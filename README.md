@@ -26,7 +26,7 @@ I've created two samples to show the library in action. The first is a Tower Con
 
 [Tower Controller](https://chessmess.github.io/UltimateDarkTower/examples/controller/TowerController.htm)
 
-[Tower Game](https://chessmess.github.io/UltimateDarkTower/examples/game/TowerGame.htm)
+[Tower Game](https://chessmess.github.io/UltimateDarkTower/examples/game/TowerGame.html)
 
 # Community
 
