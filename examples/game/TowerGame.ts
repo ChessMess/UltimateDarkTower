@@ -110,9 +110,9 @@ async function revealPicksOnTower() {
 
   // drums
   // split is used because of values like 'empty south' etc
-  const topGlyph = GLYPHS[GameState.TowerPicks[0]] ?? { side: GameState.TowerPicks[0].split(" ")[1].toLowerCase() };
-  const middleGlyph = GLYPHS[GameState.TowerPicks[1]] ?? { side: GameState.TowerPicks[1].split(" ")[1].toLowerCase() };
-  const bottomGlyph = GLYPHS[GameState.TowerPicks[2]] ?? { side: GameState.TowerPicks[2].split(" ")[1].toLowerCase() };
+  const topGlyph = GLYPHS[GameState.TowerPicks[0]] ?? { side: GameState.TowerPicks[0].split(" ")[1] };
+  const middleGlyph = GLYPHS[GameState.TowerPicks[1]] ?? { side: GameState.TowerPicks[1].split(" ")[1] };
+  const bottomGlyph = GLYPHS[GameState.TowerPicks[2]] ?? { side: GameState.TowerPicks[2].split(" ")[1] };
   const rotate = { top: topGlyph.side, middle: middleGlyph.side, bottom: bottomGlyph.side };
 
   // lights
@@ -335,7 +335,7 @@ const glyphClick = (glyph: Glyphs) => {
   let middle = null;
   let bottom = null;
 
-  switch (glyph.toLowerCase()) {
+  switch (glyph) {
     case "cleanse":
       top = document.querySelector("select[name='player-picks'][data-level='top']");
       GameState.PlayerPicks[0] = "Cleanse";

@@ -88,9 +88,9 @@ async function revealPicksOnTower() {
     console.log("[GAME] The Tower reveals...", GameState.TowerPicks);
     // drums
     // split is used because of values like 'empty south' etc
-    const topGlyph = (_a = GLYPHS[GameState.TowerPicks[0]]) !== null && _a !== void 0 ? _a : { side: GameState.TowerPicks[0].split(" ")[1].toLowerCase() };
-    const middleGlyph = (_b = GLYPHS[GameState.TowerPicks[1]]) !== null && _b !== void 0 ? _b : { side: GameState.TowerPicks[1].split(" ")[1].toLowerCase() };
-    const bottomGlyph = (_c = GLYPHS[GameState.TowerPicks[2]]) !== null && _c !== void 0 ? _c : { side: GameState.TowerPicks[2].split(" ")[1].toLowerCase() };
+    const topGlyph = (_a = GLYPHS[GameState.TowerPicks[0]]) !== null && _a !== void 0 ? _a : { side: GameState.TowerPicks[0].split(" ")[1] };
+    const middleGlyph = (_b = GLYPHS[GameState.TowerPicks[1]]) !== null && _b !== void 0 ? _b : { side: GameState.TowerPicks[1].split(" ")[1] };
+    const bottomGlyph = (_c = GLYPHS[GameState.TowerPicks[2]]) !== null && _c !== void 0 ? _c : { side: GameState.TowerPicks[2].split(" ")[1] };
     const rotate = { top: topGlyph.side, middle: middleGlyph.side, bottom: bottomGlyph.side };
     // lights
     const doorwayLights = getDoorwayLightsCommand();
@@ -289,7 +289,7 @@ const glyphClick = (glyph) => {
     let top = null;
     let middle = null;
     let bottom = null;
-    switch (glyph.toLowerCase()) {
+    switch (glyph) {
         case "cleanse":
             top = document.querySelector("select[name='player-picks'][data-level='top']");
             GameState.PlayerPicks[0] = "Cleanse";
