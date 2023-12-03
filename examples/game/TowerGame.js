@@ -33,8 +33,8 @@ const startGame = () => {
     if (!DarkTower.isConnected) {
         (async () => {
             await DarkTower.connect();
-            // !this.hasCalibrated && myTower.calibrate();
-            // this.hasCalibrated = true;
+            !this.hasCalibrated && DarkTower.calibrate();
+            this.hasCalibrated = true;
         })();
     }
     console.log('[GAME] New game started');
