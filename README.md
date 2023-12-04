@@ -15,16 +15,14 @@ Currently we are not handling the communication coming back from the tower. It's
 
 Other items on the TODO list:
 
-- Command Queueing & Retry - Right now if the command is sent and the tower throws an error that an operation is in process that command is lost. Queing and Retry needs to be implemented, and will be dependant upon handling the tower response.
+- Command Queueing & Retry - Right now if the command is sent and the tower throws an error that an operation is in process that command is lost. Queing and Retry needs to be implemented, and will be dependant upon handling the tower response. I have a makeshift retry system in place but it needs work and is only temporary until I fully implement tower response handling.
 - Utility Functions - Being able to call functions like 'BreakSeal' that handles the lights and sounds for that type of event, Randomize Levels which will can randomize the position of a level, and others such as this.
-
-## Examples
-
-I've created two samples to show the library in action. The first is a Tower Controller that replicates the functionality found in the official Return To Dark Tower app (under settings). In addition I created a game called 'The Towers Challenge'. It's a simple game that only requires the Tower, and serves as a good example while allowing me to 'dogfood' the tower library.
 
 ### Web Application Examples
 
-These web apps require Web Bluetooth, which is currently only supported in certain browsers, such as Chrome on the desktop and Android, Microsoft Edge, and Samsung Internet. You can find a list of all supported browsers at [CanIUse](https://caniuse.com/?search=web%20bluetooth).
+I've created two samples to show the library in action. The first is a Tower Controller that replicates the functionality found in the official Return To Dark Tower app (under settings). In addition I created a game called 'The Towers Challenge'. It's a simple game that only requires the Tower, and serves as a good example while allowing me to 'dogfood' the tower library.
+
+These web apps require Web Bluetooth, which is currently only supported in certain browsers, such as Chrome on the desktop, Chrome on Android mobile devices, Microsoft Edge, and Samsung Internet. You can find a list of all supported browsers at [CanIUse](https://caniuse.com/?search=web%20bluetooth).
 
 You will need your Dark Tower from the game to use these apps.
 
