@@ -22,12 +22,16 @@ Other items on the TODO list:
 
 I've created two samples to show the library in action. The first is a Tower Controller that replicates the functionality found in the official Return To Dark Tower app (under settings). In addition I created a game called 'The Towers Challenge'. It's a simple game that only requires the Tower, and serves as a good example while allowing me to 'dogfood' the tower library.
 
-### Links
+### Web Application Examples
+
+These web apps require Web Bluetooth, which is currently only supported in certain browsers, such as Chrome on the desktop and Android, Microsoft Edge, and Samsung Internet. You can find a list of all supported browsers at [CanIUse](https://caniuse.com/?search=web%20bluetooth).
+
+You will need your Dark Tower from the game to use these apps.
 
 [Tower Controller](https://chessmess.github.io/UltimateDarkTower/examples/controller/TowerController.html)
 
 [Tower Game](https://chessmess.github.io/UltimateDarkTower/examples/game/TowerGame.html)
 
-# Community
+## Community
 
 Join us on our [Discord Server](https://discord.com/channels/722465956265197618/1167555008376610945/1167842435766952158)!
