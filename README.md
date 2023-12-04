@@ -4,7 +4,17 @@ Working on these docs... so consider this placeholder for the moment.
 
 The Ultimate Dark Tower library is a javascript library that you can use in your projects to control the Tower that comes with Restoration Game's Return To Dark Tower board game.
 
-I've created a couple of sample pages that show the library in use, linked below.
+### Web Application Examples
+
+I've created two samples to show the library in action that you can use from your browser. Just power on your Tower and go to the links below!
+
+The first is a Tower Controller that replicates the functionality found in the official Return To Dark Tower app (under settings). In addition I created a game called 'The Towers Challenge'. It's a simple game that only requires the Tower, and serves as a good example while allowing me to 'dogfood' the tower library.
+
+These web apps require Web Bluetooth, which is currently only supported in certain browsers, such as Chrome on the desktop, Chrome on Android mobile devices, Microsoft Edge, and Samsung Internet. You can find a list of all supported browsers at [CanIUse](https://caniuse.com/?search=web%20bluetooth).
+
+[Tower Controller](https://chessmess.github.io/UltimateDarkTower/examples/controller/TowerController.html)
+
+[Tower Game](https://chessmess.github.io/UltimateDarkTower/examples/game/TowerGame.html)
 
 ## Known Issues:
 
@@ -17,18 +27,6 @@ Other items on the TODO list:
 
 - Command Queueing & Retry - Right now if the command is sent and the tower throws an error that an operation is in process that command is lost. Queing and Retry needs to be implemented, and will be dependant upon handling the tower response. I have a makeshift retry system in place but it needs work and is only temporary until I fully implement tower response handling.
 - Utility Functions - Being able to call functions like 'BreakSeal' that handles the lights and sounds for that type of event, Randomize Levels which will can randomize the position of a level, and others such as this.
-
-### Web Application Examples
-
-I've created two samples to show the library in action. The first is a Tower Controller that replicates the functionality found in the official Return To Dark Tower app (under settings). In addition I created a game called 'The Towers Challenge'. It's a simple game that only requires the Tower, and serves as a good example while allowing me to 'dogfood' the tower library.
-
-These web apps require Web Bluetooth, which is currently only supported in certain browsers, such as Chrome on the desktop, Chrome on Android mobile devices, Microsoft Edge, and Samsung Internet. You can find a list of all supported browsers at [CanIUse](https://caniuse.com/?search=web%20bluetooth).
-
-You will need your Dark Tower from the game to use these apps.
-
-[Tower Controller](https://chessmess.github.io/UltimateDarkTower/examples/controller/TowerController.html)
-
-[Tower Game](https://chessmess.github.io/UltimateDarkTower/examples/game/TowerGame.html)
 
 ## Community
 
