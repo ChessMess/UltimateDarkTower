@@ -70,7 +70,7 @@ class UltimateDarkTower {
       lightOverrideCommand[AUDIO_COMMAND_POS] = soundIndex;
     }
 
-    console.log('[UDT] Sending light override' + soundIndex ? ' with sound' : '');
+    console.log('[UDT] Sending light override' + (soundIndex ? ' with sound' : ''));
     await this.sendTowerCommand(lightOverrideCommand);
   }
 
@@ -83,7 +83,7 @@ class UltimateDarkTower {
       rotateCommand[AUDIO_COMMAND_POS] = soundIndex;
     }
 
-    console.log('[UDT] Sending rotate command' + soundIndex ? ' with sound' : '');
+    console.log('[UDT] Sending rotate command' + (soundIndex ? ' with sound' : ''));
     await this.sendTowerCommand(rotateCommand);
 
     // saving drum positions

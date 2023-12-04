@@ -103,6 +103,7 @@ const updateScore = () => {
     // reset round score
     GameState.RoundScore = 0;
     // score matches
+    console.log('scoring', GameState.TowerPicks, GameState.PlayerPicks);
     for (let index = 0; index < GameState.PlayerPicks.length; index++) {
         if (GameState.PlayerPicks[index] === GameState.TowerPicks[index]) {
             GameState.RoundScore++;
@@ -226,16 +227,16 @@ const updateTowerPicksHTML = () => {
 const updatePlayerPicks = () => {
     GameState.PlayerPicks = [];
     const top = document.querySelector("select[name='player-picks'][data-level='top']");
-    GameState.PlayerPicks[0] = top.value;
+    GameState.PlayerPicks[0] = top.value.toLowerCase();
     const middle = document.querySelector("select[name='player-picks'][data-level='middle']");
-    GameState.PlayerPicks[1] = middle.value;
+    GameState.PlayerPicks[1] = middle.value.toLowerCase();
     const bottom = document.querySelector("select[name='player-picks'][data-level='bottom']");
-    GameState.PlayerPicks[2] = bottom.value;
+    GameState.PlayerPicks[2] = bottom.value.toLowerCase();
 };
 const setTowerPicks = () => {
     GameState.TowerPicks = [];
     for (let level = 1; level < 4; level++) {
-        GameState.TowerPicks.push(pickRandomGlyph(level));
+        GameState.TowerPicks.push(pickRandomGlyph(level).toLowerCase());
     }
     updateTowerPicksHTML();
 };

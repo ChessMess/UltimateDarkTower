@@ -1,17 +1,18 @@
-const TheTower = new UltimateDarkTower();
+
+const Tower = new UltimateDarkTower();
 
 async function connectToTower() {
-  await DarkTower.connect();
+  await Tower.connect();
 }
 
 const playSound = () => {
   const select = document.getElementById("sounds") as HTMLInputElement;
-  DarkTower.playSound(Number(select.value));
+  Tower.playSound(Number(select.value));
 }
 
 const overrides = () => {
   const select = document.getElementById("lightOverrideDropDown") as HTMLInputElement;
-  DarkTower.lightOverrides(Number(select.value));
+  Tower.lightOverrides(Number(select.value));
 }
 
 const rotate = () => {
@@ -19,7 +20,7 @@ const rotate = () => {
   const middle = document.getElementById("middle") as HTMLInputElement;
   const bottom = document.getElementById("bottom") as HTMLInputElement;
   const sound = document.getElementById("sounds") as HTMLInputElement;
-  DarkTower.Rotate(
+  Tower.Rotate(
     top.value as TowerSide,
     middle.value as TowerSide,
     bottom.value as TowerSide, Number(sound.value)
@@ -43,7 +44,7 @@ const lights = () => {
   const ledgeLights: Array<LedgeLight> = getLedgeLights();
   const baseLights: Array<BaseLight> = getBaseLights();
   const allLights = { doorway: doorwayLights, ledge: ledgeLights, base: baseLights };
-  DarkTower.Lights(allLights);
+  Tower.Lights(allLights);
 }
 
 const getDoorwayLights = () => {
