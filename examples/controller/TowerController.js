@@ -39,9 +39,15 @@ const lights = () => {
 const getDoorwayLights = () => {
     const qs = 'input[type="checkbox"][data-light-type="doorway"]:checked';
     const checked = document.querySelectorAll(qs);
+    const ls = document.getElementById("lightStyles");
+    const selectedLightStyle = ls.options[ls.selectedIndex].textContent;
     let doorwayCmds = [];
     Array.from(checked).forEach(cb => {
-        const { lightSide, lightStyle, lightLevel } = getDataAttributes(cb);
+        let { lightSide, lightStyle, lightLevel } = getDataAttributes(cb);
+        if (lightStyle !== selectedLightStyle) {
+            lightStyle = selectedLightStyle;
+            cb.setAttribute('data-light-style', lightStyle);
+        }
         doorwayCmds.push({ position: lightSide, level: lightLevel, style: lightStyle });
     });
     return doorwayCmds;
