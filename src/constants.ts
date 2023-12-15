@@ -6,6 +6,15 @@ const UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 const TOWER_DEVICE_NAME = "ReturnToDarkTower";
 type CommandPacket = Uint8Array;
 
+const TOWER_COMMANDS = {
+  towerState: 0,
+  doorReset: 1,
+  unjamDrums: 2,
+  resetCounter: 3,
+  calibration: 4,
+  // go no further!
+};
+
 const DRUM_PACKETS = {
   topMiddle: 1,
   bottom: 2
@@ -76,7 +85,7 @@ const drumPositionCmds = {
 const BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
 const DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];
 
-const LIGHTING_STYLES = {
+const LIGHT_EFFECTS = {
   on: 0x3,
   off: 0,
   breathe: 5,
@@ -86,24 +95,26 @@ const LIGHTING_STYLES = {
 }
 
 
-const TOWER_LIGHT_OVERRIDES = {
+const TOWER_LIGHT_SEQUENCES = {
+  twinkle: 0x01,
+  flareThenFade: 0x02,
+  flareThenFadeBase: 0x03,
+  flareThenFlicker: 0x04,
   angryStrobe01: 0x05,
   angryStrobe02: 0x06,
   angryStrobe03: 0x07,
-  defeat: 0x0b,
-  dungeonIdle: 0x0d,
-  flareThenFade01: 0x02,
-  flareThenFade02: 0x03,
-  flareThenFlicker: 0x04,
   gloat01: 0x08,
   gloat02: 0x09,
   gloat03: 0x0a,
-  monthStarted: 0x13,
-  rotation: 0x0f,
-  sealReveal: 0x0e,
-  twinkle: 0x01,
+  defeat: 0x0b,
   victory: 0x0c,
-  unknown01: 0x08
+  dungeonIdle: 0x0d,
+  sealReveal: 0x0e,
+  rotationAllDrums: 0x0f,
+  rotationDrumTop: 0x10,
+  rotationDrumMiddle: 0x11,
+  rotationDrumBottom: 0x12,
+  monthStarted: 0x13,
 }
 
 type SoundCategory =

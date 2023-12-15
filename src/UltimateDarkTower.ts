@@ -36,7 +36,7 @@ class UltimateDarkTower {
 
   async calibrate() {
     console.log('[UDT] Tower Calibration');
-    await this.sendTowerCommand(new Uint8Array([4]));
+    await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]));
     this.wasCalibrated = true;
   }
 
@@ -265,19 +265,19 @@ class UltimateDarkTower {
     doorways && doorways.forEach(dlt => {
       packetPos = LIGHT_PACKETS.doorway[dlt.level][dlt.position];
       const shouldBitShift = DOORWAY_LIGHTS_TO_BIT_SHIFT.includes(dlt.position);
-      command[packetPos] += LIGHTING_STYLES[`${dlt.style}`] * (shouldBitShift ? 0x10 : 0x1)
+      command[packetPos] += LIGHT_EFFECTS[`${dlt.style}`] * (shouldBitShift ? 0x10 : 0x1)
     })
 
     ledges && ledges.forEach(llt => {
       packetPos = LIGHT_PACKETS.ledge[llt.position];
       const shouldBitShift = BASE_LEDGE_LIGHTS_TO_BIT_SHIFT.includes(llt.position);
-      command[packetPos] += LIGHTING_STYLES[`${llt.style}`] * (shouldBitShift ? 0x10 : 0x1)
+      command[packetPos] += LIGHT_EFFECTS[`${llt.style}`] * (shouldBitShift ? 0x10 : 0x1)
     })
 
     bases && bases.forEach(blt => {
       packetPos = LIGHT_PACKETS.base[blt.position.side][blt.position.level]
       const shouldBitShift = BASE_LEDGE_LIGHTS_TO_BIT_SHIFT.includes(blt.position.side);
-      command[packetPos] += LIGHTING_STYLES[`${blt.style}`] * (shouldBitShift ? 0x10 : 0x1)
+      command[packetPos] += LIGHT_EFFECTS[`${blt.style}`] * (shouldBitShift ? 0x10 : 0x1)
     })
 
     return command;
