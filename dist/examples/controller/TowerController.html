@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" class="tower-controller-html">
+
+<head>
+  <meta charset="utf-8">
+  <title>UDT Controller</title>
+  <meta name="UDT Controller"
+    content="example tower controller using the ultimate dark tower library for Return To Dark Tower">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <!-- Stylesheets -->
+  <!-- Reset default styles and add support for google fonts -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" rel="stylesheet"
+    type="text/css" />
+  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+
+  <!-- Custom styles -->
+  <link href="../assets/style.css" rel="stylesheet" type="text/css" />
+
+  <!-- Scripts (also at bottom of page) -->
+  <script src="../../src/constants.js"></script>
+  <script src="../../src/UltimateDarkTower.js"></script>
+  <script src="TowerController.js"></script>
+</head>
+
+<body>
+  <div id="container">
+    <div class="inner">
+      <div id="content">
+        <div style="text-align: center;">
+          <h1 style="margin: 5px 0">Tower Controller</h1>
+          <h3 style="text-align: center;">
+            A web based tower controller for
+            <a target=" _blank" href="https://restorationgames.com/return-to-dark-tower/">
+              Return To Dark Tower </a>
+          </h3>
+        </div>
+        <hr />
+        <div style="text-align: center;">
+          Note: Web Bluetooth is not currently supported in Safari or Firefox, see full list <a target="_blank"
+            href="https://caniuse.com/?search=web%20bluetooth">here</a>
+        </div>
+        <hr />
+        <br />
+        <div style="padding-left: 40px;">
+          <button id="connectButton" onclick="connectToTower()">Connect</button>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <button id="disconnectButton" onclick="Tower.disconnect()">Disconnect</button>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <button id="calibrate" onclick="Tower.calibrate()">Calibrate</button>
+          <br /><br />
+          <button id="soundButton" onclick="playSound()">Play Sound</button>
+          &nbsp;
+          <select id="sounds">
+            <option value="0">select sound</option>
+          </select>
+          <br /><br />
+          <button id="lightOverrideButton" onclick="overrides()">Light Overrides</button>
+          &nbsp;
+          <select id="lightOverrideDropDown">
+            <option value="0">select override</option>
+          </select>
+        </div>
+        <br />
+        <div style="margin-left: 40px;">
+          <fieldset style="width: 450px; background-color: rgba(0, 0, 0, 0.6);">
+            <legend>Lights</legend>
+            <fieldset style="margin-right: 15px; margin-left: 15px; float: left; width: fit-content">
+              <legend>Doorways:</legend>
+              <Table>
+                <thead>
+                  <td>N</td>
+                  <td>E</td>
+                  <td>S</td>
+                  <td>W</td>
+                </thead>
+                <tr>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="north" data-light-level="top" />
+                  </td>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="east" data-light-level="top" />
+                  </td>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="south" data-light-level="top" />
+                  </td>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="west" data-light-level="top" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="north" data-light-level="middle" name="north" />
+                  </td>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="east" data-light-level="middle" name="east" />
+                  </td>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="south" data-light-level="middle" name="south" />
+                  </td>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="west" data-light-level="middle" name="west" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="north" data-light-level="bottom" name="north" />
+                  </td>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="east" data-light-level="bottom" name="east" />
+                  </td>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="south" data-light-level="bottom" name="south" />
+                  </td>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                      data-light-location="west" data-light-level="bottom" name="west" />
+                  </td>
+                </tr>
+              </Table>
+            </fieldset>
+            <fieldset style="margin-right: 15px;float:left; width: fit-content">
+              <legend>Ledges:</legend>
+              <table>
+                <thead>
+                  <td>N</td>
+                  <td>E</td>
+                  <td>S</td>
+                  <td>W</td>
+                </thead>
+                <tr>
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                      data-light-location="north" />
+                  </td>
+
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                      data-light-location="east" />
+                  </td>
+
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                      data-light-location="south" />
+                  </td>
+
+                  <td>
+                    <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                      data-light-location="west" />
+                  </td>
+                </tr>
+              </table>
+            </fieldset>
+            <fieldset style="width: fit-content">
+              <legend>Base:</legend>
+              <table>
+                <tr>
+                  <td>NORTH:&nbsp;&nbsp;</td>
+                  <td>front</td>
+                  <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                      data-light-location="north" data-light-base-location="a" />
+                    &nbsp;
+                  </td>
+                  <td>back</td>
+                  <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                      data-light-location="north" data-light-base-location="b" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>EAST:</td>
+                  <td>front</td>
+                  <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                      data-light-location="east" data-light-base-location="a" />
+                  </td>
+                  <td>back</td>
+                  <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                      data-light-location="east" data-light-base-location="b" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>SOUTH:</td>
+                  <td>front</td>
+                  <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                      data-light-location="south" data-light-base-location="a" />
+                  </td>
+                  <td>back</td>
+                  <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                      data-light-location="south" data-light-base-location="b" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>WEST:</td>
+                  <td>front</td>
+                  <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                      data-light-location="west" data-light-base-location="a" />
+                  </td>
+                  <td>back</td>
+                  <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                      data-light-location="west" data-light-base-location="b" />
+                  </td>
+                </tr>
+              </table>
+            </fieldset>
+            <div style="margin-left: 15px; padding: 8px 0;">
+              <button id="light" style="margin-top: 10px" onclick="lights()">Apply to all lights</button>&nbsp;&nbsp;
+              <select id="lightStyles"></select>
+            </div>
+          </fieldset>
+        </div>
+        <br /><br />
+        <div style="display: flex;justify-content: space-evenly;">
+          <button id="rotateButton" onclick="rotate()">Rotate</button>
+          &nbsp;
+          <label for="top" style="padding: 2px 0">Top:</label>
+          <select id="top">
+            <option value="north">North</option>
+            <option value="south">South</option>
+            <option value="east">East</option>
+            <option value="west">West</option>
+          </select>
+          &nbsp;
+          <label for="middle" style="padding: 2px 0">Middle:</label>
+          <select id="middle">
+            <option value="north">North</option>
+            <option value="south">South</option>
+            <option value="east">East</option>
+            <option value="west">West</option>
+          </select>
+          &nbsp;
+          <label for="bottom" style="padding: 2px 0">Bottom:</label>
+          <select id="bottom">
+            <option value="north">North</option>
+            <option value="south">South</option>
+            <option value="east">East</option>
+            <option value="west">West</option>
+          </select>
+        </div>
+        <br />
+        <hr />
+        <div style="padding-bottom: 5px; padding-left: 10px;">
+          Come join us on the
+          <a target="_blank" href="https://discord.com/invite/87kffaR3jV">
+            Ultimate Dark Tower Discord Server!
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // populate dropdowns
+    const dropDowns = [
+      { "sounds": TOWER_AUDIO_LIBRARY },
+      { "lightOverrideDropDown": TOWER_LIGHT_SEQUENCES },
+      { "lightStyles": LIGHT_EFFECTS }
+    ];
+
+    dropDowns.forEach(item => {
+      const el = Object.keys(item)[0];
+      const data = Object.keys(Object.values(item)[0]);
+      let dropDown = document.getElementById(el);
+      data.forEach((value, index) => {
+        var el = document.createElement("option");
+        el.textContent = item.sounds ? `${index + 1}. ${value}` : value;
+        el.value = index + 1;
+        dropDown.appendChild(el);
+      });
+    });
+  </script>
+</body>
+
+</html>
