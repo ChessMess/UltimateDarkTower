@@ -173,7 +173,7 @@ const getScoringSound = (): number => {
   if (matchedAll)
     sound = TOWER_AUDIO_LIBRARY.ClassicAttackTower.value;
   if (matchedNone)
-    sound = TOWER_AUDIO_LIBRARY.TowerGloat01.value;
+    sound = TOWER_AUDIO_LIBRARY.TowerGloat1.value;
   if (didPlayerWin)
     sound = TOWER_AUDIO_LIBRARY.ClassicStartMonth.value;
   if (didPlayerLose)

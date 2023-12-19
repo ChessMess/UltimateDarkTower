@@ -13,13 +13,13 @@ const TOWER_COMMANDS = {
 };
 const DRUM_PACKETS = {
     topMiddle: 1,
-    bottom: 2
+    bottom: 2,
 };
 const LIGHT_PACKETS = {
     doorway: {
         top: { north: 3, east: 3, south: 4, west: 4 },
         middle: { north: 5, east: 5, south: 6, west: 6 },
-        bottom: { north: 7, east: 7, south: 8, west: 8 }
+        bottom: { north: 7, east: 7, south: 8, west: 8 },
     },
     base: {
         north: { a: 12, b: 14 },
@@ -28,7 +28,7 @@ const LIGHT_PACKETS = {
         west: { a: 12, b: 14 },
     },
     ledge: { north: 10, west: 10, south: 9, east: 9 },
-    overrides: 19
+    overrides: 19,
 };
 // positions based on calibrated drum orientation
 const GLYPHS = {
@@ -36,13 +36,14 @@ const GLYPHS = {
     quest: { name: "Quest", level: "top", side: "south" },
     battle: { name: "Battle", level: "middle", side: "north" },
     banner: { name: "Banner", level: "bottom", side: "north" },
-    reinforce: { name: "Reinforce", level: "bottom", side: "south" }
+    reinforce: { name: "Reinforce", level: "bottom", side: "south" },
 };
 const AUDIO_COMMAND_POS = 15;
+// prettier-ignore
 const drumPositionCmds = {
     top: { north: 0b00010000, west: 0b00000010, south: 0b00010100, east: 0b00010110 },
     middle: { north: 0b00010000, west: 0b01000000, south: 0b10010000, east: 0b11010000 },
-    bottom: { north: 0b01000010, west: 0b01001010, south: 0b01010010, east: 0b01011010 }
+    bottom: { north: 0b01000010, west: 0b01001010, south: 0b01010010, east: 0b01011010 },
 };
 const BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
 const DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];
@@ -75,6 +76,7 @@ const TOWER_LIGHT_SEQUENCES = {
     rotationDrumBottom: 0x12,
     monthStarted: 0x13,
 };
+// prettier-ignore
 const TOWER_AUDIO_LIBRARY = {
     Ashstrider: { name: "Ashstrider", value: 0x01, category: "Adversary" },
     BaneofOmens: { name: "Bane of Omens", value: 0x02, category: "Adversary" },
@@ -106,18 +108,18 @@ const TOWER_AUDIO_LIBRARY = {
     CardFlip01: { name: "Card Flip 01", value: 0x1C, category: "Battle" },
     CardFlip02: { name: "Card Flip 02", value: 0x1D, category: "Battle" },
     CardFlip03: { name: "Card Flip 03", value: 0x1E, category: "Battle" },
-    CardFlip04: { name: "Card Flip 04", value: 0x1F, category: "Battle" },
-    CardFlip05: { name: "Card Flip 05", value: 0x20, category: "Battle" },
-    CardFlip06: { name: "Card Flip 06", value: 0x21, category: "Battle" },
+    CardFlipPaper01: { name: "Card Flip Paper 01", value: 0x1F, category: "Battle" },
+    CardFlipPaper02: { name: "Card Flip Paper 02", value: 0x20, category: "Battle" },
+    CardFlipPaper03: { name: "Card Flip Paper 03", value: 0x21, category: "Battle" },
     CardSelect01: { name: "Card Select 01", value: 0x22, category: "Battle" },
     CardSelect02: { name: "Card Select 02", value: 0x23, category: "Battle" },
     CardSelect03: { name: "Card Select 03", value: 0x24, category: "Battle" },
-    BattleBegins: { name: "Battle Begins", value: 0x25, category: "Battle" },
+    BattleStart: { name: "Battle Start", value: 0x25, category: "Battle" },
     BattleVictory: { name: "Battle Victory", value: 0x26, category: "Battle" },
-    ButtonCombo: { name: "Button Combo", value: 0x27, category: "Battle" },
-    ButtonPress: { name: "Button Press", value: 0x28, category: "Battle" },
-    Unlisted01: { name: "Door Shut?", value: 0x29, category: "Unlisted" },
-    ClassicAdvantages: { name: "8-bit Advantages", value: 0x2A, category: "Classic" },
+    ButtonHoldPressCombo: { name: "Button Hold Press Combo", value: 0x27, category: "Battle" },
+    ButtonHold: { name: "Button Hold", value: 0x28, category: "Battle" },
+    ButtonPress: { name: "Button Press", value: 0x29, category: "Battle" },
+    ClassicAdvantageApplied: { name: "8-bit Advantage", value: 0x2A, category: "Classic" },
     ClassicAttackTower: { name: "8-bit Attack Tower", value: 0x2B, category: "Classic" },
     ClassicBazaar: { name: "8-bit Bazaar", value: 0x2C, category: "Classic" },
     ClassicConfirmation: { name: "8-bit Confirmation", value: 0x2D, category: "Classic" },
@@ -140,13 +142,13 @@ const TOWER_AUDIO_LIBRARY = {
     DungeonRuins: { name: "Dungeon Ruins", value: 0x3E, category: "Dungeon" },
     DungeonShrine: { name: "Dungeon Shrine", value: 0x3F, category: "Dungeon" },
     DungeonTomb: { name: "Dungeon Tomb", value: 0x40, category: "Dungeon" },
-    Event: { name: "Event", value: 0x41, category: "Foe" },
-    Spawned: { name: "Spawned", value: 0x42, category: "Foe" },
+    FoeEvent: { name: "Foe Event", value: 0x41, category: "Foe" },
+    FoeSpawn: { name: "Foe Spawn", value: 0x42, category: "Foe" },
     Brigands: { name: "Brigands", value: 0x43, category: "Foe" },
     ClanofNeuri: { name: "Clan of Neuri", value: 0x44, category: "Foe" },
     Dragons: { name: "Dragons", value: 0x45, category: "Foe" },
     Lemures: { name: "Lemures", value: 0x46, category: "Foe" },
-    Leveled: { name: "Leveled", value: 0x47, category: "Foe" },
+    LeveledUp: { name: "Leveled Up", value: 0x47, category: "Foe" },
     Mormos: { name: "Mormos", value: 0x48, category: "Foe" },
     Oreks: { name: "Oreks", value: 0x49, category: "Foe" },
     ShadowWolves: { name: "Shadow Wolves", value: 0x4A, category: "Foe" },
@@ -164,29 +166,29 @@ const TOWER_AUDIO_LIBRARY = {
     LingeringRotSpawn: { name: "Lingering Rot Spawn", value: 0x56, category: "Spawn" },
     UtukKuSpawn: { name: "Utuk'Ku Spawn", value: 0x57, category: "Spawn" },
     QuestComplete: { name: "Quest Complete", value: 0x58, category: "Quest" },
-    TowerGlyph01: { name: "Tower Glyph 01", value: 0x59, category: "Glyph" },
-    TowerGlyph02: { name: "Tower Glyph 02", value: 0x5A, category: "Glyph" },
-    TowerGlyph03: { name: "Tower Glyph 03", value: 0x5B, category: "Glyph" },
-    TowerGlyph04: { name: "Tower Glyph 04", value: 0x5C, category: "Glyph" },
-    Unlisted02: { name: "Unlisted - Tower Glyph 05?", value: 0x5D, category: "Unlisted" },
+    TowerAllGlyphs: { name: "Tower All Glyphs", value: 0x59, category: "Glyph" },
+    TowerAngry1: { name: "Tower Angry 1", value: 0x5A, category: "Glyph" },
+    TowerAngry2: { name: "Tower Angry 2", value: 0x5B, category: "Glyph" },
+    TowerAngry3: { name: "Tower Angry 3", value: 0x5C, category: "Glyph" },
+    TowerAngry4: { name: "Tower Angry 4", value: 0x5D, category: "Glyph" },
     TowerConnected: { name: "Tower Connected", value: 0x5E, category: "State" },
     GameStart: { name: "Game Start", value: 0x5F, category: "State" },
-    TowerGloat01: { name: "Tower Gloat 01", value: 0x60, category: "State" },
-    TowerGloat02: { name: "Tower Gloat 02", value: 0x61, category: "State" },
-    TowerGloat03: { name: "Tower Gloat 03", value: 0x62, category: "State" },
-    TowerIdle01: { name: "Tower Idle 01", value: 0x63, category: "State" },
-    TowerIdle02: { name: "Tower Idle 02", value: 0x64, category: "State" },
-    TowerIdle03: { name: "Tower Idle 03", value: 0x65, category: "State" },
-    TowerIdle04: { name: "Tower Idle 04", value: 0x66, category: "State" },
-    TowerIdle05: { name: "Tower Idle 05", value: 0x67, category: "State" },
-    Unlisted06: { name: "Unlisted - Tower Idle 06?", value: 0x68, category: "Unlisted" },
+    TowerGloat1: { name: "Tower Gloat 1", value: 0x60, category: "State" },
+    TowerGloat2: { name: "Tower Gloat 2", value: 0x61, category: "State" },
+    TowerGloat3: { name: "Tower Gloat 3", value: 0x62, category: "State" },
+    TowerGlyph: { name: "Tower Glyph", value: 0x63, category: "State" },
+    TowerIdle1: { name: "Tower Idle 1", value: 0x64, category: "State" },
+    TowerIdle2: { name: "Tower Idle 2", value: 0x65, category: "State" },
+    TowerIdle3: { name: "Tower Idle 3", value: 0x66, category: "State" },
+    TowerIdle4: { name: "Tower Idle 4", value: 0x67, category: "State" },
+    TowerIdle5: { name: "Tower Idle 5", value: 0x68, category: "Unlisted" },
     TowerDisconnected: { name: "Tower Disconnect", value: 0x69, category: "State" },
     MonthEnded: { name: "Month Ended", value: 0x6A, category: "State" },
     MonthStarted: { name: "Month Started", value: 0x6B, category: "State" },
     QuestFailed: { name: "Quest Failed", value: 0x6C, category: "Quest" },
-    Rotate01Start: { name: "Rotate 01 Start", value: 0x6D, category: "Seals" },
-    Rotate02Loop: { name: "Rotate 02 Loop", value: 0x6E, category: "Seals" },
-    Rotate03Exit: { name: "Rotate 03  Exit", value: 0x6F, category: "Seals" },
+    RotateExit: { name: "Rotate Exit", value: 0x6D, category: "Seals" },
+    RotateLoop: { name: "Rotate Loop", value: 0x6E, category: "Seals" },
+    RotateStart: { name: "Rotate Start", value: 0x6F, category: "Seals" },
     TowerSeal: { name: "Tower Seal", value: 0x70, category: "Seals" },
     TowerSkullDropped: { name: "Tower Skull Dropped", value: 0x71, category: "State" },
 };
