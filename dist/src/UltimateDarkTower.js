@@ -28,6 +28,17 @@ class UltimateDarkTower {
         // utility
         this.logDetail = false;
         this.logTowerResponses = false;
+        // Handle Tower Response
+        this.onRxCharacteristicValueChanged = (event) => {
+            // @ts-ignore
+            let receivedData = [];
+            for (var i = 0; i < event.target.value.byteLength; i++) {
+                receivedData[i] = event.target.value.getUint8(i);
+            }
+            if (this.logTowerResponses) {
+                console.log("[UDT] Tower response: ", this.commandToString(receivedData));
+            }
+        };
         this.createLightPacketCommand = (lights) => {
             let packetPos = null;
             const command = new Uint8Array(20);
@@ -165,20 +176,6 @@ class UltimateDarkTower {
         catch (error) {
             console.log('[UDT] Tower Connection Error', error);
             this.isConnected = false;
-        }
-    }
-    // TODO: we need to wire this up as it is how the tower notifies 
-    // us that a given command that was sent is completed.
-    // It also sends us the skull drop count.
-    onRxCharacteristicValueChanged(event) {
-        let receivedData = [];
-        for (var i = 0; i < event.target.value.byteLength; i++) {
-            receivedData[i] = event.target.value.getUint8(i);
-        }
-        const receivedString = String.fromCharCode.apply(null, receivedData);
-        if (this.logTowerResponses) {
-            console.log("[UDT] received from tower: ", receivedString);
-            console.log("[UDT] cts: " + receivedData);
         }
     }
     async disconnect() {

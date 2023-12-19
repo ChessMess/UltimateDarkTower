@@ -183,19 +183,16 @@ class UltimateDarkTower {
     }
   }
 
-  // TODO: we need to wire this up as it is how the tower notifies 
-  // us that a given command that was sent is completed.
-  // It also sends us the skull drop count.
-  onRxCharacteristicValueChanged(event) {
-    let receivedData = [];
+  // Handle Tower Response
+  onRxCharacteristicValueChanged = (event) => {
+    // @ts-ignore
+    let receivedData = <Uint8Array>[];
     for (var i = 0; i < event.target.value.byteLength; i++) {
       receivedData[i] = event.target.value.getUint8(i);
     }
 
-    const receivedString = String.fromCharCode.apply(null, receivedData);
     if (this.logTowerResponses) {
-      console.log("[UDT] received from tower: ", receivedString);
-      console.log("[UDT] cts: " + receivedData);
+      console.log("[UDT] Tower response: ", this.commandToString(receivedData));
     }
   }
 
