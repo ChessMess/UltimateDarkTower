@@ -18,14 +18,10 @@ These web apps require Web Bluetooth, which is currently only supported in certa
 
 ## Known Issues:
 
-Currently we are not handling the communication coming back from the tower. It's received but just streamed to the console, it will be the next piece I work on. This means the following are not handled:
+Tower Response Handling is not fully implemented.
 
--   Skull drop detection - The tower sends it's current drop count when a skull drop is detected.
--   Command completion - The tower acks a command and then sends a command complete message.
+-   Command Queue - Currently the library sends commands as soon as they are requested. Need to add in a queue system that looks for a tower status response to the previous command before sending the next. Sending to many commands on after the other will cause the tower to disconnect.
 
-Other items on the TODO list:
-
--   Command Queueing & Retry - Right now if the command is sent and the tower throws an error that an operation is in process that command is lost. Queing and Retry needs to be implemented, and will be dependant upon handling the tower response. I have a makeshift retry system in place but it needs work and is only temporary until I fully implement tower response handling.
 -   Utility Functions - Being able to call functions like 'BreakSeal' that handles the lights and sounds for that type of event, Randomize Levels which will can randomize the position of a level, and others such as this.
 
 ## Community
