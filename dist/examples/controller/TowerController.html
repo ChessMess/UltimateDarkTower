@@ -44,11 +44,18 @@
         <hr />
         <br />
         <div style="padding-left: 40px;">
+
           <button id="connectButton" onclick="connectToTower()">Connect</button>
           &nbsp;&nbsp;&nbsp;&nbsp;
           <button id="disconnectButton" onclick="Tower.disconnect()">Disconnect</button>
           &nbsp;&nbsp;&nbsp;&nbsp;
-          <button id="calibrate" onclick="Tower.calibrate()">Calibrate</button>
+          <button id="calibrate" onclick="calibrate()">Calibrate</button>
+          &nbsp;&nbsp;
+          <span class="hide" id="calibrating-message">calibrating...</span>
+          <br /><br />
+          <button id="disconnectButton" onclick="resetSkullCount()">Reset Skull Drop Count</button>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="skull-count">Skulls Dropped:&nbsp;&nbsp;<span id="skull-count">0</span></span>
           <br /><br />
           <button id="soundButton" onclick="playSound()">Play Sound</button>
           &nbsp;
@@ -267,9 +274,9 @@
     ];
 
     dropDowns.forEach(item => {
-      const el = Object.keys(item)[0];
+      const id = Object.keys(item)[0];
       const data = Object.keys(Object.values(item)[0]);
-      let dropDown = document.getElementById(el);
+      let dropDown = document.getElementById(id);
       data.forEach((value, index) => {
         var el = document.createElement("option");
         el.textContent = item.sounds ? `${index + 1}. ${value}` : value;

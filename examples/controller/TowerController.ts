@@ -1,8 +1,32 @@
 
 const Tower = new UltimateDarkTower();
 
+// skull drop callback
+const updateSkullDropCount = (count) => {
+  const el = document.getElementById("skull-count");
+  el.innerText = count;
+}
+Tower.onSkullDrop = updateSkullDropCount;
+
 async function connectToTower() {
   await Tower.connect();
+}
+
+async function calibrate() {
+  const el = document.getElementById("calibrating-message");
+  el.classList.remove("hide");
+  await Tower.calibrate();
+}
+
+const onCalibrationComplete = () => {
+  const el = document.getElementById("calibrating-message");
+  el.classList.add("hide");
+}
+Tower.onCalibrationComplete = onCalibrationComplete;
+
+async function resetSkullCount() {
+  Tower.resetTowerSkullCount();
+  updateSkullDropCount(0);
 }
 
 const playSound = () => {

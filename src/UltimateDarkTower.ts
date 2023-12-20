@@ -22,22 +22,56 @@ class UltimateDarkTower {
 
   // tower state
   currentDrumPositions = { topMiddle: 0x10, bottom: 0x42 };
-  wasCalibrated: boolean = false;
+  isCalibrated: boolean = false;
   isConnected: boolean = false;
   retrySendCommandCount: number = 0;
   retrySendCommandMax: number = 5;
-  skullDropCount: number = 0;
+  towerSkullDropCount: number = 0;
+  performingCalibration: boolean = false;
+
+  // call back functions to be set by app
+  onSkullDrop = (count: number) => { };
+  onCalibrationComplete = () => { };
 
   // utility
   logDetail = false;
-  logTowerResponses = false;
+  logTowerResponses = true;
+
+  // allows you to log specific responses
+  // [Differential Readings] & [Battery] are sent continously so
+  // setting their defaults to false.
+  logTowerResponseConfig = {
+    TOWER_STATE: true,
+    INVALID_STATE: true,
+    HARDWARE_FAILURE: true,
+    MECH_JIGGLE_TRIGGERED: true,
+    MECH_UNEXPECTED_TRIGGER: true,
+    MECH_DURATION: true,
+    DIFFERENTIAL_READINGS: false,
+    BATTERY_READING: false,
+    CALIBRATION_FINISHED: true,
+    LOG_ALL: false, // overrides individual
+  }
 
   //#region Tower Commands 
-
   async calibrate() {
-    console.log('[UDT] Tower Calibration');
-    await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]));
-    this.wasCalibrated = true;
+    if (!this.performingCalibration) {
+      console.log('[UDT] Performing Tower Calibration');
+      await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]));
+
+      // flag to look for calibration complete tower response
+      this.performingCalibration = true;
+      return;
+    }
+
+    console.log('[UDT] Tower calibration requested when tower is already performing calibration');
+    return;
+  }
+
+  //TODO: currently not working - investigating
+  async requestTowerState() {
+    console.log('[UDT] Requesting Tower State');
+    await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.towerState]));
   }
 
   async playSound(soundIndex: number) {
@@ -112,9 +146,15 @@ class UltimateDarkTower {
 
     this.sendTowerCommand(multiCmd);
 
-    const packetMsg = this.commandToString(multiCmd);
+    const packetMsg = this.commandToPacketString(multiCmd);
     console.log('[UDT] multiple command sent', packetMsg);
   }
+
+  async resetTowerSkullCount() {
+    console.log('[UDT] Tower skull count reset requested');
+    await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.resetCounter]));
+  }
+
   //#endregion
 
   //#region future features 
@@ -183,16 +223,46 @@ class UltimateDarkTower {
     }
   }
 
-  // Handle Tower Response
+  // handle tower response
   onRxCharacteristicValueChanged = (event) => {
     // @ts-ignore
     let receivedData = <Uint8Array>[];
     for (var i = 0; i < event.target.value.byteLength; i++) {
       receivedData[i] = event.target.value.getUint8(i);
     }
+    this.logTowerResponse(receivedData);
 
+    // tower state response check
+    const isCommandTowerState = receivedData[0] === TOWER_MESSAGES["TOWER_STATE"].value;
+    isCommandTowerState && this.handleTowerStateResponse(receivedData);
+  }
+
+  private handleTowerStateResponse(receivedData: Uint8Array) {
+    const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
+
+    // check to see if the response for a calibration request
+    if (this.performingCalibration) {
+      this.performingCalibration = false;
+      this.isCalibrated = true;
+      this.onCalibrationComplete();
+      console.log('[UDT] Tower calibration complete');
+    }
+
+    // skull drop check
+    if (dataSkullDropCount !== this.towerSkullDropCount) {
+      console.log(`[UDT] Skull drop detected: ${this.towerSkullDropCount} -> ${dataSkullDropCount}`);
+      this.towerSkullDropCount = dataSkullDropCount;
+      this.onSkullDrop(dataSkullDropCount);
+    }
+  }
+
+  private logTowerResponse(receivedData: Uint8Array) {
     if (this.logTowerResponses) {
-      console.log("[UDT] Tower response: ", this.commandToString(receivedData));
+      const { cmdKey, command } = this.getTowerCommand(receivedData[0]);
+      const logAll = this.logTowerResponseConfig["LOG_ALL"];
+      if (this.logTowerResponseConfig[cmdKey] || logAll) {
+        console.log('[UDT] Tower response:', ...this.commandToString(receivedData));
+      }
     }
   }
 
@@ -218,8 +288,8 @@ class UltimateDarkTower {
 
   async sendTowerCommand(command: Uint8Array) {
     try {
-      const cmdStr = this.commandToString(command);
-      this.logDetail && console.log('command to be sent:', cmdStr);
+      const cmdStr = this.commandToPacketString(command);
+      this.logDetail && console.log('[UDT] packet(s) sent:', cmdStr);
       if (!this.txCharacteristic || !this.isConnected) {
         console.log('[UDT] Tower is not connected')
         return;
@@ -301,11 +371,41 @@ class UltimateDarkTower {
     return soundCommand;
   }
 
-  commandToString(command: Uint8Array) {
+  // TODO: return parsed data values rather than raw packet values
+  commandToString(command: Uint8Array): Array<string> {
+    const cmdValue = command[0];
+
+    const { cmdKey, command: towerCommand } = this.getTowerCommand(cmdValue)
+    switch (cmdKey) {
+      case "TOWER_STATE":
+      case "INVALID_STATE":
+      case "HARDWARE_FAILURE":
+      case "MECH_JIGGLE_TRIGGERED":
+      case "MECH_UNEXPECTED_TRIGGER":
+      case "MECH_DURATION":
+      case "DIFFERENTIAL_READINGS":
+      case "BATTERY_READING":
+      case "CALIBRATION_FINISHED":
+        return [towerCommand.name, this.commandToPacketString(command)];
+        break;
+      default:
+        return ["Unmapped Response!"]
+        break;
+    }
+  }
+
+  commandToPacketString(command: Uint8Array) {
     let cmdStr = "[";
     command.forEach(n => cmdStr += n.toString(16) + ",");
     cmdStr = cmdStr.slice(0, -1) + "]";
     return cmdStr
+  }
+
+  getTowerCommand(cmdValue: number) {
+    const cmdKeys = Object.keys(TOWER_MESSAGES);
+    const cmdKey = cmdKeys.find(key => TOWER_MESSAGES[key].value === cmdValue);
+    const command = TOWER_MESSAGES[cmdKey]
+    return { cmdKey, command };
   }
 
   //#endregion

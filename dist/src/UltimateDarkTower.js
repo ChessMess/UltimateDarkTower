@@ -20,24 +20,44 @@ class UltimateDarkTower {
         this.rxCharacteristic = null;
         // tower state
         this.currentDrumPositions = { topMiddle: 0x10, bottom: 0x42 };
-        this.wasCalibrated = false;
+        this.isCalibrated = false;
         this.isConnected = false;
         this.retrySendCommandCount = 0;
         this.retrySendCommandMax = 5;
-        this.skullDropCount = 0;
+        this.towerSkullDropCount = 0;
+        this.performingCalibration = false;
+        // call back functions to be set by app
+        this.onSkullDrop = (count) => { };
+        this.onCalibrationComplete = () => { };
         // utility
         this.logDetail = false;
-        this.logTowerResponses = false;
-        // Handle Tower Response
+        this.logTowerResponses = true;
+        // allows you to log specific responses
+        // [Differential Readings] & [Battery] are sent continously so
+        // setting their defaults to false.
+        this.logTowerResponseConfig = {
+            TOWER_STATE: true,
+            INVALID_STATE: true,
+            HARDWARE_FAILURE: true,
+            MECH_JIGGLE_TRIGGERED: true,
+            MECH_UNEXPECTED_TRIGGER: true,
+            MECH_DURATION: true,
+            DIFFERENTIAL_READINGS: false,
+            BATTERY_READING: false,
+            CALIBRATION_FINISHED: true,
+            LOG_ALL: false, // overrides individual
+        };
+        // handle tower response
         this.onRxCharacteristicValueChanged = (event) => {
             // @ts-ignore
             let receivedData = [];
             for (var i = 0; i < event.target.value.byteLength; i++) {
                 receivedData[i] = event.target.value.getUint8(i);
             }
-            if (this.logTowerResponses) {
-                console.log("[UDT] Tower response: ", this.commandToString(receivedData));
-            }
+            this.logTowerResponse(receivedData);
+            // tower state response check
+            const isCommandTowerState = receivedData[0] === TOWER_MESSAGES["TOWER_STATE"].value;
+            isCommandTowerState && this.handleTowerStateResponse(receivedData);
         };
         this.createLightPacketCommand = (lights) => {
             let packetPos = null;
@@ -66,9 +86,20 @@ class UltimateDarkTower {
     }
     //#region Tower Commands 
     async calibrate() {
-        console.log('[UDT] Tower Calibration');
-        await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]));
-        this.wasCalibrated = true;
+        if (!this.performingCalibration) {
+            console.log('[UDT] Performing Tower Calibration');
+            await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]));
+            // flag to look for calibration complete tower response
+            this.performingCalibration = true;
+            return;
+        }
+        console.log('[UDT] Tower calibration requested when tower is already performing calibration');
+        return;
+    }
+    //TODO: currently not working - investigating
+    async requestTowerState() {
+        console.log('[UDT] Requesting Tower State');
+        await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.towerState]));
     }
     async playSound(soundIndex) {
         const invalidIndex = soundIndex === null || soundIndex > (Object.keys(TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0;
@@ -126,8 +157,12 @@ class UltimateDarkTower {
             multiCmd[AUDIO_COMMAND_POS] = multiCmd[AUDIO_COMMAND_POS] | soundCmd[AUDIO_COMMAND_POS];
         }
         this.sendTowerCommand(multiCmd);
-        const packetMsg = this.commandToString(multiCmd);
+        const packetMsg = this.commandToPacketString(multiCmd);
         console.log('[UDT] multiple command sent', packetMsg);
+    }
+    async resetTowerSkullCount() {
+        console.log('[UDT] Tower skull count reset requested');
+        await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.resetCounter]));
     }
     //#endregion
     //#region future features 
@@ -178,6 +213,31 @@ class UltimateDarkTower {
             this.isConnected = false;
         }
     }
+    handleTowerStateResponse(receivedData) {
+        const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
+        // check to see if the response for a calibration request
+        if (this.performingCalibration) {
+            this.performingCalibration = false;
+            this.isCalibrated = true;
+            this.onCalibrationComplete();
+            console.log('[UDT] Tower calibration complete');
+        }
+        // skull drop check
+        if (dataSkullDropCount !== this.towerSkullDropCount) {
+            console.log(`[UDT] Skull drop detected: ${this.towerSkullDropCount} -> ${dataSkullDropCount}`);
+            this.towerSkullDropCount = dataSkullDropCount;
+            this.onSkullDrop(dataSkullDropCount);
+        }
+    }
+    logTowerResponse(receivedData) {
+        if (this.logTowerResponses) {
+            const { cmdKey, command } = this.getTowerCommand(receivedData[0]);
+            const logAll = this.logTowerResponseConfig["LOG_ALL"];
+            if (this.logTowerResponseConfig[cmdKey] || logAll) {
+                console.log('[UDT] Tower response:', ...this.commandToString(receivedData));
+            }
+        }
+    }
     async disconnect() {
         if (!this.TowerDevice) {
             return;
@@ -196,8 +256,8 @@ class UltimateDarkTower {
     async sendTowerCommand(command) {
         var _a;
         try {
-            const cmdStr = this.commandToString(command);
-            this.logDetail && console.log('command to be sent:', cmdStr);
+            const cmdStr = this.commandToPacketString(command);
+            this.logDetail && console.log('[UDT] packet(s) sent:', cmdStr);
             if (!this.txCharacteristic || !this.isConnected) {
                 console.log('[UDT] Tower is not connected');
                 return;
@@ -245,11 +305,38 @@ class UltimateDarkTower {
         soundCommand[AUDIO_COMMAND_POS] = sound;
         return soundCommand;
     }
+    // TODO: return parsed data values rather than raw packet values
     commandToString(command) {
+        const cmdValue = command[0];
+        const { cmdKey, command: towerCommand } = this.getTowerCommand(cmdValue);
+        switch (cmdKey) {
+            case "TOWER_STATE":
+            case "INVALID_STATE":
+            case "HARDWARE_FAILURE":
+            case "MECH_JIGGLE_TRIGGERED":
+            case "MECH_UNEXPECTED_TRIGGER":
+            case "MECH_DURATION":
+            case "DIFFERENTIAL_READINGS":
+            case "BATTERY_READING":
+            case "CALIBRATION_FINISHED":
+                return [towerCommand.name, this.commandToPacketString(command)];
+                break;
+            default:
+                return ["Unmapped Response!"];
+                break;
+        }
+    }
+    commandToPacketString(command) {
         let cmdStr = "[";
         command.forEach(n => cmdStr += n.toString(16) + ",");
         cmdStr = cmdStr.slice(0, -1) + "]";
         return cmdStr;
+    }
+    getTowerCommand(cmdValue) {
+        const cmdKeys = Object.keys(TOWER_MESSAGES);
+        const cmdKey = cmdKeys.find(key => TOWER_MESSAGES[key].value === cmdValue);
+        const command = TOWER_MESSAGES[cmdKey];
+        return { cmdKey, command };
     }
 }
 //# sourceMappingURL=UltimateDarkTower.js.map
