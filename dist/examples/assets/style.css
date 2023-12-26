@@ -117,12 +117,6 @@ blockquote {
 blockquote p:last-child {
     margin-bottom: 0;
 }
-.skull-count {
-    border: 1px solid white;
-    border-radius: 4px;
-    padding: 5px 8px;
-    vertical-align: center;
-}
 
 /**
  * Layout styles
@@ -213,4 +207,15 @@ select {
     letter-spacing: 0.1rem;
     font-size: 1.05rem;
     padding: 0.75rem 2rem;
+}
+.fieldset-container {
+    width: 450px;
+    margin-left: 40px;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+.skull-count {
+    border: 1px solid white;
+    border-radius: 4px;
+    padding: 5px 8px;
+    vertical-align: center;
 }

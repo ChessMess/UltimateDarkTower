@@ -24,6 +24,12 @@ const onCalibrationComplete = () => {
 }
 Tower.onCalibrationComplete = onCalibrationComplete;
 
+const onBatteryLevelNotify = (millivolts: number) => {
+  const el = document.getElementById("battery");
+  el.innerText = Tower.millVoltsToPercentage(millivolts);
+}
+Tower.onBatteryLevelNotify = onBatteryLevelNotify;
+
 async function resetSkullCount() {
   Tower.resetTowerSkullCount();
   updateSkullDropCount(0);

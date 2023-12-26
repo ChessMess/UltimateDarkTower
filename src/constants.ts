@@ -6,8 +6,9 @@ const UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 const TOWER_DEVICE_NAME = "ReturnToDarkTower";
 type CommandPacket = Uint8Array;
 
+// tower commands 
 const TOWER_COMMANDS = {
-  towerState: 0,
+  towerState: 0, // not a sendable command
   doorReset: 1,
   unjamDrums: 2,
   resetCounter: 3,
@@ -15,6 +16,18 @@ const TOWER_COMMANDS = {
   overwriteDrumStates: 5,
   // go no further!
 };
+// tower commands enum
+const TC = {
+  STATE: "TOWER_STATE",
+  INVALID_STATE: "INVALID_STATE",
+  FAILURE: "HARDWARE_FAILURE",
+  JIGGLE: "MECH_JIGGLE_TRIGGERED",
+  UNEXPECTED: "MECH_UNEXPECTED_TRIGGER",
+  DURATION: "MECH_DURATION",
+  DIFFERENTIAL: "DIFFERENTIAL_READINGS",
+  CALIBRATION: "CALIBRATION_FINISHED",
+  BATTERY: "BATTERY_READING",
+}
 
 const DRUM_PACKETS = {
   topMiddle: 1,
@@ -261,3 +274,13 @@ const TOWER_MESSAGES = {
   BATTERY_READING: { name: "Battery Level", value: 7, critical: false },
   CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false },
 }
+
+// 5% increments - voltages are in millivolts and typical for a 250mA discharge 
+// at room temperature which roughly matches a single Energizer EN91
+// This is a rough approximation as chemical makeup of battieries have differing
+// battery performace (Alkaline vs NiMH vs Li etc).
+const VOLTAGE_LEVELS = [
+  1500, 1390, 1350, 1320, 1295, 1270, 1245, 1225, 1205,
+  1180, 1175, 1166, 1150, 1133, 1125, 1107, 1095, 1066, 1033,
+  980 // There's an additional 5% until 800mV is reached
+];

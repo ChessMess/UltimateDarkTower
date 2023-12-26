@@ -18,17 +18,23 @@ class UltimateDarkTower {
         this.TowerDevice = null;
         this.txCharacteristic = null;
         this.rxCharacteristic = null;
+        // tower configuration
+        this.batteryNotifyFrequency = 15 * 1000; // Tower sends these every ~200ms
+        this.retrySendCommandCount = 0;
+        this.retrySendCommandMax = 5;
         // tower state
         this.currentDrumPositions = { topMiddle: 0x10, bottom: 0x42 };
         this.isCalibrated = false;
         this.isConnected = false;
-        this.retrySendCommandCount = 0;
-        this.retrySendCommandMax = 5;
         this.towerSkullDropCount = 0;
         this.performingCalibration = false;
-        // call back functions to be set by app
-        this.onSkullDrop = (count) => { };
+        this.lastBatteryNotification = 0;
+        // call back functions
+        // you overwrite these with your own functions 
+        // to handle these events in your app
         this.onCalibrationComplete = () => { };
+        this.onSkullDrop = (towerSkullCount) => { };
+        this.onBatteryLevelNotify = (millivolts) => { };
         // utility
         this.logDetail = false;
         this.logTowerResponses = true;
@@ -43,21 +49,41 @@ class UltimateDarkTower {
             MECH_UNEXPECTED_TRIGGER: true,
             MECH_DURATION: true,
             DIFFERENTIAL_READINGS: false,
-            BATTERY_READING: false,
+            BATTERY_READING: true,
             CALIBRATION_FINISHED: true,
             LOG_ALL: false, // overrides individual
         };
         // handle tower response
         this.onRxCharacteristicValueChanged = (event) => {
-            // @ts-ignore
+            // convert data to byte array
+            // @ts-ignore-next-line
             let receivedData = [];
             for (var i = 0; i < event.target.value.byteLength; i++) {
                 receivedData[i] = event.target.value.getUint8(i);
             }
-            this.logTowerResponse(receivedData);
+            const { cmdKey } = this.getTowerCommand(receivedData[0]);
+            // log response
+            if (this.logTowerResponses) {
+                this.logTowerResponse(receivedData);
+            }
             // tower state response check
-            const isCommandTowerState = receivedData[0] === TOWER_MESSAGES["TOWER_STATE"].value;
-            isCommandTowerState && this.handleTowerStateResponse(receivedData);
+            const isCommandTowerState = cmdKey === TC.STATE;
+            if (isCommandTowerState) {
+                this.handleTowerStateResponse(receivedData);
+            }
+            ;
+            // battery 
+            const isBatteryResponse = cmdKey === TC.BATTERY;
+            const shouldNotify = isBatteryResponse &&
+                ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
+            if (isBatteryResponse) {
+                if (shouldNotify) {
+                    console.log('[UDT] Tower response:', ...this.commandToString(receivedData));
+                    const millivolts = this.getMilliVoltsFromTowerReponse(receivedData);
+                    this.lastBatteryNotification = Date.now();
+                    this.onBatteryLevelNotify(millivolts);
+                }
+            }
         };
         this.createLightPacketCommand = (lights) => {
             let packetPos = null;
@@ -214,6 +240,7 @@ class UltimateDarkTower {
         }
     }
     handleTowerStateResponse(receivedData) {
+        const { cmdKey, command } = this.getTowerCommand(receivedData[0]);
         const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
         // check to see if the response for a calibration request
         if (this.performingCalibration) {
@@ -223,20 +250,33 @@ class UltimateDarkTower {
             console.log('[UDT] Tower calibration complete');
         }
         // skull drop check
+        // Note: If IR triggers when tower is disconnected it will result in tower sending
+        // skull count when tower is reconnected.
         if (dataSkullDropCount !== this.towerSkullDropCount) {
-            console.log(`[UDT] Skull drop detected: ${this.towerSkullDropCount} -> ${dataSkullDropCount}`);
+            // don't trigger if skull count is zero, this can happen if the tower is power cycled
+            // or when a 'reset' command is sent.
+            if (!!dataSkullDropCount) {
+                this.onSkullDrop(dataSkullDropCount);
+                console.log(`[UDT] Skull drop detected: ${this.towerSkullDropCount} -> ${dataSkullDropCount}`);
+            }
+            else {
+                console.log(`[UDT] Skull count reset to ${dataSkullDropCount}`);
+            }
             this.towerSkullDropCount = dataSkullDropCount;
-            this.onSkullDrop(dataSkullDropCount);
         }
     }
     logTowerResponse(receivedData) {
-        if (this.logTowerResponses) {
-            const { cmdKey, command } = this.getTowerCommand(receivedData[0]);
-            const logAll = this.logTowerResponseConfig["LOG_ALL"];
-            if (this.logTowerResponseConfig[cmdKey] || logAll) {
-                console.log('[UDT] Tower response:', ...this.commandToString(receivedData));
-            }
+        const { cmdKey, command } = this.getTowerCommand(receivedData[0]);
+        const logAll = this.logTowerResponseConfig["LOG_ALL"];
+        const canLogThisResponse = this.logTowerResponseConfig[cmdKey] || logAll;
+        if (!canLogThisResponse) {
+            return;
         }
+        const isBatteryResponse = cmdKey === TC.BATTERY;
+        if (isBatteryResponse) {
+            return; // logged elsewhere
+        }
+        console.log('[UDT] Tower response:', ...this.commandToString(receivedData));
     }
     async disconnect() {
         if (!this.TowerDevice) {
@@ -310,16 +350,24 @@ class UltimateDarkTower {
         const cmdValue = command[0];
         const { cmdKey, command: towerCommand } = this.getTowerCommand(cmdValue);
         switch (cmdKey) {
-            case "TOWER_STATE":
-            case "INVALID_STATE":
-            case "HARDWARE_FAILURE":
-            case "MECH_JIGGLE_TRIGGERED":
-            case "MECH_UNEXPECTED_TRIGGER":
-            case "MECH_DURATION":
-            case "DIFFERENTIAL_READINGS":
-            case "BATTERY_READING":
-            case "CALIBRATION_FINISHED":
+            case TC.STATE:
+            case TC.INVALID_STATE:
+            case TC.FAILURE:
+            case TC.JIGGLE:
+            case TC.UNEXPECTED:
+            case TC.DURATION:
+            case TC.DIFFERENTIAL:
+            case TC.CALIBRATION:
                 return [towerCommand.name, this.commandToPacketString(command)];
+                break;
+            case TC.BATTERY:
+                const millivolts = this.getMilliVoltsFromTowerReponse(command);
+                const retval = [towerCommand.name, this.millVoltsToPercentage(millivolts)];
+                if (this.logDetail) {
+                    retval.push(millivolts);
+                    retval.push(this.commandToPacketString(command));
+                }
+                return retval;
                 break;
             default:
                 return ["Unmapped Response!"];
@@ -338,5 +386,21 @@ class UltimateDarkTower {
         const command = TOWER_MESSAGES[cmdKey];
         return { cmdKey, command };
     }
+    getMilliVoltsFromTowerReponse(command) {
+        const mv = new Uint8Array(4);
+        mv[0] = command[4];
+        mv[1] = command[3];
+        mv[3] = 0;
+        mv[4] = 0;
+        var view = new DataView(mv.buffer, 0);
+        return view.getUint32(0, true);
+    }
+    // Tower returns sum total battery level in millivolts
+    millVoltsToPercentage(mv) {
+        const batLevel = mv ? mv / 3 : 0; // lookup is based on sinlge AA
+        const levels = VOLTAGE_LEVELS.filter(v => batLevel >= v);
+        return `${levels.length * 5}%`;
+    }
+    ;
 }
 //# sourceMappingURL=UltimateDarkTower.js.map
