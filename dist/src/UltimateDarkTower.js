@@ -36,7 +36,7 @@ class UltimateDarkTower {
         this.onSkullDrop = (towerSkullCount) => { };
         this.onBatteryLevelNotify = (millivolts) => { };
         // utility
-        this.logDetail = false;
+        this.logDetail = true;
         this.logTowerResponses = true;
         // allows you to log specific responses
         // [Differential Readings] & [Battery] are sent continously so

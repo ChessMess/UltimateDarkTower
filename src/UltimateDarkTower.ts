@@ -41,7 +41,7 @@ class UltimateDarkTower {
   onBatteryLevelNotify = (millivolts: number) => { };
 
   // utility
-  logDetail = false;
+  logDetail = true;
   logTowerResponses = true;
 
   // allows you to log specific responses
