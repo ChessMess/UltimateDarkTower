@@ -257,7 +257,7 @@ class UltimateDarkTower {
             // or when a 'reset' command is sent.
             if (!!dataSkullDropCount) {
                 this.onSkullDrop(dataSkullDropCount);
-                console.log(`[UDT] Skull drop detected: ${this.towerSkullDropCount} -> ${dataSkullDropCount}`);
+                console.log(`[UDT] Skull drop detected: app:${this.towerSkullDropCount}  tower:${dataSkullDropCount}`);
             }
             else {
                 console.log(`[UDT] Skull count reset to ${dataSkullDropCount}`);
