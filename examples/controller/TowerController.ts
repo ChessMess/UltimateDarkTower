@@ -12,6 +12,18 @@ async function connectToTower() {
   await Tower.connect();
 }
 
+const onTowerConnected = () => {
+  const el = document.getElementById("tower-connection-state");
+  el.innerText = "Tower Connected"
+}
+Tower.onTowerConnect = onTowerConnected;
+
+const onTowerDisconnected = () => {
+  const el = document.getElementById("tower-connection-state");
+  el.innerText = "Tower Disconnected";
+}
+Tower.onTowerDisconnect = onTowerDisconnected;
+
 async function calibrate() {
   const el = document.getElementById("calibrating-message");
   el.classList.remove("hide");
