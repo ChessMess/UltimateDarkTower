@@ -446,10 +446,9 @@ class UltimateDarkTower {
         break;
       case TC.BATTERY:
         const millivolts = this.getMilliVoltsFromTowerReponse(command);
-        const retval = [towerCommand.name];
+        const retval = [towerCommand.name, this.millVoltsToPercentage(millivolts)];
         if (this.logDetail) {
-          const mvLog = `${this.millVoltsToPercentage(millivolts)}mv`;
-          retval.push(mvLog);
+          retval.push(`${millivolts}mv`);
           retval.push(this.commandToPacketString(command));
         }
         return retval;
