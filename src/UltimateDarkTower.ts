@@ -22,6 +22,7 @@ class UltimateDarkTower {
 
   // tower configuration
   batteryNotifyFrequency: number = 15 * 1000; // Tower sends these every ~200ms
+  batteryNotifyOnValueChangeOnly = true; // overrides frequency setting if true
   retrySendCommandCount: number = 0;
   retrySendCommandMax: number = 5;
 
@@ -32,6 +33,7 @@ class UltimateDarkTower {
   towerSkullDropCount: number = -1;
   performingCalibration: boolean = false;
   lastBatteryNotification: number = 0;
+  lastBatteryPercentage: string;
 
   // call back functions
   // you overwrite these with your own functions 
@@ -257,13 +259,20 @@ class UltimateDarkTower {
 
     // battery 
     const isBatteryResponse = cmdKey === TC.BATTERY;
-    const shouldNotify = isBatteryResponse &&
-      ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
     if (isBatteryResponse) {
+      const millivolts = this.getMilliVoltsFromTowerReponse(receivedData);
+      const batteryPercentage = this.millVoltsToPercentage(millivolts);
+      const didBatteryLevelChange = this.lastBatteryPercentage !== batteryPercentage;
+      const batteryNotifyFrequencyPassed = ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
+
+      const shouldNotify = this.batteryNotifyOnValueChangeOnly ?
+        didBatteryLevelChange :
+        batteryNotifyFrequencyPassed;
+
       if (shouldNotify) {
-        console.log('[UDT] Tower response:', ...this.commandToString(receivedData));
-        const millivolts = this.getMilliVoltsFromTowerReponse(receivedData);
+        console.log('[UDT] Tower response: ', ...this.commandToString(receivedData));
         this.lastBatteryNotification = Date.now();
+        this.lastBatteryPercentage = batteryPercentage;
         this.onBatteryLevelNotify(millivolts);
       }
     }
