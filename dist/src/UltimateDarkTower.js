@@ -20,7 +20,7 @@ class UltimateDarkTower {
         this.rxCharacteristic = null;
         // tower configuration
         this.batteryNotifyFrequency = 15 * 1000; // Tower sends these every ~200ms
-        this.batteryNotifyOnValueChangeOnly = true; // overrides frequency setting if true
+        this.batteryNotifyOnValueChangeOnly = false; // overrides frequency setting if true
         this.retrySendCommandCount = 0;
         this.retrySendCommandMax = 5;
         // tower state

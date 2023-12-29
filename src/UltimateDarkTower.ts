@@ -22,7 +22,7 @@ class UltimateDarkTower {
 
   // tower configuration
   batteryNotifyFrequency: number = 15 * 1000; // Tower sends these every ~200ms
-  batteryNotifyOnValueChangeOnly = true; // overrides frequency setting if true
+  batteryNotifyOnValueChangeOnly = false; // overrides frequency setting if true
   retrySendCommandCount: number = 0;
   retrySendCommandMax: number = 5;
 
