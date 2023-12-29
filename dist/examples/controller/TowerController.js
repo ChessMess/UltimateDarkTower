@@ -11,11 +11,13 @@ async function connectToTower() {
 const onTowerConnected = () => {
     const el = document.getElementById("tower-connection-state");
     el.innerText = "Tower Connected";
+    el.style.background = 'rgb(2 255 14 / 30%)';
 };
 Tower.onTowerConnect = onTowerConnected;
 const onTowerDisconnected = () => {
     const el = document.getElementById("tower-connection-state");
     el.innerText = "Tower Disconnected";
+    el.style.background = 'rgb(255 1 1 / 30%)';
 };
 Tower.onTowerDisconnect = onTowerDisconnected;
 async function calibrate() {
