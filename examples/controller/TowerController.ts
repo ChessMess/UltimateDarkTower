@@ -27,9 +27,12 @@ const onTowerDisconnected = () => {
 Tower.onTowerDisconnect = onTowerDisconnected;
 
 async function calibrate() {
+  if (!Tower.isConnected) {
+    return;
+  }
+  await Tower.calibrate();
   const el = document.getElementById("calibrating-message");
   el.classList.remove("hide");
-  await Tower.calibrate();
 }
 
 const onCalibrationComplete = () => {
