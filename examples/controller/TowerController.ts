@@ -48,6 +48,9 @@ const onBatteryLevelNotify = (millivolts: number) => {
 Tower.onBatteryLevelNotify = onBatteryLevelNotify;
 
 async function resetSkullCount() {
+  if (!Tower.isConnected) {
+    return;
+  }
   Tower.resetTowerSkullCount();
   updateSkullDropCount(0);
 }
