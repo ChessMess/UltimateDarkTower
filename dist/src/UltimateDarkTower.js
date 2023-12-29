@@ -26,7 +26,7 @@ class UltimateDarkTower {
         this.currentDrumPositions = { topMiddle: 0x10, bottom: 0x42 };
         this.isCalibrated = false;
         this.isConnected = false;
-        this.towerSkullDropCount = 0;
+        this.towerSkullDropCount = -1;
         this.performingCalibration = false;
         this.lastBatteryNotification = 0;
         // call back functions
@@ -374,9 +374,10 @@ class UltimateDarkTower {
                 break;
             case TC.BATTERY:
                 const millivolts = this.getMilliVoltsFromTowerReponse(command);
-                const retval = [towerCommand.name, `${this.millVoltsToPercentage(millivolts)}mv`];
+                const retval = [towerCommand.name];
                 if (this.logDetail) {
-                    retval.push(millivolts);
+                    const mvLog = `${this.millVoltsToPercentage(millivolts)}mv`;
+                    retval.push(mvLog);
                     retval.push(this.commandToPacketString(command));
                 }
                 return retval;
