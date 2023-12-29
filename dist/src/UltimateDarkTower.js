@@ -35,8 +35,10 @@ class UltimateDarkTower {
         this.onCalibrationComplete = () => { };
         this.onSkullDrop = (towerSkullCount) => { };
         this.onBatteryLevelNotify = (millivolts) => { };
+        this.onTowerConnect = () => { };
+        this.onTowerDisconnect = () => { };
         // utility
-        this.logDetail = true;
+        this.logDetail = false;
         this.logTowerResponses = true;
         // allows you to log specific responses
         // [Differential Readings] & [Battery] are sent continously so
@@ -229,14 +231,16 @@ class UltimateDarkTower {
             this.txCharacteristic = await service.getCharacteristic(UART_TX_CHARACTERISTIC_UUID);
             this.rxCharacteristic = await service.getCharacteristic(UART_RX_CHARACTERISTIC_UUID);
             console.log("[UDT] Subscribing to Tower...");
-            this.rxCharacteristic.startNotifications();
-            this.rxCharacteristic.addEventListener("characteristicvaluechanged", this.onRxCharacteristicValueChanged);
+            await this.rxCharacteristic.startNotifications();
+            await this.rxCharacteristic.addEventListener("characteristicvaluechanged", this.onRxCharacteristicValueChanged);
             console.log('[UDT] Tower connection complete');
             this.isConnected = true;
+            this.onTowerConnect();
         }
         catch (error) {
             console.log('[UDT] Tower Connection Error', error);
             this.isConnected = false;
+            this.onTowerDisconnect();
         }
     }
     handleTowerStateResponse(receivedData) {
@@ -268,7 +272,11 @@ class UltimateDarkTower {
     logTowerResponse(receivedData) {
         const { cmdKey, command } = this.getTowerCommand(receivedData[0]);
         const logAll = this.logTowerResponseConfig["LOG_ALL"];
-        const canLogThisResponse = this.logTowerResponseConfig[cmdKey] || logAll;
+        let canLogThisResponse = this.logTowerResponseConfig[cmdKey] || logAll;
+        // in case a command is not known we want to capture its occurance
+        if (!cmdKey) {
+            canLogThisResponse = true;
+        }
         if (!canLogThisResponse) {
             return;
         }
@@ -285,11 +293,15 @@ class UltimateDarkTower {
         if (this.TowerDevice.gatt.connected) {
             await this.TowerDevice.gatt.disconnect();
             console.log("[UDT] Tower disconnected");
+            this.isConnected = false;
+            this.onTowerDisconnect();
         }
     }
     bleAvailabilityChange(event) {
         console.log('[UDT] Bluetooth availability changed', event);
         this.isConnected = !!this.txCharacteristic;
+        this.isConnected && this.onTowerConnect();
+        !this.isConnected && this.onTowerDisconnect();
     }
     //#endregion
     //#region utility
@@ -362,7 +374,7 @@ class UltimateDarkTower {
                 break;
             case TC.BATTERY:
                 const millivolts = this.getMilliVoltsFromTowerReponse(command);
-                const retval = [towerCommand.name, this.millVoltsToPercentage(millivolts)];
+                const retval = [towerCommand.name, `${this.millVoltsToPercentage(millivolts)}mv`];
                 if (this.logDetail) {
                     retval.push(millivolts);
                     retval.push(this.commandToPacketString(command));
@@ -370,7 +382,7 @@ class UltimateDarkTower {
                 return retval;
                 break;
             default:
-                return ["Unmapped Response!"];
+                return ["Unmapped Response!", this.commandToPacketString(command)];
                 break;
         }
     }
