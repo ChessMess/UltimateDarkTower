@@ -12,6 +12,9 @@ The first is a Tower Controller that replicates the functionality found in the o
 
 These web apps require Web Bluetooth, which is currently only supported in certain browsers, such as Chrome on the desktop, Chrome on Android mobile devices, Microsoft Edge, and Samsung Internet. You can find a list of all supported browsers at [CanIUse](https://caniuse.com/?search=web%20bluetooth).
 
+You can use Web Bluetooth LE on iOS (iPhone/iPads) by using the Bluefy app:
+https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055
+
 [Tower Controller](https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html)
 
 [Tower Game](https://chessmess.github.io/UltimateDarkTower/dist/examples/game/TowerGame.html)
