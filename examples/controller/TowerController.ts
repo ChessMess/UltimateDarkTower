@@ -1,7 +1,23 @@
-
-import UltimateDarkTower, { type TowerSide, type TowerLevels, type DoorwayLight, type LedgeLight, type BaseLight, type BaseLightLevel } from '../../src';
+import UltimateDarkTower, {
+  type TowerSide,
+  type TowerLevels,
+  type DoorwayLight,
+  type LedgeLight,
+  type BaseLight,
+  type BaseLightLevel,
+  TOWER_AUDIO_LIBRARY,
+  TOWER_LIGHT_SEQUENCES,
+  LIGHT_EFFECTS
+} from '../../src';
 
 const Tower = new UltimateDarkTower();
+
+// Expose constants globally for the inline script
+(window as any).TOWER_AUDIO_LIBRARY = TOWER_AUDIO_LIBRARY;
+(window as any).TOWER_LIGHT_SEQUENCES = TOWER_LIGHT_SEQUENCES;
+(window as any).LIGHT_EFFECTS = LIGHT_EFFECTS;
+// Expose Tower instance globally
+(window as any).Tower = Tower;
 
 // skull drop callback
 const updateSkullDropCount = (count: number) => {
@@ -178,3 +194,13 @@ const getDataAttributes = (el: HTMLElement) => {
     lightType: lightType,
   });
 }
+
+// Expose functions globally for HTML onclick handlers
+(window as any).connectToTower = connectToTower;
+(window as any).calibrate = calibrate;
+(window as any).resetSkullCount = resetSkullCount;
+(window as any).playSound = playSound;
+(window as any).singleLight = singleLight;
+(window as any).lights = lights;
+(window as any).overrides = overrides;
+(window as any).rotate = rotate;

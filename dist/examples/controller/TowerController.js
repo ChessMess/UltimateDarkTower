@@ -63,6 +63,27 @@
     breathe50percent: 9,
     flicker: 11
   };
+  var TOWER_LIGHT_SEQUENCES = {
+    twinkle: 1,
+    flareThenFade: 2,
+    flareThenFadeBase: 3,
+    flareThenFlicker: 4,
+    angryStrobe01: 5,
+    angryStrobe02: 6,
+    angryStrobe03: 7,
+    gloat01: 8,
+    gloat02: 9,
+    gloat03: 10,
+    defeat: 11,
+    victory: 12,
+    dungeonIdle: 13,
+    sealReveal: 14,
+    rotationAllDrums: 15,
+    rotationDrumTop: 16,
+    rotationDrumMiddle: 17,
+    rotationDrumBottom: 18,
+    monthStarted: 19
+  };
   var TOWER_AUDIO_LIBRARY = {
     Ashstrider: { name: "Ashstrider", value: 1, category: "Adversary" },
     BaneofOmens: { name: "Bane of Omens", value: 2, category: "Adversary" },
@@ -296,12 +317,12 @@
           }
         }
       };
-      this.createLightPacketCommand = (lights) => {
+      this.createLightPacketCommand = (lights2) => {
         let packetPos = null;
         const command = new Uint8Array(20);
-        const doorways = lights == null ? void 0 : lights.doorway;
-        const ledges = lights == null ? void 0 : lights.ledge;
-        const bases = lights == null ? void 0 : lights.base;
+        const doorways = lights2 == null ? void 0 : lights2.doorway;
+        const ledges = lights2 == null ? void 0 : lights2.ledge;
+        const bases = lights2 == null ? void 0 : lights2.base;
         doorways && doorways.forEach((dlt) => {
           packetPos = LIGHT_PACKETS.doorway[dlt.level][dlt.position];
           const shouldBitShift = DOORWAY_LIGHTS_TO_BIT_SHIFT.includes(dlt.position);
@@ -347,10 +368,10 @@
       console.log("[UDT] Sending sound command");
       await this.sendTowerCommand(soundCommand);
     }
-    async Lights(lights) {
-      const lightCommand = this.createLightPacketCommand(lights);
+    async Lights(lights2) {
+      const lightCommand = this.createLightPacketCommand(lights2);
       this.updateCommandWithCurrentDrumPositions(lightCommand);
-      this.logDetail && console.log("[UDT] Light Parameter", lights);
+      this.logDetail && console.log("[UDT] Light Parameter", lights2);
       console.log("[UDT] Sending light command");
       await this.sendTowerCommand(lightCommand);
     }
@@ -376,11 +397,11 @@
         bottom: rotateCommand[DRUM_PACKETS.bottom]
       };
     }
-    async MultiCommand(rotate, lights, soundIndex) {
-      this.logDetail && console.log("[UDT] MultiCommand Parameters", rotate, lights, soundIndex);
+    async MultiCommand(rotate2, lights2, soundIndex) {
+      this.logDetail && console.log("[UDT] MultiCommand Parameters", rotate2, lights2, soundIndex);
       let multiCmd = new Uint8Array(20);
-      const rotateCmd = this.createRotateCommand(rotate.top, rotate.middle, rotate.bottom);
-      const lightCmd = this.createLightPacketCommand(lights);
+      const rotateCmd = this.createRotateCommand(rotate2.top, rotate2.middle, rotate2.bottom);
+      const lightCmd = this.createLightPacketCommand(lights2);
       for (let index = 0; index < 20; index++) {
         multiCmd[index] = rotateCmd[index] | lightCmd[index];
       }
@@ -616,6 +637,10 @@
 
   // examples/controller/TowerController.ts
   var Tower = new src_default();
+  window.TOWER_AUDIO_LIBRARY = TOWER_AUDIO_LIBRARY;
+  window.TOWER_LIGHT_SEQUENCES = TOWER_LIGHT_SEQUENCES;
+  window.LIGHT_EFFECTS = LIGHT_EFFECTS;
+  window.Tower = Tower;
   var updateSkullDropCount = (count) => {
     const el = document.getElementById("skull-count");
     if (el) {
@@ -623,6 +648,9 @@
     }
   };
   Tower.onSkullDrop = updateSkullDropCount;
+  async function connectToTower() {
+    await Tower.connect();
+  }
   var onTowerConnected = () => {
     const el = document.getElementById("tower-connection-state");
     if (el) {
@@ -639,6 +667,16 @@
     }
   };
   Tower.onTowerDisconnect = onTowerDisconnected;
+  async function calibrate() {
+    if (!Tower.isConnected) {
+      return;
+    }
+    await Tower.calibrate();
+    const el = document.getElementById("calibrating-message");
+    if (el) {
+      el.classList.remove("hide");
+    }
+  }
   var onCalibrationComplete = () => {
     const el = document.getElementById("calibrating-message");
     if (el) {
@@ -653,5 +691,121 @@
     }
   };
   Tower.onBatteryLevelNotify = onBatteryLevelNotify;
+  async function resetSkullCount() {
+    if (!Tower.isConnected) {
+      return;
+    }
+    Tower.resetTowerSkullCount();
+    updateSkullDropCount(0);
+  }
+  var playSound = () => {
+    const select = document.getElementById("sounds");
+    Tower.playSound(Number(select.value));
+  };
+  var overrides = () => {
+    const select = document.getElementById("lightOverrideDropDown");
+    Tower.lightOverrides(Number(select.value));
+  };
+  var rotate = () => {
+    const top = document.getElementById("top");
+    const middle = document.getElementById("middle");
+    const bottom = document.getElementById("bottom");
+    const sound = document.getElementById("sounds");
+    Tower.Rotate(
+      top.value,
+      middle.value,
+      bottom.value,
+      Number(sound.value)
+    );
+  };
+  var singleLight = (el) => {
+    let style = "off";
+    if (el.checked) {
+      const ls = document.getElementById("lightStyles");
+      if (ls && ls.selectedIndex >= 0) {
+        style = ls.options[ls.selectedIndex].innerHTML;
+      }
+    }
+    el.setAttribute("data-light-style", style);
+    lights();
+  };
+  var lights = () => {
+    const doorwayLights = getDoorwayLights();
+    const ledgeLights = getLedgeLights();
+    const baseLights = getBaseLights();
+    const allLights = { doorway: doorwayLights, ledge: ledgeLights, base: baseLights };
+    Tower.Lights(allLights);
+  };
+  var getDoorwayLights = () => {
+    var _a;
+    const qs = 'input[type="checkbox"][data-light-type="doorway"]:checked';
+    const checked = document.querySelectorAll(qs);
+    const ls = document.getElementById("lightStyles");
+    const selectedLightStyle = ((_a = ls == null ? void 0 : ls.options[ls.selectedIndex]) == null ? void 0 : _a.textContent) || "off";
+    let doorwayCmds = [];
+    Array.from(checked).forEach((cb) => {
+      let { lightSide, lightStyle, lightLevel } = getDataAttributes(cb);
+      if (lightStyle !== selectedLightStyle) {
+        lightStyle = selectedLightStyle;
+        cb.setAttribute("data-light-style", lightStyle);
+      }
+      if (lightSide && lightLevel && lightStyle) {
+        doorwayCmds.push({ position: lightSide, level: lightLevel, style: lightStyle });
+      }
+    });
+    return doorwayCmds;
+  };
+  var getLedgeLights = () => {
+    const qs = 'input[type="checkbox"][data-light-type="ledge"]:checked';
+    const checked = document.querySelectorAll(qs);
+    let ledgeCmds = [];
+    Array.from(checked).forEach((cb) => {
+      const { lightSide, lightStyle } = getDataAttributes(cb);
+      if (lightSide && lightStyle) {
+        ledgeCmds.push({ position: lightSide, style: lightStyle });
+      }
+    });
+    return ledgeCmds;
+  };
+  var getBaseLights = () => {
+    const qs = 'input[type="checkbox"][data-light-type="base"]:checked';
+    const checked = document.querySelectorAll(qs);
+    let baseCmds = [];
+    Array.from(checked).forEach((cb) => {
+      const { lightSide, lightStyle, lightBaseLocation } = getDataAttributes(cb);
+      if (lightSide && lightStyle && lightBaseLocation) {
+        baseCmds.push({
+          position: {
+            side: lightSide,
+            level: lightBaseLocation
+          },
+          style: lightStyle
+        });
+      }
+    });
+    return baseCmds;
+  };
+  var getDataAttributes = (el) => {
+    const lightType = el.getAttribute("data-light-type");
+    const lightSide = el.getAttribute("data-light-location");
+    const lightLevel = el.getAttribute("data-light-level");
+    const lightBaseLocation = el.getAttribute("data-light-base-location");
+    const lightStyle = el.getAttribute("data-light-style");
+    return {
+      lightSide,
+      lightLevel,
+      lightBaseLocation,
+      lightStyle,
+      lightType
+    };
+  };
+  window.connectToTower = connectToTower;
+  window.calibrate = calibrate;
+  window.resetSkullCount = resetSkullCount;
+  window.playSound = playSound;
+  window.singleLight = singleLight;
+  window.lights = lights;
+  window.overrides = overrides;
+  window.rotate = rotate;
 })();
 //# sourceMappingURL=TowerController.js.map
