@@ -1,4 +1,6 @@
 
+import UltimateDarkTower, { type TowerSide, type DoorwayLight, type LedgeLight, type BaseLight } from '../../src';
+
 const Tower = new UltimateDarkTower();
 
 // skull drop callback

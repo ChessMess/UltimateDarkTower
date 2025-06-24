@@ -1,13 +1,13 @@
 
 // Nordic Semicondutor's UART/Serial IDs for Bluetooth LE
-const UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-const UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-const UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
-const TOWER_DEVICE_NAME = "ReturnToDarkTower";
-type CommandPacket = Uint8Array;
+export const UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+export const UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+export const UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+export const TOWER_DEVICE_NAME = "ReturnToDarkTower";
+export type CommandPacket = Uint8Array;
 
 // tower commands 
-const TOWER_COMMANDS = {
+export const TOWER_COMMANDS = {
   towerState: 0, // not a sendable command
   doorReset: 1,
   unjamDrums: 2,
@@ -17,7 +17,7 @@ const TOWER_COMMANDS = {
   // go no further!
 };
 // tower commands enum
-const TC = {
+export const TC = {
   STATE: "TOWER_STATE",
   INVALID_STATE: "INVALID_STATE",
   FAILURE: "HARDWARE_FAILURE",
@@ -29,12 +29,12 @@ const TC = {
   BATTERY: "BATTERY_READING",
 }
 
-const DRUM_PACKETS = {
+export const DRUM_PACKETS = {
   topMiddle: 1,
   bottom: 2,
 }
 
-const LIGHT_PACKETS = {
+export const LIGHT_PACKETS = {
   doorway: {
     top: { north: 3, east: 3, south: 4, west: 4 },
     middle: { north: 5, east: 5, south: 6, west: 6 },
@@ -50,10 +50,10 @@ const LIGHT_PACKETS = {
   overrides: 19,
 }
 
-type Glyphs = "cleanse" | "quest" | "battle" | "banner" | "reinforce";
+export type Glyphs = "cleanse" | "quest" | "battle" | "banner" | "reinforce";
 
 // positions based on calibrated drum orientation
-const GLYPHS = {
+export const GLYPHS = {
   cleanse: { name: "Cleanse", level: "top", side: "north" },
   quest: { name: "Quest", level: "top", side: "south" },
   battle: { name: "Battle", level: "middle", side: "north" },
@@ -61,45 +61,45 @@ const GLYPHS = {
   reinforce: { name: "Reinforce", level: "bottom", side: "south" },
 }
 
-const AUDIO_COMMAND_POS = 15;
-const SKULL_DROP_COUNT_POS = 17;
+export const AUDIO_COMMAND_POS = 15;
+export const SKULL_DROP_COUNT_POS = 17;
 
-type TowerLevels = "top" | "middle" | "bottom";
-type TowerSide = "north" | "south" | "east" | "west";
+export type TowerLevels = "top" | "middle" | "bottom";
+export type TowerSide = "north" | "south" | "east" | "west";
 
-type LightTypes = "base" | "doorway" | "ledge";
+export type LightTypes = "base" | "doorway" | "ledge";
 
-type DoorwayLight = { position: TowerSide, level: TowerLevels, style: string };
+export type DoorwayLight = { position: TowerSide, level: TowerLevels, style: string };
 
-type LedgeLight = { position: TowerSide, style: string };
+export type LedgeLight = { position: TowerSide, style: string };
 
-type BaseLightLevel = "top" | "bottom";
-type BaseLightPosition = { side: TowerSide, level: BaseLightLevel };
-type BaseLight = { position: BaseLightPosition, style: string }
+export type BaseLightLevel = "top" | "bottom";
+export type BaseLightPosition = { side: TowerSide, level: BaseLightLevel };
+export type BaseLight = { position: BaseLightPosition, style: string }
 
-type Lights = {
+export type Lights = {
   doorway?: Array<DoorwayLight>,
   ledge?: Array<LedgeLight>,
   base?: Array<BaseLight>
 };
 
-type RotateCommand = {
+export type RotateCommand = {
   top: TowerSide,
   middle: TowerSide,
   bottom: TowerSide
 }
 
 // prettier-ignore
-const drumPositionCmds = {
+export const drumPositionCmds = {
   top: { north: 0b00010000, west: 0b00000010, south: 0b00010100, east: 0b00010110 }, // bits 1-8
   middle: { north: 0b00010000, west: 0b01000000, south: 0b10010000, east: 0b11010000 }, // bits 1-4
   bottom: { north: 0b01000010, west: 0b01001010, south: 0b01010010, east: 0b01011010 },
 }
 
-const BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
-const DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];
+export const BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
+export const DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];
 
-const LIGHT_EFFECTS = {
+export const LIGHT_EFFECTS = {
   on: 0x3,
   off: 0,
   breathe: 5,
@@ -109,7 +109,7 @@ const LIGHT_EFFECTS = {
 }
 
 
-const TOWER_LIGHT_SEQUENCES = {
+export const TOWER_LIGHT_SEQUENCES = {
   twinkle: 0x01,
   flareThenFade: 0x02,
   flareThenFadeBase: 0x03,
@@ -131,12 +131,12 @@ const TOWER_LIGHT_SEQUENCES = {
   monthStarted: 0x13,
 }
 
-type SoundCategory =
+export type SoundCategory =
   "Adversary" | "Ally" | "Battle" |
   "Classic" | "Unlisted" | "Dungeon" | "Foe" |
   "Spawn" | "Quest" | "Glyph" | "State" | "Seals";
 
-type AudioLibrary = {
+export type AudioLibrary = {
   [name: string]: {
     name: string,
     value: number,
@@ -145,7 +145,7 @@ type AudioLibrary = {
 }
 
 // prettier-ignore
-const TOWER_AUDIO_LIBRARY: AudioLibrary = {
+export const TOWER_AUDIO_LIBRARY: AudioLibrary = {
   Ashstrider: { name: "Ashstrider", value: 0x01, category: "Adversary" },
   BaneofOmens: { name: "Bane of Omens", value: 0x02, category: "Adversary" },
   EmpressofShades: { name: "Empress of Shades", value: 0x03, category: "Adversary" },
@@ -263,7 +263,7 @@ const TOWER_AUDIO_LIBRARY: AudioLibrary = {
 
 // Tower Responses
 // prettier-ignore
-const TOWER_MESSAGES = {
+export const TOWER_MESSAGES = {
   TOWER_STATE: { name: "Tower State", value: 0, critical: false },
   INVALID_STATE: { name: "Invalid State", value: 1, critical: true },
   HARDWARE_FAILURE: { name: "Hardware Failure", value: 2, critical: true },
@@ -279,7 +279,7 @@ const TOWER_MESSAGES = {
 // at room temperature which roughly matches a single Energizer EN91
 // This is a rough approximation as chemical makeup of battieries have differing
 // battery performace (Alkaline vs NiMH vs Li etc).
-const VOLTAGE_LEVELS = [
+export const VOLTAGE_LEVELS = [
   1500, 1390, 1350, 1320, 1295, 1270, 1245, 1225, 1205,
   1180, 1175, 1166, 1150, 1133, 1125, 1107, 1095, 1066, 1033,
   980 // There's an additional 5% until 800mV is reached

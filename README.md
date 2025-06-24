@@ -1,8 +1,70 @@
 # UltimateDarkTower - BETA
 
-Working on these docs... so consider this placeholder for the moment.
+The Ultimate Dark Tower library is a JavaScript/TypeScript library that you can use in your projects to control the Tower that comes with Restoration Game's Return To Dark Tower board game.
 
-The Ultimate Dark Tower library is a javascript library that you can use in your projects to control the Tower that comes with Restoration Game's Return To Dark Tower board game.
+## Installation
+
+```bash
+npm install ultimatedarktower
+```
+
+## Usage
+
+### JavaScript/ES6
+
+```javascript
+import UltimateDarkTower from "ultimatedarktower";
+
+const tower = new UltimateDarkTower();
+
+// Connect to the tower
+await tower.connect();
+
+// Calibrate the tower
+await tower.calibrate();
+
+// Play a sound
+await tower.playSound(1);
+
+// Rotate the tower
+await tower.Rotate("north", "south", "east");
+```
+
+### TypeScript
+
+```typescript
+import UltimateDarkTower, {
+    type TowerSide,
+    type Lights,
+} from "ultimatedarktower";
+
+const tower = new UltimateDarkTower();
+
+// Connect to the tower
+await tower.connect();
+
+// Calibrate the tower
+await tower.calibrate();
+
+// Control lights with type safety
+const lights: Lights = {
+    doorway: [{ position: "north", level: "top", style: "on" }],
+};
+await tower.Lights(lights);
+
+// Rotate with type safety
+const top: TowerSide = "north";
+const middle: TowerSide = "south";
+const bottom: TowerSide = "east";
+await tower.Rotate(top, middle, bottom);
+```
+
+## Browser Support
+
+These web apps require Web Bluetooth, which is currently only supported in certain browsers, such as Chrome on the desktop, Chrome on Android mobile devices, Microsoft Edge, and Samsung Internet. You can find a list of all supported browsers at [CanIUse](https://caniuse.com/?search=web%20bluetooth).
+
+You can use Web Bluetooth LE on iOS (iPhone/iPads) by using the Bluefy app:
+https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055
 
 ### Web Application Examples
 

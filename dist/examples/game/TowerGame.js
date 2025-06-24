@@ -1,4 +1,30 @@
-const DarkTower = new UltimateDarkTower();
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const src_1 = __importStar(require("../../src"));
+const DarkTower = new src_1.default();
 const GAME_STATE = {
     //constants
     WIN_SCORE: 10,
@@ -88,9 +114,9 @@ async function revealPicksOnTower() {
     console.log("[GAME] The Tower reveals...", GameState.TowerPicks);
     // drums
     // split is used because of values like 'empty south' etc
-    const topGlyph = (_a = GLYPHS[GameState.TowerPicks[0]]) !== null && _a !== void 0 ? _a : { side: GameState.TowerPicks[0].split(" ")[1] };
-    const middleGlyph = (_b = GLYPHS[GameState.TowerPicks[1]]) !== null && _b !== void 0 ? _b : { side: GameState.TowerPicks[1].split(" ")[1] };
-    const bottomGlyph = (_c = GLYPHS[GameState.TowerPicks[2]]) !== null && _c !== void 0 ? _c : { side: GameState.TowerPicks[2].split(" ")[1] };
+    const topGlyph = (_a = src_1.GLYPHS[GameState.TowerPicks[0]]) !== null && _a !== void 0 ? _a : { side: GameState.TowerPicks[0].split(" ")[1] };
+    const middleGlyph = (_b = src_1.GLYPHS[GameState.TowerPicks[1]]) !== null && _b !== void 0 ? _b : { side: GameState.TowerPicks[1].split(" ")[1] };
+    const bottomGlyph = (_c = src_1.GLYPHS[GameState.TowerPicks[2]]) !== null && _c !== void 0 ? _c : { side: GameState.TowerPicks[2].split(" ")[1] };
     const rotate = { top: topGlyph.side, middle: middleGlyph.side, bottom: bottomGlyph.side };
     // lights
     const doorwayLights = getDoorwayLightsCommand();
@@ -140,13 +166,13 @@ const getScoringSound = () => {
     const didPlayerLose = isGameOver && !didPlayerWin;
     let sound = 0;
     if (matchedAll)
-        sound = TOWER_AUDIO_LIBRARY.ClassicAttackTower.value;
+        sound = src_1.TOWER_AUDIO_LIBRARY.ClassicAttackTower.value;
     if (matchedNone)
-        sound = TOWER_AUDIO_LIBRARY.TowerGloat1.value;
+        sound = src_1.TOWER_AUDIO_LIBRARY.TowerGloat1.value;
     if (didPlayerWin)
-        sound = TOWER_AUDIO_LIBRARY.ClassicStartMonth.value;
+        sound = src_1.TOWER_AUDIO_LIBRARY.ClassicStartMonth.value;
     if (didPlayerLose)
-        sound = TOWER_AUDIO_LIBRARY.ClassicQuestFailed.value;
+        sound = src_1.TOWER_AUDIO_LIBRARY.ClassicQuestFailed.value;
     return sound;
 };
 const fireConfettiCannon = () => {

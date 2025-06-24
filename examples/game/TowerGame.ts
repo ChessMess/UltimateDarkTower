@@ -1,4 +1,6 @@
 
+import UltimateDarkTower, { GLYPHS, TOWER_AUDIO_LIBRARY, type DoorwayLight, type TowerLevels, type Glyphs } from '../../src';
+
 const DarkTower = new UltimateDarkTower();
 
 const GAME_STATE = {

@@ -2,12 +2,19 @@
     "name": "ultimatedarktower",
     "version": "0.1.0",
     "description": "This library provides functions to communicate with the bluetooth le enabled Tower that comes with Restoration Games Return To Dark Tower board game.",
-    "main": "index.js",
+    "main": "dist/src/index.js",
+    "types": "dist/src/index.d.ts",
+    "files": [
+        "dist/src/**/*",
+        "README.md",
+        "LICENSE"
+    ],
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "lint": "eslint .",
         "watch": "tsc -watch",
-        "build": "tsc"
+        "build": "tsc",
+        "prepublishOnly": "npm run build"
     },
     "keywords": [
         "ReturnToDarkTower",
@@ -15,10 +22,21 @@
         "BoardGame",
         "Tower",
         "RestorationGames",
-        "UltimateDarkTower"
+        "UltimateDarkTower",
+        "bluetooth",
+        "ble",
+        "restoration-games"
     ],
     "author": "Chris Zeller",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/chessmess/UltimateDarkTower.git"
+    },
+    "bugs": {
+        "url": "https://github.com/chessmess/UltimateDarkTower/issues"
+    },
+    "homepage": "https://github.com/chessmess/UltimateDarkTower#readme",
     "devDependencies": {
         "prettier": "3.0.3",
         "typescript": "^5.2.2"

@@ -1,0 +1,30 @@
+# Source files
+src/
+tsconfig.json
+
+# Development files
+.prettierrc
+.gitignore
+.git/
+.vscode/
+
+# Examples and docs (keep README.md and LICENSE)
+examples/
+rtdt app.png
+
+# Node modules and build artifacts
+node_modules/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Development and testing
+*.test.js
+*.test.ts
+coverage/
+
+# Build artifacts that shouldn't be published
+dist/examples/
