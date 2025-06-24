@@ -1,12 +1,14 @@
 
-import UltimateDarkTower, { type TowerSide, type DoorwayLight, type LedgeLight, type BaseLight } from '../../src';
+import UltimateDarkTower, { type TowerSide, type TowerLevels, type DoorwayLight, type LedgeLight, type BaseLight, type BaseLightLevel } from '../../src';
 
 const Tower = new UltimateDarkTower();
 
 // skull drop callback
-const updateSkullDropCount = (count) => {
+const updateSkullDropCount = (count: number) => {
   const el = document.getElementById("skull-count");
-  el.innerText = count;
+  if (el) {
+    el.innerText = count.toString();
+  }
 }
 Tower.onSkullDrop = updateSkullDropCount;
 
@@ -16,15 +18,19 @@ async function connectToTower() {
 
 const onTowerConnected = () => {
   const el = document.getElementById("tower-connection-state");
-  el.innerText = "Tower Connected"
-  el.style.background = 'rgb(2 255 14 / 30%)';
+  if (el) {
+    el.innerText = "Tower Connected"
+    el.style.background = 'rgb(2 255 14 / 30%)';
+  }
 }
 Tower.onTowerConnect = onTowerConnected;
 
 const onTowerDisconnected = () => {
   const el = document.getElementById("tower-connection-state");
-  el.innerText = "Tower Disconnected";
-  el.style.background = 'rgb(255 1 1 / 30%)';
+  if (el) {
+    el.innerText = "Tower Disconnected";
+    el.style.background = 'rgb(255 1 1 / 30%)';
+  }
 }
 Tower.onTowerDisconnect = onTowerDisconnected;
 
@@ -34,18 +40,24 @@ async function calibrate() {
   }
   await Tower.calibrate();
   const el = document.getElementById("calibrating-message");
-  el.classList.remove("hide");
+  if (el) {
+    el.classList.remove("hide");
+  }
 }
 
 const onCalibrationComplete = () => {
   const el = document.getElementById("calibrating-message");
-  el.classList.add("hide");
+  if (el) {
+    el.classList.add("hide");
+  }
 }
 Tower.onCalibrationComplete = onCalibrationComplete;
 
 const onBatteryLevelNotify = (millivolts: number) => {
   const el = document.getElementById("battery");
-  el.innerText = Tower.millVoltsToPercentage(millivolts);
+  if (el) {
+    el.innerText = Tower.millVoltsToPercentage(millivolts).toString();
+  }
 }
 Tower.onBatteryLevelNotify = onBatteryLevelNotify;
 
@@ -79,13 +91,13 @@ const rotate = () => {
   );
 }
 
-const singleLight = (el) => {
-  let style = null;
+const singleLight = (el: HTMLInputElement) => {
+  let style: string = "off";
   if (el.checked) {
     const ls = document.getElementById("lightStyles") as HTMLSelectElement;
-    style = ls.options[ls.selectedIndex].innerHTML
-  } else {
-    style = "off";
+    if (ls && ls.selectedIndex >= 0) {
+      style = ls.options[ls.selectedIndex].innerHTML;
+    }
   }
   el.setAttribute('data-light-style', style);
   lights();
@@ -99,47 +111,59 @@ const lights = () => {
   Tower.Lights(allLights);
 }
 
-const getDoorwayLights = () => {
+const getDoorwayLights = (): Array<DoorwayLight> => {
   const qs = 'input[type="checkbox"][data-light-type="doorway"]:checked'
   const checked = document.querySelectorAll(qs) as NodeListOf<HTMLInputElement>;
   const ls = document.getElementById("lightStyles") as HTMLSelectElement;
-  const selectedLightStyle = ls.options[ls.selectedIndex].textContent;
-  let doorwayCmds = [];
+  const selectedLightStyle = ls?.options[ls.selectedIndex]?.textContent || "off";
+  let doorwayCmds: Array<DoorwayLight> = [];
   Array.from(checked).forEach(cb => {
     let { lightSide, lightStyle, lightLevel } = getDataAttributes(cb);
     if (lightStyle !== selectedLightStyle) {
       lightStyle = selectedLightStyle;
       cb.setAttribute('data-light-style', lightStyle);
     }
-    doorwayCmds.push({ position: lightSide, level: lightLevel, style: lightStyle });
+    if (lightSide && lightLevel && lightStyle) {
+      doorwayCmds.push({ position: lightSide as TowerSide, level: lightLevel as TowerLevels, style: lightStyle });
+    }
   });
   return doorwayCmds;
 }
 
-const getLedgeLights = () => {
+const getLedgeLights = (): Array<LedgeLight> => {
   const qs = 'input[type="checkbox"][data-light-type="ledge"]:checked';
   const checked = document.querySelectorAll(qs) as NodeListOf<HTMLInputElement>;
-  let ledgeCmds = [];
+  let ledgeCmds: Array<LedgeLight> = [];
   Array.from(checked).forEach(cb => {
     const { lightSide, lightStyle } = getDataAttributes(cb);
-    ledgeCmds.push({ position: lightSide, style: lightStyle });
+    if (lightSide && lightStyle) {
+      ledgeCmds.push({ position: lightSide as TowerSide, style: lightStyle });
+    }
   });
   return ledgeCmds;
 }
 
-const getBaseLights = () => {
+const getBaseLights = (): Array<BaseLight> => {
   const qs = 'input[type="checkbox"][data-light-type="base"]:checked';
   const checked = document.querySelectorAll(qs) as NodeListOf<HTMLInputElement>;
-  let baseCmds = [];
+  let baseCmds: Array<BaseLight> = [];
   Array.from(checked).forEach(cb => {
     const { lightSide, lightStyle, lightBaseLocation } = getDataAttributes(cb);
-    baseCmds.push({ position: { side: lightSide, level: lightBaseLocation }, style: lightStyle });
+    if (lightSide && lightStyle && lightBaseLocation) {
+      baseCmds.push({
+        position: {
+          side: lightSide as TowerSide,
+          level: lightBaseLocation as BaseLightLevel
+        },
+        style: lightStyle
+      });
+    }
   });
 
   return baseCmds;
 }
 
-const getDataAttributes = (el: HTMLDataElement) => {
+const getDataAttributes = (el: HTMLElement) => {
   const lightType = el.getAttribute('data-light-type');
   const lightSide = el.getAttribute('data-light-location');
   const lightLevel = el.getAttribute('data-light-level');
@@ -147,8 +171,10 @@ const getDataAttributes = (el: HTMLDataElement) => {
   const lightStyle = el.getAttribute('data-light-style');
 
   return ({
-    lightSide: lightSide, lightLevel: lightLevel,
+    lightSide: lightSide,
+    lightLevel: lightLevel,
     lightBaseLocation: lightBaseLocation,
-    lightStyle: lightStyle, lightType: lightType,
+    lightStyle: lightStyle,
+    lightType: lightType,
   });
 }

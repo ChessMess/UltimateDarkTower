@@ -15,16 +15,17 @@ const GAME_STATE = {
   TotalPlayerScore: 0,
   RoundScore: 0,
   HasCalibrated: false,
-  GameDifficulty: null,
-  TowerPicks: [],
-  PlayerPicks: [],
-  DoorwayLights: []
+  GameDifficulty: null as any,
+  TowerPicks: [] as string[],
+  PlayerPicks: [] as string[],
+  DoorwayLights: [] as any[],
+  isGameOver: false
 };
 
 const GameState = Object.create(GAME_STATE);
 
 const startGame = () => {
-  this.isGameOver = false;
+  GameState.isGameOver = false;
   const btn = document.getElementById('challenge-btn') as HTMLButtonElement;
   btn.textContent = 'Challenge Tower';
   btn.disabled = false;
@@ -42,15 +43,15 @@ const startGame = () => {
   if (!DarkTower.isConnected) {
     (async () => {
       await DarkTower.connect();
-      !this.hasCalibrated && DarkTower.calibrate();
-      this.hasCalibrated = true;
+      !GameState.HasCalibrated && DarkTower.calibrate();
+      GameState.HasCalibrated = true;
     })();
   }
   console.log('[GAME] New game started');
 }
 
 async function challengeTower() {
-  if (this.isGameOver) {
+  if (GameState.isGameOver) {
     if (GameState.TotalPlayerScore >= GameState.WIN_SCORE)
       fireConfettiCannon();
     return;
@@ -87,7 +88,7 @@ async function challengeTower() {
 }
 
 async function gameOver() {
-  this.isGameOver = true;
+  GameState.isGameOver = true;
   const playerWon = GameState.TotalPlayerScore >= GameState.WIN_SCORE;
 
   const sbtn = document.getElementById('start-game-btn') as HTMLButtonElement;
@@ -246,24 +247,24 @@ const resetScore = () => {
   GameState.TotalPlayerScore = 0;
   const cm = document.getElementById("currentMonth");
   const cs = document.getElementById("currentScore");
-  cm.innerHTML = GameState.CurrentMonth.toString();
-  cs.innerHTML = GameState.TotalPlayerScore.toString();
+  if (cm) cm.innerHTML = GameState.CurrentMonth.toString();
+  if (cs) cs.innerHTML = GameState.TotalPlayerScore.toString();
 }
 
 const updateScoreHTML = () => {
   const cm = document.getElementById("currentMonth");
   const cs = document.getElementById("currentScore");
-  cm.innerHTML = GameState.CurrentMonth.toString();
-  cs.innerHTML = GameState.TotalPlayerScore.toString();
+  if (cm) cm.innerHTML = GameState.CurrentMonth.toString();
+  if (cs) cs.innerHTML = GameState.TotalPlayerScore.toString();
 }
 
 const updateTowerPicksHTML = () => {
   const top = document.querySelector("select[name='tower-picks'][data-level='top']");
-  top.textContent = GameState.TowerPicks[0];
+  if (top) top.textContent = GameState.TowerPicks[0];
   const middle = document.querySelector("select[name='tower-picks'][data-level='middle']");
-  middle.textContent = GameState.TowerPicks[1];
+  if (middle) middle.textContent = GameState.TowerPicks[1];
   const bottom = document.querySelector("select[name='tower-picks'][data-level='bottom']");
-  bottom.textContent = GameState.TowerPicks[2];
+  if (bottom) bottom.textContent = GameState.TowerPicks[2];
 }
 
 const updatePlayerPicks = () => {
@@ -286,7 +287,7 @@ const setTowerPicks = () => {
 
 // malevolant sentience
 const pickRandomGlyph = (difficultyLevel: number): string => {
-  let glyphs = null;
+  let glyphs: string[] | null = null;
   switch (difficultyLevel) {
     case 1:
       glyphs = GameState.GameDifficulty.top;
@@ -298,6 +299,7 @@ const pickRandomGlyph = (difficultyLevel: number): string => {
       glyphs = GameState.GameDifficulty.bottom;
       break;
   }
+  if (!glyphs) return "";
   const glyph = glyphs[Math.floor(Math.random() * glyphs.length)];
   return glyph;
 }
@@ -305,13 +307,14 @@ const pickRandomGlyph = (difficultyLevel: number): string => {
 // populate dropdowns
 const populateSelections = () => {
   const dropDowns = document.querySelectorAll('select[id="glyphs"]');
-  dropDowns.forEach((item: HTMLSelectElement) => {
-    const el = Object.keys(item)[0];
-    while (item.options.length > 1) {
-      item.options.remove(1);
+  dropDowns.forEach((item) => {
+    const selectElement = item as HTMLSelectElement;
+    const el = Object.keys(selectElement)[0];
+    while (selectElement.options.length > 1) {
+      selectElement.options.remove(1);
     }
-    let glyphs = null;
-    switch (item.dataset.level) {
+    let glyphs: string[] | null = null;
+    switch (selectElement.dataset.level) {
       case "top":
         glyphs = GameState.GameDifficulty.top;
         break;
@@ -323,46 +326,48 @@ const populateSelections = () => {
         break;
     }
 
-    glyphs.forEach(aGlyph => {
-      var el = document.createElement("option");
-      el.textContent = aGlyph;
-      el.value = aGlyph;
-      item.appendChild(el);
-    });
+    if (glyphs) {
+      glyphs.forEach(aGlyph => {
+        var el = document.createElement("option");
+        el.textContent = aGlyph;
+        el.value = aGlyph;
+        selectElement.appendChild(el);
+      });
+    }
   });
 }
 
 // user clicks on glyphs
 const glyphClick = (glyph: Glyphs) => {
-  let top = null;
-  let middle = null;
-  let bottom = null;
+  let top: HTMLSelectElement | null = null;
+  let middle: HTMLSelectElement | null = null;
+  let bottom: HTMLSelectElement | null = null;
 
   switch (glyph) {
     case "cleanse":
-      top = document.querySelector("select[name='player-picks'][data-level='top']");
+      top = document.querySelector("select[name='player-picks'][data-level='top']") as HTMLSelectElement;
       GameState.PlayerPicks[0] = "Cleanse";
-      top.value = "Cleanse";
+      if (top) top.value = "Cleanse";
       break;
     case "quest":
-      top = document.querySelector("select[name='player-picks'][data-level='top']");
+      top = document.querySelector("select[name='player-picks'][data-level='top']") as HTMLSelectElement;
       GameState.PlayerPicks[0] = "Quest";
-      top.value = "Quest";
+      if (top) top.value = "Quest";
       break;
     case "battle":
-      middle = document.querySelector("select[name='player-picks'][data-level='middle']");
+      middle = document.querySelector("select[name='player-picks'][data-level='middle']") as HTMLSelectElement;
       GameState.PlayerPicks[1] = "Battle";
-      middle.value = "Battle";
+      if (middle) middle.value = "Battle";
       break;
     case "banner":
-      bottom = document.querySelector("select[name='player-picks'][data-level='bottom']");
+      bottom = document.querySelector("select[name='player-picks'][data-level='bottom']") as HTMLSelectElement;
       GameState.PlayerPicks[2] = "Banner";
-      bottom.value = "Banner";
+      if (bottom) bottom.value = "Banner";
       break;
     case "reinforce":
-      bottom = document.querySelector("select[name='player-picks'][data-level='bottom']");
+      bottom = document.querySelector("select[name='player-picks'][data-level='bottom']") as HTMLSelectElement;
       GameState.PlayerPicks[2] = "Reinforce";
-      bottom.value = "Reinforce";
+      if (bottom) bottom.value = "Reinforce";
       break;
   }
 }
