@@ -428,7 +428,6 @@
       await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.resetCounter]));
     }
     //#endregion
-    //#region future features 
     async breakSeal(seal) {
       const sealNumbers = Array.isArray(seal) ? seal : [seal];
       const SEAL_TO_SIDE = {
@@ -497,10 +496,76 @@
       console.log(`[UDT] Breaking seal(s) ${sealNumbers.join(", ")} - lighting ledges and doorways with breath effect`);
       await this.Lights(lights);
     }
-    // TODO: Implement function
-    randomizeLevels(level = 0) {
+    async randomRotateLevels(level = 0) {
+      const sides = ["north", "east", "south", "west"];
+      const getRandomSide = () => sides[Math.floor(Math.random() * sides.length)];
+      const currentTop = this.getCurrentDrumPosition("top");
+      const currentMiddle = this.getCurrentDrumPosition("middle");
+      const currentBottom = this.getCurrentDrumPosition("bottom");
+      let topSide, middleSide, bottomSide;
+      switch (level) {
+        case 0:
+          topSide = getRandomSide();
+          middleSide = getRandomSide();
+          bottomSide = getRandomSide();
+          break;
+        case 1:
+          topSide = getRandomSide();
+          middleSide = currentMiddle;
+          bottomSide = currentBottom;
+          break;
+        case 2:
+          topSide = currentTop;
+          middleSide = getRandomSide();
+          bottomSide = currentBottom;
+          break;
+        case 3:
+          topSide = currentTop;
+          middleSide = currentMiddle;
+          bottomSide = getRandomSide();
+          break;
+        case 4:
+          topSide = getRandomSide();
+          middleSide = getRandomSide();
+          bottomSide = currentBottom;
+          break;
+        case 5:
+          topSide = getRandomSide();
+          middleSide = currentMiddle;
+          bottomSide = getRandomSide();
+          break;
+        case 6:
+          topSide = currentTop;
+          middleSide = getRandomSide();
+          bottomSide = getRandomSide();
+          break;
+        default:
+          console.log("[UDT] Invalid level parameter for randomRotateLevels. Must be 0-6.");
+          return;
+      }
+      console.log("[UDT] Random rotating levels to:", { top: topSide, middle: middleSide, bottom: bottomSide });
+      await this.Rotate(topSide, middleSide, bottomSide);
     }
-    //#endregion
+    getCurrentDrumPosition(level) {
+      const drumPositions = drumPositionCmds[level];
+      const currentValue = level === "bottom" ? this.currentDrumPositions.bottom : level === "top" ? this.currentDrumPositions.topMiddle & 22 : this.currentDrumPositions.topMiddle & 192;
+      for (const [side, value] of Object.entries(drumPositions)) {
+        if (level === "middle") {
+          if ((value & 192) === (currentValue & 192)) {
+            return side;
+          }
+        } else if (level === "top") {
+          if ((value & 22) === (currentValue & 22)) {
+            return side;
+          }
+        } else {
+          if (value === currentValue) {
+            return side;
+          }
+        }
+      }
+      return "north";
+    }
     //#region bluetooth
     async connect() {
       console.log("[UDT] Looking for Tower...");

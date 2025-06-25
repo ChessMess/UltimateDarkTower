@@ -60,6 +60,12 @@ try {
     
     // Rotate the tower
     await tower.rotate("north", "south", "east");
+    
+    // Randomly rotate all levels
+    await tower.randomRotateLevels(0);
+    
+    // Randomly rotate only the top level
+    await tower.randomRotateLevels(1);
 } catch (error) {
     console.error("Tower operation failed:", error);
 }
@@ -93,6 +99,10 @@ try {
     const middle: TowerSide = "south";
     const bottom: TowerSide = "east";
     await tower.rotate(top, middle, bottom);
+    
+    // Randomly rotate levels (parameter is optional, defaults to 0 for all levels)
+    await tower.randomRotateLevels(); // All levels
+    await tower.randomRotateLevels(4); // Top & middle only
 } catch (error) {
     console.error("Tower operation failed:", error);
 }
@@ -343,6 +353,7 @@ https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055
 - `lights(lights: Lights)` - Control tower lights
 - `lightOverrides(light: number, soundIndex?: number)` - Override light patterns
 - `rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number)` - Rotate tower sections
+- `randomRotateLevels(level?: number)` - Randomly rotate drum levels (0=all, 1=top, 2=middle, 3=bottom, 4=top&middle, 5=top&bottom, 6=middle&bottom)
 - `breakSeal(seal: Array<number> | number)` - Break game seals with lights and sound effects (seals 1-12)
 - `resetTowerSkullCount()` - Reset the skull drop counter
 
@@ -436,7 +447,7 @@ Tower Response Handling is not fully implemented.
 
 -   Command Queue - Currently the library sends commands as soon as they are requested. Need to add in a queue system that looks for a tower status response to the previous command before sending the next. Sending to many commands on after the other will cause the tower to disconnect.
 
--   Utility Functions - Being able to call functions like 'BreakSeal' that handles the lights and sounds for that type of event, Randomize Levels which will can randomize the position of a level, and others such as this.
+-   Utility Functions - Additional utility functions could be added for common game events and tower operations.
 
 ## Community
 

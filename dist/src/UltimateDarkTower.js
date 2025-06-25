@@ -239,7 +239,6 @@ class UltimateDarkTower {
         await this.sendTowerCommand(new Uint8Array([constants_1.TOWER_COMMANDS.resetCounter]));
     }
     //#endregion
-    //#region future features 
     async breakSeal(seal) {
         // seals are numbered 1 - 12 with 1/5/8 representing north positions
         // Top: 1-4, Middle: 5-8, Bottom: 9-12
@@ -282,7 +281,7 @@ class UltimateDarkTower {
         });
         // Remove duplicates if any
         const uniqueLedgeLights = ledgeLights.filter((light, index, self) => index === self.findIndex(l => l.position === light.position));
-        // Create doorway lights with breath effect for each broken seal
+        // Create doorway lights with light effect for each broken seal
         const doorwayLights = sealNumbers.map(sealNum => ({
             level: SEAL_TO_LEVEL[sealNum],
             position: SEAL_TO_SIDE[sealNum],
@@ -295,12 +294,90 @@ class UltimateDarkTower {
         console.log(`[UDT] Breaking seal(s) ${sealNumbers.join(', ')} - lighting ledges and doorways with breath effect`);
         await this.Lights(lights);
     }
-    // TODO: Implement function
-    randomizeLevels(level = 0) {
+    async randomRotateLevels(level = 0) {
         // 0 = all, 1 = top, 2 = middle, 3 = bottom
         // 4 = top & middle, 5 = top & bottom, 6 = middle & bottom
+        const sides = ['north', 'east', 'south', 'west'];
+        const getRandomSide = () => sides[Math.floor(Math.random() * sides.length)];
+        // Current positions to preserve unchanged levels
+        const currentTop = this.getCurrentDrumPosition('top');
+        const currentMiddle = this.getCurrentDrumPosition('middle');
+        const currentBottom = this.getCurrentDrumPosition('bottom');
+        let topSide, middleSide, bottomSide;
+        switch (level) {
+            case 0: // all levels
+                topSide = getRandomSide();
+                middleSide = getRandomSide();
+                bottomSide = getRandomSide();
+                break;
+            case 1: // top only
+                topSide = getRandomSide();
+                middleSide = currentMiddle;
+                bottomSide = currentBottom;
+                break;
+            case 2: // middle only
+                topSide = currentTop;
+                middleSide = getRandomSide();
+                bottomSide = currentBottom;
+                break;
+            case 3: // bottom only
+                topSide = currentTop;
+                middleSide = currentMiddle;
+                bottomSide = getRandomSide();
+                break;
+            case 4: // top & middle
+                topSide = getRandomSide();
+                middleSide = getRandomSide();
+                bottomSide = currentBottom;
+                break;
+            case 5: // top & bottom
+                topSide = getRandomSide();
+                middleSide = currentMiddle;
+                bottomSide = getRandomSide();
+                break;
+            case 6: // middle & bottom
+                topSide = currentTop;
+                middleSide = getRandomSide();
+                bottomSide = getRandomSide();
+                break;
+            default:
+                console.log('[UDT] Invalid level parameter for randomRotateLevels. Must be 0-6.');
+                return;
+        }
+        console.log('[UDT] Random rotating levels to:', { top: topSide, middle: middleSide, bottom: bottomSide });
+        await this.Rotate(topSide, middleSide, bottomSide);
     }
-    //#endregion
+    getCurrentDrumPosition(level) {
+        const drumPositions = constants_1.drumPositionCmds[level];
+        const currentValue = level === 'bottom'
+            ? this.currentDrumPositions.bottom
+            : (level === 'top'
+                ? (this.currentDrumPositions.topMiddle & 0b00010110) // top bits
+                : (this.currentDrumPositions.topMiddle & 0b11000000)); // middle bits
+        // Find matching side for current drum position
+        for (const [side, value] of Object.entries(drumPositions)) {
+            if (level === 'middle') {
+                // For middle, we need to mask and compare properly
+                if ((value & 0b11000000) === (currentValue & 0b11000000)) {
+                    return side;
+                }
+            }
+            else if (level === 'top') {
+                // For top, compare the lower bits
+                if ((value & 0b00010110) === (currentValue & 0b00010110)) {
+                    return side;
+                }
+            }
+            else {
+                // For bottom, direct comparison
+                if (value === currentValue) {
+                    return side;
+                }
+            }
+        }
+        // Default to north if no match found
+        return 'north';
+    }
     //#region bluetooth
     async connect() {
         console.log("[UDT] Looking for Tower...");

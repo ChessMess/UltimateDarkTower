@@ -217,7 +217,6 @@ class UltimateDarkTower {
 
   //#endregion
 
-  //#region future features 
   async breakSeal(seal: Array<number> | number) {
     // seals are numbered 1 - 12 with 1/5/8 representing north positions
     // Top: 1-4, Middle: 5-8, Bottom: 9-12
@@ -272,7 +271,7 @@ class UltimateDarkTower {
       index === self.findIndex(l => l.position === light.position)
     );
 
-    // Create doorway lights with breath effect for each broken seal
+    // Create doorway lights with light effect for each broken seal
     const doorwayLights: DoorwayLight[] = sealNumbers.map(sealNum => ({
       level: SEAL_TO_LEVEL[sealNum],
       position: SEAL_TO_SIDE[sealNum],
@@ -288,12 +287,96 @@ class UltimateDarkTower {
     await this.Lights(lights);
   }
 
-  // TODO: Implement function
-  randomizeLevels(level: number = 0) {
+  async randomRotateLevels(level: number = 0) {
     // 0 = all, 1 = top, 2 = middle, 3 = bottom
     // 4 = top & middle, 5 = top & bottom, 6 = middle & bottom
+    
+    const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
+    const getRandomSide = (): TowerSide => sides[Math.floor(Math.random() * sides.length)];
+    
+    // Current positions to preserve unchanged levels
+    const currentTop = this.getCurrentDrumPosition('top');
+    const currentMiddle = this.getCurrentDrumPosition('middle');
+    const currentBottom = this.getCurrentDrumPosition('bottom');
+    
+    let topSide: TowerSide, middleSide: TowerSide, bottomSide: TowerSide;
+    
+    switch (level) {
+      case 0: // all levels
+        topSide = getRandomSide();
+        middleSide = getRandomSide();
+        bottomSide = getRandomSide();
+        break;
+      case 1: // top only
+        topSide = getRandomSide();
+        middleSide = currentMiddle;
+        bottomSide = currentBottom;
+        break;
+      case 2: // middle only
+        topSide = currentTop;
+        middleSide = getRandomSide();
+        bottomSide = currentBottom;
+        break;
+      case 3: // bottom only
+        topSide = currentTop;
+        middleSide = currentMiddle;
+        bottomSide = getRandomSide();
+        break;
+      case 4: // top & middle
+        topSide = getRandomSide();
+        middleSide = getRandomSide();
+        bottomSide = currentBottom;
+        break;
+      case 5: // top & bottom
+        topSide = getRandomSide();
+        middleSide = currentMiddle;
+        bottomSide = getRandomSide();
+        break;
+      case 6: // middle & bottom
+        topSide = currentTop;
+        middleSide = getRandomSide();
+        bottomSide = getRandomSide();
+        break;
+      default:
+        console.log('[UDT] Invalid level parameter for randomRotateLevels. Must be 0-6.');
+        return;
+    }
+    
+    console.log('[UDT] Random rotating levels to:', { top: topSide, middle: middleSide, bottom: bottomSide });
+    await this.Rotate(topSide, middleSide, bottomSide);
   }
-  //#endregion
+  
+  private getCurrentDrumPosition(level: 'top' | 'middle' | 'bottom'): TowerSide {
+    const drumPositions = drumPositionCmds[level];
+    const currentValue = level === 'bottom' 
+      ? this.currentDrumPositions.bottom
+      : (level === 'top' 
+        ? (this.currentDrumPositions.topMiddle & 0b00010110) // top bits
+        : (this.currentDrumPositions.topMiddle & 0b11000000)); // middle bits
+    
+    // Find matching side for current drum position
+    for (const [side, value] of Object.entries(drumPositions)) {
+      if (level === 'middle') {
+        // For middle, we need to mask and compare properly
+        if ((value & 0b11000000) === (currentValue & 0b11000000)) {
+          return side as TowerSide;
+        }
+      } else if (level === 'top') {
+        // For top, compare the lower bits
+        if ((value & 0b00010110) === (currentValue & 0b00010110)) {
+          return side as TowerSide;
+        }
+      } else {
+        // For bottom, direct comparison
+        if (value === currentValue) {
+          return side as TowerSide;
+        }
+      }
+    }
+    
+    // Default to north if no match found
+    return 'north';
+  }
 
   //#region bluetooth
 

@@ -78,7 +78,8 @@ declare class UltimateDarkTower {
     MultiCommand(rotate?: RotateCommand, lights?: Lights, soundIndex?: number): Promise<void>;
     resetTowerSkullCount(): Promise<void>;
     breakSeal(seal: Array<number> | number): Promise<void>;
-    randomizeLevels(level?: number): void;
+    randomRotateLevels(level?: number): Promise<void>;
+    private getCurrentDrumPosition;
     connect(): Promise<void>;
     onRxCharacteristicValueChanged: (event: any) => void;
     private handleTowerStateResponse;
