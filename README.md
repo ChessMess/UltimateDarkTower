@@ -59,6 +59,32 @@ const bottom: TowerSide = "east";
 await tower.Rotate(top, middle, bottom);
 ```
 
+## Development Scripts
+
+This project includes several npm scripts for development, testing, and building:
+
+### Building
+
+-   `npm run build` - Compiles TypeScript and builds examples (combines TypeScript compilation with example building)
+-   `npm run build:examples` - Builds the example web applications and copies HTML files to the dist directory
+-   `npm run watch` - Runs TypeScript compiler in watch mode for development
+
+### Testing
+
+-   `npm test` - Runs the test suite using Jest
+-   `npm run test:watch` - Runs tests in watch mode (automatically re-runs tests when files change)
+-   `npm run test:coverage` - Runs tests and generates coverage reports
+
+### Code Quality
+
+-   `npm run lint` - Runs ESLint to check code quality and style
+
+### Publishing
+
+-   `npm run prepublishOnly` - Automatically runs before publishing to npm (builds the project)
+
+The build process compiles TypeScript files and copies HTML files from the `examples/` directory to the `dist/examples/` directory, making the web applications ready for deployment.
+
 ## Browser Support
 
 These web apps require Web Bluetooth, which is currently only supported in certain browsers, such as Chrome on the desktop, Chrome on Android mobile devices, Microsoft Edge, and Samsung Internet. You can find a list of all supported browsers at [CanIUse](https://caniuse.com/?search=web%20bluetooth).
