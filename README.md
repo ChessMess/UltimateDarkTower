@@ -61,30 +61,34 @@ await tower.Rotate(top, middle, bottom);
 
 ## Disconnect Detection & Handling
 
-The UltimateDarkTower library includes comprehensive disconnect detection to ensure reliable communication with the tower device. The library uses multiple detection methods to handle various disconnect scenarios.
+The UltimateDarkTower library includes disconnect detection to ensure reliable communication with the tower device. The library uses multiple detection methods to handle various disconnect scenarios.
 
 ### How Disconnects Are Detected
 
 The library employs a multi-layered approach for disconnect detection:
 
 #### 1. Battery Heartbeat Monitoring (Primary Method)
-- **Most Reliable**: The tower automatically sends battery status every ~200ms
-- **Fast Detection**: Detects disconnects within 3 seconds (configurable)
-- **Ideal for**: Battery depletion, power loss, device sleep
-- **Default timeout**: 3000ms (3 seconds)
+
+-   **Most Reliable**: The tower automatically sends battery status every ~200ms
+-   **Fast Detection**: Detects disconnects within 3 seconds (configurable)
+-   **Ideal for**: Battery depletion, power loss, device sleep
+-   **Default timeout**: 3000ms (3 seconds)
 
 #### 2. GATT Server Disconnect Events
-- **Immediate Detection**: Catches explicit Bluetooth disconnections
-- **Ideal for**: Manual disconnects, range issues, device pairing problems
+
+-   **Immediate Detection**: Catches explicit Bluetooth disconnections
+-   **Ideal for**: Manual disconnects, range issues, device pairing problems
 
 #### 3. Command Response Timeout
-- **Backup Method**: Monitors general command responses
-- **Heartbeat Commands**: Sends periodic tower state requests when needed
-- **Default timeout**: 30000ms (30 seconds)
+
+-   **Backup Method**: Monitors general command responses
+-   **Heartbeat Commands**: Sends periodic tower state requests when needed
+-   **Default timeout**: 30000ms (30 seconds)
 
 #### 4. Bluetooth Availability Monitoring
-- **System-Level**: Detects when Bluetooth is disabled/unavailable
-- **Automatic Handling**: Triggers disconnect when Bluetooth becomes unavailable
+
+-   **System-Level**: Detects when Bluetooth is disabled/unavailable
+-   **Automatic Handling**: Triggers disconnect when Bluetooth becomes unavailable
 
 ### Handling Disconnects in Your App
 
@@ -116,17 +120,18 @@ await tower.connect();
 ### Configuration Options
 
 #### Configure Connection Monitoring
+
 ```javascript
 // Set general connection monitoring
 tower.configureConnectionMonitoring(
-    2000,   // Check every 2 seconds
-    30000   // Timeout after 30 seconds
+    2000, // Check every 2 seconds
+    30000, // Timeout after 30 seconds
 );
 
 // Configure battery heartbeat monitoring
 tower.configureBatteryHeartbeatMonitoring(
-    true,   // Enable battery heartbeat monitoring
-    3000    // Timeout after 3 seconds without battery status
+    true, // Enable battery heartbeat monitoring
+    3000, // Timeout after 3 seconds without battery status
 );
 
 // Enable/disable connection monitoring
@@ -134,17 +139,18 @@ tower.setConnectionMonitoring(true);
 ```
 
 #### Check Connection Status
+
 ```javascript
 // Simple connection check
 const isConnected = tower.isConnected;
 
 // Detailed connection status
 const status = tower.getConnectionStatus();
-console.log('Connection Status:', {
+console.log("Connection Status:", {
     connected: status.isConnected,
     batteryHeartbeatHealthy: status.batteryHeartbeatHealthy,
     lastBatteryMs: status.lastBatteryHeartbeatMs,
-    lastCommandMs: status.lastCommandResponseMs
+    lastCommandMs: status.lastCommandResponseMs,
 });
 
 // Test if tower is responsive
@@ -153,14 +159,14 @@ const isResponsive = await tower.isConnectedAndResponsive();
 
 ### Common Disconnect Scenarios
 
-| Scenario | Detection Method | Detection Time | Typical Cause |
-|----------|------------------|----------------|---------------|
-| Battery depleted | Battery heartbeat | ~3 seconds | Tower runs out of power |
-| Out of range | GATT disconnect | Immediate | Moved too far from device |
-| Manual disconnect | GATT disconnect | Immediate | User disconnects in settings |
-| Bluetooth disabled | Availability change | Immediate | System Bluetooth turned off |
-| Device sleep/suspend | Battery heartbeat | ~3 seconds | Computer/phone goes to sleep |
-| Connection timeout | Command timeout | ~30 seconds | General communication failure |
+| Scenario             | Detection Method    | Detection Time | Typical Cause                 |
+| -------------------- | ------------------- | -------------- | ----------------------------- |
+| Battery depleted     | Battery heartbeat   | ~3 seconds     | Tower runs out of power       |
+| Out of range         | GATT disconnect     | Immediate      | Moved too far from device     |
+| Manual disconnect    | GATT disconnect     | Immediate      | User disconnects in settings  |
+| Bluetooth disabled   | Availability change | Immediate      | System Bluetooth turned off   |
+| Device sleep/suspend | Battery heartbeat   | ~3 seconds     | Computer/phone goes to sleep  |
+| Connection timeout   | Command timeout     | ~30 seconds    | General communication failure |
 
 ### Best Practices
 
@@ -184,21 +190,21 @@ class TowerManager {
 
     setupEventHandlers() {
         this.tower.onTowerConnect = () => {
-            console.log('Tower connected successfully');
+            console.log("Tower connected successfully");
             this.reconnectAttempts = 0;
-            this.updateUI('connected');
+            this.updateUI("connected");
         };
 
         this.tower.onTowerDisconnect = () => {
-            console.log('Tower disconnected');
-            this.updateUI('disconnected');
+            console.log("Tower disconnected");
+            this.updateUI("disconnected");
             this.attemptReconnection();
         };
 
         this.tower.onBatteryLevelNotify = (millivolts) => {
             const percentage = this.tower.millVoltsToPercentage(millivolts);
             this.updateBatteryUI(percentage);
-            
+
             // Warn if battery is low
             if (percentage < 20) {
                 this.showLowBatteryWarning();
@@ -211,8 +217,8 @@ class TowerManager {
             await this.tower.connect();
             await this.tower.calibrate();
         } catch (error) {
-            console.error('Connection failed:', error);
-            this.updateUI('failed');
+            console.error("Connection failed:", error);
+            this.updateUI("failed");
         }
     }
 
@@ -220,14 +226,14 @@ class TowerManager {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             console.log(`Reconnection attempt ${this.reconnectAttempts}`);
-            
+
             // Wait before reconnecting
             setTimeout(() => {
                 this.connect();
             }, 2000 * this.reconnectAttempts);
         } else {
-            console.log('Max reconnection attempts reached');
-            this.updateUI('failed');
+            console.log("Max reconnection attempts reached");
+            this.updateUI("failed");
         }
     }
 
