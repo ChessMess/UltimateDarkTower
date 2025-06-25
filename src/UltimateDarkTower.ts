@@ -133,15 +133,6 @@ class UltimateDarkTower {
     return;
   }
 
-  /**
-   * Requests the current state of the tower including position and skull count.
-   * TODO: currently not working - investigating
-   * @returns {Promise<void>} Promise that resolves when request is sent
-   */
-  async requestTowerState() {
-    console.log('[UDT] Requesting Tower State');
-    await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.towerState]));
-  }
 
   /**
    * Plays a sound from the tower's audio library.
@@ -756,11 +747,9 @@ class UltimateDarkTower {
     const timeSinceLastResponse = Date.now() - this.lastSuccessfulCommand;
     if (timeSinceLastResponse > this.connectionTimeoutThreshold) {
       console.log('[UDT] General connection timeout detected - no responses received');
-      // Try to request tower state as a heartbeat
-      this.requestTowerState().catch(() => {
-        console.log('[UDT] Heartbeat failed - connection appears lost');
-        this.handleDisconnection();
-      });
+      // Connection timeout detected - handle disconnection
+      console.log('[UDT] Heartbeat timeout - connection appears lost');
+      this.handleDisconnection();
     }
   }
   //#endregion
@@ -1030,14 +1019,8 @@ class UltimateDarkTower {
       return false;
     }
 
-    try {
-      // Try to request tower state as a connectivity test
-      await this.requestTowerState();
-      return true;
-    } catch (error) {
-      console.log('[UDT] Connectivity test failed:', error);
-      return false;
-    }
+    // Simple connectivity check - if we have a valid characteristic, assume connected
+    return true;
   }
 
   /**
