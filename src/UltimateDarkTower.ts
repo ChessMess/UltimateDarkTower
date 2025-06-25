@@ -164,7 +164,7 @@ class UltimateDarkTower {
   }
 
   async Rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number) {
-    this.logDetail && console.log(`[UDT] Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${middle}] S[${soundIndex}]`);
+    this.logDetail && console.log(`[UDT] Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`);
 
     const rotateCommand = this.createRotateCommand(top, middle, bottom);
 

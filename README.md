@@ -2,6 +2,37 @@
 
 The Ultimate Dark Tower library is a JavaScript/TypeScript library that you can use in your projects to control the Tower that comes with Restoration Game's Return To Dark Tower board game.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+  - [JavaScript/ES6](#javascriptes6)
+  - [TypeScript](#typescript)
+- [Web Application Examples](#web-application-examples)
+- [Disconnect Detection & Handling](#disconnect-detection--handling)
+  - [How Disconnects Are Detected](#how-disconnects-are-detected)
+  - [Handling Disconnects in Your App](#handling-disconnects-in-your-app)
+  - [Configuration Options](#configuration-options)
+  - [Common Disconnect Scenarios](#common-disconnect-scenarios)
+  - [Best Practices](#best-practices)
+  - [Example: Robust Connection Management](#example-robust-connection-management)
+- [API Reference](#api-reference)
+  - [Core Methods](#core-methods)
+  - [Properties](#properties)
+  - [Event Callbacks](#event-callbacks)
+  - [Types](#types)
+- [Performance Considerations](#performance-considerations)
+  - [Command Rate Limiting](#command-rate-limiting)
+  - [Battery Monitoring](#battery-monitoring)
+- [Browser Support](#browser-support)
+- [Development Scripts](#development-scripts)
+  - [Building](#building)
+  - [Testing](#testing)
+  - [Code Quality](#code-quality)
+  - [Publishing](#publishing)
+- [Known Issues](#known-issues)
+- [Community](#community)
+
 ## Installation
 
 ```bash
@@ -17,17 +48,21 @@ import UltimateDarkTower from "ultimatedarktower";
 
 const tower = new UltimateDarkTower();
 
-// Connect to the tower
-await tower.connect();
-
-// Calibrate the tower
-await tower.calibrate();
-
-// Play a sound
-await tower.playSound(1);
-
-// Rotate the tower
-await tower.Rotate("north", "south", "east");
+try {
+    // Connect to the tower
+    await tower.connect();
+    
+    // Calibrate the tower
+    await tower.calibrate();
+    
+    // Play a sound
+    await tower.playSound(1);
+    
+    // Rotate the tower
+    await tower.rotate("north", "south", "east");
+} catch (error) {
+    console.error("Tower operation failed:", error);
+}
 ```
 
 ### TypeScript
@@ -40,23 +75,27 @@ import UltimateDarkTower, {
 
 const tower = new UltimateDarkTower();
 
-// Connect to the tower
-await tower.connect();
-
-// Calibrate the tower
-await tower.calibrate();
-
-// Control lights with type safety
-const lights: Lights = {
-    doorway: [{ position: "north", level: "top", style: "on" }],
-};
-await tower.Lights(lights);
-
-// Rotate with type safety
-const top: TowerSide = "north";
-const middle: TowerSide = "south";
-const bottom: TowerSide = "east";
-await tower.Rotate(top, middle, bottom);
+try {
+    // Connect to the tower
+    await tower.connect();
+    
+    // Calibrate the tower
+    await tower.calibrate();
+    
+    // Control lights with type safety
+    const lights: Lights = {
+        doorway: [{ position: "north", level: "top", style: "on" }],
+    };
+    await tower.lights(lights);
+    
+    // Rotate with type safety
+    const top: TowerSide = "north";
+    const middle: TowerSide = "south";
+    const bottom: TowerSide = "east";
+    await tower.rotate(top, middle, bottom);
+} catch (error) {
+    console.error("Tower operation failed:", error);
+}
 ```
 
 ## Disconnect Detection & Handling
@@ -202,7 +241,7 @@ class TowerManager {
         };
 
         this.tower.onBatteryLevelNotify = (millivolts) => {
-            const percentage = this.tower.millVoltsToPercentage(millivolts);
+            const batteryPercentage = this.getBatteryPercentage(millivolts);
             this.updateBatteryUI(percentage);
 
             // Warn if battery is low
@@ -273,14 +312,7 @@ This project includes several npm scripts for development, testing, and building
 
 The build process compiles TypeScript files and copies HTML files from the `examples/` directory to the `dist/examples/` directory, making the web applications ready for deployment.
 
-## Browser Support
-
-These web apps require Web Bluetooth, which is currently only supported in certain browsers, such as Chrome on the desktop, Chrome on Android mobile devices, Microsoft Edge, and Samsung Internet. You can find a list of all supported browsers at [CanIUse](https://caniuse.com/?search=web%20bluetooth).
-
-You can use Web Bluetooth LE on iOS (iPhone/iPads) by using the Bluefy app:
-https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055
-
-### Web Application Examples
+## Web Application Examples
 
 I've created two samples to show the library in action that you can use from your browser. Just power on your Tower and go to the links below!
 
@@ -294,6 +326,108 @@ https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055
 [Tower Controller](https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html)
 
 [Tower Game](https://chessmess.github.io/UltimateDarkTower/dist/examples/game/TowerGame.html)
+
+## API Reference
+
+### Core Methods
+
+#### Connection Management
+- `connect()` - Connect to the tower device via Bluetooth
+- `disconnect()` - Manually disconnect from the tower
+- `cleanup()` - Clean up resources and disconnect properly
+- `isConnectedAndResponsive()` - Test if tower is connected and responsive
+
+#### Tower Control
+- `calibrate()` - Calibrate the tower (required after connection)
+- `playSound(soundIndex: number)` - Play a sound by index (1-based)
+- `lights(lights: Lights)` - Control tower lights
+- `lightOverrides(light: number, soundIndex?: number)` - Override light patterns
+- `rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number)` - Rotate tower sections
+- `resetTowerSkullCount()` - Reset the skull drop counter
+
+#### Monitoring Configuration
+- `setConnectionMonitoring(enabled: boolean)` - Enable/disable connection monitoring
+- `configureConnectionMonitoring(frequency?: number, timeout?: number)` - Configure monitoring parameters
+- `configureBatteryHeartbeatMonitoring(enabled?: boolean, timeout?: number)` - Configure battery heartbeat detection
+- `getConnectionStatus()` - Get detailed connection status
+
+### Properties
+
+#### Connection State
+- `isConnected: boolean` - Current connection status
+- `isCalibrated: boolean` - Whether tower has been calibrated
+- `towerSkullDropCount: number` - Current skull count from tower
+
+#### Configuration
+- `batteryNotifyFrequency: number` - Battery notification throttling (default: 15000ms)
+- `batteryNotifyOnValueChangeOnly: boolean` - Only notify on battery level changes
+- `logDetail: boolean` - Enable detailed logging
+- `logTowerResponses: boolean` - Log tower responses
+
+### Event Callbacks
+
+Override these methods to handle tower events:
+
+- `onCalibrationComplete()` - Called when calibration finishes
+- `onSkullDrop(count: number)` - Called when skull is dropped
+- `onBatteryLevelNotify(millivolts: number)` - Called for battery updates
+- `onTowerConnect()` - Called when tower connects
+- `onTowerDisconnect()` - Called when tower disconnects
+
+### Types
+
+- `TowerSide` - Tower rotation positions: "north" | "south" | "east" | "west"
+- `Lights` - Light configuration object with doorway, ledge, and base properties
+
+## Performance Considerations
+
+### Command Rate Limiting
+
+The tower has limitations on how quickly it can process commands. Sending commands too rapidly can cause the tower to disconnect or become unresponsive.
+
+**Best Practices:**
+- Allow time between commands (recommended: 200-500ms minimum)
+- Wait for calibration to complete before sending other commands
+- Monitor connection status when sending multiple commands
+- Use the disconnect detection features to handle connection issues
+
+**Example: Proper Command Timing**
+```javascript
+// Good: Allow time between commands
+await tower.playSound(1);
+await new Promise(resolve => setTimeout(resolve, 500));
+await tower.rotate("north", "south", "east");
+
+// Better: Check connection status
+if (tower.isConnected) {
+    await tower.playSound(1);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    if (tower.isConnected) {
+        await tower.rotate("north", "south", "east");
+    }
+}
+```
+
+### Battery Monitoring
+
+The tower's battery level affects performance and connection stability:
+
+- Low battery can cause unexpected disconnections
+- Monitor battery levels using `onBatteryLevelNotify`
+- Consider warning users when battery is below 20%
+- Battery heartbeat monitoring is most reliable for detecting power issues
+
+## Browser Support
+
+Web Bluetooth is required for this library to function. Supported browsers include:
+
+- Chrome (desktop and Android)
+- Microsoft Edge
+- Samsung Internet
+- [Full compatibility list](https://caniuse.com/?search=web%20bluetooth)
+
+**iOS Support:** Use the Bluefy app - [App Store](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)
 
 ## Known Issues:
 
