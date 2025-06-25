@@ -393,7 +393,7 @@
       await this.sendTowerCommand(lightOverrideCommand);
     }
     async Rotate(top, middle, bottom, soundIndex) {
-      this.logDetail && console.log(`[UDT] Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${middle}] S[${soundIndex}]`);
+      this.logDetail && console.log(`[UDT] Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`);
       const rotateCommand = this.createRotateCommand(top, middle, bottom);
       if (soundIndex) {
         rotateCommand[AUDIO_COMMAND_POS] = soundIndex;
@@ -427,8 +427,73 @@
     }
     //#endregion
     //#region future features 
-    // TODO: Implement function
-    breakSeals(seal) {
+    async breakSeal(seal) {
+      const sealNumbers = Array.isArray(seal) ? seal : [seal];
+      const SEAL_TO_SIDE = {
+        1: "north",
+        2: "east",
+        3: "south",
+        4: "west",
+        // Top level
+        5: "north",
+        6: "east",
+        7: "south",
+        8: "west",
+        // Middle level  
+        9: "north",
+        10: "east",
+        11: "south",
+        12: "west"
+        // Bottom level
+      };
+      const SEAL_TO_LEVEL = {
+        1: "top",
+        2: "top",
+        3: "top",
+        4: "top",
+        5: "middle",
+        6: "middle",
+        7: "middle",
+        8: "middle",
+        9: "bottom",
+        10: "bottom",
+        11: "bottom",
+        12: "bottom"
+      };
+      for (const sealNum of sealNumbers) {
+        if (sealNum < 1 || sealNum > 12) {
+          console.log(`[UDT] Invalid seal number: ${sealNum}. Seals must be 1-12.`);
+          return;
+        }
+      }
+      console.log("[UDT] Playing tower seal sound");
+      await this.playSound(TOWER_AUDIO_LIBRARY.TowerSeal.value);
+      const sidesWithBrokenSeals = [...new Set(sealNumbers.map((sealNum) => SEAL_TO_SIDE[sealNum]))];
+      const ledgeLights = [];
+      const adjacentSides = {
+        north: "east",
+        east: "south",
+        south: "west",
+        west: "north"
+      };
+      sidesWithBrokenSeals.forEach((side) => {
+        ledgeLights.push({ position: side, style: "on" });
+        ledgeLights.push({ position: adjacentSides[side], style: "on" });
+      });
+      const uniqueLedgeLights = ledgeLights.filter(
+        (light, index, self) => index === self.findIndex((l) => l.position === light.position)
+      );
+      const doorwayLights = sealNumbers.map((sealNum) => ({
+        level: SEAL_TO_LEVEL[sealNum],
+        position: SEAL_TO_SIDE[sealNum],
+        style: "breatheFast"
+      }));
+      const lights = {
+        ledge: uniqueLedgeLights,
+        doorway: doorwayLights
+      };
+      console.log(`[UDT] Breaking seal(s) ${sealNumbers.join(", ")} - lighting ledges and doorways with breath effect`);
+      await this.Lights(lights);
     }
     // TODO: Implement function
     randomizeLevels(level = 0) {

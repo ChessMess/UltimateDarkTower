@@ -414,7 +414,7 @@
       await this.sendTowerCommand(lightOverrideCommand);
     }
     async Rotate(top, middle, bottom, soundIndex) {
-      this.logDetail && console.log(`[UDT] Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${middle}] S[${soundIndex}]`);
+      this.logDetail && console.log(`[UDT] Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`);
       const rotateCommand = this.createRotateCommand(top, middle, bottom);
       if (soundIndex) {
         rotateCommand[AUDIO_COMMAND_POS] = soundIndex;
@@ -448,8 +448,73 @@
     }
     //#endregion
     //#region future features 
-    // TODO: Implement function
-    breakSeals(seal) {
+    async breakSeal(seal) {
+      const sealNumbers = Array.isArray(seal) ? seal : [seal];
+      const SEAL_TO_SIDE = {
+        1: "north",
+        2: "east",
+        3: "south",
+        4: "west",
+        // Top level
+        5: "north",
+        6: "east",
+        7: "south",
+        8: "west",
+        // Middle level  
+        9: "north",
+        10: "east",
+        11: "south",
+        12: "west"
+        // Bottom level
+      };
+      const SEAL_TO_LEVEL = {
+        1: "top",
+        2: "top",
+        3: "top",
+        4: "top",
+        5: "middle",
+        6: "middle",
+        7: "middle",
+        8: "middle",
+        9: "bottom",
+        10: "bottom",
+        11: "bottom",
+        12: "bottom"
+      };
+      for (const sealNum of sealNumbers) {
+        if (sealNum < 1 || sealNum > 12) {
+          console.log(`[UDT] Invalid seal number: ${sealNum}. Seals must be 1-12.`);
+          return;
+        }
+      }
+      console.log("[UDT] Playing tower seal sound");
+      await this.playSound(TOWER_AUDIO_LIBRARY.TowerSeal.value);
+      const sidesWithBrokenSeals = [...new Set(sealNumbers.map((sealNum) => SEAL_TO_SIDE[sealNum]))];
+      const ledgeLights = [];
+      const adjacentSides = {
+        north: "east",
+        east: "south",
+        south: "west",
+        west: "north"
+      };
+      sidesWithBrokenSeals.forEach((side) => {
+        ledgeLights.push({ position: side, style: "on" });
+        ledgeLights.push({ position: adjacentSides[side], style: "on" });
+      });
+      const uniqueLedgeLights = ledgeLights.filter(
+        (light, index, self) => index === self.findIndex((l) => l.position === light.position)
+      );
+      const doorwayLights = sealNumbers.map((sealNum) => ({
+        level: SEAL_TO_LEVEL[sealNum],
+        position: SEAL_TO_SIDE[sealNum],
+        style: "breatheFast"
+      }));
+      const lights2 = {
+        ledge: uniqueLedgeLights,
+        doorway: doorwayLights
+      };
+      console.log(`[UDT] Breaking seal(s) ${sealNumbers.join(", ")} - lighting ledges and doorways with breath effect`);
+      await this.Lights(lights2);
     }
     // TODO: Implement function
     randomizeLevels(level = 0) {
@@ -897,6 +962,68 @@
       Number(sound.value)
     );
   };
+  var breakSeal = async () => {
+    const select = document.getElementById("sealSelect");
+    const sealValue = select.value;
+    if (!sealValue) {
+      console.log("No seal selected");
+      return;
+    }
+    const sealMap = {
+      "North Top": 1,
+      "East Top": 2,
+      "South Top": 3,
+      "West Top": 4,
+      "North Middle": 5,
+      "East Middle": 6,
+      "South Middle": 7,
+      "West Middle": 8,
+      "North Bottom": 9,
+      "East Bottom": 10,
+      "South Bottom": 11,
+      "West Bottom": 12
+    };
+    const sealNumber = sealMap[sealValue];
+    if (sealNumber) {
+      await Tower.breakSeal(sealNumber);
+    }
+  };
+  var clearAllLights = async () => {
+    const allLightsOff = {
+      doorway: [
+        { position: "north", level: "top", style: "off" },
+        { position: "north", level: "middle", style: "off" },
+        { position: "north", level: "bottom", style: "off" },
+        { position: "east", level: "top", style: "off" },
+        { position: "east", level: "middle", style: "off" },
+        { position: "east", level: "bottom", style: "off" },
+        { position: "south", level: "top", style: "off" },
+        { position: "south", level: "middle", style: "off" },
+        { position: "south", level: "bottom", style: "off" },
+        { position: "west", level: "top", style: "off" },
+        { position: "west", level: "middle", style: "off" },
+        { position: "west", level: "bottom", style: "off" }
+      ],
+      ledge: [
+        { position: "north", style: "off" },
+        { position: "east", style: "off" },
+        { position: "south", style: "off" },
+        { position: "west", style: "off" }
+      ],
+      base: [
+        { position: { side: "north", level: "top" }, style: "off" },
+        { position: { side: "north", level: "bottom" }, style: "off" },
+        { position: { side: "east", level: "top" }, style: "off" },
+        { position: { side: "east", level: "bottom" }, style: "off" },
+        { position: { side: "south", level: "top" }, style: "off" },
+        { position: { side: "south", level: "bottom" }, style: "off" },
+        { position: { side: "west", level: "top" }, style: "off" },
+        { position: { side: "west", level: "bottom" }, style: "off" }
+      ]
+    };
+    await Tower.Lights(allLightsOff);
+    console.log("All lights cleared");
+  };
   var singleLight = (el) => {
     let style = "off";
     if (el.checked) {
@@ -986,5 +1113,7 @@
   window.lights = lights;
   window.overrides = overrides;
   window.rotate = rotate;
+  window.breakSeal = breakSeal;
+  window.clearAllLights = clearAllLights;
 })();
 //# sourceMappingURL=TowerController.js.map

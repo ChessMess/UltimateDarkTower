@@ -233,6 +233,35 @@
             </select>
           </div>
         </fieldset>
+        <fieldset class="fieldset-container">
+          <legend>Break Seal</legend>
+          <div style="display: flex; padding: 8px 10px; align-items: baseline; justify-content: space-evenly;">
+            <div>
+              <label for="sealSelect">Select Seal:</label>
+              <select id="sealSelect">
+                <option value="">Select a seal</option>
+                <option value="North Top">North Top</option>
+                <option value="North Middle">North Middle</option>
+                <option value="North Bottom">North Bottom</option>
+                <option value="East Top">East Top</option>
+                <option value="East Middle">East Middle</option>
+                <option value="East Bottom">East Bottom</option>
+                <option value="South Top">South Top</option>
+                <option value="South Middle">South Middle</option>
+                <option value="South Bottom">South Bottom</option>
+                <option value="West Top">West Top</option>
+                <option value="West Middle">West Middle</option>
+                <option value="West Bottom">West Bottom</option>
+              </select>
+            </div>
+            <div>
+              <button id="breakSealButton" onclick="breakSeal()" style="padding: 8px;">Break Seal</button>
+            </div>
+            <div>
+              <button id="clearLightsButton" onclick="clearAllLights()">Clear</button>
+            </div>
+          </div>
+        </fieldset>
         <fieldset class="fieldset-container"">
           <legend>Drums</legend>
           <div

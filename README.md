@@ -343,6 +343,7 @@ https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055
 - `lights(lights: Lights)` - Control tower lights
 - `lightOverrides(light: number, soundIndex?: number)` - Override light patterns
 - `rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number)` - Rotate tower sections
+- `breakSeal(seal: Array<number> | number)` - Break game seals with lights and sound effects (seals 1-12)
 - `resetTowerSkullCount()` - Reset the skull drop counter
 
 #### Monitoring Configuration
