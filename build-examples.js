@@ -48,10 +48,21 @@ async function buildExamples() {
             tsconfig: "tsconfig.json",
         });
 
+        // Copy HTML files from source to dist
+        const controllerHtmlSrc = path.join(__dirname, "examples", "controller", "TowerController.html");
+        const controllerHtmlDest = path.join(controllerDistDir, "TowerController.html");
+        fs.copyFileSync(controllerHtmlSrc, controllerHtmlDest);
+
+        const gameHtmlSrc = path.join(__dirname, "examples", "game", "TowerGame.html");
+        const gameHtmlDest = path.join(gameDistDir, "TowerGame.html");
+        fs.copyFileSync(gameHtmlSrc, gameHtmlDest);
+
         console.log("✅ Examples built successfully!");
         console.log("📁 Output directory: dist/examples/");
         console.log("   - controller/TowerController.js");
+        console.log("   - controller/TowerController.html");
         console.log("   - game/TowerGame.js");
+        console.log("   - game/TowerGame.html");
     } catch (error) {
         console.error("❌ Build failed:", error);
         process.exit(1);
