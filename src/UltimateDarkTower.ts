@@ -114,6 +114,11 @@ class UltimateDarkTower {
   }
 
   //#region Tower Commands 
+  /**
+   * Initiates tower calibration to determine the current position of all tower drums.
+   * This must be performed after connection before other tower operations.
+   * @returns {Promise<void>} Promise that resolves when calibration command is sent
+   */
   async calibrate() {
     if (!this.performingCalibration) {
       console.log('[UDT] Performing Tower Calibration');
@@ -128,12 +133,21 @@ class UltimateDarkTower {
     return;
   }
 
-  //TODO: currently not working - investigating
+  /**
+   * Requests the current state of the tower including position and skull count.
+   * TODO: currently not working - investigating
+   * @returns {Promise<void>} Promise that resolves when request is sent
+   */
   async requestTowerState() {
     console.log('[UDT] Requesting Tower State');
     await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.towerState]));
   }
 
+  /**
+   * Plays a sound from the tower's audio library.
+   * @param {number} soundIndex - Index of the sound to play (1-based, must be valid in TOWER_AUDIO_LIBRARY)
+   * @returns {Promise<void>} Promise that resolves when sound command is sent
+   */
   async playSound(soundIndex: number) {
     const invalidIndex = soundIndex === null || soundIndex > (Object.keys(TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0
     if (invalidIndex) {
@@ -148,6 +162,11 @@ class UltimateDarkTower {
     await this.sendTowerCommand(soundCommand);
   }
 
+  /**
+   * Controls the tower's LED lights including doorway, ledge, and base lights.
+   * @param {Lights} lights - Light configuration object specifying which lights to control and their effects
+   * @returns {Promise<void>} Promise that resolves when light command is sent
+   */
   async Lights(lights: Lights) {
     const lightCommand = this.createLightPacketCommand(lights);
     this.updateCommandWithCurrentDrumPositions(lightCommand);
@@ -157,6 +176,12 @@ class UltimateDarkTower {
     await this.sendTowerCommand(lightCommand);
   }
 
+  /**
+   * Sends a light override command to control specific light patterns.
+   * @param {number} light - Light override value to send
+   * @param {number} [soundIndex] - Optional sound to play with the light override
+   * @returns {Promise<void>} Promise that resolves when light override command is sent
+   */
   async lightOverrides(light: number, soundIndex?: number) {
     const lightOverrideCommand = this.createLightOverrideCommand(light);
     this.updateCommandWithCurrentDrumPositions(lightOverrideCommand);
@@ -168,6 +193,14 @@ class UltimateDarkTower {
     await this.sendTowerCommand(lightOverrideCommand);
   }
 
+  /**
+   * Rotates tower drums to specified positions.
+   * @param {TowerSide} top - Position for the top drum ('north', 'east', 'south', 'west')
+   * @param {TowerSide} middle - Position for the middle drum
+   * @param {TowerSide} bottom - Position for the bottom drum
+   * @param {number} [soundIndex] - Optional sound to play during rotation
+   * @returns {Promise<void>} Promise that resolves when rotate command is sent
+   */
   async Rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number) {
     this.logDetail && console.log(`[UDT] Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`);
 
@@ -187,6 +220,13 @@ class UltimateDarkTower {
     };
   }
 
+  /**
+   * Sends a combined command to rotate drums, control lights, and play sound simultaneously.
+   * @param {RotateCommand} [rotate] - Rotation configuration for tower drums
+   * @param {Lights} [lights] - Light configuration object
+   * @param {number} [soundIndex] - Optional sound to play with the multi-command
+   * @returns {Promise<void>} Promise that resolves when multi-command is sent
+   */
   async MultiCommand(rotate?: RotateCommand, lights?: Lights, soundIndex?: number) {
     this.logDetail && console.log('[UDT] MultiCommand Parameters', rotate, lights, soundIndex);
     let multiCmd = new Uint8Array(20);
@@ -210,6 +250,10 @@ class UltimateDarkTower {
     console.log('[UDT] multiple command sent', packetMsg);
   }
 
+  /**
+   * Resets the tower's internal skull drop counter to zero.
+   * @returns {Promise<void>} Promise that resolves when reset command is sent
+   */
   async resetTowerSkullCount() {
     console.log('[UDT] Tower skull count reset requested');
     await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.resetCounter]));
@@ -217,6 +261,11 @@ class UltimateDarkTower {
 
   //#endregion
 
+  /**
+   * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
+   * @param {Array<number> | number} seal - Seal number(s) to break (1-12, where 1/5/8 are north positions)
+   * @returns {Promise<void>} Promise that resolves when seal break sequence is complete
+   */
   async breakSeal(seal: Array<number> | number) {
     // seals are numbered 1 - 12 with 1/5/8 representing north positions
     // Top: 1-4, Middle: 5-8, Bottom: 9-12
@@ -287,6 +336,11 @@ class UltimateDarkTower {
     await this.Lights(lights);
   }
 
+  /**
+   * Randomly rotates specified tower levels to random positions.
+   * @param {number} [level=0] - Level configuration: 0=all, 1=top, 2=middle, 3=bottom, 4=top&middle, 5=top&bottom, 6=middle&bottom
+   * @returns {Promise<void>} Promise that resolves when rotation command is sent
+   */
   async randomRotateLevels(level: number = 0) {
     // 0 = all, 1 = top, 2 = middle, 3 = bottom
     // 4 = top & middle, 5 = top & bottom, 6 = middle & bottom
@@ -346,6 +400,12 @@ class UltimateDarkTower {
     await this.Rotate(topSide, middleSide, bottomSide);
   }
   
+  /**
+   * Gets the current position of a specific drum level.
+   * @param {('top' | 'middle' | 'bottom')} level - The drum level to get position for
+   * @returns {TowerSide} The current position of the specified drum level
+   * @private
+   */
   private getCurrentDrumPosition(level: 'top' | 'middle' | 'bottom'): TowerSide {
     const drumPositions = drumPositionCmds[level];
     const currentValue = level === 'bottom' 
@@ -380,6 +440,11 @@ class UltimateDarkTower {
 
   //#region bluetooth
 
+  /**
+   * Establishes a Bluetooth connection to the Dark Tower device.
+   * Initializes GATT services, characteristics, and starts connection monitoring.
+   * @returns {Promise<void>} Promise that resolves when connection is established
+   */
   async connect() {
     console.log("[UDT] Looking for Tower...");
     try {
@@ -440,7 +505,11 @@ class UltimateDarkTower {
     }
   }
 
-  // handle tower response
+  /**
+   * Handles incoming data from the tower via Bluetooth characteristic notifications.
+   * Processes battery status, tower state responses, and other tower communications.
+   * @param {Event} event - Bluetooth characteristic value changed event
+   */
   onRxCharacteristicValueChanged = (event) => {
     // Update last successful command timestamp
     this.lastSuccessfulCommand = Date.now();
@@ -488,6 +557,11 @@ class UltimateDarkTower {
     }
   }
 
+  /**
+   * Processes tower state response data including calibration completion and skull drop detection.
+   * @param {Uint8Array} receivedData - Raw data received from the tower
+   * @private
+   */
   private handleTowerStateResponse(receivedData: Uint8Array) {
     const { cmdKey, command } = this.getTowerCommand(receivedData[0]);
     const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
@@ -519,6 +593,11 @@ class UltimateDarkTower {
     }
   }
 
+  /**
+   * Logs tower response data based on configured logging settings.
+   * @param {Uint8Array} receivedData - Raw data received from the tower
+   * @private
+   */
   private logTowerResponse(receivedData: Uint8Array) {
     const { cmdKey, command } = this.getTowerCommand(receivedData[0]);
     const logAll = this.logTowerResponseConfig["LOG_ALL"];
@@ -541,6 +620,10 @@ class UltimateDarkTower {
     console.log('[UDT] Tower response:', ...this.commandToString(receivedData));
   }
 
+  /**
+   * Disconnects from the tower device and cleans up resources.
+   * @returns {Promise<void>} Promise that resolves when disconnection is complete
+   */
   async disconnect() {
     if (!this.TowerDevice) {
       return;
@@ -559,6 +642,10 @@ class UltimateDarkTower {
     }
   }
 
+  /**
+   * Handles Bluetooth availability changes and manages disconnection if Bluetooth becomes unavailable.
+   * @param {Event} event - Bluetooth availability change event
+   */
   bleAvailabilityChange = (event) => {
     console.log('[UDT] Bluetooth availability changed', event);
     const availability = event.value;
@@ -569,12 +656,19 @@ class UltimateDarkTower {
     }
   }
 
-  // Handle device disconnection
+  /**
+   * Handles unexpected tower device disconnection events.
+   * @param {Event} event - GATT server disconnected event
+   */
   onTowerDeviceDisconnected = (event) => {
     console.log('[UDT] Tower device disconnected unexpectedly');
     this.handleDisconnection();
   }
 
+  /**
+   * Centralizes disconnection handling, cleaning up state and notifying callbacks.
+   * @private
+   */
   private handleDisconnection() {
     this.isConnected = false;
     this.isCalibrated = false;
@@ -592,6 +686,10 @@ class UltimateDarkTower {
     this.onTowerDisconnect();
   }
 
+  /**
+   * Starts the connection monitoring interval to periodically check connection health.
+   * @private
+   */
   private startConnectionMonitoring() {
     if (this.connectionMonitorInterval) {
       clearInterval(this.connectionMonitorInterval);
@@ -602,6 +700,10 @@ class UltimateDarkTower {
     }, this.connectionMonitorFrequency);
   }
 
+  /**
+   * Stops the connection monitoring interval.
+   * @private
+   */
   private stopConnectionMonitoring() {
     if (this.connectionMonitorInterval) {
       clearInterval(this.connectionMonitorInterval);
@@ -609,6 +711,10 @@ class UltimateDarkTower {
     }
   }
 
+  /**
+   * Performs connection health checks including battery heartbeat and GATT connection status.
+   * @private
+   */
   private checkConnectionHealth() {
     if (!this.isConnected || !this.TowerDevice) {
       return;
@@ -661,6 +767,11 @@ class UltimateDarkTower {
 
   //#region utility
 
+  /**
+   * Sends a command packet to the tower via Bluetooth with error handling and retry logic.
+   * @param {Uint8Array} command - The command packet to send to the tower
+   * @returns {Promise<void>} Promise that resolves when command is sent successfully
+   */
   async sendTowerCommand(command: Uint8Array) {
     try {
       const cmdStr = this.commandToPacketString(command);
@@ -703,11 +814,20 @@ class UltimateDarkTower {
     }
   }
 
+  /**
+   * Updates a command packet with the current drum positions.
+   * @param {CommandPacket} commandPacket - The command packet to update with current drum positions
+   */
   updateCommandWithCurrentDrumPositions(commandPacket: CommandPacket) {
     commandPacket[DRUM_PACKETS.topMiddle] = this.currentDrumPositions.topMiddle;
     commandPacket[DRUM_PACKETS.bottom] = this.currentDrumPositions.bottom;
   }
 
+  /**
+   * Creates a light command packet from a lights configuration object.
+   * @param {Lights} lights - Light configuration specifying doorway, ledge, and base lights
+   * @returns {Uint8Array} Command packet for controlling tower lights
+   */
   createLightPacketCommand = (lights: Lights) => {
     let packetPos = null;
     const command = new Uint8Array(20);
@@ -736,12 +856,24 @@ class UltimateDarkTower {
     return command;
   }
 
+  /**
+   * Creates a light override command packet.
+   * @param {number} lightOverride - Light override value to send
+   * @returns {Uint8Array} Command packet for light override
+   */
   createLightOverrideCommand(lightOverride: number) {
     const lightOverrideCommand = new Uint8Array(20);
     lightOverrideCommand[LIGHT_PACKETS.overrides] = lightOverride;
     return lightOverrideCommand;
   }
 
+  /**
+   * Creates a rotation command packet for positioning tower drums.
+   * @param {TowerSide} top - Target position for top drum
+   * @param {TowerSide} middle - Target position for middle drum
+   * @param {TowerSide} bottom - Target position for bottom drum
+   * @returns {Uint8Array} Command packet for rotating tower drums
+   */
   createRotateCommand(top: TowerSide, middle: TowerSide, bottom: TowerSide) {
     const rotateCmd = new Uint8Array(20);
     rotateCmd[DRUM_PACKETS.topMiddle] =
@@ -750,6 +882,11 @@ class UltimateDarkTower {
     return rotateCmd;
   }
 
+  /**
+   * Creates a sound command packet for playing tower audio.
+   * @param {number} soundIndex - Index of the sound to play from the audio library
+   * @returns {Uint8Array} Command packet for playing sound
+   */
   createSoundCommand(soundIndex: number) {
     const soundCommand = new Uint8Array(20);
     const sound = Number("0x" + Number(soundIndex).toString(16).padStart(2, '0'));
@@ -757,7 +894,12 @@ class UltimateDarkTower {
     return soundCommand;
   }
 
-  // TODO: return parsed data values rather than raw packet values
+  /**
+   * Converts a command packet to a human-readable string array for logging.
+   * TODO: return parsed data values rather than raw packet values
+   * @param {Uint8Array} command - Command packet to convert
+   * @returns {Array<string>} Human-readable representation of the command
+   */
   commandToString(command: Uint8Array): Array<string> {
     const cmdValue = command[0];
 
@@ -785,6 +927,11 @@ class UltimateDarkTower {
     }
   }
 
+  /**
+   * Converts a command packet to a hex string representation for debugging.
+   * @param {Uint8Array} command - Command packet to convert
+   * @returns {string} Hex string representation of the command packet
+   */
   commandToPacketString(command: Uint8Array) {
     let cmdStr = "[";
     command.forEach(n => cmdStr += n.toString(16) + ",");
@@ -792,6 +939,11 @@ class UltimateDarkTower {
     return cmdStr
   }
 
+  /**
+   * Maps a command value to its corresponding tower message definition.
+   * @param {number} cmdValue - Command value received from tower
+   * @returns {Object} Object containing command key and command definition
+   */
   getTowerCommand(cmdValue: number) {
     const cmdKeys = Object.keys(TOWER_MESSAGES);
     const cmdKey = cmdKeys.find(key => TOWER_MESSAGES[key].value === cmdValue);
@@ -799,6 +951,11 @@ class UltimateDarkTower {
     return { cmdKey, command };
   }
 
+  /**
+   * Extracts battery voltage in millivolts from a tower battery response.
+   * @param {Uint8Array} command - Battery response packet from tower
+   * @returns {number} Battery voltage in millivolts
+   */
   getMilliVoltsFromTowerReponse(command: Uint8Array): number {
     const mv = new Uint8Array(4);
     mv[0] = command[4];
@@ -809,7 +966,12 @@ class UltimateDarkTower {
     return view.getUint32(0, true);
   }
 
-  // Tower returns sum total battery level in millivolts
+  /**
+   * Converts battery voltage in millivolts to percentage.
+   * Tower returns sum total battery level in millivolts for all batteries.
+   * @param {number} mv - Battery voltage in millivolts
+   * @returns {string} Battery percentage as formatted string (e.g., "75%")
+   */
   millVoltsToPercentage(mv: number) {
     const batLevel = mv ? mv / 3 : 0; // lookup is based on sinlge AA
     const levels = VOLTAGE_LEVELS.filter(v => batLevel >= v);
@@ -822,7 +984,7 @@ class UltimateDarkTower {
 
   /**
    * Enable or disable connection monitoring
-   * @param enabled - Whether to enable connection monitoring
+   * @param {boolean} enabled - Whether to enable connection monitoring
    */
   setConnectionMonitoring(enabled: boolean) {
     this.enableConnectionMonitoring = enabled;
@@ -835,8 +997,8 @@ class UltimateDarkTower {
 
   /**
    * Configure connection monitoring parameters
-   * @param frequency - How often to check connection (milliseconds)
-   * @param timeout - How long to wait for responses before considering connection lost (milliseconds)
+   * @param {number} [frequency=2000] - How often to check connection (milliseconds)
+   * @param {number} [timeout=30000] - How long to wait for responses before considering connection lost (milliseconds)
    */
   configureConnectionMonitoring(frequency: number = 2000, timeout: number = 30000) {
     this.connectionMonitorFrequency = frequency;
@@ -851,8 +1013,8 @@ class UltimateDarkTower {
   /**
    * Configure battery heartbeat monitoring parameters
    * Tower sends battery status every ~200ms, so this is the most reliable disconnect indicator
-   * @param enabled - Whether to enable battery heartbeat monitoring
-   * @param timeout - How long to wait for battery status before considering disconnected (milliseconds)
+   * @param {boolean} [enabled=true] - Whether to enable battery heartbeat monitoring
+   * @param {number} [timeout=3000] - How long to wait for battery status before considering disconnected (milliseconds)
    */
   configureBatteryHeartbeatMonitoring(enabled: boolean = true, timeout: number = 3000) {
     this.enableBatteryHeartbeatMonitoring = enabled;
@@ -861,7 +1023,7 @@ class UltimateDarkTower {
 
   /**
    * Check if the tower is currently connected
-   * @returns Promise<boolean> - True if connected and responsive
+   * @returns {Promise<boolean>} True if connected and responsive
    */
   async isConnectedAndResponsive(): Promise<boolean> {
     if (!this.isConnected || !this.TowerDevice?.gatt?.connected) {
@@ -880,7 +1042,7 @@ class UltimateDarkTower {
 
   /**
    * Get detailed connection status including heartbeat information
-   * @returns Object with connection details
+   * @returns {Object} Object with connection details
    */
   getConnectionStatus() {
     const now = Date.now();
@@ -906,6 +1068,7 @@ class UltimateDarkTower {
 
   /**
    * Clean up resources and disconnect properly
+   * @returns {Promise<void>} Promise that resolves when cleanup is complete
    */
   async cleanup() {
     console.log('[UDT] Cleaning up UltimateDarkTower instance');
