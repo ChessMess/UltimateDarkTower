@@ -270,7 +270,7 @@
           </div>
 
       </div>
-      <div style="">
+      <div>
         <button id="rotateButton" onclick="rotate()" style="margin-left:40px;">
           Rotate
         </button>
@@ -299,14 +299,27 @@
 
     dropDowns.forEach(item => {
       const id = Object.keys(item)[0];
-      const data = Object.keys(Object.values(item)[0]);
+      const data = Object.values(item)[0];
       let dropDown = document.getElementById(id);
-      data.forEach((value, index) => {
-        var el = document.createElement("option");
-        el.textContent = item.sounds ? `${index + 1}. ${value}` : value;
-        el.value = index + 1;
-        dropDown.appendChild(el);
-      });
+
+      if (id === 'sounds') {
+        // Special handling for sounds dropdown to use actual sound values and names
+        Object.keys(data).forEach(key => {
+          var el = document.createElement("option");
+          el.textContent = data[key].name;
+          el.value = data[key].value;
+          dropDown.appendChild(el);
+        });
+      } else {
+        // Original logic for other dropdowns
+        const keys = Object.keys(data);
+        keys.forEach((value, index) => {
+          var el = document.createElement("option");
+          el.textContent = value;
+          el.value = index + 1;
+          dropDown.appendChild(el);
+        });
+      }
     });
   </script>
 </body>
