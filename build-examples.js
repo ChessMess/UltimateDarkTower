@@ -49,11 +49,24 @@ async function buildExamples() {
         });
 
         // Copy HTML files from source to dist
-        const controllerHtmlSrc = path.join(__dirname, "examples", "controller", "TowerController.html");
-        const controllerHtmlDest = path.join(controllerDistDir, "TowerController.html");
+        const controllerHtmlSrc = path.join(
+            __dirname,
+            "examples",
+            "controller",
+            "TowerController.html",
+        );
+        const controllerHtmlDest = path.join(
+            controllerDistDir,
+            "TowerController.html",
+        );
         fs.copyFileSync(controllerHtmlSrc, controllerHtmlDest);
 
-        const gameHtmlSrc = path.join(__dirname, "examples", "game", "TowerGame.html");
+        const gameHtmlSrc = path.join(
+            __dirname,
+            "examples",
+            "game",
+            "TowerGame.html",
+        );
         const gameHtmlDest = path.join(gameDistDir, "TowerGame.html");
         fs.copyFileSync(gameHtmlSrc, gameHtmlDest);
 
