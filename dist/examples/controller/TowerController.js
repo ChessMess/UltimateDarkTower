@@ -243,7 +243,7 @@
       this.rxCharacteristic = null;
       // tower configuration
       this.batteryNotifyFrequency = 15 * 1e3;
-      // Tower sends these every ~200ms
+      // App notification throttling (Tower sends every ~200ms)
       this.batteryNotifyOnValueChangeOnly = false;
       // overrides frequency setting if true
       this.retrySendCommandCount = 0;
@@ -255,6 +255,20 @@
       this.towerSkullDropCount = -1;
       this.performingCalibration = false;
       this.lastBatteryNotification = 0;
+      // disconnect detection
+      this.connectionMonitorInterval = null;
+      this.connectionMonitorFrequency = 2 * 1e3;
+      // Check every 2 seconds (more frequent due to battery heartbeat)
+      this.lastSuccessfulCommand = 0;
+      this.connectionTimeoutThreshold = 30 * 1e3;
+      // 30 seconds without response
+      this.enableConnectionMonitoring = true;
+      // battery-based heartbeat detection
+      this.lastBatteryHeartbeat = 0;
+      // Last time we received a battery status
+      this.batteryHeartbeatTimeout = 3 * 1e3;
+      // 3 seconds without battery = likely disconnected (normal is ~200ms)
+      this.enableBatteryHeartbeatMonitoring = true;
       // call back functions
       // you overwrite these with your own functions 
       // to handle these events in your app
@@ -289,6 +303,7 @@
       };
       // handle tower response
       this.onRxCharacteristicValueChanged = (event) => {
+        this.lastSuccessfulCommand = Date.now();
         let receivedData = [];
         for (var i = 0; i < event.target.value.byteLength; i++) {
           receivedData[i] = event.target.value.getUint8(i);
@@ -304,6 +319,7 @@
         ;
         const isBatteryResponse = cmdKey === TC.BATTERY;
         if (isBatteryResponse) {
+          this.lastBatteryHeartbeat = Date.now();
           const millivolts = this.getMilliVoltsFromTowerReponse(receivedData);
           const batteryPercentage = this.millVoltsToPercentage(millivolts);
           const didBatteryLevelChange = this.lastBatteryPercentage !== batteryPercentage;
@@ -316,6 +332,19 @@
             this.onBatteryLevelNotify(millivolts);
           }
         }
+      };
+      this.bleAvailabilityChange = (event) => {
+        console.log("[UDT] Bluetooth availability changed", event);
+        const availability = event.value;
+        if (!availability && this.isConnected) {
+          console.log("[UDT] Bluetooth became unavailable - handling disconnection");
+          this.handleDisconnection();
+        }
+      };
+      // Handle device disconnection
+      this.onTowerDeviceDisconnected = (event) => {
+        console.log("[UDT] Tower device disconnected unexpectedly");
+        this.handleDisconnection();
       };
       this.createLightPacketCommand = (lights2) => {
         let packetPos = null;
@@ -438,10 +467,7 @@
           console.log("[UDT] Tower not found");
           return;
         }
-        navigator.bluetooth.addEventListener("availabilitychanged", (event) => {
-          const availability = event.value;
-          console.log("[UDT] ble availability changed", availability);
-        });
+        navigator.bluetooth.addEventListener("availabilitychanged", this.bleAvailabilityChange);
         console.log("[UDT] Connecting to Tower GATT Server...");
         const server = await this.TowerDevice.gatt.connect();
         console.log("[UDT] Getting Tower Primary Service...");
@@ -459,8 +485,14 @@
           "characteristicvaluechanged",
           this.onRxCharacteristicValueChanged
         );
+        this.TowerDevice.addEventListener("gattserverdisconnected", this.onTowerDeviceDisconnected);
         console.log("[UDT] Tower connection complete");
         this.isConnected = true;
+        this.lastSuccessfulCommand = Date.now();
+        this.lastBatteryHeartbeat = Date.now();
+        if (this.enableConnectionMonitoring) {
+          this.startConnectionMonitoring();
+        }
         this.onTowerConnect();
       } catch (error) {
         console.log("[UDT] Tower Connection Error", error);
@@ -507,23 +539,70 @@
       if (!this.TowerDevice) {
         return;
       }
+      this.stopConnectionMonitoring();
       if (this.TowerDevice.gatt.connected) {
+        this.TowerDevice.removeEventListener("gattserverdisconnected", this.onTowerDeviceDisconnected);
         await this.TowerDevice.gatt.disconnect();
         console.log("[UDT] Tower disconnected");
-        this.isConnected = false;
-        this.onTowerDisconnect();
+        this.handleDisconnection();
       }
     }
-    bleAvailabilityChange(event) {
-      console.log("[UDT] Bluetooth availability changed", event);
-      this.isConnected = !!this.txCharacteristic;
-      this.isConnected && this.onTowerConnect();
-      !this.isConnected && this.onTowerDisconnect();
+    handleDisconnection() {
+      this.isConnected = false;
+      this.isCalibrated = false;
+      this.performingCalibration = false;
+      this.stopConnectionMonitoring();
+      this.lastBatteryHeartbeat = 0;
+      this.lastSuccessfulCommand = 0;
+      this.txCharacteristic = null;
+      this.rxCharacteristic = null;
+      this.onTowerDisconnect();
+    }
+    startConnectionMonitoring() {
+      if (this.connectionMonitorInterval) {
+        clearInterval(this.connectionMonitorInterval);
+      }
+      this.connectionMonitorInterval = setInterval(() => {
+        this.checkConnectionHealth();
+      }, this.connectionMonitorFrequency);
+    }
+    stopConnectionMonitoring() {
+      if (this.connectionMonitorInterval) {
+        clearInterval(this.connectionMonitorInterval);
+        this.connectionMonitorInterval = null;
+      }
+    }
+    checkConnectionHealth() {
+      if (!this.isConnected || !this.TowerDevice) {
+        return;
+      }
+      if (!this.TowerDevice.gatt.connected) {
+        console.log("[UDT] GATT connection lost detected during health check");
+        this.handleDisconnection();
+        return;
+      }
+      if (this.enableBatteryHeartbeatMonitoring) {
+        const timeSinceLastBatteryHeartbeat = Date.now() - this.lastBatteryHeartbeat;
+        if (timeSinceLastBatteryHeartbeat > this.batteryHeartbeatTimeout) {
+          console.log(`[UDT] Battery heartbeat timeout detected - no battery status received in ${timeSinceLastBatteryHeartbeat}ms (expected every ~200ms)`);
+          console.log("[UDT] Tower possibly disconnected due to battery depletion or power loss");
+          this.handleDisconnection();
+          return;
+        }
+      }
+      const timeSinceLastResponse = Date.now() - this.lastSuccessfulCommand;
+      if (timeSinceLastResponse > this.connectionTimeoutThreshold) {
+        console.log("[UDT] General connection timeout detected - no responses received");
+        this.requestTowerState().catch(() => {
+          console.log("[UDT] Heartbeat failed - connection appears lost");
+          this.handleDisconnection();
+        });
+      }
     }
     //#endregion
     //#region utility
     async sendTowerCommand(command) {
-      var _a;
+      var _a, _b, _c;
       try {
         const cmdStr = this.commandToPacketString(command);
         this.logDetail && console.log("[UDT] packet(s) sent:", cmdStr);
@@ -534,21 +613,28 @@
         await this.txCharacteristic.writeValue(command);
         this.isConnected = true;
         this.retrySendCommandCount = 0;
+        this.lastSuccessfulCommand = Date.now();
       } catch (error) {
         console.log("[UDT] command send error:", error);
         const errorMsg = (_a = error == null ? void 0 : error.message) != null ? _a : new String(error);
         const wasCancelled = errorMsg.includes("User cancelled");
         const alreadyInProgress = errorMsg.includes("already in progress");
-        const maxRetriesReached = this.retrySendCommandCount < this.retrySendCommandMax;
-        if (!maxRetriesReached && this.isConnected) {
-          console.log(`[UDT] retrying tower command attempt ${this.retrySendCommandCount}`);
+        const maxRetriesReached = this.retrySendCommandCount >= this.retrySendCommandMax;
+        const isDisconnected = errorMsg.includes("Cannot read properties of null") || errorMsg.includes("GATT Server is disconnected") || errorMsg.includes("Device is not connected") || !((_c = (_b = this.TowerDevice) == null ? void 0 : _b.gatt) == null ? void 0 : _c.connected);
+        if (isDisconnected) {
+          console.log("[UDT] Disconnect detected during command send");
+          this.handleDisconnection();
+          return;
+        }
+        if (!maxRetriesReached && this.isConnected && !wasCancelled) {
+          console.log(`[UDT] retrying tower command attempt ${this.retrySendCommandCount + 1}`);
           this.retrySendCommandCount++;
           setTimeout(() => {
             this.sendTowerCommand(command);
           }, 250 * this.retrySendCommandCount);
+        } else {
+          this.retrySendCommandCount = 0;
         }
-        const isDisconnected = errorMsg.includes("Cannot read properties of null");
-        this.isConnected = !isDisconnected;
       }
     }
     updateCommandWithCurrentDrumPositions(commandPacket) {
@@ -627,6 +713,99 @@
       const batLevel = mv ? mv / 3 : 0;
       const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
       return `${levels.length * 5}%`;
+    }
+    //#endregion
+    //#region Connection Management
+    /**
+     * Enable or disable connection monitoring
+     * @param enabled - Whether to enable connection monitoring
+     */
+    setConnectionMonitoring(enabled) {
+      this.enableConnectionMonitoring = enabled;
+      if (enabled && this.isConnected) {
+        this.startConnectionMonitoring();
+      } else {
+        this.stopConnectionMonitoring();
+      }
+    }
+    /**
+     * Configure connection monitoring parameters
+     * @param frequency - How often to check connection (milliseconds)
+     * @param timeout - How long to wait for responses before considering connection lost (milliseconds)
+     */
+    configureConnectionMonitoring(frequency = 2e3, timeout = 3e4) {
+      this.connectionMonitorFrequency = frequency;
+      this.connectionTimeoutThreshold = timeout;
+      if (this.enableConnectionMonitoring && this.isConnected) {
+        this.startConnectionMonitoring();
+      }
+    }
+    /**
+     * Configure battery heartbeat monitoring parameters
+     * Tower sends battery status every ~200ms, so this is the most reliable disconnect indicator
+     * @param enabled - Whether to enable battery heartbeat monitoring
+     * @param timeout - How long to wait for battery status before considering disconnected (milliseconds)
+     */
+    configureBatteryHeartbeatMonitoring(enabled = true, timeout = 3e3) {
+      this.enableBatteryHeartbeatMonitoring = enabled;
+      this.batteryHeartbeatTimeout = timeout;
+    }
+    /**
+     * Check if the tower is currently connected
+     * @returns Promise<boolean> - True if connected and responsive
+     */
+    async isConnectedAndResponsive() {
+      var _a, _b;
+      if (!this.isConnected || !((_b = (_a = this.TowerDevice) == null ? void 0 : _a.gatt) == null ? void 0 : _b.connected)) {
+        return false;
+      }
+      try {
+        await this.requestTowerState();
+        return true;
+      } catch (error) {
+        console.log("[UDT] Connectivity test failed:", error);
+        return false;
+      }
+    }
+    /**
+     * Get detailed connection status including heartbeat information
+     * @returns Object with connection details
+     */
+    getConnectionStatus() {
+      var _a, _b;
+      const now = Date.now();
+      const timeSinceLastBattery = this.lastBatteryHeartbeat ? now - this.lastBatteryHeartbeat : -1;
+      const timeSinceLastCommand = this.lastSuccessfulCommand ? now - this.lastSuccessfulCommand : -1;
+      return {
+        isConnected: this.isConnected,
+        isGattConnected: ((_b = (_a = this.TowerDevice) == null ? void 0 : _a.gatt) == null ? void 0 : _b.connected) || false,
+        isCalibrated: this.isCalibrated,
+        lastBatteryHeartbeatMs: timeSinceLastBattery,
+        lastCommandResponseMs: timeSinceLastCommand,
+        batteryHeartbeatHealthy: timeSinceLastBattery >= 0 && timeSinceLastBattery < this.batteryHeartbeatTimeout,
+        connectionMonitoringEnabled: this.enableConnectionMonitoring,
+        batteryHeartbeatMonitoringEnabled: this.enableBatteryHeartbeatMonitoring,
+        batteryHeartbeatTimeoutMs: this.batteryHeartbeatTimeout,
+        connectionTimeoutMs: this.connectionTimeoutThreshold
+      };
+    }
+    //#endregion
+    //#region cleanup
+    /**
+     * Clean up resources and disconnect properly
+     */
+    async cleanup() {
+      console.log("[UDT] Cleaning up UltimateDarkTower instance");
+      this.stopConnectionMonitoring();
+      if (this.TowerDevice) {
+        this.TowerDevice.removeEventListener("gattserverdisconnected", this.onTowerDeviceDisconnected);
+      }
+      if (navigator.bluetooth) {
+        navigator.bluetooth.removeEventListener("availabilitychanged", this.bleAvailabilityChange);
+      }
+      if (this.isConnected) {
+        await this.disconnect();
+      }
     }
     //#endregion
   };
