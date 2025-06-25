@@ -51,6 +51,7 @@ class UltimateDarkTower {
         // battery-based heartbeat detection
         this.lastBatteryHeartbeat = 0; // Last time we received a battery status
         this.batteryHeartbeatTimeout = 3 * 1000; // 3 seconds without battery = likely disconnected (normal is ~200ms)
+        this.calibrationHeartbeatTimeout = 30 * 1000; // 30 seconds during calibration (calibration blocks battery responses)
         this.enableBatteryHeartbeatMonitoring = true;
         // call back functions
         // you overwrite these with your own functions 
@@ -350,6 +351,9 @@ class UltimateDarkTower {
         if (this.performingCalibration) {
             this.performingCalibration = false;
             this.isCalibrated = true;
+            // Reset battery heartbeat timer since calibration blocks battery updates
+            // and it may take time for them to resume
+            this.lastBatteryHeartbeat = Date.now();
             this.onCalibrationComplete();
             console.log('[UDT] Tower calibration complete');
         }
@@ -440,10 +444,18 @@ class UltimateDarkTower {
         // PRIMARY CHECK: Battery heartbeat monitoring (most reliable)
         // Tower sends battery status every ~200ms, so if we haven't received one in 3+ seconds,
         // the tower is likely disconnected (probably due to battery depletion)
+        // Exception: During calibration, use longer timeout as tower doesn't send battery updates
         if (this.enableBatteryHeartbeatMonitoring) {
             const timeSinceLastBatteryHeartbeat = Date.now() - this.lastBatteryHeartbeat;
-            if (timeSinceLastBatteryHeartbeat > this.batteryHeartbeatTimeout) {
-                console.log(`[UDT] Battery heartbeat timeout detected - no battery status received in ${timeSinceLastBatteryHeartbeat}ms (expected every ~200ms)`);
+            const timeoutThreshold = this.performingCalibration ? this.calibrationHeartbeatTimeout : this.batteryHeartbeatTimeout;
+            if (timeSinceLastBatteryHeartbeat > timeoutThreshold) {
+                const operationContext = this.performingCalibration ? ' during calibration' : '';
+                console.log(`[UDT] Battery heartbeat timeout detected${operationContext} - no battery status received in ${timeSinceLastBatteryHeartbeat}ms (expected every ~200ms)`);
+                // During calibration, battery heartbeat timeouts are expected behavior, not actual disconnects
+                if (this.performingCalibration) {
+                    console.log('[UDT] Ignoring battery heartbeat timeout during calibration - this is expected behavior');
+                    return;
+                }
                 console.log('[UDT] Tower possibly disconnected due to battery depletion or power loss');
                 this.handleDisconnection();
                 return;
@@ -481,7 +493,6 @@ class UltimateDarkTower {
             console.log('[UDT] command send error:', error);
             const errorMsg = (_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : new String(error);
             const wasCancelled = errorMsg.includes('User cancelled');
-            const alreadyInProgress = errorMsg.includes('already in progress');
             const maxRetriesReached = this.retrySendCommandCount >= this.retrySendCommandMax;
             // Check for disconnect indicators
             const isDisconnected = errorMsg.includes('Cannot read properties of null') ||
@@ -541,7 +552,6 @@ class UltimateDarkTower {
             case constants_1.TC.DIFFERENTIAL:
             case constants_1.TC.CALIBRATION:
                 return [towerCommand.name, this.commandToPacketString(command)];
-                break;
             case constants_1.TC.BATTERY:
                 const millivolts = this.getMilliVoltsFromTowerReponse(command);
                 const retval = [towerCommand.name, this.millVoltsToPercentage(millivolts)];
@@ -550,10 +560,8 @@ class UltimateDarkTower {
                     retval.push(this.commandToPacketString(command));
                 }
                 return retval;
-                break;
             default:
                 return ["Unmapped Response!", this.commandToPacketString(command)];
-                break;
         }
     }
     commandToPacketString(command) {

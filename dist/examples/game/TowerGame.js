@@ -247,6 +247,8 @@
       // Last time we received a battery status
       this.batteryHeartbeatTimeout = 3 * 1e3;
       // 3 seconds without battery = likely disconnected (normal is ~200ms)
+      this.calibrationHeartbeatTimeout = 30 * 1e3;
+      // 30 seconds during calibration (calibration blocks battery responses)
       this.enableBatteryHeartbeatMonitoring = true;
       // call back functions
       // you overwrite these with your own functions 
@@ -550,6 +552,7 @@
       if (this.performingCalibration) {
         this.performingCalibration = false;
         this.isCalibrated = true;
+        this.lastBatteryHeartbeat = Date.now();
         this.onCalibrationComplete();
         console.log("[UDT] Tower calibration complete");
       }
@@ -627,8 +630,14 @@
       }
       if (this.enableBatteryHeartbeatMonitoring) {
         const timeSinceLastBatteryHeartbeat = Date.now() - this.lastBatteryHeartbeat;
-        if (timeSinceLastBatteryHeartbeat > this.batteryHeartbeatTimeout) {
-          console.log(`[UDT] Battery heartbeat timeout detected - no battery status received in ${timeSinceLastBatteryHeartbeat}ms (expected every ~200ms)`);
+        const timeoutThreshold = this.performingCalibration ? this.calibrationHeartbeatTimeout : this.batteryHeartbeatTimeout;
+        if (timeSinceLastBatteryHeartbeat > timeoutThreshold) {
+          const operationContext = this.performingCalibration ? " during calibration" : "";
+          console.log(`[UDT] Battery heartbeat timeout detected${operationContext} - no battery status received in ${timeSinceLastBatteryHeartbeat}ms (expected every ~200ms)`);
+          if (this.performingCalibration) {
+            console.log("[UDT] Ignoring battery heartbeat timeout during calibration - this is expected behavior");
+            return;
+          }
           console.log("[UDT] Tower possibly disconnected due to battery depletion or power loss");
           this.handleDisconnection();
           return;
@@ -662,7 +671,6 @@
         console.log("[UDT] command send error:", error);
         const errorMsg = (_a = error == null ? void 0 : error.message) != null ? _a : new String(error);
         const wasCancelled = errorMsg.includes("User cancelled");
-        const alreadyInProgress = errorMsg.includes("already in progress");
         const maxRetriesReached = this.retrySendCommandCount >= this.retrySendCommandMax;
         const isDisconnected = errorMsg.includes("Cannot read properties of null") || errorMsg.includes("GATT Server is disconnected") || errorMsg.includes("Device is not connected") || !((_c = (_b = this.TowerDevice) == null ? void 0 : _b.gatt) == null ? void 0 : _c.connected);
         if (isDisconnected) {
@@ -716,7 +724,6 @@
         case TC.DIFFERENTIAL:
         case TC.CALIBRATION:
           return [towerCommand.name, this.commandToPacketString(command)];
-          break;
         case TC.BATTERY:
           const millivolts = this.getMilliVoltsFromTowerReponse(command);
           const retval = [towerCommand.name, this.millVoltsToPercentage(millivolts)];
@@ -725,10 +732,8 @@
             retval.push(this.commandToPacketString(command));
           }
           return retval;
-          break;
         default:
           return ["Unmapped Response!", this.commandToPacketString(command)];
-          break;
       }
     }
     commandToPacketString(command) {

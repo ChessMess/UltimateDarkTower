@@ -48,6 +48,7 @@ declare class UltimateDarkTower {
     enableConnectionMonitoring: boolean;
     lastBatteryHeartbeat: number;
     batteryHeartbeatTimeout: number;
+    calibrationHeartbeatTimeout: number;
     enableBatteryHeartbeatMonitoring: boolean;
     onCalibrationComplete: () => void;
     onSkullDrop: (towerSkullCount: number) => void;
