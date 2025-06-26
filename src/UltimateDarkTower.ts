@@ -72,6 +72,7 @@ class UltimateDarkTower {
   isConnected: boolean = false;
   towerSkullDropCount: number = -1;
   performingCalibration: boolean = false;
+  performingLongCommand: boolean = false;
   lastBatteryNotification: number = 0;
   lastBatteryPercentage: string;
 
@@ -85,7 +86,7 @@ class UltimateDarkTower {
   // battery-based heartbeat detection
   lastBatteryHeartbeat: number = 0; // Last time we received a battery status
   batteryHeartbeatTimeout: number = 3 * 1000; // 3 seconds without battery = likely disconnected (normal is ~200ms)
-  calibrationHeartbeatTimeout: number = 30 * 1000; // 30 seconds during calibration (calibration blocks battery responses)
+  longTowerCommandTimeout: number = 30 * 1000; // 30 seconds during long operations (calibration/rotation blocks battery responses)
   enableBatteryHeartbeatMonitoring: boolean = true;
 
   // call back functions
@@ -136,6 +137,7 @@ class UltimateDarkTower {
 
       // flag to look for calibration complete tower response
       this.performingCalibration = true;
+      this.performingLongCommand = true;
       return;
     }
 
@@ -212,7 +214,18 @@ class UltimateDarkTower {
     }
 
     this.logger.info('Sending rotate command' + (soundIndex ? ' with sound' : ''), '[UDT]');
+
+    // Flag that we're performing a long command 
+    // drum rotation can exceed battery heartbeat check default
+    this.performingLongCommand = true;
     await this.sendTowerCommand(rotateCommand);
+
+    // Reset the long command flag after a delay to allow for rotation completion
+    // Drum rotation time varies based on number of drums moved
+    setTimeout(() => {
+      this.performingLongCommand = false;
+      this.lastBatteryHeartbeat = Date.now(); // Reset heartbeat timer
+    }, this.longTowerCommandTimeout);
 
     // saving drum positions
     this.currentDrumPositions = {
@@ -345,17 +358,17 @@ class UltimateDarkTower {
   async randomRotateLevels(level: number = 0) {
     // 0 = all, 1 = top, 2 = middle, 3 = bottom
     // 4 = top & middle, 5 = top & bottom, 6 = middle & bottom
-    
+
     const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
     const getRandomSide = (): TowerSide => sides[Math.floor(Math.random() * sides.length)];
-    
+
     // Current positions to preserve unchanged levels
     const currentTop = this.getCurrentDrumPosition('top');
     const currentMiddle = this.getCurrentDrumPosition('middle');
     const currentBottom = this.getCurrentDrumPosition('bottom');
-    
+
     let topSide: TowerSide, middleSide: TowerSide, bottomSide: TowerSide;
-    
+
     switch (level) {
       case 0: // all levels
         topSide = getRandomSide();
@@ -396,11 +409,11 @@ class UltimateDarkTower {
         this.logger.error('Invalid level parameter for randomRotateLevels. Must be 0-6.', '[UDT]');
         return;
     }
-    
+
     this.logger.info(`Random rotating levels to: top:${topSide}, middle:${middleSide}, bottom:${bottomSide}`, '[UDT]');
     await this.Rotate(topSide, middleSide, bottomSide);
   }
-  
+
   /**
    * Gets the current position of a specific drum level.
    * @param {('top' | 'middle' | 'bottom')} level - The drum level to get position for
@@ -409,12 +422,12 @@ class UltimateDarkTower {
    */
   private getCurrentDrumPosition(level: 'top' | 'middle' | 'bottom'): TowerSide {
     const drumPositions = drumPositionCmds[level];
-    const currentValue = level === 'bottom' 
+    const currentValue = level === 'bottom'
       ? this.currentDrumPositions.bottom
-      : (level === 'top' 
+      : (level === 'top'
         ? (this.currentDrumPositions.topMiddle & 0b00010110) // top bits
         : (this.currentDrumPositions.topMiddle & 0b11000000)); // middle bits
-    
+
     // Find matching side for current drum position
     for (const [side, value] of Object.entries(drumPositions)) {
       if (level === 'middle') {
@@ -434,7 +447,7 @@ class UltimateDarkTower {
         }
       }
     }
-    
+
     // Default to north if no match found
     return 'north';
   }
@@ -570,10 +583,13 @@ class UltimateDarkTower {
     // check to see if the response for a calibration request
     if (this.performingCalibration) {
       this.performingCalibration = false;
+      this.performingLongCommand = false;
       this.isCalibrated = true;
-      // Reset battery heartbeat timer since calibration blocks battery updates
-      // and it may take time for them to resume
+
+      // Reset battery heartbeat timer since long tower command blocks 
+      // battery updates and it may take time for them to resume
       this.lastBatteryHeartbeat = Date.now();
+
       this.onCalibrationComplete();
       this.logger.info('Tower calibration complete', '[UDT]');
     }
@@ -674,6 +690,7 @@ class UltimateDarkTower {
     this.isConnected = false;
     this.isCalibrated = false;
     this.performingCalibration = false;
+    this.performingLongCommand = false;
     this.stopConnectionMonitoring();
 
     // Reset heartbeat tracking
@@ -731,18 +748,19 @@ class UltimateDarkTower {
     // PRIMARY CHECK: Battery heartbeat monitoring (most reliable)
     // Tower sends battery status every ~200ms, so if we haven't received one in 3+ seconds,
     // the tower is likely disconnected (probably due to battery depletion)
-    // Exception: During calibration, use longer timeout as tower doesn't send battery updates
+    // Exception: No hearbeat is sent when the tower performs commands. Long commands such as 
+    // calibration or drum rotations could exceed the default timeout.
     if (this.enableBatteryHeartbeatMonitoring) {
       const timeSinceLastBatteryHeartbeat = Date.now() - this.lastBatteryHeartbeat;
-      const timeoutThreshold = this.performingCalibration ? this.calibrationHeartbeatTimeout : this.batteryHeartbeatTimeout;
+      const timeoutThreshold = this.performingLongCommand ? this.longTowerCommandTimeout : this.batteryHeartbeatTimeout;
 
       if (timeSinceLastBatteryHeartbeat > timeoutThreshold) {
-        const operationContext = this.performingCalibration ? ' during calibration' : '';
+        const operationContext = this.performingLongCommand ? ' during long command operation' : '';
         this.logger.warn(`Battery heartbeat timeout detected${operationContext} - no battery status received in ${timeSinceLastBatteryHeartbeat}ms (expected every ~200ms)`, '[UDT]');
 
-        // During calibration, battery heartbeat timeouts are expected behavior, not actual disconnects
-        if (this.performingCalibration) {
-          this.logger.info('Ignoring battery heartbeat timeout during calibration - this is expected behavior', '[UDT]');
+        // During long commands, battery heartbeat timeouts are expected behavior, not actual disconnects
+        if (this.performingLongCommand) {
+          this.logger.info('Ignoring battery heartbeat timeout during long command - this is expected behavior', '[UDT]');
           return;
         }
 
