@@ -293,11 +293,9 @@
         </fieldset>
         <fieldset class="fieldset-container" style="max-width: 800px; margin: 20px auto;">
           <legend>Drums</legend>
-          <div style=" display: flex; padding: 0px 0px 20px; align-items: baseline; flex-wrap: nowrap; justify-content:
-          space-evenly;">
-
-            <div style="display:flex; flex-direction: column; ">
-              Top:
+          <div style="display: flex; padding: 8px 10px; align-items: center; justify-content: space-evenly; gap: 20px;">
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <label style="margin-bottom: 4px; font-weight: bold;">Top:</label>
               <select id="top">
                 <option value="north">North</option>
                 <option value="south">South</option>
@@ -305,9 +303,8 @@
                 <option value="west">West</option>
               </select>
             </div>
-
-            <div style="display:flex; flex-direction: column; ">
-              Middle:
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <label style="margin-bottom: 4px; font-weight: bold;">Middle:</label>
               <select id="middle">
                 <option value="north">North</option>
                 <option value="south">South</option>
@@ -315,9 +312,8 @@
                 <option value="west">West</option>
               </select>
             </div>
-
-            <div style="display:flex; flex-direction: column; ">
-              Bottom:
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <label style="margin-bottom: 4px; font-weight: bold;">Bottom:</label>
               <select id="bottom">
                 <option value="north">North</option>
                 <option value="south">South</option>
@@ -325,12 +321,9 @@
                 <option value="west">West</option>
               </select>
             </div>
-
           </div>
-          <div style="text-align: center; margin: 20px 0;">
-            <button id="rotateButton" onclick="rotate()">
-              Rotate
-            </button>
+          <div style="text-align: center; padding: 8px 0;">
+            <button id="rotateButton" onclick="rotate()" style="padding: 8px 16px;">Rotate</button>
           </div>
         </fieldset>
         <fieldset class="fieldset-container" style="max-width: 800px; margin: 20px auto;">
