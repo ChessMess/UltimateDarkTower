@@ -4,34 +4,61 @@ The Ultimate Dark Tower library is a JavaScript/TypeScript library that you can 
 
 ## Table of Contents
 
-- [Installation](#installation)
-- [Usage](#usage)
-  - [JavaScript/ES6](#javascriptes6)
-  - [TypeScript](#typescript)
-- [Web Application Examples](#web-application-examples)
-- [Disconnect Detection & Handling](#disconnect-detection--handling)
-  - [How Disconnects Are Detected](#how-disconnects-are-detected)
-  - [Handling Disconnects in Your App](#handling-disconnects-in-your-app)
-  - [Configuration Options](#configuration-options)
-  - [Common Disconnect Scenarios](#common-disconnect-scenarios)
-  - [Best Practices](#best-practices)
-  - [Example: Robust Connection Management](#example-robust-connection-management)
-- [API Reference](#api-reference)
-  - [Core Methods](#core-methods)
-  - [Properties](#properties)
-  - [Event Callbacks](#event-callbacks)
-  - [Types](#types)
-- [Performance Considerations](#performance-considerations)
-  - [Command Rate Limiting](#command-rate-limiting)
-  - [Battery Monitoring](#battery-monitoring)
-- [Browser Support](#browser-support)
-- [Development Scripts](#development-scripts)
-  - [Building](#building)
-  - [Testing](#testing)
-  - [Code Quality](#code-quality)
-  - [Publishing](#publishing)
-- [Known Issues](#known-issues)
-- [Community](#community)
+-   [UltimateDarkTower - BETA](#ultimatedarktower---beta)
+    -   [Table of Contents](#table-of-contents)
+    -   [Installation](#installation)
+    -   [Usage](#usage)
+        -   [JavaScript/ES6](#javascriptes6)
+        -   [TypeScript](#typescript)
+    -   [Disconnect Detection \& Handling](#disconnect-detection--handling)
+        -   [How Disconnects Are Detected](#how-disconnects-are-detected)
+            -   [1. Battery Heartbeat Monitoring (Primary Method)](#1-battery-heartbeat-monitoring-primary-method)
+            -   [2. GATT Server Disconnect Events](#2-gatt-server-disconnect-events)
+            -   [3. Command Response Timeout](#3-command-response-timeout)
+            -   [4. Bluetooth Availability Monitoring](#4-bluetooth-availability-monitoring)
+        -   [Handling Disconnects in Your App](#handling-disconnects-in-your-app)
+        -   [Configuration Options](#configuration-options)
+            -   [Configure Connection Monitoring](#configure-connection-monitoring)
+            -   [Check Connection Status](#check-connection-status)
+        -   [Common Disconnect Scenarios](#common-disconnect-scenarios)
+        -   [Best Practices](#best-practices)
+        -   [Example: Robust Connection Management](#example-robust-connection-management)
+    -   [Development Scripts](#development-scripts)
+        -   [Building](#building)
+        -   [Testing](#testing)
+        -   [Code Quality](#code-quality)
+        -   [Publishing](#publishing)
+    -   [Web Application Examples](#web-application-examples)
+    -   [API Reference](#api-reference)
+        -   [Core Methods](#core-methods)
+            -   [Connection Management](#connection-management)
+            -   [Tower Control](#tower-control)
+            -   [Monitoring Configuration](#monitoring-configuration)
+            -   [Logging System](#logging-system)
+        -   [Properties](#properties)
+            -   [Connection State](#connection-state)
+            -   [Configuration](#configuration)
+        -   [Event Callbacks](#event-callbacks)
+        -   [Types](#types)
+    -   [Logging System](#logging-system-1)
+        -   [Basic Usage](#basic-usage)
+        -   [TypeScript Usage](#typescript-usage)
+        -   [Log Levels](#log-levels)
+        -   [Output Destinations](#output-destinations)
+            -   [Console Output (Default)](#console-output-default)
+            -   [DOM Output](#dom-output)
+            -   [Custom Output](#custom-output)
+        -   [Advanced Configuration](#advanced-configuration)
+            -   [Multiple Outputs](#multiple-outputs)
+            -   [Context-Aware Logging](#context-aware-logging)
+        -   [DOM Output Styling](#dom-output-styling)
+        -   [Best Practices](#best-practices-1)
+    -   [Performance Considerations](#performance-considerations)
+        -   [Command Rate Limiting](#command-rate-limiting)
+        -   [Battery Monitoring](#battery-monitoring)
+    -   [Browser Support](#browser-support)
+    -   [Known Issues:](#known-issues)
+    -   [Community](#community)
 
 ## Installation
 
@@ -51,19 +78,19 @@ const tower = new UltimateDarkTower();
 try {
     // Connect to the tower
     await tower.connect();
-    
+
     // Calibrate the tower
     await tower.calibrate();
-    
+
     // Play a sound
     await tower.playSound(1);
-    
+
     // Rotate the tower
     await tower.rotate("north", "south", "east");
-    
+
     // Randomly rotate all levels
     await tower.randomRotateLevels(0);
-    
+
     // Randomly rotate only the top level
     await tower.randomRotateLevels(1);
 } catch (error) {
@@ -84,22 +111,22 @@ const tower = new UltimateDarkTower();
 try {
     // Connect to the tower
     await tower.connect();
-    
+
     // Calibrate the tower
     await tower.calibrate();
-    
+
     // Control lights with type safety
     const lights: Lights = {
         doorway: [{ position: "north", level: "top", style: "on" }],
     };
     await tower.lights(lights);
-    
+
     // Rotate with type safety
     const top: TowerSide = "north";
     const middle: TowerSide = "south";
     const bottom: TowerSide = "east";
     await tower.rotate(top, middle, bottom);
-    
+
     // Randomly rotate levels (parameter is optional, defaults to 0 for all levels)
     await tower.randomRotateLevels(); // All levels
     await tower.randomRotateLevels(4); // Top & middle only
@@ -342,54 +369,257 @@ https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055
 ### Core Methods
 
 #### Connection Management
-- `connect()` - Connect to the tower device via Bluetooth
-- `disconnect()` - Manually disconnect from the tower
-- `cleanup()` - Clean up resources and disconnect properly
-- `isConnectedAndResponsive()` - Test if tower is connected and responsive
+
+-   `connect()` - Connect to the tower device via Bluetooth
+-   `disconnect()` - Manually disconnect from the tower
+-   `cleanup()` - Clean up resources and disconnect properly
+-   `isConnectedAndResponsive()` - Test if tower is connected and responsive
 
 #### Tower Control
-- `calibrate()` - Calibrate the tower (required after connection)
-- `playSound(soundIndex: number)` - Play a sound by index (1-based)
-- `lights(lights: Lights)` - Control tower lights
-- `lightOverrides(light: number, soundIndex?: number)` - Override light patterns
-- `rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number)` - Rotate tower sections
-- `randomRotateLevels(level?: number)` - Randomly rotate drum levels (0=all, 1=top, 2=middle, 3=bottom, 4=top&middle, 5=top&bottom, 6=middle&bottom)
-- `breakSeal(seal: Array<number> | number)` - Break game seals with lights and sound effects (seals 1-12)
-- `resetTowerSkullCount()` - Reset the skull drop counter
+
+-   `calibrate()` - Calibrate the tower (required after connection)
+-   `playSound(soundIndex: number)` - Play a sound by index (1-based)
+-   `lights(lights: Lights)` - Control tower lights
+-   `lightOverrides(light: number, soundIndex?: number)` - Override light patterns
+-   `rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number)` - Rotate tower sections
+-   `randomRotateLevels(level?: number)` - Randomly rotate drum levels (0=all, 1=top, 2=middle, 3=bottom, 4=top&middle, 5=top&bottom, 6=middle&bottom)
+-   `breakSeal(seal: Array<number> | number)` - Break game seals with lights and sound effects (seals 1-12)
+-   `resetTowerSkullCount()` - Reset the skull drop counter
 
 #### Monitoring Configuration
-- `setConnectionMonitoring(enabled: boolean)` - Enable/disable connection monitoring
-- `configureConnectionMonitoring(frequency?: number, timeout?: number)` - Configure monitoring parameters
-- `configureBatteryHeartbeatMonitoring(enabled?: boolean, timeout?: number)` - Configure battery heartbeat detection
-- `getConnectionStatus()` - Get detailed connection status
+
+-   `setConnectionMonitoring(enabled: boolean)` - Enable/disable connection monitoring
+-   `configureConnectionMonitoring(frequency?: number, timeout?: number)` - Configure monitoring parameters
+-   `configureBatteryHeartbeatMonitoring(enabled?: boolean, timeout?: number)` - Configure battery heartbeat detection
+-   `getConnectionStatus()` - Get detailed connection status
+
+#### Logging System
+
+-   `Logger.getInstance()` - Get the singleton logger instance
+-   `logger.debug(message: string, context?: string)` - Log debug messages
+-   `logger.info(message: string, context?: string)` - Log informational messages
+-   `logger.warn(message: string, context?: string)` - Log warning messages
+-   `logger.error(message: string, context?: string)` - Log error messages
+-   `logger.setMinLevel(level: LogLevel)` - Set minimum logging level
+-   `logger.addOutput(output: LogOutput)` - Add custom output destination
 
 ### Properties
 
 #### Connection State
-- `isConnected: boolean` - Current connection status
-- `isCalibrated: boolean` - Whether tower has been calibrated
-- `towerSkullDropCount: number` - Current skull count from tower
+
+-   `isConnected: boolean` - Current connection status
+-   `isCalibrated: boolean` - Whether tower has been calibrated
+-   `towerSkullDropCount: number` - Current skull count from tower
 
 #### Configuration
-- `batteryNotifyFrequency: number` - Battery notification throttling (default: 15000ms)
-- `batteryNotifyOnValueChangeOnly: boolean` - Only notify on battery level changes
-- `logDetail: boolean` - Enable detailed logging
-- `logTowerResponses: boolean` - Log tower responses
+
+-   `batteryNotifyFrequency: number` - Battery notification throttling (default: 15000ms)
+-   `batteryNotifyOnValueChangeOnly: boolean` - Only notify on battery level changes
+-   `logDetail: boolean` - Enable detailed logging
+-   `logTowerResponses: boolean` - Log tower responses
 
 ### Event Callbacks
 
 Override these methods to handle tower events:
 
-- `onCalibrationComplete()` - Called when calibration finishes
-- `onSkullDrop(count: number)` - Called when skull is dropped
-- `onBatteryLevelNotify(millivolts: number)` - Called for battery updates
-- `onTowerConnect()` - Called when tower connects
-- `onTowerDisconnect()` - Called when tower disconnects
+-   `onCalibrationComplete()` - Called when calibration finishes
+-   `onSkullDrop(count: number)` - Called when skull is dropped
+-   `onBatteryLevelNotify(millivolts: number)` - Called for battery updates
+-   `onTowerConnect()` - Called when tower connects
+-   `onTowerDisconnect()` - Called when tower disconnects
 
 ### Types
 
-- `TowerSide` - Tower rotation positions: "north" | "south" | "east" | "west"
-- `Lights` - Light configuration object with doorway, ledge, and base properties
+-   `TowerSide` - Tower rotation positions: "north" | "south" | "east" | "west"
+-   `Lights` - Light configuration object with doorway, ledge, and base properties
+-   `LogLevel` - Log level types: "all" | "debug" | "info" | "warn" | "error"
+-   `LogOutput` - Interface for custom log output implementations
+
+## Logging System
+
+The UltimateDarkTower library includes a comprehensive logging system that supports multiple output destinations and configurable log levels.
+
+### Basic Usage
+
+```javascript
+import { logger } from "ultimatedarktower";
+
+// Basic logging
+logger.debug("Debug message");
+logger.info("Information message");
+logger.warn("Warning message");
+logger.error("Error message");
+
+// Logging with context
+logger.info("Tower connected", "CONNECTION");
+logger.error("Calibration failed", "TOWER");
+```
+
+### TypeScript Usage
+
+```typescript
+import { logger, Logger, LogLevel, LogOutput } from "ultimatedarktower";
+
+// Set log level
+const level: LogLevel = "info";
+logger.setMinLevel(level);
+
+// Create custom logger instance
+const customLogger = new Logger();
+customLogger.setMinLevel("debug");
+```
+
+### Log Levels
+
+Log levels determine which messages are output based on severity:
+
+-   `"all"` - Shows all log messages (default)
+-   `"debug"` - Shows debug, info, warn, and error messages
+-   `"info"` - Shows info, warn, and error messages
+-   `"warn"` - Shows warn and error messages only
+-   `"error"` - Shows error messages only
+
+```javascript
+// Set minimum log level
+logger.setMinLevel("info"); // Only info, warn, and error messages will be shown
+```
+
+### Output Destinations
+
+#### Console Output (Default)
+
+By default, the logger outputs to the browser console:
+
+```javascript
+logger.info("This goes to console.info()");
+logger.error("This goes to console.error()");
+```
+
+#### DOM Output
+
+Log messages can be displayed in a DOM element:
+
+```javascript
+import { DOMOutput } from "ultimatedarktower";
+
+// Create DOM output (assumes you have a div with id="log-container")
+const domOutput = new DOMOutput("log-container", 50); // Max 50 lines
+logger.addOutput(domOutput);
+
+logger.info("This message appears in both console and DOM");
+```
+
+#### Custom Output
+
+Create custom output destinations by implementing the `LogOutput` interface:
+
+```javascript
+class FileOutput {
+    constructor(filename) {
+        this.filename = filename;
+        this.logs = [];
+    }
+
+    write(level, message, timestamp) {
+        const logEntry = {
+            level,
+            message,
+            timestamp: timestamp.toISOString(),
+        };
+        this.logs.push(logEntry);
+
+        // In a real implementation, you might save to local storage
+        // or send to a server
+        localStorage.setItem(this.filename, JSON.stringify(this.logs));
+    }
+}
+
+// Add custom output
+const fileOutput = new FileOutput("tower-logs.json");
+logger.addOutput(fileOutput);
+```
+
+### Advanced Configuration
+
+#### Multiple Outputs
+
+```javascript
+import { logger, ConsoleOutput, DOMOutput } from "ultimatedarktower";
+
+// Clear default outputs and add custom ones
+const customLogger = new Logger();
+customLogger.addOutput(new ConsoleOutput());
+customLogger.addOutput(new DOMOutput("debug-panel", 100));
+customLogger.addOutput(new FileOutput("app-logs.json"));
+```
+
+#### Context-Aware Logging
+
+Use context parameters to organize log messages:
+
+```javascript
+// Tower operations
+logger.info("Starting calibration", "TOWER");
+logger.debug("Rotation command sent", "TOWER");
+logger.error("Connection lost", "BLUETOOTH");
+
+// Application flow
+logger.info("User clicked connect button", "UI");
+logger.debug("Processing user input", "GAME");
+```
+
+### DOM Output Styling
+
+When using `DOMOutput`, you can style log messages with CSS:
+
+```css
+.log-line {
+    padding: 4px 8px;
+    font-family: monospace;
+    font-size: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.log-debug {
+    color: #666;
+}
+.log-info {
+    color: #0066cc;
+}
+.log-warn {
+    color: #ff9900;
+    background-color: #fff3cd;
+}
+.log-error {
+    color: #cc0000;
+    background-color: #f8d7da;
+}
+```
+
+### Best Practices
+
+1. **Use Appropriate Levels**: Reserve `error` for actual errors, `warn` for potential issues, `info` for important events, and `debug` for detailed diagnostics.
+
+2. **Add Context**: Use the context parameter to categorize messages:
+
+    ```javascript
+    logger.info("Battery level: 85%", "BATTERY");
+    logger.debug("Command response received", "BLUETOOTH");
+    ```
+
+3. **Configure for Environment**: Set different log levels for development vs production:
+
+    ```javascript
+    const isDevelopment = process.env.NODE_ENV === "development";
+    logger.setMinLevel(isDevelopment ? "debug" : "warn");
+    ```
+
+4. **Handle Output Errors**: The logger automatically catches and handles output errors to prevent crashes.
+
+5. **Use Singleton Pattern**: Import the pre-configured logger instance for consistency across your application:
+    ```javascript
+    import { logger } from "ultimatedarktower";
+    ```
 
 ## Performance Considerations
 
@@ -398,23 +628,25 @@ Override these methods to handle tower events:
 The tower has limitations on how quickly it can process commands. Sending commands too rapidly can cause the tower to disconnect or become unresponsive.
 
 **Best Practices:**
-- Allow time between commands (recommended: 200-500ms minimum)
-- Wait for calibration to complete before sending other commands
-- Monitor connection status when sending multiple commands
-- Use the disconnect detection features to handle connection issues
+
+-   Allow time between commands (recommended: 200-500ms minimum)
+-   Wait for calibration to complete before sending other commands
+-   Monitor connection status when sending multiple commands
+-   Use the disconnect detection features to handle connection issues
 
 **Example: Proper Command Timing**
+
 ```javascript
 // Good: Allow time between commands
 await tower.playSound(1);
-await new Promise(resolve => setTimeout(resolve, 500));
+await new Promise((resolve) => setTimeout(resolve, 500));
 await tower.rotate("north", "south", "east");
 
 // Better: Check connection status
 if (tower.isConnected) {
     await tower.playSound(1);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     if (tower.isConnected) {
         await tower.rotate("north", "south", "east");
     }
@@ -425,19 +657,19 @@ if (tower.isConnected) {
 
 The tower's battery level affects performance and connection stability:
 
-- Low battery can cause unexpected disconnections
-- Monitor battery levels using `onBatteryLevelNotify`
-- Consider warning users when battery is below 20%
-- Battery heartbeat monitoring is most reliable for detecting power issues
+-   Low battery can cause unexpected disconnections
+-   Monitor battery levels using `onBatteryLevelNotify`
+-   Consider warning users when battery is below 20%
+-   Battery heartbeat monitoring is most reliable for detecting power issues
 
 ## Browser Support
 
 Web Bluetooth is required for this library to function. Supported browsers include:
 
-- Chrome (desktop and Android)
-- Microsoft Edge
-- Samsung Internet
-- [Full compatibility list](https://caniuse.com/?search=web%20bluetooth)
+-   Chrome (desktop and Android)
+-   Microsoft Edge
+-   Samsung Internet
+-   [Full compatibility list](https://caniuse.com/?search=web%20bluetooth)
 
 **iOS Support:** Use the Bluefy app - [App Store](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)
 
