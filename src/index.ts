@@ -5,6 +5,7 @@
 
 export { default as UltimateDarkTower } from './UltimateDarkTower';
 export * from './constants';
+export { logger, Logger, ConsoleOutput, DOMOutput, type LogLevel, type LogOutput } from './Logger';
 
 // For convenience, also export as default
 import UltimateDarkTower from './UltimateDarkTower';

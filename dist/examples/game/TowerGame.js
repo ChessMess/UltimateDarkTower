@@ -213,6 +213,84 @@
     // There's an additional 5% until 800mV is reached
   ];
 
+  // src/Logger.ts
+  var ConsoleOutput = class {
+    write(level, message, timestamp) {
+      switch (level) {
+        case "debug":
+          console.debug(message);
+          break;
+        case "info":
+          console.info(message);
+          break;
+        case "warn":
+          console.warn(message);
+          break;
+        case "error":
+          console.error(message);
+          break;
+      }
+    }
+  };
+  var _Logger = class _Logger {
+    constructor() {
+      this.outputs = [];
+      this.minLevel = "all";
+      this.outputs.push(new ConsoleOutput());
+    }
+    static getInstance() {
+      if (!_Logger.instance) {
+        _Logger.instance = new _Logger();
+      }
+      return _Logger.instance;
+    }
+    addOutput(output) {
+      this.outputs.push(output);
+    }
+    setMinLevel(level) {
+      this.minLevel = level;
+    }
+    shouldLog(level) {
+      if (this.minLevel === "all")
+        return true;
+      if (level === "all")
+        return true;
+      const levels = ["debug", "info", "warn", "error"];
+      const minIndex = levels.indexOf(this.minLevel);
+      const currentIndex = levels.indexOf(level);
+      return currentIndex >= minIndex;
+    }
+    log(level, message, context) {
+      if (!this.shouldLog(level))
+        return;
+      const contextPrefix = context ? `${context} ` : "";
+      const finalMessage = `${contextPrefix}${message}`;
+      const timestamp = /* @__PURE__ */ new Date();
+      this.outputs.forEach((output) => {
+        try {
+          output.write(level, finalMessage, timestamp);
+        } catch (error) {
+          console.error("Logger output error:", error);
+        }
+      });
+    }
+    debug(message, context) {
+      this.log("debug", message, context);
+    }
+    info(message, context) {
+      this.log("info", message, context);
+    }
+    warn(message, context) {
+      this.log("warn", message, context);
+    }
+    error(message, context) {
+      this.log("error", message, context);
+    }
+  };
+  _Logger.instance = null;
+  var Logger = _Logger;
+  var logger = Logger.getInstance();
+
   // src/UltimateDarkTower.ts
   var UltimateDarkTower = class {
     constructor() {
@@ -282,7 +360,11 @@
         LOG_ALL: false
         // overrides individual
       };
-      // handle tower response
+      /**
+       * Handles incoming data from the tower via Bluetooth characteristic notifications.
+       * Processes battery status, tower state responses, and other tower communications.
+       * @param {Event} event - Bluetooth characteristic value changed event
+       */
       this.onRxCharacteristicValueChanged = (event) => {
         this.lastSuccessfulCommand = Date.now();
         let receivedData = [];
@@ -307,26 +389,38 @@
           const batteryNotifyFrequencyPassed = Date.now() - this.lastBatteryNotification >= this.batteryNotifyFrequency;
           const shouldNotify = this.batteryNotifyOnValueChangeOnly ? didBatteryLevelChange : batteryNotifyFrequencyPassed;
           if (shouldNotify) {
-            console.log("[UDT] Tower response: ", ...this.commandToString(receivedData));
+            this.logger.info(`Tower response: ${this.commandToString(receivedData).join(" ")}`, "[UDT]");
             this.lastBatteryNotification = Date.now();
             this.lastBatteryPercentage = batteryPercentage;
             this.onBatteryLevelNotify(millivolts);
           }
         }
       };
+      /**
+       * Handles Bluetooth availability changes and manages disconnection if Bluetooth becomes unavailable.
+       * @param {Event} event - Bluetooth availability change event
+       */
       this.bleAvailabilityChange = (event) => {
-        console.log("[UDT] Bluetooth availability changed", event);
+        this.logger.info("Bluetooth availability changed", "[UDT]");
         const availability = event.value;
         if (!availability && this.isConnected) {
-          console.log("[UDT] Bluetooth became unavailable - handling disconnection");
+          this.logger.warn("Bluetooth became unavailable - handling disconnection", "[UDT]");
           this.handleDisconnection();
         }
       };
-      // Handle device disconnection
+      /**
+       * Handles unexpected tower device disconnection events.
+       * @param {Event} event - GATT server disconnected event
+       */
       this.onTowerDeviceDisconnected = (event) => {
-        console.log("[UDT] Tower device disconnected unexpectedly");
+        this.logger.warn("Tower device disconnected unexpectedly", "[UDT]");
         this.handleDisconnection();
       };
+      /**
+       * Creates a light command packet from a lights configuration object.
+       * @param {Lights} lights - Light configuration specifying doorway, ledge, and base lights
+       * @returns {Uint8Array} Command packet for controlling tower lights
+       */
       this.createLightPacketCommand = (lights) => {
         let packetPos = null;
         const command = new Uint8Array(20);
@@ -350,65 +444,98 @@
         });
         return command;
       };
+      this.logger = new Logger();
+      this.logger.addOutput(new ConsoleOutput());
     }
     //#region Tower Commands 
+    /**
+     * Initiates tower calibration to determine the current position of all tower drums.
+     * This must be performed after connection before other tower operations.
+     * @returns {Promise<void>} Promise that resolves when calibration command is sent
+     */
     async calibrate() {
       if (!this.performingCalibration) {
-        console.log("[UDT] Performing Tower Calibration");
+        this.logger.info("Performing Tower Calibration", "[UDT]");
         await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]));
         this.performingCalibration = true;
         return;
       }
-      console.log("[UDT] Tower calibration requested when tower is already performing calibration");
+      this.logger.warn("Tower calibration requested when tower is already performing calibration", "[UDT]");
       return;
     }
-    //TODO: currently not working - investigating
-    async requestTowerState() {
-      console.log("[UDT] Requesting Tower State");
-      await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.towerState]));
-    }
+    /**
+     * Plays a sound from the tower's audio library.
+     * @param {number} soundIndex - Index of the sound to play (1-based, must be valid in TOWER_AUDIO_LIBRARY)
+     * @returns {Promise<void>} Promise that resolves when sound command is sent
+     */
     async playSound(soundIndex) {
       const invalidIndex = soundIndex === null || soundIndex > Object.keys(TOWER_AUDIO_LIBRARY).length || soundIndex <= 0;
       if (invalidIndex) {
-        console.log("[UDT] attempt to play invalid sound index", soundIndex);
+        this.logger.error(`attempt to play invalid sound index ${soundIndex}`, "[UDT]");
         return;
       }
       const soundCommand = this.createSoundCommand(soundIndex);
       this.updateCommandWithCurrentDrumPositions(soundCommand);
-      console.log("[UDT] Sending sound command");
+      this.logger.info("Sending sound command", "[UDT]");
       await this.sendTowerCommand(soundCommand);
     }
+    /**
+     * Controls the tower's LED lights including doorway, ledge, and base lights.
+     * @param {Lights} lights - Light configuration object specifying which lights to control and their effects
+     * @returns {Promise<void>} Promise that resolves when light command is sent
+     */
     async Lights(lights) {
       const lightCommand = this.createLightPacketCommand(lights);
       this.updateCommandWithCurrentDrumPositions(lightCommand);
-      this.logDetail && console.log("[UDT] Light Parameter", lights);
-      console.log("[UDT] Sending light command");
+      this.logDetail && this.logger.debug(`Light Parameter ${JSON.stringify(lights)}`, "[UDT]");
+      this.logger.info("Sending light command", "[UDT]");
       await this.sendTowerCommand(lightCommand);
     }
+    /**
+     * Sends a light override command to control specific light patterns.
+     * @param {number} light - Light override value to send
+     * @param {number} [soundIndex] - Optional sound to play with the light override
+     * @returns {Promise<void>} Promise that resolves when light override command is sent
+     */
     async lightOverrides(light, soundIndex) {
       const lightOverrideCommand = this.createLightOverrideCommand(light);
       this.updateCommandWithCurrentDrumPositions(lightOverrideCommand);
       if (soundIndex) {
         lightOverrideCommand[AUDIO_COMMAND_POS] = soundIndex;
       }
-      console.log("[UDT] Sending light override" + (soundIndex ? " with sound" : ""));
+      this.logger.info("Sending light override" + (soundIndex ? " with sound" : ""), "[UDT]");
       await this.sendTowerCommand(lightOverrideCommand);
     }
+    /**
+     * Rotates tower drums to specified positions.
+     * @param {TowerSide} top - Position for the top drum ('north', 'east', 'south', 'west')
+     * @param {TowerSide} middle - Position for the middle drum
+     * @param {TowerSide} bottom - Position for the bottom drum
+     * @param {number} [soundIndex] - Optional sound to play during rotation
+     * @returns {Promise<void>} Promise that resolves when rotate command is sent
+     */
     async Rotate(top, middle, bottom, soundIndex) {
-      this.logDetail && console.log(`[UDT] Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`);
+      this.logDetail && this.logger.debug(`Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`, "[UDT]");
       const rotateCommand = this.createRotateCommand(top, middle, bottom);
       if (soundIndex) {
         rotateCommand[AUDIO_COMMAND_POS] = soundIndex;
       }
-      console.log("[UDT] Sending rotate command" + (soundIndex ? " with sound" : ""));
+      this.logger.info("Sending rotate command" + (soundIndex ? " with sound" : ""), "[UDT]");
       await this.sendTowerCommand(rotateCommand);
       this.currentDrumPositions = {
         topMiddle: rotateCommand[DRUM_PACKETS.topMiddle],
         bottom: rotateCommand[DRUM_PACKETS.bottom]
       };
     }
+    /**
+     * Sends a combined command to rotate drums, control lights, and play sound simultaneously.
+     * @param {RotateCommand} [rotate] - Rotation configuration for tower drums
+     * @param {Lights} [lights] - Light configuration object
+     * @param {number} [soundIndex] - Optional sound to play with the multi-command
+     * @returns {Promise<void>} Promise that resolves when multi-command is sent
+     */
     async MultiCommand(rotate, lights, soundIndex) {
-      this.logDetail && console.log("[UDT] MultiCommand Parameters", rotate, lights, soundIndex);
+      this.logDetail && this.logger.debug(`MultiCommand Parameters ${JSON.stringify(rotate)} ${JSON.stringify(lights)} ${soundIndex}`, "[UDT]");
       let multiCmd = new Uint8Array(20);
       const rotateCmd = this.createRotateCommand(rotate.top, rotate.middle, rotate.bottom);
       const lightCmd = this.createLightPacketCommand(lights);
@@ -421,13 +548,22 @@
       }
       this.sendTowerCommand(multiCmd);
       const packetMsg = this.commandToPacketString(multiCmd);
-      console.log("[UDT] multiple command sent", packetMsg);
+      this.logger.info(`multiple command sent ${packetMsg}`, "[UDT]");
     }
+    /**
+     * Resets the tower's internal skull drop counter to zero.
+     * @returns {Promise<void>} Promise that resolves when reset command is sent
+     */
     async resetTowerSkullCount() {
-      console.log("[UDT] Tower skull count reset requested");
+      this.logger.info("Tower skull count reset requested", "[UDT]");
       await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.resetCounter]));
     }
     //#endregion
+    /**
+     * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
+     * @param {Array<number> | number} seal - Seal number(s) to break (1-12, where 1/5/8 are north positions)
+     * @returns {Promise<void>} Promise that resolves when seal break sequence is complete
+     */
     async breakSeal(seal) {
       const sealNumbers = Array.isArray(seal) ? seal : [seal];
       const SEAL_TO_SIDE = {
@@ -463,11 +599,11 @@
       };
       for (const sealNum of sealNumbers) {
         if (sealNum < 1 || sealNum > 12) {
-          console.log(`[UDT] Invalid seal number: ${sealNum}. Seals must be 1-12.`);
+          this.logger.error(`Invalid seal number: ${sealNum}. Seals must be 1-12.`, "[UDT]");
           return;
         }
       }
-      console.log("[UDT] Playing tower seal sound");
+      this.logger.info("Playing tower seal sound", "[UDT]");
       await this.playSound(TOWER_AUDIO_LIBRARY.TowerSeal.value);
       const sidesWithBrokenSeals = [...new Set(sealNumbers.map((sealNum) => SEAL_TO_SIDE[sealNum]))];
       const ledgeLights = [];
@@ -493,9 +629,14 @@
         ledge: uniqueLedgeLights,
         doorway: doorwayLights
       };
-      console.log(`[UDT] Breaking seal(s) ${sealNumbers.join(", ")} - lighting ledges and doorways with breath effect`);
+      this.logger.info(`Breaking seal(s) ${sealNumbers.join(", ")} - lighting ledges and doorways with breath effect`, "[UDT]");
       await this.Lights(lights);
     }
+    /**
+     * Randomly rotates specified tower levels to random positions.
+     * @param {number} [level=0] - Level configuration: 0=all, 1=top, 2=middle, 3=bottom, 4=top&middle, 5=top&bottom, 6=middle&bottom
+     * @returns {Promise<void>} Promise that resolves when rotation command is sent
+     */
     async randomRotateLevels(level = 0) {
       const sides = ["north", "east", "south", "west"];
       const getRandomSide = () => sides[Math.floor(Math.random() * sides.length)];
@@ -540,12 +681,18 @@
           bottomSide = getRandomSide();
           break;
         default:
-          console.log("[UDT] Invalid level parameter for randomRotateLevels. Must be 0-6.");
+          this.logger.error("Invalid level parameter for randomRotateLevels. Must be 0-6.", "[UDT]");
           return;
       }
-      console.log("[UDT] Random rotating levels to:", { top: topSide, middle: middleSide, bottom: bottomSide });
+      this.logger.info(`Random rotating levels to: top:${topSide}, middle:${middleSide}, bottom:${bottomSide}`, "[UDT]");
       await this.Rotate(topSide, middleSide, bottomSide);
     }
+    /**
+     * Gets the current position of a specific drum level.
+     * @param {('top' | 'middle' | 'bottom')} level - The drum level to get position for
+     * @returns {TowerSide} The current position of the specified drum level
+     * @private
+     */
     getCurrentDrumPosition(level) {
       const drumPositions = drumPositionCmds[level];
       const currentValue = level === "bottom" ? this.currentDrumPositions.bottom : level === "top" ? this.currentDrumPositions.topMiddle & 22 : this.currentDrumPositions.topMiddle & 192;
@@ -567,37 +714,42 @@
       return "north";
     }
     //#region bluetooth
+    /**
+     * Establishes a Bluetooth connection to the Dark Tower device.
+     * Initializes GATT services, characteristics, and starts connection monitoring.
+     * @returns {Promise<void>} Promise that resolves when connection is established
+     */
     async connect() {
-      console.log("[UDT] Looking for Tower...");
+      this.logger.info("Looking for Tower...", "[UDT]");
       try {
         this.TowerDevice = await navigator.bluetooth.requestDevice({
           filters: [{ namePrefix: TOWER_DEVICE_NAME }],
           optionalServices: [UART_SERVICE_UUID]
         });
         if (this.TowerDevice === null) {
-          console.log("[UDT] Tower not found");
+          this.logger.warn("Tower not found", "[UDT]");
           return;
         }
         navigator.bluetooth.addEventListener("availabilitychanged", this.bleAvailabilityChange);
-        console.log("[UDT] Connecting to Tower GATT Server...");
+        this.logger.info("Connecting to Tower GATT Server...", "[UDT]");
         const server = await this.TowerDevice.gatt.connect();
-        console.log("[UDT] Getting Tower Primary Service...");
+        this.logger.info("Getting Tower Primary Service...", "[UDT]");
         const service = await server.getPrimaryService(UART_SERVICE_UUID);
-        console.log("[UDT] Getting Tower Characteristics...");
+        this.logger.info("Getting Tower Characteristics...", "[UDT]");
         this.txCharacteristic = await service.getCharacteristic(
           UART_TX_CHARACTERISTIC_UUID
         );
         this.rxCharacteristic = await service.getCharacteristic(
           UART_RX_CHARACTERISTIC_UUID
         );
-        console.log("[UDT] Subscribing to Tower...");
+        this.logger.info("Subscribing to Tower...", "[UDT]");
         await this.rxCharacteristic.startNotifications();
         await this.rxCharacteristic.addEventListener(
           "characteristicvaluechanged",
           this.onRxCharacteristicValueChanged
         );
         this.TowerDevice.addEventListener("gattserverdisconnected", this.onTowerDeviceDisconnected);
-        console.log("[UDT] Tower connection complete");
+        this.logger.info("Tower connection complete", "[UDT]");
         this.isConnected = true;
         this.lastSuccessfulCommand = Date.now();
         this.lastBatteryHeartbeat = Date.now();
@@ -606,11 +758,16 @@
         }
         this.onTowerConnect();
       } catch (error) {
-        console.log("[UDT] Tower Connection Error", error);
+        this.logger.error(`Tower Connection Error: ${error}`, "[UDT]");
         this.isConnected = false;
         this.onTowerDisconnect();
       }
     }
+    /**
+     * Processes tower state response data including calibration completion and skull drop detection.
+     * @param {Uint8Array} receivedData - Raw data received from the tower
+     * @private
+     */
     handleTowerStateResponse(receivedData) {
       const { cmdKey, command } = this.getTowerCommand(receivedData[0]);
       const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
@@ -619,18 +776,23 @@
         this.isCalibrated = true;
         this.lastBatteryHeartbeat = Date.now();
         this.onCalibrationComplete();
-        console.log("[UDT] Tower calibration complete");
+        this.logger.info("Tower calibration complete", "[UDT]");
       }
       if (dataSkullDropCount !== this.towerSkullDropCount) {
         if (!!dataSkullDropCount) {
           this.onSkullDrop(dataSkullDropCount);
-          console.log(`[UDT] Skull drop detected: app:${this.towerSkullDropCount < 0 ? "empty" : this.towerSkullDropCount}  tower:${dataSkullDropCount}`);
+          this.logger.info(`Skull drop detected: app:${this.towerSkullDropCount < 0 ? "empty" : this.towerSkullDropCount}  tower:${dataSkullDropCount}`, "[UDT]");
         } else {
-          console.log(`[UDT] Skull count reset to ${dataSkullDropCount}`);
+          this.logger.info(`Skull count reset to ${dataSkullDropCount}`, "[UDT]");
         }
         this.towerSkullDropCount = dataSkullDropCount;
       }
     }
+    /**
+     * Logs tower response data based on configured logging settings.
+     * @param {Uint8Array} receivedData - Raw data received from the tower
+     * @private
+     */
     logTowerResponse(receivedData) {
       const { cmdKey, command } = this.getTowerCommand(receivedData[0]);
       const logAll = this.logTowerResponseConfig["LOG_ALL"];
@@ -645,8 +807,12 @@
       if (isBatteryResponse) {
         return;
       }
-      console.log("[UDT] Tower response:", ...this.commandToString(receivedData));
+      this.logger.info(`Tower response: ${this.commandToString(receivedData).join(" ")}`, "[UDT]");
     }
+    /**
+     * Disconnects from the tower device and cleans up resources.
+     * @returns {Promise<void>} Promise that resolves when disconnection is complete
+     */
     async disconnect() {
       if (!this.TowerDevice) {
         return;
@@ -655,10 +821,14 @@
       if (this.TowerDevice.gatt.connected) {
         this.TowerDevice.removeEventListener("gattserverdisconnected", this.onTowerDeviceDisconnected);
         await this.TowerDevice.gatt.disconnect();
-        console.log("[UDT] Tower disconnected");
+        this.logger.info("Tower disconnected", "[UDT]");
         this.handleDisconnection();
       }
     }
+    /**
+     * Centralizes disconnection handling, cleaning up state and notifying callbacks.
+     * @private
+     */
     handleDisconnection() {
       this.isConnected = false;
       this.isCalibrated = false;
@@ -670,6 +840,10 @@
       this.rxCharacteristic = null;
       this.onTowerDisconnect();
     }
+    /**
+     * Starts the connection monitoring interval to periodically check connection health.
+     * @private
+     */
     startConnectionMonitoring() {
       if (this.connectionMonitorInterval) {
         clearInterval(this.connectionMonitorInterval);
@@ -678,18 +852,26 @@
         this.checkConnectionHealth();
       }, this.connectionMonitorFrequency);
     }
+    /**
+     * Stops the connection monitoring interval.
+     * @private
+     */
     stopConnectionMonitoring() {
       if (this.connectionMonitorInterval) {
         clearInterval(this.connectionMonitorInterval);
         this.connectionMonitorInterval = null;
       }
     }
+    /**
+     * Performs connection health checks including battery heartbeat and GATT connection status.
+     * @private
+     */
     checkConnectionHealth() {
       if (!this.isConnected || !this.TowerDevice) {
         return;
       }
       if (!this.TowerDevice.gatt.connected) {
-        console.log("[UDT] GATT connection lost detected during health check");
+        this.logger.warn("GATT connection lost detected during health check", "[UDT]");
         this.handleDisconnection();
         return;
       }
@@ -698,34 +880,45 @@
         const timeoutThreshold = this.performingCalibration ? this.calibrationHeartbeatTimeout : this.batteryHeartbeatTimeout;
         if (timeSinceLastBatteryHeartbeat > timeoutThreshold) {
           const operationContext = this.performingCalibration ? " during calibration" : "";
-          console.log(`[UDT] Battery heartbeat timeout detected${operationContext} - no battery status received in ${timeSinceLastBatteryHeartbeat}ms (expected every ~200ms)`);
+          this.logger.warn(`Battery heartbeat timeout detected${operationContext} - no battery status received in ${timeSinceLastBatteryHeartbeat}ms (expected every ~200ms)`, "[UDT]");
           if (this.performingCalibration) {
-            console.log("[UDT] Ignoring battery heartbeat timeout during calibration - this is expected behavior");
+            this.logger.info("Ignoring battery heartbeat timeout during calibration - this is expected behavior", "[UDT]");
             return;
           }
-          console.log("[UDT] Tower possibly disconnected due to battery depletion or power loss");
+          this.logger.warn("Tower possibly disconnected due to battery depletion or power loss", "[UDT]");
           this.handleDisconnection();
           return;
         }
       }
       const timeSinceLastResponse = Date.now() - this.lastSuccessfulCommand;
       if (timeSinceLastResponse > this.connectionTimeoutThreshold) {
-        console.log("[UDT] General connection timeout detected - no responses received");
-        this.requestTowerState().catch(() => {
-          console.log("[UDT] Heartbeat failed - connection appears lost");
-          this.handleDisconnection();
-        });
+        this.logger.warn("General connection timeout detected - no responses received", "[UDT]");
+        this.logger.warn("Heartbeat timeout - connection appears lost", "[UDT]");
+        this.handleDisconnection();
       }
     }
     //#endregion
     //#region utility
+    /**
+     * Configure logger outputs for this UltimateDarkTower instance
+     * @param {LogOutput[]} outputs - Array of log outputs to use (e.g., ConsoleOutput, DOMOutput)
+     */
+    setLoggerOutputs(outputs) {
+      this.logger = new Logger();
+      outputs.forEach((output) => this.logger.addOutput(output));
+    }
+    /**
+     * Sends a command packet to the tower via Bluetooth with error handling and retry logic.
+     * @param {Uint8Array} command - The command packet to send to the tower
+     * @returns {Promise<void>} Promise that resolves when command is sent successfully
+     */
     async sendTowerCommand(command) {
       var _a, _b, _c;
       try {
         const cmdStr = this.commandToPacketString(command);
-        this.logDetail && console.log("[UDT] packet(s) sent:", cmdStr);
+        this.logDetail && this.logger.debug(`packet(s) sent: ${cmdStr}`, "[UDT]");
         if (!this.txCharacteristic || !this.isConnected) {
-          console.log("[UDT] Tower is not connected");
+          this.logger.warn("Tower is not connected", "[UDT]");
           return;
         }
         await this.txCharacteristic.writeValue(command);
@@ -733,18 +926,18 @@
         this.retrySendCommandCount = 0;
         this.lastSuccessfulCommand = Date.now();
       } catch (error) {
-        console.log("[UDT] command send error:", error);
+        this.logger.error(`command send error: ${error}`, "[UDT]");
         const errorMsg = (_a = error == null ? void 0 : error.message) != null ? _a : new String(error);
         const wasCancelled = errorMsg.includes("User cancelled");
         const maxRetriesReached = this.retrySendCommandCount >= this.retrySendCommandMax;
         const isDisconnected = errorMsg.includes("Cannot read properties of null") || errorMsg.includes("GATT Server is disconnected") || errorMsg.includes("Device is not connected") || !((_c = (_b = this.TowerDevice) == null ? void 0 : _b.gatt) == null ? void 0 : _c.connected);
         if (isDisconnected) {
-          console.log("[UDT] Disconnect detected during command send");
+          this.logger.warn("Disconnect detected during command send", "[UDT]");
           this.handleDisconnection();
           return;
         }
         if (!maxRetriesReached && this.isConnected && !wasCancelled) {
-          console.log(`[UDT] retrying tower command attempt ${this.retrySendCommandCount + 1}`);
+          this.logger.info(`retrying tower command attempt ${this.retrySendCommandCount + 1}`, "[UDT]");
           this.retrySendCommandCount++;
           setTimeout(() => {
             this.sendTowerCommand(command);
@@ -754,28 +947,54 @@
         }
       }
     }
+    /**
+     * Updates a command packet with the current drum positions.
+     * @param {CommandPacket} commandPacket - The command packet to update with current drum positions
+     */
     updateCommandWithCurrentDrumPositions(commandPacket) {
       commandPacket[DRUM_PACKETS.topMiddle] = this.currentDrumPositions.topMiddle;
       commandPacket[DRUM_PACKETS.bottom] = this.currentDrumPositions.bottom;
     }
+    /**
+     * Creates a light override command packet.
+     * @param {number} lightOverride - Light override value to send
+     * @returns {Uint8Array} Command packet for light override
+     */
     createLightOverrideCommand(lightOverride) {
       const lightOverrideCommand = new Uint8Array(20);
       lightOverrideCommand[LIGHT_PACKETS.overrides] = lightOverride;
       return lightOverrideCommand;
     }
+    /**
+     * Creates a rotation command packet for positioning tower drums.
+     * @param {TowerSide} top - Target position for top drum
+     * @param {TowerSide} middle - Target position for middle drum
+     * @param {TowerSide} bottom - Target position for bottom drum
+     * @returns {Uint8Array} Command packet for rotating tower drums
+     */
     createRotateCommand(top, middle, bottom) {
       const rotateCmd = new Uint8Array(20);
       rotateCmd[DRUM_PACKETS.topMiddle] = drumPositionCmds.top[top] | drumPositionCmds.middle[middle];
       rotateCmd[DRUM_PACKETS.bottom] = drumPositionCmds.bottom[bottom];
       return rotateCmd;
     }
+    /**
+     * Creates a sound command packet for playing tower audio.
+     * @param {number} soundIndex - Index of the sound to play from the audio library
+     * @returns {Uint8Array} Command packet for playing sound
+     */
     createSoundCommand(soundIndex) {
       const soundCommand = new Uint8Array(20);
       const sound = Number("0x" + Number(soundIndex).toString(16).padStart(2, "0"));
       soundCommand[AUDIO_COMMAND_POS] = sound;
       return soundCommand;
     }
-    // TODO: return parsed data values rather than raw packet values
+    /**
+     * Converts a command packet to a human-readable string array for logging.
+     * TODO: return parsed data values rather than raw packet values
+     * @param {Uint8Array} command - Command packet to convert
+     * @returns {Array<string>} Human-readable representation of the command
+     */
     commandToString(command) {
       const cmdValue = command[0];
       const { cmdKey, command: towerCommand } = this.getTowerCommand(cmdValue);
@@ -801,18 +1020,33 @@
           return ["Unmapped Response!", this.commandToPacketString(command)];
       }
     }
+    /**
+     * Converts a command packet to a hex string representation for debugging.
+     * @param {Uint8Array} command - Command packet to convert
+     * @returns {string} Hex string representation of the command packet
+     */
     commandToPacketString(command) {
       let cmdStr = "[";
       command.forEach((n) => cmdStr += n.toString(16) + ",");
       cmdStr = cmdStr.slice(0, -1) + "]";
       return cmdStr;
     }
+    /**
+     * Maps a command value to its corresponding tower message definition.
+     * @param {number} cmdValue - Command value received from tower
+     * @returns {Object} Object containing command key and command definition
+     */
     getTowerCommand(cmdValue) {
       const cmdKeys = Object.keys(TOWER_MESSAGES);
       const cmdKey = cmdKeys.find((key) => TOWER_MESSAGES[key].value === cmdValue);
       const command = TOWER_MESSAGES[cmdKey];
       return { cmdKey, command };
     }
+    /**
+     * Extracts battery voltage in millivolts from a tower battery response.
+     * @param {Uint8Array} command - Battery response packet from tower
+     * @returns {number} Battery voltage in millivolts
+     */
     getMilliVoltsFromTowerReponse(command) {
       const mv = new Uint8Array(4);
       mv[0] = command[4];
@@ -822,7 +1056,12 @@
       var view = new DataView(mv.buffer, 0);
       return view.getUint32(0, true);
     }
-    // Tower returns sum total battery level in millivolts
+    /**
+     * Converts battery voltage in millivolts to percentage.
+     * Tower returns sum total battery level in millivolts for all batteries.
+     * @param {number} mv - Battery voltage in millivolts
+     * @returns {string} Battery percentage as formatted string (e.g., "75%")
+     */
     millVoltsToPercentage(mv) {
       const batLevel = mv ? mv / 3 : 0;
       const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
@@ -832,7 +1071,7 @@
     //#region Connection Management
     /**
      * Enable or disable connection monitoring
-     * @param enabled - Whether to enable connection monitoring
+     * @param {boolean} enabled - Whether to enable connection monitoring
      */
     setConnectionMonitoring(enabled) {
       this.enableConnectionMonitoring = enabled;
@@ -844,8 +1083,8 @@
     }
     /**
      * Configure connection monitoring parameters
-     * @param frequency - How often to check connection (milliseconds)
-     * @param timeout - How long to wait for responses before considering connection lost (milliseconds)
+     * @param {number} [frequency=2000] - How often to check connection (milliseconds)
+     * @param {number} [timeout=30000] - How long to wait for responses before considering connection lost (milliseconds)
      */
     configureConnectionMonitoring(frequency = 2e3, timeout = 3e4) {
       this.connectionMonitorFrequency = frequency;
@@ -857,8 +1096,8 @@
     /**
      * Configure battery heartbeat monitoring parameters
      * Tower sends battery status every ~200ms, so this is the most reliable disconnect indicator
-     * @param enabled - Whether to enable battery heartbeat monitoring
-     * @param timeout - How long to wait for battery status before considering disconnected (milliseconds)
+     * @param {boolean} [enabled=true] - Whether to enable battery heartbeat monitoring
+     * @param {number} [timeout=3000] - How long to wait for battery status before considering disconnected (milliseconds)
      */
     configureBatteryHeartbeatMonitoring(enabled = true, timeout = 3e3) {
       this.enableBatteryHeartbeatMonitoring = enabled;
@@ -866,24 +1105,18 @@
     }
     /**
      * Check if the tower is currently connected
-     * @returns Promise<boolean> - True if connected and responsive
+     * @returns {Promise<boolean>} True if connected and responsive
      */
     async isConnectedAndResponsive() {
       var _a, _b;
       if (!this.isConnected || !((_b = (_a = this.TowerDevice) == null ? void 0 : _a.gatt) == null ? void 0 : _b.connected)) {
         return false;
       }
-      try {
-        await this.requestTowerState();
-        return true;
-      } catch (error) {
-        console.log("[UDT] Connectivity test failed:", error);
-        return false;
-      }
+      return true;
     }
     /**
      * Get detailed connection status including heartbeat information
-     * @returns Object with connection details
+     * @returns {Object} Object with connection details
      */
     getConnectionStatus() {
       var _a, _b;
@@ -907,9 +1140,10 @@
     //#region cleanup
     /**
      * Clean up resources and disconnect properly
+     * @returns {Promise<void>} Promise that resolves when cleanup is complete
      */
     async cleanup() {
-      console.log("[UDT] Cleaning up UltimateDarkTower instance");
+      this.logger.info("Cleaning up UltimateDarkTower instance", "[UDT]");
       this.stopConnectionMonitoring();
       if (this.TowerDevice) {
         this.TowerDevice.removeEventListener("gattserverdisconnected", this.onTowerDeviceDisconnected);

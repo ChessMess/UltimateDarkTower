@@ -10,15 +10,34 @@ import UltimateDarkTower, {
   TOWER_LIGHT_SEQUENCES,
   LIGHT_EFFECTS
 } from '../../src';
+import { logger, DOMOutput, ConsoleOutput } from '../../src/Logger';
 
 const Tower = new UltimateDarkTower();
+
+// Setup loggers with DOM output after DOM is ready
+const initializeLogger = () => {
+  // Configure Tower to use both console and DOM output
+  Tower.setLoggerOutputs([new ConsoleOutput(), new DOMOutput('log-container')]);
+  
+  // Configure TowerController logger
+  logger.addOutput(new DOMOutput('log-container'));
+  logger.info('Logger initialized with DOM output', '[TC]');
+};
+
+// Initialize logger when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeLogger);
+} else {
+  initializeLogger();
+}
 
 // Expose constants globally for the inline script
 (window as any).TOWER_AUDIO_LIBRARY = TOWER_AUDIO_LIBRARY;
 (window as any).TOWER_LIGHT_SEQUENCES = TOWER_LIGHT_SEQUENCES;
 (window as any).LIGHT_EFFECTS = LIGHT_EFFECTS;
-// Expose Tower instance globally
+// Expose Tower instance and logger globally
 (window as any).Tower = Tower;
+(window as any).logger = logger;
 
 // skull drop callback
 const updateSkullDropCount = (count: number) => {
@@ -30,7 +49,12 @@ const updateSkullDropCount = (count: number) => {
 Tower.onSkullDrop = updateSkullDropCount;
 
 async function connectToTower() {
-  await Tower.connect();
+  logger.info("Attempting to connect to tower...", '[TC]');
+  try {
+    await Tower.connect();
+  } catch (error) {
+    logger.error(`Connection failed: ${error}`, '[TC]');
+  }
 }
 
 const onTowerConnected = () => {
@@ -39,6 +63,7 @@ const onTowerConnected = () => {
     el.innerText = "Tower Connected"
     el.style.background = 'rgb(2 255 14 / 30%)';
   }
+  logger.info("Tower connected successfully", '[TC]');
 }
 Tower.onTowerConnect = onTowerConnected;
 
@@ -48,6 +73,7 @@ const onTowerDisconnected = () => {
     el.innerText = "Tower Disconnected";
     el.style.background = 'rgb(255 1 1 / 30%)';
   }
+  logger.warn("Tower disconnected", '[TC]');
 }
 Tower.onTowerDisconnect = onTowerDisconnected;
 
@@ -113,7 +139,7 @@ const breakSeal = async () => {
   const sealValue = select.value;
   
   if (!sealValue) {
-    console.log("No seal selected");
+    logger.warn("No seal selected", '[TC]');
     return;
   }
   
@@ -175,7 +201,7 @@ const clearAllLights = async () => {
   };
   
   await Tower.Lights(allLightsOff);
-  console.log("All lights cleared");
+  logger.info("All lights cleared", '[TC]');
 }
 
 const singleLight = (el: HTMLInputElement) => {

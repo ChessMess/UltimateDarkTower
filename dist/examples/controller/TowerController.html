@@ -17,6 +17,31 @@
 
   <!-- Custom styles -->
   <link href="../assets/style.css" rel="stylesheet" type="text/css" />
+  <style>
+    .log-line {
+      margin: 2px 0;
+      padding: 1px 4px;
+      border-left: 3px solid transparent;
+    }
+    .log-debug { 
+      color: #666; 
+      border-left-color: #999;
+    }
+    .log-info { 
+      color: #333; 
+      border-left-color: #2196F3;
+    }
+    .log-warn { 
+      color: #e65100; 
+      border-left-color: #FF9800;
+      background-color: #fff3e0;
+    }
+    .log-error { 
+      color: #c62828; 
+      border-left-color: #F44336;
+      background-color: #ffebee;
+    }
+  </style>
 
   <!-- Scripts (also at bottom of page) -->
   <script src="TowerController.js"></script>
@@ -305,6 +330,24 @@
         </button>
       </div>
       </fieldset>
+      <fieldset class="fieldset-container">
+        <legend>Debug Log</legend>
+        <div style="display: flex; padding: 8px 10px; align-items: baseline; justify-content: space-between;">
+          <div>
+            <label for="logLevel">Log Level:</label>
+            <select id="logLevel" onchange="updateLogLevel()">
+              <option value="all" selected>All</option>
+              <option value="debug">Debug</option>
+              <option value="info">Info</option>
+              <option value="warn">Warn</option>
+              <option value="error">Error</option>
+            </select>
+          </div>
+          <button onclick="clearLog()">Clear Log</button>
+        </div>
+        <div id="log-container" style="height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 8px; font-family: monospace; font-size: 12px; background-color: #f5f5f5;">
+        </div>
+      </fieldset>
       <hr />
       <div style="padding-bottom: 5px; padding-left: 10px;">
         Come join us on the
@@ -319,6 +362,21 @@
   </div>
   </div>
   <script>
+    // Log control functions
+    const updateLogLevel = () => {
+      const select = document.getElementById("logLevel");
+      if (window.logger && select) {
+        window.logger.setMinLevel(select.value);
+      }
+    }
+
+    const clearLog = () => {
+      const container = document.getElementById("log-container");
+      if (container) {
+        container.innerHTML = '';
+      }
+    }
+
     // populate dropdowns
     const dropDowns = [
       { "sounds": TOWER_AUDIO_LIBRARY },

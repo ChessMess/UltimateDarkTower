@@ -4,5 +4,6 @@
  */
 export { default as UltimateDarkTower } from './UltimateDarkTower';
 export * from './constants';
+export { logger, Logger, ConsoleOutput, DOMOutput, type LogLevel, type LogOutput } from './Logger';
 import UltimateDarkTower from './UltimateDarkTower';
 export default UltimateDarkTower;
