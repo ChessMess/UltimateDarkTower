@@ -149,6 +149,7 @@ The library employs a multi-layered approach for disconnect detection:
 -   **Fast Detection**: Detects disconnects within 3 seconds (configurable)
 -   **Ideal for**: Battery depletion, power loss, device sleep
 -   **Default timeout**: 3000ms (3 seconds)
+-   **Long Command Handling**: Extended timeout (30 seconds) during calibration and drum rotation operations
 
 #### 2. GATT Server Disconnect Events
 
@@ -242,6 +243,7 @@ const isResponsive = await tower.isConnectedAndResponsive();
 | Manual disconnect    | GATT disconnect     | Immediate      | User disconnects in settings  |
 | Bluetooth disabled   | Availability change | Immediate      | System Bluetooth turned off   |
 | Device sleep/suspend | Battery heartbeat   | ~3 seconds     | Computer/phone goes to sleep  |
+| Long command timeout | Battery heartbeat   | ~30 seconds    | During calibration/rotation   |
 | Connection timeout   | Command timeout     | ~30 seconds    | General communication failure |
 
 ### Best Practices
@@ -631,8 +633,10 @@ The tower has limitations on how quickly it can process commands. Sending comman
 
 -   Allow time between commands (recommended: 200-500ms minimum)
 -   Wait for calibration to complete before sending other commands
+-   Allow sufficient time for drum rotation operations to complete
 -   Monitor connection status when sending multiple commands
 -   Use the disconnect detection features to handle connection issues
+-   Be aware that when the tower executes commands no battery status messages are sent. This can be a problem for long running comamnds as they could run afoul of the heartbeat detection. Currently the only long commands are calibration and drum rotations.
 
 **Example: Proper Command Timing**
 
