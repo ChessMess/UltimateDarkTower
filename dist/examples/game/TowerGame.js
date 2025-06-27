@@ -835,7 +835,7 @@
     }
   };
 
-  // src/udtTowerCommands.ts
+  // src/udtCommandQueue.ts
   var CommandQueue = class {
     // 30 seconds
     constructor(logger2, sendCommandFn) {
@@ -955,6 +955,8 @@
       };
     }
   };
+
+  // src/udtTowerCommands.ts
   var UdtTowerCommands = class {
     constructor(dependencies) {
       this.deps = dependencies;

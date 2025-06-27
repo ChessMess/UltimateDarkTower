@@ -15,6 +15,8 @@ import { Logger } from './Logger';
 import { UdtCommandFactory } from './udtCommandFactory';
 import { UdtBleConnection } from './udtBleConnection';
 import { TowerResponseProcessor } from './udtTowerResponse';
+import { CommandQueue } from './udtCommandQueue';
+
 
 export interface TowerCommandDependencies {
     logger: Logger;
@@ -29,17 +31,35 @@ export interface TowerCommandDependencies {
 
 export class UdtTowerCommands {
     private deps: TowerCommandDependencies;
+    private commandQueue: CommandQueue;
 
     constructor(dependencies: TowerCommandDependencies) {
         this.deps = dependencies;
+        
+        // Initialize command queue with the actual send function
+        this.commandQueue = new CommandQueue(
+            this.deps.logger,
+            (command: Uint8Array) => this.sendTowerCommandDirect(command)
+        );
     }
 
     /**
-     * Sends a command packet to the tower via Bluetooth with error handling and retry logic.
+     * Sends a command packet to the tower via the command queue
+     * @param command - The command packet to send to the tower
+     * @param description - Optional description for logging
+     * @returns Promise that resolves when command is completed
+     */
+    async sendTowerCommand(command: Uint8Array, description?: string): Promise<void> {
+        return await this.commandQueue.enqueue(command, description);
+    }
+
+    /**
+     * Directly sends a command packet to the tower via Bluetooth with error handling and retry logic.
+     * This method is used internally by the command queue.
      * @param command - The command packet to send to the tower
      * @returns Promise that resolves when command is sent successfully
      */
-    async sendTowerCommand(command: Uint8Array): Promise<void> {
+    private async sendTowerCommandDirect(command: Uint8Array): Promise<void> {
         try {
             const cmdStr = this.deps.responseProcessor.commandToPacketString(command);
             this.deps.logDetail && this.deps.logger.debug(`packet(s) sent: ${cmdStr}`, '[UDT]');
@@ -72,7 +92,7 @@ export class UdtTowerCommands {
                 this.deps.logger.info(`retrying tower command attempt ${this.deps.retrySendCommandCount.value + 1}`, '[UDT]');
                 this.deps.retrySendCommandCount.value++;
                 setTimeout(() => {
-                    this.sendTowerCommand(command);
+                    this.sendTowerCommandDirect(command);
                 }, 250 * this.deps.retrySendCommandCount.value);
             } else {
                 this.deps.retrySendCommandCount.value = 0;
@@ -88,7 +108,7 @@ export class UdtTowerCommands {
     async calibrate(): Promise<void> {
         if (!this.deps.bleConnection.performingCalibration) {
             this.deps.logger.info('Performing Tower Calibration', '[UDT]');
-            await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]));
+            await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]), 'calibrate');
 
             // flag to look for calibration complete tower response
             this.deps.bleConnection.performingCalibration = true;
@@ -116,7 +136,7 @@ export class UdtTowerCommands {
         this.deps.commandFactory.updateCommandWithCurrentDrumPositions(soundCommand, this.deps.currentDrumPositions);
 
         this.deps.logger.info('Sending sound command', '[UDT]');
-        await this.sendTowerCommand(soundCommand);
+        await this.sendTowerCommand(soundCommand, `playSound(${soundIndex})`);
     }
 
     /**
@@ -130,7 +150,7 @@ export class UdtTowerCommands {
 
         this.deps.logDetail && this.deps.logger.debug(`Light Parameter ${JSON.stringify(lights)}`, '[UDT]');
         this.deps.logger.info('Sending light command', '[UDT]');
-        await this.sendTowerCommand(lightCommand);
+        await this.sendTowerCommand(lightCommand, 'lights');
     }
 
     /**
@@ -147,7 +167,7 @@ export class UdtTowerCommands {
         }
 
         this.deps.logger.info('Sending light override' + (soundIndex ? ' with sound' : ''), '[UDT]');
-        await this.sendTowerCommand(lightOverrideCommand);
+        await this.sendTowerCommand(lightOverrideCommand, `lightOverrides(${light}${soundIndex ? `, ${soundIndex}` : ''})`);
     }
 
     /**
@@ -172,7 +192,7 @@ export class UdtTowerCommands {
         // Flag that we're performing a long command 
         // drum rotation can exceed battery heartbeat check default
         this.deps.bleConnection.performingLongCommand = true;
-        await this.sendTowerCommand(rotateCommand);
+        await this.sendTowerCommand(rotateCommand, `rotate(${top}, ${middle}, ${bottom}${soundIndex ? `, ${soundIndex}` : ''})`);
 
         // Reset the long command flag after a delay to allow for rotation completion
         // Drum rotation time varies based on number of drums moved
@@ -202,7 +222,7 @@ export class UdtTowerCommands {
 
         const multiCmd = this.deps.commandFactory.createMultiCommand(rotateCmd, lightCmd, soundCmd);
 
-        this.sendTowerCommand(multiCmd);
+        await this.sendTowerCommand(multiCmd, 'multiCommand');
 
         const packetMsg = this.deps.responseProcessor.commandToPacketString(multiCmd);
         this.deps.logger.info(`multiple command sent ${packetMsg}`, '[UDT]');
@@ -214,7 +234,7 @@ export class UdtTowerCommands {
      */
     async resetTowerSkullCount(): Promise<void> {
         this.deps.logger.info('Tower skull count reset requested', '[UDT]');
-        await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.resetCounter]));
+        await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.resetCounter]), 'resetTowerSkullCount');
     }
 
     /**
@@ -391,5 +411,27 @@ export class UdtTowerCommands {
 
         // Default to north if no match found
         return 'north';
+    }
+
+    /**
+     * Called when a tower response is received to notify the command queue
+     * This should be called from the BLE connection response handler
+     */
+    onTowerResponse(): void {
+        this.commandQueue.onResponse();
+    }
+
+    /**
+     * Get command queue status for debugging
+     */
+    getQueueStatus() {
+        return this.commandQueue.getStatus();
+    }
+
+    /**
+     * Clear the command queue (for cleanup or error recovery)
+     */
+    clearQueue(): void {
+        this.commandQueue.clear();
     }
 }
