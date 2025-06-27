@@ -1559,7 +1559,7 @@
   var onBatteryLevelNotify = (millivolts) => {
     const el = document.getElementById("battery");
     if (el) {
-      el.innerText = Tower.millVoltsToPercentage(millivolts).toString();
+      el.innerText = Tower.milliVoltsToPercentage(millivolts).toString();
     }
   };
   Tower.onBatteryLevelNotify = onBatteryLevelNotify;
