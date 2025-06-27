@@ -530,6 +530,10 @@
             this.lastBatteryPercentage = batteryPercentage;
             this.callbacks.onBatteryLevelNotify(millivolts);
           }
+        } else {
+          if (this.callbacks.onTowerResponse) {
+            this.callbacks.onTowerResponse();
+          }
         }
       };
       this.bleAvailabilityChange = (event) => {
@@ -874,16 +878,149 @@
   };
 
   // src/udtTowerCommands.ts
+  var CommandQueue = class {
+    // 30 seconds
+    constructor(logger2, sendCommandFn) {
+      this.logger = logger2;
+      this.sendCommandFn = sendCommandFn;
+      this.queue = [];
+      this.currentCommand = null;
+      this.timeoutHandle = null;
+      this.isProcessing = false;
+      this.timeoutMs = 3e4;
+    }
+    /**
+     * Enqueue a command for processing
+     */
+    async enqueue(command, description) {
+      return new Promise((resolve, reject) => {
+        const queuedCommand = {
+          id: `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          command,
+          timestamp: Date.now(),
+          resolve,
+          reject,
+          description
+        };
+        this.queue.push(queuedCommand);
+        this.logger.debug(`Command queued: ${description || "unnamed"} (queue size: ${this.queue.length})`, "[UDT]");
+        if (!this.isProcessing) {
+          this.processNext();
+        }
+      });
+    }
+    /**
+     * Process the next command in the queue
+     */
+    async processNext() {
+      if (this.isProcessing || this.queue.length === 0) {
+        return;
+      }
+      this.isProcessing = true;
+      this.currentCommand = this.queue.shift();
+      const { id, command, description, resolve, reject } = this.currentCommand;
+      this.logger.debug(`Processing command: ${description || id}`, "[UDT]");
+      try {
+        this.timeoutHandle = setTimeout(() => {
+          this.onTimeout();
+        }, this.timeoutMs);
+        await this.sendCommandFn(command);
+      } catch (error) {
+        this.clearTimeout();
+        this.currentCommand = null;
+        this.isProcessing = false;
+        reject(error);
+        this.processNext();
+      }
+    }
+    /**
+     * Called when a tower response is received
+     */
+    onResponse() {
+      if (this.currentCommand) {
+        this.clearTimeout();
+        const { resolve, description, id } = this.currentCommand;
+        this.logger.debug(`Command completed: ${description || id}`, "[UDT]");
+        this.currentCommand = null;
+        this.isProcessing = false;
+        resolve();
+        this.processNext();
+      }
+    }
+    /**
+     * Handle command timeout
+     */
+    onTimeout() {
+      if (this.currentCommand) {
+        const { description, id } = this.currentCommand;
+        this.logger.warn(`Command timeout after ${this.timeoutMs}ms: ${description || id}`, "[UDT]");
+        this.currentCommand.resolve();
+        this.currentCommand = null;
+        this.isProcessing = false;
+        this.processNext();
+      }
+    }
+    /**
+     * Clear the current timeout
+     */
+    clearTimeout() {
+      if (this.timeoutHandle) {
+        clearTimeout(this.timeoutHandle);
+        this.timeoutHandle = null;
+      }
+    }
+    /**
+     * Clear all pending commands
+     */
+    clear() {
+      this.clearTimeout();
+      this.queue.forEach((cmd) => {
+        cmd.reject(new Error("Command queue cleared"));
+      });
+      this.queue = [];
+      this.currentCommand = null;
+      this.isProcessing = false;
+      this.logger.debug("Command queue cleared", "[UDT]");
+    }
+    /**
+     * Get queue status for debugging
+     */
+    getStatus() {
+      return {
+        queueLength: this.queue.length,
+        isProcessing: this.isProcessing,
+        currentCommand: this.currentCommand ? {
+          id: this.currentCommand.id,
+          description: this.currentCommand.description,
+          timestamp: this.currentCommand.timestamp
+        } : null
+      };
+    }
+  };
   var UdtTowerCommands = class {
     constructor(dependencies) {
       this.deps = dependencies;
+      this.commandQueue = new CommandQueue(
+        this.deps.logger,
+        (command) => this.sendTowerCommandDirect(command)
+      );
     }
     /**
-     * Sends a command packet to the tower via Bluetooth with error handling and retry logic.
+     * Sends a command packet to the tower via the command queue
+     * @param command - The command packet to send to the tower
+     * @param description - Optional description for logging
+     * @returns Promise that resolves when command is completed
+     */
+    async sendTowerCommand(command, description) {
+      return await this.commandQueue.enqueue(command, description);
+    }
+    /**
+     * Directly sends a command packet to the tower via Bluetooth with error handling and retry logic.
+     * This method is used internally by the command queue.
      * @param command - The command packet to send to the tower
      * @returns Promise that resolves when command is sent successfully
      */
-    async sendTowerCommand(command) {
+    async sendTowerCommandDirect(command) {
       var _a, _b, _c;
       try {
         const cmdStr = this.deps.responseProcessor.commandToPacketString(command);
@@ -910,7 +1047,7 @@
           this.deps.logger.info(`retrying tower command attempt ${this.deps.retrySendCommandCount.value + 1}`, "[UDT]");
           this.deps.retrySendCommandCount.value++;
           setTimeout(() => {
-            this.sendTowerCommand(command);
+            this.sendTowerCommandDirect(command);
           }, 250 * this.deps.retrySendCommandCount.value);
         } else {
           this.deps.retrySendCommandCount.value = 0;
@@ -925,7 +1062,7 @@
     async calibrate() {
       if (!this.deps.bleConnection.performingCalibration) {
         this.deps.logger.info("Performing Tower Calibration", "[UDT]");
-        await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]));
+        await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]), "calibrate");
         this.deps.bleConnection.performingCalibration = true;
         this.deps.bleConnection.performingLongCommand = true;
         return;
@@ -947,7 +1084,7 @@
       const soundCommand = this.deps.commandFactory.createSoundCommand(soundIndex);
       this.deps.commandFactory.updateCommandWithCurrentDrumPositions(soundCommand, this.deps.currentDrumPositions);
       this.deps.logger.info("Sending sound command", "[UDT]");
-      await this.sendTowerCommand(soundCommand);
+      await this.sendTowerCommand(soundCommand, `playSound(${soundIndex})`);
     }
     /**
      * Controls the tower's LED lights including doorway, ledge, and base lights.
@@ -959,7 +1096,7 @@
       this.deps.commandFactory.updateCommandWithCurrentDrumPositions(lightCommand, this.deps.currentDrumPositions);
       this.deps.logDetail && this.deps.logger.debug(`Light Parameter ${JSON.stringify(lights2)}`, "[UDT]");
       this.deps.logger.info("Sending light command", "[UDT]");
-      await this.sendTowerCommand(lightCommand);
+      await this.sendTowerCommand(lightCommand, "lights");
     }
     /**
      * Sends a light override command to control specific light patterns.
@@ -974,7 +1111,7 @@
         lightOverrideCommand[AUDIO_COMMAND_POS] = soundIndex;
       }
       this.deps.logger.info("Sending light override" + (soundIndex ? " with sound" : ""), "[UDT]");
-      await this.sendTowerCommand(lightOverrideCommand);
+      await this.sendTowerCommand(lightOverrideCommand, `lightOverrides(${light}${soundIndex ? `, ${soundIndex}` : ""})`);
     }
     /**
      * Rotates tower drums to specified positions.
@@ -992,7 +1129,7 @@
       }
       this.deps.logger.info("Sending rotate command" + (soundIndex ? " with sound" : ""), "[UDT]");
       this.deps.bleConnection.performingLongCommand = true;
-      await this.sendTowerCommand(rotateCommand);
+      await this.sendTowerCommand(rotateCommand, `rotate(${top}, ${middle}, ${bottom}${soundIndex ? `, ${soundIndex}` : ""})`);
       setTimeout(() => {
         this.deps.bleConnection.performingLongCommand = false;
         this.deps.bleConnection.lastBatteryHeartbeat = Date.now();
@@ -1013,7 +1150,7 @@
       const lightCmd = this.deps.commandFactory.createLightPacketCommand(lights2);
       const soundCmd = soundIndex ? this.deps.commandFactory.createSoundCommand(soundIndex) : void 0;
       const multiCmd = this.deps.commandFactory.createMultiCommand(rotateCmd, lightCmd, soundCmd);
-      this.sendTowerCommand(multiCmd);
+      await this.sendTowerCommand(multiCmd, "multiCommand");
       const packetMsg = this.deps.responseProcessor.commandToPacketString(multiCmd);
       this.deps.logger.info(`multiple command sent ${packetMsg}`, "[UDT]");
     }
@@ -1023,7 +1160,7 @@
      */
     async resetTowerSkullCount() {
       this.deps.logger.info("Tower skull count reset requested", "[UDT]");
-      await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.resetCounter]));
+      await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.resetCounter]), "resetTowerSkullCount");
     }
     /**
      * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
@@ -1178,6 +1315,25 @@
       }
       return "north";
     }
+    /**
+     * Called when a tower response is received to notify the command queue
+     * This should be called from the BLE connection response handler
+     */
+    onTowerResponse() {
+      this.commandQueue.onResponse();
+    }
+    /**
+     * Get command queue status for debugging
+     */
+    getQueueStatus() {
+      return this.commandQueue.getStatus();
+    }
+    /**
+     * Clear the command queue (for cleanup or error recovery)
+     */
+    clearQueue() {
+      this.commandQueue.clear();
+    }
   };
 
   // src/UltimateDarkTower.ts
@@ -1207,7 +1363,12 @@
       this.logger.addOutput(new ConsoleOutput());
       const callbacks = {
         onTowerConnect: () => this.onTowerConnect(),
-        onTowerDisconnect: () => this.onTowerDisconnect(),
+        onTowerDisconnect: () => {
+          this.onTowerDisconnect();
+          if (this.towerCommands) {
+            this.towerCommands.clearQueue();
+          }
+        },
         onBatteryLevelNotify: (millivolts) => this.onBatteryLevelNotify(millivolts),
         onCalibrationComplete: () => this.onCalibrationComplete(),
         onSkullDrop: (towerSkullCount) => this.onSkullDrop(towerSkullCount)
@@ -1226,6 +1387,7 @@
         retrySendCommandMax: this.retrySendCommandMax
       };
       this.towerCommands = new UdtTowerCommands(commandDependencies);
+      callbacks.onTowerResponse = () => this.towerCommands.onTowerResponse();
     }
     get logDetail() {
       return this._logDetail;
@@ -1479,6 +1641,7 @@
      */
     async cleanup() {
       this.logger.info("Cleaning up UltimateDarkTower instance", "[UDT]");
+      this.towerCommands.clearQueue();
       await this.bleConnection.cleanup();
     }
     //#endregion

@@ -76,6 +76,13 @@ class UdtBleConnection {
                     this.callbacks.onBatteryLevelNotify(millivolts);
                 }
             }
+            else {
+                // For non-battery responses, notify the command queue
+                // This includes tower state responses, command acknowledgments, etc.
+                if (this.callbacks.onTowerResponse) {
+                    this.callbacks.onTowerResponse();
+                }
+            }
         };
         this.bleAvailabilityChange = (event) => {
             this.logger.info('Bluetooth availability changed', '[UDT]');
