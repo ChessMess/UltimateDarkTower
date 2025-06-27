@@ -19,6 +19,9 @@ const initializeLogger = () => {
   // Configure Tower to use both console and DOM output
   Tower.setLoggerOutputs([new ConsoleOutput(), new DOMOutput('log-container')]);
   
+  // Enable detailed logging to see all [UDT] messages
+  Tower.logDetail = true;
+  
   // Configure TowerController logger
   logger.addOutput(new DOMOutput('log-container'));
   logger.info('Logger initialized with DOM output', '[TC]');
