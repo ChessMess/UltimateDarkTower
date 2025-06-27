@@ -32,14 +32,14 @@ export declare class TowerResponseProcessor {
      * @param {Uint8Array} command - Battery response packet from tower
      * @returns {number} Battery voltage in millivolts
      */
-    getMilliVoltsFromTowerReponse(command: Uint8Array): number;
+    getMilliVoltsFromTowerResponse(command: Uint8Array): number;
     /**
      * Converts battery voltage in millivolts to percentage.
      * Tower returns sum total battery level in millivolts for all batteries.
      * @param {number} mv - Battery voltage in millivolts
      * @returns {string} Battery percentage as formatted string (e.g., "75%")
      */
-    millVoltsToPercentage(mv: number): string;
+    milliVoltsToPercentage(mv: number): string;
     /**
      * Determines if a response should be logged based on command type and configuration.
      * @param {string} cmdKey - Command key from tower message

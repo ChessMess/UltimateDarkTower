@@ -261,8 +261,8 @@ class UltimateDarkTower {
      * @param {number} mv - Battery voltage in millivolts
      * @returns {string} Battery percentage as formatted string (e.g., "75%")
      */
-    millVoltsToPercentage(mv) {
-        return this.responseProcessor.millVoltsToPercentage(mv);
+    milliVoltsToPercentage(mv) {
+        return this.responseProcessor.milliVoltsToPercentage(mv);
     }
     //#endregion
     //#region Connection Management

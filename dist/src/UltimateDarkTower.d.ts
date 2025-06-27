@@ -174,7 +174,7 @@ declare class UltimateDarkTower {
      * @param {number} mv - Battery voltage in millivolts
      * @returns {string} Battery percentage as formatted string (e.g., "75%")
      */
-    millVoltsToPercentage(mv: number): string;
+    milliVoltsToPercentage(mv: number): string;
     /**
      * Enable or disable connection monitoring
      * @param {boolean} enabled - Whether to enable connection monitoring

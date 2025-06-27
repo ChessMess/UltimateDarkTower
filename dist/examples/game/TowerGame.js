@@ -312,6 +312,10 @@
     getTowerCommand(cmdValue) {
       const cmdKeys = Object.keys(TOWER_MESSAGES);
       const cmdKey = cmdKeys.find((key) => TOWER_MESSAGES[key].value === cmdValue);
+      if (!cmdKey) {
+        logger.warn(`Unknown command received from tower: ${cmdValue} (0x${cmdValue.toString(16)})`, "TowerResponseProcessor");
+        return { cmdKey: void 0, command: { name: "Unknown Command", value: cmdValue } };
+      }
       const command = TOWER_MESSAGES[cmdKey];
       return { cmdKey, command };
     }
@@ -334,8 +338,8 @@
         case TC.CALIBRATION:
           return [towerCommand.name, this.commandToPacketString(command)];
         case TC.BATTERY:
-          const millivolts = this.getMilliVoltsFromTowerReponse(command);
-          const retval = [towerCommand.name, this.millVoltsToPercentage(millivolts)];
+          const millivolts = this.getMilliVoltsFromTowerResponse(command);
+          const retval = [towerCommand.name, this.milliVoltsToPercentage(millivolts)];
           if (this.logDetail) {
             retval.push(`${millivolts}mv`);
             retval.push(this.commandToPacketString(command));
@@ -361,7 +365,7 @@
      * @param {Uint8Array} command - Battery response packet from tower
      * @returns {number} Battery voltage in millivolts
      */
-    getMilliVoltsFromTowerReponse(command) {
+    getMilliVoltsFromTowerResponse(command) {
       const mv = new Uint8Array(4);
       mv[0] = command[4];
       mv[1] = command[3];
@@ -376,7 +380,7 @@
      * @param {number} mv - Battery voltage in millivolts
      * @returns {string} Battery percentage as formatted string (e.g., "75%")
      */
-    millVoltsToPercentage(mv) {
+    milliVoltsToPercentage(mv) {
       const batLevel = mv ? mv / 3 : 0;
       const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
       return `${levels.length * 5}%`;
@@ -473,8 +477,8 @@
         }
         if (this.responseProcessor.isBatteryResponse(cmdKey)) {
           this.lastBatteryHeartbeat = Date.now();
-          const millivolts = this.responseProcessor.getMilliVoltsFromTowerReponse(receivedData);
-          const batteryPercentage = this.responseProcessor.millVoltsToPercentage(millivolts);
+          const millivolts = this.responseProcessor.getMilliVoltsFromTowerResponse(receivedData);
+          const batteryPercentage = this.responseProcessor.milliVoltsToPercentage(millivolts);
           const didBatteryLevelChange = this.lastBatteryPercentage !== batteryPercentage;
           const batteryNotifyFrequencyPassed = Date.now() - this.lastBatteryNotification >= this.batteryNotifyFrequency;
           const shouldNotify = this.batteryNotifyOnValueChangeOnly ? didBatteryLevelChange : batteryNotifyFrequencyPassed;
@@ -1381,8 +1385,8 @@
      * @param {number} mv - Battery voltage in millivolts
      * @returns {string} Battery percentage as formatted string (e.g., "75%")
      */
-    millVoltsToPercentage(mv) {
-      return this.responseProcessor.millVoltsToPercentage(mv);
+    milliVoltsToPercentage(mv) {
+      return this.responseProcessor.milliVoltsToPercentage(mv);
     }
     //#endregion
     //#region Connection Management

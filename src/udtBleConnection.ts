@@ -183,8 +183,8 @@ export class UdtBleConnection {
         if (this.responseProcessor.isBatteryResponse(cmdKey)) {
             this.lastBatteryHeartbeat = Date.now();
 
-            const millivolts = this.responseProcessor.getMilliVoltsFromTowerReponse(receivedData);
-            const batteryPercentage = this.responseProcessor.millVoltsToPercentage(millivolts);
+            const millivolts = this.responseProcessor.getMilliVoltsFromTowerResponse(receivedData);
+            const batteryPercentage = this.responseProcessor.milliVoltsToPercentage(millivolts);
             const didBatteryLevelChange = this.lastBatteryPercentage !== batteryPercentage;
             const batteryNotifyFrequencyPassed = ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
 

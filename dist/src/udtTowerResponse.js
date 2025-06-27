@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TowerResponseProcessor = void 0;
 const constants_1 = require("./constants");
+const Logger_1 = require("./Logger");
 class TowerResponseProcessor {
     constructor(logDetail = false) {
         this.logDetail = false;
@@ -22,6 +23,10 @@ class TowerResponseProcessor {
     getTowerCommand(cmdValue) {
         const cmdKeys = Object.keys(constants_1.TOWER_MESSAGES);
         const cmdKey = cmdKeys.find(key => constants_1.TOWER_MESSAGES[key].value === cmdValue);
+        if (!cmdKey) {
+            Logger_1.logger.warn(`Unknown command received from tower: ${cmdValue} (0x${cmdValue.toString(16)})`, 'TowerResponseProcessor');
+            return { cmdKey: undefined, command: { name: "Unknown Command", value: cmdValue } };
+        }
         const command = constants_1.TOWER_MESSAGES[cmdKey];
         return { cmdKey, command };
     }
@@ -44,8 +49,8 @@ class TowerResponseProcessor {
             case constants_1.TC.CALIBRATION:
                 return [towerCommand.name, this.commandToPacketString(command)];
             case constants_1.TC.BATTERY:
-                const millivolts = this.getMilliVoltsFromTowerReponse(command);
-                const retval = [towerCommand.name, this.millVoltsToPercentage(millivolts)];
+                const millivolts = this.getMilliVoltsFromTowerResponse(command);
+                const retval = [towerCommand.name, this.milliVoltsToPercentage(millivolts)];
                 if (this.logDetail) {
                     retval.push(`${millivolts}mv`);
                     retval.push(this.commandToPacketString(command));
@@ -71,7 +76,7 @@ class TowerResponseProcessor {
      * @param {Uint8Array} command - Battery response packet from tower
      * @returns {number} Battery voltage in millivolts
      */
-    getMilliVoltsFromTowerReponse(command) {
+    getMilliVoltsFromTowerResponse(command) {
         const mv = new Uint8Array(4);
         mv[0] = command[4];
         mv[1] = command[3];
@@ -86,7 +91,7 @@ class TowerResponseProcessor {
      * @param {number} mv - Battery voltage in millivolts
      * @returns {string} Battery percentage as formatted string (e.g., "75%")
      */
-    millVoltsToPercentage(mv) {
+    milliVoltsToPercentage(mv) {
         const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
         const levels = constants_1.VOLTAGE_LEVELS.filter(v => batLevel >= v);
         return `${levels.length * 5}%`;
