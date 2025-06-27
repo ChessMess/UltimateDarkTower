@@ -44,7 +44,6 @@ describe('UltimateDarkTower', () => {
         });
         test('should have default configuration values', () => {
             expect(darkTower.retrySendCommandMax).toBe(5);
-            expect(darkTower.retrySendCommandCount).toBe(0);
             expect(darkTower.logDetail).toBe(false);
             expect(darkTower.logTowerResponses).toBe(true);
         });
