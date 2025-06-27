@@ -18,10 +18,10 @@ const Tower = new UltimateDarkTower();
 const initializeLogger = () => {
   // Configure Tower to use both console and DOM output
   Tower.setLoggerOutputs([new ConsoleOutput(), new DOMOutput('log-container')]);
-  
+
   // Enable detailed logging to see all [UDT] messages
   Tower.logDetail = true;
-  
+
   // Configure TowerController logger
   logger.addOutput(new DOMOutput('log-container'));
   logger.info('Logger initialized with DOM output', '[TC]');
@@ -102,7 +102,7 @@ Tower.onCalibrationComplete = onCalibrationComplete;
 const onBatteryLevelNotify = (millivolts: number) => {
   const el = document.getElementById("battery");
   if (el) {
-    el.innerText = Tower.millVoltsToPercentage(millivolts).toString();
+    el.innerText = Tower.milliVoltsToPercentage(millivolts).toString();
   }
 }
 Tower.onBatteryLevelNotify = onBatteryLevelNotify;
@@ -140,28 +140,28 @@ const rotate = () => {
 const breakSeal = async () => {
   const select = document.getElementById("sealSelect") as HTMLSelectElement;
   const sealValue = select.value;
-  
+
   if (!sealValue) {
     logger.warn("No seal selected", '[TC]');
     return;
   }
-  
+
   // Map seal names to numbers (1-12 based on the UltimateDarkTower breakSeal method)
   const sealMap: { [key: string]: number } = {
     "North Top": 1,
-    "East Top": 2, 
+    "East Top": 2,
     "South Top": 3,
     "West Top": 4,
     "North Middle": 5,
     "East Middle": 6,
-    "South Middle": 7, 
+    "South Middle": 7,
     "West Middle": 8,
     "North Bottom": 9,
     "East Bottom": 10,
     "South Bottom": 11,
     "West Bottom": 12
   };
-  
+
   const sealNumber = sealMap[sealValue];
   if (sealNumber) {
     await Tower.breakSeal(sealNumber);
@@ -202,7 +202,7 @@ const clearAllLights = async () => {
       { position: { side: 'west', level: 'bottom' }, style: 'off' }
     ]
   };
-  
+
   await Tower.Lights(allLightsOff);
   logger.info("All lights cleared", '[TC]');
 }
