@@ -88,7 +88,13 @@ class UltimateDarkTower {
     // Initialize BLE connection with callback handlers
     const callbacks: ConnectionCallbacks = {
       onTowerConnect: () => this.onTowerConnect(),
-      onTowerDisconnect: () => this.onTowerDisconnect(),
+      onTowerDisconnect: () => {
+        this.onTowerDisconnect();
+        // Clear the command queue on disconnection to prevent hanging commands
+        if (this.towerCommands) {
+          this.towerCommands.clearQueue();
+        }
+      },
       onBatteryLevelNotify: (millivolts: number) => this.onBatteryLevelNotify(millivolts),
       onCalibrationComplete: () => this.onCalibrationComplete(),
       onSkullDrop: (towerSkullCount: number) => this.onSkullDrop(towerSkullCount)
@@ -113,6 +119,9 @@ class UltimateDarkTower {
       retrySendCommandMax: this.retrySendCommandMax
     };
     this.towerCommands = new UdtTowerCommands(commandDependencies);
+    
+    // Set up command queue response callback now that tower commands are initialized
+    callbacks.onTowerResponse = () => this.towerCommands.onTowerResponse();
   }
 
   // utility
@@ -377,6 +386,8 @@ class UltimateDarkTower {
    */
   async cleanup() {
     this.logger.info('Cleaning up UltimateDarkTower instance', '[UDT]');
+    // Clear any pending commands in the queue
+    this.towerCommands.clearQueue();
     await this.bleConnection.cleanup();
   }
 

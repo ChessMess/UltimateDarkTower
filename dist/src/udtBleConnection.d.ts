@@ -5,6 +5,7 @@ export interface ConnectionCallbacks {
     onBatteryLevelNotify: (millivolts: number) => void;
     onCalibrationComplete: () => void;
     onSkullDrop: (towerSkullCount: number) => void;
+    onTowerResponse?: () => void;
 }
 export interface ConnectionStatus {
     isConnected: boolean;
