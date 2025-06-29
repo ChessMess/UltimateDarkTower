@@ -155,6 +155,9 @@ export class CommandQueue {
         });
         
         this.queue = [];
+        if (this.currentCommand) {
+            this.currentCommand.reject(new Error('Command queue cleared'));
+        }
         this.currentCommand = null;
         this.isProcessing = false;
         
