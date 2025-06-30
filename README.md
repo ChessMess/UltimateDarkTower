@@ -4,61 +4,17 @@ The Ultimate Dark Tower library is a JavaScript/TypeScript library that you can 
 
 ## Table of Contents
 
-- [UltimateDarkTower - BETA](#ultimatedarktower---beta)
-  - [Table of Contents](#table-of-contents)
-  - [Web Application Examples](#web-application-examples)
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [JavaScript/ES6](#javascriptes6)
-    - [TypeScript](#typescript)
-  - [Disconnect Detection \& Handling](#disconnect-detection--handling)
-    - [How Disconnects Are Detected](#how-disconnects-are-detected)
-      - [1. Battery Heartbeat Monitoring (Primary Method)](#1-battery-heartbeat-monitoring-primary-method)
-      - [2. GATT Server Disconnect Events](#2-gatt-server-disconnect-events)
-      - [3. Command Response Timeout](#3-command-response-timeout)
-      - [4. Bluetooth Availability Monitoring](#4-bluetooth-availability-monitoring)
-    - [Handling Disconnects in Your App](#handling-disconnects-in-your-app)
-    - [Configuration Options](#configuration-options)
-      - [Configure Connection Monitoring](#configure-connection-monitoring)
-      - [Check Connection Status](#check-connection-status)
-    - [Common Disconnect Scenarios](#common-disconnect-scenarios)
-    - [Best Practices](#best-practices)
-    - [Example: Robust Connection Management](#example-robust-connection-management)
-  - [Development Scripts](#development-scripts)
-    - [Building](#building)
-    - [Testing](#testing)
-    - [Code Quality](#code-quality)
-    - [Publishing](#publishing)
-  - [API Reference](#api-reference)
-    - [Core Methods](#core-methods)
-      - [Connection Management](#connection-management)
-      - [Tower Control](#tower-control)
-      - [Monitoring Configuration](#monitoring-configuration)
-      - [Logging System](#logging-system)
-    - [Properties](#properties)
-      - [Connection State](#connection-state)
-      - [Configuration](#configuration)
-    - [Event Callbacks](#event-callbacks)
-    - [Types](#types)
-  - [Logging System](#logging-system-1)
-    - [Basic Usage](#basic-usage)
-    - [TypeScript Usage](#typescript-usage)
-    - [Log Levels](#log-levels)
-    - [Output Destinations](#output-destinations)
-      - [Console Output (Default)](#console-output-default)
-      - [DOM Output](#dom-output)
-      - [Custom Output](#custom-output)
-    - [Advanced Configuration](#advanced-configuration)
-      - [Multiple Outputs](#multiple-outputs)
-      - [Context-Aware Logging](#context-aware-logging)
-    - [DOM Output Styling](#dom-output-styling)
-    - [Best Practices](#best-practices-1)
-  - [Performance Considerations](#performance-considerations)
-    - [Command Rate Limiting](#command-rate-limiting)
-    - [Battery Monitoring](#battery-monitoring)
-  - [Browser Support](#browser-support)
-  - [Known Issues:](#known-issues)
-  - [Community](#community)
+- [Web Application Examples](#web-application-examples)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Disconnect Detection & Handling](#disconnect-detection--handling)
+- [Development Scripts](#development-scripts)
+- [API Reference](#api-reference)
+- [Logging System](#logging-system)
+- [Performance Considerations](#performance-considerations)
+- [Browser Support](#browser-support)
+- [Known Issues](#known-issues)
+- [Community](#community)
 
 ## Web Application Examples
 
@@ -84,6 +40,10 @@ npm install ultimatedarktower
 ```
 
 ## Usage
+
+### Table of Contents
+- [JavaScript/ES6](#javascriptes6)
+- [TypeScript](#typescript)
 
 ### JavaScript/ES6
 
@@ -156,9 +116,23 @@ try {
 
 The UltimateDarkTower library includes disconnect detection to ensure reliable communication with the tower device. The library uses multiple detection methods to handle various disconnect scenarios.
 
+### Table of Contents
+- [How Disconnects Are Detected](#how-disconnects-are-detected)
+- [Handling Disconnects in Your App](#handling-disconnects-in-your-app)
+- [Configuration Options](#configuration-options)
+- [Common Disconnect Scenarios](#common-disconnect-scenarios)
+- [Best Practices](#best-practices)
+- [Example: Robust Connection Management](#example-robust-connection-management)
+
 ### How Disconnects Are Detected
 
 The library employs a multi-layered approach for disconnect detection:
+
+#### Methods
+- [Battery Heartbeat Monitoring (Primary Method)](#1-battery-heartbeat-monitoring-primary-method)
+- [GATT Server Disconnect Events](#2-gatt-server-disconnect-events)
+- [Command Response Timeout](#3-command-response-timeout)
+- [Bluetooth Availability Monitoring](#4-bluetooth-availability-monitoring)
 
 #### 1. Battery Heartbeat Monitoring (Primary Method)
 
@@ -212,6 +186,10 @@ await tower.connect();
 ```
 
 ### Configuration Options
+
+#### Options
+- [Configure Connection Monitoring](#configure-connection-monitoring)
+- [Check Connection Status](#check-connection-status)
 
 #### Configure Connection Monitoring
 
@@ -346,6 +324,12 @@ class TowerManager {
 
 This project includes several npm scripts for development, testing, and building:
 
+### Table of Contents
+- [Building](#building)
+- [Testing](#testing)
+- [Code Quality](#code-quality)
+- [Publishing](#publishing)
+
 ### Building
 
 -   `npm run build` - Compiles TypeScript and builds examples (combines TypeScript compilation with example building)
@@ -370,7 +354,19 @@ The build process compiles TypeScript files and copies HTML files from the `exam
 
 ## API Reference
 
+### Table of Contents
+- [Core Methods](#core-methods)
+- [Properties](#properties)
+- [Event Callbacks](#event-callbacks)
+- [Types](#types)
+
 ### Core Methods
+
+#### Sections
+- [Connection Management](#connection-management)
+- [Tower Control](#tower-control)
+- [Monitoring Configuration](#monitoring-configuration)
+- [Logging System](#logging-system-methods)
 
 #### Connection Management
 
@@ -397,7 +393,7 @@ The build process compiles TypeScript files and copies HTML files from the `exam
 -   `configureBatteryHeartbeatMonitoring(enabled?: boolean, timeout?: number)` - Configure battery heartbeat detection
 -   `getConnectionStatus()` - Get detailed connection status
 
-#### Logging System
+#### Logging System Methods
 
 -   `Logger.getInstance()` - Get the singleton logger instance
 -   `logger.debug(message: string, context?: string)` - Log debug messages
@@ -408,6 +404,10 @@ The build process compiles TypeScript files and copies HTML files from the `exam
 -   `logger.addOutput(output: LogOutput)` - Add custom output destination
 
 ### Properties
+
+#### Sections
+- [Connection State](#connection-state)
+- [Configuration](#configuration)
 
 #### Connection State
 
@@ -442,6 +442,15 @@ Override these methods to handle tower events:
 ## Logging System
 
 The UltimateDarkTower library includes a comprehensive logging system that supports multiple output destinations and configurable log levels.
+
+### Table of Contents
+- [Basic Usage](#basic-usage)
+- [TypeScript Usage](#typescript-usage)
+- [Log Levels](#log-levels)
+- [Output Destinations](#output-destinations)
+- [Advanced Configuration](#advanced-configuration)
+- [DOM Output Styling](#dom-output-styling)
+- [Best Practices](#best-practices-1)
 
 ### Basic Usage
 
@@ -489,6 +498,11 @@ logger.setMinLevel("info"); // Only info, warn, and error messages will be shown
 ```
 
 ### Output Destinations
+
+#### Types
+- [Console Output (Default)](#console-output-default)
+- [DOM Output](#dom-output)
+- [Custom Output](#custom-output)
 
 #### Console Output (Default)
 
@@ -544,6 +558,10 @@ logger.addOutput(fileOutput);
 ```
 
 ### Advanced Configuration
+
+#### Topics
+- [Multiple Outputs](#multiple-outputs)
+- [Context-Aware Logging](#context-aware-logging)
 
 #### Multiple Outputs
 
@@ -626,6 +644,10 @@ When using `DOMOutput`, you can style log messages with CSS:
     ```
 
 ## Performance Considerations
+
+### Table of Contents
+- [Command Rate Limiting](#command-rate-limiting)
+- [Battery Monitoring](#battery-monitoring)
 
 ### Command Rate Limiting
 
