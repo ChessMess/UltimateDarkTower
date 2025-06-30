@@ -4,63 +4,80 @@ The Ultimate Dark Tower library is a JavaScript/TypeScript library that you can 
 
 ## Table of Contents
 
--   [UltimateDarkTower - BETA](#ultimatedarktower---beta)
-    -   [Table of Contents](#table-of-contents)
-    -   [Installation](#installation)
-    -   [Usage](#usage)
-        -   [JavaScript/ES6](#javascriptes6)
-        -   [TypeScript](#typescript)
-    -   [Disconnect Detection \& Handling](#disconnect-detection--handling)
-        -   [How Disconnects Are Detected](#how-disconnects-are-detected)
-            -   [1. Battery Heartbeat Monitoring (Primary Method)](#1-battery-heartbeat-monitoring-primary-method)
-            -   [2. GATT Server Disconnect Events](#2-gatt-server-disconnect-events)
-            -   [3. Command Response Timeout](#3-command-response-timeout)
-            -   [4. Bluetooth Availability Monitoring](#4-bluetooth-availability-monitoring)
-        -   [Handling Disconnects in Your App](#handling-disconnects-in-your-app)
-        -   [Configuration Options](#configuration-options)
-            -   [Configure Connection Monitoring](#configure-connection-monitoring)
-            -   [Check Connection Status](#check-connection-status)
-        -   [Common Disconnect Scenarios](#common-disconnect-scenarios)
-        -   [Best Practices](#best-practices)
-        -   [Example: Robust Connection Management](#example-robust-connection-management)
-    -   [Development Scripts](#development-scripts)
-        -   [Building](#building)
-        -   [Testing](#testing)
-        -   [Code Quality](#code-quality)
-        -   [Publishing](#publishing)
-    -   [Web Application Examples](#web-application-examples)
-    -   [API Reference](#api-reference)
-        -   [Core Methods](#core-methods)
-            -   [Connection Management](#connection-management)
-            -   [Tower Control](#tower-control)
-            -   [Monitoring Configuration](#monitoring-configuration)
-            -   [Logging System](#logging-system)
-        -   [Properties](#properties)
-            -   [Connection State](#connection-state)
-            -   [Configuration](#configuration)
-        -   [Event Callbacks](#event-callbacks)
-        -   [Types](#types)
-    -   [Logging System](#logging-system-1)
-        -   [Basic Usage](#basic-usage)
-        -   [TypeScript Usage](#typescript-usage)
-        -   [Log Levels](#log-levels)
-        -   [Output Destinations](#output-destinations)
-            -   [Console Output (Default)](#console-output-default)
-            -   [DOM Output](#dom-output)
-            -   [Custom Output](#custom-output)
-        -   [Advanced Configuration](#advanced-configuration)
-            -   [Multiple Outputs](#multiple-outputs)
-            -   [Context-Aware Logging](#context-aware-logging)
-        -   [DOM Output Styling](#dom-output-styling)
-        -   [Best Practices](#best-practices-1)
-    -   [Performance Considerations](#performance-considerations)
-        -   [Command Rate Limiting](#command-rate-limiting)
-        -   [Battery Monitoring](#battery-monitoring)
-    -   [Browser Support](#browser-support)
-    -   [Known Issues:](#known-issues)
-    -   [Community](#community)
+- [UltimateDarkTower - BETA](#ultimatedarktower---beta)
+  - [Table of Contents](#table-of-contents)
+  - [Web Application Examples](#web-application-examples)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [JavaScript/ES6](#javascriptes6)
+    - [TypeScript](#typescript)
+  - [Disconnect Detection \& Handling](#disconnect-detection--handling)
+    - [How Disconnects Are Detected](#how-disconnects-are-detected)
+      - [1. Battery Heartbeat Monitoring (Primary Method)](#1-battery-heartbeat-monitoring-primary-method)
+      - [2. GATT Server Disconnect Events](#2-gatt-server-disconnect-events)
+      - [3. Command Response Timeout](#3-command-response-timeout)
+      - [4. Bluetooth Availability Monitoring](#4-bluetooth-availability-monitoring)
+    - [Handling Disconnects in Your App](#handling-disconnects-in-your-app)
+    - [Configuration Options](#configuration-options)
+      - [Configure Connection Monitoring](#configure-connection-monitoring)
+      - [Check Connection Status](#check-connection-status)
+    - [Common Disconnect Scenarios](#common-disconnect-scenarios)
+    - [Best Practices](#best-practices)
+    - [Example: Robust Connection Management](#example-robust-connection-management)
+  - [Development Scripts](#development-scripts)
+    - [Building](#building)
+    - [Testing](#testing)
+    - [Code Quality](#code-quality)
+    - [Publishing](#publishing)
+  - [API Reference](#api-reference)
+    - [Core Methods](#core-methods)
+      - [Connection Management](#connection-management)
+      - [Tower Control](#tower-control)
+      - [Monitoring Configuration](#monitoring-configuration)
+      - [Logging System](#logging-system)
+    - [Properties](#properties)
+      - [Connection State](#connection-state)
+      - [Configuration](#configuration)
+    - [Event Callbacks](#event-callbacks)
+    - [Types](#types)
+  - [Logging System](#logging-system-1)
+    - [Basic Usage](#basic-usage)
+    - [TypeScript Usage](#typescript-usage)
+    - [Log Levels](#log-levels)
+    - [Output Destinations](#output-destinations)
+      - [Console Output (Default)](#console-output-default)
+      - [DOM Output](#dom-output)
+      - [Custom Output](#custom-output)
+    - [Advanced Configuration](#advanced-configuration)
+      - [Multiple Outputs](#multiple-outputs)
+      - [Context-Aware Logging](#context-aware-logging)
+    - [DOM Output Styling](#dom-output-styling)
+    - [Best Practices](#best-practices-1)
+  - [Performance Considerations](#performance-considerations)
+    - [Command Rate Limiting](#command-rate-limiting)
+    - [Battery Monitoring](#battery-monitoring)
+  - [Browser Support](#browser-support)
+  - [Known Issues:](#known-issues)
+  - [Community](#community)
+
+## Web Application Examples
+
+I've created two samples to show the library in action that you can use from your browser. Just power on your Tower and go to the links below!
+
+The first is a Tower Controller that replicates the functionality found in the official Return To Dark Tower app (under settings), and more. In addition I created a game called 'The Towers Challenge'. It's a simple game that only requires the Tower, and serves as a good example while allowing me to 'dogfood' the tower library.
+
+These web apps require Web Bluetooth, which is currently only supported in certain browsers, such as Chrome on the desktop, Chrome on Android mobile devices, Microsoft Edge, and Samsung Internet. You can find a list of all supported browsers at [CanIUse](https://caniuse.com/?search=web%20bluetooth).
+
+You can use Web Bluetooth LE on iOS (iPhone/iPads) by using the Bluefy app:
+https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055
+
+[Tower Controller](https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html)
+
+[Tower Game](https://chessmess.github.io/UltimateDarkTower/dist/examples/game/TowerGame.html)
 
 ## Installation
+
+NOTE: I have not published this as an NPM package just yet. Finalizing some functionality and cleaning up the code base in preperation of doing so.
 
 ```bash
 npm install ultimatedarktower
@@ -350,21 +367,6 @@ This project includes several npm scripts for development, testing, and building
 -   `npm run prepublishOnly` - Automatically runs before publishing to npm (builds the project)
 
 The build process compiles TypeScript files and copies HTML files from the `examples/` directory to the `dist/examples/` directory, making the web applications ready for deployment.
-
-## Web Application Examples
-
-I've created two samples to show the library in action that you can use from your browser. Just power on your Tower and go to the links below!
-
-The first is a Tower Controller that replicates the functionality found in the official Return To Dark Tower app (under settings). In addition I created a game called 'The Towers Challenge'. It's a simple game that only requires the Tower, and serves as a good example while allowing me to 'dogfood' the tower library.
-
-These web apps require Web Bluetooth, which is currently only supported in certain browsers, such as Chrome on the desktop, Chrome on Android mobile devices, Microsoft Edge, and Samsung Internet. You can find a list of all supported browsers at [CanIUse](https://caniuse.com/?search=web%20bluetooth).
-
-You can use Web Bluetooth LE on iOS (iPhone/iPads) by using the Bluefy app:
-https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055
-
-[Tower Controller](https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html)
-
-[Tower Game](https://chessmess.github.io/UltimateDarkTower/dist/examples/game/TowerGame.html)
 
 ## API Reference
 
