@@ -67,12 +67,12 @@
 </head>
 
 <body class="font-roboto text-white min-h-screen">
-  <div id="container" class="max-w-7xl mx-auto mt-6 border-2 border-yellow-500">
-    <div class="inner bg-black bg-opacity-60 p-6">
+  <div id="container" class="max-w-6xl mx-auto mt-3 border-2 border-yellow-500">
+    <div class="inner bg-black bg-opacity-60 p-3">
       <div id="content">
         <div class="text-center">
-          <h1 class="text-6xl font-light my-1" style="font-family: 'azkolskerning7', serif;">Tower Controller</h1>
-          <h3 class="text-center text-xl font-light">
+          <h1 class="text-5xl font-light my-1" style="font-family: 'azkolskerning7', serif;">Tower Controller</h1>
+          <h3 class="text-center text-lg font-light">
             A web based tower controller for
             <a target=" _blank" href="https://restorationgames.com/return-to-dark-tower/"
               class="text-orange-500 hover:text-orange-400">
@@ -80,29 +80,28 @@
           </h3>
 
         </div>
-        <hr class="my-4 border-gray-400" />
+        <hr class="my-2 border-gray-400" />
         <div id="tower-connection-state" class="text-center">
           Turn on your Tower and press the Connect button
         </div>
-        <hr class="my-4 border-gray-400" />
-        <br />
-        <div class="text-center pb-4 space-x-4">
+        <hr class="my-2 border-gray-400" />
+        <div class="text-center pb-2 space-x-4">
           <button id="connectButton" onclick="connectToTower()"
-            class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md">Connect</button>
+            class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Connect</button>
           <button id="disconnectButton" onclick="Tower.disconnect()"
-            class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md">Disconnect</button>
+            class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Disconnect</button>
           <button id="calibrate" onclick="calibrate()"
-            class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md">Calibrate</button>
+            class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Calibrate</button>
           <span class="hidden ml-2" id="calibrating-message">calibrating...</span>
         </div>
 
         <!-- Two-column layout for fieldsets -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <!-- Left Column -->
-          <div class="space-y-5">
-            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-4">
+          <div class="space-y-3">
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
               <legend class="px-2 text-white">Tower Status</legend>
-              <div class="flex justify-evenly items-baseline p-2">
+              <div class="flex justify-evenly items-baseline p-1">
                 <div class="text-center">
                   <label class="block mb-2">Battery Level</label>
                   <span class="w-full inline-block text-center" id="battery">*</span>
@@ -111,29 +110,29 @@
                   <div class="border border-white rounded px-2 py-1 mb-2">Skulls Dropped:&nbsp;&nbsp;<span
                       id="skull-count">unknown</span></div>
                   <button id="reset" onclick="resetSkullCount()"
-                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md">Reset
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Reset
                     Count</button>
                 </div>
               </div>
             </fieldset>
 
-            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-4">
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
               <legend class="px-2 text-white">Audio</legend>
-              <div class="flex justify-evenly items-center p-2 space-x-4">
+              <div class="flex justify-evenly items-center p-1 space-x-4">
                 <button id="soundButton" onclick="playSound()"
-                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md">Play
+                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Play
                   Sound</button>
                 <select id="sounds"
-                  class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md">
+                  class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">
                   <option value="0">select sound</option>
                 </select>
               </div>
             </fieldset>
 
-            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-4">
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
               <legend class="px-2 text-white">Lights</legend>
               <div class="flex flex-wrap gap-4">
-                <fieldset class="border border-gray-400 rounded p-4 w-fit">
+                <fieldset class="border border-gray-400 rounded p-2 w-fit">
                   <legend class="px-2 text-white">Doorways:</legend>
                   <table class="text-center">
                     <thead>
@@ -202,7 +201,7 @@
                     </tbody>
                   </table>
                 </fieldset>
-                <fieldset class="border border-gray-400 rounded p-4 w-fit">
+                <fieldset class="border border-gray-400 rounded p-2 w-fit">
                   <legend class="px-2 text-white">Ledges:</legend>
                   <table class="text-center">
                     <thead>
@@ -235,7 +234,7 @@
                     </tbody>
                   </table>
                 </fieldset>
-                <fieldset class="border border-gray-400 rounded p-4 w-fit">
+                <fieldset class="border border-gray-400 rounded p-2 w-fit">
                   <legend class="px-2 text-white">Base:</legend>
                   <table class="text-sm">
                     <tbody>
@@ -295,18 +294,20 @@
                   </table>
                 </fieldset>
               </div>
-              <br />
-              <div class="p-2 flex flex-wrap gap-2 items-center">
+              <div style="margin-bottom: 1.5rem;"></div>
+              <div class="p-1 flex flex-wrap gap-2 items-center">
                 <button id="light" onclick="lights()"
-                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md w-48 whitespace-nowrap">Apply
+                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md w-40 whitespace-nowrap">Apply
                   to all lights</button>
                 <select id="lightStyles"
-                  class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md w-48"></select>
+                  class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md w-40"></select>
+              </div>
+              <div class="p-1 flex flex-wrap gap-2 items-center">
                 <button id="lightOverrideButton" onclick="overrides()"
-                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md w-48 whitespace-nowrap">Light
+                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md w-40 whitespace-nowrap">Light
                   Overrides</button>
                 <select id="lightOverrideDropDown"
-                  class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md w-48">
+                  class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md w-40">
                   <option value="0">select override</option>
                 </select>
               </div>
@@ -314,13 +315,13 @@
           </div>
 
           <!-- Right Column -->
-          <div class="space-y-5">
-            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-4">
+          <div class="space-y-3">
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
               <legend class="px-2 text-white">Break Seal</legend>
-              <div class="flex justify-evenly items-baseline p-2 space-x-4">
+              <div class="flex justify-evenly items-baseline p-1 space-x-4">
                 <div class="flex flex-col">
                   <select id="sealSelect"
-                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md">
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">
                     <option value="">Select a seal</option>
                     <option value="North Top">North Top</option>
                     <option value="North Middle">North Middle</option>
@@ -338,22 +339,22 @@
                 </div>
                 <div>
                   <button id="breakSealButton" onclick="breakSeal()"
-                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md">Break
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Break
                     Seal</button>
                 </div>
                 <div>
                   <button id="clearLightsButton" onclick="clearAllLights()"
-                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md">Clear</button>
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Clear</button>
                 </div>
               </div>
             </fieldset>
 
-            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-4">
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
               <legend class="px-2 text-white">Drums</legend>
-              <div class="flex justify-evenly items-center p-2 gap-5">
+              <div class="flex justify-evenly items-center p-1 gap-5">
                 <div class="flex flex-col items-center">
                   <select id="top"
-                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-sm px-3 py-1 rounded-md">
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
                     <option value="north">North</option>
                     <option value="south">South</option>
                     <option value="east">East</option>
@@ -362,7 +363,7 @@
                 </div>
                 <div class="flex flex-col items-center">
                   <select id="middle"
-                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-sm px-3 py-1 rounded-md">
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
                     <option value="north">North</option>
                     <option value="south">South</option>
                     <option value="east">East</option>
@@ -371,7 +372,7 @@
                 </div>
                 <div class="flex flex-col items-center">
                   <select id="bottom"
-                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-sm px-3 py-1 rounded-md">
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
                     <option value="north">North</option>
                     <option value="south">South</option>
                     <option value="east">East</option>
@@ -379,18 +380,18 @@
                   </select>
                 </div>
               </div>
-              <div class="text-center p-2">
+              <div class="text-center p-1">
                 <button id="rotateButton" onclick="rotate()"
-                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md">Rotate</button>
+                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Rotate</button>
               </div>
             </fieldset>
 
-            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-4">
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
               <legend class="px-2 text-white">Log</legend>
-              <div class="flex justify-between items-baseline p-2">
+              <div class="flex justify-between items-baseline p-1">
                 <div class="flex flex-col">
                   <select id="logLevel" onchange="updateLogLevel()"
-                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-sm px-3 py-1 rounded-md">
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
                     <option value="all" selected>All</option>
                     <option value="debug">Debug</option>
                     <option value="info">Info</option>
@@ -399,7 +400,7 @@
                   </select>
                 </div>
                 <button onclick="clearLog()"
-                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-sm px-4 py-2 rounded-md">Clear
+                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Clear
                   Log</button>
               </div>
               <div id="log-container"
@@ -409,13 +410,13 @@
           </div>
         </div>
 
-        <hr class="my-4 border-gray-400" />
+        <hr class="my-2 border-gray-400" />
         <div class="pb-1 text-center">
           Come join us on the
           <a target="_blank" href="https://discord.com/invite/87kffaR3jV" class="text-orange-500 hover:text-orange-400">
             Ultimate Dark Tower Discord Server!
           </a>
-          <hr class="my-4 border-gray-400" />
+          <hr class="my-2 border-gray-400" />
           Note: Web Bluetooth is not yet supported in Safari, Firefox or mobile. See <a target="_blank"
             href="https://caniuse.com/?search=web%20bluetooth" class="text-orange-500 hover:text-orange-400">support
             matrix</a>
