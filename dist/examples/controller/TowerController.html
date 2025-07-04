@@ -96,26 +96,9 @@
         </div>
 
         <!-- Two-column layout for fieldsets -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
           <!-- Left Column -->
           <div class="space-y-3">
-            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
-              <legend class="px-2 text-white">Tower Status</legend>
-              <div class="flex justify-evenly items-baseline p-1">
-                <div class="text-center">
-                  <label class="block mb-2">Battery Level</label>
-                  <span class="w-full inline-block text-center" id="battery">*</span>
-                </div>
-                <div class="text-center">
-                  <div class="border border-white rounded px-2 py-1 mb-2">Skulls Dropped:&nbsp;&nbsp;<span
-                      id="skull-count">unknown</span></div>
-                  <button id="reset" onclick="resetSkullCount()"
-                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Reset
-                    Count</button>
-                </div>
-              </div>
-            </fieldset>
-
             <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
               <legend class="px-2 text-white">Audio</legend>
               <div class="flex justify-evenly items-center p-1 space-x-4">
@@ -312,42 +295,6 @@
                 </select>
               </div>
             </fieldset>
-          </div>
-
-          <!-- Right Column -->
-          <div class="space-y-3">
-            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
-              <legend class="px-2 text-white">Break Seal</legend>
-              <div class="flex justify-evenly items-baseline p-1 space-x-4">
-                <div class="flex flex-col">
-                  <select id="sealSelect"
-                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">
-                    <option value="">Select a seal</option>
-                    <option value="North Top">North Top</option>
-                    <option value="North Middle">North Middle</option>
-                    <option value="North Bottom">North Bottom</option>
-                    <option value="East Top">East Top</option>
-                    <option value="East Middle">East Middle</option>
-                    <option value="East Bottom">East Bottom</option>
-                    <option value="South Top">South Top</option>
-                    <option value="South Middle">South Middle</option>
-                    <option value="South Bottom">South Bottom</option>
-                    <option value="West Top">West Top</option>
-                    <option value="West Middle">West Middle</option>
-                    <option value="West Bottom">West Bottom</option>
-                  </select>
-                </div>
-                <div>
-                  <button id="breakSealButton" onclick="breakSeal()"
-                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Break
-                    Seal</button>
-                </div>
-                <div>
-                  <button id="clearLightsButton" onclick="clearAllLights()"
-                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Clear</button>
-                </div>
-              </div>
-            </fieldset>
 
             <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
               <legend class="px-2 text-white">Drums</legend>
@@ -387,6 +334,59 @@
             </fieldset>
 
             <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
+              <legend class="px-2 text-white">Break Seal</legend>
+              <div class="flex justify-evenly items-baseline p-1 space-x-4">
+                <div class="flex flex-col">
+                  <select id="sealSelect"
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">
+                    <option value="">Select a seal</option>
+                    <option value="North Top">North Top</option>
+                    <option value="North Middle">North Middle</option>
+                    <option value="North Bottom">North Bottom</option>
+                    <option value="East Top">East Top</option>
+                    <option value="East Middle">East Middle</option>
+                    <option value="East Bottom">East Bottom</option>
+                    <option value="South Top">South Top</option>
+                    <option value="South Middle">South Middle</option>
+                    <option value="South Bottom">South Bottom</option>
+                    <option value="West Top">West Top</option>
+                    <option value="West Middle">West Middle</option>
+                    <option value="West Bottom">West Bottom</option>
+                  </select>
+                </div>
+                <div>
+                  <button id="breakSealButton" onclick="breakSeal()"
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Break
+                    Seal</button>
+                </div>
+                <div>
+                  <button id="clearLightsButton" onclick="clearAllLights()"
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Clear</button>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- Right Column -->
+          <div class="space-y-3">
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
+              <legend class="px-2 text-white">Tower Status</legend>
+              <div class="flex justify-evenly items-baseline p-1">
+                <div class="text-center">
+                  <label class="block mb-2">Battery Level</label>
+                  <span class="w-full inline-block text-center" id="battery">*</span>
+                </div>
+                <div class="text-center">
+                  <div class="border border-white rounded px-2 py-1 mb-2">Skulls Dropped:&nbsp;&nbsp;<span
+                      id="skull-count">unknown</span></div>
+                  <button id="reset" onclick="resetSkullCount()"
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Reset
+                    Count</button>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3 flex flex-col h-[500px]">
               <legend class="px-2 text-white">Log</legend>
               <div class="flex justify-between items-baseline p-1">
                 <div class="flex flex-col">
@@ -404,7 +404,7 @@
                   Log</button>
               </div>
               <div id="log-container"
-                class="h-48 overflow-y-auto border border-gray-400 p-2 font-mono text-xs bg-gray-100 text-black rounded-md">
+                class="flex-1 overflow-y-auto border border-gray-400 p-2 font-mono text-xs bg-gray-100 text-black rounded-md">
               </div>
             </fieldset>
           </div>
