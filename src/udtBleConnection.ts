@@ -14,6 +14,7 @@ export interface ConnectionCallbacks {
     onBatteryLevelNotify: (millivolts: number) => void;
     onCalibrationComplete: () => void;
     onSkullDrop: (towerSkullCount: number) => void;
+    onTowerResponse?: () => void; // Optional callback for command queue response detection
 }
 
 export interface ConnectionStatus {
@@ -197,6 +198,12 @@ export class UdtBleConnection {
                 this.lastBatteryNotification = Date.now();
                 this.lastBatteryPercentage = batteryPercentage;
                 this.callbacks.onBatteryLevelNotify(millivolts);
+            }
+        } else {
+            // For non-battery responses, notify the command queue
+            // This includes tower state responses, command acknowledgments, etc.
+            if (this.callbacks.onTowerResponse) {
+                this.callbacks.onTowerResponse();
             }
         }
     }
