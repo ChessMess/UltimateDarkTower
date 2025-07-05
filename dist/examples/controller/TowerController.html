@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="tower-controller-html">
+<html lang="en" class="tower-controller-bg min-h-screen">
 
 <head>
   <meta charset="utf-8">
@@ -9,41 +9,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <link rel="icon" type="image/png" href="favicon.png">
 
-  <!-- Stylesheets -->
-  <!-- Reset default styles and add support for google fonts -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" rel="stylesheet"
-    type="text/css" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
 
-  <!-- Custom styles -->
-  <link href="../assets/style.css" rel="stylesheet" type="text/css" />
   <style>
+    /* Custom font for tower controller */
+    @font-face {
+      font-family: 'azkolskerning7';
+      src: url('../assets/azkolskerning7-webfont.woff2') format('woff2'),
+        url('../assets/azkolskerning7-webfont.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    /* Custom background for the tower controller */
+    .tower-controller-bg {
+      background-image: url('../assets/background.jpeg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    /* Custom log styles */
     .log-line {
       margin: 2px 0;
       padding: 1px 4px;
-      border-left: 3px solid transparent;
+      border-left: 4px solid transparent;
     }
 
     .log-debug {
-      color: #666;
-      border-left-color: #999;
+      color: #6b7280;
+      border-left-color: #9ca3af;
     }
 
     .log-info {
-      color: #333;
-      border-left-color: #2196F3;
+      color: #1f2937;
+      border-left-color: #3b82f6;
     }
 
     .log-warn {
-      color: #e65100;
-      border-left-color: #FF9800;
-      background-color: #fff3e0;
+      color: #c2410c;
+      border-left-color: #f97316;
+      background-color: #fefbf3;
     }
 
     .log-error {
-      color: #c62828;
-      border-left-color: #F44336;
-      background-color: #ffebee;
+      color: #b91c1c;
+      border-left-color: #ef4444;
+      background-color: #fdf2f2;
     }
   </style>
 
@@ -51,309 +66,360 @@
   <script src="TowerController.js"></script>
 </head>
 
-<body>
-  <div id="container">
-    <div class="inner">
+<body class="font-roboto text-white min-h-screen">
+  <div id="container" class="max-w-6xl mx-auto mt-3 border-2 border-yellow-500">
+    <div class="inner bg-black bg-opacity-60 p-3">
       <div id="content">
-        <div style="text-align: center;">
-          <h1 style="margin: 5px 0">Tower Controller</h1>
-          <h3 style="text-align: center;">
+        <div class="text-center">
+          <h1 class="text-5xl font-light my-1" style="font-family: 'azkolskerning7', serif;">Tower Controller</h1>
+          <h3 class="text-center text-lg font-light">
             A web based tower controller for
-            <a target=" _blank" href="https://restorationgames.com/return-to-dark-tower/">
+            <a target=" _blank" href="https://restorationgames.com/return-to-dark-tower/"
+              class="text-orange-500 hover:text-orange-400">
               Return To Dark Tower </a>
           </h3>
 
         </div>
-        <hr />
-        <div id="tower-connection-state" style="text-align: center;">
+        <hr class="my-2 border-gray-400" />
+        <div id="tower-connection-state" class="text-center">
           Turn on your Tower and press the Connect button
         </div>
-        <hr />
-        <br />
-        <div style="text-align: center; padding-bottom: 15px;">
-          <button id="connectButton" onclick="connectToTower()">Connect</button>
-          &nbsp;&nbsp;&nbsp;&nbsp;
-          <button id="disconnectButton" onclick="Tower.disconnect()">Disconnect</button>
-          &nbsp;&nbsp;&nbsp;&nbsp;
-          <button id="calibrate" onclick="calibrate()">Calibrate</button>
-          &nbsp;&nbsp;
-          <span class="hide" id="calibrating-message">calibrating...</span>
+        <hr class="my-2 border-gray-400" />
+        <div class="text-center pb-2 space-x-4">
+          <button id="connectButton" onclick="connectToTower()"
+            class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Connect</button>
+          <button id="disconnectButton" onclick="Tower.disconnect()"
+            class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Disconnect</button>
+          <button id="calibrate" onclick="calibrate()"
+            class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Calibrate</button>
+          <span class="hidden ml-2" id="calibrating-message">calibrating...</span>
         </div>
-        <fieldset class="fieldset-container" style="max-width: 800px; margin: 20px auto;">
-          <legend>Tower Status</legend>
-          <div style="display: flex; padding: 8px 10px; align-items: baseline; justify-content: space-evenly;">
-            <div>
-              <label>Battery Level</label>
-              <br />
-              <span style="width:100%;align-items: center;" id="battery">*</span>
-            </div>
-            <div>
-              <div class="skull-count">Skulls Dropped:&nbsp;&nbsp;<span id="skull-count">unknown</span></div>
-              <button id="reset" onclick="resetSkullCount()" style="margin-top: 10px">Reset Count</button>
-            </div>
-          </div>
-        </fieldset>
-        <fieldset class="fieldset-container" style="max-width: 800px; margin: 20px auto;">
-          <legend>Audio</legend>
-          <div
-            style="display: flex; padding: 8px 10px; align-items: stretch; flex-direction: row;flex-wrap: nowrap; justify-content: space-evenly;">
-            <button id="soundButton" onclick="playSound()">Play Sound</button>
-            <select id="sounds">
-              <option value="0">select sound</option>
-            </select>
-          </div>
-        </fieldset>
-        <fieldset class="fieldset-container" style="max-width: 800px; margin: 20px auto;">
-          <legend>Lights</legend>
-          <fieldset style="margin: 0px 15px; float: left; width: fit-content">
-            <legend>Doorways:</legend>
-            <Table>
-              <thead>
-                <td>N</td>
-                <td>E</td>
-                <td>S</td>
-                <td>W</td>
-              </thead>
-              <tr>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="north" data-light-level="top" />
-                </td>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="east" data-light-level="top" />
-                </td>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="south" data-light-level="top" />
-                </td>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="west" data-light-level="top" />
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="north" data-light-level="middle" name="north" />
-                </td>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="east" data-light-level="middle" name="east" />
-                </td>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="south" data-light-level="middle" name="south" />
-                </td>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="west" data-light-level="middle" name="west" />
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="north" data-light-level="bottom" name="north" />
-                </td>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="east" data-light-level="bottom" name="east" />
-                </td>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="south" data-light-level="bottom" name="south" />
-                </td>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                    data-light-location="west" data-light-level="bottom" name="west" />
-                </td>
-              </tr>
-            </Table>
-          </fieldset>
-          <fieldset style="margin-right: 15px;float:left; width: fit-content">
-            <legend>Ledges:</legend>
-            <table>
-              <thead>
-                <td>N</td>
-                <td>E</td>
-                <td>S</td>
-                <td>W</td>
-              </thead>
-              <tr>
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                    data-light-location="north" />
-                </td>
 
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                    data-light-location="east" />
-                </td>
+        <!-- Two-column layout for fieldsets -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+          <!-- Left Column -->
+          <div class="space-y-3">
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
+              <legend class="px-2 text-white">Audio</legend>
+              <div class="flex justify-evenly items-center p-1 space-x-4">
+                <button id="soundButton" onclick="playSound()"
+                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Play
+                  Sound</button>
+                <select id="sounds"
+                  class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">
+                  <option value="0">select sound</option>
+                </select>
+              </div>
+            </fieldset>
 
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                    data-light-location="south" />
-                </td>
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
+              <legend class="px-2 text-white">Lights</legend>
+              <div class="flex flex-wrap gap-4">
+                <fieldset class="border border-gray-400 rounded p-2 w-fit">
+                  <legend class="px-2 text-white">Doorways:</legend>
+                  <table class="text-center">
+                    <thead>
+                      <tr>
+                        <td class="px-2 py-1 font-bold">N</td>
+                        <td class="px-2 py-1 font-bold">E</td>
+                        <td class="px-2 py-1 font-bold">S</td>
+                        <td class="px-2 py-1 font-bold">W</td>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="north" data-light-level="top" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="east" data-light-level="top" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="south" data-light-level="top" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="west" data-light-level="top" class="w-4 h-4" />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="north" data-light-level="middle" name="north" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="east" data-light-level="middle" name="east" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="south" data-light-level="middle" name="south" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="west" data-light-level="middle" name="west" class="w-4 h-4" />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="north" data-light-level="bottom" name="north" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="east" data-light-level="bottom" name="east" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="south" data-light-level="bottom" name="south" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                            data-light-location="west" data-light-level="bottom" name="west" class="w-4 h-4" />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </fieldset>
+                <fieldset class="border border-gray-400 rounded p-2 w-fit">
+                  <legend class="px-2 text-white">Ledges:</legend>
+                  <table class="text-center">
+                    <thead>
+                      <tr>
+                        <td class="px-2 py-1 font-bold">N</td>
+                        <td class="px-2 py-1 font-bold">E</td>
+                        <td class="px-2 py-1 font-bold">S</td>
+                        <td class="px-2 py-1 font-bold">W</td>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                            data-light-location="north" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                            data-light-location="east" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                            data-light-location="south" class="w-4 h-4" />
+                        </td>
+                        <td class="px-2 py-1">
+                          <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                            data-light-location="west" class="w-4 h-4" />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </fieldset>
+                <fieldset class="border border-gray-400 rounded p-2 w-fit">
+                  <legend class="px-2 text-white">Base:</legend>
+                  <table class="text-sm">
+                    <tbody>
+                      <tr>
+                        <td class="pr-2 py-1 font-bold">N</td>
+                        <td class="px-1 py-1">front</td>
+                        <td class="px-1 py-1">
+                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                            data-light-location="north" data-light-base-location="a" class="w-4 h-4" />
+                        </td>
+                        <td class="px-1 py-1">back</td>
+                        <td class="px-1 py-1">
+                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                            data-light-location="north" data-light-base-location="b" class="w-4 h-4" />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="pr-2 py-1 font-bold">E</td>
+                        <td class="px-1 py-1">front</td>
+                        <td class="px-1 py-1">
+                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                            data-light-location="east" data-light-base-location="a" class="w-4 h-4" />
+                        </td>
+                        <td class="px-1 py-1">back</td>
+                        <td class="px-1 py-1">
+                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                            data-light-location="east" data-light-base-location="b" class="w-4 h-4" />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="pr-2 py-1 font-bold">S</td>
+                        <td class="px-1 py-1">front</td>
+                        <td class="px-1 py-1">
+                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                            data-light-location="south" data-light-base-location="a" class="w-4 h-4" />
+                        </td>
+                        <td class="px-1 py-1">back</td>
+                        <td class="px-1 py-1">
+                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                            data-light-location="south" data-light-base-location="b" class="w-4 h-4" />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="pr-2 py-1 font-bold">W</td>
+                        <td class="px-1 py-1">front</td>
+                        <td class="px-1 py-1">
+                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                            data-light-location="west" data-light-base-location="a" class="w-4 h-4" />
+                        </td>
+                        <td class="px-1 py-1">back</td>
+                        <td class="px-1 py-1">
+                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                            data-light-location="west" data-light-base-location="b" class="w-4 h-4" />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </fieldset>
+              </div>
+              <div style="margin-bottom: 1.5rem;"></div>
+              <div class="p-1 flex flex-wrap gap-2 items-center">
+                <button id="light" onclick="lights()"
+                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md w-40 whitespace-nowrap">Apply
+                  to all lights</button>
+                <select id="lightStyles"
+                  class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md w-40"></select>
+              </div>
+              <div class="p-1 flex flex-wrap gap-2 items-center">
+                <button id="lightOverrideButton" onclick="overrides()"
+                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md w-40 whitespace-nowrap">Light
+                  Overrides</button>
+                <select id="lightOverrideDropDown"
+                  class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md w-40">
+                  <option value="0">select override</option>
+                </select>
+              </div>
+            </fieldset>
 
-                <td>
-                  <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                    data-light-location="west" />
-                </td>
-              </tr>
-            </table>
-          </fieldset>
-          <fieldset style="width: fit-content">
-            <legend>Base:</legend>
-            <table>
-              <tr>
-                <td>NORTH:&nbsp;&nbsp;</td>
-                <td>front</td>
-                <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                    data-light-location="north" data-light-base-location="a" />
-                  &nbsp;
-                </td>
-                <td>back</td>
-                <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                    data-light-location="north" data-light-base-location="b" />
-                </td>
-              </tr>
-              <tr>
-                <td>EAST:</td>
-                <td>front</td>
-                <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                    data-light-location="east" data-light-base-location="a" />
-                </td>
-                <td>back</td>
-                <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                    data-light-location="east" data-light-base-location="b" />
-                </td>
-              </tr>
-              <tr>
-                <td>SOUTH:</td>
-                <td>front</td>
-                <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                    data-light-location="south" data-light-base-location="a" />
-                </td>
-                <td>back</td>
-                <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                    data-light-location="south" data-light-base-location="b" />
-                </td>
-              </tr>
-              <tr>
-                <td>WEST:</td>
-                <td>front</td>
-                <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                    data-light-location="west" data-light-base-location="a" />
-                </td>
-                <td>back</td>
-                <td> <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                    data-light-location="west" data-light-base-location="b" />
-                </td>
-              </tr>
-            </table>
-          </fieldset>
-          <div style="margin-left: 15px; padding: 8px 0;">
-            <button id="light" style="margin-top: 10px" onclick="lights()">Apply to all lights</button>&nbsp;&nbsp;
-            <select id="lightStyles" style="margin-bottom: 10px;"></select>
-            <button id="lightOverrideButton" onclick="overrides()">Light Overrides</button>
-            &nbsp;
-            <select id="lightOverrideDropDown">
-              <option value="0">select override</option>
-            </select>
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
+              <legend class="px-2 text-white">Drums</legend>
+              <div class="flex justify-evenly items-center p-1 gap-5">
+                <div class="flex flex-col items-center">
+                  <select id="top"
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
+                    <option value="north">North</option>
+                    <option value="south">South</option>
+                    <option value="east">East</option>
+                    <option value="west">West</option>
+                  </select>
+                </div>
+                <div class="flex flex-col items-center">
+                  <select id="middle"
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
+                    <option value="north">North</option>
+                    <option value="south">South</option>
+                    <option value="east">East</option>
+                    <option value="west">West</option>
+                  </select>
+                </div>
+                <div class="flex flex-col items-center">
+                  <select id="bottom"
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
+                    <option value="north">North</option>
+                    <option value="south">South</option>
+                    <option value="east">East</option>
+                    <option value="west">West</option>
+                  </select>
+                </div>
+              </div>
+              <div class="text-center p-1">
+                <button id="rotateButton" onclick="rotate()"
+                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Rotate</button>
+              </div>
+            </fieldset>
+
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
+              <legend class="px-2 text-white">Break Seal</legend>
+              <div class="flex justify-evenly items-baseline p-1 space-x-4">
+                <div class="flex flex-col">
+                  <select id="sealSelect"
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">
+                    <option value="">Select a seal</option>
+                    <option value="North Top">North Top</option>
+                    <option value="North Middle">North Middle</option>
+                    <option value="North Bottom">North Bottom</option>
+                    <option value="East Top">East Top</option>
+                    <option value="East Middle">East Middle</option>
+                    <option value="East Bottom">East Bottom</option>
+                    <option value="South Top">South Top</option>
+                    <option value="South Middle">South Middle</option>
+                    <option value="South Bottom">South Bottom</option>
+                    <option value="West Top">West Top</option>
+                    <option value="West Middle">West Middle</option>
+                    <option value="West Bottom">West Bottom</option>
+                  </select>
+                </div>
+                <div>
+                  <button id="breakSealButton" onclick="breakSeal()"
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Break
+                    Seal</button>
+                </div>
+                <div>
+                  <button id="clearLightsButton" onclick="clearAllLights()"
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Clear</button>
+                </div>
+              </div>
+            </fieldset>
           </div>
-        </fieldset>
-        <fieldset class="fieldset-container" style="max-width: 800px; margin: 20px auto;">
-          <legend>Break Seal</legend>
-          <div style="display: flex; padding: 8px 10px; align-items: baseline; justify-content: space-evenly;">
-            <div>
-              <label for="sealSelect">Select Seal:</label>
-              <select id="sealSelect">
-                <option value="">Select a seal</option>
-                <option value="North Top">North Top</option>
-                <option value="North Middle">North Middle</option>
-                <option value="North Bottom">North Bottom</option>
-                <option value="East Top">East Top</option>
-                <option value="East Middle">East Middle</option>
-                <option value="East Bottom">East Bottom</option>
-                <option value="South Top">South Top</option>
-                <option value="South Middle">South Middle</option>
-                <option value="South Bottom">South Bottom</option>
-                <option value="West Top">West Top</option>
-                <option value="West Middle">West Middle</option>
-                <option value="West Bottom">West Bottom</option>
-              </select>
-            </div>
-            <div>
-              <button id="breakSealButton" onclick="breakSeal()" style="padding: 8px;">Break Seal</button>
-            </div>
-            <div>
-              <button id="clearLightsButton" onclick="clearAllLights()">Clear</button>
-            </div>
+
+          <!-- Right Column -->
+          <div class="space-y-3">
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
+              <legend class="px-2 text-white">Tower Status</legend>
+              <div class="flex justify-evenly items-baseline p-1">
+                <div class="text-center">
+                  <label class="block mb-2">Battery Level</label>
+                  <span class="w-full inline-block text-center" id="battery">*</span>
+                </div>
+                <div class="text-center">
+                  <div class="border border-white rounded px-2 py-1 mb-2">Skulls Dropped:&nbsp;&nbsp;<span
+                      id="skull-count">unknown</span></div>
+                  <button id="reset" onclick="resetSkullCount()"
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Reset
+                    Count</button>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3 flex flex-col h-[500px]">
+              <legend class="px-2 text-white">Log</legend>
+              <div class="flex justify-between items-baseline p-1">
+                <div class="flex flex-col">
+                  <select id="logLevel" onchange="updateLogLevel()"
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
+                    <option value="all" selected>All</option>
+                    <option value="debug">Debug</option>
+                    <option value="info">Info</option>
+                    <option value="warn">Warn</option>
+                    <option value="error">Error</option>
+                  </select>
+                </div>
+                <button onclick="clearLog()"
+                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Clear
+                  Log</button>
+              </div>
+              <div id="log-container"
+                class="flex-1 overflow-y-auto border border-gray-400 p-2 font-mono text-xs bg-gray-100 text-black rounded-md">
+              </div>
+            </fieldset>
           </div>
-        </fieldset>
-        <fieldset class="fieldset-container" style="max-width: 800px; margin: 20px auto;">
-          <legend>Drums</legend>
-          <div style="display: flex; padding: 8px 10px; align-items: center; justify-content: space-evenly; gap: 20px;">
-            <div style="display: flex; flex-direction: column; align-items: center;">
-              <label style="margin-bottom: 4px; font-weight: bold;">Top:</label>
-              <select id="top">
-                <option value="north">North</option>
-                <option value="south">South</option>
-                <option value="east">East</option>
-                <option value="west">West</option>
-              </select>
-            </div>
-            <div style="display: flex; flex-direction: column; align-items: center;">
-              <label style="margin-bottom: 4px; font-weight: bold;">Middle:</label>
-              <select id="middle">
-                <option value="north">North</option>
-                <option value="south">South</option>
-                <option value="east">East</option>
-                <option value="west">West</option>
-              </select>
-            </div>
-            <div style="display: flex; flex-direction: column; align-items: center;">
-              <label style="margin-bottom: 4px; font-weight: bold;">Bottom:</label>
-              <select id="bottom">
-                <option value="north">North</option>
-                <option value="south">South</option>
-                <option value="east">East</option>
-                <option value="west">West</option>
-              </select>
-            </div>
-          </div>
-          <div style="text-align: center; padding: 8px 0;">
-            <button id="rotateButton" onclick="rotate()" style="padding: 8px 16px;">Rotate</button>
-          </div>
-        </fieldset>
-        <fieldset class="fieldset-container" style="max-width: 800px; margin: 20px auto;">
-          <legend>Debug Log</legend>
-          <div style="display: flex; padding: 8px 10px; align-items: baseline; justify-content: space-between;">
-            <div>
-              <label for="logLevel">Log Level:</label>
-              <select id="logLevel" onchange="updateLogLevel()">
-                <option value="all" selected>All</option>
-                <option value="debug">Debug</option>
-                <option value="info">Info</option>
-                <option value="warn">Warn</option>
-                <option value="error">Error</option>
-              </select>
-            </div>
-            <button onclick="clearLog()">Clear Log</button>
-          </div>
-          <div id="log-container"
-            style="height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 8px; font-family: monospace; font-size: 12px; background-color: #f5f5f5;">
-          </div>
-        </fieldset>
-        <hr />
-        <div style="padding-bottom: 5px; text-align: center;">
+        </div>
+
+        <hr class="my-2 border-gray-400" />
+        <div class="pb-1 text-center">
           Come join us on the
-          <a target="_blank" href="https://discord.com/invite/87kffaR3jV">
+          <a target="_blank" href="https://discord.com/invite/87kffaR3jV" class="text-orange-500 hover:text-orange-400">
             Ultimate Dark Tower Discord Server!
           </a>
-          <hr />
+          <hr class="my-2 border-gray-400" />
           Note: Web Bluetooth is not yet supported in Safari, Firefox or mobile. See <a target="_blank"
-            href="https://caniuse.com/?search=web%20bluetooth">support matrix</a>
+            href="https://caniuse.com/?search=web%20bluetooth" class="text-orange-500 hover:text-orange-400">support
+            matrix</a>
         </div>
       </div>
     </div>
