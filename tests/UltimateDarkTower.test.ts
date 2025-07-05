@@ -5,24 +5,35 @@
 import UltimateDarkTower from '../src/UltimateDarkTower';
 
 // Mock the web bluetooth API since it's not available in Node.js test environment
+const mockCharacteristic = {
+  writeValue: jest.fn().mockResolvedValue(undefined),
+  addEventListener: jest.fn(),
+  startNotifications: jest.fn().mockResolvedValue(undefined),
+};
+
+const mockService = {
+  getCharacteristic: jest.fn().mockResolvedValue(mockCharacteristic),
+};
+
+const mockServer = {
+  getPrimaryService: jest.fn().mockResolvedValue(mockService),
+};
+
 const mockBluetoothDevice = {
   gatt: {
-    connect: jest.fn().mockResolvedValue({
-      getPrimaryService: jest.fn().mockResolvedValue({
-        getCharacteristic: jest.fn().mockResolvedValue({
-          writeValue: jest.fn().mockResolvedValue(undefined),
-          addEventListener: jest.fn(),
-        }),
-      }),
-    }),
+    connect: jest.fn().mockResolvedValue(mockServer),
+    connected: true,
   },
   addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
 };
 
 // Mock navigator.bluetooth
 Object.defineProperty(global.navigator, 'bluetooth', {
   value: {
     requestDevice: jest.fn().mockResolvedValue(mockBluetoothDevice),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
   },
   configurable: true,
 });
@@ -189,5 +200,78 @@ describe('UltimateDarkTower', () => {
       darkTower.currentDrumPositions.topMiddle = 0x46; // Has bits outside middle mask
       expect(darkTower['getCurrentDrumPosition']('middle')).toBe('west'); // Should match 0x40
     });
+  });
+
+  describe('Command Queue System', () => {
+    beforeEach(async () => {
+      // Connect to tower for testing
+      await darkTower.connect();
+      jest.clearAllMocks(); // Clear any connection-related calls
+    });
+
+    test('should queue commands sequentially', async () => {
+      const writeValueSpy = jest.spyOn(mockCharacteristic, 'writeValue');
+      
+      // Send multiple commands rapidly
+      const promises = [
+        darkTower.playSound(1),
+        darkTower.playSound(2),
+        darkTower.playSound(3)
+      ];
+      
+      // Commands should be queued but only first one executed immediately
+      expect(writeValueSpy).toHaveBeenCalledTimes(1);
+      
+      // Simulate tower responses to progress the queue
+      const towerCommands = darkTower['towerCommands'];
+      towerCommands.onTowerResponse(); // Complete first command
+      towerCommands.onTowerResponse(); // Complete second command
+      towerCommands.onTowerResponse(); // Complete third command
+      
+      // Wait for all commands to complete
+      await Promise.all(promises);
+      
+      // All commands should have been executed
+      expect(writeValueSpy).toHaveBeenCalledTimes(3);
+    });
+
+    test('should handle command timeout gracefully', async () => {
+      const writeValueSpy = jest.spyOn(mockCharacteristic, 'writeValue');
+      const loggerSpy = jest.spyOn(darkTower['logger'], 'warn');
+      
+      // Mock a command that will timeout (don't trigger response)
+      jest.useFakeTimers();
+      const promise = darkTower.playSound(1);
+      
+      // Fast-forward time to trigger timeout (30 seconds)
+      jest.advanceTimersByTime(30000);
+      
+      await promise; // Should complete despite timeout
+      
+      expect(writeValueSpy).toHaveBeenCalledTimes(1);
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Command timeout after 30000ms'),
+        '[UDT]'
+      );
+      
+      jest.useRealTimers();
+    });
+
+    test('should clear queue on disconnection', async () => {
+      // Queue some commands but don't trigger responses
+      const promises = [
+        darkTower.playSound(1),
+        darkTower.playSound(2),
+        darkTower.playSound(3)
+      ];
+      
+      // Trigger disconnection - this should clear the queue
+      const towerCommands = darkTower['towerCommands'];
+      towerCommands.clearQueue();
+      
+      // Commands should be rejected (except the first one that already started)
+      await expect(promises[1]).rejects.toThrow('Command queue cleared');
+      await expect(promises[2]).rejects.toThrow('Command queue cleared');
+    }, 10000);
   });
 });

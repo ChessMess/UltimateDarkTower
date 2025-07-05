@@ -20,13 +20,22 @@ export interface TowerCommandDependencies {
 }
 export declare class UdtTowerCommands {
     private deps;
+    private commandQueue;
     constructor(dependencies: TowerCommandDependencies);
     /**
-     * Sends a command packet to the tower via Bluetooth with error handling and retry logic.
+     * Sends a command packet to the tower via the command queue
+     * @param command - The command packet to send to the tower
+     * @param description - Optional description for logging
+     * @returns Promise that resolves when command is completed
+     */
+    sendTowerCommand(command: Uint8Array, description?: string): Promise<void>;
+    /**
+     * Directly sends a command packet to the tower via Bluetooth with error handling and retry logic.
+     * This method is used internally by the command queue.
      * @param command - The command packet to send to the tower
      * @returns Promise that resolves when command is sent successfully
      */
-    sendTowerCommand(command: Uint8Array): Promise<void>;
+    private sendTowerCommandDirect;
     /**
      * Initiates tower calibration to determine the current position of all tower drums.
      * This must be performed after connection before other tower operations.
@@ -92,4 +101,25 @@ export declare class UdtTowerCommands {
      * @returns The current position of the specified drum level
      */
     getCurrentDrumPosition(level: 'top' | 'middle' | 'bottom'): TowerSide;
+    /**
+     * Called when a tower response is received to notify the command queue
+     * This should be called from the BLE connection response handler
+     */
+    onTowerResponse(): void;
+    /**
+     * Get command queue status for debugging
+     */
+    getQueueStatus(): {
+        queueLength: number;
+        isProcessing: boolean;
+        currentCommand: {
+            id: string;
+            description: string;
+            timestamp: number;
+        };
+    };
+    /**
+     * Clear the command queue (for cleanup or error recovery)
+     */
+    clearQueue(): void;
 }
