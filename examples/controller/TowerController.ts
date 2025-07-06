@@ -176,11 +176,45 @@ const breakSeal = async () => {
 
   const sealNumber = sealMap[sealValue];
   if (sealNumber) {
+    // Clear checkboxes first, before sending tower command
+    clearAllLightCheckboxes();
+    
     await Tower.breakSeal(sealNumber);
   }
 }
 
+const clearAllLightCheckboxes = () => {
+  // Unselect all light checkboxes
+  const allLightCheckboxes = document.querySelectorAll('input[type="checkbox"][data-light-type]') as NodeListOf<HTMLInputElement>;
+  allLightCheckboxes.forEach(checkbox => {
+    checkbox.checked = false;
+    checkbox.removeAttribute('data-light-style');
+  });
+}
+
+const allLightsOn = () => {
+  // Check all light checkboxes
+  const allLightCheckboxes = document.querySelectorAll('input[type="checkbox"][data-light-type]') as NodeListOf<HTMLInputElement>;
+  allLightCheckboxes.forEach(checkbox => {
+    checkbox.checked = true;
+  });
+  
+  // Send the light command
+  lights();
+}
+
+const allLightsOff = () => {
+  // Uncheck all light checkboxes
+  clearAllLightCheckboxes();
+  
+  // Send the light command (all lights off)
+  lights();
+}
+
 const clearAllLights = async () => {
+  // Clear checkboxes first, before sending tower command
+  clearAllLightCheckboxes();
+  
   // Create lights object with all lights set to off
   const allLightsOff: Lights = {
     doorway: [
@@ -232,6 +266,16 @@ const singleLight = (el: HTMLInputElement) => {
 }
 
 const lights = () => {
+  // Get the currently selected light style from the dropdown
+  const lightStyleSelect = document.getElementById("lightStyles") as HTMLSelectElement;
+  const selectedLightStyle = lightStyleSelect?.options[lightStyleSelect.selectedIndex]?.textContent || "off";
+  
+  // Apply the selected style to all checked lights
+  const allCheckedLights = document.querySelectorAll('input[type="checkbox"][data-light-type]:checked') as NodeListOf<HTMLInputElement>;
+  allCheckedLights.forEach(checkbox => {
+    checkbox.setAttribute('data-light-style', selectedLightStyle);
+  });
+  
   const doorwayLights: Array<DoorwayLight> = getDoorwayLights();
   const ledgeLights: Array<LedgeLight> = getLedgeLights();
   const baseLights: Array<BaseLight> = getBaseLights();
@@ -318,3 +362,6 @@ const getDataAttributes = (el: HTMLElement) => {
 (window as any).rotate = rotate;
 (window as any).breakSeal = breakSeal;
 (window as any).clearAllLights = clearAllLights;
+(window as any).clearAllLightCheckboxes = clearAllLightCheckboxes;
+(window as any).allLightsOn = allLightsOn;
+(window as any).allLightsOff = allLightsOff;

@@ -1884,11 +1884,31 @@
     };
     const sealNumber = sealMap[sealValue];
     if (sealNumber) {
+      clearAllLightCheckboxes();
       await Tower.breakSeal(sealNumber);
     }
   };
+  var clearAllLightCheckboxes = () => {
+    const allLightCheckboxes = document.querySelectorAll('input[type="checkbox"][data-light-type]');
+    allLightCheckboxes.forEach((checkbox) => {
+      checkbox.checked = false;
+      checkbox.removeAttribute("data-light-style");
+    });
+  };
+  var allLightsOn = () => {
+    const allLightCheckboxes = document.querySelectorAll('input[type="checkbox"][data-light-type]');
+    allLightCheckboxes.forEach((checkbox) => {
+      checkbox.checked = true;
+    });
+    lights();
+  };
+  var allLightsOff = () => {
+    clearAllLightCheckboxes();
+    lights();
+  };
   var clearAllLights = async () => {
-    const allLightsOff = {
+    clearAllLightCheckboxes();
+    const allLightsOff2 = {
       doorway: [
         { position: "north", level: "top", style: "off" },
         { position: "north", level: "middle", style: "off" },
@@ -1920,7 +1940,7 @@
         { position: { side: "west", level: "bottom" }, style: "off" }
       ]
     };
-    await Tower.Lights(allLightsOff);
+    await Tower.Lights(allLightsOff2);
     logger.info("All lights cleared", "[TC]");
   };
   var singleLight = (el) => {
@@ -1935,6 +1955,13 @@
     lights();
   };
   var lights = () => {
+    var _a;
+    const lightStyleSelect = document.getElementById("lightStyles");
+    const selectedLightStyle = ((_a = lightStyleSelect == null ? void 0 : lightStyleSelect.options[lightStyleSelect.selectedIndex]) == null ? void 0 : _a.textContent) || "off";
+    const allCheckedLights = document.querySelectorAll('input[type="checkbox"][data-light-type]:checked');
+    allCheckedLights.forEach((checkbox) => {
+      checkbox.setAttribute("data-light-style", selectedLightStyle);
+    });
     const doorwayLights = getDoorwayLights();
     const ledgeLights = getLedgeLights();
     const baseLights = getBaseLights();
@@ -2014,5 +2041,8 @@
   window.rotate = rotate;
   window.breakSeal = breakSeal;
   window.clearAllLights = clearAllLights;
+  window.clearAllLightCheckboxes = clearAllLightCheckboxes;
+  window.allLightsOn = allLightsOn;
+  window.allLightsOff = allLightsOff;
 })();
 //# sourceMappingURL=TowerController.js.map
