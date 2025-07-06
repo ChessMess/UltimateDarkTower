@@ -1,102 +1,4 @@
 (() => {
-  // src/Logger.ts
-  var ConsoleOutput = class {
-    write(level, message, _timestamp) {
-      switch (level) {
-        case "debug":
-          console.debug(message);
-          break;
-        case "info":
-          console.info(message);
-          break;
-        case "warn":
-          console.warn(message);
-          break;
-        case "error":
-          console.error(message);
-          break;
-      }
-    }
-  };
-  var _Logger = class _Logger {
-    constructor() {
-      this.outputs = [];
-      this.enabledLevels = /* @__PURE__ */ new Set(["all"]);
-      this.outputs.push(new ConsoleOutput());
-    }
-    static getInstance() {
-      if (!_Logger.instance) {
-        _Logger.instance = new _Logger();
-      }
-      return _Logger.instance;
-    }
-    addOutput(output) {
-      this.outputs.push(output);
-    }
-    setMinLevel(level) {
-      this.enabledLevels = /* @__PURE__ */ new Set([level]);
-    }
-    setEnabledLevels(levels) {
-      this.enabledLevels = new Set(levels);
-    }
-    enableLevel(level) {
-      this.enabledLevels.add(level);
-    }
-    disableLevel(level) {
-      this.enabledLevels.delete(level);
-    }
-    getEnabledLevels() {
-      return Array.from(this.enabledLevels);
-    }
-    shouldLog(level) {
-      if (this.enabledLevels.has("all"))
-        return true;
-      if (level === "all")
-        return true;
-      if (this.enabledLevels.has(level))
-        return true;
-      if (this.enabledLevels.size === 1) {
-        const singleLevel = Array.from(this.enabledLevels)[0];
-        if (singleLevel !== "all") {
-          const levels = ["debug", "info", "warn", "error"];
-          const minIndex = levels.indexOf(singleLevel);
-          const currentIndex = levels.indexOf(level);
-          return currentIndex >= minIndex;
-        }
-      }
-      return false;
-    }
-    log(level, message, context) {
-      if (!this.shouldLog(level))
-        return;
-      const contextPrefix = context ? `${context} ` : "";
-      const finalMessage = `${contextPrefix}${message}`;
-      const timestamp = /* @__PURE__ */ new Date();
-      this.outputs.forEach((output) => {
-        try {
-          output.write(level, finalMessage, timestamp);
-        } catch (error) {
-          console.error("Logger output error:", error);
-        }
-      });
-    }
-    debug(message, context) {
-      this.log("debug", message, context);
-    }
-    info(message, context) {
-      this.log("info", message, context);
-    }
-    warn(message, context) {
-      this.log("warn", message, context);
-    }
-    error(message, context) {
-      this.log("error", message, context);
-    }
-  };
-  _Logger.instance = null;
-  var Logger = _Logger;
-  var logger = Logger.getInstance();
-
   // src/constants.ts
   var UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
   var UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
@@ -310,6 +212,104 @@
     980
     // There's an additional 5% until 800mV is reached
   ];
+
+  // src/Logger.ts
+  var ConsoleOutput = class {
+    write(level, message, _timestamp) {
+      switch (level) {
+        case "debug":
+          console.debug(message);
+          break;
+        case "info":
+          console.info(message);
+          break;
+        case "warn":
+          console.warn(message);
+          break;
+        case "error":
+          console.error(message);
+          break;
+      }
+    }
+  };
+  var _Logger = class _Logger {
+    constructor() {
+      this.outputs = [];
+      this.enabledLevels = /* @__PURE__ */ new Set(["all"]);
+      this.outputs.push(new ConsoleOutput());
+    }
+    static getInstance() {
+      if (!_Logger.instance) {
+        _Logger.instance = new _Logger();
+      }
+      return _Logger.instance;
+    }
+    addOutput(output) {
+      this.outputs.push(output);
+    }
+    setMinLevel(level) {
+      this.enabledLevels = /* @__PURE__ */ new Set([level]);
+    }
+    setEnabledLevels(levels) {
+      this.enabledLevels = new Set(levels);
+    }
+    enableLevel(level) {
+      this.enabledLevels.add(level);
+    }
+    disableLevel(level) {
+      this.enabledLevels.delete(level);
+    }
+    getEnabledLevels() {
+      return Array.from(this.enabledLevels);
+    }
+    shouldLog(level) {
+      if (this.enabledLevels.has("all"))
+        return true;
+      if (level === "all")
+        return true;
+      if (this.enabledLevels.has(level))
+        return true;
+      if (this.enabledLevels.size === 1) {
+        const singleLevel = Array.from(this.enabledLevels)[0];
+        if (singleLevel !== "all") {
+          const levels = ["debug", "info", "warn", "error"];
+          const minIndex = levels.indexOf(singleLevel);
+          const currentIndex = levels.indexOf(level);
+          return currentIndex >= minIndex;
+        }
+      }
+      return false;
+    }
+    log(level, message, context) {
+      if (!this.shouldLog(level))
+        return;
+      const contextPrefix = context ? `${context} ` : "";
+      const finalMessage = `${contextPrefix}${message}`;
+      const timestamp = /* @__PURE__ */ new Date();
+      this.outputs.forEach((output) => {
+        try {
+          output.write(level, finalMessage, timestamp);
+        } catch (error) {
+          console.error("Logger output error:", error);
+        }
+      });
+    }
+    debug(message, context) {
+      this.log("debug", message, context);
+    }
+    info(message, context) {
+      this.log("info", message, context);
+    }
+    warn(message, context) {
+      this.log("warn", message, context);
+    }
+    error(message, context) {
+      this.log("error", message, context);
+    }
+  };
+  _Logger.instance = null;
+  var Logger = _Logger;
+  var logger = Logger.getInstance();
 
   // src/udtTowerResponse.ts
   var TowerResponseProcessor = class {
@@ -1327,6 +1327,10 @@
       this.retrySendCommandMax = 5;
       // tower state
       this.currentDrumPositions = { topMiddle: 16, bottom: 66 };
+      this.currentBatteryValue = 0;
+      this.previousBatteryValue = 0;
+      this.currentBatteryPercentage = 0;
+      this.previousBatteryPercentage = 0;
       // call back functions
       // you overwrite these with your own functions 
       // to handle these events in your app
@@ -1352,7 +1356,13 @@
             this.towerCommands.clearQueue();
           }
         },
-        onBatteryLevelNotify: (millivolts) => this.onBatteryLevelNotify(millivolts),
+        onBatteryLevelNotify: (millivolts) => {
+          this.previousBatteryValue = this.currentBatteryValue;
+          this.currentBatteryValue = millivolts;
+          this.previousBatteryPercentage = this.currentBatteryPercentage;
+          this.currentBatteryPercentage = this.milliVoltsToPercentageNumber(millivolts);
+          this.onBatteryLevelNotify(millivolts);
+        },
         onCalibrationComplete: () => this.onCalibrationComplete(),
         onSkullDrop: (towerSkullCount) => this.onSkullDrop(towerSkullCount)
       };
@@ -1410,6 +1420,19 @@
     }
     get txCharacteristic() {
       return this.bleConnection.txCharacteristic;
+    }
+    // Getter methods for battery state
+    get currentBattery() {
+      return this.currentBatteryValue;
+    }
+    get previousBattery() {
+      return this.previousBatteryValue;
+    }
+    get currentBatteryPercent() {
+      return this.currentBatteryPercentage;
+    }
+    get previousBatteryPercent() {
+      return this.previousBatteryPercentage;
     }
     // Getter/setter methods for connection configuration
     get batteryNotifyFrequency() {
@@ -1617,6 +1640,16 @@
       return this.bleConnection.getConnectionStatus();
     }
     //#endregion
+    /**
+     * Converts millivolts to percentage number (0-100).
+     * @param mv - Battery voltage in millivolts
+     * @returns Battery percentage as number (0-100)
+     */
+    milliVoltsToPercentageNumber(mv) {
+      const batLevel = mv ? mv / 3 : 0;
+      const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
+      return levels.length * 5;
+    }
     //#region cleanup
     /**
      * Clean up resources and disconnect properly

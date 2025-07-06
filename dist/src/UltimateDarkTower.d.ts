@@ -51,6 +51,10 @@ declare class UltimateDarkTower {
         topMiddle: number;
         bottom: number;
     };
+    currentBatteryValue: number;
+    previousBatteryValue: number;
+    currentBatteryPercentage: number;
+    previousBatteryPercentage: number;
     onCalibrationComplete: () => void;
     onSkullDrop: (_towerSkullCount: number) => void;
     onBatteryLevelNotify: (_millivolts: number) => void;
@@ -66,6 +70,10 @@ declare class UltimateDarkTower {
     get performingLongCommand(): boolean;
     get towerSkullDropCount(): number;
     get txCharacteristic(): any;
+    get currentBattery(): number;
+    get previousBattery(): number;
+    get currentBatteryPercent(): number;
+    get previousBatteryPercent(): number;
     get batteryNotifyFrequency(): number;
     set batteryNotifyFrequency(value: number);
     get batteryNotifyOnValueChangeOnly(): boolean;
@@ -204,6 +212,12 @@ declare class UltimateDarkTower {
      * @returns {Object} Object with connection details
      */
     getConnectionStatus(): ConnectionStatus;
+    /**
+     * Converts millivolts to percentage number (0-100).
+     * @param mv - Battery voltage in millivolts
+     * @returns Battery percentage as number (0-100)
+     */
+    private milliVoltsToPercentageNumber;
     /**
      * Clean up resources and disconnect properly
      * @returns {Promise<void>} Promise that resolves when cleanup is complete

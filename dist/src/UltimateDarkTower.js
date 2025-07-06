@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const constants_1 = require("./constants");
 const Logger_1 = require("./Logger");
 const udtBleConnection_1 = require("./udtBleConnection");
 const udtTowerResponse_1 = require("./udtTowerResponse");
@@ -50,6 +51,10 @@ class UltimateDarkTower {
         this.retrySendCommandMax = 5;
         // tower state
         this.currentDrumPositions = { topMiddle: 0x10, bottom: 0x42 };
+        this.currentBatteryValue = 0;
+        this.previousBatteryValue = 0;
+        this.currentBatteryPercentage = 0;
+        this.previousBatteryPercentage = 0;
         // call back functions
         // you overwrite these with your own functions 
         // to handle these events in your app
@@ -73,7 +78,13 @@ class UltimateDarkTower {
                     this.towerCommands.clearQueue();
                 }
             },
-            onBatteryLevelNotify: (millivolts) => this.onBatteryLevelNotify(millivolts),
+            onBatteryLevelNotify: (millivolts) => {
+                this.previousBatteryValue = this.currentBatteryValue;
+                this.currentBatteryValue = millivolts;
+                this.previousBatteryPercentage = this.currentBatteryPercentage;
+                this.currentBatteryPercentage = this.milliVoltsToPercentageNumber(millivolts);
+                this.onBatteryLevelNotify(millivolts);
+            },
             onCalibrationComplete: () => this.onCalibrationComplete(),
             onSkullDrop: (towerSkullCount) => this.onSkullDrop(towerSkullCount)
         };
@@ -123,6 +134,11 @@ class UltimateDarkTower {
     get performingLongCommand() { return this.bleConnection.performingLongCommand; }
     get towerSkullDropCount() { return this.bleConnection.towerSkullDropCount; }
     get txCharacteristic() { return this.bleConnection.txCharacteristic; }
+    // Getter methods for battery state
+    get currentBattery() { return this.currentBatteryValue; }
+    get previousBattery() { return this.previousBatteryValue; }
+    get currentBatteryPercent() { return this.currentBatteryPercentage; }
+    get previousBatteryPercent() { return this.previousBatteryPercentage; }
     // Getter/setter methods for connection configuration
     get batteryNotifyFrequency() { return this.bleConnection.batteryNotifyFrequency; }
     set batteryNotifyFrequency(value) { this.bleConnection.batteryNotifyFrequency = value; }
@@ -314,6 +330,16 @@ class UltimateDarkTower {
         return this.bleConnection.getConnectionStatus();
     }
     //#endregion
+    /**
+     * Converts millivolts to percentage number (0-100).
+     * @param mv - Battery voltage in millivolts
+     * @returns Battery percentage as number (0-100)
+     */
+    milliVoltsToPercentageNumber(mv) {
+        const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
+        const levels = constants_1.VOLTAGE_LEVELS.filter(v => batLevel >= v);
+        return levels.length * 5;
+    }
     //#region cleanup
     /**
      * Clean up resources and disconnect properly

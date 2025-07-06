@@ -82,6 +82,13 @@ const onTowerConnected = () => {
     el.style.background = 'rgb(2 255 14 / 30%)';
   }
   logger.info("Tower connected successfully", '[TC]');
+  
+  // Configure battery notification settings
+  Tower.batteryNotifyFrequency = 1000;
+  Tower.batteryNotifyOnValueChangeOnly = false;
+  
+  // Initialize battery trend display
+  updateBatteryTrend();
 }
 Tower.onTowerConnect = onTowerConnected;
 
@@ -114,11 +121,39 @@ const onCalibrationComplete = () => {
 }
 Tower.onCalibrationComplete = onCalibrationComplete;
 
+const updateBatteryTrend = () => {
+  const trendElement = document.getElementById("batteryTrend");
+  if (!trendElement) return;
+
+  const currentBatteryPercent = Tower.currentBatteryPercent;
+  const previousBatteryPercent = Tower.previousBatteryPercent;
+
+  // Skip trend update if we don't have previous data yet
+  if (previousBatteryPercent === 0) {
+    trendElement.innerHTML = '<span style="color: #d1d5db; font-size: 16px;">→</span>';
+    return;
+  }
+
+  if (currentBatteryPercent > previousBatteryPercent) {
+    // Battery increased - green up arrow
+    trendElement.innerHTML = '<span style="color: #10b981; font-size: 16px;">↑</span>';
+  } else if (currentBatteryPercent < previousBatteryPercent) {
+    // Battery decreased - yellow down arrow
+    trendElement.innerHTML = '<span style="color: #fbbf24; font-size: 16px;">↓</span>';
+  } else {
+    // Battery same - light grey right arrow
+    trendElement.innerHTML = '<span style="color: #d1d5db; font-size: 16px;">→</span>';
+  }
+}
+
 const onBatteryLevelNotify = (millivolts: number) => {
   const el = document.getElementById("battery");
   if (el) {
     el.innerText = Tower.milliVoltsToPercentage(millivolts).toString();
   }
+  
+  // Update battery trend after battery display is updated
+  updateBatteryTrend();
 }
 Tower.onBatteryLevelNotify = onBatteryLevelNotify;
 

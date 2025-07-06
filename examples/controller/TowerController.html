@@ -7,67 +7,65 @@
   <meta name="UDT Controller"
     content="example tower controller using the ultimate dark tower library for Return To Dark Tower">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <link rel="icon              <legend class=" px-2 text-white">Log</legend>
-  <div class="flex justify-between items-center py-1 px-1">
-    <div class="grid grid-cols-3 gap-x-4 gap-y-2 flex-1 mr-4 items-end mb-2">ype="image/png" href="favicon.png">
+  <link rel="icon" type="image/png" href="favicon.png">
 
-      <!-- Tailwind CSS -->
-      <script src="https://cdn.tailwindcss.com"></script>
-      <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
-      <!-- Font Awesome -->
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-      <style>
-        /* Custom font for tower controller */
-        @font-face {
-          font-family: 'azkolskerning7';
-          src: url('../assets/azkolskerning7-webfont.woff2') format('woff2'),
-            url('../assets/azkolskerning7-webfont.woff') format('woff');
-          font-weight: normal;
-          font-style: normal;
-        }
+  <style>
+    /* Custom font for tower controller */
+    @font-face {
+      font-family: 'azkolskerning7';
+      src: url('../assets/azkolskerning7-webfont.woff2') format('woff2'),
+        url('../assets/azkolskerning7-webfont.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
 
-        /* Custom background for the tower controller */
-        .tower-controller-bg {
-          background-image: url('../assets/background.jpeg');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          background-attachment: fixed;
-        }
+    /* Custom background for the tower controller */
+    .tower-controller-bg {
+      background-image: url('../assets/background.jpeg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
 
-        /* Custom log styles */
-        .log-line {
-          margin: 2px 0;
-          padding: 1px 4px;
-          border-left: 4px solid transparent;
-        }
+    /* Custom log styles */
+    .log-line {
+      margin: 2px 0;
+      padding: 1px 4px;
+      border-left: 4px solid transparent;
+    }
 
-        .log-debug {
-          color: #6b7280;
-          border-left-color: #9ca3af;
-        }
+    .log-debug {
+      color: #6b7280;
+      border-left-color: #9ca3af;
+    }
 
-        .log-info {
-          color: #1f2937;
-          border-left-color: #3b82f6;
-        }
+    .log-info {
+      color: #1f2937;
+      border-left-color: #3b82f6;
+    }
 
-        .log-warn {
-          color: #c2410c;
-          border-left-color: #f97316;
-          background-color: #fefbf3;
-        }
+    .log-warn {
+      color: #c2410c;
+      border-left-color: #f97316;
+      background-color: #fefbf3;
+    }
 
-        .log-error {
-          color: #b91c1c;
-          border-left-color: #ef4444;
-          background-color: #fdf2f2;
-        }
-      </style>
+    .log-error {
+      color: #b91c1c;
+      border-left-color: #ef4444;
+      background-color: #fdf2f2;
+    }
+  </style>
 
-      <!-- Scripts (also at bottom of page) -->
-      <script src="TowerController.js"></script>
+  <!-- Scripts (also at bottom of page) -->
+  <script src="TowerController.js"></script>
 </head>
 
 <body class="font-roboto text-white min-h-screen">
@@ -78,7 +76,7 @@
           <h1 class="text-5xl font-light my-1" style="font-family: 'azkolskerning7', serif;">Tower Controller</h1>
           <h3 class="text-center text-lg font-light">
             A web based tower controller for
-            <a target=" _blank" href="https://restorationgames.com/return-to-dark-tower/"
+            <a target="_blank" href="https://restorationgames.com/return-to-dark-tower/"
               class="text-orange-500 hover:text-orange-400">
               Return To Dark Tower </a>
           </h3>
@@ -384,8 +382,11 @@
               <div class="flex justify-evenly items-baseline p-1">
                 <div class="text-center">
                   <label class="block mb-2">Battery Level</label>
-                  <span class="w-full inline-block text-center" id="battery">*</span>
-                  <span class="w-full inline-block text-center" id="batteryTrend">-></span>
+                  <div class="flex justify-center items-center space-x-2">
+                    <span id="battery">Unknown</span>
+                    <span id="batteryTrend">
+                    </span>
+                  </div>
                 </div>
                 <div class="text-center">
                   <div class="border border-white rounded px-2 py-1 mb-2">Skulls Dropped:&nbsp;&nbsp;<span

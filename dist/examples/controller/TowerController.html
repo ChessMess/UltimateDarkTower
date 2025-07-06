@@ -76,7 +76,7 @@
           <h1 class="text-5xl font-light my-1" style="font-family: 'azkolskerning7', serif;">Tower Controller</h1>
           <h3 class="text-center text-lg font-light">
             A web based tower controller for
-            <a target=" _blank" href="https://restorationgames.com/return-to-dark-tower/"
+            <a target="_blank" href="https://restorationgames.com/return-to-dark-tower/"
               class="text-orange-500 hover:text-orange-400">
               Return To Dark Tower </a>
           </h3>
@@ -382,7 +382,11 @@
               <div class="flex justify-evenly items-baseline p-1">
                 <div class="text-center">
                   <label class="block mb-2">Battery Level</label>
-                  <span class="w-full inline-block text-center" id="battery">*</span>
+                  <div class="flex justify-center items-center space-x-2">
+                    <span id="battery">Unknown</span>
+                    <span id="batteryTrend">
+                    </span>
+                  </div>
                 </div>
                 <div class="text-center">
                   <div class="border border-white rounded px-2 py-1 mb-2">Skulls Dropped:&nbsp;&nbsp;<span
@@ -435,12 +439,12 @@
                     <div class="flex flex-col space-y-1">
                       <div class="flex items-center space-x-1">
                         <input type="radio" id="batteryAll" name="batteryFilter" value="all"
-                          onchange="updateBatteryFilter()" checked class="w-4 h-4" />
+                          onchange="updateBatteryFilter()" class="w-4 h-4" />
                         <label for="batteryAll" class="text-white uppercase tracking-wider text-xs">All</label>
                       </div>
                       <div class="flex items-center space-x-1">
                         <input type="radio" id="batteryChanges" name="batteryFilter" value="changes"
-                          onchange="updateBatteryFilter()" class="w-4 h-4" />
+                          onchange="updateBatteryFilter()" checked class="w-4 h-4" />
                         <label for="batteryChanges" class="text-white uppercase tracking-wider text-xs">Changes</label>
                       </div>
                     </div>

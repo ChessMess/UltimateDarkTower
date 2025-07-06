@@ -1,201 +1,4 @@
 (() => {
-  // src/Logger.ts
-  var ConsoleOutput = class {
-    write(level, message, _timestamp) {
-      switch (level) {
-        case "debug":
-          console.debug(message);
-          break;
-        case "info":
-          console.info(message);
-          break;
-        case "warn":
-          console.warn(message);
-          break;
-        case "error":
-          console.error(message);
-          break;
-      }
-    }
-  };
-  var DOMOutput = class {
-    constructor(containerId, maxLines = 100) {
-      this.container = null;
-      this.maxLines = 100;
-      this.allEntries = [];
-      this.container = typeof document !== "undefined" ? document.getElementById(containerId) : null;
-      this.maxLines = maxLines;
-    }
-    write(level, message, timestamp) {
-      if (!this.container)
-        return;
-      this.allEntries.push({ level, message, timestamp });
-      while (this.allEntries.length > this.maxLines) {
-        this.allEntries.shift();
-      }
-      this.refreshDisplay();
-    }
-    refreshDisplay() {
-      if (!this.container)
-        return;
-      this.container.innerHTML = "";
-      const enabledLevels = this.getEnabledLevelsFromCheckboxes();
-      const textFilter = this.getTextFilter();
-      this.allEntries.forEach((entry) => {
-        if (enabledLevels.has(entry.level)) {
-          if (textFilter && !entry.message.toLowerCase().includes(textFilter.toLowerCase())) {
-            return;
-          }
-          const timeStr = entry.timestamp.toLocaleTimeString();
-          const logLine = document.createElement("div");
-          logLine.className = `log-line log-${entry.level}`;
-          logLine.textContent = `[${timeStr}] ${entry.message}`;
-          this.container.appendChild(logLine);
-        }
-      });
-      this.container.scrollTop = this.container.scrollHeight;
-      this.updateBufferSizeDisplay();
-    }
-    getEnabledLevelsFromCheckboxes() {
-      const enabledLevels = /* @__PURE__ */ new Set();
-      if (typeof document === "undefined") {
-        return enabledLevels;
-      }
-      const checkboxes = ["debug", "info", "warn", "error"];
-      checkboxes.forEach((level) => {
-        const checkbox = document.getElementById(`logLevel-${level}`);
-        if (checkbox && checkbox.checked) {
-          enabledLevels.add(level);
-        }
-      });
-      return enabledLevels;
-    }
-    getTextFilter() {
-      var _a;
-      if (typeof document === "undefined") {
-        return "";
-      }
-      const textFilterInput = document.getElementById("logTextFilter");
-      return ((_a = textFilterInput == null ? void 0 : textFilterInput.value) == null ? void 0 : _a.trim()) || "";
-    }
-    updateBufferSizeDisplay() {
-      var _a, _b;
-      if (typeof document === "undefined") {
-        return;
-      }
-      const bufferSizeElement = document.getElementById("logBufferSize");
-      if (!bufferSizeElement) {
-        return;
-      }
-      const displayedCount = ((_b = (_a = this.container) == null ? void 0 : _a.children) == null ? void 0 : _b.length) || 0;
-      const totalCount = this.allEntries.length;
-      bufferSizeElement.textContent = `${displayedCount} / ${totalCount}`;
-    }
-    // Public method to refresh display when filter checkboxes change
-    refreshFilter() {
-      this.refreshDisplay();
-    }
-    // Public method to clear all entries
-    clearAll() {
-      this.allEntries = [];
-      if (this.container) {
-        this.container.innerHTML = "";
-      }
-    }
-    // Debug methods to help diagnose filtering issues
-    getEntryCount() {
-      return this.allEntries.length;
-    }
-    getEnabledLevels() {
-      return Array.from(this.getEnabledLevelsFromCheckboxes());
-    }
-    debugEntries() {
-      console.log("DOMOutput Debug:");
-      console.log("- Container exists:", !!this.container);
-      console.log("- Entry count:", this.allEntries.length);
-      console.log("- Enabled levels:", this.getEnabledLevels());
-      console.log("- Entries:", this.allEntries);
-    }
-  };
-  var _Logger = class _Logger {
-    constructor() {
-      this.outputs = [];
-      this.enabledLevels = /* @__PURE__ */ new Set(["all"]);
-      this.outputs.push(new ConsoleOutput());
-    }
-    static getInstance() {
-      if (!_Logger.instance) {
-        _Logger.instance = new _Logger();
-      }
-      return _Logger.instance;
-    }
-    addOutput(output) {
-      this.outputs.push(output);
-    }
-    setMinLevel(level) {
-      this.enabledLevels = /* @__PURE__ */ new Set([level]);
-    }
-    setEnabledLevels(levels) {
-      this.enabledLevels = new Set(levels);
-    }
-    enableLevel(level) {
-      this.enabledLevels.add(level);
-    }
-    disableLevel(level) {
-      this.enabledLevels.delete(level);
-    }
-    getEnabledLevels() {
-      return Array.from(this.enabledLevels);
-    }
-    shouldLog(level) {
-      if (this.enabledLevels.has("all"))
-        return true;
-      if (level === "all")
-        return true;
-      if (this.enabledLevels.has(level))
-        return true;
-      if (this.enabledLevels.size === 1) {
-        const singleLevel = Array.from(this.enabledLevels)[0];
-        if (singleLevel !== "all") {
-          const levels = ["debug", "info", "warn", "error"];
-          const minIndex = levels.indexOf(singleLevel);
-          const currentIndex = levels.indexOf(level);
-          return currentIndex >= minIndex;
-        }
-      }
-      return false;
-    }
-    log(level, message, context) {
-      if (!this.shouldLog(level))
-        return;
-      const contextPrefix = context ? `${context} ` : "";
-      const finalMessage = `${contextPrefix}${message}`;
-      const timestamp = /* @__PURE__ */ new Date();
-      this.outputs.forEach((output) => {
-        try {
-          output.write(level, finalMessage, timestamp);
-        } catch (error) {
-          console.error("Logger output error:", error);
-        }
-      });
-    }
-    debug(message, context) {
-      this.log("debug", message, context);
-    }
-    info(message, context) {
-      this.log("info", message, context);
-    }
-    warn(message, context) {
-      this.log("warn", message, context);
-    }
-    error(message, context) {
-      this.log("error", message, context);
-    }
-  };
-  _Logger.instance = null;
-  var Logger = _Logger;
-  var logger = Logger.getInstance();
-
   // src/constants.ts
   var UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
   var UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
@@ -430,6 +233,203 @@
     980
     // There's an additional 5% until 800mV is reached
   ];
+
+  // src/Logger.ts
+  var ConsoleOutput = class {
+    write(level, message, _timestamp) {
+      switch (level) {
+        case "debug":
+          console.debug(message);
+          break;
+        case "info":
+          console.info(message);
+          break;
+        case "warn":
+          console.warn(message);
+          break;
+        case "error":
+          console.error(message);
+          break;
+      }
+    }
+  };
+  var DOMOutput = class {
+    constructor(containerId, maxLines = 100) {
+      this.container = null;
+      this.maxLines = 100;
+      this.allEntries = [];
+      this.container = typeof document !== "undefined" ? document.getElementById(containerId) : null;
+      this.maxLines = maxLines;
+    }
+    write(level, message, timestamp) {
+      if (!this.container)
+        return;
+      this.allEntries.push({ level, message, timestamp });
+      while (this.allEntries.length > this.maxLines) {
+        this.allEntries.shift();
+      }
+      this.refreshDisplay();
+    }
+    refreshDisplay() {
+      if (!this.container)
+        return;
+      this.container.innerHTML = "";
+      const enabledLevels = this.getEnabledLevelsFromCheckboxes();
+      const textFilter = this.getTextFilter();
+      this.allEntries.forEach((entry) => {
+        if (enabledLevels.has(entry.level)) {
+          if (textFilter && !entry.message.toLowerCase().includes(textFilter.toLowerCase())) {
+            return;
+          }
+          const timeStr = entry.timestamp.toLocaleTimeString();
+          const logLine = document.createElement("div");
+          logLine.className = `log-line log-${entry.level}`;
+          logLine.textContent = `[${timeStr}] ${entry.message}`;
+          this.container.appendChild(logLine);
+        }
+      });
+      this.container.scrollTop = this.container.scrollHeight;
+      this.updateBufferSizeDisplay();
+    }
+    getEnabledLevelsFromCheckboxes() {
+      const enabledLevels = /* @__PURE__ */ new Set();
+      if (typeof document === "undefined") {
+        return enabledLevels;
+      }
+      const checkboxes = ["debug", "info", "warn", "error"];
+      checkboxes.forEach((level) => {
+        const checkbox = document.getElementById(`logLevel-${level}`);
+        if (checkbox && checkbox.checked) {
+          enabledLevels.add(level);
+        }
+      });
+      return enabledLevels;
+    }
+    getTextFilter() {
+      var _a;
+      if (typeof document === "undefined") {
+        return "";
+      }
+      const textFilterInput = document.getElementById("logTextFilter");
+      return ((_a = textFilterInput == null ? void 0 : textFilterInput.value) == null ? void 0 : _a.trim()) || "";
+    }
+    updateBufferSizeDisplay() {
+      var _a, _b;
+      if (typeof document === "undefined") {
+        return;
+      }
+      const bufferSizeElement = document.getElementById("logBufferSize");
+      if (!bufferSizeElement) {
+        return;
+      }
+      const displayedCount = ((_b = (_a = this.container) == null ? void 0 : _a.children) == null ? void 0 : _b.length) || 0;
+      const totalCount = this.allEntries.length;
+      bufferSizeElement.textContent = `${displayedCount} / ${totalCount}`;
+    }
+    // Public method to refresh display when filter checkboxes change
+    refreshFilter() {
+      this.refreshDisplay();
+    }
+    // Public method to clear all entries
+    clearAll() {
+      this.allEntries = [];
+      if (this.container) {
+        this.container.innerHTML = "";
+      }
+    }
+    // Debug methods to help diagnose filtering issues
+    getEntryCount() {
+      return this.allEntries.length;
+    }
+    getEnabledLevels() {
+      return Array.from(this.getEnabledLevelsFromCheckboxes());
+    }
+    debugEntries() {
+      console.log("DOMOutput Debug:");
+      console.log("- Container exists:", !!this.container);
+      console.log("- Entry count:", this.allEntries.length);
+      console.log("- Enabled levels:", this.getEnabledLevels());
+      console.log("- Entries:", this.allEntries);
+    }
+  };
+  var _Logger = class _Logger {
+    constructor() {
+      this.outputs = [];
+      this.enabledLevels = /* @__PURE__ */ new Set(["all"]);
+      this.outputs.push(new ConsoleOutput());
+    }
+    static getInstance() {
+      if (!_Logger.instance) {
+        _Logger.instance = new _Logger();
+      }
+      return _Logger.instance;
+    }
+    addOutput(output) {
+      this.outputs.push(output);
+    }
+    setMinLevel(level) {
+      this.enabledLevels = /* @__PURE__ */ new Set([level]);
+    }
+    setEnabledLevels(levels) {
+      this.enabledLevels = new Set(levels);
+    }
+    enableLevel(level) {
+      this.enabledLevels.add(level);
+    }
+    disableLevel(level) {
+      this.enabledLevels.delete(level);
+    }
+    getEnabledLevels() {
+      return Array.from(this.enabledLevels);
+    }
+    shouldLog(level) {
+      if (this.enabledLevels.has("all"))
+        return true;
+      if (level === "all")
+        return true;
+      if (this.enabledLevels.has(level))
+        return true;
+      if (this.enabledLevels.size === 1) {
+        const singleLevel = Array.from(this.enabledLevels)[0];
+        if (singleLevel !== "all") {
+          const levels = ["debug", "info", "warn", "error"];
+          const minIndex = levels.indexOf(singleLevel);
+          const currentIndex = levels.indexOf(level);
+          return currentIndex >= minIndex;
+        }
+      }
+      return false;
+    }
+    log(level, message, context) {
+      if (!this.shouldLog(level))
+        return;
+      const contextPrefix = context ? `${context} ` : "";
+      const finalMessage = `${contextPrefix}${message}`;
+      const timestamp = /* @__PURE__ */ new Date();
+      this.outputs.forEach((output) => {
+        try {
+          output.write(level, finalMessage, timestamp);
+        } catch (error) {
+          console.error("Logger output error:", error);
+        }
+      });
+    }
+    debug(message, context) {
+      this.log("debug", message, context);
+    }
+    info(message, context) {
+      this.log("info", message, context);
+    }
+    warn(message, context) {
+      this.log("warn", message, context);
+    }
+    error(message, context) {
+      this.log("error", message, context);
+    }
+  };
+  _Logger.instance = null;
+  var Logger = _Logger;
+  var logger = Logger.getInstance();
 
   // src/udtTowerResponse.ts
   var TowerResponseProcessor = class {
@@ -1447,6 +1447,10 @@
       this.retrySendCommandMax = 5;
       // tower state
       this.currentDrumPositions = { topMiddle: 16, bottom: 66 };
+      this.currentBatteryValue = 0;
+      this.previousBatteryValue = 0;
+      this.currentBatteryPercentage = 0;
+      this.previousBatteryPercentage = 0;
       // call back functions
       // you overwrite these with your own functions 
       // to handle these events in your app
@@ -1472,7 +1476,13 @@
             this.towerCommands.clearQueue();
           }
         },
-        onBatteryLevelNotify: (millivolts) => this.onBatteryLevelNotify(millivolts),
+        onBatteryLevelNotify: (millivolts) => {
+          this.previousBatteryValue = this.currentBatteryValue;
+          this.currentBatteryValue = millivolts;
+          this.previousBatteryPercentage = this.currentBatteryPercentage;
+          this.currentBatteryPercentage = this.milliVoltsToPercentageNumber(millivolts);
+          this.onBatteryLevelNotify(millivolts);
+        },
         onCalibrationComplete: () => this.onCalibrationComplete(),
         onSkullDrop: (towerSkullCount) => this.onSkullDrop(towerSkullCount)
       };
@@ -1530,6 +1540,19 @@
     }
     get txCharacteristic() {
       return this.bleConnection.txCharacteristic;
+    }
+    // Getter methods for battery state
+    get currentBattery() {
+      return this.currentBatteryValue;
+    }
+    get previousBattery() {
+      return this.previousBatteryValue;
+    }
+    get currentBatteryPercent() {
+      return this.currentBatteryPercentage;
+    }
+    get previousBatteryPercent() {
+      return this.previousBatteryPercentage;
     }
     // Getter/setter methods for connection configuration
     get batteryNotifyFrequency() {
@@ -1737,6 +1760,16 @@
       return this.bleConnection.getConnectionStatus();
     }
     //#endregion
+    /**
+     * Converts millivolts to percentage number (0-100).
+     * @param mv - Battery voltage in millivolts
+     * @returns Battery percentage as number (0-100)
+     */
+    milliVoltsToPercentageNumber(mv) {
+      const batLevel = mv ? mv / 3 : 0;
+      const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
+      return levels.length * 5;
+    }
     //#region cleanup
     /**
      * Clean up resources and disconnect properly
@@ -1800,6 +1833,9 @@
       el.style.background = "rgb(2 255 14 / 30%)";
     }
     logger.info("Tower connected successfully", "[TC]");
+    Tower.batteryNotifyFrequency = 1e3;
+    Tower.batteryNotifyOnValueChangeOnly = false;
+    updateBatteryTrend();
   };
   Tower.onTowerConnect = onTowerConnected;
   var onTowerDisconnected = () => {
@@ -1828,11 +1864,30 @@
     }
   };
   Tower.onCalibrationComplete = onCalibrationComplete;
+  var updateBatteryTrend = () => {
+    const trendElement = document.getElementById("batteryTrend");
+    if (!trendElement)
+      return;
+    const currentBatteryPercent = Tower.currentBatteryPercent;
+    const previousBatteryPercent = Tower.previousBatteryPercent;
+    if (previousBatteryPercent === 0) {
+      trendElement.innerHTML = '<span style="color: #d1d5db; font-size: 16px;">\u2192</span>';
+      return;
+    }
+    if (currentBatteryPercent > previousBatteryPercent) {
+      trendElement.innerHTML = '<span style="color: #10b981; font-size: 16px;">\u2191</span>';
+    } else if (currentBatteryPercent < previousBatteryPercent) {
+      trendElement.innerHTML = '<span style="color: #fbbf24; font-size: 16px;">\u2193</span>';
+    } else {
+      trendElement.innerHTML = '<span style="color: #d1d5db; font-size: 16px;">\u2192</span>';
+    }
+  };
   var onBatteryLevelNotify = (millivolts) => {
     const el = document.getElementById("battery");
     if (el) {
       el.innerText = Tower.milliVoltsToPercentage(millivolts).toString();
     }
+    updateBatteryTrend();
   };
   Tower.onBatteryLevelNotify = onBatteryLevelNotify;
   async function resetSkullCount() {

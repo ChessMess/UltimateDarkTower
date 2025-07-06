@@ -1,7 +1,8 @@
 import {
   type Lights,
   type TowerSide,
-  type RotateCommand
+  type RotateCommand,
+  VOLTAGE_LEVELS
 } from './constants';
 import { Logger, ConsoleOutput, type LogOutput } from './Logger';
 import { UdtBleConnection, type ConnectionCallbacks, type ConnectionStatus } from './udtBleConnection';
@@ -72,6 +73,8 @@ class UltimateDarkTower {
   currentDrumPositions = { topMiddle: 0x10, bottom: 0x42 };
   currentBatteryValue: number = 0;
   previousBatteryValue: number = 0;
+  currentBatteryPercentage: number = 0;
+  previousBatteryPercentage: number = 0;
 
   // call back functions
   // you overwrite these with your own functions 
@@ -100,6 +103,8 @@ class UltimateDarkTower {
       onBatteryLevelNotify: (millivolts: number) => {
         this.previousBatteryValue = this.currentBatteryValue;
         this.currentBatteryValue = millivolts;
+        this.previousBatteryPercentage = this.currentBatteryPercentage;
+        this.currentBatteryPercentage = this.milliVoltsToPercentageNumber(millivolts);
         this.onBatteryLevelNotify(millivolts);
       },
       onCalibrationComplete: () => this.onCalibrationComplete(),
@@ -164,6 +169,8 @@ class UltimateDarkTower {
   // Getter methods for battery state
   get currentBattery(): number { return this.currentBatteryValue; }
   get previousBattery(): number { return this.previousBatteryValue; }
+  get currentBatteryPercent(): number { return this.currentBatteryPercentage; }
+  get previousBatteryPercent(): number { return this.previousBatteryPercentage; }
 
   // Getter/setter methods for connection configuration
   get batteryNotifyFrequency(): number { return this.bleConnection.batteryNotifyFrequency; }
@@ -387,6 +394,17 @@ class UltimateDarkTower {
     return this.bleConnection.getConnectionStatus();
   }
   //#endregion
+
+  /**
+   * Converts millivolts to percentage number (0-100).
+   * @param mv - Battery voltage in millivolts
+   * @returns Battery percentage as number (0-100)
+   */
+  private milliVoltsToPercentageNumber(mv: number): number {
+    const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
+    const levels = VOLTAGE_LEVELS.filter(v => batLevel >= v);
+    return levels.length * 5;
+  }
 
   //#region cleanup
 
