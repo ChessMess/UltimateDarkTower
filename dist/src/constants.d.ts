@@ -2,6 +2,16 @@ export declare const UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 export declare const UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 export declare const UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 export declare const TOWER_DEVICE_NAME = "ReturnToDarkTower";
+export declare const DIS_SERVICE_UUID = "0000180a-0000-1000-8000-00805f9b34fb";
+export declare const DIS_MANUFACTURER_NAME_UUID = "00002a29-0000-1000-8000-00805f9b34fb";
+export declare const DIS_MODEL_NUMBER_UUID = "00002a24-0000-1000-8000-00805f9b34fb";
+export declare const DIS_SERIAL_NUMBER_UUID = "00002a25-0000-1000-8000-00805f9b34fb";
+export declare const DIS_HARDWARE_REVISION_UUID = "00002a27-0000-1000-8000-00805f9b34fb";
+export declare const DIS_FIRMWARE_REVISION_UUID = "00002a26-0000-1000-8000-00805f9b34fb";
+export declare const DIS_SOFTWARE_REVISION_UUID = "00002a28-0000-1000-8000-00805f9b34fb";
+export declare const DIS_SYSTEM_ID_UUID = "00002a23-0000-1000-8000-00805f9b34fb";
+export declare const DIS_IEEE_REGULATORY_UUID = "00002a2a-0000-1000-8000-00805f9b34fb";
+export declare const DIS_PNP_ID_UUID = "00002a50-0000-1000-8000-00805f9b34fb";
 export type CommandPacket = Uint8Array;
 export declare const TOWER_COMMANDS: {
     towerState: number;

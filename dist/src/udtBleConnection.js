@@ -32,6 +32,8 @@ class UdtBleConnection {
         this.lastBatteryPercentage = "";
         this.batteryNotifyFrequency = 15 * 1000;
         this.batteryNotifyOnValueChangeOnly = false;
+        // Device information
+        this.deviceInformation = {};
         // Logging configuration
         this.logTowerResponses = true;
         this.logTowerResponseConfig = {
@@ -107,7 +109,7 @@ class UdtBleConnection {
             // @ts-ignore
             this.TowerDevice = await navigator.bluetooth.requestDevice({
                 filters: [{ namePrefix: constants_1.TOWER_DEVICE_NAME }],
-                optionalServices: [constants_1.UART_SERVICE_UUID]
+                optionalServices: [constants_1.UART_SERVICE_UUID, constants_1.DIS_SERVICE_UUID]
             });
             if (this.TowerDevice === null) {
                 this.logger.warn("Tower not found", '[UDT]');
@@ -130,6 +132,8 @@ class UdtBleConnection {
             this.isConnected = true;
             this.lastSuccessfulCommand = Date.now();
             this.lastBatteryHeartbeat = Date.now();
+            // Read device information after successful connection
+            await this.readDeviceInformation();
             if (this.enableConnectionMonitoring) {
                 this.startConnectionMonitoring();
             }
@@ -194,6 +198,8 @@ class UdtBleConnection {
         this.lastSuccessfulCommand = 0;
         this.txCharacteristic = null;
         this.rxCharacteristic = null;
+        // Clear device information on disconnect
+        this.deviceInformation = {};
         this.callbacks.onTowerDisconnect();
     }
     startConnectionMonitoring() {
@@ -316,6 +322,63 @@ class UdtBleConnection {
             batteryHeartbeatVerifyConnection: this.batteryHeartbeatVerifyConnection,
             connectionTimeoutMs: this.connectionTimeoutThreshold
         };
+    }
+    getDeviceInformation() {
+        return Object.assign({}, this.deviceInformation);
+    }
+    async readDeviceInformation() {
+        var _a, _b;
+        if (!((_b = (_a = this.TowerDevice) === null || _a === void 0 ? void 0 : _a.gatt) === null || _b === void 0 ? void 0 : _b.connected)) {
+            this.logger.warn('Cannot read device information - not connected', '[UDT]');
+            return;
+        }
+        try {
+            this.logger.info('Reading device information service...', '[UDT]');
+            const disService = await this.TowerDevice.gatt.getPrimaryService(constants_1.DIS_SERVICE_UUID);
+            // Reset device information object
+            this.deviceInformation = {};
+            const characteristicMap = [
+                { uuid: constants_1.DIS_MANUFACTURER_NAME_UUID, name: 'Manufacturer Name', key: 'manufacturerName', logIfMissing: true },
+                { uuid: constants_1.DIS_MODEL_NUMBER_UUID, name: 'Model Number', key: 'modelNumber', logIfMissing: true },
+                { uuid: constants_1.DIS_SERIAL_NUMBER_UUID, name: 'Serial Number', key: 'serialNumber', logIfMissing: false },
+                { uuid: constants_1.DIS_HARDWARE_REVISION_UUID, name: 'Hardware Revision', key: 'hardwareRevision', logIfMissing: true },
+                { uuid: constants_1.DIS_FIRMWARE_REVISION_UUID, name: 'Firmware Revision', key: 'firmwareRevision', logIfMissing: true },
+                { uuid: constants_1.DIS_SOFTWARE_REVISION_UUID, name: 'Software Revision', key: 'softwareRevision', logIfMissing: true },
+                { uuid: constants_1.DIS_SYSTEM_ID_UUID, name: 'System ID', key: 'systemId', logIfMissing: false },
+                { uuid: constants_1.DIS_IEEE_REGULATORY_UUID, name: 'IEEE Regulatory', key: 'ieeeRegulatory', logIfMissing: false },
+                { uuid: constants_1.DIS_PNP_ID_UUID, name: 'PnP ID', key: 'pnpId', logIfMissing: false },
+            ];
+            for (const { uuid, name, key, logIfMissing } of characteristicMap) {
+                try {
+                    const characteristic = await disService.getCharacteristic(uuid);
+                    const value = await characteristic.readValue();
+                    if (uuid === constants_1.DIS_SYSTEM_ID_UUID || uuid === constants_1.DIS_PNP_ID_UUID) {
+                        // These are binary data, convert to hex string
+                        const hexValue = Array.from(new Uint8Array(value.buffer))
+                            .map(b => b.toString(16).padStart(2, '0'))
+                            .join(':');
+                        this.logger.info(`Device ${name}: ${hexValue}`, '[UDT]');
+                        this.deviceInformation[key] = hexValue;
+                    }
+                    else {
+                        // Text characteristics
+                        const textValue = new TextDecoder().decode(value);
+                        this.logger.info(`Device ${name}: ${textValue}`, '[UDT]');
+                        this.deviceInformation[key] = textValue;
+                    }
+                }
+                catch (error) {
+                    if (logIfMissing) {
+                        this.logger.debug(`Device ${name} characteristic not available`, '[UDT]');
+                    }
+                }
+            }
+            // Set timestamp when device information was last read
+            this.deviceInformation.lastUpdated = new Date();
+        }
+        catch (error) {
+            this.logger.debug('Device Information Service not available', '[UDT]');
+        }
     }
     async cleanup() {
         this.logger.info('Cleaning up UdtBleConnection instance', '[UDT]');

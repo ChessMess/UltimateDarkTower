@@ -7,6 +7,18 @@ export interface ConnectionCallbacks {
     onSkullDrop: (towerSkullCount: number) => void;
     onTowerResponse?: () => void;
 }
+export interface DeviceInformation {
+    manufacturerName?: string;
+    modelNumber?: string;
+    serialNumber?: string;
+    hardwareRevision?: string;
+    firmwareRevision?: string;
+    softwareRevision?: string;
+    systemId?: string;
+    ieeeRegulatory?: string;
+    pnpId?: string;
+    lastUpdated?: Date;
+}
 export interface ConnectionStatus {
     isConnected: boolean;
     isGattConnected: boolean;
@@ -46,6 +58,7 @@ export declare class UdtBleConnection {
     lastBatteryPercentage: string;
     batteryNotifyFrequency: number;
     batteryNotifyOnValueChangeOnly: boolean;
+    private deviceInformation;
     logTowerResponses: boolean;
     logTowerResponseConfig: {
         TOWER_STATE: boolean;
@@ -78,5 +91,7 @@ export declare class UdtBleConnection {
     configureBatteryHeartbeatMonitoring(enabled?: boolean, timeout?: number, verifyConnection?: boolean): void;
     isConnectedAndResponsive(): Promise<boolean>;
     getConnectionStatus(): ConnectionStatus;
+    getDeviceInformation(): DeviceInformation;
+    private readDeviceInformation;
     cleanup(): Promise<void>;
 }

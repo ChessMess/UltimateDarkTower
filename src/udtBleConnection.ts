@@ -4,6 +4,16 @@ import {
     UART_TX_CHARACTERISTIC_UUID,
     UART_RX_CHARACTERISTIC_UUID,
     SKULL_DROP_COUNT_POS,
+    DIS_SERVICE_UUID,
+    DIS_MANUFACTURER_NAME_UUID,
+    DIS_MODEL_NUMBER_UUID,
+    DIS_SERIAL_NUMBER_UUID,
+    DIS_HARDWARE_REVISION_UUID,
+    DIS_FIRMWARE_REVISION_UUID,
+    DIS_SOFTWARE_REVISION_UUID,
+    DIS_SYSTEM_ID_UUID,
+    DIS_IEEE_REGULATORY_UUID,
+    DIS_PNP_ID_UUID,
 } from './constants';
 import { Logger } from './Logger';
 import { TowerResponseProcessor } from './udtTowerResponse';
@@ -15,6 +25,19 @@ export interface ConnectionCallbacks {
     onCalibrationComplete: () => void;
     onSkullDrop: (towerSkullCount: number) => void;
     onTowerResponse?: () => void; // Optional callback for command queue response detection
+}
+
+export interface DeviceInformation {
+    manufacturerName?: string;
+    modelNumber?: string;
+    serialNumber?: string;
+    hardwareRevision?: string;
+    firmwareRevision?: string;
+    softwareRevision?: string;
+    systemId?: string;
+    ieeeRegulatory?: string;
+    pnpId?: string;
+    lastUpdated?: Date;
 }
 
 export interface ConnectionStatus {
@@ -68,6 +91,9 @@ export class UdtBleConnection {
     batteryNotifyFrequency: number = 15 * 1000;
     batteryNotifyOnValueChangeOnly = false;
 
+    // Device information
+    private deviceInformation: DeviceInformation = {};
+
     // Logging configuration
     logTowerResponses = true;
     logTowerResponseConfig = {
@@ -95,7 +121,7 @@ export class UdtBleConnection {
             // @ts-ignore
             this.TowerDevice = await navigator.bluetooth.requestDevice({
                 filters: [{ namePrefix: TOWER_DEVICE_NAME }],
-                optionalServices: [UART_SERVICE_UUID]
+                optionalServices: [UART_SERVICE_UUID, DIS_SERVICE_UUID]
             });
 
             if (this.TowerDevice === null) {
@@ -134,6 +160,9 @@ export class UdtBleConnection {
             this.isConnected = true;
             this.lastSuccessfulCommand = Date.now();
             this.lastBatteryHeartbeat = Date.now();
+
+            // Read device information after successful connection
+            await this.readDeviceInformation();
 
             if (this.enableConnectionMonitoring) {
                 this.startConnectionMonitoring();
@@ -272,6 +301,9 @@ export class UdtBleConnection {
 
         this.txCharacteristic = null;
         this.rxCharacteristic = null;
+
+        // Clear device information on disconnect
+        this.deviceInformation = {};
 
         this.callbacks.onTowerDisconnect();
     }
@@ -413,6 +445,67 @@ export class UdtBleConnection {
             batteryHeartbeatVerifyConnection: this.batteryHeartbeatVerifyConnection,
             connectionTimeoutMs: this.connectionTimeoutThreshold
         };
+    }
+
+    getDeviceInformation(): DeviceInformation {
+        return { ...this.deviceInformation };
+    }
+
+    private async readDeviceInformation() {
+        if (!this.TowerDevice?.gatt?.connected) {
+            this.logger.warn('Cannot read device information - not connected', '[UDT]');
+            return;
+        }
+
+        try {
+            this.logger.info('Reading device information service...', '[UDT]');
+            const disService = await this.TowerDevice.gatt.getPrimaryService(DIS_SERVICE_UUID);
+            
+            // Reset device information object
+            this.deviceInformation = {};
+            
+            const characteristicMap = [
+                { uuid: DIS_MANUFACTURER_NAME_UUID, name: 'Manufacturer Name', key: 'manufacturerName', logIfMissing: true },
+                { uuid: DIS_MODEL_NUMBER_UUID, name: 'Model Number', key: 'modelNumber', logIfMissing: true },
+                { uuid: DIS_SERIAL_NUMBER_UUID, name: 'Serial Number', key: 'serialNumber', logIfMissing: false },
+                { uuid: DIS_HARDWARE_REVISION_UUID, name: 'Hardware Revision', key: 'hardwareRevision', logIfMissing: true },
+                { uuid: DIS_FIRMWARE_REVISION_UUID, name: 'Firmware Revision', key: 'firmwareRevision', logIfMissing: true },
+                { uuid: DIS_SOFTWARE_REVISION_UUID, name: 'Software Revision', key: 'softwareRevision', logIfMissing: true },
+                { uuid: DIS_SYSTEM_ID_UUID, name: 'System ID', key: 'systemId', logIfMissing: false },
+                { uuid: DIS_IEEE_REGULATORY_UUID, name: 'IEEE Regulatory', key: 'ieeeRegulatory', logIfMissing: false },
+                { uuid: DIS_PNP_ID_UUID, name: 'PnP ID', key: 'pnpId', logIfMissing: false },
+            ];
+
+            for (const { uuid, name, key, logIfMissing } of characteristicMap) {
+                try {
+                    const characteristic = await disService.getCharacteristic(uuid);
+                    const value = await characteristic.readValue();
+                    
+                    if (uuid === DIS_SYSTEM_ID_UUID || uuid === DIS_PNP_ID_UUID) {
+                        // These are binary data, convert to hex string
+                        const hexValue = Array.from(new Uint8Array(value.buffer))
+                            .map(b => b.toString(16).padStart(2, '0'))
+                            .join(':');
+                        this.logger.info(`Device ${name}: ${hexValue}`, '[UDT]');
+                        (this.deviceInformation as any)[key] = hexValue;
+                    } else {
+                        // Text characteristics
+                        const textValue = new TextDecoder().decode(value);
+                        this.logger.info(`Device ${name}: ${textValue}`, '[UDT]');
+                        (this.deviceInformation as any)[key] = textValue;
+                    }
+                } catch (error) {
+                    if (logIfMissing) {
+                        this.logger.debug(`Device ${name} characteristic not available`, '[UDT]');
+                    }
+                }
+            }
+            
+            // Set timestamp when device information was last read
+            this.deviceInformation.lastUpdated = new Date();
+        } catch (error) {
+            this.logger.debug('Device Information Service not available', '[UDT]');
+        }
     }
 
     async cleanup() {

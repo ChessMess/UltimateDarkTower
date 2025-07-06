@@ -1,9 +1,36 @@
 (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __propIsEnum = Object.prototype.propertyIsEnumerable;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __spreadValues = (a, b) => {
+    for (var prop in b || (b = {}))
+      if (__hasOwnProp.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    if (__getOwnPropSymbols)
+      for (var prop of __getOwnPropSymbols(b)) {
+        if (__propIsEnum.call(b, prop))
+          __defNormalProp(a, prop, b[prop]);
+      }
+    return a;
+  };
+
   // src/constants.ts
   var UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
   var UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
   var UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
   var TOWER_DEVICE_NAME = "ReturnToDarkTower";
+  var DIS_SERVICE_UUID = "0000180a-0000-1000-8000-00805f9b34fb";
+  var DIS_MANUFACTURER_NAME_UUID = "00002a29-0000-1000-8000-00805f9b34fb";
+  var DIS_MODEL_NUMBER_UUID = "00002a24-0000-1000-8000-00805f9b34fb";
+  var DIS_SERIAL_NUMBER_UUID = "00002a25-0000-1000-8000-00805f9b34fb";
+  var DIS_HARDWARE_REVISION_UUID = "00002a27-0000-1000-8000-00805f9b34fb";
+  var DIS_FIRMWARE_REVISION_UUID = "00002a26-0000-1000-8000-00805f9b34fb";
+  var DIS_SOFTWARE_REVISION_UUID = "00002a28-0000-1000-8000-00805f9b34fb";
+  var DIS_SYSTEM_ID_UUID = "00002a23-0000-1000-8000-00805f9b34fb";
+  var DIS_IEEE_REGULATORY_UUID = "00002a2a-0000-1000-8000-00805f9b34fb";
+  var DIS_PNP_ID_UUID = "00002a50-0000-1000-8000-00805f9b34fb";
   var TOWER_COMMANDS = {
     towerState: 0,
     // not a sendable command
@@ -468,6 +495,8 @@
       this.lastBatteryPercentage = "";
       this.batteryNotifyFrequency = 15 * 1e3;
       this.batteryNotifyOnValueChangeOnly = false;
+      // Device information
+      this.deviceInformation = {};
       // Logging configuration
       this.logTowerResponses = true;
       this.logTowerResponseConfig = {
@@ -536,7 +565,7 @@
       try {
         this.TowerDevice = await navigator.bluetooth.requestDevice({
           filters: [{ namePrefix: TOWER_DEVICE_NAME }],
-          optionalServices: [UART_SERVICE_UUID]
+          optionalServices: [UART_SERVICE_UUID, DIS_SERVICE_UUID]
         });
         if (this.TowerDevice === null) {
           this.logger.warn("Tower not found", "[UDT]");
@@ -565,6 +594,7 @@
         this.isConnected = true;
         this.lastSuccessfulCommand = Date.now();
         this.lastBatteryHeartbeat = Date.now();
+        await this.readDeviceInformation();
         if (this.enableConnectionMonitoring) {
           this.startConnectionMonitoring();
         }
@@ -627,6 +657,7 @@
       this.lastSuccessfulCommand = 0;
       this.txCharacteristic = null;
       this.rxCharacteristic = null;
+      this.deviceInformation = {};
       this.callbacks.onTowerDisconnect();
     }
     startConnectionMonitoring() {
@@ -740,6 +771,54 @@
         batteryHeartbeatVerifyConnection: this.batteryHeartbeatVerifyConnection,
         connectionTimeoutMs: this.connectionTimeoutThreshold
       };
+    }
+    getDeviceInformation() {
+      return __spreadValues({}, this.deviceInformation);
+    }
+    async readDeviceInformation() {
+      var _a, _b;
+      if (!((_b = (_a = this.TowerDevice) == null ? void 0 : _a.gatt) == null ? void 0 : _b.connected)) {
+        this.logger.warn("Cannot read device information - not connected", "[UDT]");
+        return;
+      }
+      try {
+        this.logger.info("Reading device information service...", "[UDT]");
+        const disService = await this.TowerDevice.gatt.getPrimaryService(DIS_SERVICE_UUID);
+        this.deviceInformation = {};
+        const characteristicMap = [
+          { uuid: DIS_MANUFACTURER_NAME_UUID, name: "Manufacturer Name", key: "manufacturerName", logIfMissing: true },
+          { uuid: DIS_MODEL_NUMBER_UUID, name: "Model Number", key: "modelNumber", logIfMissing: true },
+          { uuid: DIS_SERIAL_NUMBER_UUID, name: "Serial Number", key: "serialNumber", logIfMissing: false },
+          { uuid: DIS_HARDWARE_REVISION_UUID, name: "Hardware Revision", key: "hardwareRevision", logIfMissing: true },
+          { uuid: DIS_FIRMWARE_REVISION_UUID, name: "Firmware Revision", key: "firmwareRevision", logIfMissing: true },
+          { uuid: DIS_SOFTWARE_REVISION_UUID, name: "Software Revision", key: "softwareRevision", logIfMissing: true },
+          { uuid: DIS_SYSTEM_ID_UUID, name: "System ID", key: "systemId", logIfMissing: false },
+          { uuid: DIS_IEEE_REGULATORY_UUID, name: "IEEE Regulatory", key: "ieeeRegulatory", logIfMissing: false },
+          { uuid: DIS_PNP_ID_UUID, name: "PnP ID", key: "pnpId", logIfMissing: false }
+        ];
+        for (const { uuid, name, key, logIfMissing } of characteristicMap) {
+          try {
+            const characteristic = await disService.getCharacteristic(uuid);
+            const value = await characteristic.readValue();
+            if (uuid === DIS_SYSTEM_ID_UUID || uuid === DIS_PNP_ID_UUID) {
+              const hexValue = Array.from(new Uint8Array(value.buffer)).map((b) => b.toString(16).padStart(2, "0")).join(":");
+              this.logger.info(`Device ${name}: ${hexValue}`, "[UDT]");
+              this.deviceInformation[key] = hexValue;
+            } else {
+              const textValue = new TextDecoder().decode(value);
+              this.logger.info(`Device ${name}: ${textValue}`, "[UDT]");
+              this.deviceInformation[key] = textValue;
+            }
+          } catch (error) {
+            if (logIfMissing) {
+              this.logger.debug(`Device ${name} characteristic not available`, "[UDT]");
+            }
+          }
+        }
+        this.deviceInformation.lastUpdated = /* @__PURE__ */ new Date();
+      } catch (error) {
+        this.logger.debug("Device Information Service not available", "[UDT]");
+      }
     }
     async cleanup() {
       this.logger.info("Cleaning up UdtBleConnection instance", "[UDT]");
