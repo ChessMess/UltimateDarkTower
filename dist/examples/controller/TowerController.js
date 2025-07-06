@@ -1776,6 +1776,7 @@
   window.TOWER_LIGHT_SEQUENCES = TOWER_LIGHT_SEQUENCES;
   window.LIGHT_EFFECTS = LIGHT_EFFECTS;
   window.Tower = Tower;
+  window.Tower = Tower;
   window.logger = logger;
   var updateSkullDropCount = (count) => {
     const el = document.getElementById("skull-count");

@@ -50,6 +50,9 @@ if (document.readyState === 'loading') {
 (window as any).TOWER_AUDIO_LIBRARY = TOWER_AUDIO_LIBRARY;
 (window as any).TOWER_LIGHT_SEQUENCES = TOWER_LIGHT_SEQUENCES;
 (window as any).LIGHT_EFFECTS = LIGHT_EFFECTS;
+
+// Expose Tower instance globally so HTML can access batteryNotifyOnValueChangeOnly
+(window as any).Tower = Tower;
 // Expose Tower instance and logger globally
 (window as any).Tower = Tower;
 (window as any).logger = logger;
@@ -178,7 +181,7 @@ const breakSeal = async () => {
   if (sealNumber) {
     // Clear checkboxes first, before sending tower command
     clearAllLightCheckboxes();
-    
+
     await Tower.breakSeal(sealNumber);
   }
 }
@@ -198,7 +201,7 @@ const allLightsOn = () => {
   allLightCheckboxes.forEach(checkbox => {
     checkbox.checked = true;
   });
-  
+
   // Send the light command
   lights();
 }
@@ -206,7 +209,7 @@ const allLightsOn = () => {
 const allLightsOff = () => {
   // Uncheck all light checkboxes
   clearAllLightCheckboxes();
-  
+
   // Send the light command (all lights off)
   lights();
 }
@@ -214,7 +217,7 @@ const allLightsOff = () => {
 const clearAllLights = async () => {
   // Clear checkboxes first, before sending tower command
   clearAllLightCheckboxes();
-  
+
   // Create lights object with all lights set to off
   const allLightsOff: Lights = {
     doorway: [
@@ -269,13 +272,13 @@ const lights = () => {
   // Get the currently selected light style from the dropdown
   const lightStyleSelect = document.getElementById("lightStyles") as HTMLSelectElement;
   const selectedLightStyle = lightStyleSelect?.options[lightStyleSelect.selectedIndex]?.textContent || "off";
-  
+
   // Apply the selected style to all checked lights
   const allCheckedLights = document.querySelectorAll('input[type="checkbox"][data-light-type]:checked') as NodeListOf<HTMLInputElement>;
   allCheckedLights.forEach(checkbox => {
     checkbox.setAttribute('data-light-style', selectedLightStyle);
   });
-  
+
   const doorwayLights: Array<DoorwayLight> = getDoorwayLights();
   const ledgeLights: Array<LedgeLight> = getLedgeLights();
   const baseLights: Array<BaseLight> = getBaseLights();
