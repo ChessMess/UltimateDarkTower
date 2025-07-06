@@ -70,6 +70,8 @@ class UltimateDarkTower {
 
   // tower state
   currentDrumPositions = { topMiddle: 0x10, bottom: 0x42 };
+  currentBatteryValue: number = 0;
+  previousBatteryValue: number = 0;
 
   // call back functions
   // you overwrite these with your own functions 
@@ -95,7 +97,11 @@ class UltimateDarkTower {
           this.towerCommands.clearQueue();
         }
       },
-      onBatteryLevelNotify: (millivolts: number) => this.onBatteryLevelNotify(millivolts),
+      onBatteryLevelNotify: (millivolts: number) => {
+        this.previousBatteryValue = this.currentBatteryValue;
+        this.currentBatteryValue = millivolts;
+        this.onBatteryLevelNotify(millivolts);
+      },
       onCalibrationComplete: () => this.onCalibrationComplete(),
       onSkullDrop: (towerSkullCount: number) => this.onSkullDrop(towerSkullCount)
     };
@@ -154,6 +160,10 @@ class UltimateDarkTower {
   get performingLongCommand(): boolean { return this.bleConnection.performingLongCommand; }
   get towerSkullDropCount(): number { return this.bleConnection.towerSkullDropCount; }
   get txCharacteristic() { return this.bleConnection.txCharacteristic; }
+
+  // Getter methods for battery state
+  get currentBattery(): number { return this.currentBatteryValue; }
+  get previousBattery(): number { return this.previousBatteryValue; }
 
   // Getter/setter methods for connection configuration
   get batteryNotifyFrequency(): number { return this.bleConnection.batteryNotifyFrequency; }
