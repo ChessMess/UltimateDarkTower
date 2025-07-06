@@ -79,10 +79,16 @@ class DOMOutput {
         this.container.innerHTML = '';
         // Get currently enabled levels from checkboxes
         const enabledLevels = this.getEnabledLevelsFromCheckboxes();
+        // Get text filter value
+        const textFilter = this.getTextFilter();
         // Add entries that match the current filter
         this.allEntries.forEach(entry => {
             // Only show entries if their level checkbox is checked
             if (enabledLevels.has(entry.level)) {
+                // Apply text filter if one is set
+                if (textFilter && !entry.message.toLowerCase().includes(textFilter.toLowerCase())) {
+                    return; // Skip this entry if it doesn't match text filter
+                }
                 // Create fresh DOM element for this entry
                 const timeStr = entry.timestamp.toLocaleTimeString();
                 const logLine = document.createElement('div');
@@ -108,6 +114,14 @@ class DOMOutput {
             }
         });
         return enabledLevels;
+    }
+    getTextFilter() {
+        var _a;
+        if (typeof document === 'undefined') {
+            return '';
+        }
+        const textFilterInput = document.getElementById('logTextFilter');
+        return ((_a = textFilterInput === null || textFilterInput === void 0 ? void 0 : textFilterInput.value) === null || _a === void 0 ? void 0 : _a.trim()) || '';
     }
     // Public method to refresh display when filter checkboxes change
     refreshFilter() {

@@ -12,6 +12,8 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
   <style>
     /* Custom font for tower controller */
@@ -426,6 +428,18 @@
               <div id="log-container"
                 class="flex-1 overflow-y-auto border border-gray-400 p-2 font-mono text-xs bg-gray-100 text-black rounded-md">
               </div>
+              <div class="mt-2 flex gap-2">
+                <input type="text" id="logTextFilter" placeholder="Filter log messages..." onkeyup="updateLogLevel()"
+                  class="flex-1 bg-gray-700 bg-opacity-60 text-white text-xs px-2 py-1.5 rounded-md placeholder-gray-400" />
+                <button onclick="copyDisplayedLogs(event)" title="Copy displayed logs to clipboard"
+                  class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-md">
+                  <i class="fas fa-copy"></i>
+                </button>
+                <button onclick="downloadDisplayedLogs(event)" title="Download displayed logs to file"
+                  class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-md">
+                  <i class="fas fa-file-arrow-down"></i>
+                </button>
+              </div>
             </fieldset>
           </div>
         </div>
@@ -461,7 +475,7 @@
         }
       }
 
-      // Refresh DOM output filtering
+      // Refresh DOM output filtering (includes text filter)
       if (window.sharedDOMOutput) {
         window.sharedDOMOutput.refreshFilter();
       }
@@ -478,6 +492,96 @@
       if (container) {
         container.innerHTML = '';
       }
+
+      // Clear the text filter input
+      const textFilter = document.getElementById("logTextFilter");
+      if (textFilter) {
+        textFilter.value = '';
+      }
+    }
+
+    const copyDisplayedLogs = (event) => {
+      const logContainer = document.getElementById("log-container");
+      if (!logContainer) return;
+
+      // Get all currently displayed log entries
+      const logLines = logContainer.querySelectorAll('.log-line');
+      if (logLines.length === 0) {
+        alert('No log entries to copy');
+        return;
+      }
+
+      // Extract text content from each log line
+      const logText = Array.from(logLines)
+        .map(line => line.textContent || '')
+        .join('\n');
+
+      // Copy to clipboard
+      navigator.clipboard.writeText(logText).then(() => {
+        // Optional: Show temporary success feedback
+        const button = event.target.closest('button');
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.style.backgroundColor = '#10b981';
+        
+        setTimeout(() => {
+          button.innerHTML = originalIcon;
+          button.style.backgroundColor = '';
+        }, 1000);
+      }).catch(err => {
+        console.error('Failed to copy logs: ', err);
+        alert('Failed to copy logs to clipboard');
+      });
+    }
+
+    const downloadDisplayedLogs = (event) => {
+      const logContainer = document.getElementById("log-container");
+      if (!logContainer) return;
+
+      // Get all currently displayed log entries
+      const logLines = logContainer.querySelectorAll('.log-line');
+      if (logLines.length === 0) {
+        alert('No log entries to download');
+        return;
+      }
+
+      // Extract text content from each log line
+      const logText = Array.from(logLines)
+        .map(line => line.textContent || '')
+        .join('\n');
+
+      // Create header with current date and time
+      const now = new Date();
+      const dateStr = now.toLocaleDateString();
+      const timeStr = now.toLocaleTimeString();
+      const header = `UltimateDarkTower Log Output - ${dateStr} ${timeStr}\n${'-'.repeat(60)}\n`;
+      
+      // Combine header with log content
+      const fileContent = header + logText;
+
+      // Create a blob with the log content
+      const blob = new Blob([fileContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+
+      // Create a temporary anchor element for download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'TowerLog.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      // Show temporary success feedback
+      const button = event.target.closest('button');
+      const originalIcon = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-check"></i>';
+      button.style.backgroundColor = '#10b981';
+      
+      setTimeout(() => {
+        button.innerHTML = originalIcon;
+        button.style.backgroundColor = '';
+      }, 1000);
     }
 
 
@@ -512,6 +616,10 @@
         });
       }
     });
+
+    // Expose copy and download functions globally for HTML onclick handlers
+    window.copyDisplayedLogs = copyDisplayedLogs;
+    window.downloadDisplayedLogs = downloadDisplayedLogs;
   </script>
 </body>
 

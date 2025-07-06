@@ -30,6 +30,7 @@ export declare class DOMOutput implements LogOutput {
     write(level: LogLevel, message: string, timestamp: Date): void;
     private refreshDisplay;
     private getEnabledLevelsFromCheckboxes;
+    private getTextFilter;
     refreshFilter(): void;
     clearAll(): void;
     getEntryCount(): number;

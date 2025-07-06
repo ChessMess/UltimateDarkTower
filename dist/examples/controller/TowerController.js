@@ -40,8 +40,12 @@
         return;
       this.container.innerHTML = "";
       const enabledLevels = this.getEnabledLevelsFromCheckboxes();
+      const textFilter = this.getTextFilter();
       this.allEntries.forEach((entry) => {
         if (enabledLevels.has(entry.level)) {
+          if (textFilter && !entry.message.toLowerCase().includes(textFilter.toLowerCase())) {
+            return;
+          }
           const timeStr = entry.timestamp.toLocaleTimeString();
           const logLine = document.createElement("div");
           logLine.className = `log-line log-${entry.level}`;
@@ -64,6 +68,14 @@
         }
       });
       return enabledLevels;
+    }
+    getTextFilter() {
+      var _a;
+      if (typeof document === "undefined") {
+        return "";
+      }
+      const textFilterInput = document.getElementById("logTextFilter");
+      return ((_a = textFilterInput == null ? void 0 : textFilterInput.value) == null ? void 0 : _a.trim()) || "";
     }
     // Public method to refresh display when filter checkboxes change
     refreshFilter() {
