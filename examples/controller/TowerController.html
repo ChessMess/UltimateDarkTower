@@ -431,6 +431,7 @@
               <div class="mt-2 flex gap-2">
                 <input type="text" id="logTextFilter" placeholder="Filter log messages..." onkeyup="updateLogLevel()"
                   class="flex-1 bg-gray-700 bg-opacity-60 text-white text-xs px-2 py-1.5 rounded-md placeholder-gray-400" />
+                <span id="logBufferSize" class="text-gray-400 text-sm px-2 py-1.5 whitespace-nowrap">0/0</span>
                 <button onclick="copyDisplayedLogs(event)" title="Copy displayed logs to clipboard"
                   class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-md">
                   <i class="fas fa-copy"></i>

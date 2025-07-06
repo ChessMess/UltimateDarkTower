@@ -99,6 +99,8 @@ class DOMOutput {
         });
         // Auto-scroll to bottom
         this.container.scrollTop = this.container.scrollHeight;
+        // Update buffer size display
+        this.updateBufferSizeDisplay();
     }
     getEnabledLevelsFromCheckboxes() {
         const enabledLevels = new Set();
@@ -122,6 +124,22 @@ class DOMOutput {
         }
         const textFilterInput = document.getElementById('logTextFilter');
         return ((_a = textFilterInput === null || textFilterInput === void 0 ? void 0 : textFilterInput.value) === null || _a === void 0 ? void 0 : _a.trim()) || '';
+    }
+    updateBufferSizeDisplay() {
+        var _a, _b;
+        if (typeof document === 'undefined') {
+            return;
+        }
+        const bufferSizeElement = document.getElementById('logBufferSize');
+        if (!bufferSizeElement) {
+            return;
+        }
+        // Count currently displayed entries
+        const displayedCount = ((_b = (_a = this.container) === null || _a === void 0 ? void 0 : _a.children) === null || _b === void 0 ? void 0 : _b.length) || 0;
+        // Total entries in buffer
+        const totalCount = this.allEntries.length;
+        // Update display
+        bufferSizeElement.textContent = `${displayedCount} / ${totalCount}`;
     }
     // Public method to refresh display when filter checkboxes change
     refreshFilter() {

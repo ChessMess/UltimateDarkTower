@@ -127,6 +127,9 @@ export class DOMOutput implements LogOutput {
 
         // Auto-scroll to bottom
         this.container.scrollTop = this.container.scrollHeight;
+        
+        // Update buffer size display
+        this.updateBufferSizeDisplay();
     }
 
     private getEnabledLevelsFromCheckboxes(): Set<LogLevel> {
@@ -155,6 +158,26 @@ export class DOMOutput implements LogOutput {
         
         const textFilterInput = document.getElementById('logTextFilter') as HTMLInputElement;
         return textFilterInput?.value?.trim() || '';
+    }
+    
+    private updateBufferSizeDisplay(): void {
+        if (typeof document === 'undefined') {
+            return;
+        }
+        
+        const bufferSizeElement = document.getElementById('logBufferSize');
+        if (!bufferSizeElement) {
+            return;
+        }
+        
+        // Count currently displayed entries
+        const displayedCount = this.container?.children?.length || 0;
+        
+        // Total entries in buffer
+        const totalCount = this.allEntries.length;
+        
+        // Update display
+        bufferSizeElement.textContent = `${displayedCount} / ${totalCount}`;
     }
 
     // Public method to refresh display when filter checkboxes change

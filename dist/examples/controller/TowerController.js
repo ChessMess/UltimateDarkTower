@@ -54,6 +54,7 @@
         }
       });
       this.container.scrollTop = this.container.scrollHeight;
+      this.updateBufferSizeDisplay();
     }
     getEnabledLevelsFromCheckboxes() {
       const enabledLevels = /* @__PURE__ */ new Set();
@@ -76,6 +77,19 @@
       }
       const textFilterInput = document.getElementById("logTextFilter");
       return ((_a = textFilterInput == null ? void 0 : textFilterInput.value) == null ? void 0 : _a.trim()) || "";
+    }
+    updateBufferSizeDisplay() {
+      var _a, _b;
+      if (typeof document === "undefined") {
+        return;
+      }
+      const bufferSizeElement = document.getElementById("logBufferSize");
+      if (!bufferSizeElement) {
+        return;
+      }
+      const displayedCount = ((_b = (_a = this.container) == null ? void 0 : _a.children) == null ? void 0 : _b.length) || 0;
+      const totalCount = this.allEntries.length;
+      bufferSizeElement.textContent = `${displayedCount} / ${totalCount}`;
     }
     // Public method to refresh display when filter checkboxes change
     refreshFilter() {

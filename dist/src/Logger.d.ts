@@ -31,6 +31,7 @@ export declare class DOMOutput implements LogOutput {
     private refreshDisplay;
     private getEnabledLevelsFromCheckboxes;
     private getTextFilter;
+    private updateBufferSizeDisplay;
     refreshFilter(): void;
     clearAll(): void;
     getEntryCount(): number;
