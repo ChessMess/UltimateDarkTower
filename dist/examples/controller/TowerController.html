@@ -388,16 +388,36 @@
 
             <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3 flex flex-col h-[500px]">
               <legend class="px-2 text-white">Log</legend>
-              <div class="flex justify-between items-baseline p-1">
-                <div class="flex flex-col">
-                  <select id="logLevel" onchange="updateLogLevel()"
-                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
-                    <option value="all" selected>All</option>
-                    <option value="debug">Debug</option>
-                    <option value="info">Info</option>
-                    <option value="warn">Warn</option>
-                    <option value="error">Error</option>
-                  </select>
+              <div class="flex justify-between items-center p-1">
+                <div class="flex items-center justify-evenly flex-1 mr-4">
+                  <div class="flex items-center space-x-1">
+                    <input type="checkbox" id="logLevel-info" value="info" onchange="updateLogLevel()" checked
+                      class="w-4 h-4" />
+                    <label for="logLevel-info" class="text-white uppercase tracking-wider text-xs">Info</label>
+                    <span class="inline-block w-3 h-3 ml-1"
+                      style="background-color: #3b82f6; border: 1px solid #1f2937;"></span>
+                  </div>
+                  <div class="flex items-center space-x-1">
+                    <input type="checkbox" id="logLevel-warn" value="warn" onchange="updateLogLevel()" checked
+                      class="w-4 h-4" />
+                    <label for="logLevel-warn" class="text-white uppercase tracking-wider text-xs">Warn</label>
+                    <span class="inline-block w-3 h-3 ml-1"
+                      style="background-color: #f97316; border: 1px solid #c2410c;"></span>
+                  </div>
+                  <div class="flex items-center space-x-1">
+                    <input type="checkbox" id="logLevel-debug" value="debug" onchange="updateLogLevel()" checked
+                      class="w-4 h-4" />
+                    <label for="logLevel-debug" class="text-white uppercase tracking-wider text-xs">Debug</label>
+                    <span class="inline-block w-3 h-3 ml-1"
+                      style="background-color: #9ca3af; border: 1px solid #6b7280;"></span>
+                  </div>
+                  <div class="flex items-center space-x-1">
+                    <input type="checkbox" id="logLevel-error" value="error" onchange="updateLogLevel()" checked
+                      class="w-4 h-4" />
+                    <label for="logLevel-error" class="text-white uppercase tracking-wider text-xs">Error</label>
+                    <span class="inline-block w-3 h-3 ml-1"
+                      style="background-color: #ef4444; border: 1px solid #b91c1c;"></span>
+                  </div>
                 </div>
                 <button onclick="clearLog()"
                   class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Clear
@@ -427,18 +447,39 @@
   <script>
     // Log control functions
     const updateLogLevel = () => {
-      const select = document.getElementById("logLevel");
-      if (window.logger && select) {
-        window.logger.setMinLevel(select.value);
+      if (window.logger) {
+        const checkboxes = document.querySelectorAll('input[id^="logLevel-"]');
+        const selectedLevels = Array.from(checkboxes)
+          .filter(checkbox => checkbox.checked)
+          .map(checkbox => checkbox.value);
+
+        if (selectedLevels.length > 0) {
+          window.logger.setEnabledLevels(selectedLevels);
+        } else {
+          // Default to 'all' if nothing is selected
+          window.logger.setEnabledLevels(['all']);
+        }
+      }
+
+      // Refresh DOM output filtering
+      if (window.sharedDOMOutput) {
+        window.sharedDOMOutput.refreshFilter();
       }
     }
 
     const clearLog = () => {
+      // Clear shared DOM output
+      if (window.sharedDOMOutput) {
+        window.sharedDOMOutput.clearAll();
+      }
+
+      // Fallback to direct container clearing
       const container = document.getElementById("log-container");
       if (container) {
         container.innerHTML = '';
       }
     }
+
 
     // populate dropdowns
     const dropDowns = [

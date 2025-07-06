@@ -1,7 +1,7 @@
 (() => {
   // src/Logger.ts
   var ConsoleOutput = class {
-    write(level, message, timestamp) {
+    write(level, message, _timestamp) {
       switch (level) {
         case "debug":
           console.debug(message);
@@ -21,7 +21,7 @@
   var _Logger = class _Logger {
     constructor() {
       this.outputs = [];
-      this.minLevel = "all";
+      this.enabledLevels = /* @__PURE__ */ new Set(["all"]);
       this.outputs.push(new ConsoleOutput());
     }
     static getInstance() {
@@ -34,17 +34,37 @@
       this.outputs.push(output);
     }
     setMinLevel(level) {
-      this.minLevel = level;
+      this.enabledLevels = /* @__PURE__ */ new Set([level]);
+    }
+    setEnabledLevels(levels) {
+      this.enabledLevels = new Set(levels);
+    }
+    enableLevel(level) {
+      this.enabledLevels.add(level);
+    }
+    disableLevel(level) {
+      this.enabledLevels.delete(level);
+    }
+    getEnabledLevels() {
+      return Array.from(this.enabledLevels);
     }
     shouldLog(level) {
-      if (this.minLevel === "all")
+      if (this.enabledLevels.has("all"))
         return true;
       if (level === "all")
         return true;
-      const levels = ["debug", "info", "warn", "error"];
-      const minIndex = levels.indexOf(this.minLevel);
-      const currentIndex = levels.indexOf(level);
-      return currentIndex >= minIndex;
+      if (this.enabledLevels.has(level))
+        return true;
+      if (this.enabledLevels.size === 1) {
+        const singleLevel = Array.from(this.enabledLevels)[0];
+        if (singleLevel !== "all") {
+          const levels = ["debug", "info", "warn", "error"];
+          const minIndex = levels.indexOf(singleLevel);
+          const currentIndex = levels.indexOf(level);
+          return currentIndex >= minIndex;
+        }
+      }
+      return false;
     }
     log(level, message, context) {
       if (!this.shouldLog(level))
@@ -936,6 +956,9 @@
         cmd.reject(new Error("Command queue cleared"));
       });
       this.queue = [];
+      if (this.currentCommand) {
+        this.currentCommand.reject(new Error("Command queue cleared"));
+      }
       this.currentCommand = null;
       this.isProcessing = false;
       this.logger.debug("Command queue cleared", "[UDT]");

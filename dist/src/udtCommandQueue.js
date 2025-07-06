@@ -117,6 +117,9 @@ class CommandQueue {
             cmd.reject(new Error('Command queue cleared'));
         });
         this.queue = [];
+        if (this.currentCommand) {
+            this.currentCommand.reject(new Error('Command queue cleared'));
+        }
         this.currentCommand = null;
         this.isProcessing = false;
         this.logger.debug('Command queue cleared', '[UDT]');

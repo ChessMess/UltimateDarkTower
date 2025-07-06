@@ -1,7 +1,7 @@
 (() => {
   // src/Logger.ts
   var ConsoleOutput = class {
-    write(level, message, timestamp) {
+    write(level, message, _timestamp) {
       switch (level) {
         case "debug":
           console.debug(message);
@@ -22,27 +22,79 @@
     constructor(containerId, maxLines = 100) {
       this.container = null;
       this.maxLines = 100;
-      this.container = document.getElementById(containerId);
+      this.allEntries = [];
+      this.container = typeof document !== "undefined" ? document.getElementById(containerId) : null;
       this.maxLines = maxLines;
     }
     write(level, message, timestamp) {
       if (!this.container)
         return;
-      const timeStr = timestamp.toLocaleTimeString();
-      const logLine = document.createElement("div");
-      logLine.className = `log-line log-${level}`;
-      logLine.textContent = `[${timeStr}] ${message}`;
-      this.container.appendChild(logLine);
-      while (this.container.children.length > this.maxLines) {
-        this.container.removeChild(this.container.firstChild);
+      this.allEntries.push({ level, message, timestamp });
+      while (this.allEntries.length > this.maxLines) {
+        this.allEntries.shift();
       }
+      this.refreshDisplay();
+    }
+    refreshDisplay() {
+      if (!this.container)
+        return;
+      this.container.innerHTML = "";
+      const enabledLevels = this.getEnabledLevelsFromCheckboxes();
+      this.allEntries.forEach((entry) => {
+        if (enabledLevels.has(entry.level)) {
+          const timeStr = entry.timestamp.toLocaleTimeString();
+          const logLine = document.createElement("div");
+          logLine.className = `log-line log-${entry.level}`;
+          logLine.textContent = `[${timeStr}] ${entry.message}`;
+          this.container.appendChild(logLine);
+        }
+      });
       this.container.scrollTop = this.container.scrollHeight;
+    }
+    getEnabledLevelsFromCheckboxes() {
+      const enabledLevels = /* @__PURE__ */ new Set();
+      if (typeof document === "undefined") {
+        return enabledLevels;
+      }
+      const checkboxes = ["debug", "info", "warn", "error"];
+      checkboxes.forEach((level) => {
+        const checkbox = document.getElementById(`logLevel-${level}`);
+        if (checkbox && checkbox.checked) {
+          enabledLevels.add(level);
+        }
+      });
+      return enabledLevels;
+    }
+    // Public method to refresh display when filter checkboxes change
+    refreshFilter() {
+      this.refreshDisplay();
+    }
+    // Public method to clear all entries
+    clearAll() {
+      this.allEntries = [];
+      if (this.container) {
+        this.container.innerHTML = "";
+      }
+    }
+    // Debug methods to help diagnose filtering issues
+    getEntryCount() {
+      return this.allEntries.length;
+    }
+    getEnabledLevels() {
+      return Array.from(this.getEnabledLevelsFromCheckboxes());
+    }
+    debugEntries() {
+      console.log("DOMOutput Debug:");
+      console.log("- Container exists:", !!this.container);
+      console.log("- Entry count:", this.allEntries.length);
+      console.log("- Enabled levels:", this.getEnabledLevels());
+      console.log("- Entries:", this.allEntries);
     }
   };
   var _Logger = class _Logger {
     constructor() {
       this.outputs = [];
-      this.minLevel = "all";
+      this.enabledLevels = /* @__PURE__ */ new Set(["all"]);
       this.outputs.push(new ConsoleOutput());
     }
     static getInstance() {
@@ -55,17 +107,37 @@
       this.outputs.push(output);
     }
     setMinLevel(level) {
-      this.minLevel = level;
+      this.enabledLevels = /* @__PURE__ */ new Set([level]);
+    }
+    setEnabledLevels(levels) {
+      this.enabledLevels = new Set(levels);
+    }
+    enableLevel(level) {
+      this.enabledLevels.add(level);
+    }
+    disableLevel(level) {
+      this.enabledLevels.delete(level);
+    }
+    getEnabledLevels() {
+      return Array.from(this.enabledLevels);
     }
     shouldLog(level) {
-      if (this.minLevel === "all")
+      if (this.enabledLevels.has("all"))
         return true;
       if (level === "all")
         return true;
-      const levels = ["debug", "info", "warn", "error"];
-      const minIndex = levels.indexOf(this.minLevel);
-      const currentIndex = levels.indexOf(level);
-      return currentIndex >= minIndex;
+      if (this.enabledLevels.has(level))
+        return true;
+      if (this.enabledLevels.size === 1) {
+        const singleLevel = Array.from(this.enabledLevels)[0];
+        if (singleLevel !== "all") {
+          const levels = ["debug", "info", "warn", "error"];
+          const minIndex = levels.indexOf(singleLevel);
+          const currentIndex = levels.indexOf(level);
+          return currentIndex >= minIndex;
+        }
+      }
+      return false;
     }
     log(level, message, context) {
       if (!this.shouldLog(level))
@@ -978,6 +1050,9 @@
         cmd.reject(new Error("Command queue cleared"));
       });
       this.queue = [];
+      if (this.currentCommand) {
+        this.currentCommand.reject(new Error("Command queue cleared"));
+      }
       this.currentCommand = null;
       this.isProcessing = false;
       this.logger.debug("Command queue cleared", "[UDT]");
@@ -1655,11 +1730,16 @@
 
   // examples/controller/TowerController.ts
   var Tower = new src_default();
+  var sharedDOMOutput;
   var initializeLogger = () => {
-    Tower.setLoggerOutputs([new ConsoleOutput(), new DOMOutput("log-container")]);
+    sharedDOMOutput = new DOMOutput("log-container");
+    Tower.setLoggerOutputs([new ConsoleOutput(), sharedDOMOutput]);
     Tower.logDetail = true;
-    logger.addOutput(new DOMOutput("log-container"));
+    logger.addOutput(sharedDOMOutput);
     logger.info("Logger initialized with DOM output", "[TC]");
+    window.sharedDOMOutput = sharedDOMOutput;
+    window.towerDOMOutput = sharedDOMOutput;
+    window.loggerDOMOutput = sharedDOMOutput;
   };
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initializeLogger);

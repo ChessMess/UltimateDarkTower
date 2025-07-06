@@ -14,17 +14,29 @@ import { logger, DOMOutput, ConsoleOutput } from '../../src/Logger';
 
 const Tower = new UltimateDarkTower();
 
+// Global reference to shared DOM output for filtering
+let sharedDOMOutput: DOMOutput;
+
 // Setup loggers with DOM output after DOM is ready
 const initializeLogger = () => {
-  // Configure Tower to use both console and DOM output
-  Tower.setLoggerOutputs([new ConsoleOutput(), new DOMOutput('log-container')]);
+  // Create single shared DOM output
+  sharedDOMOutput = new DOMOutput('log-container');
+
+  // Configure Tower to use both console and shared DOM output
+  Tower.setLoggerOutputs([new ConsoleOutput(), sharedDOMOutput]);
 
   // Enable detailed logging to see all [UDT] messages
   Tower.logDetail = true;
 
-  // Configure TowerController logger
-  logger.addOutput(new DOMOutput('log-container'));
+  // Configure TowerController logger to use the same shared DOM output
+  logger.addOutput(sharedDOMOutput);
   logger.info('Logger initialized with DOM output', '[TC]');
+
+  // Expose shared DOM output instance globally after creation
+  (window as any).sharedDOMOutput = sharedDOMOutput;
+  // Keep old names for backwards compatibility
+  (window as any).towerDOMOutput = sharedDOMOutput;
+  (window as any).loggerDOMOutput = sharedDOMOutput;
 };
 
 // Initialize logger when DOM is ready
