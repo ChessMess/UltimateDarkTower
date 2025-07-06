@@ -22,6 +22,7 @@ const mockServer = {
 const mockBluetoothDevice = {
   gatt: {
     connect: jest.fn().mockResolvedValue(mockServer),
+    disconnect: jest.fn().mockResolvedValue(undefined),
     connected: true,
   },
   addEventListener: jest.fn(),
@@ -44,6 +45,13 @@ describe('UltimateDarkTower', () => {
   beforeEach(() => {
     darkTower = new UltimateDarkTower();
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    // Clean up any timers/intervals to prevent warnings
+    if (darkTower && darkTower.isConnected) {
+      darkTower.disconnect();
+    }
   });
 
   describe('Initialization', () => {
@@ -209,6 +217,15 @@ describe('UltimateDarkTower', () => {
       jest.clearAllMocks(); // Clear any connection-related calls
     });
 
+    afterEach(() => {
+      // Clean up command queue and timers
+      if (darkTower && darkTower.isConnected) {
+        const towerCommands = darkTower['towerCommands'];
+        towerCommands.clearQueue();
+        darkTower.disconnect();
+      }
+    });
+
     test('should queue commands sequentially', async () => {
       const writeValueSpy = jest.spyOn(mockCharacteristic, 'writeValue');
       
@@ -269,7 +286,8 @@ describe('UltimateDarkTower', () => {
       const towerCommands = darkTower['towerCommands'];
       towerCommands.clearQueue();
       
-      // Commands should be rejected (except the first one that already started)
+      // All commands should be rejected when queue is cleared
+      await expect(promises[0]).rejects.toThrow('Command queue cleared');
       await expect(promises[1]).rejects.toThrow('Command queue cleared');
       await expect(promises[2]).rejects.toThrow('Command queue cleared');
     }, 10000);
