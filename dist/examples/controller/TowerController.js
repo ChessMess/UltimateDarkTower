@@ -1758,7 +1758,7 @@
   var Tower = new src_default();
   var sharedDOMOutput;
   var initializeLogger = () => {
-    sharedDOMOutput = new DOMOutput("log-container");
+    sharedDOMOutput = new DOMOutput("log-container", 1e3);
     Tower.setLoggerOutputs([new ConsoleOutput(), sharedDOMOutput]);
     Tower.logDetail = true;
     logger.addOutput(sharedDOMOutput);

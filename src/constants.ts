@@ -16,6 +16,7 @@ export const TOWER_COMMANDS = {
   overwriteDrumStates: 5,
   // go no further!
 };
+
 // tower commands enum
 export const TC = {
   STATE: "TOWER_STATE",

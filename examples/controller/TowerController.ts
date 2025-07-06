@@ -19,8 +19,8 @@ let sharedDOMOutput: DOMOutput;
 
 // Setup loggers with DOM output after DOM is ready
 const initializeLogger = () => {
-  // Create single shared DOM output
-  sharedDOMOutput = new DOMOutput('log-container');
+  // Create single shared DOM output with 1000 max lines
+  sharedDOMOutput = new DOMOutput('log-container', 1000);
 
   // Configure Tower to use both console and shared DOM output
   Tower.setLoggerOutputs([new ConsoleOutput(), sharedDOMOutput]);
