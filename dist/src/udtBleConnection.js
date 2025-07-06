@@ -29,6 +29,7 @@ class UdtBleConnection {
         // Tower state
         this.towerSkullDropCount = -1;
         this.lastBatteryNotification = 0;
+        this.lastBatteryPercentage = "";
         this.batteryNotifyFrequency = 15 * 1000;
         this.batteryNotifyOnValueChangeOnly = false;
         // Logging configuration
@@ -64,10 +65,10 @@ class UdtBleConnection {
                 this.lastBatteryHeartbeat = Date.now();
                 const millivolts = this.responseProcessor.getMilliVoltsFromTowerResponse(receivedData);
                 const batteryPercentage = this.responseProcessor.milliVoltsToPercentage(millivolts);
-                const didBatteryLevelChange = this.lastBatteryPercentage !== batteryPercentage;
+                const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
                 const batteryNotifyFrequencyPassed = ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
                 const shouldNotify = this.batteryNotifyOnValueChangeOnly ?
-                    didBatteryLevelChange :
+                    (didBatteryLevelChange || this.lastBatteryPercentage === "") :
                     batteryNotifyFrequencyPassed;
                 if (shouldNotify) {
                     this.logger.info(`Tower response: ${this.responseProcessor.commandToString(receivedData).join(' ')}`, '[UDT]');

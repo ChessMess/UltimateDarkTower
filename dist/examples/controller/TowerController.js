@@ -585,6 +585,7 @@
       // Tower state
       this.towerSkullDropCount = -1;
       this.lastBatteryNotification = 0;
+      this.lastBatteryPercentage = "";
       this.batteryNotifyFrequency = 15 * 1e3;
       this.batteryNotifyOnValueChangeOnly = false;
       // Logging configuration
@@ -619,9 +620,9 @@
           this.lastBatteryHeartbeat = Date.now();
           const millivolts = this.responseProcessor.getMilliVoltsFromTowerResponse(receivedData);
           const batteryPercentage = this.responseProcessor.milliVoltsToPercentage(millivolts);
-          const didBatteryLevelChange = this.lastBatteryPercentage !== batteryPercentage;
+          const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
           const batteryNotifyFrequencyPassed = Date.now() - this.lastBatteryNotification >= this.batteryNotifyFrequency;
-          const shouldNotify = this.batteryNotifyOnValueChangeOnly ? didBatteryLevelChange : batteryNotifyFrequencyPassed;
+          const shouldNotify = this.batteryNotifyOnValueChangeOnly ? didBatteryLevelChange || this.lastBatteryPercentage === "" : batteryNotifyFrequencyPassed;
           if (shouldNotify) {
             this.logger.info(`Tower response: ${this.responseProcessor.commandToString(receivedData).join(" ")}`, "[UDT]");
             this.lastBatteryNotification = Date.now();
@@ -1827,6 +1828,7 @@
     }
   }
   var onTowerConnected = () => {
+    var _a;
     const el = document.getElementById("tower-connection-state");
     if (el) {
       el.innerText = "Tower Connected";
@@ -1834,7 +1836,9 @@
     }
     logger.info("Tower connected successfully", "[TC]");
     Tower.batteryNotifyFrequency = 1e3;
-    Tower.batteryNotifyOnValueChangeOnly = false;
+    const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]');
+    const selectedValue = (_a = Array.from(batteryFilterRadios).find((radio) => radio.checked)) == null ? void 0 : _a.value;
+    Tower.batteryNotifyOnValueChangeOnly = selectedValue === "changes";
     updateBatteryTrend();
   };
   Tower.onTowerConnect = onTowerConnected;

@@ -667,6 +667,11 @@
     window.copyDisplayedLogs = copyDisplayedLogs;
     window.downloadDisplayedLogs = downloadDisplayedLogs;
     window.updateBatteryFilter = updateBatteryFilter;
+    
+    // Initialize battery filter on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateBatteryFilter();
+    });
   </script>
 </body>
 

@@ -85,7 +85,10 @@ const onTowerConnected = () => {
   
   // Configure battery notification settings
   Tower.batteryNotifyFrequency = 1000;
-  Tower.batteryNotifyOnValueChangeOnly = false;
+  // Apply the UI battery filter setting
+  const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]') as NodeListOf<HTMLInputElement>;
+  const selectedValue = Array.from(batteryFilterRadios).find(radio => radio.checked)?.value;
+  Tower.batteryNotifyOnValueChangeOnly = selectedValue === 'changes';
   
   // Initialize battery trend display
   updateBatteryTrend();
