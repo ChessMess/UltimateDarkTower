@@ -82,14 +82,14 @@ const onTowerConnected = () => {
     el.style.background = 'rgb(2 255 14 / 30%)';
   }
   logger.info("Tower connected successfully", '[TC]');
-  
+
   // Configure battery notification settings
   Tower.batteryNotifyFrequency = 1000;
   // Apply the UI battery filter setting
   const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]') as NodeListOf<HTMLInputElement>;
   const selectedValue = Array.from(batteryFilterRadios).find(radio => radio.checked)?.value;
   Tower.batteryNotifyOnValueChangeOnly = selectedValue === 'changes';
-  
+
   // Initialize battery trend display
   updateBatteryTrend();
 }
@@ -154,7 +154,7 @@ const onBatteryLevelNotify = (millivolts: number) => {
   if (el) {
     el.innerText = Tower.milliVoltsToPercentage(millivolts).toString();
   }
-  
+
   // Update battery trend after battery display is updated
   updateBatteryTrend();
 }
@@ -188,6 +188,23 @@ const rotate = () => {
     middle.value as TowerSide,
     bottom.value as TowerSide, Number(sound.value)
   );
+}
+
+const randomizeLevels = () => {
+  const select = document.getElementById("randomLevels") as HTMLSelectElement;
+  const levelValue = parseInt(select.value);
+
+  if (levelValue === -1) {
+    logger.warn("No level selected for randomization", '[TC]');
+    return;
+  }
+
+  if (!Tower.isConnected) {
+    logger.warn("Tower is not connected", '[TC]');
+    return;
+  }
+
+  Tower.randomRotateLevels(levelValue);
 }
 
 const breakSeal = async () => {
@@ -406,3 +423,4 @@ const getDataAttributes = (el: HTMLElement) => {
 (window as any).clearAllLightCheckboxes = clearAllLightCheckboxes;
 (window as any).allLightsOn = allLightsOn;
 (window as any).allLightsOff = allLightsOff;
+(window as any).randomizeLevels = randomizeLevels;

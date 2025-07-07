@@ -2000,6 +2000,19 @@
       Number(sound.value)
     );
   };
+  var randomizeLevels = () => {
+    const select = document.getElementById("randomLevels");
+    const levelValue = parseInt(select.value);
+    if (levelValue === -1) {
+      logger.warn("No level selected for randomization", "[TC]");
+      return;
+    }
+    if (!Tower.isConnected) {
+      logger.warn("Tower is not connected", "[TC]");
+      return;
+    }
+    Tower.randomRotateLevels(levelValue);
+  };
   var breakSeal = async () => {
     const select = document.getElementById("sealSelect");
     const sealValue = select.value;
@@ -2183,5 +2196,6 @@
   window.clearAllLightCheckboxes = clearAllLightCheckboxes;
   window.allLightsOn = allLightsOn;
   window.allLightsOff = allLightsOff;
+  window.randomizeLevels = randomizeLevels;
 })();
 //# sourceMappingURL=TowerController.js.map

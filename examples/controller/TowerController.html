@@ -307,38 +307,55 @@
 
             <fieldset class="bg-black bg-opacity-60 border border-gray-400 rounded-md p-3">
               <legend class="px-2 text-white">Drums</legend>
-              <div class="flex justify-evenly items-center p-1 gap-5">
-                <div class="flex flex-col items-center">
-                  <select id="top"
+              <div class="flex justify-evenly items-start p-1 gap-5">
+                <div class="flex flex-col items-center space-y-2">
+                  <select id="randomLevels"
                     class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
-                    <option value="north">North</option>
-                    <option value="south">South</option>
-                    <option value="east">East</option>
-                    <option value="west">West</option>
+                    <option value="-1">select level(s)</option>
+                    <option value="0">all</option>
+                    <option value="1">top</option>
+                    <option value="2">middle</option>
+                    <option value="3">bottom</option>
+                    <option value="4">top & middle</option>
+                    <option value="5">top & bottom</option>
+                    <option value="6">middle & bottom</option>
                   </select>
+                  <button id="randomizeButton" onclick="randomizeLevels()"
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Randomize</button>
                 </div>
-                <div class="flex flex-col items-center">
-                  <select id="middle"
-                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
-                    <option value="north">North</option>
-                    <option value="south">South</option>
-                    <option value="east">East</option>
-                    <option value="west">West</option>
-                  </select>
+                <!-- Vertical divider -->
+                <div class="flex items-center">
+                  <div class="w-px bg-gray-400 h-16"></div>
                 </div>
-                <div class="flex flex-col items-center">
-                  <select id="bottom"
-                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
-                    <option value="north">North</option>
-                    <option value="south">South</option>
-                    <option value="east">East</option>
-                    <option value="west">West</option>
-                  </select>
+                <div class="flex flex-col items-center space-y-2">
+                  <div class="flex gap-5">
+                    <select id="top"
+                      class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
+                      <option value="north">North</option>
+                      <option value="south">South</option>
+                      <option value="east">East</option>
+                      <option value="west">West</option>
+                    </select>
+                    <select id="middle"
+                      class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
+                      <option value="north">North</option>
+                      <option value="south">South</option>
+                      <option value="east">East</option>
+                      <option value="west">West</option>
+                    </select>
+                    <select id="bottom"
+                      class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-2 py-1 rounded-md">
+                      <option value="north">North</option>
+                      <option value="south">South</option>
+                      <option value="east">East</option>
+                      <option value="west">West</option>
+                    </select>
+                  </div>
+                  <div class="flex justify-center">
+                    <button id="rotateButton" onclick="rotate()"
+                      class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Rotate</button>
+                  </div>
                 </div>
-              </div>
-              <div class="text-center p-1">
-                <button id="rotateButton" onclick="rotate()"
-                  class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Rotate</button>
               </div>
             </fieldset>
 
@@ -347,7 +364,7 @@
               <div class="flex justify-evenly items-baseline p-1 space-x-4">
                 <div class="flex flex-col">
                   <select id="sealSelect"
-                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">
+                    class="bg-gray-700 bg-opacity-60 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md w-52">
                     <option value="">Select a seal</option>
                     <option value="North Top">North Top</option>
                     <option value="North Middle">North Middle</option>
@@ -365,12 +382,15 @@
                 </div>
                 <div>
                   <button id="breakSealButton" onclick="breakSeal()"
-                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Break
-                    Seal</button>
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">
+                    Break Seal
+                  </button>
                 </div>
                 <div>
                   <button id="clearLightsButton" onclick="clearAllLights()"
-                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">Clear</button>
+                    class="bg-gray-700 hover:bg-gray-600 text-white uppercase tracking-wider text-xs px-3 py-1.5 rounded-md">
+                    Clear Effect
+                  </button>
                 </div>
               </div>
             </fieldset>
