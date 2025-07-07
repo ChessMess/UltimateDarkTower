@@ -28,12 +28,6 @@ import { UdtTowerCommands, type TowerCommandDependencies } from './udtTowerComma
  * - Comprehensive logging system with multiple output options
  * - Connection heartbeat monitoring for reliable disconnect detection
  * 
-  * Known Issues:
- *    Tower command complete response is not being considered. Async Await is working
- *    only on the fact that a command was sent, which is pretty much immediate, so we need
- *    to rework this a bit to take into account when a command is complete. This is all
- *    part of work still to be done.
- * 
  * Usage:
  * 1. Create instance: const tower = new UltimateDarkTower()
  * 2. Connect to tower: await tower.connect()
@@ -45,7 +39,7 @@ import { UdtTowerCommands, type TowerCommandDependencies } from './udtTowerComma
  * - onTowerConnect: Called when tower connects
  * - onTowerDisconnect: Called when tower disconnects
  * - onCalibrationComplete: Called when calibration finishes
- * - onSkullDrop: Called when skulls are dropped from the tower
+ * - onSkullDrop: Called when skulls are dropped into the tower
  * - onBatteryLevelNotify: Called when battery level updates
  */
 
@@ -130,7 +124,7 @@ class UltimateDarkTower {
       retrySendCommandMax: this.retrySendCommandMax
     };
     this.towerCommands = new UdtTowerCommands(commandDependencies);
-    
+
     // Set up command queue response callback now that tower commands are initialized
     callbacks.onTowerResponse = () => this.towerCommands.onTowerResponse();
   }
