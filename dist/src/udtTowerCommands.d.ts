@@ -84,11 +84,11 @@ export declare class UdtTowerCommands {
      */
     resetTowerSkullCount(): Promise<void>;
     /**
-     * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
-     * @param seal - Seal identifier(s) to break (e.g., {side: 'north', level: 'middle'})
+     * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
+     * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
      * @returns Promise that resolves when seal break sequence is complete
      */
-    breakSeal(seal: SealIdentifier | SealIdentifier[]): Promise<void>;
+    breakSeal(seal: SealIdentifier): Promise<void>;
     /**
      * Randomly rotates specified tower levels to random positions.
      * @param level - Level configuration: 0=all, 1=top, 2=middle, 3=bottom, 4=top&middle, 5=top&bottom, 6=middle&bottom

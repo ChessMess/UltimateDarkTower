@@ -209,18 +209,15 @@ class UltimateDarkTower {
     }
     //#endregion
     /**
-     * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
-     * @param seal - Seal identifier(s) to break (e.g., {side: 'north', level: 'middle'})
+     * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
+     * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
      * @returns Promise that resolves when seal break sequence is complete
      */
     async breakSeal(seal) {
         const result = await this.towerCommands.breakSeal(seal);
-        // Track broken seals
-        const seals = Array.isArray(seal) ? seal : [seal];
-        seals.forEach(s => {
-            const sealKey = `${s.level}-${s.side}`;
-            this.brokenSeals.add(sealKey);
-        });
+        // Track broken seal
+        const sealKey = `${seal.level}-${seal.side}`;
+        this.brokenSeals.add(sealKey);
         return result;
     }
     /**

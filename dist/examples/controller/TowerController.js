@@ -1346,40 +1346,36 @@
       await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.resetCounter]), "resetTowerSkullCount");
     }
     /**
-     * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
-     * @param seal - Seal identifier(s) to break (e.g., {side: 'north', level: 'middle'})
+     * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
+     * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
      * @returns Promise that resolves when seal break sequence is complete
      */
     async breakSeal(seal) {
-      const sealIdentifiers = Array.isArray(seal) ? seal : [seal];
       this.deps.logger.info("Playing tower seal sound", "[UDT]");
       await this.playSound(TOWER_AUDIO_LIBRARY.TowerSeal.value);
-      const sidesWithBrokenSeals = [...new Set(sealIdentifiers.map((seal2) => seal2.side))];
-      const ledgeLights = [];
       const adjacentSides = {
         north: "east",
         east: "south",
         south: "west",
         west: "north"
       };
-      sidesWithBrokenSeals.forEach((side) => {
-        ledgeLights.push({ position: side, style: "on" });
-        ledgeLights.push({ position: adjacentSides[side], style: "on" });
-      });
+      const ledgeLights = [
+        { position: seal.side, style: "on" },
+        { position: adjacentSides[seal.side], style: "on" }
+      ];
       const uniqueLedgeLights = ledgeLights.filter(
         (light, index, self) => index === self.findIndex((l) => l.position === light.position)
       );
-      const doorwayLights = sealIdentifiers.map((seal2) => ({
-        level: seal2.level,
-        position: seal2.side,
+      const doorwayLights = [{
+        level: seal.level,
+        position: seal.side,
         style: "breatheFast"
-      }));
+      }];
       const lights2 = {
         ledge: uniqueLedgeLights,
         doorway: doorwayLights
       };
-      const sealDescriptions = sealIdentifiers.map((s) => `${s.level}-${s.side}`);
-      this.deps.logger.info(`Breaking seal(s) ${sealDescriptions.join(", ")} - lighting ledges and doorways with breath effect`, "[UDT]");
+      this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - lighting ledges and doorways with breath effect`, "[UDT]");
       await this.lights(lights2);
     }
     /**
@@ -1690,17 +1686,14 @@
     }
     //#endregion
     /**
-     * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
-     * @param seal - Seal identifier(s) to break (e.g., {side: 'north', level: 'middle'})
+     * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
+     * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
      * @returns Promise that resolves when seal break sequence is complete
      */
     async breakSeal(seal) {
       const result = await this.towerCommands.breakSeal(seal);
-      const seals = Array.isArray(seal) ? seal : [seal];
-      seals.forEach((s) => {
-        const sealKey = `${s.level}-${s.side}`;
-        this.brokenSeals.add(sealKey);
-      });
+      const sealKey = `${seal.level}-${seal.side}`;
+      this.brokenSeals.add(sealKey);
       return result;
     }
     /**

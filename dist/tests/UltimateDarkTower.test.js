@@ -178,6 +178,159 @@ describe('UltimateDarkTower', () => {
             expect(darkTower['getCurrentDrumPosition']('middle')).toBe('west'); // Should match 0x40
         });
     });
+    describe('Broken Seal Tracking', () => {
+        test('should initialize with no broken seals', () => {
+            expect(darkTower.getBrokenSeals()).toEqual([]);
+        });
+        test('should return false for unbroken seals', () => {
+            const seal = { side: 'west', level: 'middle' };
+            expect(darkTower.isSealBroken(seal)).toBe(false);
+        });
+        test('should return random unbroken seal', () => {
+            // Initially all seals are unbroken
+            const randomSeal = darkTower.getRandomUnbrokenSeal();
+            expect(randomSeal).toBeTruthy();
+            expect(randomSeal).toHaveProperty('side');
+            expect(randomSeal).toHaveProperty('level');
+            expect(['north', 'south', 'east', 'west']).toContain(randomSeal.side);
+            expect(['top', 'middle', 'bottom']).toContain(randomSeal.level);
+        });
+        test('should track broken seals directly via internal state', () => {
+            // Access the internal brokenSeals Set directly to test tracking logic
+            const brokenSeals = darkTower['brokenSeals'];
+            const seal = { side: 'north', level: 'middle' };
+            const sealKey = `${seal.level}-${seal.side}`;
+            // Initially should not be broken
+            expect(darkTower.isSealBroken(seal)).toBe(false);
+            expect(brokenSeals.has(sealKey)).toBe(false);
+            // Manually add to broken seals to test the tracking logic
+            brokenSeals.add(sealKey);
+            // Now should be considered broken
+            expect(darkTower.isSealBroken(seal)).toBe(true);
+            expect(darkTower.getBrokenSeals()).toContainEqual(seal);
+            expect(darkTower.getBrokenSeals()).toHaveLength(1);
+        });
+        test('should handle multiple broken seals', () => {
+            const brokenSeals = darkTower['brokenSeals'];
+            const seal1 = { side: 'north', level: 'top' };
+            const seal2 = { side: 'south', level: 'bottom' };
+            const seal3 = { side: 'east', level: 'middle' };
+            // Add seals to broken state
+            brokenSeals.add(`${seal1.level}-${seal1.side}`);
+            brokenSeals.add(`${seal2.level}-${seal2.side}`);
+            brokenSeals.add(`${seal3.level}-${seal3.side}`);
+            expect(darkTower.isSealBroken(seal1)).toBe(true);
+            expect(darkTower.isSealBroken(seal2)).toBe(true);
+            expect(darkTower.isSealBroken(seal3)).toBe(true);
+            const allBrokenSeals = darkTower.getBrokenSeals();
+            expect(allBrokenSeals).toHaveLength(3);
+            expect(allBrokenSeals).toContainEqual(seal1);
+            expect(allBrokenSeals).toContainEqual(seal2);
+            expect(allBrokenSeals).toContainEqual(seal3);
+        });
+        test('should not duplicate seals in tracking', () => {
+            const brokenSeals = darkTower['brokenSeals'];
+            const seal = { side: 'east', level: 'top' };
+            const sealKey = `${seal.level}-${seal.side}`;
+            // Add same seal multiple times
+            brokenSeals.add(sealKey);
+            brokenSeals.add(sealKey);
+            brokenSeals.add(sealKey);
+            expect(darkTower.isSealBroken(seal)).toBe(true);
+            expect(darkTower.getBrokenSeals()).toHaveLength(1);
+            expect(darkTower.getBrokenSeals()).toContainEqual(seal);
+        });
+        test('should reset all broken seals', () => {
+            const brokenSeals = darkTower['brokenSeals'];
+            const seal1 = { side: 'north', level: 'top' };
+            const seal2 = { side: 'south', level: 'bottom' };
+            // Add seals to broken state
+            brokenSeals.add(`${seal1.level}-${seal1.side}`);
+            brokenSeals.add(`${seal2.level}-${seal2.side}`);
+            expect(darkTower.getBrokenSeals()).toHaveLength(2);
+            darkTower.resetBrokenSeals();
+            expect(darkTower.getBrokenSeals()).toEqual([]);
+            expect(darkTower.isSealBroken(seal1)).toBe(false);
+            expect(darkTower.isSealBroken(seal2)).toBe(false);
+        });
+        test('should return null when all seals are broken', () => {
+            const brokenSeals = darkTower['brokenSeals'];
+            // Break all possible seals (4 sides × 3 levels = 12 seals)
+            for (const side of ['north', 'south', 'east', 'west']) {
+                for (const level of ['top', 'middle', 'bottom']) {
+                    brokenSeals.add(`${level}-${side}`);
+                }
+            }
+            expect(darkTower.getRandomUnbrokenSeal()).toBeNull();
+        });
+        test('should return only unbroken seals when some are broken', () => {
+            const brokenSeals = darkTower['brokenSeals'];
+            // Break some specific seals
+            const brokenSealsList = [
+                { side: 'north', level: 'top' },
+                { side: 'south', level: 'middle' },
+                { side: 'east', level: 'bottom' }
+            ];
+            brokenSealsList.forEach(seal => {
+                brokenSeals.add(`${seal.level}-${seal.side}`);
+            });
+            // Get random unbroken seal multiple times to ensure it's not broken
+            for (let i = 0; i < 10; i++) {
+                const randomSeal = darkTower.getRandomUnbrokenSeal();
+                expect(randomSeal).toBeTruthy();
+                expect(darkTower.isSealBroken(randomSeal)).toBe(false);
+            }
+        });
+        test('should maintain seal state consistency', () => {
+            const seal = { side: 'west', level: 'top' };
+            // Initially unbroken
+            expect(darkTower.isSealBroken(seal)).toBe(false);
+            expect(darkTower.getBrokenSeals()).not.toContainEqual(seal);
+            // Mark as broken
+            const brokenSeals = darkTower['brokenSeals'];
+            brokenSeals.add(`${seal.level}-${seal.side}`);
+            expect(darkTower.isSealBroken(seal)).toBe(true);
+            expect(darkTower.getBrokenSeals()).toContainEqual(seal);
+            // Reset and verify
+            darkTower.resetBrokenSeals();
+            expect(darkTower.isSealBroken(seal)).toBe(false);
+            expect(darkTower.getBrokenSeals()).not.toContainEqual(seal);
+        });
+        // Integration test that actually calls breakSeal to verify the full flow
+        test('should update broken seal state when breakSeal method is called', async () => {
+            await darkTower.connect();
+            const seal = { side: 'north', level: 'middle' };
+            // Mock the underlying command execution to avoid timing issues
+            const towerCommands = darkTower['towerCommands'];
+            const originalBreakSeal = towerCommands.breakSeal;
+            towerCommands.breakSeal = jest.fn().mockResolvedValue(undefined);
+            try {
+                // Call the actual breakSeal method
+                await darkTower.breakSeal(seal);
+                // Verify the seal tracking was updated
+                expect(darkTower.isSealBroken(seal)).toBe(true);
+                expect(darkTower.getBrokenSeals()).toContainEqual(seal);
+                // Test with multiple seals (now calling individually)
+                const seals = [
+                    { side: 'east', level: 'top' },
+                    { side: 'west', level: 'bottom' }
+                ];
+                // Break each seal individually since arrays are no longer supported
+                for (const sealToBreak of seals) {
+                    await darkTower.breakSeal(sealToBreak);
+                }
+                seals.forEach(s => {
+                    expect(darkTower.isSealBroken(s)).toBe(true);
+                });
+                expect(darkTower.getBrokenSeals()).toHaveLength(3); // original + 2 new
+            }
+            finally {
+                // Restore original method
+                towerCommands.breakSeal = originalBreakSeal;
+                await darkTower.disconnect();
+            }
+        });
+    });
     describe('Command Queue System', () => {
         beforeEach(async () => {
             // Connect to tower for testing

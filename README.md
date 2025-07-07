@@ -427,7 +427,7 @@ These are the commands the library provides to control the tower.
 -   `lightOverrides(light: number, soundIndex?: number)` - Override light patterns
 -   `rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number)` - Rotate tower sections
 -   `randomRotateLevels(level?: number)` - Randomly rotate drum levels (0=all, 1=top, 2=middle, 3=bottom, 4=top&middle, 5=top&bottom, 6=middle&bottom)
--   `breakSeal(seal: SealIdentifier | SealIdentifier[])` - Break game seals with lights and sound effects
+-   `breakSeal(seal: SealIdentifier)` - Break a single game seal with lights and sound effects
 -   `isSealBroken(seal: SealIdentifier)` - Check if a specific seal is broken
 -   `getBrokenSeals()` - Get array of all broken seals
 -   `resetBrokenSeals()` - Reset all broken seals tracking

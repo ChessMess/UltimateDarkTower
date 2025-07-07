@@ -381,13 +381,16 @@ describe('UltimateDarkTower', () => {
         expect(darkTower.isSealBroken(seal)).toBe(true);
         expect(darkTower.getBrokenSeals()).toContainEqual(seal);
         
-        // Test with multiple seals
+        // Test with multiple seals (now calling individually)
         const seals = [
           { side: 'east' as const, level: 'top' as const },
           { side: 'west' as const, level: 'bottom' as const }
         ];
         
-        await darkTower.breakSeal(seals);
+        // Break each seal individually since arrays are no longer supported
+        for (const sealToBreak of seals) {
+          await darkTower.breakSeal(sealToBreak);
+        }
         
         seals.forEach(s => {
           expect(darkTower.isSealBroken(s)).toBe(true);

@@ -239,23 +239,17 @@ export class UdtTowerCommands {
     }
 
     /**
-     * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
-     * @param seal - Seal identifier(s) to break (e.g., {side: 'north', level: 'middle'})
+     * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
+     * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
      * @returns Promise that resolves when seal break sequence is complete
      */
-    async breakSeal(seal: SealIdentifier | SealIdentifier[]): Promise<void> {
-        const sealIdentifiers = Array.isArray(seal) ? seal : [seal];
-
+    async breakSeal(seal: SealIdentifier): Promise<void> {
         // Play tower seal sound
         this.deps.logger.info('Playing tower seal sound', '[UDT]');
         await this.playSound(TOWER_AUDIO_LIBRARY.TowerSeal.value);
 
-        // Get unique sides that need ledge lighting
-        const sidesWithBrokenSeals = [...new Set(sealIdentifiers.map(seal => seal.side))];
-
-        // Light both the primary ledge and adjacent ledge for each side with broken seals
-        // This ensures both left and right ledge lights are activated for each side
-        const ledgeLights: LedgeLight[] = [];
+        // Light both the primary ledge and adjacent ledge for the seal's side
+        // This ensures both left and right ledge lights are activated for the side
         const adjacentSides: { [key in TowerSide]: TowerSide } = {
             north: 'east',
             east: 'south',
@@ -263,30 +257,29 @@ export class UdtTowerCommands {
             west: 'north'
         };
 
-        sidesWithBrokenSeals.forEach(side => {
-            ledgeLights.push({ position: side, style: 'on' });
-            ledgeLights.push({ position: adjacentSides[side], style: 'on' });
-        });
+        const ledgeLights: LedgeLight[] = [
+            { position: seal.side, style: 'on' },
+            { position: adjacentSides[seal.side], style: 'on' }
+        ];
 
         // Remove duplicates if any
         const uniqueLedgeLights = ledgeLights.filter((light, index, self) =>
             index === self.findIndex(l => l.position === light.position)
         );
 
-        // Create doorway lights with light effect for each broken seal
-        const doorwayLights: DoorwayLight[] = sealIdentifiers.map(seal => ({
+        // Create doorway light with light effect for the broken seal
+        const doorwayLights: DoorwayLight[] = [{
             level: seal.level,
             position: seal.side,
             style: 'breatheFast'
-        }));
+        }];
 
         const lights: Lights = {
             ledge: uniqueLedgeLights,
             doorway: doorwayLights
         };
 
-        const sealDescriptions = sealIdentifiers.map(s => `${s.level}-${s.side}`);
-        this.deps.logger.info(`Breaking seal(s) ${sealDescriptions.join(', ')} - lighting ledges and doorways with breath effect`, '[UDT]');
+        this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - lighting ledges and doorways with breath effect`, '[UDT]');
         await this.lights(lights);
     }
 
