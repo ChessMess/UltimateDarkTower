@@ -159,8 +159,7 @@
           <h1 class="text-5xl font-light my-1" style="font-family: 'azkolskerning7', serif;">Tower Controller</h1>
           <h3 class="text-center text-lg font-light">
             A web based tower controller for
-            <a target="_blank" href="https://restorationgames.com/return-to-dark-tower/"
-              class="tower-link">
+            <a target="_blank" href="https://restorationgames.com/return-to-dark-tower/" class="tower-link">
               Return To Dark Tower </a>
           </h3>
 
@@ -171,12 +170,9 @@
         </div>
         <hr class="tower-hr" />
         <div class="text-center pb-2 space-x-4">
-          <button id="connectButton" onclick="connectToTower()"
-            class="tower-button">Connect</button>
-          <button id="disconnectButton" onclick="Tower.disconnect()"
-            class="tower-button">Disconnect</button>
-          <button id="calibrate" onclick="calibrate()"
-            class="tower-button">Calibrate</button>
+          <button id="connectButton" onclick="connectToTower()" class="tower-button">Connect</button>
+          <button id="disconnectButton" onclick="Tower.disconnect()" class="tower-button">Disconnect</button>
+          <button id="calibrate" onclick="calibrate()" class="tower-button">Calibrate</button>
           <span class="hidden ml-2" id="calibrating-message">calibrating...</span>
         </div>
 
@@ -187,12 +183,10 @@
             <fieldset class="tower-fieldset">
               <legend class="tower-legend">Audio</legend>
               <div class="flex justify-evenly items-center p-1 space-x-4">
-                <select id="sounds"
-                  class="tower-select w-3/4">
+                <select id="sounds" class="tower-select w-3/4">
                   <option value="0">select sound</option>
                 </select>
-                <button id="soundButton" onclick="playSound()"
-                  class="tower-button w-1/4">
+                <button id="soundButton" onclick="playSound()" class="tower-button w-1/4">
                   Play
                 </button>
               </div>
@@ -365,25 +359,19 @@
               </div>
               <div style="margin-bottom: 1.5rem;"></div>
               <div class="p-1 flex flex-wrap gap-2 items-center">
-                <button id="light" onclick="lights()"
-                  class="tower-button w-40 whitespace-nowrap">Apply
+                <button id="light" onclick="lights()" class="tower-button w-40 whitespace-nowrap">Apply
                   to all lights</button>
-                <select id="lightStyles"
-                  class="tower-select w-40"></select>
-                <button id="allLightsOn" onclick="allLightsOn()"
-                  class="tower-button w-40 whitespace-nowrap">All
+                <select id="lightStyles" class="tower-select w-40"></select>
+                <button id="allLightsOn" onclick="allLightsOn()" class="tower-button w-40 whitespace-nowrap">All
                   On</button>
               </div>
               <div class="p-1 flex flex-wrap gap-2 items-center">
-                <button id="lightOverrideButton" onclick="overrides()"
-                  class="tower-button w-40 whitespace-nowrap">Light
+                <button id="lightOverrideButton" onclick="overrides()" class="tower-button w-40 whitespace-nowrap">Light
                   Overrides</button>
-                <select id="lightOverrideDropDown"
-                  class="tower-select w-40">
+                <select id="lightOverrideDropDown" class="tower-select w-40">
                   <option value="0">select override</option>
                 </select>
-                <button id="allLightsOff" onclick="allLightsOff()"
-                  class="tower-button w-40 whitespace-nowrap">All
+                <button id="allLightsOff" onclick="allLightsOff()" class="tower-button w-40 whitespace-nowrap">All
                   Off</button>
               </div>
             </fieldset>
@@ -392,8 +380,7 @@
               <legend class="tower-legend">Drums</legend>
               <div class="flex justify-evenly items-start p-1 gap-5">
                 <div class="flex flex-col items-center space-y-2">
-                  <select id="randomLevels"
-                    class="tower-select">
+                  <select id="randomLevels" class="tower-select">
                     <option value="-1">select level(s)</option>
                     <option value="0">all</option>
                     <option value="1">top</option>
@@ -403,8 +390,7 @@
                     <option value="5">top & bottom</option>
                     <option value="6">middle & bottom</option>
                   </select>
-                  <button id="randomizeButton" onclick="randomizeLevels()"
-                    class="tower-button">Randomize</button>
+                  <button id="randomizeButton" onclick="randomizeLevels()" class="tower-button">Randomize</button>
                 </div>
                 <!-- Vertical divider -->
                 <div class="flex items-center">
@@ -412,22 +398,19 @@
                 </div>
                 <div class="flex flex-col items-center space-y-2">
                   <div class="flex gap-5">
-                    <select id="top"
-                      class="tower-select">
+                    <select id="top" class="tower-select">
                       <option value="north">North</option>
                       <option value="south">South</option>
                       <option value="east">East</option>
                       <option value="west">West</option>
                     </select>
-                    <select id="middle"
-                      class="tower-select">
+                    <select id="middle" class="tower-select">
                       <option value="north">North</option>
                       <option value="south">South</option>
                       <option value="east">East</option>
                       <option value="west">West</option>
                     </select>
-                    <select id="bottom"
-                      class="tower-select">
+                    <select id="bottom" class="tower-select">
                       <option value="north">North</option>
                       <option value="south">South</option>
                       <option value="east">East</option>
@@ -435,8 +418,7 @@
                     </select>
                   </div>
                   <div class="flex justify-center">
-                    <button id="rotateButton" onclick="rotate()"
-                      class="tower-button">Rotate</button>
+                    <button id="rotateButton" onclick="rotate()" class="tower-button">Rotate</button>
                   </div>
                 </div>
               </div>
@@ -446,8 +428,7 @@
               <legend class="tower-legend">Break Seal</legend>
               <div class="flex justify-evenly items-baseline p-1 space-x-4">
                 <div class="flex flex-col">
-                  <select id="sealSelect"
-                    class="tower-select w-52">
+                  <select id="sealSelect" class="tower-select w-52">
                     <option value="">Select a seal</option>
                     <option value="North Top">North Top</option>
                     <option value="North Middle">North Middle</option>
@@ -464,14 +445,12 @@
                   </select>
                 </div>
                 <div>
-                  <button id="breakSealButton" onclick="breakSeal()"
-                    class="tower-button">
+                  <button id="breakSealButton" onclick="breakSeal()" class="tower-button">
                     Break Seal
                   </button>
                 </div>
                 <div>
-                  <button id="clearLightsButton" onclick="clearAllLights()"
-                    class="tower-button">
+                  <button id="clearLightsButton" onclick="clearAllLights()" class="tower-button">
                     Clear Effect
                   </button>
                 </div>
@@ -495,8 +474,7 @@
                 <div class="text-center">
                   <div class="border border-white rounded px-2 py-1 mb-2">Skulls Dropped:&nbsp;&nbsp;<span
                       id="skull-count">unknown</span></div>
-                  <button id="reset" onclick="resetSkullCount()"
-                    class="tower-button">Reset
+                  <button id="reset" onclick="resetSkullCount()" class="tower-button">Reset
                     Count</button>
                 </div>
               </div>
@@ -571,8 +549,7 @@
                   class="tower-button">
                   <i class="fas fa-file-arrow-down"></i>
                 </button>
-                <button onclick="clearLog()"
-                  class="tower-button">
+                <button onclick="clearLog()" class="tower-button">
                   Clear Log
                 </button>
               </div>
