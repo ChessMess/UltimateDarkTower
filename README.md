@@ -373,7 +373,7 @@ The build process compiles TypeScript files and copies HTML files from the `exam
 #### Sections
 
 -   [Connection Management](#connection-management)
--   [Tower Control](#tower-control)
+-   [Tower Commands](#tower-commands)
 -   [Monitoring Configuration](#monitoring-configuration)
 -   [Logging System](#logging-system-methods)
 
@@ -384,7 +384,9 @@ The build process compiles TypeScript files and copies HTML files from the `exam
 -   `cleanup()` - Clean up resources and disconnect properly
 -   `isConnectedAndResponsive()` - Test if tower is connected and responsive
 
-#### Tower Control
+#### Tower Commands
+
+These are the commands the library provides to control the tower.
 
 -   `calibrate()` - Calibrate the tower (required after connection)
 -   `playSound(soundIndex: number)` - Play a sound by index (1-based)
