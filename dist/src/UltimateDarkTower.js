@@ -24,12 +24,6 @@ const udtTowerCommands_1 = require("./udtTowerCommands");
  * - Comprehensive logging system with multiple output options
  * - Connection heartbeat monitoring for reliable disconnect detection
  *
-  * Known Issues:
- *    Tower command complete response is not being considered. Async Await is working
- *    only on the fact that a command was sent, which is pretty much immediate, so we need
- *    to rework this a bit to take into account when a command is complete. This is all
- *    part of work still to be done.
- *
  * Usage:
  * 1. Create instance: const tower = new UltimateDarkTower()
  * 2. Connect to tower: await tower.connect()
@@ -41,7 +35,7 @@ const udtTowerCommands_1 = require("./udtTowerCommands");
  * - onTowerConnect: Called when tower connects
  * - onTowerDisconnect: Called when tower disconnects
  * - onCalibrationComplete: Called when calibration finishes
- * - onSkullDrop: Called when skulls are dropped from the tower
+ * - onSkullDrop: Called when skulls are dropped into the tower
  * - onBatteryLevelNotify: Called when battery level updates
  */
 class UltimateDarkTower {
@@ -55,6 +49,7 @@ class UltimateDarkTower {
         this.previousBatteryValue = 0;
         this.currentBatteryPercentage = 0;
         this.previousBatteryPercentage = 0;
+        this.brokenSeals = new Set();
         // call back functions
         // you overwrite these with your own functions 
         // to handle these events in your app
@@ -215,11 +210,18 @@ class UltimateDarkTower {
     //#endregion
     /**
      * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
-     * @param seal - Seal number(s) to break (1-12, where 1/5/8 are north positions)
+     * @param seal - Seal identifier(s) to break (e.g., {side: 'north', level: 'middle'})
      * @returns Promise that resolves when seal break sequence is complete
      */
     async breakSeal(seal) {
-        return await this.towerCommands.breakSeal(seal);
+        const result = await this.towerCommands.breakSeal(seal);
+        // Track broken seals
+        const seals = Array.isArray(seal) ? seal : [seal];
+        seals.forEach(s => {
+            const sealKey = `${s.level}-${s.side}`;
+            this.brokenSeals.add(sealKey);
+        });
+        return result;
     }
     /**
      * Randomly rotates specified tower levels to random positions.
@@ -236,6 +238,54 @@ class UltimateDarkTower {
      */
     getCurrentDrumPosition(level) {
         return this.towerCommands.getCurrentDrumPosition(level);
+    }
+    /**
+     * Checks if a specific seal is broken.
+     * @param seal - The seal identifier to check
+     * @returns True if the seal is broken, false otherwise
+     */
+    isSealBroken(seal) {
+        const sealKey = `${seal.level}-${seal.side}`;
+        return this.brokenSeals.has(sealKey);
+    }
+    /**
+     * Gets a list of all broken seals.
+     * @returns Array of SealIdentifier objects representing all broken seals
+     */
+    getBrokenSeals() {
+        return Array.from(this.brokenSeals).map(sealKey => {
+            const [level, side] = sealKey.split('-');
+            return { level: level, side: side };
+        });
+    }
+    /**
+     * Resets the broken seals tracking (clears all broken seals).
+     */
+    resetBrokenSeals() {
+        this.brokenSeals.clear();
+    }
+    /**
+     * Gets a random unbroken seal that can be passed to breakSeal().
+     * @returns A random SealIdentifier that is not currently broken, or null if all seals are broken
+     */
+    getRandomUnbrokenSeal() {
+        const allSeals = [];
+        const levels = ['top', 'middle', 'bottom'];
+        const sides = ['north', 'east', 'south', 'west'];
+        // Generate all possible seal combinations
+        for (const level of levels) {
+            for (const side of sides) {
+                allSeals.push({ level, side });
+            }
+        }
+        // Filter out broken seals
+        const unbrokenSeals = allSeals.filter(seal => !this.isSealBroken(seal));
+        if (unbrokenSeals.length === 0) {
+            return null; // All seals are broken
+        }
+        // Return a random unbroken seal
+        const randomIndex = Math.floor(Math.random() * unbrokenSeals.length);
+        return unbrokenSeals[randomIndex];
     }
     //#region bluetooth
     /**

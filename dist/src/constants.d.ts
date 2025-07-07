@@ -115,6 +115,10 @@ export declare const AUDIO_COMMAND_POS = 15;
 export declare const SKULL_DROP_COUNT_POS = 17;
 export type TowerLevels = "top" | "middle" | "bottom";
 export type TowerSide = "north" | "south" | "east" | "west";
+export type SealIdentifier = {
+    side: TowerSide;
+    level: TowerLevels;
+};
 export type LightTypes = "base" | "doorway" | "ledge";
 export type DoorwayLight = {
     position: TowerSide;

@@ -145,6 +145,37 @@
       padding: 0.5rem;
       width: fit-content;
     }
+
+    .seal-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      padding: 0.25rem;
+      width: fit-content;
+    }
+
+    .seal-square {
+      width: 1rem;
+      height: 1rem;
+      background-color: #d1d5db;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      border: 1px solid transparent;
+    }
+
+    .seal-square:hover {
+      background-color: #9ca3af;
+      border-color: #6b7280;
+    }
+
+    .seal-square.broken {
+      background-color: #991b1b;
+    }
+
+    .seal-square.broken:hover {
+      background-color: #b91c1c;
+    }
   </style>
 
   <!-- Scripts (also at bottom of page) -->
@@ -426,33 +457,56 @@
 
             <fieldset class="tower-fieldset">
               <legend class="tower-legend">Break Seal</legend>
-              <div class="flex justify-evenly items-baseline p-1 space-x-4">
-                <div class="flex flex-col">
-                  <select id="sealSelect" class="tower-select w-52">
-                    <option value="">Select a seal</option>
-                    <option value="North Top">North Top</option>
-                    <option value="North Middle">North Middle</option>
-                    <option value="North Bottom">North Bottom</option>
-                    <option value="East Top">East Top</option>
-                    <option value="East Middle">East Middle</option>
-                    <option value="East Bottom">East Bottom</option>
-                    <option value="South Top">South Top</option>
-                    <option value="South Middle">South Middle</option>
-                    <option value="South Bottom">South Bottom</option>
-                    <option value="West Top">West Top</option>
-                    <option value="West Middle">West Middle</option>
-                    <option value="West Bottom">West Bottom</option>
-                  </select>
+              <div class="flex justify-between items-start p-1">
+                <!-- Left side: Controls -->
+                <div class="flex-1 flex justify-center">
+                  <div class="flex flex-col space-y-2">
+                    <!-- Dropdown -->
+                    <select id="sealSelect" class="tower-select w-55">
+                      <option value="">Select a seal</option>
+                      <option value="North Top">North Top</option>
+                      <option value="North Middle">North Middle</option>
+                      <option value="North Bottom">North Bottom</option>
+                      <option value="East Top">East Top</option>
+                      <option value="East Middle">East Middle</option>
+                      <option value="East Bottom">East Bottom</option>
+                      <option value="South Top">South Top</option>
+                      <option value="South Middle">South Middle</option>
+                      <option value="South Bottom">South Bottom</option>
+                      <option value="West Top">West Top</option>
+                      <option value="West Middle">West Middle</option>
+                      <option value="West Bottom">West Bottom</option>
+                    </select>
+                    <!-- Buttons -->
+                    <div class="flex justify-center items-center space-x-2">
+                      <button id="breakSealButton" onclick="breakSeal()" class="tower-button">
+                        Break Seal
+                      </button>
+                      <button id="clearLightsButton" onclick="clearAllLights()" class="tower-button">
+                        Clear Effect
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <button id="breakSealButton" onclick="breakSeal()" class="tower-button">
-                    Break Seal
-                  </button>
-                </div>
-                <div>
-                  <button id="clearLightsButton" onclick="clearAllLights()" class="tower-button">
-                    Clear Effect
-                  </button>
+                <!-- Right side: Seal Status Grid -->
+                <div class="flex-1 flex justify-center">
+                  <div class="seal-grid">
+                    <!-- Top Row -->
+                    <div class="seal-square" data-seal-level="top" data-seal-side="north" title="North Top Seal" onclick="sealSquareClick(this)"></div>
+                    <div class="seal-square" data-seal-level="top" data-seal-side="east" title="East Top Seal" onclick="sealSquareClick(this)"></div>
+                    <div class="seal-square" data-seal-level="top" data-seal-side="south" title="South Top Seal" onclick="sealSquareClick(this)"></div>
+                    <div class="seal-square" data-seal-level="top" data-seal-side="west" title="West Top Seal" onclick="sealSquareClick(this)"></div>
+                    <!-- Middle Row -->
+                    <div class="seal-square" data-seal-level="middle" data-seal-side="north" title="North Middle Seal" onclick="sealSquareClick(this)"></div>
+                    <div class="seal-square" data-seal-level="middle" data-seal-side="east" title="East Middle Seal" onclick="sealSquareClick(this)"></div>
+                    <div class="seal-square" data-seal-level="middle" data-seal-side="south" title="South Middle Seal" onclick="sealSquareClick(this)"></div>
+                    <div class="seal-square" data-seal-level="middle" data-seal-side="west" title="West Middle Seal" onclick="sealSquareClick(this)"></div>
+                    <!-- Bottom Row -->
+                    <div class="seal-square" data-seal-level="bottom" data-seal-side="north" title="North Bottom Seal" onclick="sealSquareClick(this)"></div>
+                    <div class="seal-square" data-seal-level="bottom" data-seal-side="east" title="East Bottom Seal" onclick="sealSquareClick(this)"></div>
+                    <div class="seal-square" data-seal-level="bottom" data-seal-side="south" title="South Bottom Seal" onclick="sealSquareClick(this)"></div>
+                    <div class="seal-square" data-seal-level="bottom" data-seal-side="west" title="West Bottom Seal" onclick="sealSquareClick(this)"></div>
+                  </div>
                 </div>
               </div>
             </fieldset>

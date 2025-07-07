@@ -1227,51 +1227,14 @@
     }
     /**
      * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
-     * @param seal - Seal number(s) to break (1-12, where 1/5/8 are north positions)
+     * @param seal - Seal identifier(s) to break (e.g., {side: 'north', level: 'middle'})
      * @returns Promise that resolves when seal break sequence is complete
      */
     async breakSeal(seal) {
-      const sealNumbers = Array.isArray(seal) ? seal : [seal];
-      const SEAL_TO_SIDE = {
-        1: "north",
-        2: "east",
-        3: "south",
-        4: "west",
-        // Top level
-        5: "north",
-        6: "east",
-        7: "south",
-        8: "west",
-        // Middle level  
-        9: "north",
-        10: "east",
-        11: "south",
-        12: "west"
-        // Bottom level
-      };
-      const SEAL_TO_LEVEL = {
-        1: "top",
-        2: "top",
-        3: "top",
-        4: "top",
-        5: "middle",
-        6: "middle",
-        7: "middle",
-        8: "middle",
-        9: "bottom",
-        10: "bottom",
-        11: "bottom",
-        12: "bottom"
-      };
-      for (const sealNum of sealNumbers) {
-        if (sealNum < 1 || sealNum > 12) {
-          this.deps.logger.error(`Invalid seal number: ${sealNum}. Seals must be 1-12.`, "[UDT]");
-          return;
-        }
-      }
+      const sealIdentifiers = Array.isArray(seal) ? seal : [seal];
       this.deps.logger.info("Playing tower seal sound", "[UDT]");
       await this.playSound(TOWER_AUDIO_LIBRARY.TowerSeal.value);
-      const sidesWithBrokenSeals = [...new Set(sealNumbers.map((sealNum) => SEAL_TO_SIDE[sealNum]))];
+      const sidesWithBrokenSeals = [...new Set(sealIdentifiers.map((seal2) => seal2.side))];
       const ledgeLights = [];
       const adjacentSides = {
         north: "east",
@@ -1286,16 +1249,17 @@
       const uniqueLedgeLights = ledgeLights.filter(
         (light, index, self) => index === self.findIndex((l) => l.position === light.position)
       );
-      const doorwayLights = sealNumbers.map((sealNum) => ({
-        level: SEAL_TO_LEVEL[sealNum],
-        position: SEAL_TO_SIDE[sealNum],
+      const doorwayLights = sealIdentifiers.map((seal2) => ({
+        level: seal2.level,
+        position: seal2.side,
         style: "breatheFast"
       }));
       const lights = {
         ledge: uniqueLedgeLights,
         doorway: doorwayLights
       };
-      this.deps.logger.info(`Breaking seal(s) ${sealNumbers.join(", ")} - lighting ledges and doorways with breath effect`, "[UDT]");
+      const sealDescriptions = sealIdentifiers.map((s) => `${s.level}-${s.side}`);
+      this.deps.logger.info(`Breaking seal(s) ${sealDescriptions.join(", ")} - lighting ledges and doorways with breath effect`, "[UDT]");
       await this.lights(lights);
     }
     /**
@@ -1411,6 +1375,7 @@
       this.previousBatteryValue = 0;
       this.currentBatteryPercentage = 0;
       this.previousBatteryPercentage = 0;
+      this.brokenSeals = /* @__PURE__ */ new Set();
       // call back functions
       // you overwrite these with your own functions 
       // to handle these events in your app
@@ -1606,11 +1571,17 @@
     //#endregion
     /**
      * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
-     * @param seal - Seal number(s) to break (1-12, where 1/5/8 are north positions)
+     * @param seal - Seal identifier(s) to break (e.g., {side: 'north', level: 'middle'})
      * @returns Promise that resolves when seal break sequence is complete
      */
     async breakSeal(seal) {
-      return await this.towerCommands.breakSeal(seal);
+      const result = await this.towerCommands.breakSeal(seal);
+      const seals = Array.isArray(seal) ? seal : [seal];
+      seals.forEach((s) => {
+        const sealKey = `${s.level}-${s.side}`;
+        this.brokenSeals.add(sealKey);
+      });
+      return result;
     }
     /**
      * Randomly rotates specified tower levels to random positions.
@@ -1627,6 +1598,51 @@
      */
     getCurrentDrumPosition(level) {
       return this.towerCommands.getCurrentDrumPosition(level);
+    }
+    /**
+     * Checks if a specific seal is broken.
+     * @param seal - The seal identifier to check
+     * @returns True if the seal is broken, false otherwise
+     */
+    isSealBroken(seal) {
+      const sealKey = `${seal.level}-${seal.side}`;
+      return this.brokenSeals.has(sealKey);
+    }
+    /**
+     * Gets a list of all broken seals.
+     * @returns Array of SealIdentifier objects representing all broken seals
+     */
+    getBrokenSeals() {
+      return Array.from(this.brokenSeals).map((sealKey) => {
+        const [level, side] = sealKey.split("-");
+        return { level, side };
+      });
+    }
+    /**
+     * Resets the broken seals tracking (clears all broken seals).
+     */
+    resetBrokenSeals() {
+      this.brokenSeals.clear();
+    }
+    /**
+     * Gets a random unbroken seal that can be passed to breakSeal().
+     * @returns A random SealIdentifier that is not currently broken, or null if all seals are broken
+     */
+    getRandomUnbrokenSeal() {
+      const allSeals = [];
+      const levels = ["top", "middle", "bottom"];
+      const sides = ["north", "east", "south", "west"];
+      for (const level of levels) {
+        for (const side of sides) {
+          allSeals.push({ level, side });
+        }
+      }
+      const unbrokenSeals = allSeals.filter((seal) => !this.isSealBroken(seal));
+      if (unbrokenSeals.length === 0) {
+        return null;
+      }
+      const randomIndex = Math.floor(Math.random() * unbrokenSeals.length);
+      return unbrokenSeals[randomIndex];
     }
     //#region bluetooth
     /**

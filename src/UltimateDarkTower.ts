@@ -1,7 +1,9 @@
 import {
   type Lights,
   type TowerSide,
+  type TowerLevels,
   type RotateCommand,
+  type SealIdentifier,
   VOLTAGE_LEVELS
 } from './constants';
 import { Logger, ConsoleOutput, type LogOutput } from './Logger';
@@ -69,6 +71,7 @@ class UltimateDarkTower {
   previousBatteryValue: number = 0;
   currentBatteryPercentage: number = 0;
   previousBatteryPercentage: number = 0;
+  private brokenSeals: Set<string> = new Set();
 
   // call back functions
   // you overwrite these with your own functions 
@@ -255,11 +258,20 @@ class UltimateDarkTower {
 
   /**
    * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
-   * @param seal - Seal number(s) to break (1-12, where 1/5/8 are north positions)
+   * @param seal - Seal identifier(s) to break (e.g., {side: 'north', level: 'middle'})
    * @returns Promise that resolves when seal break sequence is complete
    */
-  async breakSeal(seal: Array<number> | number) {
-    return await this.towerCommands.breakSeal(seal);
+  async breakSeal(seal: SealIdentifier | SealIdentifier[]) {
+    const result = await this.towerCommands.breakSeal(seal);
+    
+    // Track broken seals
+    const seals = Array.isArray(seal) ? seal : [seal];
+    seals.forEach(s => {
+      const sealKey = `${s.level}-${s.side}`;
+      this.brokenSeals.add(sealKey);
+    });
+    
+    return result;
   }
 
   /**
@@ -278,6 +290,62 @@ class UltimateDarkTower {
    */
   getCurrentDrumPosition(level: 'top' | 'middle' | 'bottom'): TowerSide {
     return this.towerCommands.getCurrentDrumPosition(level);
+  }
+
+  /**
+   * Checks if a specific seal is broken.
+   * @param seal - The seal identifier to check
+   * @returns True if the seal is broken, false otherwise
+   */
+  isSealBroken(seal: SealIdentifier): boolean {
+    const sealKey = `${seal.level}-${seal.side}`;
+    return this.brokenSeals.has(sealKey);
+  }
+
+  /**
+   * Gets a list of all broken seals.
+   * @returns Array of SealIdentifier objects representing all broken seals
+   */
+  getBrokenSeals(): SealIdentifier[] {
+    return Array.from(this.brokenSeals).map(sealKey => {
+      const [level, side] = sealKey.split('-');
+      return { level: level as TowerLevels, side: side as TowerSide };
+    });
+  }
+
+  /**
+   * Resets the broken seals tracking (clears all broken seals).
+   */
+  resetBrokenSeals(): void {
+    this.brokenSeals.clear();
+  }
+
+  /**
+   * Gets a random unbroken seal that can be passed to breakSeal().
+   * @returns A random SealIdentifier that is not currently broken, or null if all seals are broken
+   */
+  getRandomUnbrokenSeal(): SealIdentifier | null {
+    const allSeals: SealIdentifier[] = [];
+    const levels: TowerLevels[] = ['top', 'middle', 'bottom'];
+    const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
+
+    // Generate all possible seal combinations
+    for (const level of levels) {
+      for (const side of sides) {
+        allSeals.push({ level, side });
+      }
+    }
+
+    // Filter out broken seals
+    const unbrokenSeals = allSeals.filter(seal => !this.isSealBroken(seal));
+
+    if (unbrokenSeals.length === 0) {
+      return null; // All seals are broken
+    }
+
+    // Return a random unbroken seal
+    const randomIndex = Math.floor(Math.random() * unbrokenSeals.length);
+    return unbrokenSeals[randomIndex];
   }
 
   //#region bluetooth

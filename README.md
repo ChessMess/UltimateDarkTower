@@ -73,6 +73,25 @@ try {
 
     // Randomly rotate only the top level
     await tower.randomRotateLevels(1);
+
+    // Break a specific seal
+    await tower.breakSeal({ side: "north", level: "middle" });
+
+    // Check if a seal is broken
+    const isNorthMiddleBroken = tower.isSealBroken({ side: "north", level: "middle" });
+
+    // Get all broken seals
+    const brokenSeals = tower.getBrokenSeals();
+    console.log("Broken seals:", brokenSeals);
+
+    // Get a random unbroken seal
+    const randomSeal = tower.getRandomUnbrokenSeal();
+    if (randomSeal) {
+        await tower.breakSeal(randomSeal);
+    }
+
+    // Reset all broken seals
+    tower.resetBrokenSeals();
 } catch (error) {
     console.error("Tower operation failed:", error);
 }
@@ -84,6 +103,7 @@ try {
 import UltimateDarkTower, {
     type TowerSide,
     type Lights,
+    type SealIdentifier,
 } from "ultimatedarktower";
 
 const tower = new UltimateDarkTower();
@@ -110,6 +130,19 @@ try {
     // Randomly rotate levels (parameter is optional, defaults to 0 for all levels)
     await tower.randomRotateLevels(); // All levels
     await tower.randomRotateLevels(4); // Top & middle only
+
+    // Seal tracking with type safety
+    const sealToBreak: SealIdentifier = { side: "east", level: "top" };
+    await tower.breakSeal(sealToBreak);
+
+    // Check seal status
+    const isBroken: boolean = tower.isSealBroken(sealToBreak);
+    
+    // Get all broken seals
+    const allBrokenSeals: SealIdentifier[] = tower.getBrokenSeals();
+    
+    // Get random unbroken seal
+    const randomUnbrokenSeal: SealIdentifier | null = tower.getRandomUnbrokenSeal();
 } catch (error) {
     console.error("Tower operation failed:", error);
 }
@@ -394,7 +427,11 @@ These are the commands the library provides to control the tower.
 -   `lightOverrides(light: number, soundIndex?: number)` - Override light patterns
 -   `rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number)` - Rotate tower sections
 -   `randomRotateLevels(level?: number)` - Randomly rotate drum levels (0=all, 1=top, 2=middle, 3=bottom, 4=top&middle, 5=top&bottom, 6=middle&bottom)
--   `breakSeal(seal: Array<number> | number)` - Break game seals with lights and sound effects (seals 1-12)
+-   `breakSeal(seal: SealIdentifier | SealIdentifier[])` - Break game seals with lights and sound effects
+-   `isSealBroken(seal: SealIdentifier)` - Check if a specific seal is broken
+-   `getBrokenSeals()` - Get array of all broken seals
+-   `resetBrokenSeals()` - Reset all broken seals tracking
+-   `getRandomUnbrokenSeal()` - Get a random unbroken seal, or null if all are broken
 -   `resetTowerSkullCount()` - Reset the skull drop counter
 
 #### Monitoring Configuration
@@ -447,6 +484,8 @@ Override these methods to handle tower events:
 ### Types
 
 -   `TowerSide` - Tower rotation positions: "north" | "south" | "east" | "west"
+-   `TowerLevels` - Tower seal levels: "top" | "middle" | "bottom"
+-   `SealIdentifier` - Seal location object: `{ side: TowerSide; level: TowerLevels }`
 -   `Lights` - Light configuration object with doorway, ledge, and base properties
 -   `LogLevel` - Log level types: "all" | "debug" | "info" | "warn" | "error"
 -   `LogOutput` - Interface for custom log output implementations

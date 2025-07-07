@@ -1,4 +1,4 @@
-import { type Lights, type TowerSide, type RotateCommand } from './constants';
+import { type Lights, type TowerSide, type RotateCommand, type SealIdentifier } from './constants';
 import { type LogOutput } from './Logger';
 import { type ConnectionStatus } from './udtBleConnection';
 /**
@@ -19,12 +19,6 @@ import { type ConnectionStatus } from './udtBleConnection';
  * - Comprehensive logging system with multiple output options
  * - Connection heartbeat monitoring for reliable disconnect detection
  *
-  * Known Issues:
- *    Tower command complete response is not being considered. Async Await is working
- *    only on the fact that a command was sent, which is pretty much immediate, so we need
- *    to rework this a bit to take into account when a command is complete. This is all
- *    part of work still to be done.
- *
  * Usage:
  * 1. Create instance: const tower = new UltimateDarkTower()
  * 2. Connect to tower: await tower.connect()
@@ -36,7 +30,7 @@ import { type ConnectionStatus } from './udtBleConnection';
  * - onTowerConnect: Called when tower connects
  * - onTowerDisconnect: Called when tower disconnects
  * - onCalibrationComplete: Called when calibration finishes
- * - onSkullDrop: Called when skulls are dropped from the tower
+ * - onSkullDrop: Called when skulls are dropped into the tower
  * - onBatteryLevelNotify: Called when battery level updates
  */
 declare class UltimateDarkTower {
@@ -55,6 +49,7 @@ declare class UltimateDarkTower {
     previousBatteryValue: number;
     currentBatteryPercentage: number;
     previousBatteryPercentage: number;
+    private brokenSeals;
     onCalibrationComplete: () => void;
     onSkullDrop: (_towerSkullCount: number) => void;
     onBatteryLevelNotify: (_millivolts: number) => void;
@@ -133,10 +128,10 @@ declare class UltimateDarkTower {
     resetTowerSkullCount(): Promise<void>;
     /**
      * Breaks one or more seals on the tower, playing appropriate sound and lighting effects.
-     * @param seal - Seal number(s) to break (1-12, where 1/5/8 are north positions)
+     * @param seal - Seal identifier(s) to break (e.g., {side: 'north', level: 'middle'})
      * @returns Promise that resolves when seal break sequence is complete
      */
-    breakSeal(seal: Array<number> | number): Promise<void>;
+    breakSeal(seal: SealIdentifier | SealIdentifier[]): Promise<void>;
     /**
      * Randomly rotates specified tower levels to random positions.
      * @param level - Level configuration: 0=all, 1=top, 2=middle, 3=bottom, 4=top&middle, 5=top&bottom, 6=middle&bottom
@@ -149,6 +144,26 @@ declare class UltimateDarkTower {
      * @returns The current position of the specified drum level
      */
     getCurrentDrumPosition(level: 'top' | 'middle' | 'bottom'): TowerSide;
+    /**
+     * Checks if a specific seal is broken.
+     * @param seal - The seal identifier to check
+     * @returns True if the seal is broken, false otherwise
+     */
+    isSealBroken(seal: SealIdentifier): boolean;
+    /**
+     * Gets a list of all broken seals.
+     * @returns Array of SealIdentifier objects representing all broken seals
+     */
+    getBrokenSeals(): SealIdentifier[];
+    /**
+     * Resets the broken seals tracking (clears all broken seals).
+     */
+    resetBrokenSeals(): void;
+    /**
+     * Gets a random unbroken seal that can be passed to breakSeal().
+     * @returns A random SealIdentifier that is not currently broken, or null if all seals are broken
+     */
+    getRandomUnbrokenSeal(): SealIdentifier | null;
     /**
      * Establishes a Bluetooth connection to the Dark Tower device.
      * Initializes GATT services, characteristics, and starts connection monitoring.
