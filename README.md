@@ -9,6 +9,7 @@ I have spent many hours reverse engineering the Tower's protocol in order to cre
 -   [Web Application Examples](#web-application-examples)
 -   [Installation](#installation)
 -   [Usage](#usage)
+-   [Glyph Position Tracking](#glyph-position-tracking)
 -   [Disconnect Detection & Handling](#disconnect-detection--handling)
 -   [Development Scripts](#development-scripts)
 -   [API Reference](#api-reference)
@@ -42,73 +43,6 @@ npm install ultimatedarktower
 ```
 
 ## Usage
-
-### Table of Contents
-
--   [JavaScript/ES6](#javascriptes6)
--   [TypeScript](#typescript)
-
-### JavaScript/ES6
-
-```javascript
-import UltimateDarkTower from "ultimatedarktower";
-
-const tower = new UltimateDarkTower();
-
-try {
-    // Connect to the tower
-    await tower.connect();
-
-    // Calibrate the tower
-    await tower.calibrate();
-
-    // Play a sound
-    await tower.playSound(1);
-
-    // Rotate the tower
-    await tower.rotate("north", "south", "east");
-
-    // Randomly rotate all levels
-    await tower.randomRotateLevels(0);
-
-    // Randomly rotate only the top level
-    await tower.randomRotateLevels(1);
-
-    // Break a specific seal
-    await tower.breakSeal({ side: "north", level: "middle" });
-
-    // Check if a seal is broken
-    const isNorthMiddleBroken = tower.isSealBroken({ side: "north", level: "middle" });
-
-    // Get all broken seals
-    const brokenSeals = tower.getBrokenSeals();
-    console.log("Broken seals:", brokenSeals);
-
-    // Get a random unbroken seal
-    const randomSeal = tower.getRandomUnbrokenSeal();
-    if (randomSeal) {
-        await tower.breakSeal(randomSeal);
-    }
-
-    // Reset all broken seals
-    tower.resetBrokenSeals();
-
-    // Track glyph positions after calibration
-    const cleansePosition = tower.getGlyphPosition("cleanse");
-    console.log("Cleanse glyph is at:", cleansePosition); // "north" after calibration
-
-    // Get all glyph positions
-    const allGlyphPositions = tower.getAllGlyphPositions();
-    console.log("All glyph positions:", allGlyphPositions);
-
-    // Rotate tower and see glyph positions update automatically
-    await tower.rotate("east", "west", "south");
-    const newCleansePosition = tower.getGlyphPosition("cleanse");
-    console.log("Cleanse glyph moved to:", newCleansePosition); // "east" after rotation
-} catch (error) {
-    console.error("Tower operation failed:", error);
-}
-```
 
 ### TypeScript
 
