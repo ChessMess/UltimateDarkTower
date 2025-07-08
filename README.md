@@ -92,6 +92,19 @@ try {
 
     // Reset all broken seals
     tower.resetBrokenSeals();
+
+    // Track glyph positions after calibration
+    const cleansePosition = tower.getGlyphPosition("cleanse");
+    console.log("Cleanse glyph is at:", cleansePosition); // "north" after calibration
+
+    // Get all glyph positions
+    const allGlyphPositions = tower.getAllGlyphPositions();
+    console.log("All glyph positions:", allGlyphPositions);
+
+    // Rotate tower and see glyph positions update automatically
+    await tower.rotate("east", "west", "south");
+    const newCleansePosition = tower.getGlyphPosition("cleanse");
+    console.log("Cleanse glyph moved to:", newCleansePosition); // "east" after rotation
 } catch (error) {
     console.error("Tower operation failed:", error);
 }
@@ -104,6 +117,7 @@ import UltimateDarkTower, {
     type TowerSide,
     type Lights,
     type SealIdentifier,
+    type Glyphs,
 } from "ultimatedarktower";
 
 const tower = new UltimateDarkTower();
@@ -143,10 +157,124 @@ try {
     
     // Get random unbroken seal
     const randomUnbrokenSeal: SealIdentifier | null = tower.getRandomUnbrokenSeal();
+
+    // Track glyph positions with type safety
+    const cleansePosition: TowerSide | null = tower.getGlyphPosition("cleanse");
+    const allGlyphPositions: { [key in Glyphs]: TowerSide | null } = tower.getAllGlyphPositions();
 } catch (error) {
     console.error("Tower operation failed:", error);
 }
 ```
+
+## Glyph Position Tracking
+
+The UltimateDarkTower library automatically tracks the positions of all glyphs on the tower drums. This feature provides real-time position information as the tower rotates, making it easy to build game logic that depends on glyph locations.
+
+### How It Works
+
+1. **Initialization**: All glyph positions start as `null` until calibration
+2. **Calibration**: When calibration completes, positions are set from the `GLYPHS` constant based on the tower's initial drum orientations
+3. **Automatic Updates**: Glyph positions are automatically updated whenever drums rotate via `rotate()`, `randomRotateLevels()`, or `MultiCommand()`
+
+### Available Glyphs
+
+The tower tracks these five glyphs:
+
+- **cleanse** - Top level, initially at north
+- **quest** - Top level, initially at south  
+- **battle** - Middle level, initially at north
+- **banner** - Bottom level, initially at north
+- **reinforce** - Bottom level, initially at south
+
+### Usage Examples
+
+```javascript
+// Check if tower is calibrated before accessing glyph positions
+if (tower.isCalibrated) {
+    // Get position of a specific glyph
+    const cleansePosition = tower.getGlyphPosition("cleanse");
+    console.log("Cleanse glyph is at:", cleansePosition); // "north", "east", "south", or "west"
+    
+    // Get all glyph positions
+    const allPositions = tower.getAllGlyphPositions();
+    console.log("All glyph positions:", allPositions);
+    /* Output:
+    {
+        cleanse: "north",
+        quest: "south", 
+        battle: "north",
+        banner: "north",
+        reinforce: "south"
+    }
+    */
+    
+    // Rotate tower and positions update automatically
+    await tower.rotate("east", "west", "south");
+    
+    // Check updated positions
+    const newCleansePosition = tower.getGlyphPosition("cleanse");
+    console.log("Cleanse moved to:", newCleansePosition); // "east"
+} else {
+    console.log("Tower not calibrated - glyph positions are null");
+}
+```
+
+### TypeScript Support
+
+```typescript
+import { type Glyphs, type TowerSide } from "ultimatedarktower";
+
+// Type-safe glyph position access
+const glyph: Glyphs = "cleanse";
+const position: TowerSide | null = tower.getGlyphPosition(glyph);
+
+// Type-safe all positions
+const allPositions: { [key in Glyphs]: TowerSide | null } = tower.getAllGlyphPositions();
+```
+
+### Game Logic Integration
+
+Use glyph positions to build game mechanics:
+
+```javascript
+// Example: Check if cleanse glyph is facing north
+function canPerformCleanse() {
+    return tower.getGlyphPosition("cleanse") === "north";
+}
+
+// Example: Find all glyphs facing a specific direction
+function getGlyphsFacing(direction) {
+    const positions = tower.getAllGlyphPositions();
+    return Object.entries(positions)
+        .filter(([glyph, position]) => position === direction)
+        .map(([glyph]) => glyph);
+}
+
+// Example: Rotate to align a glyph with a specific side
+async function alignGlyphTo(glyph, targetSide) {
+    const glyphData = GLYPHS[glyph];
+    const currentPos = tower.getCurrentDrumPosition(glyphData.level);
+    
+    // Calculate rotation needed (simplified example)
+    if (currentPos !== targetSide) {
+        if (glyphData.level === "top") {
+            await tower.rotate(targetSide, "north", "north");
+        } else if (glyphData.level === "middle") {
+            await tower.rotate("north", targetSide, "north");
+        } else {
+            await tower.rotate("north", "north", targetSide);
+        }
+    }
+}
+```
+
+### Important Notes
+
+- Glyph positions are `null` until calibration completes
+- Positions are automatically updated for all rotation methods
+- The tracking is based on the initial calibrated positions defined in `GLYPHS`
+- Glyph positions rotate clockwise with their respective drum levels
+- Each glyph belongs to a specific drum level (top, middle, or bottom)
 
 ## Disconnect Detection & Handling
 
@@ -433,6 +561,8 @@ These are the commands the library provides to control the tower.
 -   `resetBrokenSeals()` - Reset all broken seals tracking
 -   `getRandomUnbrokenSeal()` - Get a random unbroken seal, or null if all are broken
 -   `resetTowerSkullCount()` - Reset the skull drop counter
+-   `getGlyphPosition(glyph: Glyphs)` - Get current position of a specific glyph (returns null if not calibrated)
+-   `getAllGlyphPositions()` - Get all current glyph positions as an object
 
 #### Monitoring Configuration
 
@@ -487,6 +617,7 @@ Override these methods to handle tower events:
 -   `TowerLevels` - Tower seal levels: "top" | "middle" | "bottom"
 -   `SealIdentifier` - Seal location object: `{ side: TowerSide; level: TowerLevels }`
 -   `Lights` - Light configuration object with doorway, ledge, and base properties
+-   `Glyphs` - Glyph names: "cleanse" | "quest" | "battle" | "banner" | "reinforce"
 -   `LogLevel` - Log level types: "all" | "debug" | "info" | "warn" | "error"
 -   `LogOutput` - Interface for custom log output implementations
 

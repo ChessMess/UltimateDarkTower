@@ -219,7 +219,7 @@ const breakSeal = async () => {
 
   // Check if we're in timeout period
   if (breakSealTimeout !== null) {
-    logger.warn("Break seal is on cooldown. Please wait before breaking another seal.", '[TC]');
+    logger.warn("Break seal is in progress. Please wait before breaking another seal.", '[TC]');
     return;
   }
 
@@ -246,10 +246,10 @@ const breakSeal = async () => {
 
     await Tower.breakSeal(sealIdentifier);
     logger.info(`Broke seal at ${sealIdentifier.level}-${sealIdentifier.side}`, '[TC]');
-    
+
     // Update the visual seal grid
     updateSealGrid(sealIdentifier, true);
-    
+
     // Start cooldown and disable button
     startBreakSealCooldown();
   }
@@ -323,11 +323,11 @@ const clearAllLights = async () => {
 
   await Tower.Lights(allLightsOff);
   logger.info("All lights cleared", '[TC]');
-  
+
   // Reset all broken seals and update the visual grid
   Tower.resetBrokenSeals();
   resetSealGrid();
-  
+
   // Reset the dropdown to default selection
   const sealSelect = document.getElementById("sealSelect") as HTMLSelectElement;
   if (sealSelect) {
@@ -467,26 +467,25 @@ let breakSealTimeout: number | null = null;
  */
 const startBreakSealCooldown = () => {
   const breakSealButton = document.getElementById("breakSealButton") as HTMLButtonElement;
-  
+
   // Disable the button and update text
   if (breakSealButton) {
     breakSealButton.disabled = true;
-    breakSealButton.textContent = "Cooldown...";
     breakSealButton.style.opacity = "0.5";
   }
-  
+
   // Start 10-second timeout
   logger.info("Break seal cooldown started (10 seconds)", '[TC]');
   breakSealTimeout = window.setTimeout(() => {
     breakSealTimeout = null;
-    
+
     // Re-enable the button and restore text
     if (breakSealButton) {
       breakSealButton.disabled = false;
       breakSealButton.textContent = "Break Seal";
       breakSealButton.style.opacity = "1";
     }
-    
+
     logger.info("Break seal cooldown ended", '[TC]');
   }, 10000);
 }
@@ -498,7 +497,7 @@ const startBreakSealCooldown = () => {
 const sealSquareClick = (element: HTMLElement) => {
   const level = element.getAttribute('data-seal-level');
   const side = element.getAttribute('data-seal-side');
-  
+
   if (!level || !side) {
     logger.warn("Invalid seal square data", '[TC]');
     return;
@@ -506,20 +505,20 @@ const sealSquareClick = (element: HTMLElement) => {
 
   const sealSelect = document.getElementById("sealSelect") as HTMLSelectElement;
   const isCurrentlyBroken = element.classList.contains('broken');
-  
+
   if (isCurrentlyBroken) {
     // Seal is already broken - reset it (no timeout needed for resets)
     element.classList.remove('broken');
-    
+
     // Remove from Tower's broken seals tracking
     const sealKey = `${level}-${side}`;
     (Tower as any).brokenSeals.delete(sealKey);
-    
+
     // Reset dropdown to default
     if (sealSelect) {
       sealSelect.value = "";
     }
-    
+
     logger.info(`Reset seal at ${level}-${side}`, '[TC]');
   } else {
     // Seal is not broken - check if we're in timeout period
@@ -527,17 +526,17 @@ const sealSquareClick = (element: HTMLElement) => {
       logger.warn("Break seal is on cooldown. Please wait before breaking another seal.", '[TC]');
       return;
     }
-    
+
     // Break the seal
     // Capitalize first letter for dropdown value format
     const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
     const dropdownValue = `${capitalizeFirst(side)} ${capitalizeFirst(level)}`;
-    
+
     // Update the dropdown selection
     if (sealSelect) {
       sealSelect.value = dropdownValue;
     }
-    
+
     // Trigger the break seal function
     breakSeal();
   }

@@ -2030,7 +2030,7 @@
       return;
     }
     if (breakSealTimeout !== null) {
-      logger.warn("Break seal is on cooldown. Please wait before breaking another seal.", "[TC]");
+      logger.warn("Break seal is in progress. Please wait before breaking another seal.", "[TC]");
       return;
     }
     const sealMap = {
@@ -2226,7 +2226,6 @@
     const breakSealButton = document.getElementById("breakSealButton");
     if (breakSealButton) {
       breakSealButton.disabled = true;
-      breakSealButton.textContent = "Cooldown...";
       breakSealButton.style.opacity = "0.5";
     }
     logger.info("Break seal cooldown started (10 seconds)", "[TC]");

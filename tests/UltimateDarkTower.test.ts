@@ -3,6 +3,7 @@
  */
 
 import UltimateDarkTower from '../src/UltimateDarkTower';
+import { GLYPHS } from '../src/constants';
 
 // Mock the web bluetooth API since it's not available in Node.js test environment
 const mockCharacteristic = {
@@ -487,5 +488,397 @@ describe('UltimateDarkTower', () => {
       await expect(promises[1]).rejects.toThrow('Command queue cleared');
       await expect(promises[2]).rejects.toThrow('Command queue cleared');
     }, 10000);
+  });
+
+  describe('Glyph Position Tracking', () => {
+    describe('Initialization', () => {
+      test('should initialize all glyph positions as null', () => {
+        const glyphPositions = darkTower.getAllGlyphPositions();
+        
+        expect(glyphPositions.cleanse).toBeNull();
+        expect(glyphPositions.quest).toBeNull();
+        expect(glyphPositions.battle).toBeNull();
+        expect(glyphPositions.banner).toBeNull();
+        expect(glyphPositions.reinforce).toBeNull();
+      });
+
+      test('should return null for individual glyph positions before calibration', () => {
+        expect(darkTower.getGlyphPosition('cleanse')).toBeNull();
+        expect(darkTower.getGlyphPosition('quest')).toBeNull();
+        expect(darkTower.getGlyphPosition('battle')).toBeNull();
+        expect(darkTower.getGlyphPosition('banner')).toBeNull();
+        expect(darkTower.getGlyphPosition('reinforce')).toBeNull();
+      });
+
+      test('should return a copy of glyph positions object', () => {
+        const positions1 = darkTower.getAllGlyphPositions();
+        const positions2 = darkTower.getAllGlyphPositions();
+        
+        expect(positions1).toEqual(positions2);
+        expect(positions1).not.toBe(positions2); // Different objects
+      });
+    });
+
+    describe('Calibration', () => {
+      test('should set initial glyph positions after calibration', () => {
+        // Trigger calibration complete callback
+        const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
+        calibrationCallback();
+        
+        const glyphPositions = darkTower.getAllGlyphPositions();
+        
+        expect(glyphPositions.cleanse).toBe(GLYPHS.cleanse.side);
+        expect(glyphPositions.quest).toBe(GLYPHS.quest.side);
+        expect(glyphPositions.battle).toBe(GLYPHS.battle.side);
+        expect(glyphPositions.banner).toBe(GLYPHS.banner.side);
+        expect(glyphPositions.reinforce).toBe(GLYPHS.reinforce.side);
+      });
+
+      test('should set correct initial positions from GLYPHS constant', () => {
+        const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
+        calibrationCallback();
+        
+        // Test each glyph matches its expected position from constants
+        expect(darkTower.getGlyphPosition('cleanse')).toBe('north');
+        expect(darkTower.getGlyphPosition('quest')).toBe('south');
+        expect(darkTower.getGlyphPosition('battle')).toBe('north');
+        expect(darkTower.getGlyphPosition('banner')).toBe('north');
+        expect(darkTower.getGlyphPosition('reinforce')).toBe('south');
+      });
+
+      test('should trigger calibration callback on onCalibrationComplete', () => {
+        const originalCallback = darkTower.onCalibrationComplete;
+        const mockCallback = jest.fn();
+        darkTower.onCalibrationComplete = mockCallback;
+        
+        // Simulate calibration complete from BLE connection
+        const bleConnection = darkTower['bleConnection'];
+        const callbacks = bleConnection['callbacks'];
+        callbacks.onCalibrationComplete();
+        
+        // Check glyph positions were set
+        expect(darkTower.getGlyphPosition('cleanse')).toBe('north');
+        expect(mockCallback).toHaveBeenCalled();
+        
+        // Restore original callback
+        darkTower.onCalibrationComplete = originalCallback;
+      });
+    });
+
+    describe('Rotation Updates', () => {
+      beforeEach(() => {
+        // Set up initial calibrated state
+        const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
+        calibrationCallback();
+      });
+
+      test('should update glyph positions after single level rotation', () => {
+        // Mock current drum position method to return known state
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        getCurrentDrumPositionSpy.mockReturnValue('north'); // Current position
+        
+        const updateMethod = darkTower['updateGlyphPositionsForRotation'].bind(darkTower);
+        
+        // Rotate top level from north to east (1 step clockwise)
+        updateMethod('top', 'east');
+        
+        // Cleanse starts at north, moves 1 step clockwise to east
+        expect(darkTower.getGlyphPosition('cleanse')).toBe('east');
+        
+        // Quest starts at south, moves 1 step clockwise to west
+        expect(darkTower.getGlyphPosition('quest')).toBe('west');
+        
+        // Other glyphs should remain unchanged (not on top level)
+        expect(darkTower.getGlyphPosition('battle')).toBe('north');
+        expect(darkTower.getGlyphPosition('banner')).toBe('north');
+        expect(darkTower.getGlyphPosition('reinforce')).toBe('south');
+        
+        getCurrentDrumPositionSpy.mockRestore();
+      });
+
+      test('should handle multiple rotation steps correctly', () => {
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        getCurrentDrumPositionSpy.mockReturnValue('north');
+        
+        const updateMethod = darkTower['updateGlyphPositionsForRotation'].bind(darkTower);
+        
+        // Rotate top level from north to south (2 steps clockwise)
+        updateMethod('top', 'south');
+        
+        // Cleanse starts at north, moves 2 steps clockwise to south
+        expect(darkTower.getGlyphPosition('cleanse')).toBe('south');
+        
+        // Quest starts at south, moves 2 steps clockwise to north
+        expect(darkTower.getGlyphPosition('quest')).toBe('north');
+        
+        getCurrentDrumPositionSpy.mockRestore();
+      });
+
+      test('should handle wrap-around rotation correctly', () => {
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        getCurrentDrumPositionSpy.mockReturnValue('west');
+        
+        const updateMethod = darkTower['updateGlyphPositionsForRotation'].bind(darkTower);
+        
+        // Rotate top level from west to north (1 step clockwise with wrap)
+        updateMethod('top', 'north');
+        
+        // Cleanse should move from north to east (it started at north, moved to west during calibration mock, then to north)
+        expect(darkTower.getGlyphPosition('cleanse')).toBe('east');
+        
+        getCurrentDrumPositionSpy.mockRestore();
+      });
+
+      test('should update only glyphs on the rotated level', () => {
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        getCurrentDrumPositionSpy.mockReturnValue('north');
+        
+        const updateMethod = darkTower['updateGlyphPositionsForRotation'].bind(darkTower);
+        
+        // Rotate middle level from north to east
+        updateMethod('middle', 'east');
+        
+        // Battle is on middle level, should change
+        expect(darkTower.getGlyphPosition('battle')).toBe('east');
+        
+        // All other glyphs should remain unchanged
+        expect(darkTower.getGlyphPosition('cleanse')).toBe('north'); // top level
+        expect(darkTower.getGlyphPosition('quest')).toBe('south'); // top level
+        expect(darkTower.getGlyphPosition('banner')).toBe('north'); // bottom level
+        expect(darkTower.getGlyphPosition('reinforce')).toBe('south'); // bottom level
+        
+        getCurrentDrumPositionSpy.mockRestore();
+      });
+
+      test('should handle bottom level rotation correctly', () => {
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        getCurrentDrumPositionSpy.mockReturnValue('north');
+        
+        const updateMethod = darkTower['updateGlyphPositionsForRotation'].bind(darkTower);
+        
+        // Rotate bottom level from north to west (3 steps clockwise)
+        updateMethod('bottom', 'west');
+        
+        // Banner starts at north, moves 3 steps clockwise to west
+        expect(darkTower.getGlyphPosition('banner')).toBe('west');
+        
+        // Reinforce starts at south, moves 3 steps clockwise to east
+        expect(darkTower.getGlyphPosition('reinforce')).toBe('east');
+        
+        // Other glyphs should remain unchanged
+        expect(darkTower.getGlyphPosition('cleanse')).toBe('north');
+        expect(darkTower.getGlyphPosition('quest')).toBe('south');
+        expect(darkTower.getGlyphPosition('battle')).toBe('north');
+        
+        getCurrentDrumPositionSpy.mockRestore();
+      });
+    });
+
+    describe('Integration with Rotation Commands', () => {
+      beforeEach(async () => {
+        await darkTower.connect();
+        // Set up initial calibrated state
+        const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
+        calibrationCallback();
+      });
+
+      afterEach(async () => {
+        await darkTower.disconnect();
+      });
+
+      test('should update glyph positions when Rotate method is called', async () => {
+        // Mock the underlying tower commands
+        const towerCommands = darkTower['towerCommands'];
+        const originalRotate = towerCommands.rotate;
+        towerCommands.rotate = jest.fn().mockResolvedValue(undefined);
+        
+        // Mock getCurrentDrumPosition to return known positions
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        getCurrentDrumPositionSpy.mockReturnValue('north');
+        
+        try {
+          // Call the Rotate method - rotate each level 1 step clockwise
+          await darkTower.Rotate('east', 'east', 'east');
+          
+          // Top level glyphs: cleanse (north->east), quest (south->west)
+          expect(darkTower.getGlyphPosition('cleanse')).toBe('east');
+          expect(darkTower.getGlyphPosition('quest')).toBe('west');
+          
+          // Middle level glyph: battle (north->east)
+          expect(darkTower.getGlyphPosition('battle')).toBe('east');
+          
+          // Bottom level glyphs: banner (north->east), reinforce (south->west)
+          expect(darkTower.getGlyphPosition('banner')).toBe('east');
+          expect(darkTower.getGlyphPosition('reinforce')).toBe('west');
+          
+        } finally {
+          // Restore original methods
+          towerCommands.rotate = originalRotate;
+          getCurrentDrumPositionSpy.mockRestore();
+        }
+      });
+
+      test('should update glyph positions when MultiCommand is called with rotation', async () => {
+        const towerCommands = darkTower['towerCommands'];
+        const originalMultiCommand = towerCommands.multiCommand;
+        towerCommands.multiCommand = jest.fn().mockResolvedValue(undefined);
+        
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        getCurrentDrumPositionSpy.mockReturnValue('north');
+        
+        try {
+          const rotateCommand = { top: 'south' as const, middle: 'east' as const, bottom: 'west' as const };
+          await darkTower.MultiCommand(rotateCommand);
+          
+          // Top level: rotate 2 steps clockwise (north->south)
+          // cleanse: north->south, quest: south->north
+          expect(darkTower.getGlyphPosition('cleanse')).toBe('south');
+          expect(darkTower.getGlyphPosition('quest')).toBe('north');
+          
+          // Middle level: rotate 1 step clockwise (north->east)
+          // battle: north->east
+          expect(darkTower.getGlyphPosition('battle')).toBe('east');
+          
+          // Bottom level: rotate 3 steps clockwise (north->west)
+          // banner: north->west, reinforce: south->east
+          expect(darkTower.getGlyphPosition('banner')).toBe('west');
+          expect(darkTower.getGlyphPosition('reinforce')).toBe('east');
+          
+        } finally {
+          towerCommands.multiCommand = originalMultiCommand;
+          getCurrentDrumPositionSpy.mockRestore();
+        }
+      });
+
+      test('should not update glyph positions when MultiCommand is called without rotation', async () => {
+        const towerCommands = darkTower['towerCommands'];
+        const originalMultiCommand = towerCommands.multiCommand;
+        towerCommands.multiCommand = jest.fn().mockResolvedValue(undefined);
+        
+        try {
+          // Store initial positions
+          const initialPositions = darkTower.getAllGlyphPositions();
+          
+          // Call MultiCommand without rotation
+          await darkTower.MultiCommand(undefined, { doorway: [] });
+          
+          // Verify glyph positions remained unchanged
+          expect(darkTower.getAllGlyphPositions()).toEqual(initialPositions);
+          
+        } finally {
+          towerCommands.multiCommand = originalMultiCommand;
+        }
+      });
+
+      test('should handle randomRotateLevels correctly', async () => {
+        const towerCommands = darkTower['towerCommands'];
+        const originalRandomRotate = towerCommands.randomRotateLevels;
+        towerCommands.randomRotateLevels = jest.fn().mockResolvedValue(undefined);
+        
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        // Mock different return values for before and after
+        getCurrentDrumPositionSpy
+          .mockReturnValueOnce('north') // before top
+          .mockReturnValueOnce('north') // before middle
+          .mockReturnValueOnce('north') // before bottom
+          .mockReturnValueOnce('east')  // after top (1 step clockwise)
+          .mockReturnValueOnce('south') // after middle (2 steps clockwise)
+          .mockReturnValueOnce('north'); // after bottom (unchanged)
+        
+        try {
+          await darkTower.randomRotateLevels(4); // top & middle levels
+          
+          // Top level changed from north to east (1 step clockwise)
+          // cleanse: north->east, quest: south->west
+          expect(darkTower.getGlyphPosition('cleanse')).toBe('east');
+          expect(darkTower.getGlyphPosition('quest')).toBe('west');
+          
+          // Middle level changed from north to south (2 steps clockwise)
+          // battle: north->south
+          expect(darkTower.getGlyphPosition('battle')).toBe('south');
+          
+          // Bottom level unchanged
+          expect(darkTower.getGlyphPosition('banner')).toBe('north');
+          expect(darkTower.getGlyphPosition('reinforce')).toBe('south');
+          
+        } finally {
+          towerCommands.randomRotateLevels = originalRandomRotate;
+          getCurrentDrumPositionSpy.mockRestore();
+        }
+      });
+    });
+
+    describe('Edge Cases and Error Handling', () => {
+      test('should handle null glyph positions gracefully', () => {
+        // Before calibration, all positions should be null
+        expect(darkTower.getGlyphPosition('cleanse')).toBeNull();
+        
+        // Trying to update positions before calibration should not crash
+        const updateMethod = darkTower['updateGlyphPositionsAfterRotation'].bind(darkTower);
+        expect(() => updateMethod('top', 1)).not.toThrow();
+        
+        // Positions should remain null
+        expect(darkTower.getGlyphPosition('cleanse')).toBeNull();
+      });
+
+      test('should handle rotation calculations with all positions', () => {
+        // Set up calibrated state
+        const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
+        calibrationCallback();
+        
+        const sides = ['north', 'east', 'south', 'west'] as const;
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        const updateMethod = darkTower['updateGlyphPositionsForRotation'].bind(darkTower);
+        
+        // Test all possible rotations
+        for (const fromSide of sides) {
+          for (const toSide of sides) {
+            getCurrentDrumPositionSpy.mockReturnValue(fromSide);
+            
+            // Reset to known state
+            calibrationCallback();
+            
+            // Perform rotation
+            expect(() => updateMethod('top', toSide)).not.toThrow();
+            
+            // Verify the result is valid
+            const newPosition = darkTower.getGlyphPosition('cleanse');
+            expect(sides).toContain(newPosition as any);
+          }
+        }
+        
+        getCurrentDrumPositionSpy.mockRestore();
+      });
+
+      test('should maintain consistency with multiple rotations', () => {
+        const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
+        calibrationCallback();
+        
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        const updateMethod = darkTower['updateGlyphPositionsForRotation'].bind(darkTower);
+        
+        // Mock the current position to match what we're rotating from
+        let currentPosition: 'north' | 'east' | 'south' | 'west' = 'north';
+        getCurrentDrumPositionSpy.mockImplementation(() => currentPosition);
+        
+        // Perform multiple rotations, updating the mock position each time
+        currentPosition = 'north';
+        updateMethod('top', 'east');  // north to east (1 step clockwise)
+        currentPosition = 'east';
+        
+        updateMethod('top', 'south'); // east to south (1 step clockwise) 
+        currentPosition = 'south';
+        
+        updateMethod('top', 'west');  // south to west (1 step clockwise)
+        currentPosition = 'west';
+        
+        updateMethod('top', 'north'); // west to north (1 step clockwise, back to start)
+        
+        // Should be back to original position
+        expect(darkTower.getGlyphPosition('cleanse')).toBe('north');
+        
+        getCurrentDrumPositionSpy.mockRestore();
+      });
+    });
   });
 });
