@@ -2049,6 +2049,7 @@
   window.TOWER_AUDIO_LIBRARY = TOWER_AUDIO_LIBRARY;
   window.TOWER_LIGHT_SEQUENCES = TOWER_LIGHT_SEQUENCES;
   window.LIGHT_EFFECTS = LIGHT_EFFECTS;
+  window.GLYPHS = GLYPHS;
   window.Tower = Tower;
   window.Tower = Tower;
   window.logger = logger;

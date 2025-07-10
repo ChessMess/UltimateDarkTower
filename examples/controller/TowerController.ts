@@ -9,7 +9,8 @@ import UltimateDarkTower, {
   type SealIdentifier,
   TOWER_AUDIO_LIBRARY,
   TOWER_LIGHT_SEQUENCES,
-  LIGHT_EFFECTS
+  LIGHT_EFFECTS,
+  GLYPHS
 } from '../../src';
 import { logger, DOMOutput, ConsoleOutput } from '../../src/Logger';
 
@@ -51,6 +52,7 @@ if (document.readyState === 'loading') {
 (window as any).TOWER_AUDIO_LIBRARY = TOWER_AUDIO_LIBRARY;
 (window as any).TOWER_LIGHT_SEQUENCES = TOWER_LIGHT_SEQUENCES;
 (window as any).LIGHT_EFFECTS = LIGHT_EFFECTS;
+(window as any).GLYPHS = GLYPHS;
 
 // Expose Tower instance globally so HTML can access batteryNotifyOnValueChangeOnly
 (window as any).Tower = Tower;

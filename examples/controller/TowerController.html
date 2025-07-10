@@ -273,6 +273,10 @@
 
   <!-- Scripts (also at bottom of page) -->
   <script src="TowerController.js"></script>
+  <script>
+    // Make GLYPHS constant available globally
+    window.GLYPHS = window.GLYPHS || {};
+  </script>
 </head>
 
 <body class="font-roboto text-white min-h-screen">
@@ -1072,15 +1076,9 @@
         Object.entries(positions).forEach(([glyph, position]) => {
           if (position && position !== 'unknown') {
             // Get the glyph's fixed level based on its type
-            const glyphLevels = {
-              'cleanse': 'top',
-              'quest': 'top',
-              'battle': 'middle',
-              'banner': 'bottom',
-              'reinforce': 'bottom'
-            };
+            const glyphLevel = GLYPHS[glyph].level;
 
-            const level = glyphLevels[glyph];
+            const level = glyphLevel;
             const cellId = `glyph-${level}-${position}`;
             const cell = document.getElementById(cellId);
 
@@ -1123,15 +1121,7 @@
         }
 
         // Get the fixed level for this glyph (glyphs can't change levels)
-        const glyphDefinitions = {
-          cleanse: { level: 'top', side: 'north' },
-          quest: { level: 'top', side: 'south' },
-          battle: { level: 'middle', side: 'north' },
-          banner: { level: 'bottom', side: 'north' },
-          reinforce: { level: 'bottom', side: 'south' }
-        };
-
-        const glyphLevel = glyphDefinitions[selectedGlyph].level;
+        const glyphLevel = GLYPHS[selectedGlyph].level;
 
         // Calculate rotation needed to move glyph to target position
         const sides = ['north', 'east', 'south', 'west'];
@@ -1318,18 +1308,11 @@
 
     // Helper function to find which glyph is at a given position
     const findGlyphAtPosition = (level, side) => {
-      const glyphLevels = {
-        'cleanse': 'top',
-        'quest': 'top',
-        'battle': 'middle',
-        'banner': 'bottom',
-        'reinforce': 'bottom'
-      };
       
       const allPositions = Tower.getAllGlyphPositions();
       
       for (const [glyph, currentSide] of Object.entries(allPositions)) {
-        if (glyphLevels[glyph] === level && currentSide === side) {
+        if (GLYPHS[glyph].level === level && currentSide === side) {
           return glyph;
         }
       }
@@ -1339,15 +1322,7 @@
 
     // Helper function to get glyph level
     const getGlyphLevel = (glyph) => {
-      const glyphLevels = {
-        'cleanse': 'top',
-        'quest': 'top',
-        'battle': 'middle',
-        'banner': 'bottom',
-        'reinforce': 'bottom'
-      };
-      
-      return glyphLevels[glyph] || 'middle';
+      return GLYPHS[glyph]?.level || 'middle';
     };
 
     // Refresh visual light states in the glyph grid
