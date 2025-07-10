@@ -1106,7 +1106,7 @@
         const currentGlyphPosition = currentPositions[selectedGlyph];
 
         if (!currentGlyphPosition) {
-          window.logger.error(`Unable to find current position for ${selectedGlyph} glyph`, '[Glyphs]');
+          window.logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, '[Glyphs]');
           return;
         }
 
