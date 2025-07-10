@@ -99,7 +99,8 @@
       background-color: rgba(0, 0, 0, 0.6);
       border: 1px solid #9ca3af;
       border-radius: 0.375rem;
-      padding: 0.75rem;
+      padding: 1rem;
+      margin: 0.5rem 0;
     }
 
     .tower-legend {
@@ -176,6 +177,62 @@
     .seal-square.broken:hover {
       background-color: #b91c1c;
     }
+
+    /* Material Design Tab interface styles */
+    .tower-tabs {
+      display: flex;
+      width: 100%;
+      background-color: rgba(15, 23, 42, 0.8);
+      border-radius: 0.5rem;
+      padding: 0.25rem;
+      margin-bottom: 1rem;
+      border: 1px solid #334155;
+    }
+
+    .tower-tab-button {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: transparent;
+      color: #64748b;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.2s ease-in-out;
+      border-radius: 0.375rem;
+      z-index: 10;
+      position: relative;
+    }
+
+    .tower-tab-button:hover {
+      color: #cbd5e1;
+      background-color: rgba(51, 65, 85, 0.5);
+    }
+
+    .tower-tab-button.tower-tab-active {
+      color: #f97316;
+      background-color: rgba(249, 115, 22, 0.15);
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+    }
+
+    .tower-tab-content {
+      display: none;
+    }
+
+    .tower-tab-content.tower-tab-content-active {
+      display: block;
+    }
+
+    /* Align left column tabs with right column content */
+    .tower-left-column {
+      margin-top: 0.5rem;
+    }
   </style>
 
   <!-- Scripts (also at bottom of page) -->
@@ -206,211 +263,263 @@
           <button id="calibrate" onclick="calibrate()" class="tower-button">Calibrate</button>
           <span class="hidden ml-2" id="calibrating-message">calibrating...</span>
         </div>
+        <hr class="tower-hr" />
 
         <!-- Two-column layout for fieldsets -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
           <!-- Left Column -->
-          <div class="space-y-3">
-            <fieldset class="tower-fieldset">
-              <legend class="tower-legend">Audio</legend>
-              <div class="flex justify-evenly items-center p-1 space-x-4">
-                <select id="sounds" class="tower-select w-3/4">
-                  <option value="0">select sound</option>
-                </select>
-                <button id="soundButton" onclick="playSound()" class="tower-button w-1/4">
-                  Play
-                </button>
-              </div>
-            </fieldset>
+          <div class="space-y-3 tower-left-column">
+            <!-- Tab Navigation -->
+            <div class="tower-tabs">
+              <button id="diagnostics-tab" class="tower-tab-button tower-tab-active" onclick="switchTab('diagnostics')">
+                Diagnostics
+              </button>
+              <button id="library-tab" class="tower-tab-button" onclick="switchTab('library')">
+                Library
+              </button>
+            </div>
 
-            <fieldset class="tower-fieldset">
-              <legend class="tower-legend">Lights</legend>
-              <div class="flex flex-wrap gap-4">
-                <fieldset class="nested-fieldset">
-                  <legend class="tower-legend">Doorways:</legend>
-                  <table class="text-center">
-                    <thead>
-                      <tr>
-                        <td class="tower-table-header">N</td>
-                        <td class="tower-table-header">E</td>
-                        <td class="tower-table-header">S</td>
-                        <td class="tower-table-header">W</td>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="north" data-light-level="top" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="east" data-light-level="top" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="south" data-light-level="top" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="west" data-light-level="top" class="tower-checkbox" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="north" data-light-level="middle" name="north" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="east" data-light-level="middle" name="east" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="south" data-light-level="middle" name="south" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="west" data-light-level="middle" name="west" class="tower-checkbox" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="north" data-light-level="bottom" name="north" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="east" data-light-level="bottom" name="east" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="south" data-light-level="bottom" name="south" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                            data-light-location="west" data-light-level="bottom" name="west" class="tower-checkbox" />
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </fieldset>
-                <fieldset class="nested-fieldset">
-                  <legend class="tower-legend">Ledges:</legend>
-                  <table class="text-center">
-                    <thead>
-                      <tr>
-                        <td class="tower-table-header">N</td>
-                        <td class="tower-table-header">E</td>
-                        <td class="tower-table-header">S</td>
-                        <td class="tower-table-header">W</td>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                            data-light-location="north" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                            data-light-location="east" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                            data-light-location="south" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell">
-                          <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                            data-light-location="west" class="tower-checkbox" />
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </fieldset>
-                <fieldset class="nested-fieldset">
-                  <legend class="tower-legend">Base:</legend>
-                  <table class="text-sm">
-                    <tbody>
-                      <tr>
-                        <td class="pr-2 py-1 font-bold">N</td>
-                        <td class="tower-table-cell-sm">front</td>
-                        <td class="tower-table-cell-sm">
-                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                            data-light-location="north" data-light-base-location="a" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell-sm">back</td>
-                        <td class="tower-table-cell-sm">
-                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                            data-light-location="north" data-light-base-location="b" class="tower-checkbox" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="pr-2 py-1 font-bold">E</td>
-                        <td class="tower-table-cell-sm">front</td>
-                        <td class="tower-table-cell-sm">
-                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                            data-light-location="east" data-light-base-location="a" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell-sm">back</td>
-                        <td class="tower-table-cell-sm">
-                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                            data-light-location="east" data-light-base-location="b" class="tower-checkbox" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="pr-2 py-1 font-bold">S</td>
-                        <td class="tower-table-cell-sm">front</td>
-                        <td class="tower-table-cell-sm">
-                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                            data-light-location="south" data-light-base-location="a" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell-sm">back</td>
-                        <td class="tower-table-cell-sm">
-                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                            data-light-location="south" data-light-base-location="b" class="tower-checkbox" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="pr-2 py-1 font-bold">W</td>
-                        <td class="tower-table-cell-sm">front</td>
-                        <td class="tower-table-cell-sm">
-                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                            data-light-location="west" data-light-base-location="a" class="tower-checkbox" />
-                        </td>
-                        <td class="tower-table-cell-sm">back</td>
-                        <td class="tower-table-cell-sm">
-                          <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                            data-light-location="west" data-light-base-location="b" class="tower-checkbox" />
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </fieldset>
-              </div>
-              <div style="margin-bottom: 1.5rem;"></div>
-              <div class="p-1 flex flex-wrap gap-2 items-center">
-                <button id="light" onclick="lights()" class="tower-button w-40 whitespace-nowrap">Apply
-                  to all lights</button>
-                <select id="lightStyles" class="tower-select w-40"></select>
-                <button id="allLightsOn" onclick="allLightsOn()" class="tower-button w-40 whitespace-nowrap">All
-                  On</button>
-              </div>
-              <div class="p-1 flex flex-wrap gap-2 items-center">
-                <button id="lightOverrideButton" onclick="overrides()" class="tower-button w-40 whitespace-nowrap">Light
-                  Overrides</button>
-                <select id="lightOverrideDropDown" class="tower-select w-40">
-                  <option value="0">select override</option>
-                </select>
-                <button id="allLightsOff" onclick="allLightsOff()" class="tower-button w-40 whitespace-nowrap">All
-                  Off</button>
-              </div>
-            </fieldset>
+            <!-- Diagnostics Tab Content -->
+            <div id="diagnostics-content" class="tower-tab-content tower-tab-content-active">
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Audio</legend>
+                <div class="flex justify-evenly items-center p-1 space-x-4">
+                  <select id="sounds" class="tower-select w-3/4">
+                    <option value="0">select sound</option>
+                  </select>
+                  <button id="soundButton" onclick="playSound()" class="tower-button w-1/4">
+                    Play
+                  </button>
+                </div>
+              </fieldset>
 
-            <fieldset class="tower-fieldset">
-              <legend class="tower-legend">Drums</legend>
-              <div class="flex justify-evenly items-start p-1 gap-5">
-                <div class="flex flex-col items-center space-y-2">
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Lights</legend>
+                <div class="flex flex-wrap gap-4 py-2">
+                  <fieldset class="nested-fieldset">
+                    <legend class="tower-legend">Doorways:</legend>
+                    <table class="text-center">
+                      <thead>
+                        <tr>
+                          <td class="tower-table-header">N</td>
+                          <td class="tower-table-header">E</td>
+                          <td class="tower-table-header">S</td>
+                          <td class="tower-table-header">W</td>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="north" data-light-level="top" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="east" data-light-level="top" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="south" data-light-level="top" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="west" data-light-level="top" class="tower-checkbox" />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="north" data-light-level="middle" name="north"
+                              class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="east" data-light-level="middle" name="east" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="south" data-light-level="middle" name="south"
+                              class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="west" data-light-level="middle" name="west" class="tower-checkbox" />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="north" data-light-level="bottom" name="north"
+                              class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="east" data-light-level="bottom" name="east" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="south" data-light-level="bottom" name="south"
+                              class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
+                              data-light-location="west" data-light-level="bottom" name="west" class="tower-checkbox" />
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </fieldset>
+                  <fieldset class="nested-fieldset">
+                    <legend class="tower-legend">Ledges:</legend>
+                    <table class="text-center">
+                      <thead>
+                        <tr>
+                          <td class="tower-table-header">N</td>
+                          <td class="tower-table-header">E</td>
+                          <td class="tower-table-header">S</td>
+                          <td class="tower-table-header">W</td>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                              data-light-location="north" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                              data-light-location="east" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                              data-light-location="south" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell">
+                            <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
+                              data-light-location="west" class="tower-checkbox" />
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </fieldset>
+                  <fieldset class="nested-fieldset">
+                    <legend class="tower-legend">Base:</legend>
+                    <table class="text-sm">
+                      <tbody>
+                        <tr>
+                          <td class="pr-2 py-1 font-bold">N</td>
+                          <td class="tower-table-cell-sm">front</td>
+                          <td class="tower-table-cell-sm">
+                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                              data-light-location="north" data-light-base-location="a" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell-sm">back</td>
+                          <td class="tower-table-cell-sm">
+                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                              data-light-location="north" data-light-base-location="b" class="tower-checkbox" />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="pr-2 py-1 font-bold">E</td>
+                          <td class="tower-table-cell-sm">front</td>
+                          <td class="tower-table-cell-sm">
+                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                              data-light-location="east" data-light-base-location="a" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell-sm">back</td>
+                          <td class="tower-table-cell-sm">
+                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                              data-light-location="east" data-light-base-location="b" class="tower-checkbox" />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="pr-2 py-1 font-bold">S</td>
+                          <td class="tower-table-cell-sm">front</td>
+                          <td class="tower-table-cell-sm">
+                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                              data-light-location="south" data-light-base-location="a" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell-sm">back</td>
+                          <td class="tower-table-cell-sm">
+                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                              data-light-location="south" data-light-base-location="b" class="tower-checkbox" />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="pr-2 py-1 font-bold">W</td>
+                          <td class="tower-table-cell-sm">front</td>
+                          <td class="tower-table-cell-sm">
+                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                              data-light-location="west" data-light-base-location="a" class="tower-checkbox" />
+                          </td>
+                          <td class="tower-table-cell-sm">back</td>
+                          <td class="tower-table-cell-sm">
+                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
+                              data-light-location="west" data-light-base-location="b" class="tower-checkbox" />
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </fieldset>
+                </div>
+                <div style="margin-bottom: 1.5rem;"></div>
+                <div class="p-1 flex flex-wrap gap-2 items-center">
+                  <button id="light" onclick="lights()" class="tower-button w-40 whitespace-nowrap">Apply
+                    to all lights</button>
+                  <select id="lightStyles" class="tower-select w-40"></select>
+                  <button id="allLightsOn" onclick="allLightsOn()" class="tower-button w-40 whitespace-nowrap">All
+                    On</button>
+                </div>
+                <div class="p-1 flex flex-wrap gap-2 items-center">
+                  <button id="lightOverrideButton" onclick="overrides()"
+                    class="tower-button w-40 whitespace-nowrap">Light
+                    Overrides</button>
+                  <select id="lightOverrideDropDown" class="tower-select w-40">
+                    <option value="0">select override</option>
+                  </select>
+                  <button id="allLightsOff" onclick="allLightsOff()" class="tower-button w-40 whitespace-nowrap">All
+                    Off</button>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Drums</legend>
+                <div class="flex justify-center items-start p-1">
+                  <div class="flex flex-col items-center space-y-2">
+                    <div class="flex gap-5">
+                      <select id="top" class="tower-select">
+                        <option value="north">North</option>
+                        <option value="south">South</option>
+                        <option value="east">East</option>
+                        <option value="west">West</option>
+                      </select>
+                      <select id="middle" class="tower-select">
+                        <option value="north">North</option>
+                        <option value="south">South</option>
+                        <option value="east">East</option>
+                        <option value="west">West</option>
+                      </select>
+                      <select id="bottom" class="tower-select">
+                        <option value="north">North</option>
+                        <option value="south">South</option>
+                        <option value="east">East</option>
+                        <option value="west">West</option>
+                      </select>
+                    </div>
+                    <div class="flex justify-center">
+                      <button id="rotateButton" onclick="rotate()" class="tower-button">Rotate</button>
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+
+            </div>
+
+            <!-- Library Tab Content -->
+            <div id="library-content" class="tower-tab-content">
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Drums</legend>
+                <div class="flex justify-center items-center p-1 space-x-4">
                   <select id="randomLevels" class="tower-select">
                     <option value="-1">select level(s)</option>
                     <option value="0">all</option>
@@ -423,93 +532,76 @@
                   </select>
                   <button id="randomizeButton" onclick="randomizeLevels()" class="tower-button">Randomize</button>
                 </div>
-                <!-- Vertical divider -->
-                <div class="flex items-center">
-                  <div class="w-px bg-gray-400 h-16"></div>
-                </div>
-                <div class="flex flex-col items-center space-y-2">
-                  <div class="flex gap-5">
-                    <select id="top" class="tower-select">
-                      <option value="north">North</option>
-                      <option value="south">South</option>
-                      <option value="east">East</option>
-                      <option value="west">West</option>
-                    </select>
-                    <select id="middle" class="tower-select">
-                      <option value="north">North</option>
-                      <option value="south">South</option>
-                      <option value="east">East</option>
-                      <option value="west">West</option>
-                    </select>
-                    <select id="bottom" class="tower-select">
-                      <option value="north">North</option>
-                      <option value="south">South</option>
-                      <option value="east">East</option>
-                      <option value="west">West</option>
-                    </select>
-                  </div>
-                  <div class="flex justify-center">
-                    <button id="rotateButton" onclick="rotate()" class="tower-button">Rotate</button>
-                  </div>
-                </div>
-              </div>
-            </fieldset>
+              </fieldset>
 
-            <fieldset class="tower-fieldset">
-              <legend class="tower-legend">Break Seal</legend>
-              <div class="flex justify-between items-start p-1">
-                <!-- Left side: Controls -->
-                <div class="flex-1 flex justify-center">
-                  <div class="flex flex-col space-y-2">
-                    <!-- Dropdown -->
-                    <select id="sealSelect" class="tower-select w-55">
-                      <option value="">Select a seal</option>
-                      <option value="North Top">North Top</option>
-                      <option value="North Middle">North Middle</option>
-                      <option value="North Bottom">North Bottom</option>
-                      <option value="East Top">East Top</option>
-                      <option value="East Middle">East Middle</option>
-                      <option value="East Bottom">East Bottom</option>
-                      <option value="South Top">South Top</option>
-                      <option value="South Middle">South Middle</option>
-                      <option value="South Bottom">South Bottom</option>
-                      <option value="West Top">West Top</option>
-                      <option value="West Middle">West Middle</option>
-                      <option value="West Bottom">West Bottom</option>
-                    </select>
-                    <!-- Buttons -->
-                    <div class="flex justify-center items-center space-x-2">
-                      <button id="breakSealButton" onclick="breakSeal()" class="tower-button">
-                        Break Seal
-                      </button>
-                      <button id="clearLightsButton" onclick="clearAllLights()" class="tower-button">
-                        Clear Effect
-                      </button>
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Break Seal</legend>
+                <div class="flex justify-between items-start p-1">
+                  <!-- Left side: Controls -->
+                  <div class="flex-1 flex justify-center">
+                    <div class="flex flex-col space-y-2">
+                      <!-- Dropdown -->
+                      <select id="sealSelect" class="tower-select w-55">
+                        <option value="">Select a Location</option>
+                        <option value="North Top">North Top</option>
+                        <option value="North Middle">North Middle</option>
+                        <option value="North Bottom">North Bottom</option>
+                        <option value="East Top">East Top</option>
+                        <option value="East Middle">East Middle</option>
+                        <option value="East Bottom">East Bottom</option>
+                        <option value="South Top">South Top</option>
+                        <option value="South Middle">South Middle</option>
+                        <option value="South Bottom">South Bottom</option>
+                        <option value="West Top">West Top</option>
+                        <option value="West Middle">West Middle</option>
+                        <option value="West Bottom">West Bottom</option>
+                      </select>
+                      <!-- Buttons -->
+                      <div class="flex justify-center items-center space-x-2">
+                        <button id="breakSealButton" onclick="breakSeal()" class="tower-button">
+                          Break Seal
+                        </button>
+                        <button id="clearLightsButton" onclick="clearAllLights()" class="tower-button">
+                          Clear Effect
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Right side: Seal Status Grid -->
+                  <div class="flex-1 flex justify-center">
+                    <div class="seal-grid">
+                      <!-- Top Row -->
+                      <div class="seal-square" data-seal-level="top" data-seal-side="north" title="North Top Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="top" data-seal-side="east" title="East Top Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="top" data-seal-side="south" title="South Top Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="top" data-seal-side="west" title="West Top Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <!-- Middle Row -->
+                      <div class="seal-square" data-seal-level="middle" data-seal-side="north" title="North Middle Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="middle" data-seal-side="east" title="East Middle Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="middle" data-seal-side="south" title="South Middle Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="middle" data-seal-side="west" title="West Middle Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <!-- Bottom Row -->
+                      <div class="seal-square" data-seal-level="bottom" data-seal-side="north" title="North Bottom Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="bottom" data-seal-side="east" title="East Bottom Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="bottom" data-seal-side="south" title="South Bottom Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="bottom" data-seal-side="west" title="West Bottom Seal"
+                        onclick="sealSquareClick(this)"></div>
                     </div>
                   </div>
                 </div>
-                <!-- Right side: Seal Status Grid -->
-                <div class="flex-1 flex justify-center">
-                  <div class="seal-grid">
-                    <!-- Top Row -->
-                    <div class="seal-square" data-seal-level="top" data-seal-side="north" title="North Top Seal" onclick="sealSquareClick(this)"></div>
-                    <div class="seal-square" data-seal-level="top" data-seal-side="east" title="East Top Seal" onclick="sealSquareClick(this)"></div>
-                    <div class="seal-square" data-seal-level="top" data-seal-side="south" title="South Top Seal" onclick="sealSquareClick(this)"></div>
-                    <div class="seal-square" data-seal-level="top" data-seal-side="west" title="West Top Seal" onclick="sealSquareClick(this)"></div>
-                    <!-- Middle Row -->
-                    <div class="seal-square" data-seal-level="middle" data-seal-side="north" title="North Middle Seal" onclick="sealSquareClick(this)"></div>
-                    <div class="seal-square" data-seal-level="middle" data-seal-side="east" title="East Middle Seal" onclick="sealSquareClick(this)"></div>
-                    <div class="seal-square" data-seal-level="middle" data-seal-side="south" title="South Middle Seal" onclick="sealSquareClick(this)"></div>
-                    <div class="seal-square" data-seal-level="middle" data-seal-side="west" title="West Middle Seal" onclick="sealSquareClick(this)"></div>
-                    <!-- Bottom Row -->
-                    <div class="seal-square" data-seal-level="bottom" data-seal-side="north" title="North Bottom Seal" onclick="sealSquareClick(this)"></div>
-                    <div class="seal-square" data-seal-level="bottom" data-seal-side="east" title="East Bottom Seal" onclick="sealSquareClick(this)"></div>
-                    <div class="seal-square" data-seal-level="bottom" data-seal-side="south" title="South Bottom Seal" onclick="sealSquareClick(this)"></div>
-                    <div class="seal-square" data-seal-level="bottom" data-seal-side="west" title="West Bottom Seal" onclick="sealSquareClick(this)"></div>
-                  </div>
-                </div>
-              </div>
-            </fieldset>
+              </fieldset>
+            </div>
           </div>
 
           <!-- Right Column -->
@@ -802,6 +894,28 @@
     window.copyDisplayedLogs = copyDisplayedLogs;
     window.downloadDisplayedLogs = downloadDisplayedLogs;
     window.updateBatteryFilter = updateBatteryFilter;
+
+    // Tab switching functionality
+    const switchTab = (tabName) => {
+      // Remove active class from all tab buttons
+      document.querySelectorAll('.tower-tab-button').forEach(button => {
+        button.classList.remove('tower-tab-active');
+      });
+
+      // Hide all tab content
+      document.querySelectorAll('.tower-tab-content').forEach(content => {
+        content.classList.remove('tower-tab-content-active');
+      });
+
+      // Activate the selected tab button
+      document.getElementById(tabName + '-tab').classList.add('tower-tab-active');
+
+      // Show the selected tab content
+      document.getElementById(tabName + '-content').classList.add('tower-tab-content-active');
+    }
+
+    // Expose switchTab function globally for HTML onclick handlers
+    window.switchTab = switchTab;
 
     // Initialize battery filter on page load
     document.addEventListener('DOMContentLoaded', () => {

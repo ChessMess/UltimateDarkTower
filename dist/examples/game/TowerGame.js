@@ -1391,17 +1391,17 @@
       // call back functions
       // you overwrite these with your own functions 
       // to handle these events in your app
-      this.onCalibrationComplete = () => {
-      };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      this.onSkullDrop = (_towerSkullCount) => {
-      };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      this.onBatteryLevelNotify = (_millivolts) => {
-      };
       this.onTowerConnect = () => {
       };
       this.onTowerDisconnect = () => {
+      };
+      this.onCalibrationComplete = () => {
+      };
+      this.onSkullDrop = (_towerSkullCount) => {
+        console.log(_towerSkullCount);
+      };
+      this.onBatteryLevelNotify = (_millivolts) => {
+        console.log(_millivolts);
       };
       // utility
       this._logDetail = false;

@@ -51,11 +51,11 @@ declare class UltimateDarkTower {
     previousBatteryPercentage: number;
     private brokenSeals;
     private glyphPositions;
+    onTowerConnect: () => void;
+    onTowerDisconnect: () => void;
     onCalibrationComplete: () => void;
     onSkullDrop: (_towerSkullCount: number) => void;
     onBatteryLevelNotify: (_millivolts: number) => void;
-    onTowerConnect: () => void;
-    onTowerDisconnect: () => void;
     constructor();
     private _logDetail;
     get logDetail(): boolean;
