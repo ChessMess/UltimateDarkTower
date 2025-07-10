@@ -1,9 +1,11 @@
 # Source files
 src/
 tsconfig.json
+tsconfig.examples.json
 
 # Development files
 .prettierrc
+.eslintrc.json
 .gitignore
 .git/
 .vscode/
@@ -11,6 +13,7 @@ tsconfig.json
 # Examples and docs (keep README.md and LICENSE)
 examples/
 rtdt app.png
+build-examples.js
 
 # Node modules and build artifacts
 node_modules/
@@ -24,7 +27,9 @@ Thumbs.db
 # Development and testing
 *.test.js
 *.test.ts
+tests/
 coverage/
+jest.config.js
 
 # Build artifacts that shouldn't be published
 dist/examples/

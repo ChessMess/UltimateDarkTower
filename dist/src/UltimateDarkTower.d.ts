@@ -1,4 +1,4 @@
-import { type Lights, type TowerSide, type RotateCommand, type SealIdentifier } from './constants';
+import { type Lights, type TowerSide, type RotateCommand, type SealIdentifier, type Glyphs } from './constants';
 import { type LogOutput } from './Logger';
 import { type ConnectionStatus } from './udtBleConnection';
 /**
@@ -50,6 +50,7 @@ declare class UltimateDarkTower {
     currentBatteryPercentage: number;
     previousBatteryPercentage: number;
     private brokenSeals;
+    private glyphPositions;
     onCalibrationComplete: () => void;
     onSkullDrop: (_towerSkullCount: number) => void;
     onBatteryLevelNotify: (_millivolts: number) => void;
@@ -144,6 +145,36 @@ declare class UltimateDarkTower {
      * @returns The current position of the specified drum level
      */
     getCurrentDrumPosition(level: 'top' | 'middle' | 'bottom'): TowerSide;
+    /**
+     * Sets the initial glyph positions from calibration.
+     * Called automatically when calibration completes.
+     */
+    private setGlyphPositionsFromCalibration;
+    /**
+     * Gets the current position of a specific glyph.
+     * @param glyph - The glyph to get position for
+     * @returns The current position of the glyph, or null if not calibrated
+     */
+    getGlyphPosition(glyph: Glyphs): TowerSide | null;
+    /**
+     * Gets all current glyph positions.
+     * @returns Object mapping each glyph to its current position (or null if not calibrated)
+     */
+    getAllGlyphPositions(): {
+        [key in Glyphs]: TowerSide | null;
+    };
+    /**
+     * Updates glyph positions after a drum rotation.
+     * @param level - The drum level that was rotated
+     * @param rotationSteps - Number of steps rotated (1 = 90 degrees clockwise)
+     */
+    private updateGlyphPositionsAfterRotation;
+    /**
+     * Updates glyph positions for a specific level rotation.
+     * @param level - The drum level that was rotated
+     * @param newPosition - The new position the drum was rotated to
+     */
+    private updateGlyphPositionsForRotation;
     /**
      * Checks if a specific seal is broken.
      * @param seal - The seal identifier to check
