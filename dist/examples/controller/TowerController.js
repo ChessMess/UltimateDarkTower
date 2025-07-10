@@ -81,11 +81,11 @@
   var AUDIO_COMMAND_POS = 15;
   var SKULL_DROP_COUNT_POS = 17;
   var drumPositionCmds = {
-    top: { north: 16, west: 2, south: 20, east: 22 },
+    top: { north: 16, east: 2, south: 20, west: 22 },
     // bits 1-8
-    middle: { north: 16, west: 64, south: 144, east: 208 },
+    middle: { north: 16, east: 64, south: 144, west: 208 },
     // bits 1-4
-    bottom: { north: 66, west: 74, south: 82, east: 90 }
+    bottom: { north: 66, east: 74, south: 82, west: 90 }
   };
   var BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
   var DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];

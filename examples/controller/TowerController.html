@@ -194,6 +194,18 @@
     .glyph-cell:hover {
       background-color: #6b7280;
       border-color: #9ca3af;
+      cursor: pointer;
+    }
+
+    .glyph-cell.glyph-lit {
+      background-color: #fbbf24;
+      border-color: #f59e0b;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    }
+
+    .glyph-cell.glyph-lit:hover {
+      background-color: #f59e0b;
+      border-color: #d97706;
     }
 
     .glyph-cell img {
@@ -608,24 +620,24 @@
                       <div class="grid grid-cols-5 gap-1">
                         <!-- Top row -->
                         <div class="text-xs font-semibold flex items-center justify-center">Top</div>
-                        <div id="glyph-top-north" class="glyph-cell" data-level="top" data-side="north"></div>
-                        <div id="glyph-top-east" class="glyph-cell" data-level="top" data-side="east"></div>
-                        <div id="glyph-top-south" class="glyph-cell" data-level="top" data-side="south"></div>
-                        <div id="glyph-top-west" class="glyph-cell" data-level="top" data-side="west"></div>
+                        <div id="glyph-top-north" class="glyph-cell" data-level="top" data-side="north" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-top-east" class="glyph-cell" data-level="top" data-side="east" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-top-south" class="glyph-cell" data-level="top" data-side="south" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-top-west" class="glyph-cell" data-level="top" data-side="west" onclick="toggleGlyphLight(this)"></div>
 
                         <!-- Middle row -->
                         <div class="text-xs font-semibold flex items-center justify-center">Mid</div>
-                        <div id="glyph-middle-north" class="glyph-cell" data-level="middle" data-side="north"></div>
-                        <div id="glyph-middle-east" class="glyph-cell" data-level="middle" data-side="east"></div>
-                        <div id="glyph-middle-south" class="glyph-cell" data-level="middle" data-side="south"></div>
-                        <div id="glyph-middle-west" class="glyph-cell" data-level="middle" data-side="west"></div>
+                        <div id="glyph-middle-north" class="glyph-cell" data-level="middle" data-side="north" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-middle-east" class="glyph-cell" data-level="middle" data-side="east" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-middle-south" class="glyph-cell" data-level="middle" data-side="south" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-middle-west" class="glyph-cell" data-level="middle" data-side="west" onclick="toggleGlyphLight(this)"></div>
 
                         <!-- Bottom row -->
                         <div class="text-xs font-semibold flex items-center justify-center">Bot</div>
-                        <div id="glyph-bottom-north" class="glyph-cell" data-level="bottom" data-side="north"></div>
-                        <div id="glyph-bottom-east" class="glyph-cell" data-level="bottom" data-side="east"></div>
-                        <div id="glyph-bottom-south" class="glyph-cell" data-level="bottom" data-side="south"></div>
-                        <div id="glyph-bottom-west" class="glyph-cell" data-level="bottom" data-side="west"></div>
+                        <div id="glyph-bottom-north" class="glyph-cell" data-level="bottom" data-side="north" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-bottom-east" class="glyph-cell" data-level="bottom" data-side="east" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-bottom-south" class="glyph-cell" data-level="bottom" data-side="south" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-bottom-west" class="glyph-cell" data-level="bottom" data-side="west" onclick="toggleGlyphLight(this)"></div>
                       </div>
                     </div>
                   </div>
@@ -1165,11 +1177,52 @@
 
         window.logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, '[Glyphs]');
 
+        // Check if this glyph has a light that needs to be moved
+        const oldLightKey = `${currentGlyphPosition}-${glyphLevel}`;
+        const hadLight = currentLightStates.doorway.has(oldLightKey);
+
         // Execute the rotation with all three drum positions
         await Tower.Rotate(topPosition, middlePosition, bottomPosition);
 
+        // If the glyph had a light, move it to the new position
+        if (hadLight) {
+          // Remove light from old position
+          currentLightStates.doorway.delete(oldLightKey);
+          
+          // Wait for rotation to complete, then get actual glyph position
+          setTimeout(async () => {
+            try {
+              // Get the actual position of the glyph after rotation
+              const actualNewPosition = Tower.getGlyphPosition(selectedGlyph);
+              
+              if (actualNewPosition) {
+                // Add light to actual new position
+                const newLightKey = `${actualNewPosition}-${glyphLevel}`;
+                currentLightStates.doorway.set(newLightKey, { 
+                  position: actualNewPosition, 
+                  level: glyphLevel, 
+                  style: 'on' 
+                });
+                
+                // Update tower lights to reflect new positions
+                const allDoorwayLights = Array.from(currentLightStates.doorway.values());
+                await Tower.Lights({ doorway: allDoorwayLights });
+                window.logger.info(`Successfully moved light with ${selectedGlyph} glyph to actual position ${actualNewPosition}`, '[Glyphs]');
+              } else {
+                window.logger.error(`Could not determine actual position for ${selectedGlyph} after rotation`, '[Glyphs]');
+              }
+            } catch (error) {
+              window.logger.error('Error updating lights after glyph move: ' + error.message, '[Glyphs]');
+            }
+          }, 1500);
+        }
+
         // Refresh glyph positions after rotation
-        setTimeout(refreshGlyphPositions, 1000);
+        setTimeout(() => {
+          refreshGlyphPositions();
+          // Refresh visual light states after a bit more delay to ensure light updates completed
+          setTimeout(refreshVisualLightStates, 700);
+        }, 1000);
 
         window.logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, '[Glyphs]');
 
@@ -1179,10 +1232,151 @@
       }
     };
 
+    // Light state tracking - keeps track of which lights are currently on
+    const currentLightStates = {
+      doorway: new Map() // key: "position-level", value: { position, level, style }
+    };
+
+    // Toggle glyph light function
+    const toggleGlyphLight = async (element) => {
+      const level = element.getAttribute('data-level');
+      const side = element.getAttribute('data-side');
+      const position = `${level}-${side}`;
+      
+      // Find which glyph is at this position (if any)
+      const glyphAtPosition = findGlyphAtPosition(level, side);
+      
+      // Only proceed with lighting effects if there's a glyph at this position
+      if (!glyphAtPosition) {
+        // No glyph at this position, just update the side dropdown
+        const sideSelect = document.getElementById('side-select');
+        if (sideSelect) {
+          sideSelect.value = side;
+        }
+        return; // Exit early, no lighting effects
+      }
+      
+      // Toggle the light state (only if glyph is present)
+      const isLit = element.classList.toggle('glyph-lit');
+      
+      // Auto-select dropdowns based on clicked glyph
+      const glyphSelect = document.getElementById('glyph-select');
+      if (glyphSelect) {
+        glyphSelect.value = glyphAtPosition;
+      }
+      
+      // Auto-select the glyph's current position in the side dropdown
+      const glyphCurrentSide = Tower.getGlyphPosition(glyphAtPosition);
+      if (glyphCurrentSide) {
+        const sideSelect = document.getElementById('side-select');
+        if (sideSelect) {
+          sideSelect.value = glyphCurrentSide;
+        }
+      }
+      
+      // Send command to tower to toggle the light
+      try {
+        const lightEffect = isLit ? 'on' : 'off';
+        
+        window.logger.info(`Toggling light ${lightEffect} for glyph ${glyphAtPosition} at position ${position}`, '[Glyphs]');
+        
+        // Light up the glyph's actual current position on the tower
+        const glyphCurrentSide = Tower.getGlyphPosition(glyphAtPosition);
+        if (!glyphCurrentSide) {
+          throw new Error(`Could not find current position for glyph ${glyphAtPosition}`);
+        }
+        
+        const targetSide = glyphCurrentSide;
+        const targetLevel = getGlyphLevel(glyphAtPosition);
+        
+        // Update the light state tracking
+        const lightKey = `${targetSide}-${targetLevel}`;
+        if (isLit) {
+          currentLightStates.doorway.set(lightKey, { position: targetSide, level: targetLevel, style: 'on' });
+        } else {
+          currentLightStates.doorway.delete(lightKey);
+        }
+        
+        // Build the complete light command from current state
+        const allDoorwayLights = Array.from(currentLightStates.doorway.values());
+        
+        const lights = {
+          doorway: allDoorwayLights
+        };
+        
+        await Tower.Lights(lights);
+        window.logger.info(`Successfully updated tower lights. Active lights: ${allDoorwayLights.length}`, '[Glyphs]');
+        
+      } catch (error) {
+        console.error('Error toggling glyph light:', error);
+        window.logger.error('Error toggling glyph light: ' + error.message, '[Glyphs]');
+        
+        // Revert the visual state if tower command failed
+        element.classList.toggle('glyph-lit');
+      }
+    };
+
+    // Helper function to find which glyph is at a given position
+    const findGlyphAtPosition = (level, side) => {
+      const glyphLevels = {
+        'cleanse': 'top',
+        'quest': 'top',
+        'battle': 'middle',
+        'banner': 'bottom',
+        'reinforce': 'bottom'
+      };
+      
+      const allPositions = Tower.getAllGlyphPositions();
+      
+      for (const [glyph, currentSide] of Object.entries(allPositions)) {
+        if (glyphLevels[glyph] === level && currentSide === side) {
+          return glyph;
+        }
+      }
+      
+      return null;
+    };
+
+    // Helper function to get glyph level
+    const getGlyphLevel = (glyph) => {
+      const glyphLevels = {
+        'cleanse': 'top',
+        'quest': 'top',
+        'battle': 'middle',
+        'banner': 'bottom',
+        'reinforce': 'bottom'
+      };
+      
+      return glyphLevels[glyph] || 'middle';
+    };
+
+    // Refresh visual light states in the glyph grid
+    const refreshVisualLightStates = () => {
+      // Clear all existing glyph-lit classes
+      document.querySelectorAll('.glyph-cell').forEach(cell => {
+        cell.classList.remove('glyph-lit');
+      });
+      
+      // Apply glyph-lit class to cells that have active lights
+      currentLightStates.doorway.forEach((light, lightKey) => {
+        const [position, level] = lightKey.split('-');
+        const cellId = `glyph-${level}-${position}`;
+        const cell = document.getElementById(cellId);
+        if (cell) {
+          cell.classList.add('glyph-lit');
+        }
+      });
+    };
+
+
+
+
     // Expose glyph functions globally
     window.getGlyphsFacingDirection = getGlyphsFacingDirection;
     window.refreshGlyphPositions = refreshGlyphPositions;
     window.moveGlyph = moveGlyph;
+    window.toggleGlyphLight = toggleGlyphLight;
+    window.refreshVisualLightStates = refreshVisualLightStates;
   </script>
 </body>
 
