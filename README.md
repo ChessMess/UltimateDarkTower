@@ -52,7 +52,7 @@ import UltimateDarkTower, {
     type Lights,
     type SealIdentifier,
     type Glyphs,
-} from "ultimatedarktower";
+} from 'ultimatedarktower';
 
 const tower = new UltimateDarkTower();
 
@@ -65,14 +65,14 @@ try {
 
     // Control lights with type safety
     const lights: Lights = {
-        doorway: [{ position: "north", level: "top", style: "on" }],
+        doorway: [{ position: 'north', level: 'top', style: 'on' }],
     };
     await tower.lights(lights);
 
     // Rotate with type safety
-    const top: TowerSide = "north";
-    const middle: TowerSide = "south";
-    const bottom: TowerSide = "east";
+    const top: TowerSide = 'north';
+    const middle: TowerSide = 'south';
+    const bottom: TowerSide = 'east';
     await tower.rotate(top, middle, bottom);
 
     // Randomly rotate levels (parameter is optional, defaults to 0 for all levels)
@@ -80,23 +80,26 @@ try {
     await tower.randomRotateLevels(4); // Top & middle only
 
     // Seal tracking with type safety
-    const sealToBreak: SealIdentifier = { side: "east", level: "top" };
+    const sealToBreak: SealIdentifier = { side: 'east', level: 'top' };
     await tower.breakSeal(sealToBreak);
 
     // Check seal status
     const isBroken: boolean = tower.isSealBroken(sealToBreak);
-    
+
     // Get all broken seals
     const allBrokenSeals: SealIdentifier[] = tower.getBrokenSeals();
-    
+
     // Get random unbroken seal
     const randomUnbrokenSeal: SealIdentifier | null = tower.getRandomUnbrokenSeal();
 
     // Track glyph positions with type safety
-    const cleansePosition: TowerSide | null = tower.getGlyphPosition("cleanse");
+    const cleansePosition: TowerSide | null = tower.getGlyphPosition('cleanse');
     const allGlyphPositions: { [key in Glyphs]: TowerSide | null } = tower.getAllGlyphPositions();
+    
+    // Get glyphs facing a specific direction
+    const northFacingGlyphs: Glyphs[] = tower.getGlyphsFacingDirection('north');
 } catch (error) {
-    console.error("Tower operation failed:", error);
+    console.error('Tower operation failed:', error);
 }
 ```
 
@@ -107,96 +110,114 @@ The UltimateDarkTower library automatically tracks the positions of all glyphs o
 ### How It Works
 
 1. **Initialization**: All glyph positions start as `null` until calibration
-2. **Calibration**: When calibration completes, positions are set from the `GLYPHS` constant based on the tower's initial drum orientations
-3. **Automatic Updates**: Glyph positions are automatically updated whenever drums rotate via `rotate()`, `randomRotateLevels()`, or `MultiCommand()`
+2. **Calibration**: When calibration completes, positions are set to their initial locations based on the tower's physical drum orientations
+3. **Automatic Updates**: Glyph positions are automatically updated whenever drums rotate via `Rotate()`, `randomRotateLevels()`, or `MultiCommand()`
+4. **Multi-Glyph Drums**: Glyphs are physically attached to drums, so when one glyph moves, all glyphs on the same drum move together
 
-### Available Glyphs
+### Available Glyphs and Initial Positions After Calibration
 
-The tower tracks these five glyphs:
+The tower tracks these five glyphs with their initial positions after calibration:
 
-- **cleanse** - Top level, initially at north
-- **quest** - Top level, initially at south  
-- **battle** - Middle level, initially at north
-- **banner** - Bottom level, initially at north
-- **reinforce** - Bottom level, initially at south
+**Top Drum:**
+
+-   **cleanse** - North side
+-   **quest** - South side
+
+**Middle Drum:**
+
+-   **battle** - North side (only glyph on this drum)
+
+**Bottom Drum:**
+
+-   **banner** - North side
+-   **reinforce** - South side
+
+### Physical Drum Behavior
+
+Since glyphs are physically attached to the drums, rotating a drum moves **all glyphs on that drum together**:
+
+-   **Top drum rotation**: Both `cleanse` and `quest` move together
+-   **Middle drum rotation**: Only `battle` moves (it's alone on this drum)
+-   **Bottom drum rotation**: Both `banner` and `reinforce` move together
 
 ### Usage Examples
 
-```javascript
-// Check if tower is calibrated before accessing glyph positions
-if (tower.isCalibrated) {
-    // Get position of a specific glyph
-    const cleansePosition = tower.getGlyphPosition("cleanse");
-    console.log("Cleanse glyph is at:", cleansePosition); // "north", "east", "south", or "west"
-    
-    // Get all glyph positions
-    const allPositions = tower.getAllGlyphPositions();
-    console.log("All glyph positions:", allPositions);
-    /* Output:
-    {
-        cleanse: "north",
-        quest: "south", 
-        battle: "north",
-        banner: "north",
-        reinforce: "south"
-    }
-    */
-    
-    // Rotate tower and positions update automatically
-    await tower.rotate("east", "west", "south");
-    
-    // Check updated positions
-    const newCleansePosition = tower.getGlyphPosition("cleanse");
-    console.log("Cleanse moved to:", newCleansePosition); // "east"
-} else {
-    console.log("Tower not calibrated - glyph positions are null");
-}
-```
-
-### TypeScript Support
-
 ```typescript
-import { type Glyphs, type TowerSide } from "ultimatedarktower";
+import { type Glyphs, type TowerSide } from 'ultimatedarktower';
 
 // Type-safe glyph position access
-const glyph: Glyphs = "cleanse";
+const glyph: Glyphs = 'cleanse';
 const position: TowerSide | null = tower.getGlyphPosition(glyph);
 
 // Type-safe all positions
 const allPositions: { [key in Glyphs]: TowerSide | null } = tower.getAllGlyphPositions();
+
+// Get all glyphs facing a specific direction
+const northGlyphs: Glyphs[] = tower.getGlyphsFacingDirection('north');
+const eastGlyphs: Glyphs[] = tower.getGlyphsFacingDirection('east');
 ```
 
 ### Game Logic Integration
 
 Use glyph positions to build game mechanics:
 
-```javascript
+```typescript
+import { type Glyphs, type TowerSide, GLYPHS } from 'ultimatedarktower';
+
 // Example: Check if cleanse glyph is facing north
-function canPerformCleanse() {
-    return tower.getGlyphPosition("cleanse") === "north";
+function canPerformCleanse(): boolean {
+    return tower.getGlyphPosition('cleanse') === 'north';
 }
 
-// Example: Find all glyphs facing a specific direction
-function getGlyphsFacing(direction) {
-    const positions = tower.getAllGlyphPositions();
-    return Object.entries(positions)
-        .filter(([glyph, position]) => position === direction)
-        .map(([glyph]) => glyph);
+// Example: Get all glyphs facing a specific direction (built-in utility)
+function getGlyphsForDirection(direction: TowerSide): Glyphs[] {
+    return tower.getGlyphsFacingDirection(direction);
+}
+
+// Example: Check if any combat glyphs are facing a player's direction
+function hasCombatGlyphsFacing(direction: TowerSide): boolean {
+    const glyphsInDirection = tower.getGlyphsFacingDirection(direction);
+    return glyphsInDirection.includes('battle') || glyphsInDirection.includes('banner');
 }
 
 // Example: Rotate to align a glyph with a specific side
-async function alignGlyphTo(glyph, targetSide) {
+async function alignGlyphTo(glyph: Glyphs, targetSide: TowerSide): Promise<void> {
     const glyphData = GLYPHS[glyph];
     const currentPos = tower.getCurrentDrumPosition(glyphData.level);
-    
+
     // Calculate rotation needed (simplified example)
     if (currentPos !== targetSide) {
-        if (glyphData.level === "top") {
-            await tower.rotate(targetSide, "north", "north");
-        } else if (glyphData.level === "middle") {
-            await tower.rotate("north", targetSide, "north");
+        if (glyphData.level === 'top') {
+            await tower.Rotate(targetSide, 'north', 'north');
+        } else if (glyphData.level === 'middle') {
+            await tower.Rotate('north', targetSide, 'north');
         } else {
-            await tower.rotate("north", "north", targetSide);
+            await tower.Rotate('north', 'north', targetSide);
+        }
+    }
+}
+
+// Example: Game event based on glyph positions
+function processGlyphEffects(playerDirection: TowerSide): void {
+    const glyphsInDirection = tower.getGlyphsFacingDirection(playerDirection);
+    
+    for (const glyph of glyphsInDirection) {
+        switch (glyph) {
+            case 'cleanse':
+                console.log('Player gains cleanse effect');
+                break;
+            case 'quest':
+                console.log('Player encounters quest');
+                break;
+            case 'battle':
+                console.log('Player enters battle');
+                break;
+            case 'banner':
+                console.log('Player gains banner bonus');
+                break;
+            case 'reinforce':
+                console.log('Player gains reinforcement');
+                break;
         }
     }
 }
@@ -204,11 +225,11 @@ async function alignGlyphTo(glyph, targetSide) {
 
 ### Important Notes
 
-- Glyph positions are `null` until calibration completes
-- Positions are automatically updated for all rotation methods
-- The tracking is based on the initial calibrated positions defined in `GLYPHS`
-- Glyph positions rotate clockwise with their respective drum levels
-- Each glyph belongs to a specific drum level (top, middle, or bottom)
+-   Glyph positions are `null` until calibration completes
+-   Positions are automatically updated for all rotation methods
+-   The tracking is based on the initial calibrated positions defined in `GLYPHS`
+-   Glyph positions rotate clockwise with their respective drum levels
+-   Each glyph belongs to a specific drum level (top, middle, or bottom)
 
 ## Disconnect Detection & Handling
 
@@ -267,14 +288,14 @@ const tower = new UltimateDarkTower();
 
 // Handle successful connections
 tower.onTowerConnect = () => {
-    console.log("Tower connected!");
+    console.log('Tower connected!');
     // Update your UI to show connected state
     updateConnectionStatus(true);
 };
 
 // Handle disconnections
 tower.onTowerDisconnect = () => {
-    console.log("Tower disconnected!");
+    console.log('Tower disconnected!');
     // Update your UI to show disconnected state
     updateConnectionStatus(false);
     // Optionally attempt reconnection
@@ -298,13 +319,13 @@ await tower.connect();
 // Set general connection monitoring
 tower.configureConnectionMonitoring(
     2000, // Check every 2 seconds
-    30000, // Timeout after 30 seconds
+    30000 // Timeout after 30 seconds
 );
 
 // Configure battery heartbeat monitoring
 tower.configureBatteryHeartbeatMonitoring(
     true, // Enable battery heartbeat monitoring
-    3000, // Timeout after 3 seconds without battery status
+    3000 // Timeout after 3 seconds without battery status
 );
 
 // Enable/disable connection monitoring
@@ -319,7 +340,7 @@ const isConnected = tower.isConnected;
 
 // Detailed connection status
 const status = tower.getConnectionStatus();
-console.log("Connection Status:", {
+console.log('Connection Status:', {
     connected: status.isConnected,
     batteryHeartbeatHealthy: status.batteryHeartbeatHealthy,
     lastBatteryMs: status.lastBatteryHeartbeatMs,
@@ -364,14 +385,14 @@ class TowerManager {
 
     setupEventHandlers() {
         this.tower.onTowerConnect = () => {
-            console.log("Tower connected successfully");
+            console.log('Tower connected successfully');
             this.reconnectAttempts = 0;
-            this.updateUI("connected");
+            this.updateUI('connected');
         };
 
         this.tower.onTowerDisconnect = () => {
-            console.log("Tower disconnected");
-            this.updateUI("disconnected");
+            console.log('Tower disconnected');
+            this.updateUI('disconnected');
             this.attemptReconnection();
         };
 
@@ -391,8 +412,8 @@ class TowerManager {
             await this.tower.connect();
             await this.tower.calibrate();
         } catch (error) {
-            console.error("Connection failed:", error);
-            this.updateUI("failed");
+            console.error('Connection failed:', error);
+            this.updateUI('failed');
         }
     }
 
@@ -406,8 +427,8 @@ class TowerManager {
                 this.connect();
             }, 2000 * this.reconnectAttempts);
         } else {
-            console.log("Max reconnection attempts reached");
-            this.updateUI("failed");
+            console.log('Max reconnection attempts reached');
+            this.updateUI('failed');
         }
     }
 
@@ -497,6 +518,7 @@ These are the commands the library provides to control the tower.
 -   `resetTowerSkullCount()` - Reset the skull drop counter
 -   `getGlyphPosition(glyph: Glyphs)` - Get current position of a specific glyph (returns null if not calibrated)
 -   `getAllGlyphPositions()` - Get all current glyph positions as an object
+-   `getGlyphsFacingDirection(direction: TowerSide)` - Get array of glyphs currently facing a specific direction
 
 #### Monitoring Configuration
 
@@ -572,31 +594,31 @@ The UltimateDarkTower library includes a comprehensive logging system that suppo
 ### Basic Usage
 
 ```javascript
-import { logger } from "ultimatedarktower";
+import { logger } from 'ultimatedarktower';
 
 // Basic logging
-logger.debug("Debug message");
-logger.info("Information message");
-logger.warn("Warning message");
-logger.error("Error message");
+logger.debug('Debug message');
+logger.info('Information message');
+logger.warn('Warning message');
+logger.error('Error message');
 
 // Logging with context
-logger.info("Tower connected", "CONNECTION");
-logger.error("Calibration failed", "TOWER");
+logger.info('Tower connected', 'CONNECTION');
+logger.error('Calibration failed', 'TOWER');
 ```
 
 ### TypeScript Usage
 
 ```typescript
-import { logger, Logger, LogLevel, LogOutput } from "ultimatedarktower";
+import { logger, Logger, LogLevel, LogOutput } from 'ultimatedarktower';
 
 // Set log level
-const level: LogLevel = "info";
+const level: LogLevel = 'info';
 logger.setMinLevel(level);
 
 // Create custom logger instance
 const customLogger = new Logger();
-customLogger.setMinLevel("debug");
+customLogger.setMinLevel('debug');
 ```
 
 ### Log Levels
@@ -611,7 +633,7 @@ Log levels determine which messages are output based on severity:
 
 ```javascript
 // Set minimum log level
-logger.setMinLevel("info"); // Only info, warn, and error messages will be shown
+logger.setMinLevel('info'); // Only info, warn, and error messages will be shown
 ```
 
 ### Output Destinations
@@ -627,8 +649,8 @@ logger.setMinLevel("info"); // Only info, warn, and error messages will be shown
 By default, the logger outputs to the browser console:
 
 ```javascript
-logger.info("This goes to console.info()");
-logger.error("This goes to console.error()");
+logger.info('This goes to console.info()');
+logger.error('This goes to console.error()');
 ```
 
 #### DOM Output
@@ -636,13 +658,13 @@ logger.error("This goes to console.error()");
 Log messages can be displayed in a DOM element:
 
 ```javascript
-import { DOMOutput } from "ultimatedarktower";
+import { DOMOutput } from 'ultimatedarktower';
 
 // Create DOM output (assumes you have a div with id="log-container")
-const domOutput = new DOMOutput("log-container", 50); // Max 50 lines
+const domOutput = new DOMOutput('log-container', 50); // Max 50 lines
 logger.addOutput(domOutput);
 
-logger.info("This message appears in both console and DOM");
+logger.info('This message appears in both console and DOM');
 ```
 
 #### Custom Output
@@ -671,7 +693,7 @@ class FileOutput {
 }
 
 // Add custom output
-const fileOutput = new FileOutput("tower-logs.json");
+const fileOutput = new FileOutput('tower-logs.json');
 logger.addOutput(fileOutput);
 ```
 
@@ -685,13 +707,13 @@ logger.addOutput(fileOutput);
 #### Multiple Outputs
 
 ```javascript
-import { logger, ConsoleOutput, DOMOutput } from "ultimatedarktower";
+import { logger, ConsoleOutput, DOMOutput } from 'ultimatedarktower';
 
 // Clear default outputs and add custom ones
 const customLogger = new Logger();
 customLogger.addOutput(new ConsoleOutput());
-customLogger.addOutput(new DOMOutput("debug-panel", 100));
-customLogger.addOutput(new FileOutput("app-logs.json"));
+customLogger.addOutput(new DOMOutput('debug-panel', 100));
+customLogger.addOutput(new FileOutput('app-logs.json'));
 ```
 
 #### Context-Aware Logging
@@ -700,13 +722,13 @@ Use context parameters to organize log messages:
 
 ```javascript
 // Tower operations
-logger.info("Starting calibration", "TOWER");
-logger.debug("Rotation command sent", "TOWER");
-logger.error("Connection lost", "BLUETOOTH");
+logger.info('Starting calibration', 'TOWER');
+logger.debug('Rotation command sent', 'TOWER');
+logger.error('Connection lost', 'BLUETOOTH');
 
 // Application flow
-logger.info("User clicked connect button", "UI");
-logger.debug("Processing user input", "GAME");
+logger.info('User clicked connect button', 'UI');
+logger.debug('Processing user input', 'GAME');
 ```
 
 ### DOM Output Styling
@@ -744,22 +766,22 @@ When using `DOMOutput`, you can style log messages with CSS:
 2. **Add Context**: Use the context parameter to categorize messages:
 
     ```javascript
-    logger.info("Battery level: 85%", "BATTERY");
-    logger.debug("Command response received", "BLUETOOTH");
+    logger.info('Battery level: 85%', 'BATTERY');
+    logger.debug('Command response received', 'BLUETOOTH');
     ```
 
 3. **Configure for Environment**: Set different log levels for development vs production:
 
     ```javascript
-    const isDevelopment = process.env.NODE_ENV === "development";
-    logger.setMinLevel(isDevelopment ? "debug" : "warn");
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    logger.setMinLevel(isDevelopment ? 'debug' : 'warn');
     ```
 
 4. **Handle Output Errors**: The logger automatically catches and handles output errors to prevent crashes.
 
 5. **Use Singleton Pattern**: Import the pre-configured logger instance for consistency across your application:
     ```javascript
-    import { logger } from "ultimatedarktower";
+    import { logger } from 'ultimatedarktower';
     ```
 
 ## Performance Considerations
@@ -788,7 +810,7 @@ The tower has limitations on how quickly it can process commands. Sending comman
 // Good: Allow time between commands
 await tower.playSound(1);
 await new Promise((resolve) => setTimeout(resolve, 500));
-await tower.rotate("north", "south", "east");
+await tower.rotate('north', 'south', 'east');
 
 // Better: Check connection status
 if (tower.isConnected) {
@@ -796,7 +818,7 @@ if (tower.isConnected) {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     if (tower.isConnected) {
-        await tower.rotate("north", "south", "east");
+        await tower.rotate('north', 'south', 'east');
     }
 }
 ```

@@ -122,6 +122,23 @@ const onCalibrationComplete = () => {
   if (el) {
     el.classList.add("hide");
   }
+
+  // Auto-refresh glyph positions after calibration
+  logger.info("Calibration complete", '[TC]');
+
+  // Wait a bit longer for calibration to fully complete, then refresh
+  setTimeout(() => {
+    try {
+      if (typeof (window as any).refreshGlyphPositions === 'function') {
+        (window as any).refreshGlyphPositions();
+        logger.info("Glyph positions refreshed after calibration", '[TC]');
+      } else {
+        logger.warn("refreshGlyphPositions function not available", '[TC]');
+      }
+    } catch (error) {
+      logger.error("Error refreshing glyph positions after calibration: " + error, '[TC]');
+    }
+  }, 1000);
 }
 Tower.onCalibrationComplete = onCalibrationComplete;
 

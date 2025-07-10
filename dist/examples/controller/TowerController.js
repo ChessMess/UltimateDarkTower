@@ -1684,10 +1684,13 @@
      * @returns Promise that resolves when rotate command is sent
      */
     async Rotate(top, middle, bottom, soundIndex) {
+      const oldTopPosition = this.getCurrentDrumPosition("top");
+      const oldMiddlePosition = this.getCurrentDrumPosition("middle");
+      const oldBottomPosition = this.getCurrentDrumPosition("bottom");
       const result = await this.towerCommands.rotate(top, middle, bottom, soundIndex);
-      this.updateGlyphPositionsForRotation("top", top);
-      this.updateGlyphPositionsForRotation("middle", middle);
-      this.updateGlyphPositionsForRotation("bottom", bottom);
+      this.calculateAndUpdateGlyphPositions("top", oldTopPosition, top);
+      this.calculateAndUpdateGlyphPositions("middle", oldMiddlePosition, middle);
+      this.calculateAndUpdateGlyphPositions("bottom", oldBottomPosition, bottom);
       return result;
     }
     /**
@@ -1700,11 +1703,19 @@
      * @deprecated SPECIAL USE ONLY - CAN CAUSE DISCONNECTS
      */
     async MultiCommand(rotate2, lights2, soundIndex) {
-      const result = await this.towerCommands.multiCommand(rotate2, lights2, soundIndex);
+      let oldTopPosition;
+      let oldMiddlePosition;
+      let oldBottomPosition;
       if (rotate2) {
-        this.updateGlyphPositionsForRotation("top", rotate2.top);
-        this.updateGlyphPositionsForRotation("middle", rotate2.middle);
-        this.updateGlyphPositionsForRotation("bottom", rotate2.bottom);
+        oldTopPosition = this.getCurrentDrumPosition("top");
+        oldMiddlePosition = this.getCurrentDrumPosition("middle");
+        oldBottomPosition = this.getCurrentDrumPosition("bottom");
+      }
+      const result = await this.towerCommands.multiCommand(rotate2, lights2, soundIndex);
+      if (rotate2 && oldTopPosition && oldMiddlePosition && oldBottomPosition) {
+        this.calculateAndUpdateGlyphPositions("top", oldTopPosition, rotate2.top);
+        this.calculateAndUpdateGlyphPositions("middle", oldMiddlePosition, rotate2.middle);
+        this.calculateAndUpdateGlyphPositions("bottom", oldBottomPosition, rotate2.bottom);
       }
       return result;
     }
@@ -1741,13 +1752,13 @@
       const afterMiddle = this.getCurrentDrumPosition("middle");
       const afterBottom = this.getCurrentDrumPosition("bottom");
       if (beforeTop !== afterTop) {
-        this.updateGlyphPositionsForRotation("top", afterTop);
+        this.calculateAndUpdateGlyphPositions("top", beforeTop, afterTop);
       }
       if (beforeMiddle !== afterMiddle) {
-        this.updateGlyphPositionsForRotation("middle", afterMiddle);
+        this.calculateAndUpdateGlyphPositions("middle", beforeMiddle, afterMiddle);
       }
       if (beforeBottom !== afterBottom) {
-        this.updateGlyphPositionsForRotation("bottom", afterBottom);
+        this.calculateAndUpdateGlyphPositions("bottom", beforeBottom, afterBottom);
       }
       return result;
     }
@@ -1785,6 +1796,22 @@
       return __spreadValues({}, this.glyphPositions);
     }
     /**
+     * Gets all glyphs currently facing a specific direction.
+     * @param direction - The direction to check for (north, east, south, west)
+     * @returns Array of glyph names that are currently facing the specified direction
+     */
+    getGlyphsFacingDirection(direction) {
+      const glyphsFacing = [];
+      for (const glyphKey in this.glyphPositions) {
+        const glyph = glyphKey;
+        const position = this.glyphPositions[glyph];
+        if (position && position.toLowerCase() === direction.toLowerCase()) {
+          glyphsFacing.push(glyph);
+        }
+      }
+      return glyphsFacing;
+    }
+    /**
      * Updates glyph positions after a drum rotation.
      * @param level - The drum level that was rotated
      * @param rotationSteps - Number of steps rotated (1 = 90 degrees clockwise)
@@ -1803,9 +1830,28 @@
       }
     }
     /**
+     * Calculates rotation steps and updates glyph positions for a specific level.
+     * @param level - The drum level that was rotated
+     * @param oldPosition - The position before rotation
+     * @param newPosition - The position after rotation
+     */
+    calculateAndUpdateGlyphPositions(level, oldPosition, newPosition) {
+      const sides = ["north", "east", "south", "west"];
+      const oldIndex = sides.indexOf(oldPosition);
+      const newIndex = sides.indexOf(newPosition);
+      let rotationSteps = newIndex - oldIndex;
+      if (rotationSteps < 0) {
+        rotationSteps += 4;
+      }
+      if (rotationSteps > 0) {
+        this.updateGlyphPositionsAfterRotation(level, rotationSteps);
+      }
+    }
+    /**
      * Updates glyph positions for a specific level rotation.
      * @param level - The drum level that was rotated
      * @param newPosition - The new position the drum was rotated to
+     * @deprecated Use calculateAndUpdateGlyphPositions instead
      */
     updateGlyphPositionsForRotation(level, newPosition) {
       const currentPosition = this.getCurrentDrumPosition(level);
@@ -2060,6 +2106,19 @@
     if (el) {
       el.classList.add("hide");
     }
+    logger.info("Calibration complete", "[TC]");
+    setTimeout(() => {
+      try {
+        if (typeof window.refreshGlyphPositions === "function") {
+          window.refreshGlyphPositions();
+          logger.info("Glyph positions refreshed after calibration", "[TC]");
+        } else {
+          logger.warn("refreshGlyphPositions function not available", "[TC]");
+        }
+      } catch (error) {
+        logger.error("Error refreshing glyph positions after calibration: " + error, "[TC]");
+      }
+    }, 1e3);
   };
   Tower.onCalibrationComplete = onCalibrationComplete;
   var updateBatteryTrend = () => {

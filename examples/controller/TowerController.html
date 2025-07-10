@@ -178,6 +178,30 @@
       background-color: #b91c1c;
     }
 
+    /* Glyph grid cell styles */
+    .glyph-cell {
+      width: 2rem;
+      height: 2rem;
+      background-color: #4b5563;
+      border-radius: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #6b7280;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .glyph-cell:hover {
+      background-color: #6b7280;
+      border-color: #9ca3af;
+    }
+
+    .glyph-cell img {
+      width: 1.5rem;
+      height: 1.5rem;
+      filter: brightness(0) invert(1);
+    }
+
     /* Material Design Tab interface styles */
     .tower-tabs {
       display: flex;
@@ -531,6 +555,80 @@
                     <option value="6">middle & bottom</option>
                   </select>
                   <button id="randomizeButton" onclick="randomizeLevels()" class="tower-button">Randomize</button>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Glyphs</legend>
+                <div class="grid grid-cols-2 gap-4">
+                  <!-- Left Column: Controls -->
+                  <div class="space-y-4">
+                    <div>
+                      <div class="space-y-3">
+                        <div class="flex items-center space-x-2">
+                          <label class="text-sm w-20">Glyph:</label>
+                          <select id="glyph-select" class="tower-select flex-1">
+                            <option value="">Select glyph</option>
+                            <option value="cleanse">Cleanse</option>
+                            <option value="quest">Quest</option>
+                            <option value="battle">Battle</option>
+                            <option value="banner">Banner</option>
+                            <option value="reinforce">Reinforce</option>
+                          </select>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                          <label class="text-sm w-20">Side:</label>
+                          <select id="side-select" class="tower-select flex-1">
+                            <option value="">Select side</option>
+                            <option value="north">North</option>
+                            <option value="east">East</option>
+                            <option value="south">South</option>
+                            <option value="west">West</option>
+                          </select>
+                        </div>
+                        <button id="move-glyph-btn" onclick="moveGlyph()" class="tower-button w-full">
+                          Move Glyph
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Right Column: Current Positions -->
+                  <div>
+                    <div id="current-glyph-positions" class="bg-gray-800 rounded p-3">
+                      <!-- Grid headers -->
+                      <div class="grid grid-cols-5 gap-1 mb-2 text-xs text-center">
+                        <div></div>
+                        <div class="font-semibold">N</div>
+                        <div class="font-semibold">E</div>
+                        <div class="font-semibold">S</div>
+                        <div class="font-semibold">W</div>
+                      </div>
+                      <!-- Grid content -->
+                      <div class="grid grid-cols-5 gap-1">
+                        <!-- Top row -->
+                        <div class="text-xs font-semibold flex items-center justify-center">Top</div>
+                        <div id="glyph-top-north" class="glyph-cell" data-level="top" data-side="north"></div>
+                        <div id="glyph-top-east" class="glyph-cell" data-level="top" data-side="east"></div>
+                        <div id="glyph-top-south" class="glyph-cell" data-level="top" data-side="south"></div>
+                        <div id="glyph-top-west" class="glyph-cell" data-level="top" data-side="west"></div>
+
+                        <!-- Middle row -->
+                        <div class="text-xs font-semibold flex items-center justify-center">Mid</div>
+                        <div id="glyph-middle-north" class="glyph-cell" data-level="middle" data-side="north"></div>
+                        <div id="glyph-middle-east" class="glyph-cell" data-level="middle" data-side="east"></div>
+                        <div id="glyph-middle-south" class="glyph-cell" data-level="middle" data-side="south"></div>
+                        <div id="glyph-middle-west" class="glyph-cell" data-level="middle" data-side="west"></div>
+
+                        <!-- Bottom row -->
+                        <div class="text-xs font-semibold flex items-center justify-center">Bot</div>
+                        <div id="glyph-bottom-north" class="glyph-cell" data-level="bottom" data-side="north"></div>
+                        <div id="glyph-bottom-east" class="glyph-cell" data-level="bottom" data-side="east"></div>
+                        <div id="glyph-bottom-south" class="glyph-cell" data-level="bottom" data-side="south"></div>
+                        <div id="glyph-bottom-west" class="glyph-cell" data-level="bottom" data-side="west"></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </fieldset>
 
@@ -912,6 +1010,11 @@
 
       // Show the selected tab content
       document.getElementById(tabName + '-content').classList.add('tower-tab-content-active');
+
+      // Auto-refresh glyph positions when switching to library tab (since glyphs are now there)
+      if (tabName === 'library') {
+        setTimeout(refreshGlyphPositions, 100);
+      }
     }
 
     // Expose switchTab function globally for HTML onclick handlers
@@ -921,6 +1024,165 @@
     document.addEventListener('DOMContentLoaded', () => {
       updateBatteryFilter();
     });
+
+    // Glyph management functions
+    const getGlyphsFacingDirection = (direction) => {
+      try {
+        return Tower.getGlyphsFacingDirection(direction);
+      } catch (error) {
+        console.error('Error getting glyphs facing direction:', error);
+        window.logger.error('Error getting glyphs facing direction: ' + error.message, '[Glyphs]');
+        return [];
+      }
+    };
+
+    const refreshGlyphPositions = async () => {
+      try {
+        const positions = await Tower.getAllGlyphPositions();
+
+        // Clear all glyph cells first
+        const allCells = document.querySelectorAll('.glyph-cell');
+        allCells.forEach(cell => {
+          cell.innerHTML = '';
+          cell.style.backgroundColor = '#4b5563';
+        });
+
+        // Map of glyph names to their SVG file paths
+        const glyphSvgMap = {
+          'cleanse': '../assets/glyph_cleanse.svg',
+          'quest': '../assets/glyph_quest.svg',
+          'battle': '../assets/glyph_battle.svg',
+          'banner': '../assets/glyph_banner.svg',
+          'reinforce': '../assets/glyph_reinforce.svg'
+        };
+
+        // Update the display for each glyph
+        Object.entries(positions).forEach(([glyph, position]) => {
+          if (position && position !== 'unknown') {
+            // Get the glyph's fixed level based on its type
+            const glyphLevels = {
+              'cleanse': 'top',
+              'quest': 'top',
+              'battle': 'middle',
+              'banner': 'bottom',
+              'reinforce': 'bottom'
+            };
+
+            const level = glyphLevels[glyph];
+            const cellId = `glyph-${level}-${position}`;
+            const cell = document.getElementById(cellId);
+
+            if (cell && glyphSvgMap[glyph]) {
+              const img = document.createElement('img');
+              img.src = glyphSvgMap[glyph];
+              img.alt = glyph;
+              img.title = `${glyph.charAt(0).toUpperCase() + glyph.slice(1)} (${position})`;
+              cell.appendChild(img);
+              cell.style.backgroundColor = '#374151'; // Slightly lighter for occupied cells
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error refreshing glyph positions:', error);
+        window.logger.error('Error refreshing glyph positions: ' + error.message, '[Glyphs]');
+      }
+    };
+
+    const moveGlyph = async () => {
+      const glyphSelect = document.getElementById('glyph-select');
+      const sideSelect = document.getElementById('side-select');
+
+      const selectedGlyph = glyphSelect.value;
+      const targetSide = sideSelect.value;
+
+      if (!selectedGlyph || !targetSide) {
+        window.logger.warn('Please select a glyph and target side', '[Glyphs]');
+        return;
+      }
+
+      try {
+        // Get current glyph positions
+        const currentPositions = await Tower.getAllGlyphPositions();
+        const currentGlyphPosition = currentPositions[selectedGlyph];
+
+        if (!currentGlyphPosition) {
+          window.logger.error(`Unable to find current position for ${selectedGlyph} glyph`, '[Glyphs]');
+          return;
+        }
+
+        // Get the fixed level for this glyph (glyphs can't change levels)
+        const glyphDefinitions = {
+          cleanse: { level: 'top', side: 'north' },
+          quest: { level: 'top', side: 'south' },
+          battle: { level: 'middle', side: 'north' },
+          banner: { level: 'bottom', side: 'north' },
+          reinforce: { level: 'bottom', side: 'south' }
+        };
+
+        const glyphLevel = glyphDefinitions[selectedGlyph].level;
+
+        // Calculate rotation needed to move glyph to target position
+        const sides = ['north', 'east', 'south', 'west'];
+        const currentSideIndex = sides.indexOf(currentGlyphPosition);
+        const targetSideIndex = sides.indexOf(targetSide);
+
+        if (currentSideIndex === -1 || targetSideIndex === -1) {
+          window.logger.error('Invalid current or target side', '[Glyphs]');
+          return;
+        }
+
+        // Calculate clockwise rotation steps needed
+        let rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
+
+        if (rotationSteps === 0) {
+          window.logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, '[Glyphs]');
+          return;
+        }
+
+        // Calculate what drum position will put the selected glyph at the target side
+        let targetDrumPosition;
+        if (glyphLevel === 'top' || glyphLevel === 'middle' || glyphLevel === 'bottom') {
+          // Calculate the drum position needed to put this specific glyph at the target side
+          const currentDrumPosition = Tower.getCurrentDrumPosition(glyphLevel);
+          const sides = ['north', 'east', 'south', 'west'];
+
+          const currentDrumIndex = sides.indexOf(currentDrumPosition);
+          const currentGlyphIndex = sides.indexOf(currentGlyphPosition);
+          const targetGlyphIndex = sides.indexOf(targetSide);
+
+          // Calculate how many steps the glyph needs to move
+          let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
+
+          // Calculate the new drum position
+          const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
+          targetDrumPosition = sides[newDrumIndex];
+        }
+
+        // Set positions for all three drums
+        const topPosition = glyphLevel === 'top' ? targetDrumPosition : Tower.getCurrentDrumPosition('top');
+        const middlePosition = glyphLevel === 'middle' ? targetDrumPosition : Tower.getCurrentDrumPosition('middle');
+        const bottomPosition = glyphLevel === 'bottom' ? targetDrumPosition : Tower.getCurrentDrumPosition('bottom');
+
+        window.logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, '[Glyphs]');
+
+        // Execute the rotation with all three drum positions
+        await Tower.Rotate(topPosition, middlePosition, bottomPosition);
+
+        // Refresh glyph positions after rotation
+        setTimeout(refreshGlyphPositions, 1000);
+
+        window.logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, '[Glyphs]');
+
+      } catch (error) {
+        console.error('Error moving glyph:', error);
+        window.logger.error('Error moving glyph: ' + error.message, '[Glyphs]');
+      }
+    };
+
+    // Expose glyph functions globally
+    window.getGlyphsFacingDirection = getGlyphsFacingDirection;
+    window.refreshGlyphPositions = refreshGlyphPositions;
+    window.moveGlyph = moveGlyph;
   </script>
 </body>
 

@@ -164,15 +164,29 @@ declare class UltimateDarkTower {
         [key in Glyphs]: TowerSide | null;
     };
     /**
+     * Gets all glyphs currently facing a specific direction.
+     * @param direction - The direction to check for (north, east, south, west)
+     * @returns Array of glyph names that are currently facing the specified direction
+     */
+    getGlyphsFacingDirection(direction: TowerSide): Glyphs[];
+    /**
      * Updates glyph positions after a drum rotation.
      * @param level - The drum level that was rotated
      * @param rotationSteps - Number of steps rotated (1 = 90 degrees clockwise)
      */
     private updateGlyphPositionsAfterRotation;
     /**
+     * Calculates rotation steps and updates glyph positions for a specific level.
+     * @param level - The drum level that was rotated
+     * @param oldPosition - The position before rotation
+     * @param newPosition - The position after rotation
+     */
+    private calculateAndUpdateGlyphPositions;
+    /**
      * Updates glyph positions for a specific level rotation.
      * @param level - The drum level that was rotated
      * @param newPosition - The new position the drum was rotated to
+     * @deprecated Use calculateAndUpdateGlyphPositions instead
      */
     private updateGlyphPositionsForRotation;
     /**
