@@ -74,7 +74,7 @@ class UltimateDarkTower {
   currentBatteryPercentage: number = 0;
   previousBatteryPercentage: number = 0;
   private brokenSeals: Set<string> = new Set();
-  
+
   // glyph position tracking
   private glyphPositions: { [key in Glyphs]: TowerSide | null } = {
     cleanse: null,
@@ -87,13 +87,11 @@ class UltimateDarkTower {
   // call back functions
   // you overwrite these with your own functions 
   // to handle these events in your app
-  onCalibrationComplete = () => { };
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onSkullDrop = (_towerSkullCount: number) => { };
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onBatteryLevelNotify = (_millivolts: number) => { };
   onTowerConnect = () => { };
   onTowerDisconnect = () => { };
+  onCalibrationComplete = () => { };
+  onSkullDrop = (_towerSkullCount: number) => { console.log(_towerSkullCount) };
+  onBatteryLevelNotify = (_millivolts: number) => { console.log(_millivolts) };
 
   constructor() {
     // Initialize logger with console output by default
@@ -247,12 +245,12 @@ class UltimateDarkTower {
    */
   async Rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number) {
     const result = await this.towerCommands.rotate(top, middle, bottom, soundIndex);
-    
+
     // Update glyph positions for each rotated drum
     this.updateGlyphPositionsForRotation('top', top);
     this.updateGlyphPositionsForRotation('middle', middle);
     this.updateGlyphPositionsForRotation('bottom', bottom);
-    
+
     return result;
   }
 
@@ -267,14 +265,14 @@ class UltimateDarkTower {
    */
   async MultiCommand(rotate?: RotateCommand, lights?: Lights, soundIndex?: number) {
     const result = await this.towerCommands.multiCommand(rotate, lights, soundIndex);
-    
+
     // Update glyph positions if rotation was performed
     if (rotate) {
       this.updateGlyphPositionsForRotation('top', rotate.top);
       this.updateGlyphPositionsForRotation('middle', rotate.middle);
       this.updateGlyphPositionsForRotation('bottom', rotate.bottom);
     }
-    
+
     return result;
   }
 
@@ -295,11 +293,11 @@ class UltimateDarkTower {
    */
   async breakSeal(seal: SealIdentifier) {
     const result = await this.towerCommands.breakSeal(seal);
-    
+
     // Track broken seal
     const sealKey = `${seal.level}-${seal.side}`;
     this.brokenSeals.add(sealKey);
-    
+
     return result;
   }
 
@@ -313,14 +311,14 @@ class UltimateDarkTower {
     const beforeTop = this.getCurrentDrumPosition('top');
     const beforeMiddle = this.getCurrentDrumPosition('middle');
     const beforeBottom = this.getCurrentDrumPosition('bottom');
-    
+
     const result = await this.towerCommands.randomRotateLevels(level);
-    
+
     // Update glyph positions based on what levels were rotated
     const afterTop = this.getCurrentDrumPosition('top');
     const afterMiddle = this.getCurrentDrumPosition('middle');
     const afterBottom = this.getCurrentDrumPosition('bottom');
-    
+
     if (beforeTop !== afterTop) {
       this.updateGlyphPositionsForRotation('top', afterTop);
     }
@@ -330,7 +328,7 @@ class UltimateDarkTower {
     if (beforeBottom !== afterBottom) {
       this.updateGlyphPositionsForRotation('bottom', afterBottom);
     }
-    
+
     return result;
   }
 
@@ -379,12 +377,12 @@ class UltimateDarkTower {
   private updateGlyphPositionsAfterRotation(level: TowerLevels, rotationSteps: number): void {
     // Define the rotation order (clockwise)
     const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
-    
+
     // Find glyphs on the rotated level
     for (const glyphKey in GLYPHS) {
       const glyph = glyphKey as Glyphs;
       const glyphData = GLYPHS[glyph];
-      
+
       if (glyphData.level === level && this.glyphPositions[glyph] !== null) {
         const currentPosition = this.glyphPositions[glyph]!;
         const currentIndex = sides.indexOf(currentPosition);
@@ -402,18 +400,18 @@ class UltimateDarkTower {
   private updateGlyphPositionsForRotation(level: TowerLevels, newPosition: TowerSide): void {
     // Get the current drum position before rotation
     const currentPosition = this.getCurrentDrumPosition(level);
-    
+
     // Calculate rotation steps
     const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
     const currentIndex = sides.indexOf(currentPosition);
     const newIndex = sides.indexOf(newPosition);
-    
+
     // Calculate rotation steps (positive for clockwise)
     let rotationSteps = newIndex - currentIndex;
     if (rotationSteps < 0) {
       rotationSteps += 4; // Handle wrap-around
     }
-    
+
     // Update glyph positions
     this.updateGlyphPositionsAfterRotation(level, rotationSteps);
   }

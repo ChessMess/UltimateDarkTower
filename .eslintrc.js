@@ -13,10 +13,11 @@ module.exports = {
         jest: true,
     },
     rules: {
-        // Add any custom rules here
+        // TypeScript-specific rules
         '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-        '@typescript-eslint/explicit-function-return-type': 'warn',
-        '@typescript-eslint/no-explicit-any': 'warn',
+
+        // General JavaScript/ES6 rules
+        'no-duplicate-imports': 'error',
     },
     ignorePatterns: ['dist/', 'node_modules/', '*.js', 'examples/'],
 };
