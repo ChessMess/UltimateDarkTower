@@ -270,7 +270,7 @@
 
   // src/Logger.ts
   var ConsoleOutput = class {
-    write(level, message, _timestamp) {
+    write(level, message) {
       switch (level) {
         case "debug":
           console.debug(message);
@@ -511,7 +511,7 @@
         case TC.DIFFERENTIAL:
         case TC.CALIBRATION:
           return [towerCommand.name, this.commandToPacketString(command)];
-        case TC.BATTERY:
+        case TC.BATTERY: {
           const millivolts = this.getMilliVoltsFromTowerResponse(command);
           const retval = [towerCommand.name, this.milliVoltsToPercentage(millivolts)];
           if (this.logDetail) {
@@ -519,6 +519,7 @@
             retval.push(this.commandToPacketString(command));
           }
           return retval;
+        }
         default:
           return ["Unmapped Response!", this.commandToPacketString(command)];
       }
@@ -679,8 +680,8 @@
           this.handleDisconnection();
         }
       };
-      this.onTowerDeviceDisconnected = (_event) => {
-        this.logger.warn("Tower device disconnected unexpectedly", "[UDT]");
+      this.onTowerDeviceDisconnected = (event) => {
+        this.logger.warn(`Tower device disconnected unexpectedly: ${event.type}`, "[UDT]");
         this.handleDisconnection();
       };
       this.logger = logger2;
@@ -755,7 +756,7 @@
         this.logger.info("Tower calibration complete", "[UDT]");
       }
       if (dataSkullDropCount !== this.towerSkullDropCount) {
-        if (!!dataSkullDropCount) {
+        if (dataSkullDropCount) {
           this.callbacks.onSkullDrop(dataSkullDropCount);
           this.logger.info(`Skull drop detected: app:${this.towerSkullDropCount < 0 ? "empty" : this.towerSkullDropCount}  tower:${dataSkullDropCount}`, "[UDT]");
         } else {
@@ -1103,7 +1104,7 @@
       }
       this.isProcessing = true;
       this.currentCommand = this.queue.shift();
-      const { id, command, description, resolve, reject } = this.currentCommand;
+      const { id, command, description, reject } = this.currentCommand;
       this.logger.debug(`Processing command: ${description || id}`, "[UDT]");
       try {
         this.timeoutHandle = setTimeout(() => {
@@ -1512,8 +1513,10 @@
       // to handle these events in your app
       this.onCalibrationComplete = () => {
       };
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       this.onSkullDrop = (_towerSkullCount) => {
       };
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       this.onBatteryLevelNotify = (_millivolts) => {
       };
       this.onTowerConnect = () => {

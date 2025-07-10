@@ -20,7 +20,7 @@ interface QueuedCommand {
 export class CommandQueue {
     private queue: QueuedCommand[] = [];
     private currentCommand: QueuedCommand | null = null;
-    private timeoutHandle: NodeJS.Timeout | null = null;
+    private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
     private isProcessing: boolean = false;
     private readonly timeoutMs: number = 30000; // 30 seconds
     
@@ -64,7 +64,7 @@ export class CommandQueue {
         this.isProcessing = true;
         this.currentCommand = this.queue.shift()!;
 
-        const { id, command, description, resolve, reject } = this.currentCommand;
+        const { id, command, description, reject } = this.currentCommand;
         
         this.logger.debug(`Processing command: ${description || id}`, '[UDT]');
 

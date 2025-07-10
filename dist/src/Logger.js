@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.logger = exports.Logger = exports.DOMOutput = exports.BufferOutput = exports.ConsoleOutput = void 0;
 class ConsoleOutput {
-    write(level, message, _timestamp) {
+    write(level, message) {
         switch (level) {
             case 'debug':
                 console.debug(message);

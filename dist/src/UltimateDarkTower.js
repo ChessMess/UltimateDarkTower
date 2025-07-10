@@ -62,7 +62,9 @@ class UltimateDarkTower {
         // you overwrite these with your own functions 
         // to handle these events in your app
         this.onCalibrationComplete = () => { };
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.onSkullDrop = (_towerSkullCount) => { };
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.onBatteryLevelNotify = (_millivolts) => { };
         this.onTowerConnect = () => { };
         this.onTowerDisconnect = () => { };

@@ -6,7 +6,6 @@ import {
     drumPositionCmds,
     type Lights,
     type TowerSide,
-    type TowerLevels,
     type LedgeLight,
     type DoorwayLight,
     type RotateCommand,

@@ -3,7 +3,7 @@ export interface LogOutput {
     write(level: LogLevel, message: string, timestamp: Date): void;
 }
 export declare class ConsoleOutput implements LogOutput {
-    write(level: LogLevel, message: string, _timestamp: Date): void;
+    write(level: LogLevel, message: string): void;
 }
 export interface LogEntry {
     level: LogLevel;

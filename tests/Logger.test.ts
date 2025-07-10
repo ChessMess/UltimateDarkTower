@@ -1,4 +1,4 @@
-import { Logger, BufferOutput, DOMOutput, LogLevel } from '../src/Logger';
+import { Logger, BufferOutput, DOMOutput } from '../src/Logger';
 
 describe('BufferOutput', () => {
     let bufferOutput: BufferOutput;

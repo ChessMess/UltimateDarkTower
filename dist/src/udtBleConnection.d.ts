@@ -81,7 +81,7 @@ export declare class UdtBleConnection {
     bleAvailabilityChange: (event: Event & {
         value: boolean;
     }) => void;
-    onTowerDeviceDisconnected: (_event: Event) => void;
+    onTowerDeviceDisconnected: (event: Event) => void;
     private handleDisconnection;
     private startConnectionMonitoring;
     private stopConnectionMonitoring;

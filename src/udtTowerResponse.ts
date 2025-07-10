@@ -55,7 +55,7 @@ export class TowerResponseProcessor {
             case TC.DIFFERENTIAL:
             case TC.CALIBRATION:
                 return [towerCommand.name, this.commandToPacketString(command)];
-            case TC.BATTERY:
+            case TC.BATTERY: {
                 const millivolts = this.getMilliVoltsFromTowerResponse(command);
                 const retval = [towerCommand.name, this.milliVoltsToPercentage(millivolts)];
                 if (this.logDetail) {
@@ -63,6 +63,7 @@ export class TowerResponseProcessor {
                     retval.push(this.commandToPacketString(command));
                 }
                 return retval;
+            }
             default:
                 return ["Unmapped Response!", this.commandToPacketString(command)];
         }

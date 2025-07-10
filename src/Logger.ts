@@ -5,7 +5,7 @@ export interface LogOutput {
 }
 
 export class ConsoleOutput implements LogOutput {
-    write(level: LogLevel, message: string, _timestamp: Date): void {
+    write(level: LogLevel, message: string): void {
         switch (level) {
             case 'debug':
                 console.debug(message);

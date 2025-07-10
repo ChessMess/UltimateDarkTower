@@ -45,7 +45,7 @@ class CommandQueue {
         }
         this.isProcessing = true;
         this.currentCommand = this.queue.shift();
-        const { id, command, description, resolve, reject } = this.currentCommand;
+        const { id, command, description, reject } = this.currentCommand;
         this.logger.debug(`Processing command: ${description || id}`, '[UDT]');
         try {
             // Set timeout for command completion

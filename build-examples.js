@@ -70,6 +70,29 @@ async function buildExamples() {
         const gameHtmlDest = path.join(gameDistDir, "TowerGame.html");
         fs.copyFileSync(gameHtmlSrc, gameHtmlDest);
 
+        // Copy assets directory if it exists
+        const assetsSrcDir = path.join(__dirname, "examples", "assets");
+        const assetsDestDir = path.join(examplesDistDir, "assets");
+        
+        if (fs.existsSync(assetsSrcDir)) {
+            // Create assets directory in dist
+            if (!fs.existsSync(assetsDestDir)) {
+                fs.mkdirSync(assetsDestDir, { recursive: true });
+            }
+            
+            // Copy all files from assets directory
+            const assetFiles = fs.readdirSync(assetsSrcDir);
+            assetFiles.forEach(file => {
+                const srcFile = path.join(assetsSrcDir, file);
+                const destFile = path.join(assetsDestDir, file);
+                fs.copyFileSync(srcFile, destFile);
+            });
+            
+            console.log("   - assets/ (copied from examples/assets)");
+        } else {
+            console.log("   - assets/ directory not found - examples may not display correctly");
+        }
+
         console.log("✅ Examples built successfully!");
         console.log("📁 Output directory: dist/examples/");
         console.log("   - controller/TowerController.js");

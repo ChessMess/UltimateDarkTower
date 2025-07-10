@@ -95,8 +95,8 @@ class UdtBleConnection {
                 this.handleDisconnection();
             }
         };
-        this.onTowerDeviceDisconnected = (_event) => {
-            this.logger.warn('Tower device disconnected unexpectedly', '[UDT]');
+        this.onTowerDeviceDisconnected = (event) => {
+            this.logger.warn(`Tower device disconnected unexpectedly: ${event.type}`, '[UDT]');
             this.handleDisconnection();
         };
         this.logger = logger;
@@ -168,7 +168,7 @@ class UdtBleConnection {
             this.logger.info('Tower calibration complete', '[UDT]');
         }
         if (dataSkullDropCount !== this.towerSkullDropCount) {
-            if (!!dataSkullDropCount) {
+            if (dataSkullDropCount) {
                 this.callbacks.onSkullDrop(dataSkullDropCount);
                 this.logger.info(`Skull drop detected: app:${this.towerSkullDropCount < 0 ? 'empty' : this.towerSkullDropCount}  tower:${dataSkullDropCount}`, '[UDT]');
             }

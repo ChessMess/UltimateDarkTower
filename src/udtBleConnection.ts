@@ -71,7 +71,7 @@ export class UdtBleConnection {
     performingLongCommand: boolean = false;
 
     // Connection monitoring
-    private connectionMonitorInterval: NodeJS.Timeout | null = null;
+    private connectionMonitorInterval: ReturnType<typeof setInterval> | null = null;
     connectionMonitorFrequency: number = 2 * 1000;
     lastSuccessfulCommand: number = 0;
     connectionTimeoutThreshold: number = 30 * 1000;
@@ -250,7 +250,7 @@ export class UdtBleConnection {
         }
 
         if (dataSkullDropCount !== this.towerSkullDropCount) {
-            if (!!dataSkullDropCount) {
+            if (dataSkullDropCount) {
                 this.callbacks.onSkullDrop(dataSkullDropCount);
                 this.logger.info(`Skull drop detected: app:${this.towerSkullDropCount < 0 ? 'empty' : this.towerSkullDropCount}  tower:${dataSkullDropCount}`, '[UDT]');
             } else {
@@ -284,8 +284,8 @@ export class UdtBleConnection {
         }
     }
 
-    onTowerDeviceDisconnected = (_event: Event) => {
-        this.logger.warn('Tower device disconnected unexpectedly', '[UDT]');
+    onTowerDeviceDisconnected = (event: Event) => {
+        this.logger.warn(`Tower device disconnected unexpectedly: ${event.type}`, '[UDT]');
         this.handleDisconnection();
     }
 
