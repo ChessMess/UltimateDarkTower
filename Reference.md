@@ -20,6 +20,18 @@ A comprehensive reference guide for the UltimateDarkTower library - your complet
 
 ## Quick Start
 
+Web Bluetooth is required for this library to function.
+
+**✅ Supported Browsers:**
+
+-   Chrome (desktop and Android)
+-   Microsoft Edge
+-   Samsung Internet
+
+**📱 iOS Support:** Use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055) when on iPhone or iPads as Chrome/Safari does not have Web Bluetooth support on Apples platform at the moment.
+
+**❌ Not Supported:** Firefox, Safari ([compatibility details](https://caniuse.com/?search=web%20bluetooth))
+
 ### Basic Setup and Usage
 
 ```typescript
