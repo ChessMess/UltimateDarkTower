@@ -1,4 +1,4 @@
-# UltimateDarkTower - BETA
+# UltimateDarkTower
 
 A JavaScript/TypeScript library for controlling the Bluetooth-enabled tower from Restoration Games' Return to Dark Tower board game. Control lights, sounds, drum rotation, and track game state through Web Bluetooth.
 
@@ -6,7 +6,7 @@ I have spent many hours reverse engineering the Tower's protocol in order to cre
 
 ## Table of Contents
 
--   [UltimateDarkTower - BETA](#ultimatedarktower---beta)
+-   [UltimateDarkTower](#ultimatedarktower)
     -   [Table of Contents](#table-of-contents)
     -   [Features](#features)
     -   [Live Examples](#live-examples)
