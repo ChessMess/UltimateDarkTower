@@ -1,4 +1,4 @@
-import { Logger } from './Logger';
+import { Logger } from './udtLogger';
 export interface ConnectionCallbacks {
     onTowerConnect: () => void;
     onTowerDisconnect: () => void;

@@ -1,5 +1,5 @@
-import { type Lights, type TowerSide, type RotateCommand, type SealIdentifier, type Glyphs } from './constants';
-import { type LogOutput } from './Logger';
+import { type Lights, type TowerSide, type RotateCommand, type SealIdentifier, type Glyphs } from './udtConstants';
+import { type LogOutput } from './udtLogger';
 import { type ConnectionStatus } from './udtBleConnection';
 /**
  * @title UltimateDarkTower

@@ -1,4 +1,4 @@
-import { Logger } from './Logger';
+import { Logger } from './udtLogger';
 /**
  * Internal command queue for managing sequential tower command processing
  * @private

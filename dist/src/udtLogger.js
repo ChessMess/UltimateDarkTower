@@ -252,4 +252,4 @@ exports.Logger = Logger;
 Logger.instance = null;
 // Export singleton instance for easy use
 exports.logger = Logger.getInstance();
-//# sourceMappingURL=Logger.js.map
+//# sourceMappingURL=udtLogger.js.map

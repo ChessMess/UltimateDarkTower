@@ -7,8 +7,8 @@ import {
   type Glyphs,
   VOLTAGE_LEVELS,
   GLYPHS
-} from './constants';
-import { Logger, ConsoleOutput, type LogOutput } from './Logger';
+} from './udtConstants';
+import { Logger, ConsoleOutput, type LogOutput } from './udtLogger';
 import { UdtBleConnection, type ConnectionCallbacks, type ConnectionStatus } from './udtBleConnection';
 import { TowerResponseProcessor } from './udtTowerResponse';
 import { UdtCommandFactory } from './udtCommandFactory';

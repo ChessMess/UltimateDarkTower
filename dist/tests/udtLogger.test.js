@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Logger_1 = require("../src/Logger");
+const udtLogger_1 = require("../src/udtLogger");
 describe('BufferOutput', () => {
     let bufferOutput;
     beforeEach(() => {
-        bufferOutput = new Logger_1.BufferOutput(10, 3); // Small buffer for testing
+        bufferOutput = new udtLogger_1.BufferOutput(10, 3); // Small buffer for testing
     });
     test('should store log entries in buffer', () => {
         const timestamp = new Date();
@@ -65,7 +65,7 @@ describe('Logger with BufferOutput', () => {
     let bufferOutput;
     beforeEach(() => {
         // Create a custom logger without console output to avoid test noise
-        class TestLogger extends Logger_1.Logger {
+        class TestLogger extends udtLogger_1.Logger {
             constructor() {
                 super();
                 // Clear the default console output
@@ -73,7 +73,7 @@ describe('Logger with BufferOutput', () => {
             }
         }
         logger = new TestLogger();
-        bufferOutput = new Logger_1.BufferOutput();
+        bufferOutput = new udtLogger_1.BufferOutput();
         logger.addOutput(bufferOutput);
     });
     test('should log messages to buffer output', () => {
@@ -87,7 +87,7 @@ describe('Logger with BufferOutput', () => {
         expect(buffer[1].message).toBe('Test error message');
     });
     test('should handle circular buffer with default settings', () => {
-        const defaultBuffer = new Logger_1.BufferOutput(); // 1000 max, 100 clear
+        const defaultBuffer = new udtLogger_1.BufferOutput(); // 1000 max, 100 clear
         // Add 1000 entries directly to buffer (no logger to avoid console output)
         for (let i = 0; i < 1000; i++) {
             defaultBuffer.write('info', `Message ${i}`, new Date());
@@ -105,8 +105,8 @@ describe('Logger with BufferOutput', () => {
 describe('DOMOutput basic functionality', () => {
     test('should create DOMOutput instance without DOM', () => {
         // Test that DOMOutput can be instantiated (constructor won't fail if element doesn't exist)
-        const domOutput = new Logger_1.DOMOutput('non-existent-container');
-        expect(domOutput).toBeInstanceOf(Logger_1.DOMOutput);
+        const domOutput = new udtLogger_1.DOMOutput('non-existent-container');
+        expect(domOutput).toBeInstanceOf(udtLogger_1.DOMOutput);
         // Test that calling methods on instance with no container doesn't throw
         expect(() => {
             domOutput.write('info', 'Test message', new Date());
@@ -115,7 +115,7 @@ describe('DOMOutput basic functionality', () => {
         }).not.toThrow();
     });
     test('should not store entries when no container exists', () => {
-        const domOutput = new Logger_1.DOMOutput('non-existent-container');
+        const domOutput = new udtLogger_1.DOMOutput('non-existent-container');
         // Add entries (should not be stored since no container)
         domOutput.write('debug', 'Debug message', new Date());
         domOutput.write('info', 'Info message', new Date());
@@ -138,7 +138,7 @@ describe('DOMOutput basic functionality', () => {
         else {
             document.getElementById = jest.fn().mockReturnValue(mockContainer);
         }
-        const domOutput = new Logger_1.DOMOutput('test-container');
+        const domOutput = new udtLogger_1.DOMOutput('test-container');
         // Add entries
         domOutput.write('debug', 'Debug message', new Date());
         domOutput.write('info', 'Info message', new Date());
@@ -168,7 +168,7 @@ describe('DOMOutput basic functionality', () => {
             document.getElementById = jest.fn().mockReturnValue(mockContainer);
         }
         // Create DOMOutput with small maxLines for testing
-        const domOutput = new Logger_1.DOMOutput('test-container', 3);
+        const domOutput = new udtLogger_1.DOMOutput('test-container', 3);
         // Add 5 entries (exceeds maxLines of 3)
         for (let i = 0; i < 5; i++) {
             domOutput.write('info', `Message ${i}`, new Date());
@@ -185,7 +185,7 @@ describe('DOMOutput basic functionality', () => {
         }
     });
     test('should provide debug methods', () => {
-        const domOutput = new Logger_1.DOMOutput('non-existent-container');
+        const domOutput = new udtLogger_1.DOMOutput('non-existent-container');
         // Test debug methods don't throw and return expected values
         expect(domOutput.getEntryCount()).toBe(0);
         expect(domOutput.getEnabledLevels()).toEqual([]);
@@ -210,7 +210,7 @@ describe('DOMOutput basic functionality', () => {
         else {
             document.getElementById = jest.fn().mockImplementation((id) => mockCheckboxes[id] || null);
         }
-        const domOutput = new Logger_1.DOMOutput('test-container');
+        const domOutput = new udtLogger_1.DOMOutput('test-container');
         const enabledLevels = domOutput.getEnabledLevels();
         expect(enabledLevels).toContain('debug');
         expect(enabledLevels).toContain('warn');
@@ -222,4 +222,4 @@ describe('DOMOutput basic functionality', () => {
         }
     });
 });
-//# sourceMappingURL=Logger.test.js.map
+//# sourceMappingURL=udtLogger.test.js.map

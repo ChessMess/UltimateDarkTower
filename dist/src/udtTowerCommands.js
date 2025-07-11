@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UdtTowerCommands = void 0;
-const constants_1 = require("./constants");
+const udtConstants_1 = require("./udtConstants");
 const udtCommandQueue_1 = require("./udtCommandQueue");
 class UdtTowerCommands {
     constructor(dependencies) {
@@ -72,7 +72,7 @@ class UdtTowerCommands {
     async calibrate() {
         if (!this.deps.bleConnection.performingCalibration) {
             this.deps.logger.info('Performing Tower Calibration', '[UDT]');
-            await this.sendTowerCommand(new Uint8Array([constants_1.TOWER_COMMANDS.calibration]), 'calibrate');
+            await this.sendTowerCommand(new Uint8Array([udtConstants_1.TOWER_COMMANDS.calibration]), 'calibrate');
             // flag to look for calibration complete tower response
             this.deps.bleConnection.performingCalibration = true;
             this.deps.bleConnection.performingLongCommand = true;
@@ -87,7 +87,7 @@ class UdtTowerCommands {
      * @returns Promise that resolves when sound command is sent
      */
     async playSound(soundIndex) {
-        const invalidIndex = soundIndex === null || soundIndex > (Object.keys(constants_1.TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0;
+        const invalidIndex = soundIndex === null || soundIndex > (Object.keys(udtConstants_1.TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0;
         if (invalidIndex) {
             this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, '[UDT]');
             return;
@@ -119,7 +119,7 @@ class UdtTowerCommands {
         const lightOverrideCommand = this.deps.commandFactory.createLightOverrideCommand(light);
         this.deps.commandFactory.updateCommandWithCurrentDrumPositions(lightOverrideCommand, this.deps.currentDrumPositions);
         if (soundIndex) {
-            lightOverrideCommand[constants_1.AUDIO_COMMAND_POS] = soundIndex;
+            lightOverrideCommand[udtConstants_1.AUDIO_COMMAND_POS] = soundIndex;
         }
         this.deps.logger.info('Sending light override' + (soundIndex ? ' with sound' : ''), '[UDT]');
         await this.sendTowerCommand(lightOverrideCommand, `lightOverrides(${light}${soundIndex ? `, ${soundIndex}` : ''})`);
@@ -136,7 +136,7 @@ class UdtTowerCommands {
         this.deps.logDetail && this.deps.logger.debug(`Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`, '[UDT]');
         const rotateCommand = this.deps.commandFactory.createRotateCommand(top, middle, bottom);
         if (soundIndex) {
-            rotateCommand[constants_1.AUDIO_COMMAND_POS] = soundIndex;
+            rotateCommand[udtConstants_1.AUDIO_COMMAND_POS] = soundIndex;
         }
         this.deps.logger.info('Sending rotate command' + (soundIndex ? ' with sound' : ''), '[UDT]');
         // Flag that we're performing a long command 
@@ -150,8 +150,8 @@ class UdtTowerCommands {
             this.deps.bleConnection.lastBatteryHeartbeat = Date.now(); // Reset heartbeat timer
         }, this.deps.bleConnection.longTowerCommandTimeout);
         // saving drum positions
-        this.deps.currentDrumPositions.topMiddle = rotateCommand[constants_1.DRUM_PACKETS.topMiddle];
-        this.deps.currentDrumPositions.bottom = rotateCommand[constants_1.DRUM_PACKETS.bottom];
+        this.deps.currentDrumPositions.topMiddle = rotateCommand[udtConstants_1.DRUM_PACKETS.topMiddle];
+        this.deps.currentDrumPositions.bottom = rotateCommand[udtConstants_1.DRUM_PACKETS.bottom];
     }
     /**
      * Sends a combined command to rotate drums, control lights, and play sound simultaneously.
@@ -176,7 +176,7 @@ class UdtTowerCommands {
      */
     async resetTowerSkullCount() {
         this.deps.logger.info('Tower skull count reset requested', '[UDT]');
-        await this.sendTowerCommand(new Uint8Array([constants_1.TOWER_COMMANDS.resetCounter]), 'resetTowerSkullCount');
+        await this.sendTowerCommand(new Uint8Array([udtConstants_1.TOWER_COMMANDS.resetCounter]), 'resetTowerSkullCount');
     }
     /**
      * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
@@ -186,7 +186,7 @@ class UdtTowerCommands {
     async breakSeal(seal) {
         // Play tower seal sound
         this.deps.logger.info('Playing tower seal sound', '[UDT]');
-        await this.playSound(constants_1.TOWER_AUDIO_LIBRARY.TowerSeal.value);
+        await this.playSound(udtConstants_1.TOWER_AUDIO_LIBRARY.TowerSeal.value);
         // Light both the primary ledge and adjacent ledge for the seal's side
         // This ensures both left and right ledge lights are activated for the side
         const adjacentSides = {
@@ -278,7 +278,7 @@ class UdtTowerCommands {
      * @returns The current position of the specified drum level
      */
     getCurrentDrumPosition(level) {
-        const drumPositions = constants_1.drumPositionCmds[level];
+        const drumPositions = udtConstants_1.drumPositionCmds[level];
         const currentValue = level === 'bottom'
             ? this.deps.currentDrumPositions.bottom
             : (level === 'top'

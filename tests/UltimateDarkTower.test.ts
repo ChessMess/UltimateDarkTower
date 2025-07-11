@@ -3,7 +3,7 @@
  */
 
 import UltimateDarkTower from '../src/UltimateDarkTower';
-import { GLYPHS } from '../src/constants';
+import { GLYPHS } from '../src/udtConstants';
 
 // Mock the web bluetooth API since it's not available in Node.js test environment
 const mockCharacteristic = {

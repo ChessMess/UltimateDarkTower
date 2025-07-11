@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TowerResponseProcessor = void 0;
-const constants_1 = require("./constants");
-const Logger_1 = require("./Logger");
+const udtConstants_1 = require("./udtConstants");
+const udtLogger_1 = require("./udtLogger");
 class TowerResponseProcessor {
     constructor(logDetail = false) {
         this.logDetail = false;
@@ -21,13 +21,13 @@ class TowerResponseProcessor {
      * @returns {Object} Object containing command key and command definition
      */
     getTowerCommand(cmdValue) {
-        const cmdKeys = Object.keys(constants_1.TOWER_MESSAGES);
-        const cmdKey = cmdKeys.find(key => constants_1.TOWER_MESSAGES[key].value === cmdValue);
+        const cmdKeys = Object.keys(udtConstants_1.TOWER_MESSAGES);
+        const cmdKey = cmdKeys.find(key => udtConstants_1.TOWER_MESSAGES[key].value === cmdValue);
         if (!cmdKey) {
-            Logger_1.logger.warn(`Unknown command received from tower: ${cmdValue} (0x${cmdValue.toString(16)})`, 'TowerResponseProcessor');
+            udtLogger_1.logger.warn(`Unknown command received from tower: ${cmdValue} (0x${cmdValue.toString(16)})`, 'TowerResponseProcessor');
             return { cmdKey: undefined, command: { name: "Unknown Command", value: cmdValue } };
         }
-        const command = constants_1.TOWER_MESSAGES[cmdKey];
+        const command = udtConstants_1.TOWER_MESSAGES[cmdKey];
         return { cmdKey, command };
     }
     /**
@@ -39,16 +39,16 @@ class TowerResponseProcessor {
         const cmdValue = command[0];
         const { cmdKey, command: towerCommand } = this.getTowerCommand(cmdValue);
         switch (cmdKey) {
-            case constants_1.TC.STATE:
-            case constants_1.TC.INVALID_STATE:
-            case constants_1.TC.FAILURE:
-            case constants_1.TC.JIGGLE:
-            case constants_1.TC.UNEXPECTED:
-            case constants_1.TC.DURATION:
-            case constants_1.TC.DIFFERENTIAL:
-            case constants_1.TC.CALIBRATION:
+            case udtConstants_1.TC.STATE:
+            case udtConstants_1.TC.INVALID_STATE:
+            case udtConstants_1.TC.FAILURE:
+            case udtConstants_1.TC.JIGGLE:
+            case udtConstants_1.TC.UNEXPECTED:
+            case udtConstants_1.TC.DURATION:
+            case udtConstants_1.TC.DIFFERENTIAL:
+            case udtConstants_1.TC.CALIBRATION:
                 return [towerCommand.name, this.commandToPacketString(command)];
-            case constants_1.TC.BATTERY: {
+            case udtConstants_1.TC.BATTERY: {
                 const millivolts = this.getMilliVoltsFromTowerResponse(command);
                 const retval = [towerCommand.name, this.milliVoltsToPercentage(millivolts)];
                 if (this.logDetail) {
@@ -94,7 +94,7 @@ class TowerResponseProcessor {
      */
     milliVoltsToPercentage(mv) {
         const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
-        const levels = constants_1.VOLTAGE_LEVELS.filter(v => batLevel >= v);
+        const levels = udtConstants_1.VOLTAGE_LEVELS.filter(v => batLevel >= v);
         return `${levels.length * 5}%`;
     }
     /**
@@ -118,7 +118,7 @@ class TowerResponseProcessor {
      * @returns {boolean} True if this is a battery response
      */
     isBatteryResponse(cmdKey) {
-        return cmdKey === constants_1.TC.BATTERY;
+        return cmdKey === udtConstants_1.TC.BATTERY;
     }
     /**
      * Checks if a command is a tower state response type.
@@ -126,7 +126,7 @@ class TowerResponseProcessor {
      * @returns {boolean} True if this is a tower state response
      */
     isTowerStateResponse(cmdKey) {
-        return cmdKey === constants_1.TC.STATE;
+        return cmdKey === udtConstants_1.TC.STATE;
     }
 }
 exports.TowerResponseProcessor = TowerResponseProcessor;

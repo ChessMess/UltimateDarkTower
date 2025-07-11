@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UdtBleConnection = void 0;
-const constants_1 = require("./constants");
+const udtConstants_1 = require("./udtConstants");
 const udtTowerResponse_1 = require("./udtTowerResponse");
 class UdtBleConnection {
     constructor(logger, callbacks) {
@@ -108,8 +108,8 @@ class UdtBleConnection {
         try {
             // @ts-ignore
             this.TowerDevice = await navigator.bluetooth.requestDevice({
-                filters: [{ namePrefix: constants_1.TOWER_DEVICE_NAME }],
-                optionalServices: [constants_1.UART_SERVICE_UUID, constants_1.DIS_SERVICE_UUID]
+                filters: [{ namePrefix: udtConstants_1.TOWER_DEVICE_NAME }],
+                optionalServices: [udtConstants_1.UART_SERVICE_UUID, udtConstants_1.DIS_SERVICE_UUID]
             });
             if (this.TowerDevice === null) {
                 this.logger.warn("Tower not found", '[UDT]');
@@ -120,10 +120,10 @@ class UdtBleConnection {
             this.logger.info("Connecting to Tower GATT Server...", '[UDT]');
             const server = await this.TowerDevice.gatt.connect();
             this.logger.info("Getting Tower Primary Service...", '[UDT]');
-            const service = await server.getPrimaryService(constants_1.UART_SERVICE_UUID);
+            const service = await server.getPrimaryService(udtConstants_1.UART_SERVICE_UUID);
             this.logger.info("Getting Tower Characteristics...", '[UDT]');
-            this.txCharacteristic = await service.getCharacteristic(constants_1.UART_TX_CHARACTERISTIC_UUID);
-            this.rxCharacteristic = await service.getCharacteristic(constants_1.UART_RX_CHARACTERISTIC_UUID);
+            this.txCharacteristic = await service.getCharacteristic(udtConstants_1.UART_TX_CHARACTERISTIC_UUID);
+            this.rxCharacteristic = await service.getCharacteristic(udtConstants_1.UART_RX_CHARACTERISTIC_UUID);
             this.logger.info("Subscribing to Tower...", '[UDT]');
             await this.rxCharacteristic.startNotifications();
             await this.rxCharacteristic.addEventListener("characteristicvaluechanged", this.onRxCharacteristicValueChanged);
@@ -158,7 +158,7 @@ class UdtBleConnection {
         }
     }
     handleTowerStateResponse(receivedData) {
-        const dataSkullDropCount = receivedData[constants_1.SKULL_DROP_COUNT_POS];
+        const dataSkullDropCount = receivedData[udtConstants_1.SKULL_DROP_COUNT_POS];
         if (this.performingCalibration) {
             this.performingCalibration = false;
             this.performingLongCommand = false;
@@ -334,25 +334,25 @@ class UdtBleConnection {
         }
         try {
             this.logger.info('Reading device information service...', '[UDT]');
-            const disService = await this.TowerDevice.gatt.getPrimaryService(constants_1.DIS_SERVICE_UUID);
+            const disService = await this.TowerDevice.gatt.getPrimaryService(udtConstants_1.DIS_SERVICE_UUID);
             // Reset device information object
             this.deviceInformation = {};
             const characteristicMap = [
-                { uuid: constants_1.DIS_MANUFACTURER_NAME_UUID, name: 'Manufacturer Name', key: 'manufacturerName', logIfMissing: true },
-                { uuid: constants_1.DIS_MODEL_NUMBER_UUID, name: 'Model Number', key: 'modelNumber', logIfMissing: true },
-                { uuid: constants_1.DIS_SERIAL_NUMBER_UUID, name: 'Serial Number', key: 'serialNumber', logIfMissing: false },
-                { uuid: constants_1.DIS_HARDWARE_REVISION_UUID, name: 'Hardware Revision', key: 'hardwareRevision', logIfMissing: true },
-                { uuid: constants_1.DIS_FIRMWARE_REVISION_UUID, name: 'Firmware Revision', key: 'firmwareRevision', logIfMissing: true },
-                { uuid: constants_1.DIS_SOFTWARE_REVISION_UUID, name: 'Software Revision', key: 'softwareRevision', logIfMissing: true },
-                { uuid: constants_1.DIS_SYSTEM_ID_UUID, name: 'System ID', key: 'systemId', logIfMissing: false },
-                { uuid: constants_1.DIS_IEEE_REGULATORY_UUID, name: 'IEEE Regulatory', key: 'ieeeRegulatory', logIfMissing: false },
-                { uuid: constants_1.DIS_PNP_ID_UUID, name: 'PnP ID', key: 'pnpId', logIfMissing: false },
+                { uuid: udtConstants_1.DIS_MANUFACTURER_NAME_UUID, name: 'Manufacturer Name', key: 'manufacturerName', logIfMissing: true },
+                { uuid: udtConstants_1.DIS_MODEL_NUMBER_UUID, name: 'Model Number', key: 'modelNumber', logIfMissing: true },
+                { uuid: udtConstants_1.DIS_SERIAL_NUMBER_UUID, name: 'Serial Number', key: 'serialNumber', logIfMissing: false },
+                { uuid: udtConstants_1.DIS_HARDWARE_REVISION_UUID, name: 'Hardware Revision', key: 'hardwareRevision', logIfMissing: true },
+                { uuid: udtConstants_1.DIS_FIRMWARE_REVISION_UUID, name: 'Firmware Revision', key: 'firmwareRevision', logIfMissing: true },
+                { uuid: udtConstants_1.DIS_SOFTWARE_REVISION_UUID, name: 'Software Revision', key: 'softwareRevision', logIfMissing: true },
+                { uuid: udtConstants_1.DIS_SYSTEM_ID_UUID, name: 'System ID', key: 'systemId', logIfMissing: false },
+                { uuid: udtConstants_1.DIS_IEEE_REGULATORY_UUID, name: 'IEEE Regulatory', key: 'ieeeRegulatory', logIfMissing: false },
+                { uuid: udtConstants_1.DIS_PNP_ID_UUID, name: 'PnP ID', key: 'pnpId', logIfMissing: false },
             ];
             for (const { uuid, name, key, logIfMissing } of characteristicMap) {
                 try {
                     const characteristic = await disService.getCharacteristic(uuid);
                     const value = await characteristic.readValue();
-                    if (uuid === constants_1.DIS_SYSTEM_ID_UUID || uuid === constants_1.DIS_PNP_ID_UUID) {
+                    if (uuid === udtConstants_1.DIS_SYSTEM_ID_UUID || uuid === udtConstants_1.DIS_PNP_ID_UUID) {
                         // These are binary data, convert to hex string
                         const hexValue = Array.from(new Uint8Array(value.buffer))
                             .map(b => b.toString(16).padStart(2, '0'))

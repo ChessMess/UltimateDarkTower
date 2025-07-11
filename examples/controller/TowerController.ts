@@ -12,7 +12,7 @@ import UltimateDarkTower, {
   LIGHT_EFFECTS,
   GLYPHS
 } from '../../src';
-import { logger, DOMOutput, ConsoleOutput } from '../../src/Logger';
+import { logger, DOMOutput, ConsoleOutput } from '../../src/udtLogger';
 
 const Tower = new UltimateDarkTower();
 

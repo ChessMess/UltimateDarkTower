@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UdtCommandFactory = void 0;
-const constants_1 = require("./constants");
+const udtConstants_1 = require("./udtConstants");
 class UdtCommandFactory {
     /**
      * Creates a light command packet from a lights configuration object.
@@ -15,19 +15,19 @@ class UdtCommandFactory {
         const ledges = lights === null || lights === void 0 ? void 0 : lights.ledge;
         const bases = lights === null || lights === void 0 ? void 0 : lights.base;
         doorways && doorways.forEach(dlt => {
-            packetPos = constants_1.LIGHT_PACKETS.doorway[dlt.level][dlt.position];
-            const shouldBitShift = constants_1.DOORWAY_LIGHTS_TO_BIT_SHIFT.includes(dlt.position);
-            command[packetPos] += constants_1.LIGHT_EFFECTS[`${dlt.style}`] * (shouldBitShift ? 0x10 : 0x1);
+            packetPos = udtConstants_1.LIGHT_PACKETS.doorway[dlt.level][dlt.position];
+            const shouldBitShift = udtConstants_1.DOORWAY_LIGHTS_TO_BIT_SHIFT.includes(dlt.position);
+            command[packetPos] += udtConstants_1.LIGHT_EFFECTS[`${dlt.style}`] * (shouldBitShift ? 0x10 : 0x1);
         });
         ledges && ledges.forEach(llt => {
-            packetPos = constants_1.LIGHT_PACKETS.ledge[llt.position];
-            const shouldBitShift = constants_1.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT.includes(llt.position);
-            command[packetPos] += constants_1.LIGHT_EFFECTS[`${llt.style}`] * (shouldBitShift ? 0x10 : 0x1);
+            packetPos = udtConstants_1.LIGHT_PACKETS.ledge[llt.position];
+            const shouldBitShift = udtConstants_1.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT.includes(llt.position);
+            command[packetPos] += udtConstants_1.LIGHT_EFFECTS[`${llt.style}`] * (shouldBitShift ? 0x10 : 0x1);
         });
         bases && bases.forEach(blt => {
-            packetPos = constants_1.LIGHT_PACKETS.base[blt.position.side][blt.position.level];
-            const shouldBitShift = constants_1.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT.includes(blt.position.side);
-            command[packetPos] += constants_1.LIGHT_EFFECTS[`${blt.style}`] * (shouldBitShift ? 0x10 : 0x1);
+            packetPos = udtConstants_1.LIGHT_PACKETS.base[blt.position.side][blt.position.level];
+            const shouldBitShift = udtConstants_1.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT.includes(blt.position.side);
+            command[packetPos] += udtConstants_1.LIGHT_EFFECTS[`${blt.style}`] * (shouldBitShift ? 0x10 : 0x1);
         });
         return command;
     }
@@ -38,7 +38,7 @@ class UdtCommandFactory {
      */
     createLightOverrideCommand(lightOverride) {
         const lightOverrideCommand = new Uint8Array(20);
-        lightOverrideCommand[constants_1.LIGHT_PACKETS.overrides] = lightOverride;
+        lightOverrideCommand[udtConstants_1.LIGHT_PACKETS.overrides] = lightOverride;
         return lightOverrideCommand;
     }
     /**
@@ -50,9 +50,9 @@ class UdtCommandFactory {
      */
     createRotateCommand(top, middle, bottom) {
         const rotateCmd = new Uint8Array(20);
-        rotateCmd[constants_1.DRUM_PACKETS.topMiddle] =
-            constants_1.drumPositionCmds.top[top] | constants_1.drumPositionCmds.middle[middle];
-        rotateCmd[constants_1.DRUM_PACKETS.bottom] = constants_1.drumPositionCmds.bottom[bottom];
+        rotateCmd[udtConstants_1.DRUM_PACKETS.topMiddle] =
+            udtConstants_1.drumPositionCmds.top[top] | udtConstants_1.drumPositionCmds.middle[middle];
+        rotateCmd[udtConstants_1.DRUM_PACKETS.bottom] = udtConstants_1.drumPositionCmds.bottom[bottom];
         return rotateCmd;
     }
     /**
@@ -63,7 +63,7 @@ class UdtCommandFactory {
     createSoundCommand(soundIndex) {
         const soundCommand = new Uint8Array(20);
         const sound = Number("0x" + Number(soundIndex).toString(16).padStart(2, '0'));
-        soundCommand[constants_1.AUDIO_COMMAND_POS] = sound;
+        soundCommand[udtConstants_1.AUDIO_COMMAND_POS] = sound;
         return soundCommand;
     }
     /**
@@ -72,8 +72,8 @@ class UdtCommandFactory {
      * @param currentPositions - Current drum positions to apply
      */
     updateCommandWithCurrentDrumPositions(commandPacket, currentPositions) {
-        commandPacket[constants_1.DRUM_PACKETS.topMiddle] = currentPositions.topMiddle;
-        commandPacket[constants_1.DRUM_PACKETS.bottom] = currentPositions.bottom;
+        commandPacket[udtConstants_1.DRUM_PACKETS.topMiddle] = currentPositions.topMiddle;
+        commandPacket[udtConstants_1.DRUM_PACKETS.bottom] = currentPositions.bottom;
     }
     /**
      * Creates a combined command packet by merging rotation, light, and sound commands.
@@ -90,7 +90,7 @@ class UdtCommandFactory {
         }
         // Add sound if provided
         if (soundCommand) {
-            multiCmd[constants_1.AUDIO_COMMAND_POS] = multiCmd[constants_1.AUDIO_COMMAND_POS] | soundCommand[constants_1.AUDIO_COMMAND_POS];
+            multiCmd[udtConstants_1.AUDIO_COMMAND_POS] = multiCmd[udtConstants_1.AUDIO_COMMAND_POS] | soundCommand[udtConstants_1.AUDIO_COMMAND_POS];
         }
         return multiCmd;
     }

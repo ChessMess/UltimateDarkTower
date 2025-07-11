@@ -1,5 +1,5 @@
-import { type Lights, type TowerSide, type RotateCommand, type SealIdentifier } from './constants';
-import { Logger } from './Logger';
+import { type Lights, type TowerSide, type RotateCommand, type SealIdentifier } from './udtConstants';
+import { Logger } from './udtLogger';
 import { UdtCommandFactory } from './udtCommandFactory';
 import { UdtBleConnection } from './udtBleConnection';
 import { TowerResponseProcessor } from './udtTowerResponse';

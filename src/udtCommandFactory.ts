@@ -9,7 +9,7 @@ import {
     type Lights,
     type TowerSide,
     type CommandPacket
-} from './constants';
+} from './udtConstants';
 
 export interface DrumPositions {
     topMiddle: number;

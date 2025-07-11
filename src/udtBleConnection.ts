@@ -14,8 +14,8 @@ import {
     DIS_SYSTEM_ID_UUID,
     DIS_IEEE_REGULATORY_UUID,
     DIS_PNP_ID_UUID,
-} from './constants';
-import { Logger } from './Logger';
+} from './udtConstants';
+import { Logger } from './udtLogger';
 import { TowerResponseProcessor } from './udtTowerResponse';
 
 export interface ConnectionCallbacks {

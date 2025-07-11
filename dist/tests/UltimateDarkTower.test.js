@@ -7,7 +7,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const UltimateDarkTower_1 = __importDefault(require("../src/UltimateDarkTower"));
-const constants_1 = require("../src/constants");
+const udtConstants_1 = require("../src/udtConstants");
 // Mock the web bluetooth API since it's not available in Node.js test environment
 const mockCharacteristic = {
     writeValue: jest.fn().mockResolvedValue(undefined),
@@ -425,11 +425,11 @@ describe('UltimateDarkTower', () => {
                 const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
                 calibrationCallback();
                 const glyphPositions = darkTower.getAllGlyphPositions();
-                expect(glyphPositions.cleanse).toBe(constants_1.GLYPHS.cleanse.side);
-                expect(glyphPositions.quest).toBe(constants_1.GLYPHS.quest.side);
-                expect(glyphPositions.battle).toBe(constants_1.GLYPHS.battle.side);
-                expect(glyphPositions.banner).toBe(constants_1.GLYPHS.banner.side);
-                expect(glyphPositions.reinforce).toBe(constants_1.GLYPHS.reinforce.side);
+                expect(glyphPositions.cleanse).toBe(udtConstants_1.GLYPHS.cleanse.side);
+                expect(glyphPositions.quest).toBe(udtConstants_1.GLYPHS.quest.side);
+                expect(glyphPositions.battle).toBe(udtConstants_1.GLYPHS.battle.side);
+                expect(glyphPositions.banner).toBe(udtConstants_1.GLYPHS.banner.side);
+                expect(glyphPositions.reinforce).toBe(udtConstants_1.GLYPHS.reinforce.side);
             });
             test('should set correct initial positions from GLYPHS constant', () => {
                 const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);

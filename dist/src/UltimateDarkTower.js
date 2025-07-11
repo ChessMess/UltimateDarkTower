@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const constants_1 = require("./constants");
-const Logger_1 = require("./Logger");
+const udtConstants_1 = require("./udtConstants");
+const udtLogger_1 = require("./udtLogger");
 const udtBleConnection_1 = require("./udtBleConnection");
 const udtTowerResponse_1 = require("./udtTowerResponse");
 const udtCommandFactory_1 = require("./udtCommandFactory");
@@ -69,8 +69,8 @@ class UltimateDarkTower {
         // utility
         this._logDetail = false;
         // Initialize logger with console output by default
-        this.logger = new Logger_1.Logger();
-        this.logger.addOutput(new Logger_1.ConsoleOutput());
+        this.logger = new udtLogger_1.Logger();
+        this.logger.addOutput(new udtLogger_1.ConsoleOutput());
         // Initialize BLE connection with callback handlers
         const callbacks = {
             onTowerConnect: () => this.onTowerConnect(),
@@ -295,9 +295,9 @@ class UltimateDarkTower {
      * Called automatically when calibration completes.
      */
     setGlyphPositionsFromCalibration() {
-        for (const glyphKey in constants_1.GLYPHS) {
+        for (const glyphKey in udtConstants_1.GLYPHS) {
             const glyph = glyphKey;
-            this.glyphPositions[glyph] = constants_1.GLYPHS[glyph].side;
+            this.glyphPositions[glyph] = udtConstants_1.GLYPHS[glyph].side;
         }
     }
     /**
@@ -340,9 +340,9 @@ class UltimateDarkTower {
         // Define the rotation order (clockwise)
         const sides = ['north', 'east', 'south', 'west'];
         // Find glyphs on the rotated level
-        for (const glyphKey in constants_1.GLYPHS) {
+        for (const glyphKey in udtConstants_1.GLYPHS) {
             const glyph = glyphKey;
-            const glyphData = constants_1.GLYPHS[glyph];
+            const glyphData = udtConstants_1.GLYPHS[glyph];
             if (glyphData.level === level && this.glyphPositions[glyph] !== null) {
                 const currentPosition = this.glyphPositions[glyph];
                 const currentIndex = sides.indexOf(currentPosition);
@@ -541,7 +541,7 @@ class UltimateDarkTower {
      */
     milliVoltsToPercentageNumber(mv) {
         const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
-        const levels = constants_1.VOLTAGE_LEVELS.filter(v => batLevel >= v);
+        const levels = udtConstants_1.VOLTAGE_LEVELS.filter(v => batLevel >= v);
         return levels.length * 5;
     }
     //#region cleanup

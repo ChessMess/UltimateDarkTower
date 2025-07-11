@@ -1,4 +1,4 @@
-import { type Lights, type TowerSide, type CommandPacket } from './constants';
+import { type Lights, type TowerSide, type CommandPacket } from './udtConstants';
 export interface DrumPositions {
     topMiddle: number;
     bottom: number;

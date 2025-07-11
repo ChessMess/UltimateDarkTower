@@ -2,8 +2,8 @@ import {
     TC,
     TOWER_MESSAGES,
     VOLTAGE_LEVELS
-} from './constants';
-import { logger } from './Logger';
+} from './udtConstants';
+import { logger } from './udtLogger';
 
 export class TowerResponseProcessor {
     private logDetail: boolean = false;

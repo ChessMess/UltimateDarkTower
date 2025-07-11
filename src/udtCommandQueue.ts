@@ -1,4 +1,4 @@
-import { Logger } from './Logger';
+import { Logger } from './udtLogger';
 
 /**
  * Internal interface for queued commands

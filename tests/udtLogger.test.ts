@@ -1,4 +1,4 @@
-import { Logger, BufferOutput, DOMOutput } from '../src/Logger';
+import { Logger, BufferOutput, DOMOutput } from '../src/udtLogger';
 
 describe('BufferOutput', () => {
     let bufferOutput: BufferOutput;

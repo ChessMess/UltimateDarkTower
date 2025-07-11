@@ -13,7 +13,7 @@ import {
   LIGHT_PACKETS,
   GLYPHS,
   TOWER_AUDIO_LIBRARY
-} from '../src/constants';
+} from '../src/udtConstants';
 
 describe('Constants', () => {
   describe('Bluetooth UUIDs', () => {
