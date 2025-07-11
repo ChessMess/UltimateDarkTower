@@ -116,7 +116,7 @@ Web Bluetooth is required for this library to function.
 -   Microsoft Edge
 -   Samsung Internet
 
-**📱 iOS Support:** Use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)
+**📱 iOS Support:** Use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055) when on iPhone or iPads as Chrome/Safari does not have Web Bluetooth support on Apples platform at the moment.
 
 **❌ Not Supported:** Firefox, Safari ([compatibility details](https://caniuse.com/?search=web%20bluetooth))
 
