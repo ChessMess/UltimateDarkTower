@@ -624,24 +624,36 @@
                       <div class="grid grid-cols-5 gap-1">
                         <!-- Top row -->
                         <div class="text-xs font-semibold flex items-center justify-center">Top</div>
-                        <div id="glyph-top-north" class="glyph-cell" data-level="top" data-side="north" onclick="toggleGlyphLight(this)"></div>
-                        <div id="glyph-top-east" class="glyph-cell" data-level="top" data-side="east" onclick="toggleGlyphLight(this)"></div>
-                        <div id="glyph-top-south" class="glyph-cell" data-level="top" data-side="south" onclick="toggleGlyphLight(this)"></div>
-                        <div id="glyph-top-west" class="glyph-cell" data-level="top" data-side="west" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-top-north" class="glyph-cell" data-level="top" data-side="north"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-top-east" class="glyph-cell" data-level="top" data-side="east"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-top-south" class="glyph-cell" data-level="top" data-side="south"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-top-west" class="glyph-cell" data-level="top" data-side="west"
+                          onclick="toggleGlyphLight(this)"></div>
 
                         <!-- Middle row -->
                         <div class="text-xs font-semibold flex items-center justify-center">Mid</div>
-                        <div id="glyph-middle-north" class="glyph-cell" data-level="middle" data-side="north" onclick="toggleGlyphLight(this)"></div>
-                        <div id="glyph-middle-east" class="glyph-cell" data-level="middle" data-side="east" onclick="toggleGlyphLight(this)"></div>
-                        <div id="glyph-middle-south" class="glyph-cell" data-level="middle" data-side="south" onclick="toggleGlyphLight(this)"></div>
-                        <div id="glyph-middle-west" class="glyph-cell" data-level="middle" data-side="west" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-middle-north" class="glyph-cell" data-level="middle" data-side="north"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-middle-east" class="glyph-cell" data-level="middle" data-side="east"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-middle-south" class="glyph-cell" data-level="middle" data-side="south"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-middle-west" class="glyph-cell" data-level="middle" data-side="west"
+                          onclick="toggleGlyphLight(this)"></div>
 
                         <!-- Bottom row -->
                         <div class="text-xs font-semibold flex items-center justify-center">Bot</div>
-                        <div id="glyph-bottom-north" class="glyph-cell" data-level="bottom" data-side="north" onclick="toggleGlyphLight(this)"></div>
-                        <div id="glyph-bottom-east" class="glyph-cell" data-level="bottom" data-side="east" onclick="toggleGlyphLight(this)"></div>
-                        <div id="glyph-bottom-south" class="glyph-cell" data-level="bottom" data-side="south" onclick="toggleGlyphLight(this)"></div>
-                        <div id="glyph-bottom-west" class="glyph-cell" data-level="bottom" data-side="west" onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-bottom-north" class="glyph-cell" data-level="bottom" data-side="north"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-bottom-east" class="glyph-cell" data-level="bottom" data-side="east"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-bottom-south" class="glyph-cell" data-level="bottom" data-side="south"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-bottom-west" class="glyph-cell" data-level="bottom" data-side="west"
+                          onclick="toggleGlyphLight(this)"></div>
                       </div>
                     </div>
                   </div>
@@ -1105,15 +1117,16 @@
       const selectedGlyph = glyphSelect.value;
       const targetSide = sideSelect.value;
 
+      window.logger.debug(`UI Selection: glyph=${selectedGlyph}, targetSide=${targetSide}`, '[Glyphs]');
+
       if (!selectedGlyph || !targetSide) {
         window.logger.warn('Please select a glyph and target side', '[Glyphs]');
         return;
       }
 
       try {
-        // Get current glyph positions
-        const currentPositions = await Tower.getAllGlyphPositions();
-        const currentGlyphPosition = currentPositions[selectedGlyph];
+        // Get current glyph position directly (more reliable than getAllGlyphPositions)
+        const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph);
 
         if (!currentGlyphPosition) {
           window.logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, '[Glyphs]');
@@ -1152,12 +1165,17 @@
           const currentGlyphIndex = sides.indexOf(currentGlyphPosition);
           const targetGlyphIndex = sides.indexOf(targetSide);
 
+          // Debug logging to understand the calculation
+          window.logger.debug(`Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`, '[Glyphs]');
+
           // Calculate how many steps the glyph needs to move
           let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
 
           // Calculate the new drum position
           const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
           targetDrumPosition = sides[newDrumIndex];
+
+          window.logger.debug(`Move calculation result: glyphSteps=${glyphSteps}, newDrumIndex=${newDrumIndex}, targetDrumPosition=${targetDrumPosition}`, '[Glyphs]');
         }
 
         // Set positions for all three drums
@@ -1174,26 +1192,30 @@
         // Execute the rotation with all three drum positions
         await Tower.Rotate(topPosition, middlePosition, bottomPosition);
 
+        // CRITICAL: The Tower.Rotate() command should automatically update internal glyph positions,
+        // but we'll also refresh the UI immediately to ensure consistency
+        refreshGlyphPositions();
+
         // If the glyph had a light, move it to the new position
         if (hadLight) {
           // Remove light from old position
           currentLightStates.doorway.delete(oldLightKey);
-          
+
           // Wait for rotation to complete, then get actual glyph position
           setTimeout(async () => {
             try {
               // Get the actual position of the glyph after rotation
               const actualNewPosition = Tower.getGlyphPosition(selectedGlyph);
-              
+
               if (actualNewPosition) {
                 // Add light to actual new position
                 const newLightKey = `${actualNewPosition}-${glyphLevel}`;
-                currentLightStates.doorway.set(newLightKey, { 
-                  position: actualNewPosition, 
-                  level: glyphLevel, 
-                  style: 'on' 
+                currentLightStates.doorway.set(newLightKey, {
+                  position: actualNewPosition,
+                  level: glyphLevel,
+                  style: 'on'
                 });
-                
+
                 // Update tower lights to reflect new positions
                 const allDoorwayLights = Array.from(currentLightStates.doorway.values());
                 await Tower.Lights({ doorway: allDoorwayLights });
@@ -1207,7 +1229,7 @@
           }, 1500);
         }
 
-        // Refresh glyph positions after rotation
+        // Additional refresh glyph positions after rotation to update UI
         setTimeout(() => {
           refreshGlyphPositions();
           // Refresh visual light states after a bit more delay to ensure light updates completed
@@ -1232,10 +1254,10 @@
       const level = element.getAttribute('data-level');
       const side = element.getAttribute('data-side');
       const position = `${level}-${side}`;
-      
+
       // Find which glyph is at this position (if any)
       const glyphAtPosition = findGlyphAtPosition(level, side);
-      
+
       // Only proceed with lighting effects if there's a glyph at this position
       if (!glyphAtPosition) {
         // No glyph at this position, just update the side dropdown
@@ -1245,16 +1267,16 @@
         }
         return; // Exit early, no lighting effects
       }
-      
+
       // Toggle the light state (only if glyph is present)
       const isLit = element.classList.toggle('glyph-lit');
-      
+
       // Auto-select dropdowns based on clicked glyph
       const glyphSelect = document.getElementById('glyph-select');
       if (glyphSelect) {
         glyphSelect.value = glyphAtPosition;
       }
-      
+
       // Auto-select the glyph's current position in the side dropdown
       const glyphCurrentSide = Tower.getGlyphPosition(glyphAtPosition);
       if (glyphCurrentSide) {
@@ -1263,22 +1285,22 @@
           sideSelect.value = glyphCurrentSide;
         }
       }
-      
+
       // Send command to tower to toggle the light
       try {
         const lightEffect = isLit ? 'on' : 'off';
-        
+
         window.logger.info(`Toggling light ${lightEffect} for glyph ${glyphAtPosition} at position ${position}`, '[Glyphs]');
-        
+
         // Light up the glyph's actual current position on the tower
         const glyphCurrentSide = Tower.getGlyphPosition(glyphAtPosition);
         if (!glyphCurrentSide) {
           throw new Error(`Could not find current position for glyph ${glyphAtPosition}`);
         }
-        
+
         const targetSide = glyphCurrentSide;
         const targetLevel = getGlyphLevel(glyphAtPosition);
-        
+
         // Update the light state tracking
         const lightKey = `${targetSide}-${targetLevel}`;
         if (isLit) {
@@ -1286,21 +1308,21 @@
         } else {
           currentLightStates.doorway.delete(lightKey);
         }
-        
+
         // Build the complete light command from current state
         const allDoorwayLights = Array.from(currentLightStates.doorway.values());
-        
+
         const lights = {
           doorway: allDoorwayLights
         };
-        
+
         await Tower.Lights(lights);
         window.logger.info(`Successfully updated tower lights. Active lights: ${allDoorwayLights.length}`, '[Glyphs]');
-        
+
       } catch (error) {
         console.error('Error toggling glyph light:', error);
         window.logger.error('Error toggling glyph light: ' + error.message, '[Glyphs]');
-        
+
         // Revert the visual state if tower command failed
         element.classList.toggle('glyph-lit');
       }
@@ -1308,15 +1330,15 @@
 
     // Helper function to find which glyph is at a given position
     const findGlyphAtPosition = (level, side) => {
-      
+
       const allPositions = Tower.getAllGlyphPositions();
-      
+
       for (const [glyph, currentSide] of Object.entries(allPositions)) {
         if (GLYPHS[glyph].level === level && currentSide === side) {
           return glyph;
         }
       }
-      
+
       return null;
     };
 
@@ -1331,7 +1353,7 @@
       document.querySelectorAll('.glyph-cell').forEach(cell => {
         cell.classList.remove('glyph-lit');
       });
-      
+
       // Apply glyph-lit class to cells that have active lights
       currentLightStates.doorway.forEach((light, lightKey) => {
         const [position, level] = lightKey.split('-');

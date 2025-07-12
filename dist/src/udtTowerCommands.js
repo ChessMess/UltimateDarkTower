@@ -287,15 +287,29 @@ class UdtTowerCommands {
         // Find matching side for current drum position
         for (const [side, value] of Object.entries(drumPositions)) {
             if (level === 'middle') {
-                // For middle, we need to mask and compare properly
+                // For middle, compare the middle-specific bits (bits 6-7)
                 if ((value & 0b11000000) === (currentValue & 0b11000000)) {
                     return side;
                 }
             }
             else if (level === 'top') {
-                // For top, compare the lower bits
-                if ((value & 0b00010110) === (currentValue & 0b00010110)) {
-                    return side;
+                // For top drum, we need to account for the fact that middle drum
+                // position is encoded in the same byte. 
+                // Check what middle position is currently set
+                const middleBits = currentValue & 0b11000000;
+                if (middleBits === 0b00000000) {
+                    // Middle is north (0b00010000), so we need to check combined values
+                    const expectedCombined = value | 0b00010000; // top value OR middle north
+                    if (currentValue === expectedCombined) {
+                        return side;
+                    }
+                }
+                else {
+                    // Middle is not north, so we can mask out middle bits safely
+                    const topBits = currentValue & 0b00010110; // Mask to get only possible top bits
+                    if (value === topBits) {
+                        return side;
+                    }
                 }
             }
             else {

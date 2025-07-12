@@ -35,7 +35,7 @@ export class UdtTowerCommands {
 
     constructor(dependencies: TowerCommandDependencies) {
         this.deps = dependencies;
-        
+
         // Initialize command queue with the actual send function
         this.commandQueue = new CommandQueue(
             this.deps.logger,
@@ -215,7 +215,7 @@ export class UdtTowerCommands {
      */
     async multiCommand(rotate?: RotateCommand, lights?: Lights, soundIndex?: number): Promise<void> {
         this.deps.logDetail && this.deps.logger.debug(`MultiCommand Parameters ${JSON.stringify(rotate)} ${JSON.stringify(lights)} ${soundIndex}`, '[UDT]');
-        
+
         const rotateCmd = this.deps.commandFactory.createRotateCommand(rotate.top, rotate.middle, rotate.bottom);
         const lightCmd = this.deps.commandFactory.createLightPacketCommand(lights);
         const soundCmd = soundIndex ? this.deps.commandFactory.createSoundCommand(soundIndex) : undefined;
@@ -362,14 +362,29 @@ export class UdtTowerCommands {
         // Find matching side for current drum position
         for (const [side, value] of Object.entries(drumPositions)) {
             if (level === 'middle') {
-                // For middle, we need to mask and compare properly
+                // For middle, compare the middle-specific bits (bits 6-7)
                 if ((value & 0b11000000) === (currentValue & 0b11000000)) {
                     return side as TowerSide;
                 }
             } else if (level === 'top') {
-                // For top, compare the lower bits
-                if ((value & 0b00010110) === (currentValue & 0b00010110)) {
-                    return side as TowerSide;
+                // For top drum, we need to account for the fact that middle drum
+                // position is encoded in the same byte. 
+
+                // Check what middle position is currently set
+                const middleBits = currentValue & 0b11000000;
+
+                if (middleBits === 0b00000000) {
+                    // Middle is north (0b00010000), so we need to check combined values
+                    const expectedCombined = value | 0b00010000; // top value OR middle north
+                    if (currentValue === expectedCombined) {
+                        return side as TowerSide;
+                    }
+                } else {
+                    // Middle is not north, so we can mask out middle bits safely
+                    const topBits = currentValue & 0b00010110; // Mask to get only possible top bits
+                    if (value === topBits) {
+                        return side as TowerSide;
+                    }
                 }
             } else {
                 // For bottom, direct comparison

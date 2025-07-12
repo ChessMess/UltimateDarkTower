@@ -1335,8 +1335,17 @@
             return side;
           }
         } else if (level === "top") {
-          if ((value & 22) === (currentValue & 22)) {
-            return side;
+          const middleBits = currentValue & 192;
+          if (middleBits === 0) {
+            const expectedCombined = value | 16;
+            if (currentValue === expectedCombined) {
+              return side;
+            }
+          } else {
+            const topBits = currentValue & 22;
+            if (value === topBits) {
+              return side;
+            }
           }
         } else {
           if (value === currentValue) {

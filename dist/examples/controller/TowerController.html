@@ -1105,15 +1105,16 @@
       const selectedGlyph = glyphSelect.value;
       const targetSide = sideSelect.value;
 
+      window.logger.debug(`UI Selection: glyph=${selectedGlyph}, targetSide=${targetSide}`, '[Glyphs]');
+
       if (!selectedGlyph || !targetSide) {
         window.logger.warn('Please select a glyph and target side', '[Glyphs]');
         return;
       }
 
       try {
-        // Get current glyph positions
-        const currentPositions = await Tower.getAllGlyphPositions();
-        const currentGlyphPosition = currentPositions[selectedGlyph];
+        // Get current glyph position directly (more reliable than getAllGlyphPositions)
+        const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph);
 
         if (!currentGlyphPosition) {
           window.logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, '[Glyphs]');
@@ -1152,12 +1153,17 @@
           const currentGlyphIndex = sides.indexOf(currentGlyphPosition);
           const targetGlyphIndex = sides.indexOf(targetSide);
 
+          // Debug logging to understand the calculation
+          window.logger.debug(`Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`, '[Glyphs]');
+
           // Calculate how many steps the glyph needs to move
           let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
 
           // Calculate the new drum position
           const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
           targetDrumPosition = sides[newDrumIndex];
+
+          window.logger.debug(`Move calculation result: glyphSteps=${glyphSteps}, newDrumIndex=${newDrumIndex}, targetDrumPosition=${targetDrumPosition}`, '[Glyphs]');
         }
 
         // Set positions for all three drums
@@ -1173,6 +1179,10 @@
 
         // Execute the rotation with all three drum positions
         await Tower.Rotate(topPosition, middlePosition, bottomPosition);
+
+        // CRITICAL: The Tower.Rotate() command should automatically update internal glyph positions,
+        // but we'll also refresh the UI immediately to ensure consistency
+        refreshGlyphPositions();
 
         // If the glyph had a light, move it to the new position
         if (hadLight) {
@@ -1207,7 +1217,7 @@
           }, 1500);
         }
 
-        // Refresh glyph positions after rotation
+        // Additional refresh glyph positions after rotation to update UI
         setTimeout(() => {
           refreshGlyphPositions();
           // Refresh visual light states after a bit more delay to ensure light updates completed

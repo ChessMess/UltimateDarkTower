@@ -7,18 +7,6 @@ import { type ConnectionStatus } from './udtBleConnection';
  * The UltimateDarkTower class is the main control interface for the Return To Dark Tower board game device.
  * It provides a comprehensive API for interacting with the tower through Bluetooth Low Energy (BLE).
  *
- * Key Features:
- * - Bluetooth connection management with automatic monitoring and reconnection
- * - Tower calibration and drum position tracking
- * - Audio playback from the tower's built-in sound library
- * - LED light control (doorway, ledge, and base lights)
- * - Drum rotation commands with precise positioning
- * - Multi-command support for synchronized operations
- * - Seal breaking animations and effects
- * - Battery level monitoring with customizable notifications
- * - Comprehensive logging system with multiple output options
- * - Connection heartbeat monitoring for reliable disconnect detection
- *
  * Usage:
  * 1. Create instance: const tower = new UltimateDarkTower()
  * 2. Connect to tower: await tower.connect()
