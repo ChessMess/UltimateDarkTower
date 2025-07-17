@@ -10,6 +10,7 @@ import {
     type TowerSide,
     type CommandPacket
 } from './udtConstants';
+import { type TowerState, rtdt_pack_state } from './functions';
 
 export interface DrumPositions {
     topMiddle: number;
@@ -133,4 +134,196 @@ export class UdtCommandFactory {
     createBasicCommand(commandValue: number): Uint8Array {
         return new Uint8Array([commandValue]);
     }
+
+    //#region Stateful Command Methods
+
+    /**
+     * Creates a stateful tower command by modifying only specific fields while preserving the rest.
+     * This is the proper way to send commands that only change certain aspects of the tower state.
+     * @param currentState - The current complete tower state (or null to create default state)
+     * @param modifications - Partial tower state with only the fields to modify
+     * @returns 20-byte command packet (command type + 19-byte state data)
+     */
+    createStatefulCommand(currentState: TowerState | null, modifications: Partial<TowerState>): Uint8Array {
+        // Start with current state or create default state
+        const newState: TowerState = currentState ? { ...currentState } : this.createDefaultTowerState();
+
+        // Apply modifications
+        if (modifications.drum) {
+            modifications.drum.forEach((drum, index) => {
+                if (drum && newState.drum[index]) {
+                    Object.assign(newState.drum[index], drum);
+                }
+            });
+        }
+
+        if (modifications.layer) {
+            modifications.layer.forEach((layer, layerIndex) => {
+                if (layer && newState.layer[layerIndex]) {
+                    if (layer.light) {
+                        layer.light.forEach((light, lightIndex) => {
+                            if (light && newState.layer[layerIndex].light[lightIndex]) {
+                                Object.assign(newState.layer[layerIndex].light[lightIndex], light);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        if (modifications.audio) {
+            Object.assign(newState.audio, modifications.audio);
+        }
+
+        if (modifications.beam) {
+            Object.assign(newState.beam, modifications.beam);
+        }
+
+        if (modifications.led_sequence !== undefined) {
+            newState.led_sequence = modifications.led_sequence;
+        }
+
+        // Pack the state into a command
+        return this.packTowerStateCommand(newState);
+    }
+
+    /**
+     * Creates a stateful LED command that only changes specific LEDs while preserving all other state.
+     * @param currentState - The current complete tower state
+     * @param layerIndex - Layer index (0-5)
+     * @param lightIndex - Light index within layer (0-3)
+     * @param effect - Light effect (0=off, 1=on, 2=slow pulse, etc.)
+     * @param loop - Whether to loop the effect
+     * @returns 20-byte command packet
+     */
+    createStatefulLEDCommand(
+        currentState: TowerState | null, 
+        layerIndex: number, 
+        lightIndex: number, 
+        effect: number, 
+        loop: boolean = false
+    ): Uint8Array {
+        const modifications: Partial<TowerState> = {};
+
+        // Create a partial layer array with only the layer we want to modify
+        if (!modifications.layer) {
+            modifications.layer = [] as any;
+        }
+        modifications.layer[layerIndex] = {
+            light: [
+                { effect: 0, loop: false },
+                { effect: 0, loop: false }, 
+                { effect: 0, loop: false },
+                { effect: 0, loop: false }
+            ]
+        };
+        modifications.layer[layerIndex].light[lightIndex] = { effect, loop };
+
+        return this.createStatefulCommand(currentState, modifications);
+    }
+
+    /**
+     * Creates a stateful audio command that only changes audio while preserving all other state.
+     * @param currentState - The current complete tower state
+     * @param sample - Audio sample index (0-127)
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @returns 20-byte command packet
+     */
+    createStatefulAudioCommand(
+        currentState: TowerState | null,
+        sample: number,
+        loop: boolean = false,
+        volume?: number
+    ): Uint8Array {
+        const audioMods: any = { sample, loop };
+        if (volume !== undefined) {
+            audioMods.volume = volume;
+        }
+
+        const modifications: Partial<TowerState> = {
+            audio: audioMods
+        };
+
+        return this.createStatefulCommand(currentState, modifications);
+    }
+
+    /**
+     * Creates a stateful drum rotation command that only changes drum positions while preserving all other state.
+     * @param currentState - The current complete tower state
+     * @param drumIndex - Drum index (0=top, 1=middle, 2=bottom)
+     * @param position - Target position (0=north, 1=east, 2=south, 3=west)
+     * @param playSound - Whether to play sound during rotation
+     * @returns 20-byte command packet
+     */
+    createStatefulDrumCommand(
+        currentState: TowerState | null,
+        drumIndex: number,
+        position: number,
+        playSound: boolean = false
+    ): Uint8Array {
+        const modifications: Partial<TowerState> = {};
+
+        // Create a partial drum array with only the drum we want to modify
+        if (!modifications.drum) {
+            modifications.drum = [] as any;
+        }
+        modifications.drum[drumIndex] = {
+            jammed: false,
+            calibrated: true,
+            position,
+            playSound,
+            reverse: false
+        };
+
+        return this.createStatefulCommand(currentState, modifications);
+    }
+
+    /**
+     * Packs a complete tower state into a 20-byte command packet.
+     * @param state - Complete tower state to pack
+     * @returns 20-byte command packet (0x00 + 19 bytes state data)
+     */
+    packTowerStateCommand(state: TowerState): Uint8Array {
+        const stateData = new Uint8Array(19);
+        const success = rtdt_pack_state(stateData, 19, state);
+        
+        if (!success) {
+            throw new Error('Failed to pack tower state data');
+        }
+
+        // Create 20-byte command packet (command type 0x00 + 19 bytes state)
+        const command = new Uint8Array(20);
+        command[0] = 0x00; // Command type for tower state
+        command.set(stateData, 1);
+        
+        return command;
+    }
+
+    /**
+     * Creates a default tower state with all systems off/neutral.
+     * @returns Default TowerState object
+     */
+    private createDefaultTowerState(): TowerState {
+        return {
+            drum: [
+                { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+                { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+                { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false }
+            ],
+            layer: [
+                { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+                { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+                { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+                { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+                { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+                { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] }
+            ],
+            audio: { sample: 0, loop: false, volume: 0 },
+            beam: { count: 0, fault: false },
+            led_sequence: 0
+        };
+    }
+
+    //#endregion
 }

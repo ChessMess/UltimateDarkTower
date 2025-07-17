@@ -322,6 +322,84 @@ class UdtTowerCommands {
         // Default to north if no match found
         return 'north';
     }
+    //#region Stateful Command Methods
+    /**
+     * Sends a stateful LED command that only changes specific LEDs while preserving all other state.
+     * @param layerIndex - Layer index (0-5)
+     * @param lightIndex - Light index within layer (0-3)
+     * @param effect - Light effect (0=off, 1=on, 2=slow pulse, etc.)
+     * @param loop - Whether to loop the effect
+     * @returns Promise that resolves when command is sent
+     */
+    async setLEDStateful(layerIndex, lightIndex, effect, loop = false) {
+        var _a, _b;
+        const currentState = ((_b = (_a = this.deps).getCurrentTowerState) === null || _b === void 0 ? void 0 : _b.call(_a)) || null;
+        const command = this.deps.commandFactory.createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop);
+        this.deps.logger.info(`Setting LED layer ${layerIndex} light ${lightIndex} to effect ${effect}${loop ? ' (looped)' : ''}`, '[UDT]');
+        await this.sendTowerCommand(command, `setLEDStateful(${layerIndex}, ${lightIndex}, ${effect}, ${loop})`);
+    }
+    /**
+     * Plays a sound using stateful commands that preserve existing tower state.
+     * @param soundIndex - Index of the sound to play (1-based)
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @returns Promise that resolves when command is sent
+     */
+    async playSoundStateful(soundIndex, loop = false, volume) {
+        var _a, _b;
+        const invalidIndex = soundIndex === null || soundIndex > (Object.keys(udtConstants_1.TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0;
+        if (invalidIndex) {
+            this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, '[UDT]');
+            return;
+        }
+        const currentState = ((_b = (_a = this.deps).getCurrentTowerState) === null || _b === void 0 ? void 0 : _b.call(_a)) || null;
+        const command = this.deps.commandFactory.createStatefulAudioCommand(currentState, soundIndex, loop, volume);
+        this.deps.logger.info(`Playing sound ${soundIndex}${loop ? ' (looped)' : ''}${volume !== undefined ? ` at volume ${volume}` : ''}`, '[UDT]');
+        await this.sendTowerCommand(command, `playSoundStateful(${soundIndex}, ${loop}${volume !== undefined ? `, ${volume}` : ''})`);
+    }
+    /**
+     * Rotates a single drum using stateful commands that preserve existing tower state.
+     * @param drumIndex - Drum index (0=top, 1=middle, 2=bottom)
+     * @param position - Target position (0=north, 1=east, 2=south, 3=west)
+     * @param playSound - Whether to play sound during rotation
+     * @returns Promise that resolves when command is sent
+     */
+    async rotateDrumStateful(drumIndex, position, playSound = false) {
+        var _a, _b;
+        const currentState = ((_b = (_a = this.deps).getCurrentTowerState) === null || _b === void 0 ? void 0 : _b.call(_a)) || null;
+        const command = this.deps.commandFactory.createStatefulDrumCommand(currentState, drumIndex, position, playSound);
+        const drumNames = ['top', 'middle', 'bottom'];
+        const positionNames = ['north', 'east', 'south', 'west'];
+        this.deps.logger.info(`Rotating ${drumNames[drumIndex]} drum to ${positionNames[position]}${playSound ? ' with sound' : ''}`, '[UDT]');
+        // Flag that we're performing a long command
+        this.deps.bleConnection.performingLongCommand = true;
+        await this.sendTowerCommand(command, `rotateDrumStateful(${drumIndex}, ${position}, ${playSound})`);
+        // Reset the long command flag after a delay
+        setTimeout(() => {
+            this.deps.bleConnection.performingLongCommand = false;
+            this.deps.bleConnection.lastBatteryHeartbeat = Date.now();
+        }, this.deps.bleConnection.longTowerCommandTimeout);
+    }
+    /**
+     * Sends a complete tower state using stateful commands.
+     * @param state - Complete tower state to send
+     * @returns Promise that resolves when command is sent
+     */
+    async sendTowerStateStateful(state) {
+        const command = this.deps.commandFactory.packTowerStateCommand(state);
+        this.deps.logger.info('Sending complete tower state', '[UDT]');
+        await this.sendTowerCommand(command, 'sendTowerStateStateful');
+    }
+    //#endregion
+    /**
+     * Public access to sendTowerCommandDirect for testing purposes.
+     * This bypasses the command queue and sends commands directly.
+     * @param command - The command packet to send directly to the tower
+     * @returns Promise that resolves when command is sent
+     */
+    async sendTowerCommandDirectPublic(command) {
+        return await this.sendTowerCommandDirect(command);
+    }
     /**
      * Called when a tower response is received to notify the command queue
      * This should be called from the BLE connection response handler

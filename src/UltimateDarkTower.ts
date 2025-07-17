@@ -8,6 +8,7 @@ import {
   VOLTAGE_LEVELS,
   GLYPHS
 } from './udtConstants';
+import { type TowerState } from './functions';
 import { Logger, ConsoleOutput, type LogOutput } from './udtLogger';
 import { UdtBleConnection, type ConnectionCallbacks, type ConnectionStatus } from './udtBleConnection';
 import { TowerResponseProcessor } from './udtTowerResponse';
@@ -62,6 +63,9 @@ class UltimateDarkTower {
   currentBatteryPercentage: number = 0;
   previousBatteryPercentage: number = 0;
   private brokenSeals: Set<string> = new Set();
+  
+  // Complete tower state tracking for stateful commands
+  private currentTowerState: TowerState | null = null;
 
   // glyph position tracking
   private glyphPositions: { [key in Glyphs]: TowerSide | null } = {
@@ -126,12 +130,26 @@ class UltimateDarkTower {
       currentDrumPositions: this.currentDrumPositions,
       logDetail: this.logDetail,
       retrySendCommandCount: this.retrySendCommandCountRef,
-      retrySendCommandMax: this.retrySendCommandMax
+      retrySendCommandMax: this.retrySendCommandMax,
+      getCurrentTowerState: () => this.currentTowerState
     };
     this.towerCommands = new UdtTowerCommands(commandDependencies);
 
     // Set up command queue response callback now that tower commands are initialized
-    callbacks.onTowerResponse = () => this.towerCommands.onTowerResponse();
+    callbacks.onTowerResponse = (response: Uint8Array) => {
+      // Handle command queue response processing (existing functionality)
+      this.towerCommands.onTowerResponse();
+      
+      // Check if this is a tower state response and update our state tracking
+      if (response.length >= 20) {
+        const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
+        if (this.responseProcessor.isTowerStateResponse(cmdKey)) {
+          // Extract the 19-byte state data (skip command byte)
+          const stateData = response.slice(1, 20);
+          this.updateTowerStateFromResponse(stateData);
+        }
+      }
+    };
   }
 
   // utility
@@ -151,7 +169,8 @@ class UltimateDarkTower {
         currentDrumPositions: this.currentDrumPositions,
         logDetail: this.logDetail,
         retrySendCommandCount: this.retrySendCommandCountRef,
-        retrySendCommandMax: this.retrySendCommandMax
+        retrySendCommandMax: this.retrySendCommandMax,
+        getCurrentTowerState: () => this.currentTowerState
       };
       this.towerCommands = new UdtTowerCommands(commandDependencies);
     }
@@ -211,6 +230,15 @@ class UltimateDarkTower {
    */
   async Lights(lights: Lights) {
     return await this.towerCommands.lights(lights);
+  }
+
+  /**
+   * Sends a raw command packet directly to the tower (for testing purposes).
+   * @param command - The raw command packet to send
+   * @returns Promise that resolves when command is sent
+   */
+  async sendTowerCommandDirect(command: Uint8Array): Promise<void> {
+    return await this.towerCommands.sendTowerCommandDirectPublic(command);
   }
 
   /**
@@ -286,6 +314,99 @@ class UltimateDarkTower {
    */
   async resetTowerSkullCount() {
     return await this.towerCommands.resetTowerSkullCount();
+  }
+
+  //#endregion
+
+  //#region Stateful Tower Commands
+
+  /**
+   * Sets a specific LED using stateful commands that preserve all other tower state.
+   * This is the recommended way to control individual LEDs.
+   * @param layerIndex - Layer index (0-5: TopRing, MiddleRing, BottomRing, Ledge, Base1, Base2)
+   * @param lightIndex - Light index within layer (0-3)
+   * @param effect - Light effect (0=off, 1=on, 2=slow pulse, 3=fast pulse, etc.)
+   * @param loop - Whether to loop the effect
+   * @returns Promise that resolves when command is sent
+   */
+  async setLED(layerIndex: number, lightIndex: number, effect: number, loop: boolean = false): Promise<void> {
+    return await this.towerCommands.setLEDStateful(layerIndex, lightIndex, effect, loop);
+  }
+
+  /**
+   * Plays a sound using stateful commands that preserve existing tower state.
+   * @param soundIndex - Index of the sound to play (1-based)
+   * @param loop - Whether to loop the audio
+   * @param volume - Audio volume (0-15), optional
+   * @returns Promise that resolves when command is sent
+   */
+  async playSoundStateful(soundIndex: number, loop: boolean = false, volume?: number): Promise<void> {
+    return await this.towerCommands.playSoundStateful(soundIndex, loop, volume);
+  }
+
+  /**
+   * Rotates a single drum using stateful commands that preserve existing tower state.
+   * @param drumIndex - Drum index (0=top, 1=middle, 2=bottom)
+   * @param position - Target position (0=north, 1=east, 2=south, 3=west)
+   * @param playSound - Whether to play sound during rotation
+   * @returns Promise that resolves when command is sent
+   */
+  async rotateDrumStateful(drumIndex: number, position: number, playSound: boolean = false): Promise<void> {
+    return await this.towerCommands.rotateDrumStateful(drumIndex, position, playSound);
+  }
+
+  //#endregion
+
+  //#region Tower State Management
+  
+  /**
+   * Gets the current complete tower state if available.
+   * @returns The current tower state object, or null if not available
+   */
+  getCurrentTowerState(): TowerState | null {
+    return this.currentTowerState ? { ...this.currentTowerState } : null;
+  }
+
+  /**
+   * Sends a complete tower state to the tower, preserving existing state.
+   * This creates a stateful command that only changes the specified fields.
+   * @param towerState - The tower state to send
+   * @returns Promise that resolves when the command is sent
+   */
+  async sendTowerState(towerState: TowerState): Promise<void> {
+    // Import pack function here to avoid circular dependencies
+    const { rtdt_pack_state } = await import('./functions');
+    
+    // Pack the tower state into 19 bytes
+    const stateData = new Uint8Array(19);
+    const success = rtdt_pack_state(stateData, 19, towerState);
+    
+    if (!success) {
+      throw new Error('Failed to pack tower state data');
+    }
+    
+    // Create 20-byte command packet (command type 0x00 + 19 bytes state)
+    const command = new Uint8Array(20);
+    command[0] = 0x00; // Command type for tower state
+    command.set(stateData, 1);
+    
+    // Update our current state tracking
+    this.currentTowerState = { ...towerState };
+    
+    // Send the command
+    return await this.sendTowerCommandDirect(command);
+  }
+
+  /**
+   * Updates the current tower state from a tower response.
+   * Called internally when tower state responses are received.
+   * @param stateData - The 19-byte state data from tower response
+   */
+  private updateTowerStateFromResponse(stateData: Uint8Array): void {
+    // Import unpack function here to avoid circular dependencies
+    import('./functions').then(({ rtdt_unpack_state }) => {
+      this.currentTowerState = rtdt_unpack_state(stateData);
+    });
   }
 
   //#endregion

@@ -1,5 +1,7 @@
 (() => {
   var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getOwnPropSymbols = Object.getOwnPropertySymbols;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __propIsEnum = Object.prototype.propertyIsEnumerable;
@@ -15,6 +17,298 @@
       }
     return a;
   };
+  var __esm = (fn, res) => function __init() {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  };
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+  // src/functions.ts
+  var functions_exports = {};
+  __export(functions_exports, {
+    LAYER_TO_POSITION: () => LAYER_TO_POSITION,
+    LEDGE_BASE_LIGHT_POSITIONS: () => LEDGE_BASE_LIGHT_POSITIONS,
+    LED_CHANNEL_LOOKUP: () => LED_CHANNEL_LOOKUP,
+    LIGHT_INDEX_TO_DIRECTION: () => LIGHT_INDEX_TO_DIRECTION,
+    RING_LIGHT_POSITIONS: () => RING_LIGHT_POSITIONS,
+    STATE_DATA_LENGTH: () => STATE_DATA_LENGTH,
+    TOWER_LAYERS: () => TOWER_LAYERS,
+    TOWER_LIGHT_POSITIONS: () => TOWER_LIGHT_POSITIONS,
+    createDefaultTowerState: () => createDefaultTowerState,
+    getActiveLights: () => getActiveLights,
+    getTowerPosition: () => getTowerPosition,
+    rtdt_pack_state: () => rtdt_pack_state,
+    rtdt_unpack_state: () => rtdt_unpack_state
+  });
+  function rtdt_unpack_state(data) {
+    const state = {
+      drum: [
+        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false }
+      ],
+      layer: [
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] }
+      ],
+      audio: { sample: 0, loop: false, volume: 0 },
+      beam: { count: 0, fault: false },
+      led_sequence: 0
+    };
+    state.drum[0].jammed = !!(data[0] & 8);
+    state.drum[0].calibrated = !!(data[0] & 16);
+    state.drum[1].jammed = !!(data[1] & 1);
+    state.drum[1].calibrated = !!(data[1] & 2);
+    state.drum[2].jammed = !!(data[1] & 32);
+    state.drum[2].calibrated = !!(data[1] & 64);
+    state.drum[0].position = (data[0] & 6) >> 1;
+    state.drum[1].position = (data[0] & 192) >> 6;
+    state.drum[2].position = (data[1] & 24) >> 3;
+    state.drum[0].playSound = !!(data[0] & 1);
+    state.drum[1].playSound = !!(data[0] & 32);
+    state.drum[2].playSound = !!(data[1] & 4);
+    state.layer[0].light[0].effect = (data[2] & 224) >> 5;
+    state.layer[0].light[0].loop = !!(data[2] & 16);
+    state.layer[0].light[1].effect = (data[2] & 14) >> 1;
+    state.layer[0].light[1].loop = !!(data[2] & 1);
+    state.layer[0].light[2].effect = (data[3] & 224) >> 5;
+    state.layer[0].light[2].loop = !!(data[3] & 16);
+    state.layer[0].light[3].effect = (data[3] & 14) >> 1;
+    state.layer[0].light[3].loop = !!(data[3] & 1);
+    state.layer[1].light[0].effect = (data[4] & 224) >> 5;
+    state.layer[1].light[0].loop = !!(data[4] & 16);
+    state.layer[1].light[1].effect = (data[4] & 14) >> 1;
+    state.layer[1].light[1].loop = !!(data[4] & 1);
+    state.layer[1].light[2].effect = (data[5] & 224) >> 5;
+    state.layer[1].light[2].loop = !!(data[5] & 16);
+    state.layer[1].light[3].effect = (data[5] & 14) >> 1;
+    state.layer[1].light[3].loop = !!(data[5] & 1);
+    state.layer[2].light[0].effect = (data[6] & 224) >> 5;
+    state.layer[2].light[0].loop = !!(data[6] & 16);
+    state.layer[2].light[1].effect = (data[6] & 14) >> 1;
+    state.layer[2].light[1].loop = !!(data[6] & 1);
+    state.layer[2].light[2].effect = (data[7] & 224) >> 5;
+    state.layer[2].light[2].loop = !!(data[7] & 16);
+    state.layer[2].light[3].effect = (data[7] & 14) >> 1;
+    state.layer[2].light[3].loop = !!(data[7] & 1);
+    state.layer[3].light[0].effect = (data[8] & 224) >> 5;
+    state.layer[3].light[0].loop = !!(data[8] & 16);
+    state.layer[3].light[1].effect = (data[8] & 14) >> 1;
+    state.layer[3].light[1].loop = !!(data[8] & 1);
+    state.layer[3].light[2].effect = (data[9] & 224) >> 5;
+    state.layer[3].light[2].loop = !!(data[9] & 16);
+    state.layer[3].light[3].effect = (data[9] & 14) >> 1;
+    state.layer[3].light[3].loop = !!(data[9] & 1);
+    state.layer[4].light[0].effect = (data[10] & 224) >> 5;
+    state.layer[4].light[0].loop = !!(data[10] & 16);
+    state.layer[4].light[1].effect = (data[10] & 14) >> 1;
+    state.layer[4].light[1].loop = !!(data[10] & 1);
+    state.layer[4].light[2].effect = (data[11] & 224) >> 5;
+    state.layer[4].light[2].loop = !!(data[11] & 16);
+    state.layer[4].light[3].effect = (data[11] & 14) >> 1;
+    state.layer[4].light[3].loop = !!(data[11] & 1);
+    state.layer[5].light[0].effect = (data[12] & 224) >> 5;
+    state.layer[5].light[0].loop = !!(data[12] & 16);
+    state.layer[5].light[1].effect = (data[12] & 14) >> 1;
+    state.layer[5].light[1].loop = !!(data[12] & 1);
+    state.layer[5].light[2].effect = (data[13] & 224) >> 5;
+    state.layer[5].light[2].loop = !!(data[13] & 16);
+    state.layer[5].light[3].effect = (data[13] & 14) >> 1;
+    state.layer[5].light[3].loop = !!(data[13] & 1);
+    state.audio.sample = data[14] & 127;
+    state.audio.loop = !!(data[14] & 128);
+    state.beam.count = data[15] << 8 | data[16];
+    state.beam.fault = !!(data[17] & 1);
+    state.drum[0].reverse = !!(data[17] & 2);
+    state.drum[1].reverse = !!(data[17] & 4);
+    state.drum[2].reverse = !!(data[17] & 8);
+    state.audio.volume = (data[17] & 240) >> 4;
+    state.led_sequence = data[18];
+    return state;
+  }
+  function rtdt_pack_state(data, len, state) {
+    if (len < STATE_DATA_LENGTH)
+      return false;
+    data.fill(0, 0, STATE_DATA_LENGTH);
+    data[0] |= (state.drum[0].playSound ? 1 : 0) | (state.drum[0].position & 3) << 1 | (state.drum[0].jammed ? 1 : 0) << 3 | (state.drum[0].calibrated ? 1 : 0) << 4 | (state.drum[1].playSound ? 1 : 0) << 5 | (state.drum[1].position & 3) << 6;
+    data[1] |= (state.drum[1].jammed ? 1 : 0) | (state.drum[1].calibrated ? 1 : 0) << 1 | (state.drum[2].playSound ? 1 : 0) << 2 | (state.drum[2].position & 3) << 3 | (state.drum[2].jammed ? 1 : 0) << 5 | (state.drum[2].calibrated ? 1 : 0) << 6;
+    data[2] |= state.layer[0].light[0].effect << 5 | (state.layer[0].light[0].loop ? 1 : 0) << 4;
+    data[2] |= state.layer[0].light[1].effect << 1 | (state.layer[0].light[1].loop ? 1 : 0);
+    data[3] |= state.layer[0].light[2].effect << 5 | (state.layer[0].light[2].loop ? 1 : 0) << 4;
+    data[3] |= state.layer[0].light[3].effect << 1 | (state.layer[0].light[3].loop ? 1 : 0);
+    data[4] |= state.layer[1].light[0].effect << 5 | (state.layer[1].light[0].loop ? 1 : 0) << 4;
+    data[4] |= state.layer[1].light[1].effect << 1 | (state.layer[1].light[1].loop ? 1 : 0);
+    data[5] |= state.layer[1].light[2].effect << 5 | (state.layer[1].light[2].loop ? 1 : 0) << 4;
+    data[5] |= state.layer[1].light[3].effect << 1 | (state.layer[1].light[3].loop ? 1 : 0);
+    data[6] |= state.layer[2].light[0].effect << 5 | (state.layer[2].light[0].loop ? 1 : 0) << 4;
+    data[6] |= state.layer[2].light[1].effect << 1 | (state.layer[2].light[1].loop ? 1 : 0);
+    data[7] |= state.layer[2].light[2].effect << 5 | (state.layer[2].light[2].loop ? 1 : 0) << 4;
+    data[7] |= state.layer[2].light[3].effect << 1 | (state.layer[2].light[3].loop ? 1 : 0);
+    data[8] |= state.layer[3].light[0].effect << 5 | (state.layer[3].light[0].loop ? 1 : 0) << 4;
+    data[8] |= state.layer[3].light[1].effect << 1 | (state.layer[3].light[1].loop ? 1 : 0);
+    data[9] |= state.layer[3].light[2].effect << 5 | (state.layer[3].light[2].loop ? 1 : 0) << 4;
+    data[9] |= state.layer[3].light[3].effect << 1 | (state.layer[3].light[3].loop ? 1 : 0);
+    data[10] |= state.layer[4].light[0].effect << 5 | (state.layer[4].light[0].loop ? 1 : 0) << 4;
+    data[10] |= state.layer[4].light[1].effect << 1 | (state.layer[4].light[1].loop ? 1 : 0);
+    data[11] |= state.layer[4].light[2].effect << 5 | (state.layer[4].light[2].loop ? 1 : 0) << 4;
+    data[11] |= state.layer[4].light[3].effect << 1 | (state.layer[4].light[3].loop ? 1 : 0);
+    data[12] |= state.layer[5].light[0].effect << 5 | (state.layer[5].light[0].loop ? 1 : 0) << 4;
+    data[12] |= state.layer[5].light[1].effect << 1 | (state.layer[5].light[1].loop ? 1 : 0);
+    data[13] |= state.layer[5].light[2].effect << 5 | (state.layer[5].light[2].loop ? 1 : 0) << 4;
+    data[13] |= state.layer[5].light[3].effect << 1 | (state.layer[5].light[3].loop ? 1 : 0);
+    data[14] = state.audio.sample | (state.audio.loop ? 1 : 0) << 7;
+    data[15] = state.beam.count >> 8;
+    data[16] = state.beam.count & 255;
+    data[17] = state.audio.volume << 4 | (state.beam.fault ? 1 : 0) | (state.drum[0].reverse ? 1 : 0) << 1 | (state.drum[1].reverse ? 1 : 0) << 2 | (state.drum[2].reverse ? 1 : 0) << 3;
+    data[18] = state.led_sequence;
+    return true;
+  }
+  function getTowerPosition(layerIndex, lightIndex) {
+    const isRingLayer = layerIndex <= 2;
+    const ledChannel = LED_CHANNEL_LOOKUP[layerIndex * 4 + lightIndex];
+    if (isRingLayer) {
+      const directions = ["NORTH", "EAST", "SOUTH", "WEST"];
+      const layerNames = ["TOP_RING", "MIDDLE_RING", "BOTTOM_RING"];
+      return {
+        level: layerNames[layerIndex],
+        direction: directions[lightIndex],
+        ledChannel
+      };
+    } else {
+      const directions = ["NORTH_EAST", "SOUTH_EAST", "SOUTH_WEST", "NORTH_WEST"];
+      const layerNames = ["LEDGE", "BASE1", "BASE2"];
+      return {
+        level: layerNames[layerIndex - 3],
+        direction: directions[lightIndex],
+        ledChannel
+      };
+    }
+  }
+  function getActiveLights(state) {
+    const activeLights = [];
+    state.layer.forEach((layer, layerIndex) => {
+      layer.light.forEach((light, lightIndex) => {
+        if (light.effect > 0) {
+          const position = getTowerPosition(layerIndex, lightIndex);
+          activeLights.push({
+            level: position.level,
+            direction: position.direction,
+            effect: light.effect,
+            loop: light.loop
+          });
+        }
+      });
+    });
+    return activeLights;
+  }
+  function createDefaultTowerState() {
+    return {
+      drum: [
+        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false }
+      ],
+      layer: [
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] }
+      ],
+      audio: { sample: 0, loop: false, volume: 0 },
+      beam: { count: 0, fault: false },
+      led_sequence: 0
+    };
+  }
+  var TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LED_CHANNEL_LOOKUP, TOWER_LIGHT_POSITIONS, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH;
+  var init_functions = __esm({
+    "src/functions.ts"() {
+      TOWER_LAYERS = {
+        TOP_RING: 0,
+        MIDDLE_RING: 1,
+        BOTTOM_RING: 2,
+        LEDGE: 3,
+        BASE1: 4,
+        BASE2: 5
+      };
+      RING_LIGHT_POSITIONS = {
+        NORTH: 0,
+        EAST: 1,
+        SOUTH: 2,
+        WEST: 3
+      };
+      LEDGE_BASE_LIGHT_POSITIONS = {
+        NORTH_EAST: 0,
+        SOUTH_EAST: 1,
+        SOUTH_WEST: 2,
+        NORTH_WEST: 3
+      };
+      LED_CHANNEL_LOOKUP = [
+        // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
+        0,
+        3,
+        2,
+        1,
+        // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
+        7,
+        6,
+        5,
+        4,
+        // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
+        10,
+        9,
+        8,
+        11,
+        // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
+        12,
+        13,
+        14,
+        15,
+        // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
+        16,
+        17,
+        18,
+        19,
+        // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
+        20,
+        21,
+        22,
+        23
+      ];
+      TOWER_LIGHT_POSITIONS = RING_LIGHT_POSITIONS;
+      LAYER_TO_POSITION = {
+        [TOWER_LAYERS.TOP_RING]: "TOP_RING",
+        [TOWER_LAYERS.MIDDLE_RING]: "MIDDLE_RING",
+        [TOWER_LAYERS.BOTTOM_RING]: "BOTTOM_RING",
+        [TOWER_LAYERS.LEDGE]: "LEDGE",
+        [TOWER_LAYERS.BASE1]: "BASE1",
+        [TOWER_LAYERS.BASE2]: "BASE2"
+      };
+      LIGHT_INDEX_TO_DIRECTION = {
+        [RING_LIGHT_POSITIONS.NORTH]: "NORTH",
+        [RING_LIGHT_POSITIONS.EAST]: "EAST",
+        [RING_LIGHT_POSITIONS.SOUTH]: "SOUTH",
+        [RING_LIGHT_POSITIONS.WEST]: "WEST"
+      };
+      STATE_DATA_LENGTH = 19;
+    }
+  });
 
   // src/udtConstants.ts
   var UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
@@ -593,6 +887,7 @@
   };
 
   // src/udtBleConnection.ts
+  init_functions();
   var UdtBleConnection = class {
     constructor(logger2, callbacks) {
       // BLE connection objects
@@ -668,7 +963,7 @@
           }
         } else {
           if (this.callbacks.onTowerResponse) {
-            this.callbacks.onTowerResponse();
+            this.callbacks.onTowerResponse(receivedData);
           }
         }
       };
@@ -747,6 +1042,18 @@
     }
     handleTowerStateResponse(receivedData) {
       const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
+      this.logger.debug("Tower Message Received", "[UDT][BLE]");
+      const state = rtdt_unpack_state(receivedData);
+      this.logger.debug(`Tower State: ${JSON.stringify(state)} `, "[UDT][BLE])");
+      console.log("[CEK] Tower State:", state);
+      try {
+        const { getActiveLights: getActiveLights2 } = (init_functions(), __toCommonJS(functions_exports));
+        const activeLights = getActiveLights2(state);
+        if (activeLights.length > 0) {
+          console.log("[CEK] Active Lights:", activeLights);
+        }
+      } catch (error) {
+      }
       if (this.performingCalibration) {
         this.performingCalibration = false;
         this.performingLongCommand = false;
@@ -964,6 +1271,7 @@
   };
 
   // src/udtCommandFactory.ts
+  init_functions();
   var UdtCommandFactory = class {
     /**
      * Creates a light command packet from a lights configuration object.
@@ -1061,6 +1369,153 @@
     createBasicCommand(commandValue) {
       return new Uint8Array([commandValue]);
     }
+    //#region Stateful Command Methods
+    /**
+     * Creates a stateful tower command by modifying only specific fields while preserving the rest.
+     * This is the proper way to send commands that only change certain aspects of the tower state.
+     * @param currentState - The current complete tower state (or null to create default state)
+     * @param modifications - Partial tower state with only the fields to modify
+     * @returns 20-byte command packet (command type + 19-byte state data)
+     */
+    createStatefulCommand(currentState, modifications) {
+      const newState = currentState ? __spreadValues({}, currentState) : this.createDefaultTowerState();
+      if (modifications.drum) {
+        modifications.drum.forEach((drum, index) => {
+          if (drum && newState.drum[index]) {
+            Object.assign(newState.drum[index], drum);
+          }
+        });
+      }
+      if (modifications.layer) {
+        modifications.layer.forEach((layer, layerIndex) => {
+          if (layer && newState.layer[layerIndex]) {
+            if (layer.light) {
+              layer.light.forEach((light, lightIndex) => {
+                if (light && newState.layer[layerIndex].light[lightIndex]) {
+                  Object.assign(newState.layer[layerIndex].light[lightIndex], light);
+                }
+              });
+            }
+          }
+        });
+      }
+      if (modifications.audio) {
+        Object.assign(newState.audio, modifications.audio);
+      }
+      if (modifications.beam) {
+        Object.assign(newState.beam, modifications.beam);
+      }
+      if (modifications.led_sequence !== void 0) {
+        newState.led_sequence = modifications.led_sequence;
+      }
+      return this.packTowerStateCommand(newState);
+    }
+    /**
+     * Creates a stateful LED command that only changes specific LEDs while preserving all other state.
+     * @param currentState - The current complete tower state
+     * @param layerIndex - Layer index (0-5)
+     * @param lightIndex - Light index within layer (0-3)
+     * @param effect - Light effect (0=off, 1=on, 2=slow pulse, etc.)
+     * @param loop - Whether to loop the effect
+     * @returns 20-byte command packet
+     */
+    createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop = false) {
+      const modifications = {};
+      if (!modifications.layer) {
+        modifications.layer = [];
+      }
+      modifications.layer[layerIndex] = {
+        light: [
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false }
+        ]
+      };
+      modifications.layer[layerIndex].light[lightIndex] = { effect, loop };
+      return this.createStatefulCommand(currentState, modifications);
+    }
+    /**
+     * Creates a stateful audio command that only changes audio while preserving all other state.
+     * @param currentState - The current complete tower state
+     * @param sample - Audio sample index (0-127)
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @returns 20-byte command packet
+     */
+    createStatefulAudioCommand(currentState, sample, loop = false, volume) {
+      const audioMods = { sample, loop };
+      if (volume !== void 0) {
+        audioMods.volume = volume;
+      }
+      const modifications = {
+        audio: audioMods
+      };
+      return this.createStatefulCommand(currentState, modifications);
+    }
+    /**
+     * Creates a stateful drum rotation command that only changes drum positions while preserving all other state.
+     * @param currentState - The current complete tower state
+     * @param drumIndex - Drum index (0=top, 1=middle, 2=bottom)
+     * @param position - Target position (0=north, 1=east, 2=south, 3=west)
+     * @param playSound - Whether to play sound during rotation
+     * @returns 20-byte command packet
+     */
+    createStatefulDrumCommand(currentState, drumIndex, position, playSound2 = false) {
+      const modifications = {};
+      if (!modifications.drum) {
+        modifications.drum = [];
+      }
+      modifications.drum[drumIndex] = {
+        jammed: false,
+        calibrated: true,
+        position,
+        playSound: playSound2,
+        reverse: false
+      };
+      return this.createStatefulCommand(currentState, modifications);
+    }
+    /**
+     * Packs a complete tower state into a 20-byte command packet.
+     * @param state - Complete tower state to pack
+     * @returns 20-byte command packet (0x00 + 19 bytes state data)
+     */
+    packTowerStateCommand(state) {
+      const stateData = new Uint8Array(19);
+      const success = rtdt_pack_state(stateData, 19, state);
+      if (!success) {
+        throw new Error("Failed to pack tower state data");
+      }
+      const command = new Uint8Array(20);
+      command[0] = 0;
+      command.set(stateData, 1);
+      return command;
+    }
+    /**
+     * Creates a default tower state with all systems off/neutral.
+     * @returns Default TowerState object
+     */
+    createDefaultTowerState() {
+      return {
+        drum: [
+          { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+          { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+          { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false }
+        ],
+        layer: [
+          { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+          { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+          { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+          { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+          { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+          { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] }
+        ],
+        audio: { sample: 0, loop: false, volume: 0 },
+        beam: { count: 0, fault: false },
+        led_sequence: 0
+      };
+    }
+    //#endregion
   };
 
   // src/udtCommandQueue.ts
@@ -1475,6 +1930,82 @@
       }
       return "north";
     }
+    //#region Stateful Command Methods
+    /**
+     * Sends a stateful LED command that only changes specific LEDs while preserving all other state.
+     * @param layerIndex - Layer index (0-5)
+     * @param lightIndex - Light index within layer (0-3)
+     * @param effect - Light effect (0=off, 1=on, 2=slow pulse, etc.)
+     * @param loop - Whether to loop the effect
+     * @returns Promise that resolves when command is sent
+     */
+    async setLEDStateful(layerIndex, lightIndex, effect, loop = false) {
+      var _a, _b;
+      const currentState = ((_b = (_a = this.deps).getCurrentTowerState) == null ? void 0 : _b.call(_a)) || null;
+      const command = this.deps.commandFactory.createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop);
+      this.deps.logger.info(`Setting LED layer ${layerIndex} light ${lightIndex} to effect ${effect}${loop ? " (looped)" : ""}`, "[UDT]");
+      await this.sendTowerCommand(command, `setLEDStateful(${layerIndex}, ${lightIndex}, ${effect}, ${loop})`);
+    }
+    /**
+     * Plays a sound using stateful commands that preserve existing tower state.
+     * @param soundIndex - Index of the sound to play (1-based)
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @returns Promise that resolves when command is sent
+     */
+    async playSoundStateful(soundIndex, loop = false, volume) {
+      var _a, _b;
+      const invalidIndex = soundIndex === null || soundIndex > Object.keys(TOWER_AUDIO_LIBRARY).length || soundIndex <= 0;
+      if (invalidIndex) {
+        this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, "[UDT]");
+        return;
+      }
+      const currentState = ((_b = (_a = this.deps).getCurrentTowerState) == null ? void 0 : _b.call(_a)) || null;
+      const command = this.deps.commandFactory.createStatefulAudioCommand(currentState, soundIndex, loop, volume);
+      this.deps.logger.info(`Playing sound ${soundIndex}${loop ? " (looped)" : ""}${volume !== void 0 ? ` at volume ${volume}` : ""}`, "[UDT]");
+      await this.sendTowerCommand(command, `playSoundStateful(${soundIndex}, ${loop}${volume !== void 0 ? `, ${volume}` : ""})`);
+    }
+    /**
+     * Rotates a single drum using stateful commands that preserve existing tower state.
+     * @param drumIndex - Drum index (0=top, 1=middle, 2=bottom)
+     * @param position - Target position (0=north, 1=east, 2=south, 3=west)
+     * @param playSound - Whether to play sound during rotation
+     * @returns Promise that resolves when command is sent
+     */
+    async rotateDrumStateful(drumIndex, position, playSound2 = false) {
+      var _a, _b;
+      const currentState = ((_b = (_a = this.deps).getCurrentTowerState) == null ? void 0 : _b.call(_a)) || null;
+      const command = this.deps.commandFactory.createStatefulDrumCommand(currentState, drumIndex, position, playSound2);
+      const drumNames = ["top", "middle", "bottom"];
+      const positionNames = ["north", "east", "south", "west"];
+      this.deps.logger.info(`Rotating ${drumNames[drumIndex]} drum to ${positionNames[position]}${playSound2 ? " with sound" : ""}`, "[UDT]");
+      this.deps.bleConnection.performingLongCommand = true;
+      await this.sendTowerCommand(command, `rotateDrumStateful(${drumIndex}, ${position}, ${playSound2})`);
+      setTimeout(() => {
+        this.deps.bleConnection.performingLongCommand = false;
+        this.deps.bleConnection.lastBatteryHeartbeat = Date.now();
+      }, this.deps.bleConnection.longTowerCommandTimeout);
+    }
+    /**
+     * Sends a complete tower state using stateful commands.
+     * @param state - Complete tower state to send
+     * @returns Promise that resolves when command is sent
+     */
+    async sendTowerStateStateful(state) {
+      const command = this.deps.commandFactory.packTowerStateCommand(state);
+      this.deps.logger.info("Sending complete tower state", "[UDT]");
+      await this.sendTowerCommand(command, "sendTowerStateStateful");
+    }
+    //#endregion
+    /**
+     * Public access to sendTowerCommandDirect for testing purposes.
+     * This bypasses the command queue and sends commands directly.
+     * @param command - The command packet to send directly to the tower
+     * @returns Promise that resolves when command is sent
+     */
+    async sendTowerCommandDirectPublic(command) {
+      return await this.sendTowerCommandDirect(command);
+    }
     /**
      * Called when a tower response is received to notify the command queue
      * This should be called from the BLE connection response handler
@@ -1509,6 +2040,8 @@
       this.currentBatteryPercentage = 0;
       this.previousBatteryPercentage = 0;
       this.brokenSeals = /* @__PURE__ */ new Set();
+      // Complete tower state tracking for stateful commands
+      this.currentTowerState = null;
       // glyph position tracking
       this.glyphPositions = {
         cleanse: null,
@@ -1568,10 +2101,20 @@
         currentDrumPositions: this.currentDrumPositions,
         logDetail: this.logDetail,
         retrySendCommandCount: this.retrySendCommandCountRef,
-        retrySendCommandMax: this.retrySendCommandMax
+        retrySendCommandMax: this.retrySendCommandMax,
+        getCurrentTowerState: () => this.currentTowerState
       };
       this.towerCommands = new UdtTowerCommands(commandDependencies);
-      callbacks.onTowerResponse = () => this.towerCommands.onTowerResponse();
+      callbacks.onTowerResponse = (response) => {
+        this.towerCommands.onTowerResponse();
+        if (response.length >= 20) {
+          const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
+          if (this.responseProcessor.isTowerStateResponse(cmdKey)) {
+            const stateData = response.slice(1, 20);
+            this.updateTowerStateFromResponse(stateData);
+          }
+        }
+      };
     }
     get logDetail() {
       return this._logDetail;
@@ -1588,7 +2131,8 @@
           currentDrumPositions: this.currentDrumPositions,
           logDetail: this.logDetail,
           retrySendCommandCount: this.retrySendCommandCountRef,
-          retrySendCommandMax: this.retrySendCommandMax
+          retrySendCommandMax: this.retrySendCommandMax,
+          getCurrentTowerState: () => this.currentTowerState
         };
         this.towerCommands = new UdtTowerCommands(commandDependencies);
       }
@@ -1676,6 +2220,14 @@
       return await this.towerCommands.lights(lights2);
     }
     /**
+     * Sends a raw command packet directly to the tower (for testing purposes).
+     * @param command - The raw command packet to send
+     * @returns Promise that resolves when command is sent
+     */
+    async sendTowerCommandDirect(command) {
+      return await this.towerCommands.sendTowerCommandDirectPublic(command);
+    }
+    /**
      * Sends a light override command to control specific light patterns.
      * @param light - Light override value to send
      * @param soundIndex - Optional sound to play with the light override
@@ -1734,6 +2286,78 @@
      */
     async resetTowerSkullCount() {
       return await this.towerCommands.resetTowerSkullCount();
+    }
+    //#endregion
+    //#region Stateful Tower Commands
+    /**
+     * Sets a specific LED using stateful commands that preserve all other tower state.
+     * This is the recommended way to control individual LEDs.
+     * @param layerIndex - Layer index (0-5: TopRing, MiddleRing, BottomRing, Ledge, Base1, Base2)
+     * @param lightIndex - Light index within layer (0-3)
+     * @param effect - Light effect (0=off, 1=on, 2=slow pulse, 3=fast pulse, etc.)
+     * @param loop - Whether to loop the effect
+     * @returns Promise that resolves when command is sent
+     */
+    async setLED(layerIndex, lightIndex, effect, loop = false) {
+      return await this.towerCommands.setLEDStateful(layerIndex, lightIndex, effect, loop);
+    }
+    /**
+     * Plays a sound using stateful commands that preserve existing tower state.
+     * @param soundIndex - Index of the sound to play (1-based)
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @returns Promise that resolves when command is sent
+     */
+    async playSoundStateful(soundIndex, loop = false, volume) {
+      return await this.towerCommands.playSoundStateful(soundIndex, loop, volume);
+    }
+    /**
+     * Rotates a single drum using stateful commands that preserve existing tower state.
+     * @param drumIndex - Drum index (0=top, 1=middle, 2=bottom)
+     * @param position - Target position (0=north, 1=east, 2=south, 3=west)
+     * @param playSound - Whether to play sound during rotation
+     * @returns Promise that resolves when command is sent
+     */
+    async rotateDrumStateful(drumIndex, position, playSound2 = false) {
+      return await this.towerCommands.rotateDrumStateful(drumIndex, position, playSound2);
+    }
+    //#endregion
+    //#region Tower State Management
+    /**
+     * Gets the current complete tower state if available.
+     * @returns The current tower state object, or null if not available
+     */
+    getCurrentTowerState() {
+      return this.currentTowerState ? __spreadValues({}, this.currentTowerState) : null;
+    }
+    /**
+     * Sends a complete tower state to the tower, preserving existing state.
+     * This creates a stateful command that only changes the specified fields.
+     * @param towerState - The tower state to send
+     * @returns Promise that resolves when the command is sent
+     */
+    async sendTowerState(towerState) {
+      const { rtdt_pack_state: rtdt_pack_state2 } = await Promise.resolve().then(() => (init_functions(), functions_exports));
+      const stateData = new Uint8Array(19);
+      const success = rtdt_pack_state2(stateData, 19, towerState);
+      if (!success) {
+        throw new Error("Failed to pack tower state data");
+      }
+      const command = new Uint8Array(20);
+      command[0] = 0;
+      command.set(stateData, 1);
+      this.currentTowerState = __spreadValues({}, towerState);
+      return await this.sendTowerCommandDirect(command);
+    }
+    /**
+     * Updates the current tower state from a tower response.
+     * Called internally when tower state responses are received.
+     * @param stateData - The 19-byte state data from tower response
+     */
+    updateTowerStateFromResponse(stateData) {
+      Promise.resolve().then(() => (init_functions(), functions_exports)).then(({ rtdt_unpack_state: rtdt_unpack_state2 }) => {
+        this.currentTowerState = rtdt_unpack_state2(stateData);
+      });
     }
     //#endregion
     /**
@@ -2038,6 +2662,7 @@
   var src_default = UltimateDarkTower_default;
 
   // examples/controller/TowerController.ts
+  init_functions();
   var Tower = new src_default();
   var sharedDOMOutput;
   var initializeLogger = () => {
@@ -2059,6 +2684,9 @@
   window.TOWER_LIGHT_SEQUENCES = TOWER_LIGHT_SEQUENCES;
   window.LIGHT_EFFECTS = LIGHT_EFFECTS;
   window.GLYPHS = GLYPHS;
+  window.rtdt_pack_state = rtdt_pack_state;
+  window.rtdt_unpack_state = rtdt_unpack_state;
+  window.createDefaultTowerState = createDefaultTowerState;
   window.Tower = Tower;
   window.Tower = Tower;
   window.logger = logger;
@@ -2444,6 +3072,591 @@
       breakSeal();
     }
   };
+  var switchTab = (tabName) => {
+    const allTabContents = document.querySelectorAll(".tower-tab-content");
+    allTabContents.forEach((content) => {
+      content.classList.remove("tower-tab-content-active");
+    });
+    const allTabButtons = document.querySelectorAll(".tower-tab-button");
+    allTabButtons.forEach((button) => {
+      button.classList.remove("tower-tab-active");
+    });
+    const selectedContent = document.getElementById(`${tabName}-content`);
+    if (selectedContent) {
+      selectedContent.classList.add("tower-tab-content-active");
+    }
+    const selectedButton = document.getElementById(`${tabName}-tab`);
+    if (selectedButton) {
+      selectedButton.classList.add("tower-tab-active");
+    }
+  };
+  var moveGlyph = async () => {
+    const glyphSelect = document.getElementById("glyph-select");
+    const sideSelect = document.getElementById("side-select");
+    const selectedGlyph = glyphSelect.value;
+    const targetSide = sideSelect.value;
+    if (!selectedGlyph || !targetSide) {
+      logger.warn("Please select both a glyph and a side", "[TC]");
+      return;
+    }
+    if (!Tower.isConnected) {
+      logger.warn("Tower is not connected", "[TC]");
+      return;
+    }
+    try {
+      const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph);
+      if (!currentGlyphPosition) {
+        logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, "[TC]");
+        return;
+      }
+      const glyphLevel = GLYPHS[selectedGlyph].level;
+      const sides = ["north", "east", "south", "west"];
+      const currentSideIndex = sides.indexOf(currentGlyphPosition);
+      const targetSideIndex = sides.indexOf(targetSide);
+      if (currentSideIndex === -1 || targetSideIndex === -1) {
+        logger.error("Invalid current or target side", "[TC]");
+        return;
+      }
+      let rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
+      if (rotationSteps === 0) {
+        logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, "[TC]");
+        return;
+      }
+      let targetDrumPosition;
+      if (glyphLevel === "top" || glyphLevel === "middle" || glyphLevel === "bottom") {
+        const currentDrumPosition = Tower.getCurrentDrumPosition(glyphLevel);
+        const sides2 = ["north", "east", "south", "west"];
+        const currentDrumIndex = sides2.indexOf(currentDrumPosition);
+        const currentGlyphIndex = sides2.indexOf(currentGlyphPosition);
+        const targetGlyphIndex = sides2.indexOf(targetSide);
+        let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
+        const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
+        targetDrumPosition = sides2[newDrumIndex];
+      } else {
+        targetDrumPosition = targetSide;
+      }
+      const topPosition = glyphLevel === "top" ? targetDrumPosition : Tower.getCurrentDrumPosition("top");
+      const middlePosition = glyphLevel === "middle" ? targetDrumPosition : Tower.getCurrentDrumPosition("middle");
+      const bottomPosition = glyphLevel === "bottom" ? targetDrumPosition : Tower.getCurrentDrumPosition("bottom");
+      logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, "[TC]");
+      await Tower.Rotate(topPosition, middlePosition, bottomPosition);
+      if (typeof refreshGlyphPositions === "function") {
+        refreshGlyphPositions();
+      }
+      logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, "[TC]");
+    } catch (error) {
+      logger.error(`Failed to move glyph: ${error}`, "[TC]");
+    }
+  };
+  var toggleGlyphLight = (element) => {
+    const level = element.getAttribute("data-level");
+    const side = element.getAttribute("data-side");
+    if (!level || !side) {
+      logger.warn("Invalid glyph cell data", "[TC]");
+      return;
+    }
+    element.classList.toggle("glyph-lit");
+    const isLit = element.classList.contains("glyph-lit");
+    logger.info(`Glyph light at ${level}-${side} ${isLit ? "turned on" : "turned off"}`, "[TC]");
+  };
+  var refreshGlyphPositions = () => {
+    if (!Tower.isConnected) {
+      logger.warn("Tower is not connected", "[TC]");
+      return;
+    }
+    try {
+      const positions = Tower.getAllGlyphPositions();
+      const allGlyphCells = document.querySelectorAll(".glyph-cell");
+      allGlyphCells.forEach((cell) => {
+        cell.innerHTML = "";
+        cell.classList.remove("glyph-lit");
+      });
+      Object.entries(positions).forEach(([glyphName, side]) => {
+        if (side) {
+          const glyphLevel = GLYPHS[glyphName].level;
+          const cellId = `glyph-${glyphLevel}-${side}`;
+          const cell = document.getElementById(cellId);
+          if (cell) {
+            const img = document.createElement("img");
+            img.src = `../assets/glyph_${glyphName}.svg`;
+            img.alt = glyphName;
+            cell.appendChild(img);
+            cell.classList.add("glyph-lit");
+          }
+        }
+      });
+      logger.info("Glyph positions refreshed", "[TC]");
+    } catch (error) {
+      logger.error(`Failed to refresh glyph positions: ${error}`, "[TC]");
+    }
+  };
+  var filterLogs = () => {
+    if (!sharedDOMOutput) {
+      logger.warn("DOM output not initialized", "[TC]");
+      return;
+    }
+    const filterSelect = document.getElementById("logFilter");
+    const selectedLevel = (filterSelect == null ? void 0 : filterSelect.value) || "all";
+    sharedDOMOutput.refreshFilter();
+    logger.info(`Log filter set to: ${selectedLevel}`, "[TC]");
+  };
+  var clearLogs = () => {
+    if (!sharedDOMOutput) {
+      logger.warn("DOM output not initialized", "[TC]");
+      return;
+    }
+    sharedDOMOutput.clearAll();
+    logger.info("Logs cleared", "[TC]");
+  };
+  var updateBatteryFilter = () => {
+    var _a;
+    const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]');
+    const selectedValue = (_a = Array.from(batteryFilterRadios).find((radio) => radio.checked)) == null ? void 0 : _a.value;
+    if (selectedValue) {
+      Tower.batteryNotifyOnValueChangeOnly = selectedValue === "changes";
+      logger.info(`Battery filter set to: ${selectedValue}`, "[TC]");
+    }
+  };
+  var saveState = () => {
+    if (!Tower.isConnected) {
+      logger.warn("Tower is not connected", "[TC]");
+      return;
+    }
+    try {
+      const state = Tower.getCurrentTowerState();
+      if (!state) {
+        logger.warn("No current tower state available", "[TC]");
+        return;
+      }
+      const buffer = new Uint8Array(256);
+      const success = rtdt_pack_state(buffer, buffer.length, state);
+      if (!success) {
+        logger.error("Failed to pack tower state", "[TC]");
+        return;
+      }
+      const packedState = Array.from(buffer);
+      localStorage.setItem("towerState", JSON.stringify(packedState));
+      const stateDisplay = document.getElementById("currentState");
+      if (stateDisplay) {
+        stateDisplay.value = JSON.stringify(packedState, null, 2);
+      }
+      logger.info("Tower state saved", "[TC]");
+    } catch (error) {
+      logger.error(`Failed to save state: ${error}`, "[TC]");
+    }
+  };
+  var loadState = async () => {
+    if (!Tower.isConnected) {
+      logger.warn("Tower is not connected", "[TC]");
+      return;
+    }
+    try {
+      const savedState = localStorage.getItem("towerState");
+      if (!savedState) {
+        logger.warn("No saved state found", "[TC]");
+        return;
+      }
+      const packedState = JSON.parse(savedState);
+      const buffer = new Uint8Array(packedState);
+      const state = rtdt_unpack_state(buffer);
+      if (!state) {
+        logger.error("Failed to unpack tower state", "[TC]");
+        return;
+      }
+      await Tower.sendTowerState(state);
+      logger.info("Tower state loaded", "[TC]");
+      if (typeof refreshGlyphPositions === "function") {
+        refreshGlyphPositions();
+      }
+    } catch (error) {
+      logger.error(`Failed to load state: ${error}`, "[TC]");
+    }
+  };
+  var resetState = async () => {
+    if (!Tower.isConnected) {
+      logger.warn("Tower is not connected", "[TC]");
+      return;
+    }
+    try {
+      const defaultState = createDefaultTowerState();
+      await Tower.sendTowerState(defaultState);
+      localStorage.removeItem("towerState");
+      const stateDisplay = document.getElementById("currentState");
+      if (stateDisplay) {
+        stateDisplay.value = "";
+      }
+      resetSealGrid();
+      if (typeof refreshGlyphPositions === "function") {
+        refreshGlyphPositions();
+      }
+      logger.info("Tower state reset", "[TC]");
+    } catch (error) {
+      logger.error(`Failed to reset state: ${error}`, "[TC]");
+    }
+  };
+  var initializeUI = () => {
+    const soundSelect = document.getElementById("sounds");
+    if (soundSelect) {
+      Object.entries(TOWER_AUDIO_LIBRARY).forEach(([key, value]) => {
+        const option = document.createElement("option");
+        option.value = value.value.toString();
+        option.textContent = value.name;
+        soundSelect.appendChild(option);
+      });
+    }
+    const lightStyleSelect = document.getElementById("lightStyles");
+    if (lightStyleSelect) {
+      Object.entries(LIGHT_EFFECTS).forEach(([key, value]) => {
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = key;
+        lightStyleSelect.appendChild(option);
+      });
+    }
+    const lightOverrideSelect = document.getElementById("lightOverrideDropDown");
+    if (lightOverrideSelect) {
+      Object.entries(TOWER_LIGHT_SEQUENCES).forEach(([key, value]) => {
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = key;
+        lightOverrideSelect.appendChild(option);
+      });
+    }
+    const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]');
+    batteryFilterRadios.forEach((radio) => {
+      radio.addEventListener("change", updateBatteryFilter);
+    });
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeUI);
+  } else {
+    initializeUI();
+  }
+  var sendLEDTestCommand = async () => {
+    try {
+      const effectSelect = document.getElementById("led-effect-select");
+      const loopCheckbox = document.getElementById("led-loop-checkbox");
+      const selectedEffect = parseInt(effectSelect.value);
+      const loopEnabled = loopCheckbox.checked;
+      const checkedLEDs = document.querySelectorAll(".led-checkbox:checked");
+      if (checkedLEDs.length === 0) {
+        logger.warn("No LEDs selected for testing", "[LED Testing]");
+        return;
+      }
+      if (!Tower || !Tower.getCurrentTowerState || !Tower.sendTowerState) {
+        logger.error("Tower not connected or tower state methods not available", "[LED Testing]");
+        return;
+      }
+      let currentState = Tower.getCurrentTowerState();
+      if (!currentState) {
+        currentState = createDefaultTowerState();
+      }
+      checkedLEDs.forEach((checkbox) => {
+        const layer = parseInt(checkbox.dataset.layer);
+        const position = parseInt(checkbox.dataset.position);
+        const isValidLightPosition = layer >= 0 && layer < 6 && position >= 0 && position < 4;
+        if (isValidLightPosition) {
+          currentState.layer[layer].light[position].effect = selectedEffect;
+          currentState.layer[layer].light[position].loop = loopEnabled;
+          logger.debug(`LED configured: layer=${layer}, position=${position}, effect=${selectedEffect}, loop=${loopEnabled}`, "[LED Testing]");
+        }
+      });
+      await Tower.sendTowerState(currentState);
+      logger.info(`LED test command sent: ${checkedLEDs.length} LEDs updated, effect=${selectedEffect}, loop=${loopEnabled}`, "[LED Testing]");
+    } catch (error) {
+      console.error("Error sending LED test command:", error);
+      logger.error("Error sending LED test command: " + error, "[LED Testing]");
+    }
+  };
+  var clearAllLEDs = async () => {
+    try {
+      if (!Tower || !Tower.getCurrentTowerState || !Tower.sendTowerState) {
+        logger.error("Tower not connected or tower state methods not available", "[LED Testing]");
+        return;
+      }
+      let currentState = Tower.getCurrentTowerState();
+      if (!currentState) {
+        currentState = createDefaultTowerState();
+      }
+      for (let layer = 0; layer < 6; layer++) {
+        for (let position = 0; position < 4; position++) {
+          currentState.layer[layer].light[position].effect = 0;
+          currentState.layer[layer].light[position].loop = false;
+        }
+      }
+      await Tower.sendTowerState(currentState);
+      logger.info("All LEDs cleared with single tower state command", "[LED Testing]");
+      document.querySelectorAll(".led-checkbox").forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+    } catch (error) {
+      console.error("Error clearing LEDs:", error);
+      logger.error("Error clearing LEDs: " + error, "[LED Testing]");
+    }
+  };
+  var updateLogLevel = () => {
+    if (window.logger) {
+      const checkboxes = document.querySelectorAll('input[id^="logLevel-"]');
+      const selectedLevels = Array.from(checkboxes).filter((checkbox) => checkbox.checked).map((checkbox) => checkbox.value);
+      if (selectedLevels.length > 0) {
+        window.logger.setEnabledLevels(selectedLevels);
+      } else {
+        window.logger.setEnabledLevels(["all"]);
+      }
+    }
+    if (sharedDOMOutput) {
+      sharedDOMOutput.refreshFilter();
+    }
+  };
+  var clearLog = () => {
+    if (sharedDOMOutput) {
+      sharedDOMOutput.clearAll();
+    }
+    const container = document.getElementById("log-container");
+    if (container) {
+      container.innerHTML = "";
+    }
+    const textFilter = document.getElementById("logTextFilter");
+    if (textFilter) {
+      textFilter.value = "";
+    }
+  };
+  var copyDisplayedLogs = (event) => {
+    const logContainer = document.getElementById("log-container");
+    if (!logContainer)
+      return;
+    const logLines = logContainer.querySelectorAll(".log-line");
+    if (logLines.length === 0) {
+      alert("No log entries to copy");
+      return;
+    }
+    const logText = Array.from(logLines).map((line) => line.textContent || "").join("\n");
+    navigator.clipboard.writeText(logText).then(() => {
+      const button = event.target.closest("button");
+      if (button) {
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.style.backgroundColor = "#10b981";
+        setTimeout(() => {
+          button.innerHTML = originalIcon;
+          button.style.backgroundColor = "";
+        }, 1e3);
+      }
+    }).catch((err) => {
+      console.error("Failed to copy logs: ", err);
+      alert("Failed to copy logs to clipboard");
+    });
+  };
+  var downloadDisplayedLogs = (event) => {
+    const logContainer = document.getElementById("log-container");
+    if (!logContainer)
+      return;
+    const logLines = logContainer.querySelectorAll(".log-line");
+    if (logLines.length === 0) {
+      alert("No log entries to download");
+      return;
+    }
+    const logText = Array.from(logLines).map((line) => line.textContent || "").join("\n");
+    const now = /* @__PURE__ */ new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+    const header = `UltimateDarkTower Log Output - ${dateStr} ${timeStr}
+${"-".repeat(60)}
+`;
+    const fileContent = header + logText;
+    const blob = new Blob([fileContent], { type: "text/plain" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "TowerLog.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    const button = event.target.closest("button");
+    if (button) {
+      const originalIcon = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-check"></i>';
+      button.style.backgroundColor = "#10b981";
+      setTimeout(() => {
+        button.innerHTML = originalIcon;
+        button.style.backgroundColor = "";
+      }, 1e3);
+    }
+  };
+  var getGlyphsFacingDirection = (direction) => {
+    try {
+      return Tower.getGlyphsFacingDirection(direction);
+    } catch (error) {
+      console.error("Error getting glyphs facing direction:", error);
+      logger.error("Error getting glyphs facing direction: " + error, "[Glyphs]");
+      return [];
+    }
+  };
+  var currentLightStates = {
+    doorway: /* @__PURE__ */ new Map()
+    // key: "position-level", value: { position, level, style }
+  };
+  var enhancedToggleGlyphLight = async (element) => {
+    const level = element.getAttribute("data-level");
+    const side = element.getAttribute("data-side");
+    const position = `${level}-${side}`;
+    const glyphAtPosition = findGlyphAtPosition(level, side);
+    if (!glyphAtPosition) {
+      const sideSelect = document.getElementById("side-select");
+      if (sideSelect) {
+        sideSelect.value = side;
+      }
+      return;
+    }
+    const isLit = element.classList.toggle("glyph-lit");
+    const glyphSelect = document.getElementById("glyph-select");
+    if (glyphSelect) {
+      glyphSelect.value = glyphAtPosition;
+    }
+    const glyphCurrentSide = Tower.getGlyphPosition(glyphAtPosition);
+    if (glyphCurrentSide) {
+      const sideSelect = document.getElementById("side-select");
+      if (sideSelect) {
+        sideSelect.value = glyphCurrentSide;
+      }
+    }
+    try {
+      const lightEffect = isLit ? "on" : "off";
+      logger.info(`Toggling light ${lightEffect} for glyph ${glyphAtPosition} at position ${position}`, "[Glyphs]");
+      const glyphCurrentSide2 = Tower.getGlyphPosition(glyphAtPosition);
+      if (!glyphCurrentSide2) {
+        throw new Error(`Could not find current position for glyph ${glyphAtPosition}`);
+      }
+      const targetSide = glyphCurrentSide2;
+      const targetLevel = getGlyphLevel(glyphAtPosition);
+      const lightKey = `${targetSide}-${targetLevel}`;
+      if (isLit) {
+        currentLightStates.doorway.set(lightKey, { position: targetSide, level: targetLevel, style: "on" });
+      } else {
+        currentLightStates.doorway.delete(lightKey);
+      }
+      const allDoorwayLights = Array.from(currentLightStates.doorway.values());
+      const lights2 = {
+        doorway: allDoorwayLights
+      };
+      await Tower.Lights(lights2);
+      logger.info(`Successfully updated tower lights. Active lights: ${allDoorwayLights.length}`, "[Glyphs]");
+    } catch (error) {
+      console.error("Error toggling glyph light:", error);
+      logger.error("Error toggling glyph light: " + error, "[Glyphs]");
+      element.classList.toggle("glyph-lit");
+    }
+  };
+  var findGlyphAtPosition = (level, side) => {
+    const allPositions = Tower.getAllGlyphPositions();
+    for (const [glyph, currentSide] of Object.entries(allPositions)) {
+      if (GLYPHS[glyph].level === level && currentSide === side) {
+        return glyph;
+      }
+    }
+    return null;
+  };
+  var getGlyphLevel = (glyph) => {
+    var _a;
+    return ((_a = GLYPHS[glyph]) == null ? void 0 : _a.level) || "middle";
+  };
+  var refreshVisualLightStates = () => {
+    document.querySelectorAll(".glyph-cell").forEach((cell) => {
+      cell.classList.remove("glyph-lit");
+    });
+    currentLightStates.doorway.forEach((light, lightKey) => {
+      const [position, level] = lightKey.split("-");
+      const cellId = `glyph-${level}-${position}`;
+      const cell = document.getElementById(cellId);
+      if (cell) {
+        cell.classList.add("glyph-lit");
+      }
+    });
+  };
+  var enhancedMoveGlyph = async () => {
+    const glyphSelect = document.getElementById("glyph-select");
+    const sideSelect = document.getElementById("side-select");
+    const selectedGlyph = glyphSelect.value;
+    const targetSide = sideSelect.value;
+    logger.debug(`UI Selection: glyph=${selectedGlyph}, targetSide=${targetSide}`, "[Glyphs]");
+    if (!selectedGlyph || !targetSide) {
+      logger.warn("Please select a glyph and target side", "[Glyphs]");
+      return;
+    }
+    try {
+      const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph);
+      if (!currentGlyphPosition) {
+        logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, "[Glyphs]");
+        return;
+      }
+      const glyphLevel = GLYPHS[selectedGlyph].level;
+      const sides = ["north", "east", "south", "west"];
+      const currentSideIndex = sides.indexOf(currentGlyphPosition);
+      const targetSideIndex = sides.indexOf(targetSide);
+      if (currentSideIndex === -1 || targetSideIndex === -1) {
+        logger.error("Invalid current or target side", "[Glyphs]");
+        return;
+      }
+      let rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
+      if (rotationSteps === 0) {
+        logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, "[Glyphs]");
+        return;
+      }
+      let targetDrumPosition;
+      if (glyphLevel === "top" || glyphLevel === "middle" || glyphLevel === "bottom") {
+        const currentDrumPosition = Tower.getCurrentDrumPosition(glyphLevel);
+        const sides2 = ["north", "east", "south", "west"];
+        const currentDrumIndex = sides2.indexOf(currentDrumPosition);
+        const currentGlyphIndex = sides2.indexOf(currentGlyphPosition);
+        const targetGlyphIndex = sides2.indexOf(targetSide);
+        logger.debug(`Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`, "[Glyphs]");
+        let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
+        const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
+        targetDrumPosition = sides2[newDrumIndex];
+        logger.debug(`Move calculation result: glyphSteps=${glyphSteps}, newDrumIndex=${newDrumIndex}, targetDrumPosition=${targetDrumPosition}`, "[Glyphs]");
+      }
+      const topPosition = glyphLevel === "top" ? targetDrumPosition : Tower.getCurrentDrumPosition("top");
+      const middlePosition = glyphLevel === "middle" ? targetDrumPosition : Tower.getCurrentDrumPosition("middle");
+      const bottomPosition = glyphLevel === "bottom" ? targetDrumPosition : Tower.getCurrentDrumPosition("bottom");
+      logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, "[Glyphs]");
+      const oldLightKey = `${currentGlyphPosition}-${glyphLevel}`;
+      const hadLight = currentLightStates.doorway.has(oldLightKey);
+      await Tower.Rotate(topPosition, middlePosition, bottomPosition);
+      refreshGlyphPositions();
+      if (hadLight) {
+        currentLightStates.doorway.delete(oldLightKey);
+        setTimeout(async () => {
+          try {
+            const actualNewPosition = Tower.getGlyphPosition(selectedGlyph);
+            if (actualNewPosition) {
+              const newLightKey = `${actualNewPosition}-${glyphLevel}`;
+              currentLightStates.doorway.set(newLightKey, {
+                position: actualNewPosition,
+                level: glyphLevel,
+                style: "on"
+              });
+              const allDoorwayLights = Array.from(currentLightStates.doorway.values());
+              await Tower.Lights({ doorway: allDoorwayLights });
+              logger.info(`Successfully moved light with ${selectedGlyph} glyph to actual position ${actualNewPosition}`, "[Glyphs]");
+            } else {
+              logger.error(`Could not determine actual position for ${selectedGlyph} after rotation`, "[Glyphs]");
+            }
+          } catch (error) {
+            logger.error("Error updating lights after glyph move: " + error, "[Glyphs]");
+          }
+        }, 1500);
+      }
+      setTimeout(() => {
+        refreshGlyphPositions();
+        setTimeout(refreshVisualLightStates, 700);
+      }, 1e3);
+      logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, "[Glyphs]");
+    } catch (error) {
+      console.error("Error moving glyph:", error);
+      logger.error("Error moving glyph: " + error, "[Glyphs]");
+    }
+  };
   window.connectToTower = connectToTower;
   window.calibrate = calibrate;
   window.resetSkullCount = resetSkullCount;
@@ -2459,5 +3672,28 @@
   window.allLightsOff = allLightsOff;
   window.randomizeLevels = randomizeLevels;
   window.sealSquareClick = sealSquareClick;
+  window.switchTab = switchTab;
+  window.moveGlyph = moveGlyph;
+  window.toggleGlyphLight = toggleGlyphLight;
+  window.refreshGlyphPositions = refreshGlyphPositions;
+  window.filterLogs = filterLogs;
+  window.clearLogs = clearLogs;
+  window.saveState = saveState;
+  window.loadState = loadState;
+  window.resetState = resetState;
+  window.updateLogLevel = updateLogLevel;
+  window.clearLog = clearLog;
+  window.copyDisplayedLogs = copyDisplayedLogs;
+  window.downloadDisplayedLogs = downloadDisplayedLogs;
+  window.getGlyphsFacingDirection = getGlyphsFacingDirection;
+  window.enhancedToggleGlyphLight = enhancedToggleGlyphLight;
+  window.enhancedMoveGlyph = enhancedMoveGlyph;
+  window.refreshVisualLightStates = refreshVisualLightStates;
+  window.sendLEDTestCommand = sendLEDTestCommand;
+  window.clearAllLEDs = clearAllLEDs;
+  window.findGlyphAtPosition = findGlyphAtPosition;
+  window.getGlyphLevel = getGlyphLevel;
+  window.currentLightStates = currentLightStates;
+  window.updateBatteryFilter = updateBatteryFilter;
 })();
 //# sourceMappingURL=TowerController.js.map

@@ -5,7 +5,7 @@ export interface ConnectionCallbacks {
     onBatteryLevelNotify: (millivolts: number) => void;
     onCalibrationComplete: () => void;
     onSkullDrop: (towerSkullCount: number) => void;
-    onTowerResponse?: () => void;
+    onTowerResponse?: (response: Uint8Array) => void;
 }
 export interface DeviceInformation {
     manufacturerName?: string;

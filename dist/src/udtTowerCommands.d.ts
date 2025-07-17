@@ -1,4 +1,5 @@
 import { type Lights, type TowerSide, type RotateCommand, type SealIdentifier } from './udtConstants';
+import { type TowerState } from './functions';
 import { Logger } from './udtLogger';
 import { UdtCommandFactory } from './udtCommandFactory';
 import { UdtBleConnection } from './udtBleConnection';
@@ -17,6 +18,7 @@ export interface TowerCommandDependencies {
         value: number;
     };
     retrySendCommandMax: number;
+    getCurrentTowerState?: () => TowerState | null;
 }
 export declare class UdtTowerCommands {
     private deps;
@@ -101,6 +103,44 @@ export declare class UdtTowerCommands {
      * @returns The current position of the specified drum level
      */
     getCurrentDrumPosition(level: 'top' | 'middle' | 'bottom'): TowerSide;
+    /**
+     * Sends a stateful LED command that only changes specific LEDs while preserving all other state.
+     * @param layerIndex - Layer index (0-5)
+     * @param lightIndex - Light index within layer (0-3)
+     * @param effect - Light effect (0=off, 1=on, 2=slow pulse, etc.)
+     * @param loop - Whether to loop the effect
+     * @returns Promise that resolves when command is sent
+     */
+    setLEDStateful(layerIndex: number, lightIndex: number, effect: number, loop?: boolean): Promise<void>;
+    /**
+     * Plays a sound using stateful commands that preserve existing tower state.
+     * @param soundIndex - Index of the sound to play (1-based)
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @returns Promise that resolves when command is sent
+     */
+    playSoundStateful(soundIndex: number, loop?: boolean, volume?: number): Promise<void>;
+    /**
+     * Rotates a single drum using stateful commands that preserve existing tower state.
+     * @param drumIndex - Drum index (0=top, 1=middle, 2=bottom)
+     * @param position - Target position (0=north, 1=east, 2=south, 3=west)
+     * @param playSound - Whether to play sound during rotation
+     * @returns Promise that resolves when command is sent
+     */
+    rotateDrumStateful(drumIndex: number, position: number, playSound?: boolean): Promise<void>;
+    /**
+     * Sends a complete tower state using stateful commands.
+     * @param state - Complete tower state to send
+     * @returns Promise that resolves when command is sent
+     */
+    sendTowerStateStateful(state: TowerState): Promise<void>;
+    /**
+     * Public access to sendTowerCommandDirect for testing purposes.
+     * This bypasses the command queue and sends commands directly.
+     * @param command - The command packet to send directly to the tower
+     * @returns Promise that resolves when command is sent
+     */
+    sendTowerCommandDirectPublic(command: Uint8Array): Promise<void>;
     /**
      * Called when a tower response is received to notify the command queue
      * This should be called from the BLE connection response handler

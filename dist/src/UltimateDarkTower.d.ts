@@ -1,4 +1,5 @@
 import { type Lights, type TowerSide, type RotateCommand, type SealIdentifier, type Glyphs } from './udtConstants';
+import { type TowerState } from './functions';
 import { type LogOutput } from './udtLogger';
 import { type ConnectionStatus } from './udtBleConnection';
 /**
@@ -38,6 +39,7 @@ declare class UltimateDarkTower {
     currentBatteryPercentage: number;
     previousBatteryPercentage: number;
     private brokenSeals;
+    private currentTowerState;
     private glyphPositions;
     onTowerConnect: () => void;
     onTowerDisconnect: () => void;
@@ -85,6 +87,12 @@ declare class UltimateDarkTower {
      */
     Lights(lights: Lights): Promise<void>;
     /**
+     * Sends a raw command packet directly to the tower (for testing purposes).
+     * @param command - The raw command packet to send
+     * @returns Promise that resolves when command is sent
+     */
+    sendTowerCommandDirect(command: Uint8Array): Promise<void>;
+    /**
      * Sends a light override command to control specific light patterns.
      * @param light - Light override value to send
      * @param soundIndex - Optional sound to play with the light override
@@ -115,6 +123,50 @@ declare class UltimateDarkTower {
      * @returns Promise that resolves when reset command is sent
      */
     resetTowerSkullCount(): Promise<void>;
+    /**
+     * Sets a specific LED using stateful commands that preserve all other tower state.
+     * This is the recommended way to control individual LEDs.
+     * @param layerIndex - Layer index (0-5: TopRing, MiddleRing, BottomRing, Ledge, Base1, Base2)
+     * @param lightIndex - Light index within layer (0-3)
+     * @param effect - Light effect (0=off, 1=on, 2=slow pulse, 3=fast pulse, etc.)
+     * @param loop - Whether to loop the effect
+     * @returns Promise that resolves when command is sent
+     */
+    setLED(layerIndex: number, lightIndex: number, effect: number, loop?: boolean): Promise<void>;
+    /**
+     * Plays a sound using stateful commands that preserve existing tower state.
+     * @param soundIndex - Index of the sound to play (1-based)
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @returns Promise that resolves when command is sent
+     */
+    playSoundStateful(soundIndex: number, loop?: boolean, volume?: number): Promise<void>;
+    /**
+     * Rotates a single drum using stateful commands that preserve existing tower state.
+     * @param drumIndex - Drum index (0=top, 1=middle, 2=bottom)
+     * @param position - Target position (0=north, 1=east, 2=south, 3=west)
+     * @param playSound - Whether to play sound during rotation
+     * @returns Promise that resolves when command is sent
+     */
+    rotateDrumStateful(drumIndex: number, position: number, playSound?: boolean): Promise<void>;
+    /**
+     * Gets the current complete tower state if available.
+     * @returns The current tower state object, or null if not available
+     */
+    getCurrentTowerState(): TowerState | null;
+    /**
+     * Sends a complete tower state to the tower, preserving existing state.
+     * This creates a stateful command that only changes the specified fields.
+     * @param towerState - The tower state to send
+     * @returns Promise that resolves when the command is sent
+     */
+    sendTowerState(towerState: TowerState): Promise<void>;
+    /**
+     * Updates the current tower state from a tower response.
+     * Called internally when tower state responses are received.
+     * @param stateData - The 19-byte state data from tower response
+     */
+    private updateTowerStateFromResponse;
     /**
      * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
      * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
