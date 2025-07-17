@@ -200,11 +200,12 @@ function rtdt_unpack_state(data: Uint8Array): TowerState {
   state.audio.loop = !!(data[14] & 0b10000000);
 
   // Bytes 15-17: Beam, drum-reversing, volume
+  // Don't run the drums in reverse, trust me
   state.beam.count = (data[15] << 8) | data[16];
   state.beam.fault = !!(data[17] & 0b00000001);
-  state.drum[0].reverse = !!(data[17] & 0b00000010);
-  state.drum[1].reverse = !!(data[17] & 0b00000100);
-  state.drum[2].reverse = !!(data[17] & 0b00001000);
+  state.drum[0].reverse = !!(data[17] & 0b00000010); // DON'T
+  state.drum[1].reverse = !!(data[17] & 0b00000100); // USE
+  state.drum[2].reverse = !!(data[17] & 0b00001000); // THESE
   state.audio.volume = (data[17] & 0b11110000) >> 4;
 
   // Byte 18: LED sequences
