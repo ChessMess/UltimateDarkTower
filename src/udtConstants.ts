@@ -109,9 +109,9 @@ export type RotateCommand = {
 
 // prettier-ignore
 export const drumPositionCmds = {
-  top: { north: 0b00010000, east: 0b00000010, south: 0b00010100, west: 0b00010110 }, // bits 1-8
-  middle: { north: 0b00010000, east: 0b01000000, south: 0b10010000, west: 0b11010000 }, // bits 1-4
-  bottom: { north: 0b01000010, east: 0b01001010, south: 0b01010010, west: 0b01011010 },
+  top: { north: 0b00010000, west: 0b00000010, south: 0b00010100, east: 0b00010110 }, // bits 1-8
+  middle: { north: 0b00010000, west: 0b01000000, south: 0b10010000, east: 0b11010000 }, // bits 1-4
+  bottom: { north: 0b01000010, west: 0b01001010, south: 0b01010010, east: 0b01011010 },
 }
 
 export const BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];

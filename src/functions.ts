@@ -78,9 +78,6 @@ const LED_CHANNEL_LOOKUP = [
   20, 21, 22, 23,
 ];
 
-// Legacy constants for backwards compatibility (deprecated)
-const TOWER_LIGHT_POSITIONS = RING_LIGHT_POSITIONS;
-
 // Updated reverse mapping for the corrected layer architecture
 const LAYER_TO_POSITION = {
   [TOWER_LAYERS.TOP_RING]: 'TOP_RING',
@@ -382,7 +379,6 @@ export {
   RING_LIGHT_POSITIONS,
   LEDGE_BASE_LIGHT_POSITIONS,
   LED_CHANNEL_LOOKUP,
-  TOWER_LIGHT_POSITIONS,  // Legacy - deprecated
   LAYER_TO_POSITION,
   LIGHT_INDEX_TO_DIRECTION,
   getTowerPosition,

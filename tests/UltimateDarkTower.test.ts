@@ -234,17 +234,17 @@ describe('UltimateDarkTower', () => {
     test('should track broken seals directly via internal state', () => {
       // Access the internal brokenSeals Set directly to test tracking logic
       const brokenSeals = darkTower['brokenSeals'] as Set<string>;
-      
+
       const seal = { side: 'north' as const, level: 'middle' as const };
       const sealKey = `${seal.level}-${seal.side}`;
-      
+
       // Initially should not be broken
       expect(darkTower.isSealBroken(seal)).toBe(false);
       expect(brokenSeals.has(sealKey)).toBe(false);
-      
+
       // Manually add to broken seals to test the tracking logic
       brokenSeals.add(sealKey);
-      
+
       // Now should be considered broken
       expect(darkTower.isSealBroken(seal)).toBe(true);
       expect(darkTower.getBrokenSeals()).toContainEqual(seal);
@@ -253,20 +253,20 @@ describe('UltimateDarkTower', () => {
 
     test('should handle multiple broken seals', () => {
       const brokenSeals = darkTower['brokenSeals'] as Set<string>;
-      
+
       const seal1 = { side: 'north' as const, level: 'top' as const };
       const seal2 = { side: 'south' as const, level: 'bottom' as const };
       const seal3 = { side: 'east' as const, level: 'middle' as const };
-      
+
       // Add seals to broken state
       brokenSeals.add(`${seal1.level}-${seal1.side}`);
       brokenSeals.add(`${seal2.level}-${seal2.side}`);
       brokenSeals.add(`${seal3.level}-${seal3.side}`);
-      
+
       expect(darkTower.isSealBroken(seal1)).toBe(true);
       expect(darkTower.isSealBroken(seal2)).toBe(true);
       expect(darkTower.isSealBroken(seal3)).toBe(true);
-      
+
       const allBrokenSeals = darkTower.getBrokenSeals();
       expect(allBrokenSeals).toHaveLength(3);
       expect(allBrokenSeals).toContainEqual(seal1);
@@ -278,12 +278,12 @@ describe('UltimateDarkTower', () => {
       const brokenSeals = darkTower['brokenSeals'] as Set<string>;
       const seal = { side: 'east' as const, level: 'top' as const };
       const sealKey = `${seal.level}-${seal.side}`;
-      
+
       // Add same seal multiple times
       brokenSeals.add(sealKey);
       brokenSeals.add(sealKey);
       brokenSeals.add(sealKey);
-      
+
       expect(darkTower.isSealBroken(seal)).toBe(true);
       expect(darkTower.getBrokenSeals()).toHaveLength(1);
       expect(darkTower.getBrokenSeals()).toContainEqual(seal);
@@ -291,18 +291,18 @@ describe('UltimateDarkTower', () => {
 
     test('should reset all broken seals', () => {
       const brokenSeals = darkTower['brokenSeals'] as Set<string>;
-      
+
       const seal1 = { side: 'north' as const, level: 'top' as const };
       const seal2 = { side: 'south' as const, level: 'bottom' as const };
-      
+
       // Add seals to broken state
       brokenSeals.add(`${seal1.level}-${seal1.side}`);
       brokenSeals.add(`${seal2.level}-${seal2.side}`);
-      
+
       expect(darkTower.getBrokenSeals()).toHaveLength(2);
-      
+
       darkTower.resetBrokenSeals();
-      
+
       expect(darkTower.getBrokenSeals()).toEqual([]);
       expect(darkTower.isSealBroken(seal1)).toBe(false);
       expect(darkTower.isSealBroken(seal2)).toBe(false);
@@ -310,31 +310,31 @@ describe('UltimateDarkTower', () => {
 
     test('should return null when all seals are broken', () => {
       const brokenSeals = darkTower['brokenSeals'] as Set<string>;
-      
+
       // Break all possible seals (4 sides × 3 levels = 12 seals)
       for (const side of ['north', 'south', 'east', 'west'] as const) {
         for (const level of ['top', 'middle', 'bottom'] as const) {
           brokenSeals.add(`${level}-${side}`);
         }
       }
-      
+
       expect(darkTower.getRandomUnbrokenSeal()).toBeNull();
     });
 
     test('should return only unbroken seals when some are broken', () => {
       const brokenSeals = darkTower['brokenSeals'] as Set<string>;
-      
+
       // Break some specific seals
       const brokenSealsList = [
         { side: 'north' as const, level: 'top' as const },
         { side: 'south' as const, level: 'middle' as const },
         { side: 'east' as const, level: 'bottom' as const }
       ];
-      
+
       brokenSealsList.forEach(seal => {
         brokenSeals.add(`${seal.level}-${seal.side}`);
       });
-      
+
       // Get random unbroken seal multiple times to ensure it's not broken
       for (let i = 0; i < 10; i++) {
         const randomSeal = darkTower.getRandomUnbrokenSeal();
@@ -345,18 +345,18 @@ describe('UltimateDarkTower', () => {
 
     test('should maintain seal state consistency', () => {
       const seal = { side: 'west' as const, level: 'top' as const };
-      
+
       // Initially unbroken
       expect(darkTower.isSealBroken(seal)).toBe(false);
       expect(darkTower.getBrokenSeals()).not.toContainEqual(seal);
-      
+
       // Mark as broken
       const brokenSeals = darkTower['brokenSeals'] as Set<string>;
       brokenSeals.add(`${seal.level}-${seal.side}`);
-      
+
       expect(darkTower.isSealBroken(seal)).toBe(true);
       expect(darkTower.getBrokenSeals()).toContainEqual(seal);
-      
+
       // Reset and verify
       darkTower.resetBrokenSeals();
       expect(darkTower.isSealBroken(seal)).toBe(false);
@@ -366,39 +366,39 @@ describe('UltimateDarkTower', () => {
     // Integration test that actually calls breakSeal to verify the full flow
     test('should update broken seal state when breakSeal method is called', async () => {
       await darkTower.connect();
-      
+
       const seal = { side: 'north' as const, level: 'middle' as const };
-      
+
       // Mock the underlying command execution to avoid timing issues
       const towerCommands = darkTower['towerCommands'];
       const originalBreakSeal = towerCommands.breakSeal;
       towerCommands.breakSeal = jest.fn().mockResolvedValue(undefined);
-      
+
       try {
         // Call the actual breakSeal method
         await darkTower.breakSeal(seal);
-        
+
         // Verify the seal tracking was updated
         expect(darkTower.isSealBroken(seal)).toBe(true);
         expect(darkTower.getBrokenSeals()).toContainEqual(seal);
-        
+
         // Test with multiple seals (now calling individually)
         const seals = [
           { side: 'east' as const, level: 'top' as const },
           { side: 'west' as const, level: 'bottom' as const }
         ];
-        
+
         // Break each seal individually since arrays are no longer supported
         for (const sealToBreak of seals) {
           await darkTower.breakSeal(sealToBreak);
         }
-        
+
         seals.forEach(s => {
           expect(darkTower.isSealBroken(s)).toBe(true);
         });
-        
+
         expect(darkTower.getBrokenSeals()).toHaveLength(3); // original + 2 new
-        
+
       } finally {
         // Restore original method
         towerCommands.breakSeal = originalBreakSeal;
@@ -425,26 +425,26 @@ describe('UltimateDarkTower', () => {
 
     test('should queue commands sequentially', async () => {
       const writeValueSpy = jest.spyOn(mockCharacteristic, 'writeValue');
-      
+
       // Send multiple commands rapidly
       const promises = [
         darkTower.playSound(1),
         darkTower.playSound(2),
         darkTower.playSound(3)
       ];
-      
+
       // Commands should be queued but only first one executed immediately
       expect(writeValueSpy).toHaveBeenCalledTimes(1);
-      
+
       // Simulate tower responses to progress the queue
       const towerCommands = darkTower['towerCommands'];
       towerCommands.onTowerResponse(); // Complete first command
       towerCommands.onTowerResponse(); // Complete second command
       towerCommands.onTowerResponse(); // Complete third command
-      
+
       // Wait for all commands to complete
       await Promise.all(promises);
-      
+
       // All commands should have been executed
       expect(writeValueSpy).toHaveBeenCalledTimes(3);
     });
@@ -452,22 +452,22 @@ describe('UltimateDarkTower', () => {
     test('should handle command timeout gracefully', async () => {
       const writeValueSpy = jest.spyOn(mockCharacteristic, 'writeValue');
       const loggerSpy = jest.spyOn(darkTower['logger'], 'warn');
-      
+
       // Mock a command that will timeout (don't trigger response)
       jest.useFakeTimers();
       const promise = darkTower.playSound(1);
-      
+
       // Fast-forward time to trigger timeout (30 seconds)
       jest.advanceTimersByTime(30000);
-      
+
       await promise; // Should complete despite timeout
-      
+
       expect(writeValueSpy).toHaveBeenCalledTimes(1);
       expect(loggerSpy).toHaveBeenCalledWith(
         expect.stringContaining('Command timeout after 30000ms'),
         '[UDT]'
       );
-      
+
       jest.useRealTimers();
     });
 
@@ -478,11 +478,11 @@ describe('UltimateDarkTower', () => {
         darkTower.playSound(2),
         darkTower.playSound(3)
       ];
-      
+
       // Trigger disconnection - this should clear the queue
       const towerCommands = darkTower['towerCommands'];
       towerCommands.clearQueue();
-      
+
       // All commands should be rejected when queue is cleared
       await expect(promises[0]).rejects.toThrow('Command queue cleared');
       await expect(promises[1]).rejects.toThrow('Command queue cleared');
@@ -494,7 +494,7 @@ describe('UltimateDarkTower', () => {
     describe('Initialization', () => {
       test('should initialize all glyph positions as null', () => {
         const glyphPositions = darkTower.getAllGlyphPositions();
-        
+
         expect(glyphPositions.cleanse).toBeNull();
         expect(glyphPositions.quest).toBeNull();
         expect(glyphPositions.battle).toBeNull();
@@ -513,7 +513,7 @@ describe('UltimateDarkTower', () => {
       test('should return a copy of glyph positions object', () => {
         const positions1 = darkTower.getAllGlyphPositions();
         const positions2 = darkTower.getAllGlyphPositions();
-        
+
         expect(positions1).toEqual(positions2);
         expect(positions1).not.toBe(positions2); // Different objects
       });
@@ -524,9 +524,9 @@ describe('UltimateDarkTower', () => {
         // Trigger calibration complete callback
         const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
         calibrationCallback();
-        
+
         const glyphPositions = darkTower.getAllGlyphPositions();
-        
+
         expect(glyphPositions.cleanse).toBe(GLYPHS.cleanse.side);
         expect(glyphPositions.quest).toBe(GLYPHS.quest.side);
         expect(glyphPositions.battle).toBe(GLYPHS.battle.side);
@@ -537,7 +537,7 @@ describe('UltimateDarkTower', () => {
       test('should set correct initial positions from GLYPHS constant', () => {
         const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
         calibrationCallback();
-        
+
         // Test each glyph matches its expected position from constants
         expect(darkTower.getGlyphPosition('cleanse')).toBe('north');
         expect(darkTower.getGlyphPosition('quest')).toBe('south');
@@ -550,16 +550,16 @@ describe('UltimateDarkTower', () => {
         const originalCallback = darkTower.onCalibrationComplete;
         const mockCallback = jest.fn();
         darkTower.onCalibrationComplete = mockCallback;
-        
+
         // Simulate calibration complete from BLE connection
         const bleConnection = darkTower['bleConnection'];
         const callbacks = bleConnection['callbacks'];
         callbacks.onCalibrationComplete();
-        
+
         // Check glyph positions were set
         expect(darkTower.getGlyphPosition('cleanse')).toBe('north');
         expect(mockCallback).toHaveBeenCalled();
-        
+
         // Restore original callback
         darkTower.onCalibrationComplete = originalCallback;
       });
@@ -574,16 +574,16 @@ describe('UltimateDarkTower', () => {
 
       test('should update glyph positions after single level rotation', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Rotate top level from north to east (1 step clockwise)
         updateMethod('top', 'north', 'east');
-        
+
         // Cleanse starts at north, moves 1 step clockwise to east
         expect(darkTower.getGlyphPosition('cleanse')).toBe('east');
-        
+
         // Quest starts at south, moves 1 step clockwise to west
         expect(darkTower.getGlyphPosition('quest')).toBe('west');
-        
+
         // Other glyphs should remain unchanged (not on top level)
         expect(darkTower.getGlyphPosition('battle')).toBe('north');
         expect(darkTower.getGlyphPosition('banner')).toBe('north');
@@ -592,40 +592,40 @@ describe('UltimateDarkTower', () => {
 
       test('should handle multiple rotation steps correctly', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Rotate top level from north to south (2 steps clockwise)
         updateMethod('top', 'north', 'south');
-        
+
         // Cleanse starts at north, moves 2 steps clockwise to south
         expect(darkTower.getGlyphPosition('cleanse')).toBe('south');
-        
+
         // Quest starts at south, moves 2 steps clockwise to north
         expect(darkTower.getGlyphPosition('quest')).toBe('north');
       });
 
       test('should handle wrap-around rotation correctly', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Rotate top level from west to north (1 step clockwise with wrap)
         updateMethod('top', 'west', 'north');
-        
+
         // Cleanse starts at north, drum goes from west to north (1 step clockwise)
         // So cleanse moves 1 step clockwise: north -> east
         expect(darkTower.getGlyphPosition('cleanse')).toBe('east');
-        
+
         // Quest starts at south, moves 1 step clockwise: south -> west
         expect(darkTower.getGlyphPosition('quest')).toBe('west');
       });
 
       test('should update only glyphs on the rotated level', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Rotate middle level from north to east
         updateMethod('middle', 'north', 'east');
-        
+
         // Battle is on middle level, should change
         expect(darkTower.getGlyphPosition('battle')).toBe('east');
-        
+
         // All other glyphs should remain unchanged
         expect(darkTower.getGlyphPosition('cleanse')).toBe('north'); // top level
         expect(darkTower.getGlyphPosition('quest')).toBe('south'); // top level
@@ -635,16 +635,16 @@ describe('UltimateDarkTower', () => {
 
       test('should handle bottom level rotation correctly', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Rotate bottom level from north to west (3 steps clockwise)
         updateMethod('bottom', 'north', 'west');
-        
+
         // Banner starts at north, moves 3 steps clockwise to west
         expect(darkTower.getGlyphPosition('banner')).toBe('west');
-        
+
         // Reinforce starts at south, moves 3 steps clockwise to east
         expect(darkTower.getGlyphPosition('reinforce')).toBe('east');
-        
+
         // Other glyphs should remain unchanged
         expect(darkTower.getGlyphPosition('cleanse')).toBe('north');
         expect(darkTower.getGlyphPosition('quest')).toBe('south');
@@ -669,26 +669,26 @@ describe('UltimateDarkTower', () => {
         const towerCommands = darkTower['towerCommands'];
         const originalRotate = towerCommands.rotate;
         towerCommands.rotate = jest.fn().mockResolvedValue(undefined);
-        
+
         // Mock getCurrentDrumPosition to return known positions
         const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
         getCurrentDrumPositionSpy.mockReturnValue('north');
-        
+
         try {
           // Call the Rotate method - rotate each level 1 step clockwise
           await darkTower.Rotate('east', 'east', 'east');
-          
+
           // Top level glyphs: cleanse (north->east), quest (south->west)
           expect(darkTower.getGlyphPosition('cleanse')).toBe('east');
           expect(darkTower.getGlyphPosition('quest')).toBe('west');
-          
+
           // Middle level glyph: battle (north->east)
           expect(darkTower.getGlyphPosition('battle')).toBe('east');
-          
+
           // Bottom level glyphs: banner (north->east), reinforce (south->west)
           expect(darkTower.getGlyphPosition('banner')).toBe('east');
           expect(darkTower.getGlyphPosition('reinforce')).toBe('west');
-          
+
         } finally {
           // Restore original methods
           towerCommands.rotate = originalRotate;
@@ -696,63 +696,11 @@ describe('UltimateDarkTower', () => {
         }
       });
 
-      test('should update glyph positions when MultiCommand is called with rotation', async () => {
-        const towerCommands = darkTower['towerCommands'];
-        const originalMultiCommand = towerCommands.multiCommand;
-        towerCommands.multiCommand = jest.fn().mockResolvedValue(undefined);
-        
-        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
-        getCurrentDrumPositionSpy.mockReturnValue('north');
-        
-        try {
-          const rotateCommand = { top: 'south' as const, middle: 'east' as const, bottom: 'west' as const };
-          await darkTower.MultiCommand(rotateCommand);
-          
-          // Top level: rotate 2 steps clockwise (north->south)
-          // cleanse: north->south, quest: south->north
-          expect(darkTower.getGlyphPosition('cleanse')).toBe('south');
-          expect(darkTower.getGlyphPosition('quest')).toBe('north');
-          
-          // Middle level: rotate 1 step clockwise (north->east)
-          // battle: north->east
-          expect(darkTower.getGlyphPosition('battle')).toBe('east');
-          
-          // Bottom level: rotate 3 steps clockwise (north->west)
-          // banner: north->west, reinforce: south->east
-          expect(darkTower.getGlyphPosition('banner')).toBe('west');
-          expect(darkTower.getGlyphPosition('reinforce')).toBe('east');
-          
-        } finally {
-          towerCommands.multiCommand = originalMultiCommand;
-          getCurrentDrumPositionSpy.mockRestore();
-        }
-      });
-
-      test('should not update glyph positions when MultiCommand is called without rotation', async () => {
-        const towerCommands = darkTower['towerCommands'];
-        const originalMultiCommand = towerCommands.multiCommand;
-        towerCommands.multiCommand = jest.fn().mockResolvedValue(undefined);
-        
-        try {
-          // Store initial positions
-          const initialPositions = darkTower.getAllGlyphPositions();
-          
-          // Call MultiCommand without rotation
-          await darkTower.MultiCommand(undefined, { doorway: [] });
-          
-          // Verify glyph positions remained unchanged
-          expect(darkTower.getAllGlyphPositions()).toEqual(initialPositions);
-          
-        } finally {
-          towerCommands.multiCommand = originalMultiCommand;
-        }
-      });
-
       test('should handle randomRotateLevels correctly', async () => {
         const towerCommands = darkTower['towerCommands'];
         const originalRandomRotate = towerCommands.randomRotateLevels;
         towerCommands.randomRotateLevels = jest.fn().mockResolvedValue(undefined);
-        
+
         const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
         // Mock different return values for before and after
         getCurrentDrumPositionSpy
@@ -762,23 +710,23 @@ describe('UltimateDarkTower', () => {
           .mockReturnValueOnce('east')  // after top (1 step clockwise)
           .mockReturnValueOnce('south') // after middle (2 steps clockwise)
           .mockReturnValueOnce('north'); // after bottom (unchanged)
-        
+
         try {
           await darkTower.randomRotateLevels(4); // top & middle levels
-          
+
           // Top level changed from north to east (1 step clockwise)
           // cleanse: north->east, quest: south->west
           expect(darkTower.getGlyphPosition('cleanse')).toBe('east');
           expect(darkTower.getGlyphPosition('quest')).toBe('west');
-          
+
           // Middle level changed from north to south (2 steps clockwise)
           // battle: north->south
           expect(darkTower.getGlyphPosition('battle')).toBe('south');
-          
+
           // Bottom level unchanged
           expect(darkTower.getGlyphPosition('banner')).toBe('north');
           expect(darkTower.getGlyphPosition('reinforce')).toBe('south');
-          
+
         } finally {
           towerCommands.randomRotateLevels = originalRandomRotate;
           getCurrentDrumPositionSpy.mockRestore();
@@ -790,11 +738,11 @@ describe('UltimateDarkTower', () => {
       test('should handle null glyph positions gracefully', () => {
         // Before calibration, all positions should be null
         expect(darkTower.getGlyphPosition('cleanse')).toBeNull();
-        
+
         // Trying to update positions before calibration should not crash
         const updateMethod = darkTower['updateGlyphPositionsAfterRotation'].bind(darkTower);
         expect(() => updateMethod('top', 1)).not.toThrow();
-        
+
         // Positions should remain null
         expect(darkTower.getGlyphPosition('cleanse')).toBeNull();
       });
@@ -803,19 +751,19 @@ describe('UltimateDarkTower', () => {
         // Set up calibrated state
         const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
         calibrationCallback();
-        
+
         const sides = ['north', 'east', 'south', 'west'] as const;
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Test all possible rotations
         for (const fromSide of sides) {
           for (const toSide of sides) {
             // Reset to known state
             calibrationCallback();
-            
+
             // Perform rotation
             expect(() => updateMethod('top', fromSide, toSide)).not.toThrow();
-            
+
             // Verify the result is valid
             const newPosition = darkTower.getGlyphPosition('cleanse');
             expect(sides).toContain(newPosition as any);
@@ -826,35 +774,35 @@ describe('UltimateDarkTower', () => {
       test('should maintain consistency with multiple rotations', () => {
         const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
         calibrationCallback();
-        
+
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Perform multiple rotations around the circle
         updateMethod('top', 'north', 'east');  // north to east (1 step clockwise)
         updateMethod('top', 'east', 'south');  // east to south (1 step clockwise) 
         updateMethod('top', 'south', 'west');  // south to west (1 step clockwise)
         updateMethod('top', 'west', 'north');  // west to north (1 step clockwise, back to start)
-        
+
         // Should be back to original position
         expect(darkTower.getGlyphPosition('cleanse')).toBe('north');
       });
 
       test('should handle no rotation when old and new positions are the same', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Store initial positions
         const initialPositions = darkTower.getAllGlyphPositions();
-        
+
         // Try to rotate from north to north (no change)
         updateMethod('top', 'north', 'north');
-        
+
         // Positions should remain unchanged
         expect(darkTower.getAllGlyphPositions()).toEqual(initialPositions);
       });
 
       test('should correctly calculate rotation steps for all directions', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Test moving drum from initial position (north) to each direction
         // Since cleanse starts at north and quest starts at south on the top drum
         const testCases = [
@@ -863,15 +811,15 @@ describe('UltimateDarkTower', () => {
           { from: 'north', to: 'west', expectedCleanse: 'west', expectedQuest: 'east' },   // 3 steps clockwise
           { from: 'north', to: 'north', expectedCleanse: 'north', expectedQuest: 'south' }, // No rotation
         ] as const;
-        
+
         for (const testCase of testCases) {
           // Reset to known state (cleanse=north, quest=south)
           const calibrationCallback = darkTower['setGlyphPositionsFromCalibration'].bind(darkTower);
           calibrationCallback();
-          
+
           // Perform rotation
           updateMethod('top', testCase.from, testCase.to);
-          
+
           // Verify results
           expect(darkTower.getGlyphPosition('cleanse')).toBe(testCase.expectedCleanse);
           expect(darkTower.getGlyphPosition('quest')).toBe(testCase.expectedQuest);
@@ -888,14 +836,14 @@ describe('UltimateDarkTower', () => {
 
       test('should track multi-glyph drum movements correctly', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Move top drum from north to east (affects both cleanse and quest)
         updateMethod('top', 'north', 'east');
-        
+
         // Both glyphs on top drum should move together
         expect(darkTower.getGlyphPosition('cleanse')).toBe('east'); // was north
         expect(darkTower.getGlyphPosition('quest')).toBe('west');   // was south
-        
+
         // Other drums unaffected
         expect(darkTower.getGlyphPosition('battle')).toBe('north');
         expect(darkTower.getGlyphPosition('banner')).toBe('north');
@@ -904,14 +852,14 @@ describe('UltimateDarkTower', () => {
 
       test('should handle bottom drum multi-glyph movements', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Move bottom drum from north to south (affects both banner and reinforce)
         updateMethod('bottom', 'north', 'south');
-        
+
         // Both glyphs on bottom drum should move together
         expect(darkTower.getGlyphPosition('banner')).toBe('south');    // was north
         expect(darkTower.getGlyphPosition('reinforce')).toBe('north'); // was south
-        
+
         // Other drums unaffected
         expect(darkTower.getGlyphPosition('cleanse')).toBe('north');
         expect(darkTower.getGlyphPosition('quest')).toBe('south');
@@ -920,13 +868,13 @@ describe('UltimateDarkTower', () => {
 
       test('should handle single glyph drum movement (middle)', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Move middle drum from north to west (only affects battle)
         updateMethod('middle', 'north', 'west');
-        
+
         // Only battle should move
         expect(darkTower.getGlyphPosition('battle')).toBe('west'); // was north
-        
+
         // All other glyphs unaffected
         expect(darkTower.getGlyphPosition('cleanse')).toBe('north');
         expect(darkTower.getGlyphPosition('quest')).toBe('south');
@@ -936,10 +884,10 @@ describe('UltimateDarkTower', () => {
 
       test('should correctly handle 180-degree rotations', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Rotate top drum 180 degrees: north to south
         updateMethod('top', 'north', 'south');
-        
+
         // Glyphs should swap positions
         expect(darkTower.getGlyphPosition('cleanse')).toBe('south'); // was north
         expect(darkTower.getGlyphPosition('quest')).toBe('north');   // was south
@@ -947,10 +895,10 @@ describe('UltimateDarkTower', () => {
 
       test('should correctly handle 270-degree rotations', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
-        
+
         // Rotate bottom drum 270 degrees: north to west  
         updateMethod('bottom', 'north', 'west');
-        
+
         // 270-degree clockwise rotation
         expect(darkTower.getGlyphPosition('banner')).toBe('west');    // north + 3 steps = west
         expect(darkTower.getGlyphPosition('reinforce')).toBe('east'); // south + 3 steps = east

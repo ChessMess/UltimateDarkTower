@@ -1,0 +1,922 @@
+[
+  {
+    "id": "default-state",
+    "description": "Default/empty tower state with all values at zero",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    },
+    "tower_state_expected": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum0-position-1",
+    "description": "Drum 0 at position 1",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 1, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum0-position-2",
+    "description": "Drum 0 at position 2",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 2, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum0-position-3",
+    "description": "Drum 0 at position 3",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 3, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum1-position-1",
+    "description": "Drum 1 at position 1",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 1, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum1-position-2",
+    "description": "Drum 1 at position 2",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 2, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum1-position-3",
+    "description": "Drum 1 at position 3",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 3, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum2-position-1",
+    "description": "Drum 2 at position 1",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 1, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum2-position-2",
+    "description": "Drum 2 at position 2",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 2, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum2-position-3",
+    "description": "Drum 2 at position 3",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 3, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum0-jammed",
+    "description": "Drum 0 jammed",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": true, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum1-jammed",
+    "description": "Drum 1 jammed",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": true, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum2-jammed",
+    "description": "Drum 2 jammed",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": true, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum0-calibrated",
+    "description": "Drum 0 calibrated",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": true, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum1-calibrated",
+    "description": "Drum 1 calibrated",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": true, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum2-calibrated",
+    "description": "Drum 2 calibrated",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": true, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum0-playSound",
+    "description": "Drum 0 play sound",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": true, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum1-playSound",
+    "description": "Drum 1 play sound",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": true, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "drum2-playSound",
+    "description": "Drum 2 play sound",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": true, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "all-drums-positions",
+    "description": "All drums at different positions",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 1, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 2, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 3, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "all-drums-jammed-calibrated",
+    "description": "All drums jammed and calibrated",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": true, "calibrated": true, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": true, "calibrated": true, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": true, "calibrated": true, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "top-ring-north-effect-1",
+    "description": "Top ring north light effect 1",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 1, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "top-ring-east-effect-2",
+    "description": "Top ring east light effect 2",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 2, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "top-ring-south-effect-3",
+    "description": "Top ring south light effect 3",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 3, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "top-ring-west-effect-4",
+    "description": "Top ring west light effect 4",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 4, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "middle-ring-all-effects",
+    "description": "Middle ring all directions with different effects",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 1, "loop": false }, { "effect": 2, "loop": false }, { "effect": 3, "loop": false }, { "effect": 4, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "bottom-ring-all-effects",
+    "description": "Bottom ring all directions with different effects",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 5, "loop": false }, { "effect": 6, "loop": false }, { "effect": 7, "loop": false }, { "effect": 1, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "ledge-ne-effect-7",
+    "description": "Ledge north-east light effect 7",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 7, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "base1-all-directions",
+    "description": "Base1 all directions with different effects",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 2, "loop": false }, { "effect": 3, "loop": false }, { "effect": 4, "loop": false }, { "effect": 5, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "base2-all-directions",
+    "description": "Base2 all directions with different effects",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 6, "loop": false }, { "effect": 7, "loop": false }, { "effect": 1, "loop": false }, { "effect": 2, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "light-loop-tests",
+    "description": "Various lights with loop enabled",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 1, "loop": true }, { "effect": 2, "loop": true }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 3, "loop": true }, { "effect": 0, "loop": false }, { "effect": 4, "loop": true }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 5, "loop": true }, { "effect": 0, "loop": false }, { "effect": 6, "loop": true }] },
+        { "light": [{ "effect": 7, "loop": true }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 1, "loop": true }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 2, "loop": true }, { "effect": 3, "loop": true }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "audio-sample-50",
+    "description": "Audio sample 50",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 50, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "audio-sample-127",
+    "description": "Audio sample 127 (maximum)",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 127, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "audio-loop-enabled",
+    "description": "Audio with loop enabled",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 25, "loop": true, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "audio-volume-8",
+    "description": "Audio volume 8",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 8 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "audio-volume-15",
+    "description": "Audio volume 15 (maximum)",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 15 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "audio-complex",
+    "description": "Complex audio state: sample 100, loop enabled, volume 12",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 100, "loop": true, "volume": 12 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 0
+    }
+  },
+  {
+    "id": "led-sequence-50",
+    "description": "LED sequence 50",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 50
+    }
+  },
+  {
+    "id": "led-sequence-255",
+    "description": "LED sequence 255 (maximum)",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 0, "loop": false, "volume": 0 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 255
+    }
+  },
+  {
+    "id": "complex-game-state",
+    "description": "Complex game state with multiple active elements",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": true, "position": 2, "playSound": true, "reverse": false },
+        { "jammed": true, "calibrated": true, "position": 1, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": true, "position": 3, "playSound": true, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 3, "loop": true }, { "effect": 0, "loop": false }, { "effect": 5, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 2, "loop": true }, { "effect": 0, "loop": false }, { "effect": 4, "loop": false }] },
+        { "light": [{ "effect": 1, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 7, "loop": true }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 6, "loop": true }, { "effect": 2, "loop": false }, { "effect": 0, "loop": false }] },
+        { "light": [{ "effect": 4, "loop": false }, { "effect": 0, "loop": false }, { "effect": 0, "loop": false }, { "effect": 3, "loop": true }] },
+        { "light": [{ "effect": 0, "loop": false }, { "effect": 1, "loop": false }, { "effect": 5, "loop": true }, { "effect": 0, "loop": false }] }
+      ],
+      "audio": { "sample": 75, "loop": true, "volume": 10 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 128
+    }
+  },
+  {
+    "id": "maximum-effects",
+    "description": "All lights at maximum effect (7) with various loop states",
+    "tower_state_test": {
+      "drum": [
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false },
+        { "jammed": false, "calibrated": false, "position": 0, "playSound": false, "reverse": false }
+      ],
+      "layer": [
+        { "light": [{ "effect": 7, "loop": true }, { "effect": 7, "loop": false }, { "effect": 7, "loop": true }, { "effect": 7, "loop": false }] },
+        { "light": [{ "effect": 7, "loop": false }, { "effect": 7, "loop": true }, { "effect": 7, "loop": false }, { "effect": 7, "loop": true }] },
+        { "light": [{ "effect": 7, "loop": true }, { "effect": 7, "loop": false }, { "effect": 7, "loop": true }, { "effect": 7, "loop": false }] },
+        { "light": [{ "effect": 7, "loop": false }, { "effect": 7, "loop": true }, { "effect": 7, "loop": false }, { "effect": 7, "loop": true }] },
+        { "light": [{ "effect": 7, "loop": true }, { "effect": 7, "loop": false }, { "effect": 7, "loop": true }, { "effect": 7, "loop": false }] },
+        { "light": [{ "effect": 7, "loop": false }, { "effect": 7, "loop": true }, { "effect": 7, "loop": false }, { "effect": 7, "loop": true }] }
+      ],
+      "audio": { "sample": 127, "loop": true, "volume": 15 },
+      "beam": { "count": 0, "fault": false },
+      "led_sequence": 255
+    }
+  }
+]

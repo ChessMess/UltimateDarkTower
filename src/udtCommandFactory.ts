@@ -100,33 +100,6 @@ export class UdtCommandFactory {
     }
 
     /**
-     * Creates a combined command packet by merging rotation, light, and sound commands.
-     * @param rotateCommand - Rotation command packet
-     * @param lightCommand - Light command packet
-     * @param soundCommand - Optional sound command packet
-     * @returns Combined command packet
-     */
-    createMultiCommand(
-        rotateCommand: Uint8Array, 
-        lightCommand: Uint8Array, 
-        soundCommand?: Uint8Array
-    ): Uint8Array {
-        const multiCmd = new Uint8Array(20);
-        
-        // Combine rotate and light commands with bitwise OR
-        for (let index = 0; index < 20; index++) {
-            multiCmd[index] = rotateCommand[index] | lightCommand[index];
-        }
-
-        // Add sound if provided
-        if (soundCommand) {
-            multiCmd[AUDIO_COMMAND_POS] = multiCmd[AUDIO_COMMAND_POS] | soundCommand[AUDIO_COMMAND_POS];
-        }
-
-        return multiCmd;
-    }
-
-    /**
      * Creates a basic tower command packet with the specified command value.
      * @param commandValue - The command value to send
      * @returns Basic command packet
@@ -146,7 +119,7 @@ export class UdtCommandFactory {
      */
     createStatefulCommand(currentState: TowerState | null, modifications: Partial<TowerState>): Uint8Array {
         // Start with current state or create default state
-        const newState: TowerState = currentState ? { ...currentState } : this.createDefaultTowerState();
+        const newState: TowerState = currentState ? { ...currentState } : this.createEmptyTowerState();
 
         // Apply modifications
         if (modifications.drum) {
@@ -197,10 +170,10 @@ export class UdtCommandFactory {
      * @returns 20-byte command packet
      */
     createStatefulLEDCommand(
-        currentState: TowerState | null, 
-        layerIndex: number, 
-        lightIndex: number, 
-        effect: number, 
+        currentState: TowerState | null,
+        layerIndex: number,
+        lightIndex: number,
+        effect: number,
         loop: boolean = false
     ): Uint8Array {
         const modifications: Partial<TowerState> = {};
@@ -212,7 +185,7 @@ export class UdtCommandFactory {
         modifications.layer[layerIndex] = {
             light: [
                 { effect: 0, loop: false },
-                { effect: 0, loop: false }, 
+                { effect: 0, loop: false },
                 { effect: 0, loop: false },
                 { effect: 0, loop: false }
             ]
@@ -287,7 +260,7 @@ export class UdtCommandFactory {
     packTowerStateCommand(state: TowerState): Uint8Array {
         const stateData = new Uint8Array(19);
         const success = rtdt_pack_state(stateData, 19, state);
-        
+
         if (!success) {
             throw new Error('Failed to pack tower state data');
         }
@@ -296,7 +269,7 @@ export class UdtCommandFactory {
         const command = new Uint8Array(20);
         command[0] = 0x00; // Command type for tower state
         command.set(stateData, 1);
-        
+
         return command;
     }
 
@@ -304,7 +277,7 @@ export class UdtCommandFactory {
      * Creates a default tower state with all systems off/neutral.
      * @returns Default TowerState object
      */
-    private createDefaultTowerState(): TowerState {
+    private createEmptyTowerState(): TowerState {
         return {
             drum: [
                 { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },

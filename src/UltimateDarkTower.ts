@@ -2,13 +2,12 @@ import {
   type Lights,
   type TowerSide,
   type TowerLevels,
-  type RotateCommand,
   type SealIdentifier,
   type Glyphs,
   VOLTAGE_LEVELS,
   GLYPHS
 } from './udtConstants';
-import { type TowerState } from './functions';
+import { type TowerState, createDefaultTowerState } from './functions';
 import { Logger, ConsoleOutput, type LogOutput } from './udtLogger';
 import { UdtBleConnection, type ConnectionCallbacks, type ConnectionStatus } from './udtBleConnection';
 import { TowerResponseProcessor } from './udtTowerResponse';
@@ -63,9 +62,9 @@ class UltimateDarkTower {
   currentBatteryPercentage: number = 0;
   previousBatteryPercentage: number = 0;
   private brokenSeals: Set<string> = new Set();
-  
+
   // Complete tower state tracking for stateful commands
-  private currentTowerState: TowerState | null = null;
+  private currentTowerState: TowerState = createDefaultTowerState();
 
   // glyph position tracking
   private glyphPositions: { [key in Glyphs]: TowerSide | null } = {
@@ -139,7 +138,7 @@ class UltimateDarkTower {
     callbacks.onTowerResponse = (response: Uint8Array) => {
       // Handle command queue response processing (existing functionality)
       this.towerCommands.onTowerResponse();
-      
+
       // Check if this is a tower state response and update our state tracking
       if (response.length >= 20) {
         const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
@@ -276,39 +275,6 @@ class UltimateDarkTower {
   }
 
   /**
-   * DO NOT USE THIS FUNCTION - MULTIPLE SIMULTANEOUS ACTIONS CAN CAUSE TOWER DISCONNECTION
-   * Sends a combined command to rotate drums, control lights, and play sound simultaneously.
-   * @param rotate - Rotation configuration for tower drums
-   * @param lights - Light configuration object
-   * @param soundIndex - Optional sound to play with the multi-command
-   * @returns Promise that resolves when multi-command is sent
-   * @deprecated SPECIAL USE ONLY - CAN CAUSE DISCONNECTS
-   */
-  async MultiCommand(rotate?: RotateCommand, lights?: Lights, soundIndex?: number) {
-    // Store current drum positions before rotation if we're rotating
-    let oldTopPosition: TowerSide | undefined;
-    let oldMiddlePosition: TowerSide | undefined;
-    let oldBottomPosition: TowerSide | undefined;
-
-    if (rotate) {
-      oldTopPosition = this.getCurrentDrumPosition('top');
-      oldMiddlePosition = this.getCurrentDrumPosition('middle');
-      oldBottomPosition = this.getCurrentDrumPosition('bottom');
-    }
-
-    const result = await this.towerCommands.multiCommand(rotate, lights, soundIndex);
-
-    // Update glyph positions if rotation was performed
-    if (rotate && oldTopPosition && oldMiddlePosition && oldBottomPosition) {
-      this.calculateAndUpdateGlyphPositions('top', oldTopPosition, rotate.top);
-      this.calculateAndUpdateGlyphPositions('middle', oldMiddlePosition, rotate.middle);
-      this.calculateAndUpdateGlyphPositions('bottom', oldBottomPosition, rotate.bottom);
-    }
-
-    return result;
-  }
-
-  /**
    * Resets the tower's internal skull drop counter to zero.
    * @returns Promise that resolves when reset command is sent
    */
@@ -358,13 +324,13 @@ class UltimateDarkTower {
   //#endregion
 
   //#region Tower State Management
-  
+
   /**
    * Gets the current complete tower state if available.
-   * @returns The current tower state object, or null if not available
+   * @returns The current tower state object
    */
-  getCurrentTowerState(): TowerState | null {
-    return this.currentTowerState ? { ...this.currentTowerState } : null;
+  getCurrentTowerState(): TowerState {
+    return { ...this.currentTowerState };
   }
 
   /**
@@ -376,23 +342,23 @@ class UltimateDarkTower {
   async sendTowerState(towerState: TowerState): Promise<void> {
     // Import pack function here to avoid circular dependencies
     const { rtdt_pack_state } = await import('./functions');
-    
+
     // Pack the tower state into 19 bytes
     const stateData = new Uint8Array(19);
     const success = rtdt_pack_state(stateData, 19, towerState);
-    
+
     if (!success) {
       throw new Error('Failed to pack tower state data');
     }
-    
+
     // Create 20-byte command packet (command type 0x00 + 19 bytes state)
     const command = new Uint8Array(20);
     command[0] = 0x00; // Command type for tower state
     command.set(stateData, 1);
-    
+
     // Update our current state tracking
     this.currentTowerState = { ...towerState };
-    
+
     // Send the command
     return await this.sendTowerCommandDirect(command);
   }

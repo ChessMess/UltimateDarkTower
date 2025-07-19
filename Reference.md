@@ -360,25 +360,6 @@ const bottomPosition = tower.getCurrentDrumPosition('bottom');
 console.log(`Drums: Top=${topPosition}, Middle=${middlePosition}, Bottom=${bottomPosition}`);
 ```
 
-### Advanced Commands
-
-#### `MultiCommand(rotate?: RotateCommand, lights?: Lights, soundIndex?: number): Promise<void>`
-
-**⚠️ Advanced Use Only**: Combine multiple actions in one command. Not recommended as this can cause excessive current draw and cause the tower to drop bluetooth connection.
-
-```typescript
-// WARNING: Can cause disconnections
-await tower.MultiCommand(
-    { top: 'north', middle: 'east', bottom: 'south' },
-    { doorway: [{ position: 'north', level: 'top', style: LIGHT_EFFECTS.on }] },
-    TOWER_AUDIO_LIBRARY.BattleStart.value
-);
-```
-
-**Best Practice**: Use individual commands instead of MultiCommand or commands that allow multiple items (such as lights with sound) for maximum reliability. Do Lights, Sounds, and Rotations as discrete actions.
-
----
-
 ## Glyph System
 
 The tower tracks glyph positions as drums rotate. Glyphs are game symbols that appear on different drum levels.
