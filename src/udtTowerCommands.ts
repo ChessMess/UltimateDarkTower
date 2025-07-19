@@ -208,6 +208,55 @@ export class UdtTowerCommands {
     }
 
     /**
+   * Rotates tower drums to specified positions.
+   * @param top - Position for the top drum ('north', 'east', 'south', 'west')
+   * @param middle - Position for the middle drum
+   * @param bottom - Position for the bottom drum
+   * @param soundIndex - Optional sound to play during rotation
+   * @returns Promise that resolves when rotate command is sent
+   */
+    async rotateWithState(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number): Promise<void> {
+        this.deps.logDetail && this.deps.logger.debug(`Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`, '[UDT]');
+
+        // Convert TowerSide to numeric positions
+        const positionMap: { [key in TowerSide]: number } = {
+            'north': 0, 'east': 1, 'south': 2, 'west': 3
+        };
+
+        this.deps.logger.info('Sending stateful rotate commands' + (soundIndex ? ' with sound' : ''), '[UDT]');
+
+        // Flag that we're performing a long command 
+        // drum rotation can exceed battery heartbeat check default
+        this.deps.bleConnection.performingLongCommand = true;
+
+        try {
+            // Rotate each drum individually using the proven single-drum stateful commands
+            // This approach is more reliable than trying to change all drums in one command
+            await this.rotateDrumStateful(0, positionMap[top], false);
+            await this.rotateDrumStateful(1, positionMap[middle], false);
+            await this.rotateDrumStateful(2, positionMap[bottom], false);
+
+            // Play sound if requested - do this after all rotations to avoid conflicts
+            if (soundIndex) {
+                await this.playSound(soundIndex);
+            }
+
+        } finally {
+            // Reset the long command flag after a delay to allow for rotation completion
+            // Drum rotation time varies based on number of drums moved
+            setTimeout(() => {
+                this.deps.bleConnection.performingLongCommand = false;
+                this.deps.bleConnection.lastBatteryHeartbeat = Date.now(); // Reset heartbeat timer
+            }, this.deps.bleConnection.longTowerCommandTimeout);
+
+            // Update drum positions tracking - with stateful commands we know the exact positions
+            // The drum position encoding for topMiddle combines top and middle drum positions
+            this.deps.currentDrumPositions.topMiddle = (positionMap[top] << 2) | positionMap[middle];
+            this.deps.currentDrumPositions.bottom = positionMap[bottom];
+        }
+    }
+
+    /**
      * Resets the tower's internal skull drop counter to zero.
      * @returns Promise that resolves when reset command is sent
      */

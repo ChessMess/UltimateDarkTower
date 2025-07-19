@@ -357,10 +357,23 @@ class UltimateDarkTower {
     command.set(stateData, 1);
 
     // Update our current state tracking
-    this.currentTowerState = { ...towerState };
+    this.setTowerState({ ...towerState }, 'sendTowerState');
 
     // Send the command
     return await this.sendTowerCommandDirect(command);
+  }
+
+  /**
+   * Sets the tower state with comprehensive logging of changes.
+   * @param newState - The new tower state to set
+   * @param source - Source identifier for logging (e.g., "sendTowerState", "tower response")
+   */
+  private setTowerState(newState: TowerState, source: string): void {
+    const oldState = this.currentTowerState;
+    this.currentTowerState = newState;
+    
+    // Use the logger's tower state change method
+    this.logger.logTowerStateChange(oldState, newState, source, this.logDetail);
   }
 
   /**
@@ -371,7 +384,8 @@ class UltimateDarkTower {
   private updateTowerStateFromResponse(stateData: Uint8Array): void {
     // Import unpack function here to avoid circular dependencies
     import('./functions').then(({ rtdt_unpack_state }) => {
-      this.currentTowerState = rtdt_unpack_state(stateData);
+      const newState = rtdt_unpack_state(stateData);
+      this.setTowerState(newState, 'tower response');
     });
   }
 
