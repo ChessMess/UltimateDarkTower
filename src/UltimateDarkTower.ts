@@ -4,10 +4,10 @@ import {
   type TowerLevels,
   type SealIdentifier,
   type Glyphs,
-  VOLTAGE_LEVELS,
   GLYPHS
 } from './udtConstants';
-import { type TowerState, createDefaultTowerState } from './functions';
+import { type TowerState } from './functions';
+import { createDefaultTowerState, milliVoltsToPercentageNumber, commandToPacketString, milliVoltsToPercentage } from './udtHelpers';
 import { Logger, ConsoleOutput, type LogOutput } from './udtLogger';
 import { UdtBleConnection, type ConnectionCallbacks, type ConnectionStatus } from './udtBleConnection';
 import { TowerResponseProcessor } from './udtTowerResponse';
@@ -103,7 +103,7 @@ class UltimateDarkTower {
         this.previousBatteryValue = this.currentBatteryValue;
         this.currentBatteryValue = millivolts;
         this.previousBatteryPercentage = this.currentBatteryPercentage;
-        this.currentBatteryPercentage = this.milliVoltsToPercentageNumber(millivolts);
+        this.currentBatteryPercentage = milliVoltsToPercentageNumber(millivolts);
         this.onBatteryLevelNotify(millivolts);
       },
       onCalibrationComplete: () => {
@@ -670,7 +670,7 @@ class UltimateDarkTower {
    * @returns {string} Hex string representation of the command packet
    */
   commandToPacketString(command: Uint8Array): string {
-    return this.responseProcessor.commandToPacketString(command);
+    return commandToPacketString(command);
   }
 
   /**
@@ -679,7 +679,7 @@ class UltimateDarkTower {
    * @returns {string} Battery percentage as formatted string (e.g., "75%")
    */
   milliVoltsToPercentage(mv: number): string {
-    return this.responseProcessor.milliVoltsToPercentage(mv);
+    return milliVoltsToPercentage(mv);
   }
 
   //#endregion
@@ -731,16 +731,6 @@ class UltimateDarkTower {
   }
   //#endregion
 
-  /**
-   * Converts millivolts to percentage number (0-100).
-   * @param mv - Battery voltage in millivolts
-   * @returns Battery percentage as number (0-100)
-   */
-  private milliVoltsToPercentageNumber(mv: number): number {
-    const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
-    const levels = VOLTAGE_LEVELS.filter(v => batLevel >= v);
-    return levels.length * 5;
-  }
 
   //#region cleanup
 

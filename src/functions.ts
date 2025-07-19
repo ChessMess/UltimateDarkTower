@@ -284,103 +284,17 @@ function rtdt_pack_state(data: Uint8Array, len: number, state: TowerState): bool
   return true;
 }
 
-/**
- * Utility function to get the tower position and direction for a given layer and light index
- * Updated based on LED channel lookup table and corrected architecture:
- * - Layers 0-2: Ring LEDs with cardinal directions (N,E,S,W)
- * - Layers 3-5: Ledge/Base LEDs with ordinal directions (NE,SE,SW,NW)
- * @param layerIndex - The layer index (0-5)
- * @param lightIndex - The light index within the layer (0-3)
- * @returns Object containing the tower level, direction, and LED channel
- */
-function getTowerPosition(layerIndex: number, lightIndex: number): { level: string, direction: string, ledChannel?: number } {
-  const isRingLayer = layerIndex <= 2;
-  const ledChannel = LED_CHANNEL_LOOKUP[layerIndex * 4 + lightIndex];
-
-  if (isRingLayer) {
-    // Ring layers: cardinal directions (position 0 = North)
-    const directions = ['NORTH', 'EAST', 'SOUTH', 'WEST'];
-    const layerNames = ['TOP_RING', 'MIDDLE_RING', 'BOTTOM_RING'];
-    return {
-      level: layerNames[layerIndex],
-      direction: directions[lightIndex],
-      ledChannel
-    };
-  } else {
-    // Ledge/Base layers: ordinal directions (position 0 = North-East)
-    const directions = ['NORTH_EAST', 'SOUTH_EAST', 'SOUTH_WEST', 'NORTH_WEST'];
-    const layerNames = ['LEDGE', 'BASE1', 'BASE2'];
-    return {
-      level: layerNames[layerIndex - 3],
-      direction: directions[lightIndex],
-      ledChannel
-    };
-  }
-}
-
-/**
- * Utility function to get all active lights in a tower state
- * @param state - The tower state object
- * @returns Array of objects describing each active light
- */
-function getActiveLights(state: TowerState): Array<{ level: string, direction: string, effect: number, loop: boolean }> {
-  const activeLights: Array<{ level: string, direction: string, effect: number, loop: boolean }> = [];
-
-  state.layer.forEach((layer, layerIndex) => {
-    layer.light.forEach((light, lightIndex) => {
-      if (light.effect > 0) {
-        const position = getTowerPosition(layerIndex, lightIndex);
-        activeLights.push({
-          level: position.level,
-          direction: position.direction,
-          effect: light.effect,
-          loop: light.loop
-        });
-      }
-    });
-  });
-
-  return activeLights;
-}
-
-/**
- * Creates a default/empty tower state with all settings reset to defaults
- * @returns A default TowerState object with all lights off, no audio, etc.
- */
-function createDefaultTowerState(): TowerState {
-  return {
-    drum: [
-      { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
-      { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
-      { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false }
-    ],
-    layer: [
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] }
-    ],
-    audio: { sample: 0, loop: false, volume: 0 },
-    beam: { count: 0, fault: false },
-    led_sequence: 0
-  };
-}
 
 // Export the functions and types for use elsewhere
 export type { TowerState, Light, Layer, Drum, Audio, Beam };
 export {
   rtdt_unpack_state,
   rtdt_pack_state,
-  createDefaultTowerState,
   STATE_DATA_LENGTH,
   TOWER_LAYERS,
   RING_LIGHT_POSITIONS,
   LEDGE_BASE_LIGHT_POSITIONS,
   LED_CHANNEL_LOOKUP,
   LAYER_TO_POSITION,
-  LIGHT_INDEX_TO_DIRECTION,
-  getTowerPosition,
-  getActiveLights
+  LIGHT_INDEX_TO_DIRECTION
 };

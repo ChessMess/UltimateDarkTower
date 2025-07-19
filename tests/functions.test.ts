@@ -6,10 +6,10 @@
 import {
   rtdt_pack_state,
   rtdt_unpack_state,
-  createDefaultTowerState,
   STATE_DATA_LENGTH,
   type TowerState,
 } from '../src/functions';
+import { createDefaultTowerState } from '../src/udtHelpers';
 import testData from './tower-state-test-data.json';
 
 interface TestCase {

@@ -17,6 +17,7 @@ import {
 } from './udtConstants';
 import { Logger } from './udtLogger';
 import { TowerResponseProcessor } from './udtTowerResponse';
+import { getMilliVoltsFromTowerResponse, milliVoltsToPercentage, getActiveLights } from './udtHelpers';
 import { rtdt_unpack_state } from './functions'
 
 
@@ -215,8 +216,8 @@ export class UdtBleConnection {
         if (this.responseProcessor.isBatteryResponse(cmdKey)) {
             this.lastBatteryHeartbeat = Date.now();
 
-            const millivolts = this.responseProcessor.getMilliVoltsFromTowerResponse(receivedData);
-            const batteryPercentage = this.responseProcessor.milliVoltsToPercentage(millivolts);
+            const millivolts = getMilliVoltsFromTowerResponse(receivedData);
+            const batteryPercentage = milliVoltsToPercentage(millivolts);
             const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
             const batteryNotifyFrequencyPassed = ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
 
@@ -248,7 +249,6 @@ export class UdtBleConnection {
 
         // Log active lights for easier debugging
         try {
-            const { getActiveLights } = require('./functions');
             const activeLights = getActiveLights(state);
             if (activeLights.length > 0) {
                 console.log('[CEK] Active Lights:', activeLights);

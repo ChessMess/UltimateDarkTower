@@ -16,6 +16,7 @@ import { UdtCommandFactory } from './udtCommandFactory';
 import { UdtBleConnection } from './udtBleConnection';
 import { TowerResponseProcessor } from './udtTowerResponse';
 import { CommandQueue } from './udtCommandQueue';
+import { commandToPacketString } from './udtHelpers';
 
 
 export interface TowerCommandDependencies {
@@ -62,7 +63,7 @@ export class UdtTowerCommands {
      */
     private async sendTowerCommandDirect(command: Uint8Array): Promise<void> {
         try {
-            const cmdStr = this.deps.responseProcessor.commandToPacketString(command);
+            const cmdStr = commandToPacketString(command);
             this.deps.logDetail && this.deps.logger.debug(`packet(s) sent: ${cmdStr}`, '[UDT]');
             if (!this.deps.bleConnection.txCharacteristic || !this.deps.bleConnection.isConnected) {
                 this.deps.logger.warn('Tower is not connected', '[UDT]');

@@ -14,7 +14,8 @@ import UltimateDarkTower, {
   GLYPHS
 } from '../../src';
 import { logger, DOMOutput, ConsoleOutput } from '../../src/udtLogger';
-import { rtdt_pack_state, rtdt_unpack_state, createDefaultTowerState, type TowerState } from '../../src/functions';
+import { rtdt_pack_state, rtdt_unpack_state, type TowerState } from '../../src/functions';
+import { createDefaultTowerState } from '../../src/udtHelpers';
 
 const Tower = new UltimateDarkTower();
 
