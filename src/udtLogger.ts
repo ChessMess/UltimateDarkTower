@@ -364,11 +364,16 @@ export class Logger {
                 const oldLight = oldState.layer[layerIndex].light[lightIndex];
                 const newLight = newState.layer[layerIndex].light[lightIndex];
                 
+                const lightChanges: string[] = [];
                 if (oldLight.effect !== newLight.effect) {
-                    changes.push(`${layerNames[layerIndex]} light ${lightIndex}: effect ${oldLight.effect} → ${newLight.effect}`);
+                    lightChanges.push(`effect ${oldLight.effect} → ${newLight.effect}`);
                 }
                 if (oldLight.loop !== newLight.loop) {
-                    changes.push(`${layerNames[layerIndex]} light ${lightIndex}: loop ${oldLight.loop} → ${newLight.loop}`);
+                    lightChanges.push(`loop ${oldLight.loop} → ${newLight.loop}`);
+                }
+                
+                if (lightChanges.length > 0) {
+                    changes.push(`${layerNames[layerIndex]} light ${lightIndex}: ${lightChanges.join(', ')}`);
                 }
             }
         }

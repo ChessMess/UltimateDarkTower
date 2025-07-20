@@ -707,11 +707,15 @@
         for (let lightIndex = 0; lightIndex < 4; lightIndex++) {
           const oldLight = oldState.layer[layerIndex].light[lightIndex];
           const newLight = newState.layer[layerIndex].light[lightIndex];
+          const lightChanges = [];
           if (oldLight.effect !== newLight.effect) {
-            changes.push(`${layerNames[layerIndex]} light ${lightIndex}: effect ${oldLight.effect} \u2192 ${newLight.effect}`);
+            lightChanges.push(`effect ${oldLight.effect} \u2192 ${newLight.effect}`);
           }
           if (oldLight.loop !== newLight.loop) {
-            changes.push(`${layerNames[layerIndex]} light ${lightIndex}: loop ${oldLight.loop} \u2192 ${newLight.loop}`);
+            lightChanges.push(`loop ${oldLight.loop} \u2192 ${newLight.loop}`);
+          }
+          if (lightChanges.length > 0) {
+            changes.push(`${layerNames[layerIndex]} light ${lightIndex}: ${lightChanges.join(", ")}`);
           }
         }
       }
