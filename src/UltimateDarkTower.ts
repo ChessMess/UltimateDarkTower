@@ -6,7 +6,7 @@ import {
   type Glyphs,
   GLYPHS
 } from './udtConstants';
-import { type TowerState } from './udtTowerState';
+import { type TowerState, isCalibrated } from './udtTowerState';
 import { createDefaultTowerState, milliVoltsToPercentageNumber, commandToPacketString, milliVoltsToPercentage } from './udtHelpers';
 import { Logger, ConsoleOutput, type LogOutput } from './udtLogger';
 import { UdtBleConnection, type ConnectionCallbacks, type ConnectionStatus } from './udtBleConnection';
@@ -177,7 +177,7 @@ class UltimateDarkTower {
 
   // Getter methods for connection state
   get isConnected(): boolean { return this.bleConnection.isConnected; }
-  get isCalibrated(): boolean { return this.bleConnection.isCalibrated; }
+  get isCalibrated(): boolean { return isCalibrated(this.currentTowerState); }
   get performingCalibration(): boolean { return this.bleConnection.performingCalibration; }
   get performingLongCommand(): boolean { return this.bleConnection.performingLongCommand; }
   get towerSkullDropCount(): number { return this.bleConnection.towerSkullDropCount; }
@@ -374,7 +374,7 @@ class UltimateDarkTower {
   private setTowerState(newState: TowerState, source: string): void {
     const oldState = this.currentTowerState;
     this.currentTowerState = newState;
-    
+
     // Use the logger's tower state change method
     this.logger.logTowerStateChange(oldState, newState, source, this.logDetail);
   }

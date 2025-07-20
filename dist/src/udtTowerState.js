@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LIGHT_INDEX_TO_DIRECTION = exports.LAYER_TO_POSITION = exports.LED_CHANNEL_LOOKUP = exports.LEDGE_BASE_LIGHT_POSITIONS = exports.RING_LIGHT_POSITIONS = exports.TOWER_LAYERS = exports.STATE_DATA_LENGTH = exports.rtdt_pack_state = exports.rtdt_unpack_state = void 0;
+exports.LIGHT_INDEX_TO_DIRECTION = exports.LAYER_TO_POSITION = exports.LED_CHANNEL_LOOKUP = exports.LEDGE_BASE_LIGHT_POSITIONS = exports.RING_LIGHT_POSITIONS = exports.TOWER_LAYERS = exports.STATE_DATA_LENGTH = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = void 0;
 const udtConstants_1 = require("./udtConstants");
 Object.defineProperty(exports, "TOWER_LAYERS", { enumerable: true, get: function () { return udtConstants_1.TOWER_LAYERS; } });
 Object.defineProperty(exports, "RING_LIGHT_POSITIONS", { enumerable: true, get: function () { return udtConstants_1.RING_LIGHT_POSITIONS; } });
@@ -9,6 +9,13 @@ Object.defineProperty(exports, "LED_CHANNEL_LOOKUP", { enumerable: true, get: fu
 Object.defineProperty(exports, "LAYER_TO_POSITION", { enumerable: true, get: function () { return udtConstants_1.LAYER_TO_POSITION; } });
 Object.defineProperty(exports, "LIGHT_INDEX_TO_DIRECTION", { enumerable: true, get: function () { return udtConstants_1.LIGHT_INDEX_TO_DIRECTION; } });
 Object.defineProperty(exports, "STATE_DATA_LENGTH", { enumerable: true, get: function () { return udtConstants_1.STATE_DATA_LENGTH; } });
+/**
+ * Unpacks binary data from the tower into a structured TowerState object.
+ * Extracts drum states, LED configurations, audio settings, beam counter, and LED sequences.
+ *
+ * @param data - The raw binary data received from the tower (must be at least STATE_DATA_LENGTH bytes)
+ * @returns A TowerState object containing all the parsed tower state information
+ */
 function rtdt_unpack_state(data) {
     // Padding is aligns the different sections on byte boundaries
     const state = {
@@ -110,6 +117,15 @@ function rtdt_unpack_state(data) {
     return state;
 }
 exports.rtdt_unpack_state = rtdt_unpack_state;
+/**
+ * Packs a TowerState object into binary data format for transmission to the tower.
+ * Serializes drum states, LED configurations, audio settings, beam counter, and LED sequences.
+ *
+ * @param data - The output buffer to write the packed data to
+ * @param len - The length of the output buffer (must be at least STATE_DATA_LENGTH)
+ * @param state - The TowerState object to pack into binary format
+ * @returns True if packing was successful, false if the buffer is too small or invalid
+ */
 function rtdt_pack_state(data, len, state) {
     if (!data || len < udtConstants_1.STATE_DATA_LENGTH)
         return false;
@@ -168,4 +184,15 @@ function rtdt_pack_state(data, len, state) {
     return true;
 }
 exports.rtdt_pack_state = rtdt_pack_state;
+/**
+ * Checks if all drums in the tower are calibrated.
+ * A tower is considered fully calibrated only when all three drums have completed their calibration process.
+ *
+ * @param state - The TowerState object to check
+ * @returns True if all drums are calibrated, false if any drum is not calibrated
+ */
+function isCalibrated(state) {
+    return state.drum.every(drum => drum.calibrated);
+}
+exports.isCalibrated = isCalibrated;
 //# sourceMappingURL=udtTowerState.js.map

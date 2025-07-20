@@ -22,7 +22,6 @@ export interface DeviceInformation {
 export interface ConnectionStatus {
     isConnected: boolean;
     isGattConnected: boolean;
-    isCalibrated: boolean;
     lastBatteryHeartbeatMs: number;
     lastCommandResponseMs: number;
     batteryHeartbeatHealthy: boolean;
@@ -40,7 +39,6 @@ export declare class UdtBleConnection {
     txCharacteristic: any;
     rxCharacteristic: any;
     isConnected: boolean;
-    isCalibrated: boolean;
     performingCalibration: boolean;
     performingLongCommand: boolean;
     private connectionMonitorInterval;

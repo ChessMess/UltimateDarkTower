@@ -24,6 +24,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const udtConstants_1 = require("./udtConstants");
+const udtTowerState_1 = require("./udtTowerState");
 const udtHelpers_1 = require("./udtHelpers");
 const udtLogger_1 = require("./udtLogger");
 const udtBleConnection_1 = require("./udtBleConnection");
@@ -163,7 +164,7 @@ class UltimateDarkTower {
     }
     // Getter methods for connection state
     get isConnected() { return this.bleConnection.isConnected; }
-    get isCalibrated() { return this.bleConnection.isCalibrated; }
+    get isCalibrated() { return (0, udtTowerState_1.isCalibrated)(this.currentTowerState); }
     get performingCalibration() { return this.bleConnection.performingCalibration; }
     get performingLongCommand() { return this.bleConnection.performingLongCommand; }
     get towerSkullDropCount() { return this.bleConnection.towerSkullDropCount; }

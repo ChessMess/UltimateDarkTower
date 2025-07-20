@@ -337,6 +337,7 @@
     RING_LIGHT_POSITIONS: () => RING_LIGHT_POSITIONS,
     STATE_DATA_LENGTH: () => STATE_DATA_LENGTH,
     TOWER_LAYERS: () => TOWER_LAYERS,
+    isCalibrated: () => isCalibrated,
     rtdt_pack_state: () => rtdt_pack_state,
     rtdt_unpack_state: () => rtdt_unpack_state
   });
@@ -467,6 +468,9 @@
     data[18] = state.led_sequence;
     return true;
   }
+  function isCalibrated(state) {
+    return state.drum.every((drum) => drum.calibrated);
+  }
   var init_udtTowerState = __esm({
     "src/udtTowerState.ts"() {
       init_udtConstants();
@@ -475,6 +479,7 @@
 
   // src/UltimateDarkTower.ts
   init_udtConstants();
+  init_udtTowerState();
 
   // src/udtHelpers.ts
   init_udtConstants();
@@ -811,7 +816,6 @@
       this.rxCharacteristic = null;
       // Connection state
       this.isConnected = false;
-      this.isCalibrated = false;
       this.performingCalibration = false;
       this.performingLongCommand = false;
       // Connection monitoring
@@ -964,7 +968,6 @@
       if (this.performingCalibration) {
         this.performingCalibration = false;
         this.performingLongCommand = false;
-        this.isCalibrated = true;
         this.lastBatteryHeartbeat = Date.now();
         this.callbacks.onCalibrationComplete();
         this.logger.info("Tower calibration complete", "[UDT]");
@@ -991,7 +994,6 @@
     }
     handleDisconnection() {
       this.isConnected = false;
-      this.isCalibrated = false;
       this.performingCalibration = false;
       this.performingLongCommand = false;
       this.stopConnectionMonitoring();
@@ -1103,7 +1105,6 @@
       return {
         isConnected: this.isConnected,
         isGattConnected: ((_b = (_a = this.TowerDevice) == null ? void 0 : _a.gatt) == null ? void 0 : _b.connected) || false,
-        isCalibrated: this.isCalibrated,
         lastBatteryHeartbeatMs: timeSinceLastBattery,
         lastCommandResponseMs: timeSinceLastCommand,
         batteryHeartbeatHealthy: timeSinceLastBattery >= 0 && timeSinceLastBattery < this.batteryHeartbeatTimeout,
@@ -2039,7 +2040,7 @@
       return this.bleConnection.isConnected;
     }
     get isCalibrated() {
-      return this.bleConnection.isCalibrated;
+      return isCalibrated(this.currentTowerState);
     }
     get performingCalibration() {
       return this.bleConnection.performingCalibration;

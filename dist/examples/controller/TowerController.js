@@ -358,6 +358,7 @@
     RING_LIGHT_POSITIONS: () => RING_LIGHT_POSITIONS,
     STATE_DATA_LENGTH: () => STATE_DATA_LENGTH,
     TOWER_LAYERS: () => TOWER_LAYERS,
+    isCalibrated: () => isCalibrated,
     rtdt_pack_state: () => rtdt_pack_state,
     rtdt_unpack_state: () => rtdt_unpack_state
   });
@@ -488,6 +489,9 @@
     data[18] = state.led_sequence;
     return true;
   }
+  function isCalibrated(state) {
+    return state.drum.every((drum) => drum.calibrated);
+  }
   var init_udtTowerState = __esm({
     "src/udtTowerState.ts"() {
       init_udtConstants();
@@ -496,6 +500,7 @@
 
   // src/UltimateDarkTower.ts
   init_udtConstants();
+  init_udtTowerState();
 
   // src/udtHelpers.ts
   init_udtConstants();
@@ -931,7 +936,6 @@
       this.rxCharacteristic = null;
       // Connection state
       this.isConnected = false;
-      this.isCalibrated = false;
       this.performingCalibration = false;
       this.performingLongCommand = false;
       // Connection monitoring
@@ -1084,7 +1088,6 @@
       if (this.performingCalibration) {
         this.performingCalibration = false;
         this.performingLongCommand = false;
-        this.isCalibrated = true;
         this.lastBatteryHeartbeat = Date.now();
         this.callbacks.onCalibrationComplete();
         this.logger.info("Tower calibration complete", "[UDT]");
@@ -1111,7 +1114,6 @@
     }
     handleDisconnection() {
       this.isConnected = false;
-      this.isCalibrated = false;
       this.performingCalibration = false;
       this.performingLongCommand = false;
       this.stopConnectionMonitoring();
@@ -1223,7 +1225,6 @@
       return {
         isConnected: this.isConnected,
         isGattConnected: ((_b = (_a = this.TowerDevice) == null ? void 0 : _a.gatt) == null ? void 0 : _b.connected) || false,
-        isCalibrated: this.isCalibrated,
         lastBatteryHeartbeatMs: timeSinceLastBattery,
         lastCommandResponseMs: timeSinceLastCommand,
         batteryHeartbeatHealthy: timeSinceLastBattery >= 0 && timeSinceLastBattery < this.batteryHeartbeatTimeout,
@@ -2159,7 +2160,7 @@
       return this.bleConnection.isConnected;
     }
     get isCalibrated() {
-      return this.bleConnection.isCalibrated;
+      return isCalibrated(this.currentTowerState);
     }
     get performingCalibration() {
       return this.bleConnection.performingCalibration;
@@ -2722,6 +2723,7 @@
       Tower.batteryNotifyOnValueChangeOnly = selectedValue === "changes";
     }
     updateBatteryTrend();
+    updateCalibrationStatus();
   };
   Tower.onTowerConnect = onTowerConnected;
   var onTowerDisconnected = () => {
@@ -2731,6 +2733,7 @@
       el.style.background = "rgb(255 1 1 / 30%)";
     }
     logger.warn("Tower disconnected", "[TC]");
+    updateCalibrationStatus();
   };
   Tower.onTowerDisconnect = onTowerDisconnected;
   async function calibrate() {
@@ -2740,15 +2743,16 @@
     await Tower.calibrate();
     const el = document.getElementById("calibrating-message");
     if (el) {
-      el.classList.remove("hide");
+      el.classList.remove("hidden");
     }
   }
   var onCalibrationComplete = () => {
     const el = document.getElementById("calibrating-message");
     if (el) {
-      el.classList.add("hide");
+      el.classList.add("hidden");
     }
     logger.info("Calibration complete", "[TC]");
+    updateCalibrationStatus();
     setTimeout(() => {
       try {
         if (typeof window.refreshGlyphPositions === "function") {
@@ -2789,6 +2793,27 @@
     updateBatteryTrend();
   };
   Tower.onBatteryLevelNotify = onBatteryLevelNotify;
+  var updateCalibrationStatus = () => {
+    const statusElement = document.getElementById("calibration-status");
+    const iconElement = document.getElementById("calibration-icon");
+    if (!statusElement || !iconElement)
+      return;
+    if (!Tower.isConnected) {
+      statusElement.innerText = "Unknown";
+      statusElement.style.color = "#9ca3af";
+      iconElement.innerHTML = '<span style="color: #9ca3af; font-size: 16px;">?</span>';
+      return;
+    }
+    if (Tower.isCalibrated) {
+      statusElement.innerText = "Calibrated";
+      statusElement.style.color = "#10b981";
+      iconElement.innerHTML = '<span style="color: #10b981; font-size: 16px;">\u2713</span>';
+    } else {
+      statusElement.innerText = "Not Calibrated";
+      statusElement.style.color = "#ef4444";
+      iconElement.innerHTML = '<span style="color: #ef4444; font-size: 16px;">\u2717</span>';
+    }
+  };
   async function resetSkullCount() {
     if (!Tower.isConnected) {
       return;
@@ -3344,6 +3369,7 @@
     batteryFilterRadios.forEach((radio) => {
       radio.addEventListener("change", updateBatteryFilter);
     });
+    updateCalibrationStatus();
   };
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initializeUI);

@@ -46,7 +46,6 @@ export interface DeviceInformation {
 export interface ConnectionStatus {
     isConnected: boolean;
     isGattConnected: boolean;
-    isCalibrated: boolean;
     lastBatteryHeartbeatMs: number;
     lastCommandResponseMs: number;
     batteryHeartbeatHealthy: boolean;
@@ -69,7 +68,6 @@ export class UdtBleConnection {
 
     // Connection state
     isConnected: boolean = false;
-    isCalibrated: boolean = false;
     performingCalibration: boolean = false;
     performingLongCommand: boolean = false;
 
@@ -250,7 +248,6 @@ export class UdtBleConnection {
         if (this.performingCalibration) {
             this.performingCalibration = false;
             this.performingLongCommand = false;
-            this.isCalibrated = true;
             this.lastBatteryHeartbeat = Date.now();
             this.callbacks.onCalibrationComplete();
             this.logger.info('Tower calibration complete', '[UDT]');
@@ -298,7 +295,6 @@ export class UdtBleConnection {
 
     private handleDisconnection() {
         this.isConnected = false;
-        this.isCalibrated = false;
         this.performingCalibration = false;
         this.performingLongCommand = false;
         this.stopConnectionMonitoring();
@@ -442,7 +438,6 @@ export class UdtBleConnection {
         return {
             isConnected: this.isConnected,
             isGattConnected: this.TowerDevice?.gatt?.connected || false,
-            isCalibrated: this.isCalibrated,
             lastBatteryHeartbeatMs: timeSinceLastBattery,
             lastCommandResponseMs: timeSinceLastCommand,
             batteryHeartbeatHealthy: timeSinceLastBattery >= 0 && timeSinceLastBattery < this.batteryHeartbeatTimeout,

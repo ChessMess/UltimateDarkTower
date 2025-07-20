@@ -108,6 +108,9 @@ const onTowerConnected = () => {
 
   // Initialize battery trend display
   updateBatteryTrend();
+
+  // Initialize calibration status display
+  updateCalibrationStatus();
 }
 Tower.onTowerConnect = onTowerConnected;
 
@@ -118,6 +121,9 @@ const onTowerDisconnected = () => {
     el.style.background = 'rgb(255 1 1 / 30%)';
   }
   logger.warn("Tower disconnected", '[TC]');
+
+  // Update calibration status for disconnected state
+  updateCalibrationStatus();
 }
 Tower.onTowerDisconnect = onTowerDisconnected;
 
@@ -128,18 +134,21 @@ async function calibrate() {
   await Tower.calibrate();
   const el = document.getElementById("calibrating-message");
   if (el) {
-    el.classList.remove("hide");
+    el.classList.remove("hidden");
   }
 }
 
 const onCalibrationComplete = () => {
   const el = document.getElementById("calibrating-message");
   if (el) {
-    el.classList.add("hide");
+    el.classList.add("hidden");
   }
 
   // Auto-refresh glyph positions after calibration
   logger.info("Calibration complete", '[TC]');
+
+  // Update calibration status display
+  updateCalibrationStatus();
 
   // Wait a bit longer for calibration to fully complete, then refresh
   setTimeout(() => {
@@ -192,6 +201,30 @@ const onBatteryLevelNotify = (millivolts: number) => {
   updateBatteryTrend();
 }
 Tower.onBatteryLevelNotify = onBatteryLevelNotify;
+
+const updateCalibrationStatus = () => {
+  const statusElement = document.getElementById("calibration-status");
+  const iconElement = document.getElementById("calibration-icon");
+
+  if (!statusElement || !iconElement) return;
+
+  if (!Tower.isConnected) {
+    statusElement.innerText = "Unknown";
+    statusElement.style.color = "#9ca3af"; // gray
+    iconElement.innerHTML = '<span style="color: #9ca3af; font-size: 16px;">?</span>';
+    return;
+  }
+
+  if (Tower.isCalibrated) {
+    statusElement.innerText = "Calibrated";
+    statusElement.style.color = "#10b981"; // green
+    iconElement.innerHTML = '<span style="color: #10b981; font-size: 16px;">✓</span>';
+  } else {
+    statusElement.innerText = "Not Calibrated";
+    statusElement.style.color = "#ef4444"; // red
+    iconElement.innerHTML = '<span style="color: #ef4444; font-size: 16px;">✗</span>';
+  }
+}
 
 async function resetSkullCount() {
   if (!Tower.isConnected) {
@@ -686,7 +719,7 @@ const moveGlyph = async () => {
       try {
         // Refresh glyph positions (this will also restore visual light states based on glyph tracking)
         refreshGlyphPositions();
-        
+
         // Restore all lights on the physical tower based on current glyph positions
         const allDoorwayLights = getCurrentDoorwayLights();
         if (allDoorwayLights.length > 0) {
@@ -957,6 +990,9 @@ const initializeUI = () => {
   batteryFilterRadios.forEach(radio => {
     radio.addEventListener('change', updateBatteryFilter);
   });
+
+  // Initialize calibration status display
+  updateCalibrationStatus();
 }
 
 // Initialize UI when DOM is ready
@@ -1199,19 +1235,19 @@ const getGlyphsFacingDirection = (direction: TowerSide) => {
 const glyphLightStates = new Set(); // Set of glyph names that have lights on
 
 // Helper function to get current doorway lights based on glyph positions and states
-const getCurrentDoorwayLights = () => {
-  const doorwayLights = [];
+const getCurrentDoorwayLights = (): Array<DoorwayLight> => {
+  const doorwayLights: Array<DoorwayLight> = [];
   logger.debug(`Getting current doorway lights for ${glyphLightStates.size} lit glyphs`, '[Glyphs]');
-  
+
   for (const glyphName of glyphLightStates) {
     const currentPosition = Tower.getGlyphPosition(glyphName as any);
     logger.debug(`Glyph ${glyphName} current position: ${currentPosition}`, '[Glyphs]');
-    
+
     if (currentPosition) {
       const level = GLYPHS[glyphName as keyof typeof GLYPHS].level;
-      const lightCommand = {
+      const lightCommand: DoorwayLight = {
         position: currentPosition,
-        level: level,
+        level: level as TowerLevels,
         style: 'on'
       };
       doorwayLights.push(lightCommand);
@@ -1220,7 +1256,7 @@ const getCurrentDoorwayLights = () => {
       logger.warn(`Could not get position for glyph ${glyphName}`, '[Glyphs]');
     }
   }
-  
+
   logger.debug(`Total doorway lights to restore: ${doorwayLights.length}`, '[Glyphs]');
   return doorwayLights;
 };
@@ -1399,7 +1435,7 @@ const enhancedMoveGlyph = async () => {
       try {
         // Refresh glyph positions (this will also restore visual light states based on glyph tracking)
         refreshGlyphPositions();
-        
+
         // Restore all lights on the physical tower based on current glyph positions
         const allDoorwayLights = getCurrentDoorwayLights();
         if (allDoorwayLights.length > 0) {
