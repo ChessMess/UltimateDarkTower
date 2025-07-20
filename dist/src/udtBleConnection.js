@@ -165,17 +165,6 @@ class UdtBleConnection {
         this.logger.debug('Tower Message Received', '[UDT][BLE]');
         const state = (0, udtTowerState_1.rtdt_unpack_state)(receivedData);
         this.logger.debug(`Tower State: ${JSON.stringify(state)} `, '[UDT][BLE]');
-        console.log('[CEK] Tower State:', state);
-        // Log active lights for easier debugging
-        try {
-            const activeLights = (0, udtHelpers_1.getActiveLights)(state);
-            if (activeLights.length > 0) {
-                console.log('[CEK] Active Lights:', activeLights);
-            }
-        }
-        catch (error) {
-            // Silently ignore if functions not available
-        }
         if (this.performingCalibration) {
             this.performingCalibration = false;
             this.performingLongCommand = false;

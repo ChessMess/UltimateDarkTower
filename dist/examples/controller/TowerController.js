@@ -527,44 +527,6 @@
     cmdStr = cmdStr.slice(0, -1) + "]";
     return cmdStr;
   }
-  function getTowerPosition(layerIndex, lightIndex) {
-    const isRingLayer = layerIndex <= 2;
-    const ledChannel = LED_CHANNEL_LOOKUP[layerIndex * 4 + lightIndex];
-    if (isRingLayer) {
-      const directions = ["NORTH", "EAST", "SOUTH", "WEST"];
-      const layerNames = ["TOP_RING", "MIDDLE_RING", "BOTTOM_RING"];
-      return {
-        level: layerNames[layerIndex],
-        direction: directions[lightIndex],
-        ledChannel
-      };
-    } else {
-      const directions = ["NORTH_EAST", "SOUTH_EAST", "SOUTH_WEST", "NORTH_WEST"];
-      const layerNames = ["LEDGE", "BASE1", "BASE2"];
-      return {
-        level: layerNames[layerIndex - 3],
-        direction: directions[lightIndex],
-        ledChannel
-      };
-    }
-  }
-  function getActiveLights(state) {
-    const activeLights = [];
-    state.layer.forEach((layer, layerIndex) => {
-      layer.light.forEach((light, lightIndex) => {
-        if (light.effect > 0) {
-          const position = getTowerPosition(layerIndex, lightIndex);
-          activeLights.push({
-            level: position.level,
-            direction: position.direction,
-            effect: light.effect,
-            loop: light.loop
-          });
-        }
-      });
-    });
-    return activeLights;
-  }
   function createDefaultTowerState() {
     return {
       drum: [
@@ -1119,14 +1081,6 @@
       this.logger.debug("Tower Message Received", "[UDT][BLE]");
       const state = rtdt_unpack_state(receivedData);
       this.logger.debug(`Tower State: ${JSON.stringify(state)} `, "[UDT][BLE]");
-      console.log("[CEK] Tower State:", state);
-      try {
-        const activeLights = getActiveLights(state);
-        if (activeLights.length > 0) {
-          console.log("[CEK] Active Lights:", activeLights);
-        }
-      } catch (error) {
-      }
       if (this.performingCalibration) {
         this.performingCalibration = false;
         this.performingLongCommand = false;
