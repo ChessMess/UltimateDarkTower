@@ -7,12 +7,15 @@ import UltimateDarkTower, {
   type BaseLightLevel,
   type Lights,
   type SealIdentifier,
+  type Glyphs,
   TOWER_AUDIO_LIBRARY,
   TOWER_LIGHT_SEQUENCES,
   LIGHT_EFFECTS,
   GLYPHS
 } from '../../src';
 import { logger, DOMOutput, ConsoleOutput } from '../../src/udtLogger';
+import { rtdt_pack_state, rtdt_unpack_state, type TowerState } from '../../src/udtTowerState';
+import { createDefaultTowerState } from '../../src/udtHelpers';
 
 const Tower = new UltimateDarkTower();
 
@@ -53,6 +56,11 @@ if (document.readyState === 'loading') {
 (window as any).TOWER_LIGHT_SEQUENCES = TOWER_LIGHT_SEQUENCES;
 (window as any).LIGHT_EFFECTS = LIGHT_EFFECTS;
 (window as any).GLYPHS = GLYPHS;
+
+// Expose functions from udtTowerState.ts globally
+(window as any).rtdt_pack_state = rtdt_pack_state;
+(window as any).rtdt_unpack_state = rtdt_unpack_state;
+(window as any).createDefaultTowerState = createDefaultTowerState;
 
 // Expose Tower instance globally so HTML can access batteryNotifyOnValueChangeOnly
 (window as any).Tower = Tower;
@@ -561,6 +569,861 @@ const sealSquareClick = (element: HTMLElement) => {
   }
 }
 
+// Tab switching functionality
+const switchTab = (tabName: string) => {
+  // Hide all tab contents
+  const allTabContents = document.querySelectorAll('.tower-tab-content');
+  allTabContents.forEach(content => {
+    content.classList.remove('tower-tab-content-active');
+  });
+
+  // Remove active class from all tab buttons
+  const allTabButtons = document.querySelectorAll('.tower-tab-button');
+  allTabButtons.forEach(button => {
+    button.classList.remove('tower-tab-active');
+  });
+
+  // Show selected tab content
+  const selectedContent = document.getElementById(`${tabName}-content`);
+  if (selectedContent) {
+    selectedContent.classList.add('tower-tab-content-active');
+  }
+
+  // Add active class to selected tab button
+  const selectedButton = document.getElementById(`${tabName}-tab`);
+  if (selectedButton) {
+    selectedButton.classList.add('tower-tab-active');
+  }
+}
+
+// Glyph management functionality
+const moveGlyph = async () => {
+  const glyphSelect = document.getElementById('glyph-select') as HTMLSelectElement;
+  const sideSelect = document.getElementById('side-select') as HTMLSelectElement;
+
+  const selectedGlyph = glyphSelect.value;
+  const targetSide = sideSelect.value;
+
+  if (!selectedGlyph || !targetSide) {
+    logger.warn("Please select both a glyph and a side", '[TC]');
+    return;
+  }
+
+  if (!Tower.isConnected) {
+    logger.warn("Tower is not connected", '[TC]');
+    return;
+  }
+
+  try {
+    // Get current glyph position
+    const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph as Glyphs);
+
+    if (!currentGlyphPosition) {
+      logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, '[TC]');
+      return;
+    }
+
+    // Get the fixed level for this glyph (glyphs can't change levels)
+    const glyphLevel = GLYPHS[selectedGlyph as keyof typeof GLYPHS].level;
+
+    // Calculate rotation needed to move glyph to target position
+    const sides = ['north', 'east', 'south', 'west'];
+    const currentSideIndex = sides.indexOf(currentGlyphPosition);
+    const targetSideIndex = sides.indexOf(targetSide);
+
+    if (currentSideIndex === -1 || targetSideIndex === -1) {
+      logger.error('Invalid current or target side', '[TC]');
+      return;
+    }
+
+    // Calculate clockwise rotation steps needed
+    let rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
+
+    if (rotationSteps === 0) {
+      logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, '[TC]');
+      return;
+    }
+
+    // Calculate what drum position will put the selected glyph at the target side
+    let targetDrumPosition: TowerSide;
+    if (glyphLevel === 'top' || glyphLevel === 'middle' || glyphLevel === 'bottom') {
+      // Calculate the drum position needed to put this specific glyph at the target side
+      const currentDrumPosition = Tower.getCurrentDrumPosition(glyphLevel);
+      const sides = ['north', 'east', 'south', 'west'];
+
+      const currentDrumIndex = sides.indexOf(currentDrumPosition);
+      const currentGlyphIndex = sides.indexOf(currentGlyphPosition);
+      const targetGlyphIndex = sides.indexOf(targetSide);
+
+      // Calculate how many steps the glyph needs to move
+      let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
+
+      // Calculate the new drum position
+      const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
+      targetDrumPosition = sides[newDrumIndex] as TowerSide;
+    } else {
+      targetDrumPosition = targetSide as TowerSide;
+    }
+
+    // Set positions for all three drums
+    const topPosition = glyphLevel === 'top' ? targetDrumPosition : Tower.getCurrentDrumPosition('top');
+    const middlePosition = glyphLevel === 'middle' ? targetDrumPosition : Tower.getCurrentDrumPosition('middle');
+    const bottomPosition = glyphLevel === 'bottom' ? targetDrumPosition : Tower.getCurrentDrumPosition('bottom');
+
+    logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, '[TC]');
+
+    // Execute the rotation with all three drum positions
+    await Tower.Rotate(topPosition as TowerSide, middlePosition as TowerSide, bottomPosition as TowerSide);
+
+    // Refresh glyph positions after move
+    if (typeof refreshGlyphPositions === 'function') {
+      refreshGlyphPositions();
+    }
+
+    logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, '[TC]');
+  } catch (error) {
+    logger.error(`Failed to move glyph: ${error}`, '[TC]');
+  }
+}
+
+const toggleGlyphLight = (element: HTMLElement) => {
+  const level = element.getAttribute('data-level');
+  const side = element.getAttribute('data-side');
+
+  if (!level || !side) {
+    logger.warn("Invalid glyph cell data", '[TC]');
+    return;
+  }
+
+  // Toggle the lit state
+  element.classList.toggle('glyph-lit');
+
+  const isLit = element.classList.contains('glyph-lit');
+  logger.info(`Glyph light at ${level}-${side} ${isLit ? 'turned on' : 'turned off'}`, '[TC]');
+}
+
+const refreshGlyphPositions = () => {
+  if (!Tower.isConnected) {
+    logger.warn("Tower is not connected", '[TC]');
+    return;
+  }
+
+  try {
+    // Get current glyph positions from tower
+    const positions = Tower.getAllGlyphPositions();
+
+    // Clear all existing glyph displays
+    const allGlyphCells = document.querySelectorAll('.glyph-cell');
+    allGlyphCells.forEach(cell => {
+      cell.innerHTML = '';
+      cell.classList.remove('glyph-lit');
+    });
+
+    // Update display with current positions
+    Object.entries(positions).forEach(([glyphName, side]) => {
+      if (side) {
+        // Get the level from the GLYPHS constant since getAllGlyphPositions only returns the side
+        const glyphLevel = GLYPHS[glyphName as keyof typeof GLYPHS].level;
+        const cellId = `glyph-${glyphLevel}-${side}`;
+        const cell = document.getElementById(cellId);
+        if (cell) {
+          // Add glyph icon
+          const img = document.createElement('img');
+          img.src = `../assets/glyph_${glyphName}.svg`;
+          img.alt = glyphName;
+          cell.appendChild(img);
+          cell.classList.add('glyph-lit');
+        }
+      }
+    });
+
+    logger.info("Glyph positions refreshed", '[TC]');
+  } catch (error) {
+    logger.error(`Failed to refresh glyph positions: ${error}`, '[TC]');
+  }
+}
+
+// Log filtering functionality
+const filterLogs = () => {
+  if (!sharedDOMOutput) {
+    logger.warn("DOM output not initialized", '[TC]');
+    return;
+  }
+
+  const filterSelect = document.getElementById('logFilter') as HTMLSelectElement;
+  const selectedLevel = filterSelect?.value || 'all';
+
+  // Use refreshFilter method instead of setFilter
+  sharedDOMOutput.refreshFilter();
+  logger.info(`Log filter set to: ${selectedLevel}`, '[TC]');
+}
+
+const clearLogs = () => {
+  if (!sharedDOMOutput) {
+    logger.warn("DOM output not initialized", '[TC]');
+    return;
+  }
+
+  sharedDOMOutput.clearAll();
+  logger.info("Logs cleared", '[TC]');
+}
+
+// Battery filter functionality
+const updateBatteryFilter = () => {
+  const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]') as NodeListOf<HTMLInputElement>;
+  const selectedValue = Array.from(batteryFilterRadios).find(radio => radio.checked)?.value;
+
+  if (selectedValue) {
+    Tower.batteryNotifyOnValueChangeOnly = selectedValue === 'changes';
+    logger.info(`Battery filter set to: ${selectedValue}`, '[TC]');
+  }
+}
+
+// State management functionality
+const saveState = () => {
+  if (!Tower.isConnected) {
+    logger.warn("Tower is not connected", '[TC]');
+    return;
+  }
+
+  try {
+    const state = Tower.getCurrentTowerState();
+    if (!state) {
+      logger.warn("No current tower state available", '[TC]');
+      return;
+    }
+
+    // Create a buffer for the packed state
+    const buffer = new Uint8Array(256); // Adjust size as needed
+    const success = rtdt_pack_state(buffer, buffer.length, state);
+
+    if (!success) {
+      logger.error("Failed to pack tower state", '[TC]');
+      return;
+    }
+
+    // Convert buffer to array for JSON serialization
+    const packedState = Array.from(buffer);
+
+    // Save to localStorage
+    localStorage.setItem('towerState', JSON.stringify(packedState));
+
+    // Update UI display
+    const stateDisplay = document.getElementById('currentState') as HTMLTextAreaElement;
+    if (stateDisplay) {
+      stateDisplay.value = JSON.stringify(packedState, null, 2);
+    }
+
+    logger.info("Tower state saved", '[TC]');
+  } catch (error) {
+    logger.error(`Failed to save state: ${error}`, '[TC]');
+  }
+}
+
+const loadState = async () => {
+  if (!Tower.isConnected) {
+    logger.warn("Tower is not connected", '[TC]');
+    return;
+  }
+
+  try {
+    const savedState = localStorage.getItem('towerState');
+    if (!savedState) {
+      logger.warn("No saved state found", '[TC]');
+      return;
+    }
+
+    const packedState = JSON.parse(savedState) as number[];
+    const buffer = new Uint8Array(packedState);
+    const state = rtdt_unpack_state(buffer);
+
+    if (!state) {
+      logger.error("Failed to unpack tower state", '[TC]');
+      return;
+    }
+
+    // Send the state to the tower
+    await Tower.sendTowerState(state);
+    logger.info("Tower state loaded", '[TC]');
+
+    // Refresh displays
+    if (typeof refreshGlyphPositions === 'function') {
+      refreshGlyphPositions();
+    }
+  } catch (error) {
+    logger.error(`Failed to load state: ${error}`, '[TC]');
+  }
+}
+
+const resetState = async () => {
+  if (!Tower.isConnected) {
+    logger.warn("Tower is not connected", '[TC]');
+    return;
+  }
+
+  try {
+    // Create a default/empty tower state using the utility function
+    const defaultState = createDefaultTowerState();
+
+    // Send the default state to the tower
+    await Tower.sendTowerState(defaultState);
+
+    // Clear saved state
+    localStorage.removeItem('towerState');
+
+    // Clear UI display
+    const stateDisplay = document.getElementById('currentState') as HTMLTextAreaElement;
+    if (stateDisplay) {
+      stateDisplay.value = '';
+    }
+
+    // Reset visual elements
+    resetSealGrid();
+
+    // Refresh displays
+    if (typeof refreshGlyphPositions === 'function') {
+      refreshGlyphPositions();
+    }
+
+    logger.info("Tower state reset", '[TC]');
+  } catch (error) {
+    logger.error(`Failed to reset state: ${error}`, '[TC]');
+  }
+}
+
+// Initialize dropdowns and UI elements
+const initializeUI = () => {
+  // Populate sound dropdown
+  const soundSelect = document.getElementById('sounds') as HTMLSelectElement;
+  if (soundSelect) {
+    Object.entries(TOWER_AUDIO_LIBRARY).forEach(([key, value]) => {
+      const option = document.createElement('option');
+      option.value = value.value.toString();
+      option.textContent = value.name;
+      soundSelect.appendChild(option);
+    });
+  }
+
+  // Populate light styles dropdown (Apply to all lights - should have basic 6 options)
+  const lightStyleSelect = document.getElementById('lightStyles') as HTMLSelectElement;
+  if (lightStyleSelect) {
+    Object.entries(LIGHT_EFFECTS).forEach(([key, value]) => {
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = key; // Use the key (name) for display instead of numeric value
+      lightStyleSelect.appendChild(option);
+    });
+  }
+
+  // Populate light overrides dropdown (should have advanced sequences)
+  const lightOverrideSelect = document.getElementById('lightOverrideDropDown') as HTMLSelectElement;
+  if (lightOverrideSelect) {
+    Object.entries(TOWER_LIGHT_SEQUENCES).forEach(([key, value]) => {
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = key;
+      lightOverrideSelect.appendChild(option);
+    });
+  }
+
+  // Set up event listeners for battery filter radio buttons
+  const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]') as NodeListOf<HTMLInputElement>;
+  batteryFilterRadios.forEach(radio => {
+    radio.addEventListener('change', updateBatteryFilter);
+  });
+}
+
+// Initialize UI when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeUI);
+} else {
+  initializeUI();
+}
+
+// LED Testing Functions
+const sendLEDTestCommand = async () => {
+  try {
+    // Get the selected effect and loop setting
+    const effectSelect = document.getElementById('led-effect-select') as HTMLSelectElement;
+    const loopCheckbox = document.getElementById('led-loop-checkbox') as HTMLInputElement;
+    const selectedEffect = parseInt(effectSelect.value);
+    const loopEnabled = loopCheckbox.checked;
+
+    // Get all checked LED checkboxes
+    const checkedLEDs = document.querySelectorAll('.led-checkbox:checked') as NodeListOf<HTMLInputElement>;
+
+    if (checkedLEDs.length === 0) {
+      logger.warn('No LEDs selected for testing', '[LED Testing]');
+      return;
+    }
+
+    if (!Tower || !Tower.getCurrentTowerState || !Tower.sendTowerState) {
+      logger.error('Tower not connected or tower state methods not available', '[LED Testing]');
+      return;
+    }
+
+    // Get current tower state or create a default state
+    let currentState = Tower.getCurrentTowerState();
+    if (!currentState) {
+      // Create default state if none available
+      currentState = createDefaultTowerState();
+    }
+
+    // Apply all LED changes to the tower state
+    checkedLEDs.forEach(checkbox => {
+      const layer = parseInt(checkbox.dataset.layer!);
+      const position = parseInt(checkbox.dataset.position!);
+      const isValidLightPosition = layer >= 0 && layer < 6 && position >= 0 && position < 4;
+
+      if (isValidLightPosition) {
+        currentState.layer[layer].light[position].effect = selectedEffect;
+        currentState.layer[layer].light[position].loop = loopEnabled;
+        logger.debug(`LED configured: layer=${layer}, position=${position}, effect=${selectedEffect}, loop=${loopEnabled}`, '[LED Testing]');
+      }
+    });
+
+    // Send the complete updated tower state in a single command
+    await Tower.sendTowerState(currentState);
+    logger.info(`LED test command sent: ${checkedLEDs.length} LEDs updated, effect=${selectedEffect}, loop=${loopEnabled}`, '[LED Testing]');
+
+  } catch (error) {
+    console.error('Error sending LED test command:', error);
+    logger.error('Error sending LED test command: ' + error, '[LED Testing]');
+  }
+};
+
+const clearAllLEDs = async () => {
+  try {
+    if (!Tower || !Tower.getCurrentTowerState || !Tower.sendTowerState) {
+      logger.error('Tower not connected or tower state methods not available', '[LED Testing]');
+      return;
+    }
+
+    // Get current tower state or create a default state
+    let currentState = Tower.getCurrentTowerState();
+    if (!currentState) {
+      // Create default state if none available
+      currentState = createDefaultTowerState();
+    }
+
+    // Turn off all LEDs in the tower state
+    for (let layer = 0; layer < 6; layer++) {
+      for (let position = 0; position < 4; position++) {
+        currentState.layer[layer].light[position].effect = 0; // Effect 0 = off
+        currentState.layer[layer].light[position].loop = false;
+      }
+    }
+
+    // Send the complete updated tower state in a single command
+    await Tower.sendTowerState(currentState);
+    logger.info('All LEDs cleared with single tower state command', '[LED Testing]');
+
+    // Clear all checkboxes
+    document.querySelectorAll('.led-checkbox').forEach(checkbox => {
+      (checkbox as HTMLInputElement).checked = false;
+    });
+
+  } catch (error) {
+    console.error('Error clearing LEDs:', error);
+    logger.error('Error clearing LEDs: ' + error, '[LED Testing]');
+  }
+};
+
+// Log control functions
+const updateLogLevel = () => {
+  if ((window as any).logger) {
+    const checkboxes = document.querySelectorAll('input[id^="logLevel-"]') as NodeListOf<HTMLInputElement>;
+    const selectedLevels = Array.from(checkboxes)
+      .filter(checkbox => checkbox.checked)
+      .map(checkbox => checkbox.value);
+
+    if (selectedLevels.length > 0) {
+      (window as any).logger.setEnabledLevels(selectedLevels);
+    } else {
+      // Default to 'all' if nothing is selected
+      (window as any).logger.setEnabledLevels(['all']);
+    }
+  }
+
+  // Refresh DOM output filtering (includes text filter)
+  if (sharedDOMOutput) {
+    sharedDOMOutput.refreshFilter();
+  }
+}
+
+const clearLog = () => {
+  // Clear shared DOM output
+  if (sharedDOMOutput) {
+    sharedDOMOutput.clearAll();
+  }
+
+  // Fallback to direct container clearing
+  const container = document.getElementById("log-container");
+  if (container) {
+    container.innerHTML = '';
+  }
+
+  // Clear the text filter input
+  const textFilter = document.getElementById("logTextFilter") as HTMLInputElement;
+  if (textFilter) {
+    textFilter.value = '';
+  }
+}
+
+const copyDisplayedLogs = (event: Event) => {
+  const logContainer = document.getElementById("log-container");
+  if (!logContainer) return;
+
+  // Get all currently displayed log entries
+  const logLines = logContainer.querySelectorAll('.log-line');
+  if (logLines.length === 0) {
+    alert('No log entries to copy');
+    return;
+  }
+
+  // Extract text content from each log line
+  const logText = Array.from(logLines)
+    .map(line => line.textContent || '')
+    .join('\n');
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(logText).then(() => {
+    // Optional: Show temporary success feedback
+    const button = (event.target as HTMLElement).closest('button');
+    if (button) {
+      const originalIcon = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-check"></i>';
+      button.style.backgroundColor = '#10b981';
+
+      setTimeout(() => {
+        button.innerHTML = originalIcon;
+        button.style.backgroundColor = '';
+      }, 1000);
+    }
+  }).catch(err => {
+    console.error('Failed to copy logs: ', err);
+    alert('Failed to copy logs to clipboard');
+  });
+}
+
+const downloadDisplayedLogs = (event: Event) => {
+  const logContainer = document.getElementById("log-container");
+  if (!logContainer) return;
+
+  // Get all currently displayed log entries
+  const logLines = logContainer.querySelectorAll('.log-line');
+  if (logLines.length === 0) {
+    alert('No log entries to download');
+    return;
+  }
+
+  // Extract text content from each log line
+  const logText = Array.from(logLines)
+    .map(line => line.textContent || '')
+    .join('\n');
+
+  // Create header with current date and time
+  const now = new Date();
+  const dateStr = now.toLocaleDateString();
+  const timeStr = now.toLocaleTimeString();
+  const header = `UltimateDarkTower Log Output - ${dateStr} ${timeStr}\n${'-'.repeat(60)}\n`;
+
+  // Combine header with log content
+  const fileContent = header + logText;
+
+  // Create a blob with the log content
+  const blob = new Blob([fileContent], { type: 'text/plain' });
+  const url = window.URL.createObjectURL(blob);
+
+  // Create a temporary anchor element for download
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'TowerLog.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+
+  // Show temporary success feedback
+  const button = (event.target as HTMLElement).closest('button');
+  if (button) {
+    const originalIcon = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i>';
+    button.style.backgroundColor = '#10b981';
+
+    setTimeout(() => {
+      button.innerHTML = originalIcon;
+      button.style.backgroundColor = '';
+    }, 1000);
+  }
+}
+
+// Enhanced glyph management functions
+const getGlyphsFacingDirection = (direction: TowerSide) => {
+  try {
+    return Tower.getGlyphsFacingDirection(direction);
+  } catch (error) {
+    console.error('Error getting glyphs facing direction:', error);
+    logger.error('Error getting glyphs facing direction: ' + error, '[Glyphs]');
+    return [];
+  }
+};
+
+// Light state tracking - keeps track of which lights are currently on
+const currentLightStates = {
+  doorway: new Map() // key: "position-level", value: { position, level, style }
+};
+
+// Enhanced toggle glyph light function with full functionality
+const enhancedToggleGlyphLight = async (element: HTMLElement) => {
+  const level = element.getAttribute('data-level');
+  const side = element.getAttribute('data-side');
+  const position = `${level}-${side}`;
+
+  // Find which glyph is at this position (if any)
+  const glyphAtPosition = findGlyphAtPosition(level!, side!);
+
+  // Only proceed with lighting effects if there's a glyph at this position
+  if (!glyphAtPosition) {
+    // No glyph at this position, just update the side dropdown
+    const sideSelect = document.getElementById('side-select') as HTMLSelectElement;
+    if (sideSelect) {
+      sideSelect.value = side!;
+    }
+    return; // Exit early, no lighting effects
+  }
+
+  // Toggle the light state (only if glyph is present)
+  const isLit = element.classList.toggle('glyph-lit');
+
+  // Auto-select dropdowns based on clicked glyph
+  const glyphSelect = document.getElementById('glyph-select') as HTMLSelectElement;
+  if (glyphSelect) {
+    glyphSelect.value = glyphAtPosition;
+  }
+
+  // Auto-select the glyph's current position in the side dropdown
+  const glyphCurrentSide = Tower.getGlyphPosition(glyphAtPosition as Glyphs);
+  if (glyphCurrentSide) {
+    const sideSelect = document.getElementById('side-select') as HTMLSelectElement;
+    if (sideSelect) {
+      sideSelect.value = glyphCurrentSide;
+    }
+  }
+
+  // Send command to tower to toggle the light
+  try {
+    const lightEffect = isLit ? 'on' : 'off';
+
+    logger.info(`Toggling light ${lightEffect} for glyph ${glyphAtPosition} at position ${position}`, '[Glyphs]');
+
+    // Light up the glyph's actual current position on the tower
+    const glyphCurrentSide = Tower.getGlyphPosition(glyphAtPosition as Glyphs);
+    if (!glyphCurrentSide) {
+      throw new Error(`Could not find current position for glyph ${glyphAtPosition}`);
+    }
+
+    const targetSide = glyphCurrentSide;
+    const targetLevel = getGlyphLevel(glyphAtPosition);
+
+    // Update the light state tracking
+    const lightKey = `${targetSide}-${targetLevel}`;
+    if (isLit) {
+      currentLightStates.doorway.set(lightKey, { position: targetSide, level: targetLevel, style: 'on' });
+    } else {
+      currentLightStates.doorway.delete(lightKey);
+    }
+
+    // Build the complete light command from current state
+    const allDoorwayLights = Array.from(currentLightStates.doorway.values());
+
+    const lights = {
+      doorway: allDoorwayLights
+    };
+
+    await Tower.Lights(lights);
+    logger.info(`Successfully updated tower lights. Active lights: ${allDoorwayLights.length}`, '[Glyphs]');
+
+  } catch (error) {
+    console.error('Error toggling glyph light:', error);
+    logger.error('Error toggling glyph light: ' + error, '[Glyphs]');
+
+    // Revert the visual state if tower command failed
+    element.classList.toggle('glyph-lit');
+  }
+};
+
+// Helper function to find which glyph is at a given position
+const findGlyphAtPosition = (level: string, side: string) => {
+  const allPositions = Tower.getAllGlyphPositions();
+
+  for (const [glyph, currentSide] of Object.entries(allPositions)) {
+    if (GLYPHS[glyph as keyof typeof GLYPHS].level === level && currentSide === side) {
+      return glyph;
+    }
+  }
+
+  return null;
+};
+
+// Helper function to get glyph level
+const getGlyphLevel = (glyph: string) => {
+  return GLYPHS[glyph as keyof typeof GLYPHS]?.level || 'middle';
+};
+
+// Refresh visual light states in the glyph grid
+const refreshVisualLightStates = () => {
+  // Clear all existing glyph-lit classes
+  document.querySelectorAll('.glyph-cell').forEach(cell => {
+    cell.classList.remove('glyph-lit');
+  });
+
+  // Apply glyph-lit class to cells that have active lights
+  currentLightStates.doorway.forEach((light, lightKey) => {
+    const [position, level] = lightKey.split('-');
+    const cellId = `glyph-${level}-${position}`;
+    const cell = document.getElementById(cellId);
+    if (cell) {
+      cell.classList.add('glyph-lit');
+    }
+  });
+};
+
+// Enhanced moveGlyph function with full functionality
+const enhancedMoveGlyph = async () => {
+  const glyphSelect = document.getElementById('glyph-select') as HTMLSelectElement;
+  const sideSelect = document.getElementById('side-select') as HTMLSelectElement;
+
+  const selectedGlyph = glyphSelect.value;
+  const targetSide = sideSelect.value;
+
+  logger.debug(`UI Selection: glyph=${selectedGlyph}, targetSide=${targetSide}`, '[Glyphs]');
+
+  if (!selectedGlyph || !targetSide) {
+    logger.warn('Please select a glyph and target side', '[Glyphs]');
+    return;
+  }
+
+  try {
+    // Get current glyph position directly (more reliable than getAllGlyphPositions)
+    const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph as Glyphs);
+
+    if (!currentGlyphPosition) {
+      logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, '[Glyphs]');
+      return;
+    }
+
+    // Get the fixed level for this glyph (glyphs can't change levels)
+    const glyphLevel = GLYPHS[selectedGlyph as keyof typeof GLYPHS].level;
+
+    // Calculate rotation needed to move glyph to target position
+    const sides = ['north', 'east', 'south', 'west'];
+    const currentSideIndex = sides.indexOf(currentGlyphPosition);
+    const targetSideIndex = sides.indexOf(targetSide);
+
+    if (currentSideIndex === -1 || targetSideIndex === -1) {
+      logger.error('Invalid current or target side', '[Glyphs]');
+      return;
+    }
+
+    // Calculate clockwise rotation steps needed
+    let rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
+
+    if (rotationSteps === 0) {
+      logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, '[Glyphs]');
+      return;
+    }
+
+    // Calculate what drum position will put the selected glyph at the target side
+    let targetDrumPosition;
+    if (glyphLevel === 'top' || glyphLevel === 'middle' || glyphLevel === 'bottom') {
+      // Calculate the drum position needed to put this specific glyph at the target side
+      const currentDrumPosition = Tower.getCurrentDrumPosition(glyphLevel);
+      const sides = ['north', 'east', 'south', 'west'];
+
+      const currentDrumIndex = sides.indexOf(currentDrumPosition);
+      const currentGlyphIndex = sides.indexOf(currentGlyphPosition);
+      const targetGlyphIndex = sides.indexOf(targetSide);
+
+      // Debug logging to understand the calculation
+      logger.debug(`Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`, '[Glyphs]');
+
+      // Calculate how many steps the glyph needs to move
+      let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
+
+      // Calculate the new drum position
+      const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
+      targetDrumPosition = sides[newDrumIndex];
+
+      logger.debug(`Move calculation result: glyphSteps=${glyphSteps}, newDrumIndex=${newDrumIndex}, targetDrumPosition=${targetDrumPosition}`, '[Glyphs]');
+    }
+
+    // Set positions for all three drums
+    const topPosition = glyphLevel === 'top' ? targetDrumPosition : Tower.getCurrentDrumPosition('top');
+    const middlePosition = glyphLevel === 'middle' ? targetDrumPosition : Tower.getCurrentDrumPosition('middle');
+    const bottomPosition = glyphLevel === 'bottom' ? targetDrumPosition : Tower.getCurrentDrumPosition('bottom');
+
+    logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, '[Glyphs]');
+
+    // Check if this glyph has a light that needs to be moved
+    const oldLightKey = `${currentGlyphPosition}-${glyphLevel}`;
+    const hadLight = currentLightStates.doorway.has(oldLightKey);
+
+    // Execute the rotation with all three drum positions
+    await Tower.Rotate(topPosition as TowerSide, middlePosition as TowerSide, bottomPosition as TowerSide);
+
+    // CRITICAL: The Tower.Rotate() command should automatically update internal glyph positions,
+    // but we'll also refresh the UI immediately to ensure consistency
+    refreshGlyphPositions();
+
+    // If the glyph had a light, move it to the new position
+    if (hadLight) {
+      // Remove light from old position
+      currentLightStates.doorway.delete(oldLightKey);
+
+      // Wait for rotation to complete, then get actual glyph position
+      setTimeout(async () => {
+        try {
+          // Get the actual position of the glyph after rotation
+          const actualNewPosition = Tower.getGlyphPosition(selectedGlyph as Glyphs);
+
+          if (actualNewPosition) {
+            // Add light to actual new position
+            const newLightKey = `${actualNewPosition}-${glyphLevel}`;
+            currentLightStates.doorway.set(newLightKey, {
+              position: actualNewPosition,
+              level: glyphLevel,
+              style: 'on'
+            });
+
+            // Update tower lights to reflect new positions
+            const allDoorwayLights = Array.from(currentLightStates.doorway.values());
+            await Tower.Lights({ doorway: allDoorwayLights });
+            logger.info(`Successfully moved light with ${selectedGlyph} glyph to actual position ${actualNewPosition}`, '[Glyphs]');
+          } else {
+            logger.error(`Could not determine actual position for ${selectedGlyph} after rotation`, '[Glyphs]');
+          }
+        } catch (error) {
+          logger.error('Error updating lights after glyph move: ' + error, '[Glyphs]');
+        }
+      }, 1500);
+    }
+
+    // Additional refresh glyph positions after rotation to update UI
+    setTimeout(() => {
+      refreshGlyphPositions();
+      // Refresh visual light states after a bit more delay to ensure light updates completed
+      setTimeout(refreshVisualLightStates, 700);
+    }, 1000);
+
+    logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, '[Glyphs]');
+
+  } catch (error) {
+    console.error('Error moving glyph:', error);
+    logger.error('Error moving glyph: ' + error, '[Glyphs]');
+  }
+};
+
 // Expose functions globally for HTML onclick handlers
 (window as any).connectToTower = connectToTower;
 (window as any).calibrate = calibrate;
@@ -577,3 +1440,26 @@ const sealSquareClick = (element: HTMLElement) => {
 (window as any).allLightsOff = allLightsOff;
 (window as any).randomizeLevels = randomizeLevels;
 (window as any).sealSquareClick = sealSquareClick;
+(window as any).switchTab = switchTab;
+(window as any).moveGlyph = moveGlyph;
+(window as any).toggleGlyphLight = toggleGlyphLight;
+(window as any).refreshGlyphPositions = refreshGlyphPositions;
+(window as any).filterLogs = filterLogs;
+(window as any).clearLogs = clearLogs;
+(window as any).saveState = saveState;
+(window as any).loadState = loadState;
+(window as any).resetState = resetState;
+(window as any).updateLogLevel = updateLogLevel;
+(window as any).clearLog = clearLog;
+(window as any).copyDisplayedLogs = copyDisplayedLogs;
+(window as any).downloadDisplayedLogs = downloadDisplayedLogs;
+(window as any).getGlyphsFacingDirection = getGlyphsFacingDirection;
+(window as any).enhancedToggleGlyphLight = enhancedToggleGlyphLight;
+(window as any).enhancedMoveGlyph = enhancedMoveGlyph;
+(window as any).refreshVisualLightStates = refreshVisualLightStates;
+(window as any).sendLEDTestCommand = sendLEDTestCommand;
+(window as any).clearAllLEDs = clearAllLEDs;
+(window as any).findGlyphAtPosition = findGlyphAtPosition;
+(window as any).getGlyphLevel = getGlyphLevel;
+(window as any).currentLightStates = currentLightStates;
+(window as any).updateBatteryFilter = updateBatteryFilter;

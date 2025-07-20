@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.VOLTAGE_LEVELS = exports.TOWER_MESSAGES = exports.TOWER_AUDIO_LIBRARY = exports.TOWER_LIGHT_SEQUENCES = exports.LIGHT_EFFECTS = exports.DOORWAY_LIGHTS_TO_BIT_SHIFT = exports.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = exports.drumPositionCmds = exports.SKULL_DROP_COUNT_POS = exports.AUDIO_COMMAND_POS = exports.GLYPHS = exports.LIGHT_PACKETS = exports.DRUM_PACKETS = exports.TC = exports.TOWER_COMMANDS = exports.DIS_PNP_ID_UUID = exports.DIS_IEEE_REGULATORY_UUID = exports.DIS_SYSTEM_ID_UUID = exports.DIS_SOFTWARE_REVISION_UUID = exports.DIS_FIRMWARE_REVISION_UUID = exports.DIS_HARDWARE_REVISION_UUID = exports.DIS_SERIAL_NUMBER_UUID = exports.DIS_MODEL_NUMBER_UUID = exports.DIS_MANUFACTURER_NAME_UUID = exports.DIS_SERVICE_UUID = exports.TOWER_DEVICE_NAME = exports.UART_RX_CHARACTERISTIC_UUID = exports.UART_TX_CHARACTERISTIC_UUID = exports.UART_SERVICE_UUID = void 0;
+exports.STATE_DATA_LENGTH = exports.LIGHT_INDEX_TO_DIRECTION = exports.LAYER_TO_POSITION = exports.LED_CHANNEL_LOOKUP = exports.LEDGE_BASE_LIGHT_POSITIONS = exports.RING_LIGHT_POSITIONS = exports.TOWER_LAYERS = exports.VOLTAGE_LEVELS = exports.TOWER_MESSAGES = exports.TOWER_AUDIO_LIBRARY = exports.TOWER_LIGHT_SEQUENCES = exports.LIGHT_EFFECTS = exports.DOORWAY_LIGHTS_TO_BIT_SHIFT = exports.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = exports.drumPositionCmds = exports.SKULL_DROP_COUNT_POS = exports.AUDIO_COMMAND_POS = exports.GLYPHS = exports.LIGHT_PACKETS = exports.DRUM_PACKETS = exports.TC = exports.TOWER_COMMANDS = exports.DIS_PNP_ID_UUID = exports.DIS_IEEE_REGULATORY_UUID = exports.DIS_SYSTEM_ID_UUID = exports.DIS_SOFTWARE_REVISION_UUID = exports.DIS_FIRMWARE_REVISION_UUID = exports.DIS_HARDWARE_REVISION_UUID = exports.DIS_SERIAL_NUMBER_UUID = exports.DIS_MODEL_NUMBER_UUID = exports.DIS_MANUFACTURER_NAME_UUID = exports.DIS_SERVICE_UUID = exports.TOWER_DEVICE_NAME = exports.UART_RX_CHARACTERISTIC_UUID = exports.UART_TX_CHARACTERISTIC_UUID = exports.UART_SERVICE_UUID = void 0;
 // Nordic Semicondutor's UART/Serial IDs for Bluetooth LE
 exports.UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 exports.UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
@@ -70,9 +70,9 @@ exports.AUDIO_COMMAND_POS = 15;
 exports.SKULL_DROP_COUNT_POS = 17;
 // prettier-ignore
 exports.drumPositionCmds = {
-    top: { north: 0b00010000, east: 0b00000010, south: 0b00010100, west: 0b00010110 },
-    middle: { north: 0b00010000, east: 0b01000000, south: 0b10010000, west: 0b11010000 },
-    bottom: { north: 0b01000010, east: 0b01001010, south: 0b01010010, west: 0b01011010 },
+    top: { north: 0b00010000, west: 0b00000010, south: 0b00010100, east: 0b00010110 },
+    middle: { north: 0b00010000, west: 0b01000000, south: 0b10010000, east: 0b11010000 },
+    bottom: { north: 0b01000010, west: 0b01001010, south: 0b01010010, east: 0b01011010 },
 };
 exports.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
 exports.DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];
@@ -243,4 +243,60 @@ exports.VOLTAGE_LEVELS = [
     1180, 1175, 1166, 1150, 1133, 1125, 1107, 1095, 1066, 1033,
     980 // There's an additional 5% until 800mV is reached
 ];
+// Tower Layer Mapping Constants (moved from functions.ts)
+// Constants for mapping tower layers to physical locations
+exports.TOWER_LAYERS = {
+    TOP_RING: 0,
+    MIDDLE_RING: 1,
+    BOTTOM_RING: 2,
+    LEDGE: 3,
+    BASE1: 4,
+    BASE2: 5,
+};
+// Ring layers use cardinal directions (position 0 = North)
+exports.RING_LIGHT_POSITIONS = {
+    NORTH: 0,
+    EAST: 1,
+    SOUTH: 2,
+    WEST: 3,
+};
+// Ledge and Base layers use ordinal directions (position 0 = North-East)
+exports.LEDGE_BASE_LIGHT_POSITIONS = {
+    NORTH_EAST: 0,
+    SOUTH_EAST: 1,
+    SOUTH_WEST: 2,
+    NORTH_WEST: 3,
+};
+// LED Channel Lookup (matches firmware implementation)
+// Convert from (layer * 4) + position to LED driver channel (0-23)
+exports.LED_CHANNEL_LOOKUP = [
+    // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
+    0, 3, 2, 1,
+    // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
+    7, 6, 5, 4,
+    // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
+    10, 9, 8, 11,
+    // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
+    12, 13, 14, 15,
+    // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
+    16, 17, 18, 19,
+    // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
+    20, 21, 22, 23,
+];
+// Updated reverse mapping for the corrected layer architecture
+exports.LAYER_TO_POSITION = {
+    [exports.TOWER_LAYERS.TOP_RING]: 'TOP_RING',
+    [exports.TOWER_LAYERS.MIDDLE_RING]: 'MIDDLE_RING',
+    [exports.TOWER_LAYERS.BOTTOM_RING]: 'BOTTOM_RING',
+    [exports.TOWER_LAYERS.LEDGE]: 'LEDGE',
+    [exports.TOWER_LAYERS.BASE1]: 'BASE1',
+    [exports.TOWER_LAYERS.BASE2]: 'BASE2'
+};
+exports.LIGHT_INDEX_TO_DIRECTION = {
+    [exports.RING_LIGHT_POSITIONS.NORTH]: 'NORTH',
+    [exports.RING_LIGHT_POSITIONS.EAST]: 'EAST',
+    [exports.RING_LIGHT_POSITIONS.SOUTH]: 'SOUTH',
+    [exports.RING_LIGHT_POSITIONS.WEST]: 'WEST'
+};
+exports.STATE_DATA_LENGTH = 19;
 //# sourceMappingURL=udtConstants.js.map

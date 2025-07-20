@@ -22,25 +22,6 @@ export declare class TowerResponseProcessor {
      */
     commandToString(command: Uint8Array): Array<string>;
     /**
-     * Converts a command packet to a hex string representation for debugging.
-     * @param {Uint8Array} command - Command packet to convert
-     * @returns {string} Hex string representation of the command packet
-     */
-    commandToPacketString(command: Uint8Array): string;
-    /**
-     * Extracts battery voltage in millivolts from a tower battery response.
-     * @param {Uint8Array} command - Battery response packet from tower
-     * @returns {number} Battery voltage in millivolts
-     */
-    getMilliVoltsFromTowerResponse(command: Uint8Array): number;
-    /**
-     * Converts battery voltage in millivolts to percentage.
-     * Tower returns sum total battery level in millivolts for all batteries.
-     * @param {number} mv - Battery voltage in millivolts
-     * @returns {string} Battery percentage as formatted string (e.g., "75%")
-     */
-    milliVoltsToPercentage(mv: number): string;
-    /**
      * Determines if a response should be logged based on command type and configuration.
      * @param {string} cmdKey - Command key from tower message
      * @param {any} logConfig - Logging configuration object

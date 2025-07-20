@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UdtTowerCommands = void 0;
 const udtConstants_1 = require("./udtConstants");
 const udtCommandQueue_1 = require("./udtCommandQueue");
+const udtHelpers_1 = require("./udtHelpers");
 class UdtTowerCommands {
     constructor(dependencies) {
         this.deps = dependencies;
@@ -27,7 +28,7 @@ class UdtTowerCommands {
     async sendTowerCommandDirect(command) {
         var _a, _b, _c;
         try {
-            const cmdStr = this.deps.responseProcessor.commandToPacketString(command);
+            const cmdStr = (0, udtHelpers_1.commandToPacketString)(command);
             this.deps.logDetail && this.deps.logger.debug(`packet(s) sent: ${cmdStr}`, '[UDT]');
             if (!this.deps.bleConnection.txCharacteristic || !this.deps.bleConnection.isConnected) {
                 this.deps.logger.warn('Tower is not connected', '[UDT]');
@@ -82,7 +83,7 @@ class UdtTowerCommands {
         return;
     }
     /**
-     * Plays a sound from the tower's audio library.
+     * Plays a sound from the tower's audio library using stateful commands that preserve existing tower state.
      * @param soundIndex - Index of the sound to play (1-based, must be valid in TOWER_AUDIO_LIBRARY)
      * @returns Promise that resolves when sound command is sent
      */
@@ -92,10 +93,10 @@ class UdtTowerCommands {
             this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, '[UDT]');
             return;
         }
-        const soundCommand = this.deps.commandFactory.createSoundCommand(soundIndex);
-        this.deps.commandFactory.updateCommandWithCurrentDrumPositions(soundCommand, this.deps.currentDrumPositions);
-        this.deps.logger.info('Sending sound command', '[UDT]');
-        await this.sendTowerCommand(soundCommand, `playSound(${soundIndex})`);
+        const currentState = this.deps.getCurrentTowerState();
+        const command = this.deps.commandFactory.createStatefulAudioCommand(currentState, soundIndex, false);
+        this.deps.logger.info('Sending sound command (stateful)', '[UDT]');
+        await this.sendTowerCommand(command, `playSound(${soundIndex})`);
     }
     /**
      * Controls the tower's LED lights including doorway, ledge, and base lights.
@@ -154,21 +155,46 @@ class UdtTowerCommands {
         this.deps.currentDrumPositions.bottom = rotateCommand[udtConstants_1.DRUM_PACKETS.bottom];
     }
     /**
-     * Sends a combined command to rotate drums, control lights, and play sound simultaneously.
-     * @param rotate - Rotation configuration for tower drums
-     * @param lights - Light configuration object
-     * @param soundIndex - Optional sound to play with the multi-command
-     * @returns Promise that resolves when multi-command is sent
-     */
-    async multiCommand(rotate, lights, soundIndex) {
-        this.deps.logDetail && this.deps.logger.debug(`MultiCommand Parameters ${JSON.stringify(rotate)} ${JSON.stringify(lights)} ${soundIndex}`, '[UDT]');
-        const rotateCmd = this.deps.commandFactory.createRotateCommand(rotate.top, rotate.middle, rotate.bottom);
-        const lightCmd = this.deps.commandFactory.createLightPacketCommand(lights);
-        const soundCmd = soundIndex ? this.deps.commandFactory.createSoundCommand(soundIndex) : undefined;
-        const multiCmd = this.deps.commandFactory.createMultiCommand(rotateCmd, lightCmd, soundCmd);
-        await this.sendTowerCommand(multiCmd, 'multiCommand');
-        const packetMsg = this.deps.responseProcessor.commandToPacketString(multiCmd);
-        this.deps.logger.info(`multiple command sent ${packetMsg}`, '[UDT]');
+   * Rotates tower drums to specified positions.
+   * @param top - Position for the top drum ('north', 'east', 'south', 'west')
+   * @param middle - Position for the middle drum
+   * @param bottom - Position for the bottom drum
+   * @param soundIndex - Optional sound to play during rotation
+   * @returns Promise that resolves when rotate command is sent
+   */
+    async rotateWithState(top, middle, bottom, soundIndex) {
+        this.deps.logDetail && this.deps.logger.debug(`Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`, '[UDT]');
+        // Convert TowerSide to numeric positions
+        const positionMap = {
+            'north': 0, 'east': 1, 'south': 2, 'west': 3
+        };
+        this.deps.logger.info('Sending stateful rotate commands' + (soundIndex ? ' with sound' : ''), '[UDT]');
+        // Flag that we're performing a long command 
+        // drum rotation can exceed battery heartbeat check default
+        this.deps.bleConnection.performingLongCommand = true;
+        try {
+            // Rotate each drum individually using the proven single-drum stateful commands
+            // This approach is more reliable than trying to change all drums in one command
+            await this.rotateDrumStateful(0, positionMap[top], false);
+            await this.rotateDrumStateful(1, positionMap[middle], false);
+            await this.rotateDrumStateful(2, positionMap[bottom], false);
+            // Play sound if requested - do this after all rotations to avoid conflicts
+            if (soundIndex) {
+                await this.playSound(soundIndex);
+            }
+        }
+        finally {
+            // Reset the long command flag after a delay to allow for rotation completion
+            // Drum rotation time varies based on number of drums moved
+            setTimeout(() => {
+                this.deps.bleConnection.performingLongCommand = false;
+                this.deps.bleConnection.lastBatteryHeartbeat = Date.now(); // Reset heartbeat timer
+            }, this.deps.bleConnection.longTowerCommandTimeout);
+            // Update drum positions tracking - with stateful commands we know the exact positions
+            // The drum position encoding for topMiddle combines top and middle drum positions
+            this.deps.currentDrumPositions.topMiddle = (positionMap[top] << 2) | positionMap[middle];
+            this.deps.currentDrumPositions.bottom = positionMap[bottom];
+        }
     }
     /**
      * Resets the tower's internal skull drop counter to zero.
@@ -279,48 +305,107 @@ class UdtTowerCommands {
      */
     getCurrentDrumPosition(level) {
         const drumPositions = udtConstants_1.drumPositionCmds[level];
-        const currentValue = level === 'bottom'
+        const rawValue = level === 'bottom'
             ? this.deps.currentDrumPositions.bottom
-            : (level === 'top'
-                ? (this.deps.currentDrumPositions.topMiddle & 0b00010110) // top bits
-                : (this.deps.currentDrumPositions.topMiddle & 0b11000000)); // middle bits
+            : this.deps.currentDrumPositions.topMiddle;
         // Find matching side for current drum position
         for (const [side, value] of Object.entries(drumPositions)) {
             if (level === 'middle') {
                 // For middle, compare the middle-specific bits (bits 6-7)
-                if ((value & 0b11000000) === (currentValue & 0b11000000)) {
+                if ((value & 0b11000000) === (rawValue & 0b11000000)) {
                     return side;
                 }
             }
             else if (level === 'top') {
-                // For top drum, we need to account for the fact that middle drum
-                // position is encoded in the same byte. 
-                // Check what middle position is currently set
-                const middleBits = currentValue & 0b11000000;
-                if (middleBits === 0b00000000) {
-                    // Middle is north (0b00010000), so we need to check combined values
-                    const expectedCombined = value | 0b00010000; // top value OR middle north
-                    if (currentValue === expectedCombined) {
-                        return side;
-                    }
-                }
-                else {
-                    // Middle is not north, so we can mask out middle bits safely
-                    const topBits = currentValue & 0b00010110; // Mask to get only possible top bits
-                    if (value === topBits) {
-                        return side;
-                    }
+                // For top drum, compare the top-specific bits (bits 1, 2, 4)
+                if ((value & 0b00010110) === (rawValue & 0b00010110)) {
+                    return side;
                 }
             }
             else {
                 // For bottom, direct comparison
-                if (value === currentValue) {
+                if (value === rawValue) {
                     return side;
                 }
             }
         }
         // Default to north if no match found
         return 'north';
+    }
+    //#region Stateful Command Methods
+    /**
+     * Sends a stateful LED command that only changes specific LEDs while preserving all other state.
+     * @param layerIndex - Layer index (0-5)
+     * @param lightIndex - Light index within layer (0-3)
+     * @param effect - Light effect (0=off, 1=on, 2=slow pulse, etc.)
+     * @param loop - Whether to loop the effect
+     * @returns Promise that resolves when command is sent
+     */
+    async setLEDStateful(layerIndex, lightIndex, effect, loop = false) {
+        const currentState = this.deps.getCurrentTowerState();
+        const command = this.deps.commandFactory.createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop);
+        this.deps.logger.info(`Setting LED layer ${layerIndex} light ${lightIndex} to effect ${effect}${loop ? ' (looped)' : ''}`, '[UDT]');
+        await this.sendTowerCommand(command, `setLEDStateful(${layerIndex}, ${lightIndex}, ${effect}, ${loop})`);
+    }
+    /**
+     * Plays a sound using stateful commands that preserve existing tower state.
+     * @param soundIndex - Index of the sound to play (1-based)
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @returns Promise that resolves when command is sent
+     */
+    async playSoundStateful(soundIndex, loop = false, volume) {
+        const invalidIndex = soundIndex === null || soundIndex > (Object.keys(udtConstants_1.TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0;
+        if (invalidIndex) {
+            this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, '[UDT]');
+            return;
+        }
+        const currentState = this.deps.getCurrentTowerState();
+        const command = this.deps.commandFactory.createStatefulAudioCommand(currentState, soundIndex, loop, volume);
+        this.deps.logger.info(`Playing sound ${soundIndex}${loop ? ' (looped)' : ''}${volume !== undefined ? ` at volume ${volume}` : ''}`, '[UDT]');
+        await this.sendTowerCommand(command, `playSoundStateful(${soundIndex}, ${loop}${volume !== undefined ? `, ${volume}` : ''})`);
+    }
+    /**
+     * Rotates a single drum using stateful commands that preserve existing tower state.
+     * @param drumIndex - Drum index (0=top, 1=middle, 2=bottom)
+     * @param position - Target position (0=north, 1=east, 2=south, 3=west)
+     * @param playSound - Whether to play sound during rotation
+     * @returns Promise that resolves when command is sent
+     */
+    async rotateDrumStateful(drumIndex, position, playSound = false) {
+        const currentState = this.deps.getCurrentTowerState();
+        const command = this.deps.commandFactory.createStatefulDrumCommand(currentState, drumIndex, position, playSound);
+        const drumNames = ['top', 'middle', 'bottom'];
+        const positionNames = ['north', 'east', 'south', 'west'];
+        this.deps.logger.info(`Rotating ${drumNames[drumIndex]} drum to ${positionNames[position]}${playSound ? ' with sound' : ''}`, '[UDT]');
+        // Flag that we're performing a long command
+        this.deps.bleConnection.performingLongCommand = true;
+        await this.sendTowerCommand(command, `rotateDrumStateful(${drumIndex}, ${position}, ${playSound})`);
+        // Reset the long command flag after a delay
+        setTimeout(() => {
+            this.deps.bleConnection.performingLongCommand = false;
+            this.deps.bleConnection.lastBatteryHeartbeat = Date.now();
+        }, this.deps.bleConnection.longTowerCommandTimeout);
+    }
+    /**
+     * Sends a complete tower state using stateful commands.
+     * @param state - Complete tower state to send
+     * @returns Promise that resolves when command is sent
+     */
+    async sendTowerStateStateful(state) {
+        const command = this.deps.commandFactory.packTowerStateCommand(state);
+        this.deps.logger.info('Sending complete tower state', '[UDT]');
+        await this.sendTowerCommand(command, 'sendTowerStateStateful');
+    }
+    //#endregion
+    /**
+     * Public access to sendTowerCommandDirect for testing purposes.
+     * This bypasses the command queue and sends commands directly.
+     * @param command - The command packet to send directly to the tower
+     * @returns Promise that resolves when command is sent
+     */
+    async sendTowerCommandDirectPublic(command) {
+        return await this.sendTowerCommandDirect(command);
     }
     /**
      * Called when a tower response is received to notify the command queue

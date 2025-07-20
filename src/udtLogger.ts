@@ -1,3 +1,5 @@
+import type { TowerState } from './udtTowerState';
+
 export type LogLevel = 'all' | 'debug' | 'info' | 'warn' | 'error';
 
 export interface LogOutput {
@@ -303,6 +305,99 @@ export class Logger {
 
     error(message: string, context?: string): void {
         this.log('error', message, context);
+    }
+
+    /**
+     * Logs tower state changes with detailed information about what changed.
+     * @param oldState - The previous tower state
+     * @param newState - The new tower state
+     * @param source - Source identifier for the update (e.g., "sendTowerState", "tower response")
+     * @param enableDetailedLogging - Whether to include detailed change descriptions
+     */
+    logTowerStateChange(oldState: TowerState, newState: TowerState, source: string, enableDetailedLogging: boolean = false): void {
+        this.info(`Tower state updated from ${source}`, '[TowerState]');
+        
+        if (enableDetailedLogging) {
+            const changes = this.computeStateChanges(oldState, newState);
+            if (changes.length > 0) {
+                this.debug(`State changes: ${changes.join(', ')}`, '[TowerState]');
+            } else {
+                this.debug('No changes detected in state update', '[TowerState]');
+            }
+        }
+    }
+
+    /**
+     * Computes the differences between two tower states for logging purposes.
+     * @param oldState - The previous tower state
+     * @param newState - The new tower state
+     * @returns Array of human-readable change descriptions
+     */
+    private computeStateChanges(oldState: TowerState, newState: TowerState): string[] {
+        const changes: string[] = [];
+
+        // Check drum changes
+        for (let i = 0; i < 3; i++) {
+            const drumNames = ['top', 'middle', 'bottom'];
+            const oldDrum = oldState.drum[i];
+            const newDrum = newState.drum[i];
+            
+            if (oldDrum.position !== newDrum.position) {
+                const positions = ['north', 'east', 'south', 'west'];
+                changes.push(`${drumNames[i]} drum: ${positions[oldDrum.position]} → ${positions[newDrum.position]}`);
+            }
+            if (oldDrum.calibrated !== newDrum.calibrated) {
+                changes.push(`${drumNames[i]} drum calibrated: ${oldDrum.calibrated} → ${newDrum.calibrated}`);
+            }
+            if (oldDrum.jammed !== newDrum.jammed) {
+                changes.push(`${drumNames[i]} drum jammed: ${oldDrum.jammed} → ${newDrum.jammed}`);
+            }
+            if (oldDrum.playSound !== newDrum.playSound) {
+                changes.push(`${drumNames[i]} drum playSound: ${oldDrum.playSound} → ${newDrum.playSound}`);
+            }
+        }
+
+        // Check LED layer changes
+        const layerNames = ['top ring', 'middle ring', 'bottom ring', 'ledge', 'base1', 'base2'];
+        for (let layerIndex = 0; layerIndex < 6; layerIndex++) {
+            for (let lightIndex = 0; lightIndex < 4; lightIndex++) {
+                const oldLight = oldState.layer[layerIndex].light[lightIndex];
+                const newLight = newState.layer[layerIndex].light[lightIndex];
+                
+                if (oldLight.effect !== newLight.effect) {
+                    changes.push(`${layerNames[layerIndex]} light ${lightIndex}: effect ${oldLight.effect} → ${newLight.effect}`);
+                }
+                if (oldLight.loop !== newLight.loop) {
+                    changes.push(`${layerNames[layerIndex]} light ${lightIndex}: loop ${oldLight.loop} → ${newLight.loop}`);
+                }
+            }
+        }
+
+        // Check audio changes
+        if (oldState.audio.sample !== newState.audio.sample) {
+            changes.push(`audio sample: ${oldState.audio.sample} → ${newState.audio.sample}`);
+        }
+        if (oldState.audio.loop !== newState.audio.loop) {
+            changes.push(`audio loop: ${oldState.audio.loop} → ${newState.audio.loop}`);
+        }
+        if (oldState.audio.volume !== newState.audio.volume) {
+            changes.push(`audio volume: ${oldState.audio.volume} → ${newState.audio.volume}`);
+        }
+
+        // Check beam changes
+        if (oldState.beam.count !== newState.beam.count) {
+            changes.push(`beam count: ${oldState.beam.count} → ${newState.beam.count}`);
+        }
+        if (oldState.beam.fault !== newState.beam.fault) {
+            changes.push(`beam fault: ${oldState.beam.fault} → ${newState.beam.fault}`);
+        }
+
+        // Check LED sequence changes
+        if (oldState.led_sequence !== newState.led_sequence) {
+            changes.push(`LED sequence: ${oldState.led_sequence} → ${newState.led_sequence}`);
+        }
+
+        return changes;
     }
 }
 

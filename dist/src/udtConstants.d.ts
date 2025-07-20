@@ -151,21 +151,21 @@ export type RotateCommand = {
 export declare const drumPositionCmds: {
     top: {
         north: number;
-        east: number;
-        south: number;
         west: number;
+        south: number;
+        east: number;
     };
     middle: {
         north: number;
-        east: number;
-        south: number;
         west: number;
+        south: number;
+        east: number;
     };
     bottom: {
         north: number;
-        east: number;
-        south: number;
         west: number;
+        south: number;
+        east: number;
     };
 };
 export declare const BASE_LEDGE_LIGHTS_TO_BIT_SHIFT: string[];
@@ -256,3 +256,39 @@ export declare const TOWER_MESSAGES: {
     };
 };
 export declare const VOLTAGE_LEVELS: number[];
+export declare const TOWER_LAYERS: {
+    readonly TOP_RING: 0;
+    readonly MIDDLE_RING: 1;
+    readonly BOTTOM_RING: 2;
+    readonly LEDGE: 3;
+    readonly BASE1: 4;
+    readonly BASE2: 5;
+};
+export declare const RING_LIGHT_POSITIONS: {
+    readonly NORTH: 0;
+    readonly EAST: 1;
+    readonly SOUTH: 2;
+    readonly WEST: 3;
+};
+export declare const LEDGE_BASE_LIGHT_POSITIONS: {
+    readonly NORTH_EAST: 0;
+    readonly SOUTH_EAST: 1;
+    readonly SOUTH_WEST: 2;
+    readonly NORTH_WEST: 3;
+};
+export declare const LED_CHANNEL_LOOKUP: number[];
+export declare const LAYER_TO_POSITION: {
+    readonly 0: "TOP_RING";
+    readonly 1: "MIDDLE_RING";
+    readonly 2: "BOTTOM_RING";
+    readonly 3: "LEDGE";
+    readonly 4: "BASE1";
+    readonly 5: "BASE2";
+};
+export declare const LIGHT_INDEX_TO_DIRECTION: {
+    readonly 0: "NORTH";
+    readonly 1: "EAST";
+    readonly 2: "SOUTH";
+    readonly 3: "WEST";
+};
+export declare const STATE_DATA_LENGTH = 19;

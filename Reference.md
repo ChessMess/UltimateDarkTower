@@ -360,25 +360,6 @@ const bottomPosition = tower.getCurrentDrumPosition('bottom');
 console.log(`Drums: Top=${topPosition}, Middle=${middlePosition}, Bottom=${bottomPosition}`);
 ```
 
-### Advanced Commands
-
-#### `MultiCommand(rotate?: RotateCommand, lights?: Lights, soundIndex?: number): Promise<void>`
-
-**⚠️ Advanced Use Only**: Combine multiple actions in one command. Not recommended as this can cause excessive current draw and cause the tower to drop bluetooth connection.
-
-```typescript
-// WARNING: Can cause disconnections
-await tower.MultiCommand(
-    { top: 'north', middle: 'east', bottom: 'south' },
-    { doorway: [{ position: 'north', level: 'top', style: LIGHT_EFFECTS.on }] },
-    TOWER_AUDIO_LIBRARY.BattleStart.value
-);
-```
-
-**Best Practice**: Use individual commands instead of MultiCommand or commands that allow multiple items (such as lights with sound) for maximum reliability. Do Lights, Sounds, and Rotations as discrete actions.
-
----
-
 ## Glyph System
 
 The tower tracks glyph positions as drums rotate. Glyphs are game symbols that appear on different drum levels.
@@ -389,14 +370,8 @@ The tower tracks glyph positions as drums rotate. Glyphs are game symbols that a
 // Available glyphs
 type Glyphs = 'cleanse' | 'quest' | 'battle' | 'banner' | 'reinforce';
 
-// Glyph locations after calibration
-const GLYPHS = {
-    cleanse: { name: 'Cleanse', level: 'top', side: 'north' },
-    quest: { name: 'Quest', level: 'top', side: 'south' },
-    battle: { name: 'Battle', level: 'middle', side: 'north' },
-    banner: { name: 'Banner', level: 'bottom', side: 'north' },
-    reinforce: { name: 'Reinforce', level: 'bottom', side: 'south' },
-};
+// Glyph locations after calibration - see src/udtConstants.ts for definition
+import { GLYPHS } from 'ultimatedarktower';
 ```
 
 ### Glyph Position Tracking
@@ -725,8 +700,10 @@ tower.onSkullDrop = (skullCount: number) => {
 Called when battery level updates.
 
 ```typescript
+import { milliVoltsToPercentage } from 'ultimatedarktower';
+
 tower.onBatteryLevelNotify = (millivolts: number) => {
-    const percentage = tower.milliVoltsToPercentage(millivolts);
+    const percentage = milliVoltsToPercentage(millivolts);
     console.log(`Battery level: ${percentage}`);
 
     // Show low battery warning
@@ -1028,7 +1005,7 @@ class GameManager {
     }
 
     private handleBatteryUpdate(millivolts: number) {
-        const percentage = this.tower.milliVoltsToPercentage(millivolts);
+        const percentage = milliVoltsToPercentage(millivolts);
         if (millivolts < 3000) {
             this.showLowBatteryWarning(percentage);
         }

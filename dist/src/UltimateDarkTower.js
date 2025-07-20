@@ -1,6 +1,30 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const udtConstants_1 = require("./udtConstants");
+const udtHelpers_1 = require("./udtHelpers");
 const udtLogger_1 = require("./udtLogger");
 const udtBleConnection_1 = require("./udtBleConnection");
 const udtTowerResponse_1 = require("./udtTowerResponse");
@@ -38,6 +62,8 @@ class UltimateDarkTower {
         this.currentBatteryPercentage = 0;
         this.previousBatteryPercentage = 0;
         this.brokenSeals = new Set();
+        // Complete tower state tracking for stateful commands
+        this.currentTowerState = (0, udtHelpers_1.createDefaultTowerState)();
         // glyph position tracking
         this.glyphPositions = {
             cleanse: null,
@@ -73,7 +99,7 @@ class UltimateDarkTower {
                 this.previousBatteryValue = this.currentBatteryValue;
                 this.currentBatteryValue = millivolts;
                 this.previousBatteryPercentage = this.currentBatteryPercentage;
-                this.currentBatteryPercentage = this.milliVoltsToPercentageNumber(millivolts);
+                this.currentBatteryPercentage = (0, udtHelpers_1.milliVoltsToPercentageNumber)(millivolts);
                 this.onBatteryLevelNotify(millivolts);
             },
             onCalibrationComplete: () => {
@@ -96,11 +122,24 @@ class UltimateDarkTower {
             currentDrumPositions: this.currentDrumPositions,
             logDetail: this.logDetail,
             retrySendCommandCount: this.retrySendCommandCountRef,
-            retrySendCommandMax: this.retrySendCommandMax
+            retrySendCommandMax: this.retrySendCommandMax,
+            getCurrentTowerState: () => this.currentTowerState
         };
         this.towerCommands = new udtTowerCommands_1.UdtTowerCommands(commandDependencies);
         // Set up command queue response callback now that tower commands are initialized
-        callbacks.onTowerResponse = () => this.towerCommands.onTowerResponse();
+        callbacks.onTowerResponse = (response) => {
+            // Handle command queue response processing (existing functionality)
+            this.towerCommands.onTowerResponse();
+            // Check if this is a tower state response and update our state tracking
+            if (response.length >= 20) {
+                const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
+                if (this.responseProcessor.isTowerStateResponse(cmdKey)) {
+                    // Extract the 19-byte state data (skip command byte)
+                    const stateData = response.slice(1, 20);
+                    this.updateTowerStateFromResponse(stateData);
+                }
+            }
+        };
     }
     get logDetail() { return this._logDetail; }
     set logDetail(value) {
@@ -116,7 +155,8 @@ class UltimateDarkTower {
                 currentDrumPositions: this.currentDrumPositions,
                 logDetail: this.logDetail,
                 retrySendCommandCount: this.retrySendCommandCountRef,
-                retrySendCommandMax: this.retrySendCommandMax
+                retrySendCommandMax: this.retrySendCommandMax,
+                getCurrentTowerState: () => this.currentTowerState
             };
             this.towerCommands = new udtTowerCommands_1.UdtTowerCommands(commandDependencies);
         }
@@ -168,6 +208,14 @@ class UltimateDarkTower {
         return await this.towerCommands.lights(lights);
     }
     /**
+     * Sends a raw command packet directly to the tower (for testing purposes).
+     * @param command - The raw command packet to send
+     * @returns Promise that resolves when command is sent
+     */
+    async sendTowerCommandDirect(command) {
+        return await this.towerCommands.sendTowerCommandDirectPublic(command);
+    }
+    /**
      * Sends a light override command to control specific light patterns.
      * @param light - Light override value to send
      * @param soundIndex - Optional sound to play with the light override
@@ -197,39 +245,101 @@ class UltimateDarkTower {
         return result;
     }
     /**
-     * DO NOT USE THIS FUNCTION - MULTIPLE SIMULTANEOUS ACTIONS CAN CAUSE TOWER DISCONNECTION
-     * Sends a combined command to rotate drums, control lights, and play sound simultaneously.
-     * @param rotate - Rotation configuration for tower drums
-     * @param lights - Light configuration object
-     * @param soundIndex - Optional sound to play with the multi-command
-     * @returns Promise that resolves when multi-command is sent
-     * @deprecated SPECIAL USE ONLY - CAN CAUSE DISCONNECTS
-     */
-    async MultiCommand(rotate, lights, soundIndex) {
-        // Store current drum positions before rotation if we're rotating
-        let oldTopPosition;
-        let oldMiddlePosition;
-        let oldBottomPosition;
-        if (rotate) {
-            oldTopPosition = this.getCurrentDrumPosition('top');
-            oldMiddlePosition = this.getCurrentDrumPosition('middle');
-            oldBottomPosition = this.getCurrentDrumPosition('bottom');
-        }
-        const result = await this.towerCommands.multiCommand(rotate, lights, soundIndex);
-        // Update glyph positions if rotation was performed
-        if (rotate && oldTopPosition && oldMiddlePosition && oldBottomPosition) {
-            this.calculateAndUpdateGlyphPositions('top', oldTopPosition, rotate.top);
-            this.calculateAndUpdateGlyphPositions('middle', oldMiddlePosition, rotate.middle);
-            this.calculateAndUpdateGlyphPositions('bottom', oldBottomPosition, rotate.bottom);
-        }
-        return result;
-    }
-    /**
      * Resets the tower's internal skull drop counter to zero.
      * @returns Promise that resolves when reset command is sent
      */
     async resetTowerSkullCount() {
         return await this.towerCommands.resetTowerSkullCount();
+    }
+    //#endregion
+    //#region Stateful Tower Commands
+    /**
+     * Sets a specific LED using stateful commands that preserve all other tower state.
+     * This is the recommended way to control individual LEDs.
+     * @param layerIndex - Layer index (0-5: TopRing, MiddleRing, BottomRing, Ledge, Base1, Base2)
+     * @param lightIndex - Light index within layer (0-3)
+     * @param effect - Light effect (0=off, 1=on, 2=slow pulse, 3=fast pulse, etc.)
+     * @param loop - Whether to loop the effect
+     * @returns Promise that resolves when command is sent
+     */
+    async setLED(layerIndex, lightIndex, effect, loop = false) {
+        return await this.towerCommands.setLEDStateful(layerIndex, lightIndex, effect, loop);
+    }
+    /**
+     * Plays a sound using stateful commands that preserve existing tower state.
+     * @param soundIndex - Index of the sound to play (1-based)
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @returns Promise that resolves when command is sent
+     */
+    async playSoundStateful(soundIndex, loop = false, volume) {
+        return await this.towerCommands.playSoundStateful(soundIndex, loop, volume);
+    }
+    /**
+     * Rotates a single drum using stateful commands that preserve existing tower state.
+     * @param drumIndex - Drum index (0=top, 1=middle, 2=bottom)
+     * @param position - Target position (0=north, 1=east, 2=south, 3=west)
+     * @param playSound - Whether to play sound during rotation
+     * @returns Promise that resolves when command is sent
+     */
+    async rotateDrumStateful(drumIndex, position, playSound = false) {
+        return await this.towerCommands.rotateDrumStateful(drumIndex, position, playSound);
+    }
+    //#endregion
+    //#region Tower State Management
+    /**
+     * Gets the current complete tower state if available.
+     * @returns The current tower state object
+     */
+    getCurrentTowerState() {
+        return Object.assign({}, this.currentTowerState);
+    }
+    /**
+     * Sends a complete tower state to the tower, preserving existing state.
+     * This creates a stateful command that only changes the specified fields.
+     * @param towerState - The tower state to send
+     * @returns Promise that resolves when the command is sent
+     */
+    async sendTowerState(towerState) {
+        // Import pack function here to avoid circular dependencies
+        const { rtdt_pack_state } = await Promise.resolve().then(() => __importStar(require('./udtTowerState')));
+        // Pack the tower state into 19 bytes
+        const stateData = new Uint8Array(19);
+        const success = rtdt_pack_state(stateData, 19, towerState);
+        if (!success) {
+            throw new Error('Failed to pack tower state data');
+        }
+        // Create 20-byte command packet (command type 0x00 + 19 bytes state)
+        const command = new Uint8Array(20);
+        command[0] = 0x00; // Command type for tower state
+        command.set(stateData, 1);
+        // Update our current state tracking
+        this.setTowerState(Object.assign({}, towerState), 'sendTowerState');
+        // Send the command
+        return await this.sendTowerCommandDirect(command);
+    }
+    /**
+     * Sets the tower state with comprehensive logging of changes.
+     * @param newState - The new tower state to set
+     * @param source - Source identifier for logging (e.g., "sendTowerState", "tower response")
+     */
+    setTowerState(newState, source) {
+        const oldState = this.currentTowerState;
+        this.currentTowerState = newState;
+        // Use the logger's tower state change method
+        this.logger.logTowerStateChange(oldState, newState, source, this.logDetail);
+    }
+    /**
+     * Updates the current tower state from a tower response.
+     * Called internally when tower state responses are received.
+     * @param stateData - The 19-byte state data from tower response
+     */
+    updateTowerStateFromResponse(stateData) {
+        // Import unpack function here to avoid circular dependencies
+        Promise.resolve().then(() => __importStar(require('./udtTowerState'))).then(({ rtdt_unpack_state }) => {
+            const newState = rtdt_unpack_state(stateData);
+            this.setTowerState(newState, 'tower response');
+        });
     }
     //#endregion
     /**
@@ -470,7 +580,7 @@ class UltimateDarkTower {
      * @returns {string} Hex string representation of the command packet
      */
     commandToPacketString(command) {
-        return this.responseProcessor.commandToPacketString(command);
+        return (0, udtHelpers_1.commandToPacketString)(command);
     }
     /**
      * Converts battery voltage in millivolts to percentage.
@@ -478,7 +588,7 @@ class UltimateDarkTower {
      * @returns {string} Battery percentage as formatted string (e.g., "75%")
      */
     milliVoltsToPercentage(mv) {
-        return this.responseProcessor.milliVoltsToPercentage(mv);
+        return (0, udtHelpers_1.milliVoltsToPercentage)(mv);
     }
     //#endregion
     //#region Connection Management
@@ -522,16 +632,6 @@ class UltimateDarkTower {
         return this.bleConnection.getConnectionStatus();
     }
     //#endregion
-    /**
-     * Converts millivolts to percentage number (0-100).
-     * @param mv - Battery voltage in millivolts
-     * @returns Battery percentage as number (0-100)
-     */
-    milliVoltsToPercentageNumber(mv) {
-        const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
-        const levels = udtConstants_1.VOLTAGE_LEVELS.filter(v => batLevel >= v);
-        return levels.length * 5;
-    }
     //#region cleanup
     /**
      * Clean up resources and disconnect properly

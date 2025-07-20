@@ -43,8 +43,6 @@ _Requires Web Bluetooth support (Chrome, Edge, Samsung Internet). For iOS, use t
 
 ## Installation
 
-> **Note:** NPM package coming soon! Currently in beta while finalizing functionality.
-
 ```bash
 npm install ultimatedarktower
 ```
@@ -98,12 +96,18 @@ src/
 ├── UltimateDarkTower.ts      # Main class
 ├── udtBleConnection.ts       # Bluetooth connection management
 ├── udtTowerCommands.ts       # Tower command implementations
+├── udtCommandFactory.ts      # Command creation utilities
+├── udtCommandQueue.ts        # Command queue management
+├── udtTowerResponse.ts       # Response handling
+├── udtTowerState.ts          # Tower state management
+├── udtHelpers.ts             # Utility helper functions
 ├── udtLogger.ts              # Logging system
 └── udtConstants.ts           # Constants and type definitions
 
 examples/
 ├── controller/               # Tower controller web app
-└── game/                     # Tower game web app
+├── game/                     # Tower game web app
+└── assets/                   # Shared assets (images, fonts, etc.)
 ```
 
 ## Browser Support

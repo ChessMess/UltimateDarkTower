@@ -17,6 +17,9 @@ import {
 } from './udtConstants';
 import { Logger } from './udtLogger';
 import { TowerResponseProcessor } from './udtTowerResponse';
+import { getMilliVoltsFromTowerResponse, milliVoltsToPercentage, getActiveLights } from './udtHelpers';
+import { rtdt_unpack_state } from './udtTowerState'
+
 
 export interface ConnectionCallbacks {
     onTowerConnect: () => void;
@@ -24,7 +27,7 @@ export interface ConnectionCallbacks {
     onBatteryLevelNotify: (millivolts: number) => void;
     onCalibrationComplete: () => void;
     onSkullDrop: (towerSkullCount: number) => void;
-    onTowerResponse?: () => void; // Optional callback for command queue response detection
+    onTowerResponse?: (response: Uint8Array) => void; // Optional callback for command queue response detection with response data
 }
 
 export interface DeviceInformation {
@@ -213,8 +216,8 @@ export class UdtBleConnection {
         if (this.responseProcessor.isBatteryResponse(cmdKey)) {
             this.lastBatteryHeartbeat = Date.now();
 
-            const millivolts = this.responseProcessor.getMilliVoltsFromTowerResponse(receivedData);
-            const batteryPercentage = this.responseProcessor.milliVoltsToPercentage(millivolts);
+            const millivolts = getMilliVoltsFromTowerResponse(receivedData);
+            const batteryPercentage = milliVoltsToPercentage(millivolts);
             const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
             const batteryNotifyFrequencyPassed = ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
 
@@ -232,13 +235,27 @@ export class UdtBleConnection {
             // For non-battery responses, notify the command queue
             // This includes tower state responses, command acknowledgments, etc.
             if (this.callbacks.onTowerResponse) {
-                this.callbacks.onTowerResponse();
+                this.callbacks.onTowerResponse(receivedData);
             }
         }
     }
 
     private handleTowerStateResponse(receivedData: Uint8Array) {
         const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
+        this.logger.debug('Tower Message Received', '[UDT][BLE]')
+        const state = rtdt_unpack_state(receivedData);
+        this.logger.debug(`Tower State: ${JSON.stringify(state)} `, '[UDT][BLE]');
+        console.log('[CEK] Tower State:', state);
+
+        // Log active lights for easier debugging
+        try {
+            const activeLights = getActiveLights(state);
+            if (activeLights.length > 0) {
+                console.log('[CEK] Active Lights:', activeLights);
+            }
+        } catch (error) {
+            // Silently ignore if functions not available
+        }
 
         if (this.performingCalibration) {
             this.performingCalibration = false;
@@ -460,10 +477,10 @@ export class UdtBleConnection {
         try {
             this.logger.info('Reading device information service...', '[UDT]');
             const disService = await this.TowerDevice.gatt.getPrimaryService(DIS_SERVICE_UUID);
-            
+
             // Reset device information object
             this.deviceInformation = {};
-            
+
             const characteristicMap = [
                 { uuid: DIS_MANUFACTURER_NAME_UUID, name: 'Manufacturer Name', key: 'manufacturerName', logIfMissing: true },
                 { uuid: DIS_MODEL_NUMBER_UUID, name: 'Model Number', key: 'modelNumber', logIfMissing: true },
@@ -480,7 +497,7 @@ export class UdtBleConnection {
                 try {
                     const characteristic = await disService.getCharacteristic(uuid);
                     const value = await characteristic.readValue();
-                    
+
                     if (uuid === DIS_SYSTEM_ID_UUID || uuid === DIS_PNP_ID_UUID) {
                         // These are binary data, convert to hex string
                         const hexValue = Array.from(new Uint8Array(value.buffer))
@@ -500,7 +517,7 @@ export class UdtBleConnection {
                     }
                 }
             }
-            
+
             // Set timestamp when device information was last read
             this.deviceInformation.lastUpdated = new Date();
         } catch (error) {

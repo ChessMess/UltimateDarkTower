@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UdtBleConnection = void 0;
 const udtConstants_1 = require("./udtConstants");
 const udtTowerResponse_1 = require("./udtTowerResponse");
+const udtHelpers_1 = require("./udtHelpers");
+const udtTowerState_1 = require("./udtTowerState");
 class UdtBleConnection {
     constructor(logger, callbacks) {
         // BLE connection objects
@@ -65,8 +67,8 @@ class UdtBleConnection {
             }
             if (this.responseProcessor.isBatteryResponse(cmdKey)) {
                 this.lastBatteryHeartbeat = Date.now();
-                const millivolts = this.responseProcessor.getMilliVoltsFromTowerResponse(receivedData);
-                const batteryPercentage = this.responseProcessor.milliVoltsToPercentage(millivolts);
+                const millivolts = (0, udtHelpers_1.getMilliVoltsFromTowerResponse)(receivedData);
+                const batteryPercentage = (0, udtHelpers_1.milliVoltsToPercentage)(millivolts);
                 const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
                 const batteryNotifyFrequencyPassed = ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
                 const shouldNotify = this.batteryNotifyOnValueChangeOnly ?
@@ -83,7 +85,7 @@ class UdtBleConnection {
                 // For non-battery responses, notify the command queue
                 // This includes tower state responses, command acknowledgments, etc.
                 if (this.callbacks.onTowerResponse) {
-                    this.callbacks.onTowerResponse();
+                    this.callbacks.onTowerResponse(receivedData);
                 }
             }
         };
@@ -159,6 +161,20 @@ class UdtBleConnection {
     }
     handleTowerStateResponse(receivedData) {
         const dataSkullDropCount = receivedData[udtConstants_1.SKULL_DROP_COUNT_POS];
+        this.logger.debug('Tower Message Received', '[UDT][BLE]');
+        const state = (0, udtTowerState_1.rtdt_unpack_state)(receivedData);
+        this.logger.debug(`Tower State: ${JSON.stringify(state)} `, '[UDT][BLE]');
+        console.log('[CEK] Tower State:', state);
+        // Log active lights for easier debugging
+        try {
+            const activeLights = (0, udtHelpers_1.getActiveLights)(state);
+            if (activeLights.length > 0) {
+                console.log('[CEK] Active Lights:', activeLights);
+            }
+        }
+        catch (error) {
+            // Silently ignore if functions not available
+        }
         if (this.performingCalibration) {
             this.performingCalibration = false;
             this.performingLongCommand = false;

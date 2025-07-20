@@ -317,6 +317,9 @@
               <button id="library-tab" class="tower-tab-button" onclick="switchTab('library')">
                 Library
               </button>
+              <button id="testing-tab" class="tower-tab-button" onclick="switchTab('testing')">
+                Testing
+              </button>
             </div>
 
             <!-- Diagnostics Tab Content -->
@@ -728,6 +731,184 @@
                 </div>
               </fieldset>
             </div>
+
+            <!-- Testing Tab Content -->
+            <div id="testing-content" class="tower-tab-content">
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">LED Testing</legend>
+                <div class="space-y-4">
+                  <!-- Effect Selection -->
+                  <div class="flex items-center space-x-4">
+                    <label class="text-sm w-20">Effect:</label>
+                    <select id="led-effect-select" class="tower-select flex-1">
+                      <option value="0">Off</option>
+                      <option value="1">On</option>
+                      <option value="2">Slow Pulse</option>
+                      <option value="3">Fast Pulse</option>
+                      <option value="4">Slow Fade</option>
+                      <option value="5">Fast Fade</option>
+                      <option value="6">Strobe</option>
+                      <option value="7">Flicker</option>
+                    </select>
+                    <div class="flex items-center space-x-2">
+                      <input type="checkbox" id="led-loop-checkbox" class="tower-checkbox" />
+                      <label for="led-loop-checkbox" class="text-sm">Loop</label>
+                    </div>
+                  </div>
+
+                  <!-- LED Grid -->
+                  <div class="grid grid-cols-1 gap-4">
+                    <!-- Top Ring -->
+                    <div class="bg-gray-800 rounded p-3">
+                      <h4 class="text-sm font-semibold mb-2">Top Ring</h4>
+                      <div class="grid grid-cols-4 gap-2">
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">N-T</label>
+                          <input type="checkbox" data-layer="0" data-position="0" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">E-T</label>
+                          <input type="checkbox" data-layer="0" data-position="1" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">S-T</label>
+                          <input type="checkbox" data-layer="0" data-position="2" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">W-T</label>
+                          <input type="checkbox" data-layer="0" data-position="3" class="led-checkbox tower-checkbox" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Middle Ring -->
+                    <div class="bg-gray-800 rounded p-3">
+                      <h4 class="text-sm font-semibold mb-2">Middle Ring</h4>
+                      <div class="grid grid-cols-4 gap-2">
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">N-M</label>
+                          <input type="checkbox" data-layer="1" data-position="0" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">E-M</label>
+                          <input type="checkbox" data-layer="1" data-position="1" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">S-M</label>
+                          <input type="checkbox" data-layer="1" data-position="2" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">W-M</label>
+                          <input type="checkbox" data-layer="1" data-position="3" class="led-checkbox tower-checkbox" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Bottom Ring -->
+                    <div class="bg-gray-800 rounded p-3">
+                      <h4 class="text-sm font-semibold mb-2">Bottom Ring</h4>
+                      <div class="grid grid-cols-4 gap-2">
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">N-B</label>
+                          <input type="checkbox" data-layer="2" data-position="0" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">E-B</label>
+                          <input type="checkbox" data-layer="2" data-position="1" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">S-B</label>
+                          <input type="checkbox" data-layer="2" data-position="2" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">W-B</label>
+                          <input type="checkbox" data-layer="2" data-position="3" class="led-checkbox tower-checkbox" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Ledge -->
+                    <div class="bg-gray-800 rounded p-3">
+                      <h4 class="text-sm font-semibold mb-2">Ledge</h4>
+                      <div class="grid grid-cols-4 gap-2">
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">NE-L</label>
+                          <input type="checkbox" data-layer="3" data-position="0" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">SE-L</label>
+                          <input type="checkbox" data-layer="3" data-position="1" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">SW-L</label>
+                          <input type="checkbox" data-layer="3" data-position="2" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">NW-L</label>
+                          <input type="checkbox" data-layer="3" data-position="3" class="led-checkbox tower-checkbox" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Base1 -->
+                    <div class="bg-gray-800 rounded p-3">
+                      <h4 class="text-sm font-semibold mb-2">Base1</h4>
+                      <div class="grid grid-cols-4 gap-2">
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">NE-B1</label>
+                          <input type="checkbox" data-layer="4" data-position="0" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">SE-B1</label>
+                          <input type="checkbox" data-layer="4" data-position="1" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">SW-B1</label>
+                          <input type="checkbox" data-layer="4" data-position="2" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">NW-B1</label>
+                          <input type="checkbox" data-layer="4" data-position="3" class="led-checkbox tower-checkbox" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Base2 -->
+                    <div class="bg-gray-800 rounded p-3">
+                      <h4 class="text-sm font-semibold mb-2">Base2</h4>
+                      <div class="grid grid-cols-4 gap-2">
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">NE-B2</label>
+                          <input type="checkbox" data-layer="5" data-position="0" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">SE-B2</label>
+                          <input type="checkbox" data-layer="5" data-position="1" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">SW-B2</label>
+                          <input type="checkbox" data-layer="5" data-position="2" class="led-checkbox tower-checkbox" />
+                        </div>
+                        <div class="text-center">
+                          <label class="block text-xs mb-1">NW-B2</label>
+                          <input type="checkbox" data-layer="5" data-position="3" class="led-checkbox tower-checkbox" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Control Buttons -->
+                  <div class="flex justify-center space-x-4 mt-4">
+                    <button id="send-led-command" onclick="sendLEDTestCommand()" class="tower-button">
+                      Send LED Command
+                    </button>
+                    <button id="clear-all-leds" onclick="clearAllLEDs()" class="tower-button">
+                      Clear All LEDs
+                    </button>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
           </div>
 
           <!-- Right Column -->
@@ -827,6 +1008,183 @@
               </div>
             </fieldset>
           </div>
+          <!-- Testing Tab Content -->
+          <div id="testing-content" class="tower-tab-content">
+            <fieldset class="tower-fieldset">
+              <legend class="tower-legend">LED Testing</legend>
+              <div class="space-y-4">
+                <!-- Effect Selection -->
+                <div class="flex items-center space-x-4">
+                  <label class="text-sm w-20">Effect:</label>
+                  <select id="led-effect-select" class="tower-select flex-1">
+                    <option value="0">Off</option>
+                    <option value="1">On</option>
+                    <option value="2">Slow Pulse</option>
+                    <option value="3">Fast Pulse</option>
+                    <option value="4">Slow Fade</option>
+                    <option value="5">Fast Fade</option>
+                    <option value="6">Strobe</option>
+                    <option value="7">Flicker</option>
+                  </select>
+                  <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="led-loop-checkbox" class="tower-checkbox" />
+                    <label for="led-loop-checkbox" class="text-sm">Loop</label>
+                  </div>
+                </div>
+
+                <!-- LED Grid -->
+                <div class="grid grid-cols-1 gap-4">
+                  <!-- Top Ring -->
+                  <div class="bg-gray-800 rounded p-3">
+                    <h4 class="text-sm font-semibold mb-2">Top Ring</h4>
+                    <div class="grid grid-cols-4 gap-2">
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">N-T</label>
+                        <input type="checkbox" data-layer="0" data-position="0" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">E-T</label>
+                        <input type="checkbox" data-layer="0" data-position="1" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">S-T</label>
+                        <input type="checkbox" data-layer="0" data-position="2" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">W-T</label>
+                        <input type="checkbox" data-layer="0" data-position="3" class="led-checkbox tower-checkbox" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Middle Ring -->
+                  <div class="bg-gray-800 rounded p-3">
+                    <h4 class="text-sm font-semibold mb-2">Middle Ring</h4>
+                    <div class="grid grid-cols-4 gap-2">
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">N-M</label>
+                        <input type="checkbox" data-layer="1" data-position="0" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">E-M</label>
+                        <input type="checkbox" data-layer="1" data-position="1" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">S-M</label>
+                        <input type="checkbox" data-layer="1" data-position="2" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">W-M</label>
+                        <input type="checkbox" data-layer="1" data-position="3" class="led-checkbox tower-checkbox" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Bottom Ring -->
+                  <div class="bg-gray-800 rounded p-3">
+                    <h4 class="text-sm font-semibold mb-2">Bottom Ring</h4>
+                    <div class="grid grid-cols-4 gap-2">
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">N-B</label>
+                        <input type="checkbox" data-layer="2" data-position="0" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">E-B</label>
+                        <input type="checkbox" data-layer="2" data-position="1" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">S-B</label>
+                        <input type="checkbox" data-layer="2" data-position="2" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">W-B</label>
+                        <input type="checkbox" data-layer="2" data-position="3" class="led-checkbox tower-checkbox" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Ledge -->
+                  <div class="bg-gray-800 rounded p-3">
+                    <h4 class="text-sm font-semibold mb-2">Ledge</h4>
+                    <div class="grid grid-cols-4 gap-2">
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">NE-L</label>
+                        <input type="checkbox" data-layer="3" data-position="0" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">SE-L</label>
+                        <input type="checkbox" data-layer="3" data-position="1" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">SW-L</label>
+                        <input type="checkbox" data-layer="3" data-position="2" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">NW-L</label>
+                        <input type="checkbox" data-layer="3" data-position="3" class="led-checkbox tower-checkbox" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Base1 -->
+                  <div class="bg-gray-800 rounded p-3">
+                    <h4 class="text-sm font-semibold mb-2">Base1</h4>
+                    <div class="grid grid-cols-4 gap-2">
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">NE-B1</label>
+                        <input type="checkbox" data-layer="4" data-position="0" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">SE-B1</label>
+                        <input type="checkbox" data-layer="4" data-position="1" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">SW-B1</label>
+                        <input type="checkbox" data-layer="4" data-position="2" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">NW-B1</label>
+                        <input type="checkbox" data-layer="4" data-position="3" class="led-checkbox tower-checkbox" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Base2 -->
+                  <div class="bg-gray-800 rounded p-3">
+                    <h4 class="text-sm font-semibold mb-2">Base2</h4>
+                    <div class="grid grid-cols-4 gap-2">
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">NE-B2</label>
+                        <input type="checkbox" data-layer="5" data-position="0" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">SE-B2</label>
+                        <input type="checkbox" data-layer="5" data-position="1" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">SW-B2</label>
+                        <input type="checkbox" data-layer="5" data-position="2" class="led-checkbox tower-checkbox" />
+                      </div>
+                      <div class="text-center">
+                        <label class="block text-xs mb-1">NW-B2</label>
+                        <input type="checkbox" data-layer="5" data-position="3" class="led-checkbox tower-checkbox" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="flex justify-center space-x-4 mt-4">
+                  <button id="send-led-command" onclick="sendLEDTestCommand()" class="tower-button">
+                    Send LED Command
+                  </button>
+                  <button id="clear-all-leds" onclick="clearAllLEDs()" class="tower-button">
+                    Clear All LEDs
+                  </button>
+                </div>
+              </div>
+            </fieldset>
+          </div>
         </div>
 
         <hr class="tower-hr" />
@@ -844,536 +1202,10 @@
     </div>
   </div>
   <script>
-    const updateBatteryFilter = () => {
-      const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]');
-      const selectedValue = Array.from(batteryFilterRadios).find(radio => radio.checked)?.value;
-
-      if (selectedValue && window.Tower) {
-        // Update the tower's battery notification setting
-        // 'all' = false (show all notifications), 'changes' = true (only show changes)
-        window.Tower.batteryNotifyOnValueChangeOnly = selectedValue === 'changes';
-
-        // Log the change for debugging
-        console.log('Battery filter set to:', selectedValue);
-      }
-    }
-
-    // Log control functions
-    const updateLogLevel = () => {
-      if (window.logger) {
-        const checkboxes = document.querySelectorAll('input[id^="logLevel-"]');
-        const selectedLevels = Array.from(checkboxes)
-          .filter(checkbox => checkbox.checked)
-          .map(checkbox => checkbox.value);
-
-        if (selectedLevels.length > 0) {
-          window.logger.setEnabledLevels(selectedLevels);
-        } else {
-          // Default to 'all' if nothing is selected
-          window.logger.setEnabledLevels(['all']);
-        }
-      }
-
-      // Refresh DOM output filtering (includes text filter)
-      if (window.sharedDOMOutput) {
-        window.sharedDOMOutput.refreshFilter();
-      }
-    }
-
-    const clearLog = () => {
-      // Clear shared DOM output
-      if (window.sharedDOMOutput) {
-        window.sharedDOMOutput.clearAll();
-      }
-
-      // Fallback to direct container clearing
-      const container = document.getElementById("log-container");
-      if (container) {
-        container.innerHTML = '';
-      }
-
-      // Clear the text filter input
-      const textFilter = document.getElementById("logTextFilter");
-      if (textFilter) {
-        textFilter.value = '';
-      }
-    }
-
-    const copyDisplayedLogs = (event) => {
-      const logContainer = document.getElementById("log-container");
-      if (!logContainer) return;
-
-      // Get all currently displayed log entries
-      const logLines = logContainer.querySelectorAll('.log-line');
-      if (logLines.length === 0) {
-        alert('No log entries to copy');
-        return;
-      }
-
-      // Extract text content from each log line
-      const logText = Array.from(logLines)
-        .map(line => line.textContent || '')
-        .join('\n');
-
-      // Copy to clipboard
-      navigator.clipboard.writeText(logText).then(() => {
-        // Optional: Show temporary success feedback
-        const button = event.target.closest('button');
-        const originalIcon = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i>';
-        button.style.backgroundColor = '#10b981';
-
-        setTimeout(() => {
-          button.innerHTML = originalIcon;
-          button.style.backgroundColor = '';
-        }, 1000);
-      }).catch(err => {
-        console.error('Failed to copy logs: ', err);
-        alert('Failed to copy logs to clipboard');
-      });
-    }
-
-    const downloadDisplayedLogs = (event) => {
-      const logContainer = document.getElementById("log-container");
-      if (!logContainer) return;
-
-      // Get all currently displayed log entries
-      const logLines = logContainer.querySelectorAll('.log-line');
-      if (logLines.length === 0) {
-        alert('No log entries to download');
-        return;
-      }
-
-      // Extract text content from each log line
-      const logText = Array.from(logLines)
-        .map(line => line.textContent || '')
-        .join('\n');
-
-      // Create header with current date and time
-      const now = new Date();
-      const dateStr = now.toLocaleDateString();
-      const timeStr = now.toLocaleTimeString();
-      const header = `UltimateDarkTower Log Output - ${dateStr} ${timeStr}\n${'-'.repeat(60)}\n`;
-
-      // Combine header with log content
-      const fileContent = header + logText;
-
-      // Create a blob with the log content
-      const blob = new Blob([fileContent], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-
-      // Create a temporary anchor element for download
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'TowerLog.txt';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      // Show temporary success feedback
-      const button = event.target.closest('button');
-      const originalIcon = button.innerHTML;
-      button.innerHTML = '<i class="fas fa-check"></i>';
-      button.style.backgroundColor = '#10b981';
-
-      setTimeout(() => {
-        button.innerHTML = originalIcon;
-        button.style.backgroundColor = '';
-      }, 1000);
-    }
-
-
-    // populate dropdowns
-    const dropDowns = [
-      { "sounds": TOWER_AUDIO_LIBRARY },
-      { "lightOverrideDropDown": TOWER_LIGHT_SEQUENCES },
-      { "lightStyles": LIGHT_EFFECTS }
-    ];
-
-    dropDowns.forEach(item => {
-      const id = Object.keys(item)[0];
-      const data = Object.values(item)[0];
-      let dropDown = document.getElementById(id);
-
-      if (id === 'sounds') {
-        // Special handling for sounds dropdown to use actual sound values and names
-        Object.keys(data).forEach(key => {
-          var el = document.createElement("option");
-          el.textContent = data[key].name;
-          el.value = data[key].value;
-          dropDown.appendChild(el);
-        });
-      } else {
-        // Original logic for other dropdowns
-        const keys = Object.keys(data);
-        keys.forEach((value, index) => {
-          var el = document.createElement("option");
-          el.textContent = value;
-          el.value = index + 1;
-          dropDown.appendChild(el);
-        });
-      }
-    });
-
-    // Expose copy and download functions globally for HTML onclick handlers
-    window.copyDisplayedLogs = copyDisplayedLogs;
-    window.downloadDisplayedLogs = downloadDisplayedLogs;
-    window.updateBatteryFilter = updateBatteryFilter;
-
-    // Tab switching functionality
-    const switchTab = (tabName) => {
-      // Remove active class from all tab buttons
-      document.querySelectorAll('.tower-tab-button').forEach(button => {
-        button.classList.remove('tower-tab-active');
-      });
-
-      // Hide all tab content
-      document.querySelectorAll('.tower-tab-content').forEach(content => {
-        content.classList.remove('tower-tab-content-active');
-      });
-
-      // Activate the selected tab button
-      document.getElementById(tabName + '-tab').classList.add('tower-tab-active');
-
-      // Show the selected tab content
-      document.getElementById(tabName + '-content').classList.add('tower-tab-content-active');
-
-      // Auto-refresh glyph positions when switching to library tab (since glyphs are now there)
-      if (tabName === 'library') {
-        setTimeout(refreshGlyphPositions, 100);
-      }
-    }
-
-    // Expose switchTab function globally for HTML onclick handlers
-    window.switchTab = switchTab;
-
     // Initialize battery filter on page load
     document.addEventListener('DOMContentLoaded', () => {
       updateBatteryFilter();
     });
-
-    // Glyph management functions
-    const getGlyphsFacingDirection = (direction) => {
-      try {
-        return Tower.getGlyphsFacingDirection(direction);
-      } catch (error) {
-        console.error('Error getting glyphs facing direction:', error);
-        window.logger.error('Error getting glyphs facing direction: ' + error.message, '[Glyphs]');
-        return [];
-      }
-    };
-
-    const refreshGlyphPositions = async () => {
-      try {
-        const positions = await Tower.getAllGlyphPositions();
-
-        // Clear all glyph cells first
-        const allCells = document.querySelectorAll('.glyph-cell');
-        allCells.forEach(cell => {
-          cell.innerHTML = '';
-          cell.style.backgroundColor = '#4b5563';
-        });
-
-        // Map of glyph names to their SVG file paths
-        const glyphSvgMap = {
-          'cleanse': '../assets/glyph_cleanse.svg',
-          'quest': '../assets/glyph_quest.svg',
-          'battle': '../assets/glyph_battle.svg',
-          'banner': '../assets/glyph_banner.svg',
-          'reinforce': '../assets/glyph_reinforce.svg'
-        };
-
-        // Update the display for each glyph
-        Object.entries(positions).forEach(([glyph, position]) => {
-          if (position && position !== 'unknown') {
-            // Get the glyph's fixed level based on its type
-            const glyphLevel = GLYPHS[glyph].level;
-
-            const level = glyphLevel;
-            const cellId = `glyph-${level}-${position}`;
-            const cell = document.getElementById(cellId);
-
-            if (cell && glyphSvgMap[glyph]) {
-              const img = document.createElement('img');
-              img.src = glyphSvgMap[glyph];
-              img.alt = glyph;
-              img.title = `${glyph.charAt(0).toUpperCase() + glyph.slice(1)} (${position})`;
-              cell.appendChild(img);
-              cell.style.backgroundColor = '#374151'; // Slightly lighter for occupied cells
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Error refreshing glyph positions:', error);
-        window.logger.error('Error refreshing glyph positions: ' + error.message, '[Glyphs]');
-      }
-    };
-
-    const moveGlyph = async () => {
-      const glyphSelect = document.getElementById('glyph-select');
-      const sideSelect = document.getElementById('side-select');
-
-      const selectedGlyph = glyphSelect.value;
-      const targetSide = sideSelect.value;
-
-      window.logger.debug(`UI Selection: glyph=${selectedGlyph}, targetSide=${targetSide}`, '[Glyphs]');
-
-      if (!selectedGlyph || !targetSide) {
-        window.logger.warn('Please select a glyph and target side', '[Glyphs]');
-        return;
-      }
-
-      try {
-        // Get current glyph position directly (more reliable than getAllGlyphPositions)
-        const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph);
-
-        if (!currentGlyphPosition) {
-          window.logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, '[Glyphs]');
-          return;
-        }
-
-        // Get the fixed level for this glyph (glyphs can't change levels)
-        const glyphLevel = GLYPHS[selectedGlyph].level;
-
-        // Calculate rotation needed to move glyph to target position
-        const sides = ['north', 'east', 'south', 'west'];
-        const currentSideIndex = sides.indexOf(currentGlyphPosition);
-        const targetSideIndex = sides.indexOf(targetSide);
-
-        if (currentSideIndex === -1 || targetSideIndex === -1) {
-          window.logger.error('Invalid current or target side', '[Glyphs]');
-          return;
-        }
-
-        // Calculate clockwise rotation steps needed
-        let rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
-
-        if (rotationSteps === 0) {
-          window.logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, '[Glyphs]');
-          return;
-        }
-
-        // Calculate what drum position will put the selected glyph at the target side
-        let targetDrumPosition;
-        if (glyphLevel === 'top' || glyphLevel === 'middle' || glyphLevel === 'bottom') {
-          // Calculate the drum position needed to put this specific glyph at the target side
-          const currentDrumPosition = Tower.getCurrentDrumPosition(glyphLevel);
-          const sides = ['north', 'east', 'south', 'west'];
-
-          const currentDrumIndex = sides.indexOf(currentDrumPosition);
-          const currentGlyphIndex = sides.indexOf(currentGlyphPosition);
-          const targetGlyphIndex = sides.indexOf(targetSide);
-
-          // Debug logging to understand the calculation
-          window.logger.debug(`Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`, '[Glyphs]');
-
-          // Calculate how many steps the glyph needs to move
-          let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
-
-          // Calculate the new drum position
-          const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
-          targetDrumPosition = sides[newDrumIndex];
-
-          window.logger.debug(`Move calculation result: glyphSteps=${glyphSteps}, newDrumIndex=${newDrumIndex}, targetDrumPosition=${targetDrumPosition}`, '[Glyphs]');
-        }
-
-        // Set positions for all three drums
-        const topPosition = glyphLevel === 'top' ? targetDrumPosition : Tower.getCurrentDrumPosition('top');
-        const middlePosition = glyphLevel === 'middle' ? targetDrumPosition : Tower.getCurrentDrumPosition('middle');
-        const bottomPosition = glyphLevel === 'bottom' ? targetDrumPosition : Tower.getCurrentDrumPosition('bottom');
-
-        window.logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, '[Glyphs]');
-
-        // Check if this glyph has a light that needs to be moved
-        const oldLightKey = `${currentGlyphPosition}-${glyphLevel}`;
-        const hadLight = currentLightStates.doorway.has(oldLightKey);
-
-        // Execute the rotation with all three drum positions
-        await Tower.Rotate(topPosition, middlePosition, bottomPosition);
-
-        // CRITICAL: The Tower.Rotate() command should automatically update internal glyph positions,
-        // but we'll also refresh the UI immediately to ensure consistency
-        refreshGlyphPositions();
-
-        // If the glyph had a light, move it to the new position
-        if (hadLight) {
-          // Remove light from old position
-          currentLightStates.doorway.delete(oldLightKey);
-
-          // Wait for rotation to complete, then get actual glyph position
-          setTimeout(async () => {
-            try {
-              // Get the actual position of the glyph after rotation
-              const actualNewPosition = Tower.getGlyphPosition(selectedGlyph);
-
-              if (actualNewPosition) {
-                // Add light to actual new position
-                const newLightKey = `${actualNewPosition}-${glyphLevel}`;
-                currentLightStates.doorway.set(newLightKey, {
-                  position: actualNewPosition,
-                  level: glyphLevel,
-                  style: 'on'
-                });
-
-                // Update tower lights to reflect new positions
-                const allDoorwayLights = Array.from(currentLightStates.doorway.values());
-                await Tower.Lights({ doorway: allDoorwayLights });
-                window.logger.info(`Successfully moved light with ${selectedGlyph} glyph to actual position ${actualNewPosition}`, '[Glyphs]');
-              } else {
-                window.logger.error(`Could not determine actual position for ${selectedGlyph} after rotation`, '[Glyphs]');
-              }
-            } catch (error) {
-              window.logger.error('Error updating lights after glyph move: ' + error.message, '[Glyphs]');
-            }
-          }, 1500);
-        }
-
-        // Additional refresh glyph positions after rotation to update UI
-        setTimeout(() => {
-          refreshGlyphPositions();
-          // Refresh visual light states after a bit more delay to ensure light updates completed
-          setTimeout(refreshVisualLightStates, 700);
-        }, 1000);
-
-        window.logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, '[Glyphs]');
-
-      } catch (error) {
-        console.error('Error moving glyph:', error);
-        window.logger.error('Error moving glyph: ' + error.message, '[Glyphs]');
-      }
-    };
-
-    // Light state tracking - keeps track of which lights are currently on
-    const currentLightStates = {
-      doorway: new Map() // key: "position-level", value: { position, level, style }
-    };
-
-    // Toggle glyph light function
-    const toggleGlyphLight = async (element) => {
-      const level = element.getAttribute('data-level');
-      const side = element.getAttribute('data-side');
-      const position = `${level}-${side}`;
-
-      // Find which glyph is at this position (if any)
-      const glyphAtPosition = findGlyphAtPosition(level, side);
-
-      // Only proceed with lighting effects if there's a glyph at this position
-      if (!glyphAtPosition) {
-        // No glyph at this position, just update the side dropdown
-        const sideSelect = document.getElementById('side-select');
-        if (sideSelect) {
-          sideSelect.value = side;
-        }
-        return; // Exit early, no lighting effects
-      }
-
-      // Toggle the light state (only if glyph is present)
-      const isLit = element.classList.toggle('glyph-lit');
-
-      // Auto-select dropdowns based on clicked glyph
-      const glyphSelect = document.getElementById('glyph-select');
-      if (glyphSelect) {
-        glyphSelect.value = glyphAtPosition;
-      }
-
-      // Auto-select the glyph's current position in the side dropdown
-      const glyphCurrentSide = Tower.getGlyphPosition(glyphAtPosition);
-      if (glyphCurrentSide) {
-        const sideSelect = document.getElementById('side-select');
-        if (sideSelect) {
-          sideSelect.value = glyphCurrentSide;
-        }
-      }
-
-      // Send command to tower to toggle the light
-      try {
-        const lightEffect = isLit ? 'on' : 'off';
-
-        window.logger.info(`Toggling light ${lightEffect} for glyph ${glyphAtPosition} at position ${position}`, '[Glyphs]');
-
-        // Light up the glyph's actual current position on the tower
-        const glyphCurrentSide = Tower.getGlyphPosition(glyphAtPosition);
-        if (!glyphCurrentSide) {
-          throw new Error(`Could not find current position for glyph ${glyphAtPosition}`);
-        }
-
-        const targetSide = glyphCurrentSide;
-        const targetLevel = getGlyphLevel(glyphAtPosition);
-
-        // Update the light state tracking
-        const lightKey = `${targetSide}-${targetLevel}`;
-        if (isLit) {
-          currentLightStates.doorway.set(lightKey, { position: targetSide, level: targetLevel, style: 'on' });
-        } else {
-          currentLightStates.doorway.delete(lightKey);
-        }
-
-        // Build the complete light command from current state
-        const allDoorwayLights = Array.from(currentLightStates.doorway.values());
-
-        const lights = {
-          doorway: allDoorwayLights
-        };
-
-        await Tower.Lights(lights);
-        window.logger.info(`Successfully updated tower lights. Active lights: ${allDoorwayLights.length}`, '[Glyphs]');
-
-      } catch (error) {
-        console.error('Error toggling glyph light:', error);
-        window.logger.error('Error toggling glyph light: ' + error.message, '[Glyphs]');
-
-        // Revert the visual state if tower command failed
-        element.classList.toggle('glyph-lit');
-      }
-    };
-
-    // Helper function to find which glyph is at a given position
-    const findGlyphAtPosition = (level, side) => {
-
-      const allPositions = Tower.getAllGlyphPositions();
-
-      for (const [glyph, currentSide] of Object.entries(allPositions)) {
-        if (GLYPHS[glyph].level === level && currentSide === side) {
-          return glyph;
-        }
-      }
-
-      return null;
-    };
-
-    // Helper function to get glyph level
-    const getGlyphLevel = (glyph) => {
-      return GLYPHS[glyph]?.level || 'middle';
-    };
-
-    // Refresh visual light states in the glyph grid
-    const refreshVisualLightStates = () => {
-      // Clear all existing glyph-lit classes
-      document.querySelectorAll('.glyph-cell').forEach(cell => {
-        cell.classList.remove('glyph-lit');
-      });
-
-      // Apply glyph-lit class to cells that have active lights
-      currentLightStates.doorway.forEach((light, lightKey) => {
-        const [position, level] = lightKey.split('-');
-        const cellId = `glyph-${level}-${position}`;
-        const cell = document.getElementById(cellId);
-        if (cell) {
-          cell.classList.add('glyph-lit');
-        }
-      });
-    };
-
-
-
-
-    // Expose glyph functions globally
-    window.getGlyphsFacingDirection = getGlyphsFacingDirection;
-    window.refreshGlyphPositions = refreshGlyphPositions;
-    window.moveGlyph = moveGlyph;
-    window.toggleGlyphLight = toggleGlyphLight;
-    window.refreshVisualLightStates = refreshVisualLightStates;
   </script>
 </body>
 
