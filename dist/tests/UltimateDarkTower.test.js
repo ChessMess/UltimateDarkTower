@@ -112,43 +112,43 @@ describe('UltimateDarkTower', () => {
             // Set bottom position to north (0x42)
             darkTower.currentDrumPositions.bottom = 0x42;
             expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('north');
-            // Set bottom position to west (0x4A)
+            // Set bottom position to east (0x4A)
             darkTower.currentDrumPositions.bottom = 0x4A;
-            expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('west');
+            expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('east');
             // Set bottom position to south (0x52)
             darkTower.currentDrumPositions.bottom = 0x52;
             expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('south');
-            // Set bottom position to east (0x5A)
+            // Set bottom position to west (0x5A)
             darkTower.currentDrumPositions.bottom = 0x5A;
-            expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('east');
+            expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('west');
         });
         test('should return correct side for top level', () => {
             // Set topMiddle to include top north position (0x10)
             darkTower.currentDrumPositions.topMiddle = 0x10;
             expect(darkTower['getCurrentDrumPosition']('top')).toBe('north');
-            // Set topMiddle to include top west position (0x02)
-            darkTower.currentDrumPositions.topMiddle = 0xC2; // includes middle bits + top west
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('west');
+            // Set topMiddle to include top east position (0x02)
+            darkTower.currentDrumPositions.topMiddle = 0xC2; // includes middle bits + top east
+            expect(darkTower['getCurrentDrumPosition']('top')).toBe('east');
             // Set topMiddle to include top south position (0x14)
             darkTower.currentDrumPositions.topMiddle = 0x14;
             expect(darkTower['getCurrentDrumPosition']('top')).toBe('south');
-            // Set topMiddle to include top east position (0x16)
+            // Set topMiddle to include top west position (0x16)
             darkTower.currentDrumPositions.topMiddle = 0x16;
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('east');
+            expect(darkTower['getCurrentDrumPosition']('top')).toBe('west');
         });
         test('should return correct side for middle level', () => {
             // Set topMiddle to include middle north position (0x10)
             darkTower.currentDrumPositions.topMiddle = 0x10;
             expect(darkTower['getCurrentDrumPosition']('middle')).toBe('north');
-            // Set topMiddle to include middle west position (0x40)
+            // Set topMiddle to include middle east position (0x40)
             darkTower.currentDrumPositions.topMiddle = 0x40;
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('west');
+            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('east');
             // Set topMiddle to include middle south position (0x90)
             darkTower.currentDrumPositions.topMiddle = 0x90;
             expect(darkTower['getCurrentDrumPosition']('middle')).toBe('south');
-            // Set topMiddle to include middle east position (0xD0)
+            // Set topMiddle to include middle west position (0xD0)
             darkTower.currentDrumPositions.topMiddle = 0xD0;
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('east');
+            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('west');
         });
         test('should return north as default when no match found', () => {
             // Set invalid position values
@@ -161,10 +161,10 @@ describe('UltimateDarkTower', () => {
             expect(darkTower['getCurrentDrumPosition']('middle')).toBe('north');
         });
         test('should handle combined top and middle positions correctly', () => {
-            // Test with both top east (0x16) and middle west (0x40) combined
+            // Test with both top west (0x16) and middle east (0x40) combined
             darkTower.currentDrumPositions.topMiddle = 0x56; // 0x40 | 0x16
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('east');
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('west');
+            expect(darkTower['getCurrentDrumPosition']('top')).toBe('west');
+            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('east');
             // Test with top north (0x10) and middle south (0x90) combined
             darkTower.currentDrumPositions.topMiddle = 0x90; // 0x90 | 0x10
             expect(darkTower['getCurrentDrumPosition']('top')).toBe('north');
@@ -173,10 +173,10 @@ describe('UltimateDarkTower', () => {
         test('should use correct bit masks for each level', () => {
             // Test that top level uses 0b00010110 mask
             darkTower.currentDrumPositions.topMiddle = 0xC2; // Has bits outside top mask
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('west'); // Should match 0x02
+            expect(darkTower['getCurrentDrumPosition']('top')).toBe('east'); // Should match 0x02
             // Test that middle level uses 0b11000000 mask  
             darkTower.currentDrumPositions.topMiddle = 0x46; // Has bits outside middle mask
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('west'); // Should match 0x40
+            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('east'); // Should match 0x40
         });
     });
     describe('Broken Seal Tracking', () => {

@@ -151,21 +151,21 @@ export type RotateCommand = {
 export declare const drumPositionCmds: {
     top: {
         north: number;
-        west: number;
-        south: number;
         east: number;
+        south: number;
+        west: number;
     };
     middle: {
         north: number;
-        west: number;
-        south: number;
         east: number;
+        south: number;
+        west: number;
     };
     bottom: {
         north: number;
-        west: number;
-        south: number;
         east: number;
+        south: number;
+        west: number;
     };
 };
 export declare const BASE_LEDGE_LIGHTS_TO_BIT_SHIFT: string[];

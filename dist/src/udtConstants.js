@@ -70,9 +70,9 @@ exports.AUDIO_COMMAND_POS = 15;
 exports.SKULL_DROP_COUNT_POS = 17;
 // prettier-ignore
 exports.drumPositionCmds = {
-    top: { north: 0b00010000, west: 0b00000010, south: 0b00010100, east: 0b00010110 },
-    middle: { north: 0b00010000, west: 0b01000000, south: 0b10010000, east: 0b11010000 },
-    bottom: { north: 0b01000010, west: 0b01001010, south: 0b01010010, east: 0b01011010 },
+    top: { north: 0b00010000, east: 0b00000010, south: 0b00010100, west: 0b00010110 },
+    middle: { north: 0b00010000, east: 0b01000000, south: 0b10010000, west: 0b11010000 },
+    bottom: { north: 0b01000010, east: 0b01001010, south: 0b01010010, west: 0b01011010 },
 };
 exports.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
 exports.DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];

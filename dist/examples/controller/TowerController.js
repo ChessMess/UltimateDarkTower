@@ -92,11 +92,11 @@
       AUDIO_COMMAND_POS = 15;
       SKULL_DROP_COUNT_POS = 17;
       drumPositionCmds = {
-        top: { north: 16, west: 2, south: 20, east: 22 },
+        top: { north: 16, east: 2, south: 20, west: 22 },
         // bits 1-8
-        middle: { north: 16, west: 64, south: 144, east: 208 },
+        middle: { north: 16, east: 64, south: 144, west: 208 },
         // bits 1-4
-        bottom: { north: 66, west: 74, south: 82, east: 90 }
+        bottom: { north: 66, east: 74, south: 82, west: 90 }
       };
       BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
       DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];
@@ -3129,18 +3129,15 @@
     const sideSelect = document.getElementById("side-select");
     const selectedGlyph = glyphSelect.value;
     const targetSide = sideSelect.value;
+    logger.debug(`UI Selection: glyph=${selectedGlyph}, targetSide=${targetSide}`, "[Glyphs]");
     if (!selectedGlyph || !targetSide) {
-      logger.warn("Please select both a glyph and a side", "[TC]");
-      return;
-    }
-    if (!Tower.isConnected) {
-      logger.warn("Tower is not connected", "[TC]");
+      logger.warn("Please select a glyph and target side", "[Glyphs]");
       return;
     }
     try {
       const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph);
       if (!currentGlyphPosition) {
-        logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, "[TC]");
+        logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, "[Glyphs]");
         return;
       }
       const glyphLevel = GLYPHS[selectedGlyph].level;
@@ -3148,12 +3145,12 @@
       const currentSideIndex = sides.indexOf(currentGlyphPosition);
       const targetSideIndex = sides.indexOf(targetSide);
       if (currentSideIndex === -1 || targetSideIndex === -1) {
-        logger.error("Invalid current or target side", "[TC]");
+        logger.error("Invalid current or target side", "[Glyphs]");
         return;
       }
       let rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
       if (rotationSteps === 0) {
-        logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, "[TC]");
+        logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, "[Glyphs]");
         return;
       }
       let targetDrumPosition;
@@ -3163,35 +3160,37 @@
         const currentDrumIndex = sides2.indexOf(currentDrumPosition);
         const currentGlyphIndex = sides2.indexOf(currentGlyphPosition);
         const targetGlyphIndex = sides2.indexOf(targetSide);
+        logger.debug(`Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`, "[Glyphs]");
         let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
         const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
         targetDrumPosition = sides2[newDrumIndex];
-      } else {
-        targetDrumPosition = targetSide;
+        logger.debug(`Move calculation result: glyphSteps=${glyphSteps}, newDrumIndex=${newDrumIndex}, targetDrumPosition=${targetDrumPosition}`, "[Glyphs]");
       }
       const topPosition = glyphLevel === "top" ? targetDrumPosition : Tower.getCurrentDrumPosition("top");
       const middlePosition = glyphLevel === "middle" ? targetDrumPosition : Tower.getCurrentDrumPosition("middle");
       const bottomPosition = glyphLevel === "bottom" ? targetDrumPosition : Tower.getCurrentDrumPosition("bottom");
-      logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, "[TC]");
+      logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, "[Glyphs]");
       await Tower.Rotate(topPosition, middlePosition, bottomPosition);
-      if (typeof refreshGlyphPositions === "function") {
-        refreshGlyphPositions();
-      }
-      logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, "[TC]");
+      setTimeout(async () => {
+        try {
+          refreshGlyphPositions();
+          const allDoorwayLights = getCurrentDoorwayLights();
+          if (allDoorwayLights.length > 0) {
+            logger.info(`About to restore ${allDoorwayLights.length} lights: ${JSON.stringify(allDoorwayLights)}`, "[Glyphs]");
+            await Tower.Lights({ doorway: allDoorwayLights });
+            logger.info(`Successfully restored ${allDoorwayLights.length} lights after glyph movement`, "[Glyphs]");
+          } else {
+            logger.warn("No lights to restore after glyph movement", "[Glyphs]");
+          }
+        } catch (error) {
+          logger.error("Error restoring lights after glyph move: " + error, "[Glyphs]");
+        }
+      }, 1e3);
+      logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, "[Glyphs]");
     } catch (error) {
-      logger.error(`Failed to move glyph: ${error}`, "[TC]");
+      console.error("Error moving glyph:", error);
+      logger.error("Error moving glyph: " + error, "[Glyphs]");
     }
-  };
-  var toggleGlyphLight = (element) => {
-    const level = element.getAttribute("data-level");
-    const side = element.getAttribute("data-side");
-    if (!level || !side) {
-      logger.warn("Invalid glyph cell data", "[TC]");
-      return;
-    }
-    element.classList.toggle("glyph-lit");
-    const isLit = element.classList.contains("glyph-lit");
-    logger.info(`Glyph light at ${level}-${side} ${isLit ? "turned on" : "turned off"}`, "[TC]");
   };
   var refreshGlyphPositions = () => {
     if (!Tower.isConnected) {
@@ -3215,10 +3214,20 @@
             img.src = `../assets/glyph_${glyphName}.svg`;
             img.alt = glyphName;
             cell.appendChild(img);
-            cell.classList.add("glyph-lit");
           }
         }
       });
+      for (const glyphName of glyphLightStates) {
+        const currentPosition = Tower.getGlyphPosition(glyphName);
+        if (currentPosition) {
+          const level = GLYPHS[glyphName].level;
+          const cellId = `glyph-${level}-${currentPosition}`;
+          const cell = document.getElementById(cellId);
+          if (cell && cell.querySelector("img")) {
+            cell.classList.add("glyph-lit");
+          }
+        }
+      }
       logger.info("Glyph positions refreshed", "[TC]");
     } catch (error) {
       logger.error(`Failed to refresh glyph positions: ${error}`, "[TC]");
@@ -3527,11 +3536,30 @@ ${"-".repeat(60)}
       return [];
     }
   };
-  var currentLightStates = {
-    doorway: /* @__PURE__ */ new Map()
-    // key: "position-level", value: { position, level, style }
+  var glyphLightStates = /* @__PURE__ */ new Set();
+  var getCurrentDoorwayLights = () => {
+    const doorwayLights = [];
+    logger.debug(`Getting current doorway lights for ${glyphLightStates.size} lit glyphs`, "[Glyphs]");
+    for (const glyphName of glyphLightStates) {
+      const currentPosition = Tower.getGlyphPosition(glyphName);
+      logger.debug(`Glyph ${glyphName} current position: ${currentPosition}`, "[Glyphs]");
+      if (currentPosition) {
+        const level = GLYPHS[glyphName].level;
+        const lightCommand = {
+          position: currentPosition,
+          level,
+          style: "on"
+        };
+        doorwayLights.push(lightCommand);
+        logger.debug(`Added light command: ${JSON.stringify(lightCommand)}`, "[Glyphs]");
+      } else {
+        logger.warn(`Could not get position for glyph ${glyphName}`, "[Glyphs]");
+      }
+    }
+    logger.debug(`Total doorway lights to restore: ${doorwayLights.length}`, "[Glyphs]");
+    return doorwayLights;
   };
-  var enhancedToggleGlyphLight = async (element) => {
+  var toggleGlyphLight = async (element) => {
     const level = element.getAttribute("data-level");
     const side = element.getAttribute("data-side");
     const position = `${level}-${side}`;
@@ -3557,29 +3585,24 @@ ${"-".repeat(60)}
     }
     try {
       const lightEffect = isLit ? "on" : "off";
-      logger.info(`Toggling light ${lightEffect} for glyph ${glyphAtPosition} at position ${position}`, "[Glyphs]");
-      const glyphCurrentSide2 = Tower.getGlyphPosition(glyphAtPosition);
-      if (!glyphCurrentSide2) {
-        throw new Error(`Could not find current position for glyph ${glyphAtPosition}`);
-      }
-      const targetSide = glyphCurrentSide2;
-      const targetLevel = getGlyphLevel(glyphAtPosition);
-      const lightKey = `${targetSide}-${targetLevel}`;
+      logger.info(`Toggling light ${lightEffect} for glyph ${glyphAtPosition}`, "[Glyphs]");
       if (isLit) {
-        currentLightStates.doorway.set(lightKey, { position: targetSide, level: targetLevel, style: "on" });
+        glyphLightStates.add(glyphAtPosition);
       } else {
-        currentLightStates.doorway.delete(lightKey);
+        glyphLightStates.delete(glyphAtPosition);
       }
-      const allDoorwayLights = Array.from(currentLightStates.doorway.values());
-      const lights2 = {
-        doorway: allDoorwayLights
-      };
-      await Tower.Lights(lights2);
+      const allDoorwayLights = getCurrentDoorwayLights();
+      await Tower.Lights({ doorway: allDoorwayLights });
       logger.info(`Successfully updated tower lights. Active lights: ${allDoorwayLights.length}`, "[Glyphs]");
     } catch (error) {
       console.error("Error toggling glyph light:", error);
       logger.error("Error toggling glyph light: " + error, "[Glyphs]");
       element.classList.toggle("glyph-lit");
+      if (isLit) {
+        glyphLightStates.delete(glyphAtPosition);
+      } else {
+        glyphLightStates.add(glyphAtPosition);
+      }
     }
   };
   var findGlyphAtPosition = (level, side) => {
@@ -3594,102 +3617,6 @@ ${"-".repeat(60)}
   var getGlyphLevel = (glyph) => {
     var _a;
     return ((_a = GLYPHS[glyph]) == null ? void 0 : _a.level) || "middle";
-  };
-  var refreshVisualLightStates = () => {
-    document.querySelectorAll(".glyph-cell").forEach((cell) => {
-      cell.classList.remove("glyph-lit");
-    });
-    currentLightStates.doorway.forEach((light, lightKey) => {
-      const [position, level] = lightKey.split("-");
-      const cellId = `glyph-${level}-${position}`;
-      const cell = document.getElementById(cellId);
-      if (cell) {
-        cell.classList.add("glyph-lit");
-      }
-    });
-  };
-  var enhancedMoveGlyph = async () => {
-    const glyphSelect = document.getElementById("glyph-select");
-    const sideSelect = document.getElementById("side-select");
-    const selectedGlyph = glyphSelect.value;
-    const targetSide = sideSelect.value;
-    logger.debug(`UI Selection: glyph=${selectedGlyph}, targetSide=${targetSide}`, "[Glyphs]");
-    if (!selectedGlyph || !targetSide) {
-      logger.warn("Please select a glyph and target side", "[Glyphs]");
-      return;
-    }
-    try {
-      const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph);
-      if (!currentGlyphPosition) {
-        logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, "[Glyphs]");
-        return;
-      }
-      const glyphLevel = GLYPHS[selectedGlyph].level;
-      const sides = ["north", "east", "south", "west"];
-      const currentSideIndex = sides.indexOf(currentGlyphPosition);
-      const targetSideIndex = sides.indexOf(targetSide);
-      if (currentSideIndex === -1 || targetSideIndex === -1) {
-        logger.error("Invalid current or target side", "[Glyphs]");
-        return;
-      }
-      let rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
-      if (rotationSteps === 0) {
-        logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, "[Glyphs]");
-        return;
-      }
-      let targetDrumPosition;
-      if (glyphLevel === "top" || glyphLevel === "middle" || glyphLevel === "bottom") {
-        const currentDrumPosition = Tower.getCurrentDrumPosition(glyphLevel);
-        const sides2 = ["north", "east", "south", "west"];
-        const currentDrumIndex = sides2.indexOf(currentDrumPosition);
-        const currentGlyphIndex = sides2.indexOf(currentGlyphPosition);
-        const targetGlyphIndex = sides2.indexOf(targetSide);
-        logger.debug(`Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`, "[Glyphs]");
-        let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
-        const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
-        targetDrumPosition = sides2[newDrumIndex];
-        logger.debug(`Move calculation result: glyphSteps=${glyphSteps}, newDrumIndex=${newDrumIndex}, targetDrumPosition=${targetDrumPosition}`, "[Glyphs]");
-      }
-      const topPosition = glyphLevel === "top" ? targetDrumPosition : Tower.getCurrentDrumPosition("top");
-      const middlePosition = glyphLevel === "middle" ? targetDrumPosition : Tower.getCurrentDrumPosition("middle");
-      const bottomPosition = glyphLevel === "bottom" ? targetDrumPosition : Tower.getCurrentDrumPosition("bottom");
-      logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, "[Glyphs]");
-      const oldLightKey = `${currentGlyphPosition}-${glyphLevel}`;
-      const hadLight = currentLightStates.doorway.has(oldLightKey);
-      await Tower.Rotate(topPosition, middlePosition, bottomPosition);
-      refreshGlyphPositions();
-      if (hadLight) {
-        currentLightStates.doorway.delete(oldLightKey);
-        setTimeout(async () => {
-          try {
-            const actualNewPosition = Tower.getGlyphPosition(selectedGlyph);
-            if (actualNewPosition) {
-              const newLightKey = `${actualNewPosition}-${glyphLevel}`;
-              currentLightStates.doorway.set(newLightKey, {
-                position: actualNewPosition,
-                level: glyphLevel,
-                style: "on"
-              });
-              const allDoorwayLights = Array.from(currentLightStates.doorway.values());
-              await Tower.Lights({ doorway: allDoorwayLights });
-              logger.info(`Successfully moved light with ${selectedGlyph} glyph to actual position ${actualNewPosition}`, "[Glyphs]");
-            } else {
-              logger.error(`Could not determine actual position for ${selectedGlyph} after rotation`, "[Glyphs]");
-            }
-          } catch (error) {
-            logger.error("Error updating lights after glyph move: " + error, "[Glyphs]");
-          }
-        }, 1500);
-      }
-      setTimeout(() => {
-        refreshGlyphPositions();
-        setTimeout(refreshVisualLightStates, 700);
-      }, 1e3);
-      logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, "[Glyphs]");
-    } catch (error) {
-      console.error("Error moving glyph:", error);
-      logger.error("Error moving glyph: " + error, "[Glyphs]");
-    }
   };
   window.connectToTower = connectToTower;
   window.calibrate = calibrate;
@@ -3720,14 +3647,12 @@ ${"-".repeat(60)}
   window.copyDisplayedLogs = copyDisplayedLogs;
   window.downloadDisplayedLogs = downloadDisplayedLogs;
   window.getGlyphsFacingDirection = getGlyphsFacingDirection;
-  window.enhancedToggleGlyphLight = enhancedToggleGlyphLight;
-  window.enhancedMoveGlyph = enhancedMoveGlyph;
-  window.refreshVisualLightStates = refreshVisualLightStates;
   window.sendLEDTestCommand = sendLEDTestCommand;
   window.clearAllLEDs = clearAllLEDs;
   window.findGlyphAtPosition = findGlyphAtPosition;
   window.getGlyphLevel = getGlyphLevel;
-  window.currentLightStates = currentLightStates;
+  window.glyphLightStates = glyphLightStates;
+  window.getCurrentDoorwayLights = getCurrentDoorwayLights;
   window.updateBatteryFilter = updateBatteryFilter;
 })();
 //# sourceMappingURL=TowerController.js.map
