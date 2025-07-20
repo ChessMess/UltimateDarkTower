@@ -867,6 +867,7 @@
       this.lastBatteryPercentage = "";
       this.batteryNotifyFrequency = 15 * 1e3;
       this.batteryNotifyOnValueChangeOnly = false;
+      this.batteryNotifyEnabled = true;
       // Device information
       this.deviceInformation = {};
       // Logging configuration
@@ -903,7 +904,7 @@
           const batteryPercentage = milliVoltsToPercentage(millivolts);
           const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
           const batteryNotifyFrequencyPassed = Date.now() - this.lastBatteryNotification >= this.batteryNotifyFrequency;
-          const shouldNotify = this.batteryNotifyOnValueChangeOnly ? didBatteryLevelChange || this.lastBatteryPercentage === "" : batteryNotifyFrequencyPassed;
+          const shouldNotify = this.batteryNotifyEnabled && (this.batteryNotifyOnValueChangeOnly ? didBatteryLevelChange || this.lastBatteryPercentage === "" : batteryNotifyFrequencyPassed);
           if (shouldNotify) {
             this.logger.info(`Tower response: ${this.responseProcessor.commandToString(receivedData).join(" ")}`, "[UDT]");
             this.lastBatteryNotification = Date.now();
@@ -2119,6 +2120,12 @@
     }
     set batteryNotifyOnValueChangeOnly(value) {
       this.bleConnection.batteryNotifyOnValueChangeOnly = value;
+    }
+    get batteryNotifyEnabled() {
+      return this.bleConnection.batteryNotifyEnabled;
+    }
+    set batteryNotifyEnabled(value) {
+      this.bleConnection.batteryNotifyEnabled = value;
     }
     get logTowerResponses() {
       return this.bleConnection.logTowerResponses;

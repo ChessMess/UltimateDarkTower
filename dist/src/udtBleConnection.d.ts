@@ -58,6 +58,7 @@ export declare class UdtBleConnection {
     lastBatteryPercentage: string;
     batteryNotifyFrequency: number;
     batteryNotifyOnValueChangeOnly: boolean;
+    batteryNotifyEnabled: boolean;
     private deviceInformation;
     logTowerResponses: boolean;
     logTowerResponseConfig: {

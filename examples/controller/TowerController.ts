@@ -99,7 +99,12 @@ const onTowerConnected = () => {
   // Apply the UI battery filter setting
   const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]') as NodeListOf<HTMLInputElement>;
   const selectedValue = Array.from(batteryFilterRadios).find(radio => radio.checked)?.value;
-  Tower.batteryNotifyOnValueChangeOnly = selectedValue === 'changes';
+  if (selectedValue === 'none') {
+    Tower.batteryNotifyEnabled = false;
+  } else {
+    Tower.batteryNotifyEnabled = true;
+    Tower.batteryNotifyOnValueChangeOnly = selectedValue === 'changes';
+  }
 
   // Initialize battery trend display
   updateBatteryTrend();
@@ -790,7 +795,12 @@ const updateBatteryFilter = () => {
   const selectedValue = Array.from(batteryFilterRadios).find(radio => radio.checked)?.value;
 
   if (selectedValue) {
-    Tower.batteryNotifyOnValueChangeOnly = selectedValue === 'changes';
+    if (selectedValue === 'none') {
+      Tower.batteryNotifyEnabled = false;
+    } else {
+      Tower.batteryNotifyEnabled = true;
+      Tower.batteryNotifyOnValueChangeOnly = selectedValue === 'changes';
+    }
     logger.info(`Battery filter set to: ${selectedValue}`, '[TC]');
   }
 }

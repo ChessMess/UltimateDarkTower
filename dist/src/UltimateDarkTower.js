@@ -178,6 +178,8 @@ class UltimateDarkTower {
     set batteryNotifyFrequency(value) { this.bleConnection.batteryNotifyFrequency = value; }
     get batteryNotifyOnValueChangeOnly() { return this.bleConnection.batteryNotifyOnValueChangeOnly; }
     set batteryNotifyOnValueChangeOnly(value) { this.bleConnection.batteryNotifyOnValueChangeOnly = value; }
+    get batteryNotifyEnabled() { return this.bleConnection.batteryNotifyEnabled; }
+    set batteryNotifyEnabled(value) { this.bleConnection.batteryNotifyEnabled = value; }
     get logTowerResponses() { return this.bleConnection.logTowerResponses; }
     set logTowerResponses(value) { this.bleConnection.logTowerResponses = value; }
     get logTowerResponseConfig() { return this.bleConnection.logTowerResponseConfig; }

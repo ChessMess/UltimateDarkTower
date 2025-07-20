@@ -34,6 +34,7 @@ class UdtBleConnection {
         this.lastBatteryPercentage = "";
         this.batteryNotifyFrequency = 15 * 1000;
         this.batteryNotifyOnValueChangeOnly = false;
+        this.batteryNotifyEnabled = true;
         // Device information
         this.deviceInformation = {};
         // Logging configuration
@@ -71,9 +72,9 @@ class UdtBleConnection {
                 const batteryPercentage = (0, udtHelpers_1.milliVoltsToPercentage)(millivolts);
                 const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
                 const batteryNotifyFrequencyPassed = ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
-                const shouldNotify = this.batteryNotifyOnValueChangeOnly ?
+                const shouldNotify = this.batteryNotifyEnabled && (this.batteryNotifyOnValueChangeOnly ?
                     (didBatteryLevelChange || this.lastBatteryPercentage === "") :
-                    batteryNotifyFrequencyPassed;
+                    batteryNotifyFrequencyPassed);
                 if (shouldNotify) {
                     this.logger.info(`Tower response: ${this.responseProcessor.commandToString(receivedData).join(' ')}`, '[UDT]');
                     this.lastBatteryNotification = Date.now();
