@@ -111,7 +111,7 @@ function rtdt_unpack_state(data) {
 }
 exports.rtdt_unpack_state = rtdt_unpack_state;
 function rtdt_pack_state(data, len, state) {
-    if (len < udtConstants_1.STATE_DATA_LENGTH)
+    if (!data || len < udtConstants_1.STATE_DATA_LENGTH)
         return false;
     // Clear the data array
     data.fill(0, 0, udtConstants_1.STATE_DATA_LENGTH);

@@ -46,6 +46,9 @@ exports.getMilliVoltsFromTowerResponse = getMilliVoltsFromTowerResponse;
  * @returns {string} Hex string representation of the command packet
  */
 function commandToPacketString(command) {
+    if (command.length === 0) {
+        return "[]";
+    }
     let cmdStr = "[";
     command.forEach(n => cmdStr += n.toString(16) + ",");
     cmdStr = cmdStr.slice(0, -1) + "]";

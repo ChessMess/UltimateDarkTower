@@ -160,7 +160,7 @@ function rtdt_unpack_state(data: Uint8Array): TowerState {
 }
 
 function rtdt_pack_state(data: Uint8Array, len: number, state: TowerState): boolean {
-  if (len < STATE_DATA_LENGTH)
+  if (!data || len < STATE_DATA_LENGTH)
     return false;
 
   // Clear the data array

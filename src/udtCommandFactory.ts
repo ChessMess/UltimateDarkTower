@@ -178,18 +178,16 @@ export class UdtCommandFactory {
     ): Uint8Array {
         const modifications: Partial<TowerState> = {};
 
-        // Create a partial layer array with only the layer we want to modify
+        // Create a targeted modification for only the specific light
         if (!modifications.layer) {
             modifications.layer = [] as any;
         }
-        modifications.layer[layerIndex] = {
-            light: [
-                { effect: 0, loop: false },
-                { effect: 0, loop: false },
-                { effect: 0, loop: false },
-                { effect: 0, loop: false }
-            ]
-        };
+        if (!modifications.layer[layerIndex]) {
+            modifications.layer[layerIndex] = { light: [] as any };
+        }
+        if (!modifications.layer[layerIndex].light) {
+            modifications.layer[layerIndex].light = [] as any;
+        }
         modifications.layer[layerIndex].light[lightIndex] = { effect, loop };
 
         return this.createStatefulCommand(currentState, modifications);

@@ -431,7 +431,7 @@
     return state;
   }
   function rtdt_pack_state(data, len, state) {
-    if (len < STATE_DATA_LENGTH)
+    if (!data || len < STATE_DATA_LENGTH)
       return false;
     data.fill(0, 0, STATE_DATA_LENGTH);
     data[0] |= (state.drum[0].playSound ? 1 : 0) | (state.drum[0].position & 3) << 1 | (state.drum[0].jammed ? 1 : 0) << 3 | (state.drum[0].calibrated ? 1 : 0) << 4 | (state.drum[1].playSound ? 1 : 0) << 5 | (state.drum[1].position & 3) << 6;
@@ -498,6 +498,9 @@
     return view.getUint32(0, true);
   }
   function commandToPacketString(command) {
+    if (command.length === 0) {
+      return "[]";
+    }
     let cmdStr = "[";
     command.forEach((n) => cmdStr += n.toString(16) + ",");
     cmdStr = cmdStr.slice(0, -1) + "]";
@@ -990,7 +993,7 @@
       const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
       this.logger.debug("Tower Message Received", "[UDT][BLE]");
       const state = rtdt_unpack_state(receivedData);
-      this.logger.debug(`Tower State: ${JSON.stringify(state)} `, "[UDT][BLE])");
+      this.logger.debug(`Tower State: ${JSON.stringify(state)} `, "[UDT][BLE]");
       console.log("[CEK] Tower State:", state);
       try {
         const activeLights = getActiveLights(state);
@@ -1353,14 +1356,12 @@
       if (!modifications.layer) {
         modifications.layer = [];
       }
-      modifications.layer[layerIndex] = {
-        light: [
-          { effect: 0, loop: false },
-          { effect: 0, loop: false },
-          { effect: 0, loop: false },
-          { effect: 0, loop: false }
-        ]
-      };
+      if (!modifications.layer[layerIndex]) {
+        modifications.layer[layerIndex] = { light: [] };
+      }
+      if (!modifications.layer[layerIndex].light) {
+        modifications.layer[layerIndex].light = [];
+      }
       modifications.layer[layerIndex].light[lightIndex] = { effect, loop };
       return this.createStatefulCommand(currentState, modifications);
     }

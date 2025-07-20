@@ -21,7 +21,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
+exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
 var UltimateDarkTower_1 = require("./UltimateDarkTower");
 Object.defineProperty(exports, "UltimateDarkTower", { enumerable: true, get: function () { return __importDefault(UltimateDarkTower_1).default; } });
 __exportStar(require("./udtConstants"), exports);
@@ -30,6 +30,10 @@ Object.defineProperty(exports, "logger", { enumerable: true, get: function () { 
 Object.defineProperty(exports, "Logger", { enumerable: true, get: function () { return udtLogger_1.Logger; } });
 Object.defineProperty(exports, "ConsoleOutput", { enumerable: true, get: function () { return udtLogger_1.ConsoleOutput; } });
 Object.defineProperty(exports, "DOMOutput", { enumerable: true, get: function () { return udtLogger_1.DOMOutput; } });
+Object.defineProperty(exports, "BufferOutput", { enumerable: true, get: function () { return udtLogger_1.BufferOutput; } });
+var udtHelpers_1 = require("./udtHelpers");
+Object.defineProperty(exports, "milliVoltsToPercentage", { enumerable: true, get: function () { return udtHelpers_1.milliVoltsToPercentage; } });
+Object.defineProperty(exports, "milliVoltsToPercentageNumber", { enumerable: true, get: function () { return udtHelpers_1.milliVoltsToPercentageNumber; } });
 // For convenience, also export as default
 const UltimateDarkTower_2 = __importDefault(require("./UltimateDarkTower"));
 exports.default = UltimateDarkTower_2.default;

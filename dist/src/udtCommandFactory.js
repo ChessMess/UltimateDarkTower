@@ -139,18 +139,16 @@ class UdtCommandFactory {
      */
     createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop = false) {
         const modifications = {};
-        // Create a partial layer array with only the layer we want to modify
+        // Create a targeted modification for only the specific light
         if (!modifications.layer) {
             modifications.layer = [];
         }
-        modifications.layer[layerIndex] = {
-            light: [
-                { effect: 0, loop: false },
-                { effect: 0, loop: false },
-                { effect: 0, loop: false },
-                { effect: 0, loop: false }
-            ]
-        };
+        if (!modifications.layer[layerIndex]) {
+            modifications.layer[layerIndex] = { light: [] };
+        }
+        if (!modifications.layer[layerIndex].light) {
+            modifications.layer[layerIndex].light = [];
+        }
         modifications.layer[layerIndex].light[lightIndex] = { effect, loop };
         return this.createStatefulCommand(currentState, modifications);
     }

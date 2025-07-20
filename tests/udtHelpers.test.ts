@@ -121,8 +121,7 @@ describe('udtHelpers', () => {
 
     test('should handle empty array', () => {
       const command = new Uint8Array([]);
-      // When empty, forEach doesn't execute, so cmdStr stays "[", then slice(0, -1) removes the "[", leaving "]"
-      expect(commandToPacketString(command)).toBe(']');
+      expect(commandToPacketString(command)).toBe('[]');
     });
 
     test('should format hex values correctly', () => {
