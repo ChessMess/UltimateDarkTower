@@ -21,6 +21,7 @@ import { type ConnectionStatus } from './udtBleConnection';
  * - onCalibrationComplete: Called when calibration finishes
  * - onSkullDrop: Called when skulls are dropped into the tower
  * - onBatteryLevelNotify: Called when battery level updates
+ * - onTowerStateUpdate: Called whenever the tower state is updated
  */
 declare class UltimateDarkTower {
     private logger;
@@ -46,6 +47,7 @@ declare class UltimateDarkTower {
     onCalibrationComplete: () => void;
     onSkullDrop: (_towerSkullCount: number) => void;
     onBatteryLevelNotify: (_millivolts: number) => void;
+    onTowerStateUpdate: (_newState: TowerState, _oldState: TowerState, _source: string) => void;
     constructor();
     private _logDetail;
     get logDetail(): boolean;

@@ -102,7 +102,7 @@
       background-color: rgba(0, 0, 0, 0.6);
       border: 1px solid #9ca3af;
       border-radius: 0.375rem;
-      padding: 1rem;
+      padding: 0.75rem;
       margin: 0.5rem 0;
     }
 
@@ -272,6 +272,37 @@
     .tower-left-column {
       margin-top: 0.5rem;
     }
+
+    /* Status packet display styles */
+    .status-byte {
+      display: inline-block;
+      min-width: 1.25rem;
+      height: 1.25rem;
+      background-color: #374151;
+      border: 1px solid #6b7280;
+      border-radius: 0.25rem;
+      color: #f3f4f6;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      font-size: 0.65rem;
+      text-align: center;
+      line-height: 1.25rem;
+      margin: 0.05rem;
+      cursor: default;
+    }
+
+    .status-byte:hover {
+      background-color: #4b5563;
+      border-color: #9ca3af;
+    }
+
+    .status-byte.non-zero {
+      background-color: rgba(220, 38, 38, 0.15);
+    }
+
+    .status-byte.non-zero:hover {
+      background-color: rgba(220, 38, 38, 0.25);
+    }
   </style>
 
   <!-- Scripts (also at bottom of page) -->
@@ -311,7 +342,7 @@
         <!-- Two-column layout for fieldsets -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
           <!-- Left Column -->
-          <div class="space-y-3 tower-left-column">
+          <div class="space-y-3 pt-3 tower-left-column">
             <!-- Tab Navigation -->
             <div class="tower-tabs">
               <button id="diagnostics-tab" class="tower-tab-button tower-tab-active" onclick="switchTab('diagnostics')">
@@ -508,7 +539,7 @@
                     </table>
                   </fieldset>
                 </div>
-                <div style="margin-bottom: 1.5rem;"></div>
+                <div style="margin-bottom: 0.5rem;"></div>
                 <div class="p-1 flex flex-wrap gap-2 items-center">
                   <button id="light" onclick="lights()" class="tower-button w-40 whitespace-nowrap">Apply
                     to all lights</button>
@@ -554,6 +585,29 @@
                     </div>
                     <div class="flex justify-center">
                       <button id="rotateButton" onclick="rotate()" class="tower-button">Rotate</button>
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Tower Status Packet</legend>
+                <div class="flex justify-center p-1">
+                  <div class="w-full">
+                    <div id="status-packet-container" class="bg-gray-800 rounded p-2 border border-gray-600">
+                      <div class="flex flex-wrap justify-center gap-0.5" id="status-packet-display">
+                        <!-- Status packet bytes will be displayed here -->
+                        <span class="status-byte" title="Byte 0: Battery Level">0</span><span class="status-byte" title="Byte 1: Calibration Status">0</span><span
+                          class="status-byte" title="Byte 2: Drum Positions (Top)">0</span><span class="status-byte" title="Byte 3: Drum Positions (Middle)">0</span><span
+                          class="status-byte" title="Byte 4: Drum Positions (Bottom)">0</span><span class="status-byte" title="Byte 5: Light States (Doorways)">0</span><span
+                          class="status-byte" title="Byte 6: Light States (Ledges)">0</span><span class="status-byte" title="Byte 7: Light States (Base)">0</span><span
+                          class="status-byte" title="Byte 8: Glyph Positions">0</span><span class="status-byte" title="Byte 9: Seal States">0</span><span
+                          class="status-byte" title="Byte 10: Sound Effects">0</span><span class="status-byte" title="Byte 11: Player Count">0</span><span
+                          class="status-byte" title="Byte 12: Game State">0</span><span class="status-byte" title="Byte 13: Error Flags">0</span><span
+                          class="status-byte" title="Byte 14: Communication Status">0</span><span class="status-byte" title="Byte 15: Reserved">0</span><span
+                          class="status-byte" title="Byte 16: Extended Flags">0</span><span class="status-byte" title="Byte 17: Skull Drop Count">0</span><span
+                          class="status-byte" title="Byte 18: Reserved">0</span><span class="status-byte" title="Byte 19: Checksum">0</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -916,30 +970,85 @@
 
           <!-- Right Column -->
           <div class="space-y-3">
-            <fieldset class="tower-fieldset">
-              <legend class="tower-legend">Tower Status</legend>
-              <div class="flex justify-evenly items-baseline p-1">
-                <div class="text-center">
-                  <label class="block mb-2">Battery Level</label>
-                  <div class="flex justify-center items-center space-x-2">
-                    <span id="battery">Unknown</span>
-                    <span id="batteryTrend">
-                    </span>
+            <fieldset class="tower-fieldset mb-6">
+              <legend class="tower-legend">⚡ Tower Status</legend>
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3">
+                <!-- Battery Status Card -->
+                <div
+                  class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-3 border border-yellow-500/30 hover:border-yellow-500/60 transition-all duration-300 transform hover:scale-105">
+                  <div class="flex items-center justify-center mb-2">
+                    <i class="fas fa-battery-half text-green-400 text-xl mr-2"></i>
+                    <h3 class="text-md font-semibold text-yellow-400">Battery</h3>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-xl font-bold text-white mb-1">
+                      <span id="battery">Unknown</span>
+                    </div>
+                    <div class="flex justify-center items-center space-x-2">
+                      <span class="text-xs text-gray-300">Level</span>
+                      <span id="batteryTrend" class="text-md">
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div class="text-center">
-                  <label class="block mb-2">Calibration Status</label>
-                  <div class="flex justify-center items-center space-x-2">
-                    <span id="calibration-status" class="font-semibold">Unknown</span>
-                    <span id="calibration-icon">
-                    </span>
+
+                <!-- Calibration Status Card -->
+                <div
+                  class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-3 border border-blue-500/30 hover:border-blue-500/60 transition-all duration-300 transform hover:scale-105">
+                  <div class="flex items-center justify-center mb-2">
+                    <i class="fas fa-crosshairs text-blue-400 text-xl mr-2"></i>
+                    <h3 class="text-md font-semibold text-yellow-400">Calibration</h3>
                   </div>
+                  <div class="text-center">
+                    <div class="flex justify-center items-center space-x-3 mb-1">
+                      <div class="flex flex-col items-center">
+                        <i id="calibration-top" class="fas fa-times-circle text-red-400 text-lg"
+                          title="Top drum not calibrated"></i>
+                        <span class="text-xs text-gray-300 mt-1">Top</span>
+                      </div>
+                      <div class="flex flex-col items-center">
+                        <i id="calibration-middle" class="fas fa-times-circle text-red-400 text-lg"
+                          title="Middle drum not calibrated"></i>
+                        <span class="text-xs text-gray-300 mt-1">Mid</span>
+                      </div>
+                      <div class="flex flex-col items-center">
+                        <i id="calibration-bottom" class="fas fa-times-circle text-red-400 text-lg"
+                          title="Bottom drum not calibrated"></i>
+                        <span class="text-xs text-gray-300 mt-1">Bot</span>
+                      </div>
+                    </div>
+                    <div class="flex justify-center items-center">
+                      <span class="text-xs text-gray-300">Drum Status</span>
+                    </div>
+                  </div>
+                  <!-- Hidden elements for backward compatibility -->
+                  <span id="calibration-status" class="hidden">Unknown</span>
+                  <span id="calibration-icon" class="hidden"></span>
                 </div>
-                <div class="text-center">
-                  <div class="border border-white rounded px-2 py-1 mb-2">Skulls Dropped:&nbsp;&nbsp;<span
-                      id="skull-count">unknown</span></div>
-                  <button id="reset" onclick="resetSkullCount()" class="tower-button">Reset
-                    Count</button>
+
+                <!-- Skulls Counter Card -->
+                <div
+                  class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-3 border border-red-500/30 hover:border-red-500/60 transition-all duration-300 transform hover:scale-105">
+                  <div class="flex items-center justify-center mb-2">
+                    <i class="fas fa-skull text-red-400 text-xl mr-2"></i>
+                    <h3 class="text-md font-semibold text-yellow-400">Skulls</h3>
+                  </div>
+                  <div class="text-center">
+                    <div
+                      class="bg-red-900/30 border border-red-500/50 rounded-lg px-3 py-1 mb-2 flex items-center justify-between">
+                      <div class="flex items-center">
+                        <span class="text-xs text-gray-300">Dropped:</span>
+                        <span id="skull-count" class="text-xl font-bold text-red-400 ml-1">
+                          <i class="fas fa-question-circle"></i>
+                        </span>
+                      </div>
+                      <button id="reset" onclick="resetSkullCount()"
+                        class="text-gray-400 hover:text-red-400 transition-colors duration-200 flex-shrink-0"
+                        title="Reset skull count">
+                        <i class="fas fa-times text-sm"></i>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </fieldset>

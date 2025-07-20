@@ -111,6 +111,17 @@ const onTowerConnected = () => {
 
   // Initialize calibration status display
   updateCalibrationStatus();
+
+  // Initialize status packet display
+  setTimeout(() => {
+    try {
+      if (typeof refreshStatusPacket === 'function') {
+        refreshStatusPacket();
+      }
+    } catch (error) {
+      logger.debug("Error initializing status packet: " + error, '[TC]');
+    }
+  }, 500);
 }
 Tower.onTowerConnect = onTowerConnected;
 
@@ -147,10 +158,10 @@ const onCalibrationComplete = () => {
   // Auto-refresh glyph positions after calibration
   logger.info("Calibration complete", '[TC]');
 
-  // Update calibration status display
-  updateCalibrationStatus();
+  // Note: calibration status will be updated via onTowerStateUpdate callback
+  // when the tower state changes, no need for setTimeout here
 
-  // Wait a bit longer for calibration to fully complete, then refresh
+  // Wait a bit for calibration to fully complete, then refresh glyph positions
   setTimeout(() => {
     try {
       if (typeof (window as any).refreshGlyphPositions === 'function') {
@@ -162,7 +173,7 @@ const onCalibrationComplete = () => {
     } catch (error) {
       logger.error("Error refreshing glyph positions after calibration: " + error, '[TC]');
     }
-  }, 1000);
+  }, 1500);
 }
 Tower.onCalibrationComplete = onCalibrationComplete;
 
@@ -202,27 +213,81 @@ const onBatteryLevelNotify = (millivolts: number) => {
 }
 Tower.onBatteryLevelNotify = onBatteryLevelNotify;
 
+const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: string) => {
+  logger.debug(`Tower state updated from ${source}`, '[TC]');
+
+  // Check if calibration status changed and update the UI accordingly
+  const calibrationChanged =
+    newState.drum[0].calibrated !== oldState.drum[0].calibrated ||
+    newState.drum[1].calibrated !== oldState.drum[1].calibrated ||
+    newState.drum[2].calibrated !== oldState.drum[2].calibrated;
+
+  if (calibrationChanged) {
+    logger.info("Calibration status changed, updating display", '[TC]');
+    updateCalibrationStatus();
+  }
+
+  // Auto-refresh status packet when tower state changes
+  try {
+    if (typeof refreshStatusPacket === 'function') {
+      refreshStatusPacket();
+    }
+  } catch (error) {
+    logger.debug("Error auto-refreshing status packet: " + error, '[TC]');
+  }
+};
+Tower.onTowerStateUpdate = onTowerStateUpdate;
+
 const updateCalibrationStatus = () => {
-  const statusElement = document.getElementById("calibration-status");
-  const iconElement = document.getElementById("calibration-icon");
+  const topIcon = document.getElementById("calibration-top");
+  const middleIcon = document.getElementById("calibration-middle");
+  const bottomIcon = document.getElementById("calibration-bottom");
 
-  if (!statusElement || !iconElement) return;
-
-  if (!Tower.isConnected) {
-    statusElement.innerText = "Unknown";
-    statusElement.style.color = "#9ca3af"; // gray
-    iconElement.innerHTML = '<span style="color: #9ca3af; font-size: 16px;">?</span>';
+  if (!topIcon || !middleIcon || !bottomIcon) {
+    logger.warn("Calibration icon elements not found", '[TC]');
     return;
   }
 
-  if (Tower.isCalibrated) {
-    statusElement.innerText = "Calibrated";
-    statusElement.style.color = "#10b981"; // green
-    iconElement.innerHTML = '<span style="color: #10b981; font-size: 16px;">✓</span>';
+  if (!Tower.isConnected) {
+    logger.info("Tower not connected, setting calibration icons to unknown state", '[TC]');
+    // Unknown state - gray question circles
+    topIcon.className = "fas fa-question-circle text-gray-400 text-lg";
+    topIcon.title = "Top drum status unknown";
+    middleIcon.className = "fas fa-question-circle text-gray-400 text-lg";
+    middleIcon.title = "Middle drum status unknown";
+    bottomIcon.className = "fas fa-question-circle text-gray-400 text-lg";
+    bottomIcon.title = "Bottom drum status unknown";
+    return;
+  }
+
+  const towerState = Tower.getCurrentTowerState();
+  logger.info(`Updating calibration status - Top: ${towerState.drum[0].calibrated}, Middle: ${towerState.drum[1].calibrated}, Bottom: ${towerState.drum[2].calibrated}`, '[TC]');
+
+  // Update top drum calibration icon
+  if (towerState.drum[0].calibrated) {
+    topIcon.className = "fas fa-check-circle text-green-400 text-lg";
+    topIcon.title = "Top drum calibrated";
   } else {
-    statusElement.innerText = "Not Calibrated";
-    statusElement.style.color = "#ef4444"; // red
-    iconElement.innerHTML = '<span style="color: #ef4444; font-size: 16px;">✗</span>';
+    topIcon.className = "fas fa-times-circle text-red-400 text-lg";
+    topIcon.title = "Top drum not calibrated";
+  }
+
+  // Update middle drum calibration icon
+  if (towerState.drum[1].calibrated) {
+    middleIcon.className = "fas fa-check-circle text-green-400 text-lg";
+    middleIcon.title = "Middle drum calibrated";
+  } else {
+    middleIcon.className = "fas fa-times-circle text-red-400 text-lg";
+    middleIcon.title = "Middle drum not calibrated";
+  }
+
+  // Update bottom drum calibration icon
+  if (towerState.drum[2].calibrated) {
+    bottomIcon.className = "fas fa-check-circle text-green-400 text-lg";
+    bottomIcon.title = "Bottom drum calibrated";
+  } else {
+    bottomIcon.className = "fas fa-times-circle text-red-400 text-lg";
+    bottomIcon.title = "Bottom drum not calibrated";
   }
 }
 
@@ -1220,6 +1285,99 @@ const downloadDisplayedLogs = (event: Event) => {
   }
 }
 
+// Tower Status Packet functions
+const refreshStatusPacket = () => {
+  if (!Tower.isConnected) {
+    logger.warn("Tower is not connected", '[Status Packet]');
+    updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    return;
+  }
+
+  try {
+    const state = Tower.getCurrentTowerState();
+    if (!state) {
+      logger.warn("No current tower state available", '[Status Packet]');
+      updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+      return;
+    }
+
+    // Create a buffer for the packed state (19 bytes + 1 command byte = 20 bytes)
+    const buffer = new Uint8Array(20);
+    const stateBuffer = new Uint8Array(19);
+
+    const success = rtdt_pack_state(stateBuffer, 19, state);
+
+    if (!success) {
+      logger.error("Failed to pack tower state", '[Status Packet]');
+      updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+      return;
+    }
+
+    // Command byte (0x00) + 19 bytes of state data
+    buffer[0] = 0; // Command type for tower state
+    for (let i = 0; i < 19; i++) {
+      buffer[i + 1] = stateBuffer[i];
+    }
+
+    // Convert to array for display
+    const packedState = Array.from(buffer);
+    updateStatusPacketDisplay(packedState);
+
+    logger.info("Status packet refreshed", '[Status Packet]');
+  } catch (error) {
+    logger.error(`Failed to refresh status packet: ${error}`, '[Status Packet]');
+    updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  }
+}
+
+const updateStatusPacketDisplay = (packetData: number[]) => {
+  const display = document.getElementById('status-packet-display');
+  if (!display) return;
+
+  // Descriptions for each byte position
+  const byteDescriptions = [
+    'Battery Level',
+    'Calibration Status', 
+    'Drum Positions (Top)',
+    'Drum Positions (Middle)',
+    'Drum Positions (Bottom)',
+    'Light States (Doorways)',
+    'Light States (Ledges)',
+    'Light States (Base)',
+    'Glyph Positions',
+    'Seal States',
+    'Sound Effects',
+    'Player Count',
+    'Game State',
+    'Error Flags',
+    'Communication Status',
+    'Reserved',
+    'Extended Flags',
+    'Skull Drop Count',
+    'Reserved',
+    'Checksum'
+  ];
+
+  // Clear existing content
+  display.innerHTML = '';
+
+  // Add each byte as a styled span
+  packetData.forEach((byte, index) => {
+    const span = document.createElement('span');
+    span.className = 'status-byte';
+    
+    // Add non-zero class for non-zero values
+    if (byte !== 0) {
+      span.className += ' non-zero';
+    }
+    
+    span.textContent = byte.toString();
+    const description = index < byteDescriptions.length ? byteDescriptions[index] : 'Unknown';
+    span.title = `Byte ${index}: ${byte} (0x${byte.toString(16).padStart(2, '0').toUpperCase()}) - ${description}`;
+    display.appendChild(span);
+  });
+}
+
 // Enhanced glyph management functions
 const getGlyphsFacingDirection = (direction: TowerSide) => {
   try {
@@ -1496,3 +1654,4 @@ const enhancedMoveGlyph = async () => {
 (window as any).glyphLightStates = glyphLightStates;
 (window as any).getCurrentDoorwayLights = getCurrentDoorwayLights;
 (window as any).updateBatteryFilter = updateBatteryFilter;
+(window as any).refreshStatusPacket = refreshStatusPacket;

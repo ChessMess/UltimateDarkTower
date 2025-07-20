@@ -1963,6 +1963,9 @@
       this.onBatteryLevelNotify = (_millivolts) => {
         console.log(_millivolts);
       };
+      this.onTowerStateUpdate = (_newState, _oldState, _source) => {
+        console.log(_newState, _oldState, _source);
+      };
       // utility
       this._logDetail = false;
       this.logger = new Logger();
@@ -2236,6 +2239,7 @@
       const oldState = this.currentTowerState;
       this.currentTowerState = newState;
       this.logger.logTowerStateChange(oldState, newState, source, this.logDetail);
+      this.onTowerStateUpdate(newState, oldState, source);
     }
     /**
      * Updates the current tower state from a tower response.

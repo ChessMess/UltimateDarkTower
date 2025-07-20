@@ -50,6 +50,7 @@ const udtTowerCommands_1 = require("./udtTowerCommands");
  * - onCalibrationComplete: Called when calibration finishes
  * - onSkullDrop: Called when skulls are dropped into the tower
  * - onBatteryLevelNotify: Called when battery level updates
+ * - onTowerStateUpdate: Called whenever the tower state is updated
  */
 class UltimateDarkTower {
     constructor() {
@@ -81,6 +82,7 @@ class UltimateDarkTower {
         this.onCalibrationComplete = () => { };
         this.onSkullDrop = (_towerSkullCount) => { console.log(_towerSkullCount); };
         this.onBatteryLevelNotify = (_millivolts) => { console.log(_millivolts); };
+        this.onTowerStateUpdate = (_newState, _oldState, _source) => { console.log(_newState, _oldState, _source); };
         // utility
         this._logDetail = false;
         // Initialize logger with console output by default
@@ -331,6 +333,8 @@ class UltimateDarkTower {
         this.currentTowerState = newState;
         // Use the logger's tower state change method
         this.logger.logTowerStateChange(oldState, newState, source, this.logDetail);
+        // Call the tower state update callback
+        this.onTowerStateUpdate(newState, oldState, source);
     }
     /**
      * Updates the current tower state from a tower response.
