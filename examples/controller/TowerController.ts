@@ -1337,7 +1337,7 @@ const updateStatusPacketDisplay = (packetData: number[]) => {
   // Descriptions for each byte position
   const byteDescriptions = [
     'Battery Level',
-    'Calibration Status', 
+    'Calibration Status',
     'Drum Positions (Top)',
     'Drum Positions (Middle)',
     'Drum Positions (Bottom)',
@@ -1365,12 +1365,12 @@ const updateStatusPacketDisplay = (packetData: number[]) => {
   packetData.forEach((byte, index) => {
     const span = document.createElement('span');
     span.className = 'status-byte';
-    
+
     // Add non-zero class for non-zero values
     if (byte !== 0) {
       span.className += ' non-zero';
     }
-    
+
     span.textContent = byte.toString();
     const description = index < byteDescriptions.length ? byteDescriptions[index] : 'Unknown';
     span.title = `Byte ${index}: ${byte} (0x${byte.toString(16).padStart(2, '0').toUpperCase()}) - ${description}`;
