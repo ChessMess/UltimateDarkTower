@@ -371,7 +371,7 @@ The tower tracks glyph positions as drums rotate. Glyphs are game symbols that a
 type Glyphs = 'cleanse' | 'quest' | 'battle' | 'banner' | 'reinforce';
 
 // Glyph locations after calibration - see src/udtConstants.ts for definition
-import { GLYPHS } from './src/udtConstants';
+import { GLYPHS } from 'ultimatedarktower';
 ```
 
 ### Glyph Position Tracking
@@ -700,8 +700,10 @@ tower.onSkullDrop = (skullCount: number) => {
 Called when battery level updates.
 
 ```typescript
+import { milliVoltsToPercentage } from 'ultimatedarktower';
+
 tower.onBatteryLevelNotify = (millivolts: number) => {
-    const percentage = tower.milliVoltsToPercentage(millivolts);
+    const percentage = milliVoltsToPercentage(millivolts);
     console.log(`Battery level: ${percentage}`);
 
     // Show low battery warning
@@ -1003,7 +1005,7 @@ class GameManager {
     }
 
     private handleBatteryUpdate(millivolts: number) {
-        const percentage = this.tower.milliVoltsToPercentage(millivolts);
+        const percentage = milliVoltsToPercentage(millivolts);
         if (millivolts < 3000) {
             this.showLowBatteryWarning(percentage);
         }
