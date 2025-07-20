@@ -12,7 +12,7 @@ import {
   createDefaultTowerState
 } from '../src/udtHelpers';
 import { VOLTAGE_LEVELS } from '../src/udtConstants';
-import { type TowerState } from '../src/functions';
+import { type TowerState } from '../src/udtTowerState';
 
 describe('udtHelpers', () => {
   describe('Battery Voltage Functions', () => {

@@ -370,14 +370,8 @@ The tower tracks glyph positions as drums rotate. Glyphs are game symbols that a
 // Available glyphs
 type Glyphs = 'cleanse' | 'quest' | 'battle' | 'banner' | 'reinforce';
 
-// Glyph locations after calibration
-const GLYPHS = {
-    cleanse: { name: 'Cleanse', level: 'top', side: 'north' },
-    quest: { name: 'Quest', level: 'top', side: 'south' },
-    battle: { name: 'Battle', level: 'middle', side: 'north' },
-    banner: { name: 'Banner', level: 'bottom', side: 'north' },
-    reinforce: { name: 'Reinforce', level: 'bottom', side: 'south' },
-};
+// Glyph locations after calibration - see src/udtConstants.ts for definition
+import { GLYPHS } from './src/udtConstants';
 ```
 
 ### Glyph Position Tracking

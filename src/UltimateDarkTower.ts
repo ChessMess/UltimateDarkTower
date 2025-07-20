@@ -6,7 +6,7 @@ import {
   type Glyphs,
   GLYPHS
 } from './udtConstants';
-import { type TowerState } from './functions';
+import { type TowerState } from './udtTowerState';
 import { createDefaultTowerState, milliVoltsToPercentageNumber, commandToPacketString, milliVoltsToPercentage } from './udtHelpers';
 import { Logger, ConsoleOutput, type LogOutput } from './udtLogger';
 import { UdtBleConnection, type ConnectionCallbacks, type ConnectionStatus } from './udtBleConnection';
@@ -341,7 +341,7 @@ class UltimateDarkTower {
    */
   async sendTowerState(towerState: TowerState): Promise<void> {
     // Import pack function here to avoid circular dependencies
-    const { rtdt_pack_state } = await import('./functions');
+    const { rtdt_pack_state } = await import('./udtTowerState');
 
     // Pack the tower state into 19 bytes
     const stateData = new Uint8Array(19);
@@ -383,7 +383,7 @@ class UltimateDarkTower {
    */
   private updateTowerStateFromResponse(stateData: Uint8Array): void {
     // Import unpack function here to avoid circular dependencies
-    import('./functions').then(({ rtdt_unpack_state }) => {
+    import('./udtTowerState').then(({ rtdt_unpack_state }) => {
       const newState = rtdt_unpack_state(stateData);
       this.setTowerState(newState, 'tower response');
     });

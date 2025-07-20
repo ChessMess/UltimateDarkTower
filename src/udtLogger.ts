@@ -1,4 +1,4 @@
-import type { TowerState } from './functions';
+import type { TowerState } from './udtTowerState';
 
 export type LogLevel = 'all' | 'debug' | 'info' | 'warn' | 'error';
 

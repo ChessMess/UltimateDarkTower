@@ -10,7 +10,7 @@ import {
     type DoorwayLight,
     type SealIdentifier
 } from './udtConstants';
-import { type TowerState } from './functions';
+import { type TowerState } from './udtTowerState';
 import { Logger } from './udtLogger';
 import { UdtCommandFactory } from './udtCommandFactory';
 import { UdtBleConnection } from './udtBleConnection';

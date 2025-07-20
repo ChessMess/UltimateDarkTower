@@ -10,7 +10,7 @@ import {
     type TowerSide,
     type CommandPacket
 } from './udtConstants';
-import { type TowerState, rtdt_pack_state } from './functions';
+import { type TowerState, rtdt_pack_state } from './udtTowerState';
 
 export interface DrumPositions {
     topMiddle: number;

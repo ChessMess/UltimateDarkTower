@@ -18,7 +18,7 @@ import {
 import { Logger } from './udtLogger';
 import { TowerResponseProcessor } from './udtTowerResponse';
 import { getMilliVoltsFromTowerResponse, milliVoltsToPercentage, getActiveLights } from './udtHelpers';
-import { rtdt_unpack_state } from './functions'
+import { rtdt_unpack_state } from './udtTowerState'
 
 
 export interface ConnectionCallbacks {

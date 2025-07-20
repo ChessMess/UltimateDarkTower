@@ -1,3 +1,13 @@
+import {
+  TOWER_LAYERS,
+  RING_LIGHT_POSITIONS,
+  LEDGE_BASE_LIGHT_POSITIONS,
+  LED_CHANNEL_LOOKUP,
+  LAYER_TO_POSITION,
+  LIGHT_INDEX_TO_DIRECTION,
+  STATE_DATA_LENGTH
+} from './udtConstants';
+
 // TypeScript interfaces for tower state structure
 interface Light {
   effect: number;
@@ -34,68 +44,6 @@ interface TowerState {
   beam: Beam;
   led_sequence: number;
 }
-
-// Constants for mapping tower layers to physical locations
-const TOWER_LAYERS = {
-  TOP_RING: 0,
-  MIDDLE_RING: 1,
-  BOTTOM_RING: 2,
-  LEDGE: 3,
-  BASE1: 4,
-  BASE2: 5,
-} as const;
-
-// Ring layers use cardinal directions (position 0 = North)
-const RING_LIGHT_POSITIONS = {
-  NORTH: 0,
-  EAST: 1,
-  SOUTH: 2,
-  WEST: 3,
-} as const;
-
-// Ledge and Base layers use ordinal directions (position 0 = North-East)
-const LEDGE_BASE_LIGHT_POSITIONS = {
-  NORTH_EAST: 0,
-  SOUTH_EAST: 1,
-  SOUTH_WEST: 2,
-  NORTH_WEST: 3,
-} as const;
-
-// LED Channel Lookup (matches firmware implementation)
-// Convert from (layer * 4) + position to LED driver channel (0-23)
-const LED_CHANNEL_LOOKUP = [
-  // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
-  0, 3, 2, 1,
-  // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
-  7, 6, 5, 4,
-  // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
-  10, 9, 8, 11,
-  // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
-  12, 13, 14, 15,
-  // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
-  16, 17, 18, 19,
-  // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
-  20, 21, 22, 23,
-];
-
-// Updated reverse mapping for the corrected layer architecture
-const LAYER_TO_POSITION = {
-  [TOWER_LAYERS.TOP_RING]: 'TOP_RING',
-  [TOWER_LAYERS.MIDDLE_RING]: 'MIDDLE_RING',
-  [TOWER_LAYERS.BOTTOM_RING]: 'BOTTOM_RING',
-  [TOWER_LAYERS.LEDGE]: 'LEDGE',
-  [TOWER_LAYERS.BASE1]: 'BASE1',
-  [TOWER_LAYERS.BASE2]: 'BASE2'
-} as const;
-
-const LIGHT_INDEX_TO_DIRECTION = {
-  [RING_LIGHT_POSITIONS.NORTH]: 'NORTH',
-  [RING_LIGHT_POSITIONS.EAST]: 'EAST',
-  [RING_LIGHT_POSITIONS.SOUTH]: 'SOUTH',
-  [RING_LIGHT_POSITIONS.WEST]: 'WEST'
-} as const;
-
-const STATE_DATA_LENGTH = 19;
 
 function rtdt_unpack_state(data: Uint8Array): TowerState {
   // Padding is used to align the different sections on byte boundaries

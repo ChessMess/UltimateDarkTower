@@ -14,7 +14,7 @@ import UltimateDarkTower, {
   GLYPHS
 } from '../../src';
 import { logger, DOMOutput, ConsoleOutput } from '../../src/udtLogger';
-import { rtdt_pack_state, rtdt_unpack_state, type TowerState } from '../../src/functions';
+import { rtdt_pack_state, rtdt_unpack_state, type TowerState } from '../../src/udtTowerState';
 import { createDefaultTowerState } from '../../src/udtHelpers';
 
 const Tower = new UltimateDarkTower();
@@ -57,7 +57,7 @@ if (document.readyState === 'loading') {
 (window as any).LIGHT_EFFECTS = LIGHT_EFFECTS;
 (window as any).GLYPHS = GLYPHS;
 
-// Expose functions from functions.ts globally
+// Expose functions from udtTowerState.ts globally
 (window as any).rtdt_pack_state = rtdt_pack_state;
 (window as any).rtdt_unpack_state = rtdt_unpack_state;
 (window as any).createDefaultTowerState = createDefaultTowerState;

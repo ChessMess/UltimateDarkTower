@@ -1,5 +1,5 @@
-import { VOLTAGE_LEVELS } from './udtConstants';
-import { type TowerState } from './functions';
+import { VOLTAGE_LEVELS, LED_CHANNEL_LOOKUP } from './udtConstants';
+import { type TowerState } from './udtTowerState';
 
 /**
  * Converts battery voltage in millivolts to percentage number (0-100).
@@ -61,22 +61,6 @@ export function commandToPacketString(command: Uint8Array): string {
  * @returns Object containing the tower level, direction, and LED channel
  */
 export function getTowerPosition(layerIndex: number, lightIndex: number): { level: string, direction: string, ledChannel?: number } {
-  // LED Channel Lookup (matches firmware implementation)
-  const LED_CHANNEL_LOOKUP = [
-    // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
-    0, 3, 2, 1,
-    // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
-    7, 6, 5, 4,
-    // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
-    10, 9, 8, 11,
-    // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
-    12, 13, 14, 15,
-    // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
-    16, 17, 18, 19,
-    // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
-    20, 21, 22, 23,
-  ];
-
   const isRingLayer = layerIndex <= 2;
   const ledChannel = LED_CHANNEL_LOOKUP[layerIndex * 4 + lightIndex];
 
