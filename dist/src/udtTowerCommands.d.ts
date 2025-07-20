@@ -1,5 +1,5 @@
-import { type Lights, type TowerSide, type RotateCommand, type SealIdentifier } from './udtConstants';
-import { type TowerState } from './functions';
+import { type Lights, type TowerSide, type SealIdentifier } from './udtConstants';
+import { type TowerState } from './udtTowerState';
 import { Logger } from './udtLogger';
 import { UdtCommandFactory } from './udtCommandFactory';
 import { UdtBleConnection } from './udtBleConnection';
@@ -18,7 +18,7 @@ export interface TowerCommandDependencies {
         value: number;
     };
     retrySendCommandMax: number;
-    getCurrentTowerState?: () => TowerState | null;
+    getCurrentTowerState: () => TowerState;
 }
 export declare class UdtTowerCommands {
     private deps;
@@ -45,7 +45,7 @@ export declare class UdtTowerCommands {
      */
     calibrate(): Promise<void>;
     /**
-     * Plays a sound from the tower's audio library.
+     * Plays a sound from the tower's audio library using stateful commands that preserve existing tower state.
      * @param soundIndex - Index of the sound to play (1-based, must be valid in TOWER_AUDIO_LIBRARY)
      * @returns Promise that resolves when sound command is sent
      */
@@ -73,13 +73,14 @@ export declare class UdtTowerCommands {
      */
     rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number): Promise<void>;
     /**
-     * Sends a combined command to rotate drums, control lights, and play sound simultaneously.
-     * @param rotate - Rotation configuration for tower drums
-     * @param lights - Light configuration object
-     * @param soundIndex - Optional sound to play with the multi-command
-     * @returns Promise that resolves when multi-command is sent
-     */
-    multiCommand(rotate?: RotateCommand, lights?: Lights, soundIndex?: number): Promise<void>;
+   * Rotates tower drums to specified positions.
+   * @param top - Position for the top drum ('north', 'east', 'south', 'west')
+   * @param middle - Position for the middle drum
+   * @param bottom - Position for the bottom drum
+   * @param soundIndex - Optional sound to play during rotation
+   * @returns Promise that resolves when rotate command is sent
+   */
+    rotateWithState(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number): Promise<void>;
     /**
      * Resets the tower's internal skull drop counter to zero.
      * @returns Promise that resolves when reset command is sent

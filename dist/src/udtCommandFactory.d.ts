@@ -1,5 +1,5 @@
 import { type Lights, type TowerSide, type CommandPacket } from './udtConstants';
-import { type TowerState } from './functions';
+import { type TowerState } from './udtTowerState';
 export interface DrumPositions {
     topMiddle: number;
     bottom: number;
@@ -37,14 +37,6 @@ export declare class UdtCommandFactory {
      * @param currentPositions - Current drum positions to apply
      */
     updateCommandWithCurrentDrumPositions(commandPacket: CommandPacket, currentPositions: DrumPositions): void;
-    /**
-     * Creates a combined command packet by merging rotation, light, and sound commands.
-     * @param rotateCommand - Rotation command packet
-     * @param lightCommand - Light command packet
-     * @param soundCommand - Optional sound command packet
-     * @returns Combined command packet
-     */
-    createMultiCommand(rotateCommand: Uint8Array, lightCommand: Uint8Array, soundCommand?: Uint8Array): Uint8Array;
     /**
      * Creates a basic tower command packet with the specified command value.
      * @param commandValue - The command value to send
@@ -97,5 +89,5 @@ export declare class UdtCommandFactory {
      * Creates a default tower state with all systems off/neutral.
      * @returns Default TowerState object
      */
-    private createDefaultTowerState;
+    private createEmptyTowerState;
 }

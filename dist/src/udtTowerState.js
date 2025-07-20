@@ -1,71 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getActiveLights = exports.getTowerPosition = exports.LIGHT_INDEX_TO_DIRECTION = exports.LAYER_TO_POSITION = exports.TOWER_LIGHT_POSITIONS = exports.LED_CHANNEL_LOOKUP = exports.LEDGE_BASE_LIGHT_POSITIONS = exports.RING_LIGHT_POSITIONS = exports.TOWER_LAYERS = exports.STATE_DATA_LENGTH = exports.createDefaultTowerState = exports.rtdt_pack_state = exports.rtdt_unpack_state = void 0;
-// Constants for mapping tower layers to physical locations
-const TOWER_LAYERS = {
-    TOP_RING: 0,
-    MIDDLE_RING: 1,
-    BOTTOM_RING: 2,
-    LEDGE: 3,
-    BASE1: 4,
-    BASE2: 5,
-};
-exports.TOWER_LAYERS = TOWER_LAYERS;
-// Ring layers use cardinal directions (position 0 = North)
-const RING_LIGHT_POSITIONS = {
-    NORTH: 0,
-    EAST: 1,
-    SOUTH: 2,
-    WEST: 3,
-};
-exports.RING_LIGHT_POSITIONS = RING_LIGHT_POSITIONS;
-// Ledge and Base layers use ordinal directions (position 0 = North-East)
-const LEDGE_BASE_LIGHT_POSITIONS = {
-    NORTH_EAST: 0,
-    SOUTH_EAST: 1,
-    SOUTH_WEST: 2,
-    NORTH_WEST: 3,
-};
-exports.LEDGE_BASE_LIGHT_POSITIONS = LEDGE_BASE_LIGHT_POSITIONS;
-// LED Channel Lookup (matches firmware implementation)
-// Convert from (layer * 4) + position to LED driver channel (0-23)
-const LED_CHANNEL_LOOKUP = [
-    // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
-    0, 3, 2, 1,
-    // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
-    7, 6, 5, 4,
-    // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
-    10, 9, 8, 11,
-    // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
-    12, 13, 14, 15,
-    // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
-    16, 17, 18, 19,
-    // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
-    20, 21, 22, 23,
-];
-exports.LED_CHANNEL_LOOKUP = LED_CHANNEL_LOOKUP;
-// Legacy constants for backwards compatibility (deprecated)
-const TOWER_LIGHT_POSITIONS = RING_LIGHT_POSITIONS;
-exports.TOWER_LIGHT_POSITIONS = TOWER_LIGHT_POSITIONS;
-// Updated reverse mapping for the corrected layer architecture
-const LAYER_TO_POSITION = {
-    [TOWER_LAYERS.TOP_RING]: 'TOP_RING',
-    [TOWER_LAYERS.MIDDLE_RING]: 'MIDDLE_RING',
-    [TOWER_LAYERS.BOTTOM_RING]: 'BOTTOM_RING',
-    [TOWER_LAYERS.LEDGE]: 'LEDGE',
-    [TOWER_LAYERS.BASE1]: 'BASE1',
-    [TOWER_LAYERS.BASE2]: 'BASE2'
-};
-exports.LAYER_TO_POSITION = LAYER_TO_POSITION;
-const LIGHT_INDEX_TO_DIRECTION = {
-    [RING_LIGHT_POSITIONS.NORTH]: 'NORTH',
-    [RING_LIGHT_POSITIONS.EAST]: 'EAST',
-    [RING_LIGHT_POSITIONS.SOUTH]: 'SOUTH',
-    [RING_LIGHT_POSITIONS.WEST]: 'WEST'
-};
-exports.LIGHT_INDEX_TO_DIRECTION = LIGHT_INDEX_TO_DIRECTION;
-const STATE_DATA_LENGTH = 19;
-exports.STATE_DATA_LENGTH = STATE_DATA_LENGTH;
+exports.LIGHT_INDEX_TO_DIRECTION = exports.LAYER_TO_POSITION = exports.LED_CHANNEL_LOOKUP = exports.LEDGE_BASE_LIGHT_POSITIONS = exports.RING_LIGHT_POSITIONS = exports.TOWER_LAYERS = exports.STATE_DATA_LENGTH = exports.rtdt_pack_state = exports.rtdt_unpack_state = void 0;
+const udtConstants_1 = require("./udtConstants");
+Object.defineProperty(exports, "TOWER_LAYERS", { enumerable: true, get: function () { return udtConstants_1.TOWER_LAYERS; } });
+Object.defineProperty(exports, "RING_LIGHT_POSITIONS", { enumerable: true, get: function () { return udtConstants_1.RING_LIGHT_POSITIONS; } });
+Object.defineProperty(exports, "LEDGE_BASE_LIGHT_POSITIONS", { enumerable: true, get: function () { return udtConstants_1.LEDGE_BASE_LIGHT_POSITIONS; } });
+Object.defineProperty(exports, "LED_CHANNEL_LOOKUP", { enumerable: true, get: function () { return udtConstants_1.LED_CHANNEL_LOOKUP; } });
+Object.defineProperty(exports, "LAYER_TO_POSITION", { enumerable: true, get: function () { return udtConstants_1.LAYER_TO_POSITION; } });
+Object.defineProperty(exports, "LIGHT_INDEX_TO_DIRECTION", { enumerable: true, get: function () { return udtConstants_1.LIGHT_INDEX_TO_DIRECTION; } });
+Object.defineProperty(exports, "STATE_DATA_LENGTH", { enumerable: true, get: function () { return udtConstants_1.STATE_DATA_LENGTH; } });
 function rtdt_unpack_state(data) {
     // Padding is used to align the different sections on byte boundaries
     const state = {
@@ -155,11 +98,12 @@ function rtdt_unpack_state(data) {
     state.audio.sample = data[14] & 0b01111111;
     state.audio.loop = !!(data[14] & 0b10000000);
     // Bytes 15-17: Beam, drum-reversing, volume
+    // Don't run the drums in reverse, trust me
     state.beam.count = (data[15] << 8) | data[16];
     state.beam.fault = !!(data[17] & 0b00000001);
-    state.drum[0].reverse = !!(data[17] & 0b00000010);
-    state.drum[1].reverse = !!(data[17] & 0b00000100);
-    state.drum[2].reverse = !!(data[17] & 0b00001000);
+    state.drum[0].reverse = !!(data[17] & 0b00000010); // DON'T
+    state.drum[1].reverse = !!(data[17] & 0b00000100); // USE
+    state.drum[2].reverse = !!(data[17] & 0b00001000); // THESE
     state.audio.volume = (data[17] & 0b11110000) >> 4;
     // Byte 18: LED sequences
     state.led_sequence = data[18];
@@ -167,10 +111,10 @@ function rtdt_unpack_state(data) {
 }
 exports.rtdt_unpack_state = rtdt_unpack_state;
 function rtdt_pack_state(data, len, state) {
-    if (len < STATE_DATA_LENGTH)
+    if (len < udtConstants_1.STATE_DATA_LENGTH)
         return false;
     // Clear the data array
-    data.fill(0, 0, STATE_DATA_LENGTH);
+    data.fill(0, 0, udtConstants_1.STATE_DATA_LENGTH);
     // Pack drum states
     // Later prototypes/production units removed the half-way markers
     // We repurpose the low bit for whether or not we need to play a rotation sound
@@ -226,86 +170,4 @@ function rtdt_pack_state(data, len, state) {
     return true;
 }
 exports.rtdt_pack_state = rtdt_pack_state;
-/**
- * Utility function to get the tower position and direction for a given layer and light index
- * Updated based on LED channel lookup table and corrected architecture:
- * - Layers 0-2: Ring LEDs with cardinal directions (N,E,S,W)
- * - Layers 3-5: Ledge/Base LEDs with ordinal directions (NE,SE,SW,NW)
- * @param layerIndex - The layer index (0-5)
- * @param lightIndex - The light index within the layer (0-3)
- * @returns Object containing the tower level, direction, and LED channel
- */
-function getTowerPosition(layerIndex, lightIndex) {
-    const isRingLayer = layerIndex <= 2;
-    const ledChannel = LED_CHANNEL_LOOKUP[layerIndex * 4 + lightIndex];
-    if (isRingLayer) {
-        // Ring layers: cardinal directions (position 0 = North)
-        const directions = ['NORTH', 'EAST', 'SOUTH', 'WEST'];
-        const layerNames = ['TOP_RING', 'MIDDLE_RING', 'BOTTOM_RING'];
-        return {
-            level: layerNames[layerIndex],
-            direction: directions[lightIndex],
-            ledChannel
-        };
-    }
-    else {
-        // Ledge/Base layers: ordinal directions (position 0 = North-East)
-        const directions = ['NORTH_EAST', 'SOUTH_EAST', 'SOUTH_WEST', 'NORTH_WEST'];
-        const layerNames = ['LEDGE', 'BASE1', 'BASE2'];
-        return {
-            level: layerNames[layerIndex - 3],
-            direction: directions[lightIndex],
-            ledChannel
-        };
-    }
-}
-exports.getTowerPosition = getTowerPosition;
-/**
- * Utility function to get all active lights in a tower state
- * @param state - The tower state object
- * @returns Array of objects describing each active light
- */
-function getActiveLights(state) {
-    const activeLights = [];
-    state.layer.forEach((layer, layerIndex) => {
-        layer.light.forEach((light, lightIndex) => {
-            if (light.effect > 0) {
-                const position = getTowerPosition(layerIndex, lightIndex);
-                activeLights.push({
-                    level: position.level,
-                    direction: position.direction,
-                    effect: light.effect,
-                    loop: light.loop
-                });
-            }
-        });
-    });
-    return activeLights;
-}
-exports.getActiveLights = getActiveLights;
-/**
- * Creates a default/empty tower state with all settings reset to defaults
- * @returns A default TowerState object with all lights off, no audio, etc.
- */
-function createDefaultTowerState() {
-    return {
-        drum: [
-            { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
-            { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
-            { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false }
-        ],
-        layer: [
-            { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-            { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-            { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-            { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-            { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-            { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] }
-        ],
-        audio: { sample: 0, loop: false, volume: 0 },
-        beam: { count: 0, fault: false },
-        led_sequence: 0
-    };
-}
-exports.createDefaultTowerState = createDefaultTowerState;
-//# sourceMappingURL=functions.js.map
+//# sourceMappingURL=udtTowerState.js.map

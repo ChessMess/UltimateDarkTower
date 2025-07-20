@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UdtCommandFactory = void 0;
 const udtConstants_1 = require("./udtConstants");
-const functions_1 = require("./functions");
+const udtTowerState_1 = require("./udtTowerState");
 class UdtCommandFactory {
     /**
      * Creates a light command packet from a lights configuration object.
@@ -77,25 +77,6 @@ class UdtCommandFactory {
         commandPacket[udtConstants_1.DRUM_PACKETS.bottom] = currentPositions.bottom;
     }
     /**
-     * Creates a combined command packet by merging rotation, light, and sound commands.
-     * @param rotateCommand - Rotation command packet
-     * @param lightCommand - Light command packet
-     * @param soundCommand - Optional sound command packet
-     * @returns Combined command packet
-     */
-    createMultiCommand(rotateCommand, lightCommand, soundCommand) {
-        const multiCmd = new Uint8Array(20);
-        // Combine rotate and light commands with bitwise OR
-        for (let index = 0; index < 20; index++) {
-            multiCmd[index] = rotateCommand[index] | lightCommand[index];
-        }
-        // Add sound if provided
-        if (soundCommand) {
-            multiCmd[udtConstants_1.AUDIO_COMMAND_POS] = multiCmd[udtConstants_1.AUDIO_COMMAND_POS] | soundCommand[udtConstants_1.AUDIO_COMMAND_POS];
-        }
-        return multiCmd;
-    }
-    /**
      * Creates a basic tower command packet with the specified command value.
      * @param commandValue - The command value to send
      * @returns Basic command packet
@@ -113,7 +94,7 @@ class UdtCommandFactory {
      */
     createStatefulCommand(currentState, modifications) {
         // Start with current state or create default state
-        const newState = currentState ? Object.assign({}, currentState) : this.createDefaultTowerState();
+        const newState = currentState ? Object.assign({}, currentState) : this.createEmptyTowerState();
         // Apply modifications
         if (modifications.drum) {
             modifications.drum.forEach((drum, index) => {
@@ -221,7 +202,7 @@ class UdtCommandFactory {
      */
     packTowerStateCommand(state) {
         const stateData = new Uint8Array(19);
-        const success = (0, functions_1.rtdt_pack_state)(stateData, 19, state);
+        const success = (0, udtTowerState_1.rtdt_pack_state)(stateData, 19, state);
         if (!success) {
             throw new Error('Failed to pack tower state data');
         }
@@ -235,7 +216,7 @@ class UdtCommandFactory {
      * Creates a default tower state with all systems off/neutral.
      * @returns Default TowerState object
      */
-    createDefaultTowerState() {
+    createEmptyTowerState() {
         return {
             drum: [
                 { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },

@@ -1,5 +1,5 @@
-import { type Lights, type TowerSide, type RotateCommand, type SealIdentifier, type Glyphs } from './udtConstants';
-import { type TowerState } from './functions';
+import { type Lights, type TowerSide, type SealIdentifier, type Glyphs } from './udtConstants';
+import { type TowerState } from './udtTowerState';
 import { type LogOutput } from './udtLogger';
 import { type ConnectionStatus } from './udtBleConnection';
 /**
@@ -109,16 +109,6 @@ declare class UltimateDarkTower {
      */
     Rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number): Promise<void>;
     /**
-     * DO NOT USE THIS FUNCTION - MULTIPLE SIMULTANEOUS ACTIONS CAN CAUSE TOWER DISCONNECTION
-     * Sends a combined command to rotate drums, control lights, and play sound simultaneously.
-     * @param rotate - Rotation configuration for tower drums
-     * @param lights - Light configuration object
-     * @param soundIndex - Optional sound to play with the multi-command
-     * @returns Promise that resolves when multi-command is sent
-     * @deprecated SPECIAL USE ONLY - CAN CAUSE DISCONNECTS
-     */
-    MultiCommand(rotate?: RotateCommand, lights?: Lights, soundIndex?: number): Promise<void>;
-    /**
      * Resets the tower's internal skull drop counter to zero.
      * @returns Promise that resolves when reset command is sent
      */
@@ -151,9 +141,9 @@ declare class UltimateDarkTower {
     rotateDrumStateful(drumIndex: number, position: number, playSound?: boolean): Promise<void>;
     /**
      * Gets the current complete tower state if available.
-     * @returns The current tower state object, or null if not available
+     * @returns The current tower state object
      */
-    getCurrentTowerState(): TowerState | null;
+    getCurrentTowerState(): TowerState;
     /**
      * Sends a complete tower state to the tower, preserving existing state.
      * This creates a stateful command that only changes the specified fields.
@@ -161,6 +151,12 @@ declare class UltimateDarkTower {
      * @returns Promise that resolves when the command is sent
      */
     sendTowerState(towerState: TowerState): Promise<void>;
+    /**
+     * Sets the tower state with comprehensive logging of changes.
+     * @param newState - The new tower state to set
+     * @param source - Source identifier for logging (e.g., "sendTowerState", "tower response")
+     */
+    private setTowerState;
     /**
      * Updates the current tower state from a tower response.
      * Called internally when tower state responses are received.
@@ -312,12 +308,6 @@ declare class UltimateDarkTower {
      * @returns {Object} Object with connection details
      */
     getConnectionStatus(): ConnectionStatus;
-    /**
-     * Converts millivolts to percentage number (0-100).
-     * @param mv - Battery voltage in millivolts
-     * @returns Battery percentage as number (0-100)
-     */
-    private milliVoltsToPercentageNumber;
     /**
      * Clean up resources and disconnect properly
      * @returns {Promise<void>} Promise that resolves when cleanup is complete

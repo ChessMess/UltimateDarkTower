@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TowerResponseProcessor = void 0;
 const udtConstants_1 = require("./udtConstants");
 const udtLogger_1 = require("./udtLogger");
+const udtHelpers_1 = require("./udtHelpers");
 class TowerResponseProcessor {
     constructor(logDetail = false) {
         this.logDetail = false;
@@ -47,55 +48,19 @@ class TowerResponseProcessor {
             case udtConstants_1.TC.DURATION:
             case udtConstants_1.TC.DIFFERENTIAL:
             case udtConstants_1.TC.CALIBRATION:
-                return [towerCommand.name, this.commandToPacketString(command)];
+                return [towerCommand.name, (0, udtHelpers_1.commandToPacketString)(command)];
             case udtConstants_1.TC.BATTERY: {
-                const millivolts = this.getMilliVoltsFromTowerResponse(command);
-                const retval = [towerCommand.name, this.milliVoltsToPercentage(millivolts)];
+                const millivolts = (0, udtHelpers_1.getMilliVoltsFromTowerResponse)(command);
+                const retval = [towerCommand.name, (0, udtHelpers_1.milliVoltsToPercentage)(millivolts)];
                 if (this.logDetail) {
                     retval.push(`${millivolts}mv`);
-                    retval.push(this.commandToPacketString(command));
+                    retval.push((0, udtHelpers_1.commandToPacketString)(command));
                 }
                 return retval;
             }
             default:
-                return ["Unmapped Response!", this.commandToPacketString(command)];
+                return ["Unmapped Response!", (0, udtHelpers_1.commandToPacketString)(command)];
         }
-    }
-    /**
-     * Converts a command packet to a hex string representation for debugging.
-     * @param {Uint8Array} command - Command packet to convert
-     * @returns {string} Hex string representation of the command packet
-     */
-    commandToPacketString(command) {
-        let cmdStr = "[";
-        command.forEach(n => cmdStr += n.toString(16) + ",");
-        cmdStr = cmdStr.slice(0, -1) + "]";
-        return cmdStr;
-    }
-    /**
-     * Extracts battery voltage in millivolts from a tower battery response.
-     * @param {Uint8Array} command - Battery response packet from tower
-     * @returns {number} Battery voltage in millivolts
-     */
-    getMilliVoltsFromTowerResponse(command) {
-        const mv = new Uint8Array(4);
-        mv[0] = command[4];
-        mv[1] = command[3];
-        mv[2] = 0;
-        mv[3] = 0;
-        const view = new DataView(mv.buffer, 0);
-        return view.getUint32(0, true);
-    }
-    /**
-     * Converts battery voltage in millivolts to percentage.
-     * Tower returns sum total battery level in millivolts for all batteries.
-     * @param {number} mv - Battery voltage in millivolts
-     * @returns {string} Battery percentage as formatted string (e.g., "75%")
-     */
-    milliVoltsToPercentage(mv) {
-        const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
-        const levels = udtConstants_1.VOLTAGE_LEVELS.filter(v => batLevel >= v);
-        return `${levels.length * 5}%`;
     }
     /**
      * Determines if a response should be logged based on command type and configuration.

@@ -556,48 +556,6 @@ describe('UltimateDarkTower', () => {
                     getCurrentDrumPositionSpy.mockRestore();
                 }
             });
-            test('should update glyph positions when MultiCommand is called with rotation', async () => {
-                const towerCommands = darkTower['towerCommands'];
-                const originalMultiCommand = towerCommands.multiCommand;
-                towerCommands.multiCommand = jest.fn().mockResolvedValue(undefined);
-                const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
-                getCurrentDrumPositionSpy.mockReturnValue('north');
-                try {
-                    const rotateCommand = { top: 'south', middle: 'east', bottom: 'west' };
-                    await darkTower.MultiCommand(rotateCommand);
-                    // Top level: rotate 2 steps clockwise (north->south)
-                    // cleanse: north->south, quest: south->north
-                    expect(darkTower.getGlyphPosition('cleanse')).toBe('south');
-                    expect(darkTower.getGlyphPosition('quest')).toBe('north');
-                    // Middle level: rotate 1 step clockwise (north->east)
-                    // battle: north->east
-                    expect(darkTower.getGlyphPosition('battle')).toBe('east');
-                    // Bottom level: rotate 3 steps clockwise (north->west)
-                    // banner: north->west, reinforce: south->east
-                    expect(darkTower.getGlyphPosition('banner')).toBe('west');
-                    expect(darkTower.getGlyphPosition('reinforce')).toBe('east');
-                }
-                finally {
-                    towerCommands.multiCommand = originalMultiCommand;
-                    getCurrentDrumPositionSpy.mockRestore();
-                }
-            });
-            test('should not update glyph positions when MultiCommand is called without rotation', async () => {
-                const towerCommands = darkTower['towerCommands'];
-                const originalMultiCommand = towerCommands.multiCommand;
-                towerCommands.multiCommand = jest.fn().mockResolvedValue(undefined);
-                try {
-                    // Store initial positions
-                    const initialPositions = darkTower.getAllGlyphPositions();
-                    // Call MultiCommand without rotation
-                    await darkTower.MultiCommand(undefined, { doorway: [] });
-                    // Verify glyph positions remained unchanged
-                    expect(darkTower.getAllGlyphPositions()).toEqual(initialPositions);
-                }
-                finally {
-                    towerCommands.multiCommand = originalMultiCommand;
-                }
-            });
             test('should handle randomRotateLevels correctly', async () => {
                 const towerCommands = darkTower['towerCommands'];
                 const originalRandomRotate = towerCommands.randomRotateLevels;

@@ -1,3 +1,4 @@
+import type { TowerState } from './udtTowerState';
 export type LogLevel = 'all' | 'debug' | 'info' | 'warn' | 'error';
 export interface LogOutput {
     write(level: LogLevel, message: string, timestamp: Date): void;
@@ -56,5 +57,20 @@ export declare class Logger {
     info(message: string, context?: string): void;
     warn(message: string, context?: string): void;
     error(message: string, context?: string): void;
+    /**
+     * Logs tower state changes with detailed information about what changed.
+     * @param oldState - The previous tower state
+     * @param newState - The new tower state
+     * @param source - Source identifier for the update (e.g., "sendTowerState", "tower response")
+     * @param enableDetailedLogging - Whether to include detailed change descriptions
+     */
+    logTowerStateChange(oldState: TowerState, newState: TowerState, source: string, enableDetailedLogging?: boolean): void;
+    /**
+     * Computes the differences between two tower states for logging purposes.
+     * @param oldState - The previous tower state
+     * @param newState - The new tower state
+     * @returns Array of human-readable change descriptions
+     */
+    private computeStateChanges;
 }
 export declare const logger: Logger;

@@ -1,6 +1,5 @@
 (() => {
   var __defProp = Object.defineProperty;
-  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getOwnPropSymbols = Object.getOwnPropertySymbols;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
@@ -24,19 +23,313 @@
     for (var name in all)
       __defProp(target, name, { get: all[name], enumerable: true });
   };
-  var __copyProps = (to, from, except, desc) => {
-    if (from && typeof from === "object" || typeof from === "function") {
-      for (let key of __getOwnPropNames(from))
-        if (!__hasOwnProp.call(to, key) && key !== except)
-          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-    }
-    return to;
-  };
-  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-  // src/functions.ts
-  var functions_exports = {};
-  __export(functions_exports, {
+  // src/udtConstants.ts
+  var UART_SERVICE_UUID, UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID, TOWER_DEVICE_NAME, DIS_SERVICE_UUID, DIS_MANUFACTURER_NAME_UUID, DIS_MODEL_NUMBER_UUID, DIS_SERIAL_NUMBER_UUID, DIS_HARDWARE_REVISION_UUID, DIS_FIRMWARE_REVISION_UUID, DIS_SOFTWARE_REVISION_UUID, DIS_SYSTEM_ID_UUID, DIS_IEEE_REGULATORY_UUID, DIS_PNP_ID_UUID, TOWER_COMMANDS, TC, DRUM_PACKETS, LIGHT_PACKETS, GLYPHS, AUDIO_COMMAND_POS, SKULL_DROP_COUNT_POS, drumPositionCmds, BASE_LEDGE_LIGHTS_TO_BIT_SHIFT, DOORWAY_LIGHTS_TO_BIT_SHIFT, LIGHT_EFFECTS, TOWER_AUDIO_LIBRARY, TOWER_MESSAGES, VOLTAGE_LEVELS, TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LED_CHANNEL_LOOKUP, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH;
+  var init_udtConstants = __esm({
+    "src/udtConstants.ts"() {
+      UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+      UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+      UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+      TOWER_DEVICE_NAME = "ReturnToDarkTower";
+      DIS_SERVICE_UUID = "0000180a-0000-1000-8000-00805f9b34fb";
+      DIS_MANUFACTURER_NAME_UUID = "00002a29-0000-1000-8000-00805f9b34fb";
+      DIS_MODEL_NUMBER_UUID = "00002a24-0000-1000-8000-00805f9b34fb";
+      DIS_SERIAL_NUMBER_UUID = "00002a25-0000-1000-8000-00805f9b34fb";
+      DIS_HARDWARE_REVISION_UUID = "00002a27-0000-1000-8000-00805f9b34fb";
+      DIS_FIRMWARE_REVISION_UUID = "00002a26-0000-1000-8000-00805f9b34fb";
+      DIS_SOFTWARE_REVISION_UUID = "00002a28-0000-1000-8000-00805f9b34fb";
+      DIS_SYSTEM_ID_UUID = "00002a23-0000-1000-8000-00805f9b34fb";
+      DIS_IEEE_REGULATORY_UUID = "00002a2a-0000-1000-8000-00805f9b34fb";
+      DIS_PNP_ID_UUID = "00002a50-0000-1000-8000-00805f9b34fb";
+      TOWER_COMMANDS = {
+        towerState: 0,
+        // not a sendable command
+        doorReset: 1,
+        unjamDrums: 2,
+        resetCounter: 3,
+        calibration: 4,
+        overwriteDrumStates: 5
+        // go no further!
+      };
+      TC = {
+        STATE: "TOWER_STATE",
+        INVALID_STATE: "INVALID_STATE",
+        FAILURE: "HARDWARE_FAILURE",
+        JIGGLE: "MECH_JIGGLE_TRIGGERED",
+        UNEXPECTED: "MECH_UNEXPECTED_TRIGGER",
+        DURATION: "MECH_DURATION",
+        DIFFERENTIAL: "DIFFERENTIAL_READINGS",
+        CALIBRATION: "CALIBRATION_FINISHED",
+        BATTERY: "BATTERY_READING"
+      };
+      DRUM_PACKETS = {
+        topMiddle: 1,
+        bottom: 2
+      };
+      LIGHT_PACKETS = {
+        doorway: {
+          top: { north: 3, east: 3, south: 4, west: 4 },
+          middle: { north: 5, east: 5, south: 6, west: 6 },
+          bottom: { north: 7, east: 7, south: 8, west: 8 }
+        },
+        base: {
+          north: { a: 12, b: 14 },
+          east: { a: 11, b: 13 },
+          south: { a: 11, b: 13 },
+          west: { a: 12, b: 14 }
+        },
+        ledge: { north: 10, west: 10, south: 9, east: 9 },
+        overrides: 19
+      };
+      GLYPHS = {
+        cleanse: { name: "Cleanse", level: "top", side: "north" },
+        quest: { name: "Quest", level: "top", side: "south" },
+        battle: { name: "Battle", level: "middle", side: "north" },
+        banner: { name: "Banner", level: "bottom", side: "north" },
+        reinforce: { name: "Reinforce", level: "bottom", side: "south" }
+      };
+      AUDIO_COMMAND_POS = 15;
+      SKULL_DROP_COUNT_POS = 17;
+      drumPositionCmds = {
+        top: { north: 16, west: 2, south: 20, east: 22 },
+        // bits 1-8
+        middle: { north: 16, west: 64, south: 144, east: 208 },
+        // bits 1-4
+        bottom: { north: 66, west: 74, south: 82, east: 90 }
+      };
+      BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
+      DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];
+      LIGHT_EFFECTS = {
+        on: 3,
+        off: 0,
+        breathe: 5,
+        breatheFast: 7,
+        breathe50percent: 9,
+        flicker: 11
+      };
+      TOWER_AUDIO_LIBRARY = {
+        Ashstrider: { name: "Ashstrider", value: 1, category: "Adversary" },
+        BaneofOmens: { name: "Bane of Omens", value: 2, category: "Adversary" },
+        EmpressofShades: { name: "Empress of Shades", value: 3, category: "Adversary" },
+        GazeEternal: { name: "Gaze Eternal", value: 4, category: "Adversary" },
+        Gravemaw: { name: "Gravemaw", value: 5, category: "Adversary" },
+        IsatheHollow: { name: "Isa the Hollow", value: 6, category: "Adversary" },
+        LingeringRot: { name: "Lingering Rot", value: 7, category: "Adversary" },
+        UtukKu: { name: "Utuk'Ku", value: 8, category: "Adversary" },
+        Gleb: { name: "Gleb", value: 9, category: "Ally" },
+        Grigor: { name: "Grigor", value: 10, category: "Ally" },
+        Hakan: { name: "Hakan", value: 11, category: "Ally" },
+        Letha: { name: "Letha", value: 12, category: "Ally" },
+        Miras: { name: "Miras", value: 13, category: "Ally" },
+        Nimet: { name: "Nimet", value: 14, category: "Ally" },
+        Tomas: { name: "Tomas", value: 15, category: "Ally" },
+        Vasa: { name: "Vasa", value: 16, category: "Ally" },
+        Yana: { name: "Yana", value: 17, category: "Ally" },
+        Zaida: { name: "Zaida", value: 18, category: "Ally" },
+        ApplyAdvantage01: { name: "Apply Advantage 01", value: 19, category: "Battle" },
+        ApplyAdvantage02: { name: "Apply Advantage 02", value: 20, category: "Battle" },
+        ApplyAdvantage03: { name: "Apply Advantage 03", value: 21, category: "Battle" },
+        ApplyAdvantage04: { name: "Apply Advantage 04", value: 22, category: "Battle" },
+        ApplyAdvantage05: { name: "Apply Advantage 05", value: 23, category: "Battle" },
+        MaxAdvantages: { name: "Max Advantages", value: 24, category: "Battle" },
+        NoAdvantages: { name: "No Advantages", value: 25, category: "Battle" },
+        AdversaryEscaped: { name: "Adversary Escaped", value: 26, category: "Battle" },
+        BattleButton: { name: "Battle Button", value: 27, category: "Battle" },
+        CardFlip01: { name: "Card Flip 01", value: 28, category: "Battle" },
+        CardFlip02: { name: "Card Flip 02", value: 29, category: "Battle" },
+        CardFlip03: { name: "Card Flip 03", value: 30, category: "Battle" },
+        CardFlipPaper01: { name: "Card Flip Paper 01", value: 31, category: "Battle" },
+        CardFlipPaper02: { name: "Card Flip Paper 02", value: 32, category: "Battle" },
+        CardFlipPaper03: { name: "Card Flip Paper 03", value: 33, category: "Battle" },
+        CardSelect01: { name: "Card Select 01", value: 34, category: "Battle" },
+        CardSelect02: { name: "Card Select 02", value: 35, category: "Battle" },
+        CardSelect03: { name: "Card Select 03", value: 36, category: "Battle" },
+        BattleStart: { name: "Battle Start", value: 37, category: "Battle" },
+        BattleVictory: { name: "Battle Victory", value: 38, category: "Battle" },
+        ButtonHoldPressCombo: { name: "Button Hold Press Combo", value: 39, category: "Battle" },
+        ButtonHold: { name: "Button Hold", value: 40, category: "Battle" },
+        ButtonPress: { name: "Button Press", value: 41, category: "Battle" },
+        ClassicAdvantageApplied: { name: "8-bit Advantage", value: 42, category: "Classic" },
+        ClassicAttackTower: { name: "8-bit Attack Tower", value: 43, category: "Classic" },
+        ClassicBazaar: { name: "8-bit Bazaar", value: 44, category: "Classic" },
+        ClassicConfirmation: { name: "8-bit Confirmation", value: 45, category: "Classic" },
+        ClassicDragons: { name: "8-bit Dragons", value: 46, category: "Classic" },
+        ClassicQuestFailed: { name: "8-bit Quest Failed", value: 47, category: "Classic" },
+        ClassicRetreat: { name: "8-bit Retreat", value: 48, category: "Classic" },
+        ClassicStartMonth: { name: "8-bit Start Month", value: 49, category: "Classic" },
+        ClassicStartDungeon: { name: "8-bit Start Dungeon", value: 50, category: "Classic" },
+        ClassicTowerLost: { name: "8-bit Tower Lost", value: 51, category: "Classic" },
+        ClassicUnsure: { name: "8-bit Unsure", value: 52, category: "Classic" },
+        DungeonAdvantage01: { name: "Dungeon Advantage 01", value: 53, category: "Dungeon" },
+        DungeonAdvantage02: { name: "Dungeon Advantage 02", value: 54, category: "Dungeon" },
+        DungeonButton: { name: "Dungeon Button", value: 55, category: "Dungeon" },
+        DungeonFootsteps: { name: "Dungeon Footsteps", value: 56, category: "Dungeon" },
+        DungeonCaves: { name: "Dungeon Caves", value: 57, category: "Dungeon" },
+        DungeonComplete: { name: "Dungeon Complete", value: 58, category: "Dungeon" },
+        DungeonEncampment: { name: "Dungeon Encampment", value: 59, category: "Dungeon" },
+        DungeonEscape: { name: "Dungeon Escape", value: 60, category: "Dungeon" },
+        DungeonFortress: { name: "Dungeon Fortress", value: 61, category: "Dungeon" },
+        DungeonRuins: { name: "Dungeon Ruins", value: 62, category: "Dungeon" },
+        DungeonShrine: { name: "Dungeon Shrine", value: 63, category: "Dungeon" },
+        DungeonTomb: { name: "Dungeon Tomb", value: 64, category: "Dungeon" },
+        FoeEvent: { name: "Foe Event", value: 65, category: "Foe" },
+        FoeSpawn: { name: "Foe Spawn", value: 66, category: "Foe" },
+        Brigands: { name: "Brigands", value: 67, category: "Foe" },
+        ClanofNeuri: { name: "Clan of Neuri", value: 68, category: "Foe" },
+        Dragons: { name: "Dragons", value: 69, category: "Foe" },
+        Lemures: { name: "Lemures", value: 70, category: "Foe" },
+        LeveledUp: { name: "Leveled Up", value: 71, category: "Foe" },
+        Mormos: { name: "Mormos", value: 72, category: "Foe" },
+        Oreks: { name: "Oreks", value: 73, category: "Foe" },
+        ShadowWolves: { name: "Shadow Wolves", value: 74, category: "Foe" },
+        SpineFiends: { name: "Spine Fiends", value: 75, category: "Foe" },
+        Strigas: { name: "Strigas", value: 76, category: "Foe" },
+        Titans: { name: "Titans", value: 77, category: "Foe" },
+        FrostTrolls: { name: "Frost Trolls", value: 78, category: "Foe" },
+        WidowmadeSpiders: { name: "Widowmade Spiders", value: 79, category: "Foe" },
+        AshstriderSpawn: { name: "Ashstrider Spawn", value: 80, category: "Spawn" },
+        BaneofOmensSpawn: { name: "Bane of Omens Spawn", value: 81, category: "Spawn" },
+        EmpressofShadesSpawn: { name: "Empress of Shades Spawn", value: 82, category: "Spawn" },
+        GazeEternalSpawn: { name: "Gaze Eternal Spawn", value: 83, category: "Spawn" },
+        GravemawSpawn: { name: "Gravemaw Spawn", value: 84, category: "Spawn" },
+        IsatheHollowSpawn: { name: "Isa the Hollow Spawn", value: 85, category: "Spawn" },
+        LingeringRotSpawn: { name: "Lingering Rot Spawn", value: 86, category: "Spawn" },
+        UtukKuSpawn: { name: "Utuk'Ku Spawn", value: 87, category: "Spawn" },
+        QuestComplete: { name: "Quest Complete", value: 88, category: "Quest" },
+        TowerAllGlyphs: { name: "Tower All Glyphs", value: 89, category: "Glyph" },
+        TowerAngry1: { name: "Tower Angry 1", value: 90, category: "Glyph" },
+        TowerAngry2: { name: "Tower Angry 2", value: 91, category: "Glyph" },
+        TowerAngry3: { name: "Tower Angry 3", value: 92, category: "Glyph" },
+        TowerAngry4: { name: "Tower Angry 4", value: 93, category: "Glyph" },
+        TowerConnected: { name: "Tower Connected", value: 94, category: "State" },
+        GameStart: { name: "Game Start", value: 95, category: "State" },
+        TowerGloat1: { name: "Tower Gloat 1", value: 96, category: "State" },
+        TowerGloat2: { name: "Tower Gloat 2", value: 97, category: "State" },
+        TowerGloat3: { name: "Tower Gloat 3", value: 98, category: "State" },
+        TowerGlyph: { name: "Tower Glyph", value: 99, category: "State" },
+        TowerIdle1: { name: "Tower Idle 1", value: 100, category: "State" },
+        TowerIdle2: { name: "Tower Idle 2", value: 101, category: "State" },
+        TowerIdle3: { name: "Tower Idle 3", value: 102, category: "State" },
+        TowerIdle4: { name: "Tower Idle 4", value: 103, category: "State" },
+        TowerIdle5: { name: "Tower Idle 5", value: 104, category: "Unlisted" },
+        TowerDisconnected: { name: "Tower Disconnect", value: 105, category: "State" },
+        MonthEnded: { name: "Month Ended", value: 106, category: "State" },
+        MonthStarted: { name: "Month Started", value: 107, category: "State" },
+        QuestFailed: { name: "Quest Failed", value: 108, category: "Quest" },
+        RotateExit: { name: "Rotate Exit", value: 109, category: "Seals" },
+        RotateLoop: { name: "Rotate Loop", value: 110, category: "Seals" },
+        RotateStart: { name: "Rotate Start", value: 111, category: "Seals" },
+        TowerSeal: { name: "Tower Seal", value: 112, category: "Seals" },
+        TowerSkullDropped: { name: "Tower Skull Dropped", value: 113, category: "State" }
+      };
+      TOWER_MESSAGES = {
+        TOWER_STATE: { name: "Tower State", value: 0, critical: false },
+        INVALID_STATE: { name: "Invalid State", value: 1, critical: true },
+        HARDWARE_FAILURE: { name: "Hardware Failure", value: 2, critical: true },
+        MECH_JIGGLE_TRIGGERED: { name: "Unjam Jiggle Triggered", value: 3, critical: false },
+        MECH_DURATION: { name: "Rotation Duration", value: 4, critical: false },
+        MECH_UNEXPECTED_TRIGGER: { name: "Unexpected Trigger", value: 5, critical: false },
+        DIFFERENTIAL_READINGS: { name: "Diff Voltage Readings", value: 6, critical: false },
+        BATTERY_READING: { name: "Battery Level", value: 7, critical: false },
+        CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false }
+      };
+      VOLTAGE_LEVELS = [
+        1500,
+        1390,
+        1350,
+        1320,
+        1295,
+        1270,
+        1245,
+        1225,
+        1205,
+        1180,
+        1175,
+        1166,
+        1150,
+        1133,
+        1125,
+        1107,
+        1095,
+        1066,
+        1033,
+        980
+        // There's an additional 5% until 800mV is reached
+      ];
+      TOWER_LAYERS = {
+        TOP_RING: 0,
+        MIDDLE_RING: 1,
+        BOTTOM_RING: 2,
+        LEDGE: 3,
+        BASE1: 4,
+        BASE2: 5
+      };
+      RING_LIGHT_POSITIONS = {
+        NORTH: 0,
+        EAST: 1,
+        SOUTH: 2,
+        WEST: 3
+      };
+      LEDGE_BASE_LIGHT_POSITIONS = {
+        NORTH_EAST: 0,
+        SOUTH_EAST: 1,
+        SOUTH_WEST: 2,
+        NORTH_WEST: 3
+      };
+      LED_CHANNEL_LOOKUP = [
+        // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
+        0,
+        3,
+        2,
+        1,
+        // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
+        7,
+        6,
+        5,
+        4,
+        // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
+        10,
+        9,
+        8,
+        11,
+        // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
+        12,
+        13,
+        14,
+        15,
+        // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
+        16,
+        17,
+        18,
+        19,
+        // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
+        20,
+        21,
+        22,
+        23
+      ];
+      LAYER_TO_POSITION = {
+        [TOWER_LAYERS.TOP_RING]: "TOP_RING",
+        [TOWER_LAYERS.MIDDLE_RING]: "MIDDLE_RING",
+        [TOWER_LAYERS.BOTTOM_RING]: "BOTTOM_RING",
+        [TOWER_LAYERS.LEDGE]: "LEDGE",
+        [TOWER_LAYERS.BASE1]: "BASE1",
+        [TOWER_LAYERS.BASE2]: "BASE2"
+      };
+      LIGHT_INDEX_TO_DIRECTION = {
+        [RING_LIGHT_POSITIONS.NORTH]: "NORTH",
+        [RING_LIGHT_POSITIONS.EAST]: "EAST",
+        [RING_LIGHT_POSITIONS.SOUTH]: "SOUTH",
+        [RING_LIGHT_POSITIONS.WEST]: "WEST"
+      };
+      STATE_DATA_LENGTH = 19;
+    }
+  });
+
+  // src/udtTowerState.ts
+  var udtTowerState_exports = {};
+  __export(udtTowerState_exports, {
     LAYER_TO_POSITION: () => LAYER_TO_POSITION,
     LEDGE_BASE_LIGHT_POSITIONS: () => LEDGE_BASE_LIGHT_POSITIONS,
     LED_CHANNEL_LOOKUP: () => LED_CHANNEL_LOOKUP,
@@ -44,10 +337,6 @@
     RING_LIGHT_POSITIONS: () => RING_LIGHT_POSITIONS,
     STATE_DATA_LENGTH: () => STATE_DATA_LENGTH,
     TOWER_LAYERS: () => TOWER_LAYERS,
-    TOWER_LIGHT_POSITIONS: () => TOWER_LIGHT_POSITIONS,
-    createDefaultTowerState: () => createDefaultTowerState,
-    getActiveLights: () => getActiveLights,
-    getTowerPosition: () => getTowerPosition,
     rtdt_pack_state: () => rtdt_pack_state,
     rtdt_unpack_state: () => rtdt_unpack_state
   });
@@ -178,6 +467,42 @@
     data[18] = state.led_sequence;
     return true;
   }
+  var init_udtTowerState = __esm({
+    "src/udtTowerState.ts"() {
+      init_udtConstants();
+    }
+  });
+
+  // src/UltimateDarkTower.ts
+  init_udtConstants();
+
+  // src/udtHelpers.ts
+  init_udtConstants();
+  function milliVoltsToPercentageNumber(mv) {
+    const batLevel = mv ? mv / 3 : 0;
+    const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
+    return levels.length * 5;
+  }
+  function milliVoltsToPercentage(mv) {
+    const batLevel = mv ? mv / 3 : 0;
+    const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
+    return `${levels.length * 5}%`;
+  }
+  function getMilliVoltsFromTowerResponse(command) {
+    const mv = new Uint8Array(4);
+    mv[0] = command[4];
+    mv[1] = command[3];
+    mv[2] = 0;
+    mv[3] = 0;
+    const view = new DataView(mv.buffer, 0);
+    return view.getUint32(0, true);
+  }
+  function commandToPacketString(command) {
+    let cmdStr = "[";
+    command.forEach((n) => cmdStr += n.toString(16) + ",");
+    cmdStr = cmdStr.slice(0, -1) + "]";
+    return cmdStr;
+  }
   function getTowerPosition(layerIndex, lightIndex) {
     const isRingLayer = layerIndex <= 2;
     const ledChannel = LED_CHANNEL_LOOKUP[layerIndex * 4 + lightIndex];
@@ -236,310 +561,6 @@
       led_sequence: 0
     };
   }
-  var TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LED_CHANNEL_LOOKUP, TOWER_LIGHT_POSITIONS, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH;
-  var init_functions = __esm({
-    "src/functions.ts"() {
-      TOWER_LAYERS = {
-        TOP_RING: 0,
-        MIDDLE_RING: 1,
-        BOTTOM_RING: 2,
-        LEDGE: 3,
-        BASE1: 4,
-        BASE2: 5
-      };
-      RING_LIGHT_POSITIONS = {
-        NORTH: 0,
-        EAST: 1,
-        SOUTH: 2,
-        WEST: 3
-      };
-      LEDGE_BASE_LIGHT_POSITIONS = {
-        NORTH_EAST: 0,
-        SOUTH_EAST: 1,
-        SOUTH_WEST: 2,
-        NORTH_WEST: 3
-      };
-      LED_CHANNEL_LOOKUP = [
-        // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
-        0,
-        3,
-        2,
-        1,
-        // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
-        7,
-        6,
-        5,
-        4,
-        // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
-        10,
-        9,
-        8,
-        11,
-        // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
-        12,
-        13,
-        14,
-        15,
-        // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
-        16,
-        17,
-        18,
-        19,
-        // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
-        20,
-        21,
-        22,
-        23
-      ];
-      TOWER_LIGHT_POSITIONS = RING_LIGHT_POSITIONS;
-      LAYER_TO_POSITION = {
-        [TOWER_LAYERS.TOP_RING]: "TOP_RING",
-        [TOWER_LAYERS.MIDDLE_RING]: "MIDDLE_RING",
-        [TOWER_LAYERS.BOTTOM_RING]: "BOTTOM_RING",
-        [TOWER_LAYERS.LEDGE]: "LEDGE",
-        [TOWER_LAYERS.BASE1]: "BASE1",
-        [TOWER_LAYERS.BASE2]: "BASE2"
-      };
-      LIGHT_INDEX_TO_DIRECTION = {
-        [RING_LIGHT_POSITIONS.NORTH]: "NORTH",
-        [RING_LIGHT_POSITIONS.EAST]: "EAST",
-        [RING_LIGHT_POSITIONS.SOUTH]: "SOUTH",
-        [RING_LIGHT_POSITIONS.WEST]: "WEST"
-      };
-      STATE_DATA_LENGTH = 19;
-    }
-  });
-
-  // src/udtConstants.ts
-  var UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-  var UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-  var UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
-  var TOWER_DEVICE_NAME = "ReturnToDarkTower";
-  var DIS_SERVICE_UUID = "0000180a-0000-1000-8000-00805f9b34fb";
-  var DIS_MANUFACTURER_NAME_UUID = "00002a29-0000-1000-8000-00805f9b34fb";
-  var DIS_MODEL_NUMBER_UUID = "00002a24-0000-1000-8000-00805f9b34fb";
-  var DIS_SERIAL_NUMBER_UUID = "00002a25-0000-1000-8000-00805f9b34fb";
-  var DIS_HARDWARE_REVISION_UUID = "00002a27-0000-1000-8000-00805f9b34fb";
-  var DIS_FIRMWARE_REVISION_UUID = "00002a26-0000-1000-8000-00805f9b34fb";
-  var DIS_SOFTWARE_REVISION_UUID = "00002a28-0000-1000-8000-00805f9b34fb";
-  var DIS_SYSTEM_ID_UUID = "00002a23-0000-1000-8000-00805f9b34fb";
-  var DIS_IEEE_REGULATORY_UUID = "00002a2a-0000-1000-8000-00805f9b34fb";
-  var DIS_PNP_ID_UUID = "00002a50-0000-1000-8000-00805f9b34fb";
-  var TOWER_COMMANDS = {
-    towerState: 0,
-    // not a sendable command
-    doorReset: 1,
-    unjamDrums: 2,
-    resetCounter: 3,
-    calibration: 4,
-    overwriteDrumStates: 5
-    // go no further!
-  };
-  var TC = {
-    STATE: "TOWER_STATE",
-    INVALID_STATE: "INVALID_STATE",
-    FAILURE: "HARDWARE_FAILURE",
-    JIGGLE: "MECH_JIGGLE_TRIGGERED",
-    UNEXPECTED: "MECH_UNEXPECTED_TRIGGER",
-    DURATION: "MECH_DURATION",
-    DIFFERENTIAL: "DIFFERENTIAL_READINGS",
-    CALIBRATION: "CALIBRATION_FINISHED",
-    BATTERY: "BATTERY_READING"
-  };
-  var DRUM_PACKETS = {
-    topMiddle: 1,
-    bottom: 2
-  };
-  var LIGHT_PACKETS = {
-    doorway: {
-      top: { north: 3, east: 3, south: 4, west: 4 },
-      middle: { north: 5, east: 5, south: 6, west: 6 },
-      bottom: { north: 7, east: 7, south: 8, west: 8 }
-    },
-    base: {
-      north: { a: 12, b: 14 },
-      east: { a: 11, b: 13 },
-      south: { a: 11, b: 13 },
-      west: { a: 12, b: 14 }
-    },
-    ledge: { north: 10, west: 10, south: 9, east: 9 },
-    overrides: 19
-  };
-  var GLYPHS = {
-    cleanse: { name: "Cleanse", level: "top", side: "north" },
-    quest: { name: "Quest", level: "top", side: "south" },
-    battle: { name: "Battle", level: "middle", side: "north" },
-    banner: { name: "Banner", level: "bottom", side: "north" },
-    reinforce: { name: "Reinforce", level: "bottom", side: "south" }
-  };
-  var AUDIO_COMMAND_POS = 15;
-  var SKULL_DROP_COUNT_POS = 17;
-  var drumPositionCmds = {
-    top: { north: 16, east: 2, south: 20, west: 22 },
-    // bits 1-8
-    middle: { north: 16, east: 64, south: 144, west: 208 },
-    // bits 1-4
-    bottom: { north: 66, east: 74, south: 82, west: 90 }
-  };
-  var BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
-  var DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];
-  var LIGHT_EFFECTS = {
-    on: 3,
-    off: 0,
-    breathe: 5,
-    breatheFast: 7,
-    breathe50percent: 9,
-    flicker: 11
-  };
-  var TOWER_AUDIO_LIBRARY = {
-    Ashstrider: { name: "Ashstrider", value: 1, category: "Adversary" },
-    BaneofOmens: { name: "Bane of Omens", value: 2, category: "Adversary" },
-    EmpressofShades: { name: "Empress of Shades", value: 3, category: "Adversary" },
-    GazeEternal: { name: "Gaze Eternal", value: 4, category: "Adversary" },
-    Gravemaw: { name: "Gravemaw", value: 5, category: "Adversary" },
-    IsatheHollow: { name: "Isa the Hollow", value: 6, category: "Adversary" },
-    LingeringRot: { name: "Lingering Rot", value: 7, category: "Adversary" },
-    UtukKu: { name: "Utuk'Ku", value: 8, category: "Adversary" },
-    Gleb: { name: "Gleb", value: 9, category: "Ally" },
-    Grigor: { name: "Grigor", value: 10, category: "Ally" },
-    Hakan: { name: "Hakan", value: 11, category: "Ally" },
-    Letha: { name: "Letha", value: 12, category: "Ally" },
-    Miras: { name: "Miras", value: 13, category: "Ally" },
-    Nimet: { name: "Nimet", value: 14, category: "Ally" },
-    Tomas: { name: "Tomas", value: 15, category: "Ally" },
-    Vasa: { name: "Vasa", value: 16, category: "Ally" },
-    Yana: { name: "Yana", value: 17, category: "Ally" },
-    Zaida: { name: "Zaida", value: 18, category: "Ally" },
-    ApplyAdvantage01: { name: "Apply Advantage 01", value: 19, category: "Battle" },
-    ApplyAdvantage02: { name: "Apply Advantage 02", value: 20, category: "Battle" },
-    ApplyAdvantage03: { name: "Apply Advantage 03", value: 21, category: "Battle" },
-    ApplyAdvantage04: { name: "Apply Advantage 04", value: 22, category: "Battle" },
-    ApplyAdvantage05: { name: "Apply Advantage 05", value: 23, category: "Battle" },
-    MaxAdvantages: { name: "Max Advantages", value: 24, category: "Battle" },
-    NoAdvantages: { name: "No Advantages", value: 25, category: "Battle" },
-    AdversaryEscaped: { name: "Adversary Escaped", value: 26, category: "Battle" },
-    BattleButton: { name: "Battle Button", value: 27, category: "Battle" },
-    CardFlip01: { name: "Card Flip 01", value: 28, category: "Battle" },
-    CardFlip02: { name: "Card Flip 02", value: 29, category: "Battle" },
-    CardFlip03: { name: "Card Flip 03", value: 30, category: "Battle" },
-    CardFlipPaper01: { name: "Card Flip Paper 01", value: 31, category: "Battle" },
-    CardFlipPaper02: { name: "Card Flip Paper 02", value: 32, category: "Battle" },
-    CardFlipPaper03: { name: "Card Flip Paper 03", value: 33, category: "Battle" },
-    CardSelect01: { name: "Card Select 01", value: 34, category: "Battle" },
-    CardSelect02: { name: "Card Select 02", value: 35, category: "Battle" },
-    CardSelect03: { name: "Card Select 03", value: 36, category: "Battle" },
-    BattleStart: { name: "Battle Start", value: 37, category: "Battle" },
-    BattleVictory: { name: "Battle Victory", value: 38, category: "Battle" },
-    ButtonHoldPressCombo: { name: "Button Hold Press Combo", value: 39, category: "Battle" },
-    ButtonHold: { name: "Button Hold", value: 40, category: "Battle" },
-    ButtonPress: { name: "Button Press", value: 41, category: "Battle" },
-    ClassicAdvantageApplied: { name: "8-bit Advantage", value: 42, category: "Classic" },
-    ClassicAttackTower: { name: "8-bit Attack Tower", value: 43, category: "Classic" },
-    ClassicBazaar: { name: "8-bit Bazaar", value: 44, category: "Classic" },
-    ClassicConfirmation: { name: "8-bit Confirmation", value: 45, category: "Classic" },
-    ClassicDragons: { name: "8-bit Dragons", value: 46, category: "Classic" },
-    ClassicQuestFailed: { name: "8-bit Quest Failed", value: 47, category: "Classic" },
-    ClassicRetreat: { name: "8-bit Retreat", value: 48, category: "Classic" },
-    ClassicStartMonth: { name: "8-bit Start Month", value: 49, category: "Classic" },
-    ClassicStartDungeon: { name: "8-bit Start Dungeon", value: 50, category: "Classic" },
-    ClassicTowerLost: { name: "8-bit Tower Lost", value: 51, category: "Classic" },
-    ClassicUnsure: { name: "8-bit Unsure", value: 52, category: "Classic" },
-    DungeonAdvantage01: { name: "Dungeon Advantage 01", value: 53, category: "Dungeon" },
-    DungeonAdvantage02: { name: "Dungeon Advantage 02", value: 54, category: "Dungeon" },
-    DungeonButton: { name: "Dungeon Button", value: 55, category: "Dungeon" },
-    DungeonFootsteps: { name: "Dungeon Footsteps", value: 56, category: "Dungeon" },
-    DungeonCaves: { name: "Dungeon Caves", value: 57, category: "Dungeon" },
-    DungeonComplete: { name: "Dungeon Complete", value: 58, category: "Dungeon" },
-    DungeonEncampment: { name: "Dungeon Encampment", value: 59, category: "Dungeon" },
-    DungeonEscape: { name: "Dungeon Escape", value: 60, category: "Dungeon" },
-    DungeonFortress: { name: "Dungeon Fortress", value: 61, category: "Dungeon" },
-    DungeonRuins: { name: "Dungeon Ruins", value: 62, category: "Dungeon" },
-    DungeonShrine: { name: "Dungeon Shrine", value: 63, category: "Dungeon" },
-    DungeonTomb: { name: "Dungeon Tomb", value: 64, category: "Dungeon" },
-    FoeEvent: { name: "Foe Event", value: 65, category: "Foe" },
-    FoeSpawn: { name: "Foe Spawn", value: 66, category: "Foe" },
-    Brigands: { name: "Brigands", value: 67, category: "Foe" },
-    ClanofNeuri: { name: "Clan of Neuri", value: 68, category: "Foe" },
-    Dragons: { name: "Dragons", value: 69, category: "Foe" },
-    Lemures: { name: "Lemures", value: 70, category: "Foe" },
-    LeveledUp: { name: "Leveled Up", value: 71, category: "Foe" },
-    Mormos: { name: "Mormos", value: 72, category: "Foe" },
-    Oreks: { name: "Oreks", value: 73, category: "Foe" },
-    ShadowWolves: { name: "Shadow Wolves", value: 74, category: "Foe" },
-    SpineFiends: { name: "Spine Fiends", value: 75, category: "Foe" },
-    Strigas: { name: "Strigas", value: 76, category: "Foe" },
-    Titans: { name: "Titans", value: 77, category: "Foe" },
-    FrostTrolls: { name: "Frost Trolls", value: 78, category: "Foe" },
-    WidowmadeSpiders: { name: "Widowmade Spiders", value: 79, category: "Foe" },
-    AshstriderSpawn: { name: "Ashstrider Spawn", value: 80, category: "Spawn" },
-    BaneofOmensSpawn: { name: "Bane of Omens Spawn", value: 81, category: "Spawn" },
-    EmpressofShadesSpawn: { name: "Empress of Shades Spawn", value: 82, category: "Spawn" },
-    GazeEternalSpawn: { name: "Gaze Eternal Spawn", value: 83, category: "Spawn" },
-    GravemawSpawn: { name: "Gravemaw Spawn", value: 84, category: "Spawn" },
-    IsatheHollowSpawn: { name: "Isa the Hollow Spawn", value: 85, category: "Spawn" },
-    LingeringRotSpawn: { name: "Lingering Rot Spawn", value: 86, category: "Spawn" },
-    UtukKuSpawn: { name: "Utuk'Ku Spawn", value: 87, category: "Spawn" },
-    QuestComplete: { name: "Quest Complete", value: 88, category: "Quest" },
-    TowerAllGlyphs: { name: "Tower All Glyphs", value: 89, category: "Glyph" },
-    TowerAngry1: { name: "Tower Angry 1", value: 90, category: "Glyph" },
-    TowerAngry2: { name: "Tower Angry 2", value: 91, category: "Glyph" },
-    TowerAngry3: { name: "Tower Angry 3", value: 92, category: "Glyph" },
-    TowerAngry4: { name: "Tower Angry 4", value: 93, category: "Glyph" },
-    TowerConnected: { name: "Tower Connected", value: 94, category: "State" },
-    GameStart: { name: "Game Start", value: 95, category: "State" },
-    TowerGloat1: { name: "Tower Gloat 1", value: 96, category: "State" },
-    TowerGloat2: { name: "Tower Gloat 2", value: 97, category: "State" },
-    TowerGloat3: { name: "Tower Gloat 3", value: 98, category: "State" },
-    TowerGlyph: { name: "Tower Glyph", value: 99, category: "State" },
-    TowerIdle1: { name: "Tower Idle 1", value: 100, category: "State" },
-    TowerIdle2: { name: "Tower Idle 2", value: 101, category: "State" },
-    TowerIdle3: { name: "Tower Idle 3", value: 102, category: "State" },
-    TowerIdle4: { name: "Tower Idle 4", value: 103, category: "State" },
-    TowerIdle5: { name: "Tower Idle 5", value: 104, category: "Unlisted" },
-    TowerDisconnected: { name: "Tower Disconnect", value: 105, category: "State" },
-    MonthEnded: { name: "Month Ended", value: 106, category: "State" },
-    MonthStarted: { name: "Month Started", value: 107, category: "State" },
-    QuestFailed: { name: "Quest Failed", value: 108, category: "Quest" },
-    RotateExit: { name: "Rotate Exit", value: 109, category: "Seals" },
-    RotateLoop: { name: "Rotate Loop", value: 110, category: "Seals" },
-    RotateStart: { name: "Rotate Start", value: 111, category: "Seals" },
-    TowerSeal: { name: "Tower Seal", value: 112, category: "Seals" },
-    TowerSkullDropped: { name: "Tower Skull Dropped", value: 113, category: "State" }
-  };
-  var TOWER_MESSAGES = {
-    TOWER_STATE: { name: "Tower State", value: 0, critical: false },
-    INVALID_STATE: { name: "Invalid State", value: 1, critical: true },
-    HARDWARE_FAILURE: { name: "Hardware Failure", value: 2, critical: true },
-    MECH_JIGGLE_TRIGGERED: { name: "Unjam Jiggle Triggered", value: 3, critical: false },
-    MECH_DURATION: { name: "Rotation Duration", value: 4, critical: false },
-    MECH_UNEXPECTED_TRIGGER: { name: "Unexpected Trigger", value: 5, critical: false },
-    DIFFERENTIAL_READINGS: { name: "Diff Voltage Readings", value: 6, critical: false },
-    BATTERY_READING: { name: "Battery Level", value: 7, critical: false },
-    CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false }
-  };
-  var VOLTAGE_LEVELS = [
-    1500,
-    1390,
-    1350,
-    1320,
-    1295,
-    1270,
-    1245,
-    1225,
-    1205,
-    1180,
-    1175,
-    1166,
-    1150,
-    1133,
-    1125,
-    1107,
-    1095,
-    1066,
-    1033,
-    980
-    // There's an additional 5% until 800mV is reached
-  ];
 
   // src/udtLogger.ts
   var ConsoleOutput = class {
@@ -634,12 +655,93 @@
     error(message, context) {
       this.log("error", message, context);
     }
+    /**
+     * Logs tower state changes with detailed information about what changed.
+     * @param oldState - The previous tower state
+     * @param newState - The new tower state
+     * @param source - Source identifier for the update (e.g., "sendTowerState", "tower response")
+     * @param enableDetailedLogging - Whether to include detailed change descriptions
+     */
+    logTowerStateChange(oldState, newState, source, enableDetailedLogging = false) {
+      this.info(`Tower state updated from ${source}`, "[TowerState]");
+      if (enableDetailedLogging) {
+        const changes = this.computeStateChanges(oldState, newState);
+        if (changes.length > 0) {
+          this.debug(`State changes: ${changes.join(", ")}`, "[TowerState]");
+        } else {
+          this.debug("No changes detected in state update", "[TowerState]");
+        }
+      }
+    }
+    /**
+     * Computes the differences between two tower states for logging purposes.
+     * @param oldState - The previous tower state
+     * @param newState - The new tower state
+     * @returns Array of human-readable change descriptions
+     */
+    computeStateChanges(oldState, newState) {
+      const changes = [];
+      for (let i = 0; i < 3; i++) {
+        const drumNames = ["top", "middle", "bottom"];
+        const oldDrum = oldState.drum[i];
+        const newDrum = newState.drum[i];
+        if (oldDrum.position !== newDrum.position) {
+          const positions = ["north", "east", "south", "west"];
+          changes.push(`${drumNames[i]} drum: ${positions[oldDrum.position]} \u2192 ${positions[newDrum.position]}`);
+        }
+        if (oldDrum.calibrated !== newDrum.calibrated) {
+          changes.push(`${drumNames[i]} drum calibrated: ${oldDrum.calibrated} \u2192 ${newDrum.calibrated}`);
+        }
+        if (oldDrum.jammed !== newDrum.jammed) {
+          changes.push(`${drumNames[i]} drum jammed: ${oldDrum.jammed} \u2192 ${newDrum.jammed}`);
+        }
+        if (oldDrum.playSound !== newDrum.playSound) {
+          changes.push(`${drumNames[i]} drum playSound: ${oldDrum.playSound} \u2192 ${newDrum.playSound}`);
+        }
+      }
+      const layerNames = ["top ring", "middle ring", "bottom ring", "ledge", "base1", "base2"];
+      for (let layerIndex = 0; layerIndex < 6; layerIndex++) {
+        for (let lightIndex = 0; lightIndex < 4; lightIndex++) {
+          const oldLight = oldState.layer[layerIndex].light[lightIndex];
+          const newLight = newState.layer[layerIndex].light[lightIndex];
+          if (oldLight.effect !== newLight.effect) {
+            changes.push(`${layerNames[layerIndex]} light ${lightIndex}: effect ${oldLight.effect} \u2192 ${newLight.effect}`);
+          }
+          if (oldLight.loop !== newLight.loop) {
+            changes.push(`${layerNames[layerIndex]} light ${lightIndex}: loop ${oldLight.loop} \u2192 ${newLight.loop}`);
+          }
+        }
+      }
+      if (oldState.audio.sample !== newState.audio.sample) {
+        changes.push(`audio sample: ${oldState.audio.sample} \u2192 ${newState.audio.sample}`);
+      }
+      if (oldState.audio.loop !== newState.audio.loop) {
+        changes.push(`audio loop: ${oldState.audio.loop} \u2192 ${newState.audio.loop}`);
+      }
+      if (oldState.audio.volume !== newState.audio.volume) {
+        changes.push(`audio volume: ${oldState.audio.volume} \u2192 ${newState.audio.volume}`);
+      }
+      if (oldState.beam.count !== newState.beam.count) {
+        changes.push(`beam count: ${oldState.beam.count} \u2192 ${newState.beam.count}`);
+      }
+      if (oldState.beam.fault !== newState.beam.fault) {
+        changes.push(`beam fault: ${oldState.beam.fault} \u2192 ${newState.beam.fault}`);
+      }
+      if (oldState.led_sequence !== newState.led_sequence) {
+        changes.push(`LED sequence: ${oldState.led_sequence} \u2192 ${newState.led_sequence}`);
+      }
+      return changes;
+    }
   };
   _Logger.instance = null;
   var Logger = _Logger;
   var logger = Logger.getInstance();
 
+  // src/udtBleConnection.ts
+  init_udtConstants();
+
   // src/udtTowerResponse.ts
+  init_udtConstants();
   var TowerResponseProcessor = class {
     constructor(logDetail = false) {
       this.logDetail = false;
@@ -684,55 +786,19 @@
         case TC.DURATION:
         case TC.DIFFERENTIAL:
         case TC.CALIBRATION:
-          return [towerCommand.name, this.commandToPacketString(command)];
+          return [towerCommand.name, commandToPacketString(command)];
         case TC.BATTERY: {
-          const millivolts = this.getMilliVoltsFromTowerResponse(command);
-          const retval = [towerCommand.name, this.milliVoltsToPercentage(millivolts)];
+          const millivolts = getMilliVoltsFromTowerResponse(command);
+          const retval = [towerCommand.name, milliVoltsToPercentage(millivolts)];
           if (this.logDetail) {
             retval.push(`${millivolts}mv`);
-            retval.push(this.commandToPacketString(command));
+            retval.push(commandToPacketString(command));
           }
           return retval;
         }
         default:
-          return ["Unmapped Response!", this.commandToPacketString(command)];
+          return ["Unmapped Response!", commandToPacketString(command)];
       }
-    }
-    /**
-     * Converts a command packet to a hex string representation for debugging.
-     * @param {Uint8Array} command - Command packet to convert
-     * @returns {string} Hex string representation of the command packet
-     */
-    commandToPacketString(command) {
-      let cmdStr = "[";
-      command.forEach((n) => cmdStr += n.toString(16) + ",");
-      cmdStr = cmdStr.slice(0, -1) + "]";
-      return cmdStr;
-    }
-    /**
-     * Extracts battery voltage in millivolts from a tower battery response.
-     * @param {Uint8Array} command - Battery response packet from tower
-     * @returns {number} Battery voltage in millivolts
-     */
-    getMilliVoltsFromTowerResponse(command) {
-      const mv = new Uint8Array(4);
-      mv[0] = command[4];
-      mv[1] = command[3];
-      mv[2] = 0;
-      mv[3] = 0;
-      const view = new DataView(mv.buffer, 0);
-      return view.getUint32(0, true);
-    }
-    /**
-     * Converts battery voltage in millivolts to percentage.
-     * Tower returns sum total battery level in millivolts for all batteries.
-     * @param {number} mv - Battery voltage in millivolts
-     * @returns {string} Battery percentage as formatted string (e.g., "75%")
-     */
-    milliVoltsToPercentage(mv) {
-      const batLevel = mv ? mv / 3 : 0;
-      const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
-      return `${levels.length * 5}%`;
     }
     /**
      * Determines if a response should be logged based on command type and configuration.
@@ -767,7 +833,7 @@
   };
 
   // src/udtBleConnection.ts
-  init_functions();
+  init_udtTowerState();
   var UdtBleConnection = class {
     constructor(logger2, callbacks) {
       // BLE connection objects
@@ -830,8 +896,8 @@
         }
         if (this.responseProcessor.isBatteryResponse(cmdKey)) {
           this.lastBatteryHeartbeat = Date.now();
-          const millivolts = this.responseProcessor.getMilliVoltsFromTowerResponse(receivedData);
-          const batteryPercentage = this.responseProcessor.milliVoltsToPercentage(millivolts);
+          const millivolts = getMilliVoltsFromTowerResponse(receivedData);
+          const batteryPercentage = milliVoltsToPercentage(millivolts);
           const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
           const batteryNotifyFrequencyPassed = Date.now() - this.lastBatteryNotification >= this.batteryNotifyFrequency;
           const shouldNotify = this.batteryNotifyOnValueChangeOnly ? didBatteryLevelChange || this.lastBatteryPercentage === "" : batteryNotifyFrequencyPassed;
@@ -927,8 +993,7 @@
       this.logger.debug(`Tower State: ${JSON.stringify(state)} `, "[UDT][BLE])");
       console.log("[CEK] Tower State:", state);
       try {
-        const { getActiveLights: getActiveLights2 } = (init_functions(), __toCommonJS(functions_exports));
-        const activeLights = getActiveLights2(state);
+        const activeLights = getActiveLights(state);
         if (activeLights.length > 0) {
           console.log("[CEK] Active Lights:", activeLights);
         }
@@ -1151,7 +1216,8 @@
   };
 
   // src/udtCommandFactory.ts
-  init_functions();
+  init_udtConstants();
+  init_udtTowerState();
   var UdtCommandFactory = class {
     /**
      * Creates a light command packet from a lights configuration object.
@@ -1225,23 +1291,6 @@
       commandPacket[DRUM_PACKETS.bottom] = currentPositions.bottom;
     }
     /**
-     * Creates a combined command packet by merging rotation, light, and sound commands.
-     * @param rotateCommand - Rotation command packet
-     * @param lightCommand - Light command packet
-     * @param soundCommand - Optional sound command packet
-     * @returns Combined command packet
-     */
-    createMultiCommand(rotateCommand, lightCommand, soundCommand) {
-      const multiCmd = new Uint8Array(20);
-      for (let index = 0; index < 20; index++) {
-        multiCmd[index] = rotateCommand[index] | lightCommand[index];
-      }
-      if (soundCommand) {
-        multiCmd[AUDIO_COMMAND_POS] = multiCmd[AUDIO_COMMAND_POS] | soundCommand[AUDIO_COMMAND_POS];
-      }
-      return multiCmd;
-    }
-    /**
      * Creates a basic tower command packet with the specified command value.
      * @param commandValue - The command value to send
      * @returns Basic command packet
@@ -1258,7 +1307,7 @@
      * @returns 20-byte command packet (command type + 19-byte state data)
      */
     createStatefulCommand(currentState, modifications) {
-      const newState = currentState ? __spreadValues({}, currentState) : this.createDefaultTowerState();
+      const newState = currentState ? __spreadValues({}, currentState) : this.createEmptyTowerState();
       if (modifications.drum) {
         modifications.drum.forEach((drum, index) => {
           if (drum && newState.drum[index]) {
@@ -1375,7 +1424,7 @@
      * Creates a default tower state with all systems off/neutral.
      * @returns Default TowerState object
      */
-    createDefaultTowerState() {
+    createEmptyTowerState() {
       return {
         drum: [
           { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
@@ -1397,6 +1446,9 @@
     }
     //#endregion
   };
+
+  // src/udtTowerCommands.ts
+  init_udtConstants();
 
   // src/udtCommandQueue.ts
   var CommandQueue = class {
@@ -1549,7 +1601,7 @@
     async sendTowerCommandDirect(command) {
       var _a, _b, _c;
       try {
-        const cmdStr = this.deps.responseProcessor.commandToPacketString(command);
+        const cmdStr = commandToPacketString(command);
         this.deps.logDetail && this.deps.logger.debug(`packet(s) sent: ${cmdStr}`, "[UDT]");
         if (!this.deps.bleConnection.txCharacteristic || !this.deps.bleConnection.isConnected) {
           this.deps.logger.warn("Tower is not connected", "[UDT]");
@@ -1597,7 +1649,7 @@
       return;
     }
     /**
-     * Plays a sound from the tower's audio library.
+     * Plays a sound from the tower's audio library using stateful commands that preserve existing tower state.
      * @param soundIndex - Index of the sound to play (1-based, must be valid in TOWER_AUDIO_LIBRARY)
      * @returns Promise that resolves when sound command is sent
      */
@@ -1607,10 +1659,10 @@
         this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, "[UDT]");
         return;
       }
-      const soundCommand = this.deps.commandFactory.createSoundCommand(soundIndex);
-      this.deps.commandFactory.updateCommandWithCurrentDrumPositions(soundCommand, this.deps.currentDrumPositions);
-      this.deps.logger.info("Sending sound command", "[UDT]");
-      await this.sendTowerCommand(soundCommand, `playSound(${soundIndex})`);
+      const currentState = this.deps.getCurrentTowerState();
+      const command = this.deps.commandFactory.createStatefulAudioCommand(currentState, soundIndex, false);
+      this.deps.logger.info("Sending sound command (stateful)", "[UDT]");
+      await this.sendTowerCommand(command, `playSound(${soundIndex})`);
     }
     /**
      * Controls the tower's LED lights including doorway, ledge, and base lights.
@@ -1664,21 +1716,38 @@
       this.deps.currentDrumPositions.bottom = rotateCommand[DRUM_PACKETS.bottom];
     }
     /**
-     * Sends a combined command to rotate drums, control lights, and play sound simultaneously.
-     * @param rotate - Rotation configuration for tower drums
-     * @param lights - Light configuration object
-     * @param soundIndex - Optional sound to play with the multi-command
-     * @returns Promise that resolves when multi-command is sent
-     */
-    async multiCommand(rotate, lights, soundIndex) {
-      this.deps.logDetail && this.deps.logger.debug(`MultiCommand Parameters ${JSON.stringify(rotate)} ${JSON.stringify(lights)} ${soundIndex}`, "[UDT]");
-      const rotateCmd = this.deps.commandFactory.createRotateCommand(rotate.top, rotate.middle, rotate.bottom);
-      const lightCmd = this.deps.commandFactory.createLightPacketCommand(lights);
-      const soundCmd = soundIndex ? this.deps.commandFactory.createSoundCommand(soundIndex) : void 0;
-      const multiCmd = this.deps.commandFactory.createMultiCommand(rotateCmd, lightCmd, soundCmd);
-      await this.sendTowerCommand(multiCmd, "multiCommand");
-      const packetMsg = this.deps.responseProcessor.commandToPacketString(multiCmd);
-      this.deps.logger.info(`multiple command sent ${packetMsg}`, "[UDT]");
+    * Rotates tower drums to specified positions.
+    * @param top - Position for the top drum ('north', 'east', 'south', 'west')
+    * @param middle - Position for the middle drum
+    * @param bottom - Position for the bottom drum
+    * @param soundIndex - Optional sound to play during rotation
+    * @returns Promise that resolves when rotate command is sent
+    */
+    async rotateWithState(top, middle, bottom, soundIndex) {
+      this.deps.logDetail && this.deps.logger.debug(`Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`, "[UDT]");
+      const positionMap = {
+        "north": 0,
+        "east": 1,
+        "south": 2,
+        "west": 3
+      };
+      this.deps.logger.info("Sending stateful rotate commands" + (soundIndex ? " with sound" : ""), "[UDT]");
+      this.deps.bleConnection.performingLongCommand = true;
+      try {
+        await this.rotateDrumStateful(0, positionMap[top], false);
+        await this.rotateDrumStateful(1, positionMap[middle], false);
+        await this.rotateDrumStateful(2, positionMap[bottom], false);
+        if (soundIndex) {
+          await this.playSound(soundIndex);
+        }
+      } finally {
+        setTimeout(() => {
+          this.deps.bleConnection.performingLongCommand = false;
+          this.deps.bleConnection.lastBatteryHeartbeat = Date.now();
+        }, this.deps.bleConnection.longTowerCommandTimeout);
+        this.deps.currentDrumPositions.topMiddle = positionMap[top] << 2 | positionMap[middle];
+        this.deps.currentDrumPositions.bottom = positionMap[bottom];
+      }
     }
     /**
      * Resets the tower's internal skull drop counter to zero.
@@ -1783,27 +1852,18 @@
      */
     getCurrentDrumPosition(level) {
       const drumPositions = drumPositionCmds[level];
-      const currentValue = level === "bottom" ? this.deps.currentDrumPositions.bottom : level === "top" ? this.deps.currentDrumPositions.topMiddle & 22 : this.deps.currentDrumPositions.topMiddle & 192;
+      const rawValue = level === "bottom" ? this.deps.currentDrumPositions.bottom : this.deps.currentDrumPositions.topMiddle;
       for (const [side, value] of Object.entries(drumPositions)) {
         if (level === "middle") {
-          if ((value & 192) === (currentValue & 192)) {
+          if ((value & 192) === (rawValue & 192)) {
             return side;
           }
         } else if (level === "top") {
-          const middleBits = currentValue & 192;
-          if (middleBits === 0) {
-            const expectedCombined = value | 16;
-            if (currentValue === expectedCombined) {
-              return side;
-            }
-          } else {
-            const topBits = currentValue & 22;
-            if (value === topBits) {
-              return side;
-            }
+          if ((value & 22) === (rawValue & 22)) {
+            return side;
           }
         } else {
-          if (value === currentValue) {
+          if (value === rawValue) {
             return side;
           }
         }
@@ -1820,8 +1880,7 @@
      * @returns Promise that resolves when command is sent
      */
     async setLEDStateful(layerIndex, lightIndex, effect, loop = false) {
-      var _a, _b;
-      const currentState = ((_b = (_a = this.deps).getCurrentTowerState) == null ? void 0 : _b.call(_a)) || null;
+      const currentState = this.deps.getCurrentTowerState();
       const command = this.deps.commandFactory.createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop);
       this.deps.logger.info(`Setting LED layer ${layerIndex} light ${lightIndex} to effect ${effect}${loop ? " (looped)" : ""}`, "[UDT]");
       await this.sendTowerCommand(command, `setLEDStateful(${layerIndex}, ${lightIndex}, ${effect}, ${loop})`);
@@ -1834,13 +1893,12 @@
      * @returns Promise that resolves when command is sent
      */
     async playSoundStateful(soundIndex, loop = false, volume) {
-      var _a, _b;
       const invalidIndex = soundIndex === null || soundIndex > Object.keys(TOWER_AUDIO_LIBRARY).length || soundIndex <= 0;
       if (invalidIndex) {
         this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, "[UDT]");
         return;
       }
-      const currentState = ((_b = (_a = this.deps).getCurrentTowerState) == null ? void 0 : _b.call(_a)) || null;
+      const currentState = this.deps.getCurrentTowerState();
       const command = this.deps.commandFactory.createStatefulAudioCommand(currentState, soundIndex, loop, volume);
       this.deps.logger.info(`Playing sound ${soundIndex}${loop ? " (looped)" : ""}${volume !== void 0 ? ` at volume ${volume}` : ""}`, "[UDT]");
       await this.sendTowerCommand(command, `playSoundStateful(${soundIndex}, ${loop}${volume !== void 0 ? `, ${volume}` : ""})`);
@@ -1853,8 +1911,7 @@
      * @returns Promise that resolves when command is sent
      */
     async rotateDrumStateful(drumIndex, position, playSound = false) {
-      var _a, _b;
-      const currentState = ((_b = (_a = this.deps).getCurrentTowerState) == null ? void 0 : _b.call(_a)) || null;
+      const currentState = this.deps.getCurrentTowerState();
       const command = this.deps.commandFactory.createStatefulDrumCommand(currentState, drumIndex, position, playSound);
       const drumNames = ["top", "middle", "bottom"];
       const positionNames = ["north", "east", "south", "west"];
@@ -1921,7 +1978,7 @@
       this.previousBatteryPercentage = 0;
       this.brokenSeals = /* @__PURE__ */ new Set();
       // Complete tower state tracking for stateful commands
-      this.currentTowerState = null;
+      this.currentTowerState = createDefaultTowerState();
       // glyph position tracking
       this.glyphPositions = {
         cleanse: null,
@@ -1961,7 +2018,7 @@
           this.previousBatteryValue = this.currentBatteryValue;
           this.currentBatteryValue = millivolts;
           this.previousBatteryPercentage = this.currentBatteryPercentage;
-          this.currentBatteryPercentage = this.milliVoltsToPercentageNumber(millivolts);
+          this.currentBatteryPercentage = milliVoltsToPercentageNumber(millivolts);
           this.onBatteryLevelNotify(millivolts);
         },
         onCalibrationComplete: () => {
@@ -2135,32 +2192,6 @@
       return result;
     }
     /**
-     * DO NOT USE THIS FUNCTION - MULTIPLE SIMULTANEOUS ACTIONS CAN CAUSE TOWER DISCONNECTION
-     * Sends a combined command to rotate drums, control lights, and play sound simultaneously.
-     * @param rotate - Rotation configuration for tower drums
-     * @param lights - Light configuration object
-     * @param soundIndex - Optional sound to play with the multi-command
-     * @returns Promise that resolves when multi-command is sent
-     * @deprecated SPECIAL USE ONLY - CAN CAUSE DISCONNECTS
-     */
-    async MultiCommand(rotate, lights, soundIndex) {
-      let oldTopPosition;
-      let oldMiddlePosition;
-      let oldBottomPosition;
-      if (rotate) {
-        oldTopPosition = this.getCurrentDrumPosition("top");
-        oldMiddlePosition = this.getCurrentDrumPosition("middle");
-        oldBottomPosition = this.getCurrentDrumPosition("bottom");
-      }
-      const result = await this.towerCommands.multiCommand(rotate, lights, soundIndex);
-      if (rotate && oldTopPosition && oldMiddlePosition && oldBottomPosition) {
-        this.calculateAndUpdateGlyphPositions("top", oldTopPosition, rotate.top);
-        this.calculateAndUpdateGlyphPositions("middle", oldMiddlePosition, rotate.middle);
-        this.calculateAndUpdateGlyphPositions("bottom", oldBottomPosition, rotate.bottom);
-      }
-      return result;
-    }
-    /**
      * Resets the tower's internal skull drop counter to zero.
      * @returns Promise that resolves when reset command is sent
      */
@@ -2205,10 +2236,10 @@
     //#region Tower State Management
     /**
      * Gets the current complete tower state if available.
-     * @returns The current tower state object, or null if not available
+     * @returns The current tower state object
      */
     getCurrentTowerState() {
-      return this.currentTowerState ? __spreadValues({}, this.currentTowerState) : null;
+      return __spreadValues({}, this.currentTowerState);
     }
     /**
      * Sends a complete tower state to the tower, preserving existing state.
@@ -2217,7 +2248,7 @@
      * @returns Promise that resolves when the command is sent
      */
     async sendTowerState(towerState) {
-      const { rtdt_pack_state: rtdt_pack_state2 } = await Promise.resolve().then(() => (init_functions(), functions_exports));
+      const { rtdt_pack_state: rtdt_pack_state2 } = await Promise.resolve().then(() => (init_udtTowerState(), udtTowerState_exports));
       const stateData = new Uint8Array(19);
       const success = rtdt_pack_state2(stateData, 19, towerState);
       if (!success) {
@@ -2226,8 +2257,18 @@
       const command = new Uint8Array(20);
       command[0] = 0;
       command.set(stateData, 1);
-      this.currentTowerState = __spreadValues({}, towerState);
+      this.setTowerState(__spreadValues({}, towerState), "sendTowerState");
       return await this.sendTowerCommandDirect(command);
+    }
+    /**
+     * Sets the tower state with comprehensive logging of changes.
+     * @param newState - The new tower state to set
+     * @param source - Source identifier for logging (e.g., "sendTowerState", "tower response")
+     */
+    setTowerState(newState, source) {
+      const oldState = this.currentTowerState;
+      this.currentTowerState = newState;
+      this.logger.logTowerStateChange(oldState, newState, source, this.logDetail);
     }
     /**
      * Updates the current tower state from a tower response.
@@ -2235,8 +2276,9 @@
      * @param stateData - The 19-byte state data from tower response
      */
     updateTowerStateFromResponse(stateData) {
-      Promise.resolve().then(() => (init_functions(), functions_exports)).then(({ rtdt_unpack_state: rtdt_unpack_state2 }) => {
-        this.currentTowerState = rtdt_unpack_state2(stateData);
+      Promise.resolve().then(() => (init_udtTowerState(), udtTowerState_exports)).then(({ rtdt_unpack_state: rtdt_unpack_state2 }) => {
+        const newState = rtdt_unpack_state2(stateData);
+        this.setTowerState(newState, "tower response");
       });
     }
     //#endregion
@@ -2462,7 +2504,7 @@
      * @returns {string} Hex string representation of the command packet
      */
     commandToPacketString(command) {
-      return this.responseProcessor.commandToPacketString(command);
+      return commandToPacketString(command);
     }
     /**
      * Converts battery voltage in millivolts to percentage.
@@ -2470,7 +2512,7 @@
      * @returns {string} Battery percentage as formatted string (e.g., "75%")
      */
     milliVoltsToPercentage(mv) {
-      return this.responseProcessor.milliVoltsToPercentage(mv);
+      return milliVoltsToPercentage(mv);
     }
     //#endregion
     //#region Connection Management
@@ -2514,16 +2556,6 @@
       return this.bleConnection.getConnectionStatus();
     }
     //#endregion
-    /**
-     * Converts millivolts to percentage number (0-100).
-     * @param mv - Battery voltage in millivolts
-     * @returns Battery percentage as number (0-100)
-     */
-    milliVoltsToPercentageNumber(mv) {
-      const batLevel = mv ? mv / 3 : 0;
-      const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
-      return levels.length * 5;
-    }
     //#region cleanup
     /**
      * Clean up resources and disconnect properly
@@ -2539,6 +2571,7 @@
   var UltimateDarkTower_default = UltimateDarkTower;
 
   // src/index.ts
+  init_udtConstants();
   var src_default = UltimateDarkTower_default;
 
   // examples/game/TowerGame.ts
