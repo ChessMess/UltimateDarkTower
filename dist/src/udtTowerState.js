@@ -10,7 +10,7 @@ Object.defineProperty(exports, "LAYER_TO_POSITION", { enumerable: true, get: fun
 Object.defineProperty(exports, "LIGHT_INDEX_TO_DIRECTION", { enumerable: true, get: function () { return udtConstants_1.LIGHT_INDEX_TO_DIRECTION; } });
 Object.defineProperty(exports, "STATE_DATA_LENGTH", { enumerable: true, get: function () { return udtConstants_1.STATE_DATA_LENGTH; } });
 function rtdt_unpack_state(data) {
-    // Padding is used to align the different sections on byte boundaries
+    // Padding is aligns the different sections on byte boundaries
     const state = {
         drum: [
             { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
@@ -36,9 +36,9 @@ function rtdt_unpack_state(data) {
     state.drum[1].calibrated = !!(data[1] & 0b00000010);
     state.drum[2].jammed = !!(data[1] & 0b00100000);
     state.drum[2].calibrated = !!(data[1] & 0b01000000);
-    // Early prototypes allowed us to stop at any one of 8 locations (45 degree increments)
-    // Later prototypes/production units only have 4 stopping locations
-    // We repurpose the low bit to define whether or not we play a sound during rotation
+    // 4 stopping locations, low bit defines whether or not 
+    // to play a sound during rotation
+    // not recommended to play sound during rotation due to battery draw
     state.drum[0].position = (data[0] & 0b00000110) >> 1;
     state.drum[1].position = (data[0] & 0b11000000) >> 6;
     state.drum[2].position = (data[1] & 0b00011000) >> 3;
@@ -98,7 +98,7 @@ function rtdt_unpack_state(data) {
     state.audio.sample = data[14] & 0b01111111;
     state.audio.loop = !!(data[14] & 0b10000000);
     // Bytes 15-17: Beam, drum-reversing, volume
-    // Don't run the drums in reverse, trust me
+    // DO NOT run the drums in reverse!
     state.beam.count = (data[15] << 8) | data[16];
     state.beam.fault = !!(data[17] & 0b00000001);
     state.drum[0].reverse = !!(data[17] & 0b00000010); // DON'T
@@ -116,8 +116,6 @@ function rtdt_pack_state(data, len, state) {
     // Clear the data array
     data.fill(0, 0, udtConstants_1.STATE_DATA_LENGTH);
     // Pack drum states
-    // Later prototypes/production units removed the half-way markers
-    // We repurpose the low bit for whether or not we need to play a rotation sound
     data[0] |= (state.drum[0].playSound ? 1 : 0) |
         (((state.drum[0].position) & 0b11) << 1) |
         ((state.drum[0].jammed ? 1 : 0) << 3) |
