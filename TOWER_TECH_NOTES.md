@@ -44,11 +44,11 @@ const uint8_t lookup_led_channel[] = {
 
 Tower layer and position constants are defined in `src/udtConstants.ts`:
 
-- `TOWER_LAYERS` - Maps layer names to indices (0-5)
-- `RING_LIGHT_POSITIONS` - Cardinal direction positions for ring layers
-- `LEDGE_BASE_LIGHT_POSITIONS` - Ordinal direction positions for ledge/base layers  
-- `LED_CHANNEL_LOOKUP` - Hardware LED channel mapping array
-- `STATE_DATA_LENGTH` - Binary state data length (19 bytes)
+-   `TOWER_LAYERS` - Maps layer names to indices (0-5)
+-   `RING_LIGHT_POSITIONS` - Cardinal direction positions for ring layers
+-   `LEDGE_BASE_LIGHT_POSITIONS` - Ordinal direction positions for ledge/base layers
+-   `LED_CHANNEL_LOOKUP` - Hardware LED channel mapping array
+-   `STATE_DATA_LENGTH` - Binary state data length (19 bytes)
 
 See the source file for the complete definitions and latest values.
 
@@ -56,11 +56,7 @@ See the source file for the complete definitions and latest values.
 
 ```typescript
 import { getTowerPosition, getActiveLights } from './udtHelpers';
-import {
-    TOWER_LAYERS,
-    RING_LIGHT_POSITIONS,
-    LEDGE_BASE_LIGHT_POSITIONS,
-} from './udtConstants';
+import { TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS } from './udtConstants';
 
 // Get position for a ring light
 const topNorth = getTowerPosition(TOWER_LAYERS.TOP_RING, RING_LIGHT_POSITIONS.NORTH);
@@ -75,18 +71,6 @@ const activeLights = getActiveLights(towerState);
 // Returns array with correct level names and LED channel mappings
 ```
 
-## Summary
-
-This corrected mapping resolves all previous discrepancies:
-
-1. **✅ Simple Architecture**: 6 distinct physical layers, no overlapping functions
-2. **✅ All 24 LEDs Mapped**: Every LED has a clear layer[x].light[y] assignment
-3. **✅ Consistent Direction Mapping**: Rings use cardinal, Altar/Base use ordinal
-4. **✅ Hardware Alignment**: Matches the firmware's LED channel lookup table
-5. **✅ No Unused Layers**: All 6 layers have dedicated physical hardware
-
-The previous "complex overlapping" model was incorrect - the actual architecture is elegantly simple and consistent.
-
 ---
 
 # Command Packet Structure Documentation
@@ -97,8 +81,6 @@ The tower communication uses **20-byte command packets** that consist of:
 
 -   **Byte 0**: Command Type (always `0x00` for tower state commands)
 -   **Bytes 1-19**: Tower State Data (19 bytes containing complete tower state)
-
-The 19-byte tower state data is packed/unpacked using the `rtdt_pack_state` and `rtdt_unpack_state` functions from `udtTowerState.ts`, which match the firmware implementation exactly.
 
 ## Complete 20-Byte Command Packet Structure
 
