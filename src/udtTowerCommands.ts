@@ -70,7 +70,7 @@ export class UdtTowerCommands {
     private async sendTowerCommandDirect(command: Uint8Array): Promise<void> {
         try {
             const cmdStr = commandToPacketString(command);
-            this.deps.logDetail && this.deps.logger.debug(`packet(s) sent: ${cmdStr}`, '[UDT]');
+            this.deps.logDetail && this.deps.logger.debug(`SND: ${cmdStr}`, '[UDT][CMD]');
             if (!this.deps.bleConnection.txCharacteristic || !this.deps.bleConnection.isConnected) {
                 this.deps.logger.warn('Tower is not connected', '[UDT]');
                 return;
@@ -468,7 +468,7 @@ export class UdtTowerCommands {
     async breakSeal(seal: SealIdentifier, volume?: number): Promise<void> {
         // Get the volume to use
         const actualVolume = volume !== undefined ? volume : this.deps.getCurrentTowerState().audio.volume;
-        
+
         // Update tower's internal volume state first - tower firmware ignores volume in sound commands
         // and only uses its internal global volume state
         if (actualVolume > 0) {
@@ -477,7 +477,7 @@ export class UdtTowerCommands {
             stateWithVolume.audio = { sample: 0, loop: false, volume: actualVolume };
             await this.sendTowerStateStateful(stateWithVolume);
         }
-        
+
         this.deps.logger.info('Playing tower seal sound', '[UDT]');
         await this.playSoundStateful(TOWER_AUDIO_LIBRARY.TowerSeal.value, false, actualVolume);
 
@@ -485,7 +485,7 @@ export class UdtTowerCommands {
         // For each cardinal direction, light both corners that include that direction
         const sideCorners: { [key in TowerSide]: [TowerCorner, TowerCorner] } = {
             north: ['northeast', 'northwest'],
-            east: ['northeast', 'southeast'], 
+            east: ['northeast', 'southeast'],
             south: ['southeast', 'southwest'],
             west: ['southwest', 'northwest']
         };

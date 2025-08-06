@@ -15,7 +15,9 @@ import UltimateDarkTower, {
   TOWER_LAYERS,
   RING_LIGHT_POSITIONS,
   LEDGE_BASE_LIGHT_POSITIONS,
-  GLYPHS
+  GLYPHS,
+  VOLUME_DESCRIPTIONS,
+  VOLUME_ICONS
 } from '../../src';
 import { logger, DOMOutput, ConsoleOutput } from '../../src/udtLogger';
 import { rtdt_pack_state, rtdt_unpack_state, type TowerState } from '../../src/udtTowerState';
@@ -1533,9 +1535,9 @@ const refreshStatusPacket = () => {
     const packedState = Array.from(buffer);
     updateStatusPacketDisplay(packedState);
 
-    logger.info("Status packet refreshed", '[Status Packet]');
+    logger.info("Status packet refreshed", '[TC]');
   } catch (error) {
-    logger.error(`Failed to refresh status packet: ${error}`, '[Status Packet]');
+    logger.error(`Failed to refresh status packet: ${error}`, '[TC]');
     updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
   }
 }
@@ -1594,7 +1596,7 @@ const getGlyphsFacingDirection = (direction: TowerSide) => {
     return Tower.getGlyphsFacingDirection(direction);
   } catch (error) {
     console.error('Error getting glyphs facing direction:', error);
-    logger.error('Error getting glyphs facing direction: ' + error, '[Glyphs]');
+    logger.error('Error getting glyphs facing direction: ' + error, '[TC]');
     return [];
   }
 };
@@ -1605,11 +1607,9 @@ const glyphLightStates = new Set(); // Set of glyph names that have lights on
 // Helper function to get current doorway lights based on glyph positions and states
 const getCurrentDoorwayLights = (): Array<DoorwayLight> => {
   const doorwayLights: Array<DoorwayLight> = [];
-  logger.debug(`Getting current doorway lights for ${glyphLightStates.size} lit glyphs`, '[Glyphs]');
 
   for (const glyphName of glyphLightStates) {
     const currentPosition = Tower.getGlyphPosition(glyphName as any);
-    logger.debug(`Glyph ${glyphName} current position: ${currentPosition}`, '[Glyphs]');
 
     if (currentPosition) {
       const level = GLYPHS[glyphName as keyof typeof GLYPHS].level;
@@ -1619,13 +1619,11 @@ const getCurrentDoorwayLights = (): Array<DoorwayLight> => {
         style: 'on'
       };
       doorwayLights.push(lightCommand);
-      logger.debug(`Added light command: ${JSON.stringify(lightCommand)}`, '[Glyphs]');
     } else {
-      logger.warn(`Could not get position for glyph ${glyphName}`, '[Glyphs]');
+      logger.warn(`Could not get position for glyph ${glyphName}`, '[TC]');
     }
   }
 
-  logger.debug(`Total doorway lights to restore: ${doorwayLights.length}`, '[Glyphs]');
   return doorwayLights;
 };
 
@@ -1670,8 +1668,6 @@ const toggleGlyphLight = async (element: HTMLElement) => {
   try {
     const lightEffect = isLit ? 'on' : 'off';
 
-    logger.info(`Toggling light ${lightEffect} for glyph ${glyphAtPosition}`, '[Glyphs]');
-
     // Update the glyph light tracking
     if (isLit) {
       glyphLightStates.add(glyphAtPosition);
@@ -1693,16 +1689,13 @@ const toggleGlyphLight = async (element: HTMLElement) => {
       // Get all current doorway lights and send them together
       const allDoorwayLights = getCurrentDoorwayLights();
       await Tower.Lights({ doorway: allDoorwayLights });
-      logger.info(`Successfully turned on light for glyph ${glyphAtPosition}. Active lights: ${allDoorwayLights.length}`, '[Glyphs]');
     } else {
       // Send explicit off command for this specific light
       await Tower.Lights({ doorway: [specificLightCommand] });
-      logger.info(`Successfully turned off light for glyph ${glyphAtPosition}`, '[Glyphs]');
     }
 
   } catch (error) {
-    console.error('Error toggling glyph light:', error);
-    logger.error('Error toggling glyph light: ' + error, '[Glyphs]');
+    logger.error('Error toggling glyph light: ' + error, '[TC]');
 
     // Revert the visual state and glyph tracking if tower command failed
     element.classList.toggle('glyph-lit');
@@ -1741,10 +1734,8 @@ const enhancedMoveGlyph = async () => {
   const selectedGlyph = glyphSelect.value;
   const targetSide = sideSelect.value;
 
-  logger.debug(`UI Selection: glyph=${selectedGlyph}, targetSide=${targetSide}`, '[Glyphs]');
-
   if (!selectedGlyph || !targetSide) {
-    logger.warn('Please select a glyph and target side', '[Glyphs]');
+    logger.warn('Please select a glyph and target side', '[TC]');
     return;
   }
 
@@ -1753,7 +1744,7 @@ const enhancedMoveGlyph = async () => {
     const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph as Glyphs);
 
     if (!currentGlyphPosition) {
-      logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, '[Glyphs]');
+      logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, '[TC]');
       return;
     }
 
@@ -1766,7 +1757,7 @@ const enhancedMoveGlyph = async () => {
     const targetSideIndex = sides.indexOf(targetSide);
 
     if (currentSideIndex === -1 || targetSideIndex === -1) {
-      logger.error('Invalid current or target side', '[Glyphs]');
+      logger.error('Invalid current or target side', '[TC]');
       return;
     }
 
@@ -1774,7 +1765,7 @@ const enhancedMoveGlyph = async () => {
     let rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
 
     if (rotationSteps === 0) {
-      logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, '[Glyphs]');
+      logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, '[TC]');
       return;
     }
 
@@ -1789,9 +1780,6 @@ const enhancedMoveGlyph = async () => {
       const currentGlyphIndex = sides.indexOf(currentGlyphPosition);
       const targetGlyphIndex = sides.indexOf(targetSide);
 
-      // Debug logging to understand the calculation
-      logger.debug(`Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`, '[Glyphs]');
-
       // Calculate how many steps the glyph needs to move
       let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
 
@@ -1799,7 +1787,6 @@ const enhancedMoveGlyph = async () => {
       const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
       targetDrumPosition = sides[newDrumIndex];
 
-      logger.debug(`Move calculation result: glyphSteps=${glyphSteps}, newDrumIndex=${newDrumIndex}, targetDrumPosition=${targetDrumPosition}`, '[Glyphs]');
     }
 
     // Set positions for all three drums
@@ -1807,7 +1794,7 @@ const enhancedMoveGlyph = async () => {
     const middlePosition = glyphLevel === 'middle' ? targetDrumPosition : Tower.getCurrentDrumPosition('middle');
     const bottomPosition = glyphLevel === 'bottom' ? targetDrumPosition : Tower.getCurrentDrumPosition('bottom');
 
-    logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, '[Glyphs]');
+    logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, '[TC]');
 
     // Execute the rotation with all three drum positions
     await Tower.rotateWithState(topPosition as TowerSide, middlePosition as TowerSide, bottomPosition as TowerSide);
@@ -1822,41 +1809,19 @@ const enhancedMoveGlyph = async () => {
         // Restore all lights on the physical tower based on current glyph positions
         const allDoorwayLights = getCurrentDoorwayLights();
         if (allDoorwayLights.length > 0) {
-          logger.info(`About to restore ${allDoorwayLights.length} lights: ${JSON.stringify(allDoorwayLights)}`, '[Glyphs]');
           await Tower.Lights({ doorway: allDoorwayLights });
-          logger.info(`Successfully restored ${allDoorwayLights.length} lights after glyph movement`, '[Glyphs]');
-        } else {
-          logger.warn('No lights to restore after glyph movement', '[Glyphs]');
         }
       } catch (error) {
-        logger.error('Error restoring lights after glyph move: ' + error, '[Glyphs]');
+        logger.error('Error restoring lights after glyph move: ' + error, '[TC]');
       }
     }, 1000);
 
-
-    logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, '[Glyphs]');
+    logger.info(`Moved ${selectedGlyph} glyph to ${targetSide} position`, '[TC]');
 
   } catch (error) {
-    console.error('Error moving glyph:', error);
-    logger.error('Error moving glyph: ' + error, '[Glyphs]');
+    logger.error('Error moving glyph: ' + error, '[TC]');
   }
 };
-
-// Volume level descriptions (firmware: 0=loudest, 1=medium, 2=quiet, 3=mute)
-const VOLUME_DESCRIPTIONS = {
-  0: 'Loud',
-  1: 'Medium',
-  2: 'Quiet',
-  3: 'Mute'
-} as const;
-
-// Volume level icons
-const VOLUME_ICONS = {
-  0: '🔊', // Loud - biggest speaker
-  1: '🔉', // Medium - medium speaker
-  2: '🔈', // Quiet - small speaker
-  3: '🔇'  // Mute - muted speaker
-} as const;
 
 // Local volume tracking to avoid conflicts with tower state
 let localVolume = 0;
@@ -1864,15 +1829,13 @@ let localVolume = 0;
 // Volume control functions
 const volumeUp = async () => {
   try {
-    logger.debug(`volumeUp called: current localVolume = ${localVolume}`, '[Volume]');
     const newVolume = Math.min(localVolume + 1, 3); // Clamp to max 3
 
     if (newVolume === localVolume) {
-      logger.info('Volume is already at maximum (3)', '[Volume]');
       return;
     }
 
-    logger.info(`Setting volume from ${localVolume} to ${newVolume}`, '[Volume]');
+    logger.info(`Setting volume from ${localVolume} to ${newVolume}`, '[TC]');
 
     // Update local volume first
     localVolume = newVolume;
@@ -1882,7 +1845,7 @@ const volumeUp = async () => {
     const newState = { ...currentState };
     newState.audio = { ...currentState.audio, volume: newVolume };
 
-    logger.debug(`Sending tower state with volume: ${newState.audio.volume}`, '[Volume]');
+    logger.debug(`Sending tower state with volume: ${newState.audio.volume}`, '[TC]');
 
     // Send the updated state to the tower
     await Tower.sendTowerState(newState);
@@ -1893,9 +1856,8 @@ const volumeUp = async () => {
     // Update the display
     updateVolumeDisplay(newVolume);
 
-    logger.info(`Volume increased to ${newVolume}`, '[Volume]');
   } catch (error) {
-    logger.error(`Error increasing volume: ${error}`, '[Volume]');
+    logger.error(`Error increasing volume: ${error}`, '[TC]');
   }
 };
 
@@ -1904,7 +1866,6 @@ const volumeDown = async () => {
     const newVolume = Math.max(localVolume - 1, 0); // Clamp to min 0
 
     if (newVolume === localVolume) {
-      logger.info('Volume is already at minimum (0)', '[Volume]');
       return;
     }
 
@@ -1927,9 +1888,8 @@ const volumeDown = async () => {
     // Update the display
     updateVolumeDisplay(newVolume);
 
-    logger.info(`Volume decreased to ${newVolume}`, '[Volume]');
   } catch (error) {
-    logger.error(`Error decreasing volume: ${error}`, '[Volume]');
+    logger.error(`Error decreasing volume: ${error}`, '[TC]');
   }
 };
 
@@ -1953,12 +1913,9 @@ const initializeVolumeDisplay = () => {
   try {
     const currentState = Tower.getCurrentTowerState();
     localVolume = currentState.audio.volume;
-    logger.info(`Initialized volume display: tower volume = ${currentState.audio.volume}, localVolume = ${localVolume}`, '[Volume]');
     updateVolumeDisplay(localVolume);
   } catch (error) {
-    logger.debug('Could not initialize volume display, tower may not be connected yet', '[Volume]');
-    localVolume = 0; // Default to 0 if we can't get tower state
-    logger.info(`Initialized volume display with default: localVolume = ${localVolume}`, '[Volume]');
+    localVolume = 0;
   }
 };
 

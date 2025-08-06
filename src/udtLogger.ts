@@ -122,25 +122,25 @@ export class DOMOutput implements LogOutput {
                 const logLine = document.createElement('div');
                 logLine.className = `log-line log-${entry.level}`;
                 logLine.textContent = `[${timeStr}] ${entry.message}`;
-                
+
                 this.container!.appendChild(logLine);
             }
         });
 
         // Auto-scroll to bottom
         this.container.scrollTop = this.container.scrollHeight;
-        
+
         // Update buffer size display
         this.updateBufferSizeDisplay();
     }
 
     private getEnabledLevelsFromCheckboxes(): Set<LogLevel> {
         const enabledLevels = new Set<LogLevel>();
-        
+
         if (typeof document === 'undefined') {
             return enabledLevels;
         }
-        
+
         // Check for checkboxes with pattern logLevel-{level}
         const checkboxes = ['debug', 'info', 'warn', 'error'];
         checkboxes.forEach(level => {
@@ -157,27 +157,27 @@ export class DOMOutput implements LogOutput {
         if (typeof document === 'undefined') {
             return '';
         }
-        
+
         const textFilterInput = document.getElementById('logTextFilter') as HTMLInputElement;
         return textFilterInput?.value?.trim() || '';
     }
-    
+
     private updateBufferSizeDisplay(): void {
         if (typeof document === 'undefined') {
             return;
         }
-        
+
         const bufferSizeElement = document.getElementById('logBufferSize');
         if (!bufferSizeElement) {
             return;
         }
-        
+
         // Count currently displayed entries
         const displayedCount = this.container?.children?.length || 0;
-        
+
         // Total entries in buffer
         const totalCount = this.allEntries.length;
-        
+
         // Update display
         bufferSizeElement.textContent = `${displayedCount} / ${totalCount}`;
     }
@@ -193,17 +193,19 @@ export class DOMOutput implements LogOutput {
         if (this.container) {
             this.container.innerHTML = '';
         }
+        // Update buffer size display to show 0/0
+        this.updateBufferSizeDisplay();
     }
-    
+
     // Debug methods to help diagnose filtering issues
     public getEntryCount(): number {
         return this.allEntries.length;
     }
-    
+
     public getEnabledLevels(): string[] {
         return Array.from(this.getEnabledLevelsFromCheckboxes());
     }
-    
+
     public debugEntries(): void {
         console.log('DOMOutput Debug:');
         console.log('- Container exists:', !!this.container);
@@ -257,10 +259,10 @@ export class Logger {
     private shouldLog(level: LogLevel): boolean {
         if (this.enabledLevels.has('all')) return true;
         if (level === 'all') return true;
-        
+
         // If 'all' is not enabled, check if this specific level is enabled
         if (this.enabledLevels.has(level)) return true;
-        
+
         // Legacy support: if only one level is enabled and it's not 'all',
         // treat it as a minimum level threshold
         if (this.enabledLevels.size === 1) {
@@ -272,7 +274,7 @@ export class Logger {
                 return currentIndex >= minIndex;
             }
         }
-        
+
         return false;
     }
 
@@ -316,7 +318,7 @@ export class Logger {
      */
     logTowerStateChange(oldState: TowerState, newState: TowerState, source: string, enableDetailedLogging: boolean = false): void {
         this.info(`Tower state updated from ${source}`, '[TowerState]');
-        
+
         if (enableDetailedLogging) {
             const changes = this.computeStateChanges(oldState, newState);
             if (changes.length > 0) {
@@ -341,7 +343,7 @@ export class Logger {
             const drumNames = ['top', 'middle', 'bottom'];
             const oldDrum = oldState.drum[i];
             const newDrum = newState.drum[i];
-            
+
             if (oldDrum.position !== newDrum.position) {
                 const positions = ['north', 'east', 'south', 'west'];
                 changes.push(`${drumNames[i]} drum: ${positions[oldDrum.position]} → ${positions[newDrum.position]}`);
@@ -363,7 +365,7 @@ export class Logger {
             for (let lightIndex = 0; lightIndex < 4; lightIndex++) {
                 const oldLight = oldState.layer[layerIndex].light[lightIndex];
                 const newLight = newState.layer[layerIndex].light[lightIndex];
-                
+
                 const lightChanges: string[] = [];
                 if (oldLight.effect !== newLight.effect) {
                     lightChanges.push(`effect ${oldLight.effect} → ${newLight.effect}`);
@@ -371,7 +373,7 @@ export class Logger {
                 if (oldLight.loop !== newLight.loop) {
                     lightChanges.push(`loop ${oldLight.loop} → ${newLight.loop}`);
                 }
-                
+
                 if (lightChanges.length > 0) {
                     changes.push(`${layerNames[layerIndex]} light ${lightIndex}: ${lightChanges.join(', ')}`);
                 }

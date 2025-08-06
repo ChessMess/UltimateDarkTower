@@ -351,3 +351,19 @@ export const TOWER_AUDIO_LIBRARY: AudioLibrary = {
   TowerSeal: { name: "Tower Seal", value: 0x70, category: "Seals" },
   TowerSkullDropped: { name: "Tower Skull Dropped", value: 0x71, category: "State" },
 }
+
+// Volume level descriptions (firmware: 0=loudest, 1=medium, 2=quiet, 3=mute)
+export const VOLUME_DESCRIPTIONS = {
+  0: 'Loud',
+  1: 'Medium',
+  2: 'Quiet',
+  3: 'Mute'
+} as const;
+
+// Volume level icons
+export const VOLUME_ICONS = {
+  0: '🔊', // Loud - biggest speaker
+  1: '🔉', // Medium - medium speaker
+  2: '🔈', // Quiet - small speaker
+  3: '🔇'  // Mute - muted speaker
+} as const;

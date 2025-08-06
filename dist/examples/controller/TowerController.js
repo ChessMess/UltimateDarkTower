@@ -28,7 +28,7 @@
   };
 
   // src/udtConstants.ts
-  var UART_SERVICE_UUID, UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID, TOWER_DEVICE_NAME, DIS_SERVICE_UUID, DIS_MANUFACTURER_NAME_UUID, DIS_MODEL_NUMBER_UUID, DIS_SERIAL_NUMBER_UUID, DIS_HARDWARE_REVISION_UUID, DIS_FIRMWARE_REVISION_UUID, DIS_SOFTWARE_REVISION_UUID, DIS_SYSTEM_ID_UUID, DIS_IEEE_REGULATORY_UUID, DIS_PNP_ID_UUID, TOWER_COMMANDS, TC, DRUM_PACKETS, GLYPHS, AUDIO_COMMAND_POS, SKULL_DROP_COUNT_POS, drumPositionCmds, LIGHT_EFFECTS, TOWER_LIGHT_SEQUENCES, TOWER_MESSAGES, VOLTAGE_LEVELS, TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LED_CHANNEL_LOOKUP, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH, TOWER_AUDIO_LIBRARY;
+  var UART_SERVICE_UUID, UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID, TOWER_DEVICE_NAME, DIS_SERVICE_UUID, DIS_MANUFACTURER_NAME_UUID, DIS_MODEL_NUMBER_UUID, DIS_SERIAL_NUMBER_UUID, DIS_HARDWARE_REVISION_UUID, DIS_FIRMWARE_REVISION_UUID, DIS_SOFTWARE_REVISION_UUID, DIS_SYSTEM_ID_UUID, DIS_IEEE_REGULATORY_UUID, DIS_PNP_ID_UUID, TOWER_COMMANDS, TC, DRUM_PACKETS, GLYPHS, AUDIO_COMMAND_POS, SKULL_DROP_COUNT_POS, drumPositionCmds, LIGHT_EFFECTS, TOWER_LIGHT_SEQUENCES, TOWER_MESSAGES, VOLTAGE_LEVELS, TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LED_CHANNEL_LOOKUP, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH, TOWER_AUDIO_LIBRARY, VOLUME_DESCRIPTIONS, VOLUME_ICONS;
   var init_udtConstants = __esm({
     "src/udtConstants.ts"() {
       UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
@@ -330,6 +330,22 @@
         RotateStart: { name: "Rotate Start", value: 111, category: "Seals" },
         TowerSeal: { name: "Tower Seal", value: 112, category: "Seals" },
         TowerSkullDropped: { name: "Tower Skull Dropped", value: 113, category: "State" }
+      };
+      VOLUME_DESCRIPTIONS = {
+        0: "Loud",
+        1: "Medium",
+        2: "Quiet",
+        3: "Mute"
+      };
+      VOLUME_ICONS = {
+        0: "\u{1F50A}",
+        // Loud - biggest speaker
+        1: "\u{1F509}",
+        // Medium - medium speaker
+        2: "\u{1F508}",
+        // Quiet - small speaker
+        3: "\u{1F507}"
+        // Mute - muted speaker
       };
     }
   });
@@ -642,6 +658,7 @@
       if (this.container) {
         this.container.innerHTML = "";
       }
+      this.updateBufferSizeDisplay();
     }
     // Debug methods to help diagnose filtering issues
     getEntryCount() {
@@ -956,7 +973,7 @@
         MECH_JIGGLE_TRIGGERED: true,
         MECH_UNEXPECTED_TRIGGER: true,
         MECH_DURATION: true,
-        DIFFERENTIAL_READINGS: true,
+        DIFFERENTIAL_READINGS: false,
         BATTERY_READING: true,
         CALIBRATION_FINISHED: true,
         LOG_ALL: false
@@ -969,7 +986,10 @@
           receivedData[i] = target.value.getUint8(i);
         }
         const { cmdKey } = this.responseProcessor.getTowerCommand(receivedData[0]);
-        this.logger.info(`Command: ${cmdKey}`, "[UDT][BLE][RESPONSE]");
+        const shouldLogCommand = this.logTowerResponses && this.responseProcessor.shouldLogResponse(cmdKey, this.logTowerResponseConfig) && (!this.responseProcessor.isBatteryResponse(cmdKey) || this.batteryNotifyEnabled);
+        if (shouldLogCommand) {
+          this.logger.info(`${cmdKey}`, "[UDT][BLE][RCVD]");
+        }
         if (this.logTowerResponses) {
           this.logTowerResponse(receivedData);
         }
@@ -984,7 +1004,7 @@
           const batteryNotifyFrequencyPassed = Date.now() - this.lastBatteryNotification >= this.batteryNotifyFrequency;
           const shouldNotify = this.batteryNotifyEnabled && (this.batteryNotifyOnValueChangeOnly ? didBatteryLevelChange || this.lastBatteryPercentage === "" : batteryNotifyFrequencyPassed);
           if (shouldNotify) {
-            this.logger.info(`Tower response: ${this.responseProcessor.commandToString(receivedData).join(" ")}`, "[UDT]");
+            this.logger.info(`${this.responseProcessor.commandToString(receivedData).join(" ")}`, "[UDT][BLE]");
             this.lastBatteryNotification = Date.now();
             this.lastBatteryPercentage = batteryPercentage;
             this.callbacks.onBatteryLevelNotify(millivolts);
@@ -996,15 +1016,15 @@
         }
       };
       this.bleAvailabilityChange = (event) => {
-        this.logger.info("Bluetooth availability changed", "[UDT]");
+        this.logger.info("Bluetooth availability changed", "[UDT][BLE]");
         const availability = event.value;
         if (!availability && this.isConnected) {
-          this.logger.warn("Bluetooth became unavailable - handling disconnection", "[UDT]");
+          this.logger.warn("Bluetooth became unavailable - handling disconnection", "[UDT][BLE]");
           this.handleDisconnection();
         }
       };
       this.onTowerDeviceDisconnected = (event) => {
-        this.logger.warn(`Tower device disconnected unexpectedly: ${event.type}`, "[UDT]");
+        this.logger.warn(`Tower device disconnected unexpectedly: ${event.type}`, "[UDT][BLE]");
         this.handleDisconnection();
       };
       this.logger = logger2;
@@ -1041,7 +1061,7 @@
           this.onRxCharacteristicValueChanged
         );
         this.TowerDevice.addEventListener("gattserverdisconnected", this.onTowerDeviceDisconnected);
-        this.logger.info("Tower connection complete", "[UDT]");
+        this.logger.info("Tower connection complete", "[UDT][BLE]");
         this.isConnected = true;
         this.lastSuccessfulCommand = Date.now();
         this.lastBatteryHeartbeat = Date.now();
@@ -1051,7 +1071,7 @@
         }
         this.callbacks.onTowerConnect();
       } catch (error) {
-        this.logger.error(`Tower Connection Error: ${error}`, "[UDT]");
+        this.logger.error(`Tower Connection Error: ${error}`, "[UDT][BLE]");
         this.isConnected = false;
         this.callbacks.onTowerDisconnect();
       }
@@ -1098,7 +1118,7 @@
       if (this.responseProcessor.isBatteryResponse(cmdKey)) {
         return;
       }
-      this.logger.info(`Tower response: ${this.responseProcessor.commandToString(receivedData).join(" ")}`, "[UDT]");
+      this.logger.info(`${this.responseProcessor.commandToString(receivedData).join(" ")}`, "[UDT][BLE]");
     }
     handleDisconnection() {
       this.isConnected = false;
@@ -1132,7 +1152,7 @@
         return;
       }
       if (!this.TowerDevice.gatt.connected) {
-        this.logger.warn("GATT connection lost detected during health check", "[UDT]");
+        this.logger.warn("GATT connection lost detected during health check", "[UDT][BLE]");
         this.handleDisconnection();
         return;
       }
@@ -1141,29 +1161,28 @@
         const timeoutThreshold = this.performingLongCommand ? this.longTowerCommandTimeout : this.batteryHeartbeatTimeout;
         if (timeSinceLastBatteryHeartbeat > timeoutThreshold) {
           const operationContext = this.performingLongCommand ? " during long command operation" : "";
-          this.logger.warn(`Battery heartbeat timeout detected${operationContext} - no battery status received in ${timeSinceLastBatteryHeartbeat}ms (expected every ~200ms)`, "[UDT]");
+          this.logger.warn(`Battery heartbeat timeout detected${operationContext} - no battery status received in ${timeSinceLastBatteryHeartbeat}ms (expected every ~200ms)`, "[UDT][BLE]");
           if (this.performingLongCommand) {
-            this.logger.info("Ignoring battery heartbeat timeout during long command - this is expected behavior", "[UDT]");
+            this.logger.info("Ignoring battery heartbeat timeout during long command - this is expected behavior", "[UDT][BLE]");
             return;
           }
           if (this.batteryHeartbeatVerifyConnection) {
-            this.logger.info("Verifying tower connection status before triggering disconnection...", "[UDT]");
+            this.logger.info("Verifying tower connection status before triggering disconnection...", "[UDT][BLE]");
             if (((_b = (_a = this.TowerDevice) == null ? void 0 : _a.gatt) == null ? void 0 : _b.connected) && this.rxCharacteristic) {
-              this.logger.info("GATT connection and characteristics still available - heartbeat timeout may be temporary", "[UDT]");
+              this.logger.info("GATT connection and characteristics still available - heartbeat timeout may be temporary", "[UDT][BLE]");
               this.lastBatteryHeartbeat = Date.now();
-              this.logger.info("Reset battery heartbeat timer - will monitor for another timeout period", "[UDT]");
+              this.logger.info("Reset battery heartbeat timer - will monitor for another timeout period", "[UDT][BLE]");
               return;
             }
           }
-          this.logger.warn("Tower possibly disconnected due to battery depletion or power loss", "[UDT]");
+          this.logger.warn("Tower possibly disconnected due to battery depletion or power loss", "[UDT][BLE]");
           this.handleDisconnection();
           return;
         }
       }
       const timeSinceLastResponse = Date.now() - this.lastSuccessfulCommand;
       if (timeSinceLastResponse > this.connectionTimeoutThreshold) {
-        this.logger.warn("General connection timeout detected - no responses received", "[UDT]");
-        this.logger.warn("Heartbeat timeout - connection appears lost", "[UDT]");
+        this.logger.warn("General connection timeout detected - no responses received", "[UDT][BLE]");
         this.handleDisconnection();
       }
     }
@@ -1200,7 +1219,7 @@
           return true;
         }
       } catch (error) {
-        this.logger.warn("GATT characteristics or services no longer accessible", "[UDT]");
+        this.logger.warn("GATT characteristics or services no longer accessible", "[UDT][BLE]");
         return false;
       }
       return true;
@@ -1229,11 +1248,11 @@
     async readDeviceInformation() {
       var _a, _b;
       if (!((_b = (_a = this.TowerDevice) == null ? void 0 : _a.gatt) == null ? void 0 : _b.connected)) {
-        this.logger.warn("Cannot read device information - not connected", "[UDT]");
+        this.logger.warn("Cannot read device information - not connected", "[UDT][BLE]");
         return;
       }
       try {
-        this.logger.info("Reading device information service...", "[UDT]");
+        this.logger.info("Reading device information service...", "[UDT][BLE]");
         const disService = await this.TowerDevice.gatt.getPrimaryService(DIS_SERVICE_UUID);
         this.deviceInformation = {};
         const characteristicMap = [
@@ -1253,26 +1272,26 @@
             const value = await characteristic.readValue();
             if (uuid === DIS_SYSTEM_ID_UUID || uuid === DIS_PNP_ID_UUID) {
               const hexValue = Array.from(new Uint8Array(value.buffer)).map((b) => b.toString(16).padStart(2, "0")).join(":");
-              this.logger.info(`Device ${name}: ${hexValue}`, "[UDT]");
+              this.logger.info(`Device ${name}: ${hexValue}`, "[UDT][BLE]");
               this.deviceInformation[key] = hexValue;
             } else {
               const textValue = new TextDecoder().decode(value);
-              this.logger.info(`Device ${name}: ${textValue}`, "[UDT]");
+              this.logger.info(`Device ${name}: ${textValue}`, "[UDT][BLE]");
               this.deviceInformation[key] = textValue;
             }
           } catch (error) {
             if (logIfMissing) {
-              this.logger.debug(`Device ${name} characteristic not available`, "[UDT]");
+              this.logger.debug(`Device ${name} characteristic not available`, "[UDT][BLE]");
             }
           }
         }
         this.deviceInformation.lastUpdated = /* @__PURE__ */ new Date();
       } catch (error) {
-        this.logger.debug("Device Information Service not available", "[UDT]");
+        this.logger.debug("Device Information Service not available", "[UDT][BLE]");
       }
     }
     async cleanup() {
-      this.logger.info("Cleaning up UdtBleConnection instance", "[UDT]");
+      this.logger.info("Cleaning up UdtBleConnection instance", "[UDT][BLE]");
       this.stopConnectionMonitoring();
       if (this.TowerDevice) {
         this.TowerDevice.removeEventListener("gattserverdisconnected", this.onTowerDeviceDisconnected);
@@ -1688,7 +1707,7 @@
       var _a, _b, _c;
       try {
         const cmdStr = commandToPacketString(command);
-        this.deps.logDetail && this.deps.logger.debug(`packet(s) sent: ${cmdStr}`, "[UDT]");
+        this.deps.logDetail && this.deps.logger.debug(`SND: ${cmdStr}`, "[UDT][CMD]");
         if (!this.deps.bleConnection.txCharacteristic || !this.deps.bleConnection.isConnected) {
           this.deps.logger.warn("Tower is not connected", "[UDT]");
           return;
@@ -3968,9 +3987,9 @@ ${"-".repeat(60)}
       }
       const packedState = Array.from(buffer);
       updateStatusPacketDisplay(packedState);
-      logger.info("Status packet refreshed", "[Status Packet]");
+      logger.info("Status packet refreshed", "[TC]");
     } catch (error) {
-      logger.error(`Failed to refresh status packet: ${error}`, "[Status Packet]");
+      logger.error(`Failed to refresh status packet: ${error}`, "[TC]");
       updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
     }
   };
@@ -4018,17 +4037,15 @@ ${"-".repeat(60)}
       return Tower.getGlyphsFacingDirection(direction);
     } catch (error) {
       console.error("Error getting glyphs facing direction:", error);
-      logger.error("Error getting glyphs facing direction: " + error, "[Glyphs]");
+      logger.error("Error getting glyphs facing direction: " + error, "[TC]");
       return [];
     }
   };
   var glyphLightStates = /* @__PURE__ */ new Set();
   var getCurrentDoorwayLights = () => {
     const doorwayLights = [];
-    logger.debug(`Getting current doorway lights for ${glyphLightStates.size} lit glyphs`, "[Glyphs]");
     for (const glyphName of glyphLightStates) {
       const currentPosition = Tower.getGlyphPosition(glyphName);
-      logger.debug(`Glyph ${glyphName} current position: ${currentPosition}`, "[Glyphs]");
       if (currentPosition) {
         const level = GLYPHS[glyphName].level;
         const lightCommand = {
@@ -4037,12 +4054,10 @@ ${"-".repeat(60)}
           style: "on"
         };
         doorwayLights.push(lightCommand);
-        logger.debug(`Added light command: ${JSON.stringify(lightCommand)}`, "[Glyphs]");
       } else {
-        logger.warn(`Could not get position for glyph ${glyphName}`, "[Glyphs]");
+        logger.warn(`Could not get position for glyph ${glyphName}`, "[TC]");
       }
     }
-    logger.debug(`Total doorway lights to restore: ${doorwayLights.length}`, "[Glyphs]");
     return doorwayLights;
   };
   var toggleGlyphLight = async (element) => {
@@ -4071,7 +4086,6 @@ ${"-".repeat(60)}
     }
     try {
       const lightEffect = isLit ? "on" : "off";
-      logger.info(`Toggling light ${lightEffect} for glyph ${glyphAtPosition}`, "[Glyphs]");
       if (isLit) {
         glyphLightStates.add(glyphAtPosition);
       } else {
@@ -4086,14 +4100,11 @@ ${"-".repeat(60)}
       if (isLit) {
         const allDoorwayLights = getCurrentDoorwayLights();
         await Tower.Lights({ doorway: allDoorwayLights });
-        logger.info(`Successfully turned on light for glyph ${glyphAtPosition}. Active lights: ${allDoorwayLights.length}`, "[Glyphs]");
       } else {
         await Tower.Lights({ doorway: [specificLightCommand] });
-        logger.info(`Successfully turned off light for glyph ${glyphAtPosition}`, "[Glyphs]");
       }
     } catch (error) {
-      console.error("Error toggling glyph light:", error);
-      logger.error("Error toggling glyph light: " + error, "[Glyphs]");
+      logger.error("Error toggling glyph light: " + error, "[TC]");
       element.classList.toggle("glyph-lit");
       if (isLit) {
         glyphLightStates.delete(glyphAtPosition);
@@ -4115,50 +4126,30 @@ ${"-".repeat(60)}
     var _a;
     return ((_a = GLYPHS[glyph]) == null ? void 0 : _a.level) || "middle";
   };
-  var VOLUME_DESCRIPTIONS = {
-    0: "Loud",
-    1: "Medium",
-    2: "Quiet",
-    3: "Mute"
-  };
-  var VOLUME_ICONS = {
-    0: "\u{1F50A}",
-    // Loud - biggest speaker
-    1: "\u{1F509}",
-    // Medium - medium speaker
-    2: "\u{1F508}",
-    // Quiet - small speaker
-    3: "\u{1F507}"
-    // Mute - muted speaker
-  };
   var localVolume = 0;
   var volumeUp = async () => {
     try {
-      logger.debug(`volumeUp called: current localVolume = ${localVolume}`, "[Volume]");
       const newVolume = Math.min(localVolume + 1, 3);
       if (newVolume === localVolume) {
-        logger.info("Volume is already at maximum (3)", "[Volume]");
         return;
       }
-      logger.info(`Setting volume from ${localVolume} to ${newVolume}`, "[Volume]");
+      logger.info(`Setting volume from ${localVolume} to ${newVolume}`, "[TC]");
       localVolume = newVolume;
       const currentState = Tower.getCurrentTowerState();
       const newState = __spreadValues({}, currentState);
       newState.audio = __spreadProps(__spreadValues({}, currentState.audio), { volume: newVolume });
-      logger.debug(`Sending tower state with volume: ${newState.audio.volume}`, "[Volume]");
+      logger.debug(`Sending tower state with volume: ${newState.audio.volume}`, "[TC]");
       await Tower.sendTowerState(newState);
       await Tower.playSoundStateful(33, false, newVolume);
       updateVolumeDisplay(newVolume);
-      logger.info(`Volume increased to ${newVolume}`, "[Volume]");
     } catch (error) {
-      logger.error(`Error increasing volume: ${error}`, "[Volume]");
+      logger.error(`Error increasing volume: ${error}`, "[TC]");
     }
   };
   var volumeDown = async () => {
     try {
       const newVolume = Math.max(localVolume - 1, 0);
       if (newVolume === localVolume) {
-        logger.info("Volume is already at minimum (0)", "[Volume]");
         return;
       }
       localVolume = newVolume;
@@ -4170,9 +4161,8 @@ ${"-".repeat(60)}
         await Tower.playSoundStateful(33, false, newVolume);
       }
       updateVolumeDisplay(newVolume);
-      logger.info(`Volume decreased to ${newVolume}`, "[Volume]");
     } catch (error) {
-      logger.error(`Error decreasing volume: ${error}`, "[Volume]");
+      logger.error(`Error decreasing volume: ${error}`, "[TC]");
     }
   };
   var updateVolumeDisplay = (volume) => {
@@ -4191,12 +4181,9 @@ ${"-".repeat(60)}
     try {
       const currentState = Tower.getCurrentTowerState();
       localVolume = currentState.audio.volume;
-      logger.info(`Initialized volume display: tower volume = ${currentState.audio.volume}, localVolume = ${localVolume}`, "[Volume]");
       updateVolumeDisplay(localVolume);
     } catch (error) {
-      logger.debug("Could not initialize volume display, tower may not be connected yet", "[Volume]");
       localVolume = 0;
-      logger.info(`Initialized volume display with default: localVolume = ${localVolume}`, "[Volume]");
     }
   };
   window.connectToTower = connectToTower;

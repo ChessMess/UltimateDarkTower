@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TOWER_AUDIO_LIBRARY = exports.STATE_DATA_LENGTH = exports.LIGHT_INDEX_TO_DIRECTION = exports.LAYER_TO_POSITION = exports.LED_CHANNEL_LOOKUP = exports.LEDGE_BASE_LIGHT_POSITIONS = exports.RING_LIGHT_POSITIONS = exports.TOWER_LAYERS = exports.VOLTAGE_LEVELS = exports.TOWER_MESSAGES = exports.TOWER_LIGHT_SEQUENCES = exports.LIGHT_EFFECTS = exports.drumPositionCmds = exports.SKULL_DROP_COUNT_POS = exports.AUDIO_COMMAND_POS = exports.GLYPHS = exports.DRUM_PACKETS = exports.TC = exports.TOWER_COMMANDS = exports.DIS_PNP_ID_UUID = exports.DIS_IEEE_REGULATORY_UUID = exports.DIS_SYSTEM_ID_UUID = exports.DIS_SOFTWARE_REVISION_UUID = exports.DIS_FIRMWARE_REVISION_UUID = exports.DIS_HARDWARE_REVISION_UUID = exports.DIS_SERIAL_NUMBER_UUID = exports.DIS_MODEL_NUMBER_UUID = exports.DIS_MANUFACTURER_NAME_UUID = exports.DIS_SERVICE_UUID = exports.TOWER_DEVICE_NAME = exports.UART_RX_CHARACTERISTIC_UUID = exports.UART_TX_CHARACTERISTIC_UUID = exports.UART_SERVICE_UUID = void 0;
+exports.VOLUME_ICONS = exports.VOLUME_DESCRIPTIONS = exports.TOWER_AUDIO_LIBRARY = exports.STATE_DATA_LENGTH = exports.LIGHT_INDEX_TO_DIRECTION = exports.LAYER_TO_POSITION = exports.LED_CHANNEL_LOOKUP = exports.LEDGE_BASE_LIGHT_POSITIONS = exports.RING_LIGHT_POSITIONS = exports.TOWER_LAYERS = exports.VOLTAGE_LEVELS = exports.TOWER_MESSAGES = exports.TOWER_LIGHT_SEQUENCES = exports.LIGHT_EFFECTS = exports.drumPositionCmds = exports.SKULL_DROP_COUNT_POS = exports.AUDIO_COMMAND_POS = exports.GLYPHS = exports.DRUM_PACKETS = exports.TC = exports.TOWER_COMMANDS = exports.DIS_PNP_ID_UUID = exports.DIS_IEEE_REGULATORY_UUID = exports.DIS_SYSTEM_ID_UUID = exports.DIS_SOFTWARE_REVISION_UUID = exports.DIS_FIRMWARE_REVISION_UUID = exports.DIS_HARDWARE_REVISION_UUID = exports.DIS_SERIAL_NUMBER_UUID = exports.DIS_MODEL_NUMBER_UUID = exports.DIS_MANUFACTURER_NAME_UUID = exports.DIS_SERVICE_UUID = exports.TOWER_DEVICE_NAME = exports.UART_RX_CHARACTERISTIC_UUID = exports.UART_TX_CHARACTERISTIC_UUID = exports.UART_SERVICE_UUID = void 0;
 // Nordic Semicondutor's UART/Serial IDs for Bluetooth LE
 exports.UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 exports.UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
@@ -281,5 +281,19 @@ exports.TOWER_AUDIO_LIBRARY = {
     RotateStart: { name: "Rotate Start", value: 0x6F, category: "Seals" },
     TowerSeal: { name: "Tower Seal", value: 0x70, category: "Seals" },
     TowerSkullDropped: { name: "Tower Skull Dropped", value: 0x71, category: "State" },
+};
+// Volume level descriptions (firmware: 0=loudest, 1=medium, 2=quiet, 3=mute)
+exports.VOLUME_DESCRIPTIONS = {
+    0: 'Loud',
+    1: 'Medium',
+    2: 'Quiet',
+    3: 'Mute'
+};
+// Volume level icons
+exports.VOLUME_ICONS = {
+    0: '🔊',
+    1: '🔉',
+    2: '🔈',
+    3: '🔇' // Mute - muted speaker
 };
 //# sourceMappingURL=udtConstants.js.map

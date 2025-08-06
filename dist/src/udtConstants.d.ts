@@ -252,3 +252,15 @@ export type AudioLibrary = {
     };
 };
 export declare const TOWER_AUDIO_LIBRARY: AudioLibrary;
+export declare const VOLUME_DESCRIPTIONS: {
+    readonly 0: "Loud";
+    readonly 1: "Medium";
+    readonly 2: "Quiet";
+    readonly 3: "Mute";
+};
+export declare const VOLUME_ICONS: {
+    readonly 0: "🔊";
+    readonly 1: "🔉";
+    readonly 2: "🔈";
+    readonly 3: "🔇";
+};

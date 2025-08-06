@@ -151,6 +151,8 @@ class DOMOutput {
         if (this.container) {
             this.container.innerHTML = '';
         }
+        // Update buffer size display to show 0/0
+        this.updateBufferSizeDisplay();
     }
     // Debug methods to help diagnose filtering issues
     getEntryCount() {
