@@ -5,44 +5,6 @@ const udtConstants_1 = require("./udtConstants");
 const udtTowerState_1 = require("./udtTowerState");
 class UdtCommandFactory {
     /**
-     * Creates a light command packet from a lights configuration object.
-     * @param lights - Light configuration specifying doorway, ledge, and base lights
-     * @returns Command packet for controlling tower lights
-     */
-    createLightPacketCommand(lights) {
-        let packetPos = null;
-        const command = new Uint8Array(20);
-        const doorways = lights === null || lights === void 0 ? void 0 : lights.doorway;
-        const ledges = lights === null || lights === void 0 ? void 0 : lights.ledge;
-        const bases = lights === null || lights === void 0 ? void 0 : lights.base;
-        doorways && doorways.forEach(dlt => {
-            packetPos = udtConstants_1.LIGHT_PACKETS.doorway[dlt.level][dlt.position];
-            const shouldBitShift = udtConstants_1.DOORWAY_LIGHTS_TO_BIT_SHIFT.includes(dlt.position);
-            command[packetPos] += udtConstants_1.LIGHT_EFFECTS[`${dlt.style}`] * (shouldBitShift ? 0x10 : 0x1);
-        });
-        ledges && ledges.forEach(llt => {
-            packetPos = udtConstants_1.LIGHT_PACKETS.ledge[llt.position];
-            const shouldBitShift = udtConstants_1.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT.includes(llt.position);
-            command[packetPos] += udtConstants_1.LIGHT_EFFECTS[`${llt.style}`] * (shouldBitShift ? 0x10 : 0x1);
-        });
-        bases && bases.forEach(blt => {
-            packetPos = udtConstants_1.LIGHT_PACKETS.base[blt.position.side][blt.position.level];
-            const shouldBitShift = udtConstants_1.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT.includes(blt.position.side);
-            command[packetPos] += udtConstants_1.LIGHT_EFFECTS[`${blt.style}`] * (shouldBitShift ? 0x10 : 0x1);
-        });
-        return command;
-    }
-    /**
-     * Creates a light override command packet.
-     * @param lightOverride - Light override value to send
-     * @returns Command packet for light override
-     */
-    createLightOverrideCommand(lightOverride) {
-        const lightOverrideCommand = new Uint8Array(20);
-        lightOverrideCommand[udtConstants_1.LIGHT_PACKETS.overrides] = lightOverride;
-        return lightOverrideCommand;
-    }
-    /**
      * Creates a rotation command packet for positioning tower drums.
      * @param top - Target position for top drum
      * @param middle - Target position for middle drum
@@ -66,15 +28,6 @@ class UdtCommandFactory {
         const sound = Number("0x" + Number(soundIndex).toString(16).padStart(2, '0'));
         soundCommand[udtConstants_1.AUDIO_COMMAND_POS] = sound;
         return soundCommand;
-    }
-    /**
-     * Updates a command packet with the current drum positions.
-     * @param commandPacket - The command packet to update with current drum positions
-     * @param currentPositions - Current drum positions to apply
-     */
-    updateCommandWithCurrentDrumPositions(commandPacket, currentPositions) {
-        commandPacket[udtConstants_1.DRUM_PACKETS.topMiddle] = currentPositions.topMiddle;
-        commandPacket[udtConstants_1.DRUM_PACKETS.bottom] = currentPositions.bottom;
     }
     /**
      * Creates a basic tower command packet with the specified command value.
@@ -150,25 +103,94 @@ class UdtCommandFactory {
             modifications.layer[layerIndex].light = [];
         }
         modifications.layer[layerIndex].light[lightIndex] = { effect, loop };
+        // Always clear audio state for LED commands to prevent audio persistence
+        modifications.audio = { sample: 0, loop: false, volume: 0 };
         return this.createStatefulCommand(currentState, modifications);
     }
     /**
-     * Creates a stateful audio command that only changes audio while preserving all other state.
-     * @param currentState - The current complete tower state
-     * @param sample - Audio sample index (0-127)
-     * @param loop - Whether to loop the audio
-     * @param volume - Audio volume (0-15), optional
-     * @returns 20-byte command packet
-     */
+ * Creates a stateful audio command that preserves all current tower state while adding audio.
+ * @param currentState - The current complete tower state
+ * @param sample - Audio sample index to play (0-127)
+ * @param loop - Whether to loop the audio
+ * @param volume - Audio volume (0-15), optional
+ * @returns 20-byte command packet
+ */
     createStatefulAudioCommand(currentState, sample, loop = false, volume) {
-        const audioMods = { sample, loop };
-        if (volume !== undefined) {
-            audioMods.volume = volume;
-        }
+        const audioMods = { sample, loop, volume: volume !== null && volume !== void 0 ? volume : 0 };
         const modifications = {
             audio: audioMods
         };
         return this.createStatefulCommand(currentState, modifications);
+    }
+    /**
+     * Creates a transient audio command that includes current tower state but doesn't persist audio state.
+     * This prevents audio from being included in subsequent commands.
+     * @param currentState - The current complete tower state
+     * @param sample - Audio sample index to play
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @returns Object containing the command packet and the state without audio for local tracking
+     */
+    createTransientAudioCommand(currentState, sample, loop = false, volume) {
+        // Create the command with audio
+        const audioMods = { sample, loop, volume: volume !== null && volume !== void 0 ? volume : 0 };
+        const modifications = {
+            audio: audioMods
+        };
+        const command = this.createStatefulCommand(currentState, modifications);
+        // Create state without audio for local tracking
+        const stateWithoutAudio = currentState ? Object.assign({}, currentState) : this.createEmptyTowerState();
+        // Reset audio to neutral state
+        stateWithoutAudio.audio = { sample: 0, loop: false, volume: 0 };
+        return { command, stateWithoutAudio };
+    }
+    /**
+     * Creates a transient audio command with additional modifications that includes current tower state
+     * but doesn't persist audio state. This prevents audio from being included in subsequent commands.
+     * @param currentState - The current complete tower state
+     * @param sample - Audio sample index to play
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @param otherModifications - Other tower state modifications to include
+     * @returns Object containing the command packet and the state with modifications but without audio
+     */
+    createTransientAudioCommandWithModifications(currentState, sample, loop = false, volume = undefined, otherModifications = {}) {
+        // Create the command with audio and other modifications
+        const audioMods = { sample, loop, volume: volume !== null && volume !== void 0 ? volume : 0 };
+        const modifications = Object.assign(Object.assign({}, otherModifications), { audio: audioMods });
+        const command = this.createStatefulCommand(currentState, modifications);
+        // Create state with other modifications but without audio for local tracking
+        const stateWithoutAudio = currentState ? Object.assign({}, currentState) : this.createEmptyTowerState();
+        // Apply other modifications
+        if (otherModifications.drum) {
+            otherModifications.drum.forEach((drum, index) => {
+                if (drum && stateWithoutAudio.drum[index]) {
+                    Object.assign(stateWithoutAudio.drum[index], drum);
+                }
+            });
+        }
+        if (otherModifications.layer) {
+            otherModifications.layer.forEach((layer, layerIndex) => {
+                if (layer && stateWithoutAudio.layer[layerIndex]) {
+                    if (layer.light) {
+                        layer.light.forEach((light, lightIndex) => {
+                            if (light && stateWithoutAudio.layer[layerIndex].light[lightIndex]) {
+                                Object.assign(stateWithoutAudio.layer[layerIndex].light[lightIndex], light);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+        if (otherModifications.beam) {
+            Object.assign(stateWithoutAudio.beam, otherModifications.beam);
+        }
+        if (otherModifications.led_sequence !== undefined) {
+            stateWithoutAudio.led_sequence = otherModifications.led_sequence;
+        }
+        // Reset audio to neutral state (don't persist it)
+        stateWithoutAudio.audio = { sample: 0, loop: false, volume: 0 };
+        return { command, stateWithoutAudio };
     }
     /**
      * Creates a stateful drum rotation command that only changes drum positions while preserving all other state.
@@ -191,6 +213,8 @@ class UdtCommandFactory {
             playSound,
             reverse: false
         };
+        // Always clear audio state for drum commands to prevent audio persistence
+        modifications.audio = { sample: 0, loop: false, volume: 0 };
         return this.createStatefulCommand(currentState, modifications);
     }
     /**

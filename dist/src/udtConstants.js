@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.STATE_DATA_LENGTH = exports.LIGHT_INDEX_TO_DIRECTION = exports.LAYER_TO_POSITION = exports.LED_CHANNEL_LOOKUP = exports.LEDGE_BASE_LIGHT_POSITIONS = exports.RING_LIGHT_POSITIONS = exports.TOWER_LAYERS = exports.VOLTAGE_LEVELS = exports.TOWER_MESSAGES = exports.TOWER_AUDIO_LIBRARY = exports.TOWER_LIGHT_SEQUENCES = exports.LIGHT_EFFECTS = exports.DOORWAY_LIGHTS_TO_BIT_SHIFT = exports.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = exports.drumPositionCmds = exports.SKULL_DROP_COUNT_POS = exports.AUDIO_COMMAND_POS = exports.GLYPHS = exports.LIGHT_PACKETS = exports.DRUM_PACKETS = exports.TC = exports.TOWER_COMMANDS = exports.DIS_PNP_ID_UUID = exports.DIS_IEEE_REGULATORY_UUID = exports.DIS_SYSTEM_ID_UUID = exports.DIS_SOFTWARE_REVISION_UUID = exports.DIS_FIRMWARE_REVISION_UUID = exports.DIS_HARDWARE_REVISION_UUID = exports.DIS_SERIAL_NUMBER_UUID = exports.DIS_MODEL_NUMBER_UUID = exports.DIS_MANUFACTURER_NAME_UUID = exports.DIS_SERVICE_UUID = exports.TOWER_DEVICE_NAME = exports.UART_RX_CHARACTERISTIC_UUID = exports.UART_TX_CHARACTERISTIC_UUID = exports.UART_SERVICE_UUID = void 0;
+exports.TOWER_AUDIO_LIBRARY = exports.STATE_DATA_LENGTH = exports.LIGHT_INDEX_TO_DIRECTION = exports.LAYER_TO_POSITION = exports.LED_CHANNEL_LOOKUP = exports.LEDGE_BASE_LIGHT_POSITIONS = exports.RING_LIGHT_POSITIONS = exports.TOWER_LAYERS = exports.VOLTAGE_LEVELS = exports.TOWER_MESSAGES = exports.TOWER_LIGHT_SEQUENCES = exports.LIGHT_EFFECTS = exports.drumPositionCmds = exports.SKULL_DROP_COUNT_POS = exports.AUDIO_COMMAND_POS = exports.GLYPHS = exports.DRUM_PACKETS = exports.TC = exports.TOWER_COMMANDS = exports.DIS_PNP_ID_UUID = exports.DIS_IEEE_REGULATORY_UUID = exports.DIS_SYSTEM_ID_UUID = exports.DIS_SOFTWARE_REVISION_UUID = exports.DIS_FIRMWARE_REVISION_UUID = exports.DIS_HARDWARE_REVISION_UUID = exports.DIS_SERIAL_NUMBER_UUID = exports.DIS_MODEL_NUMBER_UUID = exports.DIS_MANUFACTURER_NAME_UUID = exports.DIS_SERVICE_UUID = exports.TOWER_DEVICE_NAME = exports.UART_RX_CHARACTERISTIC_UUID = exports.UART_TX_CHARACTERISTIC_UUID = exports.UART_SERVICE_UUID = void 0;
 // Nordic Semicondutor's UART/Serial IDs for Bluetooth LE
 exports.UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 exports.UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
@@ -43,21 +43,6 @@ exports.DRUM_PACKETS = {
     topMiddle: 1,
     bottom: 2,
 };
-exports.LIGHT_PACKETS = {
-    doorway: {
-        top: { north: 3, east: 3, south: 4, west: 4 },
-        middle: { north: 5, east: 5, south: 6, west: 6 },
-        bottom: { north: 7, east: 7, south: 8, west: 8 },
-    },
-    base: {
-        north: { a: 12, b: 14 },
-        east: { a: 11, b: 13 },
-        south: { a: 11, b: 13 },
-        west: { a: 12, b: 14 },
-    },
-    ledge: { north: 10, west: 10, south: 9, east: 9 },
-    overrides: 19,
-};
 // positions based on calibrated drum orientation
 exports.GLYPHS = {
     cleanse: { name: "Cleanse", level: "top", side: "north" },
@@ -74,15 +59,13 @@ exports.drumPositionCmds = {
     middle: { north: 0b00010000, east: 0b01000000, south: 0b10010000, west: 0b11010000 },
     bottom: { north: 0b01000010, east: 0b01001010, south: 0b01010010, west: 0b01011010 },
 };
-exports.BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
-exports.DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];
 exports.LIGHT_EFFECTS = {
-    on: 0x3,
     off: 0,
-    breathe: 5,
-    breatheFast: 7,
-    breathe50percent: 9,
-    flicker: 0xb,
+    on: 1,
+    breathe: 2,
+    breatheFast: 3,
+    breathe50percent: 4,
+    flicker: 5,
 };
 exports.TOWER_LIGHT_SEQUENCES = {
     twinkle: 0x01,
@@ -105,6 +88,84 @@ exports.TOWER_LIGHT_SEQUENCES = {
     rotationDrumBottom: 0x12,
     monthStarted: 0x13,
 };
+// Tower Responses
+// prettier-ignore
+exports.TOWER_MESSAGES = {
+    TOWER_STATE: { name: "Tower State", value: 0, critical: false },
+    INVALID_STATE: { name: "Invalid State", value: 1, critical: true },
+    HARDWARE_FAILURE: { name: "Hardware Failure", value: 2, critical: true },
+    MECH_JIGGLE_TRIGGERED: { name: "Unjam Jiggle Triggered", value: 3, critical: false },
+    MECH_DURATION: { name: "Rotation Duration", value: 4, critical: false },
+    MECH_UNEXPECTED_TRIGGER: { name: "Unexpected Trigger", value: 5, critical: false },
+    DIFFERENTIAL_READINGS: { name: "Diff Voltage Readings", value: 6, critical: false },
+    BATTERY_READING: { name: "Battery Level", value: 7, critical: false },
+    CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false },
+};
+// 5% increments - voltages are in millivolts and typical for a 250mA discharge 
+// at room temperature which roughly matches a single Energizer EN91
+// This is a rough approximation as chemical makeup of batteries have differing
+// battery performace (Alkaline vs NiMH vs Li etc).
+exports.VOLTAGE_LEVELS = [
+    1500, 1390, 1350, 1320, 1295, 1270, 1245, 1225, 1205,
+    1180, 1175, 1166, 1150, 1133, 1125, 1107, 1095, 1066, 1033,
+    980 // There's an additional 5% until 800mV is reached
+];
+// Tower Layer Mapping Constants (moved from functions.ts)
+// Constants for mapping tower layers to physical locations
+exports.TOWER_LAYERS = {
+    TOP_RING: 0,
+    MIDDLE_RING: 1,
+    BOTTOM_RING: 2,
+    LEDGE: 3,
+    BASE1: 4,
+    BASE2: 5,
+};
+// Ring layers use cardinal directions (position 0 = North)
+exports.RING_LIGHT_POSITIONS = {
+    NORTH: 0,
+    EAST: 1,
+    SOUTH: 2,
+    WEST: 3,
+};
+// Ledge and Base layers use ordinal directions (position 0 = North-East)
+exports.LEDGE_BASE_LIGHT_POSITIONS = {
+    NORTH_EAST: 0,
+    SOUTH_EAST: 1,
+    SOUTH_WEST: 2,
+    NORTH_WEST: 3,
+};
+// LED Channel Lookup (matches firmware implementation)
+// Convert from (layer * 4) + position to LED driver channel (0-23)
+exports.LED_CHANNEL_LOOKUP = [
+    // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
+    0, 3, 2, 1,
+    // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
+    7, 6, 5, 4,
+    // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
+    10, 9, 8, 11,
+    // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
+    12, 13, 14, 15,
+    // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
+    16, 17, 18, 19,
+    // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
+    20, 21, 22, 23,
+];
+// Updated reverse mapping for the corrected layer architecture
+exports.LAYER_TO_POSITION = {
+    [exports.TOWER_LAYERS.TOP_RING]: 'TOP_RING',
+    [exports.TOWER_LAYERS.MIDDLE_RING]: 'MIDDLE_RING',
+    [exports.TOWER_LAYERS.BOTTOM_RING]: 'BOTTOM_RING',
+    [exports.TOWER_LAYERS.LEDGE]: 'LEDGE',
+    [exports.TOWER_LAYERS.BASE1]: 'BASE1',
+    [exports.TOWER_LAYERS.BASE2]: 'BASE2'
+};
+exports.LIGHT_INDEX_TO_DIRECTION = {
+    [exports.RING_LIGHT_POSITIONS.NORTH]: 'NORTH',
+    [exports.RING_LIGHT_POSITIONS.EAST]: 'EAST',
+    [exports.RING_LIGHT_POSITIONS.SOUTH]: 'SOUTH',
+    [exports.RING_LIGHT_POSITIONS.WEST]: 'WEST'
+};
+exports.STATE_DATA_LENGTH = 19;
 // prettier-ignore
 exports.TOWER_AUDIO_LIBRARY = {
     Ashstrider: { name: "Ashstrider", value: 0x01, category: "Adversary" },
@@ -221,82 +282,4 @@ exports.TOWER_AUDIO_LIBRARY = {
     TowerSeal: { name: "Tower Seal", value: 0x70, category: "Seals" },
     TowerSkullDropped: { name: "Tower Skull Dropped", value: 0x71, category: "State" },
 };
-// Tower Responses
-// prettier-ignore
-exports.TOWER_MESSAGES = {
-    TOWER_STATE: { name: "Tower State", value: 0, critical: false },
-    INVALID_STATE: { name: "Invalid State", value: 1, critical: true },
-    HARDWARE_FAILURE: { name: "Hardware Failure", value: 2, critical: true },
-    MECH_JIGGLE_TRIGGERED: { name: "Unjam Jiggle Triggered", value: 3, critical: false },
-    MECH_DURATION: { name: "Rotation Duration", value: 4, critical: false },
-    MECH_UNEXPECTED_TRIGGER: { name: "Unexpected Trigger", value: 5, critical: false },
-    DIFFERENTIAL_READINGS: { name: "Diff Voltage Readings", value: 6, critical: false },
-    BATTERY_READING: { name: "Battery Level", value: 7, critical: false },
-    CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false },
-};
-// 5% increments - voltages are in millivolts and typical for a 250mA discharge 
-// at room temperature which roughly matches a single Energizer EN91
-// This is a rough approximation as chemical makeup of battieries have differing
-// battery performace (Alkaline vs NiMH vs Li etc).
-exports.VOLTAGE_LEVELS = [
-    1500, 1390, 1350, 1320, 1295, 1270, 1245, 1225, 1205,
-    1180, 1175, 1166, 1150, 1133, 1125, 1107, 1095, 1066, 1033,
-    980 // There's an additional 5% until 800mV is reached
-];
-// Tower Layer Mapping Constants (moved from functions.ts)
-// Constants for mapping tower layers to physical locations
-exports.TOWER_LAYERS = {
-    TOP_RING: 0,
-    MIDDLE_RING: 1,
-    BOTTOM_RING: 2,
-    LEDGE: 3,
-    BASE1: 4,
-    BASE2: 5,
-};
-// Ring layers use cardinal directions (position 0 = North)
-exports.RING_LIGHT_POSITIONS = {
-    NORTH: 0,
-    EAST: 1,
-    SOUTH: 2,
-    WEST: 3,
-};
-// Ledge and Base layers use ordinal directions (position 0 = North-East)
-exports.LEDGE_BASE_LIGHT_POSITIONS = {
-    NORTH_EAST: 0,
-    SOUTH_EAST: 1,
-    SOUTH_WEST: 2,
-    NORTH_WEST: 3,
-};
-// LED Channel Lookup (matches firmware implementation)
-// Convert from (layer * 4) + position to LED driver channel (0-23)
-exports.LED_CHANNEL_LOOKUP = [
-    // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
-    0, 3, 2, 1,
-    // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
-    7, 6, 5, 4,
-    // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
-    10, 9, 8, 11,
-    // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
-    12, 13, 14, 15,
-    // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
-    16, 17, 18, 19,
-    // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
-    20, 21, 22, 23,
-];
-// Updated reverse mapping for the corrected layer architecture
-exports.LAYER_TO_POSITION = {
-    [exports.TOWER_LAYERS.TOP_RING]: 'TOP_RING',
-    [exports.TOWER_LAYERS.MIDDLE_RING]: 'MIDDLE_RING',
-    [exports.TOWER_LAYERS.BOTTOM_RING]: 'BOTTOM_RING',
-    [exports.TOWER_LAYERS.LEDGE]: 'LEDGE',
-    [exports.TOWER_LAYERS.BASE1]: 'BASE1',
-    [exports.TOWER_LAYERS.BASE2]: 'BASE2'
-};
-exports.LIGHT_INDEX_TO_DIRECTION = {
-    [exports.RING_LIGHT_POSITIONS.NORTH]: 'NORTH',
-    [exports.RING_LIGHT_POSITIONS.EAST]: 'EAST',
-    [exports.RING_LIGHT_POSITIONS.SOUTH]: 'SOUTH',
-    [exports.RING_LIGHT_POSITIONS.WEST]: 'WEST'
-};
-exports.STATE_DATA_LENGTH = 19;
 //# sourceMappingURL=udtConstants.js.map

@@ -2,26 +2,33 @@ import { VOLTAGE_LEVELS, LED_CHANNEL_LOOKUP } from './udtConstants';
 import { type TowerState } from './udtTowerState';
 
 /**
- * Converts battery voltage in millivolts to percentage number (0-100).
+ * Internal function to calculate battery percentage from millivolts.
  * @param mv - Battery voltage in millivolts
  * @returns Battery percentage as number (0-100)
  */
-export function milliVoltsToPercentageNumber(mv: number): number {
+function calculateBatteryPercentage(mv: number): number {
   const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
   const levels = VOLTAGE_LEVELS.filter(v => batLevel >= v);
   return levels.length * 5;
 }
 
 /**
+ * Converts battery voltage in millivolts to percentage number (0-100).
+ * @param mv - Battery voltage in millivolts
+ * @returns Battery percentage as number (0-100)
+ */
+export function milliVoltsToPercentageNumber(mv: number): number {
+  return calculateBatteryPercentage(mv);
+}
+
+/**
  * Converts battery voltage in millivolts to percentage.
  * Tower returns sum total battery level in millivolts for all batteries.
- * @param {number} mv - Battery voltage in millivolts
- * @returns {string} Battery percentage as formatted string (e.g., "75%")
+ * @param mv - Battery voltage in millivolts
+ * @returns Battery percentage as formatted string (e.g., "75%")
  */
 export function milliVoltsToPercentage(mv: number): string {
-  const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
-  const levels = VOLTAGE_LEVELS.filter(v => batLevel >= v);
-  return `${levels.length * 5}%`;
+  return `${calculateBatteryPercentage(mv)}%`;
 }
 
 /**

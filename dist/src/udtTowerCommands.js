@@ -84,6 +84,7 @@ class UdtTowerCommands {
     }
     /**
      * Plays a sound from the tower's audio library using stateful commands that preserve existing tower state.
+     * Audio state is not persisted to prevent sounds from replaying on subsequent commands.
      * @param soundIndex - Index of the sound to play (1-based, must be valid in TOWER_AUDIO_LIBRARY)
      * @returns Promise that resolves when sound command is sent
      */
@@ -94,8 +95,10 @@ class UdtTowerCommands {
             return;
         }
         const currentState = this.deps.getCurrentTowerState();
-        const command = this.deps.commandFactory.createStatefulAudioCommand(currentState, soundIndex, false);
+        const { command } = this.deps.commandFactory.createTransientAudioCommand(currentState, soundIndex, false);
         this.deps.logger.info('Sending sound command (stateful)', '[UDT]');
+        // Send the command directly without updating state tracking 
+        // Audio should not persist in state as it's a transient effect
         await this.sendTowerCommand(command, `playSound(${soundIndex})`);
     }
     /**
@@ -104,26 +107,154 @@ class UdtTowerCommands {
      * @returns Promise that resolves when light command is sent
      */
     async lights(lights) {
-        const lightCommand = this.deps.commandFactory.createLightPacketCommand(lights);
-        this.deps.commandFactory.updateCommandWithCurrentDrumPositions(lightCommand, this.deps.currentDrumPositions);
         this.deps.logDetail && this.deps.logger.debug(`Light Parameter ${JSON.stringify(lights)}`, '[UDT]');
-        this.deps.logger.info('Sending light command', '[UDT]');
-        await this.sendTowerCommand(lightCommand, 'lights');
+        this.deps.logger.info('Sending light commands', '[UDT]');
+        // Convert lights object to individual setLEDStateful calls
+        const layerCommands = this.mapLightsToLayerCommands(lights);
+        // Execute all light commands
+        for (const { layerIndex, lightIndex, effect } of layerCommands) {
+            await this.setLEDStateful(layerIndex, lightIndex, effect);
+        }
     }
     /**
-     * Sends a light override command to control specific light patterns.
+     * Maps the Lights object to layer/light index commands for setLEDStateful.
+     * @param lights - Light configuration object
+     * @returns Array of layer commands
+     */
+    mapLightsToLayerCommands(lights) {
+        const commands = [];
+        // Map doorway lights (top, middle, bottom rings), assumes true on loop param
+        if (lights.doorway) {
+            for (const doorwayLight of lights.doorway) {
+                const layerIndex = this.getTowerLayerForLevel(doorwayLight.level);
+                const lightIndex = this.getLightIndexForSide(doorwayLight.position);
+                const effect = udtConstants_1.LIGHT_EFFECTS[doorwayLight.style] || udtConstants_1.LIGHT_EFFECTS.off;
+                console.log('[cek] effect', doorwayLight.style, effect);
+                commands.push({ layerIndex, lightIndex, effect, loop: true });
+            }
+        }
+        // Map ledge lights
+        if (lights.ledge) {
+            for (const ledgeLight of lights.ledge) {
+                const layerIndex = udtConstants_1.TOWER_LAYERS.LEDGE;
+                const lightIndex = this.getLedgeLightIndexForSide(ledgeLight.position);
+                const effect = udtConstants_1.LIGHT_EFFECTS[ledgeLight.style] || udtConstants_1.LIGHT_EFFECTS.off;
+                commands.push({ layerIndex, lightIndex, effect, loop: false });
+            }
+        }
+        // Map base lights (BASE1 and BASE2)
+        if (lights.base) {
+            for (const baseLight of lights.base) {
+                // Handle both HTML attributes ('a', 'b') and proper type definitions ('bottom', 'top')
+                // 'a' or 'bottom' -> BASE1 (layer 4), 'b' or 'top' -> BASE2 (layer 5)
+                const layerIndex = (baseLight.position.level === 'top' || baseLight.position.level === 'b') ? udtConstants_1.TOWER_LAYERS.BASE2 : udtConstants_1.TOWER_LAYERS.BASE1;
+                const lightIndex = this.getBaseLightIndexForSide(baseLight.position.side);
+                const effect = udtConstants_1.LIGHT_EFFECTS[baseLight.style] || udtConstants_1.LIGHT_EFFECTS.off;
+                commands.push({ layerIndex, lightIndex, effect, loop: false });
+            }
+        }
+        return commands;
+    }
+    /**
+     * Gets the tower layer index for a doorway light level.
+     * @param level - Tower level (top, middle, bottom)
+     * @returns Layer index
+     */
+    getTowerLayerForLevel(level) {
+        switch (level) {
+            case 'top': return udtConstants_1.TOWER_LAYERS.TOP_RING;
+            case 'middle': return udtConstants_1.TOWER_LAYERS.MIDDLE_RING;
+            case 'bottom': return udtConstants_1.TOWER_LAYERS.BOTTOM_RING;
+            default: return udtConstants_1.TOWER_LAYERS.TOP_RING;
+        }
+    }
+    /**
+     * Gets the light index for a cardinal direction (ring lights).
+     * @param side - Tower side (north, east, south, west)
+     * @returns Light index
+     */
+    getLightIndexForSide(side) {
+        switch (side) {
+            case 'north': return udtConstants_1.RING_LIGHT_POSITIONS.NORTH;
+            case 'east': return udtConstants_1.RING_LIGHT_POSITIONS.EAST;
+            case 'south': return udtConstants_1.RING_LIGHT_POSITIONS.SOUTH;
+            case 'west': return udtConstants_1.RING_LIGHT_POSITIONS.WEST;
+            default: return udtConstants_1.RING_LIGHT_POSITIONS.NORTH;
+        }
+    }
+    /**
+     * Maps cardinal directions to their closest corner positions for ledge lights.
+     * @param side - Tower side (north, east, south, west)
+     * @returns Tower corner (northeast, southeast, southwest, northwest)
+     */
+    mapSideToCorner(side) {
+        switch (side) {
+            case 'north': return 'northeast';
+            case 'east': return 'southeast';
+            case 'south': return 'southwest';
+            case 'west': return 'northwest';
+            default: return 'northeast';
+        }
+    }
+    /**
+     * Gets the light index for ledge lights (ordinal directions).
+     * @param corner - Tower corner (northeast, southeast, southwest, northwest)
+     * @returns Light index
+     */
+    getLedgeLightIndexForSide(corner) {
+        // Map ordinal directions directly to ledge light positions
+        switch (corner) {
+            case 'northeast': return udtConstants_1.LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+            case 'southeast': return udtConstants_1.LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;
+            case 'southwest': return udtConstants_1.LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;
+            case 'northwest': return udtConstants_1.LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;
+            default: return udtConstants_1.LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+        }
+    }
+    /**
+     * Gets the light index for base lights (ordinal directions).
+     * @param side - Tower side (north, east, south, west)
+     * @returns Light index
+     */
+    getBaseLightIndexForSide(side) {
+        // Convert cardinal direction to corner and get light index
+        return this.getLedgeLightIndexForSide(this.mapSideToCorner(side));
+    }
+    /**
+     * Sends a light override command to control specific light patterns using stateful commands.
      * @param light - Light override value to send
      * @param soundIndex - Optional sound to play with the light override
      * @returns Promise that resolves when light override command is sent
      */
     async lightOverrides(light, soundIndex) {
-        const lightOverrideCommand = this.deps.commandFactory.createLightOverrideCommand(light);
-        this.deps.commandFactory.updateCommandWithCurrentDrumPositions(lightOverrideCommand, this.deps.currentDrumPositions);
-        if (soundIndex) {
-            lightOverrideCommand[udtConstants_1.AUDIO_COMMAND_POS] = soundIndex;
+        // Validate light parameter
+        if (typeof light !== 'number' || isNaN(light)) {
+            this.deps.logger.error(`Invalid light parameter: ${light}. Must be a valid number.`, '[UDT]');
+            return;
         }
-        this.deps.logger.info('Sending light override' + (soundIndex ? ' with sound' : ''), '[UDT]');
-        await this.sendTowerCommand(lightOverrideCommand, `lightOverrides(${light}${soundIndex ? `, ${soundIndex}` : ''})`);
+        // Validate soundIndex if provided
+        if (soundIndex !== undefined && (typeof soundIndex !== 'number' || isNaN(soundIndex) || soundIndex <= 0)) {
+            this.deps.logger.error(`Invalid soundIndex parameter: ${soundIndex}. Must be a valid positive number.`, '[UDT]');
+            return;
+        }
+        const currentState = this.deps.getCurrentTowerState();
+        if (soundIndex) {
+            // Use transient audio command with LED sequence modification
+            const { command, stateWithoutAudio } = this.deps.commandFactory.createTransientAudioCommandWithModifications(currentState, soundIndex, false, undefined, { led_sequence: light });
+            this.deps.logger.info('Sending stateful light override with sound', '[UDT]');
+            // Update our state tracking without the audio
+            this.deps.setTowerState(stateWithoutAudio, 'lightOverrides');
+            await this.sendTowerCommand(command, `lightOverrides(${light}, ${soundIndex})`);
+        }
+        else {
+            // Create modifications for the light override only
+            const modifications = {
+                led_sequence: light
+            };
+            const command = this.deps.commandFactory.createStatefulCommand(currentState, modifications);
+            this.deps.logger.info('Sending stateful light override', '[UDT]');
+            await this.sendTowerCommand(command, `lightOverrides(${light})`);
+        }
     }
     /**
      * Rotates tower drums to specified positions.
@@ -150,9 +281,21 @@ class UdtTowerCommands {
             this.deps.bleConnection.performingLongCommand = false;
             this.deps.bleConnection.lastBatteryHeartbeat = Date.now(); // Reset heartbeat timer
         }, this.deps.bleConnection.longTowerCommandTimeout);
-        // saving drum positions
-        this.deps.currentDrumPositions.topMiddle = rotateCommand[udtConstants_1.DRUM_PACKETS.topMiddle];
-        this.deps.currentDrumPositions.bottom = rotateCommand[udtConstants_1.DRUM_PACKETS.bottom];
+        // Update drum positions in tower state from the rotation command
+        const towerState = this.deps.getCurrentTowerState();
+        if (towerState) {
+            // Extract drum positions from the raw command bytes
+            const topMiddleRaw = rotateCommand[udtConstants_1.DRUM_PACKETS.topMiddle];
+            const bottomRaw = rotateCommand[udtConstants_1.DRUM_PACKETS.bottom];
+            // Decode positions for each drum from raw values
+            const topPosition = this.decodeDrumPositionFromRaw('top', topMiddleRaw);
+            const middlePosition = this.decodeDrumPositionFromRaw('middle', topMiddleRaw);
+            const bottomPosition = this.decodeDrumPositionFromRaw('bottom', bottomRaw);
+            // Update tower state
+            towerState.drum[0].position = topPosition;
+            towerState.drum[1].position = middlePosition;
+            towerState.drum[2].position = bottomPosition;
+        }
     }
     /**
    * Rotates tower drums to specified positions.
@@ -190,43 +333,66 @@ class UdtTowerCommands {
                 this.deps.bleConnection.performingLongCommand = false;
                 this.deps.bleConnection.lastBatteryHeartbeat = Date.now(); // Reset heartbeat timer
             }, this.deps.bleConnection.longTowerCommandTimeout);
-            // Update drum positions tracking - with stateful commands we know the exact positions
-            // The drum position encoding for topMiddle combines top and middle drum positions
-            this.deps.currentDrumPositions.topMiddle = (positionMap[top] << 2) | positionMap[middle];
-            this.deps.currentDrumPositions.bottom = positionMap[bottom];
+            // Update drum positions in tower state - with stateful commands we know the exact positions
+            const towerState = this.deps.getCurrentTowerState();
+            if (towerState) {
+                towerState.drum[0].position = positionMap[top];
+                towerState.drum[1].position = positionMap[middle];
+                towerState.drum[2].position = positionMap[bottom];
+            }
         }
     }
     /**
-     * Resets the tower's internal skull drop counter to zero.
+     * Resets the tower's internal skull drop counter to zero using stateful commands.
      * @returns Promise that resolves when reset command is sent
      */
     async resetTowerSkullCount() {
         this.deps.logger.info('Tower skull count reset requested', '[UDT]');
-        await this.sendTowerCommand(new Uint8Array([udtConstants_1.TOWER_COMMANDS.resetCounter]), 'resetTowerSkullCount');
+        const currentState = this.deps.getCurrentTowerState();
+        const modifications = {
+            beam: { count: 0, fault: false }
+        };
+        const command = this.deps.commandFactory.createStatefulCommand(currentState, modifications);
+        await this.sendTowerCommand(command, 'resetTowerSkullCount');
+        // Update skull count in local tower state immediately to trigger UI refresh
+        // This technically shouldn't be necessary, need to investiage
+        // TODO: Why doesn't command coming back reflect zero skulls ...
+        //       could be due to using problematic tower (not using my good tower at the moment)
+        const updatedState = Object.assign({}, currentState);
+        updatedState.beam.count = 0;
+        this.deps.setTowerState(updatedState, 'resetTowerSkullCount');
     }
     /**
      * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
      * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
+     * @param volume - Optional volume override (0=loud, 1=medium, 2=quiet, 3=mute). Uses current tower state if not provided.
      * @returns Promise that resolves when seal break sequence is complete
      */
-    async breakSeal(seal) {
-        // Play tower seal sound
+    async breakSeal(seal, volume) {
+        // Get the volume to use
+        const actualVolume = volume !== undefined ? volume : this.deps.getCurrentTowerState().audio.volume;
+        // Update tower's internal volume state first - tower firmware ignores volume in sound commands
+        // and only uses its internal global volume state
+        if (actualVolume > 0) {
+            const currentState = this.deps.getCurrentTowerState();
+            const stateWithVolume = Object.assign({}, currentState);
+            stateWithVolume.audio = { sample: 0, loop: false, volume: actualVolume };
+            await this.sendTowerStateStateful(stateWithVolume);
+        }
         this.deps.logger.info('Playing tower seal sound', '[UDT]');
-        await this.playSound(udtConstants_1.TOWER_AUDIO_LIBRARY.TowerSeal.value);
-        // Light both the primary ledge and adjacent ledge for the seal's side
-        // This ensures both left and right ledge lights are activated for the side
-        const adjacentSides = {
-            north: 'east',
-            east: 'south',
-            south: 'west',
-            west: 'north'
+        await this.playSoundStateful(udtConstants_1.TOWER_AUDIO_LIBRARY.TowerSeal.value, false, actualVolume);
+        // Light both corner ledges that share the same side
+        // For each cardinal direction, light both corners that include that direction
+        const sideCorners = {
+            north: ['northeast', 'northwest'],
+            east: ['northeast', 'southeast'],
+            south: ['southeast', 'southwest'],
+            west: ['southwest', 'northwest']
         };
-        const ledgeLights = [
-            { position: seal.side, style: 'on' },
-            { position: adjacentSides[seal.side], style: 'on' }
-        ];
-        // Remove duplicates if any
-        const uniqueLedgeLights = ledgeLights.filter((light, index, self) => index === self.findIndex(l => l.position === light.position));
+        const ledgeLights = sideCorners[seal.side].map(corner => ({
+            position: corner,
+            style: 'on'
+        }));
         // Create doorway light with light effect for the broken seal
         const doorwayLights = [{
                 level: seal.level,
@@ -234,7 +400,7 @@ class UdtTowerCommands {
                 style: 'breatheFast'
             }];
         const lights = {
-            ledge: uniqueLedgeLights,
+            ledge: ledgeLights,
             doorway: doorwayLights
         };
         this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - lighting ledges and doorways with breath effect`, '[UDT]');
@@ -299,38 +465,52 @@ class UdtTowerCommands {
         await this.rotate(topSide, middleSide, bottomSide);
     }
     /**
-     * Gets the current position of a specific drum level.
-     * @param level - The drum level to get position for
-     * @returns The current position of the specified drum level
+     * Decodes drum position from raw command byte value.
+     * @param level - The drum level ('top', 'middle', 'bottom')
+     * @param rawValue - The raw byte value from the command
+     * @returns The position as a number (0=north, 1=east, 2=south, 3=west)
      */
-    getCurrentDrumPosition(level) {
+    decodeDrumPositionFromRaw(level, rawValue) {
         const drumPositions = udtConstants_1.drumPositionCmds[level];
-        const rawValue = level === 'bottom'
-            ? this.deps.currentDrumPositions.bottom
-            : this.deps.currentDrumPositions.topMiddle;
         // Find matching side for current drum position
         for (const [side, value] of Object.entries(drumPositions)) {
             if (level === 'middle') {
                 // For middle, compare the middle-specific bits (bits 6-7)
                 if ((value & 0b11000000) === (rawValue & 0b11000000)) {
-                    return side;
+                    return ['north', 'east', 'south', 'west'].indexOf(side);
                 }
             }
             else if (level === 'top') {
                 // For top drum, compare the top-specific bits (bits 1, 2, 4)
                 if ((value & 0b00010110) === (rawValue & 0b00010110)) {
-                    return side;
+                    return ['north', 'east', 'south', 'west'].indexOf(side);
                 }
             }
             else {
                 // For bottom, direct comparison
                 if (value === rawValue) {
-                    return side;
+                    return ['north', 'east', 'south', 'west'].indexOf(side);
                 }
             }
         }
-        // Default to north if no match found
-        return 'north';
+        // Default to north (0) if no match found
+        return 0;
+    }
+    /**
+     * Gets the current position of a specific drum level.
+     * @param level - The drum level to get position for
+     * @returns The current position of the specified drum level
+     */
+    getCurrentDrumPosition(level) {
+        const towerState = this.deps.getCurrentTowerState();
+        if (!towerState) {
+            return 'north';
+        }
+        const drumIndex = level === 'top' ? 0 : level === 'middle' ? 1 : 2;
+        const position = towerState.drum[drumIndex].position;
+        // Convert numeric position to TowerSide (0=north, 1=east, 2=south, 3=west)
+        const sides = ['north', 'east', 'south', 'west'];
+        return sides[position] || 'north';
     }
     //#region Stateful Command Methods
     /**
@@ -338,10 +518,10 @@ class UdtTowerCommands {
      * @param layerIndex - Layer index (0-5)
      * @param lightIndex - Light index within layer (0-3)
      * @param effect - Light effect (0=off, 1=on, 2=slow pulse, etc.)
-     * @param loop - Whether to loop the effect
+     * @param loop - Whether to loop the effect, defaults to true
      * @returns Promise that resolves when command is sent
      */
-    async setLEDStateful(layerIndex, lightIndex, effect, loop = false) {
+    async setLEDStateful(layerIndex, lightIndex, effect, loop = true) {
         const currentState = this.deps.getCurrentTowerState();
         const command = this.deps.commandFactory.createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop);
         this.deps.logger.info(`Setting LED layer ${layerIndex} light ${lightIndex} to effect ${effect}${loop ? ' (looped)' : ''}`, '[UDT]');
@@ -349,6 +529,7 @@ class UdtTowerCommands {
     }
     /**
      * Plays a sound using stateful commands that preserve existing tower state.
+     * Audio state is not persisted to prevent sounds from replaying on subsequent commands.
      * @param soundIndex - Index of the sound to play (1-based)
      * @param loop - Whether to loop the audio
      * @param volume - Audio volume (0-15), optional
@@ -361,8 +542,10 @@ class UdtTowerCommands {
             return;
         }
         const currentState = this.deps.getCurrentTowerState();
-        const command = this.deps.commandFactory.createStatefulAudioCommand(currentState, soundIndex, loop, volume);
+        const { command } = this.deps.commandFactory.createTransientAudioCommand(currentState, soundIndex, loop, volume);
         this.deps.logger.info(`Playing sound ${soundIndex}${loop ? ' (looped)' : ''}${volume !== undefined ? ` at volume ${volume}` : ''}`, '[UDT]');
+        // Send the command directly without updating state tracking
+        // Audio should not persist in state as it's a transient effect
         await this.sendTowerCommand(command, `playSoundStateful(${soundIndex}, ${loop}${volume !== undefined ? `, ${volume}` : ''})`);
     }
     /**
@@ -389,12 +572,18 @@ class UdtTowerCommands {
     }
     /**
      * Sends a complete tower state using stateful commands.
+     * Audio state is automatically cleared to prevent sounds from persisting across commands.
      * @param state - Complete tower state to send
      * @returns Promise that resolves when command is sent
      */
     async sendTowerStateStateful(state) {
-        const command = this.deps.commandFactory.packTowerStateCommand(state);
+        // Create a copy of the state and clear audio to prevent persistence
+        const stateToSend = Object.assign({}, state);
+        stateToSend.audio = { sample: 0, loop: false, volume: 0 };
+        const command = this.deps.commandFactory.packTowerStateCommand(stateToSend);
         this.deps.logger.info('Sending complete tower state', '[UDT]');
+        // Update our local state tracking without audio
+        this.deps.setTowerState(stateToSend, 'sendTowerStateStateful');
         await this.sendTowerCommand(command, 'sendTowerStateStateful');
     }
     //#endregion

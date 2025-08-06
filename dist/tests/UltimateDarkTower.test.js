@@ -95,88 +95,117 @@ describe('UltimateDarkTower', () => {
         });
     });
     describe('State Management', () => {
-        test('should track drum positions', () => {
-            expect(darkTower.currentDrumPositions).toEqual({
-                topMiddle: 0x10,
-                bottom: 0x42
-            });
+        test('should track drum positions in tower state', () => {
+            const towerState = darkTower.getCurrentTowerState();
+            expect(towerState.drum).toBeDefined();
+            expect(towerState.drum.length).toBe(3);
+            // Default positions should be 0 (north) for all drums
+            expect(towerState.drum[0].position).toBe(0); // top
+            expect(towerState.drum[1].position).toBe(0); // middle
+            expect(towerState.drum[2].position).toBe(0); // bottom
         });
-        test('should allow updating drum positions', () => {
-            const newPositions = { topMiddle: 0x20, bottom: 0x30 };
-            darkTower.currentDrumPositions = newPositions;
-            expect(darkTower.currentDrumPositions).toEqual(newPositions);
+        test('should allow updating drum positions in tower state', () => {
+            const towerState = darkTower.getCurrentTowerState();
+            // Update positions: top=east(1), middle=south(2), bottom=west(3)
+            towerState.drum[0].position = 1;
+            towerState.drum[1].position = 2;
+            towerState.drum[2].position = 3;
+            // Verify the updates
+            expect(towerState.drum[0].position).toBe(1);
+            expect(towerState.drum[1].position).toBe(2);
+            expect(towerState.drum[2].position).toBe(3);
         });
     });
     describe('getCurrentDrumPosition', () => {
-        test('should return correct side for bottom level', () => {
-            // Set bottom position to north (0x42)
-            darkTower.currentDrumPositions.bottom = 0x42;
-            expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('north');
-            // Set bottom position to east (0x4A)
-            darkTower.currentDrumPositions.bottom = 0x4A;
-            expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('east');
-            // Set bottom position to south (0x52)
-            darkTower.currentDrumPositions.bottom = 0x52;
-            expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('south');
-            // Set bottom position to west (0x5A)
-            darkTower.currentDrumPositions.bottom = 0x5A;
-            expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('west');
+        describe('Primary Path (Tower State)', () => {
+            let mockGetCurrentDrumPosition;
+            beforeEach(() => {
+                // Clear any existing mocks
+                jest.clearAllMocks();
+            });
+            afterEach(() => {
+                // Restore all mocks
+                if (mockGetCurrentDrumPosition) {
+                    mockGetCurrentDrumPosition.mockRestore();
+                }
+            });
+            test('should return correct side from tower state for all drum levels', () => {
+                // Mock the towerCommands.getCurrentDrumPosition method directly since that's what's called
+                const towerCommands = darkTower['towerCommands'];
+                mockGetCurrentDrumPosition = jest.spyOn(towerCommands, 'getCurrentDrumPosition')
+                    .mockReturnValueOnce('north') // top
+                    .mockReturnValueOnce('east') // middle  
+                    .mockReturnValueOnce('south'); // bottom
+                expect(darkTower['getCurrentDrumPosition']('top')).toBe('north');
+                expect(darkTower['getCurrentDrumPosition']('middle')).toBe('east');
+                expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('south');
+            });
+            test('should handle all position values correctly', () => {
+                const towerCommands = darkTower['towerCommands'];
+                const positions = ['north', 'east', 'south', 'west'];
+                for (let i = 0; i < 4; i++) {
+                    // Mock to return the expected position for all three calls
+                    if (mockGetCurrentDrumPosition) {
+                        mockGetCurrentDrumPosition.mockRestore();
+                    }
+                    mockGetCurrentDrumPosition = jest.spyOn(towerCommands, 'getCurrentDrumPosition')
+                        .mockReturnValue(positions[i]);
+                    expect(darkTower['getCurrentDrumPosition']('top')).toBe(positions[i]);
+                    expect(darkTower['getCurrentDrumPosition']('middle')).toBe(positions[i]);
+                    expect(darkTower['getCurrentDrumPosition']('bottom')).toBe(positions[i]);
+                }
+            });
+            test('should default to north for invalid position values', () => {
+                const towerCommands = darkTower['towerCommands'];
+                mockGetCurrentDrumPosition = jest.spyOn(towerCommands, 'getCurrentDrumPosition')
+                    .mockReturnValue('north');
+                expect(darkTower['getCurrentDrumPosition']('top')).toBe('north');
+            });
         });
-        test('should return correct side for top level', () => {
-            // Set topMiddle to include top north position (0x10)
-            darkTower.currentDrumPositions.topMiddle = 0x10;
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('north');
-            // Set topMiddle to include top east position (0x02)
-            darkTower.currentDrumPositions.topMiddle = 0xC2; // includes middle bits + top east
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('east');
-            // Set topMiddle to include top south position (0x14)
-            darkTower.currentDrumPositions.topMiddle = 0x14;
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('south');
-            // Set topMiddle to include top west position (0x16)
-            darkTower.currentDrumPositions.topMiddle = 0x16;
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('west');
-        });
-        test('should return correct side for middle level', () => {
-            // Set topMiddle to include middle north position (0x10)
-            darkTower.currentDrumPositions.topMiddle = 0x10;
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('north');
-            // Set topMiddle to include middle east position (0x40)
-            darkTower.currentDrumPositions.topMiddle = 0x40;
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('east');
-            // Set topMiddle to include middle south position (0x90)
-            darkTower.currentDrumPositions.topMiddle = 0x90;
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('south');
-            // Set topMiddle to include middle west position (0xD0)
-            darkTower.currentDrumPositions.topMiddle = 0xD0;
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('west');
-        });
-        test('should return north as default when no match found', () => {
-            // Set invalid position values
-            darkTower.currentDrumPositions.bottom = 0xFF;
-            expect(darkTower['getCurrentDrumPosition']('bottom')).toBe('north');
-            // For top and middle, 0xFF will still match some patterns due to masking
-            // Use values that won't match any defined positions
-            darkTower.currentDrumPositions.topMiddle = 0x08; // Doesn't match any top or middle patterns
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('north');
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('north');
-        });
-        test('should handle combined top and middle positions correctly', () => {
-            // Test with both top west (0x16) and middle east (0x40) combined
-            darkTower.currentDrumPositions.topMiddle = 0x56; // 0x40 | 0x16
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('west');
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('east');
-            // Test with top north (0x10) and middle south (0x90) combined
-            darkTower.currentDrumPositions.topMiddle = 0x90; // 0x90 | 0x10
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('north');
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('south');
-        });
-        test('should use correct bit masks for each level', () => {
-            // Test that top level uses 0b00010110 mask
-            darkTower.currentDrumPositions.topMiddle = 0xC2; // Has bits outside top mask
-            expect(darkTower['getCurrentDrumPosition']('top')).toBe('east'); // Should match 0x02
-            // Test that middle level uses 0b11000000 mask  
-            darkTower.currentDrumPositions.topMiddle = 0x46; // Has bits outside middle mask
-            expect(darkTower['getCurrentDrumPosition']('middle')).toBe('east'); // Should match 0x40
+        describe('Tower State Integration', () => {
+            test('should return correct drum positions from tower state', () => {
+                const towerState = darkTower.getCurrentTowerState();
+                // Test all position values: 0=north, 1=east, 2=south, 3=west
+                // Test bottom drum
+                towerState.drum[2].position = 0; // north
+                expect(darkTower.getCurrentDrumPosition('bottom')).toBe('north');
+                towerState.drum[2].position = 1; // east
+                expect(darkTower.getCurrentDrumPosition('bottom')).toBe('east');
+                towerState.drum[2].position = 2; // south
+                expect(darkTower.getCurrentDrumPosition('bottom')).toBe('south');
+                towerState.drum[2].position = 3; // west
+                expect(darkTower.getCurrentDrumPosition('bottom')).toBe('west');
+            });
+            test('should return correct positions for all drum levels', () => {
+                const towerState = darkTower.getCurrentTowerState();
+                // Set different positions for each drum
+                towerState.drum[0].position = 1; // top = east
+                towerState.drum[1].position = 2; // middle = south  
+                towerState.drum[2].position = 3; // bottom = west
+                expect(darkTower.getCurrentDrumPosition('top')).toBe('east');
+                expect(darkTower.getCurrentDrumPosition('middle')).toBe('south');
+                expect(darkTower.getCurrentDrumPosition('bottom')).toBe('west');
+            });
+            test('should default to north for invalid position values', () => {
+                const towerState = darkTower.getCurrentTowerState();
+                // Set invalid position values
+                towerState.drum[0].position = 999;
+                towerState.drum[1].position = -1;
+                towerState.drum[2].position = 10;
+                expect(darkTower.getCurrentDrumPosition('top')).toBe('north');
+                expect(darkTower.getCurrentDrumPosition('middle')).toBe('north');
+                expect(darkTower.getCurrentDrumPosition('bottom')).toBe('north');
+            });
+            test('should default to north when tower state is null', () => {
+                // Mock getCurrentTowerState to return null
+                const originalMethod = darkTower.getCurrentTowerState;
+                darkTower.getCurrentTowerState = jest.fn().mockReturnValue(null);
+                expect(darkTower.getCurrentDrumPosition('top')).toBe('north');
+                expect(darkTower.getCurrentDrumPosition('middle')).toBe('north');
+                expect(darkTower.getCurrentDrumPosition('bottom')).toBe('north');
+                // Restore original method
+                darkTower.getCurrentTowerState = originalMethod;
+            });
         });
     });
     describe('Broken Seal Tracking', () => {

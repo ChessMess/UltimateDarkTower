@@ -9,16 +9,13 @@ export interface TowerCommandDependencies {
     commandFactory: UdtCommandFactory;
     bleConnection: UdtBleConnection;
     responseProcessor: TowerResponseProcessor;
-    currentDrumPositions: {
-        topMiddle: number;
-        bottom: number;
-    };
     logDetail: boolean;
     retrySendCommandCount: {
         value: number;
     };
     retrySendCommandMax: number;
     getCurrentTowerState: () => TowerState;
+    setTowerState: (newState: TowerState, source: string) => void;
 }
 export declare class UdtTowerCommands {
     private deps;
@@ -46,6 +43,7 @@ export declare class UdtTowerCommands {
     calibrate(): Promise<void>;
     /**
      * Plays a sound from the tower's audio library using stateful commands that preserve existing tower state.
+     * Audio state is not persisted to prevent sounds from replaying on subsequent commands.
      * @param soundIndex - Index of the sound to play (1-based, must be valid in TOWER_AUDIO_LIBRARY)
      * @returns Promise that resolves when sound command is sent
      */
@@ -57,7 +55,43 @@ export declare class UdtTowerCommands {
      */
     lights(lights: Lights): Promise<void>;
     /**
-     * Sends a light override command to control specific light patterns.
+     * Maps the Lights object to layer/light index commands for setLEDStateful.
+     * @param lights - Light configuration object
+     * @returns Array of layer commands
+     */
+    private mapLightsToLayerCommands;
+    /**
+     * Gets the tower layer index for a doorway light level.
+     * @param level - Tower level (top, middle, bottom)
+     * @returns Layer index
+     */
+    private getTowerLayerForLevel;
+    /**
+     * Gets the light index for a cardinal direction (ring lights).
+     * @param side - Tower side (north, east, south, west)
+     * @returns Light index
+     */
+    private getLightIndexForSide;
+    /**
+     * Maps cardinal directions to their closest corner positions for ledge lights.
+     * @param side - Tower side (north, east, south, west)
+     * @returns Tower corner (northeast, southeast, southwest, northwest)
+     */
+    private mapSideToCorner;
+    /**
+     * Gets the light index for ledge lights (ordinal directions).
+     * @param corner - Tower corner (northeast, southeast, southwest, northwest)
+     * @returns Light index
+     */
+    private getLedgeLightIndexForSide;
+    /**
+     * Gets the light index for base lights (ordinal directions).
+     * @param side - Tower side (north, east, south, west)
+     * @returns Light index
+     */
+    private getBaseLightIndexForSide;
+    /**
+     * Sends a light override command to control specific light patterns using stateful commands.
      * @param light - Light override value to send
      * @param soundIndex - Optional sound to play with the light override
      * @returns Promise that resolves when light override command is sent
@@ -82,22 +116,30 @@ export declare class UdtTowerCommands {
    */
     rotateWithState(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number): Promise<void>;
     /**
-     * Resets the tower's internal skull drop counter to zero.
+     * Resets the tower's internal skull drop counter to zero using stateful commands.
      * @returns Promise that resolves when reset command is sent
      */
     resetTowerSkullCount(): Promise<void>;
     /**
      * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
      * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
+     * @param volume - Optional volume override (0=loud, 1=medium, 2=quiet, 3=mute). Uses current tower state if not provided.
      * @returns Promise that resolves when seal break sequence is complete
      */
-    breakSeal(seal: SealIdentifier): Promise<void>;
+    breakSeal(seal: SealIdentifier, volume?: number): Promise<void>;
     /**
      * Randomly rotates specified tower levels to random positions.
      * @param level - Level configuration: 0=all, 1=top, 2=middle, 3=bottom, 4=top&middle, 5=top&bottom, 6=middle&bottom
      * @returns Promise that resolves when rotation command is sent
      */
     randomRotateLevels(level?: number): Promise<void>;
+    /**
+     * Decodes drum position from raw command byte value.
+     * @param level - The drum level ('top', 'middle', 'bottom')
+     * @param rawValue - The raw byte value from the command
+     * @returns The position as a number (0=north, 1=east, 2=south, 3=west)
+     */
+    private decodeDrumPositionFromRaw;
     /**
      * Gets the current position of a specific drum level.
      * @param level - The drum level to get position for
@@ -109,12 +151,13 @@ export declare class UdtTowerCommands {
      * @param layerIndex - Layer index (0-5)
      * @param lightIndex - Light index within layer (0-3)
      * @param effect - Light effect (0=off, 1=on, 2=slow pulse, etc.)
-     * @param loop - Whether to loop the effect
+     * @param loop - Whether to loop the effect, defaults to true
      * @returns Promise that resolves when command is sent
      */
     setLEDStateful(layerIndex: number, lightIndex: number, effect: number, loop?: boolean): Promise<void>;
     /**
      * Plays a sound using stateful commands that preserve existing tower state.
+     * Audio state is not persisted to prevent sounds from replaying on subsequent commands.
      * @param soundIndex - Index of the sound to play (1-based)
      * @param loop - Whether to loop the audio
      * @param volume - Audio volume (0-15), optional
@@ -131,6 +174,7 @@ export declare class UdtTowerCommands {
     rotateDrumStateful(drumIndex: number, position: number, playSound?: boolean): Promise<void>;
     /**
      * Sends a complete tower state using stateful commands.
+     * Audio state is automatically cleared to prevent sounds from persisting across commands.
      * @param state - Complete tower state to send
      * @returns Promise that resolves when command is sent
      */

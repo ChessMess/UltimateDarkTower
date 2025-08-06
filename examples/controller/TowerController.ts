@@ -1,5 +1,6 @@
 import UltimateDarkTower, {
   type TowerSide,
+  type TowerCorner,
   type TowerLevels,
   type DoorwayLight,
   type LedgeLight,
@@ -11,6 +12,9 @@ import UltimateDarkTower, {
   TOWER_AUDIO_LIBRARY,
   TOWER_LIGHT_SEQUENCES,
   LIGHT_EFFECTS,
+  TOWER_LAYERS,
+  RING_LIGHT_POSITIONS,
+  LEDGE_BASE_LIGHT_POSITIONS,
   GLYPHS
 } from '../../src';
 import { logger, DOMOutput, ConsoleOutput } from '../../src/udtLogger';
@@ -112,7 +116,13 @@ const onTowerConnected = () => {
   // Initialize calibration status display
   updateCalibrationStatus();
 
+  // Initialize drum dropdown positions
+  updateDrumDropdowns();
+
   // Initialize status packet display
+
+  // Initialize volume display
+  initializeVolumeDisplay();
   setTimeout(() => {
     try {
       if (typeof refreshStatusPacket === 'function') {
@@ -161,7 +171,7 @@ const onCalibrationComplete = () => {
   // Note: calibration status will be updated via onTowerStateUpdate callback
   // when the tower state changes, no need for setTimeout here
 
-  // Wait a bit for calibration to fully complete, then refresh glyph positions
+  // Wait a bit for calibration to fully complete, then refresh glyph positions and drum dropdowns
   setTimeout(() => {
     try {
       if (typeof (window as any).refreshGlyphPositions === 'function') {
@@ -170,6 +180,9 @@ const onCalibrationComplete = () => {
       } else {
         logger.warn("refreshGlyphPositions function not available", '[TC]');
       }
+
+      // Update drum dropdowns after calibration completes
+      updateDrumDropdowns();
     } catch (error) {
       logger.error("Error refreshing glyph positions after calibration: " + error, '[TC]');
     }
@@ -225,6 +238,25 @@ const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: 
   if (calibrationChanged) {
     logger.info("Calibration status changed, updating display", '[TC]');
     updateCalibrationStatus();
+  }
+
+  // Check if drum positions changed and update the dropdowns accordingly
+  const drumPositionsChanged =
+    newState.drum[0].position !== oldState.drum[0].position ||
+    newState.drum[1].position !== oldState.drum[1].position ||
+    newState.drum[2].position !== oldState.drum[2].position;
+
+  if (drumPositionsChanged) {
+    logger.info("Drum positions changed, updating dropdowns", '[TC]');
+    updateDrumDropdowns();
+  }
+
+  // Check if volume changed and update the display (but don't override our local volume tracking)
+  if (newState.audio.volume !== oldState.audio.volume) {
+    logger.info(`Volume changed from ${oldState.audio.volume} to ${newState.audio.volume}`, '[TC]');
+    // Don't let tower responses override our local volume tracking during user-initiated changes
+    // Only sync if there's no recent user interaction or a very large difference
+    logger.debug(`Tower volume: ${newState.audio.volume}, Local volume: ${localVolume}`, '[TC]');
   }
 
   // Auto-refresh status packet when tower state changes
@@ -291,6 +323,60 @@ const updateCalibrationStatus = () => {
   }
 }
 
+const updateDrumDropdowns = () => {
+  const topSelect = document.getElementById("top") as HTMLSelectElement;
+  const middleSelect = document.getElementById("middle") as HTMLSelectElement;
+  const bottomSelect = document.getElementById("bottom") as HTMLSelectElement;
+
+  if (!topSelect || !middleSelect || !bottomSelect) {
+    logger.warn("Drum dropdown elements not found", '[TC]');
+    return;
+  }
+
+  if (!Tower.isConnected) {
+    logger.debug("Tower not connected, cannot update drum positions", '[TC]');
+    return;
+  }
+
+  try {
+    // Get current tower state for detailed debugging
+    const towerState = Tower.getCurrentTowerState();
+    logger.debug(`Raw tower state drum positions - Top: ${towerState.drum[0].position}, Middle: ${towerState.drum[1].position}, Bottom: ${towerState.drum[2].position}`, '[TC]');
+    logger.debug(`Raw tower state drum calibration - Top: ${towerState.drum[0].calibrated}, Middle: ${towerState.drum[1].calibrated}, Bottom: ${towerState.drum[2].calibrated}`, '[TC]');
+
+    // Get current drum positions from Tower method (now fixed to use tower state directly)
+    const topPosition = Tower.getCurrentDrumPosition('top');
+    const middlePosition = Tower.getCurrentDrumPosition('middle');
+    const bottomPosition = Tower.getCurrentDrumPosition('bottom');
+
+    logger.info(`getCurrentDrumPosition results - Top: ${topPosition}, Middle: ${middlePosition}, Bottom: ${bottomPosition}`, '[TC]');
+
+    // Convert raw position values for comparison logging
+    const sides = ['north', 'east', 'south', 'west'];
+    const topPositionFromRaw = sides[towerState.drum[0].position] || 'north';
+    const middlePositionFromRaw = sides[towerState.drum[1].position] || 'north';
+    const bottomPositionFromRaw = sides[towerState.drum[2].position] || 'north';
+
+    logger.info(`Raw position conversion - Top: ${topPositionFromRaw}, Middle: ${middlePositionFromRaw}, Bottom: ${bottomPositionFromRaw}`, '[TC]');
+
+    // Verify that the method and raw state match (they should now)
+    if (topPosition !== topPositionFromRaw || middlePosition !== middlePositionFromRaw || bottomPosition !== bottomPositionFromRaw) {
+      logger.warn(`Position mismatch detected! Method vs Raw - Top: ${topPosition}!=${topPositionFromRaw}, Middle: ${middlePosition}!=${middlePositionFromRaw}, Bottom: ${bottomPosition}!=${bottomPositionFromRaw}`, '[TC]');
+    } else {
+      logger.info(`Position methods working correctly - all positions match raw state`, '[TC]');
+    }
+
+    // Update dropdown selections to match current drum positions
+    topSelect.value = topPosition;
+    middleSelect.value = middlePosition;
+    bottomSelect.value = bottomPosition;
+
+    logger.info(`Updated drum dropdowns - Top: ${topPosition}, Middle: ${middlePosition}, Bottom: ${bottomPosition}`, '[TC]');
+  } catch (error) {
+    logger.error(`Failed to update drum dropdowns: ${error}`, '[TC]');
+  }
+}
+
 async function resetSkullCount() {
   if (!Tower.isConnected) {
     return;
@@ -301,7 +387,16 @@ async function resetSkullCount() {
 
 const playSound = () => {
   const select = document.getElementById("sounds") as HTMLInputElement;
-  Tower.playSound(Number(select.value));
+  const soundValue = Number(select.value);
+
+  if (soundValue === 0) {
+    logger.info('No sound selected', '[Audio]');
+    return;
+  }
+
+  // Use the current local volume for playing the sound
+  logger.info(`Playing sound ${soundValue} at volume ${localVolume}`, '[Audio]');
+  Tower.playSoundStateful(soundValue, false, localVolume);
 }
 
 const overrides = () => {
@@ -313,11 +408,10 @@ const rotate = () => {
   const top = document.getElementById("top") as HTMLInputElement;
   const middle = document.getElementById("middle") as HTMLInputElement;
   const bottom = document.getElementById("bottom") as HTMLInputElement;
-  const sound = document.getElementById("sounds") as HTMLInputElement;
-  Tower.Rotate(
+  Tower.rotateWithState(
     top.value as TowerSide,
     middle.value as TowerSide,
-    bottom.value as TowerSide, Number(sound.value)
+    bottom.value as TowerSide
   );
 }
 
@@ -371,10 +465,7 @@ const breakSeal = async () => {
 
   const sealIdentifier = sealMap[sealValue];
   if (sealIdentifier) {
-    // Clear checkboxes first, before sending tower command
-    clearAllLightCheckboxes();
-
-    await Tower.breakSeal(sealIdentifier);
+    await Tower.breakSeal(sealIdentifier, localVolume);
     logger.info(`Broke seal at ${sealIdentifier.level}-${sealIdentifier.side}`, '[TC]');
 
     // Update the visual seal grid
@@ -385,73 +476,87 @@ const breakSeal = async () => {
   }
 }
 
-const clearAllLightCheckboxes = () => {
+const clearAllLightCheckboxes = async () => {
   // Unselect all light checkboxes
   const allLightCheckboxes = document.querySelectorAll('input[type="checkbox"][data-light-type]') as NodeListOf<HTMLInputElement>;
   allLightCheckboxes.forEach(checkbox => {
     checkbox.checked = false;
-    checkbox.removeAttribute('data-light-style');
+    checkbox.setAttribute('data-light-style', 'off');
   });
+
+  // Get current tower state and turn off all lights
+  const currentState = Tower.getCurrentTowerState();
+
+  // Turn off all lights in all layers
+  for (let layerIndex = 0; layerIndex < currentState.layer.length; layerIndex++) {
+    for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
+      currentState.layer[layerIndex].light[lightIndex].effect = LIGHT_EFFECTS.off;
+      currentState.layer[layerIndex].light[lightIndex].loop = false;
+    }
+  }
+
+  // Send updated state to tower
+  try {
+    await Tower.sendTowerState(currentState);
+  } catch (error) {
+    console.error('Error sending tower state for all lights off:', error);
+  }
 }
 
-const allLightsOn = () => {
-  // Check all light checkboxes
+const allLightsOn = async () => {
+  // Get the currently selected light style from the dropdown
+  const lightStyleSelect = document.getElementById("lightStyles") as HTMLSelectElement;
+  const selectedLightStyle = lightStyleSelect?.options[lightStyleSelect.selectedIndex]?.textContent || "on";
+  const effect = LIGHT_EFFECTS[selectedLightStyle as keyof typeof LIGHT_EFFECTS] || LIGHT_EFFECTS.on;
+
+  // Check all light checkboxes and set their style
   const allLightCheckboxes = document.querySelectorAll('input[type="checkbox"][data-light-type]') as NodeListOf<HTMLInputElement>;
   allLightCheckboxes.forEach(checkbox => {
     checkbox.checked = true;
+    checkbox.setAttribute('data-light-style', selectedLightStyle);
   });
 
-  // Send the light command
-  lights();
+  // Get current tower state and turn on all lights with selected effect
+  const currentState = Tower.getCurrentTowerState();
+
+  // Apply effect to all doorway, ledge, and base lights
+  // Doorway: layers TOP_RING, MIDDLE_RING, BOTTOM_RING (indices 0,1,2)
+  for (let layerIndex = 0; layerIndex <= 2; layerIndex++) {
+    for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
+      currentState.layer[layerIndex].light[lightIndex].effect = effect;
+      currentState.layer[layerIndex].light[lightIndex].loop = effect !== 0;
+    }
+  }
+  // Ledge: layer LEDGE (index 3)
+  for (let lightIndex = 0; lightIndex < currentState.layer[3].light.length; lightIndex++) {
+    currentState.layer[3].light[lightIndex].effect = effect;
+    currentState.layer[3].light[lightIndex].loop = effect !== 0;
+  }
+  // Base: layers BASE1 and BASE2 (indices 4,5)
+  for (let layerIndex = 4; layerIndex <= 5; layerIndex++) {
+    for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
+      currentState.layer[layerIndex].light[lightIndex].effect = effect;
+      currentState.layer[layerIndex].light[lightIndex].loop = effect !== 0;
+    }
+  }
+
+  // Send updated state to tower
+  try {
+    await Tower.sendTowerState(currentState);
+  } catch (error) {
+    console.error('Error sending tower state for all lights on:', error);
+  }
 }
 
-const allLightsOff = () => {
-  // Uncheck all light checkboxes
-  clearAllLightCheckboxes();
-
-  // Send the light command (all lights off)
-  lights();
+const allLightsOff = async () => {
+  // Uncheck all light checkboxes and send tower state
+  await clearAllLightCheckboxes();
 }
 
 const clearAllLights = async () => {
   // Clear checkboxes first, before sending tower command
-  clearAllLightCheckboxes();
+  await clearAllLightCheckboxes();
 
-  // Create lights object with all lights set to off
-  const allLightsOff: Lights = {
-    doorway: [
-      { position: 'north', level: 'top', style: 'off' },
-      { position: 'north', level: 'middle', style: 'off' },
-      { position: 'north', level: 'bottom', style: 'off' },
-      { position: 'east', level: 'top', style: 'off' },
-      { position: 'east', level: 'middle', style: 'off' },
-      { position: 'east', level: 'bottom', style: 'off' },
-      { position: 'south', level: 'top', style: 'off' },
-      { position: 'south', level: 'middle', style: 'off' },
-      { position: 'south', level: 'bottom', style: 'off' },
-      { position: 'west', level: 'top', style: 'off' },
-      { position: 'west', level: 'middle', style: 'off' },
-      { position: 'west', level: 'bottom', style: 'off' }
-    ],
-    ledge: [
-      { position: 'north', style: 'off' },
-      { position: 'east', style: 'off' },
-      { position: 'south', style: 'off' },
-      { position: 'west', style: 'off' }
-    ],
-    base: [
-      { position: { side: 'north', level: 'top' }, style: 'off' },
-      { position: { side: 'north', level: 'bottom' }, style: 'off' },
-      { position: { side: 'east', level: 'top' }, style: 'off' },
-      { position: { side: 'east', level: 'bottom' }, style: 'off' },
-      { position: { side: 'south', level: 'top' }, style: 'off' },
-      { position: { side: 'south', level: 'bottom' }, style: 'off' },
-      { position: { side: 'west', level: 'top' }, style: 'off' },
-      { position: { side: 'west', level: 'bottom' }, style: 'off' }
-    ]
-  };
-
-  await Tower.Lights(allLightsOff);
   logger.info("All lights cleared", '[TC]');
 
   // Reset all broken seals and update the visual grid
@@ -465,7 +570,8 @@ const clearAllLights = async () => {
   }
 }
 
-const singleLight = (el: HTMLInputElement) => {
+const singleLight = async (el: HTMLInputElement) => {
+  // Get the light style based on checkbox state
   let style: string = "off";
   if (el.checked) {
     const ls = document.getElementById("lightStyles") as HTMLSelectElement;
@@ -474,18 +580,109 @@ const singleLight = (el: HTMLInputElement) => {
     }
   }
   el.setAttribute('data-light-style', style);
-  lights();
+
+  // Get light effect value
+  const effect = LIGHT_EFFECTS[style as keyof typeof LIGHT_EFFECTS] || LIGHT_EFFECTS.off;
+  console.log('[cek] style =', style, 'effect =', effect);
+
+  // Get current tower state
+  const currentState = Tower.getCurrentTowerState();
+
+  // Get light attributes
+  const lightType = el.getAttribute('data-light-type');
+  const lightLocation = el.getAttribute('data-light-location') as TowerSide;
+  const lightLevel = el.getAttribute('data-light-level') as TowerLevels;
+  const lightBaseLocation = el.getAttribute('data-light-base-location');
+
+  // Calculate layer and light indices
+  let layerIndex: number;
+  let lightIndex: number;
+
+  if (lightType === 'doorway') {
+    // Doorway lights: map level to layer and side to light index
+    layerIndex = getTowerLayerForLevel(lightLevel);
+    lightIndex = getLightIndexForSide(lightLocation);
+  } else if (lightType === 'ledge') {
+    // Ledge lights
+    layerIndex = TOWER_LAYERS.LEDGE;
+    lightIndex = getLedgeLightIndexForSide(lightLocation);
+  } else if (lightType === 'base') {
+    // Base lights: map base location to layer
+    layerIndex = lightBaseLocation === 'b' ? TOWER_LAYERS.BASE2 : TOWER_LAYERS.BASE1;
+    lightIndex = getBaseLightIndexForSide(lightLocation);
+  } else {
+    console.error('Unknown light type:', lightType);
+    return;
+  }
+
+  // Update the specific light in tower state
+  currentState.layer[layerIndex].light[lightIndex].effect = effect;
+  currentState.layer[layerIndex].light[lightIndex].loop = effect !== 0; // loop if not off
+
+  // Send updated state to tower
+  try {
+    await Tower.sendTowerState(currentState);
+  } catch (error) {
+    console.error('Error sending tower state:', error);
+  }
 }
+
+// Helper functions for light mapping (same logic as in udtTowerCommands.ts)
+const getTowerLayerForLevel = (level: TowerLevels): number => {
+  switch (level) {
+    case 'top': return TOWER_LAYERS.TOP_RING;
+    case 'middle': return TOWER_LAYERS.MIDDLE_RING;
+    case 'bottom': return TOWER_LAYERS.BOTTOM_RING;
+    default: return TOWER_LAYERS.TOP_RING;
+  }
+};
+
+const getLightIndexForSide = (side: TowerSide): number => {
+  switch (side) {
+    case 'north': return RING_LIGHT_POSITIONS.NORTH;
+    case 'east': return RING_LIGHT_POSITIONS.EAST;
+    case 'south': return RING_LIGHT_POSITIONS.SOUTH;
+    case 'west': return RING_LIGHT_POSITIONS.WEST;
+    default: return RING_LIGHT_POSITIONS.NORTH;
+  }
+};
+
+
+const getLedgeLightIndexForSide = (side: string): number => {
+  // Map ordinal directions directly to ledge light positions
+  switch (side) {
+    case 'northeast': return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+    case 'southeast': return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;
+    case 'southwest': return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;
+    case 'northwest': return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;
+    default: return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+  }
+};
+
+const getBaseLightIndexForSide = (side: TowerSide): number => {
+  // Map cardinal directions to ordinal positions for base lights
+  switch (side) {
+    case 'north': return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;  // Closest to north
+    case 'east': return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;   // Closest to east
+    case 'south': return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;  // Closest to south
+    case 'west': return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;   // Closest to west
+    default: return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+  }
+};
 
 const lights = () => {
   // Get the currently selected light style from the dropdown
   const lightStyleSelect = document.getElementById("lightStyles") as HTMLSelectElement;
   const selectedLightStyle = lightStyleSelect?.options[lightStyleSelect.selectedIndex]?.textContent || "off";
 
-  // Apply the selected style to all checked lights
-  const allCheckedLights = document.querySelectorAll('input[type="checkbox"][data-light-type]:checked') as NodeListOf<HTMLInputElement>;
-  allCheckedLights.forEach(checkbox => {
-    checkbox.setAttribute('data-light-style', selectedLightStyle);
+  // Apply the selected style to all checked lights and turn off unchecked lights
+  const allLEDLights = document.querySelectorAll('input[type="checkbox"][data-light-type]') as NodeListOf<HTMLInputElement>;
+  allLEDLights.forEach(checkbox => {
+    if (checkbox.checked) {
+      checkbox.setAttribute('data-light-style', selectedLightStyle);
+    } else {
+      checkbox.setAttribute('data-light-style', 'off');
+    }
   });
 
   const doorwayLights: Array<DoorwayLight> = getDoorwayLights();
@@ -521,7 +718,7 @@ const getLedgeLights = (): Array<LedgeLight> => {
   Array.from(checked).forEach(cb => {
     const { lightSide, lightStyle } = getDataAttributes(cb);
     if (lightSide && lightStyle) {
-      ledgeCmds.push({ position: lightSide as TowerSide, style: lightStyle });
+      ledgeCmds.push({ position: lightSide as TowerCorner, style: lightStyle });
     }
   });
   return ledgeCmds;
@@ -674,6 +871,9 @@ const sealSquareClick = (element: HTMLElement) => {
 
 // Tab switching functionality
 const switchTab = (tabName: string) => {
+  // Turn off all lights when switching tabs
+  allLightsOff();
+
   // Hide all tab contents
   const allTabContents = document.querySelectorAll('.tower-tab-content');
   allTabContents.forEach(content => {
@@ -776,9 +976,9 @@ const moveGlyph = async () => {
     logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, '[Glyphs]');
 
     // Execute the rotation with all three drum positions
-    await Tower.Rotate(topPosition as TowerSide, middlePosition as TowerSide, bottomPosition as TowerSide);
+    await Tower.rotateWithState(topPosition as TowerSide, middlePosition as TowerSide, bottomPosition as TowerSide);
 
-    // The Tower.Rotate() command turns off all lights, so we need to restore them
+    // Restore lights after rotation
     // Wait a moment for rotation to complete, then restore all lights and refresh UI
     setTimeout(async () => {
       try {
@@ -1037,6 +1237,11 @@ const initializeUI = () => {
       option.textContent = key; // Use the key (name) for display instead of numeric value
       lightStyleSelect.appendChild(option);
     });
+    // Set default selection to 'on' if available
+    const onIndex = Array.from(lightStyleSelect.options).findIndex(opt => opt.value === 'on');
+    if (onIndex >= 0) {
+      lightStyleSelect.selectedIndex = onIndex;
+    }
   }
 
   // Populate light overrides dropdown (should have advanced sequences)
@@ -1044,7 +1249,7 @@ const initializeUI = () => {
   if (lightOverrideSelect) {
     Object.entries(TOWER_LIGHT_SEQUENCES).forEach(([key, value]) => {
       const option = document.createElement('option');
-      option.value = key;
+      option.value = value.toString(); // Use the numeric value, not the key
       option.textContent = key;
       lightOverrideSelect.appendChild(option);
     });
@@ -1286,10 +1491,14 @@ const downloadDisplayedLogs = (event: Event) => {
 }
 
 // Tower Status Packet functions
+const STATE_BUFFER_SIZE = 19;
+const DISPLAY_BUFFER_SIZE = 20;
+const EMPTY_STATUS_PACKET = new Array(DISPLAY_BUFFER_SIZE).fill(0);
+
 const refreshStatusPacket = () => {
   if (!Tower.isConnected) {
     logger.warn("Tower is not connected", '[Status Packet]');
-    updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
     return;
   }
 
@@ -1297,25 +1506,26 @@ const refreshStatusPacket = () => {
     const state = Tower.getCurrentTowerState();
     if (!state) {
       logger.warn("No current tower state available", '[Status Packet]');
-      updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+      updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
       return;
     }
 
     // Create a buffer for the packed state (19 bytes + 1 command byte = 20 bytes)
-    const buffer = new Uint8Array(20);
-    const stateBuffer = new Uint8Array(19);
+    const buffer = new Uint8Array(DISPLAY_BUFFER_SIZE);
+    const stateBuffer = new Uint8Array(STATE_BUFFER_SIZE);
 
-    const success = rtdt_pack_state(stateBuffer, 19, state);
+    // convert tower state to packet
+    const success = rtdt_pack_state(stateBuffer, STATE_BUFFER_SIZE, state);
 
     if (!success) {
       logger.error("Failed to pack tower state", '[Status Packet]');
-      updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+      updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
       return;
     }
 
     // Command byte (0x00) + 19 bytes of state data
     buffer[0] = 0; // Command type for tower state
-    for (let i = 0; i < 19; i++) {
+    for (let i = 0; i < STATE_BUFFER_SIZE; i++) {
       buffer[i + 1] = stateBuffer[i];
     }
 
@@ -1326,7 +1536,7 @@ const refreshStatusPacket = () => {
     logger.info("Status packet refreshed", '[Status Packet]');
   } catch (error) {
     logger.error(`Failed to refresh status packet: ${error}`, '[Status Packet]');
-    updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
   }
 }
 
@@ -1371,9 +1581,9 @@ const updateStatusPacketDisplay = (packetData: number[]) => {
       span.className += ' non-zero';
     }
 
-    span.textContent = byte.toString();
+    span.textContent = byte.toString(16).padStart(2, '0').toUpperCase();
     const description = index < byteDescriptions.length ? byteDescriptions[index] : 'Unknown';
-    span.title = `Byte ${index}: ${byte} (0x${byte.toString(16).padStart(2, '0').toUpperCase()}) - ${description}`;
+    span.title = `Byte ${index}: ${byte}D - ${description}`;
     display.appendChild(span);
   });
 }
@@ -1469,11 +1679,26 @@ const toggleGlyphLight = async (element: HTMLElement) => {
       glyphLightStates.delete(glyphAtPosition);
     }
 
-    // Get all current doorway lights based on glyph positions
-    const allDoorwayLights = getCurrentDoorwayLights();
+    // Create a doorway light command for this specific glyph
+    const glyphLevel = GLYPHS[glyphAtPosition as keyof typeof GLYPHS].level;
+    const specificLightCommand: DoorwayLight = {
+      position: side as TowerSide,
+      level: glyphLevel as TowerLevels,
+      style: lightEffect
+    };
 
-    await Tower.Lights({ doorway: allDoorwayLights });
-    logger.info(`Successfully updated tower lights. Active lights: ${allDoorwayLights.length}`, '[Glyphs]');
+    // If turning on, send all current lights including this one
+    // If turning off, send just this light with 'off' style to explicitly turn it off
+    if (isLit) {
+      // Get all current doorway lights and send them together
+      const allDoorwayLights = getCurrentDoorwayLights();
+      await Tower.Lights({ doorway: allDoorwayLights });
+      logger.info(`Successfully turned on light for glyph ${glyphAtPosition}. Active lights: ${allDoorwayLights.length}`, '[Glyphs]');
+    } else {
+      // Send explicit off command for this specific light
+      await Tower.Lights({ doorway: [specificLightCommand] });
+      logger.info(`Successfully turned off light for glyph ${glyphAtPosition}`, '[Glyphs]');
+    }
 
   } catch (error) {
     console.error('Error toggling glyph light:', error);
@@ -1585,9 +1810,9 @@ const enhancedMoveGlyph = async () => {
     logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, '[Glyphs]');
 
     // Execute the rotation with all three drum positions
-    await Tower.Rotate(topPosition as TowerSide, middlePosition as TowerSide, bottomPosition as TowerSide);
+    await Tower.rotateWithState(topPosition as TowerSide, middlePosition as TowerSide, bottomPosition as TowerSide);
 
-    // The Tower.Rotate() command turns off all lights, so we need to restore them
+    // Restore lights after rotation
     // Wait a moment for rotation to complete, then restore all lights and refresh UI
     setTimeout(async () => {
       try {
@@ -1614,6 +1839,126 @@ const enhancedMoveGlyph = async () => {
   } catch (error) {
     console.error('Error moving glyph:', error);
     logger.error('Error moving glyph: ' + error, '[Glyphs]');
+  }
+};
+
+// Volume level descriptions (firmware: 0=loudest, 1=medium, 2=quiet, 3=mute)
+const VOLUME_DESCRIPTIONS = {
+  0: 'Loud',
+  1: 'Medium',
+  2: 'Quiet',
+  3: 'Mute'
+} as const;
+
+// Volume level icons
+const VOLUME_ICONS = {
+  0: '🔊', // Loud - biggest speaker
+  1: '🔉', // Medium - medium speaker
+  2: '🔈', // Quiet - small speaker
+  3: '🔇'  // Mute - muted speaker
+} as const;
+
+// Local volume tracking to avoid conflicts with tower state
+let localVolume = 0;
+
+// Volume control functions
+const volumeUp = async () => {
+  try {
+    logger.debug(`volumeUp called: current localVolume = ${localVolume}`, '[Volume]');
+    const newVolume = Math.min(localVolume + 1, 3); // Clamp to max 3
+
+    if (newVolume === localVolume) {
+      logger.info('Volume is already at maximum (3)', '[Volume]');
+      return;
+    }
+
+    logger.info(`Setting volume from ${localVolume} to ${newVolume}`, '[Volume]');
+
+    // Update local volume first
+    localVolume = newVolume;
+
+    // Get current state and update only the volume
+    const currentState = Tower.getCurrentTowerState();
+    const newState = { ...currentState };
+    newState.audio = { ...currentState.audio, volume: newVolume };
+
+    logger.debug(`Sending tower state with volume: ${newState.audio.volume}`, '[Volume]');
+
+    // Send the updated state to the tower
+    await Tower.sendTowerState(newState);
+
+    // Play CardFlipPaper03 sound with new volume for feedback
+    await Tower.playSoundStateful(0x21, false, newVolume);
+
+    // Update the display
+    updateVolumeDisplay(newVolume);
+
+    logger.info(`Volume increased to ${newVolume}`, '[Volume]');
+  } catch (error) {
+    logger.error(`Error increasing volume: ${error}`, '[Volume]');
+  }
+};
+
+const volumeDown = async () => {
+  try {
+    const newVolume = Math.max(localVolume - 1, 0); // Clamp to min 0
+
+    if (newVolume === localVolume) {
+      logger.info('Volume is already at minimum (0)', '[Volume]');
+      return;
+    }
+
+    // Update local volume first
+    localVolume = newVolume;
+
+    // Get current state and update only the volume
+    const currentState = Tower.getCurrentTowerState();
+    const newState = { ...currentState };
+    newState.audio = { ...currentState.audio, volume: newVolume };
+
+    // Send the updated state to the tower
+    await Tower.sendTowerState(newState);
+
+    // Play CardFlipPaper03 sound with new volume for feedback (except when going to Mute)
+    if (newVolume < 3) {
+      await Tower.playSoundStateful(0x21, false, newVolume);
+    }
+
+    // Update the display
+    updateVolumeDisplay(newVolume);
+
+    logger.info(`Volume decreased to ${newVolume}`, '[Volume]');
+  } catch (error) {
+    logger.error(`Error decreasing volume: ${error}`, '[Volume]');
+  }
+};
+
+const updateVolumeDisplay = (volume: number) => {
+  const volumeLevelElement = document.getElementById('volumeLevel');
+  const volumeIconElement = document.getElementById('volumeIcon');
+
+  if (volumeLevelElement) {
+    const description = VOLUME_DESCRIPTIONS[volume as keyof typeof VOLUME_DESCRIPTIONS] || 'Unknown';
+    volumeLevelElement.textContent = description;
+  }
+
+  if (volumeIconElement) {
+    const icon = VOLUME_ICONS[volume as keyof typeof VOLUME_ICONS] || '🔊';
+    volumeIconElement.textContent = icon;
+  }
+};
+
+// Initialize volume display when tower connects
+const initializeVolumeDisplay = () => {
+  try {
+    const currentState = Tower.getCurrentTowerState();
+    localVolume = currentState.audio.volume;
+    logger.info(`Initialized volume display: tower volume = ${currentState.audio.volume}, localVolume = ${localVolume}`, '[Volume]');
+    updateVolumeDisplay(localVolume);
+  } catch (error) {
+    logger.debug('Could not initialize volume display, tower may not be connected yet', '[Volume]');
+    localVolume = 0; // Default to 0 if we can't get tower state
+    logger.info(`Initialized volume display with default: localVolume = ${localVolume}`, '[Volume]');
   }
 };
 
@@ -1654,4 +1999,9 @@ const enhancedMoveGlyph = async () => {
 (window as any).glyphLightStates = glyphLightStates;
 (window as any).getCurrentDoorwayLights = getCurrentDoorwayLights;
 (window as any).updateBatteryFilter = updateBatteryFilter;
+(window as any).updateDrumDropdowns = updateDrumDropdowns;
 (window as any).refreshStatusPacket = refreshStatusPacket;
+(window as any).volumeUp = volumeUp;
+(window as any).volumeDown = volumeDown;
+(window as any).updateVolumeDisplay = updateVolumeDisplay;
+(window as any).initializeVolumeDisplay = initializeVolumeDisplay;

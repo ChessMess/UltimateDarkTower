@@ -1,22 +1,6 @@
-import { type Lights, type TowerSide, type CommandPacket } from './udtConstants';
+import { type TowerSide } from './udtConstants';
 import { type TowerState } from './udtTowerState';
-export interface DrumPositions {
-    topMiddle: number;
-    bottom: number;
-}
 export declare class UdtCommandFactory {
-    /**
-     * Creates a light command packet from a lights configuration object.
-     * @param lights - Light configuration specifying doorway, ledge, and base lights
-     * @returns Command packet for controlling tower lights
-     */
-    createLightPacketCommand(lights: Lights): Uint8Array;
-    /**
-     * Creates a light override command packet.
-     * @param lightOverride - Light override value to send
-     * @returns Command packet for light override
-     */
-    createLightOverrideCommand(lightOverride: number): Uint8Array;
     /**
      * Creates a rotation command packet for positioning tower drums.
      * @param top - Target position for top drum
@@ -31,12 +15,6 @@ export declare class UdtCommandFactory {
      * @returns Command packet for playing sound
      */
     createSoundCommand(soundIndex: number): Uint8Array;
-    /**
-     * Updates a command packet with the current drum positions.
-     * @param commandPacket - The command packet to update with current drum positions
-     * @param currentPositions - Current drum positions to apply
-     */
-    updateCommandWithCurrentDrumPositions(commandPacket: CommandPacket, currentPositions: DrumPositions): void;
     /**
      * Creates a basic tower command packet with the specified command value.
      * @param commandValue - The command value to send
@@ -62,14 +40,41 @@ export declare class UdtCommandFactory {
      */
     createStatefulLEDCommand(currentState: TowerState | null, layerIndex: number, lightIndex: number, effect: number, loop?: boolean): Uint8Array;
     /**
-     * Creates a stateful audio command that only changes audio while preserving all other state.
+ * Creates a stateful audio command that preserves all current tower state while adding audio.
+ * @param currentState - The current complete tower state
+ * @param sample - Audio sample index to play (0-127)
+ * @param loop - Whether to loop the audio
+ * @param volume - Audio volume (0-15), optional
+ * @returns 20-byte command packet
+ */
+    createStatefulAudioCommand(currentState: TowerState | null, sample: number, loop?: boolean, volume?: number): Uint8Array;
+    /**
+     * Creates a transient audio command that includes current tower state but doesn't persist audio state.
+     * This prevents audio from being included in subsequent commands.
      * @param currentState - The current complete tower state
-     * @param sample - Audio sample index (0-127)
+     * @param sample - Audio sample index to play
      * @param loop - Whether to loop the audio
      * @param volume - Audio volume (0-15), optional
-     * @returns 20-byte command packet
+     * @returns Object containing the command packet and the state without audio for local tracking
      */
-    createStatefulAudioCommand(currentState: TowerState | null, sample: number, loop?: boolean, volume?: number): Uint8Array;
+    createTransientAudioCommand(currentState: TowerState | null, sample: number, loop?: boolean, volume?: number): {
+        command: Uint8Array;
+        stateWithoutAudio: TowerState;
+    };
+    /**
+     * Creates a transient audio command with additional modifications that includes current tower state
+     * but doesn't persist audio state. This prevents audio from being included in subsequent commands.
+     * @param currentState - The current complete tower state
+     * @param sample - Audio sample index to play
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @param otherModifications - Other tower state modifications to include
+     * @returns Object containing the command packet and the state with modifications but without audio
+     */
+    createTransientAudioCommandWithModifications(currentState: TowerState | null, sample: number, loop?: boolean, volume?: number | undefined, otherModifications?: Partial<TowerState>): {
+        command: Uint8Array;
+        stateWithoutAudio: TowerState;
+    };
     /**
      * Creates a stateful drum rotation command that only changes drum positions while preserving all other state.
      * @param currentState - The current complete tower state

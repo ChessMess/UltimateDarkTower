@@ -58,7 +58,6 @@ class UltimateDarkTower {
         this.retrySendCommandCountRef = { value: 0 };
         this.retrySendCommandMax = 5;
         // tower state
-        this.currentDrumPositions = { topMiddle: 0x10, bottom: 0x42 };
         this.currentBatteryValue = 0;
         this.previousBatteryValue = 0;
         this.currentBatteryPercentage = 0;
@@ -122,11 +121,11 @@ class UltimateDarkTower {
             commandFactory: this.commandFactory,
             bleConnection: this.bleConnection,
             responseProcessor: this.responseProcessor,
-            currentDrumPositions: this.currentDrumPositions,
             logDetail: this.logDetail,
             retrySendCommandCount: this.retrySendCommandCountRef,
             retrySendCommandMax: this.retrySendCommandMax,
-            getCurrentTowerState: () => this.currentTowerState
+            getCurrentTowerState: () => this.currentTowerState,
+            setTowerState: (newState, source) => this.setTowerState(newState, source)
         };
         this.towerCommands = new udtTowerCommands_1.UdtTowerCommands(commandDependencies);
         // Set up command queue response callback now that tower commands are initialized
@@ -155,11 +154,11 @@ class UltimateDarkTower {
                 commandFactory: this.commandFactory,
                 bleConnection: this.bleConnection,
                 responseProcessor: this.responseProcessor,
-                currentDrumPositions: this.currentDrumPositions,
                 logDetail: this.logDetail,
                 retrySendCommandCount: this.retrySendCommandCountRef,
                 retrySendCommandMax: this.retrySendCommandMax,
-                getCurrentTowerState: () => this.currentTowerState
+                getCurrentTowerState: () => this.currentTowerState,
+                setTowerState: (newState, source) => this.setTowerState(newState, source)
             };
             this.towerCommands = new udtTowerCommands_1.UdtTowerCommands(commandDependencies);
         }
@@ -290,6 +289,27 @@ class UltimateDarkTower {
     async rotateDrumStateful(drumIndex, position, playSound = false) {
         return await this.towerCommands.rotateDrumStateful(drumIndex, position, playSound);
     }
+    /**
+     * Rotates tower drums to specified positions using stateful commands that preserve existing tower state.
+     * This is the recommended way to rotate drums as it preserves LEDs and other tower state.
+     * @param top - Position for the top drum ('north', 'east', 'south', 'west')
+     * @param middle - Position for the middle drum
+     * @param bottom - Position for the bottom drum
+     * @param soundIndex - Optional sound to play during rotation
+     * @returns Promise that resolves when rotate command is sent
+     */
+    async rotateWithState(top, middle, bottom, soundIndex) {
+        // Store current drum positions before rotation
+        const oldTopPosition = this.getCurrentDrumPosition('top');
+        const oldMiddlePosition = this.getCurrentDrumPosition('middle');
+        const oldBottomPosition = this.getCurrentDrumPosition('bottom');
+        const result = await this.towerCommands.rotateWithState(top, middle, bottom, soundIndex);
+        // Calculate rotation steps for each level and update glyph positions
+        this.calculateAndUpdateGlyphPositions('top', oldTopPosition, top);
+        this.calculateAndUpdateGlyphPositions('middle', oldMiddlePosition, middle);
+        this.calculateAndUpdateGlyphPositions('bottom', oldBottomPosition, bottom);
+        return result;
+    }
     //#endregion
     //#region Tower State Management
     /**
@@ -301,16 +321,19 @@ class UltimateDarkTower {
     }
     /**
      * Sends a complete tower state to the tower, preserving existing state.
-     * This creates a stateful command that only changes the specified fields.
+     * Audio state is automatically cleared to prevent sounds from persisting across commands.
      * @param towerState - The tower state to send
      * @returns Promise that resolves when the command is sent
      */
     async sendTowerState(towerState) {
         // Import pack function here to avoid circular dependencies
         const { rtdt_pack_state } = await Promise.resolve().then(() => __importStar(require('./udtTowerState')));
+        // Create a copy of the tower state and clear audio to prevent persistence
+        const stateToSend = Object.assign({}, towerState);
+        stateToSend.audio = { sample: 0, loop: false, volume: 0 };
         // Pack the tower state into 19 bytes
         const stateData = new Uint8Array(19);
-        const success = rtdt_pack_state(stateData, 19, towerState);
+        const success = rtdt_pack_state(stateData, 19, stateToSend);
         if (!success) {
             throw new Error('Failed to pack tower state data');
         }
@@ -318,8 +341,8 @@ class UltimateDarkTower {
         const command = new Uint8Array(20);
         command[0] = 0x00; // Command type for tower state
         command.set(stateData, 1);
-        // Update our current state tracking
-        this.setTowerState(Object.assign({}, towerState), 'sendTowerState');
+        // Update our current state tracking (also without audio)
+        this.setTowerState(Object.assign({}, stateToSend), 'sendTowerState');
         // Send the command
         return await this.sendTowerCommandDirect(command);
     }
@@ -339,12 +362,16 @@ class UltimateDarkTower {
     /**
      * Updates the current tower state from a tower response.
      * Called internally when tower state responses are received.
+     * Audio state is reset to prevent sounds from persisting across commands.
      * @param stateData - The 19-byte state data from tower response
      */
     updateTowerStateFromResponse(stateData) {
         // Import unpack function here to avoid circular dependencies
         Promise.resolve().then(() => __importStar(require('./udtTowerState'))).then(({ rtdt_unpack_state }) => {
             const newState = rtdt_unpack_state(stateData);
+            // Reset audio state to prevent sounds from persisting, but preserve user's volume setting
+            // Tower always returns volume=0, so we keep the current volume from our local state
+            newState.audio = { sample: 0, loop: false, volume: this.currentTowerState.audio.volume };
             this.setTowerState(newState, 'tower response');
         });
     }
@@ -352,10 +379,11 @@ class UltimateDarkTower {
     /**
      * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
      * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
+     * @param volume - Optional volume override (0=loud, 1=medium, 2=quiet, 3=mute). Uses current tower state if not provided.
      * @returns Promise that resolves when seal break sequence is complete
      */
-    async breakSeal(seal) {
-        const result = await this.towerCommands.breakSeal(seal);
+    async breakSeal(seal, volume) {
+        const result = await this.towerCommands.breakSeal(seal, volume);
         // Track broken seal
         const sealKey = `${seal.level}-${seal.side}`;
         this.brokenSeals.add(sealKey);

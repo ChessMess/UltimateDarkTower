@@ -121,7 +121,7 @@
     }
 
     .tower-table-cell-sm {
-      padding: 0.25rem 0.25rem;
+      padding: 0.25rem 0.25rem 0 0.25rem;
     }
 
     .tower-table-header {
@@ -297,11 +297,11 @@
     }
 
     .status-byte.non-zero {
-      background-color: rgba(220, 38, 38, 0.15);
+      background-color: rgba(254, 240, 138, 0.5);
     }
 
     .status-byte.non-zero:hover {
-      background-color: rgba(220, 38, 38, 0.25);
+      background-color: rgba(254, 240, 138, 0.75);
     }
   </style>
 
@@ -360,13 +360,24 @@
             <div id="diagnostics-content" class="tower-tab-content tower-tab-content-active">
               <fieldset class="tower-fieldset">
                 <legend class="tower-legend">Audio</legend>
-                <div class="flex justify-evenly items-center p-1 space-x-4">
-                  <select id="sounds" class="tower-select w-3/4">
+                <div class="flex justify-evenly items-center p-1 space-x-6">
+                  <select id="sounds" class="tower-select flex-1">
                     <option value="0">select sound</option>
                   </select>
-                  <button id="soundButton" onclick="playSound()" class="tower-button w-1/4">
+                  <button id="soundButton" onclick="playSound()" class="tower-button">
                     Play
                   </button>
+                  <div class="flex items-center space-x-1">
+                    <span id="volumeIcon" class="text-white text-lg">🔊</span>
+                    <span id="volumeLevel" class="text-white text-sm font-bold min-w-[4rem] text-center"
+                      style="font-variant: small-caps;">Loud</span>
+                    <button id="volumeDownButton" onclick="volumeDown()" class="tower-button px-2 py-1 text-sm">
+                      &lt;
+                    </button>
+                    <button id="volumeUpButton" onclick="volumeUp()" class="tower-button px-2 py-1 text-sm">
+                      &gt;
+                    </button>
+                  </div>
                 </div>
               </fieldset>
 
@@ -448,32 +459,34 @@
                   </fieldset>
                   <fieldset class="nested-fieldset">
                     <legend class="tower-legend">Ledges:</legend>
-                    <table class="text-center">
-                      <thead>
-                        <tr>
-                          <td class="tower-table-header">N</td>
-                          <td class="tower-table-header">E</td>
-                          <td class="tower-table-header">S</td>
-                          <td class="tower-table-header">W</td>
-                        </tr>
-                      </thead>
+                    <table class="text-sm mx-auto">
                       <tbody>
                         <tr>
-                          <td class="tower-table-cell">
+                          <td class="pr-2 py-1 font-bold text-center align-middle">NE</td>
+                          <td class="tower-table-cell-sm text-center align-middle">
                             <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                              data-light-location="north" class="tower-checkbox" />
+                              data-light-location="northeast" class="tower-checkbox" />
                           </td>
-                          <td class="tower-table-cell">
+                        </tr>
+                        <tr>
+                          <td class="pr-2 py-1 font-bold text-center align-middle">SE</td>
+                          <td class="tower-table-cell-sm text-center align-middle">
                             <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                              data-light-location="east" class="tower-checkbox" />
+                              data-light-location="southeast" class="tower-checkbox" />
                           </td>
-                          <td class="tower-table-cell">
+                        </tr>
+                        <tr>
+                          <td class="pr-2 py-1 font-bold text-center align-middle">SW</td>
+                          <td class="tower-table-cell-sm text-center align-middle">
                             <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                              data-light-location="south" class="tower-checkbox" />
+                              data-light-location="southwest" class="tower-checkbox" />
                           </td>
-                          <td class="tower-table-cell">
+                        </tr>
+                        <tr>
+                          <td class="pr-2 py-1 font-bold text-center align-middle">NW</td>
+                          <td class="tower-table-cell-sm text-center align-middle">
                             <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                              data-light-location="west" class="tower-checkbox" />
+                              data-light-location="northwest" class="tower-checkbox" />
                           </td>
                         </tr>
                       </tbody>
@@ -591,7 +604,7 @@
               </fieldset>
 
               <fieldset class="tower-fieldset">
-                <legend class="tower-legend">Tower Status Packet</legend>
+                <legend class="tower-legend">Tower State</legend>
                 <div class="flex justify-center p-1">
                   <div class="w-full">
                     <div id="status-packet-container" class="bg-gray-800 rounded p-2 border border-gray-600">

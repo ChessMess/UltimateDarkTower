@@ -8,8 +8,8 @@ export declare function milliVoltsToPercentageNumber(mv: number): number;
 /**
  * Converts battery voltage in millivolts to percentage.
  * Tower returns sum total battery level in millivolts for all batteries.
- * @param {number} mv - Battery voltage in millivolts
- * @returns {string} Battery percentage as formatted string (e.g., "75%")
+ * @param mv - Battery voltage in millivolts
+ * @returns Battery percentage as formatted string (e.g., "75%")
  */
 export declare function milliVoltsToPercentage(mv: number): string;
 /**

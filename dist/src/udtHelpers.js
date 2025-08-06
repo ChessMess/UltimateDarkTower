@@ -3,26 +3,32 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createDefaultTowerState = exports.getActiveLights = exports.getTowerPosition = exports.commandToPacketString = exports.getMilliVoltsFromTowerResponse = exports.milliVoltsToPercentage = exports.milliVoltsToPercentageNumber = void 0;
 const udtConstants_1 = require("./udtConstants");
 /**
+ * Internal function to calculate battery percentage from millivolts.
+ * @param mv - Battery voltage in millivolts
+ * @returns Battery percentage as number (0-100)
+ */
+function calculateBatteryPercentage(mv) {
+    const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
+    const levels = udtConstants_1.VOLTAGE_LEVELS.filter(v => batLevel >= v);
+    return levels.length * 5;
+}
+/**
  * Converts battery voltage in millivolts to percentage number (0-100).
  * @param mv - Battery voltage in millivolts
  * @returns Battery percentage as number (0-100)
  */
 function milliVoltsToPercentageNumber(mv) {
-    const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
-    const levels = udtConstants_1.VOLTAGE_LEVELS.filter(v => batLevel >= v);
-    return levels.length * 5;
+    return calculateBatteryPercentage(mv);
 }
 exports.milliVoltsToPercentageNumber = milliVoltsToPercentageNumber;
 /**
  * Converts battery voltage in millivolts to percentage.
  * Tower returns sum total battery level in millivolts for all batteries.
- * @param {number} mv - Battery voltage in millivolts
- * @returns {string} Battery percentage as formatted string (e.g., "75%")
+ * @param mv - Battery voltage in millivolts
+ * @returns Battery percentage as formatted string (e.g., "75%")
  */
 function milliVoltsToPercentage(mv) {
-    const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
-    const levels = udtConstants_1.VOLTAGE_LEVELS.filter(v => batLevel >= v);
-    return `${levels.length * 5}%`;
+    return `${calculateBatteryPercentage(mv)}%`;
 }
 exports.milliVoltsToPercentage = milliVoltsToPercentage;
 /**

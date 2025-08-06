@@ -10,7 +10,6 @@ import {
   TOWER_COMMANDS,
   TC,
   DRUM_PACKETS,
-  LIGHT_PACKETS,
   GLYPHS,
   TOWER_AUDIO_LIBRARY
 } from '../src/udtConstants';
@@ -75,30 +74,6 @@ describe('Constants', () => {
     });
   });
 
-  describe('Light Packets', () => {
-    test('should have doorway light configuration', () => {
-      expect(LIGHT_PACKETS).toHaveProperty('doorway');
-      expect(LIGHT_PACKETS.doorway).toHaveProperty('top');
-      expect(LIGHT_PACKETS.doorway).toHaveProperty('middle');
-      expect(LIGHT_PACKETS.doorway).toHaveProperty('bottom');
-    });
-
-    test('should have base light configuration', () => {
-      expect(LIGHT_PACKETS).toHaveProperty('base');
-      expect(LIGHT_PACKETS.base).toHaveProperty('north');
-      expect(LIGHT_PACKETS.base).toHaveProperty('east');
-      expect(LIGHT_PACKETS.base).toHaveProperty('south');
-      expect(LIGHT_PACKETS.base).toHaveProperty('west');
-    });
-
-    test('should have ledge light configuration', () => {
-      expect(LIGHT_PACKETS).toHaveProperty('ledge');
-      expect(LIGHT_PACKETS.ledge).toHaveProperty('north');
-      expect(LIGHT_PACKETS.ledge).toHaveProperty('east');
-      expect(LIGHT_PACKETS.ledge).toHaveProperty('south');
-      expect(LIGHT_PACKETS.ledge).toHaveProperty('west');
-    });
-  });
 
   describe('Glyphs', () => {
     test('should have GLYPHS object defined', () => {

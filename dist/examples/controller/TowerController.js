@@ -1,5 +1,7 @@
 (() => {
   var __defProp = Object.defineProperty;
+  var __defProps = Object.defineProperties;
+  var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getOwnPropSymbols = Object.getOwnPropertySymbols;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
@@ -16,6 +18,7 @@
       }
     return a;
   };
+  var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
   var __esm = (fn, res) => function __init() {
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
   };
@@ -25,7 +28,7 @@
   };
 
   // src/udtConstants.ts
-  var UART_SERVICE_UUID, UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID, TOWER_DEVICE_NAME, DIS_SERVICE_UUID, DIS_MANUFACTURER_NAME_UUID, DIS_MODEL_NUMBER_UUID, DIS_SERIAL_NUMBER_UUID, DIS_HARDWARE_REVISION_UUID, DIS_FIRMWARE_REVISION_UUID, DIS_SOFTWARE_REVISION_UUID, DIS_SYSTEM_ID_UUID, DIS_IEEE_REGULATORY_UUID, DIS_PNP_ID_UUID, TOWER_COMMANDS, TC, DRUM_PACKETS, LIGHT_PACKETS, GLYPHS, AUDIO_COMMAND_POS, SKULL_DROP_COUNT_POS, drumPositionCmds, BASE_LEDGE_LIGHTS_TO_BIT_SHIFT, DOORWAY_LIGHTS_TO_BIT_SHIFT, LIGHT_EFFECTS, TOWER_LIGHT_SEQUENCES, TOWER_AUDIO_LIBRARY, TOWER_MESSAGES, VOLTAGE_LEVELS, TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LED_CHANNEL_LOOKUP, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH;
+  var UART_SERVICE_UUID, UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID, TOWER_DEVICE_NAME, DIS_SERVICE_UUID, DIS_MANUFACTURER_NAME_UUID, DIS_MODEL_NUMBER_UUID, DIS_SERIAL_NUMBER_UUID, DIS_HARDWARE_REVISION_UUID, DIS_FIRMWARE_REVISION_UUID, DIS_SOFTWARE_REVISION_UUID, DIS_SYSTEM_ID_UUID, DIS_IEEE_REGULATORY_UUID, DIS_PNP_ID_UUID, TOWER_COMMANDS, TC, DRUM_PACKETS, GLYPHS, AUDIO_COMMAND_POS, SKULL_DROP_COUNT_POS, drumPositionCmds, LIGHT_EFFECTS, TOWER_LIGHT_SEQUENCES, TOWER_MESSAGES, VOLTAGE_LEVELS, TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LED_CHANNEL_LOOKUP, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH, TOWER_AUDIO_LIBRARY;
   var init_udtConstants = __esm({
     "src/udtConstants.ts"() {
       UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
@@ -67,21 +70,6 @@
         topMiddle: 1,
         bottom: 2
       };
-      LIGHT_PACKETS = {
-        doorway: {
-          top: { north: 3, east: 3, south: 4, west: 4 },
-          middle: { north: 5, east: 5, south: 6, west: 6 },
-          bottom: { north: 7, east: 7, south: 8, west: 8 }
-        },
-        base: {
-          north: { a: 12, b: 14 },
-          east: { a: 11, b: 13 },
-          south: { a: 11, b: 13 },
-          west: { a: 12, b: 14 }
-        },
-        ledge: { north: 10, west: 10, south: 9, east: 9 },
-        overrides: 19
-      };
       GLYPHS = {
         cleanse: { name: "Cleanse", level: "top", side: "north" },
         quest: { name: "Quest", level: "top", side: "south" },
@@ -98,15 +86,13 @@
         // bits 1-4
         bottom: { north: 66, east: 74, south: 82, west: 90 }
       };
-      BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
-      DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];
       LIGHT_EFFECTS = {
-        on: 3,
         off: 0,
-        breathe: 5,
-        breatheFast: 7,
-        breathe50percent: 9,
-        flicker: 11
+        on: 1,
+        breathe: 2,
+        breatheFast: 3,
+        breathe50percent: 4,
+        flicker: 5
       };
       TOWER_LIGHT_SEQUENCES = {
         twinkle: 1,
@@ -129,6 +115,107 @@
         rotationDrumBottom: 18,
         monthStarted: 19
       };
+      TOWER_MESSAGES = {
+        TOWER_STATE: { name: "Tower State", value: 0, critical: false },
+        INVALID_STATE: { name: "Invalid State", value: 1, critical: true },
+        HARDWARE_FAILURE: { name: "Hardware Failure", value: 2, critical: true },
+        MECH_JIGGLE_TRIGGERED: { name: "Unjam Jiggle Triggered", value: 3, critical: false },
+        MECH_DURATION: { name: "Rotation Duration", value: 4, critical: false },
+        MECH_UNEXPECTED_TRIGGER: { name: "Unexpected Trigger", value: 5, critical: false },
+        DIFFERENTIAL_READINGS: { name: "Diff Voltage Readings", value: 6, critical: false },
+        BATTERY_READING: { name: "Battery Level", value: 7, critical: false },
+        CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false }
+      };
+      VOLTAGE_LEVELS = [
+        1500,
+        1390,
+        1350,
+        1320,
+        1295,
+        1270,
+        1245,
+        1225,
+        1205,
+        1180,
+        1175,
+        1166,
+        1150,
+        1133,
+        1125,
+        1107,
+        1095,
+        1066,
+        1033,
+        980
+        // There's an additional 5% until 800mV is reached
+      ];
+      TOWER_LAYERS = {
+        TOP_RING: 0,
+        MIDDLE_RING: 1,
+        BOTTOM_RING: 2,
+        LEDGE: 3,
+        BASE1: 4,
+        BASE2: 5
+      };
+      RING_LIGHT_POSITIONS = {
+        NORTH: 0,
+        EAST: 1,
+        SOUTH: 2,
+        WEST: 3
+      };
+      LEDGE_BASE_LIGHT_POSITIONS = {
+        NORTH_EAST: 0,
+        SOUTH_EAST: 1,
+        SOUTH_WEST: 2,
+        NORTH_WEST: 3
+      };
+      LED_CHANNEL_LOOKUP = [
+        // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
+        0,
+        3,
+        2,
+        1,
+        // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
+        7,
+        6,
+        5,
+        4,
+        // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
+        10,
+        9,
+        8,
+        11,
+        // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
+        12,
+        13,
+        14,
+        15,
+        // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
+        16,
+        17,
+        18,
+        19,
+        // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
+        20,
+        21,
+        22,
+        23
+      ];
+      LAYER_TO_POSITION = {
+        [TOWER_LAYERS.TOP_RING]: "TOP_RING",
+        [TOWER_LAYERS.MIDDLE_RING]: "MIDDLE_RING",
+        [TOWER_LAYERS.BOTTOM_RING]: "BOTTOM_RING",
+        [TOWER_LAYERS.LEDGE]: "LEDGE",
+        [TOWER_LAYERS.BASE1]: "BASE1",
+        [TOWER_LAYERS.BASE2]: "BASE2"
+      };
+      LIGHT_INDEX_TO_DIRECTION = {
+        [RING_LIGHT_POSITIONS.NORTH]: "NORTH",
+        [RING_LIGHT_POSITIONS.EAST]: "EAST",
+        [RING_LIGHT_POSITIONS.SOUTH]: "SOUTH",
+        [RING_LIGHT_POSITIONS.WEST]: "WEST"
+      };
+      STATE_DATA_LENGTH = 19;
       TOWER_AUDIO_LIBRARY = {
         Ashstrider: { name: "Ashstrider", value: 1, category: "Adversary" },
         BaneofOmens: { name: "Bane of Omens", value: 2, category: "Adversary" },
@@ -244,107 +331,6 @@
         TowerSeal: { name: "Tower Seal", value: 112, category: "Seals" },
         TowerSkullDropped: { name: "Tower Skull Dropped", value: 113, category: "State" }
       };
-      TOWER_MESSAGES = {
-        TOWER_STATE: { name: "Tower State", value: 0, critical: false },
-        INVALID_STATE: { name: "Invalid State", value: 1, critical: true },
-        HARDWARE_FAILURE: { name: "Hardware Failure", value: 2, critical: true },
-        MECH_JIGGLE_TRIGGERED: { name: "Unjam Jiggle Triggered", value: 3, critical: false },
-        MECH_DURATION: { name: "Rotation Duration", value: 4, critical: false },
-        MECH_UNEXPECTED_TRIGGER: { name: "Unexpected Trigger", value: 5, critical: false },
-        DIFFERENTIAL_READINGS: { name: "Diff Voltage Readings", value: 6, critical: false },
-        BATTERY_READING: { name: "Battery Level", value: 7, critical: false },
-        CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false }
-      };
-      VOLTAGE_LEVELS = [
-        1500,
-        1390,
-        1350,
-        1320,
-        1295,
-        1270,
-        1245,
-        1225,
-        1205,
-        1180,
-        1175,
-        1166,
-        1150,
-        1133,
-        1125,
-        1107,
-        1095,
-        1066,
-        1033,
-        980
-        // There's an additional 5% until 800mV is reached
-      ];
-      TOWER_LAYERS = {
-        TOP_RING: 0,
-        MIDDLE_RING: 1,
-        BOTTOM_RING: 2,
-        LEDGE: 3,
-        BASE1: 4,
-        BASE2: 5
-      };
-      RING_LIGHT_POSITIONS = {
-        NORTH: 0,
-        EAST: 1,
-        SOUTH: 2,
-        WEST: 3
-      };
-      LEDGE_BASE_LIGHT_POSITIONS = {
-        NORTH_EAST: 0,
-        SOUTH_EAST: 1,
-        SOUTH_WEST: 2,
-        NORTH_WEST: 3
-      };
-      LED_CHANNEL_LOOKUP = [
-        // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
-        0,
-        3,
-        2,
-        1,
-        // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
-        7,
-        6,
-        5,
-        4,
-        // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
-        10,
-        9,
-        8,
-        11,
-        // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
-        12,
-        13,
-        14,
-        15,
-        // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
-        16,
-        17,
-        18,
-        19,
-        // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
-        20,
-        21,
-        22,
-        23
-      ];
-      LAYER_TO_POSITION = {
-        [TOWER_LAYERS.TOP_RING]: "TOP_RING",
-        [TOWER_LAYERS.MIDDLE_RING]: "MIDDLE_RING",
-        [TOWER_LAYERS.BOTTOM_RING]: "BOTTOM_RING",
-        [TOWER_LAYERS.LEDGE]: "LEDGE",
-        [TOWER_LAYERS.BASE1]: "BASE1",
-        [TOWER_LAYERS.BASE2]: "BASE2"
-      };
-      LIGHT_INDEX_TO_DIRECTION = {
-        [RING_LIGHT_POSITIONS.NORTH]: "NORTH",
-        [RING_LIGHT_POSITIONS.EAST]: "EAST",
-        [RING_LIGHT_POSITIONS.SOUTH]: "SOUTH",
-        [RING_LIGHT_POSITIONS.WEST]: "WEST"
-      };
-      STATE_DATA_LENGTH = 19;
     }
   });
 
@@ -504,15 +490,16 @@
 
   // src/udtHelpers.ts
   init_udtConstants();
-  function milliVoltsToPercentageNumber(mv) {
+  function calculateBatteryPercentage(mv) {
     const batLevel = mv ? mv / 3 : 0;
     const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
     return levels.length * 5;
   }
+  function milliVoltsToPercentageNumber(mv) {
+    return calculateBatteryPercentage(mv);
+  }
   function milliVoltsToPercentage(mv) {
-    const batLevel = mv ? mv / 3 : 0;
-    const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
-    return `${levels.length * 5}%`;
+    return `${calculateBatteryPercentage(mv)}%`;
   }
   function getMilliVoltsFromTowerResponse(command) {
     const mv = new Uint8Array(4);
@@ -969,7 +956,7 @@
         MECH_JIGGLE_TRIGGERED: true,
         MECH_UNEXPECTED_TRIGGER: true,
         MECH_DURATION: true,
-        DIFFERENTIAL_READINGS: false,
+        DIFFERENTIAL_READINGS: true,
         BATTERY_READING: true,
         CALIBRATION_FINISHED: true,
         LOG_ALL: false
@@ -982,6 +969,7 @@
           receivedData[i] = target.value.getUint8(i);
         }
         const { cmdKey } = this.responseProcessor.getTowerCommand(receivedData[0]);
+        this.logger.info(`Command: ${cmdKey}`, "[UDT][BLE][RESPONSE]");
         if (this.logTowerResponses) {
           this.logTowerResponse(receivedData);
         }
@@ -1303,44 +1291,6 @@
   init_udtTowerState();
   var UdtCommandFactory = class {
     /**
-     * Creates a light command packet from a lights configuration object.
-     * @param lights - Light configuration specifying doorway, ledge, and base lights
-     * @returns Command packet for controlling tower lights
-     */
-    createLightPacketCommand(lights2) {
-      let packetPos = null;
-      const command = new Uint8Array(20);
-      const doorways = lights2 == null ? void 0 : lights2.doorway;
-      const ledges = lights2 == null ? void 0 : lights2.ledge;
-      const bases = lights2 == null ? void 0 : lights2.base;
-      doorways && doorways.forEach((dlt) => {
-        packetPos = LIGHT_PACKETS.doorway[dlt.level][dlt.position];
-        const shouldBitShift = DOORWAY_LIGHTS_TO_BIT_SHIFT.includes(dlt.position);
-        command[packetPos] += LIGHT_EFFECTS[`${dlt.style}`] * (shouldBitShift ? 16 : 1);
-      });
-      ledges && ledges.forEach((llt) => {
-        packetPos = LIGHT_PACKETS.ledge[llt.position];
-        const shouldBitShift = BASE_LEDGE_LIGHTS_TO_BIT_SHIFT.includes(llt.position);
-        command[packetPos] += LIGHT_EFFECTS[`${llt.style}`] * (shouldBitShift ? 16 : 1);
-      });
-      bases && bases.forEach((blt) => {
-        packetPos = LIGHT_PACKETS.base[blt.position.side][blt.position.level];
-        const shouldBitShift = BASE_LEDGE_LIGHTS_TO_BIT_SHIFT.includes(blt.position.side);
-        command[packetPos] += LIGHT_EFFECTS[`${blt.style}`] * (shouldBitShift ? 16 : 1);
-      });
-      return command;
-    }
-    /**
-     * Creates a light override command packet.
-     * @param lightOverride - Light override value to send
-     * @returns Command packet for light override
-     */
-    createLightOverrideCommand(lightOverride) {
-      const lightOverrideCommand = new Uint8Array(20);
-      lightOverrideCommand[LIGHT_PACKETS.overrides] = lightOverride;
-      return lightOverrideCommand;
-    }
-    /**
      * Creates a rotation command packet for positioning tower drums.
      * @param top - Target position for top drum
      * @param middle - Target position for middle drum
@@ -1363,15 +1313,6 @@
       const sound = Number("0x" + Number(soundIndex).toString(16).padStart(2, "0"));
       soundCommand[AUDIO_COMMAND_POS] = sound;
       return soundCommand;
-    }
-    /**
-     * Updates a command packet with the current drum positions.
-     * @param commandPacket - The command packet to update with current drum positions
-     * @param currentPositions - Current drum positions to apply
-     */
-    updateCommandWithCurrentDrumPositions(commandPacket, currentPositions) {
-      commandPacket[DRUM_PACKETS.topMiddle] = currentPositions.topMiddle;
-      commandPacket[DRUM_PACKETS.bottom] = currentPositions.bottom;
     }
     /**
      * Creates a basic tower command packet with the specified command value.
@@ -1443,25 +1384,88 @@
         modifications.layer[layerIndex].light = [];
       }
       modifications.layer[layerIndex].light[lightIndex] = { effect, loop };
+      modifications.audio = { sample: 0, loop: false, volume: 0 };
       return this.createStatefulCommand(currentState, modifications);
     }
     /**
-     * Creates a stateful audio command that only changes audio while preserving all other state.
-     * @param currentState - The current complete tower state
-     * @param sample - Audio sample index (0-127)
-     * @param loop - Whether to loop the audio
-     * @param volume - Audio volume (0-15), optional
-     * @returns 20-byte command packet
-     */
+    * Creates a stateful audio command that preserves all current tower state while adding audio.
+    * @param currentState - The current complete tower state
+    * @param sample - Audio sample index to play (0-127)
+    * @param loop - Whether to loop the audio
+    * @param volume - Audio volume (0-15), optional
+    * @returns 20-byte command packet
+    */
     createStatefulAudioCommand(currentState, sample, loop = false, volume) {
-      const audioMods = { sample, loop };
-      if (volume !== void 0) {
-        audioMods.volume = volume;
-      }
+      const audioMods = { sample, loop, volume: volume != null ? volume : 0 };
       const modifications = {
         audio: audioMods
       };
       return this.createStatefulCommand(currentState, modifications);
+    }
+    /**
+     * Creates a transient audio command that includes current tower state but doesn't persist audio state.
+     * This prevents audio from being included in subsequent commands.
+     * @param currentState - The current complete tower state  
+     * @param sample - Audio sample index to play
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @returns Object containing the command packet and the state without audio for local tracking
+     */
+    createTransientAudioCommand(currentState, sample, loop = false, volume) {
+      const audioMods = { sample, loop, volume: volume != null ? volume : 0 };
+      const modifications = {
+        audio: audioMods
+      };
+      const command = this.createStatefulCommand(currentState, modifications);
+      const stateWithoutAudio = currentState ? __spreadValues({}, currentState) : this.createEmptyTowerState();
+      stateWithoutAudio.audio = { sample: 0, loop: false, volume: 0 };
+      return { command, stateWithoutAudio };
+    }
+    /**
+     * Creates a transient audio command with additional modifications that includes current tower state 
+     * but doesn't persist audio state. This prevents audio from being included in subsequent commands.
+     * @param currentState - The current complete tower state  
+     * @param sample - Audio sample index to play
+     * @param loop - Whether to loop the audio
+     * @param volume - Audio volume (0-15), optional
+     * @param otherModifications - Other tower state modifications to include
+     * @returns Object containing the command packet and the state with modifications but without audio
+     */
+    createTransientAudioCommandWithModifications(currentState, sample, loop = false, volume = void 0, otherModifications = {}) {
+      const audioMods = { sample, loop, volume: volume != null ? volume : 0 };
+      const modifications = __spreadProps(__spreadValues({}, otherModifications), {
+        audio: audioMods
+      });
+      const command = this.createStatefulCommand(currentState, modifications);
+      const stateWithoutAudio = currentState ? __spreadValues({}, currentState) : this.createEmptyTowerState();
+      if (otherModifications.drum) {
+        otherModifications.drum.forEach((drum, index) => {
+          if (drum && stateWithoutAudio.drum[index]) {
+            Object.assign(stateWithoutAudio.drum[index], drum);
+          }
+        });
+      }
+      if (otherModifications.layer) {
+        otherModifications.layer.forEach((layer, layerIndex) => {
+          if (layer && stateWithoutAudio.layer[layerIndex]) {
+            if (layer.light) {
+              layer.light.forEach((light, lightIndex) => {
+                if (light && stateWithoutAudio.layer[layerIndex].light[lightIndex]) {
+                  Object.assign(stateWithoutAudio.layer[layerIndex].light[lightIndex], light);
+                }
+              });
+            }
+          }
+        });
+      }
+      if (otherModifications.beam) {
+        Object.assign(stateWithoutAudio.beam, otherModifications.beam);
+      }
+      if (otherModifications.led_sequence !== void 0) {
+        stateWithoutAudio.led_sequence = otherModifications.led_sequence;
+      }
+      stateWithoutAudio.audio = { sample: 0, loop: false, volume: 0 };
+      return { command, stateWithoutAudio };
     }
     /**
      * Creates a stateful drum rotation command that only changes drum positions while preserving all other state.
@@ -1483,6 +1487,7 @@
         playSound: playSound2,
         reverse: false
       };
+      modifications.audio = { sample: 0, loop: false, volume: 0 };
       return this.createStatefulCommand(currentState, modifications);
     }
     /**
@@ -1731,6 +1736,7 @@
     }
     /**
      * Plays a sound from the tower's audio library using stateful commands that preserve existing tower state.
+     * Audio state is not persisted to prevent sounds from replaying on subsequent commands.
      * @param soundIndex - Index of the sound to play (1-based, must be valid in TOWER_AUDIO_LIBRARY)
      * @returns Promise that resolves when sound command is sent
      */
@@ -1741,7 +1747,7 @@
         return;
       }
       const currentState = this.deps.getCurrentTowerState();
-      const command = this.deps.commandFactory.createStatefulAudioCommand(currentState, soundIndex, false);
+      const { command } = this.deps.commandFactory.createTransientAudioCommand(currentState, soundIndex, false);
       this.deps.logger.info("Sending sound command (stateful)", "[UDT]");
       await this.sendTowerCommand(command, `playSound(${soundIndex})`);
     }
@@ -1751,26 +1757,164 @@
      * @returns Promise that resolves when light command is sent
      */
     async lights(lights2) {
-      const lightCommand = this.deps.commandFactory.createLightPacketCommand(lights2);
-      this.deps.commandFactory.updateCommandWithCurrentDrumPositions(lightCommand, this.deps.currentDrumPositions);
       this.deps.logDetail && this.deps.logger.debug(`Light Parameter ${JSON.stringify(lights2)}`, "[UDT]");
-      this.deps.logger.info("Sending light command", "[UDT]");
-      await this.sendTowerCommand(lightCommand, "lights");
+      this.deps.logger.info("Sending light commands", "[UDT]");
+      const layerCommands = this.mapLightsToLayerCommands(lights2);
+      for (const { layerIndex, lightIndex, effect } of layerCommands) {
+        await this.setLEDStateful(layerIndex, lightIndex, effect);
+      }
     }
     /**
-     * Sends a light override command to control specific light patterns.
+     * Maps the Lights object to layer/light index commands for setLEDStateful.
+     * @param lights - Light configuration object
+     * @returns Array of layer commands
+     */
+    mapLightsToLayerCommands(lights2) {
+      const commands = [];
+      if (lights2.doorway) {
+        for (const doorwayLight of lights2.doorway) {
+          const layerIndex = this.getTowerLayerForLevel(doorwayLight.level);
+          const lightIndex = this.getLightIndexForSide(doorwayLight.position);
+          const effect = LIGHT_EFFECTS[doorwayLight.style] || LIGHT_EFFECTS.off;
+          console.log("[cek] effect", doorwayLight.style, effect);
+          commands.push({ layerIndex, lightIndex, effect, loop: true });
+        }
+      }
+      if (lights2.ledge) {
+        for (const ledgeLight of lights2.ledge) {
+          const layerIndex = TOWER_LAYERS.LEDGE;
+          const lightIndex = this.getLedgeLightIndexForSide(ledgeLight.position);
+          const effect = LIGHT_EFFECTS[ledgeLight.style] || LIGHT_EFFECTS.off;
+          commands.push({ layerIndex, lightIndex, effect, loop: false });
+        }
+      }
+      if (lights2.base) {
+        for (const baseLight of lights2.base) {
+          const layerIndex = baseLight.position.level === "top" || baseLight.position.level === "b" ? TOWER_LAYERS.BASE2 : TOWER_LAYERS.BASE1;
+          const lightIndex = this.getBaseLightIndexForSide(baseLight.position.side);
+          const effect = LIGHT_EFFECTS[baseLight.style] || LIGHT_EFFECTS.off;
+          commands.push({ layerIndex, lightIndex, effect, loop: false });
+        }
+      }
+      return commands;
+    }
+    /**
+     * Gets the tower layer index for a doorway light level.
+     * @param level - Tower level (top, middle, bottom)
+     * @returns Layer index
+     */
+    getTowerLayerForLevel(level) {
+      switch (level) {
+        case "top":
+          return TOWER_LAYERS.TOP_RING;
+        case "middle":
+          return TOWER_LAYERS.MIDDLE_RING;
+        case "bottom":
+          return TOWER_LAYERS.BOTTOM_RING;
+        default:
+          return TOWER_LAYERS.TOP_RING;
+      }
+    }
+    /**
+     * Gets the light index for a cardinal direction (ring lights).
+     * @param side - Tower side (north, east, south, west)
+     * @returns Light index
+     */
+    getLightIndexForSide(side) {
+      switch (side) {
+        case "north":
+          return RING_LIGHT_POSITIONS.NORTH;
+        case "east":
+          return RING_LIGHT_POSITIONS.EAST;
+        case "south":
+          return RING_LIGHT_POSITIONS.SOUTH;
+        case "west":
+          return RING_LIGHT_POSITIONS.WEST;
+        default:
+          return RING_LIGHT_POSITIONS.NORTH;
+      }
+    }
+    /**
+     * Maps cardinal directions to their closest corner positions for ledge lights.
+     * @param side - Tower side (north, east, south, west)
+     * @returns Tower corner (northeast, southeast, southwest, northwest)
+     */
+    mapSideToCorner(side) {
+      switch (side) {
+        case "north":
+          return "northeast";
+        case "east":
+          return "southeast";
+        case "south":
+          return "southwest";
+        case "west":
+          return "northwest";
+        default:
+          return "northeast";
+      }
+    }
+    /**
+     * Gets the light index for ledge lights (ordinal directions).
+     * @param corner - Tower corner (northeast, southeast, southwest, northwest)
+     * @returns Light index
+     */
+    getLedgeLightIndexForSide(corner) {
+      switch (corner) {
+        case "northeast":
+          return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+        case "southeast":
+          return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;
+        case "southwest":
+          return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;
+        case "northwest":
+          return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;
+        default:
+          return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+      }
+    }
+    /**
+     * Gets the light index for base lights (ordinal directions).
+     * @param side - Tower side (north, east, south, west)
+     * @returns Light index
+     */
+    getBaseLightIndexForSide(side) {
+      return this.getLedgeLightIndexForSide(this.mapSideToCorner(side));
+    }
+    /**
+     * Sends a light override command to control specific light patterns using stateful commands.
      * @param light - Light override value to send
      * @param soundIndex - Optional sound to play with the light override
      * @returns Promise that resolves when light override command is sent
      */
     async lightOverrides(light, soundIndex) {
-      const lightOverrideCommand = this.deps.commandFactory.createLightOverrideCommand(light);
-      this.deps.commandFactory.updateCommandWithCurrentDrumPositions(lightOverrideCommand, this.deps.currentDrumPositions);
-      if (soundIndex) {
-        lightOverrideCommand[AUDIO_COMMAND_POS] = soundIndex;
+      if (typeof light !== "number" || isNaN(light)) {
+        this.deps.logger.error(`Invalid light parameter: ${light}. Must be a valid number.`, "[UDT]");
+        return;
       }
-      this.deps.logger.info("Sending light override" + (soundIndex ? " with sound" : ""), "[UDT]");
-      await this.sendTowerCommand(lightOverrideCommand, `lightOverrides(${light}${soundIndex ? `, ${soundIndex}` : ""})`);
+      if (soundIndex !== void 0 && (typeof soundIndex !== "number" || isNaN(soundIndex) || soundIndex <= 0)) {
+        this.deps.logger.error(`Invalid soundIndex parameter: ${soundIndex}. Must be a valid positive number.`, "[UDT]");
+        return;
+      }
+      const currentState = this.deps.getCurrentTowerState();
+      if (soundIndex) {
+        const { command, stateWithoutAudio } = this.deps.commandFactory.createTransientAudioCommandWithModifications(
+          currentState,
+          soundIndex,
+          false,
+          void 0,
+          { led_sequence: light }
+        );
+        this.deps.logger.info("Sending stateful light override with sound", "[UDT]");
+        this.deps.setTowerState(stateWithoutAudio, "lightOverrides");
+        await this.sendTowerCommand(command, `lightOverrides(${light}, ${soundIndex})`);
+      } else {
+        const modifications = {
+          led_sequence: light
+        };
+        const command = this.deps.commandFactory.createStatefulCommand(currentState, modifications);
+        this.deps.logger.info("Sending stateful light override", "[UDT]");
+        await this.sendTowerCommand(command, `lightOverrides(${light})`);
+      }
     }
     /**
      * Rotates tower drums to specified positions.
@@ -1793,8 +1937,17 @@
         this.deps.bleConnection.performingLongCommand = false;
         this.deps.bleConnection.lastBatteryHeartbeat = Date.now();
       }, this.deps.bleConnection.longTowerCommandTimeout);
-      this.deps.currentDrumPositions.topMiddle = rotateCommand[DRUM_PACKETS.topMiddle];
-      this.deps.currentDrumPositions.bottom = rotateCommand[DRUM_PACKETS.bottom];
+      const towerState = this.deps.getCurrentTowerState();
+      if (towerState) {
+        const topMiddleRaw = rotateCommand[DRUM_PACKETS.topMiddle];
+        const bottomRaw = rotateCommand[DRUM_PACKETS.bottom];
+        const topPosition = this.decodeDrumPositionFromRaw("top", topMiddleRaw);
+        const middlePosition = this.decodeDrumPositionFromRaw("middle", topMiddleRaw);
+        const bottomPosition = this.decodeDrumPositionFromRaw("bottom", bottomRaw);
+        towerState.drum[0].position = topPosition;
+        towerState.drum[1].position = middlePosition;
+        towerState.drum[2].position = bottomPosition;
+      }
     }
     /**
     * Rotates tower drums to specified positions.
@@ -1826,46 +1979,63 @@
           this.deps.bleConnection.performingLongCommand = false;
           this.deps.bleConnection.lastBatteryHeartbeat = Date.now();
         }, this.deps.bleConnection.longTowerCommandTimeout);
-        this.deps.currentDrumPositions.topMiddle = positionMap[top] << 2 | positionMap[middle];
-        this.deps.currentDrumPositions.bottom = positionMap[bottom];
+        const towerState = this.deps.getCurrentTowerState();
+        if (towerState) {
+          towerState.drum[0].position = positionMap[top];
+          towerState.drum[1].position = positionMap[middle];
+          towerState.drum[2].position = positionMap[bottom];
+        }
       }
     }
     /**
-     * Resets the tower's internal skull drop counter to zero.
+     * Resets the tower's internal skull drop counter to zero using stateful commands.
      * @returns Promise that resolves when reset command is sent
      */
     async resetTowerSkullCount() {
       this.deps.logger.info("Tower skull count reset requested", "[UDT]");
-      await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.resetCounter]), "resetTowerSkullCount");
+      const currentState = this.deps.getCurrentTowerState();
+      const modifications = {
+        beam: { count: 0, fault: false }
+      };
+      const command = this.deps.commandFactory.createStatefulCommand(currentState, modifications);
+      await this.sendTowerCommand(command, "resetTowerSkullCount");
+      const updatedState = __spreadValues({}, currentState);
+      updatedState.beam.count = 0;
+      this.deps.setTowerState(updatedState, "resetTowerSkullCount");
     }
     /**
      * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
      * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
+     * @param volume - Optional volume override (0=loud, 1=medium, 2=quiet, 3=mute). Uses current tower state if not provided.
      * @returns Promise that resolves when seal break sequence is complete
      */
-    async breakSeal(seal) {
+    async breakSeal(seal, volume) {
+      const actualVolume = volume !== void 0 ? volume : this.deps.getCurrentTowerState().audio.volume;
+      if (actualVolume > 0) {
+        const currentState = this.deps.getCurrentTowerState();
+        const stateWithVolume = __spreadValues({}, currentState);
+        stateWithVolume.audio = { sample: 0, loop: false, volume: actualVolume };
+        await this.sendTowerStateStateful(stateWithVolume);
+      }
       this.deps.logger.info("Playing tower seal sound", "[UDT]");
-      await this.playSound(TOWER_AUDIO_LIBRARY.TowerSeal.value);
-      const adjacentSides = {
-        north: "east",
-        east: "south",
-        south: "west",
-        west: "north"
+      await this.playSoundStateful(TOWER_AUDIO_LIBRARY.TowerSeal.value, false, actualVolume);
+      const sideCorners = {
+        north: ["northeast", "northwest"],
+        east: ["northeast", "southeast"],
+        south: ["southeast", "southwest"],
+        west: ["southwest", "northwest"]
       };
-      const ledgeLights = [
-        { position: seal.side, style: "on" },
-        { position: adjacentSides[seal.side], style: "on" }
-      ];
-      const uniqueLedgeLights = ledgeLights.filter(
-        (light, index, self) => index === self.findIndex((l) => l.position === light.position)
-      );
+      const ledgeLights = sideCorners[seal.side].map((corner) => ({
+        position: corner,
+        style: "on"
+      }));
       const doorwayLights = [{
         level: seal.level,
         position: seal.side,
         style: "breatheFast"
       }];
       const lights2 = {
-        ledge: uniqueLedgeLights,
+        ledge: ledgeLights,
         doorway: doorwayLights
       };
       this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - lighting ledges and doorways with breath effect`, "[UDT]");
@@ -1927,29 +2097,44 @@
       await this.rotate(topSide, middleSide, bottomSide);
     }
     /**
+     * Decodes drum position from raw command byte value.
+     * @param level - The drum level ('top', 'middle', 'bottom')
+     * @param rawValue - The raw byte value from the command
+     * @returns The position as a number (0=north, 1=east, 2=south, 3=west)
+     */
+    decodeDrumPositionFromRaw(level, rawValue) {
+      const drumPositions = drumPositionCmds[level];
+      for (const [side, value] of Object.entries(drumPositions)) {
+        if (level === "middle") {
+          if ((value & 192) === (rawValue & 192)) {
+            return ["north", "east", "south", "west"].indexOf(side);
+          }
+        } else if (level === "top") {
+          if ((value & 22) === (rawValue & 22)) {
+            return ["north", "east", "south", "west"].indexOf(side);
+          }
+        } else {
+          if (value === rawValue) {
+            return ["north", "east", "south", "west"].indexOf(side);
+          }
+        }
+      }
+      return 0;
+    }
+    /**
      * Gets the current position of a specific drum level.
      * @param level - The drum level to get position for
      * @returns The current position of the specified drum level
      */
     getCurrentDrumPosition(level) {
-      const drumPositions = drumPositionCmds[level];
-      const rawValue = level === "bottom" ? this.deps.currentDrumPositions.bottom : this.deps.currentDrumPositions.topMiddle;
-      for (const [side, value] of Object.entries(drumPositions)) {
-        if (level === "middle") {
-          if ((value & 192) === (rawValue & 192)) {
-            return side;
-          }
-        } else if (level === "top") {
-          if ((value & 22) === (rawValue & 22)) {
-            return side;
-          }
-        } else {
-          if (value === rawValue) {
-            return side;
-          }
-        }
+      const towerState = this.deps.getCurrentTowerState();
+      if (!towerState) {
+        return "north";
       }
-      return "north";
+      const drumIndex = level === "top" ? 0 : level === "middle" ? 1 : 2;
+      const position = towerState.drum[drumIndex].position;
+      const sides = ["north", "east", "south", "west"];
+      return sides[position] || "north";
     }
     //#region Stateful Command Methods
     /**
@@ -1957,10 +2142,10 @@
      * @param layerIndex - Layer index (0-5)
      * @param lightIndex - Light index within layer (0-3)
      * @param effect - Light effect (0=off, 1=on, 2=slow pulse, etc.)
-     * @param loop - Whether to loop the effect
+     * @param loop - Whether to loop the effect, defaults to true
      * @returns Promise that resolves when command is sent
      */
-    async setLEDStateful(layerIndex, lightIndex, effect, loop = false) {
+    async setLEDStateful(layerIndex, lightIndex, effect, loop = true) {
       const currentState = this.deps.getCurrentTowerState();
       const command = this.deps.commandFactory.createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop);
       this.deps.logger.info(`Setting LED layer ${layerIndex} light ${lightIndex} to effect ${effect}${loop ? " (looped)" : ""}`, "[UDT]");
@@ -1968,6 +2153,7 @@
     }
     /**
      * Plays a sound using stateful commands that preserve existing tower state.
+     * Audio state is not persisted to prevent sounds from replaying on subsequent commands.
      * @param soundIndex - Index of the sound to play (1-based)
      * @param loop - Whether to loop the audio
      * @param volume - Audio volume (0-15), optional
@@ -1980,7 +2166,7 @@
         return;
       }
       const currentState = this.deps.getCurrentTowerState();
-      const command = this.deps.commandFactory.createStatefulAudioCommand(currentState, soundIndex, loop, volume);
+      const { command } = this.deps.commandFactory.createTransientAudioCommand(currentState, soundIndex, loop, volume);
       this.deps.logger.info(`Playing sound ${soundIndex}${loop ? " (looped)" : ""}${volume !== void 0 ? ` at volume ${volume}` : ""}`, "[UDT]");
       await this.sendTowerCommand(command, `playSoundStateful(${soundIndex}, ${loop}${volume !== void 0 ? `, ${volume}` : ""})`);
     }
@@ -2006,12 +2192,16 @@
     }
     /**
      * Sends a complete tower state using stateful commands.
+     * Audio state is automatically cleared to prevent sounds from persisting across commands.
      * @param state - Complete tower state to send
      * @returns Promise that resolves when command is sent
      */
     async sendTowerStateStateful(state) {
-      const command = this.deps.commandFactory.packTowerStateCommand(state);
+      const stateToSend = __spreadValues({}, state);
+      stateToSend.audio = { sample: 0, loop: false, volume: 0 };
+      const command = this.deps.commandFactory.packTowerStateCommand(stateToSend);
       this.deps.logger.info("Sending complete tower state", "[UDT]");
+      this.deps.setTowerState(stateToSend, "sendTowerStateStateful");
       await this.sendTowerCommand(command, "sendTowerStateStateful");
     }
     //#endregion
@@ -2052,7 +2242,6 @@
       this.retrySendCommandCountRef = { value: 0 };
       this.retrySendCommandMax = 5;
       // tower state
-      this.currentDrumPositions = { topMiddle: 16, bottom: 66 };
       this.currentBatteryValue = 0;
       this.previousBatteryValue = 0;
       this.currentBatteryPercentage = 0;
@@ -2119,11 +2308,11 @@
         commandFactory: this.commandFactory,
         bleConnection: this.bleConnection,
         responseProcessor: this.responseProcessor,
-        currentDrumPositions: this.currentDrumPositions,
         logDetail: this.logDetail,
         retrySendCommandCount: this.retrySendCommandCountRef,
         retrySendCommandMax: this.retrySendCommandMax,
-        getCurrentTowerState: () => this.currentTowerState
+        getCurrentTowerState: () => this.currentTowerState,
+        setTowerState: (newState, source) => this.setTowerState(newState, source)
       };
       this.towerCommands = new UdtTowerCommands(commandDependencies);
       callbacks.onTowerResponse = (response) => {
@@ -2149,11 +2338,11 @@
           commandFactory: this.commandFactory,
           bleConnection: this.bleConnection,
           responseProcessor: this.responseProcessor,
-          currentDrumPositions: this.currentDrumPositions,
           logDetail: this.logDetail,
           retrySendCommandCount: this.retrySendCommandCountRef,
           retrySendCommandMax: this.retrySendCommandMax,
-          getCurrentTowerState: () => this.currentTowerState
+          getCurrentTowerState: () => this.currentTowerState,
+          setTowerState: (newState, source) => this.setTowerState(newState, source)
         };
         this.towerCommands = new UdtTowerCommands(commandDependencies);
       }
@@ -2322,6 +2511,25 @@
     async rotateDrumStateful(drumIndex, position, playSound2 = false) {
       return await this.towerCommands.rotateDrumStateful(drumIndex, position, playSound2);
     }
+    /**
+     * Rotates tower drums to specified positions using stateful commands that preserve existing tower state.
+     * This is the recommended way to rotate drums as it preserves LEDs and other tower state.
+     * @param top - Position for the top drum ('north', 'east', 'south', 'west')
+     * @param middle - Position for the middle drum
+     * @param bottom - Position for the bottom drum
+     * @param soundIndex - Optional sound to play during rotation
+     * @returns Promise that resolves when rotate command is sent
+     */
+    async rotateWithState(top, middle, bottom, soundIndex) {
+      const oldTopPosition = this.getCurrentDrumPosition("top");
+      const oldMiddlePosition = this.getCurrentDrumPosition("middle");
+      const oldBottomPosition = this.getCurrentDrumPosition("bottom");
+      const result = await this.towerCommands.rotateWithState(top, middle, bottom, soundIndex);
+      this.calculateAndUpdateGlyphPositions("top", oldTopPosition, top);
+      this.calculateAndUpdateGlyphPositions("middle", oldMiddlePosition, middle);
+      this.calculateAndUpdateGlyphPositions("bottom", oldBottomPosition, bottom);
+      return result;
+    }
     //#endregion
     //#region Tower State Management
     /**
@@ -2333,21 +2541,23 @@
     }
     /**
      * Sends a complete tower state to the tower, preserving existing state.
-     * This creates a stateful command that only changes the specified fields.
+     * Audio state is automatically cleared to prevent sounds from persisting across commands.
      * @param towerState - The tower state to send
      * @returns Promise that resolves when the command is sent
      */
     async sendTowerState(towerState) {
       const { rtdt_pack_state: rtdt_pack_state2 } = await Promise.resolve().then(() => (init_udtTowerState(), udtTowerState_exports));
+      const stateToSend = __spreadValues({}, towerState);
+      stateToSend.audio = { sample: 0, loop: false, volume: 0 };
       const stateData = new Uint8Array(19);
-      const success = rtdt_pack_state2(stateData, 19, towerState);
+      const success = rtdt_pack_state2(stateData, 19, stateToSend);
       if (!success) {
         throw new Error("Failed to pack tower state data");
       }
       const command = new Uint8Array(20);
       command[0] = 0;
       command.set(stateData, 1);
-      this.setTowerState(__spreadValues({}, towerState), "sendTowerState");
+      this.setTowerState(__spreadValues({}, stateToSend), "sendTowerState");
       return await this.sendTowerCommandDirect(command);
     }
     /**
@@ -2364,11 +2574,13 @@
     /**
      * Updates the current tower state from a tower response.
      * Called internally when tower state responses are received.
+     * Audio state is reset to prevent sounds from persisting across commands.
      * @param stateData - The 19-byte state data from tower response
      */
     updateTowerStateFromResponse(stateData) {
       Promise.resolve().then(() => (init_udtTowerState(), udtTowerState_exports)).then(({ rtdt_unpack_state: rtdt_unpack_state2 }) => {
         const newState = rtdt_unpack_state2(stateData);
+        newState.audio = { sample: 0, loop: false, volume: this.currentTowerState.audio.volume };
         this.setTowerState(newState, "tower response");
       });
     }
@@ -2376,10 +2588,11 @@
     /**
      * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
      * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
+     * @param volume - Optional volume override (0=loud, 1=medium, 2=quiet, 3=mute). Uses current tower state if not provided.
      * @returns Promise that resolves when seal break sequence is complete
      */
-    async breakSeal(seal) {
-      const result = await this.towerCommands.breakSeal(seal);
+    async breakSeal(seal, volume) {
+      const result = await this.towerCommands.breakSeal(seal, volume);
       const sealKey = `${seal.level}-${seal.side}`;
       this.brokenSeals.add(sealKey);
       return result;
@@ -2728,6 +2941,8 @@
     }
     updateBatteryTrend();
     updateCalibrationStatus();
+    updateDrumDropdowns();
+    initializeVolumeDisplay();
     setTimeout(() => {
       try {
         if (typeof refreshStatusPacket === "function") {
@@ -2773,6 +2988,7 @@
         } else {
           logger.warn("refreshGlyphPositions function not available", "[TC]");
         }
+        updateDrumDropdowns();
       } catch (error) {
         logger.error("Error refreshing glyph positions after calibration: " + error, "[TC]");
       }
@@ -2811,6 +3027,15 @@
     if (calibrationChanged) {
       logger.info("Calibration status changed, updating display", "[TC]");
       updateCalibrationStatus();
+    }
+    const drumPositionsChanged = newState.drum[0].position !== oldState.drum[0].position || newState.drum[1].position !== oldState.drum[1].position || newState.drum[2].position !== oldState.drum[2].position;
+    if (drumPositionsChanged) {
+      logger.info("Drum positions changed, updating dropdowns", "[TC]");
+      updateDrumDropdowns();
+    }
+    if (newState.audio.volume !== oldState.audio.volume) {
+      logger.info(`Volume changed from ${oldState.audio.volume} to ${newState.audio.volume}`, "[TC]");
+      logger.debug(`Tower volume: ${newState.audio.volume}, Local volume: ${localVolume}`, "[TC]");
     }
     try {
       if (typeof refreshStatusPacket === "function") {
@@ -2863,6 +3088,44 @@
       bottomIcon.title = "Bottom drum not calibrated";
     }
   };
+  var updateDrumDropdowns = () => {
+    const topSelect = document.getElementById("top");
+    const middleSelect = document.getElementById("middle");
+    const bottomSelect = document.getElementById("bottom");
+    if (!topSelect || !middleSelect || !bottomSelect) {
+      logger.warn("Drum dropdown elements not found", "[TC]");
+      return;
+    }
+    if (!Tower.isConnected) {
+      logger.debug("Tower not connected, cannot update drum positions", "[TC]");
+      return;
+    }
+    try {
+      const towerState = Tower.getCurrentTowerState();
+      logger.debug(`Raw tower state drum positions - Top: ${towerState.drum[0].position}, Middle: ${towerState.drum[1].position}, Bottom: ${towerState.drum[2].position}`, "[TC]");
+      logger.debug(`Raw tower state drum calibration - Top: ${towerState.drum[0].calibrated}, Middle: ${towerState.drum[1].calibrated}, Bottom: ${towerState.drum[2].calibrated}`, "[TC]");
+      const topPosition = Tower.getCurrentDrumPosition("top");
+      const middlePosition = Tower.getCurrentDrumPosition("middle");
+      const bottomPosition = Tower.getCurrentDrumPosition("bottom");
+      logger.info(`getCurrentDrumPosition results - Top: ${topPosition}, Middle: ${middlePosition}, Bottom: ${bottomPosition}`, "[TC]");
+      const sides = ["north", "east", "south", "west"];
+      const topPositionFromRaw = sides[towerState.drum[0].position] || "north";
+      const middlePositionFromRaw = sides[towerState.drum[1].position] || "north";
+      const bottomPositionFromRaw = sides[towerState.drum[2].position] || "north";
+      logger.info(`Raw position conversion - Top: ${topPositionFromRaw}, Middle: ${middlePositionFromRaw}, Bottom: ${bottomPositionFromRaw}`, "[TC]");
+      if (topPosition !== topPositionFromRaw || middlePosition !== middlePositionFromRaw || bottomPosition !== bottomPositionFromRaw) {
+        logger.warn(`Position mismatch detected! Method vs Raw - Top: ${topPosition}!=${topPositionFromRaw}, Middle: ${middlePosition}!=${middlePositionFromRaw}, Bottom: ${bottomPosition}!=${bottomPositionFromRaw}`, "[TC]");
+      } else {
+        logger.info(`Position methods working correctly - all positions match raw state`, "[TC]");
+      }
+      topSelect.value = topPosition;
+      middleSelect.value = middlePosition;
+      bottomSelect.value = bottomPosition;
+      logger.info(`Updated drum dropdowns - Top: ${topPosition}, Middle: ${middlePosition}, Bottom: ${bottomPosition}`, "[TC]");
+    } catch (error) {
+      logger.error(`Failed to update drum dropdowns: ${error}`, "[TC]");
+    }
+  };
   async function resetSkullCount() {
     if (!Tower.isConnected) {
       return;
@@ -2872,7 +3135,13 @@
   }
   var playSound = () => {
     const select = document.getElementById("sounds");
-    Tower.playSound(Number(select.value));
+    const soundValue = Number(select.value);
+    if (soundValue === 0) {
+      logger.info("No sound selected", "[Audio]");
+      return;
+    }
+    logger.info(`Playing sound ${soundValue} at volume ${localVolume}`, "[Audio]");
+    Tower.playSoundStateful(soundValue, false, localVolume);
   };
   var overrides = () => {
     const select = document.getElementById("lightOverrideDropDown");
@@ -2882,12 +3151,10 @@
     const top = document.getElementById("top");
     const middle = document.getElementById("middle");
     const bottom = document.getElementById("bottom");
-    const sound = document.getElementById("sounds");
-    Tower.Rotate(
+    Tower.rotateWithState(
       top.value,
       middle.value,
-      bottom.value,
-      Number(sound.value)
+      bottom.value
     );
   };
   var randomizeLevels = () => {
@@ -2930,66 +3197,69 @@
     };
     const sealIdentifier = sealMap[sealValue];
     if (sealIdentifier) {
-      clearAllLightCheckboxes();
-      await Tower.breakSeal(sealIdentifier);
+      await Tower.breakSeal(sealIdentifier, localVolume);
       logger.info(`Broke seal at ${sealIdentifier.level}-${sealIdentifier.side}`, "[TC]");
       updateSealGrid(sealIdentifier, true);
       startBreakSealCooldown();
     }
   };
-  var clearAllLightCheckboxes = () => {
+  var clearAllLightCheckboxes = async () => {
     const allLightCheckboxes = document.querySelectorAll('input[type="checkbox"][data-light-type]');
     allLightCheckboxes.forEach((checkbox) => {
       checkbox.checked = false;
-      checkbox.removeAttribute("data-light-style");
+      checkbox.setAttribute("data-light-style", "off");
     });
+    const currentState = Tower.getCurrentTowerState();
+    for (let layerIndex = 0; layerIndex < currentState.layer.length; layerIndex++) {
+      for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
+        currentState.layer[layerIndex].light[lightIndex].effect = LIGHT_EFFECTS.off;
+        currentState.layer[layerIndex].light[lightIndex].loop = false;
+      }
+    }
+    try {
+      await Tower.sendTowerState(currentState);
+    } catch (error) {
+      console.error("Error sending tower state for all lights off:", error);
+    }
   };
-  var allLightsOn = () => {
+  var allLightsOn = async () => {
+    var _a;
+    const lightStyleSelect = document.getElementById("lightStyles");
+    const selectedLightStyle = ((_a = lightStyleSelect == null ? void 0 : lightStyleSelect.options[lightStyleSelect.selectedIndex]) == null ? void 0 : _a.textContent) || "on";
+    const effect = LIGHT_EFFECTS[selectedLightStyle] || LIGHT_EFFECTS.on;
     const allLightCheckboxes = document.querySelectorAll('input[type="checkbox"][data-light-type]');
     allLightCheckboxes.forEach((checkbox) => {
       checkbox.checked = true;
+      checkbox.setAttribute("data-light-style", selectedLightStyle);
     });
-    lights();
+    const currentState = Tower.getCurrentTowerState();
+    for (let layerIndex = 0; layerIndex <= 2; layerIndex++) {
+      for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
+        currentState.layer[layerIndex].light[lightIndex].effect = effect;
+        currentState.layer[layerIndex].light[lightIndex].loop = effect !== 0;
+      }
+    }
+    for (let lightIndex = 0; lightIndex < currentState.layer[3].light.length; lightIndex++) {
+      currentState.layer[3].light[lightIndex].effect = effect;
+      currentState.layer[3].light[lightIndex].loop = effect !== 0;
+    }
+    for (let layerIndex = 4; layerIndex <= 5; layerIndex++) {
+      for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
+        currentState.layer[layerIndex].light[lightIndex].effect = effect;
+        currentState.layer[layerIndex].light[lightIndex].loop = effect !== 0;
+      }
+    }
+    try {
+      await Tower.sendTowerState(currentState);
+    } catch (error) {
+      console.error("Error sending tower state for all lights on:", error);
+    }
   };
-  var allLightsOff = () => {
-    clearAllLightCheckboxes();
-    lights();
+  var allLightsOff = async () => {
+    await clearAllLightCheckboxes();
   };
   var clearAllLights = async () => {
-    clearAllLightCheckboxes();
-    const allLightsOff2 = {
-      doorway: [
-        { position: "north", level: "top", style: "off" },
-        { position: "north", level: "middle", style: "off" },
-        { position: "north", level: "bottom", style: "off" },
-        { position: "east", level: "top", style: "off" },
-        { position: "east", level: "middle", style: "off" },
-        { position: "east", level: "bottom", style: "off" },
-        { position: "south", level: "top", style: "off" },
-        { position: "south", level: "middle", style: "off" },
-        { position: "south", level: "bottom", style: "off" },
-        { position: "west", level: "top", style: "off" },
-        { position: "west", level: "middle", style: "off" },
-        { position: "west", level: "bottom", style: "off" }
-      ],
-      ledge: [
-        { position: "north", style: "off" },
-        { position: "east", style: "off" },
-        { position: "south", style: "off" },
-        { position: "west", style: "off" }
-      ],
-      base: [
-        { position: { side: "north", level: "top" }, style: "off" },
-        { position: { side: "north", level: "bottom" }, style: "off" },
-        { position: { side: "east", level: "top" }, style: "off" },
-        { position: { side: "east", level: "bottom" }, style: "off" },
-        { position: { side: "south", level: "top" }, style: "off" },
-        { position: { side: "south", level: "bottom" }, style: "off" },
-        { position: { side: "west", level: "top" }, style: "off" },
-        { position: { side: "west", level: "bottom" }, style: "off" }
-      ]
-    };
-    await Tower.Lights(allLightsOff2);
+    await clearAllLightCheckboxes();
     logger.info("All lights cleared", "[TC]");
     Tower.resetBrokenSeals();
     resetSealGrid();
@@ -2998,7 +3268,7 @@
       sealSelect.value = "";
     }
   };
-  var singleLight = (el) => {
+  var singleLight = async (el) => {
     let style = "off";
     if (el.checked) {
       const ls = document.getElementById("lightStyles");
@@ -3007,15 +3277,101 @@
       }
     }
     el.setAttribute("data-light-style", style);
-    lights();
+    const effect = LIGHT_EFFECTS[style] || LIGHT_EFFECTS.off;
+    console.log("[cek] style =", style, "effect =", effect);
+    const currentState = Tower.getCurrentTowerState();
+    const lightType = el.getAttribute("data-light-type");
+    const lightLocation = el.getAttribute("data-light-location");
+    const lightLevel = el.getAttribute("data-light-level");
+    const lightBaseLocation = el.getAttribute("data-light-base-location");
+    let layerIndex;
+    let lightIndex;
+    if (lightType === "doorway") {
+      layerIndex = getTowerLayerForLevel(lightLevel);
+      lightIndex = getLightIndexForSide(lightLocation);
+    } else if (lightType === "ledge") {
+      layerIndex = TOWER_LAYERS.LEDGE;
+      lightIndex = getLedgeLightIndexForSide(lightLocation);
+    } else if (lightType === "base") {
+      layerIndex = lightBaseLocation === "b" ? TOWER_LAYERS.BASE2 : TOWER_LAYERS.BASE1;
+      lightIndex = getBaseLightIndexForSide(lightLocation);
+    } else {
+      console.error("Unknown light type:", lightType);
+      return;
+    }
+    currentState.layer[layerIndex].light[lightIndex].effect = effect;
+    currentState.layer[layerIndex].light[lightIndex].loop = effect !== 0;
+    try {
+      await Tower.sendTowerState(currentState);
+    } catch (error) {
+      console.error("Error sending tower state:", error);
+    }
+  };
+  var getTowerLayerForLevel = (level) => {
+    switch (level) {
+      case "top":
+        return TOWER_LAYERS.TOP_RING;
+      case "middle":
+        return TOWER_LAYERS.MIDDLE_RING;
+      case "bottom":
+        return TOWER_LAYERS.BOTTOM_RING;
+      default:
+        return TOWER_LAYERS.TOP_RING;
+    }
+  };
+  var getLightIndexForSide = (side) => {
+    switch (side) {
+      case "north":
+        return RING_LIGHT_POSITIONS.NORTH;
+      case "east":
+        return RING_LIGHT_POSITIONS.EAST;
+      case "south":
+        return RING_LIGHT_POSITIONS.SOUTH;
+      case "west":
+        return RING_LIGHT_POSITIONS.WEST;
+      default:
+        return RING_LIGHT_POSITIONS.NORTH;
+    }
+  };
+  var getLedgeLightIndexForSide = (side) => {
+    switch (side) {
+      case "northeast":
+        return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+      case "southeast":
+        return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;
+      case "southwest":
+        return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;
+      case "northwest":
+        return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;
+      default:
+        return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+    }
+  };
+  var getBaseLightIndexForSide = (side) => {
+    switch (side) {
+      case "north":
+        return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+      case "east":
+        return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;
+      case "south":
+        return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;
+      case "west":
+        return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;
+      default:
+        return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+    }
   };
   var lights = () => {
     var _a;
     const lightStyleSelect = document.getElementById("lightStyles");
     const selectedLightStyle = ((_a = lightStyleSelect == null ? void 0 : lightStyleSelect.options[lightStyleSelect.selectedIndex]) == null ? void 0 : _a.textContent) || "off";
-    const allCheckedLights = document.querySelectorAll('input[type="checkbox"][data-light-type]:checked');
-    allCheckedLights.forEach((checkbox) => {
-      checkbox.setAttribute("data-light-style", selectedLightStyle);
+    const allLEDLights = document.querySelectorAll('input[type="checkbox"][data-light-type]');
+    allLEDLights.forEach((checkbox) => {
+      if (checkbox.checked) {
+        checkbox.setAttribute("data-light-style", selectedLightStyle);
+      } else {
+        checkbox.setAttribute("data-light-style", "off");
+      }
     });
     const doorwayLights = getDoorwayLights();
     const ledgeLights = getLedgeLights();
@@ -3151,6 +3507,7 @@
     }
   };
   var switchTab = (tabName) => {
+    allLightsOff();
     const allTabContents = document.querySelectorAll(".tower-tab-content");
     allTabContents.forEach((content) => {
       content.classList.remove("tower-tab-content-active");
@@ -3214,7 +3571,7 @@
       const middlePosition = glyphLevel === "middle" ? targetDrumPosition : Tower.getCurrentDrumPosition("middle");
       const bottomPosition = glyphLevel === "bottom" ? targetDrumPosition : Tower.getCurrentDrumPosition("bottom");
       logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, "[Glyphs]");
-      await Tower.Rotate(topPosition, middlePosition, bottomPosition);
+      await Tower.rotateWithState(topPosition, middlePosition, bottomPosition);
       setTimeout(async () => {
         try {
           refreshGlyphPositions();
@@ -3404,12 +3761,16 @@
         option.textContent = key;
         lightStyleSelect.appendChild(option);
       });
+      const onIndex = Array.from(lightStyleSelect.options).findIndex((opt) => opt.value === "on");
+      if (onIndex >= 0) {
+        lightStyleSelect.selectedIndex = onIndex;
+      }
     }
     const lightOverrideSelect = document.getElementById("lightOverrideDropDown");
     if (lightOverrideSelect) {
       Object.entries(TOWER_LIGHT_SEQUENCES).forEach(([key, value]) => {
         const option = document.createElement("option");
-        option.value = key;
+        option.value = value.toString();
         option.textContent = key;
         lightOverrideSelect.appendChild(option);
       });
@@ -3577,29 +3938,32 @@ ${"-".repeat(60)}
       }, 1e3);
     }
   };
+  var STATE_BUFFER_SIZE = 19;
+  var DISPLAY_BUFFER_SIZE = 20;
+  var EMPTY_STATUS_PACKET = new Array(DISPLAY_BUFFER_SIZE).fill(0);
   var refreshStatusPacket = () => {
     if (!Tower.isConnected) {
       logger.warn("Tower is not connected", "[Status Packet]");
-      updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+      updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
       return;
     }
     try {
       const state = Tower.getCurrentTowerState();
       if (!state) {
         logger.warn("No current tower state available", "[Status Packet]");
-        updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
         return;
       }
-      const buffer = new Uint8Array(20);
-      const stateBuffer = new Uint8Array(19);
-      const success = rtdt_pack_state(stateBuffer, 19, state);
+      const buffer = new Uint8Array(DISPLAY_BUFFER_SIZE);
+      const stateBuffer = new Uint8Array(STATE_BUFFER_SIZE);
+      const success = rtdt_pack_state(stateBuffer, STATE_BUFFER_SIZE, state);
       if (!success) {
         logger.error("Failed to pack tower state", "[Status Packet]");
-        updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
         return;
       }
       buffer[0] = 0;
-      for (let i = 0; i < 19; i++) {
+      for (let i = 0; i < STATE_BUFFER_SIZE; i++) {
         buffer[i + 1] = stateBuffer[i];
       }
       const packedState = Array.from(buffer);
@@ -3607,7 +3971,7 @@ ${"-".repeat(60)}
       logger.info("Status packet refreshed", "[Status Packet]");
     } catch (error) {
       logger.error(`Failed to refresh status packet: ${error}`, "[Status Packet]");
-      updateStatusPacketDisplay([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+      updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
     }
   };
   var updateStatusPacketDisplay = (packetData) => {
@@ -3643,9 +4007,9 @@ ${"-".repeat(60)}
       if (byte !== 0) {
         span.className += " non-zero";
       }
-      span.textContent = byte.toString();
+      span.textContent = byte.toString(16).padStart(2, "0").toUpperCase();
       const description = index < byteDescriptions.length ? byteDescriptions[index] : "Unknown";
-      span.title = `Byte ${index}: ${byte} (0x${byte.toString(16).padStart(2, "0").toUpperCase()}) - ${description}`;
+      span.title = `Byte ${index}: ${byte}D - ${description}`;
       display.appendChild(span);
     });
   };
@@ -3713,9 +4077,20 @@ ${"-".repeat(60)}
       } else {
         glyphLightStates.delete(glyphAtPosition);
       }
-      const allDoorwayLights = getCurrentDoorwayLights();
-      await Tower.Lights({ doorway: allDoorwayLights });
-      logger.info(`Successfully updated tower lights. Active lights: ${allDoorwayLights.length}`, "[Glyphs]");
+      const glyphLevel = GLYPHS[glyphAtPosition].level;
+      const specificLightCommand = {
+        position: side,
+        level: glyphLevel,
+        style: lightEffect
+      };
+      if (isLit) {
+        const allDoorwayLights = getCurrentDoorwayLights();
+        await Tower.Lights({ doorway: allDoorwayLights });
+        logger.info(`Successfully turned on light for glyph ${glyphAtPosition}. Active lights: ${allDoorwayLights.length}`, "[Glyphs]");
+      } else {
+        await Tower.Lights({ doorway: [specificLightCommand] });
+        logger.info(`Successfully turned off light for glyph ${glyphAtPosition}`, "[Glyphs]");
+      }
     } catch (error) {
       console.error("Error toggling glyph light:", error);
       logger.error("Error toggling glyph light: " + error, "[Glyphs]");
@@ -3739,6 +4114,90 @@ ${"-".repeat(60)}
   var getGlyphLevel = (glyph) => {
     var _a;
     return ((_a = GLYPHS[glyph]) == null ? void 0 : _a.level) || "middle";
+  };
+  var VOLUME_DESCRIPTIONS = {
+    0: "Loud",
+    1: "Medium",
+    2: "Quiet",
+    3: "Mute"
+  };
+  var VOLUME_ICONS = {
+    0: "\u{1F50A}",
+    // Loud - biggest speaker
+    1: "\u{1F509}",
+    // Medium - medium speaker
+    2: "\u{1F508}",
+    // Quiet - small speaker
+    3: "\u{1F507}"
+    // Mute - muted speaker
+  };
+  var localVolume = 0;
+  var volumeUp = async () => {
+    try {
+      logger.debug(`volumeUp called: current localVolume = ${localVolume}`, "[Volume]");
+      const newVolume = Math.min(localVolume + 1, 3);
+      if (newVolume === localVolume) {
+        logger.info("Volume is already at maximum (3)", "[Volume]");
+        return;
+      }
+      logger.info(`Setting volume from ${localVolume} to ${newVolume}`, "[Volume]");
+      localVolume = newVolume;
+      const currentState = Tower.getCurrentTowerState();
+      const newState = __spreadValues({}, currentState);
+      newState.audio = __spreadProps(__spreadValues({}, currentState.audio), { volume: newVolume });
+      logger.debug(`Sending tower state with volume: ${newState.audio.volume}`, "[Volume]");
+      await Tower.sendTowerState(newState);
+      await Tower.playSoundStateful(33, false, newVolume);
+      updateVolumeDisplay(newVolume);
+      logger.info(`Volume increased to ${newVolume}`, "[Volume]");
+    } catch (error) {
+      logger.error(`Error increasing volume: ${error}`, "[Volume]");
+    }
+  };
+  var volumeDown = async () => {
+    try {
+      const newVolume = Math.max(localVolume - 1, 0);
+      if (newVolume === localVolume) {
+        logger.info("Volume is already at minimum (0)", "[Volume]");
+        return;
+      }
+      localVolume = newVolume;
+      const currentState = Tower.getCurrentTowerState();
+      const newState = __spreadValues({}, currentState);
+      newState.audio = __spreadProps(__spreadValues({}, currentState.audio), { volume: newVolume });
+      await Tower.sendTowerState(newState);
+      if (newVolume < 3) {
+        await Tower.playSoundStateful(33, false, newVolume);
+      }
+      updateVolumeDisplay(newVolume);
+      logger.info(`Volume decreased to ${newVolume}`, "[Volume]");
+    } catch (error) {
+      logger.error(`Error decreasing volume: ${error}`, "[Volume]");
+    }
+  };
+  var updateVolumeDisplay = (volume) => {
+    const volumeLevelElement = document.getElementById("volumeLevel");
+    const volumeIconElement = document.getElementById("volumeIcon");
+    if (volumeLevelElement) {
+      const description = VOLUME_DESCRIPTIONS[volume] || "Unknown";
+      volumeLevelElement.textContent = description;
+    }
+    if (volumeIconElement) {
+      const icon = VOLUME_ICONS[volume] || "\u{1F50A}";
+      volumeIconElement.textContent = icon;
+    }
+  };
+  var initializeVolumeDisplay = () => {
+    try {
+      const currentState = Tower.getCurrentTowerState();
+      localVolume = currentState.audio.volume;
+      logger.info(`Initialized volume display: tower volume = ${currentState.audio.volume}, localVolume = ${localVolume}`, "[Volume]");
+      updateVolumeDisplay(localVolume);
+    } catch (error) {
+      logger.debug("Could not initialize volume display, tower may not be connected yet", "[Volume]");
+      localVolume = 0;
+      logger.info(`Initialized volume display with default: localVolume = ${localVolume}`, "[Volume]");
+    }
   };
   window.connectToTower = connectToTower;
   window.calibrate = calibrate;
@@ -3776,6 +4235,11 @@ ${"-".repeat(60)}
   window.glyphLightStates = glyphLightStates;
   window.getCurrentDoorwayLights = getCurrentDoorwayLights;
   window.updateBatteryFilter = updateBatteryFilter;
+  window.updateDrumDropdowns = updateDrumDropdowns;
   window.refreshStatusPacket = refreshStatusPacket;
+  window.volumeUp = volumeUp;
+  window.volumeDown = volumeDown;
+  window.updateVolumeDisplay = updateVolumeDisplay;
+  window.initializeVolumeDisplay = initializeVolumeDisplay;
 })();
 //# sourceMappingURL=TowerController.js.map

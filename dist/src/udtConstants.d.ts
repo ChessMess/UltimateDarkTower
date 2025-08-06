@@ -36,53 +36,6 @@ export declare const DRUM_PACKETS: {
     topMiddle: number;
     bottom: number;
 };
-export declare const LIGHT_PACKETS: {
-    doorway: {
-        top: {
-            north: number;
-            east: number;
-            south: number;
-            west: number;
-        };
-        middle: {
-            north: number;
-            east: number;
-            south: number;
-            west: number;
-        };
-        bottom: {
-            north: number;
-            east: number;
-            south: number;
-            west: number;
-        };
-    };
-    base: {
-        north: {
-            a: number;
-            b: number;
-        };
-        east: {
-            a: number;
-            b: number;
-        };
-        south: {
-            a: number;
-            b: number;
-        };
-        west: {
-            a: number;
-            b: number;
-        };
-    };
-    ledge: {
-        north: number;
-        west: number;
-        south: number;
-        east: number;
-    };
-    overrides: number;
-};
 export type Glyphs = "cleanse" | "quest" | "battle" | "banner" | "reinforce";
 export declare const GLYPHS: {
     cleanse: {
@@ -115,6 +68,7 @@ export declare const AUDIO_COMMAND_POS = 15;
 export declare const SKULL_DROP_COUNT_POS = 17;
 export type TowerLevels = "top" | "middle" | "bottom";
 export type TowerSide = "north" | "south" | "east" | "west";
+export type TowerCorner = "northeast" | "southeast" | "southwest" | "northwest";
 export type SealIdentifier = {
     side: TowerSide;
     level: TowerLevels;
@@ -126,16 +80,24 @@ export type DoorwayLight = {
     style: string;
 };
 export type LedgeLight = {
-    position: TowerSide;
+    position: TowerCorner;
     style: string;
 };
-export type BaseLightLevel = "top" | "bottom";
+export type BaseLightLevel = "top" | "bottom" | "a" | "b";
 export type BaseLightPosition = {
     side: TowerSide;
     level: BaseLightLevel;
 };
+export type BaseLightCornerPosition = {
+    side: TowerCorner;
+    level: BaseLightLevel;
+};
 export type BaseLight = {
     position: BaseLightPosition;
+    style: string;
+};
+export type BaseLightCorner = {
+    position: BaseLightCornerPosition;
     style: string;
 };
 export type Lights = {
@@ -168,11 +130,9 @@ export declare const drumPositionCmds: {
         west: number;
     };
 };
-export declare const BASE_LEDGE_LIGHTS_TO_BIT_SHIFT: string[];
-export declare const DOORWAY_LIGHTS_TO_BIT_SHIFT: string[];
 export declare const LIGHT_EFFECTS: {
-    on: number;
     off: number;
+    on: number;
     breathe: number;
     breatheFast: number;
     breathe50percent: number;
@@ -200,14 +160,6 @@ export declare const TOWER_LIGHT_SEQUENCES: {
     monthStarted: number;
 };
 export type SoundCategory = "Adversary" | "Ally" | "Battle" | "Classic" | "Unlisted" | "Dungeon" | "Foe" | "Spawn" | "Quest" | "Glyph" | "State" | "Seals";
-export type AudioLibrary = {
-    [name: string]: {
-        name: string;
-        value: number;
-        category: SoundCategory;
-    };
-};
-export declare const TOWER_AUDIO_LIBRARY: AudioLibrary;
 export declare const TOWER_MESSAGES: {
     TOWER_STATE: {
         name: string;
@@ -292,3 +244,11 @@ export declare const LIGHT_INDEX_TO_DIRECTION: {
     readonly 3: "WEST";
 };
 export declare const STATE_DATA_LENGTH = 19;
+export type AudioLibrary = {
+    [name: string]: {
+        name: string;
+        value: number;
+        category: SoundCategory;
+    };
+};
+export declare const TOWER_AUDIO_LIBRARY: AudioLibrary;

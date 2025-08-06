@@ -45,7 +45,7 @@ class UdtBleConnection {
             MECH_JIGGLE_TRIGGERED: true,
             MECH_UNEXPECTED_TRIGGER: true,
             MECH_DURATION: true,
-            DIFFERENTIAL_READINGS: false,
+            DIFFERENTIAL_READINGS: true,
             BATTERY_READING: true,
             CALIBRATION_FINISHED: true,
             LOG_ALL: false,
@@ -59,6 +59,7 @@ class UdtBleConnection {
                 receivedData[i] = target.value.getUint8(i);
             }
             const { cmdKey } = this.responseProcessor.getTowerCommand(receivedData[0]);
+            this.logger.info(`Command: ${cmdKey}`, '[UDT][BLE][RESPONSE]');
             if (this.logTowerResponses) {
                 this.logTowerResponse(receivedData);
             }

@@ -47,21 +47,6 @@ export const DRUM_PACKETS = {
   bottom: 2,
 }
 
-export const LIGHT_PACKETS = {
-  doorway: {
-    top: { north: 3, east: 3, south: 4, west: 4 },
-    middle: { north: 5, east: 5, south: 6, west: 6 },
-    bottom: { north: 7, east: 7, south: 8, west: 8 },
-  },
-  base: {
-    north: { a: 12, b: 14 },
-    east: { a: 11, b: 13 },
-    south: { a: 11, b: 13 },
-    west: { a: 12, b: 14 },
-  },
-  ledge: { north: 10, west: 10, south: 9, east: 9 },
-  overrides: 19,
-}
 
 export type Glyphs = "cleanse" | "quest" | "battle" | "banner" | "reinforce";
 
@@ -79,6 +64,7 @@ export const SKULL_DROP_COUNT_POS = 17;
 
 export type TowerLevels = "top" | "middle" | "bottom";
 export type TowerSide = "north" | "south" | "east" | "west";
+export type TowerCorner = "northeast" | "southeast" | "southwest" | "northwest";
 
 export type SealIdentifier = {
   side: TowerSide;
@@ -89,11 +75,13 @@ export type LightTypes = "base" | "doorway" | "ledge";
 
 export type DoorwayLight = { position: TowerSide, level: TowerLevels, style: string };
 
-export type LedgeLight = { position: TowerSide, style: string };
+export type LedgeLight = { position: TowerCorner, style: string };
 
-export type BaseLightLevel = "top" | "bottom";
+export type BaseLightLevel = "top" | "bottom" | "a" | "b";
 export type BaseLightPosition = { side: TowerSide, level: BaseLightLevel };
-export type BaseLight = { position: BaseLightPosition, style: string }
+export type BaseLightCornerPosition = { side: TowerCorner, level: BaseLightLevel };
+export type BaseLight = { position: BaseLightPosition, style: string };
+export type BaseLightCorner = { position: BaseLightCornerPosition, style: string };
 
 export type Lights = {
   doorway?: Array<DoorwayLight>,
@@ -114,16 +102,14 @@ export const drumPositionCmds = {
   bottom: { north: 0b01000010, east: 0b01001010, south: 0b01010010, west: 0b01011010 },
 }
 
-export const BASE_LEDGE_LIGHTS_TO_BIT_SHIFT = ["east", "west"];
-export const DOORWAY_LIGHTS_TO_BIT_SHIFT = ["north", "south"];
 
 export const LIGHT_EFFECTS = {
-  on: 0x3,
   off: 0,
-  breathe: 5,
-  breatheFast: 7,
-  breathe50percent: 9,
-  flicker: 0xb,
+  on: 1,
+  breathe: 2,
+  breatheFast: 3,
+  breathe50percent: 4,
+  flicker: 5,
 }
 
 
@@ -153,6 +139,93 @@ export type SoundCategory =
   "Adversary" | "Ally" | "Battle" |
   "Classic" | "Unlisted" | "Dungeon" | "Foe" |
   "Spawn" | "Quest" | "Glyph" | "State" | "Seals";
+
+// Tower Responses
+// prettier-ignore
+export const TOWER_MESSAGES = {
+  TOWER_STATE: { name: "Tower State", value: 0, critical: false },
+  INVALID_STATE: { name: "Invalid State", value: 1, critical: true },
+  HARDWARE_FAILURE: { name: "Hardware Failure", value: 2, critical: true },
+  MECH_JIGGLE_TRIGGERED: { name: "Unjam Jiggle Triggered", value: 3, critical: false },
+  MECH_DURATION: { name: "Rotation Duration", value: 4, critical: false },
+  MECH_UNEXPECTED_TRIGGER: { name: "Unexpected Trigger", value: 5, critical: false },
+  DIFFERENTIAL_READINGS: { name: "Diff Voltage Readings", value: 6, critical: false },
+  BATTERY_READING: { name: "Battery Level", value: 7, critical: false },
+  CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false },
+}
+
+// 5% increments - voltages are in millivolts and typical for a 250mA discharge 
+// at room temperature which roughly matches a single Energizer EN91
+// This is a rough approximation as chemical makeup of batteries have differing
+// battery performace (Alkaline vs NiMH vs Li etc).
+export const VOLTAGE_LEVELS = [
+  1500, 1390, 1350, 1320, 1295, 1270, 1245, 1225, 1205,
+  1180, 1175, 1166, 1150, 1133, 1125, 1107, 1095, 1066, 1033,
+  980 // There's an additional 5% until 800mV is reached
+];
+
+// Tower Layer Mapping Constants (moved from functions.ts)
+// Constants for mapping tower layers to physical locations
+export const TOWER_LAYERS = {
+  TOP_RING: 0,
+  MIDDLE_RING: 1,
+  BOTTOM_RING: 2,
+  LEDGE: 3,
+  BASE1: 4,
+  BASE2: 5,
+} as const;
+
+// Ring layers use cardinal directions (position 0 = North)
+export const RING_LIGHT_POSITIONS = {
+  NORTH: 0,
+  EAST: 1,
+  SOUTH: 2,
+  WEST: 3,
+} as const;
+
+// Ledge and Base layers use ordinal directions (position 0 = North-East)
+export const LEDGE_BASE_LIGHT_POSITIONS = {
+  NORTH_EAST: 0,
+  SOUTH_EAST: 1,
+  SOUTH_WEST: 2,
+  NORTH_WEST: 3,
+} as const;
+
+// LED Channel Lookup (matches firmware implementation)
+// Convert from (layer * 4) + position to LED driver channel (0-23)
+export const LED_CHANNEL_LOOKUP = [
+  // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
+  0, 3, 2, 1,
+  // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
+  7, 6, 5, 4,
+  // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
+  10, 9, 8, 11,
+  // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
+  12, 13, 14, 15,
+  // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
+  16, 17, 18, 19,
+  // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
+  20, 21, 22, 23,
+];
+
+// Updated reverse mapping for the corrected layer architecture
+export const LAYER_TO_POSITION = {
+  [TOWER_LAYERS.TOP_RING]: 'TOP_RING',
+  [TOWER_LAYERS.MIDDLE_RING]: 'MIDDLE_RING',
+  [TOWER_LAYERS.BOTTOM_RING]: 'BOTTOM_RING',
+  [TOWER_LAYERS.LEDGE]: 'LEDGE',
+  [TOWER_LAYERS.BASE1]: 'BASE1',
+  [TOWER_LAYERS.BASE2]: 'BASE2'
+} as const;
+
+export const LIGHT_INDEX_TO_DIRECTION = {
+  [RING_LIGHT_POSITIONS.NORTH]: 'NORTH',
+  [RING_LIGHT_POSITIONS.EAST]: 'EAST',
+  [RING_LIGHT_POSITIONS.SOUTH]: 'SOUTH',
+  [RING_LIGHT_POSITIONS.WEST]: 'WEST'
+} as const;
+
+export const STATE_DATA_LENGTH = 19;
 
 export type AudioLibrary = {
   [name: string]: {
@@ -278,90 +351,3 @@ export const TOWER_AUDIO_LIBRARY: AudioLibrary = {
   TowerSeal: { name: "Tower Seal", value: 0x70, category: "Seals" },
   TowerSkullDropped: { name: "Tower Skull Dropped", value: 0x71, category: "State" },
 }
-
-// Tower Responses
-// prettier-ignore
-export const TOWER_MESSAGES = {
-  TOWER_STATE: { name: "Tower State", value: 0, critical: false },
-  INVALID_STATE: { name: "Invalid State", value: 1, critical: true },
-  HARDWARE_FAILURE: { name: "Hardware Failure", value: 2, critical: true },
-  MECH_JIGGLE_TRIGGERED: { name: "Unjam Jiggle Triggered", value: 3, critical: false },
-  MECH_DURATION: { name: "Rotation Duration", value: 4, critical: false },
-  MECH_UNEXPECTED_TRIGGER: { name: "Unexpected Trigger", value: 5, critical: false },
-  DIFFERENTIAL_READINGS: { name: "Diff Voltage Readings", value: 6, critical: false },
-  BATTERY_READING: { name: "Battery Level", value: 7, critical: false },
-  CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false },
-}
-
-// 5% increments - voltages are in millivolts and typical for a 250mA discharge 
-// at room temperature which roughly matches a single Energizer EN91
-// This is a rough approximation as chemical makeup of battieries have differing
-// battery performace (Alkaline vs NiMH vs Li etc).
-export const VOLTAGE_LEVELS = [
-  1500, 1390, 1350, 1320, 1295, 1270, 1245, 1225, 1205,
-  1180, 1175, 1166, 1150, 1133, 1125, 1107, 1095, 1066, 1033,
-  980 // There's an additional 5% until 800mV is reached
-];
-
-// Tower Layer Mapping Constants (moved from functions.ts)
-// Constants for mapping tower layers to physical locations
-export const TOWER_LAYERS = {
-  TOP_RING: 0,
-  MIDDLE_RING: 1,
-  BOTTOM_RING: 2,
-  LEDGE: 3,
-  BASE1: 4,
-  BASE2: 5,
-} as const;
-
-// Ring layers use cardinal directions (position 0 = North)
-export const RING_LIGHT_POSITIONS = {
-  NORTH: 0,
-  EAST: 1,
-  SOUTH: 2,
-  WEST: 3,
-} as const;
-
-// Ledge and Base layers use ordinal directions (position 0 = North-East)
-export const LEDGE_BASE_LIGHT_POSITIONS = {
-  NORTH_EAST: 0,
-  SOUTH_EAST: 1,
-  SOUTH_WEST: 2,
-  NORTH_WEST: 3,
-} as const;
-
-// LED Channel Lookup (matches firmware implementation)
-// Convert from (layer * 4) + position to LED driver channel (0-23)
-export const LED_CHANNEL_LOOKUP = [
-  // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
-  0, 3, 2, 1,
-  // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
-  7, 6, 5, 4,
-  // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
-  10, 9, 8, 11,
-  // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
-  12, 13, 14, 15,
-  // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
-  16, 17, 18, 19,
-  // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
-  20, 21, 22, 23,
-];
-
-// Updated reverse mapping for the corrected layer architecture
-export const LAYER_TO_POSITION = {
-  [TOWER_LAYERS.TOP_RING]: 'TOP_RING',
-  [TOWER_LAYERS.MIDDLE_RING]: 'MIDDLE_RING',
-  [TOWER_LAYERS.BOTTOM_RING]: 'BOTTOM_RING',
-  [TOWER_LAYERS.LEDGE]: 'LEDGE',
-  [TOWER_LAYERS.BASE1]: 'BASE1',
-  [TOWER_LAYERS.BASE2]: 'BASE2'
-} as const;
-
-export const LIGHT_INDEX_TO_DIRECTION = {
-  [RING_LIGHT_POSITIONS.NORTH]: 'NORTH',
-  [RING_LIGHT_POSITIONS.EAST]: 'EAST',
-  [RING_LIGHT_POSITIONS.SOUTH]: 'SOUTH',
-  [RING_LIGHT_POSITIONS.WEST]: 'WEST'
-} as const;
-
-export const STATE_DATA_LENGTH = 19;

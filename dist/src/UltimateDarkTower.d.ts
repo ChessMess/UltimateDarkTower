@@ -31,10 +31,6 @@ declare class UltimateDarkTower {
     private towerCommands;
     private retrySendCommandCountRef;
     retrySendCommandMax: number;
-    currentDrumPositions: {
-        topMiddle: number;
-        bottom: number;
-    };
     currentBatteryValue: number;
     previousBatteryValue: number;
     currentBatteryPercentage: number;
@@ -144,13 +140,23 @@ declare class UltimateDarkTower {
      */
     rotateDrumStateful(drumIndex: number, position: number, playSound?: boolean): Promise<void>;
     /**
+     * Rotates tower drums to specified positions using stateful commands that preserve existing tower state.
+     * This is the recommended way to rotate drums as it preserves LEDs and other tower state.
+     * @param top - Position for the top drum ('north', 'east', 'south', 'west')
+     * @param middle - Position for the middle drum
+     * @param bottom - Position for the bottom drum
+     * @param soundIndex - Optional sound to play during rotation
+     * @returns Promise that resolves when rotate command is sent
+     */
+    rotateWithState(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number): Promise<void>;
+    /**
      * Gets the current complete tower state if available.
      * @returns The current tower state object
      */
     getCurrentTowerState(): TowerState;
     /**
      * Sends a complete tower state to the tower, preserving existing state.
-     * This creates a stateful command that only changes the specified fields.
+     * Audio state is automatically cleared to prevent sounds from persisting across commands.
      * @param towerState - The tower state to send
      * @returns Promise that resolves when the command is sent
      */
@@ -164,15 +170,17 @@ declare class UltimateDarkTower {
     /**
      * Updates the current tower state from a tower response.
      * Called internally when tower state responses are received.
+     * Audio state is reset to prevent sounds from persisting across commands.
      * @param stateData - The 19-byte state data from tower response
      */
     private updateTowerStateFromResponse;
     /**
      * Breaks a single seal on the tower, playing appropriate sound and lighting effects.
      * @param seal - Seal identifier to break (e.g., {side: 'north', level: 'middle'})
+     * @param volume - Optional volume override (0=loud, 1=medium, 2=quiet, 3=mute). Uses current tower state if not provided.
      * @returns Promise that resolves when seal break sequence is complete
      */
-    breakSeal(seal: SealIdentifier): Promise<void>;
+    breakSeal(seal: SealIdentifier, volume?: number): Promise<void>;
     /**
      * Randomly rotates specified tower levels to random positions.
      * @param level - Level configuration: 0=all, 1=top, 2=middle, 3=bottom, 4=top&middle, 5=top&bottom, 6=middle&bottom

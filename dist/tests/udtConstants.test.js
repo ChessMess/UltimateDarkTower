@@ -56,28 +56,6 @@ describe('Constants', () => {
             expect(udtConstants_1.DRUM_PACKETS.bottom).toBe(2);
         });
     });
-    describe('Light Packets', () => {
-        test('should have doorway light configuration', () => {
-            expect(udtConstants_1.LIGHT_PACKETS).toHaveProperty('doorway');
-            expect(udtConstants_1.LIGHT_PACKETS.doorway).toHaveProperty('top');
-            expect(udtConstants_1.LIGHT_PACKETS.doorway).toHaveProperty('middle');
-            expect(udtConstants_1.LIGHT_PACKETS.doorway).toHaveProperty('bottom');
-        });
-        test('should have base light configuration', () => {
-            expect(udtConstants_1.LIGHT_PACKETS).toHaveProperty('base');
-            expect(udtConstants_1.LIGHT_PACKETS.base).toHaveProperty('north');
-            expect(udtConstants_1.LIGHT_PACKETS.base).toHaveProperty('east');
-            expect(udtConstants_1.LIGHT_PACKETS.base).toHaveProperty('south');
-            expect(udtConstants_1.LIGHT_PACKETS.base).toHaveProperty('west');
-        });
-        test('should have ledge light configuration', () => {
-            expect(udtConstants_1.LIGHT_PACKETS).toHaveProperty('ledge');
-            expect(udtConstants_1.LIGHT_PACKETS.ledge).toHaveProperty('north');
-            expect(udtConstants_1.LIGHT_PACKETS.ledge).toHaveProperty('east');
-            expect(udtConstants_1.LIGHT_PACKETS.ledge).toHaveProperty('south');
-            expect(udtConstants_1.LIGHT_PACKETS.ledge).toHaveProperty('west');
-        });
-    });
     describe('Glyphs', () => {
         test('should have GLYPHS object defined', () => {
             expect(udtConstants_1.GLYPHS).toBeDefined();
