@@ -953,7 +953,6 @@
     }
     handleTowerStateResponse(receivedData) {
       const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
-      this.logger.debug("Tower Message Received", "[UDT][BLE]");
       const state = rtdt_unpack_state(receivedData);
       this.logger.debug(`Tower State: ${JSON.stringify(state)} `, "[UDT][BLE]");
       if (this.performingCalibration) {
@@ -1570,7 +1569,7 @@
       var _a, _b, _c;
       try {
         const cmdStr = commandToPacketString(command);
-        this.deps.logDetail && this.deps.logger.debug(`SND: ${cmdStr}`, "[UDT][CMD]");
+        this.deps.logDetail && this.deps.logger.debug(`${cmdStr}`, "[UDT][CMD]");
         if (!this.deps.bleConnection.txCharacteristic || !this.deps.bleConnection.isConnected) {
           this.deps.logger.warn("Tower is not connected", "[UDT][CMD]");
           return;

@@ -167,7 +167,6 @@ class UdtBleConnection {
     }
     handleTowerStateResponse(receivedData) {
         const dataSkullDropCount = receivedData[udtConstants_1.SKULL_DROP_COUNT_POS];
-        this.logger.debug('Tower Message Received', '[UDT][BLE]');
         const state = (0, udtTowerState_1.rtdt_unpack_state)(receivedData);
         this.logger.debug(`Tower State: ${JSON.stringify(state)} `, '[UDT][BLE]');
         if (this.performingCalibration) {

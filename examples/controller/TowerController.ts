@@ -283,7 +283,6 @@ const updateCalibrationStatus = () => {
   }
 
   if (!Tower.isConnected) {
-    logger.info("Tower not connected, setting calibration icons to unknown state", '[TC]');
     // Unknown state - gray question circles
     topIcon.className = "fas fa-question-circle text-gray-400 text-lg";
     topIcon.title = "Top drum status unknown";
@@ -1090,7 +1089,7 @@ const updateBatteryFilter = () => {
       Tower.batteryNotifyEnabled = true;
       Tower.batteryNotifyOnValueChangeOnly = selectedValue === 'changes';
     }
-    logger.info(`Battery filter set to: ${selectedValue}`, '[TC]');
+    logger.info(`Battery logging set to: ${selectedValue}`, '[TC]');
   }
 }
 

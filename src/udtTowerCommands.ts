@@ -70,7 +70,7 @@ export class UdtTowerCommands {
     private async sendTowerCommandDirect(command: Uint8Array): Promise<void> {
         try {
             const cmdStr = commandToPacketString(command);
-            this.deps.logDetail && this.deps.logger.debug(`SND: ${cmdStr}`, '[UDT][CMD]');
+            this.deps.logDetail && this.deps.logger.debug(`${cmdStr}`, '[UDT][CMD]');
             if (!this.deps.bleConnection.txCharacteristic || !this.deps.bleConnection.isConnected) {
                 this.deps.logger.warn('Tower is not connected', '[UDT][CMD]');
                 return;
