@@ -317,14 +317,14 @@ export class Logger {
      * @param enableDetailedLogging - Whether to include detailed change descriptions
      */
     logTowerStateChange(oldState: TowerState, newState: TowerState, source: string, enableDetailedLogging: boolean = false): void {
-        this.info(`Tower state updated from ${source}`, '[TowerState]');
+        this.info(`Tower state updated from ${source}`, '[UDT]');
 
         if (enableDetailedLogging) {
             const changes = this.computeStateChanges(oldState, newState);
             if (changes.length > 0) {
-                this.debug(`State changes: ${changes.join(', ')}`, '[TowerState]');
+                this.info(`State changes: ${changes.join(', ')}`, '[UDT]');
             } else {
-                this.debug('No changes detected in state update', '[TowerState]');
+                this.info('No changes detected in state update', '[UDT]');
             }
         }
     }

@@ -295,7 +295,6 @@ const updateCalibrationStatus = () => {
   }
 
   const towerState = Tower.getCurrentTowerState();
-  logger.info(`Updating calibration status - Top: ${towerState.drum[0].calibrated}, Middle: ${towerState.drum[1].calibrated}, Bottom: ${towerState.drum[2].calibrated}`, '[TC]');
 
   // Update top drum calibration icon
   if (towerState.drum[0].calibrated) {
@@ -343,15 +342,11 @@ const updateDrumDropdowns = () => {
   try {
     // Get current tower state for detailed debugging
     const towerState = Tower.getCurrentTowerState();
-    logger.debug(`Raw tower state drum positions - Top: ${towerState.drum[0].position}, Middle: ${towerState.drum[1].position}, Bottom: ${towerState.drum[2].position}`, '[TC]');
-    logger.debug(`Raw tower state drum calibration - Top: ${towerState.drum[0].calibrated}, Middle: ${towerState.drum[1].calibrated}, Bottom: ${towerState.drum[2].calibrated}`, '[TC]');
 
     // Get current drum positions from Tower method (now fixed to use tower state directly)
     const topPosition = Tower.getCurrentDrumPosition('top');
     const middlePosition = Tower.getCurrentDrumPosition('middle');
     const bottomPosition = Tower.getCurrentDrumPosition('bottom');
-
-    logger.info(`getCurrentDrumPosition results - Top: ${topPosition}, Middle: ${middlePosition}, Bottom: ${bottomPosition}`, '[TC]');
 
     // Convert raw position values for comparison logging
     const sides = ['north', 'east', 'south', 'west'];
@@ -359,21 +354,15 @@ const updateDrumDropdowns = () => {
     const middlePositionFromRaw = sides[towerState.drum[1].position] || 'north';
     const bottomPositionFromRaw = sides[towerState.drum[2].position] || 'north';
 
-    logger.info(`Raw position conversion - Top: ${topPositionFromRaw}, Middle: ${middlePositionFromRaw}, Bottom: ${bottomPositionFromRaw}`, '[TC]');
-
     // Verify that the method and raw state match (they should now)
     if (topPosition !== topPositionFromRaw || middlePosition !== middlePositionFromRaw || bottomPosition !== bottomPositionFromRaw) {
       logger.warn(`Position mismatch detected! Method vs Raw - Top: ${topPosition}!=${topPositionFromRaw}, Middle: ${middlePosition}!=${middlePositionFromRaw}, Bottom: ${bottomPosition}!=${bottomPositionFromRaw}`, '[TC]');
-    } else {
-      logger.info(`Position methods working correctly - all positions match raw state`, '[TC]');
     }
 
     // Update dropdown selections to match current drum positions
     topSelect.value = topPosition;
     middleSelect.value = middlePosition;
     bottomSelect.value = bottomPosition;
-
-    logger.info(`Updated drum dropdowns - Top: ${topPosition}, Middle: ${middlePosition}, Bottom: ${bottomPosition}`, '[TC]');
   } catch (error) {
     logger.error(`Failed to update drum dropdowns: ${error}`, '[TC]');
   }
@@ -1535,7 +1524,6 @@ const refreshStatusPacket = () => {
     const packedState = Array.from(buffer);
     updateStatusPacketDisplay(packedState);
 
-    logger.info("Status packet refreshed", '[TC]');
   } catch (error) {
     logger.error(`Failed to refresh status packet: ${error}`, '[TC]');
     updateStatusPacketDisplay(EMPTY_STATUS_PACKET);

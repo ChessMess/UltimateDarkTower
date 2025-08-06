@@ -31,7 +31,7 @@ class UdtTowerCommands {
             const cmdStr = (0, udtHelpers_1.commandToPacketString)(command);
             this.deps.logDetail && this.deps.logger.debug(`SND: ${cmdStr}`, '[UDT][CMD]');
             if (!this.deps.bleConnection.txCharacteristic || !this.deps.bleConnection.isConnected) {
-                this.deps.logger.warn('Tower is not connected', '[UDT]');
+                this.deps.logger.warn('Tower is not connected', '[UDT][CMD]');
                 return;
             }
             await this.deps.bleConnection.txCharacteristic.writeValue(command);
@@ -39,7 +39,7 @@ class UdtTowerCommands {
             this.deps.bleConnection.lastSuccessfulCommand = Date.now();
         }
         catch (error) {
-            this.deps.logger.error(`command send error: ${error}`, '[UDT]');
+            this.deps.logger.error(`command send error: ${error}`, '[UDT][CMD]');
             const errorMsg = (_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : new String(error);
             const wasCancelled = errorMsg.includes('User cancelled');
             const maxRetriesReached = this.deps.retrySendCommandCount.value >= this.deps.retrySendCommandMax;
@@ -49,12 +49,12 @@ class UdtTowerCommands {
                 errorMsg.includes('Device is not connected') ||
                 !((_c = (_b = this.deps.bleConnection.TowerDevice) === null || _b === void 0 ? void 0 : _b.gatt) === null || _c === void 0 ? void 0 : _c.connected);
             if (isDisconnected) {
-                this.deps.logger.warn('Disconnect detected during command send', '[UDT]');
+                this.deps.logger.warn('Disconnect detected during command send', '[UDT][CMD]');
                 await this.deps.bleConnection.disconnect();
                 return;
             }
             if (!maxRetriesReached && this.deps.bleConnection.isConnected && !wasCancelled) {
-                this.deps.logger.info(`retrying tower command attempt ${this.deps.retrySendCommandCount.value + 1}`, '[UDT]');
+                this.deps.logger.info(`retrying tower command attempt ${this.deps.retrySendCommandCount.value + 1}`, '[UDT][CMD]');
                 this.deps.retrySendCommandCount.value++;
                 setTimeout(() => {
                     this.sendTowerCommandDirect(command);
@@ -72,14 +72,14 @@ class UdtTowerCommands {
      */
     async calibrate() {
         if (!this.deps.bleConnection.performingCalibration) {
-            this.deps.logger.info('Performing Tower Calibration', '[UDT]');
+            this.deps.logger.info('Performing Tower Calibration', '[UDT][CMD]');
             await this.sendTowerCommand(new Uint8Array([udtConstants_1.TOWER_COMMANDS.calibration]), 'calibrate');
             // flag to look for calibration complete tower response
             this.deps.bleConnection.performingCalibration = true;
             this.deps.bleConnection.performingLongCommand = true;
             return;
         }
-        this.deps.logger.warn('Tower calibration requested when tower is already performing calibration', '[UDT]');
+        this.deps.logger.warn('Tower calibration requested when tower is already performing calibration', '[UDT][CMD]');
         return;
     }
     /**
@@ -91,12 +91,12 @@ class UdtTowerCommands {
     async playSound(soundIndex) {
         const invalidIndex = soundIndex === null || soundIndex > (Object.keys(udtConstants_1.TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0;
         if (invalidIndex) {
-            this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, '[UDT]');
+            this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, '[UDT][CMD]');
             return;
         }
         const currentState = this.deps.getCurrentTowerState();
         const { command } = this.deps.commandFactory.createTransientAudioCommand(currentState, soundIndex, false);
-        this.deps.logger.info('Sending sound command (stateful)', '[UDT]');
+        this.deps.logger.info('Sending sound command (stateful)', '[UDT][CMD]');
         // Send the command directly without updating state tracking 
         // Audio should not persist in state as it's a transient effect
         await this.sendTowerCommand(command, `playSound(${soundIndex})`);
@@ -107,8 +107,8 @@ class UdtTowerCommands {
      * @returns Promise that resolves when light command is sent
      */
     async lights(lights) {
-        this.deps.logDetail && this.deps.logger.debug(`Light Parameter ${JSON.stringify(lights)}`, '[UDT]');
-        this.deps.logger.info('Sending light commands', '[UDT]');
+        this.deps.logDetail && this.deps.logger.debug(`Light Parameter ${JSON.stringify(lights)}`, '[UDT][CMD]');
+        this.deps.logger.info('Sending light commands', '[UDT][CMD]');
         // Convert lights object to individual setLEDStateful calls
         const layerCommands = this.mapLightsToLayerCommands(lights);
         // Execute all light commands
@@ -229,19 +229,19 @@ class UdtTowerCommands {
     async lightOverrides(light, soundIndex) {
         // Validate light parameter
         if (typeof light !== 'number' || isNaN(light)) {
-            this.deps.logger.error(`Invalid light parameter: ${light}. Must be a valid number.`, '[UDT]');
+            this.deps.logger.error(`Invalid light parameter: ${light}. Must be a valid number.`, '[UDT][CMD]');
             return;
         }
         // Validate soundIndex if provided
         if (soundIndex !== undefined && (typeof soundIndex !== 'number' || isNaN(soundIndex) || soundIndex <= 0)) {
-            this.deps.logger.error(`Invalid soundIndex parameter: ${soundIndex}. Must be a valid positive number.`, '[UDT]');
+            this.deps.logger.error(`Invalid soundIndex parameter: ${soundIndex}. Must be a valid positive number.`, '[UDT][CMD]');
             return;
         }
         const currentState = this.deps.getCurrentTowerState();
         if (soundIndex) {
             // Use transient audio command with LED sequence modification
             const { command, stateWithoutAudio } = this.deps.commandFactory.createTransientAudioCommandWithModifications(currentState, soundIndex, false, undefined, { led_sequence: light });
-            this.deps.logger.info('Sending stateful light override with sound', '[UDT]');
+            this.deps.logger.info('Sending stateful light override with sound', '[UDT][CMD]');
             // Update our state tracking without the audio
             this.deps.setTowerState(stateWithoutAudio, 'lightOverrides');
             await this.sendTowerCommand(command, `lightOverrides(${light}, ${soundIndex})`);
@@ -252,7 +252,7 @@ class UdtTowerCommands {
                 led_sequence: light
             };
             const command = this.deps.commandFactory.createStatefulCommand(currentState, modifications);
-            this.deps.logger.info('Sending stateful light override', '[UDT]');
+            this.deps.logger.info('Sending stateful light override', '[UDT][CMD]');
             await this.sendTowerCommand(command, `lightOverrides(${light})`);
         }
     }
@@ -265,7 +265,7 @@ class UdtTowerCommands {
      * @returns Promise that resolves when rotate command is sent
      */
     async rotate(top, middle, bottom, soundIndex) {
-        this.deps.logDetail && this.deps.logger.debug(`Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`, '[UDT]');
+        this.deps.logDetail && this.deps.logger.debug(`Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`, '[UDT][CMD]');
         const rotateCommand = this.deps.commandFactory.createRotateCommand(top, middle, bottom);
         if (soundIndex) {
             rotateCommand[udtConstants_1.AUDIO_COMMAND_POS] = soundIndex;
@@ -306,12 +306,12 @@ class UdtTowerCommands {
    * @returns Promise that resolves when rotate command is sent
    */
     async rotateWithState(top, middle, bottom, soundIndex) {
-        this.deps.logDetail && this.deps.logger.debug(`Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`, '[UDT]');
+        this.deps.logDetail && this.deps.logger.debug(`Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`, '[UDT][CMD]');
         // Convert TowerSide to numeric positions
         const positionMap = {
             'north': 0, 'east': 1, 'south': 2, 'west': 3
         };
-        this.deps.logger.info('Sending stateful rotate commands' + (soundIndex ? ' with sound' : ''), '[UDT]');
+        this.deps.logger.info('Sending stateful rotate commands' + (soundIndex ? ' with sound' : ''), '[UDT][CMD]');
         // Flag that we're performing a long command 
         // drum rotation can exceed battery heartbeat check default
         this.deps.bleConnection.performingLongCommand = true;
@@ -347,7 +347,7 @@ class UdtTowerCommands {
      * @returns Promise that resolves when reset command is sent
      */
     async resetTowerSkullCount() {
-        this.deps.logger.info('Tower skull count reset requested', '[UDT]');
+        this.deps.logger.info('Tower skull count reset requested', '[UDT][CMD]');
         const currentState = this.deps.getCurrentTowerState();
         const modifications = {
             beam: { count: 0, fault: false }
@@ -458,10 +458,10 @@ class UdtTowerCommands {
                 bottomSide = getRandomSide();
                 break;
             default:
-                this.deps.logger.error('Invalid level parameter for randomRotateLevels. Must be 0-6.', '[UDT]');
+                this.deps.logger.error('Invalid level parameter for randomRotateLevels. Must be 0-6.', '[UDT][CMD]');
                 return;
         }
-        this.deps.logger.info(`Random rotating levels to: top:${topSide}, middle:${middleSide}, bottom:${bottomSide}`, '[UDT]');
+        this.deps.logger.info(`Random rotating levels to: top:${topSide}, middle:${middleSide}, bottom:${bottomSide}`, '[UDT][CMD]');
         await this.rotate(topSide, middleSide, bottomSide);
     }
     /**
@@ -524,7 +524,7 @@ class UdtTowerCommands {
     async setLEDStateful(layerIndex, lightIndex, effect, loop = true) {
         const currentState = this.deps.getCurrentTowerState();
         const command = this.deps.commandFactory.createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop);
-        this.deps.logger.info(`Setting LED layer ${layerIndex} light ${lightIndex} to effect ${effect}${loop ? ' (looped)' : ''}`, '[UDT]');
+        this.deps.logger.info(`Setting LED layer ${layerIndex} light ${lightIndex} to effect ${effect}${loop ? ' (looped)' : ''}`, '[UDT][CMD]');
         await this.sendTowerCommand(command, `setLEDStateful(${layerIndex}, ${lightIndex}, ${effect}, ${loop})`);
     }
     /**
@@ -538,12 +538,12 @@ class UdtTowerCommands {
     async playSoundStateful(soundIndex, loop = false, volume) {
         const invalidIndex = soundIndex === null || soundIndex > (Object.keys(udtConstants_1.TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0;
         if (invalidIndex) {
-            this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, '[UDT]');
+            this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, '[UDT][CMD]');
             return;
         }
         const currentState = this.deps.getCurrentTowerState();
         const { command } = this.deps.commandFactory.createTransientAudioCommand(currentState, soundIndex, loop, volume);
-        this.deps.logger.info(`Playing sound ${soundIndex}${loop ? ' (looped)' : ''}${volume !== undefined ? ` at volume ${volume}` : ''}`, '[UDT]');
+        this.deps.logger.info(`Playing sound ${soundIndex}${loop ? ' (looped)' : ''}${volume !== undefined ? ` at volume ${volume}` : ''}`, '[UDT][CMD]');
         // Send the command directly without updating state tracking
         // Audio should not persist in state as it's a transient effect
         await this.sendTowerCommand(command, `playSoundStateful(${soundIndex}, ${loop}${volume !== undefined ? `, ${volume}` : ''})`);
@@ -560,7 +560,7 @@ class UdtTowerCommands {
         const command = this.deps.commandFactory.createStatefulDrumCommand(currentState, drumIndex, position, playSound);
         const drumNames = ['top', 'middle', 'bottom'];
         const positionNames = ['north', 'east', 'south', 'west'];
-        this.deps.logger.info(`Rotating ${drumNames[drumIndex]} drum to ${positionNames[position]}${playSound ? ' with sound' : ''}`, '[UDT]');
+        this.deps.logger.info(`Rotating ${drumNames[drumIndex]} drum to ${positionNames[position]}${playSound ? ' with sound' : ''}`, '[UDT][CMD]');
         // Flag that we're performing a long command
         this.deps.bleConnection.performingLongCommand = true;
         await this.sendTowerCommand(command, `rotateDrumStateful(${drumIndex}, ${position}, ${playSound})`);
@@ -581,7 +581,7 @@ class UdtTowerCommands {
         const stateToSend = Object.assign({}, state);
         stateToSend.audio = { sample: 0, loop: false, volume: 0 };
         const command = this.deps.commandFactory.packTowerStateCommand(stateToSend);
-        this.deps.logger.info('Sending complete tower state', '[UDT]');
+        this.deps.logger.info('Sending complete tower state', '[UDT][CMD]');
         // Update our local state tracking without audio
         this.deps.setTowerState(stateToSend, 'sendTowerStateStateful');
         await this.sendTowerCommand(command, 'sendTowerStateStateful');
