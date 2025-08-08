@@ -122,29 +122,29 @@ describe('Pack/Unpack Functions', () => {
     });
     describe('LED Layer and Effect Testing', () => {
         test.each([
-            { layer: 0, light: 0, effect: 1 },
-            { layer: 0, light: 1, effect: 2 },
-            { layer: 0, light: 2, effect: 3 },
-            { layer: 0, light: 3, effect: 4 },
-            { layer: 1, light: 0, effect: 5 },
-            { layer: 1, light: 1, effect: 6 },
-            { layer: 1, light: 2, effect: 7 },
-            { layer: 1, light: 3, effect: 1 },
-            { layer: 2, light: 0, effect: 2 },
-            { layer: 2, light: 1, effect: 3 },
-            { layer: 2, light: 2, effect: 4 },
-            { layer: 2, light: 3, effect: 5 },
-            { layer: 3, light: 0, effect: 6 },
-            { layer: 3, light: 1, effect: 7 },
-            { layer: 3, light: 2, effect: 1 },
-            { layer: 3, light: 3, effect: 2 },
-            { layer: 4, light: 0, effect: 3 },
-            { layer: 4, light: 1, effect: 4 },
-            { layer: 4, light: 2, effect: 5 },
-            { layer: 4, light: 3, effect: 6 },
-            { layer: 5, light: 0, effect: 7 },
-            { layer: 5, light: 1, effect: 1 },
-            { layer: 5, light: 2, effect: 2 },
+            { layer: 0, light: 0, effect: 1 }, // Top ring north
+            { layer: 0, light: 1, effect: 2 }, // Top ring east
+            { layer: 0, light: 2, effect: 3 }, // Top ring south
+            { layer: 0, light: 3, effect: 4 }, // Top ring west
+            { layer: 1, light: 0, effect: 5 }, // Middle ring north
+            { layer: 1, light: 1, effect: 6 }, // Middle ring east
+            { layer: 1, light: 2, effect: 7 }, // Middle ring south
+            { layer: 1, light: 3, effect: 1 }, // Middle ring west
+            { layer: 2, light: 0, effect: 2 }, // Bottom ring north
+            { layer: 2, light: 1, effect: 3 }, // Bottom ring east
+            { layer: 2, light: 2, effect: 4 }, // Bottom ring south
+            { layer: 2, light: 3, effect: 5 }, // Bottom ring west
+            { layer: 3, light: 0, effect: 6 }, // Ledge NE
+            { layer: 3, light: 1, effect: 7 }, // Ledge SE
+            { layer: 3, light: 2, effect: 1 }, // Ledge SW
+            { layer: 3, light: 3, effect: 2 }, // Ledge NW
+            { layer: 4, light: 0, effect: 3 }, // Base1 NE
+            { layer: 4, light: 1, effect: 4 }, // Base1 SE
+            { layer: 4, light: 2, effect: 5 }, // Base1 SW
+            { layer: 4, light: 3, effect: 6 }, // Base1 NW
+            { layer: 5, light: 0, effect: 7 }, // Base2 NE
+            { layer: 5, light: 1, effect: 1 }, // Base2 SE
+            { layer: 5, light: 2, effect: 2 }, // Base2 SW
             { layer: 5, light: 3, effect: 3 }, // Base2 NW
         ])('should handle layer $layer light $light effect $effect', ({ layer, light, effect }) => {
             const state = (0, udtHelpers_1.createDefaultTowerState)();
@@ -158,29 +158,29 @@ describe('Pack/Unpack Functions', () => {
     });
     describe('LED Loop Testing', () => {
         test.each([
-            { layer: 0, light: 0 },
-            { layer: 0, light: 1 },
-            { layer: 0, light: 2 },
-            { layer: 0, light: 3 },
-            { layer: 1, light: 0 },
-            { layer: 1, light: 1 },
-            { layer: 1, light: 2 },
-            { layer: 1, light: 3 },
-            { layer: 2, light: 0 },
-            { layer: 2, light: 1 },
-            { layer: 2, light: 2 },
-            { layer: 2, light: 3 },
-            { layer: 3, light: 0 },
-            { layer: 3, light: 1 },
-            { layer: 3, light: 2 },
-            { layer: 3, light: 3 },
-            { layer: 4, light: 0 },
-            { layer: 4, light: 1 },
-            { layer: 4, light: 2 },
-            { layer: 4, light: 3 },
-            { layer: 5, light: 0 },
-            { layer: 5, light: 1 },
-            { layer: 5, light: 2 },
+            { layer: 0, light: 0 }, // Top ring north
+            { layer: 0, light: 1 }, // Top ring east
+            { layer: 0, light: 2 }, // Top ring south
+            { layer: 0, light: 3 }, // Top ring west
+            { layer: 1, light: 0 }, // Middle ring north
+            { layer: 1, light: 1 }, // Middle ring east
+            { layer: 1, light: 2 }, // Middle ring south
+            { layer: 1, light: 3 }, // Middle ring west
+            { layer: 2, light: 0 }, // Bottom ring north
+            { layer: 2, light: 1 }, // Bottom ring east
+            { layer: 2, light: 2 }, // Bottom ring south
+            { layer: 2, light: 3 }, // Bottom ring west
+            { layer: 3, light: 0 }, // Ledge NE
+            { layer: 3, light: 1 }, // Ledge SE
+            { layer: 3, light: 2 }, // Ledge SW
+            { layer: 3, light: 3 }, // Ledge NW
+            { layer: 4, light: 0 }, // Base1 NE
+            { layer: 4, light: 1 }, // Base1 SE
+            { layer: 4, light: 2 }, // Base1 SW
+            { layer: 4, light: 3 }, // Base1 NW
+            { layer: 5, light: 0 }, // Base2 NE
+            { layer: 5, light: 1 }, // Base2 SE
+            { layer: 5, light: 2 }, // Base2 SW
             { layer: 5, light: 3 }, // Base2 NW
         ])('should handle layer $layer light $light loop = true', ({ layer, light }) => {
             const state = (0, udtHelpers_1.createDefaultTowerState)();
