@@ -272,7 +272,7 @@ export class UdtBleConnection {
     }
 
     private logTowerResponse(receivedData: Uint8Array) {
-        const { cmdKey } = this.responseProcessor.getTowerCommand(receivedData[0]);
+        const { cmdKey, command } = this.responseProcessor.getTowerCommand(receivedData[0]);
 
         if (!this.responseProcessor.shouldLogResponse(cmdKey, this.logTowerResponseConfig)) {
             return;
@@ -282,7 +282,13 @@ export class UdtBleConnection {
             return; // logged elsewhere
         }
 
-        this.logger.info(`${this.responseProcessor.commandToString(receivedData).join(' ')}`, '[UDT][BLE]');
+        const logMessage = `${this.responseProcessor.commandToString(receivedData).join(' ')}`;
+
+        if (command.critical) {
+            this.logger.error(logMessage, '[UDT][BLE]');
+        } else {
+            this.logger.info(logMessage, '[UDT][BLE]');
+        }
     }
 
     bleAvailabilityChange = (event: Event & { value: boolean }) => {

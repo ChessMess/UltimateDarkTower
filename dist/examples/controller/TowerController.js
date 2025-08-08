@@ -119,9 +119,9 @@
         TOWER_STATE: { name: "Tower State", value: 0, critical: false },
         INVALID_STATE: { name: "Invalid State", value: 1, critical: true },
         HARDWARE_FAILURE: { name: "Hardware Failure", value: 2, critical: true },
-        MECH_JIGGLE_TRIGGERED: { name: "Unjam Jiggle Triggered", value: 3, critical: false },
+        MECH_JIGGLE_TRIGGERED: { name: "Unjam Jiggle Triggered", value: 3, critical: true },
         MECH_DURATION: { name: "Rotation Duration", value: 4, critical: false },
-        MECH_UNEXPECTED_TRIGGER: { name: "Unexpected Trigger", value: 5, critical: false },
+        MECH_UNEXPECTED_TRIGGER: { name: "Unexpected Trigger", value: 5, critical: true },
         DIFFERENTIAL_READINGS: { name: "Diff Voltage Readings", value: 6, critical: false },
         BATTERY_READING: { name: "Battery Level", value: 7, critical: false },
         CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false }
@@ -1110,14 +1110,19 @@
       }
     }
     logTowerResponse(receivedData) {
-      const { cmdKey } = this.responseProcessor.getTowerCommand(receivedData[0]);
+      const { cmdKey, command } = this.responseProcessor.getTowerCommand(receivedData[0]);
       if (!this.responseProcessor.shouldLogResponse(cmdKey, this.logTowerResponseConfig)) {
         return;
       }
       if (this.responseProcessor.isBatteryResponse(cmdKey)) {
         return;
       }
-      this.logger.info(`${this.responseProcessor.commandToString(receivedData).join(" ")}`, "[UDT][BLE]");
+      const logMessage = `${this.responseProcessor.commandToString(receivedData).join(" ")}`;
+      if (command.critical) {
+        this.logger.error(logMessage, "[UDT][BLE]");
+      } else {
+        this.logger.info(logMessage, "[UDT][BLE]");
+      }
     }
     handleDisconnection() {
       this.isConnected = false;
