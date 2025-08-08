@@ -672,9 +672,9 @@ describe('UltimateDarkTower', () => {
                 // Test moving drum from initial position (north) to each direction
                 // Since cleanse starts at north and quest starts at south on the top drum
                 const testCases = [
-                    { from: 'north', to: 'east', expectedCleanse: 'east', expectedQuest: 'west' },
-                    { from: 'north', to: 'south', expectedCleanse: 'south', expectedQuest: 'north' },
-                    { from: 'north', to: 'west', expectedCleanse: 'west', expectedQuest: 'east' },
+                    { from: 'north', to: 'east', expectedCleanse: 'east', expectedQuest: 'west' }, // 1 step clockwise
+                    { from: 'north', to: 'south', expectedCleanse: 'south', expectedQuest: 'north' }, // 2 steps clockwise  
+                    { from: 'north', to: 'west', expectedCleanse: 'west', expectedQuest: 'east' }, // 3 steps clockwise
                     { from: 'north', to: 'north', expectedCleanse: 'north', expectedQuest: 'south' }, // No rotation
                 ];
                 for (const testCase of testCases) {

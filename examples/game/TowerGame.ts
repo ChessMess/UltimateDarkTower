@@ -116,7 +116,6 @@ async function revealPicksOnTower() {
   const topGlyph = GLYPHS[GameState.TowerPicks[0]] ?? { side: GameState.TowerPicks[0].split(" ")[1] };
   const middleGlyph = GLYPHS[GameState.TowerPicks[1]] ?? { side: GameState.TowerPicks[1].split(" ")[1] };
   const bottomGlyph = GLYPHS[GameState.TowerPicks[2]] ?? { side: GameState.TowerPicks[2].split(" ")[1] };
-  const rotate = { top: topGlyph.side, middle: middleGlyph.side, bottom: bottomGlyph.side };
 
   // lights
   const doorwayLights = getDoorwayLightsCommand();
@@ -125,7 +124,13 @@ async function revealPicksOnTower() {
   // sound
   const sound = getScoringSound();
 
-  await DarkTower.MultiCommand(rotate, lights, sound);
+  // Execute commands in sequence using available API methods
+  // Use rotateWithState to preserve other tower state, then set lights and play sound
+  await DarkTower.rotateWithState(topGlyph.side, middleGlyph.side, bottomGlyph.side);
+  await DarkTower.Lights(lights);
+  if (sound > 0) {
+    await DarkTower.playSound(sound);
+  }
 }
 
 const updateScore = () => {
@@ -371,3 +376,13 @@ const glyphClick = (glyph: Glyphs) => {
       break;
   }
 }
+
+// Make functions available globally for HTML to call
+(window as any).startGame = startGame;
+(window as any).challengeTower = challengeTower;
+(window as any).setDifficultyNormal = setDifficultyNormal;
+(window as any).setDifficultyGritty = setDifficultyGritty;
+(window as any).setDifficultyMax = setDifficultyMax;
+(window as any).populateSelections = populateSelections;
+(window as any).resetScore = resetScore;
+(window as any).glyphClick = glyphClick;
