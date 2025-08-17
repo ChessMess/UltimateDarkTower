@@ -56,7 +56,7 @@ class UltimateDarkTower {
     constructor() {
         // tower configuration
         this.retrySendCommandCountRef = { value: 0 };
-        this.retrySendCommandMax = 5;
+        this.retrySendCommandMax = udtConstants_1.DEFAULT_RETRY_SEND_COMMAND_MAX;
         // tower state
         this.currentBatteryValue = 0;
         this.previousBatteryValue = 0;
@@ -73,22 +73,68 @@ class UltimateDarkTower {
             banner: null,
             reinforce: null
         };
-        // call back functions
-        // you overwrite these with your own functions 
-        // to handle these events in your app
+        // Event callback functions
+        // Override these with your own functions to handle events in your app
         this.onTowerConnect = () => { };
         this.onTowerDisconnect = () => { };
         this.onCalibrationComplete = () => { };
-        this.onSkullDrop = (_towerSkullCount) => { console.log(_towerSkullCount); };
-        this.onBatteryLevelNotify = (_millivolts) => { console.log(_millivolts); };
-        this.onTowerStateUpdate = (_newState, _oldState, _source) => { console.log(_newState, _oldState, _source); };
+        this.onSkullDrop = (towerSkullCount) => { void towerSkullCount; };
+        this.onBatteryLevelNotify = (millivolts) => { void millivolts; };
+        this.onTowerStateUpdate = (newState, oldState, source) => {
+            void newState;
+            void oldState;
+            void source;
+        };
         // utility
         this._logDetail = false;
-        // Initialize logger with console output by default
+        this.initializeLogger();
+        this.initializeComponents();
+        this.setupTowerResponseCallback();
+    }
+    /**
+     * Initialize the logger with default console output
+     */
+    initializeLogger() {
         this.logger = new udtLogger_1.Logger();
         this.logger.addOutput(new udtLogger_1.ConsoleOutput());
-        // Initialize BLE connection with callback handlers
-        const callbacks = {
+    }
+    /**
+     * Initialize all tower components and their dependencies
+     */
+    initializeComponents() {
+        // Initialize BLE connection with tower event handlers
+        this.towerEventCallbacks = this.createTowerEventCallbacks();
+        this.bleConnection = new udtBleConnection_1.UdtBleConnection(this.logger, this.towerEventCallbacks);
+        // Initialize response processor
+        this.responseProcessor = new udtTowerResponse_1.TowerResponseProcessor(this.logDetail);
+        // Initialize command factory
+        this.commandFactory = new udtCommandFactory_1.UdtCommandFactory();
+        // Initialize tower commands with dependencies
+        const commandDependencies = this.createCommandDependencies();
+        this.towerCommands = new udtTowerCommands_1.UdtTowerCommands(commandDependencies);
+    }
+    /**
+     * Set up the tower response callback after all components are initialized
+     */
+    setupTowerResponseCallback() {
+        this.towerEventCallbacks.onTowerResponse = (response) => {
+            // Handle command queue response processing (existing functionality)
+            this.towerCommands.onTowerResponse();
+            // Check if this is a tower state response and update our state tracking
+            if (response.length >= udtConstants_1.TOWER_STATE_RESPONSE_MIN_LENGTH) {
+                const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
+                if (this.responseProcessor.isTowerStateResponse(cmdKey)) {
+                    // Extract the 19-byte state data (skip command byte)
+                    const stateData = response.slice(udtConstants_1.TOWER_STATE_DATA_OFFSET, udtConstants_1.TOWER_STATE_RESPONSE_MIN_LENGTH);
+                    this.updateTowerStateFromResponse(stateData);
+                }
+            }
+        };
+    } /**
+     * Create tower event callbacks for BLE connection
+     */
+    createTowerEventCallbacks() {
+        return {
             onTowerConnect: () => this.onTowerConnect(),
             onTowerDisconnect: () => {
                 this.onTowerDisconnect();
@@ -98,25 +144,23 @@ class UltimateDarkTower {
                 }
             },
             onBatteryLevelNotify: (millivolts) => {
-                this.previousBatteryValue = this.currentBatteryValue;
-                this.currentBatteryValue = millivolts;
-                this.previousBatteryPercentage = this.currentBatteryPercentage;
-                this.currentBatteryPercentage = (0, udtHelpers_1.milliVoltsToPercentageNumber)(millivolts);
+                this.updateBatteryState(millivolts);
                 this.onBatteryLevelNotify(millivolts);
             },
             onCalibrationComplete: () => {
                 this.setGlyphPositionsFromCalibration();
                 this.onCalibrationComplete();
             },
-            onSkullDrop: (towerSkullCount) => this.onSkullDrop(towerSkullCount)
+            onSkullDrop: (towerSkullCount) => this.onSkullDrop(towerSkullCount),
+            // onTowerResponse will be set up after tower commands are initialized
+            onTowerResponse: () => { }
         };
-        this.bleConnection = new udtBleConnection_1.UdtBleConnection(this.logger, callbacks);
-        // Initialize response processor
-        this.responseProcessor = new udtTowerResponse_1.TowerResponseProcessor(this.logDetail);
-        // Initialize command factory
-        this.commandFactory = new udtCommandFactory_1.UdtCommandFactory();
-        // Initialize tower commands with dependencies
-        const commandDependencies = {
+    }
+    /**
+     * Create command dependencies object for tower commands
+     */
+    createCommandDependencies() {
+        return {
             logger: this.logger,
             commandFactory: this.commandFactory,
             bleConnection: this.bleConnection,
@@ -127,41 +171,33 @@ class UltimateDarkTower {
             getCurrentTowerState: () => this.currentTowerState,
             setTowerState: (newState, source) => this.setTowerState(newState, source)
         };
-        this.towerCommands = new udtTowerCommands_1.UdtTowerCommands(commandDependencies);
-        // Set up command queue response callback now that tower commands are initialized
-        callbacks.onTowerResponse = (response) => {
-            // Handle command queue response processing (existing functionality)
-            this.towerCommands.onTowerResponse();
-            // Check if this is a tower state response and update our state tracking
-            if (response.length >= 20) {
-                const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
-                if (this.responseProcessor.isTowerStateResponse(cmdKey)) {
-                    // Extract the 19-byte state data (skip command byte)
-                    const stateData = response.slice(1, 20);
-                    this.updateTowerStateFromResponse(stateData);
-                }
-            }
-        };
     }
-    get logDetail() { return this._logDetail; }
+    /**
+     * Update battery state values
+     */
+    updateBatteryState(millivolts) {
+        this.previousBatteryValue = this.currentBatteryValue;
+        this.currentBatteryValue = millivolts;
+        this.previousBatteryPercentage = this.currentBatteryPercentage;
+        this.currentBatteryPercentage = (0, udtHelpers_1.milliVoltsToPercentageNumber)(millivolts);
+    }
+    get logDetail() {
+        return this._logDetail;
+    }
     set logDetail(value) {
         this._logDetail = value;
         this.responseProcessor.setDetailedLogging(value);
         // Update dependencies if towerCommands is already initialized
         if (this.towerCommands) {
-            const commandDependencies = {
-                logger: this.logger,
-                commandFactory: this.commandFactory,
-                bleConnection: this.bleConnection,
-                responseProcessor: this.responseProcessor,
-                logDetail: this.logDetail,
-                retrySendCommandCount: this.retrySendCommandCountRef,
-                retrySendCommandMax: this.retrySendCommandMax,
-                getCurrentTowerState: () => this.currentTowerState,
-                setTowerState: (newState, source) => this.setTowerState(newState, source)
-            };
-            this.towerCommands = new udtTowerCommands_1.UdtTowerCommands(commandDependencies);
+            this.updateTowerCommandDependencies();
         }
+    }
+    /**
+     * Update tower command dependencies when configuration changes
+     */
+    updateTowerCommandDependencies() {
+        const commandDependencies = this.createCommandDependencies();
+        this.towerCommands = new udtTowerCommands_1.UdtTowerCommands(commandDependencies);
     }
     // Getter methods for connection state
     get isConnected() { return this.bleConnection.isConnected; }
@@ -190,10 +226,10 @@ class UltimateDarkTower {
     /**
      * Initiates tower calibration to determine the current position of all tower drums.
      * This must be performed after connection before other tower operations.
-     * @returns {Promise<void>} Promise that resolves when calibration command is sent
+     * @returns Promise that resolves when calibration command is sent
      */
     async calibrate() {
-        return await this.towerCommands.calibrate();
+        return this.towerCommands.calibrate();
     }
     /**
      * Plays a sound from the tower's audio library.
@@ -201,15 +237,24 @@ class UltimateDarkTower {
      * @returns Promise that resolves when sound command is sent
      */
     async playSound(soundIndex) {
-        return await this.towerCommands.playSound(soundIndex);
+        return this.towerCommands.playSound(soundIndex);
     }
     /**
      * Controls the tower's LED lights including doorway, ledge, and base lights.
      * @param lights - Light configuration object specifying which lights to control and their effects
      * @returns Promise that resolves when light command is sent
      */
+    async lights(lights) {
+        return this.towerCommands.lights(lights);
+    }
+    /**
+     * Controls the tower's LED lights including doorway, ledge, and base lights.
+     * @deprecated Use `lights()` instead. This method will be removed in a future version.
+     * @param lights - Light configuration object specifying which lights to control and their effects
+     * @returns Promise that resolves when light command is sent
+     */
     async Lights(lights) {
-        return await this.towerCommands.lights(lights);
+        return this.lights(lights);
     }
     /**
      * Sends a raw command packet directly to the tower (for testing purposes).
@@ -217,7 +262,7 @@ class UltimateDarkTower {
      * @returns Promise that resolves when command is sent
      */
     async sendTowerCommandDirect(command) {
-        return await this.towerCommands.sendTowerCommandDirectPublic(command);
+        return this.towerCommands.sendTowerCommandDirectPublic(command);
     }
     /**
      * Sends a light override command to control specific light patterns.
@@ -332,15 +377,15 @@ class UltimateDarkTower {
         const stateToSend = Object.assign({}, towerState);
         stateToSend.audio = { sample: 0, loop: false, volume: 0 };
         // Pack the tower state into 19 bytes
-        const stateData = new Uint8Array(19);
-        const success = rtdt_pack_state(stateData, 19, stateToSend);
+        const stateData = new Uint8Array(udtConstants_1.TOWER_STATE_DATA_SIZE);
+        const success = rtdt_pack_state(stateData, udtConstants_1.TOWER_STATE_DATA_SIZE, stateToSend);
         if (!success) {
             throw new Error('Failed to pack tower state data');
         }
         // Create 20-byte command packet (command type 0x00 + 19 bytes state)
-        const command = new Uint8Array(20);
-        command[0] = 0x00; // Command type for tower state
-        command.set(stateData, 1);
+        const command = new Uint8Array(udtConstants_1.TOWER_COMMAND_PACKET_SIZE);
+        command[0] = udtConstants_1.TOWER_COMMAND_TYPE_TOWER_STATE; // Command type for tower state
+        command.set(stateData, udtConstants_1.TOWER_STATE_DATA_OFFSET);
         // Update our current state tracking (also without audio)
         this.setTowerState(Object.assign({}, stateToSend), 'sendTowerState');
         // Send the command
@@ -498,7 +543,7 @@ class UltimateDarkTower {
         // Calculate rotation steps (positive for clockwise)
         let rotationSteps = newIndex - oldIndex;
         if (rotationSteps < 0) {
-            rotationSteps += 4; // Handle wrap-around
+            rotationSteps += udtConstants_1.TOWER_SIDES_COUNT; // Handle wrap-around
         }
         // Only update if there was actually a rotation
         if (rotationSteps > 0) {
@@ -521,7 +566,7 @@ class UltimateDarkTower {
         // Calculate rotation steps (positive for clockwise)
         let rotationSteps = newIndex - currentIndex;
         if (rotationSteps < 0) {
-            rotationSteps += 4; // Handle wrap-around
+            rotationSteps += udtConstants_1.TOWER_SIDES_COUNT; // Handle wrap-around
         }
         // Update glyph positions
         this.updateGlyphPositionsAfterRotation(level, rotationSteps);
@@ -639,7 +684,7 @@ class UltimateDarkTower {
      * @param {number} [frequency=2000] - How often to check connection (milliseconds)
      * @param {number} [timeout=30000] - How long to wait for responses before considering connection lost (milliseconds)
      */
-    configureConnectionMonitoring(frequency = 2000, timeout = 30000) {
+    configureConnectionMonitoring(frequency = udtConstants_1.DEFAULT_CONNECTION_MONITORING_FREQUENCY, timeout = udtConstants_1.DEFAULT_CONNECTION_MONITORING_TIMEOUT) {
         this.bleConnection.configureConnectionMonitoring(frequency, timeout);
     }
     /**
@@ -649,7 +694,7 @@ class UltimateDarkTower {
      * @param {number} [timeout=3000] - How long to wait for battery status before considering disconnected (milliseconds)
      * @param {boolean} [verifyConnection=true] - Whether to verify connection status before triggering disconnection on heartbeat timeout
      */
-    configureBatteryHeartbeatMonitoring(enabled = true, timeout = 3000, verifyConnection = true) {
+    configureBatteryHeartbeatMonitoring(enabled = true, timeout = udtConstants_1.DEFAULT_BATTERY_HEARTBEAT_TIMEOUT, verifyConnection = true) {
         this.bleConnection.configureBatteryHeartbeatMonitoring(enabled, timeout, verifyConnection);
     }
     /**

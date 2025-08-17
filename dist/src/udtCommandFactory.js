@@ -12,7 +12,7 @@ class UdtCommandFactory {
      * @returns Command packet for rotating tower drums
      */
     createRotateCommand(top, middle, bottom) {
-        const rotateCmd = new Uint8Array(20);
+        const rotateCmd = new Uint8Array(udtConstants_1.TOWER_COMMAND_PACKET_SIZE);
         rotateCmd[udtConstants_1.DRUM_PACKETS.topMiddle] =
             udtConstants_1.drumPositionCmds.top[top] | udtConstants_1.drumPositionCmds.middle[middle];
         rotateCmd[udtConstants_1.DRUM_PACKETS.bottom] = udtConstants_1.drumPositionCmds.bottom[bottom];
@@ -24,7 +24,7 @@ class UdtCommandFactory {
      * @returns Command packet for playing sound
      */
     createSoundCommand(soundIndex) {
-        const soundCommand = new Uint8Array(20);
+        const soundCommand = new Uint8Array(udtConstants_1.TOWER_COMMAND_PACKET_SIZE);
         const sound = Number("0x" + Number(soundIndex).toString(16).padStart(2, '0'));
         soundCommand[udtConstants_1.AUDIO_COMMAND_POS] = sound;
         return soundCommand;
@@ -223,15 +223,15 @@ class UdtCommandFactory {
      * @returns 20-byte command packet (0x00 + 19 bytes state data)
      */
     packTowerStateCommand(state) {
-        const stateData = new Uint8Array(19);
-        const success = (0, udtTowerState_1.rtdt_pack_state)(stateData, 19, state);
+        const stateData = new Uint8Array(udtConstants_1.TOWER_STATE_DATA_SIZE);
+        const success = (0, udtTowerState_1.rtdt_pack_state)(stateData, udtConstants_1.TOWER_STATE_DATA_SIZE, state);
         if (!success) {
             throw new Error('Failed to pack tower state data');
         }
         // Create 20-byte command packet (command type 0x00 + 19 bytes state)
-        const command = new Uint8Array(20);
-        command[0] = 0x00; // Command type for tower state
-        command.set(stateData, 1);
+        const command = new Uint8Array(udtConstants_1.TOWER_COMMAND_PACKET_SIZE);
+        command[0] = udtConstants_1.TOWER_COMMAND_TYPE_TOWER_STATE; // Command type for tower state
+        command.set(stateData, udtConstants_1.TOWER_STATE_DATA_OFFSET);
         return command;
     }
     /**

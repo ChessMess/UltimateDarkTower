@@ -3,6 +3,21 @@ import { type TowerState } from './udtTowerState';
 import { type LogOutput } from './udtLogger';
 import { type ConnectionStatus } from './udtBleConnection';
 /**
+ * Configuration interface for controlling which tower responses should be logged
+ */
+interface TowerResponseConfig {
+    TOWER_STATE: boolean;
+    INVALID_STATE: boolean;
+    HARDWARE_FAILURE: boolean;
+    MECH_JIGGLE_TRIGGERED: boolean;
+    MECH_UNEXPECTED_TRIGGER: boolean;
+    MECH_DURATION: boolean;
+    DIFFERENTIAL_READINGS: boolean;
+    BATTERY_READING: boolean;
+    CALIBRATION_FINISHED: boolean;
+    LOG_ALL: boolean;
+}
+/**
  * @title UltimateDarkTower
  * @description
  * The UltimateDarkTower class is the main control interface for the Return To Dark Tower board game device.
@@ -26,6 +41,7 @@ import { type ConnectionStatus } from './udtBleConnection';
 declare class UltimateDarkTower {
     private logger;
     private bleConnection;
+    private towerEventCallbacks;
     private responseProcessor;
     private commandFactory;
     private towerCommands;
@@ -41,13 +57,40 @@ declare class UltimateDarkTower {
     onTowerConnect: () => void;
     onTowerDisconnect: () => void;
     onCalibrationComplete: () => void;
-    onSkullDrop: (_towerSkullCount: number) => void;
-    onBatteryLevelNotify: (_millivolts: number) => void;
-    onTowerStateUpdate: (_newState: TowerState, _oldState: TowerState, _source: string) => void;
+    onSkullDrop: (towerSkullCount: number) => void;
+    onBatteryLevelNotify: (millivolts: number) => void;
+    onTowerStateUpdate: (newState: TowerState, oldState: TowerState, source: string) => void;
     constructor();
+    /**
+     * Initialize the logger with default console output
+     */
+    private initializeLogger;
+    /**
+     * Initialize all tower components and their dependencies
+     */
+    private initializeComponents;
+    /**
+     * Set up the tower response callback after all components are initialized
+     */
+    private setupTowerResponseCallback; /**
+     * Create tower event callbacks for BLE connection
+     */
+    private createTowerEventCallbacks;
+    /**
+     * Create command dependencies object for tower commands
+     */
+    private createCommandDependencies;
+    /**
+     * Update battery state values
+     */
+    private updateBatteryState;
     private _logDetail;
     get logDetail(): boolean;
     set logDetail(value: boolean);
+    /**
+     * Update tower command dependencies when configuration changes
+     */
+    private updateTowerCommandDependencies;
     get isConnected(): boolean;
     get isCalibrated(): boolean;
     get performingCalibration(): boolean;
@@ -66,12 +109,12 @@ declare class UltimateDarkTower {
     set batteryNotifyEnabled(value: boolean);
     get logTowerResponses(): boolean;
     set logTowerResponses(value: boolean);
-    get logTowerResponseConfig(): any;
-    set logTowerResponseConfig(value: any);
+    get logTowerResponseConfig(): TowerResponseConfig;
+    set logTowerResponseConfig(value: TowerResponseConfig);
     /**
      * Initiates tower calibration to determine the current position of all tower drums.
      * This must be performed after connection before other tower operations.
-     * @returns {Promise<void>} Promise that resolves when calibration command is sent
+     * @returns Promise that resolves when calibration command is sent
      */
     calibrate(): Promise<void>;
     /**
@@ -82,6 +125,13 @@ declare class UltimateDarkTower {
     playSound(soundIndex: number): Promise<void>;
     /**
      * Controls the tower's LED lights including doorway, ledge, and base lights.
+     * @param lights - Light configuration object specifying which lights to control and their effects
+     * @returns Promise that resolves when light command is sent
+     */
+    lights(lights: Lights): Promise<void>;
+    /**
+     * Controls the tower's LED lights including doorway, ledge, and base lights.
+     * @deprecated Use `lights()` instead. This method will be removed in a future version.
      * @param lights - Light configuration object specifying which lights to control and their effects
      * @returns Promise that resolves when light command is sent
      */

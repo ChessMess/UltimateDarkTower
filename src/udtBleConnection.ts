@@ -21,7 +21,7 @@ import { getMilliVoltsFromTowerResponse, milliVoltsToPercentage } from './udtHel
 import { rtdt_unpack_state } from './udtTowerState'
 
 
-export interface ConnectionCallbacks {
+export interface TowerEventCallbacks {
     onTowerConnect: () => void;
     onTowerDisconnect: () => void;
     onBatteryLevelNotify: (millivolts: number) => void;
@@ -58,7 +58,7 @@ export interface ConnectionStatus {
 
 export class UdtBleConnection {
     private logger: Logger;
-    private callbacks: ConnectionCallbacks;
+    private callbacks: TowerEventCallbacks;
     private responseProcessor: TowerResponseProcessor;
 
     // BLE connection objects
@@ -111,7 +111,7 @@ export class UdtBleConnection {
         LOG_ALL: false,
     };
 
-    constructor(logger: Logger, callbacks: ConnectionCallbacks) {
+    constructor(logger: Logger, callbacks: TowerEventCallbacks) {
         this.logger = logger;
         this.callbacks = callbacks;
         this.responseProcessor = new TowerResponseProcessor();

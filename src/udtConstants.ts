@@ -18,6 +18,26 @@ export const DIS_IEEE_REGULATORY_UUID = "00002a2a-0000-1000-8000-00805f9b34fb";
 export const DIS_PNP_ID_UUID = "00002a50-0000-1000-8000-00805f9b34fb";
 export type CommandPacket = Uint8Array;
 
+// Tower command packet structure constants
+export const TOWER_COMMAND_PACKET_SIZE = 20;
+export const TOWER_STATE_DATA_SIZE = 19;
+export const TOWER_COMMAND_HEADER_SIZE = 1;
+export const TOWER_STATE_RESPONSE_MIN_LENGTH = 20;
+export const TOWER_STATE_DATA_OFFSET = 1;
+export const TOWER_COMMAND_TYPE_TOWER_STATE = 0x00;
+
+// Connection and monitoring constants
+export const DEFAULT_CONNECTION_MONITORING_FREQUENCY = 2000; // milliseconds
+export const DEFAULT_CONNECTION_MONITORING_TIMEOUT = 30000; // milliseconds
+export const DEFAULT_BATTERY_HEARTBEAT_TIMEOUT = 3000; // milliseconds
+export const BATTERY_STATUS_FREQUENCY = 200; // Tower sends battery status every ~200ms
+
+// Default retry settings
+export const DEFAULT_RETRY_SEND_COMMAND_MAX = 5;
+
+// Tower geometry constants
+export const TOWER_SIDES_COUNT = 4; // north, east, south, west
+
 // tower commands 
 export const TOWER_COMMANDS = {
   towerState: 0, // not a sendable command

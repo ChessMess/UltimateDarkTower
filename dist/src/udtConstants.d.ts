@@ -13,6 +13,18 @@ export declare const DIS_SYSTEM_ID_UUID = "00002a23-0000-1000-8000-00805f9b34fb"
 export declare const DIS_IEEE_REGULATORY_UUID = "00002a2a-0000-1000-8000-00805f9b34fb";
 export declare const DIS_PNP_ID_UUID = "00002a50-0000-1000-8000-00805f9b34fb";
 export type CommandPacket = Uint8Array;
+export declare const TOWER_COMMAND_PACKET_SIZE = 20;
+export declare const TOWER_STATE_DATA_SIZE = 19;
+export declare const TOWER_COMMAND_HEADER_SIZE = 1;
+export declare const TOWER_STATE_RESPONSE_MIN_LENGTH = 20;
+export declare const TOWER_STATE_DATA_OFFSET = 1;
+export declare const TOWER_COMMAND_TYPE_TOWER_STATE = 0;
+export declare const DEFAULT_CONNECTION_MONITORING_FREQUENCY = 2000;
+export declare const DEFAULT_CONNECTION_MONITORING_TIMEOUT = 30000;
+export declare const DEFAULT_BATTERY_HEARTBEAT_TIMEOUT = 3000;
+export declare const BATTERY_STATUS_FREQUENCY = 200;
+export declare const DEFAULT_RETRY_SEND_COMMAND_MAX = 5;
+export declare const TOWER_SIDES_COUNT = 4;
 export declare const TOWER_COMMANDS: {
     towerState: number;
     doorReset: number;

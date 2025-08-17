@@ -28,7 +28,7 @@
   };
 
   // src/udtConstants.ts
-  var UART_SERVICE_UUID, UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID, TOWER_DEVICE_NAME, DIS_SERVICE_UUID, DIS_MANUFACTURER_NAME_UUID, DIS_MODEL_NUMBER_UUID, DIS_SERIAL_NUMBER_UUID, DIS_HARDWARE_REVISION_UUID, DIS_FIRMWARE_REVISION_UUID, DIS_SOFTWARE_REVISION_UUID, DIS_SYSTEM_ID_UUID, DIS_IEEE_REGULATORY_UUID, DIS_PNP_ID_UUID, TOWER_COMMANDS, TC, DRUM_PACKETS, GLYPHS, AUDIO_COMMAND_POS, SKULL_DROP_COUNT_POS, drumPositionCmds, LIGHT_EFFECTS, TOWER_MESSAGES, VOLTAGE_LEVELS, TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LED_CHANNEL_LOOKUP, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH, TOWER_AUDIO_LIBRARY;
+  var UART_SERVICE_UUID, UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID, TOWER_DEVICE_NAME, DIS_SERVICE_UUID, DIS_MANUFACTURER_NAME_UUID, DIS_MODEL_NUMBER_UUID, DIS_SERIAL_NUMBER_UUID, DIS_HARDWARE_REVISION_UUID, DIS_FIRMWARE_REVISION_UUID, DIS_SOFTWARE_REVISION_UUID, DIS_SYSTEM_ID_UUID, DIS_IEEE_REGULATORY_UUID, DIS_PNP_ID_UUID, TOWER_COMMAND_PACKET_SIZE, TOWER_STATE_DATA_SIZE, TOWER_STATE_RESPONSE_MIN_LENGTH, TOWER_STATE_DATA_OFFSET, TOWER_COMMAND_TYPE_TOWER_STATE, DEFAULT_CONNECTION_MONITORING_FREQUENCY, DEFAULT_CONNECTION_MONITORING_TIMEOUT, DEFAULT_BATTERY_HEARTBEAT_TIMEOUT, DEFAULT_RETRY_SEND_COMMAND_MAX, TOWER_SIDES_COUNT, TOWER_COMMANDS, TC, DRUM_PACKETS, GLYPHS, AUDIO_COMMAND_POS, SKULL_DROP_COUNT_POS, drumPositionCmds, LIGHT_EFFECTS, TOWER_MESSAGES, VOLTAGE_LEVELS, TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LED_CHANNEL_LOOKUP, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH, TOWER_AUDIO_LIBRARY;
   var init_udtConstants = __esm({
     "src/udtConstants.ts"() {
       UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
@@ -45,6 +45,16 @@
       DIS_SYSTEM_ID_UUID = "00002a23-0000-1000-8000-00805f9b34fb";
       DIS_IEEE_REGULATORY_UUID = "00002a2a-0000-1000-8000-00805f9b34fb";
       DIS_PNP_ID_UUID = "00002a50-0000-1000-8000-00805f9b34fb";
+      TOWER_COMMAND_PACKET_SIZE = 20;
+      TOWER_STATE_DATA_SIZE = 19;
+      TOWER_STATE_RESPONSE_MIN_LENGTH = 20;
+      TOWER_STATE_DATA_OFFSET = 1;
+      TOWER_COMMAND_TYPE_TOWER_STATE = 0;
+      DEFAULT_CONNECTION_MONITORING_FREQUENCY = 2e3;
+      DEFAULT_CONNECTION_MONITORING_TIMEOUT = 3e4;
+      DEFAULT_BATTERY_HEARTBEAT_TIMEOUT = 3e3;
+      DEFAULT_RETRY_SEND_COMMAND_MAX = 5;
+      TOWER_SIDES_COUNT = 4;
       TOWER_COMMANDS = {
         towerState: 0,
         // not a sendable command
@@ -1184,7 +1194,7 @@
      * @returns Command packet for rotating tower drums
      */
     createRotateCommand(top, middle, bottom) {
-      const rotateCmd = new Uint8Array(20);
+      const rotateCmd = new Uint8Array(TOWER_COMMAND_PACKET_SIZE);
       rotateCmd[DRUM_PACKETS.topMiddle] = drumPositionCmds.top[top] | drumPositionCmds.middle[middle];
       rotateCmd[DRUM_PACKETS.bottom] = drumPositionCmds.bottom[bottom];
       return rotateCmd;
@@ -1195,7 +1205,7 @@
      * @returns Command packet for playing sound
      */
     createSoundCommand(soundIndex) {
-      const soundCommand = new Uint8Array(20);
+      const soundCommand = new Uint8Array(TOWER_COMMAND_PACKET_SIZE);
       const sound = Number("0x" + Number(soundIndex).toString(16).padStart(2, "0"));
       soundCommand[AUDIO_COMMAND_POS] = sound;
       return soundCommand;
@@ -1382,14 +1392,14 @@
      * @returns 20-byte command packet (0x00 + 19 bytes state data)
      */
     packTowerStateCommand(state) {
-      const stateData = new Uint8Array(19);
-      const success = rtdt_pack_state(stateData, 19, state);
+      const stateData = new Uint8Array(TOWER_STATE_DATA_SIZE);
+      const success = rtdt_pack_state(stateData, TOWER_STATE_DATA_SIZE, state);
       if (!success) {
         throw new Error("Failed to pack tower state data");
       }
-      const command = new Uint8Array(20);
-      command[0] = 0;
-      command.set(stateData, 1);
+      const command = new Uint8Array(TOWER_COMMAND_PACKET_SIZE);
+      command[0] = TOWER_COMMAND_TYPE_TOWER_STATE;
+      command.set(stateData, TOWER_STATE_DATA_OFFSET);
       return command;
     }
     /**
@@ -2126,7 +2136,7 @@
     constructor() {
       // tower configuration
       this.retrySendCommandCountRef = { value: 0 };
-      this.retrySendCommandMax = 5;
+      this.retrySendCommandMax = DEFAULT_RETRY_SEND_COMMAND_MAX;
       // tower state
       this.currentBatteryValue = 0;
       this.previousBatteryValue = 0;
@@ -2143,29 +2153,64 @@
         banner: null,
         reinforce: null
       };
-      // call back functions
-      // you overwrite these with your own functions 
-      // to handle these events in your app
+      // Event callback functions
+      // Override these with your own functions to handle events in your app
       this.onTowerConnect = () => {
       };
       this.onTowerDisconnect = () => {
       };
       this.onCalibrationComplete = () => {
       };
-      this.onSkullDrop = (_towerSkullCount) => {
-        console.log(_towerSkullCount);
+      this.onSkullDrop = (towerSkullCount) => {
       };
-      this.onBatteryLevelNotify = (_millivolts) => {
-        console.log(_millivolts);
+      this.onBatteryLevelNotify = (millivolts) => {
       };
-      this.onTowerStateUpdate = (_newState, _oldState, _source) => {
-        console.log(_newState, _oldState, _source);
+      this.onTowerStateUpdate = (newState, oldState, source) => {
       };
       // utility
       this._logDetail = false;
+      this.initializeLogger();
+      this.initializeComponents();
+      this.setupTowerResponseCallback();
+    }
+    /**
+     * Initialize the logger with default console output
+     */
+    initializeLogger() {
       this.logger = new Logger();
       this.logger.addOutput(new ConsoleOutput());
-      const callbacks = {
+    }
+    /**
+     * Initialize all tower components and their dependencies
+     */
+    initializeComponents() {
+      this.towerEventCallbacks = this.createTowerEventCallbacks();
+      this.bleConnection = new UdtBleConnection(this.logger, this.towerEventCallbacks);
+      this.responseProcessor = new TowerResponseProcessor(this.logDetail);
+      this.commandFactory = new UdtCommandFactory();
+      const commandDependencies = this.createCommandDependencies();
+      this.towerCommands = new UdtTowerCommands(commandDependencies);
+    }
+    /**
+     * Set up the tower response callback after all components are initialized
+     */
+    setupTowerResponseCallback() {
+      this.towerEventCallbacks.onTowerResponse = (response) => {
+        this.towerCommands.onTowerResponse();
+        if (response.length >= TOWER_STATE_RESPONSE_MIN_LENGTH) {
+          const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
+          if (this.responseProcessor.isTowerStateResponse(cmdKey)) {
+            const stateData = response.slice(TOWER_STATE_DATA_OFFSET, TOWER_STATE_RESPONSE_MIN_LENGTH);
+            this.updateTowerStateFromResponse(stateData);
+          }
+        }
+      };
+    }
+    /**
+    * Create tower event callbacks for BLE connection
+    */
+    createTowerEventCallbacks() {
+      return {
         onTowerConnect: () => this.onTowerConnect(),
         onTowerDisconnect: () => {
           this.onTowerDisconnect();
@@ -2174,22 +2219,24 @@
           }
         },
         onBatteryLevelNotify: (millivolts) => {
-          this.previousBatteryValue = this.currentBatteryValue;
-          this.currentBatteryValue = millivolts;
-          this.previousBatteryPercentage = this.currentBatteryPercentage;
-          this.currentBatteryPercentage = milliVoltsToPercentageNumber(millivolts);
+          this.updateBatteryState(millivolts);
           this.onBatteryLevelNotify(millivolts);
         },
         onCalibrationComplete: () => {
           this.setGlyphPositionsFromCalibration();
           this.onCalibrationComplete();
         },
-        onSkullDrop: (towerSkullCount) => this.onSkullDrop(towerSkullCount)
+        onSkullDrop: (towerSkullCount) => this.onSkullDrop(towerSkullCount),
+        // onTowerResponse will be set up after tower commands are initialized
+        onTowerResponse: () => {
+        }
       };
-      this.bleConnection = new UdtBleConnection(this.logger, callbacks);
-      this.responseProcessor = new TowerResponseProcessor(this.logDetail);
-      this.commandFactory = new UdtCommandFactory();
-      const commandDependencies = {
+    }
+    /**
+     * Create command dependencies object for tower commands
+     */
+    createCommandDependencies() {
+      return {
         logger: this.logger,
         commandFactory: this.commandFactory,
         bleConnection: this.bleConnection,
@@ -2200,17 +2247,15 @@
         getCurrentTowerState: () => this.currentTowerState,
         setTowerState: (newState, source) => this.setTowerState(newState, source)
       };
-      this.towerCommands = new UdtTowerCommands(commandDependencies);
-      callbacks.onTowerResponse = (response) => {
-        this.towerCommands.onTowerResponse();
-        if (response.length >= 20) {
-          const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
-          if (this.responseProcessor.isTowerStateResponse(cmdKey)) {
-            const stateData = response.slice(1, 20);
-            this.updateTowerStateFromResponse(stateData);
-          }
-        }
-      };
+    }
+    /**
+     * Update battery state values
+     */
+    updateBatteryState(millivolts) {
+      this.previousBatteryValue = this.currentBatteryValue;
+      this.currentBatteryValue = millivolts;
+      this.previousBatteryPercentage = this.currentBatteryPercentage;
+      this.currentBatteryPercentage = milliVoltsToPercentageNumber(millivolts);
     }
     get logDetail() {
       return this._logDetail;
@@ -2219,19 +2264,15 @@
       this._logDetail = value;
       this.responseProcessor.setDetailedLogging(value);
       if (this.towerCommands) {
-        const commandDependencies = {
-          logger: this.logger,
-          commandFactory: this.commandFactory,
-          bleConnection: this.bleConnection,
-          responseProcessor: this.responseProcessor,
-          logDetail: this.logDetail,
-          retrySendCommandCount: this.retrySendCommandCountRef,
-          retrySendCommandMax: this.retrySendCommandMax,
-          getCurrentTowerState: () => this.currentTowerState,
-          setTowerState: (newState, source) => this.setTowerState(newState, source)
-        };
-        this.towerCommands = new UdtTowerCommands(commandDependencies);
+        this.updateTowerCommandDependencies();
       }
+    }
+    /**
+     * Update tower command dependencies when configuration changes
+     */
+    updateTowerCommandDependencies() {
+      const commandDependencies = this.createCommandDependencies();
+      this.towerCommands = new UdtTowerCommands(commandDependencies);
     }
     // Getter methods for connection state
     get isConnected() {
@@ -2300,10 +2341,10 @@
     /**
      * Initiates tower calibration to determine the current position of all tower drums.
      * This must be performed after connection before other tower operations.
-     * @returns {Promise<void>} Promise that resolves when calibration command is sent
+     * @returns Promise that resolves when calibration command is sent
      */
     async calibrate() {
-      return await this.towerCommands.calibrate();
+      return this.towerCommands.calibrate();
     }
     /**
      * Plays a sound from the tower's audio library.
@@ -2311,15 +2352,24 @@
      * @returns Promise that resolves when sound command is sent
      */
     async playSound(soundIndex) {
-      return await this.towerCommands.playSound(soundIndex);
+      return this.towerCommands.playSound(soundIndex);
     }
     /**
      * Controls the tower's LED lights including doorway, ledge, and base lights.
      * @param lights - Light configuration object specifying which lights to control and their effects
      * @returns Promise that resolves when light command is sent
      */
+    async lights(lights) {
+      return this.towerCommands.lights(lights);
+    }
+    /**
+     * Controls the tower's LED lights including doorway, ledge, and base lights.
+     * @deprecated Use `lights()` instead. This method will be removed in a future version.
+     * @param lights - Light configuration object specifying which lights to control and their effects
+     * @returns Promise that resolves when light command is sent
+     */
     async Lights(lights) {
-      return await this.towerCommands.lights(lights);
+      return this.lights(lights);
     }
     /**
      * Sends a raw command packet directly to the tower (for testing purposes).
@@ -2327,7 +2377,7 @@
      * @returns Promise that resolves when command is sent
      */
     async sendTowerCommandDirect(command) {
-      return await this.towerCommands.sendTowerCommandDirectPublic(command);
+      return this.towerCommands.sendTowerCommandDirectPublic(command);
     }
     /**
      * Sends a light override command to control specific light patterns.
@@ -2435,14 +2485,14 @@
       const { rtdt_pack_state: rtdt_pack_state2 } = await Promise.resolve().then(() => (init_udtTowerState(), udtTowerState_exports));
       const stateToSend = __spreadValues({}, towerState);
       stateToSend.audio = { sample: 0, loop: false, volume: 0 };
-      const stateData = new Uint8Array(19);
-      const success = rtdt_pack_state2(stateData, 19, stateToSend);
+      const stateData = new Uint8Array(TOWER_STATE_DATA_SIZE);
+      const success = rtdt_pack_state2(stateData, TOWER_STATE_DATA_SIZE, stateToSend);
       if (!success) {
         throw new Error("Failed to pack tower state data");
       }
-      const command = new Uint8Array(20);
-      command[0] = 0;
-      command.set(stateData, 1);
+      const command = new Uint8Array(TOWER_COMMAND_PACKET_SIZE);
+      command[0] = TOWER_COMMAND_TYPE_TOWER_STATE;
+      command.set(stateData, TOWER_STATE_DATA_OFFSET);
       this.setTowerState(__spreadValues({}, stateToSend), "sendTowerState");
       return await this.sendTowerCommandDirect(command);
     }
@@ -2586,7 +2636,7 @@
       const newIndex = sides.indexOf(newPosition);
       let rotationSteps = newIndex - oldIndex;
       if (rotationSteps < 0) {
-        rotationSteps += 4;
+        rotationSteps += TOWER_SIDES_COUNT;
       }
       if (rotationSteps > 0) {
         this.updateGlyphPositionsAfterRotation(level, rotationSteps);
@@ -2605,7 +2655,7 @@
       const newIndex = sides.indexOf(newPosition);
       let rotationSteps = newIndex - currentIndex;
       if (rotationSteps < 0) {
-        rotationSteps += 4;
+        rotationSteps += TOWER_SIDES_COUNT;
       }
       this.updateGlyphPositionsAfterRotation(level, rotationSteps);
     }
@@ -2718,7 +2768,7 @@
      * @param {number} [frequency=2000] - How often to check connection (milliseconds)
      * @param {number} [timeout=30000] - How long to wait for responses before considering connection lost (milliseconds)
      */
-    configureConnectionMonitoring(frequency = 2e3, timeout = 3e4) {
+    configureConnectionMonitoring(frequency = DEFAULT_CONNECTION_MONITORING_FREQUENCY, timeout = DEFAULT_CONNECTION_MONITORING_TIMEOUT) {
       this.bleConnection.configureConnectionMonitoring(frequency, timeout);
     }
     /**
@@ -2728,7 +2778,7 @@
      * @param {number} [timeout=3000] - How long to wait for battery status before considering disconnected (milliseconds)
      * @param {boolean} [verifyConnection=true] - Whether to verify connection status before triggering disconnection on heartbeat timeout
      */
-    configureBatteryHeartbeatMonitoring(enabled = true, timeout = 3e3, verifyConnection = true) {
+    configureBatteryHeartbeatMonitoring(enabled = true, timeout = DEFAULT_BATTERY_HEARTBEAT_TIMEOUT, verifyConnection = true) {
       this.bleConnection.configureBatteryHeartbeatMonitoring(enabled, timeout, verifyConnection);
     }
     /**

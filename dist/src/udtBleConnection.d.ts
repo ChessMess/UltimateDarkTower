@@ -1,5 +1,5 @@
 import { Logger } from './udtLogger';
-export interface ConnectionCallbacks {
+export interface TowerEventCallbacks {
     onTowerConnect: () => void;
     onTowerDisconnect: () => void;
     onBatteryLevelNotify: (millivolts: number) => void;
@@ -71,7 +71,7 @@ export declare class UdtBleConnection {
         CALIBRATION_FINISHED: boolean;
         LOG_ALL: boolean;
     };
-    constructor(logger: Logger, callbacks: ConnectionCallbacks);
+    constructor(logger: Logger, callbacks: TowerEventCallbacks);
     connect(): Promise<void>;
     disconnect(): Promise<void>;
     onRxCharacteristicValueChanged: (event: Event) => void;

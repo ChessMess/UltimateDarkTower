@@ -3,6 +3,10 @@ import {
     DRUM_PACKETS,
     drumPositionCmds,
     type TowerSide,
+    TOWER_COMMAND_PACKET_SIZE,
+    TOWER_STATE_DATA_SIZE,
+    TOWER_COMMAND_TYPE_TOWER_STATE,
+    TOWER_STATE_DATA_OFFSET
 } from './udtConstants';
 import { type TowerState, type Audio, rtdt_pack_state } from './udtTowerState';
 
@@ -19,7 +23,7 @@ export class UdtCommandFactory {
      * @returns Command packet for rotating tower drums
      */
     createRotateCommand(top: TowerSide, middle: TowerSide, bottom: TowerSide): Uint8Array {
-        const rotateCmd = new Uint8Array(20);
+        const rotateCmd = new Uint8Array(TOWER_COMMAND_PACKET_SIZE);
         rotateCmd[DRUM_PACKETS.topMiddle] =
             drumPositionCmds.top[top] | drumPositionCmds.middle[middle];
         rotateCmd[DRUM_PACKETS.bottom] = drumPositionCmds.bottom[bottom];
@@ -32,7 +36,7 @@ export class UdtCommandFactory {
      * @returns Command packet for playing sound
      */
     createSoundCommand(soundIndex: number): Uint8Array {
-        const soundCommand = new Uint8Array(20);
+        const soundCommand = new Uint8Array(TOWER_COMMAND_PACKET_SIZE);
         const sound = Number("0x" + Number(soundIndex).toString(16).padStart(2, '0'));
         soundCommand[AUDIO_COMMAND_POS] = sound;
         return soundCommand;
@@ -298,17 +302,17 @@ export class UdtCommandFactory {
      * @returns 20-byte command packet (0x00 + 19 bytes state data)
      */
     packTowerStateCommand(state: TowerState): Uint8Array {
-        const stateData = new Uint8Array(19);
-        const success = rtdt_pack_state(stateData, 19, state);
+        const stateData = new Uint8Array(TOWER_STATE_DATA_SIZE);
+        const success = rtdt_pack_state(stateData, TOWER_STATE_DATA_SIZE, state);
 
         if (!success) {
             throw new Error('Failed to pack tower state data');
         }
 
         // Create 20-byte command packet (command type 0x00 + 19 bytes state)
-        const command = new Uint8Array(20);
-        command[0] = 0x00; // Command type for tower state
-        command.set(stateData, 1);
+        const command = new Uint8Array(TOWER_COMMAND_PACKET_SIZE);
+        command[0] = TOWER_COMMAND_TYPE_TOWER_STATE; // Command type for tower state
+        command.set(stateData, TOWER_STATE_DATA_OFFSET);
 
         return command;
     }
