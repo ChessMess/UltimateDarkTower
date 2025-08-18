@@ -14,6 +14,10 @@
   <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
   <style>
     /* Custom font for tower controller */
@@ -303,6 +307,33 @@
     .status-byte.non-zero:hover {
       background-color: rgba(254, 240, 138, 0.75);
     }
+
+    /* Chart container styles */
+    .chart-container {
+      position: relative;
+      height: 400px;
+      background: white;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    .chart-container canvas {
+      max-height: 100%;
+    }
+
+    /* Chart status and statistics styling */
+    .chart-stats-container {
+      background: rgba(31, 41, 55, 0.9);
+      border-radius: 0.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .chart-status {
+      background: rgba(55, 65, 81, 0.9);
+      border-radius: 0.375rem;
+      backdrop-filter: blur(10px);
+    }
   </style>
 
   <!-- Scripts (also at bottom of page) -->
@@ -351,8 +382,8 @@
               <button id="library-tab" class="tower-tab-button" onclick="switchTab('library')">
                 Library
               </button>
-              <button id="testing-tab" class="tower-tab-button" onclick="switchTab('testing')">
-                Testing
+              <button id="charts-tab" class="tower-tab-button" onclick="switchTab('charts')">
+                Charts
               </button>
             </div>
 
@@ -383,7 +414,7 @@
 
               <fieldset class="tower-fieldset">
                 <legend class="tower-legend">Lights</legend>
-                <div class="flex flex-wrap gap-4 py-2">
+                <div class="flex justify-evenly items-start py-2">
                   <fieldset class="nested-fieldset">
                     <legend class="tower-legend">Doorways:</legend>
                     <table class="text-center">
@@ -807,179 +838,62 @@
               </fieldset>
             </div>
 
-            <!-- Testing Tab Content -->
-            <div id="testing-content" class="tower-tab-content">
+
+            <!-- Charts Tab Content -->
+            <div id="charts-content" class="tower-tab-content">
               <fieldset class="tower-fieldset">
-                <legend class="tower-legend">LED Testing</legend>
+                <legend class="tower-legend">IR Detector Readings</legend>
                 <div class="space-y-4">
-                  <!-- Effect Selection -->
-                  <div class="flex items-center space-x-4">
-                    <label class="text-sm w-20">Effect:</label>
-                    <select id="led-effect-select" class="tower-select flex-1">
-                      <option value="0">Off</option>
-                      <option value="1">On</option>
-                      <option value="2">Slow Pulse</option>
-                      <option value="3">Fast Pulse</option>
-                      <option value="4">Slow Fade</option>
-                      <option value="5">Fast Fade</option>
-                      <option value="6">Strobe</option>
-                      <option value="7">Flicker</option>
-                    </select>
+                  <!-- Chart Controls -->
+                  <div class="flex flex-wrap items-center justify-center gap-4 p-3 bg-gray-800 rounded-lg">
                     <div class="flex items-center space-x-2">
-                      <input type="checkbox" id="led-loop-checkbox" class="tower-checkbox" />
-                      <label for="led-loop-checkbox" class="text-sm">Loop</label>
+                      <label class="text-sm font-semibold text-white">Time:</label>
+                      <select id="chart-time-window" class="tower-select" onchange="updateTimeWindow()">
+                        <option value="30" selected>30 Seconds</option>
+                        <option value="60">1 Minute</option>
+                        <option value="300">5 Minutes</option>
+                      </select>
+                    </div>
+                    <button id="chart-start-stop" onclick="toggleDataCollection()" class="tower-button">
+                      <i class="fas fa-play mr-1"></i>Start
+                    </button>
+                    <button id="chart-clear" onclick="clearChartData()" class="tower-button">
+                      <i class="fas fa-trash mr-1"></i>Clear
+                    </button>
+                    <button id="chart-export" onclick="exportChartData()" class="tower-button">
+                      <i class="fas fa-download mr-1"></i>Export
+                    </button>
+                  </div>
+
+                  <!-- Chart Container -->
+                  <div class="chart-container bg-white rounded-lg p-4" style="position: relative; height: 400px;">
+                    <canvas id="differential-chart"></canvas>
+                  </div>
+
+                  <!-- Chart Statistics -->
+                  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-gray-800 rounded-lg text-white text-sm">
+                    <div class="text-center">
+                      <div class="font-semibold">Data Points</div>
+                      <div id="chart-stats-points" class="text-lg">0</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="font-semibold">Latest Value</div>
+                      <div id="chart-stats-latest" class="text-lg">--</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="font-semibold">Min Value</div>
+                      <div id="chart-stats-min" class="text-lg">--</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="font-semibold">Max Value</div>
+                      <div id="chart-stats-max" class="text-lg">--</div>
                     </div>
                   </div>
 
-                  <!-- LED Grid -->
-                  <div class="grid grid-cols-1 gap-4">
-                    <!-- Top Ring -->
-                    <div class="bg-gray-800 rounded p-3">
-                      <h4 class="text-sm font-semibold mb-2">Top Ring</h4>
-                      <div class="grid grid-cols-4 gap-2">
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">N-T</label>
-                          <input type="checkbox" data-layer="0" data-position="0" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">E-T</label>
-                          <input type="checkbox" data-layer="0" data-position="1" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">S-T</label>
-                          <input type="checkbox" data-layer="0" data-position="2" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">W-T</label>
-                          <input type="checkbox" data-layer="0" data-position="3" class="led-checkbox tower-checkbox" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Middle Ring -->
-                    <div class="bg-gray-800 rounded p-3">
-                      <h4 class="text-sm font-semibold mb-2">Middle Ring</h4>
-                      <div class="grid grid-cols-4 gap-2">
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">N-M</label>
-                          <input type="checkbox" data-layer="1" data-position="0" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">E-M</label>
-                          <input type="checkbox" data-layer="1" data-position="1" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">S-M</label>
-                          <input type="checkbox" data-layer="1" data-position="2" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">W-M</label>
-                          <input type="checkbox" data-layer="1" data-position="3" class="led-checkbox tower-checkbox" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Bottom Ring -->
-                    <div class="bg-gray-800 rounded p-3">
-                      <h4 class="text-sm font-semibold mb-2">Bottom Ring</h4>
-                      <div class="grid grid-cols-4 gap-2">
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">N-B</label>
-                          <input type="checkbox" data-layer="2" data-position="0" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">E-B</label>
-                          <input type="checkbox" data-layer="2" data-position="1" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">S-B</label>
-                          <input type="checkbox" data-layer="2" data-position="2" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">W-B</label>
-                          <input type="checkbox" data-layer="2" data-position="3" class="led-checkbox tower-checkbox" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Ledge -->
-                    <div class="bg-gray-800 rounded p-3">
-                      <h4 class="text-sm font-semibold mb-2">Ledge</h4>
-                      <div class="grid grid-cols-4 gap-2">
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">NE-L</label>
-                          <input type="checkbox" data-layer="3" data-position="0" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">SE-L</label>
-                          <input type="checkbox" data-layer="3" data-position="1" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">SW-L</label>
-                          <input type="checkbox" data-layer="3" data-position="2" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">NW-L</label>
-                          <input type="checkbox" data-layer="3" data-position="3" class="led-checkbox tower-checkbox" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Base1 -->
-                    <div class="bg-gray-800 rounded p-3">
-                      <h4 class="text-sm font-semibold mb-2">Base1</h4>
-                      <div class="grid grid-cols-4 gap-2">
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">NE-B1</label>
-                          <input type="checkbox" data-layer="4" data-position="0" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">SE-B1</label>
-                          <input type="checkbox" data-layer="4" data-position="1" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">SW-B1</label>
-                          <input type="checkbox" data-layer="4" data-position="2" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">NW-B1</label>
-                          <input type="checkbox" data-layer="4" data-position="3" class="led-checkbox tower-checkbox" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Base2 -->
-                    <div class="bg-gray-800 rounded p-3">
-                      <h4 class="text-sm font-semibold mb-2">Base2</h4>
-                      <div class="grid grid-cols-4 gap-2">
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">NE-B2</label>
-                          <input type="checkbox" data-layer="5" data-position="0" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">SE-B2</label>
-                          <input type="checkbox" data-layer="5" data-position="1" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">SW-B2</label>
-                          <input type="checkbox" data-layer="5" data-position="2" class="led-checkbox tower-checkbox" />
-                        </div>
-                        <div class="text-center">
-                          <label class="block text-xs mb-1">NW-B2</label>
-                          <input type="checkbox" data-layer="5" data-position="3" class="led-checkbox tower-checkbox" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Control Buttons -->
-                  <div class="flex justify-center space-x-4 mt-4">
-                    <button id="send-led-command" onclick="sendLEDTestCommand()" class="tower-button">
-                      Send LED Command
-                    </button>
-                    <button id="clear-all-leds" onclick="clearAllLEDs()" class="tower-button">
-                      Clear All LEDs
-                    </button>
+                  <!-- Chart Status -->
+                  <div class="flex items-center justify-center p-2 bg-gray-700 rounded text-white text-sm">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <span id="chart-status">Connect to tower to start collecting differential readings</span>
                   </div>
                 </div>
               </fieldset>
@@ -1144,183 +1058,6 @@
                 <button onclick="clearLog()" class="tower-button">
                   Clear Log
                 </button>
-              </div>
-            </fieldset>
-          </div>
-          <!-- Testing Tab Content -->
-          <div id="testing-content" class="tower-tab-content">
-            <fieldset class="tower-fieldset">
-              <legend class="tower-legend">LED Testing</legend>
-              <div class="space-y-4">
-                <!-- Effect Selection -->
-                <div class="flex items-center space-x-4">
-                  <label class="text-sm w-20">Effect:</label>
-                  <select id="led-effect-select" class="tower-select flex-1">
-                    <option value="0">Off</option>
-                    <option value="1">On</option>
-                    <option value="2">Slow Pulse</option>
-                    <option value="3">Fast Pulse</option>
-                    <option value="4">Slow Fade</option>
-                    <option value="5">Fast Fade</option>
-                    <option value="6">Strobe</option>
-                    <option value="7">Flicker</option>
-                  </select>
-                  <div class="flex items-center space-x-2">
-                    <input type="checkbox" id="led-loop-checkbox" class="tower-checkbox" />
-                    <label for="led-loop-checkbox" class="text-sm">Loop</label>
-                  </div>
-                </div>
-
-                <!-- LED Grid -->
-                <div class="grid grid-cols-1 gap-4">
-                  <!-- Top Ring -->
-                  <div class="bg-gray-800 rounded p-3">
-                    <h4 class="text-sm font-semibold mb-2">Top Ring</h4>
-                    <div class="grid grid-cols-4 gap-2">
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">N-T</label>
-                        <input type="checkbox" data-layer="0" data-position="0" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">E-T</label>
-                        <input type="checkbox" data-layer="0" data-position="1" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">S-T</label>
-                        <input type="checkbox" data-layer="0" data-position="2" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">W-T</label>
-                        <input type="checkbox" data-layer="0" data-position="3" class="led-checkbox tower-checkbox" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Middle Ring -->
-                  <div class="bg-gray-800 rounded p-3">
-                    <h4 class="text-sm font-semibold mb-2">Middle Ring</h4>
-                    <div class="grid grid-cols-4 gap-2">
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">N-M</label>
-                        <input type="checkbox" data-layer="1" data-position="0" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">E-M</label>
-                        <input type="checkbox" data-layer="1" data-position="1" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">S-M</label>
-                        <input type="checkbox" data-layer="1" data-position="2" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">W-M</label>
-                        <input type="checkbox" data-layer="1" data-position="3" class="led-checkbox tower-checkbox" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Bottom Ring -->
-                  <div class="bg-gray-800 rounded p-3">
-                    <h4 class="text-sm font-semibold mb-2">Bottom Ring</h4>
-                    <div class="grid grid-cols-4 gap-2">
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">N-B</label>
-                        <input type="checkbox" data-layer="2" data-position="0" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">E-B</label>
-                        <input type="checkbox" data-layer="2" data-position="1" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">S-B</label>
-                        <input type="checkbox" data-layer="2" data-position="2" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">W-B</label>
-                        <input type="checkbox" data-layer="2" data-position="3" class="led-checkbox tower-checkbox" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Ledge -->
-                  <div class="bg-gray-800 rounded p-3">
-                    <h4 class="text-sm font-semibold mb-2">Ledge</h4>
-                    <div class="grid grid-cols-4 gap-2">
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">NE-L</label>
-                        <input type="checkbox" data-layer="3" data-position="0" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">SE-L</label>
-                        <input type="checkbox" data-layer="3" data-position="1" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">SW-L</label>
-                        <input type="checkbox" data-layer="3" data-position="2" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">NW-L</label>
-                        <input type="checkbox" data-layer="3" data-position="3" class="led-checkbox tower-checkbox" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Base1 -->
-                  <div class="bg-gray-800 rounded p-3">
-                    <h4 class="text-sm font-semibold mb-2">Base1</h4>
-                    <div class="grid grid-cols-4 gap-2">
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">NE-B1</label>
-                        <input type="checkbox" data-layer="4" data-position="0" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">SE-B1</label>
-                        <input type="checkbox" data-layer="4" data-position="1" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">SW-B1</label>
-                        <input type="checkbox" data-layer="4" data-position="2" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">NW-B1</label>
-                        <input type="checkbox" data-layer="4" data-position="3" class="led-checkbox tower-checkbox" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Base2 -->
-                  <div class="bg-gray-800 rounded p-3">
-                    <h4 class="text-sm font-semibold mb-2">Base2</h4>
-                    <div class="grid grid-cols-4 gap-2">
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">NE-B2</label>
-                        <input type="checkbox" data-layer="5" data-position="0" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">SE-B2</label>
-                        <input type="checkbox" data-layer="5" data-position="1" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">SW-B2</label>
-                        <input type="checkbox" data-layer="5" data-position="2" class="led-checkbox tower-checkbox" />
-                      </div>
-                      <div class="text-center">
-                        <label class="block text-xs mb-1">NW-B2</label>
-                        <input type="checkbox" data-layer="5" data-position="3" class="led-checkbox tower-checkbox" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Control Buttons -->
-                <div class="flex justify-center space-x-4 mt-4">
-                  <button id="send-led-command" onclick="sendLEDTestCommand()" class="tower-button">
-                    Send LED Command
-                  </button>
-                  <button id="clear-all-leds" onclick="clearAllLEDs()" class="tower-button">
-                    Clear All LEDs
-                  </button>
-                </div>
               </div>
             </fieldset>
           </div>

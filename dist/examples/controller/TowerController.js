@@ -2955,6 +2955,13 @@
   init_udtTowerState();
   var Tower = new src_default();
   var sharedDOMOutput;
+  var differentialChart = null;
+  var differentialReadings = [];
+  var isCollectingData = false;
+  var chartTimeWindow = 30;
+  var lastChartUpdate = 0;
+  var CHART_UPDATE_THROTTLE = 200;
+  var MAX_DATA_POINTS = 1e3;
   var initializeLogger = () => {
     sharedDOMOutput = new DOMOutput("log-container", 1e3);
     Tower.setLoggerOutputs([new ConsoleOutput(), sharedDOMOutput]);
@@ -3016,6 +3023,9 @@
     updateCalibrationStatus();
     updateDrumDropdowns();
     initializeVolumeDisplay();
+    initializeChart();
+    updateChartStatus("Tower connected - ready to collect data");
+    setupDifferentialReadingsHandler();
     setTimeout(() => {
       try {
         if (typeof refreshStatusPacket === "function") {
@@ -3034,6 +3044,9 @@
       el.style.background = "rgb(255 1 1 / 30%)";
     }
     logger.warn("Tower disconnected", "[TC]");
+    isCollectingData = false;
+    updateChartDataCollectionButton();
+    updateChartStatus("Tower disconnected - connect to tower to collect data");
     updateCalibrationStatus();
   };
   Tower.onTowerDisconnect = onTowerDisconnected;
@@ -3119,6 +3132,50 @@
     }
   };
   Tower.onTowerStateUpdate = onTowerStateUpdate;
+  var handleTowerResponse = (response) => {
+    if (!isCollectingData || response.length === 0)
+      return;
+    const commandValue = response[0];
+    if (commandValue === 6) {
+      const timestamp = Date.now();
+      let voltage = 0;
+      if (response.length >= 3) {
+        voltage = response[1] << 8 | response[2];
+      }
+      const reading = {
+        timestamp,
+        voltage,
+        rawData: new Uint8Array(response)
+      };
+      addDifferentialReading(reading);
+      logger.debug(`Differential reading: ${voltage} at ${new Date(timestamp).toLocaleTimeString()}`, "[Charts]");
+    }
+  };
+  var addDifferentialReading = (reading) => {
+    differentialReadings.push(reading);
+    const cutoffTime = Date.now() - chartTimeWindow * 1e3;
+    differentialReadings = differentialReadings.filter((r) => r.timestamp > cutoffTime);
+    if (differentialReadings.length > MAX_DATA_POINTS) {
+      differentialReadings = differentialReadings.slice(-MAX_DATA_POINTS);
+    }
+    const now = Date.now();
+    if (now - lastChartUpdate > CHART_UPDATE_THROTTLE) {
+      updateChart();
+      updateChartStatistics();
+      lastChartUpdate = now;
+    }
+  };
+  var setupDifferentialReadingsHandler = () => {
+    if (Tower.bleConnection && Tower.bleConnection.callbacks) {
+      const originalCallback = Tower.bleConnection.callbacks.onTowerResponse;
+      Tower.bleConnection.callbacks.onTowerResponse = (response) => {
+        if (originalCallback) {
+          originalCallback(response);
+        }
+        handleTowerResponse(response);
+      };
+    }
+  };
   var updateCalibrationStatus = () => {
     const topIcon = document.getElementById("calibration-top");
     const middleIcon = document.getElementById("calibration-middle");
@@ -3588,6 +3645,18 @@
     if (selectedButton) {
       selectedButton.classList.add("tower-tab-active");
     }
+    if (tabName === "charts") {
+      setTimeout(() => {
+        initializeChart();
+        updateChartDataCollectionButton();
+        updateChartStatistics();
+        if (Tower.isConnected) {
+          updateChartStatus("Tower connected - ready to collect data");
+        } else {
+          updateChartStatus("Connect to tower to start collecting differential readings");
+        }
+      }, 100);
+    }
   };
   var moveGlyph = async () => {
     const glyphSelect = document.getElementById("glyph-select");
@@ -3850,68 +3919,6 @@
   } else {
     initializeUI();
   }
-  var sendLEDTestCommand = async () => {
-    try {
-      const effectSelect = document.getElementById("led-effect-select");
-      const loopCheckbox = document.getElementById("led-loop-checkbox");
-      const selectedEffect = parseInt(effectSelect.value);
-      const loopEnabled = loopCheckbox.checked;
-      const checkedLEDs = document.querySelectorAll(".led-checkbox:checked");
-      if (checkedLEDs.length === 0) {
-        logger.warn("No LEDs selected for testing", "[LED Testing]");
-        return;
-      }
-      if (!Tower || !Tower.getCurrentTowerState || !Tower.sendTowerState) {
-        logger.error("Tower not connected or tower state methods not available", "[LED Testing]");
-        return;
-      }
-      let currentState = Tower.getCurrentTowerState();
-      if (!currentState) {
-        currentState = createDefaultTowerState();
-      }
-      checkedLEDs.forEach((checkbox) => {
-        const layer = parseInt(checkbox.dataset.layer);
-        const position = parseInt(checkbox.dataset.position);
-        const isValidLightPosition = layer >= 0 && layer < 6 && position >= 0 && position < 4;
-        if (isValidLightPosition) {
-          currentState.layer[layer].light[position].effect = selectedEffect;
-          currentState.layer[layer].light[position].loop = loopEnabled;
-          logger.debug(`LED configured: layer=${layer}, position=${position}, effect=${selectedEffect}, loop=${loopEnabled}`, "[LED Testing]");
-        }
-      });
-      await Tower.sendTowerState(currentState);
-      logger.info(`LED test command sent: ${checkedLEDs.length} LEDs updated, effect=${selectedEffect}, loop=${loopEnabled}`, "[LED Testing]");
-    } catch (error) {
-      console.error("Error sending LED test command:", error);
-      logger.error("Error sending LED test command: " + error, "[LED Testing]");
-    }
-  };
-  var clearAllLEDs = async () => {
-    try {
-      if (!Tower || !Tower.getCurrentTowerState || !Tower.sendTowerState) {
-        logger.error("Tower not connected or tower state methods not available", "[LED Testing]");
-        return;
-      }
-      let currentState = Tower.getCurrentTowerState();
-      if (!currentState) {
-        currentState = createDefaultTowerState();
-      }
-      for (let layer = 0; layer < 6; layer++) {
-        for (let position = 0; position < 4; position++) {
-          currentState.layer[layer].light[position].effect = 0;
-          currentState.layer[layer].light[position].loop = false;
-        }
-      }
-      await Tower.sendTowerState(currentState);
-      logger.info("All LEDs cleared with single tower state command", "[LED Testing]");
-      document.querySelectorAll(".led-checkbox").forEach((checkbox) => {
-        checkbox.checked = false;
-      });
-    } catch (error) {
-      console.error("Error clearing LEDs:", error);
-      logger.error("Error clearing LEDs: " + error, "[LED Testing]");
-    }
-  };
   var updateLogLevel = () => {
     if (window.logger) {
       const checkboxes = document.querySelectorAll('input[id^="logLevel-"]');
@@ -4230,6 +4237,207 @@ ${"-".repeat(60)}
       localVolume = 0;
     }
   };
+  var initializeChart = () => {
+    if (differentialChart)
+      return;
+    const ctx = document.getElementById("differential-chart");
+    if (!ctx)
+      return;
+    differentialChart = new window.Chart(ctx, {
+      type: "line",
+      data: {
+        datasets: [{
+          label: "Differential Voltage",
+          data: [],
+          borderColor: "#f97316",
+          backgroundColor: "rgba(249, 115, 22, 0.1)",
+          borderWidth: 2,
+          fill: true,
+          tension: 0.1,
+          pointRadius: 1,
+          pointHoverRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: "time",
+            time: {
+              unit: "second",
+              displayFormats: {
+                second: "mm:ss"
+              }
+            },
+            title: {
+              display: true,
+              text: "Time"
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: "Voltage"
+            },
+            beginAtZero: false
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: "top"
+          },
+          tooltip: {
+            mode: "nearest",
+            intersect: false,
+            callbacks: {
+              title: function(context) {
+                const date = new Date(context[0].parsed.x);
+                const minutes = date.getMinutes().toString().padStart(2, "0");
+                const seconds = date.getSeconds().toString().padStart(2, "0");
+                return `${minutes}:${seconds}`;
+              },
+              label: function(context) {
+                return `Voltage: ${context.parsed.y.toFixed(2)}`;
+              }
+            }
+          }
+        },
+        interaction: {
+          mode: "nearest",
+          axis: "x",
+          intersect: false
+        }
+      }
+    });
+  };
+  var updateChart = () => {
+    if (!differentialChart)
+      return;
+    const cutoffTime = Date.now() - chartTimeWindow * 1e3;
+    const filteredReadings = differentialReadings.filter((r) => r.timestamp > cutoffTime);
+    const chartData = filteredReadings.map((reading) => ({
+      x: reading.timestamp,
+      y: reading.voltage
+    }));
+    differentialChart.data.datasets[0].data = chartData;
+    differentialChart.update("none");
+  };
+  var updateChartStatistics = () => {
+    const statsPoints = document.getElementById("chart-stats-points");
+    const statsLatest = document.getElementById("chart-stats-latest");
+    const statsMin = document.getElementById("chart-stats-min");
+    const statsMax = document.getElementById("chart-stats-max");
+    if (!statsPoints || !statsLatest || !statsMin || !statsMax)
+      return;
+    const cutoffTime = Date.now() - chartTimeWindow * 1e3;
+    const filteredReadings = differentialReadings.filter((r) => r.timestamp > cutoffTime);
+    statsPoints.textContent = filteredReadings.length.toString();
+    if (filteredReadings.length > 0) {
+      const latest = filteredReadings[filteredReadings.length - 1];
+      const voltages = filteredReadings.map((r) => r.voltage);
+      const minVoltage = Math.min(...voltages);
+      const maxVoltage = Math.max(...voltages);
+      statsLatest.textContent = latest.voltage.toFixed(2);
+      statsMin.textContent = minVoltage.toFixed(2);
+      statsMax.textContent = maxVoltage.toFixed(2);
+    } else {
+      statsLatest.textContent = "--";
+      statsMin.textContent = "--";
+      statsMax.textContent = "--";
+    }
+  };
+  var updateChartStatus = (message) => {
+    const statusElement = document.getElementById("chart-status");
+    if (statusElement) {
+      statusElement.textContent = message;
+    }
+  };
+  var updateChartDataCollectionButton = () => {
+    const button = document.getElementById("chart-start-stop");
+    if (!button)
+      return;
+    if (isCollectingData) {
+      button.innerHTML = '<i class="fas fa-stop mr-1"></i>Stop';
+      button.classList.remove("tower-button");
+      button.classList.add("tower-button");
+      button.style.backgroundColor = "#dc2626";
+    } else {
+      button.innerHTML = '<i class="fas fa-play mr-1"></i>Start';
+      button.classList.remove("tower-button");
+      button.classList.add("tower-button");
+      button.style.backgroundColor = "";
+    }
+  };
+  var toggleDataCollection = () => {
+    if (!Tower.isConnected) {
+      updateChartStatus("Tower not connected");
+      return;
+    }
+    isCollectingData = !isCollectingData;
+    updateChartDataCollectionButton();
+    if (isCollectingData) {
+      Tower.bleConnection.loggingConfig.DIFFERENTIAL_READINGS = true;
+      updateChartStatus("Logging differential readings...");
+      logger.info("Started differential readings data collection", "[Charts]");
+    } else {
+      Tower.bleConnection.loggingConfig.DIFFERENTIAL_READINGS = false;
+      updateChartStatus("Stopped logging differential readings");
+      logger.info("Stopped differential readings data collection", "[Charts]");
+    }
+  };
+  var updateTimeWindow = () => {
+    const select = document.getElementById("chart-time-window");
+    if (!select)
+      return;
+    chartTimeWindow = parseInt(select.value);
+    if (differentialChart) {
+      updateChart();
+      updateChartStatistics();
+    }
+    logger.info(`Chart time window updated to ${chartTimeWindow} seconds`, "[Charts]");
+  };
+  var clearChartData = () => {
+    differentialReadings = [];
+    if (differentialChart) {
+      differentialChart.data.datasets[0].data = [];
+      differentialChart.update();
+    }
+    updateChartStatistics();
+    updateChartStatus(Tower.isConnected ? "Data cleared - ready to collect" : "Data cleared - connect to tower");
+    logger.info("Chart data cleared", "[Charts]");
+  };
+  var exportChartData = () => {
+    if (differentialReadings.length === 0) {
+      alert("No data to export");
+      return;
+    }
+    const headers = ["Timestamp", "Time", "Voltage", "Raw Data"];
+    const csvRows = [headers.join(",")];
+    differentialReadings.forEach((reading) => {
+      const timeString = new Date(reading.timestamp).toISOString();
+      const rawDataHex = Array.from(reading.rawData).map((b) => b.toString(16).padStart(2, "0")).join(" ");
+      const row = [
+        reading.timestamp,
+        timeString,
+        reading.voltage,
+        `"${rawDataHex}"`
+      ];
+      csvRows.push(row.join(","));
+    });
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `differential-readings-${(/* @__PURE__ */ new Date()).toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    logger.info(`Exported ${differentialReadings.length} differential readings`, "[Charts]");
+  };
   window.connectToTower = connectToTower;
   window.calibrate = calibrate;
   window.resetSkullCount = resetSkullCount;
@@ -4259,8 +4467,6 @@ ${"-".repeat(60)}
   window.copyDisplayedLogs = copyDisplayedLogs;
   window.downloadDisplayedLogs = downloadDisplayedLogs;
   window.getGlyphsFacingDirection = getGlyphsFacingDirection;
-  window.sendLEDTestCommand = sendLEDTestCommand;
-  window.clearAllLEDs = clearAllLEDs;
   window.findGlyphAtPosition = findGlyphAtPosition;
   window.getGlyphLevel = getGlyphLevel;
   window.glyphLightStates = glyphLightStates;
@@ -4272,5 +4478,10 @@ ${"-".repeat(60)}
   window.volumeDown = volumeDown;
   window.updateVolumeDisplay = updateVolumeDisplay;
   window.initializeVolumeDisplay = initializeVolumeDisplay;
+  window.toggleDataCollection = toggleDataCollection;
+  window.updateTimeWindow = updateTimeWindow;
+  window.clearChartData = clearChartData;
+  window.exportChartData = exportChartData;
+  window.initializeChart = initializeChart;
 })();
 //# sourceMappingURL=TowerController.js.map

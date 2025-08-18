@@ -28,6 +28,21 @@ const Tower = new UltimateDarkTower();
 // Global reference to shared DOM output for filtering
 let sharedDOMOutput: DOMOutput;
 
+// Chart-related global variables
+interface DifferentialReading {
+  timestamp: number;
+  voltage: number;
+  rawData: Uint8Array;
+}
+
+let differentialChart: any = null;
+let differentialReadings: DifferentialReading[] = [];
+let isCollectingData: boolean = false;
+let chartTimeWindow: number = 30; // seconds
+let lastChartUpdate: number = 0;
+const CHART_UPDATE_THROTTLE = 200; // ms
+const MAX_DATA_POINTS = 1000;
+
 // Setup loggers with DOM output after DOM is ready
 const initializeLogger = () => {
   // Create single shared DOM output with 1000 max lines
@@ -125,6 +140,16 @@ const onTowerConnected = () => {
 
   // Initialize volume display
   initializeVolumeDisplay();
+
+  // Initialize chart if Charts tab is active
+  initializeChart();
+
+  // Update chart status
+  updateChartStatus('Tower connected - ready to collect data');
+
+  // Set up differential readings handler
+  setupDifferentialReadingsHandler();
+
   setTimeout(() => {
     try {
       if (typeof refreshStatusPacket === 'function') {
@@ -144,6 +169,11 @@ const onTowerDisconnected = () => {
     el.style.background = 'rgb(255 1 1 / 30%)';
   }
   logger.warn("Tower disconnected", '[TC]');
+
+  // Update chart status and stop data collection
+  isCollectingData = false;
+  updateChartDataCollectionButton();
+  updateChartStatus('Tower disconnected - connect to tower to collect data');
 
   // Update calibration status for disconnected state
   updateCalibrationStatus();
@@ -271,6 +301,71 @@ const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: 
   }
 };
 Tower.onTowerStateUpdate = onTowerStateUpdate;
+
+// Tower response handler for differential readings
+const handleTowerResponse = (response: Uint8Array) => {
+  if (!isCollectingData || response.length === 0) return;
+  
+  // Check if this is a differential reading (command value 6)
+  const commandValue = response[0];
+  if (commandValue === 6) { // TC.DIFFERENTIAL_READINGS value
+    const timestamp = Date.now();
+    
+    // Parse voltage from response (assuming it's in bytes 1-2 as 16-bit value)
+    let voltage = 0;
+    if (response.length >= 3) {
+      voltage = (response[1] << 8) | response[2]; // Convert to 16-bit value
+    }
+    
+    const reading: DifferentialReading = {
+      timestamp,
+      voltage,
+      rawData: new Uint8Array(response)
+    };
+    
+    addDifferentialReading(reading);
+    logger.debug(`Differential reading: ${voltage} at ${new Date(timestamp).toLocaleTimeString()}`, '[Charts]');
+  }
+};
+
+// Add differential reading to storage
+const addDifferentialReading = (reading: DifferentialReading) => {
+  differentialReadings.push(reading);
+  
+  // Remove old readings outside time window
+  const cutoffTime = Date.now() - (chartTimeWindow * 1000);
+  differentialReadings = differentialReadings.filter(r => r.timestamp > cutoffTime);
+  
+  // Limit total data points
+  if (differentialReadings.length > MAX_DATA_POINTS) {
+    differentialReadings = differentialReadings.slice(-MAX_DATA_POINTS);
+  }
+  
+  // Update chart (throttled)
+  const now = Date.now();
+  if (now - lastChartUpdate > CHART_UPDATE_THROTTLE) {
+    updateChart();
+    updateChartStatistics();
+    lastChartUpdate = now;
+  }
+};
+
+// Set up custom tower response handler for differential readings
+// This will be called after tower connection is established
+const setupDifferentialReadingsHandler = () => {
+  if ((Tower as any).bleConnection && (Tower as any).bleConnection.callbacks) {
+    const originalCallback = (Tower as any).bleConnection.callbacks.onTowerResponse;
+    (Tower as any).bleConnection.callbacks.onTowerResponse = (response: Uint8Array) => {
+      // Call the original callback first
+      if (originalCallback) {
+        originalCallback(response);
+      }
+      
+      // Handle differential readings
+      handleTowerResponse(response);
+    };
+  }
+};
 
 const updateCalibrationStatus = () => {
   const topIcon = document.getElementById("calibration-top");
@@ -887,6 +982,20 @@ const switchTab = (tabName: string) => {
   if (selectedButton) {
     selectedButton.classList.add('tower-tab-active');
   }
+
+  // Initialize chart when Charts tab is selected
+  if (tabName === 'charts') {
+    setTimeout(() => {
+      initializeChart();
+      updateChartDataCollectionButton();
+      updateChartStatistics();
+      if (Tower.isConnected) {
+        updateChartStatus('Tower connected - ready to collect data');
+      } else {
+        updateChartStatus('Connect to tower to start collecting differential readings');
+      }
+    }, 100); // Small delay to ensure DOM is ready
+  }
 }
 
 // Glyph management functionality with light tracking
@@ -1262,94 +1371,6 @@ if (document.readyState === 'loading') {
   initializeUI();
 }
 
-// LED Testing Functions
-const sendLEDTestCommand = async () => {
-  try {
-    // Get the selected effect and loop setting
-    const effectSelect = document.getElementById('led-effect-select') as HTMLSelectElement;
-    const loopCheckbox = document.getElementById('led-loop-checkbox') as HTMLInputElement;
-    const selectedEffect = parseInt(effectSelect.value);
-    const loopEnabled = loopCheckbox.checked;
-
-    // Get all checked LED checkboxes
-    const checkedLEDs = document.querySelectorAll('.led-checkbox:checked') as NodeListOf<HTMLInputElement>;
-
-    if (checkedLEDs.length === 0) {
-      logger.warn('No LEDs selected for testing', '[LED Testing]');
-      return;
-    }
-
-    if (!Tower || !Tower.getCurrentTowerState || !Tower.sendTowerState) {
-      logger.error('Tower not connected or tower state methods not available', '[LED Testing]');
-      return;
-    }
-
-    // Get current tower state or create a default state
-    let currentState = Tower.getCurrentTowerState();
-    if (!currentState) {
-      // Create default state if none available
-      currentState = createDefaultTowerState();
-    }
-
-    // Apply all LED changes to the tower state
-    checkedLEDs.forEach(checkbox => {
-      const layer = parseInt(checkbox.dataset.layer!);
-      const position = parseInt(checkbox.dataset.position!);
-      const isValidLightPosition = layer >= 0 && layer < 6 && position >= 0 && position < 4;
-
-      if (isValidLightPosition) {
-        currentState.layer[layer].light[position].effect = selectedEffect;
-        currentState.layer[layer].light[position].loop = loopEnabled;
-        logger.debug(`LED configured: layer=${layer}, position=${position}, effect=${selectedEffect}, loop=${loopEnabled}`, '[LED Testing]');
-      }
-    });
-
-    // Send the complete updated tower state in a single command
-    await Tower.sendTowerState(currentState);
-    logger.info(`LED test command sent: ${checkedLEDs.length} LEDs updated, effect=${selectedEffect}, loop=${loopEnabled}`, '[LED Testing]');
-
-  } catch (error) {
-    console.error('Error sending LED test command:', error);
-    logger.error('Error sending LED test command: ' + error, '[LED Testing]');
-  }
-};
-
-const clearAllLEDs = async () => {
-  try {
-    if (!Tower || !Tower.getCurrentTowerState || !Tower.sendTowerState) {
-      logger.error('Tower not connected or tower state methods not available', '[LED Testing]');
-      return;
-    }
-
-    // Get current tower state or create a default state
-    let currentState = Tower.getCurrentTowerState();
-    if (!currentState) {
-      // Create default state if none available
-      currentState = createDefaultTowerState();
-    }
-
-    // Turn off all LEDs in the tower state
-    for (let layer = 0; layer < 6; layer++) {
-      for (let position = 0; position < 4; position++) {
-        currentState.layer[layer].light[position].effect = 0; // Effect 0 = off
-        currentState.layer[layer].light[position].loop = false;
-      }
-    }
-
-    // Send the complete updated tower state in a single command
-    await Tower.sendTowerState(currentState);
-    logger.info('All LEDs cleared with single tower state command', '[LED Testing]');
-
-    // Clear all checkboxes
-    document.querySelectorAll('.led-checkbox').forEach(checkbox => {
-      (checkbox as HTMLInputElement).checked = false;
-    });
-
-  } catch (error) {
-    console.error('Error clearing LEDs:', error);
-    logger.error('Error clearing LEDs: ' + error, '[LED Testing]');
-  }
-};
 
 // Log control functions
 const updateLogLevel = () => {
@@ -1906,6 +1927,242 @@ const initializeVolumeDisplay = () => {
   }
 };
 
+// Chart.js initialization and management functions
+const initializeChart = () => {
+  if (differentialChart) return; // Already initialized
+  
+  const ctx = document.getElementById('differential-chart') as HTMLCanvasElement;
+  if (!ctx) return;
+  
+  differentialChart = new (window as any).Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'Differential Voltage',
+        data: [],
+        borderColor: '#f97316',
+        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.1,
+        pointRadius: 1,
+        pointHoverRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'second',
+            displayFormats: {
+              second: 'mm:ss'
+            }
+          },
+          title: {
+            display: true,
+            text: 'Time'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Voltage'
+          },
+          beginAtZero: false
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top'
+        },
+        tooltip: {
+          mode: 'nearest',
+          intersect: false,
+          callbacks: {
+            title: function(context: any) {
+              const date = new Date(context[0].parsed.x);
+              const minutes = date.getMinutes().toString().padStart(2, '0');
+              const seconds = date.getSeconds().toString().padStart(2, '0');
+              return `${minutes}:${seconds}`;
+            },
+            label: function(context: any) {
+              return `Voltage: ${context.parsed.y.toFixed(2)}`;
+            }
+          }
+        }
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      }
+    }
+  });
+};
+
+const updateChart = () => {
+  if (!differentialChart) return;
+  
+  // Prepare data for Chart.js (filter by time window)
+  const cutoffTime = Date.now() - (chartTimeWindow * 1000);
+  const filteredReadings = differentialReadings.filter(r => r.timestamp > cutoffTime);
+  
+  const chartData = filteredReadings.map(reading => ({
+    x: reading.timestamp,
+    y: reading.voltage
+  }));
+  
+  differentialChart.data.datasets[0].data = chartData;
+  differentialChart.update('none'); // No animation for real-time updates
+};
+
+const updateChartStatistics = () => {
+  const statsPoints = document.getElementById('chart-stats-points');
+  const statsLatest = document.getElementById('chart-stats-latest');
+  const statsMin = document.getElementById('chart-stats-min');
+  const statsMax = document.getElementById('chart-stats-max');
+  
+  if (!statsPoints || !statsLatest || !statsMin || !statsMax) return;
+  
+  // Filter by current time window
+  const cutoffTime = Date.now() - (chartTimeWindow * 1000);
+  const filteredReadings = differentialReadings.filter(r => r.timestamp > cutoffTime);
+  
+  statsPoints.textContent = filteredReadings.length.toString();
+  
+  if (filteredReadings.length > 0) {
+    const latest = filteredReadings[filteredReadings.length - 1];
+    const voltages = filteredReadings.map(r => r.voltage);
+    const minVoltage = Math.min(...voltages);
+    const maxVoltage = Math.max(...voltages);
+    
+    statsLatest.textContent = latest.voltage.toFixed(2);
+    statsMin.textContent = minVoltage.toFixed(2);
+    statsMax.textContent = maxVoltage.toFixed(2);
+  } else {
+    statsLatest.textContent = '--';
+    statsMin.textContent = '--';
+    statsMax.textContent = '--';
+  }
+};
+
+const updateChartStatus = (message: string) => {
+  const statusElement = document.getElementById('chart-status');
+  if (statusElement) {
+    statusElement.textContent = message;
+  }
+};
+
+const updateChartDataCollectionButton = () => {
+  const button = document.getElementById('chart-start-stop');
+  if (!button) return;
+  
+  if (isCollectingData) {
+    button.innerHTML = '<i class="fas fa-stop mr-1"></i>Stop';
+    button.classList.remove('tower-button');
+    button.classList.add('tower-button');
+    button.style.backgroundColor = '#dc2626';
+  } else {
+    button.innerHTML = '<i class="fas fa-play mr-1"></i>Start';
+    button.classList.remove('tower-button');
+    button.classList.add('tower-button');
+    button.style.backgroundColor = '';
+  }
+};
+
+// Chart control functions
+const toggleDataCollection = () => {
+  if (!Tower.isConnected) {
+    updateChartStatus('Tower not connected');
+    return;
+  }
+  
+  isCollectingData = !isCollectingData;
+  updateChartDataCollectionButton();
+  
+  if (isCollectingData) {
+    // Enable differential readings logging in the tower
+    (Tower as any).bleConnection.loggingConfig.DIFFERENTIAL_READINGS = true;
+    updateChartStatus('Logging differential readings...');
+    logger.info('Started differential readings data collection', '[Charts]');
+  } else {
+    // Disable differential readings logging to save bandwidth
+    (Tower as any).bleConnection.loggingConfig.DIFFERENTIAL_READINGS = false;
+    updateChartStatus('Stopped logging differential readings');
+    logger.info('Stopped differential readings data collection', '[Charts]');
+  }
+};
+
+const updateTimeWindow = () => {
+  const select = document.getElementById('chart-time-window') as HTMLSelectElement;
+  if (!select) return;
+  
+  chartTimeWindow = parseInt(select.value);
+  
+  // Update chart to show new time window
+  if (differentialChart) {
+    updateChart();
+    updateChartStatistics();
+  }
+  
+  logger.info(`Chart time window updated to ${chartTimeWindow} seconds`, '[Charts]');
+};
+
+const clearChartData = () => {
+  differentialReadings = [];
+  
+  if (differentialChart) {
+    differentialChart.data.datasets[0].data = [];
+    differentialChart.update();
+  }
+  
+  updateChartStatistics();
+  updateChartStatus(Tower.isConnected ? 'Data cleared - ready to collect' : 'Data cleared - connect to tower');
+  logger.info('Chart data cleared', '[Charts]');
+};
+
+const exportChartData = () => {
+  if (differentialReadings.length === 0) {
+    alert('No data to export');
+    return;
+  }
+  
+  // Create CSV content
+  const headers = ['Timestamp', 'Time', 'Voltage', 'Raw Data'];
+  const csvRows = [headers.join(',')];
+  
+  differentialReadings.forEach(reading => {
+    const timeString = new Date(reading.timestamp).toISOString();
+    const rawDataHex = Array.from(reading.rawData).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    const row = [
+      reading.timestamp,
+      timeString,
+      reading.voltage,
+      `"${rawDataHex}"`
+    ];
+    csvRows.push(row.join(','));
+  });
+  
+  const csvContent = csvRows.join('\n');
+  
+  // Create download
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `differential-readings-${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+  
+  logger.info(`Exported ${differentialReadings.length} differential readings`, '[Charts]');
+};
+
 // Expose functions globally for HTML onclick handlers
 (window as any).connectToTower = connectToTower;
 (window as any).calibrate = calibrate;
@@ -1936,8 +2193,6 @@ const initializeVolumeDisplay = () => {
 (window as any).copyDisplayedLogs = copyDisplayedLogs;
 (window as any).downloadDisplayedLogs = downloadDisplayedLogs;
 (window as any).getGlyphsFacingDirection = getGlyphsFacingDirection;
-(window as any).sendLEDTestCommand = sendLEDTestCommand;
-(window as any).clearAllLEDs = clearAllLEDs;
 (window as any).findGlyphAtPosition = findGlyphAtPosition;
 (window as any).getGlyphLevel = getGlyphLevel;
 (window as any).glyphLightStates = glyphLightStates;
@@ -1949,3 +2204,8 @@ const initializeVolumeDisplay = () => {
 (window as any).volumeDown = volumeDown;
 (window as any).updateVolumeDisplay = updateVolumeDisplay;
 (window as any).initializeVolumeDisplay = initializeVolumeDisplay;
+(window as any).toggleDataCollection = toggleDataCollection;
+(window as any).updateTimeWindow = updateTimeWindow;
+(window as any).clearChartData = clearChartData;
+(window as any).exportChartData = exportChartData;
+(window as any).initializeChart = initializeChart;
