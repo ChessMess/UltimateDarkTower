@@ -50,6 +50,32 @@ export declare function getActiveLights(state: TowerState): Array<{
     loop: boolean;
 }>;
 /**
+ * Interface for parsed differential readings
+ */
+export interface ParsedDifferentialReadings {
+    irBeam: number;
+    drum1: number;
+    drum2: number;
+    drum3: number;
+    timestamp: number;
+    rawData: Uint8Array;
+}
+/**
+ * Parses a tower response containing differential readings into individual components.
+ * The firmware packs 4 differential readings into a 32-bit value and transmits as bytes:
+ * - Firmware: (signals_smoothed[0] << 24) | (signals_smoothed[1] << 16) | (signals_smoothed[2] << 8) | signals_smoothed[3]
+ * - signals_smoothed[0] = IR beam (drop sensor)
+ * - signals_smoothed[1] = Drum 1 (top)
+ * - signals_smoothed[2] = Drum 2 (middle)
+ * - signals_smoothed[3] = Drum 3 (bottom)
+ *
+ * Transmitted as: [cmd_byte][IR_beam][drum1][drum2][drum3]
+ *
+ * @param response - Tower response packet (should be MESSAGE_DIFFERENTIAL_READINGS with command value 6)
+ * @returns Parsed differential readings or null if not a valid differential response
+ */
+export declare function parseDifferentialReadings(response: Uint8Array): ParsedDifferentialReadings | null;
+/**
  * Creates a default/empty tower state with all settings reset to defaults
  * @returns A default TowerState object with all lights off, no audio, etc.
  */

@@ -545,6 +545,23 @@
     cmdStr = cmdStr.slice(0, -1) + "]";
     return cmdStr;
   }
+  function parseDifferentialReadings(response) {
+    if (response.length < 5 || response[0] !== 6) {
+      return null;
+    }
+    const drum1 = response[2];
+    const drum2 = response[3];
+    const drum3 = response[4];
+    const irBeam = response[1];
+    return {
+      irBeam,
+      drum1,
+      drum2,
+      drum3,
+      timestamp: Date.now(),
+      rawData: new Uint8Array(response)
+    };
+  }
   function createDefaultTowerState() {
     return {
       drum: [
@@ -2957,6 +2974,13 @@
   var sharedDOMOutput;
   var differentialChart = null;
   var differentialReadings = [];
+  var chartDisplayConfig = {
+    showIrBeam: true,
+    // Default to showing IR beam
+    showDrum1: false,
+    showDrum2: false,
+    showDrum3: false
+  };
   var isCollectingData = false;
   var chartTimeWindow = 30;
   var lastChartUpdate = 0;
@@ -3137,18 +3161,21 @@
       return;
     const commandValue = response[0];
     if (commandValue === 6) {
-      const timestamp = Date.now();
-      let voltage = 0;
-      if (response.length >= 3) {
-        voltage = response[1] << 8 | response[2];
+      const parsedReadings = parseDifferentialReadings(response);
+      if (parsedReadings) {
+        const voltage = parsedReadings.irBeam + parsedReadings.drum1 + parsedReadings.drum2 + parsedReadings.drum3;
+        const reading = {
+          timestamp: parsedReadings.timestamp,
+          voltage,
+          irBeam: parsedReadings.irBeam,
+          drum1: parsedReadings.drum1,
+          drum2: parsedReadings.drum2,
+          drum3: parsedReadings.drum3,
+          rawData: parsedReadings.rawData
+        };
+        addDifferentialReading(reading);
+        logger.debug(`Diff readings IR: ${parsedReadings.irBeam}, D1: ${parsedReadings.drum1}, D2: ${parsedReadings.drum2}, D3: ${parsedReadings.drum3}`, "[Charts]");
       }
-      const reading = {
-        timestamp,
-        voltage,
-        rawData: new Uint8Array(response)
-      };
-      addDifferentialReading(reading);
-      logger.debug(`Differential reading: ${voltage} at ${new Date(timestamp).toLocaleTimeString()}`, "[Charts]");
     }
   };
   var addDifferentialReading = (reading) => {
@@ -4246,17 +4273,56 @@ ${"-".repeat(60)}
     differentialChart = new window.Chart(ctx, {
       type: "line",
       data: {
-        datasets: [{
-          label: "Differential Voltage",
-          data: [],
-          borderColor: "#f97316",
-          backgroundColor: "rgba(249, 115, 22, 0.1)",
-          borderWidth: 2,
-          fill: true,
-          tension: 0.1,
-          pointRadius: 1,
-          pointHoverRadius: 4
-        }]
+        datasets: [
+          {
+            label: "IR Beam",
+            data: [],
+            borderColor: "#f97316",
+            backgroundColor: "rgba(249, 115, 22, 0.1)",
+            borderWidth: 2,
+            fill: false,
+            tension: 0.1,
+            pointRadius: 1,
+            pointHoverRadius: 4,
+            hidden: !chartDisplayConfig.showIrBeam
+          },
+          {
+            label: "Drum 1",
+            data: [],
+            borderColor: "#3b82f6",
+            backgroundColor: "rgba(59, 130, 246, 0.1)",
+            borderWidth: 2,
+            fill: false,
+            tension: 0.1,
+            pointRadius: 1,
+            pointHoverRadius: 4,
+            hidden: !chartDisplayConfig.showDrum1
+          },
+          {
+            label: "Drum 2",
+            data: [],
+            borderColor: "#10b981",
+            backgroundColor: "rgba(16, 185, 129, 0.1)",
+            borderWidth: 2,
+            fill: false,
+            tension: 0.1,
+            pointRadius: 1,
+            pointHoverRadius: 4,
+            hidden: !chartDisplayConfig.showDrum2
+          },
+          {
+            label: "Drum 3",
+            data: [],
+            borderColor: "#f59e0b",
+            backgroundColor: "rgba(245, 158, 11, 0.1)",
+            borderWidth: 2,
+            fill: false,
+            tension: 0.1,
+            pointRadius: 1,
+            pointHoverRadius: 4,
+            hidden: !chartDisplayConfig.showDrum3
+          }
+        ]
       },
       options: {
         responsive: true,
@@ -4286,7 +4352,13 @@ ${"-".repeat(60)}
         plugins: {
           legend: {
             display: true,
-            position: "top"
+            position: "top",
+            labels: {
+              filter: function(legendItem, chartData) {
+                const dataset = chartData.datasets[legendItem.datasetIndex];
+                return !dataset.hidden;
+              }
+            }
           },
           tooltip: {
             mode: "nearest",
@@ -4317,11 +4389,30 @@ ${"-".repeat(60)}
       return;
     const cutoffTime = Date.now() - chartTimeWindow * 1e3;
     const filteredReadings = differentialReadings.filter((r) => r.timestamp > cutoffTime);
-    const chartData = filteredReadings.map((reading) => ({
+    const irBeamData = filteredReadings.map((reading) => ({
       x: reading.timestamp,
-      y: reading.voltage
+      y: reading.irBeam
     }));
-    differentialChart.data.datasets[0].data = chartData;
+    const drum1Data = filteredReadings.map((reading) => ({
+      x: reading.timestamp,
+      y: reading.drum1
+    }));
+    const drum2Data = filteredReadings.map((reading) => ({
+      x: reading.timestamp,
+      y: reading.drum2
+    }));
+    const drum3Data = filteredReadings.map((reading) => ({
+      x: reading.timestamp,
+      y: reading.drum3
+    }));
+    differentialChart.data.datasets[0].data = irBeamData;
+    differentialChart.data.datasets[1].data = drum1Data;
+    differentialChart.data.datasets[2].data = drum2Data;
+    differentialChart.data.datasets[3].data = drum3Data;
+    differentialChart.data.datasets[0].hidden = !chartDisplayConfig.showIrBeam;
+    differentialChart.data.datasets[1].hidden = !chartDisplayConfig.showDrum1;
+    differentialChart.data.datasets[2].hidden = !chartDisplayConfig.showDrum2;
+    differentialChart.data.datasets[3].hidden = !chartDisplayConfig.showDrum3;
     differentialChart.update("none");
   };
   var updateChartStatistics = () => {
@@ -4378,11 +4469,15 @@ ${"-".repeat(60)}
     isCollectingData = !isCollectingData;
     updateChartDataCollectionButton();
     if (isCollectingData) {
-      Tower.bleConnection.loggingConfig.DIFFERENTIAL_READINGS = true;
+      if (Tower.bleConnection && Tower.bleConnection.loggingConfig) {
+        Tower.bleConnection.loggingConfig.DIFFERENTIAL_READINGS = true;
+      }
       updateChartStatus("Logging differential readings...");
       logger.info("Started differential readings data collection", "[Charts]");
     } else {
-      Tower.bleConnection.loggingConfig.DIFFERENTIAL_READINGS = false;
+      if (Tower.bleConnection && Tower.bleConnection.loggingConfig) {
+        Tower.bleConnection.loggingConfig.DIFFERENTIAL_READINGS = false;
+      }
       updateChartStatus("Stopped logging differential readings");
       logger.info("Stopped differential readings data collection", "[Charts]");
     }
@@ -4401,19 +4496,36 @@ ${"-".repeat(60)}
   var clearChartData = () => {
     differentialReadings = [];
     if (differentialChart) {
-      differentialChart.data.datasets[0].data = [];
+      differentialChart.data.datasets.forEach((dataset) => {
+        dataset.data = [];
+      });
       differentialChart.update();
     }
     updateChartStatistics();
     updateChartStatus(Tower.isConnected ? "Data cleared - ready to collect" : "Data cleared - connect to tower");
     logger.info("Chart data cleared", "[Charts]");
   };
+  var updateChartDisplayConfig = (type, show) => {
+    chartDisplayConfig[type] = show;
+    if (differentialChart) {
+      const datasetIndex = type === "showIrBeam" ? 0 : type === "showDrum1" ? 1 : type === "showDrum2" ? 2 : 3;
+      differentialChart.data.datasets[datasetIndex].hidden = !show;
+      differentialChart.update("none");
+    }
+    logger.info(`Chart display updated: ${type} = ${show}`, "[Charts]");
+  };
+  var toggleChartDisplay = (elementId, configKey) => {
+    const checkbox = document.getElementById(elementId);
+    if (!checkbox)
+      return;
+    updateChartDisplayConfig(configKey, checkbox.checked);
+  };
   var exportChartData = () => {
     if (differentialReadings.length === 0) {
       alert("No data to export");
       return;
     }
-    const headers = ["Timestamp", "Time", "Voltage", "Raw Data"];
+    const headers = ["Timestamp", "Time", "Combined_Voltage", "IR_Beam", "Drum1_Top", "Drum2_Middle", "Drum3_Bottom", "Raw_Data"];
     const csvRows = [headers.join(",")];
     differentialReadings.forEach((reading) => {
       const timeString = new Date(reading.timestamp).toISOString();
@@ -4422,6 +4534,10 @@ ${"-".repeat(60)}
         reading.timestamp,
         timeString,
         reading.voltage,
+        reading.irBeam,
+        reading.drum1,
+        reading.drum2,
+        reading.drum3,
         `"${rawDataHex}"`
       ];
       csvRows.push(row.join(","));
@@ -4436,7 +4552,7 @@ ${"-".repeat(60)}
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
-    logger.info(`Exported ${differentialReadings.length} differential readings`, "[Charts]");
+    logger.info(`Exported ${differentialReadings.length} differential readings with individual channel data`, "[Charts]");
   };
   window.connectToTower = connectToTower;
   window.calibrate = calibrate;
@@ -4483,5 +4599,7 @@ ${"-".repeat(60)}
   window.clearChartData = clearChartData;
   window.exportChartData = exportChartData;
   window.initializeChart = initializeChart;
+  window.updateChartDisplayConfig = updateChartDisplayConfig;
+  window.toggleChartDisplay = toggleChartDisplay;
 })();
 //# sourceMappingURL=TowerController.js.map

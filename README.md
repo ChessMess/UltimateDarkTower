@@ -6,20 +6,20 @@ I have spent many hours reverse engineering the Tower's protocol in order to cre
 
 ## Table of Contents
 
--   [UltimateDarkTower](#ultimatedarktower)
-    -   [Table of Contents](#table-of-contents)
-    -   [Features](#features)
-    -   [Live Examples](#live-examples)
-    -   [Installation](#installation)
-    -   [Documentation](#documentation)
-        -   [📖 Complete API Reference](#-complete-api-reference)
-        -   [Key Topics Covered:](#key-topics-covered)
-    -   [Development](#development)
-        -   [Building and Testing](#building-and-testing)
-        -   [Project Structure](#project-structure)
-    -   [Browser Support](#browser-support)
-    -   [Known Issues](#known-issues)
-    -   [Community](#community)
+- [UltimateDarkTower](#ultimatedarktower)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Live Examples](#live-examples)
+  - [Installation](#installation)
+  - [Documentation](#documentation)
+    - [📖 Complete API Reference](#-complete-api-reference)
+    - [Key Topics Covered:](#key-topics-covered)
+  - [Development](#development)
+    - [Building and Testing](#building-and-testing)
+    - [Project Structure](#project-structure)
+  - [Browser Support](#browser-support)
+  - [Known Issues](#known-issues)
+  - [Community](#community)
 
 ## Features
 

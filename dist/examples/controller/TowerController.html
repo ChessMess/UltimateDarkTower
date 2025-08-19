@@ -864,6 +864,34 @@
                       <i class="fas fa-download mr-1"></i>Export
                     </button>
                   </div>
+                  <!-- Chart Type Selection -->
+                  <div class="flex flex-wrap items-center justify-center gap-4 p-3 bg-gray-700 rounded-lg">
+                    <span class="text-sm font-semibold text-white">Display:</span>
+                    <div class="flex items-center space-x-1">
+                      <input type="checkbox" id="chart-show-ir-beam" checked
+                        onchange="toggleChartDisplay('chart-show-ir-beam', 'showIrBeam')" class="tower-checkbox" />
+                      <label for="chart-show-ir-beam" class="text-white text-sm">IR Beam</label>
+                      <span class="inline-block w-3 h-1 ml-1 rounded-full" style="background-color: #f97316;"></span>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                      <input type="checkbox" id="chart-show-drum1"
+                        onchange="toggleChartDisplay('chart-show-drum1', 'showDrum1')" class="tower-checkbox" />
+                      <label for="chart-show-drum1" class="text-white text-sm">Drum 1</label>
+                      <span class="inline-block w-3 h-1 ml-1 rounded-full" style="background-color: #3b82f6;"></span>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                      <input type="checkbox" id="chart-show-drum2"
+                        onchange="toggleChartDisplay('chart-show-drum2', 'showDrum2')" class="tower-checkbox" />
+                      <label for="chart-show-drum2" class="text-white text-sm">Drum 2</label>
+                      <span class="inline-block w-3 h-1 ml-1 rounded-full" style="background-color: #10b981;"></span>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                      <input type="checkbox" id="chart-show-drum3"
+                        onchange="toggleChartDisplay('chart-show-drum3', 'showDrum3')" class="tower-checkbox" />
+                      <label for="chart-show-drum3" class="text-white text-sm">Drum 3</label>
+                      <span class="inline-block w-3 h-1 ml-1 rounded-full" style="background-color: #f59e0b;"></span>
+                    </div>
+                  </div>
 
                   <!-- Chart Container -->
                   <div class="chart-container bg-white rounded-lg p-4" style="position: relative; height: 400px;">

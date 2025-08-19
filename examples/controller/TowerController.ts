@@ -21,7 +21,7 @@ import UltimateDarkTower, {
 } from '../../src';
 import { logger, DOMOutput, ConsoleOutput } from '../../src/udtLogger';
 import { rtdt_pack_state, rtdt_unpack_state, type TowerState } from '../../src/udtTowerState';
-import { createDefaultTowerState } from '../../src/udtHelpers';
+import { createDefaultTowerState, parseDifferentialReadings, type ParsedDifferentialReadings } from '../../src/udtHelpers';
 
 const Tower = new UltimateDarkTower();
 
@@ -32,11 +32,29 @@ let sharedDOMOutput: DOMOutput;
 interface DifferentialReading {
   timestamp: number;
   voltage: number;
+  irBeam: number;
+  drum1: number;
+  drum2: number;
+  drum3: number;
   rawData: Uint8Array;
+}
+
+// Chart display configuration
+interface ChartDisplayConfig {
+  showIrBeam: boolean;
+  showDrum1: boolean;
+  showDrum2: boolean;
+  showDrum3: boolean;
 }
 
 let differentialChart: any = null;
 let differentialReadings: DifferentialReading[] = [];
+let chartDisplayConfig: ChartDisplayConfig = {
+  showIrBeam: true,   // Default to showing IR beam
+  showDrum1: false,
+  showDrum2: false,
+  showDrum3: false
+};
 let isCollectingData: boolean = false;
 let chartTimeWindow: number = 30; // seconds
 let lastChartUpdate: number = 0;
@@ -305,42 +323,46 @@ Tower.onTowerStateUpdate = onTowerStateUpdate;
 // Tower response handler for differential readings
 const handleTowerResponse = (response: Uint8Array) => {
   if (!isCollectingData || response.length === 0) return;
-  
+
   // Check if this is a differential reading (command value 6)
   const commandValue = response[0];
   if (commandValue === 6) { // TC.DIFFERENTIAL_READINGS value
-    const timestamp = Date.now();
-    
-    // Parse voltage from response (assuming it's in bytes 1-2 as 16-bit value)
-    let voltage = 0;
-    if (response.length >= 3) {
-      voltage = (response[1] << 8) | response[2]; // Convert to 16-bit value
+    // Use the new helper function to parse individual readings
+    const parsedReadings = parseDifferentialReadings(response);
+
+    if (parsedReadings) {
+      // Calculate combined voltage for backward compatibility
+      const voltage = parsedReadings.irBeam + parsedReadings.drum1 + parsedReadings.drum2 + parsedReadings.drum3;
+
+      const reading: DifferentialReading = {
+        timestamp: parsedReadings.timestamp,
+        voltage,
+        irBeam: parsedReadings.irBeam,
+        drum1: parsedReadings.drum1,
+        drum2: parsedReadings.drum2,
+        drum3: parsedReadings.drum3,
+        rawData: parsedReadings.rawData
+      };
+
+      addDifferentialReading(reading);
+      logger.debug(`Diff readings IR: ${parsedReadings.irBeam}, D1: ${parsedReadings.drum1}, D2: ${parsedReadings.drum2}, D3: ${parsedReadings.drum3}`, '[Charts]');
     }
-    
-    const reading: DifferentialReading = {
-      timestamp,
-      voltage,
-      rawData: new Uint8Array(response)
-    };
-    
-    addDifferentialReading(reading);
-    logger.debug(`Differential reading: ${voltage} at ${new Date(timestamp).toLocaleTimeString()}`, '[Charts]');
   }
 };
 
 // Add differential reading to storage
 const addDifferentialReading = (reading: DifferentialReading) => {
   differentialReadings.push(reading);
-  
+
   // Remove old readings outside time window
   const cutoffTime = Date.now() - (chartTimeWindow * 1000);
   differentialReadings = differentialReadings.filter(r => r.timestamp > cutoffTime);
-  
+
   // Limit total data points
   if (differentialReadings.length > MAX_DATA_POINTS) {
     differentialReadings = differentialReadings.slice(-MAX_DATA_POINTS);
   }
-  
+
   // Update chart (throttled)
   const now = Date.now();
   if (now - lastChartUpdate > CHART_UPDATE_THROTTLE) {
@@ -360,7 +382,7 @@ const setupDifferentialReadingsHandler = () => {
       if (originalCallback) {
         originalCallback(response);
       }
-      
+
       // Handle differential readings
       handleTowerResponse(response);
     };
@@ -1930,24 +1952,63 @@ const initializeVolumeDisplay = () => {
 // Chart.js initialization and management functions
 const initializeChart = () => {
   if (differentialChart) return; // Already initialized
-  
+
   const ctx = document.getElementById('differential-chart') as HTMLCanvasElement;
   if (!ctx) return;
-  
+
   differentialChart = new (window as any).Chart(ctx, {
     type: 'line',
     data: {
-      datasets: [{
-        label: 'Differential Voltage',
-        data: [],
-        borderColor: '#f97316',
-        backgroundColor: 'rgba(249, 115, 22, 0.1)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.1,
-        pointRadius: 1,
-        pointHoverRadius: 4
-      }]
+      datasets: [
+        {
+          label: 'IR Beam',
+          data: [],
+          borderColor: '#f97316',
+          backgroundColor: 'rgba(249, 115, 22, 0.1)',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.1,
+          pointRadius: 1,
+          pointHoverRadius: 4,
+          hidden: !chartDisplayConfig.showIrBeam
+        },
+        {
+          label: 'Drum 1',
+          data: [],
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.1,
+          pointRadius: 1,
+          pointHoverRadius: 4,
+          hidden: !chartDisplayConfig.showDrum1
+        },
+        {
+          label: 'Drum 2',
+          data: [],
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.1,
+          pointRadius: 1,
+          pointHoverRadius: 4,
+          hidden: !chartDisplayConfig.showDrum2
+        },
+        {
+          label: 'Drum 3',
+          data: [],
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245, 158, 11, 0.1)',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.1,
+          pointRadius: 1,
+          pointHoverRadius: 4,
+          hidden: !chartDisplayConfig.showDrum3
+        }
+      ]
     },
     options: {
       responsive: true,
@@ -1977,19 +2038,25 @@ const initializeChart = () => {
       plugins: {
         legend: {
           display: true,
-          position: 'top'
+          position: 'top',
+          labels: {
+            filter: function(legendItem: any, chartData: any) {
+              const dataset = chartData.datasets[legendItem.datasetIndex];
+              return !dataset.hidden;
+            }
+          }
         },
         tooltip: {
           mode: 'nearest',
           intersect: false,
           callbacks: {
-            title: function(context: any) {
+            title: function (context: any) {
               const date = new Date(context[0].parsed.x);
               const minutes = date.getMinutes().toString().padStart(2, '0');
               const seconds = date.getSeconds().toString().padStart(2, '0');
               return `${minutes}:${seconds}`;
             },
-            label: function(context: any) {
+            label: function (context: any) {
               return `Voltage: ${context.parsed.y.toFixed(2)}`;
             }
           }
@@ -2006,17 +2073,44 @@ const initializeChart = () => {
 
 const updateChart = () => {
   if (!differentialChart) return;
-  
+
   // Prepare data for Chart.js (filter by time window)
   const cutoffTime = Date.now() - (chartTimeWindow * 1000);
   const filteredReadings = differentialReadings.filter(r => r.timestamp > cutoffTime);
-  
-  const chartData = filteredReadings.map(reading => ({
+
+  // Prepare data for each dataset
+  const irBeamData = filteredReadings.map(reading => ({
     x: reading.timestamp,
-    y: reading.voltage
+    y: reading.irBeam
   }));
-  
-  differentialChart.data.datasets[0].data = chartData;
+
+  const drum1Data = filteredReadings.map(reading => ({
+    x: reading.timestamp,
+    y: reading.drum1
+  }));
+
+  const drum2Data = filteredReadings.map(reading => ({
+    x: reading.timestamp,
+    y: reading.drum2
+  }));
+
+  const drum3Data = filteredReadings.map(reading => ({
+    x: reading.timestamp,
+    y: reading.drum3
+  }));
+
+  // Update each dataset
+  differentialChart.data.datasets[0].data = irBeamData;
+  differentialChart.data.datasets[1].data = drum1Data;
+  differentialChart.data.datasets[2].data = drum2Data;
+  differentialChart.data.datasets[3].data = drum3Data;
+
+  // Update visibility based on current display configuration
+  differentialChart.data.datasets[0].hidden = !chartDisplayConfig.showIrBeam;
+  differentialChart.data.datasets[1].hidden = !chartDisplayConfig.showDrum1;
+  differentialChart.data.datasets[2].hidden = !chartDisplayConfig.showDrum2;
+  differentialChart.data.datasets[3].hidden = !chartDisplayConfig.showDrum3;
+
   differentialChart.update('none'); // No animation for real-time updates
 };
 
@@ -2025,21 +2119,21 @@ const updateChartStatistics = () => {
   const statsLatest = document.getElementById('chart-stats-latest');
   const statsMin = document.getElementById('chart-stats-min');
   const statsMax = document.getElementById('chart-stats-max');
-  
+
   if (!statsPoints || !statsLatest || !statsMin || !statsMax) return;
-  
+
   // Filter by current time window
   const cutoffTime = Date.now() - (chartTimeWindow * 1000);
   const filteredReadings = differentialReadings.filter(r => r.timestamp > cutoffTime);
-  
+
   statsPoints.textContent = filteredReadings.length.toString();
-  
+
   if (filteredReadings.length > 0) {
     const latest = filteredReadings[filteredReadings.length - 1];
     const voltages = filteredReadings.map(r => r.voltage);
     const minVoltage = Math.min(...voltages);
     const maxVoltage = Math.max(...voltages);
-    
+
     statsLatest.textContent = latest.voltage.toFixed(2);
     statsMin.textContent = minVoltage.toFixed(2);
     statsMax.textContent = maxVoltage.toFixed(2);
@@ -2060,7 +2154,7 @@ const updateChartStatus = (message: string) => {
 const updateChartDataCollectionButton = () => {
   const button = document.getElementById('chart-start-stop');
   if (!button) return;
-  
+
   if (isCollectingData) {
     button.innerHTML = '<i class="fas fa-stop mr-1"></i>Stop';
     button.classList.remove('tower-button');
@@ -2080,18 +2174,22 @@ const toggleDataCollection = () => {
     updateChartStatus('Tower not connected');
     return;
   }
-  
+
   isCollectingData = !isCollectingData;
   updateChartDataCollectionButton();
-  
+
   if (isCollectingData) {
     // Enable differential readings logging in the tower
-    (Tower as any).bleConnection.loggingConfig.DIFFERENTIAL_READINGS = true;
+    if ((Tower as any).bleConnection && (Tower as any).bleConnection.loggingConfig) {
+      (Tower as any).bleConnection.loggingConfig.DIFFERENTIAL_READINGS = true;
+    }
     updateChartStatus('Logging differential readings...');
     logger.info('Started differential readings data collection', '[Charts]');
   } else {
     // Disable differential readings logging to save bandwidth
-    (Tower as any).bleConnection.loggingConfig.DIFFERENTIAL_READINGS = false;
+    if ((Tower as any).bleConnection && (Tower as any).bleConnection.loggingConfig) {
+      (Tower as any).bleConnection.loggingConfig.DIFFERENTIAL_READINGS = false;
+    }
     updateChartStatus('Stopped logging differential readings');
     logger.info('Stopped differential readings data collection', '[Charts]');
   }
@@ -2100,29 +2198,55 @@ const toggleDataCollection = () => {
 const updateTimeWindow = () => {
   const select = document.getElementById('chart-time-window') as HTMLSelectElement;
   if (!select) return;
-  
+
   chartTimeWindow = parseInt(select.value);
-  
+
   // Update chart to show new time window
   if (differentialChart) {
     updateChart();
     updateChartStatistics();
   }
-  
+
   logger.info(`Chart time window updated to ${chartTimeWindow} seconds`, '[Charts]');
 };
 
 const clearChartData = () => {
   differentialReadings = [];
-  
+
   if (differentialChart) {
-    differentialChart.data.datasets[0].data = [];
+    differentialChart.data.datasets.forEach(dataset => {
+      dataset.data = [];
+    });
     differentialChart.update();
   }
-  
+
   updateChartStatistics();
   updateChartStatus(Tower.isConnected ? 'Data cleared - ready to collect' : 'Data cleared - connect to tower');
   logger.info('Chart data cleared', '[Charts]');
+};
+
+// Chart display configuration functions
+const updateChartDisplayConfig = (type: keyof ChartDisplayConfig, show: boolean) => {
+  chartDisplayConfig[type] = show;
+
+  if (differentialChart) {
+    // Update chart visibility immediately
+    const datasetIndex = type === 'showIrBeam' ? 0 :
+      type === 'showDrum1' ? 1 :
+        type === 'showDrum2' ? 2 : 3;
+
+    differentialChart.data.datasets[datasetIndex].hidden = !show;
+    differentialChart.update('none');
+  }
+
+  logger.info(`Chart display updated: ${type} = ${show}`, '[Charts]');
+};
+
+const toggleChartDisplay = (elementId: string, configKey: keyof ChartDisplayConfig) => {
+  const checkbox = document.getElementById(elementId) as HTMLInputElement;
+  if (!checkbox) return;
+
+  updateChartDisplayConfig(configKey, checkbox.checked);
 };
 
 const exportChartData = () => {
@@ -2130,11 +2254,11 @@ const exportChartData = () => {
     alert('No data to export');
     return;
   }
-  
-  // Create CSV content
-  const headers = ['Timestamp', 'Time', 'Voltage', 'Raw Data'];
+
+  // Create CSV content with individual readings
+  const headers = ['Timestamp', 'Time', 'Combined_Voltage', 'IR_Beam', 'Drum1_Top', 'Drum2_Middle', 'Drum3_Bottom', 'Raw_Data'];
   const csvRows = [headers.join(',')];
-  
+
   differentialReadings.forEach(reading => {
     const timeString = new Date(reading.timestamp).toISOString();
     const rawDataHex = Array.from(reading.rawData).map(b => b.toString(16).padStart(2, '0')).join(' ');
@@ -2142,13 +2266,17 @@ const exportChartData = () => {
       reading.timestamp,
       timeString,
       reading.voltage,
+      reading.irBeam,
+      reading.drum1,
+      reading.drum2,
+      reading.drum3,
       `"${rawDataHex}"`
     ];
     csvRows.push(row.join(','));
   });
-  
+
   const csvContent = csvRows.join('\n');
-  
+
   // Create download
   const blob = new Blob([csvContent], { type: 'text/csv' });
   const url = window.URL.createObjectURL(blob);
@@ -2159,8 +2287,8 @@ const exportChartData = () => {
   a.click();
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
-  
-  logger.info(`Exported ${differentialReadings.length} differential readings`, '[Charts]');
+
+  logger.info(`Exported ${differentialReadings.length} differential readings with individual channel data`, '[Charts]');
 };
 
 // Expose functions globally for HTML onclick handlers
@@ -2209,3 +2337,5 @@ const exportChartData = () => {
 (window as any).clearChartData = clearChartData;
 (window as any).exportChartData = exportChartData;
 (window as any).initializeChart = initializeChart;
+(window as any).updateChartDisplayConfig = updateChartDisplayConfig;
+(window as any).toggleChartDisplay = toggleChartDisplay;
