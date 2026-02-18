@@ -31,7 +31,7 @@ The tower converts `(layer * 4) + position` to LED driver channels 0-23:
 
 ```
 Layer 0: Top Ring    → Channels [0, 3, 2, 1]    (N, E, S, W)
-Layer 1: Middle Ring → Channels [7, 6, 5, 4]    (N, E, S, W)  
+Layer 1: Middle Ring → Channels [7, 6, 5, 4]    (N, E, S, W)
 Layer 2: Bottom Ring → Channels [10, 9, 8, 11]  (N, E, S, W)
 Layer 3: Ledge       → Channels [12, 13, 14, 15] (NE, SE, SW, NW)
 Layer 4: Base1       → Channels [16, 17, 18, 19] (NE, SE, SW, NW)
@@ -295,3 +295,22 @@ This packet structure is used by:
 -   Response processing - Extracts state from tower responses
 
 The 20th byte (command type) is added by the command layer, while the tower state functions handle the core 19-byte data payload that contains all the actual tower state information.
+
+## Noble (Node.js) Platform Notes
+
+### macOS: Service Re-Discovery Invalidates Characteristic References
+
+On macOS, calling `discoverSomeServicesAndCharacteristicsAsync()` multiple times on the same peripheral causes a subtle but critical bug. CoreBluetooth's `didDiscoverServices:` callback returns `peripheral.services` — the **cumulative** list of all previously discovered services, not just the newly requested ones. Noble then recreates `Characteristic` objects for every returned service, replacing entries in its internal `_characteristics` map. Any previously saved characteristic reference (e.g., the UART RX characteristic with a `'data'` event listener) becomes stale — Noble routes incoming notification data to the new object, and the old listener never fires.
+
+**Symptoms:** Zero BLE data received (`rxDataCount = 0`), no errors logged, `subscribeAsync()` completes successfully, writes work fine, GATT reports connected. The tower appears completely unresponsive despite being connected.
+
+**Solution:** Discover all services and characteristics in a single `discoverAllServicesAndCharacteristicsAsync()` call during `connect()`, then reuse the cached characteristic references for subsequent operations like reading Device Information Service (DIS) attributes. Never call service/characteristic discovery a second time after subscribing to notifications.
+
+See the `IMPORTANT` comment in `NodeBluetoothAdapter.connect()` for implementation details.
+
+**Relevant Noble documentation:**
+
+-   [Noble README — Characteristic Methods](https://github.com/stoprocent/noble#characteristic-methods) — `subscribeAsync()`, `data` event, `notificationsAsync()` API
+-   [Noble README — Peripheral Methods](https://github.com/stoprocent/noble#peripheral-methods) — `discoverAllServicesAndCharacteristicsAsync()`, `discoverSomeServicesAndCharacteristicsAsync()`
+-   [Refactored notifications commit (c0222c6)](https://github.com/stoprocent/noble/commit/c0222c6c17cac4fae7e1bdfd9f7e767e24df90ea) — Changed `'read'` event to `'data'` event, added `notificationsAsync()` async iterator
+-   [Apple CoreBluetooth — discoverServices:](<https://developer.apple.com/documentation/corebluetooth/cbperipheral/discoverservices(_:)>) — Documents that previously discovered services accumulate on `peripheral.services`

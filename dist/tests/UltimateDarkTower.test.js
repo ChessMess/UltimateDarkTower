@@ -8,40 +8,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const UltimateDarkTower_1 = __importDefault(require("../src/UltimateDarkTower"));
 const udtConstants_1 = require("../src/udtConstants");
-// Mock the web bluetooth API since it's not available in Node.js test environment
-const mockCharacteristic = {
-    writeValue: jest.fn().mockResolvedValue(undefined),
-    addEventListener: jest.fn(),
-    startNotifications: jest.fn().mockResolvedValue(undefined),
-};
-const mockService = {
-    getCharacteristic: jest.fn().mockResolvedValue(mockCharacteristic),
-};
-const mockServer = {
-    getPrimaryService: jest.fn().mockResolvedValue(mockService),
-};
-const mockBluetoothDevice = {
-    gatt: {
-        connect: jest.fn().mockResolvedValue(mockServer),
-        disconnect: jest.fn().mockResolvedValue(undefined),
-        connected: true,
-    },
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-};
-// Mock navigator.bluetooth
-Object.defineProperty(global.navigator, 'bluetooth', {
-    value: {
-        requestDevice: jest.fn().mockResolvedValue(mockBluetoothDevice),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-    },
-    configurable: true,
-});
+const MockBluetoothAdapter_1 = require("./mocks/MockBluetoothAdapter");
 describe('UltimateDarkTower', () => {
     let darkTower;
+    let mockAdapter;
     beforeEach(() => {
-        darkTower = new UltimateDarkTower_1.default();
+        mockAdapter = new MockBluetoothAdapter_1.MockBluetoothAdapter();
+        darkTower = new UltimateDarkTower_1.default({ adapter: mockAdapter });
         jest.clearAllMocks();
     });
     afterEach(() => {
@@ -376,7 +349,6 @@ describe('UltimateDarkTower', () => {
             }
         });
         test('should queue commands sequentially', async () => {
-            const writeValueSpy = jest.spyOn(mockCharacteristic, 'writeValue');
             // Send multiple commands rapidly
             const promises = [
                 darkTower.playSound(1),
@@ -384,7 +356,7 @@ describe('UltimateDarkTower', () => {
                 darkTower.playSound(3)
             ];
             // Commands should be queued but only first one executed immediately
-            expect(writeValueSpy).toHaveBeenCalledTimes(1);
+            expect(mockAdapter.writeCalls).toBe(1);
             // Simulate tower responses to progress the queue
             const towerCommands = darkTower['towerCommands'];
             towerCommands.onTowerResponse(); // Complete first command
@@ -393,10 +365,9 @@ describe('UltimateDarkTower', () => {
             // Wait for all commands to complete
             await Promise.all(promises);
             // All commands should have been executed
-            expect(writeValueSpy).toHaveBeenCalledTimes(3);
+            expect(mockAdapter.writeCalls).toBe(3);
         });
         test('should handle command timeout gracefully', async () => {
-            const writeValueSpy = jest.spyOn(mockCharacteristic, 'writeValue');
             const loggerSpy = jest.spyOn(darkTower['logger'], 'warn');
             // Mock a command that will timeout (don't trigger response)
             jest.useFakeTimers();
@@ -404,7 +375,7 @@ describe('UltimateDarkTower', () => {
             // Fast-forward time to trigger timeout (30 seconds)
             jest.advanceTimersByTime(30000);
             await promise; // Should complete despite timeout
-            expect(writeValueSpy).toHaveBeenCalledTimes(1);
+            expect(mockAdapter.writeCalls).toBe(1);
             expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('Command timeout after 30000ms'), '[UDT]');
             jest.useRealTimers();
         });

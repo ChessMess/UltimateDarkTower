@@ -26,15 +26,15 @@ class UdtTowerCommands {
      * @returns Promise that resolves when command is sent successfully
      */
     async sendTowerCommandDirect(command) {
-        var _a, _b, _c;
+        var _a;
         try {
             const cmdStr = (0, udtHelpers_1.commandToPacketString)(command);
             this.deps.logDetail && this.deps.logger.debug(`${cmdStr}`, '[UDT][CMD]');
-            if (!this.deps.bleConnection.txCharacteristic || !this.deps.bleConnection.isConnected) {
+            if (!this.deps.bleConnection.isConnected) {
                 this.deps.logger.warn('Tower is not connected', '[UDT][CMD]');
                 return;
             }
-            await this.deps.bleConnection.txCharacteristic.writeValue(command);
+            await this.deps.bleConnection.writeCommand(command);
             this.deps.retrySendCommandCount.value = 0;
             this.deps.bleConnection.lastSuccessfulCommand = Date.now();
         }
@@ -47,7 +47,8 @@ class UdtTowerCommands {
             const isDisconnected = errorMsg.includes('Cannot read properties of null') ||
                 errorMsg.includes('GATT Server is disconnected') ||
                 errorMsg.includes('Device is not connected') ||
-                !((_c = (_b = this.deps.bleConnection.TowerDevice) === null || _b === void 0 ? void 0 : _b.gatt) === null || _c === void 0 ? void 0 : _c.connected);
+                errorMsg.includes('BluetoothConnectionError') ||
+                !this.deps.bleConnection.isConnected;
             if (isDisconnected) {
                 this.deps.logger.warn('Disconnect detected during command send', '[UDT][CMD]');
                 await this.deps.bleConnection.disconnect();

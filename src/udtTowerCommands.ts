@@ -71,11 +71,11 @@ export class UdtTowerCommands {
         try {
             const cmdStr = commandToPacketString(command);
             this.deps.logDetail && this.deps.logger.debug(`${cmdStr}`, '[UDT][CMD]');
-            if (!this.deps.bleConnection.txCharacteristic || !this.deps.bleConnection.isConnected) {
+            if (!this.deps.bleConnection.isConnected) {
                 this.deps.logger.warn('Tower is not connected', '[UDT][CMD]');
                 return;
             }
-            await this.deps.bleConnection.txCharacteristic.writeValue(command);
+            await this.deps.bleConnection.writeCommand(command);
             this.deps.retrySendCommandCount.value = 0;
             this.deps.bleConnection.lastSuccessfulCommand = Date.now();
         } catch (error) {
@@ -88,7 +88,8 @@ export class UdtTowerCommands {
             const isDisconnected = errorMsg.includes('Cannot read properties of null') ||
                 errorMsg.includes('GATT Server is disconnected') ||
                 errorMsg.includes('Device is not connected') ||
-                !this.deps.bleConnection.TowerDevice?.gatt?.connected;
+                errorMsg.includes('BluetoothConnectionError') ||
+                !this.deps.bleConnection.isConnected;
 
             if (isDisconnected) {
                 this.deps.logger.warn('Disconnect detected during command send', '[UDT][CMD]');

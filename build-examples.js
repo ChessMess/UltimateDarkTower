@@ -33,6 +33,7 @@ async function buildExamples() {
             sourcemap: true,
             minify: false,
             tsconfig: "tsconfig.json",
+            external: ["@stoprocent/noble"],
         });
 
         // Build TowerGame
@@ -46,6 +47,7 @@ async function buildExamples() {
             sourcemap: true,
             minify: false,
             tsconfig: "tsconfig.json",
+            external: ["@stoprocent/noble"],
         });
 
         // Copy HTML files from source to dist
