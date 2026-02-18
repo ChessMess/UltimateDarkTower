@@ -5,39 +5,31 @@ A comprehensive reference guide for the UltimateDarkTower library - your complet
 ## Table of Contents
 
 1. [Quick Start](#quick-start)
-2. [Connection Management](#connection-management)
-3. [Tower Control](#tower-control)
-4. [Glyph System](#glyph-system)
-5. [Seal Management](#seal-management)
-6. [Logging System](#logging-system)
-7. [Event Handling](#event-handling)
-8. [Types and Constants](#types-and-constants)
-9. [Best Practices](#best-practices)
-10. [Common Patterns](#common-patterns)
-11. [Troubleshooting](#troubleshooting)
+2. [Constructor & Configuration](#constructor--configuration)
+3. [Bluetooth Adapters](#bluetooth-adapters)
+4. [Connection Management](#connection-management)
+5. [Tower Control](#tower-control)
+6. [Glyph System](#glyph-system)
+7. [Seal Management](#seal-management)
+8. [Logging System](#logging-system)
+9. [Event Handling](#event-handling)
+10. [Types and Constants](#types-and-constants)
+11. [Best Practices](#best-practices)
+12. [Common Patterns](#common-patterns)
+13. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Quick Start
 
-Web Bluetooth is required for this library to function.
-
-**✅ Supported Browsers:**
-
--   Chrome (desktop and Android)
--   Microsoft Edge
--   Samsung Internet
-
-**📱 iOS Support:** Use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055) when on iPhone or iPads as Chrome/Safari does not have Web Bluetooth support on Apples platform at the moment.
-
-**❌ Not Supported:** Firefox, Safari ([compatibility details](https://caniuse.com/?search=web%20bluetooth))
+The library supports multiple platforms: **browsers** (Web Bluetooth), **Node.js** (`@stoprocent/noble`), **Electron**, and **custom platforms** (React Native, etc.) via the adapter pattern.
 
 ### Basic Setup and Usage
 
 ```typescript
-import UltimateDarkTower, { ConsoleOutput } from 'ultimatedarktower';
+import UltimateDarkTower from 'ultimatedarktower';
 
-// Create tower instance
+// Create tower instance (auto-detects platform)
 const tower = new UltimateDarkTower();
 
 // Set up event handlers
@@ -68,6 +60,159 @@ async function cleanup() {
 2. **Calibrate** - Determine drum positions (required before other operations)
 3. **Use** - Control lights, sounds, and rotation
 4. **Cleanup** - Properly disconnect when finished
+
+---
+
+## Constructor & Configuration
+
+### `new UltimateDarkTower(config?: UltimateDarkTowerConfig)`
+
+Creates a new tower instance with optional configuration.
+
+```typescript
+interface UltimateDarkTowerConfig {
+    /** Platform to use for Bluetooth communication (auto-detect by default) */
+    platform?: BluetoothPlatform;
+    /** Custom Bluetooth adapter (for testing or custom platforms like React Native) */
+    adapter?: IBluetoothAdapter;
+}
+```
+
+#### Auto-detect (default)
+
+```typescript
+// Platform is detected automatically at runtime
+const tower = new UltimateDarkTower();
+```
+
+#### Explicit Platform
+
+```typescript
+import UltimateDarkTower, { BluetoothPlatform } from 'ultimatedarktower';
+
+// Force Web Bluetooth
+const tower = new UltimateDarkTower({ platform: BluetoothPlatform.WEB });
+
+// Force Node.js Bluetooth
+const tower = new UltimateDarkTower({ platform: BluetoothPlatform.NODE });
+```
+
+#### Custom Adapter
+
+```typescript
+import UltimateDarkTower, { IBluetoothAdapter } from 'ultimatedarktower';
+
+const tower = new UltimateDarkTower({ adapter: myCustomAdapter });
+```
+
+### `BluetoothPlatform` Enum
+
+```typescript
+enum BluetoothPlatform {
+    WEB = 'web', // Browser Web Bluetooth API
+    NODE = 'node', // Node.js @stoprocent/noble library
+    AUTO = 'auto', // Auto-detect (default)
+}
+```
+
+---
+
+## Bluetooth Adapters
+
+The library uses an adapter pattern to abstract Bluetooth operations. Two adapters are included, and you can implement custom adapters for other platforms.
+
+### `IBluetoothAdapter` Interface
+
+All adapters implement this interface:
+
+```typescript
+interface IBluetoothAdapter {
+    connect(deviceName: string, serviceUuids: string[]): Promise<void>;
+    disconnect(): Promise<void>;
+    isConnected(): boolean;
+    isGattConnected(): boolean;
+    writeCharacteristic(data: Uint8Array): Promise<void>;
+    onCharacteristicValueChanged(callback: (data: Uint8Array) => void): void;
+    onDisconnect(callback: () => void): void;
+    onBluetoothAvailabilityChanged(callback: (available: boolean) => void): void;
+    readDeviceInformation(): Promise<DeviceInformation>;
+    cleanup(): Promise<void>;
+}
+```
+
+### Built-in Adapters
+
+| Adapter                | Platform                                 | Auto-detected |
+| ---------------------- | ---------------------------------------- | ------------- |
+| `WebBluetoothAdapter`  | Browser (Chrome, Edge, Samsung Internet) | Yes           |
+| `NodeBluetoothAdapter` | Node.js (requires `@stoprocent/noble`)   | Yes           |
+
+### Custom Adapter Example (React Native)
+
+```typescript
+import { IBluetoothAdapter, DeviceInformation } from 'ultimatedarktower';
+import { BleManager } from 'react-native-ble-plx';
+
+class ReactNativeAdapter implements IBluetoothAdapter {
+    private manager = new BleManager();
+
+    async connect(deviceName: string, serviceUuids: string[]): Promise<void> {
+        // Scan and connect using react-native-ble-plx
+    }
+
+    async writeCharacteristic(data: Uint8Array): Promise<void> {
+        // Write data to TX characteristic
+    }
+
+    // ... implement remaining methods
+}
+
+const tower = new UltimateDarkTower({ adapter: new ReactNativeAdapter() });
+```
+
+### Error Types
+
+Platform-agnostic error classes for consistent error handling:
+
+```typescript
+import {
+    BluetoothError, // Base error class
+    BluetoothConnectionError, // Connection failures
+    BluetoothDeviceNotFoundError, // Device not found during scan
+    BluetoothUserCancelledError, // User cancelled device picker (browser)
+    BluetoothTimeoutError, // Scan or operation timeout
+} from 'ultimatedarktower';
+
+try {
+    await tower.connect();
+} catch (error) {
+    if (error instanceof BluetoothDeviceNotFoundError) {
+        console.log('Tower not found - ensure it is powered on');
+    } else if (error instanceof BluetoothUserCancelledError) {
+        console.log('Device selection was cancelled');
+    } else if (error instanceof BluetoothConnectionError) {
+        console.log('Connection failed:', error.message);
+    }
+}
+```
+
+### `BluetoothAdapterFactory`
+
+Creates adapters programmatically:
+
+```typescript
+import { BluetoothAdapterFactory, BluetoothPlatform } from 'ultimatedarktower';
+
+// Auto-detect platform
+const adapter = BluetoothAdapterFactory.create();
+
+// Explicit platform
+const webAdapter = BluetoothAdapterFactory.create(BluetoothPlatform.WEB);
+const nodeAdapter = BluetoothAdapterFactory.create(BluetoothPlatform.NODE);
+
+// Detect current platform
+const platform = BluetoothAdapterFactory.detectPlatform(); // 'web' or 'node'
+```
 
 ---
 
@@ -145,6 +290,34 @@ Returns detailed connection information.
 const status = tower.getConnectionStatus();
 console.log(`Connected: ${status.isConnected}`);
 console.log(`Last heartbeat: ${status.lastHeartbeat}`);
+```
+
+#### `getDeviceInformation(): DeviceInformation`
+
+Returns device information read from the tower's Device Information Service (DIS) during connection.
+
+```typescript
+const info = tower.getDeviceInformation();
+console.log(`Manufacturer: ${info.manufacturerName}`); // "Restoration Games LLC"
+console.log(`Model: ${info.modelNumber}`); // "ReturnToDarkTower"
+console.log(`Hardware: ${info.hardwareRevision}`); // "1.11"
+console.log(`Firmware: ${info.firmwareRevision}`);
+console.log(`Software: ${info.softwareRevision}`); // "1.0.0"
+```
+
+```typescript
+interface DeviceInformation {
+    manufacturerName?: string;
+    modelNumber?: string;
+    serialNumber?: string;
+    hardwareRevision?: string;
+    firmwareRevision?: string;
+    softwareRevision?: string;
+    systemId?: string;
+    ieeeRegulatory?: string;
+    pnpId?: string;
+    lastUpdated?: Date;
+}
 ```
 
 ### Connection Monitoring
@@ -1163,18 +1336,21 @@ class SequenceManager {
 **Issue**: Tower won't connect
 
 ```typescript
-// Check browser support
-if (!navigator.bluetooth) {
-    console.error('Web Bluetooth not supported');
-    // Show error message to user
-}
+import {
+    BluetoothDeviceNotFoundError,
+    BluetoothUserCancelledError,
+    BluetoothConnectionError,
+} from 'ultimatedarktower';
 
-// Check if device is powered on
 try {
     await tower.connect();
 } catch (error) {
-    if (error.message.includes('not found')) {
+    if (error instanceof BluetoothDeviceNotFoundError) {
         console.error('Tower not found - ensure it is powered on and nearby');
+    } else if (error instanceof BluetoothUserCancelledError) {
+        console.error('Device selection was cancelled by user');
+    } else if (error instanceof BluetoothConnectionError) {
+        console.error('Connection failed:', error.message);
     }
 }
 ```
@@ -1290,32 +1466,37 @@ tower.onBatteryLevelNotify = (mv) => {
 
 ---
 
-## Browser Support
+## Platform Support
 
-### Supported Browsers
+### Built-in Support (auto-detected)
 
--   **Chrome** (desktop and Android)
--   **Microsoft Edge**
--   **Samsung Internet**
--   **iOS devices** (via Bluefy app)
+-   **Chrome** (desktop and Android) - Web Bluetooth
+-   **Microsoft Edge** - Web Bluetooth
+-   **Samsung Internet** - Web Bluetooth
+-   **iOS devices** (via Bluefy app) - Web Bluetooth
+-   **Node.js** (Windows, macOS, Linux) - `@stoprocent/noble`
+-   **Electron** - Web Bluetooth or Node.js (auto-detected)
 
-### Unsupported Browsers
+### Custom Adapter Support
 
--   **Firefox** (Web Bluetooth not supported)
--   **Safari** (Web Bluetooth not supported)
+-   **React Native** (iOS & Android) - via `react-native-ble-plx`
+-   **Cordova / Capacitor** - via platform BLE plugins
 
-### Feature Detection
+### Unsupported (no Web Bluetooth)
+
+-   **Firefox**
+-   **Safari**
+
+### Platform Detection
 
 ```typescript
-// Check for Web Bluetooth support
-if (!navigator.bluetooth) {
-    console.error('Web Bluetooth not supported in this browser');
-    // Show alternative instructions or error message
-}
+import { BluetoothAdapterFactory, BluetoothPlatform } from 'ultimatedarktower';
 
-// Check for specific features
-if (!navigator.bluetooth.requestDevice) {
-    console.error('Bluetooth device selection not supported');
+try {
+    const platform = BluetoothAdapterFactory.detectPlatform();
+    console.log(`Detected platform: ${platform}`); // 'web' or 'node'
+} catch (error) {
+    console.error('Platform not supported - provide a custom adapter');
 }
 ```
 

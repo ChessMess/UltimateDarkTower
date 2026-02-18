@@ -1,7 +1,19 @@
 import { type Lights, type TowerSide, type SealIdentifier, type Glyphs } from './udtConstants';
 import { type TowerState } from './udtTowerState';
 import { type LogOutput } from './udtLogger';
-import { type ConnectionStatus } from './udtBleConnection';
+import { type ConnectionStatus, type DeviceInformation } from './udtBleConnection';
+import { type IBluetoothAdapter } from './udtBluetoothAdapter';
+import { BluetoothPlatform } from './udtBluetoothAdapterFactory';
+/**
+ * Configuration options for the UltimateDarkTower class.
+ * All options are optional - the library will auto-detect the platform by default.
+ */
+export interface UltimateDarkTowerConfig {
+    /** Platform to use for Bluetooth communication (auto-detect by default) */
+    platform?: BluetoothPlatform;
+    /** Custom Bluetooth adapter (for testing or custom platforms like React Native) */
+    adapter?: IBluetoothAdapter;
+}
 /**
  * Configuration interface for controlling which tower responses should be logged
  */
@@ -60,7 +72,7 @@ declare class UltimateDarkTower {
     onSkullDrop: (towerSkullCount: number) => void;
     onBatteryLevelNotify: (millivolts: number) => void;
     onTowerStateUpdate: (newState: TowerState, oldState: TowerState, source: string) => void;
-    constructor();
+    constructor(config?: UltimateDarkTowerConfig);
     /**
      * Initialize the logger with default console output
      */
@@ -96,7 +108,6 @@ declare class UltimateDarkTower {
     get performingCalibration(): boolean;
     get performingLongCommand(): boolean;
     get towerSkullDropCount(): number;
-    get txCharacteristic(): any;
     get currentBattery(): number;
     get previousBattery(): number;
     get currentBatteryPercent(): number;
@@ -370,6 +381,11 @@ declare class UltimateDarkTower {
      * @returns {Object} Object with connection details
      */
     getConnectionStatus(): ConnectionStatus;
+    /**
+     * Get device information read from the tower's Device Information Service (DIS)
+     * @returns {DeviceInformation} Object with manufacturer, model, serial, firmware, etc.
+     */
+    getDeviceInformation(): DeviceInformation;
     /**
      * Clean up resources and disconnect properly
      * @returns {Promise<void>} Promise that resolves when cleanup is complete

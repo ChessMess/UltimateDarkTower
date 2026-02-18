@@ -1,4 +1,5 @@
 import { Logger } from './udtLogger';
+import { type IBluetoothAdapter } from './udtBluetoothAdapter';
 export interface TowerEventCallbacks {
     onTowerConnect: () => void;
     onTowerDisconnect: () => void;
@@ -35,9 +36,7 @@ export declare class UdtBleConnection {
     private logger;
     private callbacks;
     private responseProcessor;
-    TowerDevice: any;
-    txCharacteristic: any;
-    rxCharacteristic: any;
+    private bluetoothAdapter;
     isConnected: boolean;
     performingCalibration: boolean;
     performingLongCommand: boolean;
@@ -71,16 +70,23 @@ export declare class UdtBleConnection {
         CALIBRATION_FINISHED: boolean;
         LOG_ALL: boolean;
     };
-    constructor(logger: Logger, callbacks: TowerEventCallbacks);
+    constructor(logger: Logger, callbacks: TowerEventCallbacks, adapter?: IBluetoothAdapter);
     connect(): Promise<void>;
     disconnect(): Promise<void>;
-    onRxCharacteristicValueChanged: (event: Event) => void;
+    /**
+     * Writes a command to the tower via the Bluetooth adapter.
+     * Used by UdtTowerCommands instead of direct characteristic access.
+     */
+    writeCommand(command: Uint8Array): Promise<void>;
+    /**
+     * Processes received data from the RX characteristic (platform-agnostic).
+     * Called by the adapter's onCharacteristicValueChanged callback.
+     */
+    private onRxData;
     private handleTowerStateResponse;
     private logTowerResponse;
-    bleAvailabilityChange: (event: Event & {
-        value: boolean;
-    }) => void;
-    onTowerDeviceDisconnected: (event: Event) => void;
+    private bleAvailabilityChange;
+    private onTowerDeviceDisconnected;
     private handleDisconnection;
     private startConnectionMonitoring;
     private stopConnectionMonitoring;

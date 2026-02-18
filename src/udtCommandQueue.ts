@@ -23,11 +23,11 @@ export class CommandQueue {
     private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
     private isProcessing: boolean = false;
     private readonly timeoutMs: number = 30000; // 30 seconds
-    
+
     constructor(
         private logger: Logger,
         private sendCommandFn: (command: Uint8Array) => Promise<void>
-    ) {}
+    ) { }
 
     /**
      * Enqueue a command for processing
@@ -45,7 +45,7 @@ export class CommandQueue {
 
             this.queue.push(queuedCommand);
             this.logger.debug(`Command queued: ${description || 'unnamed'} (queue size: ${this.queue.length})`, '[UDT]');
-            
+
             // Start processing if not already running
             if (!this.isProcessing) {
                 this.processNext();
@@ -65,7 +65,7 @@ export class CommandQueue {
         this.currentCommand = this.queue.shift()!;
 
         const { id, command, description, reject } = this.currentCommand;
-        
+
         this.logger.debug(`Processing command: ${description || id}`, '[UDT]');
 
         try {
@@ -76,18 +76,18 @@ export class CommandQueue {
 
             // Send the command using the existing sendTowerCommand logic
             await this.sendCommandFn(command);
-            
+
             // Command was sent successfully, now we wait for a response
             // The response will be handled by onResponse() method
-            
+
         } catch (error) {
             // Command failed to send, reject and move to next
             this.clearTimeout();
             this.currentCommand = null;
             this.isProcessing = false;
-            
+
             reject(error as Error);
-            
+
             // Continue processing next command
             this.processNext();
         }
@@ -99,15 +99,15 @@ export class CommandQueue {
     onResponse(): void {
         if (this.currentCommand) {
             this.clearTimeout();
-            
+
             const { resolve, description, id } = this.currentCommand;
             this.logger.debug(`Command completed: ${description || id}`, '[UDT]');
-            
+
             this.currentCommand = null;
             this.isProcessing = false;
-            
+
             resolve();
-            
+
             // Process next command in queue
             this.processNext();
         }
@@ -120,14 +120,14 @@ export class CommandQueue {
         if (this.currentCommand) {
             const { description, id } = this.currentCommand;
             this.logger.warn(`Command timeout after ${this.timeoutMs}ms: ${description || id}`, '[UDT]');
-            
+
             // Don't reject the promise - just log and continue
             // This allows the queue to continue processing even if a command times out
             this.currentCommand.resolve();
-            
+
             this.currentCommand = null;
             this.isProcessing = false;
-            
+
             // Process next command in queue
             this.processNext();
         }
@@ -148,19 +148,19 @@ export class CommandQueue {
      */
     clear(): void {
         this.clearTimeout();
-        
+
         // Reject all pending commands
         this.queue.forEach(cmd => {
             cmd.reject(new Error('Command queue cleared'));
         });
-        
+
         this.queue = [];
         if (this.currentCommand) {
             this.currentCommand.reject(new Error('Command queue cleared'));
         }
         this.currentCommand = null;
         this.isProcessing = false;
-        
+
         this.logger.debug('Command queue cleared', '[UDT]');
     }
 

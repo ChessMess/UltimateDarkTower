@@ -5,12 +5,9 @@ const udtConstants_1 = require("./udtConstants");
 const udtTowerResponse_1 = require("./udtTowerResponse");
 const udtHelpers_1 = require("./udtHelpers");
 const udtTowerState_1 = require("./udtTowerState");
+const udtBluetoothAdapterFactory_1 = require("./udtBluetoothAdapterFactory");
 class UdtBleConnection {
-    constructor(logger, callbacks) {
-        // BLE connection objects
-        this.TowerDevice = null;
-        this.txCharacteristic = null;
-        this.rxCharacteristic = null;
+    constructor(logger, callbacks, adapter) {
         // Connection state
         this.isConnected = false;
         this.performingCalibration = false;
@@ -50,92 +47,26 @@ class UdtBleConnection {
             CALIBRATION_FINISHED: true,
             LOG_ALL: false,
         };
-        this.onRxCharacteristicValueChanged = (event) => {
-            this.lastSuccessfulCommand = Date.now();
-            // @ts-ignore-next-line
-            const target = event.target;
-            let receivedData = new Uint8Array(target.value.byteLength);
-            for (var i = 0; i < target.value.byteLength; i++) {
-                receivedData[i] = target.value.getUint8(i);
-            }
-            const { cmdKey } = this.responseProcessor.getTowerCommand(receivedData[0]);
-            const shouldLogCommand = this.logTowerResponses &&
-                this.responseProcessor.shouldLogResponse(cmdKey, this.logTowerResponseConfig) &&
-                (!this.responseProcessor.isBatteryResponse(cmdKey) || this.batteryNotifyEnabled);
-            if (shouldLogCommand) {
-                this.logger.info(`${cmdKey}`, '[UDT][BLE][RCVD]');
-            }
-            if (this.logTowerResponses) {
-                this.logTowerResponse(receivedData);
-            }
-            if (this.responseProcessor.isTowerStateResponse(cmdKey)) {
-                this.handleTowerStateResponse(receivedData);
-            }
-            if (this.responseProcessor.isBatteryResponse(cmdKey)) {
-                this.lastBatteryHeartbeat = Date.now();
-                const millivolts = (0, udtHelpers_1.getMilliVoltsFromTowerResponse)(receivedData);
-                const batteryPercentage = (0, udtHelpers_1.milliVoltsToPercentage)(millivolts);
-                const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
-                const batteryNotifyFrequencyPassed = ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
-                const shouldNotify = this.batteryNotifyEnabled && (this.batteryNotifyOnValueChangeOnly ?
-                    (didBatteryLevelChange || this.lastBatteryPercentage === "") :
-                    batteryNotifyFrequencyPassed);
-                if (shouldNotify) {
-                    this.logger.info(`${this.responseProcessor.commandToString(receivedData).join(' ')}`, '[UDT][BLE]');
-                    this.lastBatteryNotification = Date.now();
-                    this.lastBatteryPercentage = batteryPercentage;
-                    this.callbacks.onBatteryLevelNotify(millivolts);
-                }
-            }
-            else {
-                // For non-battery responses, notify the command queue
-                // This includes tower state responses, command acknowledgments, etc.
-                if (this.callbacks.onTowerResponse) {
-                    this.callbacks.onTowerResponse(receivedData);
-                }
-            }
-        };
-        this.bleAvailabilityChange = (event) => {
-            this.logger.info('Bluetooth availability changed', '[UDT][BLE]');
-            const availability = event.value;
-            if (!availability && this.isConnected) {
-                this.logger.warn('Bluetooth became unavailable - handling disconnection', '[UDT][BLE]');
-                this.handleDisconnection();
-            }
-        };
-        this.onTowerDeviceDisconnected = (event) => {
-            this.logger.warn(`Tower device disconnected unexpectedly: ${event.type}`, '[UDT][BLE]');
-            this.handleDisconnection();
-        };
         this.logger = logger;
         this.callbacks = callbacks;
         this.responseProcessor = new udtTowerResponse_1.TowerResponseProcessor();
+        // Use provided adapter or auto-detect platform
+        this.bluetoothAdapter = adapter || udtBluetoothAdapterFactory_1.BluetoothAdapterFactory.create(udtBluetoothAdapterFactory_1.BluetoothPlatform.AUTO);
+        // Set up adapter event callbacks
+        this.bluetoothAdapter.onCharacteristicValueChanged((data) => {
+            this.onRxData(data);
+        });
+        this.bluetoothAdapter.onDisconnect(() => {
+            this.onTowerDeviceDisconnected();
+        });
+        this.bluetoothAdapter.onBluetoothAvailabilityChanged((available) => {
+            this.bleAvailabilityChange(available);
+        });
     }
     async connect() {
         this.logger.info("Looking for Tower...", '[UDT]');
         try {
-            // @ts-ignore
-            this.TowerDevice = await navigator.bluetooth.requestDevice({
-                filters: [{ namePrefix: udtConstants_1.TOWER_DEVICE_NAME }],
-                optionalServices: [udtConstants_1.UART_SERVICE_UUID, udtConstants_1.DIS_SERVICE_UUID]
-            });
-            if (this.TowerDevice === null) {
-                this.logger.warn("Tower not found", '[UDT]');
-                return;
-            }
-            // @ts-ignore
-            navigator.bluetooth.addEventListener("availabilitychanged", this.bleAvailabilityChange);
-            this.logger.info("Connecting to Tower GATT Server...", '[UDT]');
-            const server = await this.TowerDevice.gatt.connect();
-            this.logger.info("Getting Tower Primary Service...", '[UDT]');
-            const service = await server.getPrimaryService(udtConstants_1.UART_SERVICE_UUID);
-            this.logger.info("Getting Tower Characteristics...", '[UDT]');
-            this.txCharacteristic = await service.getCharacteristic(udtConstants_1.UART_TX_CHARACTERISTIC_UUID);
-            this.rxCharacteristic = await service.getCharacteristic(udtConstants_1.UART_RX_CHARACTERISTIC_UUID);
-            this.logger.info("Subscribing to Tower...", '[UDT]');
-            await this.rxCharacteristic.startNotifications();
-            await this.rxCharacteristic.addEventListener("characteristicvaluechanged", this.onRxCharacteristicValueChanged);
-            this.TowerDevice.addEventListener('gattserverdisconnected', this.onTowerDeviceDisconnected);
+            await this.bluetoothAdapter.connect(udtConstants_1.TOWER_DEVICE_NAME, [udtConstants_1.UART_SERVICE_UUID, udtConstants_1.DIS_SERVICE_UUID]);
             this.logger.info('Tower connection complete', '[UDT][BLE]');
             this.isConnected = true;
             this.lastSuccessfulCommand = Date.now();
@@ -154,15 +85,62 @@ class UdtBleConnection {
         }
     }
     async disconnect() {
-        if (!this.TowerDevice) {
-            return;
-        }
         this.stopConnectionMonitoring();
-        if (this.TowerDevice.gatt.connected) {
-            this.TowerDevice.removeEventListener('gattserverdisconnected', this.onTowerDeviceDisconnected);
-            await this.TowerDevice.gatt.disconnect();
+        if (this.bluetoothAdapter.isConnected()) {
+            await this.bluetoothAdapter.disconnect();
             this.logger.info("Tower disconnected", '[UDT]');
-            this.handleDisconnection();
+        }
+        this.handleDisconnection();
+    }
+    /**
+     * Writes a command to the tower via the Bluetooth adapter.
+     * Used by UdtTowerCommands instead of direct characteristic access.
+     */
+    async writeCommand(command) {
+        return await this.bluetoothAdapter.writeCharacteristic(command);
+    }
+    /**
+     * Processes received data from the RX characteristic (platform-agnostic).
+     * Called by the adapter's onCharacteristicValueChanged callback.
+     */
+    onRxData(receivedData) {
+        this.lastSuccessfulCommand = Date.now();
+        const { cmdKey } = this.responseProcessor.getTowerCommand(receivedData[0]);
+        const isBattery = this.responseProcessor.isBatteryResponse(cmdKey);
+        const shouldLogCommand = this.logTowerResponses &&
+            this.responseProcessor.shouldLogResponse(cmdKey, this.logTowerResponseConfig) &&
+            (!isBattery || this.batteryNotifyEnabled);
+        if (shouldLogCommand) {
+            this.logger.info(`${cmdKey}`, '[UDT][BLE][RCVD]');
+        }
+        if (this.logTowerResponses) {
+            this.logTowerResponse(receivedData);
+        }
+        if (this.responseProcessor.isTowerStateResponse(cmdKey)) {
+            this.handleTowerStateResponse(receivedData);
+        }
+        if (isBattery) {
+            this.lastBatteryHeartbeat = Date.now();
+            const millivolts = (0, udtHelpers_1.getMilliVoltsFromTowerResponse)(receivedData);
+            const batteryPercentage = (0, udtHelpers_1.milliVoltsToPercentage)(millivolts);
+            const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
+            const batteryNotifyFrequencyPassed = ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
+            const shouldNotify = this.batteryNotifyEnabled && (this.batteryNotifyOnValueChangeOnly ?
+                (didBatteryLevelChange || this.lastBatteryPercentage === "") :
+                batteryNotifyFrequencyPassed);
+            if (shouldNotify) {
+                this.logger.info(`${this.responseProcessor.commandToString(receivedData).join(' ')}`, '[UDT][BLE]');
+                this.lastBatteryNotification = Date.now();
+                this.lastBatteryPercentage = batteryPercentage;
+                this.callbacks.onBatteryLevelNotify(millivolts);
+            }
+        }
+        else {
+            // For non-battery responses, notify the command queue
+            // This includes tower state responses, command acknowledgments, etc.
+            if (this.callbacks.onTowerResponse) {
+                this.callbacks.onTowerResponse(receivedData);
+            }
         }
     }
     handleTowerStateResponse(receivedData) {
@@ -203,6 +181,17 @@ class UdtBleConnection {
             this.logger.info(logMessage, '[UDT][BLE]');
         }
     }
+    bleAvailabilityChange(available) {
+        this.logger.info('Bluetooth availability changed', '[UDT][BLE]');
+        if (!available && this.isConnected) {
+            this.logger.warn('Bluetooth became unavailable - handling disconnection', '[UDT][BLE]');
+            this.handleDisconnection();
+        }
+    }
+    onTowerDeviceDisconnected() {
+        this.logger.warn('Tower device disconnected unexpectedly', '[UDT][BLE]');
+        this.handleDisconnection();
+    }
     handleDisconnection() {
         this.isConnected = false;
         this.performingCalibration = false;
@@ -210,8 +199,6 @@ class UdtBleConnection {
         this.stopConnectionMonitoring();
         this.lastBatteryHeartbeat = 0;
         this.lastSuccessfulCommand = 0;
-        this.txCharacteristic = null;
-        this.rxCharacteristic = null;
         // Clear device information on disconnect
         this.deviceInformation = {};
         this.callbacks.onTowerDisconnect();
@@ -231,11 +218,10 @@ class UdtBleConnection {
         }
     }
     checkConnectionHealth() {
-        var _a, _b;
-        if (!this.isConnected || !this.TowerDevice) {
+        if (!this.isConnected) {
             return;
         }
-        if (!this.TowerDevice.gatt.connected) {
+        if (!this.bluetoothAdapter.isGattConnected()) {
             this.logger.warn('GATT connection lost detected during health check', '[UDT][BLE]');
             this.handleDisconnection();
             return;
@@ -253,11 +239,10 @@ class UdtBleConnection {
                 // Before assuming disconnection, verify if the tower is actually still responsive
                 if (this.batteryHeartbeatVerifyConnection) {
                     this.logger.info('Verifying tower connection status before triggering disconnection...', '[UDT][BLE]');
-                    // Check if GATT is still connected and characteristics are available
-                    if (((_b = (_a = this.TowerDevice) === null || _a === void 0 ? void 0 : _a.gatt) === null || _b === void 0 ? void 0 : _b.connected) && this.rxCharacteristic) {
-                        this.logger.info('GATT connection and characteristics still available - heartbeat timeout may be temporary', '[UDT][BLE]');
+                    // Check if GATT is still connected via the adapter
+                    if (this.bluetoothAdapter.isGattConnected()) {
+                        this.logger.info('GATT connection still available - heartbeat timeout may be temporary', '[UDT][BLE]');
                         // Reset the last battery heartbeat to current time to give it another chance
-                        // This prevents repeated false disconnections while the tower is still actually connected
                         this.lastBatteryHeartbeat = Date.now();
                         this.logger.info('Reset battery heartbeat timer - will monitor for another timeout period', '[UDT][BLE]');
                         return;
@@ -296,35 +281,18 @@ class UdtBleConnection {
         this.batteryHeartbeatVerifyConnection = verifyConnection;
     }
     async isConnectedAndResponsive() {
-        var _a, _b;
-        if (!this.isConnected || !((_b = (_a = this.TowerDevice) === null || _a === void 0 ? void 0 : _a.gatt) === null || _b === void 0 ? void 0 : _b.connected)) {
+        if (!this.isConnected) {
             return false;
         }
-        // Check if characteristics are still available
-        if (!this.txCharacteristic || !this.rxCharacteristic) {
-            return false;
-        }
-        // Additional check: verify the GATT service is still accessible
-        try {
-            // This will throw if the service is no longer available
-            if (this.txCharacteristic.service && this.rxCharacteristic.service) {
-                return true;
-            }
-        }
-        catch (error) {
-            this.logger.warn('GATT characteristics or services no longer accessible', '[UDT][BLE]');
-            return false;
-        }
-        return true;
+        return this.bluetoothAdapter.isGattConnected();
     }
     getConnectionStatus() {
-        var _a, _b;
         const now = Date.now();
         const timeSinceLastBattery = this.lastBatteryHeartbeat ? now - this.lastBatteryHeartbeat : -1;
         const timeSinceLastCommand = this.lastSuccessfulCommand ? now - this.lastSuccessfulCommand : -1;
         return {
             isConnected: this.isConnected,
-            isGattConnected: ((_b = (_a = this.TowerDevice) === null || _a === void 0 ? void 0 : _a.gatt) === null || _b === void 0 ? void 0 : _b.connected) || false,
+            isGattConnected: this.bluetoothAdapter.isGattConnected(),
             lastBatteryHeartbeatMs: timeSinceLastBattery,
             lastCommandResponseMs: timeSinceLastCommand,
             batteryHeartbeatHealthy: timeSinceLastBattery >= 0 && timeSinceLastBattery < this.batteryHeartbeatTimeout,
@@ -339,54 +307,15 @@ class UdtBleConnection {
         return Object.assign({}, this.deviceInformation);
     }
     async readDeviceInformation() {
-        var _a, _b;
-        if (!((_b = (_a = this.TowerDevice) === null || _a === void 0 ? void 0 : _a.gatt) === null || _b === void 0 ? void 0 : _b.connected)) {
-            this.logger.warn('Cannot read device information - not connected', '[UDT][BLE]');
-            return;
-        }
         try {
             this.logger.info('Reading device information service...', '[UDT][BLE]');
-            const disService = await this.TowerDevice.gatt.getPrimaryService(udtConstants_1.DIS_SERVICE_UUID);
-            // Reset device information object
-            this.deviceInformation = {};
-            const characteristicMap = [
-                { uuid: udtConstants_1.DIS_MANUFACTURER_NAME_UUID, name: 'Manufacturer Name', key: 'manufacturerName', logIfMissing: true },
-                { uuid: udtConstants_1.DIS_MODEL_NUMBER_UUID, name: 'Model Number', key: 'modelNumber', logIfMissing: true },
-                { uuid: udtConstants_1.DIS_SERIAL_NUMBER_UUID, name: 'Serial Number', key: 'serialNumber', logIfMissing: false },
-                { uuid: udtConstants_1.DIS_HARDWARE_REVISION_UUID, name: 'Hardware Revision', key: 'hardwareRevision', logIfMissing: true },
-                { uuid: udtConstants_1.DIS_FIRMWARE_REVISION_UUID, name: 'Firmware Revision', key: 'firmwareRevision', logIfMissing: true },
-                { uuid: udtConstants_1.DIS_SOFTWARE_REVISION_UUID, name: 'Software Revision', key: 'softwareRevision', logIfMissing: true },
-                { uuid: udtConstants_1.DIS_SYSTEM_ID_UUID, name: 'System ID', key: 'systemId', logIfMissing: false },
-                { uuid: udtConstants_1.DIS_IEEE_REGULATORY_UUID, name: 'IEEE Regulatory', key: 'ieeeRegulatory', logIfMissing: false },
-                { uuid: udtConstants_1.DIS_PNP_ID_UUID, name: 'PnP ID', key: 'pnpId', logIfMissing: false },
-            ];
-            for (const { uuid, name, key, logIfMissing } of characteristicMap) {
-                try {
-                    const characteristic = await disService.getCharacteristic(uuid);
-                    const value = await characteristic.readValue();
-                    if (uuid === udtConstants_1.DIS_SYSTEM_ID_UUID || uuid === udtConstants_1.DIS_PNP_ID_UUID) {
-                        // These are binary data, convert to hex string
-                        const hexValue = Array.from(new Uint8Array(value.buffer))
-                            .map(b => b.toString(16).padStart(2, '0'))
-                            .join(':');
-                        this.logger.info(`Device ${name}: ${hexValue}`, '[UDT][BLE]');
-                        this.deviceInformation[key] = hexValue;
-                    }
-                    else {
-                        // Text characteristics
-                        const textValue = new TextDecoder().decode(value);
-                        this.logger.info(`Device ${name}: ${textValue}`, '[UDT][BLE]');
-                        this.deviceInformation[key] = textValue;
-                    }
-                }
-                catch (error) {
-                    if (logIfMissing) {
-                        this.logger.debug(`Device ${name} characteristic not available`, '[UDT][BLE]');
-                    }
+            this.deviceInformation = await this.bluetoothAdapter.readDeviceInformation();
+            // Log device information
+            for (const [key, value] of Object.entries(this.deviceInformation)) {
+                if (key !== 'lastUpdated' && value) {
+                    this.logger.info(`Device ${key}: ${value}`, '[UDT][BLE]');
                 }
             }
-            // Set timestamp when device information was last read
-            this.deviceInformation.lastUpdated = new Date();
         }
         catch (error) {
             this.logger.debug('Device Information Service not available', '[UDT][BLE]');
@@ -395,17 +324,10 @@ class UdtBleConnection {
     async cleanup() {
         this.logger.info('Cleaning up UdtBleConnection instance', '[UDT][BLE]');
         this.stopConnectionMonitoring();
-        if (this.TowerDevice) {
-            this.TowerDevice.removeEventListener('gattserverdisconnected', this.onTowerDeviceDisconnected);
-        }
-        // @ts-ignore
-        if (navigator.bluetooth) {
-            // @ts-ignore
-            navigator.bluetooth.removeEventListener("availabilitychanged", this.bleAvailabilityChange);
-        }
         if (this.isConnected) {
             await this.disconnect();
         }
+        await this.bluetoothAdapter.cleanup();
     }
 }
 exports.UdtBleConnection = UdtBleConnection;

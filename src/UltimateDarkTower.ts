@@ -19,10 +19,23 @@ import {
 import { type TowerState, isCalibrated } from './udtTowerState';
 import { createDefaultTowerState, milliVoltsToPercentageNumber, commandToPacketString, milliVoltsToPercentage } from './udtHelpers';
 import { Logger, ConsoleOutput, type LogOutput } from './udtLogger';
-import { UdtBleConnection, type TowerEventCallbacks, type ConnectionStatus } from './udtBleConnection';
+import { UdtBleConnection, type TowerEventCallbacks, type ConnectionStatus, type DeviceInformation } from './udtBleConnection';
 import { TowerResponseProcessor } from './udtTowerResponse';
 import { UdtCommandFactory } from './udtCommandFactory';
 import { UdtTowerCommands, type TowerCommandDependencies } from './udtTowerCommands';
+import { type IBluetoothAdapter } from './udtBluetoothAdapter';
+import { BluetoothAdapterFactory, BluetoothPlatform } from './udtBluetoothAdapterFactory';
+
+/**
+ * Configuration options for the UltimateDarkTower class.
+ * All options are optional - the library will auto-detect the platform by default.
+ */
+export interface UltimateDarkTowerConfig {
+  /** Platform to use for Bluetooth communication (auto-detect by default) */
+  platform?: BluetoothPlatform;
+  /** Custom Bluetooth adapter (for testing or custom platforms like React Native) */
+  adapter?: IBluetoothAdapter;
+}
 
 /**
  * Configuration interface for controlling which tower responses should be logged
@@ -113,9 +126,9 @@ class UltimateDarkTower {
     void newState; void oldState; void source;
   };
 
-  constructor() {
+  constructor(config?: UltimateDarkTowerConfig) {
     this.initializeLogger();
-    this.initializeComponents();
+    this.initializeComponents(config);
     this.setupTowerResponseCallback();
   }
 
@@ -130,10 +143,18 @@ class UltimateDarkTower {
   /**
    * Initialize all tower components and their dependencies
    */
-  private initializeComponents(): void {
+  private initializeComponents(config?: UltimateDarkTowerConfig): void {
+    // Resolve the Bluetooth adapter
+    let adapter: IBluetoothAdapter | undefined;
+    if (config?.adapter) {
+      adapter = config.adapter;
+    } else if (config?.platform) {
+      adapter = BluetoothAdapterFactory.create(config.platform);
+    }
+
     // Initialize BLE connection with tower event handlers
     this.towerEventCallbacks = this.createTowerEventCallbacks();
-    this.bleConnection = new UdtBleConnection(this.logger, this.towerEventCallbacks);
+    this.bleConnection = new UdtBleConnection(this.logger, this.towerEventCallbacks, adapter);
 
     // Initialize response processor
     this.responseProcessor = new TowerResponseProcessor(this.logDetail);
@@ -249,7 +270,6 @@ class UltimateDarkTower {
   get performingCalibration(): boolean { return this.bleConnection.performingCalibration; }
   get performingLongCommand(): boolean { return this.bleConnection.performingLongCommand; }
   get towerSkullDropCount(): number { return this.bleConnection.towerSkullDropCount; }
-  get txCharacteristic() { return this.bleConnection.txCharacteristic; }
 
   // Getter methods for battery state
   get currentBattery(): number { return this.currentBatteryValue; }
@@ -848,6 +868,14 @@ class UltimateDarkTower {
    */
   getConnectionStatus(): ConnectionStatus {
     return this.bleConnection.getConnectionStatus();
+  }
+
+  /**
+   * Get device information read from the tower's Device Information Service (DIS)
+   * @returns {DeviceInformation} Object with manufacturer, model, serial, firmware, etc.
+   */
+  getDeviceInformation(): DeviceInformation {
+    return this.bleConnection.getDeviceInformation();
   }
   //#endregion
 

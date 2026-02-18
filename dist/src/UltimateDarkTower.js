@@ -31,6 +31,7 @@ const udtBleConnection_1 = require("./udtBleConnection");
 const udtTowerResponse_1 = require("./udtTowerResponse");
 const udtCommandFactory_1 = require("./udtCommandFactory");
 const udtTowerCommands_1 = require("./udtTowerCommands");
+const udtBluetoothAdapterFactory_1 = require("./udtBluetoothAdapterFactory");
 /**
  * @title UltimateDarkTower
  * @description
@@ -53,7 +54,7 @@ const udtTowerCommands_1 = require("./udtTowerCommands");
  * - onTowerStateUpdate: Called whenever the tower state is updated
  */
 class UltimateDarkTower {
-    constructor() {
+    constructor(config) {
         // tower configuration
         this.retrySendCommandCountRef = { value: 0 };
         this.retrySendCommandMax = udtConstants_1.DEFAULT_RETRY_SEND_COMMAND_MAX;
@@ -88,7 +89,7 @@ class UltimateDarkTower {
         // utility
         this._logDetail = false;
         this.initializeLogger();
-        this.initializeComponents();
+        this.initializeComponents(config);
         this.setupTowerResponseCallback();
     }
     /**
@@ -101,10 +102,18 @@ class UltimateDarkTower {
     /**
      * Initialize all tower components and their dependencies
      */
-    initializeComponents() {
+    initializeComponents(config) {
+        // Resolve the Bluetooth adapter
+        let adapter;
+        if (config === null || config === void 0 ? void 0 : config.adapter) {
+            adapter = config.adapter;
+        }
+        else if (config === null || config === void 0 ? void 0 : config.platform) {
+            adapter = udtBluetoothAdapterFactory_1.BluetoothAdapterFactory.create(config.platform);
+        }
         // Initialize BLE connection with tower event handlers
         this.towerEventCallbacks = this.createTowerEventCallbacks();
-        this.bleConnection = new udtBleConnection_1.UdtBleConnection(this.logger, this.towerEventCallbacks);
+        this.bleConnection = new udtBleConnection_1.UdtBleConnection(this.logger, this.towerEventCallbacks, adapter);
         // Initialize response processor
         this.responseProcessor = new udtTowerResponse_1.TowerResponseProcessor(this.logDetail);
         // Initialize command factory
@@ -205,7 +214,6 @@ class UltimateDarkTower {
     get performingCalibration() { return this.bleConnection.performingCalibration; }
     get performingLongCommand() { return this.bleConnection.performingLongCommand; }
     get towerSkullDropCount() { return this.bleConnection.towerSkullDropCount; }
-    get txCharacteristic() { return this.bleConnection.txCharacteristic; }
     // Getter methods for battery state
     get currentBattery() { return this.currentBatteryValue; }
     get previousBattery() { return this.previousBatteryValue; }
@@ -710,6 +718,13 @@ class UltimateDarkTower {
      */
     getConnectionStatus() {
         return this.bleConnection.getConnectionStatus();
+    }
+    /**
+     * Get device information read from the tower's Device Information Service (DIS)
+     * @returns {DeviceInformation} Object with manufacturer, model, serial, firmware, etc.
+     */
+    getDeviceInformation() {
+        return this.bleConnection.getDeviceInformation();
     }
     //#endregion
     //#region cleanup

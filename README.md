@@ -1,28 +1,45 @@
 # UltimateDarkTower
 
-A JavaScript/TypeScript library for controlling the Bluetooth-enabled tower from Restoration Games' Return to Dark Tower board game. Control lights, sounds, drum rotation, and track game state through Web Bluetooth.
+[![npm version](https://img.shields.io/npm/v/ultimatedarktower)](https://www.npmjs.com/package/ultimatedarktower)
+[![npm downloads](https://img.shields.io/npm/dm/ultimatedarktower)](https://www.npmjs.com/package/ultimatedarktower)
+[![license](https://img.shields.io/npm/l/ultimatedarktower)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)](https://www.typescriptlang.org/)
+[![node](https://img.shields.io/node/v/ultimatedarktower)](https://nodejs.org/)
+
+A JavaScript/TypeScript library for controlling the Bluetooth-enabled tower from Restoration Games' Return to Dark Tower board game. Control lights, sounds, drum rotation, and track game state via Bluetooth - works in browsers (Web Bluetooth), Node.js, Electron, and React Native.
 
 I have spent many hours reverse engineering the Tower's protocol in order to create this library, I look forward to what others will create using this! - Chris
 
 ## Table of Contents
 
-- [UltimateDarkTower](#ultimatedarktower)
-  - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Live Examples](#live-examples)
-  - [Installation](#installation)
-  - [Documentation](#documentation)
-    - [📖 Complete API Reference](#-complete-api-reference)
-    - [Key Topics Covered:](#key-topics-covered)
-  - [Development](#development)
-    - [Building and Testing](#building-and-testing)
-    - [Project Structure](#project-structure)
-  - [Browser Support](#browser-support)
-  - [Known Issues](#known-issues)
-  - [Community](#community)
+-   [UltimateDarkTower](#ultimatedarktower)
+    -   [Table of Contents](#table-of-contents)
+    -   [Features](#features)
+    -   [Live Examples](#live-examples)
+    -   [Installation](#installation)
+        -   [Browser / Web Applications](#browser--web-applications)
+        -   [Node.js Applications](#nodejs-applications)
+    -   [Quick Start](#quick-start)
+        -   [Browser (auto-detected)](#browser-auto-detected)
+        -   [Node.js (auto-detected)](#nodejs-auto-detected)
+        -   [Explicit Platform Selection](#explicit-platform-selection)
+        -   [Custom Adapter (React Native, etc.)](#custom-adapter-react-native-etc)
+    -   [Documentation](#documentation)
+        -   [📖 Complete API Reference](#-complete-api-reference)
+        -   [Key Topics Covered:](#key-topics-covered)
+    -   [Development](#development)
+        -   [Building and Testing](#building-and-testing)
+        -   [Project Structure](#project-structure)
+    -   [Platform Support](#platform-support)
+        -   [Built-in Support (auto-detected)](#built-in-support-auto-detected)
+        -   [Custom Adapter Support](#custom-adapter-support)
+        -   [Browser Support](#browser-support)
+    -   [Known Issues](#known-issues)
+    -   [Community](#community)
 
 ## Features
 
+-   **Multi-Platform Bluetooth** - Works in browsers (Web Bluetooth), Node.js (`@stoprocent/noble`), Electron, and React Native via custom adapters
 -   **Bluetooth Connection Management** - Reliable connection with automatic monitoring and disconnect detection
 -   **Tower Control** - Complete control over lights, sounds, and drum rotation
 -   **Game State Tracking** - Track glyph positions, broken seals, and skull counts
@@ -30,6 +47,7 @@ I have spent many hours reverse engineering the Tower's protocol in order to cre
 -   **TypeScript Support** - Full TypeScript definitions and type safety
 -   **Comprehensive Logging** - Multi-output logging system for debugging
 -   **Battery Monitoring** - Real-time battery level tracking and low battery warnings
+-   **Extensible Adapter Pattern** - Implement `IBluetoothAdapter` for custom platforms
 
 ## Live Examples
 
@@ -43,8 +61,67 @@ _Requires Web Bluetooth support (Chrome, Edge, Samsung Internet). For iOS, use t
 
 ## Installation
 
+### Browser / Web Applications
+
 ```bash
 npm install ultimatedarktower
+```
+
+### Node.js Applications
+
+```bash
+npm install ultimatedarktower @stoprocent/noble
+```
+
+> `@stoprocent/noble` is an optional peer dependency for BLE support in Node.js environments.
+>
+> **Platform requirements:** macOS works out of the box. Linux requires BlueZ (`sudo apt install bluetooth bluez libbluetooth-dev`). Windows requires Windows 10+ with BLE support.
+
+## Quick Start
+
+### Browser (auto-detected)
+
+```typescript
+import UltimateDarkTower from 'ultimatedarktower';
+
+const tower = new UltimateDarkTower();
+await tower.connect(); // Opens browser device picker
+await tower.calibrate();
+await tower.playSound(1);
+await tower.cleanup();
+```
+
+### Node.js (auto-detected)
+
+```typescript
+import UltimateDarkTower from 'ultimatedarktower';
+
+const tower = new UltimateDarkTower();
+await tower.connect(); // Scans for device automatically
+await tower.calibrate();
+await tower.playSound(1);
+await tower.cleanup();
+```
+
+### Explicit Platform Selection
+
+```typescript
+import UltimateDarkTower, { BluetoothPlatform } from 'ultimatedarktower';
+
+const tower = new UltimateDarkTower({ platform: BluetoothPlatform.NODE });
+```
+
+### Custom Adapter (React Native, etc.)
+
+```typescript
+import UltimateDarkTower, { IBluetoothAdapter } from 'ultimatedarktower';
+
+class MyCustomAdapter implements IBluetoothAdapter {
+    // Implement all IBluetoothAdapter methods
+    // See Reference.md for the full interface
+}
+
+const tower = new UltimateDarkTower({ adapter: new MyCustomAdapter() });
 ```
 
 ## Documentation
@@ -55,7 +132,9 @@ Comprehensive documentation with TypeScript examples, best practices, and troubl
 
 ### Key Topics Covered:
 
+-   **Multi-Platform Setup** - Configuration for Web, Node.js, Electron, and React Native
 -   **Connection Management** - Connecting, disconnecting, and monitoring connection health
+-   **Bluetooth Adapters** - Custom adapter interface for extending platform support
 -   **Tower Control** - Detailed coverage of all tower commands (lights, sounds, rotation)
 -   **Glyph System** - Automatic tracking of glyph positions as towers rotate
 -   **Seal Management** - Breaking seals and tracking game state
@@ -94,6 +173,8 @@ npm run watch
 src/
 ├── index.ts                  # Main exports
 ├── UltimateDarkTower.ts      # Main class
+├── udtBluetoothAdapter.ts    # Bluetooth adapter interface & error types
+├── udtBluetoothAdapterFactory.ts  # Platform auto-detection factory
 ├── udtBleConnection.ts       # Bluetooth connection management
 ├── udtTowerCommands.ts       # Tower command implementations
 ├── udtCommandFactory.ts      # Command creation utilities
@@ -102,34 +183,47 @@ src/
 ├── udtTowerState.ts          # Tower state management
 ├── udtHelpers.ts             # Utility helper functions
 ├── udtLogger.ts              # Logging system
-└── udtConstants.ts           # Constants and type definitions
+├── udtConstants.ts           # Constants and type definitions
+└── adapters/
+    ├── WebBluetoothAdapter.ts    # Browser Web Bluetooth implementation
+    └── NodeBluetoothAdapter.ts   # Node.js @stoprocent/noble BLE implementation
 
 examples/
 ├── controller/               # Tower controller web app
 ├── game/                     # Tower game web app
+├── node/                     # Node.js CLI example
 └── assets/                   # Shared assets (images, fonts, etc.)
 ```
 
-## Browser Support
+## Platform Support
 
-Web Bluetooth is required for this library to function.
+### Built-in Support (auto-detected)
 
-**✅ Supported Browsers:**
+| Platform                         | Bluetooth Library                    | Notes                                    |
+| -------------------------------- | ------------------------------------ | ---------------------------------------- |
+| Chrome / Edge / Samsung Internet | Web Bluetooth API                    | Desktop and Android                      |
+| Node.js                          | `@stoprocent/noble`                  | Requires `npm install @stoprocent/noble` |
+| Electron                         | Web Bluetooth or `@stoprocent/noble` | Auto-detects renderer vs main process    |
 
--   Chrome (desktop and Android)
--   Microsoft Edge
--   Samsung Internet
+### Custom Adapter Support
 
-**📱 iOS Support:** Use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055) when on iPhone or iPads as Chrome/Safari does not have Web Bluetooth support on Apples platform at the moment.
+| Platform                   | Recommended Library    | Notes                         |
+| -------------------------- | ---------------------- | ----------------------------- |
+| React Native               | `react-native-ble-plx` | Implement `IBluetoothAdapter` |
+| iOS (via React Native)     | `react-native-ble-plx` | Same as React Native          |
+| Android (via React Native) | `react-native-ble-plx` | Same as React Native          |
+| Cordova / Capacitor        | Platform BLE plugin    | Implement `IBluetoothAdapter` |
 
-**❌ Not Supported:** Firefox, Safari ([compatibility details](https://caniuse.com/?search=web%20bluetooth))
+### Browser Support
+
+**iOS:** Use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055) as Chrome/Safari does not support Web Bluetooth on Apple platforms.
+
+**Not Supported:** Firefox, Safari ([compatibility details](https://caniuse.com/?search=web%20bluetooth))
 
 ## Known Issues
 
-This library is in **Release Candidate** status. Current limitations:
-
--   **Tower Response Handling** - Not all tower responses are fully processed
-    common game patterns are planned
+-   **Sounds** - Sounds show as command complete which is true even though the sound itself has not completed. This is just the way the tower works. I'll have to add time lengths to each at some point, just don't use the command complete response as a way of thinking the associated sound has finished playing and you can play another sound.
+-   **Light Sequences** - Same as sound for lights that play for a duration.
 
 > See [Reference.md](Reference.md) for performance best practices and workarounds.
 
