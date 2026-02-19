@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.3] - 2026-02-19
+
+### Fixed
+
+-   **`@stoprocent/noble` not loading in ESM build** — In Node.js ESM contexts, `require` is not defined, causing esbuild's `__require` shim to silently fail and leave `noble` as `undefined`. The ESM bundle now injects `import{createRequire}from'module';const require=createRequire(import.meta.url);` as a banner so `@stoprocent/noble` loads correctly via CJS `require` within the ESM module.
+
 ## [2.1.2] - 2026-02-19
 
 ### Fixed
@@ -79,6 +85,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 -   Tower Game ("The Tower's Challenge") example web app
 -   Complete API reference documentation
 
+[2.1.3]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.2...v2.1.3
 [2.1.2]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.0.0...v2.1.0
