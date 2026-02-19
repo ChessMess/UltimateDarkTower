@@ -1,6 +1,6 @@
 {
     "name": "ultimatedarktower",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "This library provides functions to communicate with the bluetooth le enabled Tower that comes with Restoration Games Return To Dark Tower board game.",
     "main": "dist/src/index.js",
     "types": "dist/src/index.d.ts",
