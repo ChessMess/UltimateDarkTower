@@ -20,7 +20,7 @@ import { type TowerState, isCalibrated } from './udtTowerState';
 import { createDefaultTowerState, milliVoltsToPercentageNumber, commandToPacketString, milliVoltsToPercentage } from './udtHelpers';
 import { Logger, ConsoleOutput, type LogOutput } from './udtLogger';
 import { UdtBleConnection, type TowerEventCallbacks, type ConnectionStatus, type DeviceInformation } from './udtBleConnection';
-import { TowerResponseProcessor } from './udtTowerResponse';
+import { TowerResponseProcessor, type TowerResponseConfig } from './udtTowerResponse';
 import { UdtCommandFactory } from './udtCommandFactory';
 import { UdtTowerCommands, type TowerCommandDependencies } from './udtTowerCommands';
 import { type IBluetoothAdapter } from './udtBluetoothAdapter';
@@ -35,22 +35,6 @@ export interface UltimateDarkTowerConfig {
   platform?: BluetoothPlatform;
   /** Custom Bluetooth adapter (for testing or custom platforms like React Native) */
   adapter?: IBluetoothAdapter;
-}
-
-/**
- * Configuration interface for controlling which tower responses should be logged
- */
-interface TowerResponseConfig {
-  TOWER_STATE: boolean;
-  INVALID_STATE: boolean;
-  HARDWARE_FAILURE: boolean;
-  MECH_JIGGLE_TRIGGERED: boolean;
-  MECH_UNEXPECTED_TRIGGER: boolean;
-  MECH_DURATION: boolean;
-  DIFFERENTIAL_READINGS: boolean;
-  BATTERY_READING: boolean;
-  CALIBRATION_FINISHED: boolean;
-  LOG_ALL: boolean;
 }
 
 /**

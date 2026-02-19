@@ -2166,7 +2166,6 @@
           const layerIndex = this.getTowerLayerForLevel(doorwayLight.level);
           const lightIndex = this.getLightIndexForSide(doorwayLight.position);
           const effect = LIGHT_EFFECTS[doorwayLight.style] || LIGHT_EFFECTS.off;
-          console.log("[cek] effect", doorwayLight.style, effect);
           commands.push({ layerIndex, lightIndex, effect, loop: true });
         }
       }

@@ -1,3 +1,18 @@
+/**
+ * Configuration interface for controlling which tower responses should be logged
+ */
+export interface TowerResponseConfig {
+    TOWER_STATE: boolean;
+    INVALID_STATE: boolean;
+    HARDWARE_FAILURE: boolean;
+    MECH_JIGGLE_TRIGGERED: boolean;
+    MECH_UNEXPECTED_TRIGGER: boolean;
+    MECH_DURATION: boolean;
+    DIFFERENTIAL_READINGS: boolean;
+    BATTERY_READING: boolean;
+    CALIBRATION_FINISHED: boolean;
+    LOG_ALL: boolean;
+}
 export declare class TowerResponseProcessor {
     private logDetail;
     constructor(logDetail?: boolean);
@@ -27,7 +42,7 @@ export declare class TowerResponseProcessor {
      * @param {any} logConfig - Logging configuration object
      * @returns {boolean} Whether this response should be logged
      */
-    shouldLogResponse(cmdKey: string, logConfig: any): boolean;
+    shouldLogResponse(cmdKey: string, logConfig: TowerResponseConfig): boolean;
     /**
      * Checks if a command is a battery response type.
      * @param {string} cmdKey - Command key from tower message

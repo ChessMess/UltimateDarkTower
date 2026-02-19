@@ -21,7 +21,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
+exports.parseDifferentialReadings = exports.createDefaultTowerState = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
 var UltimateDarkTower_1 = require("./UltimateDarkTower");
 Object.defineProperty(exports, "UltimateDarkTower", { enumerable: true, get: function () { return __importDefault(UltimateDarkTower_1).default; } });
 __exportStar(require("./udtConstants"), exports);
@@ -43,6 +43,13 @@ Object.defineProperty(exports, "BluetoothTimeoutError", { enumerable: true, get:
 var udtBluetoothAdapterFactory_1 = require("./udtBluetoothAdapterFactory");
 Object.defineProperty(exports, "BluetoothPlatform", { enumerable: true, get: function () { return udtBluetoothAdapterFactory_1.BluetoothPlatform; } });
 Object.defineProperty(exports, "BluetoothAdapterFactory", { enumerable: true, get: function () { return udtBluetoothAdapterFactory_1.BluetoothAdapterFactory; } });
+var udtTowerState_1 = require("./udtTowerState");
+Object.defineProperty(exports, "rtdt_unpack_state", { enumerable: true, get: function () { return udtTowerState_1.rtdt_unpack_state; } });
+Object.defineProperty(exports, "rtdt_pack_state", { enumerable: true, get: function () { return udtTowerState_1.rtdt_pack_state; } });
+Object.defineProperty(exports, "isCalibrated", { enumerable: true, get: function () { return udtTowerState_1.isCalibrated; } });
+var udtHelpers_2 = require("./udtHelpers");
+Object.defineProperty(exports, "createDefaultTowerState", { enumerable: true, get: function () { return udtHelpers_2.createDefaultTowerState; } });
+Object.defineProperty(exports, "parseDifferentialReadings", { enumerable: true, get: function () { return udtHelpers_2.parseDifferentialReadings; } });
 // For convenience, also export as default
 const UltimateDarkTower_2 = __importDefault(require("./UltimateDarkTower"));
 exports.default = UltimateDarkTower_2.default;

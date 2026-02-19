@@ -20,6 +20,14 @@ export {
 } from './udtBluetoothAdapter';
 export { BluetoothPlatform, BluetoothAdapterFactory } from './udtBluetoothAdapterFactory';
 
+// Tower state types and utilities
+export type { TowerState, Light, Layer, Drum, Audio, Beam } from './udtTowerState';
+export { rtdt_unpack_state, rtdt_pack_state, isCalibrated } from './udtTowerState';
+export { createDefaultTowerState, parseDifferentialReadings, type ParsedDifferentialReadings } from './udtHelpers';
+
+// Tower response types
+export type { TowerResponseConfig } from './udtTowerResponse';
+
 // Connection types
 export type { TowerEventCallbacks, DeviceInformation, ConnectionStatus } from './udtBleConnection';
 

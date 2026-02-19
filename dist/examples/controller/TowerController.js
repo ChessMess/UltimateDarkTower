@@ -2320,7 +2320,6 @@
           const layerIndex = this.getTowerLayerForLevel(doorwayLight.level);
           const lightIndex = this.getLightIndexForSide(doorwayLight.position);
           const effect = LIGHT_EFFECTS[doorwayLight.style] || LIGHT_EFFECTS.off;
-          console.log("[cek] effect", doorwayLight.style, effect);
           commands.push({ layerIndex, lightIndex, effect, loop: true });
         }
       }
@@ -3470,10 +3469,10 @@
 
   // src/index.ts
   init_udtConstants();
+  init_udtTowerState();
   var src_default = UltimateDarkTower_default;
 
   // examples/controller/TowerController.ts
-  init_udtTowerState();
   var Tower = new src_default();
   var sharedDOMOutput;
   var differentialChart = null;
@@ -3930,7 +3929,6 @@
     }
     el.setAttribute("data-light-style", style);
     const effect = LIGHT_EFFECTS[style] || LIGHT_EFFECTS.off;
-    console.log("[cek] style =", style, "effect =", effect);
     const currentState = Tower.getCurrentTowerState();
     const lightType = el.getAttribute("data-light-type");
     const lightLocation = el.getAttribute("data-light-location");
