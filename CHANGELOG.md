@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.2] - 2026-02-19
+
+### Fixed
+
+-   **ESM named imports broken** — `import { UltimateDarkTower } from 'ultimatedarktower'` previously threw `SyntaxError: The requested module does not provide an export named 'UltimateDarkTower'` in Node.js ESM projects because the `"import"` export condition pointed to the CommonJS build. The package now ships a true ES Module bundle so named imports work correctly.
+
+### Added
+
+-   **ESM build** (`dist/esm/index.mjs`) — a native ES Module bundle produced by esbuild, included in the published package alongside the existing CommonJS build
+
+### Changed
+
+-   `package.json` `exports["import"]` condition now points to `dist/esm/index.mjs` instead of the CommonJS output; `exports["require"]` is unchanged
+-   `package.json` `files` now includes `dist/esm/**/*`
+
+## [2.1.1] - 2026-02-19
+
+### Added
+
+-   Integration test for tower calibration using Node.js Bluetooth adapter, located in `tests/integration/calibration.integration.ts`
+-   `npm run test:integration` script to run integration tests requiring real hardware
+-   Integration tests are now organized under `tests/integration/` and are not run by default with unit tests or during publish
+
 ## [2.1.0] - 2026-02-19
 
 ### Added
@@ -56,6 +79,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 -   Tower Game ("The Tower's Challenge") example web app
 -   Complete API reference documentation
 
+[2.1.2]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.1...v2.1.2
+[2.1.1]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/ChessMess/UltimateDarkTower/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/ChessMess/UltimateDarkTower/releases/tag/v1.0.0

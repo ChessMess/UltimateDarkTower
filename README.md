@@ -44,6 +44,7 @@ I have spent many hours reverse engineering the Tower's protocol in order to cre
 -   **Tower Control** - Complete control over lights, sounds, and drum rotation
 -   **Game State Tracking** - Track glyph positions, broken seals, and skull counts
 -   **Event System** - Callback-based event handling for tower events
+-   **ESM + CJS** - Ships both an ES Module build and a CommonJS build; works with `import` and `require` without configuration
 -   **TypeScript Support** - Full TypeScript definitions and type safety
 -   **Comprehensive Logging** - Multi-output logging system for debugging
 -   **Battery Monitoring** - Real-time battery level tracking and low battery warnings
@@ -142,6 +143,25 @@ Comprehensive documentation with TypeScript examples, best practices, and troubl
 -   **Logging System** - Multi-output logging for debugging and monitoring
 -   **Best Practices** - Performance tips, error handling, and common patterns
 -   **Troubleshooting** - Solutions for common issues and debugging techniques
+
+## Integration Testing
+
+Integration tests that require real hardware are located in `tests/integration/` and are not run by default with the main test suite. These tests use the Node.js Bluetooth adapter and require a physical Return to Dark Tower device in range.
+
+To run the calibration integration test:
+
+```bash
+npm run test:integration
+```
+
+-   This will connect to the tower, perform a full calibration sequence, and print the resulting glyph positions.
+-   The test will fail if the tower is not available or calibration does not complete within 60 seconds.
+-   Integration tests are not included in automated test runs or npm publish.
+
+**Prerequisites:**
+
+-   Tower must be powered on and in Bluetooth range
+-   `@stoprocent/noble` must be installed (it is a peer dependency)
 
 ## Development
 
