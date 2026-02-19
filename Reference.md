@@ -976,6 +976,109 @@ type Lights = {
 };
 ```
 
+### Tower State Types
+
+```typescript
+import {
+    type TowerState,
+    type Light,
+    type Layer,
+    type Drum,
+    type Audio,
+    type Beam,
+    type TowerResponseConfig,
+} from 'ultimatedarktower';
+
+// TowerState — Full tower state representation
+interface TowerState {
+    drum: [Drum, Drum, Drum]; // 3 drum states (top, middle, bottom)
+    layer: [Layer, Layer, Layer, Layer, Layer, Layer]; // 6 LED layers
+    audio: Audio; // Audio playback state
+    beam: Beam; // Beam-break counter state
+    led_sequence: number; // LED sequence override
+}
+
+// Drum — Individual drum state
+interface Drum {
+    jammed: boolean; // Whether the drum is jammed
+    calibrated: boolean; // Whether the drum has been calibrated
+    position: number; // Current position (0-3)
+    playSound: boolean; // Play sound during rotation (not recommended)
+    reverse: boolean; // Reverse rotation direction (DO NOT USE)
+}
+
+// Layer — LED layer containing 4 lights
+interface Layer {
+    light: [Light, Light, Light, Light];
+}
+
+// Light — Individual LED light state
+interface Light {
+    effect: number; // Light effect (see LIGHT_EFFECTS)
+    loop: boolean; // Whether the effect loops
+}
+
+// Audio — Audio playback state
+interface Audio {
+    sample: number; // Audio sample number (see TOWER_AUDIO_LIBRARY)
+    loop: boolean; // Whether the audio loops
+    volume: number; // Volume level (0-15)
+}
+
+// Beam — Beam-break counter state
+interface Beam {
+    count: number; // Beam-break count
+    fault: boolean; // Whether a beam fault has occurred
+}
+
+// TowerResponseConfig — Controls which tower responses are logged
+interface TowerResponseConfig {
+    TOWER_STATE: boolean;
+    INVALID_STATE: boolean;
+    HARDWARE_FAILURE: boolean;
+    MECH_JIGGLE_TRIGGERED: boolean;
+    MECH_UNEXPECTED_TRIGGER: boolean;
+    MECH_DURATION: boolean;
+    DIFFERENTIAL_READINGS: boolean;
+    BATTERY_READING: boolean;
+    CALIBRATION_FINISHED: boolean;
+    LOG_ALL: boolean;
+}
+```
+
+### Tower State Utilities
+
+```typescript
+import {
+    rtdt_unpack_state,
+    rtdt_pack_state,
+    isCalibrated,
+    createDefaultTowerState,
+    type TowerState,
+} from 'ultimatedarktower';
+
+// Unpack binary data from the tower into a TowerState object
+const state: TowerState = rtdt_unpack_state(rawData);
+
+// Pack a TowerState object into binary data for transmission
+const buffer = new Uint8Array(19);
+const success: boolean = rtdt_pack_state(buffer, buffer.length, state);
+
+// Check if all drums are calibrated
+const calibrated: boolean = isCalibrated(state);
+
+// Create a default/empty tower state
+const defaultState: TowerState = createDefaultTowerState();
+
+// Example: Read current state, modify lights, and send back
+const currentState = tower.getCurrentTowerState();
+if (currentState) {
+    currentState.layer[0].light[0].effect = 3; // Set first light to breathe
+    currentState.layer[0].light[0].loop = true;
+    await tower.sendTowerState(currentState);
+}
+```
+
 ### Constants
 
 ```typescript

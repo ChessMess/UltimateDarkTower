@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-02-19
+
+### Added
+
+-   **Public Tower State Types** — Exported `TowerState`, `Light`, `Layer`, `Drum`, `Audio`, and `Beam` type interfaces for direct tower state manipulation
+-   **Tower State Utilities** — Exported `rtdt_unpack_state`, `rtdt_pack_state`, `isCalibrated`, and `createDefaultTowerState` for converting between `TowerState` objects and binary tower data
+-   **Differential Readings** — Exported `parseDifferentialReadings` function and `ParsedDifferentialReadings` type for parsing tower sensor data
+-   **`TowerResponseConfig` Type** — Exported interface for controlling which tower responses are logged via `logTowerResponseConfig`
+
+### Changed
+
+-   **`TowerResponseConfig`** — Moved from private interface in `UltimateDarkTower.ts` to exported interface in `udtTowerResponse.ts`
+-   **`shouldLogResponse`** — Updated parameter type from `any` to `TowerResponseConfig` for type safety
+-   **Controller Example** — Updated imports to use the package index instead of internal module paths
+
 ## [2.0.0] - 2025-02-18
 
 ### Added
@@ -41,5 +56,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 -   Tower Game ("The Tower's Challenge") example web app
 -   Complete API reference documentation
 
+[2.1.0]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/ChessMess/UltimateDarkTower/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/ChessMess/UltimateDarkTower/releases/tag/v1.0.0

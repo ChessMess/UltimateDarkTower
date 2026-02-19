@@ -19,9 +19,11 @@ import UltimateDarkTower, {
   VOLUME_DESCRIPTIONS,
   VOLUME_ICONS
 } from '../../src';
-import { logger, DOMOutput, ConsoleOutput } from '../../src/udtLogger';
-import { rtdt_pack_state, rtdt_unpack_state, type TowerState } from '../../src/udtTowerState';
-import { createDefaultTowerState, parseDifferentialReadings, type ParsedDifferentialReadings } from '../../src/udtHelpers';
+import {
+  logger, DOMOutput, ConsoleOutput,
+  rtdt_pack_state, rtdt_unpack_state, type TowerState,
+  createDefaultTowerState, parseDifferentialReadings, type ParsedDifferentialReadings
+} from '../../src';
 
 const Tower = new UltimateDarkTower();
 
@@ -690,7 +692,6 @@ const singleLight = async (el: HTMLInputElement) => {
 
   // Get light effect value
   const effect = LIGHT_EFFECTS[style as keyof typeof LIGHT_EFFECTS] || LIGHT_EFFECTS.off;
-  console.log('[cek] style =', style, 'effect =', effect);
 
   // Get current tower state
   const currentState = Tower.getCurrentTowerState();
@@ -2040,7 +2041,7 @@ const initializeChart = () => {
           display: true,
           position: 'top',
           labels: {
-            filter: function(legendItem: any, chartData: any) {
+            filter: function (legendItem: any, chartData: any) {
               const dataset = chartData.datasets[legendItem.datasetIndex];
               return !dataset.hidden;
             }

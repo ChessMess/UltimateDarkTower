@@ -2,6 +2,7 @@ import { type Lights, type TowerSide, type SealIdentifier, type Glyphs } from '.
 import { type TowerState } from './udtTowerState';
 import { type LogOutput } from './udtLogger';
 import { type ConnectionStatus, type DeviceInformation } from './udtBleConnection';
+import { type TowerResponseConfig } from './udtTowerResponse';
 import { type IBluetoothAdapter } from './udtBluetoothAdapter';
 import { BluetoothPlatform } from './udtBluetoothAdapterFactory';
 /**
@@ -13,21 +14,6 @@ export interface UltimateDarkTowerConfig {
     platform?: BluetoothPlatform;
     /** Custom Bluetooth adapter (for testing or custom platforms like React Native) */
     adapter?: IBluetoothAdapter;
-}
-/**
- * Configuration interface for controlling which tower responses should be logged
- */
-interface TowerResponseConfig {
-    TOWER_STATE: boolean;
-    INVALID_STATE: boolean;
-    HARDWARE_FAILURE: boolean;
-    MECH_JIGGLE_TRIGGERED: boolean;
-    MECH_UNEXPECTED_TRIGGER: boolean;
-    MECH_DURATION: boolean;
-    DIFFERENTIAL_READINGS: boolean;
-    BATTERY_READING: boolean;
-    CALIBRATION_FINISHED: boolean;
-    LOG_ALL: boolean;
 }
 /**
  * @title UltimateDarkTower

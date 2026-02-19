@@ -10,6 +10,10 @@ export { milliVoltsToPercentage, milliVoltsToPercentageNumber } from './udtHelpe
 export type { IBluetoothAdapter } from './udtBluetoothAdapter';
 export { BluetoothError, BluetoothConnectionError, BluetoothDeviceNotFoundError, BluetoothUserCancelledError, BluetoothTimeoutError, } from './udtBluetoothAdapter';
 export { BluetoothPlatform, BluetoothAdapterFactory } from './udtBluetoothAdapterFactory';
+export type { TowerState, Light, Layer, Drum, Audio, Beam } from './udtTowerState';
+export { rtdt_unpack_state, rtdt_pack_state, isCalibrated } from './udtTowerState';
+export { createDefaultTowerState, parseDifferentialReadings, type ParsedDifferentialReadings } from './udtHelpers';
+export type { TowerResponseConfig } from './udtTowerResponse';
 export type { TowerEventCallbacks, DeviceInformation, ConnectionStatus } from './udtBleConnection';
 import UltimateDarkTower from './UltimateDarkTower';
 export default UltimateDarkTower;

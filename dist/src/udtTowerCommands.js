@@ -130,7 +130,6 @@ class UdtTowerCommands {
                 const layerIndex = this.getTowerLayerForLevel(doorwayLight.level);
                 const lightIndex = this.getLightIndexForSide(doorwayLight.position);
                 const effect = udtConstants_1.LIGHT_EFFECTS[doorwayLight.style] || udtConstants_1.LIGHT_EFFECTS.off;
-                console.log('[cek] effect', doorwayLight.style, effect);
                 commands.push({ layerIndex, lightIndex, effect, loop: true });
             }
         }
