@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 -   **`allLightsOn(effect?)` and `allLightsOff()` convenience methods** — Turns all 24 tower LEDs on or off with a single command packet. `allLightsOn` accepts an optional `effect` parameter (default: `LIGHT_EFFECTS.on`); `allLightsOff` is a convenience wrapper around `allLightsOn(LIGHT_EFFECTS.off)`. Both preserve existing drum, beam, and audio state.
 
+### Changed
+
+-   **Public audio volume API now clamps inputs to 0–3** — The `volume` parameter accepted by `playSoundStateful`, `breakSeal`, and related methods is now clamped to the range 0–3 (0=loudest, 1=medium, 2=quiet, 3=softest/mute) before being sent to the tower. The tower's 4-bit device field accepts 0–15, but the firmware only defines behaviour for 0–3; out-of-range inputs now silently clamp rather than producing undefined tower behaviour. If you were passing values outside 0–3, update them to the equivalent in-range value.
+
 ## [2.2.0] - 2026-02-20
 
 ### Fixed

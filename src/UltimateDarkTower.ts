@@ -389,7 +389,7 @@ class UltimateDarkTower {
    * Plays a sound using stateful commands that preserve existing tower state.
    * @param soundIndex - Index of the sound to play (1-based)
    * @param loop - Whether to loop the audio
-   * @param volume - Audio volume (0-15), optional
+   * @param volume - Audio volume (0-3, 0=loudest, 3=softest), optional. Out-of-range values are clamped.
    * @returns Promise that resolves when command is sent
    */
   async playSoundStateful(soundIndex: number, loop: boolean = false, volume?: number): Promise<void> {

@@ -990,6 +990,51 @@ describe('UltimateDarkTower', () => {
     });
   });
 
+  describe('playSoundStateful volume clamping', () => {
+    // Helper: extract audio.volume nibble from a packed 20-byte command packet.
+    // Packet layout: byte 0 = command type, bytes 1-19 = 19-byte state data.
+    // audio.volume occupies bits 4-7 of stateData[17], i.e. packet byte 18.
+    const getVolumeFromPacket = (packet: Uint8Array): number =>
+      (packet[18] >> 4) & 0x0f;
+
+    beforeEach(async () => {
+      await darkTower.connect();
+      jest.clearAllMocks();
+    });
+
+    test('clamps volume above 3 to 3', async () => {
+      const promise = darkTower.playSoundStateful(1, false, 5);
+      expect(mockAdapter.writeCalls).toBe(1);
+      expect(getVolumeFromPacket(mockAdapter.lastWrittenData!)).toBe(3);
+      darkTower['towerCommands'].onTowerResponse();
+      await promise;
+    });
+
+    test('clamps volume below 0 to 0', async () => {
+      const promise = darkTower.playSoundStateful(1, false, -1);
+      expect(mockAdapter.writeCalls).toBe(1);
+      expect(getVolumeFromPacket(mockAdapter.lastWrittenData!)).toBe(0);
+      darkTower['towerCommands'].onTowerResponse();
+      await promise;
+    });
+
+    test('rounds decimal then clamps: 2.7 rounds to 3, stays within range', async () => {
+      const promise = darkTower.playSoundStateful(1, false, 2.7);
+      expect(mockAdapter.writeCalls).toBe(1);
+      expect(getVolumeFromPacket(mockAdapter.lastWrittenData!)).toBe(3);
+      darkTower['towerCommands'].onTowerResponse();
+      await promise;
+    });
+
+    test('passes valid in-range volume unchanged', async () => {
+      const promise = darkTower.playSoundStateful(1, false, 2);
+      expect(mockAdapter.writeCalls).toBe(1);
+      expect(getVolumeFromPacket(mockAdapter.lastWrittenData!)).toBe(2);
+      darkTower['towerCommands'].onTowerResponse();
+      await promise;
+    });
+  });
+
   describe('cleanup', () => {
     test('should resolve without throwing', async () => {
       await expect(darkTower.cleanup()).resolves.toBeUndefined();

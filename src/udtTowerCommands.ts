@@ -657,7 +657,7 @@ export class UdtTowerCommands {
      * Audio state is not persisted to prevent sounds from replaying on subsequent commands.
      * @param soundIndex - Index of the sound to play (1-based)
      * @param loop - Whether to loop the audio
-     * @param volume - Audio volume (0-15), optional
+     * @param volume - Audio volume (0-3, 0=loudest, 3=softest), optional. Out-of-range values are clamped.
      * @returns Promise that resolves when command is sent
      */
     async playSoundStateful(soundIndex: number, loop: boolean = false, volume?: number): Promise<void> {
@@ -667,14 +667,19 @@ export class UdtTowerCommands {
             return;
         }
 
-        const currentState = this.deps.getCurrentTowerState();
-        const { command } = this.deps.commandFactory.createTransientAudioCommand(currentState, soundIndex, loop, volume);
+        // Clamp to public API range 0..3 (0=Loud, 1=Medium, 2=Quiet, 3=Mute)
+        const clampedVolume = volume === undefined
+            ? undefined
+            : Math.min(3, Math.max(0, Math.round(volume)));
 
-        this.deps.logger.info(`Playing sound ${soundIndex}${loop ? ' (looped)' : ''}${volume !== undefined ? ` at volume ${volume}` : ''}`, '[UDT][CMD]');
+        const currentState = this.deps.getCurrentTowerState();
+        const { command } = this.deps.commandFactory.createTransientAudioCommand(currentState, soundIndex, loop, clampedVolume);
+
+        this.deps.logger.info(`Playing sound ${soundIndex}${loop ? ' (looped)' : ''}${clampedVolume !== undefined ? ` at volume ${clampedVolume}` : ''}`, '[UDT][CMD]');
 
         // Send the command directly without updating state tracking
         // Audio should not persist in state as it's a transient effect
-        await this.sendTowerCommand(command, `playSoundStateful(${soundIndex}, ${loop}${volume !== undefined ? `, ${volume}` : ''})`);
+        await this.sendTowerCommand(command, `playSoundStateful(${soundIndex}, ${loop}${clampedVolume !== undefined ? `, ${clampedVolume}` : ''})`);
     }
 
     /**
