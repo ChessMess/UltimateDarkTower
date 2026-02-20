@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 
+-   **`setLEDStateful` stale-state accumulation** — `setLEDStateful` never called `setTowerState`, so `onTowerStateUpdate` callbacks were never fired for LED changes and any code calling it in a loop (including `lights()`) risked reading stale state if `this.currentTowerState` was replaced between iterations. State is now updated explicitly before the command is sent.
 -   **`cleanup()` reconnect hazard** — `cleanup()` called `disconnect()` which fired `onTowerDisconnect`, meaning a reconnect-on-disconnect handler could call `connect()` on an instance mid-teardown. `isDisposed` is now set before any disconnect logic runs so the callback cannot re-enter `connect()`.
 -   **`cleanup()` not idempotent** — Calling `cleanup()` more than once would re-run the full teardown sequence. It now returns early if the instance is already disposed.
 -   **`MockBluetoothAdapter.cleanup()` leaving callbacks registered** — The mock adapter's `cleanup()` now clears all three event callbacks, matching the behaviour of `NodeBluetoothAdapter`.

@@ -641,6 +641,13 @@ export class UdtTowerCommands {
         const currentState = this.deps.getCurrentTowerState();
         const command = this.deps.commandFactory.createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop);
 
+        // Update local state so subsequent setLEDStateful calls (e.g. from lights() loop)
+        // read the correct accumulated state, and so onTowerStateUpdate callbacks fire.
+        if (currentState) {
+            currentState.layer[layerIndex].light[lightIndex] = { effect, loop };
+            this.deps.setTowerState(currentState, 'setLEDStateful');
+        }
+
         this.deps.logger.info(`Setting LED layer ${layerIndex} light ${lightIndex} to effect ${effect}${loop ? ' (looped)' : ''}`, '[UDT][CMD]');
         await this.sendTowerCommand(command, `setLEDStateful(${layerIndex}, ${lightIndex}, ${effect}, ${loop})`);
     }
