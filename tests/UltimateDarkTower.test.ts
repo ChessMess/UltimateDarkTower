@@ -3,7 +3,7 @@
  */
 
 import UltimateDarkTower from '../src/UltimateDarkTower';
-import { GLYPHS } from '../src/udtConstants';
+import { GLYPHS, LIGHT_EFFECTS } from '../src/udtConstants';
 import { MockBluetoothAdapter } from './mocks/MockBluetoothAdapter';
 
 describe('UltimateDarkTower', () => {
@@ -905,6 +905,88 @@ describe('UltimateDarkTower', () => {
         expect(darkTower.getGlyphPosition('banner')).toBe('west');    // north + 3 steps = west
         expect(darkTower.getGlyphPosition('reinforce')).toBe('east'); // south + 3 steps = east
       });
+    });
+  });
+
+  describe('allLightsOn / allLightsOff', () => {
+    let sendStateSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      sendStateSpy = jest.spyOn(darkTower, 'sendTowerState').mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+      sendStateSpy.mockRestore();
+    });
+
+    test('allLightsOn() defaults to LIGHT_EFFECTS.on — all 24 lights effect=1, loop=true', async () => {
+      await darkTower.allLightsOn();
+      expect(sendStateSpy).toHaveBeenCalledTimes(1);
+      const state = sendStateSpy.mock.calls[0][0];
+      expect(state.layer).toHaveLength(6);
+      state.layer.forEach((layer: { light: Array<{ effect: number; loop: boolean }> }) => {
+        expect(layer.light).toHaveLength(4);
+        layer.light.forEach(light => {
+          expect(light.effect).toBe(LIGHT_EFFECTS.on);
+          expect(light.loop).toBe(true);
+        });
+      });
+    });
+
+    test('allLightsOn(LIGHT_EFFECTS.breathe) — all 24 lights effect=2, loop=true', async () => {
+      await darkTower.allLightsOn(LIGHT_EFFECTS.breathe);
+      const state = sendStateSpy.mock.calls[0][0];
+      state.layer.forEach((layer: { light: Array<{ effect: number; loop: boolean }> }) => {
+        layer.light.forEach(light => {
+          expect(light.effect).toBe(LIGHT_EFFECTS.breathe);
+          expect(light.loop).toBe(true);
+        });
+      });
+    });
+
+    test('allLightsOn(LIGHT_EFFECTS.off) — all 24 lights effect=0, loop=false', async () => {
+      await darkTower.allLightsOn(LIGHT_EFFECTS.off);
+      const state = sendStateSpy.mock.calls[0][0];
+      state.layer.forEach((layer: { light: Array<{ effect: number; loop: boolean }> }) => {
+        layer.light.forEach(light => {
+          expect(light.effect).toBe(LIGHT_EFFECTS.off);
+          expect(light.loop).toBe(false);
+        });
+      });
+    });
+
+    test('allLightsOff() — all 24 lights off, sendTowerState called once', async () => {
+      await darkTower.allLightsOff();
+      expect(sendStateSpy).toHaveBeenCalledTimes(1);
+      const state = sendStateSpy.mock.calls[0][0];
+      state.layer.forEach((layer: { light: Array<{ effect: number; loop: boolean }> }) => {
+        layer.light.forEach(light => {
+          expect(light.effect).toBe(LIGHT_EFFECTS.off);
+          expect(light.loop).toBe(false);
+        });
+      });
+    });
+
+    test('allLightsOn() preserves drum state from currentTowerState', async () => {
+      // Simulate a non-default drum state by manipulating internal state
+      const internalState = darkTower['currentTowerState'];
+      internalState.drum[0].position = 2;
+      internalState.drum[1].calibrated = true;
+
+      await darkTower.allLightsOn();
+      const state = sendStateSpy.mock.calls[0][0];
+      expect(state.drum[0].position).toBe(2);
+      expect(state.drum[1].calibrated).toBe(true);
+    });
+
+    test('allLightsOn() does not mutate the internal tower state before sending', async () => {
+      const stateBefore = darkTower['currentTowerState'];
+      const layerRefBefore = stateBefore.layer;
+
+      await darkTower.allLightsOn();
+
+      // The layer array reference on the internal state should be unchanged
+      expect(darkTower['currentTowerState'].layer).toBe(layerRefBefore);
     });
   });
 

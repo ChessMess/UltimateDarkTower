@@ -5,6 +5,7 @@ import {
   type SealIdentifier,
   type Glyphs,
   GLYPHS,
+  LIGHT_EFFECTS,
   TOWER_COMMAND_PACKET_SIZE,
   TOWER_STATE_DATA_SIZE,
   TOWER_STATE_RESPONSE_MIN_LENGTH,
@@ -429,6 +430,33 @@ class UltimateDarkTower {
     this.calculateAndUpdateGlyphPositions('bottom', oldBottomPosition, bottom);
 
     return result;
+  }
+
+  /**
+   * Turns all tower LEDs on with the specified light effect, sending a single command packet.
+   * Preserves current drum, beam, and audio state while overriding all 6 layers of lights.
+   * @param effect - Light effect to apply (default: LIGHT_EFFECTS.on). Use LIGHT_EFFECTS constants for named values.
+   * @returns Promise that resolves when the command is sent
+   */
+  async allLightsOn(effect: number = LIGHT_EFFECTS.on): Promise<void> {
+    const currentState = this.getCurrentTowerState();
+    const loop = effect !== LIGHT_EFFECTS.off;
+    const newState: TowerState = {
+      ...currentState,
+      layer: currentState.layer.map(layer => ({
+        light: layer.light.map(() => ({ effect, loop }))
+      })) as TowerState['layer']
+    };
+    return this.sendTowerState(newState);
+  }
+
+  /**
+   * Turns all tower LEDs off, sending a single command packet.
+   * Convenience wrapper around allLightsOn(LIGHT_EFFECTS.off).
+   * @returns Promise that resolves when the command is sent
+   */
+  async allLightsOff(): Promise<void> {
+    return this.allLightsOn(LIGHT_EFFECTS.off);
   }
 
   //#endregion

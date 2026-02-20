@@ -593,20 +593,9 @@ const clearAllLightCheckboxes = async () => {
     checkbox.setAttribute('data-light-style', 'off');
   });
 
-  // Get current tower state and turn off all lights
-  const currentState = Tower.getCurrentTowerState();
-
-  // Turn off all lights in all layers
-  for (let layerIndex = 0; layerIndex < currentState.layer.length; layerIndex++) {
-    for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
-      currentState.layer[layerIndex].light[lightIndex].effect = LIGHT_EFFECTS.off;
-      currentState.layer[layerIndex].light[lightIndex].loop = false;
-    }
-  }
-
-  // Send updated state to tower
+  // Turn off all lights
   try {
-    await Tower.sendTowerState(currentState);
+    await Tower.allLightsOff();
   } catch (error) {
     console.error('Error sending tower state for all lights off:', error);
   }
@@ -625,33 +614,9 @@ const allLightsOn = async () => {
     checkbox.setAttribute('data-light-style', selectedLightStyle);
   });
 
-  // Get current tower state and turn on all lights with selected effect
-  const currentState = Tower.getCurrentTowerState();
-
-  // Apply effect to all doorway, ledge, and base lights
-  // Doorway: layers TOP_RING, MIDDLE_RING, BOTTOM_RING (indices 0,1,2)
-  for (let layerIndex = 0; layerIndex <= 2; layerIndex++) {
-    for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
-      currentState.layer[layerIndex].light[lightIndex].effect = effect;
-      currentState.layer[layerIndex].light[lightIndex].loop = effect !== 0;
-    }
-  }
-  // Ledge: layer LEDGE (index 3)
-  for (let lightIndex = 0; lightIndex < currentState.layer[3].light.length; lightIndex++) {
-    currentState.layer[3].light[lightIndex].effect = effect;
-    currentState.layer[3].light[lightIndex].loop = effect !== 0;
-  }
-  // Base: layers BASE1 and BASE2 (indices 4,5)
-  for (let layerIndex = 4; layerIndex <= 5; layerIndex++) {
-    for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
-      currentState.layer[layerIndex].light[lightIndex].effect = effect;
-      currentState.layer[layerIndex].light[lightIndex].loop = effect !== 0;
-    }
-  }
-
-  // Send updated state to tower
+  // Turn on all lights with the selected effect
   try {
-    await Tower.sendTowerState(currentState);
+    await Tower.allLightsOn(effect);
   } catch (error) {
     console.error('Error sending tower state for all lights on:', error);
   }

@@ -471,6 +471,33 @@ Send light override commands for special effects.
 await tower.lightOverrides(0x0c, TOWER_AUDIO_LIBRARY.TowerAngry1.value);
 ```
 
+#### `allLightsOn(effect?: number): Promise<void>`
+
+Turns all 24 tower LEDs on with the specified effect in a single command packet.
+Preserves current drum, beam, and audio state.
+
+- `effect` — Light effect value (default: `LIGHT_EFFECTS.on = 1`). Use `LIGHT_EFFECTS` constants for named values.
+
+```typescript
+// Turn all lights on (solid)
+await tower.allLightsOn();
+
+// Turn all lights on with breathe effect
+await tower.allLightsOn(LIGHT_EFFECTS.breathe);
+
+// Turn all lights on with fast breathe
+await tower.allLightsOn(LIGHT_EFFECTS.breatheFast);
+```
+
+#### `allLightsOff(): Promise<void>`
+
+Turns all 24 tower LEDs off in a single command packet.
+Convenience wrapper around `allLightsOn(LIGHT_EFFECTS.off)`.
+
+```typescript
+await tower.allLightsOff();
+```
+
 ### Drum Rotation
 
 #### `Rotate(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number): Promise<void>`

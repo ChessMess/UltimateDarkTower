@@ -41,6 +41,7 @@
         "publish:check": "npm run ci",
         "size": "npm run build && du -sh dist/",
         "test:integration": "npx ts-node tests/integration/calibration.integration.ts",
+        "test:integration:lights": "npx ts-node tests/integration/lights.integration.ts",
         "example:node": "npx ts-node examples/node/NodeExample.ts"
     },
     "keywords": [
