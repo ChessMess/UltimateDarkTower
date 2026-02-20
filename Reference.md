@@ -248,7 +248,7 @@ async function disconnectFromTower() {
 
 #### `cleanup(): Promise<void>`
 
-Comprehensive cleanup including connection termination and resource cleanup.
+Permanently releases all resources and terminates the connection. This method is **final and idempotent** — calling it more than once is safe, but once called the instance is disposed and any subsequent call to `connect()` will throw. Use `disconnect()` if you intend to reconnect later.
 
 ```typescript
 // Always call cleanup when your application is closing

@@ -76,6 +76,9 @@ export class MockBluetoothAdapter implements IBluetoothAdapter {
 
     async cleanup(): Promise<void> {
         this.isConnectedValue = false;
+        this.characteristicCallback = undefined;
+        this.disconnectCallback = undefined;
+        this.availabilityCallback = undefined;
     }
 
     // Test helper methods to simulate events

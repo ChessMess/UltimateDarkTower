@@ -898,13 +898,37 @@ describe('UltimateDarkTower', () => {
       test('should correctly handle 270-degree rotations', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
 
-        // Rotate bottom drum 270 degrees: north to west  
+        // Rotate bottom drum 270 degrees: north to west
         updateMethod('bottom', 'north', 'west');
 
         // 270-degree clockwise rotation
         expect(darkTower.getGlyphPosition('banner')).toBe('west');    // north + 3 steps = west
         expect(darkTower.getGlyphPosition('reinforce')).toBe('east'); // south + 3 steps = east
       });
+    });
+  });
+
+  describe('cleanup', () => {
+    test('should resolve without throwing', async () => {
+      await expect(darkTower.cleanup()).resolves.toBeUndefined();
+    });
+
+    test('should set isConnected to false', async () => {
+      await darkTower.connect();
+      expect(darkTower.isConnected).toBe(true);
+      await darkTower.cleanup();
+      expect(darkTower.isConnected).toBe(false);
+    });
+
+    test('should clear the command queue', async () => {
+      const clearQueueSpy = jest.spyOn(darkTower['towerCommands'], 'clearQueue');
+      await darkTower.cleanup();
+      expect(clearQueueSpy).toHaveBeenCalledTimes(1);
+    });
+
+    test('should be idempotent — calling twice does not throw', async () => {
+      await darkTower.cleanup();
+      await expect(darkTower.cleanup()).resolves.toBeUndefined();
     });
   });
 });

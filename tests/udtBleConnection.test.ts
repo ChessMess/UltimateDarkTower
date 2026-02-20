@@ -300,5 +300,27 @@ describe('UdtBleConnection', () => {
       expect(connection.isConnected).toBe(false);
       expect(connection['connectionMonitorInterval']).toBeNull();
     });
+
+    test('should set isDisposed to true', async () => {
+      expect(connection.isDisposed).toBe(false);
+      await connection.cleanup();
+      expect(connection.isDisposed).toBe(true);
+    });
+
+    test('should be idempotent — calling twice is a no-op', async () => {
+      await connection.connect();
+      await connection.cleanup();
+      // Second call should not throw and adapter cleanup should only run once
+      const cleanupSpy = jest.spyOn(mockAdapter, 'cleanup');
+      await connection.cleanup();
+      expect(cleanupSpy).not.toHaveBeenCalled();
+    });
+
+    test('should prevent reconnection after disposal', async () => {
+      await connection.cleanup();
+      await expect(connection.connect()).rejects.toThrow(
+        'UdtBleConnection instance has been disposed and cannot reconnect'
+      );
+    });
   });
 });

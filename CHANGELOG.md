@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+-   **`cleanup()` reconnect hazard** — `cleanup()` called `disconnect()` which fired `onTowerDisconnect`, meaning a reconnect-on-disconnect handler could call `connect()` on an instance mid-teardown. `isDisposed` is now set before any disconnect logic runs so the callback cannot re-enter `connect()`.
+-   **`cleanup()` not idempotent** — Calling `cleanup()` more than once would re-run the full teardown sequence. It now returns early if the instance is already disposed.
+-   **`MockBluetoothAdapter.cleanup()` leaving callbacks registered** — The mock adapter's `cleanup()` now clears all three event callbacks, matching the behaviour of `NodeBluetoothAdapter`.
+
+### Changed
+
+-   **`connect()` throws after disposal** — Calling `connect()` on a `UdtBleConnection` instance after `cleanup()` now throws `Error: UdtBleConnection instance has been disposed and cannot reconnect`. Use `disconnect()` for reversible disconnection.
+
 ## [2.1.3] - 2026-02-19
 
 ### Fixed

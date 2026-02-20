@@ -57,6 +57,7 @@ export class UdtBleConnection {
 
     // Connection state
     isConnected: boolean = false;
+    isDisposed: boolean = false;
     performingCalibration: boolean = false;
     performingLongCommand: boolean = false;
 
@@ -123,6 +124,9 @@ export class UdtBleConnection {
     }
 
     async connect() {
+        if (this.isDisposed) {
+            throw new Error('UdtBleConnection instance has been disposed and cannot reconnect');
+        }
         this.logger.info("Looking for Tower...", '[UDT]');
         try {
             await this.bluetoothAdapter.connect(
@@ -436,6 +440,9 @@ export class UdtBleConnection {
     }
 
     async cleanup() {
+        if (this.isDisposed) return;
+        this.isDisposed = true;
+
         this.logger.info('Cleaning up UdtBleConnection instance', '[UDT][BLE]');
 
         this.stopConnectionMonitoring();
