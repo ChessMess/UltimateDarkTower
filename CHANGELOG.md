@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-02-20
+
 ### Fixed
 
 -   **`setLEDStateful` stale-state accumulation** — `setLEDStateful` never called `setTowerState`, so `onTowerStateUpdate` callbacks were never fired for LED changes and any code calling it in a loop (including `lights()`) risked reading stale state if `this.currentTowerState` was replaced between iterations. State is now updated explicitly before the command is sent.
@@ -98,6 +100,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 -   Tower Game ("The Tower's Challenge") example web app
 -   Complete API reference documentation
 
+[2.2.0]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.3...v2.2.0
 [2.1.3]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.2...v2.1.3
 [2.1.2]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.0...v2.1.1
