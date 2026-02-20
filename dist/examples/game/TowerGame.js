@@ -1371,6 +1371,7 @@
     constructor(logger2, callbacks, adapter) {
       // Connection state
       this.isConnected = false;
+      this.isDisposed = false;
       this.performingCalibration = false;
       this.performingLongCommand = false;
       // Connection monitoring
@@ -1424,6 +1425,9 @@
       });
     }
     async connect() {
+      if (this.isDisposed) {
+        throw new Error("UdtBleConnection instance has been disposed and cannot reconnect");
+      }
       this.logger.info("Looking for Tower...", "[UDT]");
       try {
         await this.bluetoothAdapter.connect(
@@ -1667,6 +1671,9 @@
       }
     }
     async cleanup() {
+      if (this.isDisposed)
+        return;
+      this.isDisposed = true;
       this.logger.info("Cleaning up UdtBleConnection instance", "[UDT][BLE]");
       this.stopConnectionMonitoring();
       if (this.isConnected) {
@@ -2537,6 +2544,10 @@
     async setLEDStateful(layerIndex, lightIndex, effect, loop = true) {
       const currentState = this.deps.getCurrentTowerState();
       const command = this.deps.commandFactory.createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop);
+      if (currentState) {
+        currentState.layer[layerIndex].light[lightIndex] = { effect, loop };
+        this.deps.setTowerState(currentState, "setLEDStateful");
+      }
       this.deps.logger.info(`Setting LED layer ${layerIndex} light ${lightIndex} to effect ${effect}${loop ? " (looped)" : ""}`, "[UDT][CMD]");
       await this.sendTowerCommand(command, `setLEDStateful(${layerIndex}, ${lightIndex}, ${effect}, ${loop})`);
     }
@@ -3301,7 +3312,12 @@
     //#endregion
     //#region cleanup
     /**
-     * Clean up resources and disconnect properly
+     * Permanently release all resources and disconnect.
+     *
+     * This method is **final and idempotent**: calling it more than once is safe,
+     * but after the first call the instance is disposed and `connect()` will throw.
+     * Use `disconnect()` instead if you intend to reconnect later.
+     *
      * @returns {Promise<void>} Promise that resolves when cleanup is complete
      */
     async cleanup() {

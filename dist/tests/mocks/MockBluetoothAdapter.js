@@ -61,6 +61,9 @@ class MockBluetoothAdapter {
     }
     async cleanup() {
         this.isConnectedValue = false;
+        this.characteristicCallback = undefined;
+        this.disconnectCallback = undefined;
+        this.availabilityCallback = undefined;
     }
     // Test helper methods to simulate events
     simulateResponse(data) {

@@ -38,6 +38,7 @@ export declare class UdtBleConnection {
     private responseProcessor;
     private bluetoothAdapter;
     isConnected: boolean;
+    isDisposed: boolean;
     performingCalibration: boolean;
     performingLongCommand: boolean;
     private connectionMonitorInterval;

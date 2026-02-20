@@ -10,6 +10,7 @@ class UdtBleConnection {
     constructor(logger, callbacks, adapter) {
         // Connection state
         this.isConnected = false;
+        this.isDisposed = false;
         this.performingCalibration = false;
         this.performingLongCommand = false;
         // Connection monitoring
@@ -64,6 +65,9 @@ class UdtBleConnection {
         });
     }
     async connect() {
+        if (this.isDisposed) {
+            throw new Error('UdtBleConnection instance has been disposed and cannot reconnect');
+        }
         this.logger.info("Looking for Tower...", '[UDT]');
         try {
             await this.bluetoothAdapter.connect(udtConstants_1.TOWER_DEVICE_NAME, [udtConstants_1.UART_SERVICE_UUID, udtConstants_1.DIS_SERVICE_UUID]);
@@ -322,6 +326,9 @@ class UdtBleConnection {
         }
     }
     async cleanup() {
+        if (this.isDisposed)
+            return;
+        this.isDisposed = true;
         this.logger.info('Cleaning up UdtBleConnection instance', '[UDT][BLE]');
         this.stopConnectionMonitoring();
         if (this.isConnected) {

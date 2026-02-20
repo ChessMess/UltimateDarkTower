@@ -373,7 +373,12 @@ declare class UltimateDarkTower {
      */
     getDeviceInformation(): DeviceInformation;
     /**
-     * Clean up resources and disconnect properly
+     * Permanently release all resources and disconnect.
+     *
+     * This method is **final and idempotent**: calling it more than once is safe,
+     * but after the first call the instance is disposed and `connect()` will throw.
+     * Use `disconnect()` instead if you intend to reconnect later.
+     *
      * @returns {Promise<void>} Promise that resolves when cleanup is complete
      */
     cleanup(): Promise<void>;
