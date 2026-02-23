@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-02-23
+
 ### Added
 
 -   **`allLightsOn(effect?)` and `allLightsOff()` convenience methods** — Turns all 24 tower LEDs on or off with a single command packet. `allLightsOn` accepts an optional `effect` parameter (default: `LIGHT_EFFECTS.on`); `allLightsOff` is a convenience wrapper around `allLightsOn(LIGHT_EFFECTS.off)`. Both preserve existing drum, beam, and audio state.
@@ -108,6 +110,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 -   Tower Game ("The Tower's Challenge") example web app
 -   Complete API reference documentation
 
+[2.3.0]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.3...v2.2.0
 [2.1.3]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.2...v2.1.3
 [2.1.2]: https://github.com/ChessMess/UltimateDarkTower/compare/v2.1.1...v2.1.2

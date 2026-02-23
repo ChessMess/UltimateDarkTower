@@ -1943,7 +1943,7 @@
     * @param currentState - The current complete tower state
     * @param sample - Audio sample index to play (0-127)
     * @param loop - Whether to loop the audio
-    * @param volume - Audio volume (0-15), optional
+    * @param volume - Audio volume (0-3, 0=loudest, 3=softest). Public API clamps inputs to this range before reaching here.
     * @returns 20-byte command packet
     */
     createStatefulAudioCommand(currentState, sample, loop = false, volume) {
@@ -1956,10 +1956,10 @@
     /**
      * Creates a transient audio command that includes current tower state but doesn't persist audio state.
      * This prevents audio from being included in subsequent commands.
-     * @param currentState - The current complete tower state  
+     * @param currentState - The current complete tower state
      * @param sample - Audio sample index to play
      * @param loop - Whether to loop the audio
-     * @param volume - Audio volume (0-15), optional
+     * @param volume - Audio volume (0-3, 0=loudest, 3=softest). Public API clamps inputs to this range before reaching here.
      * @returns Object containing the command packet and the state without audio for local tracking
      */
     createTransientAudioCommand(currentState, sample, loop = false, volume) {
@@ -1973,12 +1973,12 @@
       return { command, stateWithoutAudio };
     }
     /**
-     * Creates a transient audio command with additional modifications that includes current tower state 
+     * Creates a transient audio command with additional modifications that includes current tower state
      * but doesn't persist audio state. This prevents audio from being included in subsequent commands.
-     * @param currentState - The current complete tower state  
+     * @param currentState - The current complete tower state
      * @param sample - Audio sample index to play
      * @param loop - Whether to loop the audio
-     * @param volume - Audio volume (0-15), optional
+     * @param volume - Audio volume (0-3, 0=loudest, 3=softest). Public API clamps inputs to this range before reaching here.
      * @param otherModifications - Other tower state modifications to include
      * @returns Object containing the command packet and the state with modifications but without audio
      */
@@ -2710,7 +2710,7 @@
      * Audio state is not persisted to prevent sounds from replaying on subsequent commands.
      * @param soundIndex - Index of the sound to play (1-based)
      * @param loop - Whether to loop the audio
-     * @param volume - Audio volume (0-15), optional
+     * @param volume - Audio volume (0-3, 0=loudest, 3=softest), optional. Out-of-range values are clamped.
      * @returns Promise that resolves when command is sent
      */
     async playSoundStateful(soundIndex, loop = false, volume) {
@@ -2719,10 +2719,11 @@
         this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, "[UDT][CMD]");
         return;
       }
+      const clampedVolume = volume === void 0 ? void 0 : Math.min(3, Math.max(0, Math.round(volume)));
       const currentState = this.deps.getCurrentTowerState();
-      const { command } = this.deps.commandFactory.createTransientAudioCommand(currentState, soundIndex, loop, volume);
-      this.deps.logger.info(`Playing sound ${soundIndex}${loop ? " (looped)" : ""}${volume !== void 0 ? ` at volume ${volume}` : ""}`, "[UDT][CMD]");
-      await this.sendTowerCommand(command, `playSoundStateful(${soundIndex}, ${loop}${volume !== void 0 ? `, ${volume}` : ""})`);
+      const { command } = this.deps.commandFactory.createTransientAudioCommand(currentState, soundIndex, loop, clampedVolume);
+      this.deps.logger.info(`Playing sound ${soundIndex}${loop ? " (looped)" : ""}${clampedVolume !== void 0 ? ` at volume ${clampedVolume}` : ""}`, "[UDT][CMD]");
+      await this.sendTowerCommand(command, `playSoundStateful(${soundIndex}, ${loop}${clampedVolume !== void 0 ? `, ${clampedVolume}` : ""})`);
     }
     /**
      * Rotates a single drum using stateful commands that preserve existing tower state.
@@ -3092,7 +3093,7 @@
      * Plays a sound using stateful commands that preserve existing tower state.
      * @param soundIndex - Index of the sound to play (1-based)
      * @param loop - Whether to loop the audio
-     * @param volume - Audio volume (0-15), optional
+     * @param volume - Audio volume (0-3, 0=loudest, 3=softest), optional. Out-of-range values are clamped.
      * @returns Promise that resolves when command is sent
      */
     async playSoundStateful(soundIndex, loop = false, volume) {
@@ -3126,6 +3127,30 @@
       this.calculateAndUpdateGlyphPositions("middle", oldMiddlePosition, middle);
       this.calculateAndUpdateGlyphPositions("bottom", oldBottomPosition, bottom);
       return result;
+    }
+    /**
+     * Turns all tower LEDs on with the specified light effect, sending a single command packet.
+     * Preserves current drum, beam, and audio state while overriding all 6 layers of lights.
+     * @param effect - Light effect to apply (default: LIGHT_EFFECTS.on). Use LIGHT_EFFECTS constants for named values.
+     * @returns Promise that resolves when the command is sent
+     */
+    async allLightsOn(effect = LIGHT_EFFECTS.on) {
+      const currentState = this.getCurrentTowerState();
+      const loop = effect !== LIGHT_EFFECTS.off;
+      const newState = __spreadProps(__spreadValues({}, currentState), {
+        layer: currentState.layer.map((layer) => ({
+          light: layer.light.map(() => ({ effect, loop }))
+        }))
+      });
+      return this.sendTowerState(newState);
+    }
+    /**
+     * Turns all tower LEDs off, sending a single command packet.
+     * Convenience wrapper around allLightsOn(LIGHT_EFFECTS.off).
+     * @returns Promise that resolves when the command is sent
+     */
+    async allLightsOff() {
+      return this.allLightsOn(LIGHT_EFFECTS.off);
     }
     //#endregion
     //#region Tower State Management
@@ -3876,15 +3901,8 @@
       checkbox.checked = false;
       checkbox.setAttribute("data-light-style", "off");
     });
-    const currentState = Tower.getCurrentTowerState();
-    for (let layerIndex = 0; layerIndex < currentState.layer.length; layerIndex++) {
-      for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
-        currentState.layer[layerIndex].light[lightIndex].effect = LIGHT_EFFECTS.off;
-        currentState.layer[layerIndex].light[lightIndex].loop = false;
-      }
-    }
     try {
-      await Tower.sendTowerState(currentState);
+      await Tower.allLightsOff();
     } catch (error) {
       console.error("Error sending tower state for all lights off:", error);
     }
@@ -3899,25 +3917,8 @@
       checkbox.checked = true;
       checkbox.setAttribute("data-light-style", selectedLightStyle);
     });
-    const currentState = Tower.getCurrentTowerState();
-    for (let layerIndex = 0; layerIndex <= 2; layerIndex++) {
-      for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
-        currentState.layer[layerIndex].light[lightIndex].effect = effect;
-        currentState.layer[layerIndex].light[lightIndex].loop = effect !== 0;
-      }
-    }
-    for (let lightIndex = 0; lightIndex < currentState.layer[3].light.length; lightIndex++) {
-      currentState.layer[3].light[lightIndex].effect = effect;
-      currentState.layer[3].light[lightIndex].loop = effect !== 0;
-    }
-    for (let layerIndex = 4; layerIndex <= 5; layerIndex++) {
-      for (let lightIndex = 0; lightIndex < currentState.layer[layerIndex].light.length; lightIndex++) {
-        currentState.layer[layerIndex].light[lightIndex].effect = effect;
-        currentState.layer[layerIndex].light[lightIndex].loop = effect !== 0;
-      }
-    }
     try {
-      await Tower.sendTowerState(currentState);
+      await Tower.allLightsOn(effect);
     } catch (error) {
       console.error("Error sending tower state for all lights on:", error);
     }

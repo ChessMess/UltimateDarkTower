@@ -174,6 +174,7 @@ function rtdt_pack_state(data, len, state) {
     // Pack beam-break counter state, and drum reversal
     data[15] = (state.beam.count >> 8);
     data[16] = (state.beam.count & 0xFF);
+    // audio.volume is stored directly in bits 4-7; public API clamps to 0..3 (firmware-defined range)
     data[17] = (state.audio.volume << 4) |
         ((state.beam.fault ? 1 : 0)) |
         ((state.drum[0].reverse ? 1 : 0) << 1) |

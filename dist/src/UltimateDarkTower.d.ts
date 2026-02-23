@@ -174,7 +174,7 @@ declare class UltimateDarkTower {
      * Plays a sound using stateful commands that preserve existing tower state.
      * @param soundIndex - Index of the sound to play (1-based)
      * @param loop - Whether to loop the audio
-     * @param volume - Audio volume (0-15), optional
+     * @param volume - Audio volume (0-3, 0=loudest, 3=softest), optional. Out-of-range values are clamped.
      * @returns Promise that resolves when command is sent
      */
     playSoundStateful(soundIndex: number, loop?: boolean, volume?: number): Promise<void>;
@@ -196,6 +196,19 @@ declare class UltimateDarkTower {
      * @returns Promise that resolves when rotate command is sent
      */
     rotateWithState(top: TowerSide, middle: TowerSide, bottom: TowerSide, soundIndex?: number): Promise<void>;
+    /**
+     * Turns all tower LEDs on with the specified light effect, sending a single command packet.
+     * Preserves current drum, beam, and audio state while overriding all 6 layers of lights.
+     * @param effect - Light effect to apply (default: LIGHT_EFFECTS.on). Use LIGHT_EFFECTS constants for named values.
+     * @returns Promise that resolves when the command is sent
+     */
+    allLightsOn(effect?: number): Promise<void>;
+    /**
+     * Turns all tower LEDs off, sending a single command packet.
+     * Convenience wrapper around allLightsOn(LIGHT_EFFECTS.off).
+     * @returns Promise that resolves when the command is sent
+     */
+    allLightsOff(): Promise<void>;
     /**
      * Gets the current complete tower state if available.
      * @returns The current tower state object

@@ -112,7 +112,7 @@ class UdtCommandFactory {
  * @param currentState - The current complete tower state
  * @param sample - Audio sample index to play (0-127)
  * @param loop - Whether to loop the audio
- * @param volume - Audio volume (0-15), optional
+ * @param volume - Audio volume (0-3, 0=loudest, 3=softest). Public API clamps inputs to this range before reaching here.
  * @returns 20-byte command packet
  */
     createStatefulAudioCommand(currentState, sample, loop = false, volume) {
@@ -128,7 +128,7 @@ class UdtCommandFactory {
      * @param currentState - The current complete tower state
      * @param sample - Audio sample index to play
      * @param loop - Whether to loop the audio
-     * @param volume - Audio volume (0-15), optional
+     * @param volume - Audio volume (0-3, 0=loudest, 3=softest). Public API clamps inputs to this range before reaching here.
      * @returns Object containing the command packet and the state without audio for local tracking
      */
     createTransientAudioCommand(currentState, sample, loop = false, volume) {
@@ -150,7 +150,7 @@ class UdtCommandFactory {
      * @param currentState - The current complete tower state
      * @param sample - Audio sample index to play
      * @param loop - Whether to loop the audio
-     * @param volume - Audio volume (0-15), optional
+     * @param volume - Audio volume (0-3, 0=loudest, 3=softest). Public API clamps inputs to this range before reaching here.
      * @param otherModifications - Other tower state modifications to include
      * @returns Object containing the command packet and the state with modifications but without audio
      */

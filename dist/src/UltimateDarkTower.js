@@ -326,7 +326,7 @@ class UltimateDarkTower {
      * Plays a sound using stateful commands that preserve existing tower state.
      * @param soundIndex - Index of the sound to play (1-based)
      * @param loop - Whether to loop the audio
-     * @param volume - Audio volume (0-15), optional
+     * @param volume - Audio volume (0-3, 0=loudest, 3=softest), optional. Out-of-range values are clamped.
      * @returns Promise that resolves when command is sent
      */
     async playSoundStateful(soundIndex, loop = false, volume) {
@@ -362,6 +362,28 @@ class UltimateDarkTower {
         this.calculateAndUpdateGlyphPositions('middle', oldMiddlePosition, middle);
         this.calculateAndUpdateGlyphPositions('bottom', oldBottomPosition, bottom);
         return result;
+    }
+    /**
+     * Turns all tower LEDs on with the specified light effect, sending a single command packet.
+     * Preserves current drum, beam, and audio state while overriding all 6 layers of lights.
+     * @param effect - Light effect to apply (default: LIGHT_EFFECTS.on). Use LIGHT_EFFECTS constants for named values.
+     * @returns Promise that resolves when the command is sent
+     */
+    async allLightsOn(effect = udtConstants_1.LIGHT_EFFECTS.on) {
+        const currentState = this.getCurrentTowerState();
+        const loop = effect !== udtConstants_1.LIGHT_EFFECTS.off;
+        const newState = Object.assign(Object.assign({}, currentState), { layer: currentState.layer.map(layer => ({
+                light: layer.light.map(() => ({ effect, loop }))
+            })) });
+        return this.sendTowerState(newState);
+    }
+    /**
+     * Turns all tower LEDs off, sending a single command packet.
+     * Convenience wrapper around allLightsOn(LIGHT_EFFECTS.off).
+     * @returns Promise that resolves when the command is sent
+     */
+    async allLightsOff() {
+        return this.allLightsOn(udtConstants_1.LIGHT_EFFECTS.off);
     }
     //#endregion
     //#region Tower State Management
