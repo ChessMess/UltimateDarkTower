@@ -1,19 +1,37 @@
 {
   "name": "mcp-server-return-to-dark-tower",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "MCP server for controlling the Return to Dark Tower board game tower via Bluetooth",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "mcp-server-dark-tower": "dist/index.js"
   },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
+    "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js",
+    "inspect:dev": "npx @modelcontextprotocol/inspector tsx src/index.ts",
     "lint": "eslint src/ && prettier --check src/",
     "lint:fix": "eslint src/ --fix && prettier --write src/",
-    "test": "echo \"No tests yet\" && exit 0"
+    "test": "echo \"No tests yet\" && exit 0",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/",
+    "ci": "npm run lint && npm run type-check && npm run test && npm run build",
+    "prepack": "npm run ci",
+    "prepublishOnly": "npm run prepack",
+    "publish:check": "npm pack --dry-run"
   },
   "keywords": [
     "mcp",
@@ -32,20 +50,20 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
     "express": "^4.21.0",
-    "ultimatedarktower": "^2.0.0",
+    "ultimatedarktower": "^2.3.0",
     "zod": "^3.25.0"
   },
   "peerDependencies": {
     "@stoprocent/noble": "^2.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "eslint": "^9.0.0",
-    "@eslint/js": "^9.0.0",
-    "typescript-eslint": "^8.0.0",
     "prettier": "^3.4.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0"
   }
 }
