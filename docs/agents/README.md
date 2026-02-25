@@ -4,6 +4,45 @@
 
 Two AI coding agents for the [Return to Dark Tower](https://restorationgames.com/return-to-dark-tower/) ecosystem.
 
+## Table of Contents
+
+- [What is an AI agent?](#what-is-an-ai-agent)
+- [Agents in this repo](#agents-in-this-repo)
+- [Ultimate Dark Tower — VS Code Coding Agent](#ultimate-dark-tower--vs-code-coding-agent)
+- [Return to Dark Tower — Web-Based AI Agent](#return-to-dark-tower--web-based-ai-agent)
+- [Related](#related)
+
+---
+
+## What is an AI agent?
+
+An AI agent is an AI assistant that has been given a specific role, context, and set of tools.
+Where a general-purpose AI like Claude or ChatGPT can answer almost any question, an agent is
+configured upfront — with a system prompt, domain knowledge, and sometimes direct access to
+external tools or APIs — so that it behaves as a specialist for a particular task.
+
+In practice, an agent is usually just a markdown file (or a short block of text) that gets
+loaded as the AI's instructions before your conversation starts. That file tells the AI who it
+is, what it knows, and what it can do.
+
+**The agents in this repo:**
+
+- The **VS Code coding agent** is a `.agent.md` file that GitHub Copilot picks up automatically.
+  When you address it with `@ultimate-dark-tower`, Copilot loads those instructions and the AI
+  answers as a specialist in the `ultimatedarktower` TypeScript library.
+
+- The **web-based agent** is a system prompt you paste into Claude.ai, ChatGPT, or any other
+  AI chat tool. It also wires up an MCP server, giving the AI the ability to call live tool
+  endpoints (connect to the physical tower, play sounds, rotate drums, etc.) rather than just
+  talk about code.
+
+Neither agent is a separate model or application — they are instructions that shape how an
+existing AI model behaves for this specific domain.
+
+---
+
+## Agents in this repo
+
 | Agent | Platform | Use when... |
 |-------|----------|-------------|
 | [Ultimate Dark Tower](#ultimate-dark-tower--vs-code-coding-agent) | VS Code | Writing TypeScript/JS apps with the [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) npm library |
