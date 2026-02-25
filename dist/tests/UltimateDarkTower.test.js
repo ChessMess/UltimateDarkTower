@@ -720,6 +720,114 @@ describe('UltimateDarkTower', () => {
             });
         });
     });
+    describe('allLightsOn / allLightsOff', () => {
+        let sendStateSpy;
+        beforeEach(() => {
+            sendStateSpy = jest.spyOn(darkTower, 'sendTowerState').mockResolvedValue(undefined);
+        });
+        afterEach(() => {
+            sendStateSpy.mockRestore();
+        });
+        test('allLightsOn() defaults to LIGHT_EFFECTS.on — all 24 lights effect=1, loop=true', async () => {
+            await darkTower.allLightsOn();
+            expect(sendStateSpy).toHaveBeenCalledTimes(1);
+            const state = sendStateSpy.mock.calls[0][0];
+            expect(state.layer).toHaveLength(6);
+            state.layer.forEach((layer) => {
+                expect(layer.light).toHaveLength(4);
+                layer.light.forEach(light => {
+                    expect(light.effect).toBe(udtConstants_1.LIGHT_EFFECTS.on);
+                    expect(light.loop).toBe(true);
+                });
+            });
+        });
+        test('allLightsOn(LIGHT_EFFECTS.breathe) — all 24 lights effect=2, loop=true', async () => {
+            await darkTower.allLightsOn(udtConstants_1.LIGHT_EFFECTS.breathe);
+            const state = sendStateSpy.mock.calls[0][0];
+            state.layer.forEach((layer) => {
+                layer.light.forEach(light => {
+                    expect(light.effect).toBe(udtConstants_1.LIGHT_EFFECTS.breathe);
+                    expect(light.loop).toBe(true);
+                });
+            });
+        });
+        test('allLightsOn(LIGHT_EFFECTS.off) — all 24 lights effect=0, loop=false', async () => {
+            await darkTower.allLightsOn(udtConstants_1.LIGHT_EFFECTS.off);
+            const state = sendStateSpy.mock.calls[0][0];
+            state.layer.forEach((layer) => {
+                layer.light.forEach(light => {
+                    expect(light.effect).toBe(udtConstants_1.LIGHT_EFFECTS.off);
+                    expect(light.loop).toBe(false);
+                });
+            });
+        });
+        test('allLightsOff() — all 24 lights off, sendTowerState called once', async () => {
+            await darkTower.allLightsOff();
+            expect(sendStateSpy).toHaveBeenCalledTimes(1);
+            const state = sendStateSpy.mock.calls[0][0];
+            state.layer.forEach((layer) => {
+                layer.light.forEach(light => {
+                    expect(light.effect).toBe(udtConstants_1.LIGHT_EFFECTS.off);
+                    expect(light.loop).toBe(false);
+                });
+            });
+        });
+        test('allLightsOn() preserves drum state from currentTowerState', async () => {
+            // Simulate a non-default drum state by manipulating internal state
+            const internalState = darkTower['currentTowerState'];
+            internalState.drum[0].position = 2;
+            internalState.drum[1].calibrated = true;
+            await darkTower.allLightsOn();
+            const state = sendStateSpy.mock.calls[0][0];
+            expect(state.drum[0].position).toBe(2);
+            expect(state.drum[1].calibrated).toBe(true);
+        });
+        test('allLightsOn() does not mutate the internal tower state before sending', async () => {
+            const stateBefore = darkTower['currentTowerState'];
+            const layerRefBefore = stateBefore.layer;
+            await darkTower.allLightsOn();
+            // The layer array reference on the internal state should be unchanged
+            expect(darkTower['currentTowerState'].layer).toBe(layerRefBefore);
+        });
+    });
+    describe('playSoundStateful volume clamping', () => {
+        // Helper: extract audio.volume nibble from a packed 20-byte command packet.
+        // Packet layout: byte 0 = command type, bytes 1-19 = 19-byte state data.
+        // audio.volume occupies bits 4-7 of stateData[17], i.e. packet byte 18.
+        const getVolumeFromPacket = (packet) => (packet[18] >> 4) & 0x0f;
+        beforeEach(async () => {
+            await darkTower.connect();
+            jest.clearAllMocks();
+        });
+        test('clamps volume above 3 to 3', async () => {
+            const promise = darkTower.playSoundStateful(1, false, 5);
+            expect(mockAdapter.writeCalls).toBe(1);
+            expect(getVolumeFromPacket(mockAdapter.lastWrittenData)).toBe(3);
+            darkTower['towerCommands'].onTowerResponse();
+            await promise;
+        });
+        test('clamps volume below 0 to 0', async () => {
+            const promise = darkTower.playSoundStateful(1, false, -1);
+            expect(mockAdapter.writeCalls).toBe(1);
+            expect(getVolumeFromPacket(mockAdapter.lastWrittenData)).toBe(0);
+            darkTower['towerCommands'].onTowerResponse();
+            await promise;
+        });
+        test('rounds decimal then clamps: 2.7 rounds to 3, stays within range', async () => {
+            const promise = darkTower.playSoundStateful(1, false, 2.7);
+            expect(mockAdapter.writeCalls).toBe(1);
+            expect(getVolumeFromPacket(mockAdapter.lastWrittenData)).toBe(3);
+            darkTower['towerCommands'].onTowerResponse();
+            await promise;
+        });
+        test('passes valid in-range volume unchanged', async () => {
+            const promise = darkTower.playSoundStateful(1, false, 2);
+            expect(mockAdapter.writeCalls).toBe(1);
+            expect(getVolumeFromPacket(mockAdapter.lastWrittenData)).toBe(2);
+            darkTower['towerCommands'].onTowerResponse();
+            await promise;
+        });
+    });
     describe('cleanup', () => {
         test('should resolve without throwing', async () => {
             await expect(darkTower.cleanup()).resolves.toBeUndefined();
