@@ -174,6 +174,8 @@ when it is present in your workspace — no additional setup needed.
 - [`mcp-server-return-to-dark-tower`](https://www.npmjs.com/package/mcp-server-return-to-dark-tower) — The MCP server
 - [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) — The Bluetooth library
 - [UltimateDarkTower on GitHub](https://github.com/chessmess/UltimateDarkTower) — Library source
+- [Return to Dark Tower](https://restorationgames.com/return-to-dark-tower/) — Official game page (Restoration Games)
+- [Return to Dark Tower on BGG](https://boardgamegeek.com/boardgame/256680/return-to-dark-tower) — BoardGameGeek entry
 
 ## License
 
