@@ -39,6 +39,8 @@ is, what it knows, and what it can do.
 Neither agent is a separate model or application — they are instructions that shape how an
 existing AI model behaves for this specific domain.
 
+**Further reading:** [AI Agents, Clearly Explained](https://www.youtube.com/watch?v=FwOTs4UxQS4) — a beginner-friendly video overview of what AI agents are and how they work.
+
 ---
 
 ## Agents in this repo
