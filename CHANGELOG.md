@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+[Added]
+
+-   Build artifacts for lights integration test (`dist/tests/integration/lights.integration.js`, `.d.ts`, `.js.map`).
+-   Updated documentation for lights integration test covering `allLightsOn` and `allLightsOff` API usage and integration test procedure.
+
 ## [2.3.0] - 2026-02-23
 
 ### Added

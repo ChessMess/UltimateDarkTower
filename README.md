@@ -158,6 +158,35 @@ npm run test:integration
 -   The test will fail if the tower is not available or calibration does not complete within 60 seconds.
 -   Integration tests are not included in automated test runs or npm publish.
 
+### Lights Integration Test
+
+The lights integration test validates the `allLightsOn` and `allLightsOff` API methods using real tower hardware.
+
+**Test steps:**
+
+-   Turns all 24 LEDs on (solid effect) for 2 seconds
+-   Turns all 24 LEDs on (breathe effect) for 3 seconds
+-   Turns all 24 LEDs off
+
+**How to run:**
+
+```bash
+npm run test:integration:lights
+```
+
+**Prerequisites:**
+
+-   Tower must be powered on and in Bluetooth range
+-   `@stoprocent/noble` must be installed
+
+**Visual verification:**
+
+-   All lights on (solid) for 2 seconds
+-   All lights breathe effect for 3 seconds
+-   All lights off
+
+See [Reference.md](Reference.md) for API details on `allLightsOn` and `allLightsOff`.
+
 **Prerequisites:**
 
 -   Tower must be powered on and in Bluetooth range

@@ -1,5 +1,29 @@
 # Tower Technical Reference Documentation
 
+## Lights Integration Test
+
+The lights integration test validates the `allLightsOn` and `allLightsOff` API methods using real tower hardware.
+
+**Test steps:**
+
+-   Turns all 24 LEDs on (solid effect) for 2 seconds
+-   Turns all 24 LEDs on (breathe effect) for 3 seconds
+-   Turns all 24 LEDs off
+
+**How to run:**
+
+```bash
+npm run test:integration:lights
+```
+
+**Visual verification:**
+
+-   All lights on (solid) for 2 seconds
+-   All lights breathe effect for 3 seconds
+-   All lights off
+
+See [Reference.md](Reference.md) for API details on `allLightsOn` and `allLightsOff`.
+
 ## LED Architecture Overview
 
 The Tower uses **24 individually addressable LEDs** organized into 6 logical layers with 4 LEDs each:

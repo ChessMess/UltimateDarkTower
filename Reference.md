@@ -1,5 +1,45 @@
 # UltimateDarkTower API Reference
 
+### Lights Integration Test
+
+The lights integration test validates the `allLightsOn` and `allLightsOff` API methods using real tower hardware.
+
+**Test steps:**
+
+-   Turns all 24 LEDs on (solid effect) for 2 seconds
+-   Turns all 24 LEDs on (breathe effect) for 3 seconds
+-   Turns all 24 LEDs off
+
+**How to run:**
+
+```bash
+npm run test:integration:lights
+```
+
+**Prerequisites:**
+
+-   Tower must be powered on and in Bluetooth range
+-   `@stoprocent/noble` must be installed
+
+**Visual verification:**
+
+-   All lights on (solid) for 2 seconds
+-   All lights breathe effect for 3 seconds
+-   All lights off
+
+#### API Usage
+
+```typescript
+// Turn all lights on (solid)
+await tower.allLightsOn();
+
+// Turn all lights on with breathe effect
+await tower.allLightsOn(LIGHT_EFFECTS.breathe);
+
+// Turn all lights off
+await tower.allLightsOff();
+```
+
 A comprehensive reference guide for the UltimateDarkTower library - your complete toolkit for controlling the Return to Dark Tower board game device via Bluetooth.
 
 ## Table of Contents
@@ -476,7 +516,7 @@ await tower.lightOverrides(0x0c, TOWER_AUDIO_LIBRARY.TowerAngry1.value);
 Turns all 24 tower LEDs on with the specified effect in a single command packet.
 Preserves current drum, beam, and audio state.
 
-- `effect` — Light effect value (default: `LIGHT_EFFECTS.on = 1`). Use `LIGHT_EFFECTS` constants for named values.
+-   `effect` — Light effect value (default: `LIGHT_EFFECTS.on = 1`). Use `LIGHT_EFFECTS` constants for named values.
 
 ```typescript
 // Turn all lights on (solid)
