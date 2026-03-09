@@ -6,10 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
-[Added]
+## [2.3.1] - 2026-03-09
 
--   Build artifacts for lights integration test (`dist/tests/integration/lights.integration.js`, `.d.ts`, `.js.map`).
--   Updated documentation for lights integration test covering `allLightsOn` and `allLightsOff` API usage and integration test procedure.
+### Added
+
+-   **Troubleshooting modal in TowerController example** — A "Troubleshooting" button now appears in the TowerController web app button bar. Clicking it opens a modal overlay displaying the full Restoration Games troubleshooting guide (tower jams, disconnects, firmware errors 133/257, and battery specifications). The modal can be dismissed via the close button, clicking the backdrop, or pressing Escape. The button is visually de-emphasised (reduced opacity, smaller text, extra left margin) to indicate it is secondary to Connect/Disconnect/Calibrate.
 
 ## [2.3.0] - 2026-02-23
 

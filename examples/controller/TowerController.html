@@ -334,6 +334,81 @@
       border-radius: 0.375rem;
       backdrop-filter: blur(10px);
     }
+
+    /* Troubleshooting modal */
+    #troubleshootingModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.75);
+    }
+
+    #troubleshootingModal.open {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #troubleshootingContent {
+      background: #111827;
+      border: 1px solid rgba(234, 179, 8, 0.5);
+      border-radius: 0.5rem;
+      padding: 1.25rem 1.5rem;
+      max-width: 680px;
+      width: calc(100% - 2rem);
+      position: relative;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    #troubleshootingContent h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #fbbf24;
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    #troubleshootingContent h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #d1d5db;
+      margin-top: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    #troubleshootingContent p {
+      color: #d1d5db;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
+    #troubleshootingContent ol {
+      color: #d1d5db;
+      padding-left: 1.25rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    #troubleshootingContent ul {
+      color: #d1d5db;
+      padding-left: 1.25rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    #troubleshootingContent li {
+      margin-bottom: 0.25rem;
+    }
+
+    #troubleshootingContent a {
+      color: #60a5fa;
+      text-decoration: underline;
+    }
   </style>
 
   <!-- Scripts (also at bottom of page) -->
@@ -366,6 +441,7 @@
           <button id="connectButton" onclick="connectToTower()" class="tower-button">Connect</button>
           <button id="disconnectButton" onclick="Tower.disconnect()" class="tower-button">Disconnect</button>
           <button id="calibrate" onclick="calibrate()" class="tower-button">Calibrate</button>
+          <button onclick="openTroubleshooting()" class="tower-button ml-6 opacity-60 text-sm">Troubleshooting</button>
           <span class="hidden ml-2" id="calibrating-message">calibrating...</span>
         </div>
         <hr class="tower-hr" />
@@ -1105,11 +1181,104 @@
       </div>
     </div>
   </div>
+  <!-- Troubleshooting Modal -->
+  <div id="troubleshootingModal" onclick="closeTroubleshootingOnBackdrop(event)">
+    <div id="troubleshootingContent">
+      <button onclick="closeTroubleshooting()" title="Close"
+        style="position:absolute;top:0.75rem;right:1rem;font-size:1.25rem;color:#9ca3af;background:none;border:none;cursor:pointer;"
+        onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#9ca3af'">&#x2715;</button>
+      <h1 style="font-size:1.5rem;font-weight:700;color:#fbbf24;margin-bottom:0.5rem;">Troubleshooting Guide</h1>
+      <p style="color:#6b7280;font-size:0.75rem;margin-bottom:1rem;">From Restoration Games</p>
+
+      <h2>App Reports Tower Jam</h2>
+      <p>Follow these steps in order:</p>
+      <ol>
+        <li>When the error message displays, note which Tower level is reported as being jammed.</li>
+        <li>Turn off the Tower and replace the batteries. Ensure you are using quality, named brand batteries with at least 2100mAh capacity. Resume play. If the error displays again, proceed to the next step.</li>
+        <li>Turn off the Tower. Remove the seals from the jammed level and any skulls behind them. With the Seals now open, carefully use your fingers to force the level to rotate in a clockwise direction. You'll hear some audible clicks but don't be concerned — this is the clutch mechanism working as designed. Stop when you've heard around five clicks. Replace the seals (including the skulls). Turn on the Tower and resume play.</li>
+        <li>If the problem persists you'll have to abandon the game. Quit the app. Turn off the Tower, remove all skulls and replace all seals. Restart the app, turn on the Tower and try a new game.</li>
+        <li>If jams are still being reported, please email <a href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+      </ol>
+
+      <h2>Tower Disconnects From App During Play</h2>
+      <p>Follow these steps in order:</p>
+      <ol>
+        <li>Ensure that the connected smart device is always kept within 3m / 10ft of the tower.</li>
+        <li>Some Android devices automatically shut down services to save battery life, which can cause disconnects. Visit <a href="https://dontkillmyapp.com" target="_blank">dontkillmyapp.com</a> and follow the instructions to make sure your device is playing nicely.</li>
+        <li>If that doesn't work, turn off the Tower and replace its batteries. Ensure you are using quality, named brand batteries with at least 2100mAh capacity.</li>
+        <li>Fully restart your device (usually by pressing the sleep button until a restart prompt appears).</li>
+        <li>If you keep getting disconnected, please email <a href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+      </ol>
+
+      <h2>Tower Firmware Update Fails (Error 133)</h2>
+      <ol>
+        <li>Try updating from a different device. The firmware update process requires more processing power than the main game, which may cause some lower-end devices to fail.</li>
+        <li>If the firmware update succeeds, feel free to return to your original device.</li>
+        <li>If the problem persists, please email <a href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+      </ol>
+
+      <h2>Tower Firmware Update Fails (Error 257)</h2>
+      <ol>
+        <li>Go into your bluetooth connections and disconnect from all other devices.</li>
+        <li>Turn off your Tower and completely close the Return to Dark Tower app.</li>
+        <li>Reopen the app and proceed normally.</li>
+        <li>If the problem persists, please email <a href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+      </ol>
+
+      <h2>Battery Specifications</h2>
+      <p>We recommend using name-brand rechargeable batteries for environmental reasons; however, it is also possible to use Alkaline or Lithium Iron Disulphide non-rechargeable batteries.</p>
+      <p>Note that NiMH rechargeable batteries will lose capacity over the course of a few weeks, even if not used — we recommend topping your rechargeable batteries up the night before playing!</p>
+
+      <h3>Good</h3>
+      <ul>
+        <li>1.2v NiMH rechargeable cells with capacity above 2000mAh (e.g. Duracell Rechargeable AA 2500mAh, Eneloop Pro 2500mAh, Energizer Recharge Extreme 2300mAh)</li>
+        <li>1.5v Alkaline non-rechargeable cells from a name brand (e.g. Duracell Plus AA Alkaline, Duracell Optimum AA Alkaline)</li>
+        <li>1.5v / 1.6v Lithium Iron Disulphide (LiFeS2) non-rechargeable cells (e.g. Energizer Ultimate Lithium)</li>
+        <li>Mains adapters / "battery eliminators" designed for 3xAA / 4.5v operation only</li>
+      </ul>
+
+      <h3>Not Recommended</h3>
+      <ul>
+        <li>1.2v NiMH rechargeables with capacity below 2000mAh</li>
+        <li>1.2v NiCd rechargeables, regardless of capacity</li>
+        <li>1.5v Zinc-Carbon batteries, regardless of capacity</li>
+        <li>Lithium-Ion rechargeable cells with integrated circuit to reduce to 1.5v</li>
+      </ul>
+
+      <h3 style="color:#f87171;">Bad (may damage the Tower)</h3>
+      <ul style="color:#f87171;">
+        <li>14500 Lithium-Ion rechargeable cells (often marketed for use in high-power flashlights or vape pens)</li>
+      </ul>
+    </div>
+  </div>
+
   <script>
     // Initialize battery filter on page load
     document.addEventListener('DOMContentLoaded', () => {
       updateBatteryFilter();
     });
+
+    function openTroubleshooting() {
+      document.getElementById('troubleshootingModal').classList.add('open');
+      document.addEventListener('keydown', closeTroubleshootingOnEscape);
+    }
+
+    function closeTroubleshooting() {
+      document.getElementById('troubleshootingModal').classList.remove('open');
+      document.removeEventListener('keydown', closeTroubleshootingOnEscape);
+    }
+
+    function closeTroubleshootingOnBackdrop(event) {
+      if (event.target === document.getElementById('troubleshootingModal')) {
+        closeTroubleshooting();
+      }
+    }
+
+    function closeTroubleshootingOnEscape(event) {
+      if (event.key === 'Escape') {
+        closeTroubleshooting();
+      }
+    }
   </script>
 </body>
 
