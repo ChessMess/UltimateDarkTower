@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+
+-   **Cleared development-tooling security advisories without permanent overrides** — Upgraded direct dev dependencies (`ts-jest`, `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin`, and `esbuild`) so the lockfile now resolves patched transitive versions for `minimatch`, `ajv`, `js-yaml`, and `flatted` without retaining temporary npm `overrides`. Full `npm audit` now reports zero vulnerabilities while preserving the existing Jest, ESLint, and build configuration.
+-   **Stabilised `ts-jest` coverage resolution after dependency cleanup** — Added an explicit `jest-util` devDependency so `ts-jest` can resolve its runtime helper consistently during Jest coverage runs.
+-   **Adjusted BLE device-info fallback for newer lint rules** — Removed an unused catch binding in `readDeviceInformation()` so the code remains compatible with the stricter `@typescript-eslint` rules introduced by the dependency upgrades.
+
 ## [2.3.1] - 2026-03-09
 
 ### Added

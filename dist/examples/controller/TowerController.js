@@ -23,8 +23,7 @@
   var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
     get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
   }) : x)(function(x) {
-    if (typeof require !== "undefined")
-      return require.apply(this, arguments);
+    if (typeof require !== "undefined") return require.apply(this, arguments);
     throw Error('Dynamic require of "' + x + '" is not supported');
   });
   var __esm = (fn, res) => function __init() {
@@ -831,8 +830,7 @@
           }
         }
         async disconnect() {
-          if (!this.peripheral)
-            return;
+          if (!this.peripheral) return;
           try {
             if (this.rxCharacteristic) {
               if (this.boundDataHandler) {
@@ -934,8 +932,7 @@
                   return cUuid === normalizedUuid || cUuid === shortUuid;
                 }
               );
-              if (!char)
-                continue;
+              if (!char) continue;
               try {
                 const buffer = await char.readAsync();
                 if (binary) {
@@ -1124,8 +1121,7 @@
       this.maxLines = maxLines;
     }
     write(level, message, timestamp) {
-      if (!this.container)
-        return;
+      if (!this.container) return;
       this.allEntries.push({ level, message, timestamp });
       while (this.allEntries.length > this.maxLines) {
         this.allEntries.shift();
@@ -1133,8 +1129,7 @@
       this.refreshDisplay();
     }
     refreshDisplay() {
-      if (!this.container)
-        return;
+      if (!this.container) return;
       this.container.innerHTML = "";
       const enabledLevels = this.getEnabledLevelsFromCheckboxes();
       const textFilter = this.getTextFilter();
@@ -1246,12 +1241,9 @@
       return Array.from(this.enabledLevels);
     }
     shouldLog(level) {
-      if (this.enabledLevels.has("all"))
-        return true;
-      if (level === "all")
-        return true;
-      if (this.enabledLevels.has(level))
-        return true;
+      if (this.enabledLevels.has("all")) return true;
+      if (level === "all") return true;
+      if (this.enabledLevels.has(level)) return true;
       if (this.enabledLevels.size === 1) {
         const singleLevel = Array.from(this.enabledLevels)[0];
         if (singleLevel !== "all") {
@@ -1264,8 +1256,7 @@
       return false;
     }
     log(level, message, context) {
-      if (!this.shouldLog(level))
-        return;
+      if (!this.shouldLog(level)) return;
       const contextPrefix = context ? `${context} ` : "";
       const finalMessage = `${contextPrefix}${message}`;
       const timestamp = /* @__PURE__ */ new Date();
@@ -1820,13 +1811,12 @@
             this.logger.info(`Device ${key}: ${value}`, "[UDT][BLE]");
           }
         }
-      } catch (error) {
+      } catch (e) {
         this.logger.debug("Device Information Service not available", "[UDT][BLE]");
       }
     }
     async cleanup() {
-      if (this.isDisposed)
-        return;
+      if (this.isDisposed) return;
       this.isDisposed = true;
       this.logger.info("Cleaning up UdtBleConnection instance", "[UDT][BLE]");
       this.stopConnectionMonitoring();
@@ -2821,10 +2811,15 @@
       this.onCalibrationComplete = () => {
       };
       this.onSkullDrop = (towerSkullCount) => {
+        void towerSkullCount;
       };
       this.onBatteryLevelNotify = (millivolts) => {
+        void millivolts;
       };
       this.onTowerStateUpdate = (newState, oldState, source) => {
+        void newState;
+        void oldState;
+        void source;
       };
       // utility
       this._logDetail = false;
@@ -3651,8 +3646,7 @@
   Tower.onCalibrationComplete = onCalibrationComplete;
   var updateBatteryTrend = () => {
     const trendElement = document.getElementById("batteryTrend");
-    if (!trendElement)
-      return;
+    if (!trendElement) return;
     const currentBatteryPercent = Tower.currentBatteryPercent;
     const previousBatteryPercent = Tower.previousBatteryPercent;
     if (previousBatteryPercent === 0) {
@@ -3701,8 +3695,7 @@
   };
   Tower.onTowerStateUpdate = onTowerStateUpdate;
   var handleTowerResponse = (response) => {
-    if (!isCollectingData || response.length === 0)
-      return;
+    if (!isCollectingData || response.length === 0) return;
     const commandValue = response[0];
     if (commandValue === 6) {
       const parsedReadings = parseDifferentialReadings(response);
@@ -4018,12 +4011,16 @@
     switch (side) {
       case "north":
         return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+      // Closest to north
       case "east":
         return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;
+      // Closest to east
       case "south":
         return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;
+      // Closest to south
       case "west":
         return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;
+      // Closest to west
       default:
         return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
     }
@@ -4494,8 +4491,7 @@
   };
   var copyDisplayedLogs = (event) => {
     const logContainer = document.getElementById("log-container");
-    if (!logContainer)
-      return;
+    if (!logContainer) return;
     const logLines = logContainer.querySelectorAll(".log-line");
     if (logLines.length === 0) {
       alert("No log entries to copy");
@@ -4520,8 +4516,7 @@
   };
   var downloadDisplayedLogs = (event) => {
     const logContainer = document.getElementById("log-container");
-    if (!logContainer)
-      return;
+    if (!logContainer) return;
     const logLines = logContainer.querySelectorAll(".log-line");
     if (logLines.length === 0) {
       alert("No log entries to download");
@@ -4592,8 +4587,7 @@ ${"-".repeat(60)}
   };
   var updateStatusPacketDisplay = (packetData) => {
     const display = document.getElementById("status-packet-display");
-    if (!display)
-      return;
+    if (!display) return;
     const byteDescriptions = [
       "Battery Level",
       "Calibration Status",
@@ -4784,11 +4778,9 @@ ${"-".repeat(60)}
     }
   };
   var initializeChart = () => {
-    if (differentialChart)
-      return;
+    if (differentialChart) return;
     const ctx = document.getElementById("differential-chart");
-    if (!ctx)
-      return;
+    if (!ctx) return;
     differentialChart = new window.Chart(ctx, {
       type: "line",
       data: {
@@ -4904,8 +4896,7 @@ ${"-".repeat(60)}
     });
   };
   var updateChart = () => {
-    if (!differentialChart)
-      return;
+    if (!differentialChart) return;
     const cutoffTime = Date.now() - chartTimeWindow * 1e3;
     const filteredReadings = differentialReadings.filter((r) => r.timestamp > cutoffTime);
     const irBeamData = filteredReadings.map((reading) => ({
@@ -4939,8 +4930,7 @@ ${"-".repeat(60)}
     const statsLatest = document.getElementById("chart-stats-latest");
     const statsMin = document.getElementById("chart-stats-min");
     const statsMax = document.getElementById("chart-stats-max");
-    if (!statsPoints || !statsLatest || !statsMin || !statsMax)
-      return;
+    if (!statsPoints || !statsLatest || !statsMin || !statsMax) return;
     const cutoffTime = Date.now() - chartTimeWindow * 1e3;
     const filteredReadings = differentialReadings.filter((r) => r.timestamp > cutoffTime);
     statsPoints.textContent = filteredReadings.length.toString();
@@ -4966,8 +4956,7 @@ ${"-".repeat(60)}
   };
   var updateChartDataCollectionButton = () => {
     const button = document.getElementById("chart-start-stop");
-    if (!button)
-      return;
+    if (!button) return;
     if (isCollectingData) {
       button.innerHTML = '<i class="fas fa-stop mr-1"></i>Stop';
       button.classList.remove("tower-button");
@@ -5003,8 +4992,7 @@ ${"-".repeat(60)}
   };
   var updateTimeWindow = () => {
     const select = document.getElementById("chart-time-window");
-    if (!select)
-      return;
+    if (!select) return;
     chartTimeWindow = parseInt(select.value);
     if (differentialChart) {
       updateChart();
@@ -5035,8 +5023,7 @@ ${"-".repeat(60)}
   };
   var toggleChartDisplay = (elementId, configKey) => {
     const checkbox = document.getElementById(elementId);
-    if (!checkbox)
-      return;
+    if (!checkbox) return;
     updateChartDisplayConfig(configKey, checkbox.checked);
   };
   var exportChartData = () => {

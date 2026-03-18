@@ -23,8 +23,7 @@
   var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
     get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
   }) : x)(function(x) {
-    if (typeof require !== "undefined")
-      return require.apply(this, arguments);
+    if (typeof require !== "undefined") return require.apply(this, arguments);
     throw Error('Dynamic require of "' + x + '" is not supported');
   });
   var __esm = (fn, res) => function __init() {
@@ -794,8 +793,7 @@
           }
         }
         async disconnect() {
-          if (!this.peripheral)
-            return;
+          if (!this.peripheral) return;
           try {
             if (this.rxCharacteristic) {
               if (this.boundDataHandler) {
@@ -897,8 +895,7 @@
                   return cUuid === normalizedUuid || cUuid === shortUuid;
                 }
               );
-              if (!char)
-                continue;
+              if (!char) continue;
               try {
                 const buffer = await char.readAsync();
                 if (binary) {
@@ -1092,12 +1089,9 @@
       return Array.from(this.enabledLevels);
     }
     shouldLog(level) {
-      if (this.enabledLevels.has("all"))
-        return true;
-      if (level === "all")
-        return true;
-      if (this.enabledLevels.has(level))
-        return true;
+      if (this.enabledLevels.has("all")) return true;
+      if (level === "all") return true;
+      if (this.enabledLevels.has(level)) return true;
       if (this.enabledLevels.size === 1) {
         const singleLevel = Array.from(this.enabledLevels)[0];
         if (singleLevel !== "all") {
@@ -1110,8 +1104,7 @@
       return false;
     }
     log(level, message, context) {
-      if (!this.shouldLog(level))
-        return;
+      if (!this.shouldLog(level)) return;
       const contextPrefix = context ? `${context} ` : "";
       const finalMessage = `${contextPrefix}${message}`;
       const timestamp = /* @__PURE__ */ new Date();
@@ -1666,13 +1659,12 @@
             this.logger.info(`Device ${key}: ${value}`, "[UDT][BLE]");
           }
         }
-      } catch (error) {
+      } catch (e) {
         this.logger.debug("Device Information Service not available", "[UDT][BLE]");
       }
     }
     async cleanup() {
-      if (this.isDisposed)
-        return;
+      if (this.isDisposed) return;
       this.isDisposed = true;
       this.logger.info("Cleaning up UdtBleConnection instance", "[UDT][BLE]");
       this.stopConnectionMonitoring();
@@ -2667,10 +2659,15 @@
       this.onCalibrationComplete = () => {
       };
       this.onSkullDrop = (towerSkullCount) => {
+        void towerSkullCount;
       };
       this.onBatteryLevelNotify = (millivolts) => {
+        void millivolts;
       };
       this.onTowerStateUpdate = (newState, oldState, source) => {
+        void newState;
+        void oldState;
+        void source;
       };
       // utility
       this._logDetail = false;

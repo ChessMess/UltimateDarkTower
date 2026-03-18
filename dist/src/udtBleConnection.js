@@ -321,7 +321,7 @@ class UdtBleConnection {
                 }
             }
         }
-        catch (error) {
+        catch (_a) {
             this.logger.debug('Device Information Service not available', '[UDT][BLE]');
         }
     }

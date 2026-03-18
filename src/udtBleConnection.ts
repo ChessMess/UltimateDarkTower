@@ -434,7 +434,7 @@ export class UdtBleConnection {
                     this.logger.info(`Device ${key}: ${value}`, '[UDT][BLE]');
                 }
             }
-        } catch (error) {
+        } catch {
             this.logger.debug('Device Information Service not available', '[UDT][BLE]');
         }
     }

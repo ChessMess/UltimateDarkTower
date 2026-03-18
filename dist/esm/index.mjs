@@ -6,8 +6,7 @@ var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
   get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
 }) : x)(function(x) {
-  if (typeof require !== "undefined")
-    return require.apply(this, arguments);
+  if (typeof require !== "undefined") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
 var __esm = (fn, res) => function __init() {
@@ -813,8 +812,7 @@ var init_NodeBluetoothAdapter = __esm({
         }
       }
       async disconnect() {
-        if (!this.peripheral)
-          return;
+        if (!this.peripheral) return;
         try {
           if (this.rxCharacteristic) {
             if (this.boundDataHandler) {
@@ -916,8 +914,7 @@ var init_NodeBluetoothAdapter = __esm({
                 return cUuid === normalizedUuid || cUuid === shortUuid;
               }
             );
-            if (!char)
-              continue;
+            if (!char) continue;
             try {
               const buffer = await char.readAsync();
               if (binary) {
@@ -1135,8 +1132,7 @@ var DOMOutput = class {
     this.maxLines = maxLines;
   }
   write(level, message, timestamp) {
-    if (!this.container)
-      return;
+    if (!this.container) return;
     this.allEntries.push({ level, message, timestamp });
     while (this.allEntries.length > this.maxLines) {
       this.allEntries.shift();
@@ -1144,8 +1140,7 @@ var DOMOutput = class {
     this.refreshDisplay();
   }
   refreshDisplay() {
-    if (!this.container)
-      return;
+    if (!this.container) return;
     this.container.innerHTML = "";
     const enabledLevels = this.getEnabledLevelsFromCheckboxes();
     const textFilter = this.getTextFilter();
@@ -1258,12 +1253,9 @@ var Logger = class _Logger {
     return Array.from(this.enabledLevels);
   }
   shouldLog(level) {
-    if (this.enabledLevels.has("all"))
-      return true;
-    if (level === "all")
-      return true;
-    if (this.enabledLevels.has(level))
-      return true;
+    if (this.enabledLevels.has("all")) return true;
+    if (level === "all") return true;
+    if (this.enabledLevels.has(level)) return true;
     if (this.enabledLevels.size === 1) {
       const singleLevel = Array.from(this.enabledLevels)[0];
       if (singleLevel !== "all") {
@@ -1276,8 +1268,7 @@ var Logger = class _Logger {
     return false;
   }
   log(level, message, context) {
-    if (!this.shouldLog(level))
-      return;
+    if (!this.shouldLog(level)) return;
     const contextPrefix = context ? `${context} ` : "";
     const finalMessage = `${contextPrefix}${message}`;
     const timestamp = /* @__PURE__ */ new Date();
@@ -1835,13 +1826,12 @@ var UdtBleConnection = class {
           this.logger.info(`Device ${key}: ${value}`, "[UDT][BLE]");
         }
       }
-    } catch (error) {
+    } catch {
       this.logger.debug("Device Information Service not available", "[UDT][BLE]");
     }
   }
   async cleanup() {
-    if (this.isDisposed)
-      return;
+    if (this.isDisposed) return;
     this.isDisposed = true;
     this.logger.info("Cleaning up UdtBleConnection instance", "[UDT][BLE]");
     this.stopConnectionMonitoring();
@@ -2836,10 +2826,15 @@ var UltimateDarkTower = class {
     this.onCalibrationComplete = () => {
     };
     this.onSkullDrop = (towerSkullCount) => {
+      void towerSkullCount;
     };
     this.onBatteryLevelNotify = (millivolts) => {
+      void millivolts;
     };
     this.onTowerStateUpdate = (newState, oldState, source) => {
+      void newState;
+      void oldState;
+      void source;
     };
     // utility
     this._logDetail = false;
@@ -3528,7 +3523,7 @@ var UltimateDarkTower_default = UltimateDarkTower;
 init_udtConstants();
 init_udtBluetoothAdapter();
 init_udtTowerState();
-var src_default = UltimateDarkTower_default;
+var index_default = UltimateDarkTower_default;
 export {
   AUDIO_COMMAND_POS,
   BATTERY_STATUS_FREQUENCY,
@@ -3589,7 +3584,7 @@ export {
   VOLUME_DESCRIPTIONS,
   VOLUME_ICONS,
   createDefaultTowerState,
-  src_default as default,
+  index_default as default,
   drumPositionCmds,
   isCalibrated,
   logger,
