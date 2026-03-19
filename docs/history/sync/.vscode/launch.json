@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Host",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/host/src/index.ts",
+      "runtimeArgs": ["-r", "ts-node/register"],
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/packages/host/dist/**/*.js"],
+      "env": {
+        "TS_NODE_PROJECT": "${workspaceFolder}/packages/host/tsconfig.json"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Debug Host (compiled)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/host/dist/index.js",
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/packages/host/dist/**/*.js"],
+      "preLaunchTask": "npm: build:host",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ]
+}

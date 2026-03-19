@@ -1,0 +1,70 @@
+{
+  "name": "dark-tower-sync",
+  "version": "0.1.0",
+  "description": "Remote multiplayer tower synchronization for Return to Dark Tower — relay BLE tower commands over WebSocket so every player's physical tower mirrors the host in real time.",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build:shared && npm run build:host && npm run build:client",
+    "build:shared": "npm run build -w packages/shared",
+    "build:host": "npm run build -w packages/host",
+    "build:client": "npm run build -w packages/client",
+    "dev:host": "npm run dev -w packages/host",
+    "dev:client": "npm run dev -w packages/client",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js",
+    "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js --fix",
+    "lint:flat:preview": "ESLINT_USE_FLAT_CONFIG=true eslint .",
+    "format": "prettier --write \"packages/*/src/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
+    "type-check": "tsc --build --noEmit && tsc --noEmit -p packages/client/tsconfig.json",
+    "ci": "npm run lint && npm run type-check && npm run test && npm run build",
+    "clean": "rm -rf packages/shared/dist packages/host/dist packages/client/dist coverage"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChessMess/DarkTowerSync.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ChessMess/DarkTowerSync/issues"
+  },
+  "homepage": "https://github.com/ChessMess/DarkTowerSync#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=7.0.0"
+  },
+  "keywords": [
+    "ReturnToDarkTower",
+    "BLE",
+    "BoardGame",
+    "Tower",
+    "RestorationGames",
+    "WebSocket",
+    "multiplayer",
+    "bluetooth",
+    "ble",
+    "restoration-games"
+  ],
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.0",
+    "@types/ws": "^8.5.10",
+    "eslint": "^8.57.1",
+    "globals": "^15.0.0",
+    "@eslint/js": "^8.57.1",
+    "jest": "^30.0.0",
+    "jest-util": "^30.0.0",
+    "prettier": "^3.8.1",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.0"
+  }
+}

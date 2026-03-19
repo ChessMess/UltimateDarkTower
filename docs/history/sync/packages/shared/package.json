@@ -1,0 +1,16 @@
+{
+  "name": "@dark-tower-sync/shared",
+  "version": "0.1.0",
+  "description": "Shared types, WebSocket protocol constants, and message schemas for DarkTowerSync.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "author": "ChessMess",
+  "license": "MIT"
+}
