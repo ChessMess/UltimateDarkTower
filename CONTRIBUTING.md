@@ -16,6 +16,12 @@ npm install
 npm run ci
 ```
 
+### Runtime Compatibility
+
+- Current supported runtime floor is Node.js 18+ (`engines.node >=18.0.0`).
+- CI validation runs on Node.js 18 and 20.
+- When changing dependencies, run the full CI pipeline locally and verify behavior on both active CI runtimes when possible.
+
 ## Development Workflow
 
 1. **Create a branch** from `main` for your changes
@@ -25,17 +31,24 @@ npm run ci
 
 ### Useful Commands
 
-| Command | Description |
-| --- | --- |
-| `npm test` | Run test suite |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run test:coverage` | Run tests with coverage report |
-| `npm run lint` | Check code with ESLint |
-| `npm run lint:fix` | Auto-fix lint issues |
-| `npm run format` | Format code with Prettier |
-| `npm run type-check` | TypeScript type checking |
-| `npm run build` | Full build (type-check + compile + examples) |
-| `npm run ci` | Full CI pipeline (lint + type-check + test + build) |
+| Command                     | Description                                         |
+| --------------------------- | --------------------------------------------------- |
+| `npm test`                  | Run test suite                                      |
+| `npm run test:watch`        | Run tests in watch mode                             |
+| `npm run test:coverage`     | Run tests with coverage report                      |
+| `npm run lint`              | Check code with ESLint                              |
+| `npm run lint:fix`          | Auto-fix lint issues                                |
+| `npm run lint:flat:preview` | Run ESLint using flat config preview mode           |
+| `npm run format`            | Format code with Prettier                           |
+| `npm run type-check`        | TypeScript type checking                            |
+| `npm run build`             | Full build (type-check + compile + examples)        |
+| `npm run ci`                | Full CI pipeline (lint + type-check + test + build) |
+
+### ESLint 9 Migration Readiness
+
+- The active lint path used by CI remains `npm run lint`.
+- A flat-config preview file is available at `eslint.config.mjs` for staged ESLint 9 migration work.
+- Use `npm run lint:flat:preview` to evaluate compatibility before any major ESLint upgrade.
 
 ## Code Standards
 
@@ -89,38 +102,44 @@ This project follows [GitHub Flow](https://docs.github.com/en/get-started/using-
 ### Steps
 
 1. **Create a release branch** from `main`:
-   ```bash
-   git checkout -b release/vX.Y.Z
-   ```
+
+    ```bash
+    git checkout -b release/vX.Y.Z
+    ```
 
 2. **Update version** in `package.json`
 
 3. **Update `CHANGELOG.md`** with the new version's changes
 
 4. **Run the full CI pipeline**:
-   ```bash
-   npm run ci
-   ```
+
+    ```bash
+    npm run ci
+    ```
 
 5. **Verify package contents**:
-   ```bash
-   npm pack --dry-run
-   ```
+
+    ```bash
+    npm pack --dry-run
+    ```
 
 6. **Open a Pull Request** from the release branch into `main`
 
 7. **After merge, tag the release**:
-   ```bash
-   git checkout main && git pull
-   git tag vX.Y.Z
-   git push origin vX.Y.Z
-   ```
+
+    ```bash
+    git checkout main && git pull
+    git tag vX.Y.Z
+    git push origin vX.Y.Z
+    ```
 
 8. **Publish to npm**:
-   ```bash
-   npm publish
-   ```
-   The `prepack` script automatically runs the full CI pipeline before publishing.
+
+    ```bash
+    npm publish
+    ```
+
+    The `prepack` script automatically runs the full CI pipeline before publishing.
 
 9. **Create a GitHub Release** from the tag with the changelog content as release notes
 

@@ -35,7 +35,7 @@ exports.DEFAULT_RETRY_SEND_COMMAND_MAX = 5;
 exports.TOWER_SIDES_COUNT = 4; // north, east, south, west
 // tower commands 
 exports.TOWER_COMMANDS = {
-    towerState: 0,
+    towerState: 0, // not a sendable command
     doorReset: 1,
     unjamDrums: 2,
     resetCounter: 3,
@@ -71,8 +71,8 @@ exports.AUDIO_COMMAND_POS = 15;
 exports.SKULL_DROP_COUNT_POS = 17;
 // prettier-ignore
 exports.drumPositionCmds = {
-    top: { north: 0b00010000, east: 0b00000010, south: 0b00010100, west: 0b00010110 },
-    middle: { north: 0b00010000, east: 0b01000000, south: 0b10010000, west: 0b11010000 },
+    top: { north: 0b00010000, east: 0b00000010, south: 0b00010100, west: 0b00010110 }, // bits 1-8
+    middle: { north: 0b00010000, east: 0b01000000, south: 0b10010000, west: 0b11010000 }, // bits 1-4
     bottom: { north: 0b01000010, east: 0b01001010, south: 0b01010010, west: 0b01011010 },
 };
 exports.LIGHT_EFFECTS = {
@@ -307,9 +307,9 @@ exports.VOLUME_DESCRIPTIONS = {
 };
 // Volume level icons
 exports.VOLUME_ICONS = {
-    0: '🔊',
-    1: '🔉',
-    2: '🔈',
+    0: '🔊', // Loud - biggest speaker
+    1: '🔉', // Medium - medium speaker
+    2: '🔈', // Quiet - small speaker
     3: '🔇' // Mute - muted speaker
 };
 //# sourceMappingURL=udtConstants.js.map
