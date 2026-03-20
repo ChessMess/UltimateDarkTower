@@ -5,9 +5,9 @@
 | Phase | Status | Notes |
 |-------|--------|-------|
 | Phase 1 — Hello World Shell | **Complete** | All files created, window opens, lint/type-check clean |
-| Phase 2 — FakeTower + RelayServer wiring | Not started | |
-| Phase 2 — IPC status dashboard | Not started | |
-| Phase 2 — macOS Bluetooth entitlement | Not started | |
+| Phase 2 — FakeTower + RelayServer wiring | **Complete** | bleno N-API prebuild works in Electron without rebuild; IPC channels wired |
+| Phase 2 — IPC status dashboard | Not started | Preload bridge is ready; renderer still shows hello world page |
+| Phase 2 — macOS Bluetooth entitlement | Not started | Needed for packaged builds only |
 
 ### Phase 1 Deviations from Plan
 
@@ -16,6 +16,22 @@
 2. **`@stoprocent/bleno` version corrected** — plan specified `^1.0.0` which does not exist on npm; corrected to `^0.12.4` (latest published as of 2026-03-19) in `packages/host/package.json`.
 
 3. **`postinstall` made non-fatal** — `@electron/rebuild` fails on Node v25 due to a `yargs` ESM compatibility regression (`require is not defined in ES module scope`). Added `|| true` to prevent `npm install` from failing. This is safe for Phase 1 since no native modules are imported. Must be revisited when bleno is wired in Phase 2 — likely needs a newer `@electron/rebuild` that pins a compatible `yargs`, or a workaround via `npm run postinstall:electron` invoked manually or in CI only.
+
+### Phase 2 Deviations / Findings
+
+1. **`@electron/rebuild` not required for bleno** — `@stoprocent/bleno@0.12.4` ships a universal macOS N-API prebuild (`darwin-x64+arm64`). N-API is ABI-stable across both Node.js versions and Electron, so no per-ABI recompilation is needed. The prebuild loads cleanly in both Node and Electron. The `postinstall` `|| true` guard (from Phase 1) remains; `@electron/rebuild` may still be useful on Linux or for other future native deps.
+
+2. **Host `index.ts` needed `require.main === module` guard** — the plan did not call this out. When Electron imports `@dark-tower-sync/host`, the host `index.ts` runs its `main()` function (starts a second relay server and BLE advertising). Fixed by wrapping the `main()` call and adding public re-exports (`FakeTower`, `RelayServer`, types) to the top of `index.ts`.
+
+3. **`start:electron` script now builds host first** — Vite externalizes `@dark-tower-sync/host` and resolves it from `node_modules/@dark-tower-sync/host/dist/index.js` at Electron runtime. Dist must exist before `electron-forge start`. Updated root script to `build:shared && build:host && npm run start -w packages/electron`.
+
+4. **`ultimatedarktower` and workspace packages externalized in Vite** — added `@dark-tower-sync/host`, `@dark-tower-sync/shared`, and `ultimatedarktower` to `vite.main.config.ts` externals so Vite doesn't attempt to bundle them.
+
+5. **Tower UUIDs sourced from `ultimatedarktower` main export** — `UART_SERVICE_UUID`, `UART_RX_CHARACTERISTIC_UUID`, `UART_TX_CHARACTERISTIC_UUID`, and `TOWER_DEVICE_NAME` are re-exported from the `ultimatedarktower` package root (`export * from './udtConstants'`). Direct subpath imports (`ultimatedarktower/dist/src/udtConstants`) are blocked by the package `exports` map.
+
+6. **Pre-existing lint errors in `packages/host` fixed** — `relayServer.ts` had two `no-duplicate-imports` errors and five `@typescript-eslint/no-unused-vars` errors that were pre-existing scaffolding stubs. All resolved by the Phase 2 implementation.
+
+7. **EventEmitter generic (`EventEmitter<T>`) used** — `@types/node@24` supports `EventEmitter<EventMap>`. Used for both `FakeTower` and `RelayServer` for fully typed `on`/`emit` calls.
 
 ### Phase 1 Verification Results
 
@@ -29,6 +45,18 @@
 - [ ] `npm run lint` — 11 pre-existing errors in client/host/tests (not introduced here)
 - [ ] `npm test` — pre-existing failure (shared package not built; needs `npm run build:shared` first)
 - [ ] `cd packages/electron && npx electron-forge package` — not yet verified (run manually to validate packaging)
+
+### Phase 2 — Main Process Wiring Verification Results
+
+- [x] `npm run build:shared && npm run build:host` — both compile clean, zero errors
+- [x] `tsc --noEmit -p packages/electron/tsconfig.json` — clean
+- [x] `eslint packages/host/src packages/electron/src` — zero errors/warnings
+- [x] `npm run start:electron` — builds shared+host, launches Electron window without crash
+- [x] FakeTower and RelayServer imported by Electron main process without triggering standalone host `main()` (guarded by `require.main === module`)
+- [x] Pre-existing lint errors in relayServer.ts (7) resolved by Phase 2 implementation
+- [ ] Companion app → fake tower BLE connection — requires physical device testing with real companion app
+- [ ] Remote client → relay → physical tower round-trip — requires full hardware test
+- [ ] IPC events reaching renderer — requires renderer dashboard (Phase 2 next step)
 
 ---
 

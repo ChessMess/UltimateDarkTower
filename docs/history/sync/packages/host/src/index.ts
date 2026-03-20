@@ -15,6 +15,12 @@
  *   5. Gracefully shuts down on SIGINT/SIGTERM.
  */
 
+// Public API — re-export classes for use as a library (e.g., from Electron main).
+export { FakeTower } from './fakeTower';
+export { RelayServer } from './relayServer';
+export type { RelayServerOptions } from './relayServer';
+export type { CommandReceivedCallback } from './fakeTower';
+
 import { FakeTower } from './fakeTower';
 import { RelayServer } from './relayServer';
 import { PROTOCOL_VERSION } from '@dark-tower-sync/shared';
@@ -32,18 +38,21 @@ async function main(): Promise<void> {
   tower.onCommandReceived = (data) => {
     relay.broadcast(data);
   };
+  tower.on('state-change', (state) => {
+    relay.setFakeTowerState(state);
+  });
 
-  // TODO: Start relay server and fake tower advertising.
-  //   await relay.start();
-  //   await tower.startAdvertising();
-  //   console.log(`Relay server listening on ws://0.0.0.0:${port}`);
-  //   console.log('Advertising fake tower — open the companion app to connect.');
+  await relay.start();
+  console.log(`Relay server listening on ws://0.0.0.0:${port}`);
+
+  await tower.startAdvertising();
+  console.log('Advertising fake tower — open the companion app to connect.');
 
   // Graceful shutdown.
   const shutdown = async (): Promise<void> => {
     console.log('\nShutting down…');
-    // TODO: await tower.stopAdvertising();
-    // TODO: await relay.stop();
+    await tower.stopAdvertising();
+    await relay.stop();
     process.exit(0);
   };
 
@@ -55,7 +64,10 @@ async function main(): Promise<void> {
   console.log(`Relay port: ${port}`);
 }
 
-main().catch((err) => {
-  console.error('Fatal error:', err);
-  process.exit(1);
-});
+// Only run as a standalone process — not when imported as a library.
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('Fatal error:', err);
+    process.exit(1);
+  });
+}

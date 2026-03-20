@@ -11,7 +11,7 @@
     "build:shared": "npm run build -w packages/shared",
     "build:host": "npm run build -w packages/host",
     "build:client": "npm run build -w packages/client",
-    "start:electron": "npm run start -w packages/electron",
+    "start:electron": "npm run build:shared && npm run build:host && npm run start -w packages/electron",
     "make:electron": "npm run make -w packages/electron",
     "package:electron": "npm run package -w packages/electron",
     "dev:host": "npm run dev -w packages/host",
