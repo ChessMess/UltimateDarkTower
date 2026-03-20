@@ -11,11 +11,7 @@
  * See docs/PROTOCOL.md for the full message lifecycle.
  */
 
-import {
-  MessageType,
-  PROTOCOL_VERSION,
-} from '@dark-tower-sync/shared';
-import type { RelayMessage, TowerCommandMessage, SyncStateMessage } from '@dark-tower-sync/shared';
+import { MessageType, type RelayMessage, type TowerCommandMessage, type SyncStateMessage } from '@dark-tower-sync/shared';
 
 /** Events emitted to the caller to drive UI updates. */
 export type TowerRelayEvent =

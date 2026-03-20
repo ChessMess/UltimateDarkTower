@@ -6,8 +6,7 @@
  */
 
 import { UI } from './ui';
-import { TowerRelay } from './towerRelay';
-import type { TowerRelayEvent } from './towerRelay';
+import { TowerRelay, type TowerRelayEvent } from './towerRelay';
 
 /**
  * App is the top-level controller.

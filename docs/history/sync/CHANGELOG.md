@@ -8,6 +8,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added
 
+- **Electron IPC status dashboard** — replaced hello-world renderer with a live
+  three-card dashboard (BLE tower state, relay clients, command counter) consuming
+  the preload bridge subscriptions for real-time updates
+- Dark-themed dashboard styles with animated state indicators, responsive
+  two-column grid layout, and pulse animation for advertising state
+- `@types/electron-squirrel-startup` dev dependency for type-safe ESM import
+
+### Fixed
+
+- **`index.html` moved to Electron package root** — Forge's Vite plugin sets
+  `root: projectDir`, so the renderer entry must be at `packages/electron/index.html`,
+  not nested in `src/renderer/`. This was causing a blank white window on launch.
+- **`ELECTRON_RUN_AS_NODE` stripped from `start:electron`** — VSCode sets this
+  env var in child processes, causing `require('electron')` to return the binary
+  path instead of the API. Added `env -u ELECTRON_RUN_AS_NODE` to root script.
+- **Added `target` fields to forge.config.ts** — `target: 'main'` and
+  `target: 'preload'` in VitePlugin build entries, matching official template.
+- **Replaced `will-quit` handler with `before-quit`** — previous pattern using
+  `event.preventDefault()` + async cleanup could cause exit loops.
+- **ESM import for `electron-squirrel-startup`** — switched from `require()` to
+  `import started from 'electron-squirrel-startup'` per official template.
+- **Merged duplicate imports** in `packages/client/src/app.ts`,
+  `packages/client/src/towerRelay.ts`, and `tests/unit/shared/protocol.test.ts`
+  (4 pre-existing `no-duplicate-imports` lint errors)
+
+---
+
+## Previous — Phase 2 Main Process Wiring + Phase 1 Shell
+
+### Added
+
 - `packages/host/src/fakeTower.ts` — full bleno BLE peripheral implementation
   - Advertises as "ReturnToDarkTower" with Nordic UART service UUID (`6e400001-…`)
   - RX characteristic (`6e400003-…`) captures 20-byte companion app writes and fires `'command'` event

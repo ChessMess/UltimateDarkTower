@@ -1,9 +1,12 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import path from 'path';
+import path from 'node:path';
+import started from 'electron-squirrel-startup';
 import { FakeTower, RelayServer } from '@dark-tower-sync/host';
 
-// Squirrel.Windows install/uninstall handling
-if (require('electron-squirrel-startup')) app.quit();
+// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+if (started) {
+  app.quit();
+}
 
 // Vite injects these at build time
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -87,11 +90,11 @@ async function startServices(): Promise<void> {
 
 async function shutdown(): Promise<void> {
   console.log('[main] Shutting down…');
-  await tower.stopAdvertising();
-  await relay.stop();
+  try { await tower.stopAdvertising(); } catch { /* best-effort */ }
+  try { await relay.stop(); } catch { /* best-effort */ }
 }
 
-app.whenReady().then(() => {
+app.on('ready', () => {
   createWindow();
   startServices().catch((err: unknown) => {
     console.error('[main] Failed to start services:', err);
@@ -107,8 +110,7 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-// Async cleanup before the process exits.
-app.on('will-quit', (event) => {
-  event.preventDefault();
-  void shutdown().then(() => app.exit(0));
+// Best-effort async cleanup — fire-and-forget, don't block quit.
+app.on('before-quit', () => {
+  void shutdown();
 });

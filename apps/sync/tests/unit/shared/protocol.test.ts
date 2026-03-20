@@ -11,8 +11,8 @@ import {
   makeTowerCommandMessage,
   makeSyncStateMessage,
   makeHostStatusMessage,
+  type HostStatus,
 } from '@dark-tower-sync/shared';
-import type { HostStatus } from '@dark-tower-sync/shared';
 
 describe('MessageType constants', () => {
   it('defines expected message type strings', () => {

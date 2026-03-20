@@ -6,7 +6,7 @@
 |-------|--------|-------|
 | Phase 1 — Hello World Shell | **Complete** | All files created, window opens, lint/type-check clean |
 | Phase 2 — FakeTower + RelayServer wiring | **Complete** | bleno N-API prebuild works in Electron without rebuild; IPC channels wired |
-| Phase 2 — IPC status dashboard | Not started | Preload bridge is ready; renderer still shows hello world page |
+| Phase 2 — IPC status dashboard | **Complete** | Dashboard renders live tower state, client list, command counter |
 | Phase 2 — macOS Bluetooth entitlement | Not started | Needed for packaged builds only |
 
 ### Phase 1 Deviations from Plan
@@ -58,6 +58,71 @@
 - [ ] Remote client → relay → physical tower round-trip — requires full hardware test
 - [ ] IPC events reaching renderer — requires renderer dashboard (Phase 2 next step)
 
+### Phase 2 — IPC Dashboard Deviations / Findings
+
+1. **`index.html` must live at the Electron package root, not `src/renderer/`** — the Forge Vite plugin sets `root: projectDir` (= `packages/electron/`) when launching the Vite dev server for the renderer. Vite looks for `index.html` at that root. The official Forge Vite TypeScript template explicitly moves `index.html` from `src/` to the project root during scaffolding (see `ViteTypeScriptTemplate.ts` line 47: `fs.move(filePath('index.html'), path.join(directory, 'index.html'))`). Our original plan placed it at `src/renderer/index.html`, which caused the Vite dev server to serve nothing — resulting in a blank white window.
+
+2. **Renderer asset paths are root-relative** — with `index.html` at the package root, the script tag must use `/src/renderer/renderer.ts` (absolute from Vite root) and the CSS link uses `./src/renderer/styles.css`. The official template uses `/src/renderer.ts` (their files are directly in `src/`).
+
+3. **`ELECTRON_RUN_AS_NODE=1` from VSCode** — VSCode (itself an Electron app) sets this env var in child processes. When set, `require('electron')` returns the binary path string instead of the Electron API, causing `TypeError: Cannot read properties of undefined` on `ipcMain`, `BrowserWindow`, etc. The root `start:electron` script was updated to `env -u ELECTRON_RUN_AS_NODE npm run start -w packages/electron`. Note: Forge's own `start.js` also deletes this env var before spawning Electron (line 146 of `@electron-forge/core/dist/api/start.js`), but the var must be cleared before Forge itself loads the config.
+
+4. **`target` field required in forge.config.ts VitePlugin build entries** — the official template specifies `target: 'main'` and `target: 'preload'` in the build array. Without these, the plugin may not correctly route builds through the right Vite config (main vs preload vs renderer).
+
+5. **`will-quit` with `event.preventDefault()` is dangerous** — the original plan used `will-quit` with `event.preventDefault()` + async cleanup + `app.quit()`. This can cause infinite exit loops if the async shutdown fails. Replaced with fire-and-forget `app.on('before-quit', () => void shutdown())`, matching the official template pattern.
+
+6. **`electron-squirrel-startup` requires ESM default import** — the plan used `require('electron-squirrel-startup')`, but the official template uses `import started from 'electron-squirrel-startup'`. Added `@types/electron-squirrel-startup` devDependency for type safety.
+
+7. **`bleno_1.Characteristic is not a constructor` at runtime** — non-fatal error caught by `startServices().catch()`. The bleno API may behave differently when loaded in Electron's Node context vs standalone Node. The relay server starts fine; only BLE advertising fails. This is expected until the bleno integration is specifically tested in Electron.
+
+8. **Pre-existing `no-duplicate-imports` lint errors** — 4 errors across `packages/client/src/app.ts`, `packages/client/src/towerRelay.ts`, and `tests/unit/shared/protocol.test.ts`. Fixed by merging duplicate import statements in each file.
+
+### Phase 2 — IPC Dashboard Verification Results
+
+- [x] `npm run start:electron` — launches Electron, dashboard renders with all three cards
+- [x] BLE Tower card shows state dot + label (idle by default)
+- [x] Relay Clients card shows badge count + list (empty by default)
+- [x] Commands Relayed card shows counter + timestamp
+- [x] Preload bridge exposes `window.darkTowerSync` API correctly
+- [x] IPC subscriptions wired: `onTowerState`, `onRelayClientChange`, `onTowerCommand`
+- [x] `npm run lint` passes clean (pre-existing errors in client/tests also fixed)
+- [x] `tsc --noEmit -p packages/electron/tsconfig.json` passes clean
+- [ ] Live IPC updates visible in dashboard — requires companion app or manual tower state trigger
+- [ ] Companion app → fake tower BLE connection — requires physical device testing
+
+---
+
+### Troubleshooting Log: Blank White Window on Launch
+
+This section documents the multi-step debugging process for the Electron app showing a blank white window instead of the dashboard UI.
+
+#### Symptom
+Running `npm run start:electron` opened an Electron window with a completely white/blank page. No errors in the terminal. The Forge logs showed "Launched Electron app" and the Vite dev server appeared to start successfully.
+
+#### Root Cause
+**`index.html` was in the wrong location.** The file was at `packages/electron/src/renderer/index.html`, but the Forge Vite plugin sets the Vite dev server's `root` to `packages/electron/` (the `projectDir`). Vite looks for `index.html` at the configured root directory. Since there was no `index.html` at the package root, the Vite dev server had nothing to serve — the Electron window loaded an empty response.
+
+#### Investigation Path
+
+1. **`ELECTRON_RUN_AS_NODE=1`** — initially suspected as the cause because `require('electron')` returned a string instead of the API. Fixed with `env -u ELECTRON_RUN_AS_NODE` in the start script. This was a real bug but not the blank-window cause.
+
+2. **Missing `target` field in forge.config.ts** — compared against official template, added `target: 'main'` and `target: 'preload'` to build entries. Real configuration gap but not the blank-window cause.
+
+3. **`will-quit` handler** — replaced with fire-and-forget `before-quit` to prevent potential exit loops. Improved reliability but not the blank-window cause.
+
+4. **Electron binary not downloaded** — `node_modules/electron/dist/` was empty. Ran `node node_modules/electron/install.js` to download. Required for launch but not the blank-window cause.
+
+5. **Direct binary run test** — ran `env -u ELECTRON_RUN_AS_NODE node_modules/electron/dist/Electron.app/Contents/MacOS/Electron packages/electron` — process stayed alive, showed a blank window (expected without Vite dev server). Confirmed the Electron code itself was functional.
+
+6. **Inspected Forge plugin-vite source** — found `vite.renderer.config.ts` (the internal one at `node_modules/@electron-forge/plugin-vite/dist/config/`) sets `root: this.projectDir`. Then inspected `ViteTypeScriptTemplate.js` and found line 47: the template **explicitly moves** `index.html` from `src/` to the project root during scaffolding.
+
+#### Fix
+- Moved `index.html` from `packages/electron/src/renderer/index.html` to `packages/electron/index.html`
+- Updated script tag from `src="./renderer.ts"` to `src="/src/renderer/renderer.ts"` (absolute from Vite root)
+- Updated CSS link from `href="./styles.css"` to `href="./src/renderer/styles.css"`
+
+#### Lesson
+The Forge Vite plugin's renderer dev server uses the Electron package directory as its Vite `root`. The `index.html` entry point must be at that root, not nested in a subdirectory. This matches how Vite itself works (it always looks for `index.html` at the configured root), and the official Forge template enforces this layout during project generation. The directory structure in the plan was updated to reflect this.
+
 ---
 
 ## Overview
@@ -100,6 +165,7 @@ packages/
 
 ```
 packages/electron/
+├── index.html                   # Renderer entry — MUST be at package root (Vite root)
 ├── forge.config.ts              # Electron Forge configuration
 ├── package.json
 ├── tsconfig.json
@@ -111,7 +177,6 @@ packages/electron/
 │   │   ├── main.ts              # Electron main process entry
 │   │   └── preload.ts           # Preload script (IPC bridge)
 │   └── renderer/
-│       ├── index.html           # Status UI page
 │       ├── renderer.ts          # Renderer entry point
 │       └── styles.css           # Status UI styles
 └── resources/

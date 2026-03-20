@@ -3,11 +3,12 @@
   --fg: #e8e8e8;
   --accent: #c0392b;
   --accent-dim: #7b241c;
-  --card: #2a2a2a;
-  --border: #444;
+  --card: #252525;
+  --border: #3a3a3a;
   --success: #27ae60;
   --warning: #f39c12;
   --error: #e74c3c;
+  --muted: #888;
 }
 
 * {
@@ -21,35 +22,144 @@ body {
   background: var(--bg);
   color: var(--fg);
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
+  padding: 2rem 1.5rem;
 }
 
 #app {
-  text-align: center;
+  max-width: 720px;
+  margin: 0 auto;
 }
 
-h1 {
-  font-size: 2rem;
-  color: var(--accent);
-  letter-spacing: 0.05em;
-  margin-bottom: 0.4rem;
-}
+/* ─── Header ─────────────────────────────────────────────────────────────── */
 
-.subtitle {
-  color: #aaa;
-  font-size: 0.9rem;
+header {
   margin-bottom: 2rem;
 }
 
-#status {
+h1 {
+  font-size: 1.75rem;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* ─── Dashboard grid ─────────────────────────────────────────────────────── */
+
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 1rem;
+}
+
+/* Commands card spans full width */
+#card-commands {
+  grid-column: 1 / -1;
+}
+
+/* ─── Cards ──────────────────────────────────────────────────────────────── */
+
+.card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  color: #aaa;
-  font-size: 0.9rem;
-  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.card h2 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ─── BLE state ──────────────────────────────────────────────────────────── */
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--muted);
+}
+
+.dot.state-idle        { background: var(--muted); }
+.dot.state-advertising { background: var(--warning); animation: pulse 1.4s ease-in-out infinite; }
+.dot.state-connected   { background: var(--success); }
+.dot.state-error       { background: var(--error); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+/* ─── Client list ────────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-block;
+  background: var(--accent-dim);
+  color: var(--fg);
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 7px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+#client-list {
+  list-style: none;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+#client-list li {
+  background: #1e1e1e;
+  border-radius: 5px;
+  padding: 0.35rem 0.6rem;
+  font-family: ui-monospace, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#client-list li.empty {
+  color: var(--muted);
+  font-family: inherit;
+  font-style: italic;
+}
+
+/* ─── Command stats ──────────────────────────────────────────────────────── */
+
+.stat-big {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--fg);
+  margin-bottom: 0.4rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--muted);
 }

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DarkTowerSync Host</title>
+  <link rel="stylesheet" href="./src/renderer/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Dark Tower Sync</h1>
+      <p class="subtitle">Host Console &nbsp;·&nbsp; <span id="version">—</span></p>
+    </header>
+
+    <div class="dashboard">
+
+      <!-- BLE Tower status -->
+      <section class="card" id="card-tower">
+        <h2>BLE Tower</h2>
+        <div class="status-row">
+          <span id="tower-state-dot" class="dot state-idle"></span>
+          <span id="tower-state">Idle</span>
+        </div>
+      </section>
+
+      <!-- Relay clients -->
+      <section class="card" id="card-clients">
+        <h2>Relay Clients &nbsp;<span class="badge" id="client-count">0</span></h2>
+        <ul id="client-list">
+          <li class="empty">No clients connected</li>
+        </ul>
+      </section>
+
+      <!-- Command traffic -->
+      <section class="card" id="card-commands">
+        <h2>Commands Relayed</h2>
+        <div class="stat-big" id="command-count">0</div>
+        <div class="stat-label">Last: <span id="last-command-at">—</span></div>
+      </section>
+
+    </div>
+  </div>
+  <script type="module" src="/src/renderer/renderer.ts"></script>
+</body>
+</html>
