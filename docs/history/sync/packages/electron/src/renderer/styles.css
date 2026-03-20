@@ -1,0 +1,55 @@
+:root {
+  --bg: #1a1a1a;
+  --fg: #e8e8e8;
+  --accent: #c0392b;
+  --accent-dim: #7b241c;
+  --card: #2a2a2a;
+  --border: #444;
+  --success: #27ae60;
+  --warning: #f39c12;
+  --error: #e74c3c;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+#app {
+  text-align: center;
+}
+
+h1 {
+  font-size: 2rem;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+
+.subtitle {
+  color: #aaa;
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+}
+
+#status {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: #aaa;
+  font-size: 0.9rem;
+  padding: 1rem 1.5rem;
+}

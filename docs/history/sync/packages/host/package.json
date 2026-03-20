@@ -14,7 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "@dark-tower-sync/shared": "*",
-    "@stoprocent/bleno": "^1.0.0",
+    "@stoprocent/bleno": "^0.12.4",
     "ultimatedarktower": "^2.1.0",
     "ws": "^8.18.0"
   },
