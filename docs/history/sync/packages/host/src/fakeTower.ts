@@ -10,7 +10,11 @@
  */
 
 import { EventEmitter } from 'events';
-import bleno, { Characteristic, PrimaryService } from '@stoprocent/bleno';
+import bleno from '@stoprocent/bleno';
+// Characteristic and PrimaryService live on Bleno.prototype, not as own enumerable
+// properties of the CJS module export. Accessing them via the default import
+// (bleno instance) uses prototype-chain lookup, which works correctly at runtime.
+const { Characteristic, PrimaryService } = bleno;
 import {
   UART_SERVICE_UUID,
   UART_RX_CHARACTERISTIC_UUID,

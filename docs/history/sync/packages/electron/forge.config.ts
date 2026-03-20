@@ -8,6 +8,10 @@ const config: ForgeConfig = {
     name: 'DarkTowerSync',
     executableName: 'dark-tower-sync',
     // icon: './resources/icon', // add when icon is ready
+    extendInfo: {
+      NSBluetoothAlwaysUsageDescription:
+        'DarkTowerSync needs Bluetooth to emulate the tower for the companion app.',
+    },
   },
   makers: [
     { name: '@electron-forge/maker-zip', platforms: ['darwin', 'linux'] },

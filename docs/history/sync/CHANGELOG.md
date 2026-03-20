@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Dark-themed dashboard styles with animated state indicators, responsive
   two-column grid layout, and pulse animation for advertising state
 - `@types/electron-squirrel-startup` dev dependency for type-safe ESM import
+- **macOS Bluetooth entitlement** — added `NSBluetoothAlwaysUsageDescription` to
+  `packagerConfig.extendInfo` in `forge.config.ts`; entry is now present in the
+  packaged app's `Info.plist`
 
 ### Fixed
 
@@ -32,6 +35,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - **Merged duplicate imports** in `packages/client/src/app.ts`,
   `packages/client/src/towerRelay.ts`, and `tests/unit/shared/protocol.test.ts`
   (4 pre-existing `no-duplicate-imports` lint errors)
+- **`bleno_1.Characteristic is not a constructor` runtime error** — `tsc` compiled
+  the named import `import bleno, { Characteristic, PrimaryService } from '@stoprocent/bleno'`
+  using `__importStar`, which copies only *own* properties of the CJS module export.
+  `Characteristic` and `PrimaryService` live on `Bleno.prototype` (not own properties
+  of the instance), so they were `undefined` when destructured. Fixed by removing
+  them from the named import and destructuring from the default import instead:
+  `const { Characteristic, PrimaryService } = bleno;` — prototype-chain lookup
+  works correctly on the default-import value (`bleno_1.default`).
 
 ---
 

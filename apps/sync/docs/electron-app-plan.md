@@ -7,7 +7,9 @@
 | Phase 1 — Hello World Shell | **Complete** | All files created, window opens, lint/type-check clean |
 | Phase 2 — FakeTower + RelayServer wiring | **Complete** | bleno N-API prebuild works in Electron without rebuild; IPC channels wired |
 | Phase 2 — IPC status dashboard | **Complete** | Dashboard renders live tower state, client list, command counter |
-| Phase 2 — macOS Bluetooth entitlement | Not started | Needed for packaged builds only |
+| Phase 2 — macOS Bluetooth entitlement | **Complete** | `extendInfo.NSBluetoothAlwaysUsageDescription` added to `forge.config.ts`; verified in packaged `Info.plist` |
+| Phase 2 — bleno `Characteristic` constructor fix | **Complete** | Named import replaced with `const { Characteristic, PrimaryService } = bleno;` — see deviations |
+| Packaging verification | **Complete** | `electron-forge package` succeeds; produces `out/DarkTowerSync-darwin-arm64/DarkTowerSync.app` |
 
 ### Phase 1 Deviations from Plan
 
@@ -44,7 +46,7 @@
 - [x] Pre-existing lint errors (11) and test failures unchanged — no regressions
 - [ ] `npm run lint` — 11 pre-existing errors in client/host/tests (not introduced here)
 - [ ] `npm test` — pre-existing failure (shared package not built; needs `npm run build:shared` first)
-- [ ] `cd packages/electron && npx electron-forge package` — not yet verified (run manually to validate packaging)
+- [x] `cd packages/electron && npx electron-forge package` — produces `out/DarkTowerSync-darwin-arm64/DarkTowerSync.app`; `NSBluetoothAlwaysUsageDescription` present in `Info.plist`
 
 ### Phase 2 — Main Process Wiring Verification Results
 
@@ -75,6 +77,12 @@
 7. **`bleno_1.Characteristic is not a constructor` at runtime** — non-fatal error caught by `startServices().catch()`. The bleno API may behave differently when loaded in Electron's Node context vs standalone Node. The relay server starts fine; only BLE advertising fails. This is expected until the bleno integration is specifically tested in Electron.
 
 8. **Pre-existing `no-duplicate-imports` lint errors** — 4 errors across `packages/client/src/app.ts`, `packages/client/src/towerRelay.ts`, and `tests/unit/shared/protocol.test.ts`. Fixed by merging duplicate import statements in each file.
+
+### Phase 2 — Packaging / Bluetooth Deviations
+
+1. **`Characteristic` and `PrimaryService` must be accessed via the default import** — `tsc` with `esModuleInterop` compiles `import bleno, { Characteristic, PrimaryService } from '@stoprocent/bleno'` using `__importStar`. That helper copies *own* properties of the CJS module export using `Object.getOwnPropertyNames`, which does **not** traverse the prototype chain. `Characteristic` and `PrimaryService` are defined on `Bleno.prototype` (line 326–327 of `lib/bleno.js`), not as own properties of the returned Bleno instance. Result: `bleno_1.Characteristic` is `undefined` at runtime → `bleno_1.Characteristic is not a constructor`. Fix: `const { Characteristic, PrimaryService } = bleno;` where `bleno` is the default import (a Bleno instance). Destructuring from the instance traverses the prototype and resolves correctly.
+
+2. **Packaging produces `out/DarkTowerSync-darwin-arm64/`** — `electron-forge package` (run from `packages/electron/`) writes output to that package's `out/` directory, not the repo root. The `.gitignore` in `packages/electron/` should include `out/` (verify before publishing the repo).
 
 ### Phase 2 — IPC Dashboard Verification Results
 
