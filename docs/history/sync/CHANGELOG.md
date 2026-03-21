@@ -39,7 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   before `bleno.disconnect()` fires during a manual stop. They now reset inside
   `stopAdvertising()` directly before calling `bleno.disconnect()`.
 - **Concurrent `startAdvertising()` calls** — the existing `if (this._advertising)
-  return` guard is only set after the full async chain completes (up to 10 seconds).
+return` guard is only set after the full async chain completes (up to 10 seconds).
   Added `_isStarting: boolean` flag set at the top of `startAdvertising()` and
   cleared in both success and failure paths to prevent a second concurrent
   invocation during the BLE wait.
@@ -118,7 +118,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   (4 pre-existing `no-duplicate-imports` lint errors)
 - **`bleno_1.Characteristic is not a constructor` runtime error** — `tsc` compiled
   the named import `import bleno, { Characteristic, PrimaryService } from '@stoprocent/bleno'`
-  using `__importStar`, which copies only *own* properties of the CJS module export.
+  using `__importStar`, which copies only _own_ properties of the CJS module export.
   `Characteristic` and `PrimaryService` live on `Bleno.prototype` (not own properties
   of the instance), so they were `undefined` when destructured. Fixed by removing
   them from the named import and destructuring from the default import instead:
