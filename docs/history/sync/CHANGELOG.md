@@ -6,7 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-03-21
+
 ### Added
+
+- **v0.1.0 release workflow** — `.github/workflows/release.yml` triggers on
+  `v*` tags, builds the Electron DMG on macOS via `electron-forge make`, runs
+  the test suite, and uploads DMG + ZIP artifacts to the GitHub Release using
+  `softprops/action-gh-release@v2`.
 
 - **Testing guide** — `docs/TESTING.md` documents how to run, debug, and extend
   the test suite: quick-start commands, test layout, what to look for in output,
@@ -377,9 +384,7 @@ return` guard is only set after the full async chain completes (up to 10 seconds
 - Pre-existing lint errors (11) in `packages/client`, `packages/host`, and `tests/` — not introduced by this change
 - Pre-existing `tsc --build --noEmit` TS6310 error in root `type-check` — `packages/host` references `packages/shared` which lacks `composite: true`; pre-dates this change
 
-## [0.1.0] - Unreleased
-
-### Added
+### Initial
 
 - Initial project scaffolding and monorepo setup
 - Shared types and WebSocket protocol message definitions

@@ -68,18 +68,9 @@ Implemented. See [Completed](#completed) section below.
 
 ## Tier 3: Release Readiness
 
-### 7. First Release (v0.1.0) Workflow
+### ~~7. First Release (v0.1.0) Workflow~~ ✓
 
-**What:** Tag a `v0.1.0` release with a GitHub Actions workflow that builds the Electron DMG (macOS) on tag push and attaches it to the GitHub release.
-
-**Why it matters:** Makes the project distributable without requiring the host to have Node.js or dev tools. The Electron app is the primary host UX.
-
-**Scope:**
-- `.github/workflows/release.yml` — triggered on `v*` tags; builds Electron via `electron-forge make`; uploads DMG as release artifact
-- Bump `version` in root and electron `package.json` to `0.1.0`
-- Write concise release notes in CHANGELOG summarizing the feature set
-
-**Key files:** `.github/workflows/release.yml`, `package.json`, `packages/electron/package.json`, `CHANGELOG.md`
+Implemented. See [Completed](#completed) section below.
 
 ---
 
@@ -92,7 +83,7 @@ Implemented. See [Completed](#completed) section below.
 | 3 | Hosted client (GitHub Pages) | Small | Very high — removes all remote player friction |
 | ~~4~~ | ~~Protocol version enforcement~~ | ~~Small~~ | ~~Medium — correctness guard~~ ✓ |
 | ~~5~~ | ~~Observer mode~~ | ~~Medium~~ | ~~Medium — usability for spectators~~ ✓ |
-| 6 | v0.1.0 release workflow | Small | High — distributable artifact |
+| ~~6~~ | ~~v0.1.0 release workflow~~ | ~~Small~~ | ~~High — distributable artifact~~ ✓ |
 
 Recommended sequence: complete Tier 1 items (1–3) together as a "pre-release quality pass," then Tier 2 items as game feature additions, then cut the release.
 
@@ -139,3 +130,12 @@ code 4000, suppresses auto-reconnect, and emits a `relay:version-mismatch` event
 the UI can display a "please hard-reload" overlay. Added 3 integration tests (mismatch
 disconnect, matching version stays connected, missing version treated as mismatch) and
 1 unit test for the close code constant.
+
+### First Release (v0.1.0) Workflow ✓
+
+`.github/workflows/release.yml` triggers on `v*` tag pushes, runs the test suite,
+builds the Electron DMG via `electron-forge make` on macOS, and uploads DMG + ZIP
+artifacts to the GitHub Release using `softprops/action-gh-release@v2`. Both
+`package.json` and `packages/electron/package.json` were already at version `0.1.0`.
+CHANGELOG.md updated with a `[0.1.0] - 2026-03-21` section. To cut the release:
+`git tag v0.1.0 && git push origin v0.1.0`.
