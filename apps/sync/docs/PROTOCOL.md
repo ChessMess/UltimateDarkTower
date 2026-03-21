@@ -205,7 +205,7 @@ Sent by the client **immediately** after the WebSocket `open` event fires.
 | `payload.label`           | string? | Optional display name chosen by the player         |
 | `payload.protocolVersion` | string  | Protocol version the client speaks (semver string) |
 
-> The host may disconnect clients whose `protocolVersion` is incompatible. Check the `PROTOCOL_VERSION` constant in `@dark-tower-sync/shared`.
+> The host logs a warning if the client's `protocolVersion` does not match its own. Clients are **not** forcibly disconnected for version mismatches in the current implementation. Check the `PROTOCOL_VERSION` constant in `@dark-tower-sync/shared`.
 
 ---
 
@@ -244,7 +244,7 @@ Sent by the client to submit structured log entries to the host for centralized,
         "ts": "2026-03-19T12:00:00.123Z",
         "seq": 42,
         "dir": "client←host",
-        "hex": "00010203040506070809101112131415161718190e",
+        "hex": "0001020304050607080910111213141516171819",
         "src": "Player 2",
         "level": "cmd",
         "decoded": { "cmdType": 0, "drumStates": [1, 2], "ledStates": [3,4,5,6,7,8,9,10,11,12,13,14], "audio": 21, "beamBreak": [22, 23], "volumeDrumBeam": 24, "ledOverride": 14 }
@@ -351,11 +351,13 @@ Broadcast when a remote player's physical tower BLE connection changes. Allows o
 Client                                     Host
   |                                          |
   |------- WebSocket connect() ------------>|
-  |<------ WebSocket open event ------------|
   |                                          |
-  |------- client:hello ------------------>|  (client sends immediately)
-  |<------ sync:state ----------------------|  (host responds with last known state)
-  |<------ client:connected (broadcast) ----|  (host tells other clients)
+  |<------ sync:state ----------------------|  (host sends immediately on connect)
+  |<------ client:connected (broadcast) ----|  (host tells existing clients)
+  |                                          |
+  |------- client:hello ------------------>|  (client sends immediately after open)
+  |                                          |  [host marks handshake complete;
+  |                                          |   10s timeout if hello never arrives]
   |                                          |
   |  [user clicks "Connect to Tower"]        |
   |  [BLE connect + calibrate]               |

@@ -218,7 +218,7 @@ On client WebSocket connection:
 
 Current behavior detail: protocol version mismatch is logged as a warning, and the client is not forcibly disconnected.
 
-### 5.4 Resilience Data Flow
+### 5.3 Resilience Data Flow
 
 ```
 Companion App Disconnect:
@@ -253,7 +253,7 @@ WebSocket Disconnect (client side):
   → On reconnect: client:hello → sync:state catchup → auto-replay if tower ready
 ```
 
-### 5.3 Logging Data Flow
+### 5.4 Logging Data Flow
 
 ```
 Client Browser                              Host (Electron/Node)
