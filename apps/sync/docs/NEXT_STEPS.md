@@ -28,21 +28,9 @@ The gaps are: low test coverage (27 passing, mostly protocol factories), operati
 
 ---
 
-### 2. Log File Rotation / Size Cap
+### ~~2. Log File Rotation / Size Cap~~ ✓
 
-**What:** Cap log files at a configurable size (e.g. 50 MB default) and rotate to a new file when the cap is hit. Optionally delete session files older than N days.
-
-**Why it matters:** Spec section 14 explicitly calls out "Log files grow without bound during long sessions." An 8-hour game session could generate hundreds of MBs. This becomes a real operational problem for the Electron app which stores logs in `userData`.
-
-**Scope:**
-- Add `maxFileSizeBytes` and `maxAgeDays` options to `HostLogger` constructor
-- On each `write()`, check stream byte count; if exceeded, close current stream and open `session-{date}-host-{n}.jsonl`
-- Add a `pruneOldLogs(dir, maxAgeDays)` utility called at startup
-- Expose `maxFileSizeMB` as a configurable option in Electron (env var or IPC)
-
-**Key files:** `packages/host/src/logger.ts`, `packages/electron/src/main/main.ts`
-
-**Verification:** Integration test that writes >N bytes to a HostLogger and asserts rotation creates a second file.
+Implemented. See [Completed](#completed) section below.
 
 ---
 
@@ -141,3 +129,13 @@ Wired `CommandParser.isValid()` as a gate before `RelayServer.broadcast()` in bo
 packets (not exactly 20 bytes) are now dropped with a `console.warn` before reaching
 any client. Added `tests/unit/host/relayGate.test.ts` (4 tests) to lock in the
 behavior.
+
+### Log File Rotation / Size Cap ✓
+
+`HostLogger` now accepts a `maxFileSizeBytes` option via a `HostLoggerOptions` object
+(backward-compatible — legacy `(logDir, boolean)` constructor still works). When a log
+file exceeds the limit, the current write stream closes and a new numbered segment
+opens (`session-{ts}-host-2.jsonl`, `-3.jsonl`, etc.). Host and all streams rotate
+independently. Electron host defaults to 10 MB per file. A `pruneOldLogs(dir, maxAgeDays)`
+utility deletes `.jsonl` files older than 30 days and is called fire-and-forget at
+Electron startup. Added 7 tests covering rotation behavior and pruning edge cases.

@@ -18,8 +18,9 @@
 // Public API — re-export classes for use as a library (e.g., from Electron main).
 export { FakeTower } from './fakeTower';
 export { RelayServer } from './relayServer';
-export { HostLogger } from './logger';
+export { HostLogger, pruneOldLogs } from './logger';
 export { CommandParser } from './commandParser';
+export type { HostLoggerOptions } from './logger';
 export type { RelayServerOptions } from './relayServer';
 export type { CommandReceivedCallback } from './fakeTower';
 

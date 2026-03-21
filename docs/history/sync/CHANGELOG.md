@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added
 
+- **Log file rotation** — `HostLogger` accepts a `maxFileSizeBytes` option; when a
+  log file exceeds the limit, the current stream closes and a new numbered segment
+  opens (`session-{ts}-host-2.jsonl`). Electron host defaults to 10 MB per file.
+- **Old log pruning** — `pruneOldLogs(dir, maxAgeDays)` utility deletes `.jsonl`
+  files older than 30 days; called automatically at Electron startup.
+
 - **Observer mode** — browser clients can now connect with `?observer` in the URL
   to view a live tower state visualizer without requiring a physical tower or Web
   Bluetooth. Observer clients receive all `tower:command` messages and decode them

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import { FakeTower, RelayServer, HostLogger, CommandParser } from '@dark-tower-sync/host';
+import { FakeTower, RelayServer, HostLogger, CommandParser, pruneOldLogs } from '@dark-tower-sync/host';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -33,7 +33,15 @@ export const IPC = {
 
 // ─── Host services ───────────────────────────────────────────────────────────
 const logDir = path.join(app.getPath('userData'), 'logs');
-const logger = new HostLogger(logDir, process.env['LOGGING'] !== '0');
+const logger = new HostLogger(logDir, {
+  enabled: process.env['LOGGING'] !== '0',
+  maxFileSizeBytes: 10 * 1024 * 1024, // 10 MB
+});
+
+// Best-effort cleanup of old log files at startup.
+pruneOldLogs(logDir, 30).then((n) => {
+  if (n > 0) console.log(`[main] Pruned ${n} old log file(s)`);
+}).catch(() => { /* best-effort */ });
 const relay = new RelayServer({
   port: Number(process.env['RELAY_PORT'] ?? 8765),
   onClientLog: (clientId, entries) => logger.writeClientEntries(clientId, entries),

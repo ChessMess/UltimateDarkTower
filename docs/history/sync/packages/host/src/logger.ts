@@ -8,9 +8,13 @@
  * The logger has a master `enabled` switch. When disabled, all write methods
  * are no-ops (no file I/O), but the log directory and streams stay open so
  * logging can be resumed without restarting the session.
+ *
+ * When `maxFileSizeBytes` is set (> 0), each stream rotates to a new numbered
+ * segment file once the current file would exceed the limit.
  */
 
 import { createWriteStream, mkdirSync, type WriteStream } from 'node:fs';
+import { readdir, stat, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   type LogDirection,
@@ -30,6 +34,17 @@ function sessionTimestamp(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Options
+// ---------------------------------------------------------------------------
+
+export interface HostLoggerOptions {
+  /** Whether logging starts enabled (default `true`). */
+  enabled?: boolean;
+  /** Max bytes per log file before rotating to a new segment. 0 = no rotation. */
+  maxFileSizeBytes?: number;
+}
+
+// ---------------------------------------------------------------------------
 // HostLogger
 // ---------------------------------------------------------------------------
 
@@ -38,22 +53,36 @@ export class HostLogger {
   enabled: boolean;
 
   private readonly logDir: string;
-  private readonly hostStream: WriteStream;
-  private readonly allStream: WriteStream;
+  private readonly ts: string;
+  private readonly maxFileSizeBytes: number;
+
+  private hostStream: WriteStream;
+  private allStream: WriteStream;
+  private hostBytes = 0;
+  private allBytes = 0;
+  private hostSegment = 1;
+  private allSegment = 1;
 
   /**
-   * @param logDir  - Directory to write log files into (created if missing).
-   * @param enabled - Whether logging starts enabled (default `true`).
+   * @param logDir            - Directory to write log files into (created if missing).
+   * @param enabledOrOptions  - Boolean (legacy) or options object.
    */
-  constructor(logDir: string, enabled = true) {
-    this.enabled = enabled;
-    this.logDir = logDir;
+  constructor(logDir: string, enabledOrOptions?: boolean | HostLoggerOptions) {
+    if (typeof enabledOrOptions === 'boolean') {
+      this.enabled = enabledOrOptions;
+      this.maxFileSizeBytes = 0;
+    } else {
+      const opts = enabledOrOptions ?? {};
+      this.enabled = opts.enabled ?? true;
+      this.maxFileSizeBytes = opts.maxFileSizeBytes ?? 0;
+    }
 
+    this.logDir = logDir;
     mkdirSync(logDir, { recursive: true });
 
-    const ts = sessionTimestamp();
-    this.hostStream = createWriteStream(join(logDir, `session-${ts}-host.jsonl`), { flags: 'a' });
-    this.allStream = createWriteStream(join(logDir, `session-${ts}-all.jsonl`), { flags: 'a' });
+    this.ts = sessionTimestamp();
+    this.hostStream = this.openStream('host', this.hostSegment);
+    this.allStream = this.openStream('all', this.allSegment);
   }
 
   // ── Public API ──────────────────────────────────────────────────────────
@@ -135,11 +164,72 @@ export class HostLogger {
 
   // ── Private helpers ─────────────────────────────────────────────────────
 
+  private openStream(tag: 'host' | 'all', segment: number): WriteStream {
+    const suffix = segment > 1 ? `-${segment}` : '';
+    return createWriteStream(
+      join(this.logDir, `session-${this.ts}-${tag}${suffix}.jsonl`),
+      { flags: 'a' },
+    );
+  }
+
   private writeToHost(entry: LogEntry): void {
-    this.hostStream.write(JSON.stringify(entry) + '\n');
+    const line = JSON.stringify(entry) + '\n';
+    const bytes = Buffer.byteLength(line, 'utf8');
+    if (this.maxFileSizeBytes > 0 && this.hostBytes + bytes > this.maxFileSizeBytes) {
+      this.hostStream.end();
+      this.hostSegment += 1;
+      this.hostStream = this.openStream('host', this.hostSegment);
+      this.hostBytes = 0;
+    }
+    this.hostStream.write(line);
+    this.hostBytes += bytes;
   }
 
   private writeToAll(entry: LogEntry): void {
-    this.allStream.write(JSON.stringify(entry) + '\n');
+    const line = JSON.stringify(entry) + '\n';
+    const bytes = Buffer.byteLength(line, 'utf8');
+    if (this.maxFileSizeBytes > 0 && this.allBytes + bytes > this.maxFileSizeBytes) {
+      this.allStream.end();
+      this.allSegment += 1;
+      this.allStream = this.openStream('all', this.allSegment);
+      this.allBytes = 0;
+    }
+    this.allStream.write(line);
+    this.allBytes += bytes;
   }
+}
+
+// ---------------------------------------------------------------------------
+// pruneOldLogs
+// ---------------------------------------------------------------------------
+
+/**
+ * Delete `.jsonl` log files older than `maxAgeDays` from the given directory.
+ * Returns the number of files deleted. Returns 0 if the directory does not exist.
+ */
+export async function pruneOldLogs(dir: string, maxAgeDays = 30): Promise<number> {
+  const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
+  let deleted = 0;
+
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return 0;
+  }
+
+  for (const name of entries) {
+    if (!name.endsWith('.jsonl')) continue;
+    const fullPath = join(dir, name);
+    try {
+      const info = await stat(fullPath);
+      if (info.mtimeMs < cutoff) {
+        await unlink(fullPath);
+        deleted++;
+      }
+    } catch {
+      // file vanished or permission error — skip
+    }
+  }
+  return deleted;
 }

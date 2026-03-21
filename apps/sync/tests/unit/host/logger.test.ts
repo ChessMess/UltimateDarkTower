@@ -5,10 +5,10 @@
  * in afterEach to flush streams before reading files back.
  */
 
-import { mkdtempSync, rmSync, readdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, readdirSync, readFileSync, writeFileSync, utimesSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { HostLogger } from '../../../packages/host/src/logger';
+import { HostLogger, pruneOldLogs } from '../../../packages/host/src/logger';
 
 /** Parse a JSONL file into an array of objects. */
 function readJsonl(filePath: string): Record<string, unknown>[] {
@@ -232,5 +232,155 @@ describe('HostLogger — writeClientEntries()', () => {
     const allFile = findFile(dir, (f) => f.includes('-all.jsonl'))!;
     const written = readJsonl(join(dir, allFile));
     expect(written[0].src).toBe('player-1');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Rotation
+// ---------------------------------------------------------------------------
+
+/** Collect all files matching a substring, sorted by segment number. */
+function findFiles(dir: string, substring: string): string[] {
+  return readdirSync(dir)
+    .filter((f) => f.includes(substring))
+    .sort((a, b) => {
+      // Extract segment number: no suffix = 1, "-2.jsonl" = 2, etc.
+      const segA = (a.match(/-(\d+)\.jsonl$/) ?? [])[1];
+      const segB = (b.match(/-(\d+)\.jsonl$/) ?? [])[1];
+      return (segA ? Number(segA) : 1) - (segB ? Number(segB) : 1);
+    });
+}
+
+/** Read and concat JSONL entries from multiple files in order. */
+function readAllJsonl(dir: string, files: string[]): Record<string, unknown>[] {
+  return files.flatMap((f) => readJsonl(join(dir, f)));
+}
+
+describe('HostLogger — rotation', () => {
+  let dir: string;
+  let logger: HostLogger;
+
+  afterEach(async () => {
+    await logger.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('rotates host stream when maxFileSizeBytes exceeded', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'dts-logger-'));
+    logger = new HostLogger(dir, { maxFileSizeBytes: 500 });
+
+    // Each logEvent entry is ~150-200 bytes of JSON; 4 should exceed 500.
+    for (let i = 0; i < 4; i++) {
+      logger.logEvent('event', 'host', `rotation test entry ${i}`);
+    }
+    await logger.close();
+
+    const hostFiles = findFiles(dir, '-host');
+    expect(hostFiles.length).toBeGreaterThanOrEqual(2);
+    expect(hostFiles[0]).toMatch(/-host\.jsonl$/);   // segment 1: no number suffix
+    expect(hostFiles[1]).toMatch(/-host-2\.jsonl$/); // segment 2
+
+    // All entries are valid JSONL.
+    const entries = readAllJsonl(dir, hostFiles);
+    expect(entries.length).toBe(4);
+    entries.forEach((e) => expect(e.level).toBe('event'));
+  });
+
+  it('rotates all stream independently from host stream', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'dts-logger-'));
+    logger = new HostLogger(dir, { maxFileSizeBytes: 300 });
+
+    // Push data only through writeClientEntries → all stream only.
+    for (let i = 0; i < 6; i++) {
+      logger.writeClientEntries('c1', [
+        { ts: new Date().toISOString(), seq: null, dir: null, hex: null, src: '', level: 'event' as const, note: `client entry ${i}` },
+      ]);
+    }
+    await logger.close();
+
+    const allFiles = findFiles(dir, '-all');
+    const hostFiles = findFiles(dir, '-host');
+    expect(allFiles.length).toBeGreaterThanOrEqual(2);
+    expect(hostFiles).toHaveLength(1); // host stream never written to — no rotation
+  });
+
+  it('does not rotate when maxFileSizeBytes is 0 (default)', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'dts-logger-'));
+    logger = new HostLogger(dir); // no options → maxFileSizeBytes = 0
+
+    for (let i = 0; i < 10; i++) {
+      logger.logEvent('event', 'host', `entry ${i}`);
+    }
+    await logger.close();
+
+    expect(findFiles(dir, '-host')).toHaveLength(1);
+    expect(findFiles(dir, '-all')).toHaveLength(1);
+  });
+
+  it('preserves all entries across rotated files without loss', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'dts-logger-'));
+    logger = new HostLogger(dir, { maxFileSizeBytes: 300 });
+
+    const totalEntries = 8;
+    for (let i = 0; i < totalEntries; i++) {
+      logger.logEvent('event', 'host', `e${i}`);
+    }
+    await logger.close();
+
+    const hostFiles = findFiles(dir, '-host');
+    const entries = readAllJsonl(dir, hostFiles);
+    expect(entries).toHaveLength(totalEntries);
+    // Verify ordering preserved.
+    entries.forEach((e, i) => expect(e.note).toBe(`e${i}`));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// pruneOldLogs
+// ---------------------------------------------------------------------------
+
+describe('pruneOldLogs', () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'dts-prune-'));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('deletes .jsonl files older than maxAgeDays', async () => {
+    const oldFile = join(dir, 'session-old-host.jsonl');
+    const recentFile = join(dir, 'session-recent-host.jsonl');
+    writeFileSync(oldFile, '{"test":true}\n');
+    writeFileSync(recentFile, '{"test":true}\n');
+
+    // Backdate old file to 31 days ago.
+    const past = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
+    utimesSync(oldFile, past, past);
+
+    const count = await pruneOldLogs(dir, 30);
+    expect(count).toBe(1);
+
+    const remaining = readdirSync(dir);
+    expect(remaining).toContain('session-recent-host.jsonl');
+    expect(remaining).not.toContain('session-old-host.jsonl');
+  });
+
+  it('ignores non-.jsonl files', async () => {
+    const txtFile = join(dir, 'notes.txt');
+    writeFileSync(txtFile, 'keep me');
+    const past = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    utimesSync(txtFile, past, past);
+
+    const count = await pruneOldLogs(dir, 30);
+    expect(count).toBe(0);
+    expect(readdirSync(dir)).toContain('notes.txt');
+  });
+
+  it('returns 0 for non-existent directory', async () => {
+    const count = await pruneOldLogs('/tmp/does-not-exist-xyz-' + Date.now(), 30);
+    expect(count).toBe(0);
   });
 });
