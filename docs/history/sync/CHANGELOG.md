@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added
 
+- **Testing guide** — `docs/TESTING.md` documents how to run, debug, and extend
+  the test suite: quick-start commands, test layout, what to look for in output,
+  coverage generation, CI matrix details, and conventions for writing new tests.
+
 - **Protocol version enforcement** — the host now disconnects clients whose
   `protocolVersion` in `client:hello` does not match `PROTOCOL_VERSION`, using
   custom WebSocket close code `4000` (`CLOSE_CODE_PROTOCOL_VERSION_MISMATCH`).
