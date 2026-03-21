@@ -1,0 +1,349 @@
+/* ─── Design tokens ───────────────────────────────────────────────────────── */
+
+:root {
+  --bg: #161616;
+  --fg: #e8e8e8;
+  --accent: #c0392b;
+  --accent-dim: #7b241c;
+  --accent-glow: rgba(192, 57, 43, 0.2);
+  --card: #222222;
+  --card-top: rgba(255, 255, 255, 0.055);
+  --border: #383838;
+  --input-bg: #0d0d0d;
+  --success: #27ae60;
+  --warning: #f39c12;
+  --error: #e74c3c;
+  --muted: #888;
+  --radius: 10px;
+}
+
+/* ─── Reset ───────────────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  min-height: 100dvh; /* dynamic viewport on mobile browsers */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* horizontal padding + safe-area insets for notch/home-bar devices */
+  padding: 2.5rem max(1.25rem, env(safe-area-inset-right))
+           2rem     max(1.25rem, env(safe-area-inset-left));
+  padding-top: max(2rem, env(safe-area-inset-top));
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
+/* ─── Header ──────────────────────────────────────────────────────────────── */
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+header h1 {
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 32px var(--accent-glow);
+}
+
+header p {
+  color: var(--muted);
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ─── Cards ───────────────────────────────────────────────────────────────── */
+
+.card {
+  background: linear-gradient(180deg, #272727 0%, #202020 100%);
+  border: 1px solid var(--border);
+  border-top: 1px solid var(--card-top);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 1.25rem;
+}
+
+.card h2 {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+/* ─── Form fields ─────────────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+input[type='text'] {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  font-size: 1rem; /* must be ≥ 16px to prevent iOS Safari auto-zoom */
+  padding: 0.65rem 0.75rem;
+  min-height: 44px; /* minimum touch target */
+  width: 100%;
+  transition: border-color 0.15s;
+  -webkit-appearance: none; /* remove iOS default styling */
+  appearance: none;
+}
+
+input[type='text']:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+input[type='text']::placeholder {
+  color: #444;
+}
+
+/* ─── Buttons ─────────────────────────────────────────────────────────────── */
+
+button {
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.75rem 1.2rem;
+  min-height: 44px; /* minimum touch target */
+  transition: background 0.15s, box-shadow 0.15s;
+  touch-action: manipulation; /* prevent double-tap zoom delay */
+  width: 100%;
+}
+
+button:hover:not(:disabled) {
+  background: #a93226;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+button:active:not(:disabled) {
+  background: #922b21;
+}
+
+button:disabled {
+  background: var(--accent-dim);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Ghost variant — secondary actions */
+button.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-weight: 500;
+}
+
+button.btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: #555;
+  box-shadow: none;
+}
+
+button.btn-ghost:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+button.btn-ghost:disabled {
+  background: transparent;
+  border-color: var(--border);
+  opacity: 0.4;
+}
+
+/* ─── Status indicators ───────────────────────────────────────────────────── */
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.875rem;
+  padding: 0.35rem 0;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.dot.connected {
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(39, 174, 96, 0.5);
+}
+
+.dot.error {
+  background: var(--error);
+  box-shadow: 0 0 8px rgba(231, 76, 60, 0.5);
+}
+
+.dot.connecting {
+  background: var(--warning);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* ─── Event log ───────────────────────────────────────────────────────────── */
+
+#log {
+  font-family: 'Menlo', 'Consolas', ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: #aaa;
+  height: 160px;
+  overflow-y: auto;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a3a transparent;
+}
+
+#log p {
+  margin: 0;
+  line-height: 1.6;
+  padding: 0.05rem 0;
+}
+
+#log p:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+/* ─── Pause overlay ───────────────────────────────────────────────────────── */
+
+.pause-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(4px);
+  color: #fce8bf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  font-size: 1.2rem;
+  font-weight: 500;
+  text-align: center;
+  padding: 2rem;
+  font-family: system-ui, sans-serif;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ─── Footer ──────────────────────────────────────────────────────────────── */
+
+footer {
+  color: #444;
+  font-size: 0.75rem;
+  margin-top: auto;
+  padding-top: 2rem;
+  text-align: center;
+}
+
+footer a {
+  color: #666;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+footer a:hover {
+  color: #999;
+}
+
+/* ─── Mobile adjustments ──────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  header {
+    margin-bottom: 1.5rem;
+  }
+
+  header h1 {
+    font-size: 1.75rem;
+  }
+
+  .card {
+    padding: 1.25rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+  }
+
+  /* Stack log action buttons vertically on very small screens */
+  #logs-actions {
+    flex-direction: column;
+  }
+
+  #log {
+    height: 180px; /* a bit taller so it's more useful without a keyboard open */
+    font-size: 0.72rem;
+  }
+}
+
+/* Prevent layout from squeezing on very wide phones (landscape) */
+@media (max-width: 600px) and (orientation: landscape) {
+  body {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  header {
+    margin-bottom: 1rem;
+  }
+
+  header h1 {
+    font-size: 1.6rem;
+  }
+
+  .card {
+    margin-bottom: 0.75rem;
+  }
+
+  #log {
+    height: 120px;
+  }
+}

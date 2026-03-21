@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+
+- UI polish pass — refined dark theme with improved depth, typography, and interactive states across both the client web app and Electron host; client UI is now mobile-friendly with proper touch targets, iOS zoom prevention, safe-area inset support, and responsive layouts for phone and tablet use
+
+
+
 ### Added
 
 - **Resilience & reconnection system** — robust failure handling across all four

@@ -125,10 +125,7 @@ export class UI {
     }
     const overlay = document.createElement('div');
     overlay.id = 'pause-overlay';
-    overlay.style.cssText =
-      'position:fixed;inset:0;background:rgba(0,0,0,0.85);color:#fce8bf;display:flex;' +
-      'align-items:center;justify-content:center;z-index:9999;font-size:1.2rem;' +
-      'text-align:center;padding:2rem;font-family:system-ui,sans-serif;';
+    overlay.className = 'pause-overlay';
     overlay.textContent = message;
     document.body.appendChild(overlay);
     this.pauseOverlay = overlay;
