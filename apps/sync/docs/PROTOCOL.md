@@ -34,6 +34,7 @@ All messages are **JSON-encoded** objects sent as WebSocket text frames. Every m
 | `client:disconnected` | Host → clients | A client has left the relay                          |
 | `host:status`         | Host → clients | Periodic host status update                          |
 | `client:hello`        | Client → host  | Handshake sent immediately after WebSocket open      |
+| `client:ready`        | Client → host  | Tower calibrated & ready to receive commands         |
 
 ---
 
@@ -58,6 +59,8 @@ Sent by the host each time the official companion app writes a 20-byte command t
 | `payload.data` | `number[]` | Raw 20-byte tower command as a JSON array |
 
 > **Note:** The byte array is always exactly 20 elements. Clients should validate length before writing to the tower characteristic.
+>
+> **Packet format:** For the full byte-by-byte layout (drum positions, LED effects, audio, beam break counter, volume) see [UltimateDarkTower/TOWER_TECH_NOTES.md](../../UltimateDarkTower/TOWER_TECH_NOTES.md#command-packet-structure-documentation).
 
 ---
 
@@ -173,6 +176,28 @@ Sent by the client **immediately** after the WebSocket `open` event fires.
 
 ---
 
+### `client:ready`
+
+Sent by the client after its local tower has been connected via Web Bluetooth and calibration has completed. Can also be sent with `ready: false` when the tower disconnects.
+
+```json
+{
+  "type": "client:ready",
+  "payload": {
+    "ready": true
+  },
+  "timestamp": "2026-03-19T12:00:05.000Z"
+}
+```
+
+| Field           | Type    | Description                                              |
+| --------------- | ------- | -------------------------------------------------------- |
+| `payload.ready` | boolean | `true` when calibrated and ready; `false` on disconnect  |
+
+> The host updates the client's state to `'ready'` or `'connected'` accordingly. This allows the host dashboard and other clients to see which players have their towers online and calibrated.
+
+---
+
 ## Connection Lifecycle
 
 ```
@@ -185,11 +210,19 @@ Client                                     Host
   |<------ sync:state ----------------------|  (host responds with last known state)
   |<------ client:connected (broadcast) ----|  (host tells other clients)
   |                                          |
+  |  [user clicks "Connect to Tower"]        |
+  |  [BLE connect + calibrate]               |
+  |                                          |
+  |------- client:ready {ready:true} ----->|  (tower calibrated)
+  |                                          |
   |     [companion app issues a command]     |
   |<------ tower:command -------------------|  (host relays to all clients)
   |<------ tower:command -------------------|
   |         ...                              |
   |<------ host:status (periodic) ----------|
+  |                                          |
+  |  [tower disconnects unexpectedly]        |
+  |------- client:ready {ready:false} ---->|
   |                                          |
   |------- WebSocket close() ------------->|
   |<------ client:disconnected (broadcast) -|
@@ -201,3 +234,4 @@ Client                                     Host
 2. **`sync:state` is always sent** to a new client, even if `lastCommand` is `null`. Clients must handle both cases.
 3. **`tower:command` messages are fire-and-forget.** There is no acknowledgement — the protocol prioritizes low latency over guaranteed delivery. A missed command is corrected by the next full-state command from the companion app.
 4. **Protocol versioning:** both sides include the version in their hello/status messages. Future breaking changes will increment the minor or major version.
+5. **`client:ready` should be sent after tower calibration completes.** Clients should also send `ready: false` if the tower disconnects, so the host can track which players have live towers. Commands received before the tower is calibrated should be ignored.

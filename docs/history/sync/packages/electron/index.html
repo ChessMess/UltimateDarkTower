@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DarkTowerSync Host</title>
   <link rel="stylesheet" href="./src/renderer/styles.css" />
 </head>
+
 <body>
   <div id="app">
     <header>
       <h1>Dark Tower Sync</h1>
       <p class="subtitle">Host Console &nbsp;·&nbsp; <span id="version">—</span></p>
     </header>
+
+    <div id="relay-banner" class="relay-banner" hidden></div>
 
     <div class="dashboard">
 
@@ -21,6 +25,20 @@
         <div class="status-row">
           <span id="tower-state-dot" class="dot state-idle"></span>
           <span id="tower-state">Idle</span>
+        </div>
+        <div id="ble-adapter-detail" class="ble-detail">
+          <div class="ble-adapter-row">Adapter: <span id="ble-adapter-state-label">unknown</span></div>
+          <div id="ble-adapter-help" class="ble-help"></div>
+          <div id="ble-error-detail" class="ble-help ble-help-error" hidden></div>
+        </div>
+        <div class="card-actions">
+          <button id="btn-start-advertising" class="text-btn" disabled>Start Advertising</button>
+          <button id="btn-stop-ble" class="text-btn" disabled>Stop BLE</button>
+          <span id="ble-control-feedback" class="action-feedback" hidden></span>
+        </div>
+        <div class="card-actions">
+          <button id="btn-skull-drop" class="icon-btn" title="Trigger skull drop" disabled>&#128128;</button>
+          <span id="skull-drop-feedback" class="action-feedback" hidden></span>
         </div>
       </section>
 
@@ -43,4 +61,5 @@
   </div>
   <script type="module" src="/src/renderer/renderer.ts"></script>
 </body>
+
 </html>

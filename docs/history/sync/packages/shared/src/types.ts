@@ -26,7 +26,7 @@ export type TowerCommandBytes = Uint8Array | number[];
 export type ClientId = string;
 
 /** Connection state of a relay client. */
-export type ClientConnectionState = 'connecting' | 'connected' | 'disconnected';
+export type ClientConnectionState = 'connecting' | 'connected' | 'ready' | 'disconnected';
 
 /** Metadata tracked by the host for each connected client. */
 export interface ConnectedClient {

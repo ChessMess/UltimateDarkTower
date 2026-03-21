@@ -2,10 +2,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/tests', '<rootDir>/packages'],
-  testMatch: [
-    '**/__tests__/**/*.+(ts|tsx|js)',
-    '**/*.(test|spec).+(ts|tsx|js)',
-  ],
+  testMatch: ['**/__tests__/**/*.+(ts|tsx|js)', '**/*.(test|spec).+(ts|tsx|js)'],
   // Explicit ts-jest config: always compile to CommonJS for Jest, regardless
   // of what individual package tsconfigs specify (some use ESNext/bundler).
   transform: {
@@ -26,6 +23,8 @@ module.exports = {
   moduleNameMapper: {
     '^@dark-tower-sync/shared$': '<rootDir>/packages/shared/src/index.ts',
     '^@dark-tower-sync/shared/(.*)$': '<rootDir>/packages/shared/src/$1',
+    '^@dark-tower-sync/host$': '<rootDir>/packages/host/src/index.ts',
+    '^@dark-tower-sync/host/(.*)$': '<rootDir>/packages/host/src/$1',
   },
   collectCoverageFrom: [
     'packages/*/src/**/*.{ts,tsx}',

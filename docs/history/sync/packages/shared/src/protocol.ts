@@ -28,6 +28,8 @@ export const MessageType = {
   HOST_STATUS: 'host:status',
   /** Client → host: sent immediately after WebSocket connection is established. */
   CLIENT_HELLO: 'client:hello',
+  /** Client → host: tower is calibrated and ready (or no longer ready). */
+  CLIENT_READY: 'client:ready',
 } as const;
 
 export type MessageTypeLiteral = (typeof MessageType)[keyof typeof MessageType];
@@ -95,6 +97,15 @@ export type ClientHelloMessage = BaseMessage<
   }
 >;
 
+/** Sent by the client when its tower is calibrated and ready (or no longer ready). */
+export type ClientReadyMessage = BaseMessage<
+  typeof MessageType.CLIENT_READY,
+  {
+    /** Whether the client's tower is calibrated and ready to receive commands. */
+    ready: boolean;
+  }
+>;
+
 // ---------------------------------------------------------------------------
 // Union type
 // ---------------------------------------------------------------------------
@@ -106,7 +117,8 @@ export type RelayMessage =
   | ClientConnectedMessage
   | ClientDisconnectedMessage
   | HostStatusMessage
-  | ClientHelloMessage;
+  | ClientHelloMessage
+  | ClientReadyMessage;
 
 // ---------------------------------------------------------------------------
 // Factory helpers
@@ -140,6 +152,15 @@ export function makeHostStatusMessage(status: HostStatus): HostStatusMessage {
   return {
     type: MessageType.HOST_STATUS,
     payload: status,
+    timestamp: now(),
+  };
+}
+
+/** Build a {@link ClientReadyMessage}. */
+export function makeClientReadyMessage(ready: boolean): ClientReadyMessage {
+  return {
+    type: MessageType.CLIENT_READY,
+    payload: { ready },
     timestamp: now(),
   };
 }

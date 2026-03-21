@@ -6,7 +6,7 @@
  */
 
 /** Connection state reflected in the UI status indicators. */
-export type UiConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type UiConnectionState = 'disconnected' | 'connecting' | 'calibrating' | 'connected' | 'error';
 
 /**
  * UI manages all DOM interaction for the DarkTowerSync client page.
@@ -79,6 +79,7 @@ export class UI {
       {
         disconnected: 'Tower not connected',
         connecting: 'Connecting to tower…',
+        calibrating: 'Tower calibrating…',
         connected: 'Tower connected',
         error: 'Tower connection error',
       }[state];
@@ -86,8 +87,6 @@ export class UI {
 
   /**
    * Append a timestamped line to the event log panel.
-   *
-   * TODO: Cap the log to a maximum number of entries to avoid unbounded growth.
    *
    * @param message - Text to append.
    */
@@ -97,6 +96,12 @@ export class UI {
     p.textContent = `[${ts}] ${message}`;
     this.logEl.appendChild(p);
     this.logEl.scrollTop = this.logEl.scrollHeight;
+
+    // Cap log to prevent unbounded DOM growth.
+    const MAX_LOG_ENTRIES = 200;
+    while (this.logEl.childElementCount > MAX_LOG_ENTRIES) {
+      this.logEl.removeChild(this.logEl.firstChild!);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -111,6 +116,8 @@ export class UI {
 
   private setDot(dot: HTMLElement, state: UiConnectionState): void {
     dot.className = 'dot';
-    if (state !== 'disconnected') dot.classList.add(state === 'error' ? 'error' : state);
+    if (state === 'connected') dot.classList.add('connected');
+    else if (state === 'error') dot.classList.add('error');
+    else if (state === 'connecting' || state === 'calibrating') dot.classList.add('connecting');
   }
 }

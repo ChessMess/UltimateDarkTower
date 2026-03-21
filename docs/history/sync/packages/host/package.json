@@ -8,13 +8,15 @@
     "build": "tsc --build",
     "dev": "tsc --build --watch",
     "start": "node dist/index.js",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "capture": "ts-node --project tsconfig.capture.json scripts/captureTower.ts"
   },
   "author": "ChessMess",
   "license": "MIT",
   "dependencies": {
     "@dark-tower-sync/shared": "*",
     "@stoprocent/bleno": "^0.12.4",
+    "@stoprocent/noble": "^2.3.10",
     "ultimatedarktower": "^2.1.0",
     "ws": "^8.18.0"
   },

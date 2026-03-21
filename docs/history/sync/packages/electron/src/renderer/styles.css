@@ -18,7 +18,10 @@
 }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: var(--bg);
   color: var(--fg);
   min-height: 100vh;
@@ -28,6 +31,16 @@ body {
 #app {
   max-width: 720px;
   margin: 0 auto;
+}
+
+.relay-banner {
+  border: 1px solid color-mix(in srgb, var(--warning) 65%, black);
+  background: color-mix(in srgb, var(--warning) 25%, black);
+  color: #fce8bf;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
 }
 
 /* ─── Header ─────────────────────────────────────────────────────────────── */
@@ -101,14 +114,73 @@ h1 {
   background: var(--muted);
 }
 
-.dot.state-idle        { background: var(--muted); }
-.dot.state-advertising { background: var(--warning); animation: pulse 1.4s ease-in-out infinite; }
-.dot.state-connected   { background: var(--success); }
-.dot.state-error       { background: var(--error); }
+.dot.state-idle {
+  background: var(--muted);
+}
+.dot.state-advertising {
+  background: var(--warning);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.dot.state-connected {
+  background: var(--success);
+}
+.dot.state-error {
+  background: var(--error);
+}
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.35; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ─── BLE adapter diagnostics ───────────────────────────────────────────── */
+
+.ble-detail {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.ble-adapter-row {
+  color: var(--muted);
+}
+
+.ble-state-poweredOn {
+  color: var(--success);
+}
+.ble-state-unauthorized,
+.ble-state-poweredOff,
+.ble-state-unsupported {
+  color: var(--error);
+}
+.ble-state-resetting,
+.ble-state-unknown {
+  color: var(--warning);
+}
+
+.ble-help {
+  margin-top: 0.4rem;
+  color: #fce8bf;
+  background: color-mix(in srgb, var(--warning) 15%, black);
+  border: 1px solid color-mix(in srgb, var(--warning) 40%, black);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  line-height: 1.4;
+}
+
+.ble-help-error {
+  color: #fbb;
+  background: color-mix(in srgb, var(--error) 15%, black);
+  border-color: color-mix(in srgb, var(--error) 40%, black);
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  word-break: break-all;
 }
 
 /* ─── Client list ────────────────────────────────────────────────────────── */
@@ -147,6 +219,88 @@ h1 {
   color: var(--muted);
   font-family: inherit;
   font-style: italic;
+}
+
+/* ─── Card action row ────────────────────────────────────────────────────── */
+
+.card-actions {
+  margin-top: 0.85rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.icon-btn {
+  background: #2e2e2e;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.3rem 0.55rem;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    opacity 0.15s;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: #3a3a3a;
+  border-color: #555;
+}
+
+.icon-btn:active:not(:disabled) {
+  background: #444;
+}
+
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.text-btn {
+  background: #2e2e2e;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0.35rem 0.75rem;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    opacity 0.15s;
+}
+
+.text-btn:hover:not(:disabled) {
+  background: #3a3a3a;
+  border-color: #555;
+}
+
+.text-btn:active:not(:disabled) {
+  background: #444;
+}
+
+.text-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.action-feedback {
+  font-size: 0.78rem;
+}
+
+.action-feedback.feedback-ok {
+  color: var(--success);
+}
+
+.action-feedback.feedback-err {
+  color: var(--error);
 }
 
 /* ─── Command stats ──────────────────────────────────────────────────────── */

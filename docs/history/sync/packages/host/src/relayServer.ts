@@ -121,6 +121,12 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
                 // Re-broadcast updated client list.
                 this.emit('client-change', this.manager.getAll());
               }
+            } else if (msg.type === MessageType.CLIENT_READY && msg.payload) {
+              const client = this.manager.get(clientId);
+              if (client) {
+                client.state = (msg.payload as { ready?: boolean }).ready ? 'ready' : 'connected';
+                this.emit('client-change', this.manager.getAll());
+              }
             }
           } catch {
             // Ignore malformed messages.

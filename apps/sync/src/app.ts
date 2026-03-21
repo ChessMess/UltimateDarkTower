@@ -5,6 +5,7 @@
  * (Web Bluetooth) into the top-level event loop.
  */
 
+import { UltimateDarkTower, BluetoothUserCancelledError } from 'ultimatedarktower';
 import { UI } from './ui';
 import { TowerRelay, type TowerRelayEvent } from './towerRelay';
 
@@ -20,17 +21,20 @@ import { TowerRelay, type TowerRelayEvent } from './towerRelay';
 export class App {
   private readonly ui: UI;
   private relay: TowerRelay | null = null;
+  private tower: UltimateDarkTower | null = null;
 
   constructor() {
     this.ui = new UI();
   }
 
-  /**
-   * Bind UI events and initialize the application.
-   *
-   * TODO: Persist the last-used host URL in localStorage and pre-fill the input.
-   */
+  /** Bind UI events and initialize the application. */
   init(): void {
+    // Restore persisted values.
+    const savedUrl = localStorage.getItem('darkTowerSync:hostUrl');
+    if (savedUrl) this.ui.hostUrlInput.value = savedUrl;
+    const savedName = localStorage.getItem('darkTowerSync:playerName');
+    if (savedName) this.ui.playerNameInput.value = savedName;
+
     this.ui.connectBtn.addEventListener('click', () => void this.handleConnectClick());
     this.ui.towerBtn.addEventListener('click', () => void this.handleTowerClick());
 
@@ -43,12 +47,7 @@ export class App {
   // Event handlers
   // ---------------------------------------------------------------------------
 
-  /**
-   * Handle the "Connect to Host" button click.
-   *
-   * TODO: Validate URL format before connecting.
-   *       Save valid URL to localStorage for next session.
-   */
+  /** Handle the "Connect to Host" button click. */
   private async handleConnectClick(): Promise<void> {
     const url = this.ui.hostUrlInput.value.trim();
     const label = this.ui.playerNameInput.value.trim() || undefined;
@@ -67,6 +66,22 @@ export class App {
       return;
     }
 
+    // Validate URL format.
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') {
+        this.ui.log('Error: URL must start with ws:// or wss://');
+        return;
+      }
+    } catch {
+      this.ui.log('Error: invalid URL format.');
+      return;
+    }
+
+    // Persist for next session.
+    localStorage.setItem('darkTowerSync:hostUrl', url);
+    if (label) localStorage.setItem('darkTowerSync:playerName', label);
+
     this.ui.setRelayState('connecting');
     this.ui.connectBtn.disabled = true;
 
@@ -76,7 +91,6 @@ export class App {
     });
 
     try {
-      // TODO: Implement TowerRelay.connect().
       await this.relay.connect(url);
       this.ui.log(`Connecting to ${url}…`);
     } catch (err) {
@@ -86,33 +100,79 @@ export class App {
     }
   }
 
-  /**
-   * Handle the "Connect to Tower" button click.
-   *
-   * TODO: Implement using UltimateDarkTower Web Bluetooth API:
-   *   1. Instantiate UltimateDarkTower with the WebBluetoothAdapter.
-   *   2. Call tower.connect() — this triggers the browser's Bluetooth device picker.
-   *   3. On success: update UI state, enable tower command replay in TowerRelay.
-   *   4. On error: display error in log and reset state.
-   */
+  /** Handle the "Connect to Tower" button click. */
   private async handleTowerClick(): Promise<void> {
+    // Toggle: if already connected, disconnect.
+    if (this.tower?.isConnected) {
+      await this.tower.disconnect();
+      this.tower = null;
+      this.ui.setTowerState('disconnected');
+      this.ui.towerBtn.textContent = 'Connect to Tower (Bluetooth)';
+      this.ui.log('Tower disconnected.');
+      this.relay?.sendReady(false);
+      return;
+    }
+
     this.ui.setTowerState('connecting');
     this.ui.towerBtn.disabled = true;
     this.ui.log('Requesting Bluetooth device — approve in the browser prompt…');
 
-    // TODO: Implement Web Bluetooth tower connection via UltimateDarkTower.
-    this.ui.log('Tower connection not yet implemented.');
-    this.ui.setTowerState('disconnected');
-    this.ui.towerBtn.disabled = false;
+    try {
+      const tower = new UltimateDarkTower();
+
+      tower.onTowerDisconnect = () => {
+        this.ui.setTowerState('disconnected');
+        this.ui.towerBtn.textContent = 'Connect to Tower (Bluetooth)';
+        this.ui.towerBtn.disabled = false;
+        this.ui.log('Tower disconnected unexpectedly.');
+        this.tower = null;
+        this.relay?.sendReady(false);
+      };
+
+      await tower.connect();
+      this.tower = tower;
+
+      // Calibrate the tower before marking as ready.
+      this.ui.setTowerState('calibrating');
+      this.ui.log('Tower connected. Calibrating…');
+
+      tower.onCalibrationComplete = () => {
+        this.ui.setTowerState('connected');
+        this.ui.towerBtn.textContent = 'Disconnect Tower';
+        this.ui.towerBtn.disabled = false;
+        this.ui.log('Tower calibrated and ready.');
+        this.relay?.sendReady(true);
+      };
+
+      await tower.calibrate();
+    } catch (err) {
+      if (err instanceof BluetoothUserCancelledError) {
+        this.ui.log('Bluetooth pairing cancelled.');
+        this.ui.setTowerState('disconnected');
+      } else {
+        this.ui.setTowerState('error');
+        this.ui.log(`Tower connection failed: ${String(err)}`);
+      }
+      this.ui.towerBtn.disabled = false;
+    }
+  }
+
+  /** Replay a 20-byte command on the local physical tower. */
+  private async replayOnTower(data: number[]): Promise<void> {
+    if (!this.tower?.isConnected || !this.tower.isCalibrated) return;
+    try {
+      await this.tower.sendTowerCommandDirect(new Uint8Array(data));
+      this.ui.log('Command replayed on tower.');
+    } catch (err) {
+      this.ui.log(`Tower write failed: ${String(err)}`);
+    }
   }
 
   // ---------------------------------------------------------------------------
   // Relay event handling
   // ---------------------------------------------------------------------------
 
-  /**
-   * Handle events from {@link TowerRelay} and update the UI accordingly.
-   */
+  /** Handle events from {@link TowerRelay} and update the UI accordingly. */
   private handleRelayEvent(event: TowerRelayEvent): void {
     switch (event.type) {
       case 'relay:connected':
@@ -121,6 +181,10 @@ export class App {
         this.ui.connectBtn.disabled = false;
         this.ui.towerBtn.disabled = false;
         this.ui.log('Connected to relay host.');
+        // If tower is already calibrated, signal readiness immediately.
+        if (this.tower?.isConnected && this.tower?.isCalibrated) {
+          this.relay?.sendReady(true);
+        }
         break;
 
       case 'relay:disconnected':
@@ -139,14 +203,28 @@ export class App {
 
       case 'tower:command':
         this.ui.log(`Command received: [${event.data.slice(0, 4).join(', ')}…]`);
+        void this.replayOnTower(event.data);
         break;
 
       case 'sync:state':
         if (event.lastCommand) {
           this.ui.log('Received full tower state sync from host.');
+          void this.replayOnTower(event.lastCommand);
         } else {
           this.ui.log('Connected — no prior tower state to sync.');
         }
+        break;
+
+      case 'client:connected':
+        this.ui.log(`Player joined: ${event.label ?? event.clientId.slice(0, 8)}`);
+        break;
+
+      case 'client:disconnected':
+        this.ui.log(`Player left: ${event.clientId.slice(0, 8)}`);
+        break;
+
+      case 'host:status':
+        this.ui.setRelayState('connected', `Connected (${event.status.clientCount} players)`);
         break;
     }
   }

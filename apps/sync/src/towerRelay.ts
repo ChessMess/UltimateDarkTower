@@ -11,7 +11,16 @@
  * See docs/PROTOCOL.md for the full message lifecycle.
  */
 
-import { MessageType, type RelayMessage, type TowerCommandMessage, type SyncStateMessage } from '@dark-tower-sync/shared';
+import {
+  MessageType,
+  PROTOCOL_VERSION,
+  makeClientReadyMessage,
+  type RelayMessage,
+  type TowerCommandMessage,
+  type SyncStateMessage,
+  type ClientHelloMessage,
+  type HostStatus,
+} from '@dark-tower-sync/shared';
 
 /** Events emitted to the caller to drive UI updates. */
 export type TowerRelayEvent =
@@ -19,7 +28,10 @@ export type TowerRelayEvent =
   | { type: 'relay:disconnected'; code: number; reason: string }
   | { type: 'relay:error'; error: Event }
   | { type: 'tower:command'; data: number[] }
-  | { type: 'sync:state'; lastCommand: number[] | null };
+  | { type: 'sync:state'; lastCommand: number[] | null }
+  | { type: 'client:connected'; clientId: string; label?: string }
+  | { type: 'client:disconnected'; clientId: string }
+  | { type: 'host:status'; status: HostStatus };
 
 export type TowerRelayEventHandler = (event: TowerRelayEvent) => void;
 
@@ -46,6 +58,11 @@ export class TowerRelay {
   private readonly label: string | undefined;
   private readonly onEvent: TowerRelayEventHandler;
 
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempts = 0;
+  private lastUrl: string | null = null;
+  private autoReconnect = true;
+
   constructor(options: TowerRelayOptions = {}) {
     this.label = options.label;
     this.onEvent = options.onEvent ?? (() => undefined);
@@ -54,29 +71,78 @@ export class TowerRelay {
   /**
    * Open a WebSocket connection to the relay host and start handling messages.
    *
-   * TODO: Implement full connection lifecycle:
-   *   1. Instantiate `new WebSocket(url)`.
-   *   2. On `open`: send CLIENT_HELLO with label and protocolVersion.
-   *   3. On `message`: parse JSON, dispatch to handleMessage().
-   *   4. On `close`: emit relay:disconnected event, schedule reconnect if desired.
-   *   5. On `error`: emit relay:error event.
-   *
    * @param url - WebSocket URL of the relay host (e.g., 'ws://192.168.1.5:8765').
    */
   async connect(url: string): Promise<void> {
-    // TODO: Implement WebSocket connection.
-    void url;
-    throw new Error('TowerRelay.connect() is not yet implemented.');
+    this.lastUrl = url;
+    this.autoReconnect = true;
+
+    return new Promise<void>((resolve, reject) => {
+      const ws = new WebSocket(url);
+
+      ws.addEventListener('open', () => {
+        this.ws = ws;
+        this.reconnectAttempts = 0;
+
+        // Send CLIENT_HELLO handshake.
+        const hello: ClientHelloMessage = {
+          type: MessageType.CLIENT_HELLO,
+          payload: {
+            label: this.label,
+            protocolVersion: PROTOCOL_VERSION,
+          },
+          timestamp: new Date().toISOString(),
+        };
+        ws.send(JSON.stringify(hello));
+
+        this.onEvent({ type: 'relay:connected' });
+        resolve();
+      });
+
+      ws.addEventListener('message', (event) => {
+        try {
+          const message = JSON.parse(event.data as string) as RelayMessage;
+          this.handleMessage(message);
+        } catch {
+          // Ignore malformed messages.
+        }
+      });
+
+      ws.addEventListener('close', (event) => {
+        this.ws = null;
+        this.onEvent({
+          type: 'relay:disconnected',
+          code: event.code,
+          reason: event.reason,
+        });
+
+        // Auto-reconnect on non-clean close.
+        if (this.autoReconnect && event.code !== 1000) {
+          this.scheduleReconnect();
+        }
+      });
+
+      ws.addEventListener('error', (event) => {
+        this.onEvent({ type: 'relay:error', error: event });
+        // If the connection never opened, reject the promise.
+        if (this.ws === null) {
+          reject(new Error('WebSocket connection failed'));
+        }
+      });
+    });
   }
 
-  /**
-   * Close the WebSocket connection cleanly.
-   *
-   * TODO: Call `this.ws.close(1000, 'User disconnected')`.
-   */
+  /** Signal to the host that this client's tower is calibrated and ready (or not). */
+  sendReady(ready: boolean): void {
+    if (!this.isConnected) return;
+    this.ws!.send(JSON.stringify(makeClientReadyMessage(ready)));
+  }
+
+  /** Close the WebSocket connection cleanly. */
   disconnect(): void {
-    // TODO: Implement disconnect.
-    this.ws?.close();
+    this.autoReconnect = false;
+    this.clearReconnectTimer();
+    this.ws?.close(1000, 'User disconnected');
     this.ws = null;
   }
 
@@ -91,11 +157,7 @@ export class TowerRelay {
   // Private message handling
   // ---------------------------------------------------------------------------
 
-  /**
-   * Dispatch an incoming relay message to the appropriate handler.
-   *
-   * TODO: Add exhaustive handling for all {@link MessageType} values.
-   */
+  /** Dispatch an incoming relay message to the appropriate handler. */
   private handleMessage(message: RelayMessage): void {
     switch (message.type) {
       case MessageType.TOWER_COMMAND:
@@ -105,13 +167,20 @@ export class TowerRelay {
         this.handleSyncState(message);
         break;
       case MessageType.HOST_STATUS:
-        // TODO: Surface host status in the UI.
+        this.onEvent({ type: 'host:status', status: message.payload });
         break;
       case MessageType.CLIENT_CONNECTED:
-        // TODO: Log or display new client join events.
+        this.onEvent({
+          type: 'client:connected',
+          clientId: message.payload.clientId,
+          label: message.payload.label,
+        });
         break;
       case MessageType.CLIENT_DISCONNECTED:
-        // TODO: Log or display client leave events.
+        this.onEvent({
+          type: 'client:disconnected',
+          clientId: message.payload.clientId,
+        });
         break;
       default:
         // Unknown message type — ignore safely.
@@ -119,28 +188,37 @@ export class TowerRelay {
     }
   }
 
-  /**
-   * Replay a tower command on the local physical tower.
-   *
-   * TODO: Implement using UltimateDarkTower:
-   *   1. Ensure UltimateDarkTower is connected (Web Bluetooth).
-   *   2. Write the raw command bytes directly to the tower characteristic.
-   *      The UltimateDarkTower library exposes a low-level write method for this.
-   *   3. Handle errors (tower disconnected, busy) gracefully.
-   */
+  /** Emit a tower command event to the caller for UI display and tower replay. */
   private handleTowerCommand(message: TowerCommandMessage): void {
     this.onEvent({ type: 'tower:command', data: message.payload.data });
-    // TODO: Replay on local tower via UltimateDarkTower Web Bluetooth write.
   }
 
-  /**
-   * Apply a full-state sync received on initial connection.
-   *
-   * TODO: If lastCommand is non-null, replay it immediately so the remote
-   *       tower matches the host's current state before the next command arrives.
-   */
+  /** Emit a sync state event so the caller can replay the last command on connect. */
   private handleSyncState(message: SyncStateMessage): void {
     this.onEvent({ type: 'sync:state', lastCommand: message.payload.lastCommand });
-    // TODO: Replay lastCommand on local tower if non-null.
+  }
+
+  // ---------------------------------------------------------------------------
+  // Auto-reconnect
+  // ---------------------------------------------------------------------------
+
+  private scheduleReconnect(): void {
+    const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30_000);
+    this.reconnectAttempts++;
+    this.reconnectTimer = setTimeout(() => {
+      if (this.lastUrl && this.autoReconnect) {
+        void this.connect(this.lastUrl).catch(() => {
+          // connect() rejects on error — reconnect will be scheduled by the
+          // close handler if autoReconnect is still true.
+        });
+      }
+    }, delay);
+  }
+
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
   }
 }
