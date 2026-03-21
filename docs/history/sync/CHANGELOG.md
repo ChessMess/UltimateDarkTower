@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Added
+
+- **Observer mode** — browser clients can now connect with `?observer` in the URL
+  to view a live tower state visualizer without requiring a physical tower or Web
+  Bluetooth. Observer clients receive all `tower:command` messages and decode them
+  using `rtdt_unpack_state()` from the `ultimatedarktower` library.
+  - `packages/client/src/towerVisualizer.ts` — new `TowerVisualizer` class renders
+    24 LEDs (6 light effects with CSS animations), 3 drum positions with glyph
+    detection, audio sample name lookup via `TOWER_AUDIO_LIBRARY`, skull drop
+    detection (beam-count delta between consecutive packets), and LED sequence
+    override labels
+  - `packages/shared/src/types.ts` — `observer: boolean` added to `ConnectedClient`;
+    `observerCount: number` added to `HostStatus`
+  - `packages/shared/src/protocol.ts` — `observer?: boolean` added to
+    `ClientHelloMessage` payload
+  - `packages/host/src/connectionManager.ts` — `observersConnected` getter for
+    counting observer clients
+  - `packages/host/src/relayServer.ts` — reads `observer` flag from `client:hello`,
+    includes `observerCount` in periodic `host:status` broadcasts
+  - `packages/client/src/towerRelay.ts` — accepts `observer` option, includes it
+    in `client:hello` payload
+  - `packages/client/src/app.ts` — detects `?observer` URL parameter; hides tower
+    Bluetooth card; decodes commands with `rtdt_unpack_state()` and updates
+    visualizer; shows observer count in relay status
+  - `packages/client/index.html` — `#visualizer-section` card (hidden by default,
+    shown in observer mode)
+  - `packages/client/src/client.css` — visualizer styles with LED effect animations
+
+### Fixed
+
+- **Wire `CommandParser` into relay path** — `CommandParser.isValid()` is now
+  called before `RelayServer.broadcast()` in both the standalone host
+  (`packages/host/src/index.ts`) and Electron main process
+  (`packages/electron/src/main/main.ts`). Malformed packets (not exactly 20
+  bytes) are dropped with a `console.warn` instead of being forwarded to all
+  connected clients.
+
+### Tests
+
+- Add `tests/unit/host/relayGate.test.ts` — 4 tests verifying the relay gate:
+  valid 20-byte commands reach `relay.broadcast`; short, empty, and oversized
+  packets do not.
+
 ### Changed
 
 - UI polish pass — refined dark theme with improved depth, typography, and interactive states across both the client web app and Electron host; client UI is now mobile-friendly with proper touch targets, iOS zoom prevention, safe-area inset support, and responsive layouts for phone and tablet use

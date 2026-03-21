@@ -107,6 +107,8 @@ export type ClientHelloMessage = BaseMessage<
     label?: string;
     /** Protocol version the client speaks. Should match PROTOCOL_VERSION. */
     protocolVersion: string;
+    /** Whether this client is an observer (no physical tower, visualizer only). */
+    observer?: boolean;
   }
 >;
 

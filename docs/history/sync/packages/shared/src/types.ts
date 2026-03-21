@@ -42,6 +42,8 @@ export interface ConnectedClient {
   towerConnected: boolean;
   /** Timestamp (ms since epoch) of the last tower status update, or null if never reported. */
   towerLastSeenAt: number | null;
+  /** Whether this client is an observer (no physical tower, visualizer only). */
+  observer: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -67,6 +69,8 @@ export interface HostStatus {
   clientCount: number;
   /** How many connected clients have their physical tower BLE connection active. */
   towersConnected: number;
+  /** How many connected clients are observers (no physical tower). */
+  observerCount: number;
   /** ISO-8601 timestamp of the last relayed command, or null if none yet. */
   lastCommandAt: string | null;
 }

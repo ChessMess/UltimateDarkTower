@@ -132,8 +132,13 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
                 console.warn(`[relay] Client ${clientId} protocol mismatch: ${(msg.payload as { protocolVersion?: string }).protocolVersion} vs ${PROTOCOL_VERSION}`);
               }
               const client = this.manager.get(clientId);
-              if (client && (msg.payload as { label?: string }).label) {
-                client.label = (msg.payload as { label?: string }).label;
+              if (client) {
+                if ((msg.payload as { label?: string }).label) {
+                  client.label = (msg.payload as { label?: string }).label;
+                }
+                if ((msg.payload as { observer?: boolean }).observer) {
+                  client.observer = true;
+                }
                 // Re-broadcast updated client list.
                 this.emit('client-change', this.manager.getAll());
               }
@@ -261,6 +266,7 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
       appConnected: this.fakeTowerState === 'connected',
       clientCount: this.manager.count,
       towersConnected: this.manager.towersConnected,
+      observerCount: this.manager.observersConnected,
       lastCommandAt: this.lastCommandAt,
     });
     this.manager.broadcast(JSON.stringify(message));

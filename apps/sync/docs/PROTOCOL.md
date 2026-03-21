@@ -168,6 +168,7 @@ Sent periodically (every ~5 seconds) and on significant state changes. Clients c
     "appConnected": true,
     "clientCount": 3,
     "towersConnected": 2,
+    "observerCount": 1,
     "lastCommandAt": "2026-03-19T12:00:55.000Z"
   },
   "timestamp": "2026-03-19T12:01:00.000Z"
@@ -181,6 +182,7 @@ Sent periodically (every ~5 seconds) and on significant state changes. Clients c
 | `payload.appConnected`   | boolean          | Whether the companion app is connected to the fake tower          |
 | `payload.clientCount`    | number           | Number of currently connected clients                             |
 | `payload.towersConnected`| number           | How many clients have their physical tower BLE connection active  |
+| `payload.observerCount`  | number           | How many connected clients are observers (no physical tower)      |
 | `payload.lastCommandAt`  | `string \| null` | ISO timestamp of the last relayed command                         |
 
 ---
@@ -194,16 +196,18 @@ Sent by the client **immediately** after the WebSocket `open` event fires.
   "type": "client:hello",
   "payload": {
     "label": "Player 2",
-    "protocolVersion": "0.1.0"
+    "protocolVersion": "0.1.0",
+    "observer": true
   },
   "timestamp": "2026-03-19T12:00:00.100Z"
 }
 ```
 
-| Field                     | Type    | Description                                        |
-| ------------------------- | ------- | -------------------------------------------------- |
-| `payload.label`           | string? | Optional display name chosen by the player         |
-| `payload.protocolVersion` | string  | Protocol version the client speaks (semver string) |
+| Field                     | Type     | Description                                                                  |
+| ------------------------- | -------- | ---------------------------------------------------------------------------- |
+| `payload.label`           | string?  | Optional display name chosen by the player                                   |
+| `payload.protocolVersion` | string   | Protocol version the client speaks (semver string)                           |
+| `payload.observer`        | boolean? | If `true`, client is an observer with no physical tower (visualizer only). Omitted or `false` for normal tower-bearing clients. |
 
 > The host logs a warning if the client's `protocolVersion` does not match its own. Clients are **not** forcibly disconnected for version mismatches in the current implementation. Check the `PROTOCOL_VERSION` constant in `@dark-tower-sync/shared`.
 
@@ -347,6 +351,8 @@ Broadcast when a remote player's physical tower BLE connection changes. Allows o
 
 ## Connection Lifecycle
 
+### Tower-bearing client (normal)
+
 ```
 Client                                     Host
   |                                          |
@@ -377,6 +383,29 @@ Client                                     Host
   |<------ client:disconnected (broadcast) -|
 ```
 
+### Observer client (no physical tower)
+
+```
+Observer                                   Host
+  |                                          |
+  |------- WebSocket connect() ------------>|
+  |                                          |
+  |<------ sync:state ----------------------|  (observer decodes & visualizes)
+  |<------ client:connected (broadcast) ----|
+  |                                          |
+  |------- client:hello {observer:true} -->|  (host tracks as observer)
+  |                                          |
+  |     [companion app issues a command]     |
+  |<------ tower:command -------------------|  (observer decodes via rtdt_unpack_state)
+  |         ...                              |
+  |<------ host:status (periodic) ----------|  (includes observerCount)
+  |                                          |
+  |------- WebSocket close() ------------->|
+  |<------ client:disconnected (broadcast) -|
+```
+
+Observer clients never send `client:ready` — they have no tower. The host counts them separately in `host:status.observerCount`.
+
 ### Key rules
 
 1. **`client:hello` must be the first message** the client sends. The host may log a warning if it receives other messages before the handshake.
@@ -384,3 +413,4 @@ Client                                     Host
 3. **`tower:command` messages are fire-and-forget.** There is no acknowledgement — the protocol prioritizes low latency over guaranteed delivery. A missed command is corrected by the next full-state command from the companion app.
 4. **Protocol versioning:** both sides include the version in their hello/status messages. Future breaking changes will increment the minor or major version.
 5. **`client:ready` should be sent after tower calibration completes.** Clients should also send `ready: false` if the tower disconnects, so the host can track which players have live towers. Commands received before the tower is calibrated should be ignored.
+6. **Observer clients** send `client:hello` with `observer: true` and receive all `tower:command` messages, but never send `client:ready`. They decode commands client-side using `rtdt_unpack_state()` and display the tower state visually.

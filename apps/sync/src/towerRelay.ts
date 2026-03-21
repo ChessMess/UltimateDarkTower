@@ -44,6 +44,8 @@ export type TowerRelayEventHandler = (event: TowerRelayEvent) => void;
 export interface TowerRelayOptions {
   /** Display name sent in the CLIENT_HELLO message. */
   label?: string;
+  /** Whether this client is an observer (no physical tower, visualizer only). */
+  observer?: boolean;
   /** Called for each relay event (connection changes, received commands). */
   onEvent?: TowerRelayEventHandler;
 }
@@ -61,6 +63,7 @@ export interface TowerRelayOptions {
 export class TowerRelay {
   private ws: WebSocket | null = null;
   private readonly label: string | undefined;
+  private readonly observer: boolean;
   private readonly onEvent: TowerRelayEventHandler;
 
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -70,6 +73,7 @@ export class TowerRelay {
 
   constructor(options: TowerRelayOptions = {}) {
     this.label = options.label;
+    this.observer = options.observer ?? false;
     this.onEvent = options.onEvent ?? (() => undefined);
   }
 
@@ -98,6 +102,7 @@ export class TowerRelay {
           payload: {
             label: this.label,
             protocolVersion: PROTOCOL_VERSION,
+            observer: this.observer || undefined,
           },
           timestamp: new Date().toISOString(),
         };

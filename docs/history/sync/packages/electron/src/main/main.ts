@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import { FakeTower, RelayServer, HostLogger } from '@dark-tower-sync/host';
+import { FakeTower, RelayServer, HostLogger, CommandParser } from '@dark-tower-sync/host';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -39,6 +39,7 @@ const relay = new RelayServer({
   onClientLog: (clientId, entries) => logger.writeClientEntries(clientId, entries),
 });
 const tower = new FakeTower();
+const parser = new CommandParser();
 let commandCount = 0;
 let towerState: string = 'idle';
 let relayStatus: { running: boolean; port: number; message: string } = {
@@ -53,6 +54,10 @@ let mainWindow: BrowserWindow | null = null;
 // ─── Wire tower → relay and IPC ─────────────────────────────────────────────
 
 tower.on('command', (data) => {
+  if (!parser.isValid(data)) {
+    console.warn('[main] Dropping invalid command: wrong byte length', Array.from(data).length);
+    return;
+  }
   logger.logCommand('companion→host', data, null, 'companion');
   const seq = relay.broadcast(data);
   logger.logCommand('host→clients', data, seq, 'host');

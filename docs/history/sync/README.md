@@ -28,6 +28,8 @@ Remote multiplayer tower synchronization for **Return to Dark Tower** — relay 
 
 DarkTowerSync lets players in different locations each use their own physical Return to Dark Tower game tower as if they were sitting at the same table. One player runs the **host** — their machine advertises a fake BLE tower to the official companion app, intercepts every 20-byte command the app sends, and relays it over WebSocket to all connected remote clients. Each remote player opens the **browser client**, connects to the host, and the client replays every command on their local physical tower via Web Bluetooth. All towers stay in sync automatically.
 
+Players without a physical tower can join in **observer mode** — add `?observer` to the client URL to see a live visualizer of the tower state (LEDs, drum positions, audio, skull drops) without needing Bluetooth.
+
 Built on top of the [UltimateDarkTower](https://github.com/chessmess/UltimateDarkTower) library for the complete BLE protocol.
 
 ---
@@ -98,6 +100,16 @@ npm run dev:client
 # Enter the host's LAN IP: ws://192.168.x.x:8765
 # Click "Connect to Tower" to pair via Web Bluetooth
 ```
+
+### Observer Mode (no tower needed)
+
+Open the client with `?observer` in the URL:
+
+```
+http://localhost:3000/?observer
+```
+
+The tower Bluetooth card is hidden and a live tower state visualizer appears instead — showing LEDs, drum positions, audio, and skull drops decoded in real time.
 
 ---
 

@@ -5,10 +5,11 @@
  * (Web Bluetooth) into the top-level event loop.
  */
 
-import { UltimateDarkTower, BluetoothUserCancelledError } from 'ultimatedarktower';
+import { UltimateDarkTower, BluetoothUserCancelledError, rtdt_unpack_state, TOWER_STATE_DATA_OFFSET } from 'ultimatedarktower';
 import { UI } from './ui';
 import { TowerRelay, type TowerRelayEvent } from './towerRelay';
 import { ClientLogger } from './clientLogger';
+import { TowerVisualizer } from './towerVisualizer';
 
 /**
  * App is the top-level controller.
@@ -22,8 +23,10 @@ import { ClientLogger } from './clientLogger';
 export class App {
   private readonly ui: UI;
   private readonly logger: ClientLogger;
+  private readonly isObserver: boolean = new URLSearchParams(window.location.search).has('observer');
   private relay: TowerRelay | null = null;
   private tower: UltimateDarkTower | null = null;
+  private visualizer: TowerVisualizer | null = null;
 
   /** Cached last command bytes for self-healing replay on tower reconnect. */
   private lastCommandBytes: number[] | null = null;
@@ -51,7 +54,18 @@ export class App {
       this.logger.downloadAsFile();
     });
 
-    this.ui.log('DarkTowerSync client ready. Enter the host URL and connect.');
+    // Observer mode: hide tower card, show visualizer section.
+    if (this.isObserver) {
+      this.ui.towerBtn.closest('.card')?.setAttribute('hidden', '');
+      const vizContainer = document.getElementById('tower-visualizer');
+      if (vizContainer) {
+        document.getElementById('visualizer-section')?.removeAttribute('hidden');
+        this.visualizer = new TowerVisualizer(vizContainer);
+      }
+      this.ui.log('Observer mode — tower visualizer active. Connect to a host to begin.');
+    } else {
+      this.ui.log('DarkTowerSync client ready. Enter the host URL and connect.');
+    }
     this.ui.setRelayState('disconnected');
     this.ui.setTowerState('disconnected');
   }
@@ -100,6 +114,7 @@ export class App {
 
     this.relay = new TowerRelay({
       label,
+      observer: this.isObserver,
       onEvent: (event) => this.handleRelayEvent(event),
     });
 
@@ -249,14 +264,24 @@ export class App {
         this.lastCommandBytes = event.data;
         this.logger.logCommand('client←host', event.data, event.seq);
         this.ui.log(`Command received: [${event.data.slice(0, 4).join(', ')}…]`);
-        void this.replayOnTower(event.data, event.seq);
+        if (this.isObserver && this.visualizer) {
+          const state = rtdt_unpack_state(Uint8Array.from(event.data).slice(TOWER_STATE_DATA_OFFSET));
+          this.visualizer.update(state);
+        } else {
+          void this.replayOnTower(event.data, event.seq);
+        }
         break;
 
       case 'sync:state':
         if (event.lastCommand) {
           this.lastCommandBytes = event.lastCommand;
           this.ui.log('Received full tower state sync from host.');
-          void this.replayOnTower(event.lastCommand);
+          if (this.isObserver && this.visualizer) {
+            const state = rtdt_unpack_state(Uint8Array.from(event.lastCommand).slice(TOWER_STATE_DATA_OFFSET));
+            this.visualizer.update(state);
+          } else {
+            void this.replayOnTower(event.lastCommand);
+          }
         } else {
           this.ui.log('Connected — no prior tower state to sync.');
         }
@@ -270,9 +295,14 @@ export class App {
         this.ui.log(`Player left: ${event.clientId.slice(0, 8)}`);
         break;
 
-      case 'host:status':
-        this.ui.setRelayState('connected', `Connected (${event.status.clientCount} players)`);
+      case 'host:status': {
+        const obs = event.status.observerCount;
+        const detail = obs > 0
+          ? `Connected (${event.status.clientCount} players, ${obs} observer${obs !== 1 ? 's' : ''})`
+          : `Connected (${event.status.clientCount} players)`;
+        this.ui.setRelayState('connected', detail);
         break;
+      }
 
       case 'host:log-config':
         this.logger.setAutoSend(event.enabled);

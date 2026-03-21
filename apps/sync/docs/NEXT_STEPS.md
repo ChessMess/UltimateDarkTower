@@ -83,34 +83,9 @@ The gaps are: low test coverage (27 passing, mostly protocol factories), operati
 
 ---
 
-### 5. Observer Mode (No-Tower Client)
+### ~~5. Observer Mode (No-Tower Client)~~ ✓
 
-**What:** Allow a client to connect to the relay, receive commands, and see decoded game state in the UI without requiring a physical tower or Web Bluetooth.
-
-**Why it matters:** Useful for spectators, the host watching from a browser, and debugging sessions where no tower hardware is available. Currently the client silently fails to do anything useful without a paired tower.
-
-**Scope:**
-- Add an "Observer" toggle in the client UI (before connecting to tower)
-- In `app.ts`: if observer mode, skip BLE connect and `client:ready` signaling; display decoded command data in a read-only view instead
-- `towerRelay.ts`: when observer, send `client:hello` with `{ label, observer: true }` so host can distinguish
-- In Electron dashboard: show observer count separately from ready players
-
-**Key files:** `packages/client/src/app.ts`, `packages/client/src/ui.ts`, `packages/client/src/towerRelay.ts`, `packages/host/src/relayServer.ts`, `packages/electron/src/renderer/renderer.ts`
-
----
-
-### 6. Wire CommandParser into Relay Path
-
-**What:** The spec notes "CommandParser exists but is not currently in the active relay path from FakeTower to RelayServer." Connect it so invalid packets are rejected before broadcast rather than silently relayed.
-
-**Why it matters:** Currently, a malformed packet (wrong length) would be broadcast to all clients. Wiring CommandParser in is low-risk and closes a gap the spec explicitly flags.
-
-**Scope:**
-- In `packages/host/src/index.ts` and `packages/electron/src/main/main.ts`, wrap the `command` event handler: `if (!parser.isValid(bytes)) { logger.warn(...); return; }`
-- Add `CommandParser` instantiation to both entry points
-- Add test: `commandParser.isValid` rejects non-20-byte input
-
-**Key files:** `packages/host/src/index.ts`, `packages/electron/src/main/main.ts`, `packages/host/src/commandParser.ts`
+Implemented. See [Completed](#completed) section below.
 
 ---
 
@@ -139,8 +114,30 @@ The gaps are: low test coverage (27 passing, mostly protocol factories), operati
 | 2 | Log rotation | Small | High — prevents operational failures |
 | 3 | Hosted client (GitHub Pages) | Small | Very high — removes all remote player friction |
 | 4 | Protocol version enforcement | Small | Medium — correctness guard |
-| 5 | Observer mode | Medium | Medium — usability for spectators |
-| 6 | Wire CommandParser | Tiny | Low (correctness cleanup) |
-| 7 | v0.1.0 release workflow | Small | High — distributable artifact |
+| ~~5~~ | ~~Observer mode~~ | ~~Medium~~ | ~~Medium — usability for spectators~~ ✓ |
+| 6 | v0.1.0 release workflow | Small | High — distributable artifact |
 
 Recommended sequence: complete Tier 1 items (1–3) together as a "pre-release quality pass," then Tier 2 items as game feature additions, then cut the release.
+
+---
+
+## Completed
+
+### Observer Mode (No-Tower Client) ✓
+
+Browser clients can connect with `?observer` in the URL to view a live tower state
+visualizer without a physical tower. Observer clients decode `tower:command` packets
+using `rtdt_unpack_state()` from the `ultimatedarktower` library and render LEDs
+(6 effect types), drum positions with glyph detection, audio sample names, skull
+drop events (beam-count delta), and LED sequence overrides. The tower Bluetooth card
+is hidden in observer mode. The host tracks observer count separately in `host:status`
+broadcasts via `observerCount`. Protocol: `client:hello` accepts an optional
+`observer: true` flag.
+
+### Wire CommandParser into Relay Path ✓
+
+Wired `CommandParser.isValid()` as a gate before `RelayServer.broadcast()` in both
+`packages/host/src/index.ts` and `packages/electron/src/main/main.ts`. Malformed
+packets (not exactly 20 bytes) are now dropped with a `console.warn` before reaching
+any client. Added `tests/unit/host/relayGate.test.ts` (4 tests) to lock in the
+behavior.

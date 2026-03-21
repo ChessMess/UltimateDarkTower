@@ -19,12 +19,14 @@
 export { FakeTower } from './fakeTower';
 export { RelayServer } from './relayServer';
 export { HostLogger } from './logger';
+export { CommandParser } from './commandParser';
 export type { RelayServerOptions } from './relayServer';
 export type { CommandReceivedCallback } from './fakeTower';
 
 import { FakeTower } from './fakeTower';
 import { RelayServer } from './relayServer';
 import { HostLogger } from './logger';
+import { CommandParser } from './commandParser';
 import { PROTOCOL_VERSION } from '@dark-tower-sync/shared';
 
 const DEFAULT_PORT = 8765;
@@ -39,9 +41,14 @@ async function main(): Promise<void> {
     onClientLog: (clientId, entries) => logger.writeClientEntries(clientId, entries),
   });
   const tower = new FakeTower();
+  const parser = new CommandParser();
 
   // Wire tower commands → relay broadcast.
   tower.onCommandReceived = (data) => {
+    if (!parser.isValid(data)) {
+      console.warn('Dropping invalid command: wrong byte length', Array.from(data).length);
+      return;
+    }
     logger.logCommand('companion→host', data, null, 'companion');
     const seq = relay.broadcast(data);
     logger.logCommand('host→clients', data, seq, 'host');

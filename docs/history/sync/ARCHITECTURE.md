@@ -14,6 +14,7 @@ This document explains how DarkTowerSync works at a component level.
   - [ConnectionManager](#connectionmanager-packageshostsrcconnectionmanagerts)
   - [TowerRelay](#towerrelay-packagesclientsrctowerrelayts)
   - [UltimateDarkTower (Web Bluetooth)](#ultimatedarktower-web-bluetooth)
+  - [TowerVisualizer (Observer Mode)](#towervisualizer-packagesclientsrctowervisualizerts)
 - [Why Full-State Commands Prevent Sync Drift](#why-full-state-commands-prevent-sync-drift)
 - [Skull and Glyph Handling](#skull-and-glyph-handling)
 - [Structured Logging](#structured-logging)
@@ -63,8 +64,16 @@ flowchart TD
         UDT2 -->|"BLE write\n20-byte command"| TOWER2
     end
 
+    subgraph OBSERVER["Observer (Browser, no tower)"]
+        WS3["TowerRelay\nWebSocket client\n{observer: true}"]
+        VIZ["TowerVisualizer\nrtdt_unpack_state()"]
+
+        WS3 -->|decode command| VIZ
+    end
+
     RELAY -->|"tower:command + seq\n(broadcast)"| WS1
     RELAY -->|"tower:command + seq\n(broadcast)"| WS2
+    RELAY -->|"tower:command + seq\n(broadcast)"| WS3
     CLOG1 -.->|"client:log\n(every 30s)"| RELAY
     CLOG2 -.->|"client:log\n(every 30s)"| RELAY
 ```
@@ -128,6 +137,19 @@ The [UltimateDarkTower](https://github.com/chessmess/UltimateDarkTower) library 
 - Handles the Web Bluetooth device picker, GATT connection, and characteristic writes.
 - The client receives raw 20-byte command arrays from the relay and writes them directly to the tower characteristic — no re-encoding needed.
 
+### TowerVisualizer (`packages/client/src/towerVisualizer.ts`)
+
+Renders decoded tower state for observer-mode clients (no physical tower).
+
+- Accepts a `TowerState` object from `rtdt_unpack_state()` (exported by the `ultimatedarktower` library) and renders it into a DOM container.
+- Displays 24 LEDs across 6 layers with CSS animations for each of the 6 light effects (`off`, `on`, `breathe`, `breatheFast`, `breathe50percent`, `flicker`).
+- Shows drum positions (N/E/S/W), calibration status, and active glyph detection using the `GLYPHS` constant.
+- Looks up audio sample names from `TOWER_AUDIO_LIBRARY` and displays volume.
+- Detects skull drops by comparing `beam.count` between consecutive packets.
+- Shows LED sequence override labels from `TOWER_LIGHT_SEQUENCES`.
+
+Observer mode is activated by adding `?observer` to the client URL. The tower Bluetooth card is hidden and the visualizer section is shown instead.
+
 ---
 
 ## Why Full-State Commands Prevent Sync Drift
@@ -189,7 +211,8 @@ RelayServer.broadcast()  ──assigns seq──▶  HostLogger logs host→clie
   │  JSON: { type: "tower:command", payload: { data: [...], seq: N } }
   ├──▶  TowerRelay (Client 1)  ──▶  ClientLogger  ──▶  UltimateDarkTower  ──▶  Tower 1
   ├──▶  TowerRelay (Client 2)  ──▶  ClientLogger  ──▶  UltimateDarkTower  ──▶  Tower 2
-  └──▶  TowerRelay (Client N)  ──▶  ClientLogger  ──▶  UltimateDarkTower  ──▶  Tower N
+  ├──▶  TowerRelay (Client N)  ──▶  ClientLogger  ──▶  UltimateDarkTower  ──▶  Tower N
+  └──▶  TowerRelay (Observer)  ──▶  rtdt_unpack_state()  ──▶  TowerVisualizer  ──▶  Browser UI
                                         │
                                         └──▶  client:log (every 30s)  ──▶  HostLogger (all.jsonl)
 ```

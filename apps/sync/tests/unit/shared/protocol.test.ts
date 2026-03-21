@@ -11,6 +11,10 @@ import {
   makeTowerCommandMessage,
   makeSyncStateMessage,
   makeHostStatusMessage,
+  makeHostLogConfigMessage,
+  makeRelayPausedMessage,
+  makeRelayResumedMessage,
+  makeClientReadyMessage,
   type HostStatus,
 } from '@dark-tower-sync/shared';
 
@@ -22,6 +26,14 @@ describe('MessageType constants', () => {
     expect(MessageType.CLIENT_DISCONNECTED).toBe('client:disconnected');
     expect(MessageType.HOST_STATUS).toBe('host:status');
     expect(MessageType.CLIENT_HELLO).toBe('client:hello');
+  });
+
+  it('defines relay and log message types', () => {
+    expect(MessageType.CLIENT_LOG).toBe('client:log');
+    expect(MessageType.HOST_LOG_CONFIG).toBe('host:log-config');
+    expect(MessageType.RELAY_PAUSED).toBe('relay:paused');
+    expect(MessageType.RELAY_RESUMED).toBe('relay:resumed');
+    expect(MessageType.RELAY_TOWER_ALERT).toBe('relay:tower:alert');
   });
 });
 
@@ -59,6 +71,11 @@ describe('makeTowerCommandMessage()', () => {
     const msg = makeTowerCommandMessage(bytes);
     expect(msg.payload.data).toEqual(sampleCommand);
   });
+
+  it('includes seq in payload', () => {
+    const msg = makeTowerCommandMessage(sampleCommand, 7);
+    expect(msg.payload.seq).toBe(7);
+  });
 });
 
 describe('makeSyncStateMessage()', () => {
@@ -83,7 +100,10 @@ describe('makeHostStatusMessage()', () => {
   const status: HostStatus = {
     relaying: true,
     fakeTowerState: 'advertising',
+    appConnected: true,
     clientCount: 2,
+    towersConnected: 1,
+    observerCount: 0,
     lastCommandAt: new Date().toISOString(),
   };
 
@@ -95,5 +115,53 @@ describe('makeHostStatusMessage()', () => {
   it('carries the full status payload', () => {
     const msg = makeHostStatusMessage(status);
     expect(msg.payload).toEqual(status);
+  });
+});
+
+describe('makeHostLogConfigMessage()', () => {
+  it('produces a message with the correct type', () => {
+    const msg = makeHostLogConfigMessage(true);
+    expect(msg.type).toBe(MessageType.HOST_LOG_CONFIG);
+  });
+
+  it('carries the enabled flag', () => {
+    expect(makeHostLogConfigMessage(true).payload.enabled).toBe(true);
+    expect(makeHostLogConfigMessage(false).payload.enabled).toBe(false);
+  });
+});
+
+describe('makeRelayPausedMessage()', () => {
+  it('produces a message with the correct type', () => {
+    const msg = makeRelayPausedMessage('BLE disconnect');
+    expect(msg.type).toBe(MessageType.RELAY_PAUSED);
+  });
+
+  it('carries the reason string', () => {
+    const msg = makeRelayPausedMessage('BLE disconnect');
+    expect(msg.payload.reason).toBe('BLE disconnect');
+  });
+});
+
+describe('makeRelayResumedMessage()', () => {
+  it('produces a message with the correct type', () => {
+    const msg = makeRelayResumedMessage();
+    expect(msg.type).toBe(MessageType.RELAY_RESUMED);
+  });
+
+  it('includes a valid ISO-8601 timestamp', () => {
+    const msg = makeRelayResumedMessage();
+    expect(new Date(msg.timestamp).toISOString()).toBe(msg.timestamp);
+  });
+});
+
+describe('makeClientReadyMessage()', () => {
+  it('produces a message with the correct type', () => {
+    const msg = makeClientReadyMessage(true);
+    expect(msg.type).toBe(MessageType.CLIENT_READY);
+  });
+
+  it('carries the ready flag', () => {
+    expect(makeClientReadyMessage(true).payload.ready).toBe(true);
+    expect(makeClientReadyMessage(false).payload.ready).toBe(false);
   });
 });

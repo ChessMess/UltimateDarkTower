@@ -55,6 +55,7 @@ export class ConnectionManager {
       state: 'connected',
       towerConnected: false,
       towerLastSeenAt: null,
+      observer: false,
     };
     this.clients.set(id, { meta: client, socket, alive: true });
 
@@ -146,6 +147,17 @@ export class ConnectionManager {
     let n = 0;
     for (const { meta } of this.clients.values()) {
       if (meta.towerConnected) n++;
+    }
+    return n;
+  }
+
+  /**
+   * Count of clients that are observers (no physical tower).
+   */
+  get observersConnected(): number {
+    let n = 0;
+    for (const { meta } of this.clients.values()) {
+      if (meta.observer) n++;
     }
     return n;
   }
