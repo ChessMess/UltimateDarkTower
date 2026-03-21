@@ -26,6 +26,7 @@ body {
   color: var(--fg);
   min-height: 100vh;
   padding: 2rem 1.5rem;
+  overflow-y: auto;
 }
 
 #app {
@@ -219,6 +220,54 @@ h1 {
   color: var(--muted);
   font-family: inherit;
   font-style: italic;
+}
+
+#client-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#client-list li.client-alert {
+  border-left: 3px solid var(--warning);
+}
+
+.client-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-health {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.health-relay {
+  color: var(--success);
+}
+
+.health-tower.tower-ok {
+  color: var(--success);
+}
+
+.health-tower.tower-disconnected {
+  color: var(--error);
+  font-weight: 700;
+}
+
+.client-alert-banner {
+  margin-top: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.8rem;
+  color: #fce8bf;
+  background: color-mix(in srgb, var(--warning) 20%, black);
+  border: 1px solid color-mix(in srgb, var(--warning) 50%, black);
+  border-radius: 6px;
+  line-height: 1.4;
 }
 
 /* ─── Card action row ────────────────────────────────────────────────────── */

@@ -1,7 +1,7 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import { FakeTower, RelayServer } from '@dark-tower-sync/host';
+import { FakeTower, RelayServer, HostLogger } from '@dark-tower-sync/host';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -26,10 +26,18 @@ export const IPC = {
   TRIGGER_SKULL_DROP: 'trigger:skull-drop',
   TOWER_START_ADVERTISING: 'tower:start-advertising',
   TOWER_STOP_ADVERTISING: 'tower:stop-advertising',
+  TOGGLE_LOGGING: 'toggle-logging',
+  GET_LOGGING_STATE: 'get-logging-state',
+  OPEN_LOG_DIR: 'open-log-dir',
 } as const;
 
 // ─── Host services ───────────────────────────────────────────────────────────
-const relay = new RelayServer({ port: Number(process.env['RELAY_PORT'] ?? 8765) });
+const logDir = path.join(app.getPath('userData'), 'logs');
+const logger = new HostLogger(logDir, process.env['LOGGING'] !== '0');
+const relay = new RelayServer({
+  port: Number(process.env['RELAY_PORT'] ?? 8765),
+  onClientLog: (clientId, entries) => logger.writeClientEntries(clientId, entries),
+});
 const tower = new FakeTower();
 let commandCount = 0;
 let towerState: string = 'idle';
@@ -45,7 +53,9 @@ let mainWindow: BrowserWindow | null = null;
 // ─── Wire tower → relay and IPC ─────────────────────────────────────────────
 
 tower.on('command', (data) => {
-  relay.broadcast(data);
+  logger.logCommand('companion→host', data, null, 'companion');
+  const seq = relay.broadcast(data);
+  logger.logCommand('host→clients', data, seq, 'host');
   commandCount += 1;
   mainWindow?.webContents.send(IPC.TOWER_COMMAND, {
     count: commandCount,
@@ -57,6 +67,14 @@ tower.on('state-change', (state) => {
   towerState = state;
   relay.setFakeTowerState(state);
   mainWindow?.webContents.send(IPC.TOWER_STATE, { state });
+});
+
+tower.on('companion-disconnected', () => {
+  relay.broadcastPaused('Companion app disconnected from FakeTower');
+});
+
+tower.on('companion-connected', () => {
+  relay.broadcastResumed();
 });
 
 tower.on('ble-adapter-state', (state) => {
@@ -95,6 +113,20 @@ ipcMain.handle(IPC.TOWER_STOP_ADVERTISING, async (): Promise<{ ok: boolean; reas
   }
 });
 
+ipcMain.handle(IPC.TOGGLE_LOGGING, (): { enabled: boolean } => {
+  const enabled = logger.setEnabled(!logger.enabled);
+  relay.broadcastLogConfig(enabled);
+  return { enabled };
+});
+
+ipcMain.handle(IPC.GET_LOGGING_STATE, (): { enabled: boolean } => {
+  return { enabled: logger.enabled };
+});
+
+ipcMain.handle(IPC.OPEN_LOG_DIR, async (): Promise<void> => {
+  await shell.openPath(logger.getLogDir());
+});
+
 ipcMain.handle(IPC.TOWER_START_ADVERTISING, async (): Promise<{ ok: boolean; reason?: string }> => {
   try {
     await tower.startAdvertising();
@@ -110,7 +142,7 @@ ipcMain.handle(IPC.TOWER_START_ADVERTISING, async (): Promise<{ ok: boolean; rea
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 720,
-    height: 520,
+    height: 680,
     title: 'DarkTowerSync Host',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -183,6 +215,7 @@ async function shutdown(): Promise<void> {
   console.log('[main] Shutting down…');
   try { await tower.stopAdvertising(); } catch { /* best-effort */ }
   try { await relay.stop(); } catch { /* best-effort */ }
+  try { await logger.close(); } catch { /* best-effort */ }
   try { tower.destroy(); } catch { /* best-effort */ }
 }
 

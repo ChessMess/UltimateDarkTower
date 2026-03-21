@@ -6,8 +6,14 @@
  * report client counts in host status messages.
  */
 
-import type WebSocket from 'ws';
+import WebSocket from 'ws';
 import type { ConnectedClient, ClientId } from '@dark-tower-sync/shared';
+
+/** How long (ms) a client has to send CLIENT_HELLO before being kicked. */
+const HANDSHAKE_TIMEOUT_MS = 10_000;
+
+/** Interval (ms) between WebSocket-level ping frames. */
+const PING_INTERVAL_MS = 20_000;
 
 /**
  * ConnectionManager tracks all active WebSocket client connections to the relay
@@ -22,26 +28,75 @@ import type { ConnectedClient, ClientId } from '@dark-tower-sync/shared';
  * ```
  */
 export class ConnectionManager {
-  private clients: Map<ClientId, { meta: ConnectedClient; socket: WebSocket }> = new Map();
+  private clients: Map<ClientId, { meta: ConnectedClient; socket: WebSocket; alive: boolean }> = new Map();
+  private handshakeTimers: Map<ClientId, ReturnType<typeof setTimeout>> = new Map();
+  private pingInterval: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Register a new client connection.
    *
-   * TODO: Implement handshake timeout — remove client if CLIENT_HELLO is not
-   *       received within a configurable grace period.
+   * Starts a handshake timeout that will remove the client if
+   * {@link markHandshakeComplete} is not called within the grace period.
    *
    * @param id     - Unique ID for this client (e.g., UUID generated on connect).
    * @param socket - The raw WebSocket instance for this client.
    * @param meta   - Optional metadata (label, etc.) to associate with the client.
+   * @returns A callback invoked if the handshake times out (so the caller can clean up).
    */
-  add(id: ClientId, socket: WebSocket, meta?: Partial<Pick<ConnectedClient, 'label'>>): void {
+  add(
+    id: ClientId,
+    socket: WebSocket,
+    meta?: Partial<Pick<ConnectedClient, 'label'>>,
+  ): { onHandshakeTimeout: (cb: () => void) => void } {
     const client: ConnectedClient = {
       id,
       label: meta?.label,
       connectedAt: Date.now(),
       state: 'connected',
+      towerConnected: false,
+      towerLastSeenAt: null,
     };
-    this.clients.set(id, { meta: client, socket });
+    this.clients.set(id, { meta: client, socket, alive: true });
+
+    // Set up pong listener for keepalive.
+    socket.on('pong', () => {
+      const entry = this.clients.get(id);
+      if (entry) entry.alive = true;
+    });
+
+    // Start ping interval on first client.
+    if (this.pingInterval === null) {
+      this.startPingInterval();
+    }
+
+    // Handshake timeout.
+    let timeoutCb: (() => void) | null = null;
+    const timer = setTimeout(() => {
+      this.handshakeTimers.delete(id);
+      const entry = this.clients.get(id);
+      if (entry && entry.meta.state === 'connected' && !entry.meta.label) {
+        console.warn(`[ConnectionManager] Client ${id} did not complete handshake within ${HANDSHAKE_TIMEOUT_MS}ms — removing`);
+        socket.close(1008, 'Handshake timeout');
+        timeoutCb?.();
+      }
+    }, HANDSHAKE_TIMEOUT_MS);
+    this.handshakeTimers.set(id, timer);
+
+    return {
+      onHandshakeTimeout: (cb: () => void) => { timeoutCb = cb; },
+    };
+  }
+
+  /**
+   * Mark a client's handshake as complete (CLIENT_HELLO received).
+   * Clears the handshake timeout.
+   */
+  markHandshakeComplete(id: ClientId): void {
+    const timer = this.handshakeTimers.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      this.handshakeTimers.delete(id);
+    }
   }
 
   /**
@@ -49,7 +104,18 @@ export class ConnectionManager {
    * Called when the WebSocket `close` or `error` event fires.
    */
   remove(id: ClientId): void {
+    const timer = this.handshakeTimers.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      this.handshakeTimers.delete(id);
+    }
     this.clients.delete(id);
+
+    // Stop ping interval when no clients remain.
+    if (this.clients.size === 0 && this.pingInterval !== null) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
   }
 
   /**
@@ -74,16 +140,33 @@ export class ConnectionManager {
   }
 
   /**
+   * Count of clients whose physical tower BLE connection is active.
+   */
+  get towersConnected(): number {
+    let n = 0;
+    for (const { meta } of this.clients.values()) {
+      if (meta.towerConnected) n++;
+    }
+    return n;
+  }
+
+  /**
    * Broadcast a serialized message to all connected clients.
    *
-   * TODO: Handle per-client send errors gracefully (log + remove stale socket).
+   * Skips clients whose socket is not in the OPEN state and removes
+   * stale sockets that fail to send.
    *
    * @param message - JSON string to send.
    */
   broadcast(message: string): void {
-    for (const { socket } of this.clients.values()) {
-      // TODO: Check socket.readyState === WebSocket.OPEN before sending.
-      socket.send(message);
+    for (const [id, { socket }] of this.clients.entries()) {
+      if (socket.readyState !== WebSocket.OPEN) continue;
+      try {
+        socket.send(message);
+      } catch (err) {
+        console.warn(`[ConnectionManager] Send failed for ${id}, removing:`, err);
+        this.remove(id);
+      }
     }
   }
 
@@ -96,9 +179,46 @@ export class ConnectionManager {
    */
   sendTo(id: ClientId, message: string): boolean {
     const entry = this.clients.get(id);
-    if (!entry) return false;
-    // TODO: Check readyState before sending.
-    entry.socket.send(message);
-    return true;
+    if (!entry || entry.socket.readyState !== WebSocket.OPEN) return false;
+    try {
+      entry.socket.send(message);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Clean up all timers. Call on server shutdown.
+   */
+  destroy(): void {
+    if (this.pingInterval !== null) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+    for (const timer of this.handshakeTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.handshakeTimers.clear();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private
+  // ---------------------------------------------------------------------------
+
+  private startPingInterval(): void {
+    this.pingInterval = setInterval(() => {
+      for (const [id, entry] of this.clients.entries()) {
+        if (!entry.alive) {
+          console.warn(`[ConnectionManager] Client ${id} did not respond to ping — terminating`);
+          entry.socket.terminate();
+          continue;
+        }
+        entry.alive = false;
+        if (entry.socket.readyState === WebSocket.OPEN) {
+          entry.socket.ping();
+        }
+      }
+    }, PING_INTERVAL_MS);
   }
 }

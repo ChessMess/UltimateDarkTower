@@ -4,6 +4,26 @@ This document explains how DarkTowerSync works at a component level.
 
 ---
 
+## Table of Contents
+
+- [System Diagram](#system-diagram)
+- [Component Descriptions](#component-descriptions)
+  - [FakeTower](#faketower-packageshostsrcfaketowerts)
+  - [CommandParser](#commandparser-packageshostsrccommandparserts)
+  - [RelayServer](#relayserver-packageshostsrcrelayserverts)
+  - [ConnectionManager](#connectionmanager-packageshostsrcconnectionmanagerts)
+  - [TowerRelay](#towerrelay-packagesclientsrctowerrelayts)
+  - [UltimateDarkTower (Web Bluetooth)](#ultimatedarktower-web-bluetooth)
+- [Why Full-State Commands Prevent Sync Drift](#why-full-state-commands-prevent-sync-drift)
+- [Skull and Glyph Handling](#skull-and-glyph-handling)
+- [Structured Logging](#structured-logging)
+  - [HostLogger](#hostlogger-packageshostsrcloggerts)
+  - [ClientLogger](#clientlogger-packagesclientsrcclientloggerts)
+  - [Log Analysis CLI](#log-analysis-cli-packageshostscriptsanalyzelogsts)
+- [Data Flow Summary](#data-flow-summary)
+
+---
+
 ## System Diagram
 
 ```mermaid
@@ -11,34 +31,42 @@ flowchart TD
     subgraph HOST["Host Machine (macOS / Linux)"]
         APP["Official Companion App\n(iPhone via iPhone Mirroring)"]
         FAKE["FakeTower\n@stoprocent/bleno\nBLE Peripheral"]
+        LOGGER["HostLogger\nJSONL file writer"]
         RELAY["RelayServer\nWebSocket ws://host:8765"]
         PARSER["CommandParser\n20-byte validation"]
 
         APP -->|"BLE write\n20-byte command"| FAKE
         FAKE -->|onCommandReceived| PARSER
-        PARSER -->|valid command bytes| RELAY
+        PARSER -->|valid command bytes| LOGGER
+        LOGGER -->|"log + assign seq"| RELAY
     end
 
     subgraph CLIENT1["Remote Player 1 (Browser)"]
         WS1["TowerRelay\nWebSocket client"]
+        CLOG1["ClientLogger\n500-entry ring buffer"]
         UDT1["UltimateDarkTower\nWeb Bluetooth"]
         TOWER1["Physical Tower 🗼"]
 
         WS1 -->|replay command| UDT1
+        WS1 -->|log entry| CLOG1
         UDT1 -->|"BLE write\n20-byte command"| TOWER1
     end
 
     subgraph CLIENT2["Remote Player 2 (Browser)"]
         WS2["TowerRelay\nWebSocket client"]
+        CLOG2["ClientLogger\n500-entry ring buffer"]
         UDT2["UltimateDarkTower\nWeb Bluetooth"]
         TOWER2["Physical Tower 🗼"]
 
         WS2 -->|replay command| UDT2
+        WS2 -->|log entry| CLOG2
         UDT2 -->|"BLE write\n20-byte command"| TOWER2
     end
 
-    RELAY -->|"tower:command\n(broadcast)"| WS1
-    RELAY -->|"tower:command\n(broadcast)"| WS2
+    RELAY -->|"tower:command + seq\n(broadcast)"| WS1
+    RELAY -->|"tower:command + seq\n(broadcast)"| WS2
+    CLOG1 -.->|"client:log\n(every 30s)"| RELAY
+    CLOG2 -.->|"client:log\n(every 30s)"| RELAY
 ```
 
 ---
@@ -69,9 +97,12 @@ Validates and annotates raw BLE write payloads before they enter the relay.
 WebSocket server that broadcasts intercepted tower commands to all connected remote clients.
 
 - Maintains a set of active client connections via `ConnectionManager`.
+- Assigns a monotonic sequence number (`seq`) to each broadcast for cross-log correlation.
 - On new client connection: sends a `sync:state` message containing the last known command, so the remote tower can catch up immediately.
 - Broadcasts `client:connected` / `client:disconnected` membership events.
 - Sends periodic `host:status` updates so clients can display host health.
+- Handles `client:log` messages from clients — forwards entries to `HostLogger` for centralized storage.
+- Broadcasts `host:log-config` when the operator toggles the master logging switch.
 
 ### ConnectionManager (`packages/host/src/connectionManager.ts`)
 
@@ -121,6 +152,24 @@ The Return to Dark Tower uses skull and glyph symbols as binary flags within the
 
 ---
 
+## Structured Logging
+
+All components produce structured JSONL log entries for post-session diagnostics. The host assigns a monotonic sequence number (`seq`) to each relayed command, enabling correlation across host and client log files regardless of clock skew.
+
+### HostLogger (`packages/host/src/logger.ts`)
+
+Writes two JSONL files per session: a host-only file and a combined file that interleaves host and client entries. Has a master on/off switch controllable from the Electron dashboard or via `LOGGING=0` env var. When disabled, all writes are no-ops but streams stay open.
+
+### ClientLogger (`packages/client/src/clientLogger.ts`)
+
+A 500-entry ring buffer in the browser. Entries are auto-sent to the host every 30 seconds via `client:log` WebSocket messages, and can also be sent manually or downloaded as a local `.jsonl` file. The host controls auto-send via `host:log-config` broadcasts.
+
+### Log Analysis CLI (`packages/host/scripts/analyzeLogs.ts`)
+
+Post-session analysis tool that reads JSONL files and produces reports: session summary, command timeline, host↔client correlation matrix, LED override analysis, anomaly detection (missing seq, hex mismatches, time gaps), and per-client summaries. Uses constants from the `ultimatedarktower` library for human-readable names.
+
+---
+
 ## Data Flow Summary
 
 ```
@@ -133,9 +182,14 @@ FakeTower (bleno)
 CommandParser  ──validates──▶  drop if invalid
   │  valid ParsedCommand
   ▼
-RelayServer.broadcast()
-  │  JSON: { type: "tower:command", payload: { data: [...] } }
-  ├──▶  TowerRelay (Client 1)  ──▶  UltimateDarkTower  ──▶  Tower 1
-  ├──▶  TowerRelay (Client 2)  ──▶  UltimateDarkTower  ──▶  Tower 2
-  └──▶  TowerRelay (Client N)  ──▶  UltimateDarkTower  ──▶  Tower N
+HostLogger  ──logs companion→host──▶  session-*-host.jsonl + session-*-all.jsonl
+  │
+  ▼
+RelayServer.broadcast()  ──assigns seq──▶  HostLogger logs host→clients
+  │  JSON: { type: "tower:command", payload: { data: [...], seq: N } }
+  ├──▶  TowerRelay (Client 1)  ──▶  ClientLogger  ──▶  UltimateDarkTower  ──▶  Tower 1
+  ├──▶  TowerRelay (Client 2)  ──▶  ClientLogger  ──▶  UltimateDarkTower  ──▶  Tower 2
+  └──▶  TowerRelay (Client N)  ──▶  ClientLogger  ──▶  UltimateDarkTower  ──▶  Tower N
+                                        │
+                                        └──▶  client:log (every 30s)  ──▶  HostLogger (all.jsonl)
 ```

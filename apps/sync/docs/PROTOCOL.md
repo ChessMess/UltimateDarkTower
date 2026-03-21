@@ -4,6 +4,28 @@ This document describes the WebSocket message protocol used between the host rel
 
 ---
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Message Types](#message-types)
+- [Message Payloads](#message-payloads)
+  - [`tower:command`](#towercommand)
+  - [`sync:state`](#syncstate)
+  - [`client:connected`](#clientconnected)
+  - [`client:disconnected`](#clientdisconnected)
+  - [`host:status`](#hoststatus)
+  - [`client:hello`](#clienthello)
+  - [`client:ready`](#clientready)
+  - [`client:log`](#clientlog)
+  - [`host:log-config`](#hostlog-config)
+  - [`relay:paused`](#relaypaused)
+  - [`relay:resumed`](#relayresumed)
+  - [`relay:tower:alert`](#relaytoweralert)
+- [Connection Lifecycle](#connection-lifecycle)
+  - [Key rules](#key-rules)
+
+---
+
 ## Overview
 
 All messages are **JSON-encoded** objects sent as WebSocket text frames. Every message follows the same envelope structure:
@@ -33,8 +55,13 @@ All messages are **JSON-encoded** objects sent as WebSocket text frames. Every m
 | `client:connected`    | Host → clients | A new client has joined the relay                    |
 | `client:disconnected` | Host → clients | A client has left the relay                          |
 | `host:status`         | Host → clients | Periodic host status update                          |
+| `host:log-config`     | Host → clients | Enable or disable automatic client log submission    |
 | `client:hello`        | Client → host  | Handshake sent immediately after WebSocket open      |
 | `client:ready`        | Client → host  | Tower calibrated & ready to receive commands         |
+| `client:log`          | Client → host  | Batch of structured log entries for centralized storage |
+| `relay:paused`        | Host → clients | Game paused — companion app disconnected from FakeTower |
+| `relay:resumed`       | Host → clients | Game resumed — companion app reconnected to FakeTower |
+| `relay:tower:alert`   | Host → clients | A remote player's tower BLE connection changed       |
 
 ---
 
@@ -48,15 +75,17 @@ Sent by the host each time the official companion app writes a 20-byte command t
 {
   "type": "tower:command",
   "payload": {
-    "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+    "seq": 42
   },
   "timestamp": "2026-03-19T12:00:00.123Z"
 }
 ```
 
-| Field          | Type       | Description                               |
-| -------------- | ---------- | ----------------------------------------- |
-| `payload.data` | `number[]` | Raw 20-byte tower command as a JSON array |
+| Field          | Type       | Description                                                     |
+| -------------- | ---------- | --------------------------------------------------------------- |
+| `payload.data` | `number[]` | Raw 20-byte tower command as a JSON array                       |
+| `payload.seq`  | `number?`  | Monotonic sequence number assigned by the relay for log correlation |
 
 > **Note:** The byte array is always exactly 20 elements. Clients should validate length before writing to the tower characteristic.
 >
@@ -136,7 +165,9 @@ Sent periodically (every ~5 seconds) and on significant state changes. Clients c
   "payload": {
     "relaying": true,
     "fakeTowerState": "connected",
+    "appConnected": true,
     "clientCount": 3,
+    "towersConnected": 2,
     "lastCommandAt": "2026-03-19T12:00:55.000Z"
   },
   "timestamp": "2026-03-19T12:01:00.000Z"
@@ -147,7 +178,9 @@ Sent periodically (every ~5 seconds) and on significant state changes. Clients c
 | ------------------------ | ---------------- | ----------------------------------------------------------------- |
 | `payload.relaying`       | boolean          | Whether the relay is actively forwarding commands                 |
 | `payload.fakeTowerState` | string           | BLE peripheral state: `idle \| advertising \| connected \| error` |
+| `payload.appConnected`   | boolean          | Whether the companion app is connected to the fake tower          |
 | `payload.clientCount`    | number           | Number of currently connected clients                             |
+| `payload.towersConnected`| number           | How many clients have their physical tower BLE connection active  |
 | `payload.lastCommandAt`  | `string \| null` | ISO timestamp of the last relayed command                         |
 
 ---
@@ -195,6 +228,120 @@ Sent by the client after its local tower has been connected via Web Bluetooth an
 | `payload.ready` | boolean | `true` when calibrated and ready; `false` on disconnect  |
 
 > The host updates the client's state to `'ready'` or `'connected'` accordingly. This allows the host dashboard and other clients to see which players have their towers online and calibrated.
+
+---
+
+### `client:log`
+
+Sent by the client to submit structured log entries to the host for centralized, persistent storage. Entries are batched — typically sent automatically every 30 seconds, or immediately via the "Send Logs" button.
+
+```json
+{
+  "type": "client:log",
+  "payload": {
+    "entries": [
+      {
+        "ts": "2026-03-19T12:00:00.123Z",
+        "seq": 42,
+        "dir": "client←host",
+        "hex": "00010203040506070809101112131415161718190e",
+        "src": "Player 2",
+        "level": "cmd",
+        "decoded": { "cmdType": 0, "drumStates": [1, 2], "ledStates": [3,4,5,6,7,8,9,10,11,12,13,14], "audio": 21, "beamBreak": [22, 23], "volumeDrumBeam": 24, "ledOverride": 14 }
+      }
+    ]
+  },
+  "timestamp": "2026-03-19T12:00:30.000Z"
+}
+```
+
+| Field              | Type         | Description                              |
+| ------------------ | ------------ | ---------------------------------------- |
+| `payload.entries`  | `LogEntry[]` | Array of structured log entries to store |
+
+> The host writes these entries to the combined `session-*-all.jsonl` log file. Each entry's `src` field is tagged with the client ID if not already set.
+
+---
+
+### `host:log-config`
+
+Sent by the host when the operator toggles the master logging switch. Clients use this to start or stop their automatic log submission timer.
+
+```json
+{
+  "type": "host:log-config",
+  "payload": {
+    "enabled": false
+  },
+  "timestamp": "2026-03-19T12:05:00.000Z"
+}
+```
+
+| Field             | Type    | Description                                              |
+| ----------------- | ------- | -------------------------------------------------------- |
+| `payload.enabled` | boolean | `true` to enable auto-send; `false` to pause auto-send  |
+
+> When `enabled` is `false`, clients stop their 30-second auto-send timer but continue buffering entries locally. The "Send Logs" and "Download Logs" buttons always work regardless of this setting.
+
+---
+
+### `relay:paused`
+
+Broadcast immediately when the companion app disconnects from FakeTower. All clients should display a pause overlay until `relay:resumed` is received.
+
+```json
+{
+  "type": "relay:paused",
+  "payload": {
+    "reason": "Companion app disconnected from FakeTower"
+  },
+  "timestamp": "2026-03-19T12:10:00.000Z"
+}
+```
+
+| Field            | Type   | Description                                              |
+| ---------------- | ------ | -------------------------------------------------------- |
+| `payload.reason` | string | Human-readable reason for the pause                      |
+
+---
+
+### `relay:resumed`
+
+Broadcast when the companion app reconnects to FakeTower. Clients should dismiss any pause overlay.
+
+```json
+{
+  "type": "relay:resumed",
+  "payload": {},
+  "timestamp": "2026-03-19T12:10:15.000Z"
+}
+```
+
+No payload fields.
+
+---
+
+### `relay:tower:alert`
+
+Broadcast when a remote player's physical tower BLE connection changes. Allows other players and the host to see who has a live tower.
+
+```json
+{
+  "type": "relay:tower:alert",
+  "payload": {
+    "clientId": "a3f2c1d4-...",
+    "label": "Player 2",
+    "towerConnected": false
+  },
+  "timestamp": "2026-03-19T12:11:00.000Z"
+}
+```
+
+| Field                    | Type    | Description                                              |
+| ------------------------ | ------- | -------------------------------------------------------- |
+| `payload.clientId`       | string  | ID of the affected client                                |
+| `payload.label`          | string? | Display name of the affected client, if known            |
+| `payload.towerConnected` | boolean | `true` if the tower just reconnected; `false` if lost    |
 
 ---
 

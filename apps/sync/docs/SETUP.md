@@ -50,6 +50,15 @@ The simplest setup is to run the official iOS companion app on an iPhone and mir
 3. Launch the **Return to Dark Tower** app on your iPhone.
 4. Start the DarkTowerSync host — the companion app will see the fake tower.
 
+> **Prevent iOS from suspending the companion app:** On the iPhone, go to
+> **Settings → Display & Brightness → Auto-Lock** and set it to **Never** while
+> hosting a game. iOS aggressively suspends backgrounded apps and kills BLE
+> connections, which will pause the game for all players.
+>
+> **Keep the iPhone within BLE range (~10 m / 30 ft) of the Mac** running the
+> host. If the phone moves out of range, the companion app will lose its
+> connection to FakeTower and the game will pause until it reconnects.
+
 ### 5. Start the host
 
 ```bash

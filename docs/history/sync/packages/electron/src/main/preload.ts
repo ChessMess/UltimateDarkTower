@@ -15,6 +15,9 @@ const CH = {
   TRIGGER_SKULL_DROP: 'trigger:skull-drop',
   TOWER_START_ADVERTISING: 'tower:start-advertising',
   TOWER_STOP_ADVERTISING: 'tower:stop-advertising',
+  TOGGLE_LOGGING: 'toggle-logging',
+  GET_LOGGING_STATE: 'get-logging-state',
+  OPEN_LOG_DIR: 'open-log-dir',
 } as const;
 
 // ─── Payload types ───────────────────────────────────────────────────────────
@@ -127,4 +130,13 @@ contextBridge.exposeInMainWorld('darkTowerSync', {
    * No-ops if already idle.
    */
   stopTowerAdvertising: (): Promise<SkullDropResult> => ipcRenderer.invoke(CH.TOWER_STOP_ADVERTISING),
+
+  /** Toggle the master logging switch on/off. Returns the new state. */
+  toggleLogging: (): Promise<{ enabled: boolean }> => ipcRenderer.invoke(CH.TOGGLE_LOGGING),
+
+  /** Query whether logging is currently enabled. */
+  getLoggingState: (): Promise<{ enabled: boolean }> => ipcRenderer.invoke(CH.GET_LOGGING_STATE),
+
+  /** Open the log directory in the system file manager. */
+  openLogDir: (): Promise<void> => ipcRenderer.invoke(CH.OPEN_LOG_DIR),
 });

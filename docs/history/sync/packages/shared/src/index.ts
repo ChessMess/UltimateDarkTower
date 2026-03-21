@@ -7,4 +7,5 @@
 
 export * from './types';
 export * from './protocol';
+export * from './logging';
 export { PROTOCOL_VERSION } from './version';

@@ -26,6 +26,8 @@ export class UI {
   // Buttons
   readonly connectBtn: HTMLButtonElement;
   readonly towerBtn: HTMLButtonElement;
+  readonly sendLogsBtn: HTMLButtonElement;
+  readonly downloadLogsBtn: HTMLButtonElement;
 
   // Status indicators
   private readonly relayDot: HTMLElement;
@@ -36,11 +38,16 @@ export class UI {
   // Log
   private readonly logEl: HTMLElement;
 
+  // Pause overlay
+  private pauseOverlay: HTMLElement | null = null;
+
   constructor() {
     this.hostUrlInput = this.require<HTMLInputElement>('host-url');
     this.playerNameInput = this.require<HTMLInputElement>('player-name');
     this.connectBtn = this.require<HTMLButtonElement>('connect-btn');
     this.towerBtn = this.require<HTMLButtonElement>('tower-btn');
+    this.sendLogsBtn = this.require<HTMLButtonElement>('send-logs-btn');
+    this.downloadLogsBtn = this.require<HTMLButtonElement>('download-logs-btn');
     this.relayDot = this.require('relay-dot');
     this.relayStatus = this.require('relay-status');
     this.towerDot = this.require('tower-dot');
@@ -56,14 +63,14 @@ export class UI {
    */
   setRelayState(state: UiConnectionState, label?: string): void {
     this.setDot(this.relayDot, state);
-    this.relayStatus.textContent =
-      label ??
-      {
-        disconnected: 'Not connected to relay',
-        connecting: 'Connecting to relay…',
-        connected: 'Connected to relay',
-        error: 'Relay connection error',
-      }[state];
+    const labels: Record<UiConnectionState, string> = {
+      disconnected: 'Not connected to relay',
+      connecting: 'Connecting to relay…',
+      calibrating: 'Relay calibrating…',
+      connected: 'Connected to relay',
+      error: 'Relay connection error',
+    };
+    this.relayStatus.textContent = label ?? labels[state];
   }
 
   /**
@@ -74,15 +81,14 @@ export class UI {
    */
   setTowerState(state: UiConnectionState, label?: string): void {
     this.setDot(this.towerDot, state);
-    this.towerStatus.textContent =
-      label ??
-      {
-        disconnected: 'Tower not connected',
-        connecting: 'Connecting to tower…',
-        calibrating: 'Tower calibrating…',
-        connected: 'Tower connected',
-        error: 'Tower connection error',
-      }[state];
+    const labels: Record<UiConnectionState, string> = {
+      disconnected: 'Tower not connected',
+      connecting: 'Connecting to tower…',
+      calibrating: 'Tower calibrating…',
+      connected: 'Tower connected',
+      error: 'Tower connection error',
+    };
+    this.towerStatus.textContent = label ?? labels[state];
   }
 
   /**
@@ -101,6 +107,38 @@ export class UI {
     const MAX_LOG_ENTRIES = 200;
     while (this.logEl.childElementCount > MAX_LOG_ENTRIES) {
       this.logEl.removeChild(this.logEl.firstChild!);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pause overlay
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Show a full-screen pause overlay with a message.
+   * Used when the host's companion app disconnects from FakeTower.
+   */
+  showPauseOverlay(message: string): void {
+    if (this.pauseOverlay) {
+      this.pauseOverlay.textContent = message;
+      return;
+    }
+    const overlay = document.createElement('div');
+    overlay.id = 'pause-overlay';
+    overlay.style.cssText =
+      'position:fixed;inset:0;background:rgba(0,0,0,0.85);color:#fce8bf;display:flex;' +
+      'align-items:center;justify-content:center;z-index:9999;font-size:1.2rem;' +
+      'text-align:center;padding:2rem;font-family:system-ui,sans-serif;';
+    overlay.textContent = message;
+    document.body.appendChild(overlay);
+    this.pauseOverlay = overlay;
+  }
+
+  /** Remove the pause overlay if present. */
+  hidePauseOverlay(): void {
+    if (this.pauseOverlay) {
+      this.pauseOverlay.remove();
+      this.pauseOverlay = null;
     }
   }
 

@@ -9,6 +9,7 @@
  */
 
 import type { TowerCommandBytes, HostStatus, ClientId } from './types';
+import type { LogEntry } from './logging';
 
 // ---------------------------------------------------------------------------
 // Message type literals
@@ -30,6 +31,16 @@ export const MessageType = {
   CLIENT_HELLO: 'client:hello',
   /** Client → host: tower is calibrated and ready (or no longer ready). */
   CLIENT_READY: 'client:ready',
+  /** Client → host: batch of structured log entries for centralized storage. */
+  CLIENT_LOG: 'client:log',
+  /** Host → clients: enable or disable automatic client log submission. */
+  HOST_LOG_CONFIG: 'host:log-config',
+  /** Host → all clients: game paused because the companion app disconnected from FakeTower. */
+  RELAY_PAUSED: 'relay:paused',
+  /** Host → all clients: game can resume, companion app reconnected to FakeTower. */
+  RELAY_RESUMED: 'relay:resumed',
+  /** Host → all clients: a remote player's physical tower BLE connection changed. */
+  RELAY_TOWER_ALERT: 'relay:tower:alert',
 } as const;
 
 export type MessageTypeLiteral = (typeof MessageType)[keyof typeof MessageType];
@@ -51,10 +62,12 @@ export interface BaseMessage<T extends MessageTypeLiteral, P> {
 /**
  * Relays a single intercepted tower command to all connected clients.
  * The `data` field is the raw 20-byte command as a JSON number array.
+ * The optional `seq` field is a monotonic counter assigned by the relay
+ * for cross-log correlation between host and client log files.
  */
 export type TowerCommandMessage = BaseMessage<
   typeof MessageType.TOWER_COMMAND,
-  { data: number[] }
+  { data: number[]; seq?: number }
 >;
 
 /**
@@ -106,6 +119,40 @@ export type ClientReadyMessage = BaseMessage<
   }
 >;
 
+/** Batch of structured log entries sent from a client to the host for centralized storage. */
+export type ClientLogMessage = BaseMessage<
+  typeof MessageType.CLIENT_LOG,
+  { entries: LogEntry[] }
+>;
+
+/** Host tells clients whether automatic log submission is enabled or disabled. */
+export type HostLogConfigMessage = BaseMessage<
+  typeof MessageType.HOST_LOG_CONFIG,
+  { enabled: boolean }
+>;
+
+/** Broadcast when the companion app disconnects from FakeTower — game should pause. */
+export type RelayPausedMessage = BaseMessage<
+  typeof MessageType.RELAY_PAUSED,
+  { reason: string }
+>;
+
+/** Broadcast when the companion app reconnects to FakeTower — game can resume. */
+export type RelayResumedMessage = BaseMessage<
+  typeof MessageType.RELAY_RESUMED,
+  Record<string, never>
+>;
+
+/** Broadcast when a remote player's physical tower BLE connection changes. */
+export type RelayTowerAlertMessage = BaseMessage<
+  typeof MessageType.RELAY_TOWER_ALERT,
+  {
+    clientId: ClientId;
+    label?: string;
+    towerConnected: boolean;
+  }
+>;
+
 // ---------------------------------------------------------------------------
 // Union type
 // ---------------------------------------------------------------------------
@@ -118,7 +165,12 @@ export type RelayMessage =
   | ClientDisconnectedMessage
   | HostStatusMessage
   | ClientHelloMessage
-  | ClientReadyMessage;
+  | ClientReadyMessage
+  | ClientLogMessage
+  | HostLogConfigMessage
+  | RelayPausedMessage
+  | RelayResumedMessage
+  | RelayTowerAlertMessage;
 
 // ---------------------------------------------------------------------------
 // Factory helpers
@@ -129,11 +181,25 @@ function now(): string {
   return new Date().toISOString();
 }
 
-/** Build a {@link TowerCommandMessage} from raw command bytes. */
-export function makeTowerCommandMessage(data: TowerCommandBytes): TowerCommandMessage {
+/**
+ * Build a {@link TowerCommandMessage} from raw command bytes.
+ *
+ * @param data - Raw 20-byte tower command.
+ * @param seq  - Optional monotonic sequence number assigned by the relay.
+ */
+export function makeTowerCommandMessage(data: TowerCommandBytes, seq?: number): TowerCommandMessage {
   return {
     type: MessageType.TOWER_COMMAND,
-    payload: { data: Array.from(data) },
+    payload: { data: Array.from(data), seq },
+    timestamp: now(),
+  };
+}
+
+/** Build a {@link HostLogConfigMessage}. */
+export function makeHostLogConfigMessage(enabled: boolean): HostLogConfigMessage {
+  return {
+    type: MessageType.HOST_LOG_CONFIG,
+    payload: { enabled },
     timestamp: now(),
   };
 }
@@ -161,6 +227,37 @@ export function makeClientReadyMessage(ready: boolean): ClientReadyMessage {
   return {
     type: MessageType.CLIENT_READY,
     payload: { ready },
+    timestamp: now(),
+  };
+}
+
+/** Build a {@link RelayPausedMessage}. */
+export function makeRelayPausedMessage(reason: string): RelayPausedMessage {
+  return {
+    type: MessageType.RELAY_PAUSED,
+    payload: { reason },
+    timestamp: now(),
+  };
+}
+
+/** Build a {@link RelayResumedMessage}. */
+export function makeRelayResumedMessage(): RelayResumedMessage {
+  return {
+    type: MessageType.RELAY_RESUMED,
+    payload: {},
+    timestamp: now(),
+  };
+}
+
+/** Build a {@link RelayTowerAlertMessage}. */
+export function makeRelayTowerAlertMessage(
+  clientId: ClientId,
+  towerConnected: boolean,
+  label?: string,
+): RelayTowerAlertMessage {
+  return {
+    type: MessageType.RELAY_TOWER_ALERT,
+    payload: { clientId, label, towerConnected },
     timestamp: now(),
   };
 }

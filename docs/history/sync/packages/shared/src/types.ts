@@ -38,6 +38,10 @@ export interface ConnectedClient {
   connectedAt: number;
   /** Current connection state. */
   state: ClientConnectionState;
+  /** Whether the client's physical tower BLE connection is active. */
+  towerConnected: boolean;
+  /** Timestamp (ms since epoch) of the last tower status update, or null if never reported. */
+  towerLastSeenAt: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,8 +61,12 @@ export interface HostStatus {
   relaying: boolean;
   /** State of the fake BLE tower peripheral. */
   fakeTowerState: FakeTowerState;
+  /** Whether the companion app is currently connected to the fake tower. */
+  appConnected: boolean;
   /** Number of clients currently connected to the relay server. */
   clientCount: number;
+  /** How many connected clients have their physical tower BLE connection active. */
+  towersConnected: number;
   /** ISO-8601 timestamp of the last relayed command, or null if none yet. */
   lastCommandAt: string | null;
 }

@@ -8,6 +8,7 @@
 import { UltimateDarkTower, BluetoothUserCancelledError } from 'ultimatedarktower';
 import { UI } from './ui';
 import { TowerRelay, type TowerRelayEvent } from './towerRelay';
+import { ClientLogger } from './clientLogger';
 
 /**
  * App is the top-level controller.
@@ -20,11 +21,16 @@ import { TowerRelay, type TowerRelayEvent } from './towerRelay';
  */
 export class App {
   private readonly ui: UI;
+  private readonly logger: ClientLogger;
   private relay: TowerRelay | null = null;
   private tower: UltimateDarkTower | null = null;
 
+  /** Cached last command bytes for self-healing replay on tower reconnect. */
+  private lastCommandBytes: number[] | null = null;
+
   constructor() {
     this.ui = new UI();
+    this.logger = new ClientLogger();
   }
 
   /** Bind UI events and initialize the application. */
@@ -37,6 +43,13 @@ export class App {
 
     this.ui.connectBtn.addEventListener('click', () => void this.handleConnectClick());
     this.ui.towerBtn.addEventListener('click', () => void this.handleTowerClick());
+    this.ui.sendLogsBtn.addEventListener('click', () => {
+      this.logger.sendLogs();
+      this.ui.log('Logs sent to host.');
+    });
+    this.ui.downloadLogsBtn.addEventListener('click', () => {
+      this.logger.downloadAsFile();
+    });
 
     this.ui.log('DarkTowerSync client ready. Enter the host URL and connect.');
     this.ui.setRelayState('disconnected');
@@ -142,6 +155,12 @@ export class App {
         this.ui.towerBtn.disabled = false;
         this.ui.log('Tower calibrated and ready.');
         this.relay?.sendReady(true);
+
+        // Self-heal: replay last known command on tower reconnect.
+        if (this.lastCommandBytes) {
+          this.ui.log('Replaying last known command on reconnected tower…');
+          void this.replayOnTower(this.lastCommandBytes);
+        }
       };
 
       await tower.calibrate();
@@ -158,12 +177,14 @@ export class App {
   }
 
   /** Replay a 20-byte command on the local physical tower. */
-  private async replayOnTower(data: number[]): Promise<void> {
+  private async replayOnTower(data: number[], seq: number | null = null): Promise<void> {
     if (!this.tower?.isConnected || !this.tower.isCalibrated) return;
     try {
       await this.tower.sendTowerCommandDirect(new Uint8Array(data));
+      this.logger.logCommand('client→tower', data, seq);
       this.ui.log('Command replayed on tower.');
     } catch (err) {
+      this.logger.logEvent('error', `Tower write failed: ${String(err)}`);
       this.ui.log(`Tower write failed: ${String(err)}`);
     }
   }
@@ -181,18 +202,31 @@ export class App {
         this.ui.connectBtn.disabled = false;
         this.ui.towerBtn.disabled = false;
         this.ui.log('Connected to relay host.');
+        this.logger.setSendFn((json) => this.relay?.sendRaw(json));
+        this.logger.setAutoSend(true);
+        this.logger.logEvent('event', 'Connected to relay host');
         // If tower is already calibrated, signal readiness immediately.
         if (this.tower?.isConnected && this.tower?.isCalibrated) {
           this.relay?.sendReady(true);
         }
+        // Clear pause overlay on reconnect (we're back online).
+        this.ui.hidePauseOverlay();
         break;
 
       case 'relay:disconnected':
+        this.logger.flush();
+        this.logger.setAutoSend(false);
+        this.logger.logEvent('event', `Relay disconnected (code ${event.code})`);
         this.ui.setRelayState('disconnected');
         this.ui.connectBtn.textContent = 'Connect to Host';
         this.ui.connectBtn.disabled = false;
         this.ui.towerBtn.disabled = true;
         this.ui.log(`Relay disconnected (code ${event.code}).`);
+        break;
+
+      case 'relay:reconnecting':
+        this.ui.setRelayState('connecting', `Reconnecting in ${Math.round(event.delayMs / 1000)}s (attempt ${event.attempt})…`);
+        this.ui.log(`Reconnecting in ${Math.round(event.delayMs / 1000)}s (attempt ${event.attempt})…`);
         break;
 
       case 'relay:error':
@@ -201,13 +235,26 @@ export class App {
         this.ui.log('Relay connection error.');
         break;
 
+      case 'relay:paused':
+        this.ui.showPauseOverlay('Host tower disconnected — game paused. Waiting for host to reconnect…');
+        this.ui.log(`Game paused: ${event.reason}`);
+        break;
+
+      case 'relay:resumed':
+        this.ui.hidePauseOverlay();
+        this.ui.log('Game resumed — host tower reconnected.');
+        break;
+
       case 'tower:command':
+        this.lastCommandBytes = event.data;
+        this.logger.logCommand('client←host', event.data, event.seq);
         this.ui.log(`Command received: [${event.data.slice(0, 4).join(', ')}…]`);
-        void this.replayOnTower(event.data);
+        void this.replayOnTower(event.data, event.seq);
         break;
 
       case 'sync:state':
         if (event.lastCommand) {
+          this.lastCommandBytes = event.lastCommand;
           this.ui.log('Received full tower state sync from host.');
           void this.replayOnTower(event.lastCommand);
         } else {
@@ -225,6 +272,19 @@ export class App {
 
       case 'host:status':
         this.ui.setRelayState('connected', `Connected (${event.status.clientCount} players)`);
+        break;
+
+      case 'host:log-config':
+        this.logger.setAutoSend(event.enabled);
+        this.ui.log(`Host ${event.enabled ? 'enabled' : 'disabled'} automatic log submission.`);
+        break;
+
+      case 'relay:tower:alert':
+        if (event.towerConnected) {
+          this.ui.log(`${event.label ?? event.clientId.slice(0, 8)}'s tower reconnected.`);
+        } else {
+          this.ui.log(`${event.label ?? event.clientId.slice(0, 8)}'s tower disconnected.`);
+        }
         break;
     }
   }

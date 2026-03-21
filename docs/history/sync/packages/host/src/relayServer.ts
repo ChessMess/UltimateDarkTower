@@ -20,12 +20,17 @@ import {
   makeTowerCommandMessage,
   makeSyncStateMessage,
   makeHostStatusMessage,
+  makeHostLogConfigMessage,
+  makeRelayPausedMessage,
+  makeRelayResumedMessage,
+  makeRelayTowerAlertMessage,
   PROTOCOL_VERSION,
   type TowerCommandBytes,
   type FakeTowerState,
   type ConnectedClient,
   type ClientConnectedMessage,
   type ClientDisconnectedMessage,
+  type LogEntry,
 } from '@dark-tower-sync/shared';
 import { ConnectionManager } from './connectionManager';
 
@@ -35,6 +40,8 @@ export interface RelayServerOptions {
   port?: number;
   /** Host/interface to bind. Default: '0.0.0.0' (all interfaces). */
   host?: string;
+  /** Called when a client submits a batch of log entries via `client:log`. */
+  onClientLog?: (clientId: string, entries: LogEntry[]) => void;
 }
 
 interface RelayServerEventMap {
@@ -62,14 +69,17 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
   private lastCommandAt: string | null = null;
   private fakeTowerState: FakeTowerState = 'idle';
   private statusInterval: ReturnType<typeof setInterval> | null = null;
+  private _seq = 0;
 
   private readonly port: number;
   private readonly host: string;
+  private readonly onClientLog?: (clientId: string, entries: LogEntry[]) => void;
 
   constructor(options: RelayServerOptions = {}) {
     super();
     this.port = options.port ?? 8765;
     this.host = options.host ?? '0.0.0.0';
+    this.onClientLog = options.onClientLog;
   }
 
   /**
@@ -103,29 +113,48 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
         };
         this.manager.broadcast(JSON.stringify(connectedMsg));
 
-        // 3. Register the client.
-        this.manager.add(clientId, socket);
+        // 3. Register the client (with handshake timeout).
+        const { onHandshakeTimeout } = this.manager.add(clientId, socket);
+        onHandshakeTimeout(() => {
+          // Clean up and notify on handshake timeout.
+          this.manager.remove(clientId);
+          this.emit('client-change', this.manager.getAll());
+        });
         this.emit('client-change', this.manager.getAll());
 
-        // 4. Parse CLIENT_HELLO to capture the player's chosen label.
+        // 4. Parse incoming messages.
         socket.on('message', (raw: Buffer) => {
           try {
-            const msg = JSON.parse(raw.toString()) as { type?: string; payload?: { label?: string; protocolVersion?: string } };
+            const msg = JSON.parse(raw.toString()) as { type?: string; payload?: Record<string, unknown> };
             if (msg.type === MessageType.CLIENT_HELLO && msg.payload) {
-              if (msg.payload.protocolVersion !== PROTOCOL_VERSION) {
-                console.warn(`[relay] Client ${clientId} protocol mismatch: ${msg.payload.protocolVersion} vs ${PROTOCOL_VERSION}`);
+              this.manager.markHandshakeComplete(clientId);
+              if ((msg.payload as { protocolVersion?: string }).protocolVersion !== PROTOCOL_VERSION) {
+                console.warn(`[relay] Client ${clientId} protocol mismatch: ${(msg.payload as { protocolVersion?: string }).protocolVersion} vs ${PROTOCOL_VERSION}`);
               }
               const client = this.manager.get(clientId);
-              if (client && msg.payload.label) {
-                client.label = msg.payload.label;
+              if (client && (msg.payload as { label?: string }).label) {
+                client.label = (msg.payload as { label?: string }).label;
                 // Re-broadcast updated client list.
                 this.emit('client-change', this.manager.getAll());
               }
             } else if (msg.type === MessageType.CLIENT_READY && msg.payload) {
               const client = this.manager.get(clientId);
               if (client) {
-                client.state = (msg.payload as { ready?: boolean }).ready ? 'ready' : 'connected';
+                const ready = (msg.payload as { ready?: boolean }).ready ?? false;
+                client.state = ready ? 'ready' : 'connected';
+                client.towerConnected = ready;
+                client.towerLastSeenAt = Date.now();
+
+                // Broadcast tower alert so all clients know about this player's tower status.
+                const alertMsg = makeRelayTowerAlertMessage(clientId, ready, client.label);
+                this.manager.broadcast(JSON.stringify(alertMsg));
+
                 this.emit('client-change', this.manager.getAll());
+              }
+            } else if (msg.type === MessageType.CLIENT_LOG && msg.payload) {
+              const entries = (msg.payload as { entries?: LogEntry[] }).entries;
+              if (entries && this.onClientLog) {
+                this.onClientLog(clientId, entries);
               }
             }
           } catch {
@@ -160,6 +189,8 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
       this.statusInterval = null;
     }
 
+    this.manager.destroy();
+
     return new Promise<void>((resolve) => {
       if (!this.wss) {
         resolve();
@@ -176,11 +207,22 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
    * Broadcast a raw tower command to all connected clients.
    *
    * Updates the lastCommand record for sync:state catchup of late joiners.
+   * @returns The monotonic sequence number assigned to this command.
    */
-  broadcast(data: TowerCommandBytes): void {
-    const message = makeTowerCommandMessage(data);
+  broadcast(data: TowerCommandBytes): number {
+    const seq = ++this._seq;
+    const message = makeTowerCommandMessage(data, seq);
     this.lastCommand = message.payload.data;
     this.lastCommandAt = message.timestamp;
+    this.manager.broadcast(JSON.stringify(message));
+    return seq;
+  }
+
+  /**
+   * Broadcast a log-config message telling clients to enable or disable auto-send.
+   */
+  broadcastLogConfig(enabled: boolean): void {
+    const message = makeHostLogConfigMessage(enabled);
     this.manager.broadcast(JSON.stringify(message));
   }
 
@@ -191,11 +233,34 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
     this.fakeTowerState = state;
   }
 
+  /**
+   * Broadcast an immediate relay:paused message to all clients.
+   * Called when the companion app disconnects from FakeTower.
+   */
+  broadcastPaused(reason: string): void {
+    const message = makeRelayPausedMessage(reason);
+    this.manager.broadcast(JSON.stringify(message));
+    // Also push an immediate status update so clients don't wait for the 5s tick.
+    this.broadcastStatus();
+  }
+
+  /**
+   * Broadcast an immediate relay:resumed message to all clients.
+   * Called when the companion app reconnects to FakeTower.
+   */
+  broadcastResumed(): void {
+    const message = makeRelayResumedMessage();
+    this.manager.broadcast(JSON.stringify(message));
+    this.broadcastStatus();
+  }
+
   private broadcastStatus(): void {
     const message = makeHostStatusMessage({
       relaying: this.wss !== null,
       fakeTowerState: this.fakeTowerState,
+      appConnected: this.fakeTowerState === 'connected',
       clientCount: this.manager.count,
+      towersConnected: this.manager.towersConnected,
       lastCommandAt: this.lastCommandAt,
     });
     this.manager.broadcast(JSON.stringify(message));

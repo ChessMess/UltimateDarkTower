@@ -26,12 +26,17 @@ import {
 export type TowerRelayEvent =
   | { type: 'relay:connected' }
   | { type: 'relay:disconnected'; code: number; reason: string }
+  | { type: 'relay:reconnecting'; attempt: number; delayMs: number }
   | { type: 'relay:error'; error: Event }
-  | { type: 'tower:command'; data: number[] }
+  | { type: 'relay:paused'; reason: string }
+  | { type: 'relay:resumed' }
+  | { type: 'tower:command'; data: number[]; seq: number | null }
   | { type: 'sync:state'; lastCommand: number[] | null }
   | { type: 'client:connected'; clientId: string; label?: string }
   | { type: 'client:disconnected'; clientId: string }
-  | { type: 'host:status'; status: HostStatus };
+  | { type: 'host:status'; status: HostStatus }
+  | { type: 'host:log-config'; enabled: boolean }
+  | { type: 'relay:tower:alert'; clientId: string; label?: string; towerConnected: boolean };
 
 export type TowerRelayEventHandler = (event: TowerRelayEvent) => void;
 
@@ -74,6 +79,9 @@ export class TowerRelay {
    * @param url - WebSocket URL of the relay host (e.g., 'ws://192.168.1.5:8765').
    */
   async connect(url: string): Promise<void> {
+    // Guard against reconnect timer race — cancel any pending reconnect.
+    this.clearReconnectTimer();
+
     this.lastUrl = url;
     this.autoReconnect = true;
 
@@ -138,6 +146,12 @@ export class TowerRelay {
     this.ws!.send(JSON.stringify(makeClientReadyMessage(ready)));
   }
 
+  /** Send a pre-serialized JSON string over the WebSocket (used by ClientLogger). */
+  sendRaw(json: string): void {
+    if (!this.isConnected) return;
+    this.ws!.send(json);
+  }
+
   /** Close the WebSocket connection cleanly. */
   disconnect(): void {
     this.autoReconnect = false;
@@ -182,6 +196,29 @@ export class TowerRelay {
           clientId: message.payload.clientId,
         });
         break;
+      case MessageType.HOST_LOG_CONFIG:
+        this.onEvent({
+          type: 'host:log-config',
+          enabled: message.payload.enabled,
+        });
+        break;
+      case MessageType.RELAY_PAUSED:
+        this.onEvent({
+          type: 'relay:paused',
+          reason: message.payload.reason,
+        });
+        break;
+      case MessageType.RELAY_RESUMED:
+        this.onEvent({ type: 'relay:resumed' });
+        break;
+      case MessageType.RELAY_TOWER_ALERT:
+        this.onEvent({
+          type: 'relay:tower:alert',
+          clientId: message.payload.clientId,
+          label: message.payload.label,
+          towerConnected: message.payload.towerConnected,
+        });
+        break;
       default:
         // Unknown message type — ignore safely.
         break;
@@ -190,7 +227,7 @@ export class TowerRelay {
 
   /** Emit a tower command event to the caller for UI display and tower replay. */
   private handleTowerCommand(message: TowerCommandMessage): void {
-    this.onEvent({ type: 'tower:command', data: message.payload.data });
+    this.onEvent({ type: 'tower:command', data: message.payload.data, seq: message.payload.seq ?? null });
   }
 
   /** Emit a sync state event so the caller can replay the last command on connect. */
@@ -205,6 +242,7 @@ export class TowerRelay {
   private scheduleReconnect(): void {
     const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30_000);
     this.reconnectAttempts++;
+    this.onEvent({ type: 'relay:reconnecting', attempt: this.reconnectAttempts, delayMs: delay });
     this.reconnectTimer = setTimeout(() => {
       if (this.lastUrl && this.autoReconnect) {
         void this.connect(this.lastUrl).catch(() => {

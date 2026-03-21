@@ -15,6 +15,9 @@ interface DarkTowerSyncAPI {
   triggerSkullDrop(): Promise<{ ok: boolean; reason?: string }>;
   startTowerAdvertising(): Promise<{ ok: boolean; reason?: string }>;
   stopTowerAdvertising(): Promise<{ ok: boolean; reason?: string }>;
+  toggleLogging(): Promise<{ enabled: boolean }>;
+  getLoggingState(): Promise<{ enabled: boolean }>;
+  openLogDir(): Promise<void>;
 }
 
 declare global {
@@ -41,6 +44,12 @@ const skullDropFeedbackEl = document.getElementById('skull-drop-feedback') as HT
 const startAdvertisingBtnEl = document.getElementById('btn-start-advertising') as HTMLButtonElement;
 const stopBleBtnEl = document.getElementById('btn-stop-ble') as HTMLButtonElement;
 const bleControlFeedbackEl = document.getElementById('ble-control-feedback') as HTMLSpanElement;
+const loggingStateDotEl = document.getElementById('logging-state-dot') as HTMLSpanElement;
+const loggingStateLabelEl = document.getElementById('logging-state-label') as HTMLSpanElement;
+const loggingBadgeEl = document.getElementById('logging-state-badge') as HTMLSpanElement;
+const toggleLoggingBtnEl = document.getElementById('btn-toggle-logging') as HTMLButtonElement;
+const openLogsBtnEl = document.getElementById('btn-open-logs') as HTMLButtonElement;
+const loggingFeedbackEl = document.getElementById('logging-feedback') as HTMLSpanElement;
 
 // ─── State labels and colours ─────────────────────────────────────────────────
 
@@ -89,9 +98,56 @@ function setClients(clients: ConnectedClient[]): void {
   for (const client of clients) {
     const li = document.createElement('li');
     const name = client.label ?? client.id;
-    const badge = client.state === 'ready' ? ' [ready]' : ' [connecting tower…]';
-    li.textContent = `${name}${badge}`;
+
+    // Per-player relay + tower health indicators
+    const relayBadge = '\u2713'; // ✓
+    const towerIcon = client.towerConnected ? '\u2713' : '\u2717'; // ✓ or ✗
+    const towerClass = client.towerConnected ? 'tower-ok' : 'tower-disconnected';
+
+    li.innerHTML = `<span class="client-name">${escapeHtml(name)}</span>` +
+      `<span class="client-health">` +
+      `<span class="health-relay" title="Relay connected">${relayBadge}</span>` +
+      `<span class="health-tower ${towerClass}" title="Tower ${client.towerConnected ? 'connected' : 'disconnected'}">${towerIcon}</span>` +
+      `</span>`;
+
+    if (!client.towerConnected && client.state !== 'connected') {
+      li.classList.add('client-alert');
+    }
     clientListEl.appendChild(li);
+  }
+
+  // Show alert banner if any previously-seen tower is now disconnected
+  const alertPlayers = clients.filter(c => !c.towerConnected && c.towerLastSeenAt !== null);
+  if (alertPlayers.length > 0) {
+    const names = alertPlayers.map(c => c.label ?? c.id.slice(0, 8)).join(', ');
+    showClientAlert(`${names}'s tower is disconnected. Wait for them to reconnect.`);
+  } else {
+    hideClientAlert();
+  }
+}
+
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+let clientAlertEl: HTMLDivElement | null = null;
+
+function showClientAlert(message: string): void {
+  if (!clientAlertEl) {
+    clientAlertEl = document.createElement('div');
+    clientAlertEl.className = 'client-alert-banner';
+    const card = document.getElementById('card-clients');
+    card?.appendChild(clientAlertEl);
+  }
+  clientAlertEl.textContent = message;
+  clientAlertEl.hidden = false;
+}
+
+function hideClientAlert(): void {
+  if (clientAlertEl) {
+    clientAlertEl.hidden = true;
   }
 }
 
@@ -165,6 +221,25 @@ function showBleControlFeedback(ok: boolean, message: string): void {
   _bleControlFeedbackTimer = setTimeout(clearBleControlFeedback, 3000);
 }
 
+// ─── Logging state ───────────────────────────────────────────────────────────
+
+function setLoggingState(enabled: boolean): void {
+  loggingStateDotEl.className = `dot ${enabled ? 'state-connected' : 'state-idle'}`;
+  loggingStateLabelEl.textContent = enabled ? 'Active — recording to file' : 'Paused — not recording';
+  loggingBadgeEl.textContent = enabled ? 'ON' : 'OFF';
+  toggleLoggingBtnEl.textContent = enabled ? 'Pause Logging' : 'Resume Logging';
+}
+
+let _loggingFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+function showLoggingFeedback(ok: boolean, message: string): void {
+  if (_loggingFeedbackTimer) { clearTimeout(_loggingFeedbackTimer); _loggingFeedbackTimer = null; }
+  loggingFeedbackEl.textContent = message;
+  loggingFeedbackEl.className = `action-feedback ${ok ? 'feedback-ok' : 'feedback-err'}`;
+  loggingFeedbackEl.hidden = false;
+  _loggingFeedbackTimer = setTimeout(() => { loggingFeedbackEl.hidden = true; }, 3000);
+}
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 async function init(): Promise<void> {
@@ -180,6 +255,8 @@ async function init(): Promise<void> {
   setRelayStatus(await api.getRelayStatus());
   const { state: initialBleState } = await api.getBleAdapterState();
   setBleAdapterState(initialBleState);
+  const { enabled: loggingEnabled } = await api.getLoggingState();
+  setLoggingState(loggingEnabled);
 
   api.onTowerState(({ state, detail }) => setTowerState(state, detail));
 
@@ -228,6 +305,24 @@ async function init(): Promise<void> {
       showBleControlFeedback(false, 'IPC error');
     });
     // Re-enable is driven by onTowerState when the tower state settles.
+  });
+
+  toggleLoggingBtnEl.addEventListener('click', () => {
+    toggleLoggingBtnEl.disabled = true;
+    api.toggleLogging().then(({ enabled }) => {
+      setLoggingState(enabled);
+      showLoggingFeedback(true, enabled ? 'Logging resumed' : 'Logging paused');
+    }).catch(() => {
+      showLoggingFeedback(false, 'IPC error');
+    }).finally(() => {
+      toggleLoggingBtnEl.disabled = false;
+    });
+  });
+
+  openLogsBtnEl.addEventListener('click', () => {
+    api.openLogDir().catch(() => {
+      showLoggingFeedback(false, 'Could not open logs folder');
+    });
   });
 }
 

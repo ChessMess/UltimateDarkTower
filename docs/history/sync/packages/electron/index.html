@@ -57,6 +57,20 @@
         <div class="stat-label">Last: <span id="last-command-at">—</span></div>
       </section>
 
+      <!-- Logging -->
+      <section class="card" id="card-logging">
+        <h2>Logging &nbsp;<span class="badge" id="logging-state-badge">ON</span></h2>
+        <div class="status-row">
+          <span id="logging-state-dot" class="dot state-connected"></span>
+          <span id="logging-state-label">Active — recording to file</span>
+        </div>
+        <div class="card-actions">
+          <button id="btn-toggle-logging" class="text-btn">Pause Logging</button>
+          <button id="btn-open-logs" class="text-btn">Open Logs Folder</button>
+          <span id="logging-feedback" class="action-feedback" hidden></span>
+        </div>
+      </section>
+
     </div>
   </div>
   <script type="module" src="/src/renderer/renderer.ts"></script>

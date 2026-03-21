@@ -18,11 +18,13 @@
 // Public API — re-export classes for use as a library (e.g., from Electron main).
 export { FakeTower } from './fakeTower';
 export { RelayServer } from './relayServer';
+export { HostLogger } from './logger';
 export type { RelayServerOptions } from './relayServer';
 export type { CommandReceivedCallback } from './fakeTower';
 
 import { FakeTower } from './fakeTower';
 import { RelayServer } from './relayServer';
+import { HostLogger } from './logger';
 import { PROTOCOL_VERSION } from '@dark-tower-sync/shared';
 
 const DEFAULT_PORT = 8765;
@@ -31,12 +33,18 @@ async function main(): Promise<void> {
   console.log(`DarkTowerSync host v${PROTOCOL_VERSION}`);
 
   const port = Number(process.env['RELAY_PORT'] ?? DEFAULT_PORT);
-  const relay = new RelayServer({ port });
+  const logger = new HostLogger('./logs', process.env['LOGGING'] !== '0');
+  const relay = new RelayServer({
+    port,
+    onClientLog: (clientId, entries) => logger.writeClientEntries(clientId, entries),
+  });
   const tower = new FakeTower();
 
   // Wire tower commands → relay broadcast.
   tower.onCommandReceived = (data) => {
-    relay.broadcast(data);
+    logger.logCommand('companion→host', data, null, 'companion');
+    const seq = relay.broadcast(data);
+    logger.logCommand('host→clients', data, seq, 'host');
   };
   tower.on('state-change', (state) => {
     relay.setFakeTowerState(state);
@@ -53,6 +61,7 @@ async function main(): Promise<void> {
     console.log('\nShutting down…');
     await tower.stopAdvertising();
     await relay.stop();
+    await logger.close();
     process.exit(0);
   };
 
