@@ -94,20 +94,19 @@ npm run dev:host
 
 ### Run the Client
 
-```bash
-npm run dev:client
-# Opens http://localhost:3000
-# Enter the host's LAN IP: ws://192.168.x.x:8765
-# Click "Connect to Tower" to pair via Web Bluetooth
-```
+Remote players open the hosted client — no install required:
+
+**[https://chessmess.github.io/UltimateDarkTowerSync/](https://chessmess.github.io/UltimateDarkTowerSync/)**
+
+Enter the host's WebSocket address (`ws://192.168.x.x:8765`) and click **Connect to Tower** to pair via Web Bluetooth.
+
+> **Developing locally?** Run `npm run dev:client` to open `http://localhost:3000` instead.
 
 ### Observer Mode (no tower needed)
 
-Open the client with `?observer` in the URL:
+Add `?observer` to the client URL:
 
-```
-http://localhost:3000/?observer
-```
+**[https://chessmess.github.io/UltimateDarkTowerSync/?observer](https://chessmess.github.io/UltimateDarkTowerSync/?observer)**
 
 The tower Bluetooth card is hidden and a live tower state visualizer appears instead — showing LEDs, drum positions, audio, and skull drops decoded in real time.
 
