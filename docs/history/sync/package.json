@@ -23,7 +23,7 @@
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js --fix",
     "lint:flat:preview": "ESLINT_USE_FLAT_CONFIG=true eslint .",
     "format": "prettier --write \"packages/*/src/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
-    "type-check": "tsc --build --noEmit && tsc --noEmit -p packages/client/tsconfig.json && tsc --noEmit -p packages/electron/tsconfig.json",
+    "type-check": "tsc --build && tsc --noEmit -p packages/client/tsconfig.json && tsc --noEmit -p packages/electron/tsconfig.json",
     "postinstall": "cd packages/electron && npx @electron/rebuild || true",
     "ci": "npm run lint && npm run type-check && npm run test && npm run build",
     "clean": "rm -rf packages/shared/dist packages/host/dist packages/client/dist coverage"
