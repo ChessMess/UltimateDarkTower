@@ -5,12 +5,11 @@
  * audio, and skull drop events into a DOM container.
  */
 
-import type { TowerState } from 'ultimatedarktower';
 import {
+  type TowerState,
   LIGHT_EFFECTS,
   GLYPHS,
   TOWER_AUDIO_LIBRARY,
-  TOWER_LAYERS,
   LAYER_TO_POSITION,
   LIGHT_INDEX_TO_DIRECTION,
   TOWER_LIGHT_SEQUENCES,
