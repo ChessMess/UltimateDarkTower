@@ -9,7 +9,7 @@
 
 import WebSocket from 'ws';
 import { RelayServer } from '../../packages/host/src/relayServer';
-import { MessageType, PROTOCOL_VERSION } from '@dark-tower-sync/shared';
+import { MessageType, PROTOCOL_VERSION, CLOSE_CODE_PROTOCOL_VERSION_MISMATCH } from '@dark-tower-sync/shared';
 
 const TEST_PORT = 19_876;
 const BASE_URL = `ws://127.0.0.1:${TEST_PORT}`;
@@ -164,5 +164,60 @@ describe('RelayServer — lifecycle', () => {
     expect(typeof msg.payload.clientId).toBe('string');
 
     clientB.close();
+  });
+
+  // ── protocol version enforcement ──────────────────────────────────────
+
+  it('disconnects a client with code 4000 when protocolVersion mismatches', async () => {
+    const { client } = await connectAndReceiveFirst();
+
+    const closePromise = new Promise<{ code: number; reason: string }>((resolve) => {
+      client.on('close', (code, reason) => {
+        resolve({ code, reason: reason.toString() });
+      });
+    });
+
+    // Send CLIENT_HELLO with a wrong protocol version.
+    client.send(
+      JSON.stringify({
+        type: MessageType.CLIENT_HELLO,
+        payload: { label: 'Old-Client', protocolVersion: '0.0.0' },
+        timestamp: new Date().toISOString(),
+      }),
+    );
+
+    const { code, reason } = await closePromise;
+    expect(code).toBe(CLOSE_CODE_PROTOCOL_VERSION_MISMATCH);
+    expect(reason).toContain('Protocol version mismatch');
+    expect(reason).toContain('0.0.0');
+  });
+
+  it('keeps a client connected when protocolVersion matches', async () => {
+    const client = await connectAndHandshake('MatchingClient');
+    expect(client.readyState).toBe(WebSocket.OPEN);
+    client.close();
+  });
+
+  it('disconnects a client with code 4000 when protocolVersion is missing', async () => {
+    const { client } = await connectAndReceiveFirst();
+
+    const closePromise = new Promise<{ code: number; reason: string }>((resolve) => {
+      client.on('close', (code, reason) => {
+        resolve({ code, reason: reason.toString() });
+      });
+    });
+
+    // Send CLIENT_HELLO without protocolVersion field.
+    client.send(
+      JSON.stringify({
+        type: MessageType.CLIENT_HELLO,
+        payload: { label: 'No-Version' },
+        timestamp: new Date().toISOString(),
+      }),
+    );
+
+    const { code, reason } = await closePromise;
+    expect(code).toBe(CLOSE_CODE_PROTOCOL_VERSION_MISMATCH);
+    expect(reason).toContain('unknown');
   });
 });

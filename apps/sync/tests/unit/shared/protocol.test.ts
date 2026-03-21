@@ -8,6 +8,7 @@
 import {
   MessageType,
   PROTOCOL_VERSION,
+  CLOSE_CODE_PROTOCOL_VERSION_MISMATCH,
   makeTowerCommandMessage,
   makeSyncStateMessage,
   makeHostStatusMessage,
@@ -42,6 +43,12 @@ describe('PROTOCOL_VERSION', () => {
     expect(typeof PROTOCOL_VERSION).toBe('string');
     expect(PROTOCOL_VERSION.length).toBeGreaterThan(0);
     expect(PROTOCOL_VERSION).toMatch(/^\d+\.\d+\.\d+/);
+  });
+});
+
+describe('CLOSE_CODE_PROTOCOL_VERSION_MISMATCH', () => {
+  it('is the custom WebSocket close code 4000', () => {
+    expect(CLOSE_CODE_PROTOCOL_VERSION_MISMATCH).toBe(4000);
   });
 });
 

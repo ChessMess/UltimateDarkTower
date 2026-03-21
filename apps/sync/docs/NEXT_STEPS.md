@@ -54,20 +54,9 @@ Implemented. See [Completed](#completed) section below.
 
 ## Tier 2: Polish & Robustness
 
-### 4. Protocol Version Enforcement
+### ~~4. Protocol Version Enforcement~~ ✓
 
-**What:** Disconnect clients that send a mismatched `protocolVersion` in `client:hello` with an error message, rather than logging a warning and continuing.
-
-**Why it matters:** Spec section 5.2 notes "protocol version mismatch is logged as a warning, and the client is not forcibly disconnected." A version-mismatched client will receive commands it may misinterpret silently. Disconnecting with a clear reason message allows the client to show a user-visible "please reload to update" notice.
-
-**Scope:**
-- `relayServer.ts`: check `payload.protocolVersion` against `PROTOCOL_VERSION`; if mismatch, send an error message and close the socket with code 4000
-- `towerRelay.ts` (client): handle close code 4000 — show "version mismatch, please hard-reload" overlay, do not auto-reconnect
-- Add `PROTOCOL_VERSION_MISMATCH = 4000` to shared constants
-
-**Key files:** `packages/host/src/relayServer.ts`, `packages/client/src/towerRelay.ts`, `packages/shared/src/protocol.ts`
-
-**Verification:** Test with a client on an old protocol version; confirm it is disconnected cleanly and the UI shows the mismatch notice.
+Implemented. See [Completed](#completed) section below.
 
 ---
 
@@ -101,7 +90,7 @@ Implemented. See [Completed](#completed) section below.
 | 1 | Expand test suite | Medium | High — confidence before release |
 | 2 | Log rotation | Small | High — prevents operational failures |
 | 3 | Hosted client (GitHub Pages) | Small | Very high — removes all remote player friction |
-| 4 | Protocol version enforcement | Small | Medium — correctness guard |
+| ~~4~~ | ~~Protocol version enforcement~~ | ~~Small~~ | ~~Medium — correctness guard~~ ✓ |
 | ~~5~~ | ~~Observer mode~~ | ~~Medium~~ | ~~Medium — usability for spectators~~ ✓ |
 | 6 | v0.1.0 release workflow | Small | High — distributable artifact |
 
@@ -139,3 +128,14 @@ opens (`session-{ts}-host-2.jsonl`, `-3.jsonl`, etc.). Host and all streams rota
 independently. Electron host defaults to 10 MB per file. A `pruneOldLogs(dir, maxAgeDays)`
 utility deletes `.jsonl` files older than 30 days and is called fire-and-forget at
 Electron startup. Added 7 tests covering rotation behavior and pruning edge cases.
+
+### Protocol Version Enforcement ✓
+
+The host now enforces protocol version matching during the `client:hello` handshake.
+If a client's `protocolVersion` does not match `PROTOCOL_VERSION`, the server closes
+the socket with custom close code `4000` (`CLOSE_CODE_PROTOCOL_VERSION_MISMATCH`)
+and a human-readable reason string. On the client side, `TowerRelay` detects close
+code 4000, suppresses auto-reconnect, and emits a `relay:version-mismatch` event so
+the UI can display a "please hard-reload" overlay. Added 3 integration tests (mismatch
+disconnect, matching version stays connected, missing version treated as mismatch) and
+1 unit test for the close code constant.

@@ -14,6 +14,7 @@
 import {
   MessageType,
   PROTOCOL_VERSION,
+  CLOSE_CODE_PROTOCOL_VERSION_MISMATCH,
   makeClientReadyMessage,
   type RelayMessage,
   type TowerCommandMessage,
@@ -36,7 +37,8 @@ export type TowerRelayEvent =
   | { type: 'client:disconnected'; clientId: string }
   | { type: 'host:status'; status: HostStatus }
   | { type: 'host:log-config'; enabled: boolean }
-  | { type: 'relay:tower:alert'; clientId: string; label?: string; towerConnected: boolean };
+  | { type: 'relay:tower:alert'; clientId: string; label?: string; towerConnected: boolean }
+  | { type: 'relay:version-mismatch'; reason: string };
 
 export type TowerRelayEventHandler = (event: TowerRelayEvent) => void;
 
@@ -128,6 +130,13 @@ export class TowerRelay {
           code: event.code,
           reason: event.reason,
         });
+
+        // Version mismatch — do NOT auto-reconnect; a hard reload is required.
+        if (event.code === CLOSE_CODE_PROTOCOL_VERSION_MISMATCH) {
+          this.autoReconnect = false;
+          this.onEvent({ type: 'relay:version-mismatch', reason: event.reason });
+          return;
+        }
 
         // Auto-reconnect on non-clean close.
         if (this.autoReconnect && event.code !== 1000) {

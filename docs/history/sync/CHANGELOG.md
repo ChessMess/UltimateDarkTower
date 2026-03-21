@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added
 
+- **Protocol version enforcement** — the host now disconnects clients whose
+  `protocolVersion` in `client:hello` does not match `PROTOCOL_VERSION`, using
+  custom WebSocket close code `4000` (`CLOSE_CODE_PROTOCOL_VERSION_MISMATCH`).
+  The client suppresses auto-reconnect on code 4000 and emits a
+  `relay:version-mismatch` event so the UI can show a "please hard-reload"
+  overlay. Added integration tests for mismatch, match, and missing-version
+  scenarios.
+
 - **Log file rotation** — `HostLogger` accepts a `maxFileSizeBytes` option; when a
   log file exceeds the limit, the current stream closes and a new numbered segment
   opens (`session-{ts}-host-2.jsonl`). Electron host defaults to 10 MB per file.

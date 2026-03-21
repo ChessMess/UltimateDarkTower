@@ -17,6 +17,7 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
 import {
   MessageType,
+  CLOSE_CODE_PROTOCOL_VERSION_MISMATCH,
   makeTowerCommandMessage,
   makeSyncStateMessage,
   makeHostStatusMessage,
@@ -128,8 +129,12 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
             const msg = JSON.parse(raw.toString()) as { type?: string; payload?: Record<string, unknown> };
             if (msg.type === MessageType.CLIENT_HELLO && msg.payload) {
               this.manager.markHandshakeComplete(clientId);
-              if ((msg.payload as { protocolVersion?: string }).protocolVersion !== PROTOCOL_VERSION) {
-                console.warn(`[relay] Client ${clientId} protocol mismatch: ${(msg.payload as { protocolVersion?: string }).protocolVersion} vs ${PROTOCOL_VERSION}`);
+              const clientVersion = (msg.payload as { protocolVersion?: string }).protocolVersion;
+              if (clientVersion !== PROTOCOL_VERSION) {
+                console.warn(`[relay] Client ${clientId} protocol mismatch: ${clientVersion} vs ${PROTOCOL_VERSION}`);
+                const reason = `Protocol version mismatch: client=${clientVersion ?? 'unknown'} server=${PROTOCOL_VERSION}`;
+                socket.close(CLOSE_CODE_PROTOCOL_VERSION_MISMATCH, reason);
+                return;
               }
               const client = this.manager.get(clientId);
               if (client) {

@@ -12,6 +12,17 @@ import type { TowerCommandBytes, HostStatus, ClientId } from './types';
 import type { LogEntry } from './logging';
 
 // ---------------------------------------------------------------------------
+// WebSocket close codes
+// ---------------------------------------------------------------------------
+
+/**
+ * Custom WebSocket close code sent by the host when a client's
+ * `protocolVersion` in `client:hello` does not match the server's version.
+ * Clients should NOT auto-reconnect on this code — a hard reload is required.
+ */
+export const CLOSE_CODE_PROTOCOL_VERSION_MISMATCH = 4000;
+
+// ---------------------------------------------------------------------------
 // Message type literals
 // ---------------------------------------------------------------------------
 
