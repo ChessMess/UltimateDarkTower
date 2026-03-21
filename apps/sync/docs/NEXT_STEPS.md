@@ -1,0 +1,146 @@
+# DarkTowerSync: Next Engineering Steps
+
+## Context
+
+The project is functionally complete for its core use case — the relay system, BLE interception, client Web Bluetooth replay, logging, resilience, and Electron dashboard are all implemented and working. Version 0.1.0 is unreleased. The codebase is clean and well-documented.
+
+The gaps are: low test coverage (27 passing, mostly protocol factories), operational risks (unbounded log growth), and friction for end users (remote players must run a local dev server to access the client). Addressing these three areas transforms the project from "works on my machine" into something genuinely distributable and trustworthy.
+
+---
+
+## Tier 1: Core Quality & Usability (do next)
+
+### 1. Expand Test Suite
+
+**What:** Add unit tests for HostLogger and ClientLogger, integration tests for relay connection lifecycle, and protocol conformance tests. Spec section 15 explicitly lists these as the top 3 suggested next steps.
+
+**Why it matters:** The existing 27 tests only cover protocol message shape. The most complex logic (ping/pong keepalive, handshake timeout, zombie cleanup, ring buffer auto-send, log file writes) has zero test coverage. A failure here would be invisible until a live game session.
+
+**Scope:**
+- `tests/unit/host/logger.test.ts` — HostLogger: write entry, master switch no-op, session file naming
+- `tests/unit/client/clientLogger.test.ts` — ring buffer eviction at 500, auto-send batching, flush on disconnect
+- `tests/integration/relayLifecycle.test.ts` — client connect → hello → sync:state → disconnect flow; handshake timeout fires for zombie; ping/pong terminates unresponsive client
+- `tests/unit/shared/protocol.test.ts` (extend) — malformed input handling, protocol version mismatch messages
+
+**Key files:** `packages/host/src/logger.ts`, `packages/client/src/clientLogger.ts`, `packages/host/src/relayServer.ts`, `packages/host/src/connectionManager.ts`
+
+**Verification:** `npm test` all green; CI matrix catches regressions.
+
+---
+
+### 2. Log File Rotation / Size Cap
+
+**What:** Cap log files at a configurable size (e.g. 50 MB default) and rotate to a new file when the cap is hit. Optionally delete session files older than N days.
+
+**Why it matters:** Spec section 14 explicitly calls out "Log files grow without bound during long sessions." An 8-hour game session could generate hundreds of MBs. This becomes a real operational problem for the Electron app which stores logs in `userData`.
+
+**Scope:**
+- Add `maxFileSizeBytes` and `maxAgeDays` options to `HostLogger` constructor
+- On each `write()`, check stream byte count; if exceeded, close current stream and open `session-{date}-host-{n}.jsonl`
+- Add a `pruneOldLogs(dir, maxAgeDays)` utility called at startup
+- Expose `maxFileSizeMB` as a configurable option in Electron (env var or IPC)
+
+**Key files:** `packages/host/src/logger.ts`, `packages/electron/src/main/main.ts`
+
+**Verification:** Integration test that writes >N bytes to a HostLogger and asserts rotation creates a second file.
+
+---
+
+### 3. Hosted Client via GitHub Pages
+
+**What:** Add a GitHub Actions workflow that builds and deploys the Vite client to GitHub Pages on every push to `main`. Remote players open a URL in Chrome instead of cloning the repo and running `npm run dev:client`.
+
+**Why it matters:** Currently, remote players need Node.js, `npm install`, and `npm run dev:client` just to participate. This is the single biggest friction point for real use. A hosted URL eliminates all of it.
+
+**Scope:**
+- New workflow: `.github/workflows/deploy-client.yml` — build `packages/client`, upload `dist/` as Pages artifact
+- Update `packages/client/vite.config.ts`: set `base` to the GitHub Pages path (e.g. `/UltimateDarkTowerSync/`)
+- Update README with the hosted URL and note that users enter the host's relay address into the client
+- The host URL input already persists in localStorage — no other client changes needed
+
+**Key files:** `packages/client/vite.config.ts`, `.github/workflows/deploy-client.yml`, `README.md`
+
+**Verification:** Push to `main`, confirm Pages deploys, open URL in Chrome, enter a host WebSocket address, verify connection and tower pairing work end-to-end.
+
+---
+
+## Tier 2: Polish & Robustness
+
+### 4. Protocol Version Enforcement
+
+**What:** Disconnect clients that send a mismatched `protocolVersion` in `client:hello` with an error message, rather than logging a warning and continuing.
+
+**Why it matters:** Spec section 5.2 notes "protocol version mismatch is logged as a warning, and the client is not forcibly disconnected." A version-mismatched client will receive commands it may misinterpret silently. Disconnecting with a clear reason message allows the client to show a user-visible "please reload to update" notice.
+
+**Scope:**
+- `relayServer.ts`: check `payload.protocolVersion` against `PROTOCOL_VERSION`; if mismatch, send an error message and close the socket with code 4000
+- `towerRelay.ts` (client): handle close code 4000 — show "version mismatch, please hard-reload" overlay, do not auto-reconnect
+- Add `PROTOCOL_VERSION_MISMATCH = 4000` to shared constants
+
+**Key files:** `packages/host/src/relayServer.ts`, `packages/client/src/towerRelay.ts`, `packages/shared/src/protocol.ts`
+
+**Verification:** Test with a client on an old protocol version; confirm it is disconnected cleanly and the UI shows the mismatch notice.
+
+---
+
+### 5. Observer Mode (No-Tower Client)
+
+**What:** Allow a client to connect to the relay, receive commands, and see decoded game state in the UI without requiring a physical tower or Web Bluetooth.
+
+**Why it matters:** Useful for spectators, the host watching from a browser, and debugging sessions where no tower hardware is available. Currently the client silently fails to do anything useful without a paired tower.
+
+**Scope:**
+- Add an "Observer" toggle in the client UI (before connecting to tower)
+- In `app.ts`: if observer mode, skip BLE connect and `client:ready` signaling; display decoded command data in a read-only view instead
+- `towerRelay.ts`: when observer, send `client:hello` with `{ label, observer: true }` so host can distinguish
+- In Electron dashboard: show observer count separately from ready players
+
+**Key files:** `packages/client/src/app.ts`, `packages/client/src/ui.ts`, `packages/client/src/towerRelay.ts`, `packages/host/src/relayServer.ts`, `packages/electron/src/renderer/renderer.ts`
+
+---
+
+### 6. Wire CommandParser into Relay Path
+
+**What:** The spec notes "CommandParser exists but is not currently in the active relay path from FakeTower to RelayServer." Connect it so invalid packets are rejected before broadcast rather than silently relayed.
+
+**Why it matters:** Currently, a malformed packet (wrong length) would be broadcast to all clients. Wiring CommandParser in is low-risk and closes a gap the spec explicitly flags.
+
+**Scope:**
+- In `packages/host/src/index.ts` and `packages/electron/src/main/main.ts`, wrap the `command` event handler: `if (!parser.isValid(bytes)) { logger.warn(...); return; }`
+- Add `CommandParser` instantiation to both entry points
+- Add test: `commandParser.isValid` rejects non-20-byte input
+
+**Key files:** `packages/host/src/index.ts`, `packages/electron/src/main/main.ts`, `packages/host/src/commandParser.ts`
+
+---
+
+## Tier 3: Release Readiness
+
+### 7. First Release (v0.1.0) Workflow
+
+**What:** Tag a `v0.1.0` release with a GitHub Actions workflow that builds the Electron DMG (macOS) on tag push and attaches it to the GitHub release.
+
+**Why it matters:** Makes the project distributable without requiring the host to have Node.js or dev tools. The Electron app is the primary host UX.
+
+**Scope:**
+- `.github/workflows/release.yml` — triggered on `v*` tags; builds Electron via `electron-forge make`; uploads DMG as release artifact
+- Bump `version` in root and electron `package.json` to `0.1.0`
+- Write concise release notes in CHANGELOG summarizing the feature set
+
+**Key files:** `.github/workflows/release.yml`, `package.json`, `packages/electron/package.json`, `CHANGELOG.md`
+
+---
+
+## Execution Order
+
+| Priority | Task | Effort | Impact |
+|----------|------|--------|--------|
+| 1 | Expand test suite | Medium | High — confidence before release |
+| 2 | Log rotation | Small | High — prevents operational failures |
+| 3 | Hosted client (GitHub Pages) | Small | Very high — removes all remote player friction |
+| 4 | Protocol version enforcement | Small | Medium — correctness guard |
+| 5 | Observer mode | Medium | Medium — usability for spectators |
+| 6 | Wire CommandParser | Tiny | Low (correctness cleanup) |
+| 7 | v0.1.0 release workflow | Small | High — distributable artifact |
+
+Recommended sequence: complete Tier 1 items (1–3) together as a "pre-release quality pass," then Tier 2 items as game feature additions, then cut the release.
