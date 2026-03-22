@@ -7,14 +7,13 @@ export default defineConfig({
         // Native modules — must not be bundled; loaded at runtime from node_modules.
         '@stoprocent/bleno',
         '@stoprocent/noble',
-        // Workspace packages — loaded at runtime via npm workspace symlinks.
-        // Build them first with: npm run build:shared && npm run build:host
-        '@dark-tower-sync/host',
-        '@dark-tower-sync/shared',
         // Large CJS/ESM package that resolves cleanly at runtime.
         'ultimatedarktower',
         // Works better unbundled in Electron main.
         'ws',
+        // NOTE: @dark-tower-sync/host and @dark-tower-sync/shared are intentionally
+        // bundled (not external) so they are included in the packaged .asar.
+        // Workspace symlinks are not preserved during electron-forge make.
       ],
     },
   },
