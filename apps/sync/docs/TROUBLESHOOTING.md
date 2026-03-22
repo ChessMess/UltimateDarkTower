@@ -13,6 +13,7 @@ Common issues and recovery steps during a live game session.
 - ["Bluetooth permission denied on macOS"](#bluetooth-permission-denied-on-macos)
 - ["Web Bluetooth not available in my browser"](#web-bluetooth-not-available-in-my-browser)
 - ["The Electron app quits immediately on launch"](#the-electron-app-quits-immediately-on-launch)
+- ["DarkTowerSync is damaged and can't be opened"](#darktowersync-is-damaged-and-cant-be-opened)
 
 ---
 
@@ -88,4 +89,24 @@ The client page must be served over `https://` or `localhost`. When hosting on a
 3. Common causes:
    - **Native module ABI mismatch** — the app was built with a different Node.js version than Electron expects. Rebuild with `electron-rebuild` or use a locally-built DMG.
    - **`ELECTRON_RUN_AS_NODE=1` set in environment** — this makes Electron run as plain Node.js (no window, silent exit). Unset it: `env -u ELECTRON_RUN_AS_NODE /Applications/DarkTowerSync.app/Contents/MacOS/dark-tower-sync`
-   - **macOS code signing** — unsigned apps may be blocked by Gatekeeper. Right-click the app and choose "Open" to bypass for the first launch.
+   - **macOS Gatekeeper** — unsigned apps downloaded from the internet are blocked. See ["DarkTowerSync is damaged and can't be opened"](#darktowersync-is-damaged-and-cant-be-opened) below.
+
+---
+
+## "DarkTowerSync is damaged and can't be opened"
+
+This is macOS Gatekeeper blocking the app because it is not code-signed or notarized. It is **not** actually damaged — macOS adds a quarantine flag to all files downloaded from the internet, and unsigned apps are rejected.
+
+**Fix — remove the quarantine flag:**
+
+```
+xattr -cr /Applications/DarkTowerSync.app
+```
+
+Then open the app normally. You only need to do this once per download.
+
+**Alternative** — if you prefer not to use the terminal:
+
+1. Open **System Settings → Privacy & Security**.
+2. Scroll down — you should see a message about DarkTowerSync being blocked.
+3. Click **"Open Anyway"** and confirm.
