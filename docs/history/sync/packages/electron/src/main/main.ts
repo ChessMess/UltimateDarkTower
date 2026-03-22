@@ -1,10 +1,67 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import path from 'node:path';
-import started from 'electron-squirrel-startup';
-import { FakeTower, RelayServer, HostLogger, CommandParser, pruneOldLogs } from '@dark-tower-sync/host';
+import fs from 'node:fs';
+import os from 'node:os';
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+// ─── Early file logging (captures output when launched from Finder) ─────────
+// Set up BEFORE any native module imports so load failures are captured.
+// Uses os.tmpdir() as fallback — app.getPath('userData') can fail before ready
+// in some packaged Electron builds.
+let _startupLogDir: string;
+try {
+  _startupLogDir = app.getPath('userData');
+} catch {
+  _startupLogDir = path.join(os.tmpdir(), 'DarkTowerSync');
+}
+const startupLogPath = path.join(_startupLogDir, 'startup.log');
+fs.mkdirSync(_startupLogDir, { recursive: true });
+const _logStream = fs.createWriteStream(startupLogPath, { flags: 'w' });
+
+function _fileLog(level: string, ...args: unknown[]): void {
+  const ts = new Date().toISOString();
+  const msg = args
+    .map((a) =>
+      typeof a === 'string'
+        ? a
+        : a instanceof Error
+          ? a.stack ?? a.message
+          : JSON.stringify(a, null, 2),
+    )
+    .join(' ');
+  _logStream.write(`[${ts}] [${level}] ${msg}\n`);
+}
+
+const _origLog = console.log.bind(console);
+const _origWarn = console.warn.bind(console);
+const _origError = console.error.bind(console);
+
+console.log = (...args: unknown[]) => { _fileLog('LOG', ...args); _origLog(...args); };
+console.warn = (...args: unknown[]) => { _fileLog('WARN', ...args); _origWarn(...args); };
+console.error = (...args: unknown[]) => { _fileLog('ERROR', ...args); _origError(...args); };
+
+console.log('=== DarkTowerSync startup ===');
+console.log(`platform: ${process.platform}, arch: ${process.arch}`);
+console.log(`electron: ${process.versions.electron}, node: ${process.versions.node}`);
+console.log(`startupLog: ${startupLogPath}`);
+console.log(`execPath: ${process.execPath}`);
+console.log(`argv: ${JSON.stringify(process.argv)}`);
+console.log(`resourcesPath: ${process.resourcesPath ?? 'N/A'}`);
+console.log(`cwd: ${process.cwd()}`);
+
+process.on('uncaughtException', (err) => {
+  _fileLog('FATAL', `Uncaught exception: ${err.stack ?? err.message}`);
+  _logStream.end();
+});
+process.on('unhandledRejection', (reason) => {
+  _fileLog('FATAL', 'Unhandled rejection:', reason instanceof Error ? reason : String(reason));
+});
+
+// ─── Squirrel (Windows installer) check ─────────────────────────────────────
+import started from 'electron-squirrel-startup';
+
+console.log(`electron-squirrel-startup: ${started}`);
 if (started) {
+  console.log('Squirrel startup detected — quitting');
   app.quit();
 }
 
@@ -31,23 +88,23 @@ export const IPC = {
   OPEN_LOG_DIR: 'open-log-dir',
 } as const;
 
-// ─── Host services ───────────────────────────────────────────────────────────
-const logDir = path.join(app.getPath('userData'), 'logs');
-const logger = new HostLogger(logDir, {
-  enabled: process.env['LOGGING'] !== '0',
-  maxFileSizeBytes: 10 * 1024 * 1024, // 10 MB
-});
+// ─── Lazy-loaded host modules ───────────────────────────────────────────────
+// These are loaded inside initApp() so the file logging above captures any
+// native module load failures (e.g. @stoprocent/bleno ABI mismatch).
 
-// Best-effort cleanup of old log files at startup.
-pruneOldLogs(logDir, 30).then((n) => {
-  if (n > 0) console.log(`[main] Pruned ${n} old log file(s)`);
-}).catch(() => { /* best-effort */ });
-const relay = new RelayServer({
-  port: Number(process.env['RELAY_PORT'] ?? 8765),
-  onClientLog: (clientId, entries) => logger.writeClientEntries(clientId, entries),
-});
-const tower = new FakeTower();
-const parser = new CommandParser();
+type HostModule = typeof import('@dark-tower-sync/host');
+let FakeTower: HostModule['FakeTower'];
+let RelayServer: HostModule['RelayServer'];
+let HostLogger: HostModule['HostLogger'];
+let CommandParser: HostModule['CommandParser'];
+let pruneOldLogs: HostModule['pruneOldLogs'];
+
+// Module-scoped state (initialized in initApp)
+let relay: InstanceType<HostModule['RelayServer']>;
+let tower: InstanceType<HostModule['FakeTower']>;
+let parser: InstanceType<HostModule['CommandParser']>;
+let logger: InstanceType<HostModule['HostLogger']>;
+
 let commandCount = 0;
 let towerState: string = 'idle';
 let relayStatus: { running: boolean; port: number; message: string } = {
@@ -56,99 +113,7 @@ let relayStatus: { running: boolean; port: number; message: string } = {
   message: 'Starting…',
 };
 let bleAdapterState = 'unknown';
-
 let mainWindow: BrowserWindow | null = null;
-
-// ─── Wire tower → relay and IPC ─────────────────────────────────────────────
-
-tower.on('command', (data) => {
-  if (!parser.isValid(data)) {
-    console.warn('[main] Dropping invalid command: wrong byte length', Array.from(data).length);
-    return;
-  }
-  logger.logCommand('companion→host', data, null, 'companion');
-  const seq = relay.broadcast(data);
-  logger.logCommand('host→clients', data, seq, 'host');
-  commandCount += 1;
-  mainWindow?.webContents.send(IPC.TOWER_COMMAND, {
-    count: commandCount,
-    lastAt: new Date().toISOString(),
-  });
-});
-
-tower.on('state-change', (state) => {
-  towerState = state;
-  relay.setFakeTowerState(state);
-  mainWindow?.webContents.send(IPC.TOWER_STATE, { state });
-});
-
-tower.on('companion-disconnected', () => {
-  relay.broadcastPaused('Companion app disconnected from FakeTower');
-});
-
-tower.on('companion-connected', () => {
-  relay.broadcastResumed();
-});
-
-tower.on('ble-adapter-state', (state) => {
-  bleAdapterState = state;
-  mainWindow?.webContents.send(IPC.BLE_ADAPTER_STATE, { state });
-});
-
-relay.on('client-change', (clients) => {
-  mainWindow?.webContents.send(IPC.RELAY_CLIENT_CHANGE, { clients });
-});
-
-// ─── IPC handlers (renderer → main) ─────────────────────────────────────────
-
-ipcMain.handle(IPC.GET_VERSION, () => app.getVersion());
-ipcMain.handle(IPC.GET_RELAY_STATUS, () => relayStatus);
-ipcMain.handle(IPC.GET_BLE_STATE, () => ({ state: bleAdapterState }));
-ipcMain.handle(IPC.GET_TOWER_STATE, () => ({ state: towerState }));
-ipcMain.handle(IPC.TRIGGER_SKULL_DROP, (): { ok: boolean; reason?: string } => {
-  const sent = tower.injectSkullDrop();
-  if (sent) {
-    return { ok: true };
-  }
-  const reason = towerState !== 'connected'
-    ? `Tower is ${towerState} — companion app not connected`
-    : 'No active BLE subscriber';
-  return { ok: false, reason };
-});
-
-ipcMain.handle(IPC.TOWER_STOP_ADVERTISING, async (): Promise<{ ok: boolean; reason?: string }> => {
-  try {
-    await tower.stopAdvertising();
-    return { ok: true };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return { ok: false, reason: msg };
-  }
-});
-
-ipcMain.handle(IPC.TOGGLE_LOGGING, (): { enabled: boolean } => {
-  const enabled = logger.setEnabled(!logger.enabled);
-  relay.broadcastLogConfig(enabled);
-  return { enabled };
-});
-
-ipcMain.handle(IPC.GET_LOGGING_STATE, (): { enabled: boolean } => {
-  return { enabled: logger.enabled };
-});
-
-ipcMain.handle(IPC.OPEN_LOG_DIR, async (): Promise<void> => {
-  await shell.openPath(logger.getLogDir());
-});
-
-ipcMain.handle(IPC.TOWER_START_ADVERTISING, async (): Promise<{ ok: boolean; reason?: string }> => {
-  try {
-    await tower.startAdvertising();
-    return { ok: true };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return { ok: false, reason: msg };
-  }
-});
 
 // ─── Window ──────────────────────────────────────────────────────────────────
 
@@ -168,7 +133,7 @@ function createWindow(): void {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
     mainWindow.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
+      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
 
@@ -177,7 +142,148 @@ function createWindow(): void {
   });
 }
 
-// ─── Lifecycle ───────────────────────────────────────────────────────────────
+// ─── App initialization (loads native modules, wires events) ────────────────
+
+async function initApp(): Promise<void> {
+  console.log('[main] Loading host modules…');
+
+  try {
+    const host = await import('@dark-tower-sync/host');
+    FakeTower = host.FakeTower;
+    RelayServer = host.RelayServer;
+    HostLogger = host.HostLogger;
+    CommandParser = host.CommandParser;
+    pruneOldLogs = host.pruneOldLogs;
+  } catch (err) {
+    console.error('[main] FATAL: Failed to load host modules:', err);
+    dialog.showErrorBox(
+      'DarkTowerSync — Startup Error',
+      `Failed to load native modules.\n\n${err instanceof Error ? err.message : String(err)}\n\nCheck ~/Library/Application Support/DarkTowerSync/startup.log for details.`,
+    );
+    app.exit(1);
+    return;
+  }
+
+  console.log('[main] Host modules loaded successfully');
+
+  // ── Instantiate services ────────────────────────────────────────────────
+  const logDir = path.join(app.getPath('userData'), 'logs');
+  logger = new HostLogger(logDir, {
+    enabled: process.env['LOGGING'] !== '0',
+    maxFileSizeBytes: 10 * 1024 * 1024, // 10 MB
+  });
+
+  // Best-effort cleanup of old log files at startup.
+  pruneOldLogs(logDir, 30)
+    .then((n) => { if (n > 0) console.log(`[main] Pruned ${n} old log file(s)`); })
+    .catch(() => { /* best-effort */ });
+
+  relay = new RelayServer({
+    port: Number(process.env['RELAY_PORT'] ?? 8765),
+    onClientLog: (clientId, entries) => logger.writeClientEntries(clientId, entries),
+  });
+  tower = new FakeTower();
+  parser = new CommandParser();
+
+  console.log('[main] Services instantiated');
+
+  // ── Wire tower → relay and IPC ──────────────────────────────────────────
+  tower.on('command', (data) => {
+    if (!parser.isValid(data)) {
+      console.warn('[main] Dropping invalid command: wrong byte length', Array.from(data).length);
+      return;
+    }
+    logger.logCommand('companion→host', data, null, 'companion');
+    const seq = relay.broadcast(data);
+    logger.logCommand('host→clients', data, seq, 'host');
+    commandCount += 1;
+    mainWindow?.webContents.send(IPC.TOWER_COMMAND, {
+      count: commandCount,
+      lastAt: new Date().toISOString(),
+    });
+  });
+
+  tower.on('state-change', (state) => {
+    towerState = state;
+    relay.setFakeTowerState(state);
+    mainWindow?.webContents.send(IPC.TOWER_STATE, { state });
+  });
+
+  tower.on('companion-disconnected', () => {
+    relay.broadcastPaused('Companion app disconnected from FakeTower');
+  });
+
+  tower.on('companion-connected', () => {
+    relay.broadcastResumed();
+  });
+
+  tower.on('ble-adapter-state', (state) => {
+    bleAdapterState = state;
+    mainWindow?.webContents.send(IPC.BLE_ADAPTER_STATE, { state });
+  });
+
+  relay.on('client-change', (clients) => {
+    mainWindow?.webContents.send(IPC.RELAY_CLIENT_CHANGE, { clients });
+  });
+
+  // ── Register IPC handlers ──────────────────────────────────────────────
+  ipcMain.handle(IPC.TRIGGER_SKULL_DROP, (): { ok: boolean; reason?: string } => {
+    const sent = tower.injectSkullDrop();
+    if (sent) return { ok: true };
+    const reason = towerState !== 'connected'
+      ? `Tower is ${towerState} — companion app not connected`
+      : 'No active BLE subscriber';
+    return { ok: false, reason };
+  });
+
+  ipcMain.handle(IPC.TOWER_STOP_ADVERTISING, async (): Promise<{ ok: boolean; reason?: string }> => {
+    try {
+      await tower.stopAdvertising();
+      return { ok: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { ok: false, reason: msg };
+    }
+  });
+
+  ipcMain.handle(IPC.TOGGLE_LOGGING, (): { enabled: boolean } => {
+    const enabled = logger.setEnabled(!logger.enabled);
+    relay.broadcastLogConfig(enabled);
+    return { enabled };
+  });
+
+  ipcMain.handle(IPC.GET_LOGGING_STATE, (): { enabled: boolean } => {
+    return { enabled: logger.enabled };
+  });
+
+  ipcMain.handle(IPC.OPEN_LOG_DIR, async (): Promise<void> => {
+    await shell.openPath(logger.getLogDir());
+  });
+
+  ipcMain.handle(IPC.TOWER_START_ADVERTISING, async (): Promise<{ ok: boolean; reason?: string }> => {
+    try {
+      await tower.startAdvertising();
+      return { ok: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { ok: false, reason: msg };
+    }
+  });
+
+  console.log('[main] IPC handlers registered');
+
+  // ── Start services ─────────────────────────────────────────────────────
+  await startServices();
+}
+
+// ─── IPC handlers that don't depend on host modules ─────────────────────────
+
+ipcMain.handle(IPC.GET_VERSION, () => app.getVersion());
+ipcMain.handle(IPC.GET_RELAY_STATUS, () => relayStatus);
+ipcMain.handle(IPC.GET_BLE_STATE, () => ({ state: bleAdapterState }));
+ipcMain.handle(IPC.GET_TOWER_STATE, () => ({ state: towerState }));
+
+// ─── Service startup ────────────────────────────────────────────────────────
 
 async function startServices(): Promise<void> {
   const relayPort = process.env['RELAY_PORT'] ?? 8765;
@@ -201,7 +307,7 @@ async function startServices(): Promise<void> {
       };
       mainWindow?.webContents.send(IPC.RELAY_STATUS, relayStatus);
       console.error(
-        `[main] Relay port ${relayPort} is already in use. Continuing without relay; stop the other process or set RELAY_PORT to a free port.`
+        `[main] Relay port ${relayPort} is already in use. Continuing without relay; stop the other process or set RELAY_PORT to a free port.`,
       );
     } else {
       relayStatus = {
@@ -224,19 +330,23 @@ async function startServices(): Promise<void> {
   }
 }
 
+// ─── Shutdown ────────────────────────────────────────────────────────────────
+
 async function shutdown(): Promise<void> {
   console.log('[main] Shutting down…');
-  try { await tower.stopAdvertising(); } catch { /* best-effort */ }
-  try { await relay.stop(); } catch { /* best-effort */ }
-  try { await logger.close(); } catch { /* best-effort */ }
-  try { tower.destroy(); } catch { /* best-effort */ }
+  try { if (tower) await tower.stopAdvertising(); } catch { /* best-effort */ }
+  try { if (relay) await relay.stop(); } catch { /* best-effort */ }
+  try { if (logger) await logger.close(); } catch { /* best-effort */ }
+  try { if (tower) tower.destroy(); } catch { /* best-effort */ }
 }
 
+// ─── Lifecycle ───────────────────────────────────────────────────────────────
+
 app.on('ready', () => {
+  console.log('[main] app ready');
   createWindow();
-  startServices().catch((err: unknown) => {
-    console.error('[main] Failed to start services:', err);
-    // App stays open — Bluetooth may be unavailable or permission denied.
+  initApp().catch((err: unknown) => {
+    console.error('[main] Failed to initialize app:', err);
   });
 });
 

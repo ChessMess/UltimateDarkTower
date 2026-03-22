@@ -149,19 +149,7 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
    * Rejects if Bluetooth times out or is unavailable.
    */
   async startAdvertising(): Promise<void> {
-    // ── Diagnostic: remove once the double-call root cause is found ──
-    console.log('[FakeTower] startAdvertising() called', {
-      _advertising: this._advertising,
-      _isStarting: this._isStarting,
-      caller: new Error().stack?.split('\n').slice(1, 4).join(' | '),
-    });
-    if (this._advertising || this._isStarting) {
-      console.log('[FakeTower] startAdvertising() blocked by guard', {
-        _advertising: this._advertising,
-        _isStarting: this._isStarting,
-      });
-      return;
-    }
+    if (this._advertising || this._isStarting) return;
     this._isStarting = true;
 
     // Register stored handler refs (removed in stopAdvertising).

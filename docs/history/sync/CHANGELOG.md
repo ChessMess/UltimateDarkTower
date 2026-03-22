@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+
+- **Packaged app crash on launch (v0.1.0 DMG):** The v0.1.0 release built native
+  modules against CI's Node.js v20, but Electron 35 uses Node.js v22. The ABI
+  mismatch caused an immediate crash with no visible error. The release workflow
+  now runs `electron-rebuild` before packaging to recompile native addons for the
+  correct Electron ABI.
+- **Duplicate `servicesSetError` listener:** `bleno.on('servicesSetError', ...)`
+  was registered inside `startAdvertising()` with an anonymous function,
+  accumulating listeners on each call. Moved to a named handler registered once
+  in the constructor.
+- **`_isStarting` guard never reset on stop:** If `stopAdvertising()` was called
+  while `startAdvertising()` was in-flight, the `_isStarting` flag stayed `true`
+  forever, blocking all future advertising. Now reset in `stopAdvertising()`.
+- **Shutdown hang leaking port 8765:** `ConnectionManager.destroy()` cleared
+  timers but did not terminate client WebSocket connections, causing `wss.close()`
+  to wait for graceful close handshakes. If that exceeded the 5-second timeout,
+  SIGKILL fired and the port leaked on next launch. `destroy()` now terminates
+  all client sockets before clearing the map.
+- **macOS `servicesSetError` noise:** CoreBluetooth blocks standard Bluetooth SIG
+  16-bit UUIDs in peripheral mode, so the Device Information Service (0x180A) is
+  now skipped on macOS with a one-time warning. See
+  `docs/MACOS_BLE_PERIPHERAL_LIMITATION.md`.
+
+### Added
+
+- **Startup file logging:** The Electron main process writes a detailed startup
+  log to `~/Library/Application Support/@dark-tower-sync/electron/startup.log`.
+  Captures platform info, module load results, uncaught exceptions, and all
+  console output. Falls back to `os.tmpdir()` if `app.getPath('userData')` is
+  unavailable before app ready.
+- **Lazy native module loading:** Host modules (`@dark-tower-sync/host`) are
+  loaded via dynamic `import()` inside `initApp()` instead of static imports.
+  File logging is guaranteed to be active before any native module loads, and
+  failures surface a clear error dialog.
+
 ## [0.1.0] - 2026-03-21
 
 ### Added

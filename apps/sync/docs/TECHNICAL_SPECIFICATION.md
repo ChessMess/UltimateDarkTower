@@ -1,6 +1,6 @@
 # DarkTowerSync Technical Specification
 
-Version: 2026-03-21
+Version: 2026-03-22
 Audience: Engineers, maintainers, and LLM coding agents
 Status: Source-of-truth implementation guide for the current codebase
 
@@ -163,21 +163,26 @@ Shutdown sequence:
 
 Main process sequence:
 
-1. Create HostLogger with `app.getPath('userData')/logs`, respects `LOGGING=0` env var.
-2. Create RelayServer with configured port and `onClientLog` callback wired to logger.
-3. Create BrowserWindow (720×680).
-4. Start RelayServer.
-5. Start FakeTower advertising.
-6. Relay every intercepted tower command: log `companion→host`, broadcast (returns seq), log `host→clients` with seq, push count to renderer.
-7. Push status updates to renderer over IPC.
+1. Set up file-based startup logging to `~/Library/Application Support/@dark-tower-sync/electron/startup.log` (falls back to `os.tmpdir()/DarkTowerSync/startup.log` if `app.getPath('userData')` is unavailable before app ready). Intercepts `console.log/warn/error` to write to both the file and stdout.
+2. Register `uncaughtException` and `unhandledRejection` handlers that write to the startup log.
+3. On `app.ready`: create BrowserWindow (720×680), then call async `initApp()`.
+4. `initApp()` loads host modules (`@dark-tower-sync/host`) via dynamic `import()` — this ensures file logging is active before any native module load attempt. On failure, shows an error dialog and exits.
+5. Create HostLogger with `app.getPath('userData')/logs`, respects `LOGGING=0` env var.
+6. Create RelayServer with configured port and `onClientLog` callback wired to logger.
+7. Start RelayServer.
+8. Start FakeTower advertising.
+9. Relay every intercepted tower command: log `companion→host`, broadcast (returns seq), log `host→clients` with seq, push count to renderer.
+10. Push status updates to renderer over IPC.
 
 Electron-specific behavior:
 
+- Host modules are lazy-loaded via dynamic `import()` so startup logging captures native module load failures (e.g. ABI mismatch).
 - Handles relay port-in-use errors without crashing the app.
 - Keeps UI open even if BLE startup fails.
 - Uses forced hard-kill during quit path to avoid native addon teardown aborts.
 - Exposes operator controls to stop BLE advertising (making the fake tower invisible to Bluetooth scanners) and restart it, without requiring the app to quit.
 - Logging card in dashboard: toggle logging on/off (broadcasts `host:log-config` to all clients), open logs folder via `shell.openPath`.
+- On macOS, the Device Information Service (0x180A) is skipped because CoreBluetooth blocks standard Bluetooth SIG UUIDs in peripheral mode.
 
 ### 4.3 Remote Client Runtime (Browser)
 
@@ -561,10 +566,11 @@ Reference docs:
 ## 14. Known Risks and Constraints
 
 - BLE peripheral behavior depends on platform support and permissions.
+- macOS CoreBluetooth blocks standard Bluetooth SIG 16-bit UUIDs in peripheral mode — the Device Information Service (0x180A) cannot be registered. The companion app may show a firmware-update prompt on macOS without hardware workarounds (see `docs/MACOS_BLE_PERIPHERAL_LIMITATION.md`).
 - Native module teardown in Electron requires guarded shutdown path.
+- Native modules (e.g. `@stoprocent/bleno`) must be compiled for Electron's Node.js version, not the system Node.js. The release workflow runs `electron-rebuild` to handle this; local builds use Forge's built-in native dependency preparation.
 - Relay transport is low-latency fire-and-forget and does not include delivery acknowledgements. Missed commands are corrected by the next full-state command from the companion app.
 - Client log auto-send relies on WebSocket connectivity; entries buffered during disconnect are flushed on reconnect but may exceed the 500-entry ring buffer if the outage is long.
-- Log files grow without bound during long sessions. No automatic rotation or cleanup is implemented.
 - Ping/pong keepalive detects dead clients within ~40 seconds. Shorter intervals would increase overhead; longer intervals delay detection.
 
 ## 15. Suggested Next Engineering Steps

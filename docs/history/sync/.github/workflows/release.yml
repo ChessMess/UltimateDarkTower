@@ -20,6 +20,12 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+
+      # Rebuild native modules (e.g. @stoprocent/bleno) for Electron's Node.js
+      # version. Without this, the packaged app crashes on launch due to ABI
+      # mismatch (CI Node.js v20 vs Electron's Node.js v22).
+      - run: cd packages/electron && npx electron-rebuild
+
       - run: cd packages/electron && npx electron-forge make
 
       - uses: softprops/action-gh-release@v2

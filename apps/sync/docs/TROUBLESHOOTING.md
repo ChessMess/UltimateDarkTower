@@ -12,6 +12,7 @@ Common issues and recovery steps during a live game session.
 - ["The companion app keeps disconnecting"](#the-companion-app-keeps-disconnecting)
 - ["Bluetooth permission denied on macOS"](#bluetooth-permission-denied-on-macos)
 - ["Web Bluetooth not available in my browser"](#web-bluetooth-not-available-in-my-browser)
+- ["The Electron app quits immediately on launch"](#the-electron-app-quits-immediately-on-launch)
 
 ---
 
@@ -67,3 +68,24 @@ Web Bluetooth requires Chrome 70+, Edge 79+, or a specialized browser like Bluef
 The client page must be served over `https://` or `localhost`. When hosting on a LAN, either:
 - Access via `localhost` on the same machine, or
 - Use a tunneling tool like `ngrok` that provides an HTTPS URL.
+
+---
+
+## "The Electron app quits immediately on launch"
+
+1. Check the startup log for errors:
+   ```
+   cat ~/Library/Application\ Support/@dark-tower-sync/electron/startup.log
+   ```
+   If that file doesn't exist, check the fallback location:
+   ```
+   cat /tmp/DarkTowerSync/startup.log
+   ```
+2. You can also run the app from Terminal to see console output:
+   ```
+   /Applications/DarkTowerSync.app/Contents/MacOS/dark-tower-sync
+   ```
+3. Common causes:
+   - **Native module ABI mismatch** — the app was built with a different Node.js version than Electron expects. Rebuild with `electron-rebuild` or use a locally-built DMG.
+   - **`ELECTRON_RUN_AS_NODE=1` set in environment** — this makes Electron run as plain Node.js (no window, silent exit). Unset it: `env -u ELECTRON_RUN_AS_NODE /Applications/DarkTowerSync.app/Contents/MacOS/dark-tower-sync`
+   - **macOS code signing** — unsigned apps may be blocked by Gatekeeper. Right-click the app and choose "Open" to bypass for the first launch.
