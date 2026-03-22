@@ -14,7 +14,11 @@
   "dependencies": {
     "@dark-tower-sync/host": "*",
     "@dark-tower-sync/shared": "*",
-    "electron-squirrel-startup": "^1.0.0"
+    "electron-squirrel-startup": "^1.0.0",
+    "@stoprocent/bleno": "^0.12.4",
+    "@stoprocent/noble": "^2.3.10",
+    "ultimatedarktower": "^2.1.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.8.0",

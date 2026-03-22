@@ -212,6 +212,13 @@ export class ConnectionManager {
       clearTimeout(timer);
     }
     this.handshakeTimers.clear();
+
+    // Forcefully terminate all client sockets so wss.close() resolves promptly
+    // during shutdown instead of waiting for graceful close handshakes.
+    for (const { socket } of this.clients.values()) {
+      socket.terminate();
+    }
+    this.clients.clear();
   }
 
   // ---------------------------------------------------------------------------

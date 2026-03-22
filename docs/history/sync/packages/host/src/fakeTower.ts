@@ -23,6 +23,9 @@ import {
 } from 'ultimatedarktower';
 import { buildSkullDropPacket } from './commandParser';
 
+const IS_MACOS = process.platform === 'darwin';
+let _disWarningLogged = false;
+
 // ─── Device Information Service constants ────────────────────────────────────
 // Captured from the real tower via BLE sniffing (captureTower.ts / UDT controller log).
 const DIS_SERVICE_UUID = '180a';
@@ -114,11 +117,16 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
     this.emit('ble-adapter-state', state);
   };
 
+  private readonly _onServicesSetError = (err: Error): void => {
+    console.error('[FakeTower] servicesSetError:', err);
+  };
+
   constructor() {
     super();
     // Track raw CoreBluetooth adapter state from the moment bleno initializes.
     // This fires immediately with the current state and again on each change.
     bleno.on('stateChange', this._onStateChange);
+    bleno.on('servicesSetError', this._onServicesSetError);
   }
 
   /** Returns the current raw CoreBluetooth adapter state. */
@@ -141,7 +149,19 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
    * Rejects if Bluetooth times out or is unavailable.
    */
   async startAdvertising(): Promise<void> {
-    if (this._advertising || this._isStarting) return;
+    // ── Diagnostic: remove once the double-call root cause is found ──
+    console.log('[FakeTower] startAdvertising() called', {
+      _advertising: this._advertising,
+      _isStarting: this._isStarting,
+      caller: new Error().stack?.split('\n').slice(1, 4).join(' | '),
+    });
+    if (this._advertising || this._isStarting) {
+      console.log('[FakeTower] startAdvertising() blocked by guard', {
+        _advertising: this._advertising,
+        _isStarting: this._isStarting,
+      });
+      return;
+    }
     this._isStarting = true;
 
     // Register stored handler refs (removed in stopAdvertising).
@@ -225,13 +245,6 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
         ],
       });
 
-      // Log any service-set errors — bleno emits these separately and they are
-      // otherwise silently dropped when setServicesAsync resolves on the first
-      // successful servicesSet event.
-      bleno.on('servicesSetError', (err: Error) => {
-        console.error('[FakeTower] servicesSetError:', err);
-      });
-
       console.log('[FakeTower] waiting for poweredOn…');
       await bleno.waitForPoweredOnAsync();
       console.log('[FakeTower] poweredOn — starting advertising…');
@@ -242,7 +255,20 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
       // fit; services are discoverable via GATT enumeration after connection.
       await bleno.startAdvertisingAsync(TOWER_DEVICE_NAME, []);
       console.log('[FakeTower] advertising started — setting services…');
-      await bleno.setServicesAsync([uartService, disService]);
+      const services = [uartService];
+      if (IS_MACOS) {
+        if (!_disWarningLogged) {
+          console.warn(
+            '[FakeTower] macOS detected — skipping Device Information Service (0x180A). ' +
+            'CoreBluetooth blocks standard Bluetooth SIG UUIDs in peripheral mode. ' +
+            'See docs/MACOS_BLE_PERIPHERAL_LIMITATION.md for workarounds.',
+          );
+          _disWarningLogged = true;
+        }
+      } else {
+        services.push(disService);
+      }
+      await bleno.setServicesAsync(services);
       console.log('[FakeTower] services set — tower ready');
       this._advertising = true;
       this._isStarting = false;
@@ -262,6 +288,7 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
    * Stop advertising and disconnect any connected companion app.
    */
   async stopAdvertising(): Promise<void> {
+    this._isStarting = false;
     if (!this._advertising) return;
     this._advertising = false;
 
@@ -286,6 +313,7 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
    */
   destroy(): void {
     bleno.removeListener('stateChange', this._onStateChange);
+    bleno.removeListener('servicesSetError', this._onServicesSetError);
     bleno.removeAllListeners();
   }
 
