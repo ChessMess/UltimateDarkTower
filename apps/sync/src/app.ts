@@ -245,6 +245,13 @@ export class App {
         this.ui.log(`Reconnecting in ${Math.round(event.delayMs / 1000)}s (attempt ${event.attempt})…`);
         break;
 
+      case 'relay:reconnect-failed':
+        this.ui.setRelayState('disconnected');
+        this.ui.connectBtn.textContent = 'Connect to Host';
+        this.ui.connectBtn.disabled = false;
+        this.ui.log(`Could not reconnect after ${event.attempts} attempts. Click "Connect to Host" to try again.`);
+        break;
+
       case 'relay:error':
         this.ui.setRelayState('error');
         this.ui.connectBtn.disabled = false;

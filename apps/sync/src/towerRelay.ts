@@ -28,6 +28,7 @@ export type TowerRelayEvent =
   | { type: 'relay:connected' }
   | { type: 'relay:disconnected'; code: number; reason: string }
   | { type: 'relay:reconnecting'; attempt: number; delayMs: number }
+  | { type: 'relay:reconnect-failed'; attempts: number }
   | { type: 'relay:error'; error: Event }
   | { type: 'relay:paused'; reason: string }
   | { type: 'relay:resumed' }
@@ -62,6 +63,8 @@ export interface TowerRelayOptions {
  * await relay.connect('ws://192.168.1.5:8765');
  * ```
  */
+const MAX_RECONNECT_ATTEMPTS = 10;
+
 export class TowerRelay {
   private ws: WebSocket | null = null;
   private readonly label: string | undefined;
@@ -254,6 +257,11 @@ export class TowerRelay {
   // ---------------------------------------------------------------------------
 
   private scheduleReconnect(): void {
+    if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      this.autoReconnect = false;
+      this.onEvent({ type: 'relay:reconnect-failed', attempts: this.reconnectAttempts });
+      return;
+    }
     const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30_000);
     this.reconnectAttempts++;
     this.onEvent({ type: 'relay:reconnecting', attempt: this.reconnectAttempts, delayMs: delay });

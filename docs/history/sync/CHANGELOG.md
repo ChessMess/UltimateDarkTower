@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+
+- **Client reconnect attempts capped at 10** — the client no longer retries indefinitely after losing the WebSocket connection to the host. After 10 failed attempts it stops, re-enables the "Connect to Host" button, and logs a message prompting the user to reconnect manually. The exponential backoff (1 s → 30 s max) is otherwise unchanged.
+
 ## [0.1.3] - 2026-03-22
 
 ### Added
