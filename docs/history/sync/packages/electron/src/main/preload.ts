@@ -39,6 +39,7 @@ export interface RelayStatusPayload {
   running: boolean;
   port: number;
   message: string;
+  urls: string[];
 }
 
 export interface BleAdapterStatePayload {

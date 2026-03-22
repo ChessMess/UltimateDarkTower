@@ -1,6 +1,6 @@
 {
   "name": "@dark-tower-sync/shared",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Shared types, WebSocket protocol constants, and message schemas for DarkTowerSync.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

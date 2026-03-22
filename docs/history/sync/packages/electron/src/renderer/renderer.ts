@@ -4,13 +4,13 @@ import type { FakeTowerState, ConnectedClient } from '@dark-tower-sync/shared';
 
 interface DarkTowerSyncAPI {
   getVersion(): Promise<string>;
-  getRelayStatus(): Promise<{ running: boolean; port: number; message: string }>;
+  getRelayStatus(): Promise<{ running: boolean; port: number; message: string; urls: string[] }>;
   getTowerState(): Promise<{ state: FakeTowerState }>;
   getBleAdapterState(): Promise<{ state: string }>;
   onTowerState(cb: (payload: { state: FakeTowerState; detail?: string }) => void): () => void;
   onRelayClientChange(cb: (payload: { clients: ConnectedClient[] }) => void): () => void;
   onTowerCommand(cb: (payload: { count: number; lastAt: string }) => void): () => void;
-  onRelayStatus(cb: (payload: { running: boolean; port: number; message: string }) => void): () => void;
+  onRelayStatus(cb: (payload: { running: boolean; port: number; message: string; urls: string[] }) => void): () => void;
   onBleAdapterState(cb: (payload: { state: string }) => void): () => void;
   triggerSkullDrop(): Promise<{ ok: boolean; reason?: string }>;
   startTowerAdvertising(): Promise<{ ok: boolean; reason?: string }>;
@@ -44,6 +44,8 @@ const skullDropFeedbackEl = document.getElementById('skull-drop-feedback') as HT
 const startAdvertisingBtnEl = document.getElementById('btn-start-advertising') as HTMLButtonElement;
 const stopBleBtnEl = document.getElementById('btn-stop-ble') as HTMLButtonElement;
 const bleControlFeedbackEl = document.getElementById('ble-control-feedback') as HTMLSpanElement;
+const relayUrlBarEl = document.getElementById('relay-url-bar') as HTMLDivElement;
+const relayUrlListEl = document.getElementById('relay-url-list') as HTMLDivElement;
 const loggingStateDotEl = document.getElementById('logging-state-dot') as HTMLSpanElement;
 const loggingStateLabelEl = document.getElementById('logging-state-label') as HTMLSpanElement;
 const loggingBadgeEl = document.getElementById('logging-state-badge') as HTMLSpanElement;
@@ -176,15 +178,46 @@ function setBleAdapterState(state: string): void {
   bleAdapterHelpEl.hidden = help === '';
 }
 
-function setRelayStatus(status: { running: boolean; message: string }): void {
+function setRelayStatus(status: { running: boolean; message: string; urls?: string[] }): void {
   if (status.running) {
     relayBannerEl.hidden = true;
     relayBannerEl.textContent = '';
-    return;
+  } else {
+    relayBannerEl.hidden = false;
+    relayBannerEl.textContent = status.message;
   }
 
-  relayBannerEl.hidden = false;
-  relayBannerEl.textContent = status.message;
+  // Show connection URLs
+  const urls = status.urls ?? [];
+  if (status.running && urls.length > 0) {
+    relayUrlBarEl.hidden = false;
+    relayUrlListEl.innerHTML = '';
+    for (const url of urls) {
+      const row = document.createElement('div');
+      row.className = 'relay-url-row';
+
+      const urlSpan = document.createElement('span');
+      urlSpan.className = 'relay-url-value';
+      urlSpan.textContent = url;
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'relay-url-copy';
+      copyBtn.textContent = 'Copy';
+      copyBtn.title = 'Copy to clipboard';
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(url).then(() => {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+        });
+      });
+
+      row.appendChild(urlSpan);
+      row.appendChild(copyBtn);
+      relayUrlListEl.appendChild(row);
+    }
+  } else {
+    relayUrlBarEl.hidden = true;
+  }
 }
 
 let _feedbackTimer: ReturnType<typeof setTimeout> | null = null;

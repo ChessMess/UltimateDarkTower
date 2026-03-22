@@ -1,6 +1,6 @@
 {
   "name": "@dark-tower-sync/electron",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "DarkTowerSync desktop host — Electron app wrapping the fake tower and relay server.",
   "main": ".vite/build/main.js",
   "scripts": {

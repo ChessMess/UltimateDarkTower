@@ -107,12 +107,28 @@ let logger: InstanceType<HostModule['HostLogger']>;
 
 let commandCount = 0;
 let towerState: string = 'idle';
-let relayStatus: { running: boolean; port: number; message: string } = {
+let relayStatus: { running: boolean; port: number; message: string; urls: string[] } = {
   running: false,
   port: Number(process.env['RELAY_PORT'] ?? 8765),
   message: 'Starting…',
+  urls: [],
 };
 let bleAdapterState = 'unknown';
+
+/** Return non-internal IPv4 addresses suitable for LAN clients. */
+function getLocalIPs(): string[] {
+  const interfaces = os.networkInterfaces();
+  const ips: string[] = [];
+  for (const nets of Object.values(interfaces)) {
+    if (!nets) continue;
+    for (const net of nets) {
+      if (net.family === 'IPv4' && !net.internal) {
+        ips.push(net.address);
+      }
+    }
+  }
+  return ips;
+}
 let mainWindow: BrowserWindow | null = null;
 
 // ─── Window ──────────────────────────────────────────────────────────────────
@@ -290,10 +306,12 @@ async function startServices(): Promise<void> {
 
   try {
     await relay.start();
+    const urls = getLocalIPs().map((ip) => `ws://${ip}:${relayPort}`);
     relayStatus = {
       running: true,
       port: Number(relayPort),
       message: `Relay listening on ${relayPort}`,
+      urls,
     };
     mainWindow?.webContents.send(IPC.RELAY_STATUS, relayStatus);
     console.log(`[main] Relay server listening on ws://0.0.0.0:${relayPort}`);
@@ -304,6 +322,7 @@ async function startServices(): Promise<void> {
         running: false,
         port: Number(relayPort),
         message: `Relay unavailable: port ${relayPort} is already in use`,
+        urls: [],
       };
       mainWindow?.webContents.send(IPC.RELAY_STATUS, relayStatus);
       console.error(
@@ -314,6 +333,7 @@ async function startServices(): Promise<void> {
         running: false,
         port: Number(relayPort),
         message: `Relay failed to start: ${e.message ?? 'unknown error'}`,
+        urls: [],
       };
       mainWindow?.webContents.send(IPC.RELAY_STATUS, relayStatus);
       console.error('[main] Failed to start relay server:', err);

@@ -245,6 +245,72 @@ h1 {
   word-break: break-all;
 }
 
+/* ─── Relay URL bar ──────────────────────────────────────────────────────── */
+
+.relay-url-bar {
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.relay-url-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.relay-url-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.relay-url-row:last-child {
+  margin-bottom: 0;
+}
+
+.relay-url-value {
+  font-family: ui-monospace, monospace;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--fg);
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  user-select: all;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.relay-url-copy {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.relay-url-copy:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #555;
+  color: var(--fg);
+}
+
+.relay-url-copy:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 /* ─── Client list ─────────────────────────────────────────────────────────── */
 
 .badge {
