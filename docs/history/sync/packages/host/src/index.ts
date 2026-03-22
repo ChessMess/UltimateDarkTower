@@ -39,7 +39,16 @@ async function main(): Promise<void> {
   const logger = new HostLogger('./logs', process.env['LOGGING'] !== '0');
   const relay = new RelayServer({
     port,
-    onClientLog: (clientId, entries) => logger.writeClientEntries(clientId, entries),
+    onClientLog: (clientId, entries) => {
+      logger.logEvent('event', 'host', `Received ${entries.length} log entries from ${clientId.slice(0, 8)}`);
+      logger.writeClientEntries(clientId, entries);
+    },
+    onClientConnected: (clientId, label, observer) =>
+      logger.logEvent('event', 'host', `Client connected: ${label ?? clientId.slice(0, 8)}${observer ? ' (observer)' : ''}`),
+    onClientDisconnected: (clientId, label) =>
+      logger.logEvent('event', 'host', `Client disconnected: ${label ?? clientId.slice(0, 8)}`),
+    onClientReady: (clientId, ready, label) =>
+      logger.logEvent('event', 'host', `Client ${label ?? clientId.slice(0, 8)} tower: ${ready ? 'connected' : 'disconnected'}`),
   });
   const tower = new FakeTower();
   const parser = new CommandParser();
@@ -56,6 +65,15 @@ async function main(): Promise<void> {
   };
   tower.on('state-change', (state) => {
     relay.setFakeTowerState(state);
+    logger.logEvent('event', 'host', `FakeTower state: ${state}`);
+  });
+  tower.on('companion-connected', () => {
+    logger.logEvent('event', 'host', 'Companion app connected');
+    relay.broadcastResumed();
+  });
+  tower.on('companion-disconnected', () => {
+    logger.logEvent('event', 'host', 'Companion app disconnected');
+    relay.broadcastPaused('Companion app disconnected from FakeTower');
   });
 
   await relay.start();

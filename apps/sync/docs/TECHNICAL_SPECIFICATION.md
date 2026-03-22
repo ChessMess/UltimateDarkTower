@@ -273,11 +273,13 @@ Command replayed on tower via BLE
 
 Every 30s (auto-send timer):
   → unsent entries packaged as              → RelayServer receives client:log
-    client:log message                      → HostLogger.writeClientEntries()
-  → sent via WebSocket ─────────────────►   → appended to session-*-all.jsonl
+    client:log message                      → logEvent: "Received N entries from…"
+  → sent via WebSocket ─────────────────►   → HostLogger.writeClientEntries()
+                                            → appended to session-*-all.jsonl
 
 Player clicks "Send Logs":
-  → sendLogs() — immediate flush ────────►  → same as above
+  → logEvent: "Sent logs to host manually"  → same as above
+  → sendLogs() — immediate flush ────────►
 
 Player clicks "Download Logs":
   → downloadAsFile() — local .jsonl save
@@ -285,6 +287,14 @@ Player clicks "Download Logs":
 
 On relay disconnect:
   → flush() — send remaining entries ────►  → written to disk before close
+
+Connection events (host side, session-*-host.jsonl + session-*-all.jsonl):
+  FakeTower state-change    → logEvent: "FakeTower state: <state>"
+  companion-connected       → logEvent: "Companion app connected"
+  companion-disconnected    → logEvent: "Companion app disconnected"
+  CLIENT_HELLO (handshake)  → logEvent: "Client connected: <label>"
+  WebSocket close           → logEvent: "Client disconnected: <label>"
+  CLIENT_READY              → logEvent: "Client <label> tower: connected/disconnected"
 ```
 
 ## 6. Protocol Contract
@@ -390,7 +400,7 @@ toggleLogging flips the HostLogger master switch and broadcasts `host:log-config
 
 ### 9.1 Overview
 
-All components produce structured JSONL log entries for post-session diagnostics. The host assigns monotonic sequence numbers (`seq`) to each relayed command, enabling cross-log correlation between host and client entries regardless of clock skew.
+All components produce structured JSONL log entries for post-session diagnostics. The host assigns monotonic sequence numbers (`seq`) to each relayed command, enabling cross-log correlation between host and client entries regardless of clock skew. In addition to commands, connection lifecycle events are recorded as `event`-level entries in the same files — companion app attach/detach, relay client join/leave, remote tower BLE connect/disconnect — so a single log file gives a complete picture of what happened during a session.
 
 ### 9.2 Log Entry Format (JSONL)
 
@@ -415,11 +425,21 @@ Each line is a JSON object conforming to `LogEntry` (defined in `packages/shared
 
 Master `enabled` switch (default `true`). When disabled, all write methods are no-ops but streams stay open for resumption. Toggled via `setEnabled()`. Electron host exposes this as a dashboard toggle that also broadcasts `host:log-config` to clients.
 
+Connection lifecycle events logged to both files by the host:
+- `FakeTower state: <state>` — BLE adapter state transition (`idle → advertising → connected`)
+- `Companion app connected` / `Companion app disconnected` — companion app attaches/detaches from FakeTower
+- `Client connected: <label>` — relay client completes CLIENT_HELLO handshake (label shown if provided)
+- `Client disconnected: <label>` — relay client WebSocket closes
+- `Client <label> tower: connected` / `tower: disconnected` — remote CLIENT_READY signal
+- `Received N log entries from <clientId>` — meta-event when a client log batch arrives (written before the entries)
+
+`RelayServer` exposes `onClientConnected`, `onClientDisconnected`, and `onClientReady` callbacks in `RelayServerOptions` to decouple logging from the relay implementation.
+
 ### 9.4 Client Logger (`packages/client/src/clientLogger.ts`)
 
 `ClientLogger` maintains a 500-entry ring buffer in memory:
 - Auto-sends unsent entries to host every 30 seconds via `client:log` WebSocket message.
-- Manual "Send Logs" button works regardless of master switch (always sends).
+- Manual "Send Logs" button logs a `Sent logs to host manually` event entry *before* flushing, so the event appears in the transmitted batch.
 - "Download Logs" button exports the full ring buffer as a local `.jsonl` file via Blob download.
 - Responds to `host:log-config` messages to start/stop the auto-send timer.
 - Flushes remaining entries on relay disconnect.

@@ -1,6 +1,6 @@
 {
   "name": "dark-tower-sync",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Remote multiplayer tower synchronization for Return to Dark Tower — relay BLE tower commands over WebSocket so every player's physical tower mirrors the host in real time.",
   "private": true,
   "workspaces": [

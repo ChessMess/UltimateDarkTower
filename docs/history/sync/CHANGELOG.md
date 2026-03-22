@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-03-22
+
+### Added
+
+- **Connection and log-send events in JSONL logs** — the following events are now
+  recorded as structured `event`-level entries in `session-*-host.jsonl` and
+  `session-*-all.jsonl`, making it possible to correlate tower commands with
+  connection lifecycle changes in a single log file:
+  - FakeTower BLE adapter state changes (`idle → advertising → connected`)
+  - Companion app connect / disconnect from FakeTower
+  - Relay client WebSocket connect / disconnect (includes player label when known)
+  - Remote client tower BLE connect / disconnect (the `client:ready` signal)
+  - Client manually clicking "Send Logs Now" (entry logged before the flush so it
+    appears in the submitted batch)
+  - Host receiving a client log batch (meta-event with entry count)
+  - `RelayServer` gains `onClientConnected`, `onClientDisconnected`, and
+    `onClientReady` optional callbacks in `RelayServerOptions`; both the Electron
+    host (`packages/electron/src/main/main.ts`) and standalone Node host
+    (`packages/host/src/index.ts`) wire these to `logger.logEvent()`
+
 ### Fixed
 
 - **Packaged app crash on launch (v0.1.0 DMG):** The v0.1.0 release built native

@@ -196,7 +196,16 @@ async function initApp(): Promise<void> {
 
   relay = new RelayServer({
     port: Number(process.env['RELAY_PORT'] ?? 8765),
-    onClientLog: (clientId, entries) => logger.writeClientEntries(clientId, entries),
+    onClientLog: (clientId, entries) => {
+      logger.logEvent('event', 'host', `Received ${entries.length} log entries from ${clientId.slice(0, 8)}`);
+      logger.writeClientEntries(clientId, entries);
+    },
+    onClientConnected: (clientId, label, observer) =>
+      logger.logEvent('event', 'host', `Client connected: ${label ?? clientId.slice(0, 8)}${observer ? ' (observer)' : ''}`),
+    onClientDisconnected: (clientId, label) =>
+      logger.logEvent('event', 'host', `Client disconnected: ${label ?? clientId.slice(0, 8)}`),
+    onClientReady: (clientId, ready, label) =>
+      logger.logEvent('event', 'host', `Client ${label ?? clientId.slice(0, 8)} tower: ${ready ? 'connected' : 'disconnected'}`),
   });
   tower = new FakeTower();
   parser = new CommandParser();
@@ -222,14 +231,17 @@ async function initApp(): Promise<void> {
   tower.on('state-change', (state) => {
     towerState = state;
     relay.setFakeTowerState(state);
+    logger.logEvent('event', 'host', `FakeTower state: ${state}`);
     mainWindow?.webContents.send(IPC.TOWER_STATE, { state });
   });
 
   tower.on('companion-disconnected', () => {
+    logger.logEvent('event', 'host', 'Companion app disconnected');
     relay.broadcastPaused('Companion app disconnected from FakeTower');
   });
 
   tower.on('companion-connected', () => {
+    logger.logEvent('event', 'host', 'Companion app connected');
     relay.broadcastResumed();
   });
 

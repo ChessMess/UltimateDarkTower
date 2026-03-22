@@ -47,6 +47,7 @@ export class App {
     this.ui.connectBtn.addEventListener('click', () => void this.handleConnectClick());
     this.ui.towerBtn.addEventListener('click', () => void this.handleTowerClick());
     this.ui.sendLogsBtn.addEventListener('click', () => {
+      this.logger.logEvent('event', 'Sent logs to host manually');
       this.logger.sendLogs();
       this.ui.log('Logs sent to host.');
     });

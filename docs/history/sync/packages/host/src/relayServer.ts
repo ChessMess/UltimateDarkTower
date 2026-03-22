@@ -43,6 +43,12 @@ export interface RelayServerOptions {
   host?: string;
   /** Called when a client submits a batch of log entries via `client:log`. */
   onClientLog?: (clientId: string, entries: LogEntry[]) => void;
+  /** Called when a client completes the CLIENT_HELLO handshake. */
+  onClientConnected?: (clientId: string, label?: string, observer?: boolean) => void;
+  /** Called when a client's WebSocket connection closes. */
+  onClientDisconnected?: (clientId: string, label?: string) => void;
+  /** Called when a client sends CLIENT_READY (tower BLE connect/disconnect). */
+  onClientReady?: (clientId: string, ready: boolean, label?: string) => void;
 }
 
 interface RelayServerEventMap {
@@ -75,12 +81,18 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
   private readonly port: number;
   private readonly host: string;
   private readonly onClientLog?: (clientId: string, entries: LogEntry[]) => void;
+  private readonly onClientConnected?: (clientId: string, label?: string, observer?: boolean) => void;
+  private readonly onClientDisconnected?: (clientId: string, label?: string) => void;
+  private readonly onClientReady?: (clientId: string, ready: boolean, label?: string) => void;
 
   constructor(options: RelayServerOptions = {}) {
     super();
     this.port = options.port ?? 8765;
     this.host = options.host ?? '0.0.0.0';
     this.onClientLog = options.onClientLog;
+    this.onClientConnected = options.onClientConnected;
+    this.onClientDisconnected = options.onClientDisconnected;
+    this.onClientReady = options.onClientReady;
   }
 
   /**
@@ -146,6 +158,7 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
                 }
                 // Re-broadcast updated client list.
                 this.emit('client-change', this.manager.getAll());
+                this.onClientConnected?.(clientId, client.label, client.observer);
               }
             } else if (msg.type === MessageType.CLIENT_READY && msg.payload) {
               const client = this.manager.get(clientId);
@@ -160,6 +173,7 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
                 this.manager.broadcast(JSON.stringify(alertMsg));
 
                 this.emit('client-change', this.manager.getAll());
+                this.onClientReady?.(clientId, ready, client.label);
               }
             } else if (msg.type === MessageType.CLIENT_LOG && msg.payload) {
               const entries = (msg.payload as { entries?: LogEntry[] }).entries;
@@ -174,7 +188,9 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
 
         // 5. Clean up on disconnect.
         const handleClose = (): void => {
+          const label = this.manager.get(clientId)?.label;
           this.manager.remove(clientId);
+          this.onClientDisconnected?.(clientId, label);
           const disconnectedMsg: ClientDisconnectedMessage = {
             type: MessageType.CLIENT_DISCONNECTED,
             payload: { clientId },

@@ -125,6 +125,15 @@ function loadEntries(dir: string, sessionFilter: string | null): LogEntry[] {
     files = files.filter((f) => f.includes(sessionFilter));
   }
 
+  // For each session segment, prefer the -all file (superset of -host).
+  // Skipping -host avoids duplicate entries in the combined dataset.
+  const allFileSet = new Set(files.filter((f) => /-all(-\d+)?\.jsonl$/.test(f)));
+  files = files.filter((f) => {
+    if (!/-host(-\d+)?\.jsonl$/.test(f)) return true;
+    const allEquivalent = f.replace(/(.*)-host(-\d+)?\.jsonl$/, (_, base, seg) => `${base}-all${seg ?? ''}.jsonl`);
+    return !allFileSet.has(allEquivalent);
+  });
+
   if (files.length === 0) {
     console.error(`No .jsonl files found${sessionFilter ? ` matching "${sessionFilter}"` : ''} in ${dir}`);
     process.exit(1);
