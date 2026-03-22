@@ -60,7 +60,7 @@ const config: ForgeConfig = {
     asar: true,
     name: 'DarkTowerSync',
     executableName: 'dark-tower-sync',
-    // icon: './resources/icon', // add when icon is ready
+    icon: './resources/icon',
     extendInfo: {
       NSBluetoothAlwaysUsageDescription:
         'DarkTowerSync needs Bluetooth to emulate the tower for the companion app.',
@@ -90,9 +90,9 @@ const config: ForgeConfig = {
     },
   },
   makers: [
-    { name: '@electron-forge/maker-zip', platforms: ['darwin', 'linux'] },
-    { name: '@electron-forge/maker-dmg', platforms: ['darwin'] },
-    { name: '@electron-forge/maker-deb', platforms: ['linux'] },
+    { name: '@electron-forge/maker-zip', platforms: ['darwin', 'linux'], config: {} },
+    { name: '@electron-forge/maker-dmg', platforms: ['darwin'], config: { icon: './resources/icon.icns' } },
+    { name: '@electron-forge/maker-deb', platforms: ['linux'], config: {} },
   ],
   plugins: [
     new AutoUnpackNativesPlugin({}),
