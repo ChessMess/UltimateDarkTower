@@ -1,6 +1,15 @@
 import { defineConfig } from 'vite';
+import path from 'node:path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      // Point at TypeScript source so Vite/esbuild processes it directly,
+      // avoiding Rollup's inability to statically analyze CJS dist output.
+      '@dark-tower-sync/host': path.resolve(__dirname, '../host/src/index.ts'),
+      '@dark-tower-sync/shared': path.resolve(__dirname, '../shared/src/index.ts'),
+    },
+  },
   build: {
     rollupOptions: {
       external: [
