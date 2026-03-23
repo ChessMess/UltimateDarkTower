@@ -49,7 +49,7 @@
       display: grid;
       grid-template-columns: minmax(280px, 520px) minmax(280px, 420px);
       gap: 1.5rem;
-      align-items: start;
+      align-items: stretch;
     }
 
     .panel {
@@ -57,6 +57,18 @@
       border: 1px solid #2f2f2f;
       border-radius: 10px;
       padding: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-header h2 {
+      margin: 0 0 0.75rem;
     }
 
     h2 {
@@ -77,6 +89,49 @@
       border: 1px solid #2a2a2a;
       border-radius: 8px;
       padding: 0.9rem;
+    }
+
+    #state-preview {
+      margin: 0;
+      flex: 1;
+      min-height: 200px;
+      resize: none;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: #d6f2d6;
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 0.9rem;
+      white-space: pre;
+      tab-size: 2;
+    }
+
+    #state-preview:focus {
+      outline: 1px solid #4a7a4a;
+    }
+
+    #btn-apply {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.7rem;
+      margin: 0 0 0.75rem 0;
+    }
+
+    #btn-apply:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    #btn-apply:not(:disabled) {
+      background: #2a4a2a;
+      border-color: #4a7a4a;
+      color: #b8f0b8;
+    }
+
+    #btn-apply:not(:disabled):hover {
+      background: #3a5a3a;
     }
 
     code {
@@ -110,8 +165,8 @@
 <body>
   <h1>UltimateDarkTowerDisplay Example</h1>
   <p>
-    This demo mirrors the README flow: create a display, start from <code>createDefaultTowerState()</code>,
-    mutate a few fields, then call <code>applyState()</code>.
+    Use the buttons to load preset states or randomize values. Edit the JSON directly in the panel
+    on the right and click <strong>Apply</strong> to see your changes rendered on the tower.
   </p>
   <div id="error-banner" hidden></div>
   <div>
@@ -125,8 +180,11 @@
       <div id="tower"></div>
     </div>
     <div class="panel">
-      <h2>Applied State</h2>
-      <pre id="state-preview"></pre>
+      <div class="panel-header">
+        <h2>Applied State</h2>
+        <button id="btn-apply" disabled>Apply</button>
+      </div>
+      <textarea id="state-preview" spellcheck="false" wrap="off"></textarea>
     </div>
   </div>
 
@@ -173,7 +231,9 @@
       TOWER_LIGHT_SEQUENCES,
     } from 'ultimatedarktower';
 
+    const banner = document.getElementById('error-banner');
     const statePreview = document.getElementById('state-preview');
+    const btnApply = document.getElementById('btn-apply');
     const towerContainer = document.getElementById('tower');
 
     if (!(towerContainer instanceof HTMLElement)) {
@@ -186,14 +246,41 @@
     const lightSequences = Object.values(TOWER_LIGHT_SEQUENCES).filter((value) => typeof value === 'number');
     const audioSamples = Object.values(TOWER_AUDIO_LIBRARY).map((entry) => entry.value);
 
+    let cleanJson = '';
+
     function showState(state) {
       if (!statePreview) return;
-      statePreview.textContent = JSON.stringify(state, null, 2);
+      const json = JSON.stringify(state, null, 2);
+      statePreview.value = json;
+      cleanJson = json;
+      if (btnApply) btnApply.disabled = true;
     }
 
     function applyAndShow(state) {
       display.applyState(state);
       showState(state);
+    }
+
+    if (statePreview) {
+      statePreview.addEventListener('input', () => {
+        if (btnApply) btnApply.disabled = statePreview.value === cleanJson;
+      });
+    }
+
+    if (btnApply) {
+      btnApply.addEventListener('click', () => {
+        if (!statePreview) return;
+        try {
+          banner.hidden = true;
+          const parsed = JSON.parse(statePreview.value);
+          display.applyState(parsed);
+          cleanJson = statePreview.value;
+          btnApply.disabled = true;
+        } catch (err) {
+          banner.hidden = false;
+          banner.textContent = `Invalid JSON: ${err.message}`;
+        }
+      });
     }
 
     function createReadmeExampleState() {
@@ -247,7 +334,9 @@
     document.getElementById('btn-idle').addEventListener('click', () => {
       display.showIdle();
       if (statePreview) {
-        statePreview.textContent = 'Idle view: no state currently rendered.';
+        statePreview.value = 'Idle view: no state currently rendered.';
+        cleanJson = statePreview.value;
+        if (btnApply) btnApply.disabled = true;
       }
     });
 

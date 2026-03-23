@@ -33,6 +33,13 @@ function redirectExamplePath(): Plugin {
 
 export default defineConfig({
   plugins: [redirectExamplePath()],
+  resolve: {
+    alias: {
+      // The ESM build of ultimatedarktower uses createRequire which is not
+      // available in browsers. Alias to the CJS build instead.
+      ultimatedarktower: resolve(__dirname, 'node_modules/ultimatedarktower/dist/src/index.js'),
+    },
+  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
