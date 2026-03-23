@@ -168,6 +168,59 @@ const CSS = `
   color: #f39c12;
   margin-top: 0.3rem;
 }
+
+/* ── Multi-Renderer Layout ── */
+
+.td-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.td-slot {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── SVG Side View ── */
+
+.tsv-wrapper {
+  max-width: 240px;
+}
+
+.tsv-side-selector {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.tsv-side-btn {
+  flex: 1;
+  padding: 0.3rem 0;
+  border: 1px solid #444;
+  background: #222;
+  color: #aaa;
+  font-size: 0.7rem;
+  cursor: pointer;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.tsv-side-btn[data-active="true"] {
+  background: #3a3a3a;
+  color: #e8e8e8;
+  border-color: #666;
+}
+
+.tsv-side-btn:hover {
+  background: #333;
+}
+
+.tsv-svg svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 `;
 
 /**

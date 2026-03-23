@@ -19,5 +19,6 @@ module.exports = {
   },
   moduleNameMapper: {
     '^ultimatedarktower$': '<rootDir>/node_modules/ultimatedarktower/dist/src/index.js',
+    '\\.svg\\?raw$': '<rootDir>/tests/__mocks__/svgRaw.js',
   },
 };

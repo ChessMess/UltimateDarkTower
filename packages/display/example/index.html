@@ -12,6 +12,9 @@
       background: #161616;
       color: #e8e8e8;
       font-family: system-ui, -apple-system, sans-serif;
+      max-width: 960px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     h1 {
@@ -39,6 +42,25 @@
 
     button:hover {
       background: #444;
+    }
+
+    .view-btns {
+      display: inline-flex;
+      gap: 0.25rem;
+      margin-left: 1rem;
+      vertical-align: middle;
+    }
+
+    .view-btns button {
+      margin: 0;
+      font-size: 0.75rem;
+      padding: 0.35rem 0.7rem;
+    }
+
+    .view-btns button.active {
+      background: #2a4a2a;
+      border-color: #4a7a4a;
+      color: #b8f0b8;
     }
 
     #tower {
@@ -173,6 +195,12 @@
     <button id="btn-readme">README Example State</button>
     <button id="btn-random">Randomize</button>
     <button id="btn-idle">Show Idle</button>
+    <span class="view-btns">
+      <span style="color:#888; font-size:0.75rem; margin-right:0.25rem;">View:</span>
+      <button id="btn-view-readout">Readout</button>
+      <button id="btn-view-svg">Side View</button>
+      <button id="btn-view-both" class="active">Both</button>
+    </span>
   </div>
   <div class="layout">
     <div class="panel">
@@ -240,7 +268,32 @@
       throw new Error('Missing #tower container');
     }
 
-    const display = new TowerDisplay({ container: towerContainer });
+    let display = new TowerDisplay({ container: towerContainer });
+    let lastState = null;
+
+    const viewButtons = {
+      'btn-view-readout': 'readout',
+      'btn-view-svg': 'side-view',
+      'btn-view-both': ['readout', 'side-view'],
+    };
+
+    function setActiveViewButton(activeId) {
+      for (const id of Object.keys(viewButtons)) {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('active', id === activeId);
+      }
+    }
+
+    function recreateDisplay(renderers, activeId) {
+      display.dispose();
+      display = new TowerDisplay({ container: towerContainer, renderers });
+      setActiveViewButton(activeId);
+      if (lastState) display.applyState(lastState);
+    }
+
+    for (const [id, renderers] of Object.entries(viewButtons)) {
+      document.getElementById(id).addEventListener('click', () => recreateDisplay(renderers, id));
+    }
 
     const lightEffects = Object.values(LIGHT_EFFECTS).filter((value) => typeof value === 'number');
     const lightSequences = Object.values(TOWER_LIGHT_SEQUENCES).filter((value) => typeof value === 'number');
@@ -257,6 +310,7 @@
     }
 
     function applyAndShow(state) {
+      lastState = state;
       display.applyState(state);
       showState(state);
     }

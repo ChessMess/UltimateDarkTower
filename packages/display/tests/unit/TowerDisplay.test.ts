@@ -49,4 +49,33 @@ describe('TowerDisplay', () => {
     display.dispose();
     expect(container.innerHTML).toBe('');
   });
+
+  it('default renderers include both readout and side-view', () => {
+    expect(container.querySelector('.tdr-idle')).not.toBeNull();
+    expect(container.querySelector('.tsv-wrapper')).not.toBeNull();
+    expect(container.querySelector('.td-multi')).not.toBeNull();
+  });
+
+  it('renderers option: readout only', () => {
+    display.dispose();
+    display = new TowerDisplay({ container, renderers: 'readout' });
+    expect(container.querySelector('.tdr-idle')).not.toBeNull();
+    expect(container.querySelector('.tsv-wrapper')).toBeNull();
+  });
+
+  it('renderers option: side-view only', () => {
+    display.dispose();
+    display = new TowerDisplay({ container, renderers: 'side-view' });
+    expect(container.querySelector('.tsv-wrapper')).not.toBeNull();
+    expect(container.querySelector('.tdr-idle')).toBeNull();
+  });
+
+  it('applyState delegates to all renderers', () => {
+    display.applyState(createDefaultTowerState());
+    // Readout rendered layers
+    expect(container.querySelectorAll('.tdr-layer')).toHaveLength(6);
+    // SVG still visible
+    const wrapper = container.querySelector('.tsv-wrapper') as HTMLElement;
+    expect(wrapper.style.display).toBe('');
+  });
 });

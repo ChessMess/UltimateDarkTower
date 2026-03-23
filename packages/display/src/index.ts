@@ -1,3 +1,4 @@
 export { TowerDisplay } from './TowerDisplay';
 export { TowerStateReadout } from './TowerStateReadout';
-export type { TowerDisplayOptions, ITowerDisplay } from './types';
+export { TowerSideView } from './TowerSideView';
+export type { TowerDisplayOptions, ITowerDisplay, RendererType, TowerSide } from './types';
