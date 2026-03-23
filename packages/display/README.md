@@ -2,6 +2,8 @@
 
 DOM-based visual readout for decoded [Ultimate Dark Tower](https://github.com/ChessMess/ultimatedarktower) tower state.
 
+**[Live Demo](https://chessmess.github.io/UltimateDarkTowerDisplay/example/)**
+
 This package renders a live tower dashboard into a DOM element. It is intended for tools that already know how to obtain or decode a `TowerState` and want a compact on-screen display of:
 
 - LED layers and per-light effects
