@@ -18,7 +18,6 @@ Try the library in action! Just power on your Tower and visit:
 
 _Requires Web Bluetooth support (Chrome, Edge, Samsung Internet). For iOS, use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)._
 
-<hr/>
 ## Table of Contents
 
 - [UltimateDarkTower](#ultimatedarktower)
