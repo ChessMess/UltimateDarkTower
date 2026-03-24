@@ -16,14 +16,9 @@ Try the library in action! Just power on your Tower and visit:
 
 - **[Tower Controller](https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html)** - Replicates official app functionality and gives examples of library functionality.
 
-<details>
-<summary>Tower Game</summary>
+_Requires Web Bluetooth support (Chrome, Edge, Samsung Internet). For iOS, use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)._
 
-- **[Tower Game](https://chessmess.github.io/UltimateDarkTower/dist/examples/game/TowerGame.html)** - "The Tower's Challenge" - a complete game using just the tower [Editors Note: Currently broken... will fix soon]
-  </details>
-  <br/>
-  _Requires Web Bluetooth support (Chrome, Edge, Samsung Internet). For iOS, use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)._
-
+<hr/>
 ## Table of Contents
 
 - [UltimateDarkTower](#ultimatedarktower)
