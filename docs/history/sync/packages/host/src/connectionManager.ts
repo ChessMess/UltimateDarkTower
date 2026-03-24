@@ -171,14 +171,18 @@ export class ConnectionManager {
    * @param message - JSON string to send.
    */
   broadcast(message: string): void {
+    const failed: ClientId[] = [];
     for (const [id, { socket }] of this.clients.entries()) {
       if (socket.readyState !== WebSocket.OPEN) continue;
       try {
         socket.send(message);
       } catch (err) {
         console.warn(`[ConnectionManager] Send failed for ${id}, removing:`, err);
-        this.remove(id);
+        failed.push(id);
       }
+    }
+    for (const id of failed) {
+      this.remove(id);
     }
   }
 

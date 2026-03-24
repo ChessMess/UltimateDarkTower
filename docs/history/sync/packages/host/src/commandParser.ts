@@ -85,7 +85,7 @@ export class CommandParser {
    * @returns A {@link ParsedCommand} with validity and optional debug info.
    */
   parse(data: Buffer | Uint8Array | number[]): ParsedCommand {
-    const raw = Array.from(data instanceof Buffer ? data : data);
+    const raw = Array.from(data);
     const valid = raw.length === TOWER_COMMAND_LENGTH;
 
     return {

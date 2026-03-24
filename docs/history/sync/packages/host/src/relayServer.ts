@@ -187,7 +187,10 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
         });
 
         // 5. Clean up on disconnect.
+        let cleaned = false;
         const handleClose = (): void => {
+          if (cleaned) return;
+          cleaned = true;
           const label = this.manager.get(clientId)?.label;
           this.manager.remove(clientId);
           this.onClientDisconnected?.(clientId, label);

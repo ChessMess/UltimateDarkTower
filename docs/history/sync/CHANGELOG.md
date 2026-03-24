@@ -6,9 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+
+- **Duplicate `client:disconnected` broadcasts** — `RelayServer` registered both
+  `close` and `error` handlers that called the same cleanup function. When a
+  socket error preceded close (which always follows), cleanup ran twice,
+  broadcasting a duplicate disconnect notification. Added a guard flag so cleanup
+  executes at most once per client.
+- **Map mutation during broadcast iteration** — `ConnectionManager.broadcast()`
+  called `this.remove(id)` inside a `for…of` loop over the clients map when a
+  send threw. While ES spec allows this, it can skip entries unpredictably.
+  Failed client IDs are now collected and removed after the loop completes.
+- **Log cap removing text nodes** — `UI.log()` used `firstChild!` to trim
+  entries beyond the 200-entry cap, which could skip over whitespace text nodes.
+  Changed to `firstElementChild!` so only `<p>` element nodes are removed.
+
 ### Changed
 
 - **Client reconnect attempts capped at 10** — the client no longer retries indefinitely after losing the WebSocket connection to the host. After 10 failed attempts it stops, re-enables the "Connect to Host" button, and logs a message prompting the user to reconnect manually. The exponential backoff (1 s → 30 s max) is otherwise unchanged.
+- Remove stale scaffolding log messages from host entry point
+  ("Implement FakeTower and RelayServer to proceed") that were leftover from
+  initial development
+- Simplify redundant ternary in `CommandParser.parse()`
+  (`Array.from(data instanceof Buffer ? data : data)` → `Array.from(data)`)
+- Bump `@dark-tower-sync/shared` version from 0.1.2 → 0.1.3 for consistency
+  with host and client packages
+
+### Tests
+
+- Remove unused `bytes` variable and `void bytes` suppressor in
+  `logger.test.ts` setEnabled test
 
 ## [0.1.3] - 2026-03-22
 

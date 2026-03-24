@@ -28,6 +28,7 @@ export class UI {
   readonly towerBtn: HTMLButtonElement;
   readonly sendLogsBtn: HTMLButtonElement;
   readonly downloadLogsBtn: HTMLButtonElement;
+  readonly toggleStateBtn: HTMLButtonElement;
 
   // Status indicators
   private readonly relayDot: HTMLElement;
@@ -48,6 +49,7 @@ export class UI {
     this.towerBtn = this.require<HTMLButtonElement>('tower-btn');
     this.sendLogsBtn = this.require<HTMLButtonElement>('send-logs-btn');
     this.downloadLogsBtn = this.require<HTMLButtonElement>('download-logs-btn');
+    this.toggleStateBtn = this.require<HTMLButtonElement>('toggle-state-btn');
     this.relayDot = this.require('relay-dot');
     this.relayStatus = this.require('relay-status');
     this.towerDot = this.require('tower-dot');
@@ -106,7 +108,7 @@ export class UI {
     // Cap log to prevent unbounded DOM growth.
     const MAX_LOG_ENTRIES = 200;
     while (this.logEl.childElementCount > MAX_LOG_ENTRIES) {
-      this.logEl.removeChild(this.logEl.firstChild!);
+      this.logEl.removeChild(this.logEl.firstElementChild!);
     }
   }
 

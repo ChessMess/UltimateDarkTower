@@ -160,8 +160,6 @@ describe('HostLogger — setEnabled()', () => {
   });
 
   it('disabling stops writes; re-enabling resumes writes', async () => {
-    const bytes = new Array(20).fill(0);
-
     logger.logEvent('event', 'host', 'before disable');
     logger.setEnabled(false);
     logger.logEvent('event', 'host', 'while disabled — should not appear');
@@ -177,8 +175,6 @@ describe('HostLogger — setEnabled()', () => {
       'before disable',
       'after re-enable',
     ]);
-
-    void bytes; // suppress unused warning
   });
 });
 

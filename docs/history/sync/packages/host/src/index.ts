@@ -20,6 +20,7 @@ export { FakeTower } from './fakeTower';
 export { RelayServer } from './relayServer';
 export { HostLogger, pruneOldLogs } from './logger';
 export { CommandParser } from './commandParser';
+export { ObserverDisplay } from './observerDisplay';
 export type { HostLoggerOptions } from './logger';
 export type { RelayServerOptions } from './relayServer';
 export type { CommandReceivedCallback } from './fakeTower';
@@ -28,6 +29,7 @@ import { FakeTower } from './fakeTower';
 import { RelayServer } from './relayServer';
 import { HostLogger } from './logger';
 import { CommandParser } from './commandParser';
+import { ObserverDisplay } from './observerDisplay';
 import { PROTOCOL_VERSION } from '@dark-tower-sync/shared';
 
 const DEFAULT_PORT = 8765;
@@ -52,6 +54,7 @@ async function main(): Promise<void> {
   });
   const tower = new FakeTower();
   const parser = new CommandParser();
+  const observer = new ObserverDisplay();
 
   // Wire tower commands → relay broadcast.
   tower.onCommandReceived = (data) => {
@@ -59,6 +62,7 @@ async function main(): Promise<void> {
       console.warn('Dropping invalid command: wrong byte length', Array.from(data).length);
       return;
     }
+    observer.onCommandReceived(data);
     logger.logCommand('companion→host', data, null, 'companion');
     const seq = relay.broadcast(data);
     logger.logCommand('host→clients', data, seq, 'host');
@@ -94,8 +98,6 @@ async function main(): Promise<void> {
   process.on('SIGINT', () => void shutdown());
   process.on('SIGTERM', () => void shutdown());
 
-  // Placeholder until implementation is complete.
-  console.log('Host scaffolding ready. Implement FakeTower and RelayServer to proceed.');
   console.log(`Relay port: ${port}`);
 }
 
