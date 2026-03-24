@@ -15,6 +15,16 @@ An MCP server that lets AI assistants like Claude, ChatGPT, and Gemini control t
 - **Dual transport** — stdio for desktop AI tools, Streamable HTTP for web apps
 - **Zero custom BLE code** — built on UltimateDarkTower adapter pattern
 
+### AI Agents <!-- omit in toc -->
+
+Ready-to-use AI agents for this server and the `ultimatedarktower` library:
+👉 **[return-to-dark-tower-agents](https://github.com/ChessMess/return-to-dark-tower-agents)**
+
+- **Return to Dark Tower agent** — system prompt for Claude.ai, ChatGPT, and other web AI tools; knows all 31 tools, 15 resources, and 8 prompts
+- **Ultimate Dark Tower agent** — VS Code / GitHub Copilot coding agent for building apps with the `ultimatedarktower` npm library
+
+Supported in VS Code (GitHub Copilot), Claude.ai, ChatGPT, and 20+ tools via the [AGENTS.md standard](https://agents.md).
+
 ---
 
 ## 📚 Table of Contents <!-- omit in toc -->
