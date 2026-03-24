@@ -66,11 +66,30 @@ class DOMOutput {
         // Store the entry data (not DOM elements) for filtering
         this.allEntries.push({ level, message, timestamp });
         // Remove oldest entries if we exceed maxLines
+        let removedEntries = false;
         while (this.allEntries.length > this.maxLines) {
             this.allEntries.shift();
+            removedEntries = true;
         }
-        // Refresh the display with current filtering
-        this.refreshDisplay();
+        // If entries were removed, we need a full rebuild to sync DOM with data
+        if (removedEntries) {
+            this.refreshDisplay();
+            return;
+        }
+        // Otherwise, try to append just the new entry (avoids full DOM rebuild)
+        const enabledLevels = this.getEnabledLevelsFromCheckboxes();
+        if (enabledLevels.has(level)) {
+            const textFilter = this.getTextFilter();
+            if (!textFilter || message.toLowerCase().includes(textFilter.toLowerCase())) {
+                const timeStr = timestamp.toLocaleTimeString();
+                const logLine = document.createElement('div');
+                logLine.className = `log-line log-${level}`;
+                logLine.textContent = `[${timeStr}] ${message}`;
+                this.container.appendChild(logLine);
+                this.container.scrollTop = this.container.scrollHeight;
+                this.updateBufferSizeDisplay();
+            }
+        }
     }
     refreshDisplay() {
         if (!this.container)
@@ -185,6 +204,9 @@ class Logger {
     }
     addOutput(output) {
         this.outputs.push(output);
+    }
+    clearOutputs() {
+        this.outputs = [];
     }
     setMinLevel(level) {
         this.enabledLevels = new Set([level]);

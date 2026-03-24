@@ -127,7 +127,7 @@ describe('UdtBleConnection', () => {
       expect(callbacks.onBatteryLevelNotify).toHaveBeenCalledWith(1350);
     });
 
-    test('should respect battery notification frequency', async () => {
+    test('should always call onBatteryLevelNotify regardless of notification frequency', async () => {
       jest.useFakeTimers();
       await connection.connect();
 
@@ -135,11 +135,11 @@ describe('UdtBleConnection', () => {
       expect(callbacks.onBatteryLevelNotify).toHaveBeenCalledTimes(1);
 
       mockAdapter.simulateResponse(createBatteryResponse(1350));
-      expect(callbacks.onBatteryLevelNotify).toHaveBeenCalledTimes(1);
-
-      jest.advanceTimersByTime(connection.batteryNotifyFrequency + 100);
-      mockAdapter.simulateResponse(createBatteryResponse(1350));
       expect(callbacks.onBatteryLevelNotify).toHaveBeenCalledTimes(2);
+
+      jest.advanceTimersByTime(connection.batteryLogFrequency + 100);
+      mockAdapter.simulateResponse(createBatteryResponse(1350));
+      expect(callbacks.onBatteryLevelNotify).toHaveBeenCalledTimes(3);
     });
   });
 

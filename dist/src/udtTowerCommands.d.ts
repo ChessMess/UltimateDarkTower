@@ -199,9 +199,9 @@ export declare class UdtTowerCommands {
         isProcessing: boolean;
         currentCommand: {
             id: string;
-            description: string;
+            description: string | undefined;
             timestamp: number;
-        };
+        } | null;
     };
     /**
      * Clear the command queue (for cleanup or error recovery)

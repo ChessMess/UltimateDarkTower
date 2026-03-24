@@ -1,37 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 const udtConstants_1 = require("./udtConstants");
 const udtTowerState_1 = require("./udtTowerState");
@@ -237,12 +204,12 @@ class UltimateDarkTower {
     get currentBatteryPercent() { return this.currentBatteryPercentage; }
     get previousBatteryPercent() { return this.previousBatteryPercentage; }
     // Getter/setter methods for connection configuration
-    get batteryNotifyFrequency() { return this.bleConnection.batteryNotifyFrequency; }
-    set batteryNotifyFrequency(value) { this.bleConnection.batteryNotifyFrequency = value; }
-    get batteryNotifyOnValueChangeOnly() { return this.bleConnection.batteryNotifyOnValueChangeOnly; }
-    set batteryNotifyOnValueChangeOnly(value) { this.bleConnection.batteryNotifyOnValueChangeOnly = value; }
-    get batteryNotifyEnabled() { return this.bleConnection.batteryNotifyEnabled; }
-    set batteryNotifyEnabled(value) { this.bleConnection.batteryNotifyEnabled = value; }
+    get batteryLogFrequency() { return this.bleConnection.batteryLogFrequency; }
+    set batteryLogFrequency(value) { this.bleConnection.batteryLogFrequency = value; }
+    get batteryLogOnChangeOnly() { return this.bleConnection.batteryLogOnChangeOnly; }
+    set batteryLogOnChangeOnly(value) { this.bleConnection.batteryLogOnChangeOnly = value; }
+    get batteryLogEnabled() { return this.bleConnection.batteryLogEnabled; }
+    set batteryLogEnabled(value) { this.bleConnection.batteryLogEnabled = value; }
     get logTowerResponses() { return this.bleConnection.logTowerResponses; }
     set logTowerResponses(value) { this.bleConnection.logTowerResponses = value; }
     get logTowerResponseConfig() { return this.bleConnection.logTowerResponseConfig; }
@@ -418,14 +385,12 @@ class UltimateDarkTower {
      * @returns Promise that resolves when the command is sent
      */
     async sendTowerState(towerState) {
-        // Import pack function here to avoid circular dependencies
-        const { rtdt_pack_state } = await Promise.resolve().then(() => __importStar(require('./udtTowerState')));
         // Create a copy of the tower state and clear audio to prevent persistence
         const stateToSend = Object.assign({}, towerState);
         stateToSend.audio = { sample: 0, loop: false, volume: 0 };
         // Pack the tower state into 19 bytes
         const stateData = new Uint8Array(udtConstants_1.TOWER_STATE_DATA_SIZE);
-        const success = rtdt_pack_state(stateData, udtConstants_1.TOWER_STATE_DATA_SIZE, stateToSend);
+        const success = (0, udtTowerState_1.rtdt_pack_state)(stateData, udtConstants_1.TOWER_STATE_DATA_SIZE, stateToSend);
         if (!success) {
             throw new Error('Failed to pack tower state data');
         }
@@ -458,14 +423,11 @@ class UltimateDarkTower {
      * @param stateData - The 19-byte state data from tower response
      */
     updateTowerStateFromResponse(stateData) {
-        // Import unpack function here to avoid circular dependencies
-        Promise.resolve().then(() => __importStar(require('./udtTowerState'))).then(({ rtdt_unpack_state }) => {
-            const newState = rtdt_unpack_state(stateData);
-            // Reset audio state to prevent sounds from persisting, but preserve user's volume setting
-            // Tower always returns volume=0, so we keep the current volume from our local state
-            newState.audio = { sample: 0, loop: false, volume: this.currentTowerState.audio.volume };
-            this.setTowerState(newState, 'tower response');
-        });
+        const newState = (0, udtTowerState_1.rtdt_unpack_state)(stateData);
+        // Reset audio state to prevent sounds from persisting, but preserve user's volume setting
+        // Tower always returns volume=0, so we keep the current volume from our local state
+        newState.audio = { sample: 0, loop: false, volume: this.currentTowerState.audio.volume };
+        this.setTowerState(newState, 'tower response');
     }
     //#endregion
     /**
@@ -709,7 +671,7 @@ class UltimateDarkTower {
      */
     setLoggerOutputs(outputs) {
         // Clear existing outputs and add new ones to maintain logger instance references
-        this.logger.outputs = [];
+        this.logger.clearOutputs();
         outputs.forEach(output => this.logger.addOutput(output));
     }
     /**

@@ -63,6 +63,7 @@ let lastChartUpdate: number = 0;
 const CHART_UPDATE_THROTTLE = 200; // ms
 const MAX_DATA_POINTS = 1000;
 
+
 // Setup loggers with DOM output after DOM is ready
 const initializeLogger = () => {
   // Create single shared DOM output with 1000 max lines
@@ -103,7 +104,7 @@ if (document.readyState === 'loading') {
 (window as any).rtdt_unpack_state = rtdt_unpack_state;
 (window as any).createDefaultTowerState = createDefaultTowerState;
 
-// Expose Tower instance globally so HTML can access batteryNotifyOnValueChangeOnly
+// Expose Tower instance globally so HTML can access batteryLogOnChangeOnly
 (window as any).Tower = Tower;
 // Expose Tower instance and logger globally
 (window as any).Tower = Tower;
@@ -135,16 +136,16 @@ const onTowerConnected = () => {
   }
   logger.info("Tower connected successfully", '[TC]');
 
-  // Configure battery notification settings
-  Tower.batteryNotifyFrequency = 1000;
+  // Configure battery logging settings
+  Tower.batteryLogFrequency = 1000;
   // Apply the UI battery filter setting
   const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]') as NodeListOf<HTMLInputElement>;
   const selectedValue = Array.from(batteryFilterRadios).find(radio => radio.checked)?.value;
   if (selectedValue === 'none') {
-    Tower.batteryNotifyEnabled = false;
+    Tower.batteryLogEnabled = false;
   } else {
-    Tower.batteryNotifyEnabled = true;
-    Tower.batteryNotifyOnValueChangeOnly = selectedValue === 'changes';
+    Tower.batteryLogEnabled = true;
+    Tower.batteryLogOnChangeOnly = selectedValue === 'changes';
   }
 
   // Initialize battery trend display
@@ -1181,10 +1182,10 @@ const updateBatteryFilter = () => {
 
   if (selectedValue) {
     if (selectedValue === 'none') {
-      Tower.batteryNotifyEnabled = false;
+      Tower.batteryLogEnabled = false;
     } else {
-      Tower.batteryNotifyEnabled = true;
-      Tower.batteryNotifyOnValueChangeOnly = selectedValue === 'changes';
+      Tower.batteryLogEnabled = true;
+      Tower.batteryLogOnChangeOnly = selectedValue === 'changes';
     }
     logger.info(`Battery logging set to: ${selectedValue}`, '[TC]');
   }
@@ -2180,7 +2181,7 @@ const clearChartData = () => {
   differentialReadings = [];
 
   if (differentialChart) {
-    differentialChart.data.datasets.forEach(dataset => {
+    differentialChart.data.datasets.forEach((dataset: { data: never[]; }) => {
       dataset.data = [];
     });
     differentialChart.update();

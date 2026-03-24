@@ -77,11 +77,11 @@ export class UdtBleConnection {
 
     // Tower state
     towerSkullDropCount: number = -1;
-    lastBatteryNotification: number = 0;
+    lastBatteryLog: number = 0;
     lastBatteryPercentage: string = "";
-    batteryNotifyFrequency: number = 15 * 1000;
-    batteryNotifyOnValueChangeOnly = false;
-    batteryNotifyEnabled = true;
+    batteryLogFrequency: number = 15 * 1000;
+    batteryLogOnChangeOnly = false;
+    batteryLogEnabled = true;
 
     // Device information
     private deviceInformation: DeviceInformation = {};
@@ -185,7 +185,7 @@ export class UdtBleConnection {
 
         const shouldLogCommand = this.logTowerResponses &&
             this.responseProcessor.shouldLogResponse(cmdKey, this.logTowerResponseConfig) &&
-            (!isBattery || this.batteryNotifyEnabled);
+            !isBattery;
 
         if (shouldLogCommand) {
             this.logger.info(`${cmdKey}`, '[UDT][BLE][RCVD]');
@@ -205,18 +205,20 @@ export class UdtBleConnection {
             const millivolts = getMilliVoltsFromTowerResponse(receivedData);
             const batteryPercentage = milliVoltsToPercentage(millivolts);
             const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
-            const batteryNotifyFrequencyPassed = ((Date.now() - this.lastBatteryNotification) >= this.batteryNotifyFrequency);
+            const batteryLogFrequencyPassed = ((Date.now() - this.lastBatteryLog) >= this.batteryLogFrequency);
 
-            const shouldNotify = this.batteryNotifyEnabled && (this.batteryNotifyOnValueChangeOnly ?
+            const shouldLog = this.batteryLogEnabled && (this.batteryLogOnChangeOnly ?
                 (didBatteryLevelChange || this.lastBatteryPercentage === "") :
-                batteryNotifyFrequencyPassed);
+                batteryLogFrequencyPassed);
 
-            if (shouldNotify) {
+            if (shouldLog) {
                 this.logger.info(`${this.responseProcessor.commandToString(receivedData).join(' ')}`, '[UDT][BLE]');
-                this.lastBatteryNotification = Date.now();
+                this.lastBatteryLog = Date.now();
                 this.lastBatteryPercentage = batteryPercentage;
-                this.callbacks.onBatteryLevelNotify(millivolts);
             }
+
+            // Always notify so internal state and UI stay current
+            this.callbacks.onBatteryLevelNotify(millivolts);
         } else {
             // For non-battery responses, notify the command queue
             // This includes tower state responses, command acknowledgments, etc.

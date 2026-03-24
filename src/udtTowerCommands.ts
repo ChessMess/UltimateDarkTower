@@ -80,7 +80,7 @@ export class UdtTowerCommands {
             this.deps.bleConnection.lastSuccessfulCommand = Date.now();
         } catch (error) {
             this.deps.logger.error(`command send error: ${error}`, '[UDT][CMD]');
-            const errorMsg = error?.message ?? new String(error);
+            const errorMsg = (error as Error)?.message ?? String(error);
             const wasCancelled = errorMsg.includes('User cancelled');
             const maxRetriesReached = this.deps.retrySendCommandCount.value >= this.deps.retrySendCommandMax;
 
@@ -100,9 +100,9 @@ export class UdtTowerCommands {
             if (!maxRetriesReached && this.deps.bleConnection.isConnected && !wasCancelled) {
                 this.deps.logger.info(`retrying tower command attempt ${this.deps.retrySendCommandCount.value + 1}`, '[UDT][CMD]');
                 this.deps.retrySendCommandCount.value++;
-                setTimeout(() => {
-                    this.sendTowerCommandDirect(command);
-                }, 250 * this.deps.retrySendCommandCount.value);
+                const delay = 250 * this.deps.retrySendCommandCount.value;
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return await this.sendTowerCommandDirect(command);
             } else {
                 this.deps.retrySendCommandCount.value = 0;
             }
@@ -161,13 +161,18 @@ export class UdtTowerCommands {
         this.deps.logDetail && this.deps.logger.debug(`Light Parameter ${JSON.stringify(lights)}`, '[UDT][CMD]');
         this.deps.logger.info('Sending light commands', '[UDT][CMD]');
 
-        // Convert lights object to individual setLEDStateful calls
+        // Convert lights object to layer commands and apply them all to a single state update
         const layerCommands = this.mapLightsToLayerCommands(lights);
+        const currentState = this.deps.getCurrentTowerState();
 
-        // Execute all light commands
-        for (const { layerIndex, lightIndex, effect } of layerCommands) {
-            await this.setLEDStateful(layerIndex, lightIndex, effect);
+        for (const { layerIndex, lightIndex, effect, loop } of layerCommands) {
+            currentState.layer[layerIndex].light[lightIndex] = { effect, loop };
         }
+
+        // Send the accumulated state as a single command
+        const command = this.deps.commandFactory.createStatefulCommand(currentState, {});
+        this.deps.setTowerState(currentState, 'lights');
+        await this.sendTowerCommand(command, 'lights');
     }
 
     /**
@@ -178,13 +183,13 @@ export class UdtTowerCommands {
     private mapLightsToLayerCommands(lights: Lights): Array<{ layerIndex: number, lightIndex: number, effect: number, loop: boolean }> {
         const commands: Array<{ layerIndex: number, lightIndex: number, effect: number, loop: boolean }> = [];
 
-        // Map doorway lights (top, middle, bottom rings), assumes true on loop param
+        // Map doorway lights (top, middle, bottom rings)
         if (lights.doorway) {
             for (const doorwayLight of lights.doorway) {
                 const layerIndex = this.getTowerLayerForLevel(doorwayLight.level);
                 const lightIndex = this.getLightIndexForSide(doorwayLight.position);
                 const effect = LIGHT_EFFECTS[doorwayLight.style] || LIGHT_EFFECTS.off;
-                commands.push({ layerIndex, lightIndex, effect, loop: true });
+                commands.push({ layerIndex, lightIndex, effect, loop: effect !== LIGHT_EFFECTS.off });
             }
         }
 
@@ -194,7 +199,7 @@ export class UdtTowerCommands {
                 const layerIndex = TOWER_LAYERS.LEDGE;
                 const lightIndex = this.getLedgeLightIndexForSide(ledgeLight.position);
                 const effect = LIGHT_EFFECTS[ledgeLight.style] || LIGHT_EFFECTS.off;
-                commands.push({ layerIndex, lightIndex, effect, loop: false });
+                commands.push({ layerIndex, lightIndex, effect, loop: effect !== LIGHT_EFFECTS.off });
             }
         }
 
@@ -206,7 +211,7 @@ export class UdtTowerCommands {
                 const layerIndex = (baseLight.position.level === 'top' || baseLight.position.level === 'b') ? TOWER_LAYERS.BASE2 : TOWER_LAYERS.BASE1;
                 const lightIndex = this.getBaseLightIndexForSide(baseLight.position.side);
                 const effect = LIGHT_EFFECTS[baseLight.style] || LIGHT_EFFECTS.off;
-                commands.push({ layerIndex, lightIndex, effect, loop: false });
+                commands.push({ layerIndex, lightIndex, effect, loop: effect !== LIGHT_EFFECTS.off });
             }
         }
 
@@ -454,8 +459,7 @@ export class UdtTowerCommands {
         // This technically shouldn't be necessary, need to investiage
         // TODO: Why doesn't command coming back reflect zero skulls ...
         //       could be due to using problematic tower (not using my good tower at the moment)
-        const updatedState = { ...currentState };
-        updatedState.beam.count = 0;
+        const updatedState = { ...currentState, beam: { ...currentState.beam, count: 0 } };
         this.deps.setTowerState(updatedState, 'resetTowerSkullCount');
     }
 

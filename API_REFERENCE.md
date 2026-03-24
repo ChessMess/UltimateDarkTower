@@ -476,7 +476,7 @@ await tower.lightOverrides(0x0c, TOWER_AUDIO_LIBRARY.TowerAngry1.value);
 Turns all 24 tower LEDs on with the specified effect in a single command packet.
 Preserves current drum, beam, and audio state.
 
--   `effect` — Light effect value (default: `LIGHT_EFFECTS.on = 1`). Use `LIGHT_EFFECTS` constants for named values.
+- `effect` — Light effect value (default: `LIGHT_EFFECTS.on = 1`). Use `LIGHT_EFFECTS` constants for named values.
 
 ```typescript
 // Turn all lights on (solid)
@@ -540,13 +540,13 @@ await tower.randomRotateLevels(4);
 
 **Level Configuration**:
 
--   `0` = All levels
--   `1` = Top only
--   `2` = Middle only
--   `3` = Bottom only
--   `4` = Top + Middle
--   `5` = Top + Bottom
--   `6` = Middle + Bottom
+- `0` = All levels
+- `1` = Top only
+- `2` = Middle only
+- `3` = Bottom only
+- `4` = Top + Middle
+- `5` = Top + Bottom
+- `6` = Middle + Bottom
 
 #### `getCurrentDrumPosition(level: 'top' | 'middle' | 'bottom'): TowerSide`
 
@@ -653,6 +653,7 @@ Seals are the physical plastic covers on the tower body. There are **12 seals to
 **Important:** Seal state is **not tracked by the tower firmware**. The tower hardware only knows how to play a seal-break effect (sound + lights) when commanded. All seal state tracking — which seals are broken, which are intact — is managed purely in software by this library.
 
 This means:
+
 - `breakSeal()` sends a command to the tower (triggering sound and light effects) **and** marks the seal as broken in software
 - All other seal methods (`isSealBroken`, `getBrokenSeals`, `markSealBroken`, `markSealRestored`, etc.) are purely software-side operations with no hardware interaction
 
@@ -947,7 +948,7 @@ tower.onSkullDrop = (skullCount: number) => {
 
 #### `onBatteryLevelNotify: (millivolts: number) => void`
 
-Called when battery level updates.
+Called on every battery response received from the tower, regardless of `batteryLogEnabled` or `batteryLogFrequency` settings. Those settings control battery **logging** only — this callback always fires so that internal battery state and any UI indicators stay current.
 
 ```typescript
 import { milliVoltsToPercentage } from 'ultimatedarktower';
@@ -961,6 +962,28 @@ tower.onBatteryLevelNotify = (millivolts: number) => {
         console.warn('Low battery warning!');
     }
 };
+```
+
+#### Battery Logging Properties
+
+These properties control how often battery readings are **logged** (written to the library's internal logger). They do not affect the `onBatteryLevelNotify` callback, which always fires.
+
+| Property                 | Type      | Default | Description                                               |
+| ------------------------ | --------- | ------- | --------------------------------------------------------- |
+| `batteryLogEnabled`      | `boolean` | `true`  | Enable or disable battery log output                      |
+| `batteryLogFrequency`    | `number`  | `1000`  | Minimum interval (ms) between logged battery readings     |
+| `batteryLogOnChangeOnly` | `boolean` | `false` | When `true`, only log when the battery percentage changes |
+
+```typescript
+// Log every battery reading at most once per second (default)
+tower.batteryLogEnabled = true;
+tower.batteryLogFrequency = 1000;
+
+// Only log when battery percentage changes
+tower.batteryLogOnChangeOnly = true;
+
+// Suppress battery logging entirely (callback still fires)
+tower.batteryLogEnabled = false;
 ```
 
 ### Event Handling Best Practices
@@ -1650,22 +1673,22 @@ tower.onBatteryLevelNotify = (mv) => {
 
 ### Built-in Support (auto-detected)
 
--   **Chrome** (desktop and Android) - Web Bluetooth
--   **Microsoft Edge** - Web Bluetooth
--   **Samsung Internet** - Web Bluetooth
--   **iOS devices** (via Bluefy app) - Web Bluetooth
--   **Node.js** (Windows, macOS, Linux) - `@stoprocent/noble`
--   **Electron** - Web Bluetooth or Node.js (auto-detected)
+- **Chrome** (desktop and Android) - Web Bluetooth
+- **Microsoft Edge** - Web Bluetooth
+- **Samsung Internet** - Web Bluetooth
+- **iOS devices** (via Bluefy app) - Web Bluetooth
+- **Node.js** (Windows, macOS, Linux) - `@stoprocent/noble`
+- **Electron** - Web Bluetooth or Node.js (auto-detected)
 
 ### Custom Adapter Support
 
--   **React Native** (iOS & Android) - via `react-native-ble-plx`
--   **Cordova / Capacitor** - via platform BLE plugins
+- **React Native** (iOS & Android) - via `react-native-ble-plx`
+- **Cordova / Capacitor** - via platform BLE plugins
 
 ### Unsupported (no Web Bluetooth)
 
--   **Firefox**
--   **Safari**
+- **Firefox**
+- **Safari**
 
 ### Platform Detection
 

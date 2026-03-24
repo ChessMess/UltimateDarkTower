@@ -27,8 +27,12 @@ export declare class TowerResponseProcessor {
      * @returns {Object} Object containing command key and command definition
      */
     getTowerCommand(cmdValue: number): {
-        cmdKey: string;
-        command: any;
+        cmdKey: string | undefined;
+        command: {
+            name: string;
+            value: number;
+            critical: boolean;
+        };
     };
     /**
      * Converts a command packet to a human-readable string array for logging.
@@ -42,17 +46,17 @@ export declare class TowerResponseProcessor {
      * @param {any} logConfig - Logging configuration object
      * @returns {boolean} Whether this response should be logged
      */
-    shouldLogResponse(cmdKey: string, logConfig: TowerResponseConfig): boolean;
+    shouldLogResponse(cmdKey: string | undefined, logConfig: TowerResponseConfig): boolean;
     /**
      * Checks if a command is a battery response type.
      * @param {string} cmdKey - Command key from tower message
      * @returns {boolean} True if this is a battery response
      */
-    isBatteryResponse(cmdKey: string): boolean;
+    isBatteryResponse(cmdKey: string | undefined): boolean;
     /**
      * Checks if a command is a tower state response type.
      * @param {string} cmdKey - Command key from tower message
      * @returns {boolean} True if this is a tower state response
      */
-    isTowerStateResponse(cmdKey: string): boolean;
+    isTowerStateResponse(cmdKey: string | undefined): boolean;
 }

@@ -95,4 +95,10 @@ export declare class UdtCommandFactory {
      * @returns Default TowerState object
      */
     private createEmptyTowerState;
+    /**
+     * Creates a deep copy of a TowerState to avoid mutating the original.
+     * @param state - The tower state to copy
+     * @returns A new TowerState with all nested objects copied
+     */
+    private deepCopyTowerState;
 }

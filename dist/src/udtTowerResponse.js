@@ -26,10 +26,10 @@ class TowerResponseProcessor {
         const cmdKey = cmdKeys.find(key => udtConstants_1.TOWER_MESSAGES[key].value === cmdValue);
         if (!cmdKey) {
             udtLogger_1.logger.warn(`Unknown command received from tower: ${cmdValue} (0x${cmdValue.toString(16)})`, 'TowerResponseProcessor');
-            return { cmdKey: undefined, command: { name: "Unknown Command", value: cmdValue } };
+            return { cmdKey: undefined, command: { name: "Unknown Command", value: cmdValue, critical: false } };
         }
         const command = udtConstants_1.TOWER_MESSAGES[cmdKey];
-        return { cmdKey, command };
+        return { cmdKey: cmdKey, command };
     }
     /**
      * Converts a command packet to a human-readable string array for logging.
@@ -69,13 +69,12 @@ class TowerResponseProcessor {
      * @returns {boolean} Whether this response should be logged
      */
     shouldLogResponse(cmdKey, logConfig) {
-        const logAll = logConfig["LOG_ALL"];
-        let canLogThisResponse = logConfig[cmdKey] || logAll;
         // Log unknown commands by default for debugging
         if (!cmdKey) {
-            canLogThisResponse = true;
+            return true;
         }
-        return canLogThisResponse;
+        const logAll = logConfig["LOG_ALL"];
+        return (logConfig[cmdKey] || logAll);
     }
     /**
      * Checks if a command is a battery response type.

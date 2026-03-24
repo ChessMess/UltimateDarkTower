@@ -29,7 +29,7 @@ describe('UltimateDarkTower', () => {
       expect(darkTower.isCalibrated).toBe(false);
       expect(darkTower.performingCalibration).toBe(false);
       expect(darkTower.towerSkullDropCount).toBe(-1);
-      expect(darkTower.batteryNotifyFrequency).toBe(15000);
+      expect(darkTower.batteryLogFrequency).toBe(15000);
     });
 
     test('should have default configuration values', () => {
@@ -40,10 +40,10 @@ describe('UltimateDarkTower', () => {
   });
 
   describe('Configuration', () => {
-    test('should allow setting battery notification frequency', () => {
+    test('should allow setting battery log frequency', () => {
       const newFrequency = 10000;
-      darkTower.batteryNotifyFrequency = newFrequency;
-      expect(darkTower.batteryNotifyFrequency).toBe(newFrequency);
+      darkTower.batteryLogFrequency = newFrequency;
+      expect(darkTower.batteryLogFrequency).toBe(newFrequency);
     });
 
     test('should allow toggling detailed logging', () => {
@@ -91,7 +91,7 @@ describe('UltimateDarkTower', () => {
       towerState.drum[0].position = 1;
       towerState.drum[1].position = 2;
       towerState.drum[2].position = 3;
-      
+
       // Verify the updates
       expect(towerState.drum[0].position).toBe(1);
       expect(towerState.drum[1].position).toBe(2);
@@ -158,31 +158,31 @@ describe('UltimateDarkTower', () => {
     describe('Tower State Integration', () => {
       test('should return correct drum positions from tower state', () => {
         const towerState = darkTower.getCurrentTowerState();
-        
+
         // Test all position values: 0=north, 1=east, 2=south, 3=west
-        
+
         // Test bottom drum
         towerState.drum[2].position = 0; // north
         expect(darkTower.getCurrentDrumPosition('bottom')).toBe('north');
-        
+
         towerState.drum[2].position = 1; // east
         expect(darkTower.getCurrentDrumPosition('bottom')).toBe('east');
-        
+
         towerState.drum[2].position = 2; // south
         expect(darkTower.getCurrentDrumPosition('bottom')).toBe('south');
-        
+
         towerState.drum[2].position = 3; // west
         expect(darkTower.getCurrentDrumPosition('bottom')).toBe('west');
       });
 
       test('should return correct positions for all drum levels', () => {
         const towerState = darkTower.getCurrentTowerState();
-        
+
         // Set different positions for each drum
         towerState.drum[0].position = 1; // top = east
         towerState.drum[1].position = 2; // middle = south  
         towerState.drum[2].position = 3; // bottom = west
-        
+
         expect(darkTower.getCurrentDrumPosition('top')).toBe('east');
         expect(darkTower.getCurrentDrumPosition('middle')).toBe('south');
         expect(darkTower.getCurrentDrumPosition('bottom')).toBe('west');
@@ -190,12 +190,12 @@ describe('UltimateDarkTower', () => {
 
       test('should default to north for invalid position values', () => {
         const towerState = darkTower.getCurrentTowerState();
-        
+
         // Set invalid position values
         towerState.drum[0].position = 999;
         towerState.drum[1].position = -1;
         towerState.drum[2].position = 10;
-        
+
         expect(darkTower.getCurrentDrumPosition('top')).toBe('north');
         expect(darkTower.getCurrentDrumPosition('middle')).toBe('north');
         expect(darkTower.getCurrentDrumPosition('bottom')).toBe('north');
@@ -205,11 +205,11 @@ describe('UltimateDarkTower', () => {
         // Mock getCurrentTowerState to return null
         const originalMethod = darkTower.getCurrentTowerState;
         darkTower.getCurrentTowerState = jest.fn().mockReturnValue(null);
-        
+
         expect(darkTower.getCurrentDrumPosition('top')).toBe('north');
         expect(darkTower.getCurrentDrumPosition('middle')).toBe('north');
         expect(darkTower.getCurrentDrumPosition('bottom')).toBe('north');
-        
+
         // Restore original method
         darkTower.getCurrentTowerState = originalMethod;
       });
@@ -615,7 +615,7 @@ describe('UltimateDarkTower', () => {
       // Fast-forward time to trigger timeout (30 seconds)
       jest.advanceTimersByTime(30000);
 
-      await promise; // Should complete despite timeout
+      await expect(promise).rejects.toThrow('Command timeout after 30000ms');
 
       expect(mockAdapter.writeCalls).toBe(1);
       expect(loggerSpy).toHaveBeenCalledWith(

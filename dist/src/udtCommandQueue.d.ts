@@ -44,8 +44,8 @@ export declare class CommandQueue {
         isProcessing: boolean;
         currentCommand: {
             id: string;
-            description: string;
+            description: string | undefined;
             timestamp: number;
-        };
+        } | null;
     };
 }

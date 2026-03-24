@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-03-24
+
+### Changed
+
+- **`onBatteryLevelNotify` now fires on every battery response** — The callback is no longer gated by battery logging settings, ensuring internal battery state and UI indicators always stay current regardless of log configuration.
+- **Renamed battery notification properties to battery logging properties** — `batteryNotifyEnabled` → `batteryLogEnabled`, `batteryNotifyFrequency` → `batteryLogFrequency`, `batteryNotifyOnValueChangeOnly` → `batteryLogOnChangeOnly`. The new names clarify that these properties control the library's internal log output, not the `onBatteryLevelNotify` callback.
+- **`lights()` now sends a single command instead of per-light commands** — Previously sent individual `setLEDStateful` commands for each light (up to 24 commands), which could overflow the tower's buffer. Now accumulates all light changes into one state packet sent as a single command.
+
+### Fixed
+
+- **Battery indicator not updating when battery logging set to NONE** — The Tower Status battery display now always updates regardless of the battery logging setting.
+- **Battery `[RCVD]` log lines ignoring "Changes" filter** — The generic `[UDT][BLE][RCVD] BATTERY_READING` log line was not respecting `batteryLogOnChangeOnly`. Battery responses now skip the generic RCVD log and are logged exclusively by the dedicated battery logging block, which correctly respects all three logging properties.
+- **Ledge and base light effects not looping** — Effects like "breathe" played once and faded away on ledge and base lights because their `loop` flag was hardcoded to `false`. All light types now set `loop` based on whether the effect is active (`effect !== LIGHT_EFFECTS.off`), matching the behaviour of `allLightsOn()`.
+
+### Added
+
+- **Battery logging properties documented in API_REFERENCE.md** — `batteryLogEnabled`, `batteryLogFrequency`, and `batteryLogOnChangeOnly` are now documented with descriptions, types, defaults, and usage examples.
+
 ## [2.5.0] - 2026-03-23
 
 ### Added

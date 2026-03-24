@@ -52,11 +52,11 @@ export declare class UdtBleConnection {
     enableBatteryHeartbeatMonitoring: boolean;
     batteryHeartbeatVerifyConnection: boolean;
     towerSkullDropCount: number;
-    lastBatteryNotification: number;
+    lastBatteryLog: number;
     lastBatteryPercentage: string;
-    batteryNotifyFrequency: number;
-    batteryNotifyOnValueChangeOnly: boolean;
-    batteryNotifyEnabled: boolean;
+    batteryLogFrequency: number;
+    batteryLogOnChangeOnly: boolean;
+    batteryLogEnabled: boolean;
     private deviceInformation;
     logTowerResponses: boolean;
     logTowerResponseConfig: {

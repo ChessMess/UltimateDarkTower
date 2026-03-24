@@ -89,11 +89,10 @@ class CommandQueue {
         if (this.currentCommand) {
             const { description, id } = this.currentCommand;
             this.logger.warn(`Command timeout after ${this.timeoutMs}ms: ${description || id}`, '[UDT]');
-            // Don't reject the promise - just log and continue
-            // This allows the queue to continue processing even if a command times out
-            this.currentCommand.resolve();
+            const reject = this.currentCommand.reject;
             this.currentCommand = null;
             this.isProcessing = false;
+            reject(new Error(`Command timeout after ${this.timeoutMs}ms: ${description || id}`));
             // Process next command in queue
             this.processNext();
         }

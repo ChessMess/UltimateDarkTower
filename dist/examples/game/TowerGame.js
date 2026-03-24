@@ -1,3 +1,4 @@
+"use strict";
 (() => {
   var __defProp = Object.defineProperty;
   var __defProps = Object.defineProperties;
@@ -44,9 +45,10 @@
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
   // src/udtConstants.ts
-  var UART_SERVICE_UUID, UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID, TOWER_DEVICE_NAME, DIS_SERVICE_UUID, DIS_MANUFACTURER_NAME_UUID, DIS_MODEL_NUMBER_UUID, DIS_SERIAL_NUMBER_UUID, DIS_HARDWARE_REVISION_UUID, DIS_FIRMWARE_REVISION_UUID, DIS_SOFTWARE_REVISION_UUID, DIS_SYSTEM_ID_UUID, DIS_IEEE_REGULATORY_UUID, DIS_PNP_ID_UUID, TOWER_COMMAND_PACKET_SIZE, TOWER_STATE_DATA_SIZE, TOWER_STATE_RESPONSE_MIN_LENGTH, TOWER_STATE_DATA_OFFSET, TOWER_COMMAND_TYPE_TOWER_STATE, DEFAULT_CONNECTION_MONITORING_FREQUENCY, DEFAULT_CONNECTION_MONITORING_TIMEOUT, DEFAULT_BATTERY_HEARTBEAT_TIMEOUT, DEFAULT_RETRY_SEND_COMMAND_MAX, TOWER_SIDES_COUNT, TOWER_COMMANDS, TC, DRUM_PACKETS, GLYPHS, AUDIO_COMMAND_POS, SKULL_DROP_COUNT_POS, drumPositionCmds, LIGHT_EFFECTS, TOWER_MESSAGES, VOLTAGE_LEVELS, TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LED_CHANNEL_LOOKUP, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH, TOWER_AUDIO_LIBRARY;
+  var UART_SERVICE_UUID, UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID, TOWER_DEVICE_NAME, DIS_SERVICE_UUID, DIS_MANUFACTURER_NAME_UUID, DIS_MODEL_NUMBER_UUID, DIS_SERIAL_NUMBER_UUID, DIS_HARDWARE_REVISION_UUID, DIS_FIRMWARE_REVISION_UUID, DIS_SOFTWARE_REVISION_UUID, DIS_SYSTEM_ID_UUID, DIS_IEEE_REGULATORY_UUID, DIS_PNP_ID_UUID, TOWER_COMMAND_PACKET_SIZE, TOWER_STATE_DATA_SIZE, TOWER_STATE_RESPONSE_MIN_LENGTH, TOWER_STATE_DATA_OFFSET, TOWER_COMMAND_TYPE_TOWER_STATE, DEFAULT_CONNECTION_MONITORING_FREQUENCY, DEFAULT_CONNECTION_MONITORING_TIMEOUT, DEFAULT_BATTERY_HEARTBEAT_TIMEOUT, DEFAULT_RETRY_SEND_COMMAND_MAX, TOWER_SIDES_COUNT, TOWER_COMMANDS, TC, DRUM_PACKETS, GLYPHS, AUDIO_COMMAND_POS, SKULL_DROP_COUNT_POS, drumPositionCmds, LIGHT_EFFECTS, TOWER_MESSAGES, VOLTAGE_LEVELS, TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH, TOWER_AUDIO_LIBRARY;
   var init_udtConstants = __esm({
     "src/udtConstants.ts"() {
+      "use strict";
       UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
       UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
       UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
@@ -174,38 +176,6 @@
         SOUTH_WEST: 2,
         NORTH_WEST: 3
       };
-      LED_CHANNEL_LOOKUP = [
-        // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
-        0,
-        3,
-        2,
-        1,
-        // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
-        7,
-        6,
-        5,
-        4,
-        // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
-        10,
-        9,
-        8,
-        11,
-        // Layer 3: Ledge (LEDGE R4, LEDGE R5, LEDGE R6, LEDGE R7)
-        12,
-        13,
-        14,
-        15,
-        // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
-        16,
-        17,
-        18,
-        19,
-        // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
-        20,
-        21,
-        22,
-        23
-      ];
       LAYER_TO_POSITION = {
         [TOWER_LAYERS.TOP_RING]: "TOP_RING",
         [TOWER_LAYERS.MIDDLE_RING]: "MIDDLE_RING",
@@ -339,160 +309,11 @@
     }
   });
 
-  // src/udtTowerState.ts
-  var udtTowerState_exports = {};
-  __export(udtTowerState_exports, {
-    LAYER_TO_POSITION: () => LAYER_TO_POSITION,
-    LEDGE_BASE_LIGHT_POSITIONS: () => LEDGE_BASE_LIGHT_POSITIONS,
-    LED_CHANNEL_LOOKUP: () => LED_CHANNEL_LOOKUP,
-    LIGHT_INDEX_TO_DIRECTION: () => LIGHT_INDEX_TO_DIRECTION,
-    RING_LIGHT_POSITIONS: () => RING_LIGHT_POSITIONS,
-    STATE_DATA_LENGTH: () => STATE_DATA_LENGTH,
-    TOWER_LAYERS: () => TOWER_LAYERS,
-    isCalibrated: () => isCalibrated,
-    rtdt_pack_state: () => rtdt_pack_state,
-    rtdt_unpack_state: () => rtdt_unpack_state
-  });
-  function rtdt_unpack_state(data) {
-    const state = {
-      drum: [
-        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
-        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
-        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false }
-      ],
-      layer: [
-        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] }
-      ],
-      audio: { sample: 0, loop: false, volume: 0 },
-      beam: { count: 0, fault: false },
-      led_sequence: 0
-    };
-    state.drum[0].jammed = !!(data[0] & 8);
-    state.drum[0].calibrated = !!(data[0] & 16);
-    state.drum[1].jammed = !!(data[1] & 1);
-    state.drum[1].calibrated = !!(data[1] & 2);
-    state.drum[2].jammed = !!(data[1] & 32);
-    state.drum[2].calibrated = !!(data[1] & 64);
-    state.drum[0].position = (data[0] & 6) >> 1;
-    state.drum[1].position = (data[0] & 192) >> 6;
-    state.drum[2].position = (data[1] & 24) >> 3;
-    state.drum[0].playSound = !!(data[0] & 1);
-    state.drum[1].playSound = !!(data[0] & 32);
-    state.drum[2].playSound = !!(data[1] & 4);
-    state.layer[0].light[0].effect = (data[2] & 224) >> 5;
-    state.layer[0].light[0].loop = !!(data[2] & 16);
-    state.layer[0].light[1].effect = (data[2] & 14) >> 1;
-    state.layer[0].light[1].loop = !!(data[2] & 1);
-    state.layer[0].light[2].effect = (data[3] & 224) >> 5;
-    state.layer[0].light[2].loop = !!(data[3] & 16);
-    state.layer[0].light[3].effect = (data[3] & 14) >> 1;
-    state.layer[0].light[3].loop = !!(data[3] & 1);
-    state.layer[1].light[0].effect = (data[4] & 224) >> 5;
-    state.layer[1].light[0].loop = !!(data[4] & 16);
-    state.layer[1].light[1].effect = (data[4] & 14) >> 1;
-    state.layer[1].light[1].loop = !!(data[4] & 1);
-    state.layer[1].light[2].effect = (data[5] & 224) >> 5;
-    state.layer[1].light[2].loop = !!(data[5] & 16);
-    state.layer[1].light[3].effect = (data[5] & 14) >> 1;
-    state.layer[1].light[3].loop = !!(data[5] & 1);
-    state.layer[2].light[0].effect = (data[6] & 224) >> 5;
-    state.layer[2].light[0].loop = !!(data[6] & 16);
-    state.layer[2].light[1].effect = (data[6] & 14) >> 1;
-    state.layer[2].light[1].loop = !!(data[6] & 1);
-    state.layer[2].light[2].effect = (data[7] & 224) >> 5;
-    state.layer[2].light[2].loop = !!(data[7] & 16);
-    state.layer[2].light[3].effect = (data[7] & 14) >> 1;
-    state.layer[2].light[3].loop = !!(data[7] & 1);
-    state.layer[3].light[0].effect = (data[8] & 224) >> 5;
-    state.layer[3].light[0].loop = !!(data[8] & 16);
-    state.layer[3].light[1].effect = (data[8] & 14) >> 1;
-    state.layer[3].light[1].loop = !!(data[8] & 1);
-    state.layer[3].light[2].effect = (data[9] & 224) >> 5;
-    state.layer[3].light[2].loop = !!(data[9] & 16);
-    state.layer[3].light[3].effect = (data[9] & 14) >> 1;
-    state.layer[3].light[3].loop = !!(data[9] & 1);
-    state.layer[4].light[0].effect = (data[10] & 224) >> 5;
-    state.layer[4].light[0].loop = !!(data[10] & 16);
-    state.layer[4].light[1].effect = (data[10] & 14) >> 1;
-    state.layer[4].light[1].loop = !!(data[10] & 1);
-    state.layer[4].light[2].effect = (data[11] & 224) >> 5;
-    state.layer[4].light[2].loop = !!(data[11] & 16);
-    state.layer[4].light[3].effect = (data[11] & 14) >> 1;
-    state.layer[4].light[3].loop = !!(data[11] & 1);
-    state.layer[5].light[0].effect = (data[12] & 224) >> 5;
-    state.layer[5].light[0].loop = !!(data[12] & 16);
-    state.layer[5].light[1].effect = (data[12] & 14) >> 1;
-    state.layer[5].light[1].loop = !!(data[12] & 1);
-    state.layer[5].light[2].effect = (data[13] & 224) >> 5;
-    state.layer[5].light[2].loop = !!(data[13] & 16);
-    state.layer[5].light[3].effect = (data[13] & 14) >> 1;
-    state.layer[5].light[3].loop = !!(data[13] & 1);
-    state.audio.sample = data[14] & 127;
-    state.audio.loop = !!(data[14] & 128);
-    state.beam.count = data[15] << 8 | data[16];
-    state.beam.fault = !!(data[17] & 1);
-    state.drum[0].reverse = !!(data[17] & 2);
-    state.drum[1].reverse = !!(data[17] & 4);
-    state.drum[2].reverse = !!(data[17] & 8);
-    state.audio.volume = (data[17] & 240) >> 4;
-    state.led_sequence = data[18];
-    return state;
-  }
-  function rtdt_pack_state(data, len, state) {
-    if (!data || len < STATE_DATA_LENGTH)
-      return false;
-    data.fill(0, 0, STATE_DATA_LENGTH);
-    data[0] |= (state.drum[0].playSound ? 1 : 0) | (state.drum[0].position & 3) << 1 | (state.drum[0].jammed ? 1 : 0) << 3 | (state.drum[0].calibrated ? 1 : 0) << 4 | (state.drum[1].playSound ? 1 : 0) << 5 | (state.drum[1].position & 3) << 6;
-    data[1] |= (state.drum[1].jammed ? 1 : 0) | (state.drum[1].calibrated ? 1 : 0) << 1 | (state.drum[2].playSound ? 1 : 0) << 2 | (state.drum[2].position & 3) << 3 | (state.drum[2].jammed ? 1 : 0) << 5 | (state.drum[2].calibrated ? 1 : 0) << 6;
-    data[2] |= state.layer[0].light[0].effect << 5 | (state.layer[0].light[0].loop ? 1 : 0) << 4;
-    data[2] |= state.layer[0].light[1].effect << 1 | (state.layer[0].light[1].loop ? 1 : 0);
-    data[3] |= state.layer[0].light[2].effect << 5 | (state.layer[0].light[2].loop ? 1 : 0) << 4;
-    data[3] |= state.layer[0].light[3].effect << 1 | (state.layer[0].light[3].loop ? 1 : 0);
-    data[4] |= state.layer[1].light[0].effect << 5 | (state.layer[1].light[0].loop ? 1 : 0) << 4;
-    data[4] |= state.layer[1].light[1].effect << 1 | (state.layer[1].light[1].loop ? 1 : 0);
-    data[5] |= state.layer[1].light[2].effect << 5 | (state.layer[1].light[2].loop ? 1 : 0) << 4;
-    data[5] |= state.layer[1].light[3].effect << 1 | (state.layer[1].light[3].loop ? 1 : 0);
-    data[6] |= state.layer[2].light[0].effect << 5 | (state.layer[2].light[0].loop ? 1 : 0) << 4;
-    data[6] |= state.layer[2].light[1].effect << 1 | (state.layer[2].light[1].loop ? 1 : 0);
-    data[7] |= state.layer[2].light[2].effect << 5 | (state.layer[2].light[2].loop ? 1 : 0) << 4;
-    data[7] |= state.layer[2].light[3].effect << 1 | (state.layer[2].light[3].loop ? 1 : 0);
-    data[8] |= state.layer[3].light[0].effect << 5 | (state.layer[3].light[0].loop ? 1 : 0) << 4;
-    data[8] |= state.layer[3].light[1].effect << 1 | (state.layer[3].light[1].loop ? 1 : 0);
-    data[9] |= state.layer[3].light[2].effect << 5 | (state.layer[3].light[2].loop ? 1 : 0) << 4;
-    data[9] |= state.layer[3].light[3].effect << 1 | (state.layer[3].light[3].loop ? 1 : 0);
-    data[10] |= state.layer[4].light[0].effect << 5 | (state.layer[4].light[0].loop ? 1 : 0) << 4;
-    data[10] |= state.layer[4].light[1].effect << 1 | (state.layer[4].light[1].loop ? 1 : 0);
-    data[11] |= state.layer[4].light[2].effect << 5 | (state.layer[4].light[2].loop ? 1 : 0) << 4;
-    data[11] |= state.layer[4].light[3].effect << 1 | (state.layer[4].light[3].loop ? 1 : 0);
-    data[12] |= state.layer[5].light[0].effect << 5 | (state.layer[5].light[0].loop ? 1 : 0) << 4;
-    data[12] |= state.layer[5].light[1].effect << 1 | (state.layer[5].light[1].loop ? 1 : 0);
-    data[13] |= state.layer[5].light[2].effect << 5 | (state.layer[5].light[2].loop ? 1 : 0) << 4;
-    data[13] |= state.layer[5].light[3].effect << 1 | (state.layer[5].light[3].loop ? 1 : 0);
-    data[14] = state.audio.sample | (state.audio.loop ? 1 : 0) << 7;
-    data[15] = state.beam.count >> 8;
-    data[16] = state.beam.count & 255;
-    data[17] = state.audio.volume << 4 | (state.beam.fault ? 1 : 0) | (state.drum[0].reverse ? 1 : 0) << 1 | (state.drum[1].reverse ? 1 : 0) << 2 | (state.drum[2].reverse ? 1 : 0) << 3;
-    data[18] = state.led_sequence;
-    return true;
-  }
-  function isCalibrated(state) {
-    return state.drum.every((drum) => drum.calibrated);
-  }
-  var init_udtTowerState = __esm({
-    "src/udtTowerState.ts"() {
-      init_udtConstants();
-    }
-  });
-
   // src/udtBluetoothAdapter.ts
   var BluetoothError, BluetoothConnectionError, BluetoothDeviceNotFoundError, BluetoothUserCancelledError, BluetoothTimeoutError;
   var init_udtBluetoothAdapter = __esm({
     "src/udtBluetoothAdapter.ts"() {
+      "use strict";
       BluetoothError = class extends Error {
         constructor(message, originalError) {
           super(message);
@@ -535,6 +356,7 @@
   var WebBluetoothAdapter;
   var init_WebBluetoothAdapter = __esm({
     "src/adapters/WebBluetoothAdapter.ts"() {
+      "use strict";
       init_udtConstants();
       init_udtBluetoothAdapter();
       WebBluetoothAdapter = class {
@@ -700,6 +522,7 @@
   var noble, _a, NodeBluetoothAdapter;
   var init_NodeBluetoothAdapter = __esm({
     "src/adapters/NodeBluetoothAdapter.ts"() {
+      "use strict";
       init_udtBluetoothAdapter();
       init_udtConstants();
       try {
@@ -985,7 +808,139 @@
 
   // src/UltimateDarkTower.ts
   init_udtConstants();
-  init_udtTowerState();
+
+  // src/udtTowerState.ts
+  init_udtConstants();
+  function rtdt_unpack_state(data) {
+    const state = {
+      drum: [
+        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+        { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false }
+      ],
+      layer: [
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+        { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] }
+      ],
+      audio: { sample: 0, loop: false, volume: 0 },
+      beam: { count: 0, fault: false },
+      led_sequence: 0
+    };
+    state.drum[0].jammed = !!(data[0] & 8);
+    state.drum[0].calibrated = !!(data[0] & 16);
+    state.drum[1].jammed = !!(data[1] & 1);
+    state.drum[1].calibrated = !!(data[1] & 2);
+    state.drum[2].jammed = !!(data[1] & 32);
+    state.drum[2].calibrated = !!(data[1] & 64);
+    state.drum[0].position = (data[0] & 6) >> 1;
+    state.drum[1].position = (data[0] & 192) >> 6;
+    state.drum[2].position = (data[1] & 24) >> 3;
+    state.drum[0].playSound = !!(data[0] & 1);
+    state.drum[1].playSound = !!(data[0] & 32);
+    state.drum[2].playSound = !!(data[1] & 4);
+    state.layer[0].light[0].effect = (data[2] & 224) >> 5;
+    state.layer[0].light[0].loop = !!(data[2] & 16);
+    state.layer[0].light[1].effect = (data[2] & 14) >> 1;
+    state.layer[0].light[1].loop = !!(data[2] & 1);
+    state.layer[0].light[2].effect = (data[3] & 224) >> 5;
+    state.layer[0].light[2].loop = !!(data[3] & 16);
+    state.layer[0].light[3].effect = (data[3] & 14) >> 1;
+    state.layer[0].light[3].loop = !!(data[3] & 1);
+    state.layer[1].light[0].effect = (data[4] & 224) >> 5;
+    state.layer[1].light[0].loop = !!(data[4] & 16);
+    state.layer[1].light[1].effect = (data[4] & 14) >> 1;
+    state.layer[1].light[1].loop = !!(data[4] & 1);
+    state.layer[1].light[2].effect = (data[5] & 224) >> 5;
+    state.layer[1].light[2].loop = !!(data[5] & 16);
+    state.layer[1].light[3].effect = (data[5] & 14) >> 1;
+    state.layer[1].light[3].loop = !!(data[5] & 1);
+    state.layer[2].light[0].effect = (data[6] & 224) >> 5;
+    state.layer[2].light[0].loop = !!(data[6] & 16);
+    state.layer[2].light[1].effect = (data[6] & 14) >> 1;
+    state.layer[2].light[1].loop = !!(data[6] & 1);
+    state.layer[2].light[2].effect = (data[7] & 224) >> 5;
+    state.layer[2].light[2].loop = !!(data[7] & 16);
+    state.layer[2].light[3].effect = (data[7] & 14) >> 1;
+    state.layer[2].light[3].loop = !!(data[7] & 1);
+    state.layer[3].light[0].effect = (data[8] & 224) >> 5;
+    state.layer[3].light[0].loop = !!(data[8] & 16);
+    state.layer[3].light[1].effect = (data[8] & 14) >> 1;
+    state.layer[3].light[1].loop = !!(data[8] & 1);
+    state.layer[3].light[2].effect = (data[9] & 224) >> 5;
+    state.layer[3].light[2].loop = !!(data[9] & 16);
+    state.layer[3].light[3].effect = (data[9] & 14) >> 1;
+    state.layer[3].light[3].loop = !!(data[9] & 1);
+    state.layer[4].light[0].effect = (data[10] & 224) >> 5;
+    state.layer[4].light[0].loop = !!(data[10] & 16);
+    state.layer[4].light[1].effect = (data[10] & 14) >> 1;
+    state.layer[4].light[1].loop = !!(data[10] & 1);
+    state.layer[4].light[2].effect = (data[11] & 224) >> 5;
+    state.layer[4].light[2].loop = !!(data[11] & 16);
+    state.layer[4].light[3].effect = (data[11] & 14) >> 1;
+    state.layer[4].light[3].loop = !!(data[11] & 1);
+    state.layer[5].light[0].effect = (data[12] & 224) >> 5;
+    state.layer[5].light[0].loop = !!(data[12] & 16);
+    state.layer[5].light[1].effect = (data[12] & 14) >> 1;
+    state.layer[5].light[1].loop = !!(data[12] & 1);
+    state.layer[5].light[2].effect = (data[13] & 224) >> 5;
+    state.layer[5].light[2].loop = !!(data[13] & 16);
+    state.layer[5].light[3].effect = (data[13] & 14) >> 1;
+    state.layer[5].light[3].loop = !!(data[13] & 1);
+    state.audio.sample = data[14] & 127;
+    state.audio.loop = !!(data[14] & 128);
+    state.beam.count = data[15] << 8 | data[16];
+    state.beam.fault = !!(data[17] & 1);
+    state.drum[0].reverse = !!(data[17] & 2);
+    state.drum[1].reverse = !!(data[17] & 4);
+    state.drum[2].reverse = !!(data[17] & 8);
+    state.audio.volume = (data[17] & 240) >> 4;
+    state.led_sequence = data[18];
+    return state;
+  }
+  function rtdt_pack_state(data, len, state) {
+    if (!data || len < STATE_DATA_LENGTH)
+      return false;
+    data.fill(0, 0, STATE_DATA_LENGTH);
+    data[0] |= (state.drum[0].playSound ? 1 : 0) | (state.drum[0].position & 3) << 1 | (state.drum[0].jammed ? 1 : 0) << 3 | (state.drum[0].calibrated ? 1 : 0) << 4 | (state.drum[1].playSound ? 1 : 0) << 5 | (state.drum[1].position & 3) << 6;
+    data[1] |= (state.drum[1].jammed ? 1 : 0) | (state.drum[1].calibrated ? 1 : 0) << 1 | (state.drum[2].playSound ? 1 : 0) << 2 | (state.drum[2].position & 3) << 3 | (state.drum[2].jammed ? 1 : 0) << 5 | (state.drum[2].calibrated ? 1 : 0) << 6;
+    data[2] |= state.layer[0].light[0].effect << 5 | (state.layer[0].light[0].loop ? 1 : 0) << 4;
+    data[2] |= state.layer[0].light[1].effect << 1 | (state.layer[0].light[1].loop ? 1 : 0);
+    data[3] |= state.layer[0].light[2].effect << 5 | (state.layer[0].light[2].loop ? 1 : 0) << 4;
+    data[3] |= state.layer[0].light[3].effect << 1 | (state.layer[0].light[3].loop ? 1 : 0);
+    data[4] |= state.layer[1].light[0].effect << 5 | (state.layer[1].light[0].loop ? 1 : 0) << 4;
+    data[4] |= state.layer[1].light[1].effect << 1 | (state.layer[1].light[1].loop ? 1 : 0);
+    data[5] |= state.layer[1].light[2].effect << 5 | (state.layer[1].light[2].loop ? 1 : 0) << 4;
+    data[5] |= state.layer[1].light[3].effect << 1 | (state.layer[1].light[3].loop ? 1 : 0);
+    data[6] |= state.layer[2].light[0].effect << 5 | (state.layer[2].light[0].loop ? 1 : 0) << 4;
+    data[6] |= state.layer[2].light[1].effect << 1 | (state.layer[2].light[1].loop ? 1 : 0);
+    data[7] |= state.layer[2].light[2].effect << 5 | (state.layer[2].light[2].loop ? 1 : 0) << 4;
+    data[7] |= state.layer[2].light[3].effect << 1 | (state.layer[2].light[3].loop ? 1 : 0);
+    data[8] |= state.layer[3].light[0].effect << 5 | (state.layer[3].light[0].loop ? 1 : 0) << 4;
+    data[8] |= state.layer[3].light[1].effect << 1 | (state.layer[3].light[1].loop ? 1 : 0);
+    data[9] |= state.layer[3].light[2].effect << 5 | (state.layer[3].light[2].loop ? 1 : 0) << 4;
+    data[9] |= state.layer[3].light[3].effect << 1 | (state.layer[3].light[3].loop ? 1 : 0);
+    data[10] |= state.layer[4].light[0].effect << 5 | (state.layer[4].light[0].loop ? 1 : 0) << 4;
+    data[10] |= state.layer[4].light[1].effect << 1 | (state.layer[4].light[1].loop ? 1 : 0);
+    data[11] |= state.layer[4].light[2].effect << 5 | (state.layer[4].light[2].loop ? 1 : 0) << 4;
+    data[11] |= state.layer[4].light[3].effect << 1 | (state.layer[4].light[3].loop ? 1 : 0);
+    data[12] |= state.layer[5].light[0].effect << 5 | (state.layer[5].light[0].loop ? 1 : 0) << 4;
+    data[12] |= state.layer[5].light[1].effect << 1 | (state.layer[5].light[1].loop ? 1 : 0);
+    data[13] |= state.layer[5].light[2].effect << 5 | (state.layer[5].light[2].loop ? 1 : 0) << 4;
+    data[13] |= state.layer[5].light[3].effect << 1 | (state.layer[5].light[3].loop ? 1 : 0);
+    data[14] = state.audio.sample | (state.audio.loop ? 1 : 0) << 7;
+    data[15] = state.beam.count >> 8;
+    data[16] = state.beam.count & 255;
+    data[17] = state.audio.volume << 4 | (state.beam.fault ? 1 : 0) | (state.drum[0].reverse ? 1 : 0) << 1 | (state.drum[1].reverse ? 1 : 0) << 2 | (state.drum[2].reverse ? 1 : 0) << 3;
+    data[18] = state.led_sequence;
+    return true;
+  }
+  function isCalibrated(state) {
+    return state.drum.every((drum) => drum.calibrated);
+  }
 
   // src/udtHelpers.ts
   init_udtConstants();
@@ -1072,6 +1027,9 @@
     }
     addOutput(output) {
       this.outputs.push(output);
+    }
+    clearOutputs() {
+      this.outputs = [];
     }
     setMinLevel(level) {
       this.enabledLevels = /* @__PURE__ */ new Set([level]);
@@ -1241,7 +1199,7 @@
       const cmdKey = cmdKeys.find((key) => TOWER_MESSAGES[key].value === cmdValue);
       if (!cmdKey) {
         logger.warn(`Unknown command received from tower: ${cmdValue} (0x${cmdValue.toString(16)})`, "TowerResponseProcessor");
-        return { cmdKey: void 0, command: { name: "Unknown Command", value: cmdValue } };
+        return { cmdKey: void 0, command: { name: "Unknown Command", value: cmdValue, critical: false } };
       }
       const command = TOWER_MESSAGES[cmdKey];
       return { cmdKey, command };
@@ -1284,12 +1242,11 @@
      * @returns {boolean} Whether this response should be logged
      */
     shouldLogResponse(cmdKey, logConfig) {
-      const logAll = logConfig["LOG_ALL"];
-      let canLogThisResponse = logConfig[cmdKey] || logAll;
       if (!cmdKey) {
-        canLogThisResponse = true;
+        return true;
       }
-      return canLogThisResponse;
+      const logAll = logConfig["LOG_ALL"];
+      return logConfig[cmdKey] || logAll;
     }
     /**
      * Checks if a command is a battery response type.
@@ -1308,9 +1265,6 @@
       return cmdKey === TC.STATE;
     }
   };
-
-  // src/udtBleConnection.ts
-  init_udtTowerState();
 
   // src/udtBluetoothAdapterFactory.ts
   var BluetoothAdapterFactory = class {
@@ -1382,11 +1336,11 @@
       // When true, verifies connection before triggering disconnection on heartbeat timeout
       // Tower state
       this.towerSkullDropCount = -1;
-      this.lastBatteryNotification = 0;
+      this.lastBatteryLog = 0;
       this.lastBatteryPercentage = "";
-      this.batteryNotifyFrequency = 15 * 1e3;
-      this.batteryNotifyOnValueChangeOnly = false;
-      this.batteryNotifyEnabled = true;
+      this.batteryLogFrequency = 15 * 1e3;
+      this.batteryLogOnChangeOnly = false;
+      this.batteryLogEnabled = true;
       // Device information
       this.deviceInformation = {};
       // Logging configuration
@@ -1465,7 +1419,7 @@
       this.lastSuccessfulCommand = Date.now();
       const { cmdKey } = this.responseProcessor.getTowerCommand(receivedData[0]);
       const isBattery = this.responseProcessor.isBatteryResponse(cmdKey);
-      const shouldLogCommand = this.logTowerResponses && this.responseProcessor.shouldLogResponse(cmdKey, this.logTowerResponseConfig) && (!isBattery || this.batteryNotifyEnabled);
+      const shouldLogCommand = this.logTowerResponses && this.responseProcessor.shouldLogResponse(cmdKey, this.logTowerResponseConfig) && !isBattery;
       if (shouldLogCommand) {
         this.logger.info(`${cmdKey}`, "[UDT][BLE][RCVD]");
       }
@@ -1480,14 +1434,14 @@
         const millivolts = getMilliVoltsFromTowerResponse(receivedData);
         const batteryPercentage = milliVoltsToPercentage(millivolts);
         const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
-        const batteryNotifyFrequencyPassed = Date.now() - this.lastBatteryNotification >= this.batteryNotifyFrequency;
-        const shouldNotify = this.batteryNotifyEnabled && (this.batteryNotifyOnValueChangeOnly ? didBatteryLevelChange || this.lastBatteryPercentage === "" : batteryNotifyFrequencyPassed);
-        if (shouldNotify) {
+        const batteryLogFrequencyPassed = Date.now() - this.lastBatteryLog >= this.batteryLogFrequency;
+        const shouldLog = this.batteryLogEnabled && (this.batteryLogOnChangeOnly ? didBatteryLevelChange || this.lastBatteryPercentage === "" : batteryLogFrequencyPassed);
+        if (shouldLog) {
           this.logger.info(`${this.responseProcessor.commandToString(receivedData).join(" ")}`, "[UDT][BLE]");
-          this.lastBatteryNotification = Date.now();
+          this.lastBatteryLog = Date.now();
           this.lastBatteryPercentage = batteryPercentage;
-          this.callbacks.onBatteryLevelNotify(millivolts);
         }
+        this.callbacks.onBatteryLevelNotify(millivolts);
       } else {
         if (this.callbacks.onTowerResponse) {
           this.callbacks.onTowerResponse(receivedData);
@@ -1677,7 +1631,6 @@
 
   // src/udtCommandFactory.ts
   init_udtConstants();
-  init_udtTowerState();
   var UdtCommandFactory = class {
     /**
      * Creates a rotation command packet for positioning tower drums.
@@ -1699,8 +1652,7 @@
      */
     createSoundCommand(soundIndex) {
       const soundCommand = new Uint8Array(TOWER_COMMAND_PACKET_SIZE);
-      const sound = Number("0x" + Number(soundIndex).toString(16).padStart(2, "0"));
-      soundCommand[AUDIO_COMMAND_POS] = sound;
+      soundCommand[AUDIO_COMMAND_POS] = soundIndex & 255;
       return soundCommand;
     }
     /**
@@ -1720,7 +1672,7 @@
      * @returns 20-byte command packet (command type + 19-byte state data)
      */
     createStatefulCommand(currentState, modifications) {
-      const newState = currentState ? __spreadValues({}, currentState) : this.createEmptyTowerState();
+      const newState = currentState ? this.deepCopyTowerState(currentState) : this.createEmptyTowerState();
       if (modifications.drum) {
         modifications.drum.forEach((drum, index) => {
           if (drum && newState.drum[index]) {
@@ -1762,17 +1714,10 @@
      * @returns 20-byte command packet
      */
     createStatefulLEDCommand(currentState, layerIndex, lightIndex, effect, loop = false) {
-      const modifications = {};
-      if (!modifications.layer) {
-        modifications.layer = [];
-      }
-      if (!modifications.layer[layerIndex]) {
-        modifications.layer[layerIndex] = { light: [] };
-      }
-      if (!modifications.layer[layerIndex].light) {
-        modifications.layer[layerIndex].light = [];
-      }
-      modifications.layer[layerIndex].light[lightIndex] = { effect, loop };
+      const layer = [];
+      layer[layerIndex] = { light: [] };
+      layer[layerIndex].light[lightIndex] = { effect, loop };
+      const modifications = { layer };
       modifications.audio = { sample: 0, loop: false, volume: 0 };
       return this.createStatefulCommand(currentState, modifications);
     }
@@ -1865,17 +1810,15 @@
      * @returns 20-byte command packet
      */
     createStatefulDrumCommand(currentState, drumIndex, position, playSound = false) {
-      const modifications = {};
-      if (!modifications.drum) {
-        modifications.drum = [];
-      }
-      modifications.drum[drumIndex] = {
+      const drum = [];
+      drum[drumIndex] = {
         jammed: false,
         calibrated: true,
         position,
         playSound,
         reverse: false
       };
+      const modifications = { drum };
       modifications.audio = { sample: 0, loop: false, volume: 0 };
       return this.createStatefulCommand(currentState, modifications);
     }
@@ -1917,6 +1860,22 @@
         audio: { sample: 0, loop: false, volume: 0 },
         beam: { count: 0, fault: false },
         led_sequence: 0
+      };
+    }
+    /**
+     * Creates a deep copy of a TowerState to avoid mutating the original.
+     * @param state - The tower state to copy
+     * @returns A new TowerState with all nested objects copied
+     */
+    deepCopyTowerState(state) {
+      return {
+        drum: state.drum.map((d) => __spreadValues({}, d)),
+        layer: state.layer.map((l) => ({
+          light: l.light.map((lt) => __spreadValues({}, lt))
+        })),
+        audio: __spreadValues({}, state.audio),
+        beam: __spreadValues({}, state.beam),
+        led_sequence: state.led_sequence
       };
     }
     //#endregion
@@ -2002,9 +1961,10 @@
       if (this.currentCommand) {
         const { description, id } = this.currentCommand;
         this.logger.warn(`Command timeout after ${this.timeoutMs}ms: ${description || id}`, "[UDT]");
-        this.currentCommand.resolve();
+        const reject = this.currentCommand.reject;
         this.currentCommand = null;
         this.isProcessing = false;
+        reject(new Error(`Command timeout after ${this.timeoutMs}ms: ${description || id}`));
         this.processNext();
       }
     }
@@ -2087,7 +2047,7 @@
         this.deps.bleConnection.lastSuccessfulCommand = Date.now();
       } catch (error) {
         this.deps.logger.error(`command send error: ${error}`, "[UDT][CMD]");
-        const errorMsg = (_a2 = error == null ? void 0 : error.message) != null ? _a2 : new String(error);
+        const errorMsg = (_a2 = error == null ? void 0 : error.message) != null ? _a2 : String(error);
         const wasCancelled = errorMsg.includes("User cancelled");
         const maxRetriesReached = this.deps.retrySendCommandCount.value >= this.deps.retrySendCommandMax;
         const isDisconnected = errorMsg.includes("Cannot read properties of null") || errorMsg.includes("GATT Server is disconnected") || errorMsg.includes("Device is not connected") || errorMsg.includes("BluetoothConnectionError") || !this.deps.bleConnection.isConnected;
@@ -2099,9 +2059,9 @@
         if (!maxRetriesReached && this.deps.bleConnection.isConnected && !wasCancelled) {
           this.deps.logger.info(`retrying tower command attempt ${this.deps.retrySendCommandCount.value + 1}`, "[UDT][CMD]");
           this.deps.retrySendCommandCount.value++;
-          setTimeout(() => {
-            this.sendTowerCommandDirect(command);
-          }, 250 * this.deps.retrySendCommandCount.value);
+          const delay = 250 * this.deps.retrySendCommandCount.value;
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          return await this.sendTowerCommandDirect(command);
         } else {
           this.deps.retrySendCommandCount.value = 0;
         }
@@ -2149,9 +2109,13 @@
       this.deps.logDetail && this.deps.logger.debug(`Light Parameter ${JSON.stringify(lights)}`, "[UDT][CMD]");
       this.deps.logger.info("Sending light commands", "[UDT][CMD]");
       const layerCommands = this.mapLightsToLayerCommands(lights);
-      for (const { layerIndex, lightIndex, effect } of layerCommands) {
-        await this.setLEDStateful(layerIndex, lightIndex, effect);
+      const currentState = this.deps.getCurrentTowerState();
+      for (const { layerIndex, lightIndex, effect, loop } of layerCommands) {
+        currentState.layer[layerIndex].light[lightIndex] = { effect, loop };
       }
+      const command = this.deps.commandFactory.createStatefulCommand(currentState, {});
+      this.deps.setTowerState(currentState, "lights");
+      await this.sendTowerCommand(command, "lights");
     }
     /**
      * Maps the Lights object to layer/light index commands for setLEDStateful.
@@ -2165,7 +2129,7 @@
           const layerIndex = this.getTowerLayerForLevel(doorwayLight.level);
           const lightIndex = this.getLightIndexForSide(doorwayLight.position);
           const effect = LIGHT_EFFECTS[doorwayLight.style] || LIGHT_EFFECTS.off;
-          commands.push({ layerIndex, lightIndex, effect, loop: true });
+          commands.push({ layerIndex, lightIndex, effect, loop: effect !== LIGHT_EFFECTS.off });
         }
       }
       if (lights.ledge) {
@@ -2173,7 +2137,7 @@
           const layerIndex = TOWER_LAYERS.LEDGE;
           const lightIndex = this.getLedgeLightIndexForSide(ledgeLight.position);
           const effect = LIGHT_EFFECTS[ledgeLight.style] || LIGHT_EFFECTS.off;
-          commands.push({ layerIndex, lightIndex, effect, loop: false });
+          commands.push({ layerIndex, lightIndex, effect, loop: effect !== LIGHT_EFFECTS.off });
         }
       }
       if (lights.base) {
@@ -2181,7 +2145,7 @@
           const layerIndex = baseLight.position.level === "top" || baseLight.position.level === "b" ? TOWER_LAYERS.BASE2 : TOWER_LAYERS.BASE1;
           const lightIndex = this.getBaseLightIndexForSide(baseLight.position.side);
           const effect = LIGHT_EFFECTS[baseLight.style] || LIGHT_EFFECTS.off;
-          commands.push({ layerIndex, lightIndex, effect, loop: false });
+          commands.push({ layerIndex, lightIndex, effect, loop: effect !== LIGHT_EFFECTS.off });
         }
       }
       return commands;
@@ -2387,8 +2351,7 @@
       };
       const command = this.deps.commandFactory.createStatefulCommand(currentState, modifications);
       await this.sendTowerCommand(command, "resetTowerSkullCount");
-      const updatedState = __spreadValues({}, currentState);
-      updatedState.beam.count = 0;
+      const updatedState = __spreadProps(__spreadValues({}, currentState), { beam: __spreadProps(__spreadValues({}, currentState.beam), { count: 0 }) });
       this.deps.setTowerState(updatedState, "resetTowerSkullCount");
     }
     /**
@@ -2818,23 +2781,23 @@
       return this.previousBatteryPercentage;
     }
     // Getter/setter methods for connection configuration
-    get batteryNotifyFrequency() {
-      return this.bleConnection.batteryNotifyFrequency;
+    get batteryLogFrequency() {
+      return this.bleConnection.batteryLogFrequency;
     }
-    set batteryNotifyFrequency(value) {
-      this.bleConnection.batteryNotifyFrequency = value;
+    set batteryLogFrequency(value) {
+      this.bleConnection.batteryLogFrequency = value;
     }
-    get batteryNotifyOnValueChangeOnly() {
-      return this.bleConnection.batteryNotifyOnValueChangeOnly;
+    get batteryLogOnChangeOnly() {
+      return this.bleConnection.batteryLogOnChangeOnly;
     }
-    set batteryNotifyOnValueChangeOnly(value) {
-      this.bleConnection.batteryNotifyOnValueChangeOnly = value;
+    set batteryLogOnChangeOnly(value) {
+      this.bleConnection.batteryLogOnChangeOnly = value;
     }
-    get batteryNotifyEnabled() {
-      return this.bleConnection.batteryNotifyEnabled;
+    get batteryLogEnabled() {
+      return this.bleConnection.batteryLogEnabled;
     }
-    set batteryNotifyEnabled(value) {
-      this.bleConnection.batteryNotifyEnabled = value;
+    set batteryLogEnabled(value) {
+      this.bleConnection.batteryLogEnabled = value;
     }
     get logTowerResponses() {
       return this.bleConnection.logTowerResponses;
@@ -3017,11 +2980,10 @@
      * @returns Promise that resolves when the command is sent
      */
     async sendTowerState(towerState) {
-      const { rtdt_pack_state: rtdt_pack_state2 } = await Promise.resolve().then(() => (init_udtTowerState(), udtTowerState_exports));
       const stateToSend = __spreadValues({}, towerState);
       stateToSend.audio = { sample: 0, loop: false, volume: 0 };
       const stateData = new Uint8Array(TOWER_STATE_DATA_SIZE);
-      const success = rtdt_pack_state2(stateData, TOWER_STATE_DATA_SIZE, stateToSend);
+      const success = rtdt_pack_state(stateData, TOWER_STATE_DATA_SIZE, stateToSend);
       if (!success) {
         throw new Error("Failed to pack tower state data");
       }
@@ -3049,11 +3011,9 @@
      * @param stateData - The 19-byte state data from tower response
      */
     updateTowerStateFromResponse(stateData) {
-      Promise.resolve().then(() => (init_udtTowerState(), udtTowerState_exports)).then(({ rtdt_unpack_state: rtdt_unpack_state2 }) => {
-        const newState = rtdt_unpack_state2(stateData);
-        newState.audio = { sample: 0, loop: false, volume: this.currentTowerState.audio.volume };
-        this.setTowerState(newState, "tower response");
-      });
+      const newState = rtdt_unpack_state(stateData);
+      newState.audio = { sample: 0, loop: false, volume: this.currentTowerState.audio.volume };
+      this.setTowerState(newState, "tower response");
     }
     //#endregion
     /**
@@ -3281,7 +3241,7 @@
      * @param {LogOutput[]} outputs - Array of log outputs to use (e.g., ConsoleOutput, DOMOutput)
      */
     setLoggerOutputs(outputs) {
-      this.logger.outputs = [];
+      this.logger.clearOutputs();
       outputs.forEach((output) => this.logger.addOutput(output));
     }
     /**

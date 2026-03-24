@@ -123,7 +123,7 @@ export const drumPositionCmds = {
 }
 
 
-export const LIGHT_EFFECTS = {
+export const LIGHT_EFFECTS: Record<string, number> = {
   off: 0,
   on: 1,
   breathe: 2,

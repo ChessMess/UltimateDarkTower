@@ -29,7 +29,7 @@ describe('UltimateDarkTower', () => {
             expect(darkTower.isCalibrated).toBe(false);
             expect(darkTower.performingCalibration).toBe(false);
             expect(darkTower.towerSkullDropCount).toBe(-1);
-            expect(darkTower.batteryNotifyFrequency).toBe(15000);
+            expect(darkTower.batteryLogFrequency).toBe(15000);
         });
         test('should have default configuration values', () => {
             expect(darkTower.retrySendCommandMax).toBe(5);
@@ -38,10 +38,10 @@ describe('UltimateDarkTower', () => {
         });
     });
     describe('Configuration', () => {
-        test('should allow setting battery notification frequency', () => {
+        test('should allow setting battery log frequency', () => {
             const newFrequency = 10000;
-            darkTower.batteryNotifyFrequency = newFrequency;
-            expect(darkTower.batteryNotifyFrequency).toBe(newFrequency);
+            darkTower.batteryLogFrequency = newFrequency;
+            expect(darkTower.batteryLogFrequency).toBe(newFrequency);
         });
         test('should allow toggling detailed logging', () => {
             darkTower.logDetail = true;
@@ -498,7 +498,7 @@ describe('UltimateDarkTower', () => {
             const promise = darkTower.playSound(1);
             // Fast-forward time to trigger timeout (30 seconds)
             jest.advanceTimersByTime(30000);
-            await promise; // Should complete despite timeout
+            await expect(promise).rejects.toThrow('Command timeout after 30000ms');
             expect(mockAdapter.writeCalls).toBe(1);
             expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('Command timeout after 30000ms'), '[UDT]');
             jest.useRealTimers();

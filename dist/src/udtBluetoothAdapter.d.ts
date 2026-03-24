@@ -32,8 +32,8 @@ export interface BluetoothAdapterConfig {
  * Base class for all Bluetooth-related errors
  */
 export declare class BluetoothError extends Error {
-    readonly originalError?: any;
-    constructor(message: string, originalError?: any);
+    readonly originalError?: any | undefined;
+    constructor(message: string, originalError?: any | undefined);
 }
 /**
  * Error thrown when Bluetooth connection fails or is lost

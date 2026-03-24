@@ -42,14 +42,14 @@ export class TowerResponseProcessor {
      * @returns {Object} Object containing command key and command definition
      */
     getTowerCommand(cmdValue: number) {
-        const cmdKeys = Object.keys(TOWER_MESSAGES);
+        const cmdKeys = Object.keys(TOWER_MESSAGES) as Array<keyof typeof TOWER_MESSAGES>;
         const cmdKey = cmdKeys.find(key => TOWER_MESSAGES[key].value === cmdValue);
         if (!cmdKey) {
             logger.warn(`Unknown command received from tower: ${cmdValue} (0x${cmdValue.toString(16)})`, 'TowerResponseProcessor');
-            return { cmdKey: undefined, command: { name: "Unknown Command", value: cmdValue } };
+            return { cmdKey: undefined as string | undefined, command: { name: "Unknown Command", value: cmdValue, critical: false } };
         }
         const command = TOWER_MESSAGES[cmdKey];
-        return { cmdKey, command };
+        return { cmdKey: cmdKey as string | undefined, command };
     }
 
     /**
@@ -92,16 +92,14 @@ export class TowerResponseProcessor {
      * @param {any} logConfig - Logging configuration object
      * @returns {boolean} Whether this response should be logged
      */
-    shouldLogResponse(cmdKey: string, logConfig: TowerResponseConfig): boolean {
-        const logAll = logConfig["LOG_ALL"];
-        let canLogThisResponse = logConfig[cmdKey] || logAll;
-
+    shouldLogResponse(cmdKey: string | undefined, logConfig: TowerResponseConfig): boolean {
         // Log unknown commands by default for debugging
         if (!cmdKey) {
-            canLogThisResponse = true;
+            return true;
         }
 
-        return canLogThisResponse;
+        const logAll = logConfig["LOG_ALL"];
+        return (logConfig[cmdKey as keyof TowerResponseConfig] || logAll) as boolean;
     }
 
     /**
@@ -109,7 +107,7 @@ export class TowerResponseProcessor {
      * @param {string} cmdKey - Command key from tower message
      * @returns {boolean} True if this is a battery response
      */
-    isBatteryResponse(cmdKey: string): boolean {
+    isBatteryResponse(cmdKey: string | undefined): boolean {
         return cmdKey === TC.BATTERY;
     }
 
@@ -118,7 +116,7 @@ export class TowerResponseProcessor {
      * @param {string} cmdKey - Command key from tower message
      * @returns {boolean} True if this is a tower state response
      */
-    isTowerStateResponse(cmdKey: string): boolean {
+    isTowerStateResponse(cmdKey: string | undefined): boolean {
         return cmdKey === TC.STATE;
     }
 }

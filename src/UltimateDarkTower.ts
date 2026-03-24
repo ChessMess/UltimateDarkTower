@@ -17,7 +17,7 @@ import {
   DEFAULT_BATTERY_HEARTBEAT_TIMEOUT,
   TOWER_SIDES_COUNT
 } from './udtConstants';
-import { type TowerState, isCalibrated } from './udtTowerState';
+import { type TowerState, isCalibrated, rtdt_pack_state, rtdt_unpack_state } from './udtTowerState';
 import { createDefaultTowerState, milliVoltsToPercentageNumber, commandToPacketString, milliVoltsToPercentage } from './udtHelpers';
 import { Logger, ConsoleOutput, type LogOutput } from './udtLogger';
 import { UdtBleConnection, type TowerEventCallbacks, type ConnectionStatus, type DeviceInformation } from './udtBleConnection';
@@ -64,20 +64,20 @@ export interface UltimateDarkTowerConfig {
 
 class UltimateDarkTower {
   // logging
-  private logger: Logger;
+  private logger!: Logger;
 
   // connection management
-  private bleConnection: UdtBleConnection;
+  private bleConnection!: UdtBleConnection;
   private towerEventCallbacks!: TowerEventCallbacks;
 
   // response processing
-  private responseProcessor: TowerResponseProcessor;
+  private responseProcessor!: TowerResponseProcessor;
 
   // command creation
-  private commandFactory: UdtCommandFactory;
+  private commandFactory!: UdtCommandFactory;
 
   // tower commands
-  private towerCommands: UdtTowerCommands;
+  private towerCommands!: UdtTowerCommands;
 
   // tower configuration
   private retrySendCommandCountRef = { value: 0 };
@@ -273,14 +273,14 @@ class UltimateDarkTower {
   get previousBatteryPercent(): number { return this.previousBatteryPercentage; }
 
   // Getter/setter methods for connection configuration
-  get batteryNotifyFrequency(): number { return this.bleConnection.batteryNotifyFrequency; }
-  set batteryNotifyFrequency(value: number) { this.bleConnection.batteryNotifyFrequency = value; }
+  get batteryLogFrequency(): number { return this.bleConnection.batteryLogFrequency; }
+  set batteryLogFrequency(value: number) { this.bleConnection.batteryLogFrequency = value; }
 
-  get batteryNotifyOnValueChangeOnly(): boolean { return this.bleConnection.batteryNotifyOnValueChangeOnly; }
-  set batteryNotifyOnValueChangeOnly(value: boolean) { this.bleConnection.batteryNotifyOnValueChangeOnly = value; }
+  get batteryLogOnChangeOnly(): boolean { return this.bleConnection.batteryLogOnChangeOnly; }
+  set batteryLogOnChangeOnly(value: boolean) { this.bleConnection.batteryLogOnChangeOnly = value; }
 
-  get batteryNotifyEnabled(): boolean { return this.bleConnection.batteryNotifyEnabled; }
-  set batteryNotifyEnabled(value: boolean) { this.bleConnection.batteryNotifyEnabled = value; }
+  get batteryLogEnabled(): boolean { return this.bleConnection.batteryLogEnabled; }
+  set batteryLogEnabled(value: boolean) { this.bleConnection.batteryLogEnabled = value; }
 
   get logTowerResponses(): boolean { return this.bleConnection.logTowerResponses; }
   set logTowerResponses(value: boolean) { this.bleConnection.logTowerResponses = value; }
@@ -488,9 +488,6 @@ class UltimateDarkTower {
    * @returns Promise that resolves when the command is sent
    */
   async sendTowerState(towerState: TowerState): Promise<void> {
-    // Import pack function here to avoid circular dependencies
-    const { rtdt_pack_state } = await import('./udtTowerState');
-
     // Create a copy of the tower state and clear audio to prevent persistence
     const stateToSend = { ...towerState };
     stateToSend.audio = { sample: 0, loop: false, volume: 0 };
@@ -538,16 +535,13 @@ class UltimateDarkTower {
    * @param stateData - The 19-byte state data from tower response
    */
   private updateTowerStateFromResponse(stateData: Uint8Array): void {
-    // Import unpack function here to avoid circular dependencies
-    import('./udtTowerState').then(({ rtdt_unpack_state }) => {
-      const newState = rtdt_unpack_state(stateData);
+    const newState = rtdt_unpack_state(stateData);
 
-      // Reset audio state to prevent sounds from persisting, but preserve user's volume setting
-      // Tower always returns volume=0, so we keep the current volume from our local state
-      newState.audio = { sample: 0, loop: false, volume: this.currentTowerState.audio.volume };
+    // Reset audio state to prevent sounds from persisting, but preserve user's volume setting
+    // Tower always returns volume=0, so we keep the current volume from our local state
+    newState.audio = { sample: 0, loop: false, volume: this.currentTowerState.audio.volume };
 
-      this.setTowerState(newState, 'tower response');
-    });
+    this.setTowerState(newState, 'tower response');
   }
 
   //#endregion
@@ -834,7 +828,7 @@ class UltimateDarkTower {
    */
   setLoggerOutputs(outputs: LogOutput[]) {
     // Clear existing outputs and add new ones to maintain logger instance references
-    (this.logger as any).outputs = [];
+    this.logger.clearOutputs();
     outputs.forEach(output => this.logger.addOutput(output));
   }
 

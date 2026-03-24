@@ -46,6 +46,7 @@ export declare class Logger {
     constructor();
     static getInstance(): Logger;
     addOutput(output: LogOutput): void;
+    clearOutputs(): void;
     setMinLevel(level: LogLevel): void;
     setEnabledLevels(levels: LogLevel[]): void;
     enableLevel(level: LogLevel): void;

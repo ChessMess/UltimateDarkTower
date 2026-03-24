@@ -142,14 +142,7 @@ export declare const drumPositionCmds: {
         west: number;
     };
 };
-export declare const LIGHT_EFFECTS: {
-    off: number;
-    on: number;
-    breathe: number;
-    breatheFast: number;
-    breathe50percent: number;
-    flicker: number;
-};
+export declare const LIGHT_EFFECTS: Record<string, number>;
 export declare const TOWER_LIGHT_SEQUENCES: {
     twinkle: number;
     flareThenFade: number;

@@ -100,12 +100,12 @@ declare class UltimateDarkTower {
     get previousBattery(): number;
     get currentBatteryPercent(): number;
     get previousBatteryPercent(): number;
-    get batteryNotifyFrequency(): number;
-    set batteryNotifyFrequency(value: number);
-    get batteryNotifyOnValueChangeOnly(): boolean;
-    set batteryNotifyOnValueChangeOnly(value: boolean);
-    get batteryNotifyEnabled(): boolean;
-    set batteryNotifyEnabled(value: boolean);
+    get batteryLogFrequency(): number;
+    set batteryLogFrequency(value: number);
+    get batteryLogOnChangeOnly(): boolean;
+    set batteryLogOnChangeOnly(value: boolean);
+    get batteryLogEnabled(): boolean;
+    set batteryLogEnabled(value: boolean);
     get logTowerResponses(): boolean;
     set logTowerResponses(value: boolean);
     get logTowerResponseConfig(): TowerResponseConfig;

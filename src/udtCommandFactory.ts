@@ -37,8 +37,7 @@ export class UdtCommandFactory {
      */
     createSoundCommand(soundIndex: number): Uint8Array {
         const soundCommand = new Uint8Array(TOWER_COMMAND_PACKET_SIZE);
-        const sound = Number("0x" + Number(soundIndex).toString(16).padStart(2, '0'));
-        soundCommand[AUDIO_COMMAND_POS] = sound;
+        soundCommand[AUDIO_COMMAND_POS] = soundIndex & 0xFF;
         return soundCommand;
     }
 
@@ -62,8 +61,8 @@ export class UdtCommandFactory {
      * @returns 20-byte command packet (command type + 19-byte state data)
      */
     createStatefulCommand(currentState: TowerState | null, modifications: Partial<TowerState>): Uint8Array {
-        // Start with current state or create default state
-        const newState: TowerState = currentState ? { ...currentState } : this.createEmptyTowerState();
+        // Deep copy to avoid mutating the caller's state (shallow spread shares nested objects)
+        const newState: TowerState = currentState ? this.deepCopyTowerState(currentState) : this.createEmptyTowerState();
 
         // Apply modifications
         if (modifications.drum) {
@@ -120,19 +119,11 @@ export class UdtCommandFactory {
         effect: number,
         loop: boolean = false
     ): Uint8Array {
-        const modifications: Partial<TowerState> = {};
+        const layer = [] as unknown as TowerState['layer'];
+        layer[layerIndex] = { light: [] as unknown as TowerState['layer'][0]['light'] };
+        layer[layerIndex].light[lightIndex] = { effect, loop };
 
-        // Create a targeted modification for only the specific light
-        if (!modifications.layer) {
-            modifications.layer = [] as any;
-        }
-        if (!modifications.layer[layerIndex]) {
-            modifications.layer[layerIndex] = { light: [] as any };
-        }
-        if (!modifications.layer[layerIndex].light) {
-            modifications.layer[layerIndex].light = [] as any;
-        }
-        modifications.layer[layerIndex].light[lightIndex] = { effect, loop };
+        const modifications: Partial<TowerState> = { layer };
 
         // Always clear audio state for LED commands to prevent audio persistence
         modifications.audio = { sample: 0, loop: false, volume: 0 };
@@ -276,19 +267,15 @@ export class UdtCommandFactory {
         position: number,
         playSound: boolean = false
     ): Uint8Array {
-        const modifications: Partial<TowerState> = {};
-
-        // Create a partial drum array with only the drum we want to modify
-        if (!modifications.drum) {
-            modifications.drum = [] as any;
-        }
-        modifications.drum[drumIndex] = {
+        const drum = [] as unknown as TowerState['drum'];
+        drum[drumIndex] = {
             jammed: false,
             calibrated: true,
             position,
             playSound,
             reverse: false
         };
+        const modifications: Partial<TowerState> = { drum };
 
         // Always clear audio state for drum commands to prevent audio persistence
         modifications.audio = { sample: 0, loop: false, volume: 0 };
@@ -339,6 +326,23 @@ export class UdtCommandFactory {
             audio: { sample: 0, loop: false, volume: 0 },
             beam: { count: 0, fault: false },
             led_sequence: 0
+        };
+    }
+
+    /**
+     * Creates a deep copy of a TowerState to avoid mutating the original.
+     * @param state - The tower state to copy
+     * @returns A new TowerState with all nested objects copied
+     */
+    private deepCopyTowerState(state: TowerState): TowerState {
+        return {
+            drum: state.drum.map(d => ({ ...d })) as TowerState['drum'],
+            layer: state.layer.map(l => ({
+                light: l.light.map(lt => ({ ...lt })) as TowerState['layer'][0]['light']
+            })) as TowerState['layer'],
+            audio: { ...state.audio },
+            beam: { ...state.beam },
+            led_sequence: state.led_sequence
         };
     }
 
