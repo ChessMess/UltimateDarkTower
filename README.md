@@ -10,12 +10,26 @@ A JavaScript/TypeScript library for controlling the Bluetooth-enabled tower from
 
 I have spent many hours reverse engineering the Tower's protocol in order to create this library, I look forward to what others will create using this! - Chris
 
+## Live Examples
+
+Try the library in action! Just power on your Tower and visit:
+
+- **[Tower Controller](https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html)** - Replicates official app functionality and gives examples of library functionality.
+
+<details>
+<summary>Tower Game</summary>
+
+- **[Tower Game](https://chessmess.github.io/UltimateDarkTower/dist/examples/game/TowerGame.html)** - "The Tower's Challenge" - a complete game using just the tower [Editors Note: Currently broken... will fix soon]
+  </details>
+  <br/>
+  _Requires Web Bluetooth support (Chrome, Edge, Samsung Internet). For iOS, use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)._
+
 ## Table of Contents
 
 - [UltimateDarkTower](#ultimatedarktower)
+    - [Live Examples](#live-examples)
     - [Table of Contents](#table-of-contents)
     - [Features](#features)
-    - [Live Examples](#live-examples)
     - [Installation](#installation)
         - [Browser / Web Applications](#browser--web-applications)
         - [Node.js Applications](#nodejs-applications)
@@ -27,6 +41,8 @@ I have spent many hours reverse engineering the Tower's protocol in order to cre
     - [Documentation](#documentation)
         - [📖 Complete API Reference](#-complete-api-reference)
         - [Key Topics Covered:](#key-topics-covered)
+    - [Integration Testing](#integration-testing)
+        - [Lights Integration Test](#lights-integration-test)
     - [Development](#development)
         - [Building and Testing](#building-and-testing)
         - [Project Structure](#project-structure)
@@ -49,16 +65,6 @@ I have spent many hours reverse engineering the Tower's protocol in order to cre
 - **Comprehensive Logging** - Multi-output logging system for debugging
 - **Battery Monitoring** - Real-time battery level tracking and low battery warnings
 - **Extensible Adapter Pattern** - Implement `IBluetoothAdapter` for custom platforms
-
-## Live Examples
-
-Try the library in action! Just power on your Tower and visit:
-
-- **[Tower Controller](https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html)** - Replicates official app functionality and gives examples of library functionality.
-
-- **[Tower Game](https://chessmess.github.io/UltimateDarkTower/dist/examples/game/TowerGame.html)** - "The Tower's Challenge" - a complete game using just the tower
-
-_Requires Web Bluetooth support (Chrome, Edge, Samsung Internet). For iOS, use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)._
 
 ## Installation
 
