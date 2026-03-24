@@ -221,6 +221,41 @@ const CSS = `
   height: auto;
   display: block;
 }
+
+.tsv-led {
+  fill: #333 !important;
+  stroke: #555 !important;
+  opacity: 1;
+  filter: none;
+  animation: none;
+  transition: fill 0.2s;
+}
+
+.tsv-led[data-effect="on"] {
+  fill: #f0c040 !important;
+  filter: drop-shadow(0 0 4px rgba(240, 192, 64, 0.65));
+}
+
+.tsv-led[data-effect="breathe"] {
+  fill: #80a0ff !important;
+  animation: tdr-breathe 2s ease-in-out infinite;
+}
+
+.tsv-led[data-effect="breathe-fast"] {
+  fill: #80a0ff !important;
+  animation: tdr-breathe 0.8s ease-in-out infinite;
+}
+
+.tsv-led[data-effect="breathe-50"] {
+  fill: #80a0ff !important;
+  animation: tdr-breathe 2s ease-in-out infinite;
+  opacity: 0.5;
+}
+
+.tsv-led[data-effect="flicker"] {
+  fill: #ff6040 !important;
+  animation: tdr-flicker 0.3s step-end infinite;
+}
 `;
 
 /**

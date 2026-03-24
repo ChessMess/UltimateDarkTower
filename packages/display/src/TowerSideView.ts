@@ -1,4 +1,4 @@
-import type { TowerState } from 'ultimatedarktower';
+import { LIGHT_EFFECTS, type TowerState } from 'ultimatedarktower';
 import type { ITowerDisplay, TowerSide } from './types';
 import { injectStyles } from './styles';
 import svgContent from './TowerSide.svg?raw';
@@ -13,6 +13,56 @@ const SIDE_LABELS: Record<TowerSide, string> = {
 };
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+
+const EFFECT_LABELS: Record<number, string> = {
+  [LIGHT_EFFECTS.off]: 'off',
+  [LIGHT_EFFECTS.on]: 'on',
+  [LIGHT_EFFECTS.breathe]: 'breathe',
+  [LIGHT_EFFECTS.breatheFast]: 'breathe-fast',
+  [LIGHT_EFFECTS.breathe50percent]: 'breathe-50',
+  [LIGHT_EFFECTS.flicker]: 'flicker',
+};
+
+const LED_BINDINGS = {
+  'top-doorway-led': { id: 'top-doorway-led', layer: 0, light: 2 },
+  'middle-doorway-led': { id: 'middle-doorway-led', layer: 1, light: 2 },
+  'bottom-doorway-led': { id: 'bottom-doorway-led', layer: 2, light: 2 },
+  'ledge-left-led': { id: 'ledge-left-led', layer: 3, light: 3 },
+  'ledge-right-led': { id: 'ledge-right-led', layer: 3, light: 1 },
+  'base-left-front-led': { id: 'base-left-front-led', layer: 4, light: 3 },
+  'base-right-front-led': { id: 'base-right-front-led', layer: 4, light: 1 },
+  'base-left-back-led': { id: 'base-left-back-led', layer: 5, light: 3 },
+  'base-right-back-led': { id: 'base-right-back-led', layer: 5, light: 1 },
+} as const;
+
+type LedLabel = keyof typeof LED_BINDINGS;
+type LightRole = 'center' | 'left' | 'right';
+
+const CENTER_LIGHT_BY_SIDE: Record<TowerSide, number> = {
+  north: 2,
+  east: 1,
+  south: 0,
+  west: 3,
+};
+
+const EDGE_LIGHTS_BY_SIDE: Record<TowerSide, { left: number; right: number }> = {
+  north: { left: 3, right: 1 },
+  east: { left: 2, right: 3 },
+  south: { left: 0, right: 2 },
+  west: { left: 1, right: 0 },
+};
+
+const LED_LIGHT_ROLES: Record<LedLabel, LightRole> = {
+  'top-doorway-led': 'center',
+  'middle-doorway-led': 'center',
+  'bottom-doorway-led': 'center',
+  'ledge-left-led': 'left',
+  'ledge-right-led': 'right',
+  'base-left-front-led': 'left',
+  'base-right-front-led': 'right',
+  'base-left-back-led': 'left',
+  'base-right-back-led': 'right',
+};
 
 /** Doorway positions within the TowerSide.svg viewBox (0 0 180 374).
  *  All doorways share the same size and left-edge x, derived from the top doorway path. */
@@ -29,7 +79,9 @@ export class TowerSideView implements ITowerDisplay {
   private readonly container: HTMLElement;
   private wrapper: HTMLDivElement | null = null;
   private currentSide: TowerSide = 'north';
+  private latestState: TowerState | null = null;
   private buttons: HTMLButtonElement[] = [];
+  private ledNodes: Partial<Record<LedLabel, SVGElement>> = {};
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -37,7 +89,9 @@ export class TowerSideView implements ITowerDisplay {
     this.build();
   }
 
-  applyState(_state: TowerState): void {
+  applyState(state: TowerState): void {
+    this.latestState = state;
+    this.applyLedState(state);
     if (this.wrapper) this.wrapper.style.display = '';
   }
 
@@ -51,6 +105,7 @@ export class TowerSideView implements ITowerDisplay {
       this.wrapper = null;
     }
     this.buttons = [];
+    this.latestState = null;
   }
 
   private build(): void {
@@ -84,6 +139,7 @@ export class TowerSideView implements ITowerDisplay {
     const towerSvg = svgContainer.querySelector('svg');
     if (towerSvg) {
       this.injectSeals(towerSvg);
+      this.cacheLedNodes(towerSvg);
     }
 
     this.container.appendChild(this.wrapper);
@@ -95,6 +151,7 @@ export class TowerSideView implements ITowerDisplay {
     const sealDoc = parser.parseFromString(sealContent, 'image/svg+xml');
     const sealRoot = sealDoc.documentElement;
     const sealViewBox = sealRoot.getAttribute('viewBox') || '0 0 302 440';
+    const lightsLayer = towerSvg.querySelector('#layer1');
 
     for (const door of DOORWAYS) {
       const y = door.cy - DOORWAY_H / 2;
@@ -113,7 +170,43 @@ export class TowerSideView implements ITowerDisplay {
         nested.appendChild(child.cloneNode(true));
       }
 
-      towerSvg.appendChild(nested);
+      if (lightsLayer?.parentNode) {
+        lightsLayer.parentNode.insertBefore(nested, lightsLayer);
+      } else {
+        towerSvg.appendChild(nested);
+      }
+    }
+  }
+
+  private cacheLedNodes(towerSvg: SVGSVGElement): void {
+    for (const label of Object.keys(LED_BINDINGS) as LedLabel[]) {
+      const binding = LED_BINDINGS[label];
+      const led = towerSvg.querySelector(`#${binding.id}`);
+      if (!(led instanceof Element)) continue;
+      const tag = led.tagName.toLowerCase();
+      if (tag !== 'circle' && tag !== 'ellipse') continue;
+      led.classList.add('tsv-led');
+      led.setAttribute('data-effect', 'off');
+      this.ledNodes[label] = led as SVGElement;
+    }
+  }
+
+  private applyLedState(state: TowerState): void {
+    for (const label of Object.keys(LED_BINDINGS) as LedLabel[]) {
+      const led = this.ledNodes[label];
+      if (!led) continue;
+      const binding = LED_BINDINGS[label];
+      const role = LED_LIGHT_ROLES[label];
+      const centerIndex = CENTER_LIGHT_BY_SIDE[this.currentSide];
+      const edgeIndices = EDGE_LIGHTS_BY_SIDE[this.currentSide];
+      const lightIndex = role === 'center'
+        ? centerIndex
+        : role === 'left'
+          ? edgeIndices.left
+          : edgeIndices.right;
+      const effectValue = state.layer[binding.layer]?.light[lightIndex]?.effect ?? LIGHT_EFFECTS.off;
+      const effectLabel = EFFECT_LABELS[effectValue] ?? 'off';
+      led.setAttribute('data-effect', effectLabel);
     }
   }
 
@@ -122,5 +215,6 @@ export class TowerSideView implements ITowerDisplay {
     for (const btn of this.buttons) {
       btn.dataset.active = String(btn.dataset.side === side);
     }
+    if (this.latestState) this.applyLedState(this.latestState);
   }
 }

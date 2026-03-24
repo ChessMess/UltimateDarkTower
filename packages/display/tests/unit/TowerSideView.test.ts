@@ -1,6 +1,28 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+
+jest.mock('../../src/TowerSide.svg?raw', () => `
+  <svg viewBox="0 0 180 374" xmlns="http://www.w3.org/2000/svg">
+    <g id="layer1">
+      <circle id="base-right-back-led" />
+      <circle id="base-right-front-led" />
+      <circle id="ledge-right-led" />
+      <circle id="ledge-left-led" />
+      <circle id="base-left-back-led" />
+      <circle id="base-left-front-led" />
+      <circle id="bottom-doorway-led" />
+      <ellipse id="middle-doorway-led" />
+      <circle id="top-doorway-led" />
+    </g>
+  </svg>
+`);
+
 import { TowerSideView } from '../../src/TowerSideView';
 import { _resetStyleInjection } from '../../src/styles';
-import { createDefaultTowerState } from 'ultimatedarktower';
+import { createDefaultTowerState, LIGHT_EFFECTS } from 'ultimatedarktower';
+
+function findLedById(container: HTMLElement, id: string): Element | null {
+  return container.querySelector(`#${id}`);
+}
 
 describe('TowerSideView', () => {
   let container: HTMLElement;
@@ -73,9 +95,47 @@ describe('TowerSideView', () => {
     expect(container.querySelector('.tsv-seal-bottom')).not.toBeNull();
   });
 
+  it('inserts seals below LED nodes so doorway LEDs stay visible', () => {
+    const topSeal = container.querySelector('.tsv-seal-top');
+    const topDoorwayLed = findLedById(container, 'top-doorway-led');
+
+    expect(topSeal).not.toBeNull();
+    expect(topDoorwayLed).not.toBeNull();
+
+    const position = topSeal!.compareDocumentPosition(topDoorwayLed!);
+    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('double dispose does not throw', () => {
     view.dispose();
     expect(() => view.dispose()).not.toThrow();
+  });
+
+  it('applyState() maps light effects onto SVG LED markers', () => {
+    const state = createDefaultTowerState();
+    state.layer[0].light[2].effect = LIGHT_EFFECTS.on;
+    state.layer[3].light[1].effect = LIGHT_EFFECTS.breatheFast;
+    state.layer[5].light[3].effect = LIGHT_EFFECTS.flicker;
+
+    view.applyState(state);
+
+    const topDoorway = findLedById(container, 'top-doorway-led');
+    const ledgeRight = findLedById(container, 'ledge-right-led');
+    const baseLeftBack = findLedById(container, 'base-left-back-led');
+
+    expect(topDoorway?.getAttribute('data-effect')).toBe('on');
+    expect(ledgeRight?.getAttribute('data-effect')).toBe('breathe-fast');
+    expect(baseLeftBack?.getAttribute('data-effect')).toBe('flicker');
+  });
+
+  it('unknown light effect falls back to off marker', () => {
+    const state = createDefaultTowerState();
+    state.layer[0].light[2].effect = 9999 as never;
+
+    view.applyState(state);
+
+    const topDoorway = findLedById(container, 'top-doorway-led');
+    expect(topDoorway?.getAttribute('data-effect')).toBe('off');
   });
 
   it('clicking multiple side buttons leaves only one active', () => {
@@ -85,5 +145,57 @@ describe('TowerSideView', () => {
     const activeButtons = container.querySelectorAll('.tsv-side-btn[data-active="true"]');
     expect(activeButtons).toHaveLength(1);
     expect(activeButtons[0].textContent).toBe('W');
+  });
+
+  it('re-maps LEDs when selecting a different side without a new state update', () => {
+    const state = createDefaultTowerState();
+    state.layer[3].light[3].effect = LIGHT_EFFECTS.on;
+
+    view.applyState(state);
+
+    const ledgeLeft = findLedById(container, 'ledge-left-led');
+    const ledgeRight = findLedById(container, 'ledge-right-led');
+    expect(ledgeLeft?.getAttribute('data-effect')).toBe('on');
+    expect(ledgeRight?.getAttribute('data-effect')).toBe('off');
+
+    const buttons = container.querySelectorAll('.tsv-side-btn');
+    (buttons[1] as HTMLButtonElement).click();
+
+    expect(ledgeLeft?.getAttribute('data-effect')).toBe('off');
+    expect(ledgeRight?.getAttribute('data-effect')).toBe('on');
+
+    (buttons[2] as HTMLButtonElement).click();
+    expect(ledgeLeft?.getAttribute('data-effect')).toBe('off');
+    expect(ledgeRight?.getAttribute('data-effect')).toBe('off');
+  });
+
+  it('re-maps all edge LEDs consistently across sides', () => {
+    const state = createDefaultTowerState();
+    state.layer[3].light[3].effect = LIGHT_EFFECTS.on;
+    state.layer[4].light[3].effect = LIGHT_EFFECTS.on;
+    state.layer[5].light[3].effect = LIGHT_EFFECTS.on;
+
+    view.applyState(state);
+
+    const ledgeLeft = findLedById(container, 'ledge-left-led');
+    const ledgeRight = findLedById(container, 'ledge-right-led');
+    const baseLeftFront = findLedById(container, 'base-left-front-led');
+    const baseRightFront = findLedById(container, 'base-right-front-led');
+    const baseLeftBack = findLedById(container, 'base-left-back-led');
+    const baseRightBack = findLedById(container, 'base-right-back-led');
+
+    expect(ledgeLeft?.getAttribute('data-effect')).toBe('on');
+    expect(baseLeftFront?.getAttribute('data-effect')).toBe('on');
+    expect(baseLeftBack?.getAttribute('data-effect')).toBe('on');
+
+    const buttons = container.querySelectorAll('.tsv-side-btn');
+    (buttons[1] as HTMLButtonElement).click();
+
+    expect(ledgeLeft?.getAttribute('data-effect')).toBe('off');
+    expect(ledgeRight?.getAttribute('data-effect')).toBe('on');
+    expect(baseLeftFront?.getAttribute('data-effect')).toBe('off');
+    expect(baseRightFront?.getAttribute('data-effect')).toBe('on');
+    expect(baseLeftBack?.getAttribute('data-effect')).toBe('off');
+    expect(baseRightBack?.getAttribute('data-effect')).toBe('on');
   });
 });
