@@ -12,51 +12,51 @@ I have spent many hours reverse engineering the Tower's protocol in order to cre
 
 ## Table of Contents
 
--   [UltimateDarkTower](#ultimatedarktower)
-    -   [Table of Contents](#table-of-contents)
-    -   [Features](#features)
-    -   [Live Examples](#live-examples)
-    -   [Installation](#installation)
-        -   [Browser / Web Applications](#browser--web-applications)
-        -   [Node.js Applications](#nodejs-applications)
-    -   [Quick Start](#quick-start)
-        -   [Browser (auto-detected)](#browser-auto-detected)
-        -   [Node.js (auto-detected)](#nodejs-auto-detected)
-        -   [Explicit Platform Selection](#explicit-platform-selection)
-        -   [Custom Adapter (React Native, etc.)](#custom-adapter-react-native-etc)
-    -   [Documentation](#documentation)
-        -   [📖 Complete API Reference](#-complete-api-reference)
-        -   [Key Topics Covered:](#key-topics-covered)
-    -   [Development](#development)
-        -   [Building and Testing](#building-and-testing)
-        -   [Project Structure](#project-structure)
-    -   [Platform Support](#platform-support)
-        -   [Built-in Support (auto-detected)](#built-in-support-auto-detected)
-        -   [Custom Adapter Support](#custom-adapter-support)
-        -   [Browser Support](#browser-support)
-    -   [Known Issues](#known-issues)
-    -   [Community](#community)
+- [UltimateDarkTower](#ultimatedarktower)
+    - [Table of Contents](#table-of-contents)
+    - [Features](#features)
+    - [Live Examples](#live-examples)
+    - [Installation](#installation)
+        - [Browser / Web Applications](#browser--web-applications)
+        - [Node.js Applications](#nodejs-applications)
+    - [Quick Start](#quick-start)
+        - [Browser (auto-detected)](#browser-auto-detected)
+        - [Node.js (auto-detected)](#nodejs-auto-detected)
+        - [Explicit Platform Selection](#explicit-platform-selection)
+        - [Custom Adapter (React Native, etc.)](#custom-adapter-react-native-etc)
+    - [Documentation](#documentation)
+        - [📖 Complete API Reference](#-complete-api-reference)
+        - [Key Topics Covered:](#key-topics-covered)
+    - [Development](#development)
+        - [Building and Testing](#building-and-testing)
+        - [Project Structure](#project-structure)
+    - [Platform Support](#platform-support)
+        - [Built-in Support (auto-detected)](#built-in-support-auto-detected)
+        - [Custom Adapter Support](#custom-adapter-support)
+        - [Browser Support](#browser-support)
+    - [Known Issues](#known-issues)
+    - [Community](#community)
 
 ## Features
 
--   **Multi-Platform Bluetooth** - Works in browsers (Web Bluetooth), Node.js (`@stoprocent/noble`), Electron, and React Native via custom adapters
--   **Bluetooth Connection Management** - Reliable connection with automatic monitoring and disconnect detection
--   **Tower Control** - Complete control over lights, sounds, and drum rotation
--   **Game State Tracking** - Track glyph positions, broken seals, and skull counts
--   **Event System** - Callback-based event handling for tower events
--   **ESM + CJS** - Ships both an ES Module build and a CommonJS build; works with `import` and `require` without configuration
--   **TypeScript Support** - Full TypeScript definitions and type safety
--   **Comprehensive Logging** - Multi-output logging system for debugging
--   **Battery Monitoring** - Real-time battery level tracking and low battery warnings
--   **Extensible Adapter Pattern** - Implement `IBluetoothAdapter` for custom platforms
+- **Multi-Platform Bluetooth** - Works in browsers (Web Bluetooth), Node.js (`@stoprocent/noble`), Electron, and React Native via custom adapters
+- **Bluetooth Connection Management** - Reliable connection with automatic monitoring and disconnect detection
+- **Tower Control** - Complete control over lights, sounds, and drum rotation
+- **Game State Tracking** - Track glyph positions, broken seals, and skull counts
+- **Event System** - Callback-based event handling for tower events
+- **ESM + CJS** - Ships both an ES Module build and a CommonJS build; works with `import` and `require` without configuration
+- **TypeScript Support** - Full TypeScript definitions and type safety
+- **Comprehensive Logging** - Multi-output logging system for debugging
+- **Battery Monitoring** - Real-time battery level tracking and low battery warnings
+- **Extensible Adapter Pattern** - Implement `IBluetoothAdapter` for custom platforms
 
 ## Live Examples
 
 Try the library in action! Just power on your Tower and visit:
 
--   **[Tower Controller](https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html)** - Replicates official app functionality and gives examples of library functionality.
+- **[Tower Controller](https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html)** - Replicates official app functionality and gives examples of library functionality.
 
--   **[Tower Game](https://chessmess.github.io/UltimateDarkTower/dist/examples/game/TowerGame.html)** - "The Tower's Challenge" - a complete game using just the tower
+- **[Tower Game](https://chessmess.github.io/UltimateDarkTower/dist/examples/game/TowerGame.html)** - "The Tower's Challenge" - a complete game using just the tower
 
 _Requires Web Bluetooth support (Chrome, Edge, Samsung Internet). For iOS, use the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)._
 
@@ -119,7 +119,7 @@ import UltimateDarkTower, { IBluetoothAdapter } from 'ultimatedarktower';
 
 class MyCustomAdapter implements IBluetoothAdapter {
     // Implement all IBluetoothAdapter methods
-    // See Reference.md for the full interface
+    // See API_REFERENCE.md for the full interface
 }
 
 const tower = new UltimateDarkTower({ adapter: new MyCustomAdapter() });
@@ -127,22 +127,22 @@ const tower = new UltimateDarkTower({ adapter: new MyCustomAdapter() });
 
 ## Documentation
 
-### 📖 [Complete API Reference](Reference.md)
+### 📖 [Complete API Reference](API_REFERENCE.md)
 
 Comprehensive documentation with TypeScript examples, best practices, and troubleshooting guides.
 
 ### Key Topics Covered:
 
--   **Multi-Platform Setup** - Configuration for Web, Node.js, Electron, and React Native
--   **Connection Management** - Connecting, disconnecting, and monitoring connection health
--   **Bluetooth Adapters** - Custom adapter interface for extending platform support
--   **Tower Control** - Detailed coverage of all tower commands (lights, sounds, rotation)
--   **Glyph System** - Automatic tracking of glyph positions as towers rotate
--   **Seal Management** - Breaking seals and tracking game state
--   **Event Handling** - Callback system for tower events
--   **Logging System** - Multi-output logging for debugging and monitoring
--   **Best Practices** - Performance tips, error handling, and common patterns
--   **Troubleshooting** - Solutions for common issues and debugging techniques
+- **Multi-Platform Setup** - Configuration for Web, Node.js, Electron, and React Native
+- **Connection Management** - Connecting, disconnecting, and monitoring connection health
+- **Bluetooth Adapters** - Custom adapter interface for extending platform support
+- **Tower Control** - Detailed coverage of all tower commands (lights, sounds, rotation)
+- **Glyph System** - Automatic tracking of glyph positions as towers rotate
+- **Seal Management** - Breaking seals and tracking game state
+- **Event Handling** - Callback system for tower events
+- **Logging System** - Multi-output logging for debugging and monitoring
+- **Best Practices** - Performance tips, error handling, and common patterns
+- **Troubleshooting** - Solutions for common issues and debugging techniques
 
 ## Integration Testing
 
@@ -154,9 +154,9 @@ To run the calibration integration test:
 npm run test:integration
 ```
 
--   This will connect to the tower, perform a full calibration sequence, and print the resulting glyph positions.
--   The test will fail if the tower is not available or calibration does not complete within 60 seconds.
--   Integration tests are not included in automated test runs or npm publish.
+- This will connect to the tower, perform a full calibration sequence, and print the resulting glyph positions.
+- The test will fail if the tower is not available or calibration does not complete within 60 seconds.
+- Integration tests are not included in automated test runs or npm publish.
 
 ### Lights Integration Test
 
@@ -164,9 +164,9 @@ The lights integration test validates the `allLightsOn` and `allLightsOff` API m
 
 **Test steps:**
 
--   Turns all 24 LEDs on (solid effect) for 2 seconds
--   Turns all 24 LEDs on (breathe effect) for 3 seconds
--   Turns all 24 LEDs off
+- Turns all 24 LEDs on (solid effect) for 2 seconds
+- Turns all 24 LEDs on (breathe effect) for 3 seconds
+- Turns all 24 LEDs off
 
 **How to run:**
 
@@ -176,21 +176,21 @@ npm run test:integration:lights
 
 **Prerequisites:**
 
--   Tower must be powered on and in Bluetooth range
--   `@stoprocent/noble` must be installed
+- Tower must be powered on and in Bluetooth range
+- `@stoprocent/noble` must be installed
 
 **Visual verification:**
 
--   All lights on (solid) for 2 seconds
--   All lights breathe effect for 3 seconds
--   All lights off
+- All lights on (solid) for 2 seconds
+- All lights breathe effect for 3 seconds
+- All lights off
 
-See [Reference.md](Reference.md) for API details on `allLightsOn` and `allLightsOff`.
+See [API_REFERENCE.md](API_REFERENCE.md) for API details on `allLightsOn` and `allLightsOff`.
 
 **Prerequisites:**
 
--   Tower must be powered on and in Bluetooth range
--   `@stoprocent/noble` must be installed (it is a peer dependency)
+- Tower must be powered on and in Bluetooth range
+- `@stoprocent/noble` must be installed (it is a peer dependency)
 
 ## Development
 
@@ -271,10 +271,10 @@ examples/
 
 ## Known Issues
 
--   **Sounds** - Sounds show as command complete which is true even though the sound itself has not completed. This is just the way the tower works. I'll have to add time lengths to each at some point, just don't use the command complete response as a way of thinking the associated sound has finished playing and you can play another sound.
--   **Light Sequences** - Same as sound for lights that play for a duration.
+- **Sounds** - Sounds show as command complete which is true even though the sound itself has not completed. This is just the way the tower works. I'll have to add time lengths to each at some point, just don't use the command complete response as a way of thinking the associated sound has finished playing and you can play another sound.
+- **Light Sequences** - Same as sound for lights that play for a duration.
 
-> See [Reference.md](Reference.md) for performance best practices and workarounds.
+> See [API_REFERENCE.md](API_REFERENCE.md) for performance best practices and workarounds.
 
 ## Community
 

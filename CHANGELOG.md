@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Changed
 
-- **Improved seal management documentation** — Reference.md now explains that seals are physical plastic covers on the tower (12 total), that seal state is tracked purely in software (not by firmware), and documents all new seal state management APIs.
+- **Improved seal management documentation** — API_REFERENCE.md now explains that seals are physical plastic covers on the tower (12 total), that seal state is tracked purely in software (not by firmware), and documents all new seal state management APIs.
 
 ## [2.4.0] - 2026-03-19
 

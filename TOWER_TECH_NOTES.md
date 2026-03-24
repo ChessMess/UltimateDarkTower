@@ -6,9 +6,9 @@ The lights integration test validates the `allLightsOn` and `allLightsOff` API m
 
 **Test steps:**
 
--   Turns all 24 LEDs on (solid effect) for 2 seconds
--   Turns all 24 LEDs on (breathe effect) for 3 seconds
--   Turns all 24 LEDs off
+- Turns all 24 LEDs on (solid effect) for 2 seconds
+- Turns all 24 LEDs on (breathe effect) for 3 seconds
+- Turns all 24 LEDs off
 
 **How to run:**
 
@@ -18,36 +18,36 @@ npm run test:integration:lights
 
 **Visual verification:**
 
--   All lights on (solid) for 2 seconds
--   All lights breathe effect for 3 seconds
--   All lights off
+- All lights on (solid) for 2 seconds
+- All lights breathe effect for 3 seconds
+- All lights off
 
-See [Reference.md](Reference.md) for API details on `allLightsOn` and `allLightsOff`.
+See [API_REFERENCE.md](API_REFERENCE.md) for API details on `allLightsOn` and `allLightsOff`.
 
 ## LED Architecture Overview
 
 The Tower uses **24 individually addressable LEDs** organized into 6 logical layers with 4 LEDs each:
 
--   **Layers 0-2**: Ring LEDs (Top, Middle, Bottom rings)
--   **Layer 3**: Ledge LEDs
--   **Layer 4**: Base1 LEDs
--   **Layer 5**: Base2 LEDs
+- **Layers 0-2**: Ring LEDs (Top, Middle, Bottom rings)
+- **Layer 3**: Ledge LEDs
+- **Layer 4**: Base1 LEDs
+- **Layer 5**: Base2 LEDs
 
 ## Layer to Physical Position Mapping
 
 The `TowerState.layer` array maps to physical tower components:
 
--   `layer[0]` = **TOP RING** (positions 0-3 = North, East, South, West)
--   `layer[1]` = **MIDDLE RING** (positions 0-3 = North, East, South, West)
--   `layer[2]` = **BOTTOM RING** (positions 0-3 = North, East, South, West)
--   `layer[3]` = **LEDGE** (positions 0-3 = North-East, South-East, South-West, North-West)
--   `layer[4]` = **BASE1** (positions 0-3 = North-East, South-East, South-West, North-West)
--   `layer[5]` = **BASE2** (positions 0-3 = North-East, South-East, South-West, North-West)
+- `layer[0]` = **TOP RING** (positions 0-3 = North, East, South, West)
+- `layer[1]` = **MIDDLE RING** (positions 0-3 = North, East, South, West)
+- `layer[2]` = **BOTTOM RING** (positions 0-3 = North, East, South, West)
+- `layer[3]` = **LEDGE** (positions 0-3 = North-East, South-East, South-West, North-West)
+- `layer[4]` = **BASE1** (positions 0-3 = North-East, South-East, South-West, North-West)
+- `layer[5]` = **BASE2** (positions 0-3 = North-East, South-East, South-West, North-West)
 
 ### Direction Systems
 
--   **Ring layers (0-2)**: Cardinal directions (N, E, S, W)
--   **Ledge/Base layers (3-5)**: Ordinal directions (NE, SE, SW, NW)
+- **Ring layers (0-2)**: Cardinal directions (N, E, S, W)
+- **Ledge/Base layers (3-5)**: Ordinal directions (NE, SE, SW, NW)
 
 ## LED Channel Lookup Table
 
@@ -66,11 +66,11 @@ Layer 5: Base2       → Channels [20, 21, 22, 23] (NE, SE, SW, NW)
 
 Tower layer and position constants are defined in `src/udtConstants.ts`:
 
--   `TOWER_LAYERS` - Maps layer names to indices (0-5)
--   `RING_LIGHT_POSITIONS` - Cardinal direction positions for ring layers
--   `LEDGE_BASE_LIGHT_POSITIONS` - Ordinal direction positions for ledge/base layers
--   `LED_CHANNEL_LOOKUP` - Hardware LED channel mapping array
--   `STATE_DATA_LENGTH` - Binary state data length (19 bytes)
+- `TOWER_LAYERS` - Maps layer names to indices (0-5)
+- `RING_LIGHT_POSITIONS` - Cardinal direction positions for ring layers
+- `LEDGE_BASE_LIGHT_POSITIONS` - Ordinal direction positions for ledge/base layers
+- `LED_CHANNEL_LOOKUP` - Hardware LED channel mapping array
+- `STATE_DATA_LENGTH` - Binary state data length (19 bytes)
 
 See the source file for the complete definitions and latest values.
 
@@ -101,8 +101,8 @@ const activeLights = getActiveLights(towerState);
 
 The tower communication uses **20-byte command packets** that consist of:
 
--   **Byte 0**: Command Type (always `0x00` for tower state commands)
--   **Bytes 1-19**: Tower State Data (19 bytes containing complete tower state)
+- **Byte 0**: Command Type (always `0x00` for tower state commands)
+- **Bytes 1-19**: Tower State Data (19 bytes containing complete tower state)
 
 ## Complete 20-Byte Command Packet Structure
 
@@ -313,10 +313,10 @@ The key to avoiding unintended effects (like drum rotation when changing LEDs) i
 
 This packet structure is used by:
 
--   `rtdt_pack_state()` - Packs TowerState object into bytes 1-19
--   `rtdt_unpack_state()` - Unpacks bytes 1-19 into TowerState object
--   Command factory methods - Create complete packets by prepending command type
--   Response processing - Extracts state from tower responses
+- `rtdt_pack_state()` - Packs TowerState object into bytes 1-19
+- `rtdt_unpack_state()` - Unpacks bytes 1-19 into TowerState object
+- Command factory methods - Create complete packets by prepending command type
+- Response processing - Extracts state from tower responses
 
 The 20th byte (command type) is added by the command layer, while the tower state functions handle the core 19-byte data payload that contains all the actual tower state information.
 
@@ -334,7 +334,7 @@ See the `IMPORTANT` comment in `NodeBluetoothAdapter.connect()` for implementati
 
 **Relevant Noble documentation:**
 
--   [Noble README — Characteristic Methods](https://github.com/stoprocent/noble#characteristic-methods) — `subscribeAsync()`, `data` event, `notificationsAsync()` API
--   [Noble README — Peripheral Methods](https://github.com/stoprocent/noble#peripheral-methods) — `discoverAllServicesAndCharacteristicsAsync()`, `discoverSomeServicesAndCharacteristicsAsync()`
--   [Refactored notifications commit (c0222c6)](https://github.com/stoprocent/noble/commit/c0222c6c17cac4fae7e1bdfd9f7e767e24df90ea) — Changed `'read'` event to `'data'` event, added `notificationsAsync()` async iterator
--   [Apple CoreBluetooth — discoverServices:](<https://developer.apple.com/documentation/corebluetooth/cbperipheral/discoverservices(_:)>) — Documents that previously discovered services accumulate on `peripheral.services`
+- [Noble README — Characteristic Methods](https://github.com/stoprocent/noble#characteristic-methods) — `subscribeAsync()`, `data` event, `notificationsAsync()` API
+- [Noble README — Peripheral Methods](https://github.com/stoprocent/noble#peripheral-methods) — `discoverAllServicesAndCharacteristicsAsync()`, `discoverSomeServicesAndCharacteristicsAsync()`
+- [Refactored notifications commit (c0222c6)](https://github.com/stoprocent/noble/commit/c0222c6c17cac4fae7e1bdfd9f7e767e24df90ea) — Changed `'read'` event to `'data'` event, added `notificationsAsync()` async iterator
+- [Apple CoreBluetooth — discoverServices:](<https://developer.apple.com/documentation/corebluetooth/cbperipheral/discoverservices(_:)>) — Documents that previously discovered services accumulate on `peripheral.services`
