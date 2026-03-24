@@ -412,6 +412,159 @@ describe('UltimateDarkTower', () => {
     });
   });
 
+  describe('markSealBroken', () => {
+    test('should mark a seal as broken without hardware interaction', () => {
+      const seal = { side: 'north' as const, level: 'top' as const };
+      darkTower.markSealBroken(seal);
+
+      expect(darkTower.isSealBroken(seal)).toBe(true);
+      expect(darkTower.getBrokenSeals()).toContainEqual(seal);
+    });
+
+    test('should be excluded from getRandomUnbrokenSeal', () => {
+      // Break all but one seal using markSealBroken
+      const sides = ['north', 'south', 'east', 'west'] as const;
+      const levels = ['top', 'middle', 'bottom'] as const;
+
+      for (const side of sides) {
+        for (const level of levels) {
+          if (!(side === 'west' && level === 'bottom')) {
+            darkTower.markSealBroken({ side, level });
+          }
+        }
+      }
+
+      // The only unbroken seal should be west-bottom
+      const remaining = darkTower.getRandomUnbrokenSeal();
+      expect(remaining).toEqual({ side: 'west', level: 'bottom' });
+    });
+
+    test('should be cleared by resetBrokenSeals', () => {
+      darkTower.markSealBroken({ side: 'north' as const, level: 'top' as const });
+      darkTower.markSealBroken({ side: 'east' as const, level: 'middle' as const });
+
+      expect(darkTower.getBrokenSeals()).toHaveLength(2);
+
+      darkTower.resetBrokenSeals();
+
+      expect(darkTower.getBrokenSeals()).toEqual([]);
+    });
+
+    test('should not duplicate when marking same seal twice', () => {
+      const seal = { side: 'south' as const, level: 'middle' as const };
+      darkTower.markSealBroken(seal);
+      darkTower.markSealBroken(seal);
+
+      expect(darkTower.getBrokenSeals()).toHaveLength(1);
+    });
+  });
+
+  describe('markSealRestored', () => {
+    test('should restore a seal marked via markSealBroken', () => {
+      const seal = { side: 'north' as const, level: 'top' as const };
+      darkTower.markSealBroken(seal);
+      expect(darkTower.isSealBroken(seal)).toBe(true);
+
+      darkTower.markSealRestored(seal);
+      expect(darkTower.isSealBroken(seal)).toBe(false);
+      expect(darkTower.getBrokenSeals()).toEqual([]);
+    });
+
+    test('should restore a seal broken via breakSeal', async () => {
+      await darkTower.connect();
+
+      const seal = { side: 'east' as const, level: 'middle' as const };
+      const towerCommands = darkTower['towerCommands'];
+      const originalBreakSeal = towerCommands.breakSeal;
+      towerCommands.breakSeal = jest.fn().mockResolvedValue(undefined);
+
+      try {
+        await darkTower.breakSeal(seal);
+        expect(darkTower.isSealBroken(seal)).toBe(true);
+
+        darkTower.markSealRestored(seal);
+        expect(darkTower.isSealBroken(seal)).toBe(false);
+      } finally {
+        towerCommands.breakSeal = originalBreakSeal;
+        await darkTower.disconnect();
+      }
+    });
+
+    test('should make seal available in getRandomUnbrokenSeal after restore', () => {
+      // Break all seals
+      const sides = ['north', 'south', 'east', 'west'] as const;
+      const levels = ['top', 'middle', 'bottom'] as const;
+
+      for (const side of sides) {
+        for (const level of levels) {
+          darkTower.markSealBroken({ side, level });
+        }
+      }
+      expect(darkTower.getRandomUnbrokenSeal()).toBeNull();
+
+      // Restore one seal
+      darkTower.markSealRestored({ side: 'north', level: 'top' });
+
+      const result = darkTower.getRandomUnbrokenSeal();
+      expect(result).toEqual({ side: 'north', level: 'top' });
+    });
+
+    test('should be a no-op for already unbroken seals', () => {
+      const seal = { side: 'west' as const, level: 'bottom' as const };
+      expect(darkTower.isSealBroken(seal)).toBe(false);
+
+      // Should not throw or cause issues
+      darkTower.markSealRestored(seal);
+      expect(darkTower.isSealBroken(seal)).toBe(false);
+    });
+  });
+
+  describe('Config brokenSeals', () => {
+    test('should initialize with broken seals from config', () => {
+      const initialSeals = [
+        { side: 'north' as const, level: 'top' as const },
+        { side: 'east' as const, level: 'middle' as const },
+      ];
+      const tower = new UltimateDarkTower({ adapter: mockAdapter, brokenSeals: initialSeals });
+
+      expect(tower.isSealBroken(initialSeals[0])).toBe(true);
+      expect(tower.isSealBroken(initialSeals[1])).toBe(true);
+      expect(tower.getBrokenSeals()).toHaveLength(2);
+    });
+
+    test('should exclude config seals from getRandomUnbrokenSeal', () => {
+      // Break all but one via config
+      const allSeals: Array<{ side: 'north' | 'south' | 'east' | 'west'; level: 'top' | 'middle' | 'bottom' }> = [];
+      for (const side of ['north', 'south', 'east', 'west'] as const) {
+        for (const level of ['top', 'middle', 'bottom'] as const) {
+          if (!(side === 'west' && level === 'bottom')) {
+            allSeals.push({ side, level });
+          }
+        }
+      }
+      const tower = new UltimateDarkTower({ adapter: mockAdapter, brokenSeals: allSeals });
+
+      const remaining = tower.getRandomUnbrokenSeal();
+      expect(remaining).toEqual({ side: 'west', level: 'bottom' });
+    });
+
+    test('should initialize with no broken seals when config omitted', () => {
+      const tower = new UltimateDarkTower({ adapter: mockAdapter });
+      expect(tower.getBrokenSeals()).toEqual([]);
+    });
+
+    test('should allow resetting config-initialized seals', () => {
+      const tower = new UltimateDarkTower({
+        adapter: mockAdapter,
+        brokenSeals: [{ side: 'north' as const, level: 'top' as const }],
+      });
+      expect(tower.getBrokenSeals()).toHaveLength(1);
+
+      tower.resetBrokenSeals();
+      expect(tower.getBrokenSeals()).toEqual([]);
+    });
+  });
+
   describe('Command Queue System', () => {
     beforeEach(async () => {
       // Connect to tower for testing

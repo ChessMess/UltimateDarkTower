@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Added
+
+- **`markSealBroken()` method** — Marks a seal as broken in software tracking without sending hardware commands. Enables restoring game state (e.g., resuming a saved game).
+- **`markSealRestored()` method** — Marks a seal as unbroken in software tracking without sending hardware commands. Enables undoing a seal break or restoring individual seals.
+- **`brokenSeals` config option** — Accepts an array of `SealIdentifier` in `UltimateDarkTowerConfig` to initialize seal state at construction time.
+
+### Changed
+
+- **Improved seal management documentation** — Reference.md now explains that seals are physical plastic covers on the tower (12 total), that seal state is tracked purely in software (not by firmware), and documents all new seal state management APIs.
+
 ## [2.4.0] - 2026-03-19
 
 ### Changed

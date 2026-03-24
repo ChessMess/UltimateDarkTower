@@ -1,45 +1,5 @@
 # UltimateDarkTower API Reference
 
-### Lights Integration Test
-
-The lights integration test validates the `allLightsOn` and `allLightsOff` API methods using real tower hardware.
-
-**Test steps:**
-
--   Turns all 24 LEDs on (solid effect) for 2 seconds
--   Turns all 24 LEDs on (breathe effect) for 3 seconds
--   Turns all 24 LEDs off
-
-**How to run:**
-
-```bash
-npm run test:integration:lights
-```
-
-**Prerequisites:**
-
--   Tower must be powered on and in Bluetooth range
--   `@stoprocent/noble` must be installed
-
-**Visual verification:**
-
--   All lights on (solid) for 2 seconds
--   All lights breathe effect for 3 seconds
--   All lights off
-
-#### API Usage
-
-```typescript
-// Turn all lights on (solid)
-await tower.allLightsOn();
-
-// Turn all lights on with breathe effect
-await tower.allLightsOn(LIGHT_EFFECTS.breathe);
-
-// Turn all lights off
-await tower.allLightsOff();
-```
-
 A comprehensive reference guide for the UltimateDarkTower library - your complete toolkit for controlling the Return to Dark Tower board game device via Bluetooth.
 
 ## Table of Contents
@@ -688,7 +648,13 @@ function checkForQuestGlyph() {
 
 ## Seal Management
 
-Seals represent breakable elements on the tower for game mechanics.
+Seals are the physical plastic covers on the tower body. There are **12 seals total** — one at each of 3 levels (`top`, `middle`, `bottom`) on each of 4 sides (`north`, `east`, `south`, `west`). In the game, seals are broken to reveal content underneath as the game progresses.
+
+**Important:** Seal state is **not tracked by the tower firmware**. The tower hardware only knows how to play a seal-break effect (sound + lights) when commanded. All seal state tracking — which seals are broken, which are intact — is managed purely in software by this library.
+
+This means:
+- `breakSeal()` sends a command to the tower (triggering sound and light effects) **and** marks the seal as broken in software
+- All other seal methods (`isSealBroken`, `getBrokenSeals`, `markSealBroken`, `markSealRestored`, etc.) are purely software-side operations with no hardware interaction
 
 ### Seal Types
 
@@ -699,11 +665,37 @@ type SealIdentifier = {
 };
 ```
 
+### Setting Initial Seal State
+
+You can initialize seal state at construction time via the `brokenSeals` config option, or at runtime using `markSealBroken()`. Neither approach sends commands to the tower hardware.
+
+#### Via Config (at construction)
+
+```typescript
+// Resume a game with some seals already broken
+const tower = new UltimateDarkTower({
+    brokenSeals: [
+        { side: 'north', level: 'top' },
+        { side: 'east', level: 'middle' },
+    ],
+});
+console.log(`Restored ${tower.getBrokenSeals().length} broken seals`);
+```
+
+#### Via `markSealBroken()` (at runtime)
+
+```typescript
+// Restore seals after construction (e.g., loading saved game state)
+tower.markSealBroken({ side: 'north', level: 'top' });
+tower.markSealBroken({ side: 'east', level: 'middle' });
+console.log(`Restored ${tower.getBrokenSeals().length} broken seals`);
+```
+
 ### Seal Operations
 
 #### `breakSeal(seal: SealIdentifier): Promise<void>`
 
-Break a specific seal with effects.
+Break a specific seal with hardware effects (sound + lights) and mark it as broken in software.
 
 ```typescript
 // Break a specific seal
@@ -722,9 +714,27 @@ for (const seal of sealsToBreak) {
 }
 ```
 
+#### `markSealBroken(seal: SealIdentifier): void`
+
+Mark a seal as broken in software tracking only. Does **not** send any commands to the tower — no sound or light effects are triggered. Use this to restore game state (e.g., resuming a game where seals were already broken).
+
+```typescript
+tower.markSealBroken({ side: 'south', level: 'bottom' });
+console.log(tower.isSealBroken({ side: 'south', level: 'bottom' })); // true
+```
+
+#### `markSealRestored(seal: SealIdentifier): void`
+
+Mark a seal as unbroken in software tracking only. Does **not** send any commands to the tower. Use this to undo a seal break or restore individual seals for game state management.
+
+```typescript
+tower.markSealRestored({ side: 'south', level: 'bottom' });
+console.log(tower.isSealBroken({ side: 'south', level: 'bottom' })); // false
+```
+
 #### `isSealBroken(seal: SealIdentifier): boolean`
 
-Check if a seal is already broken.
+Check if a seal is marked as broken in software (no hardware interaction).
 
 ```typescript
 const seal = { side: 'north', level: 'top' };
@@ -737,7 +747,7 @@ if (tower.isSealBroken(seal)) {
 
 #### `getBrokenSeals(): SealIdentifier[]`
 
-Get list of all broken seals.
+Get list of all broken seals (software-side lookup).
 
 ```typescript
 const brokenSeals = tower.getBrokenSeals();
@@ -763,7 +773,7 @@ if (randomSeal) {
 
 #### `resetBrokenSeals(): void`
 
-Reset seal tracking (start new game).
+Reset all seal tracking (clears all broken seals in software). Does not send any commands to the tower.
 
 ```typescript
 // Start new game

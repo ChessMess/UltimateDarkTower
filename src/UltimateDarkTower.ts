@@ -36,6 +36,8 @@ export interface UltimateDarkTowerConfig {
   platform?: BluetoothPlatform;
   /** Custom Bluetooth adapter (for testing or custom platforms like React Native) */
   adapter?: IBluetoothAdapter;
+  /** Initial broken seals to restore game state (software-only, no hardware effects) */
+  brokenSeals?: SealIdentifier[];
 }
 
 /**
@@ -150,6 +152,14 @@ class UltimateDarkTower {
     // Initialize tower commands with dependencies
     const commandDependencies = this.createCommandDependencies();
     this.towerCommands = new UdtTowerCommands(commandDependencies);
+
+    // Initialize broken seals from config (software-only, no hardware effects)
+    if (config?.brokenSeals) {
+      for (const seal of config.brokenSeals) {
+        const sealKey = `${seal.level}-${seal.side}`;
+        this.brokenSeals.add(sealKey);
+      }
+    }
   }
 
   /**
@@ -737,6 +747,27 @@ class UltimateDarkTower {
       const [level, side] = sealKey.split('-');
       return { level: level as TowerLevels, side: side as TowerSide };
     });
+  }
+
+  /**
+   * Marks a seal as broken in software tracking without sending any commands to the tower.
+   * Use this to restore game state (e.g., resuming a game where seals were already broken).
+   * Unlike breakSeal(), this does NOT trigger sound or light effects on the tower.
+   * @param seal - Seal identifier to mark as broken
+   */
+  markSealBroken(seal: SealIdentifier): void {
+    const sealKey = `${seal.level}-${seal.side}`;
+    this.brokenSeals.add(sealKey);
+  }
+
+  /**
+   * Marks a seal as unbroken in software tracking without sending any commands to the tower.
+   * Use this to undo a seal break or restore individual seals for game state management.
+   * @param seal - Seal identifier to mark as unbroken
+   */
+  markSealRestored(seal: SealIdentifier): void {
+    const sealKey = `${seal.level}-${seal.side}`;
+    this.brokenSeals.delete(sealKey);
   }
 
   /**
