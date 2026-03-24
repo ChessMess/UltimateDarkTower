@@ -4,3 +4,4 @@ dist-example/
 coverage/
 *.tsbuildinfo
 .vite/
+.DS_Store

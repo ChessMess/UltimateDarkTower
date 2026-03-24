@@ -29,9 +29,9 @@ const display = new TowerDisplay({
 new TowerDisplay(options: TowerDisplayOptions)
 ```
 
-| Parameter            | Type              | Description                        |
-| -------------------- | ----------------- | ---------------------------------- |
-| `options.container`  | `HTMLElement`     | DOM element to render into         |
+| Parameter           | Type          | Description                |
+| ------------------- | ------------- | -------------------------- |
+| `options.container` | `HTMLElement` | DOM element to render into |
 
 On construction, a CSS stylesheet is injected (once) and the container shows an idle "Waiting for tower state..." message.
 
@@ -109,20 +109,21 @@ When `applyState()` is called, the display renders three sections:
 
 A 6-layer x 4-light grid. Each light shows its effect as a data attribute:
 
-| Effect         | CSS `data-effect` value |
-| -------------- | ----------------------- |
-| Off            | `off`                   |
-| On             | `on`                    |
-| Breathe        | `breathe`               |
-| Breathe Fast   | `breathe-fast`          |
-| Breathe 50%    | `breathe-50`            |
-| Flicker        | `flicker`               |
+| Effect       | CSS `data-effect` value |
+| ------------ | ----------------------- |
+| Off          | `off`                   |
+| On           | `on`                    |
+| Breathe      | `breathe`               |
+| Breathe Fast | `breathe-fast`          |
+| Breathe 50%  | `breathe-50`            |
+| Flicker      | `flicker`               |
 
 Layers are labeled by position (e.g., `top`, `upper-middle`, `lower-middle`, `bottom`) using `LAYER_TO_POSITION` from `ultimatedarktower`. Lights are labeled by compass direction (N, E, S, W) using `LIGHT_INDEX_TO_DIRECTION`.
 
 ### Drums
 
 Three drums (Top, Middle, Bottom) showing:
+
 - **Position** — compass direction (N, E, S, W)
 - **Calibration** — checkmark or dash
 - **Glyph** — the glyph name visible on the north-facing side (only when calibrated), resolved from `GLYPHS`
@@ -139,34 +140,34 @@ Three drums (Top, Middle, Bottom) showing:
 
 All rendered elements use the `tdr-` prefix. Key classes:
 
-| Class                | Element                          |
-| -------------------- | -------------------------------- |
-| `.tdr-idle`          | Idle/waiting message             |
-| `.tdr-section`       | Section wrapper                  |
-| `.tdr-leds`          | LED section                      |
-| `.tdr-layer`         | Single LED layer row             |
-| `.tdr-layer-label`   | Layer position label             |
-| `.tdr-led`           | Individual LED indicator         |
-| `.tdr-drums`         | Drums section                    |
-| `.tdr-drum`          | Single drum row                  |
-| `.tdr-drum-name`     | Drum name (Top/Middle/Bottom)    |
-| `.tdr-drum-pos`      | Drum compass position            |
-| `.tdr-drum-cal`      | Calibration indicator            |
-| `.tdr-glyph`         | Glyph name                      |
-| `.tdr-info`          | Info section                     |
-| `.tdr-audio`         | Audio display                    |
-| `.tdr-audio-name`    | Audio sample name                |
-| `.tdr-audio-loop`    | Loop badge                       |
-| `.tdr-audio-vol`     | Volume label                     |
-| `.tdr-skull-drop`    | Skull drop highlight             |
-| `.tdr-beam-count`    | Beam/skull count                 |
-| `.tdr-led-seq`       | LED sequence override label      |
+| Class              | Element                       |
+| ------------------ | ----------------------------- |
+| `.tdr-idle`        | Idle/waiting message          |
+| `.tdr-section`     | Section wrapper               |
+| `.tdr-leds`        | LED section                   |
+| `.tdr-layer`       | Single LED layer row          |
+| `.tdr-layer-label` | Layer position label          |
+| `.tdr-led`         | Individual LED indicator      |
+| `.tdr-drums`       | Drums section                 |
+| `.tdr-drum`        | Single drum row               |
+| `.tdr-drum-name`   | Drum name (Top/Middle/Bottom) |
+| `.tdr-drum-pos`    | Drum compass position         |
+| `.tdr-drum-cal`    | Calibration indicator         |
+| `.tdr-glyph`       | Glyph name                    |
+| `.tdr-info`        | Info section                  |
+| `.tdr-audio`       | Audio display                 |
+| `.tdr-audio-name`  | Audio sample name             |
+| `.tdr-audio-loop`  | Loop badge                    |
+| `.tdr-audio-vol`   | Volume label                  |
+| `.tdr-skull-drop`  | Skull drop highlight          |
+| `.tdr-beam-count`  | Beam/skull count              |
+| `.tdr-led-seq`     | LED sequence override label   |
 
 ---
 
 ## Peer Dependency
 
-This package requires [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) `^2.1.0` as a peer dependency. It provides:
+This package requires [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) `^2.5.0` as a peer dependency. It provides:
 
 - `TowerState` — the state type passed to `applyState()`
 - `GLYPHS`, `TOWER_AUDIO_LIBRARY`, `TOWER_LIGHT_SEQUENCES`, `VOLUME_DESCRIPTIONS`, `LAYER_TO_POSITION`, `LIGHT_INDEX_TO_DIRECTION`, `LIGHT_EFFECTS` — lookup constants used for rendering

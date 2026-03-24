@@ -1,10 +1,9 @@
-import type { TowerState } from 'ultimatedarktower';
+import type { TowerState, TowerSide } from 'ultimatedarktower';
+
+export type { TowerSide };
 
 /** Identifies which renderer implementation to use. */
 export type RendererType = 'readout' | 'side-view';
-
-/** Identifies a side of the tower. */
-export type TowerSide = 'north' | 'east' | 'south' | 'west';
 
 /** Configuration options for TowerDisplay. */
 export interface TowerDisplayOptions {
