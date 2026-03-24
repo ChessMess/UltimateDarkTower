@@ -14,6 +14,8 @@ export interface UltimateDarkTowerConfig {
     platform?: BluetoothPlatform;
     /** Custom Bluetooth adapter (for testing or custom platforms like React Native) */
     adapter?: IBluetoothAdapter;
+    /** Initial broken seals to restore game state (software-only, no hardware effects) */
+    brokenSeals?: SealIdentifier[];
 }
 /**
  * @title UltimateDarkTower
@@ -308,6 +310,19 @@ declare class UltimateDarkTower {
      * @returns Array of SealIdentifier objects representing all broken seals
      */
     getBrokenSeals(): SealIdentifier[];
+    /**
+     * Marks a seal as broken in software tracking without sending any commands to the tower.
+     * Use this to restore game state (e.g., resuming a game where seals were already broken).
+     * Unlike breakSeal(), this does NOT trigger sound or light effects on the tower.
+     * @param seal - Seal identifier to mark as broken
+     */
+    markSealBroken(seal: SealIdentifier): void;
+    /**
+     * Marks a seal as unbroken in software tracking without sending any commands to the tower.
+     * Use this to undo a seal break or restore individual seals for game state management.
+     * @param seal - Seal identifier to mark as unbroken
+     */
+    markSealRestored(seal: SealIdentifier): void;
     /**
      * Resets the broken seals tracking (clears all broken seals).
      */

@@ -131,6 +131,13 @@ class UltimateDarkTower {
         // Initialize tower commands with dependencies
         const commandDependencies = this.createCommandDependencies();
         this.towerCommands = new udtTowerCommands_1.UdtTowerCommands(commandDependencies);
+        // Initialize broken seals from config (software-only, no hardware effects)
+        if (config === null || config === void 0 ? void 0 : config.brokenSeals) {
+            for (const seal of config.brokenSeals) {
+                const sealKey = `${seal.level}-${seal.side}`;
+                this.brokenSeals.add(sealKey);
+            }
+        }
     }
     /**
      * Set up the tower response callback after all components are initialized
@@ -629,6 +636,25 @@ class UltimateDarkTower {
             const [level, side] = sealKey.split('-');
             return { level: level, side: side };
         });
+    }
+    /**
+     * Marks a seal as broken in software tracking without sending any commands to the tower.
+     * Use this to restore game state (e.g., resuming a game where seals were already broken).
+     * Unlike breakSeal(), this does NOT trigger sound or light effects on the tower.
+     * @param seal - Seal identifier to mark as broken
+     */
+    markSealBroken(seal) {
+        const sealKey = `${seal.level}-${seal.side}`;
+        this.brokenSeals.add(sealKey);
+    }
+    /**
+     * Marks a seal as unbroken in software tracking without sending any commands to the tower.
+     * Use this to undo a seal break or restore individual seals for game state management.
+     * @param seal - Seal identifier to mark as unbroken
+     */
+    markSealRestored(seal) {
+        const sealKey = `${seal.level}-${seal.side}`;
+        this.brokenSeals.delete(sealKey);
     }
     /**
      * Resets the broken seals tracking (clears all broken seals).

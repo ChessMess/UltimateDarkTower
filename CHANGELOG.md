@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-03-23
+
 ### Added
 
 - **`markSealBroken()` method** — Marks a seal as broken in software tracking without sending hardware commands. Enables restoring game state (e.g., resuming a saved game).
