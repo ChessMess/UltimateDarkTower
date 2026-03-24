@@ -1,5 +1,6 @@
 import type { TowerState } from 'ultimatedarktower';
 import type { ITowerDisplay, TowerSide } from './types';
+import { injectStyles } from './styles';
 import svgContent from './TowerSide.svg?raw';
 import sealContent from './Seal.svg?raw';
 
@@ -32,6 +33,7 @@ export class TowerSideView implements ITowerDisplay {
 
   constructor(container: HTMLElement) {
     this.container = container;
+    injectStyles();
     this.build();
   }
 

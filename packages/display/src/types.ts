@@ -9,7 +9,7 @@ export type RendererType = 'readout' | 'side-view';
 export interface TowerDisplayOptions {
   /** DOM element to render into. */
   container: HTMLElement;
-  /** Which renderer(s) to show. Defaults to ['readout'] for backwards compat. */
+  /** Which renderer(s) to show. Defaults to ['readout', 'side-view']. */
   renderers?: RendererType | RendererType[];
 }
 

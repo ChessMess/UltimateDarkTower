@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+
+- `TowerSideView` now calls `injectStyles()` so side-view-only mode gets CSS
+- JSDoc for `TowerDisplayOptions.renderers` now correctly documents the default as `['readout', 'side-view']`
+
+### Added
+
+- Tests for seal overlay injection, double-dispose safety, and multi-button side selection
+
 ## [0.1.0] - 2026-03-22
 
 ### Added

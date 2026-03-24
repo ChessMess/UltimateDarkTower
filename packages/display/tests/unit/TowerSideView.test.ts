@@ -64,4 +64,26 @@ describe('TowerSideView', () => {
     view.dispose();
     expect(container.querySelector('.tsv-wrapper')).toBeNull();
   });
+
+  it('injects seal overlays onto each doorway', () => {
+    const seals = container.querySelectorAll('.tsv-seal');
+    expect(seals).toHaveLength(3);
+    expect(container.querySelector('.tsv-seal-top')).not.toBeNull();
+    expect(container.querySelector('.tsv-seal-middle')).not.toBeNull();
+    expect(container.querySelector('.tsv-seal-bottom')).not.toBeNull();
+  });
+
+  it('double dispose does not throw', () => {
+    view.dispose();
+    expect(() => view.dispose()).not.toThrow();
+  });
+
+  it('clicking multiple side buttons leaves only one active', () => {
+    const buttons = container.querySelectorAll('.tsv-side-btn');
+    (buttons[1] as HTMLButtonElement).click();
+    (buttons[3] as HTMLButtonElement).click();
+    const activeButtons = container.querySelectorAll('.tsv-side-btn[data-active="true"]');
+    expect(activeButtons).toHaveLength(1);
+    expect(activeButtons[0].textContent).toBe('W');
+  });
 });
