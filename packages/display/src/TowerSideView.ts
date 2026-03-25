@@ -1,6 +1,13 @@
-import { LIGHT_EFFECTS, type TowerState } from 'ultimatedarktower';
+import {
+  LIGHT_EFFECTS,
+  RING_LIGHT_POSITIONS,
+  LEDGE_BASE_LIGHT_POSITIONS,
+  TOWER_LAYERS,
+  type TowerState,
+} from 'ultimatedarktower';
 import type { ITowerDisplay, TowerSide } from './types';
 import { injectStyles } from './styles';
+import { EFFECT_LABELS } from './effectLabels';
 import svgContent from './TowerSide.svg?raw';
 import sealContent from './Seal.svg?raw';
 
@@ -14,42 +21,33 @@ const SIDE_LABELS: Record<TowerSide, string> = {
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-const EFFECT_LABELS: Record<number, string> = {
-  [LIGHT_EFFECTS.off]: 'off',
-  [LIGHT_EFFECTS.on]: 'on',
-  [LIGHT_EFFECTS.breathe]: 'breathe',
-  [LIGHT_EFFECTS.breatheFast]: 'breathe-fast',
-  [LIGHT_EFFECTS.breathe50percent]: 'breathe-50',
-  [LIGHT_EFFECTS.flicker]: 'flicker',
-};
-
 const LED_BINDINGS = {
-  'top-doorway-led': { id: 'top-doorway-led', layer: 0, light: 2 },
-  'middle-doorway-led': { id: 'middle-doorway-led', layer: 1, light: 2 },
-  'bottom-doorway-led': { id: 'bottom-doorway-led', layer: 2, light: 2 },
-  'ledge-left-led': { id: 'ledge-left-led', layer: 3, light: 3 },
-  'ledge-right-led': { id: 'ledge-right-led', layer: 3, light: 0 },
-  'base-left-front-led': { id: 'base-left-front-led', layer: 4, light: 3 },
-  'base-right-front-led': { id: 'base-right-front-led', layer: 4, light: 0 },
-  'base-left-back-led': { id: 'base-left-back-led', layer: 5, light: 3 },
-  'base-right-back-led': { id: 'base-right-back-led', layer: 5, light: 0 },
-} as const;
+  'top-doorway-led':     { id: 'top-doorway-led',     layer: TOWER_LAYERS.TOP_RING,    light: RING_LIGHT_POSITIONS.SOUTH },
+  'middle-doorway-led':  { id: 'middle-doorway-led',  layer: TOWER_LAYERS.MIDDLE_RING, light: RING_LIGHT_POSITIONS.SOUTH },
+  'bottom-doorway-led':  { id: 'bottom-doorway-led',  layer: TOWER_LAYERS.BOTTOM_RING, light: RING_LIGHT_POSITIONS.SOUTH },
+  'ledge-left-led':      { id: 'ledge-left-led',      layer: TOWER_LAYERS.LEDGE,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
+  'ledge-right-led':     { id: 'ledge-right-led',     layer: TOWER_LAYERS.LEDGE,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
+  'base-left-front-led': { id: 'base-left-front-led', layer: TOWER_LAYERS.BASE1,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
+  'base-right-front-led':{ id: 'base-right-front-led',layer: TOWER_LAYERS.BASE1,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
+  'base-left-back-led':  { id: 'base-left-back-led',  layer: TOWER_LAYERS.BASE2,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
+  'base-right-back-led': { id: 'base-right-back-led', layer: TOWER_LAYERS.BASE2,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
+};
 
 type LedLabel = keyof typeof LED_BINDINGS;
 type LightRole = 'center' | 'left' | 'right';
 
 const CENTER_LIGHT_BY_SIDE: Record<TowerSide, number> = {
-  north: 0,
-  east: 1,
-  south: 2,
-  west: 3,
+  north: RING_LIGHT_POSITIONS.NORTH,
+  east:  RING_LIGHT_POSITIONS.EAST,
+  south: RING_LIGHT_POSITIONS.SOUTH,
+  west:  RING_LIGHT_POSITIONS.WEST,
 };
 
 const EDGE_LIGHTS_BY_SIDE: Record<TowerSide, { left: number; right: number }> = {
-  north: { left: 3, right: 0 },  // NW, NE
-  east:  { left: 1, right: 0 },  // SE, NE
-  south: { left: 1, right: 2 },  // SE, SW
-  west:  { left: 3, right: 2 },  // NW, SW
+  north: { left: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST, right: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
+  east:  { left: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST, right: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
+  south: { left: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST, right: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST },
+  west:  { left: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST, right: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST },
 };
 
 const LED_LIGHT_ROLES: Record<LedLabel, LightRole> = {

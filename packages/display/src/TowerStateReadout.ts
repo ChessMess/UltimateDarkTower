@@ -6,10 +6,10 @@ import {
   VOLUME_DESCRIPTIONS,
   LAYER_TO_POSITION,
   LIGHT_INDEX_TO_DIRECTION,
-  LIGHT_EFFECTS,
 } from 'ultimatedarktower';
 import type { ITowerDisplay } from './types';
 import { injectStyles } from './styles';
+import { EFFECT_LABELS } from './effectLabels';
 
 const COMPASS = ['N', 'E', 'S', 'W'] as const;
 const COMPASS_FULL = ['north', 'east', 'south', 'west'] as const;
@@ -24,16 +24,6 @@ function esc(str: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
-
-// Build reverse lookup maps once at module level
-const EFFECT_LABELS: Record<number, string> = {
-  [LIGHT_EFFECTS.off]: 'off',
-  [LIGHT_EFFECTS.on]: 'on',
-  [LIGHT_EFFECTS.breathe]: 'breathe',
-  [LIGHT_EFFECTS.breatheFast]: 'breathe-fast',
-  [LIGHT_EFFECTS.breathe50percent]: 'breathe-50',
-  [LIGHT_EFFECTS.flicker]: 'flicker',
-};
 
 const SEQUENCE_LABELS: Record<number, string> = Object.fromEntries(
   Object.entries(TOWER_LIGHT_SEQUENCES).map(([name, val]) => [val, name]),
