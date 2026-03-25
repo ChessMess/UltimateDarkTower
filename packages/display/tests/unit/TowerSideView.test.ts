@@ -113,9 +113,9 @@ describe('TowerSideView', () => {
 
   it('applyState() maps light effects onto SVG LED markers', () => {
     const state = createDefaultTowerState();
-    state.layer[0].light[2].effect = LIGHT_EFFECTS.on;
-    state.layer[3].light[1].effect = LIGHT_EFFECTS.breatheFast;
-    state.layer[5].light[3].effect = LIGHT_EFFECTS.flicker;
+    state.layer[0].light[0].effect = LIGHT_EFFECTS.on;       // NORTH ring → top doorway on N view
+    state.layer[3].light[0].effect = LIGHT_EFFECTS.breatheFast; // NE corner → right ledge on N view
+    state.layer[5].light[3].effect = LIGHT_EFFECTS.flicker;  // NW corner → left base-back on N view
 
     view.applyState(state);
 
@@ -130,7 +130,7 @@ describe('TowerSideView', () => {
 
   it('unknown light effect falls back to off marker', () => {
     const state = createDefaultTowerState();
-    state.layer[0].light[2].effect = 9999 as never;
+    state.layer[0].light[0].effect = 9999 as never;
 
     view.applyState(state);
 
@@ -159,12 +159,13 @@ describe('TowerSideView', () => {
     expect(ledgeRight?.getAttribute('data-effect')).toBe('off');
 
     const buttons = container.querySelectorAll('.tsv-side-btn');
-    (buttons[1] as HTMLButtonElement).click();
+    (buttons[1] as HTMLButtonElement).click();  // east
 
+    // NW corner (light[3]) is not adjacent to the east face; neither side shows it
     expect(ledgeLeft?.getAttribute('data-effect')).toBe('off');
-    expect(ledgeRight?.getAttribute('data-effect')).toBe('on');
+    expect(ledgeRight?.getAttribute('data-effect')).toBe('off');
 
-    (buttons[2] as HTMLButtonElement).click();
+    (buttons[2] as HTMLButtonElement).click();  // south
     expect(ledgeLeft?.getAttribute('data-effect')).toBe('off');
     expect(ledgeRight?.getAttribute('data-effect')).toBe('off');
   });
@@ -189,13 +190,13 @@ describe('TowerSideView', () => {
     expect(baseLeftBack?.getAttribute('data-effect')).toBe('on');
 
     const buttons = container.querySelectorAll('.tsv-side-btn');
-    (buttons[1] as HTMLButtonElement).click();
+    (buttons[1] as HTMLButtonElement).click();  // east — NW corner not adjacent to east face
 
     expect(ledgeLeft?.getAttribute('data-effect')).toBe('off');
-    expect(ledgeRight?.getAttribute('data-effect')).toBe('on');
+    expect(ledgeRight?.getAttribute('data-effect')).toBe('off');
     expect(baseLeftFront?.getAttribute('data-effect')).toBe('off');
-    expect(baseRightFront?.getAttribute('data-effect')).toBe('on');
+    expect(baseRightFront?.getAttribute('data-effect')).toBe('off');
     expect(baseLeftBack?.getAttribute('data-effect')).toBe('off');
-    expect(baseRightBack?.getAttribute('data-effect')).toBe('on');
+    expect(baseRightBack?.getAttribute('data-effect')).toBe('off');
   });
 });

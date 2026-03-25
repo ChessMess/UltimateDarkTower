@@ -28,28 +28,28 @@ const LED_BINDINGS = {
   'middle-doorway-led': { id: 'middle-doorway-led', layer: 1, light: 2 },
   'bottom-doorway-led': { id: 'bottom-doorway-led', layer: 2, light: 2 },
   'ledge-left-led': { id: 'ledge-left-led', layer: 3, light: 3 },
-  'ledge-right-led': { id: 'ledge-right-led', layer: 3, light: 1 },
+  'ledge-right-led': { id: 'ledge-right-led', layer: 3, light: 0 },
   'base-left-front-led': { id: 'base-left-front-led', layer: 4, light: 3 },
-  'base-right-front-led': { id: 'base-right-front-led', layer: 4, light: 1 },
+  'base-right-front-led': { id: 'base-right-front-led', layer: 4, light: 0 },
   'base-left-back-led': { id: 'base-left-back-led', layer: 5, light: 3 },
-  'base-right-back-led': { id: 'base-right-back-led', layer: 5, light: 1 },
+  'base-right-back-led': { id: 'base-right-back-led', layer: 5, light: 0 },
 } as const;
 
 type LedLabel = keyof typeof LED_BINDINGS;
 type LightRole = 'center' | 'left' | 'right';
 
 const CENTER_LIGHT_BY_SIDE: Record<TowerSide, number> = {
-  north: 2,
+  north: 0,
   east: 1,
-  south: 0,
+  south: 2,
   west: 3,
 };
 
 const EDGE_LIGHTS_BY_SIDE: Record<TowerSide, { left: number; right: number }> = {
-  north: { left: 3, right: 1 },
-  east: { left: 2, right: 3 },
-  south: { left: 0, right: 2 },
-  west: { left: 1, right: 0 },
+  north: { left: 3, right: 0 },  // NW, NE
+  east:  { left: 1, right: 0 },  // SE, NE
+  south: { left: 1, right: 2 },  // SE, SW
+  west:  { left: 3, right: 2 },  // NW, SW
 };
 
 const LED_LIGHT_ROLES: Record<LedLabel, LightRole> = {
