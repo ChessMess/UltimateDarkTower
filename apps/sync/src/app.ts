@@ -9,7 +9,7 @@ import { UltimateDarkTower, BluetoothUserCancelledError, rtdt_unpack_state, TOWE
 import { UI } from './ui';
 import { TowerRelay, type TowerRelayEvent } from './towerRelay';
 import { ClientLogger } from './clientLogger';
-import { TowerVisualizer } from './towerVisualizer';
+import { TowerDisplay } from 'ultimatedarktowerdisplay';
 
 /**
  * App is the top-level controller.
@@ -26,7 +26,7 @@ export class App {
   private readonly isObserver: boolean = new URLSearchParams(window.location.search).has('observer');
   private relay: TowerRelay | null = null;
   private tower: UltimateDarkTower | null = null;
-  private visualizer: TowerVisualizer | null = null;
+  private towerDisplay: TowerDisplay | null = null;
 
   /** Cached last command bytes for self-healing replay on tower reconnect. */
   private lastCommandBytes: number[] | null = null;
@@ -58,13 +58,30 @@ export class App {
     // Observer mode: hide tower card, show visualizer section.
     if (this.isObserver) {
       this.ui.towerBtn.closest('.card')?.setAttribute('hidden', '');
-      const vizContainer = document.getElementById('tower-visualizer');
-      if (vizContainer) {
+      const container = document.getElementById('tower-visualizer');
+      if (container) {
         document.getElementById('visualizer-section')?.removeAttribute('hidden');
-        this.visualizer = new TowerVisualizer(vizContainer);
+        this.towerDisplay = new TowerDisplay({ container });
       }
-      this.ui.log('Observer mode — tower visualizer active. Connect to a host to begin.');
+      this.ui.log('Observer mode — tower display active. Connect to a host to begin.');
     } else {
+      const container = document.getElementById('tower-display');
+      if (container) {
+        this.towerDisplay = new TowerDisplay({ container });
+      }
+      this.ui.toggleStateBtn.removeAttribute('hidden');
+      this.ui.toggleStateBtn.addEventListener('click', () => {
+        const section = document.getElementById('state-section');
+        if (!section) return;
+        const isHidden = section.hasAttribute('hidden');
+        if (isHidden) {
+          section.removeAttribute('hidden');
+          this.ui.toggleStateBtn.textContent = 'Hide Tower State';
+        } else {
+          section.setAttribute('hidden', '');
+          this.ui.toggleStateBtn.textContent = 'Show Tower State';
+        }
+      });
       this.ui.log('DarkTowerSync client ready. Enter the host URL and connect.');
     }
     this.ui.setRelayState('disconnected');
@@ -217,6 +234,7 @@ export class App {
         this.ui.connectBtn.textContent = 'Disconnect';
         this.ui.connectBtn.disabled = false;
         this.ui.towerBtn.disabled = false;
+        this.ui.playerNameInput.disabled = true;
         this.ui.log('Connected to relay host.');
         this.logger.setSendFn((json) => this.relay?.sendRaw(json));
         this.logger.setAutoSend(true);
@@ -237,7 +255,9 @@ export class App {
         this.ui.connectBtn.textContent = 'Connect to Host';
         this.ui.connectBtn.disabled = false;
         this.ui.towerBtn.disabled = true;
+        this.ui.playerNameInput.disabled = false;
         this.ui.log(`Relay disconnected (code ${event.code}).`);
+        this.towerDisplay?.showIdle();
         break;
 
       case 'relay:reconnecting':
@@ -249,6 +269,7 @@ export class App {
         this.ui.setRelayState('disconnected');
         this.ui.connectBtn.textContent = 'Connect to Host';
         this.ui.connectBtn.disabled = false;
+        this.ui.playerNameInput.disabled = false;
         this.ui.log(`Could not reconnect after ${event.attempts} attempts. Click "Connect to Host" to try again.`);
         break;
 
@@ -268,26 +289,25 @@ export class App {
         this.ui.log('Game resumed — host tower reconnected.');
         break;
 
-      case 'tower:command':
+      case 'tower:command': {
         this.lastCommandBytes = event.data;
         this.logger.logCommand('client←host', event.data, event.seq);
         this.ui.log(`Command received: [${event.data.slice(0, 4).join(', ')}…]`);
-        if (this.isObserver && this.visualizer) {
-          const state = rtdt_unpack_state(Uint8Array.from(event.data).slice(TOWER_STATE_DATA_OFFSET));
-          this.visualizer.update(state);
-        } else {
+        const state = rtdt_unpack_state(Uint8Array.from(event.data).slice(TOWER_STATE_DATA_OFFSET));
+        this.towerDisplay?.applyState(state);
+        if (!this.isObserver) {
           void this.replayOnTower(event.data, event.seq);
         }
         break;
+      }
 
       case 'sync:state':
         if (event.lastCommand) {
           this.lastCommandBytes = event.lastCommand;
           this.ui.log('Received full tower state sync from host.');
-          if (this.isObserver && this.visualizer) {
-            const state = rtdt_unpack_state(Uint8Array.from(event.lastCommand).slice(TOWER_STATE_DATA_OFFSET));
-            this.visualizer.update(state);
-          } else {
+          const syncState = rtdt_unpack_state(Uint8Array.from(event.lastCommand).slice(TOWER_STATE_DATA_OFFSET));
+          this.towerDisplay?.applyState(syncState);
+          if (!this.isObserver) {
             void this.replayOnTower(event.lastCommand);
           }
         } else {

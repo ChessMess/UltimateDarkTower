@@ -41,6 +41,9 @@
         <div class="dot" id="tower-dot"></div>
         <span id="tower-status">Tower not connected</span>
       </div>
+      <button id="toggle-state-btn" class="btn-ghost" style="margin-top: 0.5rem;" hidden>
+        Show Tower State
+      </button>
     </div>
 
     <div class="card">
@@ -48,11 +51,14 @@
       <button id="tower-btn" disabled>Connect to Tower (Bluetooth)</button>
     </div>
 
+    <section id="state-section" class="card" hidden>
+      <h2>Tower State</h2>
+      <div id="tower-display"></div>
+    </section>
+
     <section id="visualizer-section" class="card" hidden>
       <h2>Tower State</h2>
-      <div id="tower-visualizer">
-        <p class="vis-idle">Waiting for tower state&hellip;</p>
-      </div>
+      <div id="tower-visualizer"></div>
     </section>
 
     <div class="card">

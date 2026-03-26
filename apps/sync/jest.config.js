@@ -25,6 +25,7 @@ module.exports = {
     '^@dark-tower-sync/shared/(.*)$': '<rootDir>/packages/shared/src/$1',
     '^@dark-tower-sync/host$': '<rootDir>/packages/host/src/index.ts',
     '^@dark-tower-sync/host/(.*)$': '<rootDir>/packages/host/src/$1',
+    '^ultimatedarktower$': '<rootDir>/node_modules/ultimatedarktower/dist/src/index.js',
   },
   collectCoverageFrom: [
     'packages/*/src/**/*.{ts,tsx}',

@@ -92,6 +92,8 @@ export default defineConfig({
       '@dark-tower-sync/shared': fileURLToPath(
         new URL('../shared/src/index.ts', import.meta.url)
       ),
+      // For local development with npm link:
+      // 'ultimatedarktowerdisplay': fileURLToPath(new URL('../../UltimateDarkTowerDisplay/src/index.ts', import.meta.url)),
     },
   },
   optimizeDeps: {

@@ -30,6 +30,32 @@ cd DarkTowerSync
 npm install
 ```
 
+### 2b. Local Development with UltimateDarkTowerDisplay (Optional)
+
+If you're developing on the [UltimateDarkTowerDisplay](https://github.com/ChessMess/UltimateDarkTowerDisplay) package locally:
+
+1. Clone the UDTDisplay repo (if not already cloned):
+
+   ```bash
+   cd ../
+   git clone https://github.com/ChessMess/UltimateDarkTowerDisplay.git
+   cd UltimateDarkTowerDisplay
+   ```
+
+2. Create a global symlink to the UDTDisplay package:
+
+   ```bash
+   npm link
+   ```
+
+3. Link it into DarkTowerSync:
+   ```bash
+   cd ../DarkTowerSync
+   npm link ultimatedarktowerdisplay
+   ```
+
+> **Important:** Running `npm install` in DarkTowerSync will install the published npm version of `ultimatedarktowerdisplay` and replace the symlink. If you need to reinstall dependencies after npm install, simply re-run `npm link ultimatedarktowerdisplay` to restore the local symlink.
+
 ### 3. Bluetooth permissions
 
 macOS requires explicit Bluetooth permission for Node.js processes:
