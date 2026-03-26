@@ -1,6 +1,6 @@
 # DarkTowerSync Technical Specification
 
-Version: 2026-03-22
+Version: 2026-03-26
 Audience: Engineers, maintainers, and LLM coding agents
 Status: Source-of-truth implementation guide for the current codebase
 
@@ -22,6 +22,8 @@ Status: Source-of-truth implementation guide for the current codebase
   - [5.4 Resilience Data Flow](#54-resilience-data-flow)
 - [6. Protocol Contract](#6-protocol-contract)
 - [7. BLE Emulation Details](#7-ble-emulation-details)
+  - [7.1 macOS CoreBluetooth Peripheral-Mode Limitations](#71-macos-corebluetooth-peripheral-mode-limitations)
+  - [7.2 Device Information Service Blocked on macOS](#72-device-information-service-blocked-on-macos)
 - [8. IPC Surface (Electron)](#8-ipc-surface-electron)
 - [9. Structured Logging System](#9-structured-logging-system)
   - [9.1 Overview](#91-overview)
@@ -292,6 +294,7 @@ Connection events (host side, session-*-host.jsonl + session-*-all.jsonl):
   FakeTower state-change    → logEvent: "FakeTower state: <state>"
   companion-connected       → logEvent: "Companion app connected"
   companion-disconnected    → logEvent: "Companion app disconnected"
+  ghost-connection          → logEvent: "Ghost BLE connection detected (was <state>) — recovering"
   CLIENT_HELLO (handshake)  → logEvent: "Client connected: <label>"
   WebSocket close           → logEvent: "Client disconnected: <label>"
   CLIENT_READY              → logEvent: "Client <label> tower: connected/disconnected"
@@ -369,6 +372,52 @@ Events emitted:
 - companion-connected
 - companion-disconnected
 - ble-adapter-state
+- ghost-connection (diagnostic — ghost BLE link detected, see 7.1)
+
+### 7.1 macOS CoreBluetooth Peripheral-Mode Limitations
+
+The BLE peripheral stack uses `@stoprocent/bleno`, which wraps Apple's CoreBluetooth `CBPeripheralManager` on macOS. CoreBluetooth imposes several hard platform limitations in peripheral mode that directly affect FakeTower behavior:
+
+**No peripheral-initiated disconnect.** `CBPeripheralManager` has no method to force-disconnect a connected central. The `bleno.disconnect()` call maps to an empty Objective-C method (`BLEPeripheralManager.disconnect` is a no-op). Only the central (companion app) can terminate the connection. This is confirmed by Apple's [CBPeripheralManager documentation](https://developer.apple.com/documentation/corebluetooth/cbperipheralmanager) — the complete API has no disconnect method, unlike the central side which has `CBCentralManager.cancelPeripheralConnection(_:)`.
+
+**No disconnect callback.** `CBPeripheralManagerDelegate` has no `didDisconnectCentral:` callback. The only two delegate methods that receive a `CBCentral` parameter are `didSubscribeTo:` and `didUnsubscribeFrom:`. Natural companion disconnects (app close, range loss) are detected indirectly via the `didUnsubscribeFrom` callback on the notify characteristic, which FakeTower handles in `onUnsubscribe`. The bleno `disconnect` event listener (`_onDisconnect`) is effectively dead code on macOS.
+
+**Ghost BLE connections after stop/start cycle.** When the user clicks "Stop BLE" while the companion app is connected:
+1. `bleno.disconnect()` does nothing — the companion's BLE link survives.
+2. `bleno.stopAdvertisingAsync()` stops advertising but does not drop existing connections.
+3. On the next `startAdvertising()`, the companion can still write commands to the GATT characteristic.
+4. However, neither the `accept` event (blocked by bleno's native `connectedCentrals` set which tracks seen centrals and never clears them) nor `onSubscribe` (companion doesn't resubscribe since it believes it already is) will fire.
+5. Result: commands flow but FakeTower's state machine is stuck in `advertising` — the "ghost connection" state.
+
+**Mitigation (implemented):** FakeTower detects ghost connections in `onWriteRequest`: if a BLE write arrives while in `advertising` state, the state machine is promoted to `connected` and `companion-connected` is emitted. This works because a BLE write can only arrive on an active connection. Additionally, `stopAdvertising()` now explicitly emits `companion-disconnected` when stopping from `connected` state, since `bleno.disconnect()` cannot trigger it. A `ghost-connection` diagnostic event is emitted for structured logging.
+
+**Graceful degradation:** After ghost recovery, `_txUpdateValue` remains null (no `onSubscribe` fired), so skull drop injection is unavailable until the companion resubscribes. Command relay works normally.
+
+**Service accumulation.** The bleno native binding's `setServices` calls `addService` per service but never calls `removeAllServices` first. After N stop/start cycles, CoreBluetooth holds N copies of the UART service. The JS-side emitters map is replaced each call, so only the latest characteristic callbacks are active — no duplicate command events occur, but the service clutter is unnecessary.
+
+### 7.2 Device Information Service Blocked on macOS
+
+The real tower exposes a Device Information Service (DIS, UUID `0x180A`) containing manufacturer name, model number, hardware/firmware/software revision strings. The companion app reads these immediately after BLE connect to verify the tower's firmware version.
+
+**Problem:** macOS CoreBluetooth (`CBPeripheralManager`) blocks third-party apps from registering services that use Bluetooth SIG-assigned 16-bit UUIDs. Attempting to add DIS produces a silent `CBError.uuidNotAllowed` (error code 6). This restriction has been present since OS X 10.10 Yosemite and persists through macOS 15 Sequoia. It affects all BLE peripheral libraries on macOS (bleno, Swift, Rust) — the restriction is in Apple's framework, not in library code.
+
+**Blocked UUIDs include:** `0x180A` (Device Information), `0x180F` (Battery), `0x1812` (HID), `0x1800` (GAP), `0x1801` (GATT). Custom 128-bit UUIDs are unaffected. The full 128-bit expansion of a blocked UUID (e.g., `0000180A-0000-1000-8000-00805F9B34FB`) causes `addService` to succeed but GATT read/write callbacks never fire — this workaround is non-functional.
+
+**Impact on FakeTower:** Without DIS, the companion app reads a blank firmware version, shows a firmware-update prompt, and may immediately disconnect. The UART service (Nordic UART, custom 128-bit UUID) itself works correctly — commands flow once the companion app proceeds past the firmware gate.
+
+**Current mitigation:** FakeTower skips DIS registration on macOS with a one-time console warning. The companion app can still connect and exchange commands if it is already in an active gameplay session that passed firmware validation against a real tower (the "session handoff" workaround). For reliable operation, the host should run on Linux (e.g., Raspberry Pi) where BlueZ gives userspace direct HCI access with no UUID restrictions, or use a UART HCI dongle on macOS to bypass CoreBluetooth entirely.
+
+**DIS field values captured from the real tower** (used on non-macOS platforms):
+
+| Characteristic UUID | Field | Value |
+|---|---|---|
+| `0x2A29` | Manufacturer Name | Restoration Games LLC |
+| `0x2A24` | Model Number | ReturnToDarkTower |
+| `0x2A27` | Hardware Revision | 1.11 |
+| `0x2A26` | Firmware Revision | 79556657694099f3ca293f534b9cc5b55bfeaa31 |
+| `0x2A28` | Software Revision | 1.0.0 |
+
+See [docs/MACOS_BLE_PERIPHERAL_LIMITATION.md](MACOS_BLE_PERIPHERAL_LIMITATION.md) for full analysis, hardware workaround options, and references.
 
 ## 8. IPC Surface (Electron)
 
@@ -587,6 +636,7 @@ Reference docs:
 
 - BLE peripheral behavior depends on platform support and permissions.
 - macOS CoreBluetooth blocks standard Bluetooth SIG 16-bit UUIDs in peripheral mode — the Device Information Service (0x180A) cannot be registered. The companion app may show a firmware-update prompt on macOS without hardware workarounds (see `docs/MACOS_BLE_PERIPHERAL_LIMITATION.md`).
+- macOS CoreBluetooth has no peripheral-initiated disconnect API and no disconnect callback. FakeTower mitigates ghost BLE connections via write-based detection (see section 7.1). Skull drops are unavailable during ghost recovery until the companion resubscribes.
 - Native module teardown in Electron requires guarded shutdown path.
 - Native modules (e.g. `@stoprocent/bleno`) must be compiled for Electron's Node.js version, not the system Node.js. The release workflow runs `electron-rebuild` to handle this; local builds use Forge's built-in native dependency preparation.
 - Relay transport is low-latency fire-and-forget and does not include delivery acknowledgements. Missed commands are corrected by the next full-state command from the companion app.

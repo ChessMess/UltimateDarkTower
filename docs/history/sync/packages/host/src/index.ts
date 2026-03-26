@@ -79,6 +79,9 @@ async function main(): Promise<void> {
     logger.logEvent('event', 'host', 'Companion app disconnected');
     relay.broadcastPaused('Companion app disconnected from FakeTower');
   });
+  tower.on('ghost-connection', (fromState) => {
+    logger.logEvent('event', 'host', `Ghost BLE connection detected (was ${fromState}) — recovering`);
+  });
 
   await relay.start();
   console.log(`Relay server listening on ws://0.0.0.0:${port}`);

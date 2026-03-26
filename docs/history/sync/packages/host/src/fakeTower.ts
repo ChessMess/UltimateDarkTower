@@ -56,6 +56,8 @@ interface FakeTowerEventMap {
   'companion-disconnected': [address: string];
   /** Raw CoreBluetooth adapter state — fires immediately on init and on each change. */
   'ble-adapter-state': [state: BlenoState];
+  /** Diagnostic: ghost BLE connection detected via write in non-connected state. */
+  'ghost-connection': [state: FakeTowerState];
 }
 
 /**
@@ -151,6 +153,7 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
   async startAdvertising(): Promise<void> {
     if (this._advertising || this._isStarting) return;
     this._isStarting = true;
+    console.log(`[FakeTower] startAdvertising called (was ${this._state})`);
 
     // Register stored handler refs (removed in stopAdvertising).
     bleno.on('accept', this._onAccept);
@@ -164,6 +167,17 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
         uuid: UART_TX_CHARACTERISTIC_UUID,
         properties: ['write', 'writeWithoutResponse'],
         onWriteRequest: (_handle, data, _offset, _withoutResponse, callback) => {
+          // Ghost-connection recovery: if we receive a write while in advertising
+          // state, the companion BLE link survived a stop/start cycle (macOS
+          // CoreBluetooth has no peripheral-initiated disconnect API).
+          if (this._state === 'advertising') {
+            console.log('[FakeTower] ghost connection detected via write — promoting to connected');
+            this.emit('ghost-connection', this._state);
+            this.setState('connected');
+            this.emit('companion-connected', this._connectedAddress);
+          } else if (this._state === 'idle') {
+            console.warn('[FakeTower] command received in idle state — BLE link still alive (macOS limitation)');
+          }
           console.log('[FakeTower] command received:', data.toString('hex'));
           this._lastCommand = Buffer.from(data);
           this.onCommandReceived?.(data);
@@ -280,6 +294,10 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
     if (!this._advertising) return;
     this._advertising = false;
 
+    console.log(`[FakeTower] stopAdvertising (was ${this._state})`);
+
+    const wasConnected = this._state === 'connected';
+
     bleno.removeListener('accept', this._onAccept);
     bleno.removeListener('disconnect', this._onDisconnect);
 
@@ -290,8 +308,16 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
     this._skullDropCount = 0;
     this._lastCommand = null;
 
-    bleno.disconnect();
+    bleno.disconnect();   // no-op on macOS, but kept for Linux/other platforms
     await bleno.stopAdvertisingAsync();
+
+    // If we were connected, bleno.disconnect() is a no-op on macOS so
+    // _onDisconnect never fired. Emit manually for proper bookkeeping
+    // (relay.broadcastPaused, logger, client notifications).
+    if (wasConnected) {
+      this.emit('companion-disconnected', 'unknown');
+    }
+
     this.setState('idle');
   }
 

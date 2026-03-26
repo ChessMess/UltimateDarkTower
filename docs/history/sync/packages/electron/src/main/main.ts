@@ -245,6 +245,10 @@ async function initApp(): Promise<void> {
     relay.broadcastResumed();
   });
 
+  tower.on('ghost-connection', (fromState) => {
+    logger.logEvent('event', 'host', `Ghost BLE connection detected (was ${fromState}) — recovering`);
+  });
+
   tower.on('ble-adapter-state', (state) => {
     bleAdapterState = state;
     mainWindow?.webContents.send(IPC.BLE_ADAPTER_STATE, { state });

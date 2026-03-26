@@ -8,6 +8,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 
+- **Ghost BLE connection state desync (macOS)** — After clicking "Stop BLE" while
+  the companion app was connected, the host entered a state where commands flowed
+  (relay count incremented) but the UI showed "Idle" with no green indicator.
+  Toggling Start Advertising / Stop BLE had no effect on the actual BLE connection.
+
+  **Root cause:** macOS CoreBluetooth has no peripheral-initiated disconnect API.
+  `CBPeripheralManager` has no `disconnect` method and `CBPeripheralManagerDelegate`
+  has no `didDisconnectCentral:` callback (confirmed via Apple documentation). The
+  `bleno.disconnect()` call maps to an empty Objective-C method — a platform
+  limitation, not a bleno bug. When Stop BLE is pressed, the companion app's BLE
+  link survives the stop/start cycle. On the next Start Advertising, neither the
+  `accept` event (blocked by bleno's native `connectedCentrals` set which never
+  clears known centrals) nor `onSubscribe` (companion doesn't resubscribe since it
+  believes it already is) fires, leaving FakeTower stuck in `advertising` state.
+
+  **Fixes applied:**
+  - `onWriteRequest` now detects ghost connections: if a BLE write arrives while in
+    `advertising` state, the state machine promotes to `connected` and emits
+    `companion-connected`. A write can only arrive on an active BLE link.
+  - `stopAdvertising()` now explicitly emits `companion-disconnected` when stopping
+    from `connected` state, since `bleno.disconnect()` cannot trigger it on macOS.
+  - New `ghost-connection` diagnostic event emitted and logged to session JSONL for
+    post-session troubleshooting.
+  - Diagnostic `console.log` entries added to `startAdvertising()` and
+    `stopAdvertising()` showing prior state, aiding startup log analysis.
+
 - **Duplicate `client:disconnected` broadcasts** — `RelayServer` registered both
   `close` and `error` handlers that called the same cleanup function. When a
   socket error preceded close (which always follows), cleanup ran twice,
