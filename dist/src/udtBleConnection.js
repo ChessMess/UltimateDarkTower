@@ -85,7 +85,7 @@ class UdtBleConnection {
         catch (error) {
             this.logger.error(`Tower Connection Error: ${error}`, '[UDT][BLE]');
             this.isConnected = false;
-            this.callbacks.onTowerDisconnect();
+            throw error;
         }
     }
     async disconnect() {

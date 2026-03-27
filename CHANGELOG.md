@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+- **Tower Emulator has been added** — Utilising the UltimateDarkTowerDisplay the example app can now connect to a software rendered version of the tower. The controller and the software tower share actual packets, so this can be a useful feature for testing certain features of both the UDT library and the UDT Display Library.
+
+### Added
+
+- **Tower Emulator shows audio playback notifications** — When an audio command is sent while connected to the Tower Emulator, the emulator popup now briefly displays the sound name, loop state, and volume level. The notification auto-dismisses after 4 seconds. Detection is done at the adapter level by reading the audio bytes from the outgoing command packet, so all audio commands are captured regardless of which API method triggered them.
+
+### Fixed
+
+- **`connect()` swallowed errors instead of propagating to callers** — `udtBleConnection.connect()` caught all errors from the Bluetooth adapter (including `BluetoothUserCancelledError`) and called `onTowerDisconnect()` instead of re-throwing. This prevented callers from detecting user cancellation or connection failures. The catch block also incorrectly fired a disconnect event for a tower that was never connected. Errors are now re-thrown after logging, and the spurious disconnect callback has been removed.
+
+- **Tower Emulator popup blocked on GitHub Pages (HTTPS)** — Moved `window.open` for the emulator display window to before the first `await` in `connectToTowerEmulator()`, ensuring it runs within the original user-gesture call stack and is not blocked by browser popup blockers on HTTPS origins.
+
 ## [3.0.0] - 2026-03-24
 
 ### Changed

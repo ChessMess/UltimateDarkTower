@@ -843,6 +843,120 @@
     }
   });
 
+  // examples/controller/TowerEmulatorAdapter.ts
+  var EMULATED_BATTERY_MV = 3600;
+  var BATTERY_HEARTBEAT_INTERVAL_MS = 200;
+  var INITIAL_STATE_RESPONSE_DELAY_MS = 0;
+  var COMMAND_RESPONSE_DELAY_MS = 50;
+  var CALIBRATION_DELAY_MS = 1500;
+  var TOWER_STATE_RESPONSE = 0;
+  var BATTERY_RESPONSE = 7;
+  var CMD_CALIBRATE = 4;
+  var TowerEmulatorAdapter = class {
+    constructor(options = {}) {
+      this.options = options;
+      this.connected = false;
+      // Tracks the last 20-byte stateful command so non-stateful responses preserve current state
+      this.lastStatePacket = new Uint8Array(20);
+    }
+    async connect(_deviceName, _serviceUuids) {
+      this.connected = true;
+      setTimeout(() => {
+        var _a2;
+        (_a2 = this.rxCallback) == null ? void 0 : _a2.call(this, new Uint8Array(this.lastStatePacket));
+      }, INITIAL_STATE_RESPONSE_DELAY_MS);
+      this.batteryInterval = setInterval(() => {
+        var _a2;
+        (_a2 = this.rxCallback) == null ? void 0 : _a2.call(this, this.createBatteryResponse());
+      }, BATTERY_HEARTBEAT_INTERVAL_MS);
+    }
+    async disconnect() {
+      this.connected = false;
+      this.stopBatteryHeartbeat();
+    }
+    isConnected() {
+      return this.connected;
+    }
+    isGattConnected() {
+      return this.connected;
+    }
+    async writeCharacteristic(data) {
+      var _a2, _b;
+      const commandType = data[0];
+      if (data.length >= 20 && commandType === TOWER_STATE_RESPONSE) {
+        this.lastStatePacket = new Uint8Array(data);
+        setTimeout(() => {
+          var _a3;
+          return (_a3 = this.rxCallback) == null ? void 0 : _a3.call(this, new Uint8Array(data));
+        }, COMMAND_RESPONSE_DELAY_MS);
+        const sample = data[15] & 127;
+        if (sample !== 0) {
+          const loop = !!(data[15] & 128);
+          const volume = (data[18] & 240) >> 4;
+          (_b = (_a2 = this.options).onAudioCommand) == null ? void 0 : _b.call(_a2, sample, loop, volume);
+        }
+      } else if (data.length === 1 && commandType === CMD_CALIBRATE) {
+        setTimeout(() => {
+          var _a3;
+          const calibratedResponse = this.createCalibratedStateResponse();
+          this.lastStatePacket = new Uint8Array(calibratedResponse);
+          (_a3 = this.rxCallback) == null ? void 0 : _a3.call(this, calibratedResponse);
+        }, CALIBRATION_DELAY_MS);
+      } else {
+        setTimeout(
+          () => {
+            var _a3;
+            return (_a3 = this.rxCallback) == null ? void 0 : _a3.call(this, new Uint8Array(this.lastStatePacket));
+          },
+          COMMAND_RESPONSE_DELAY_MS
+        );
+      }
+    }
+    onCharacteristicValueChanged(callback) {
+      this.rxCallback = callback;
+    }
+    onDisconnect(callback) {
+      this.disconnectCallback = callback;
+    }
+    onBluetoothAvailabilityChanged(callback) {
+      this.availabilityCallback = callback;
+    }
+    async readDeviceInformation() {
+      return {
+        modelNumber: "Tower Emulator",
+        firmwareRevision: "0.0.0"
+      };
+    }
+    async cleanup() {
+      this.connected = false;
+      this.stopBatteryHeartbeat();
+      this.lastStatePacket = new Uint8Array(20);
+      this.rxCallback = void 0;
+      this.disconnectCallback = void 0;
+      this.availabilityCallback = void 0;
+    }
+    stopBatteryHeartbeat() {
+      if (this.batteryInterval) {
+        clearInterval(this.batteryInterval);
+        this.batteryInterval = void 0;
+      }
+    }
+    createBatteryResponse() {
+      const response = new Uint8Array(5);
+      response[0] = BATTERY_RESPONSE;
+      response[3] = EMULATED_BATTERY_MV >> 8 & 255;
+      response[4] = EMULATED_BATTERY_MV & 255;
+      return response;
+    }
+    createCalibratedStateResponse() {
+      const response = new Uint8Array(20);
+      response[0] = TOWER_STATE_RESPONSE;
+      response[1] = 16;
+      response[2] = 66;
+      return response;
+    }
+  };
+
   // src/UltimateDarkTower.ts
   init_udtConstants();
 
@@ -1563,7 +1677,7 @@
       } catch (error) {
         this.logger.error(`Tower Connection Error: ${error}`, "[UDT][BLE]");
         this.isConnected = false;
-        this.callbacks.onTowerDisconnect();
+        throw error;
       }
     }
     async disconnect() {
@@ -3512,6 +3626,26 @@
 
   // examples/controller/TowerController.ts
   var Tower = new src_default();
+  var towerEmulatorWindow = null;
+  var currentConnectionMode = null;
+  var postStateToTowerEmulatorWindow = (state) => {
+    towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.postMessage({ type: "applyState", state }, "*");
+  };
+  var postAudioEventToEmulatorWindow = (sample, loop, volume) => {
+    var _a2, _b;
+    const name = (_b = (_a2 = Object.values(TOWER_AUDIO_LIBRARY).find((s) => s.value === sample)) == null ? void 0 : _a2.name) != null ? _b : `#${sample}`;
+    towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.postMessage({ type: "playAudio", name, sample, loop, volume }, "*");
+  };
+  var syncTowerEmulatorWindow = () => {
+    if (!towerEmulatorWindow) {
+      return;
+    }
+    if (Tower.isConnected) {
+      postStateToTowerEmulatorWindow(Tower.getCurrentTowerState());
+      return;
+    }
+    towerEmulatorWindow.postMessage({ type: "showIdle" }, "*");
+  };
   var sharedDOMOutput;
   var differentialChart = null;
   var differentialReadings = [];
@@ -3560,6 +3694,27 @@
   };
   Tower.onSkullDrop = updateSkullDropCount;
   async function connectToTower() {
+    var _a2;
+    const mode = (_a2 = document.getElementById("towerTypeSelect")) == null ? void 0 : _a2.value;
+    if (mode === "emulator") {
+      await connectToTowerEmulator();
+      return;
+    }
+    if (currentConnectionMode !== "ble") {
+      try {
+        await Tower.cleanup();
+      } catch (e) {
+      }
+      Tower = new src_default();
+      Tower.onSkullDrop = updateSkullDropCount;
+      Tower.onTowerConnect = onTowerConnected;
+      Tower.onTowerDisconnect = onTowerDisconnected;
+      Tower.onCalibrationComplete = onCalibrationComplete;
+      Tower.onBatteryLevelNotify = onBatteryLevelNotify;
+      Tower.onTowerStateUpdate = onTowerStateUpdate;
+      window.Tower = Tower;
+      currentConnectionMode = "ble";
+    }
     logger.info("Attempting to connect to tower...", "[TC]");
     try {
       await Tower.connect();
@@ -3567,8 +3722,35 @@
       logger.error(`Connection failed: ${error}`, "[TC]");
     }
   }
+  async function connectToTowerEmulator() {
+    logger.info("Connecting to Tower Emulator...", "[TC]");
+    towerEmulatorWindow = window.open(
+      "TowerEmulator.html",
+      "TowerEmulator",
+      "width=900,height=700,resizable=yes,scrollbars=yes"
+    );
+    try {
+      await Tower.cleanup();
+    } catch (e) {
+    }
+    Tower = new src_default({ adapter: new TowerEmulatorAdapter({ onAudioCommand: postAudioEventToEmulatorWindow }) });
+    currentConnectionMode = "emulator";
+    Tower.onSkullDrop = updateSkullDropCount;
+    Tower.onTowerConnect = onTowerConnected;
+    Tower.onTowerDisconnect = onTowerDisconnected;
+    Tower.onCalibrationComplete = onCalibrationComplete;
+    Tower.onBatteryLevelNotify = onBatteryLevelNotify;
+    Tower.onTowerStateUpdate = onTowerStateUpdate;
+    window.Tower = Tower;
+    try {
+      await Tower.connect();
+    } catch (error) {
+      logger.error(`Tower Emulator connection failed: ${error}`, "[TC]");
+    }
+  }
   var onTowerConnected = () => {
     var _a2;
+    syncTowerEmulatorWindow();
     const el = document.getElementById("tower-connection-state");
     if (el) {
       el.innerText = "Tower Connected";
@@ -3603,6 +3785,7 @@
   };
   Tower.onTowerConnect = onTowerConnected;
   var onTowerDisconnected = () => {
+    towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.postMessage({ type: "showIdle" }, "*");
     const el = document.getElementById("tower-connection-state");
     if (el) {
       el.innerText = "Tower Disconnected";
@@ -3672,6 +3855,7 @@
   };
   Tower.onBatteryLevelNotify = onBatteryLevelNotify;
   var onTowerStateUpdate = (newState, oldState, source) => {
+    postStateToTowerEmulatorWindow(newState);
     logger.debug(`Tower state updated from ${source}`, "[TC]");
     const calibrationChanged = newState.drum[0].calibrated !== oldState.drum[0].calibrated || newState.drum[1].calibrated !== oldState.drum[1].calibrated || newState.drum[2].calibrated !== oldState.drum[2].calibrated;
     if (calibrationChanged) {
@@ -5109,5 +5293,17 @@ ${"-".repeat(60)}
   window.initializeChart = initializeChart;
   window.updateChartDisplayConfig = updateChartDisplayConfig;
   window.toggleChartDisplay = toggleChartDisplay;
+  window.addEventListener("beforeunload", () => {
+    towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.close();
+  });
+  window.addEventListener("message", (event) => {
+    if (event.source !== towerEmulatorWindow) {
+      return;
+    }
+    const { type } = event.data;
+    if (type === "emulatorReady") {
+      syncTowerEmulatorWindow();
+    }
+  });
 })();
 //# sourceMappingURL=TowerController.js.map

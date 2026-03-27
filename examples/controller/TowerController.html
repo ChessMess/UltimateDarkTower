@@ -440,9 +440,10 @@
         <div class="text-center pb-2 space-x-4">
           <button id="connectButton" onclick="connectToTower()" class="tower-button">Connect</button>
           <button id="disconnectButton" onclick="Tower.disconnect()" class="tower-button">Disconnect</button>
-          <button id="calibrate" onclick="calibrate()" class="tower-button">Calibrate</button>
-          <button onclick="openTroubleshooting()" class="tower-button ml-6 opacity-60 text-sm">Troubleshooting</button>
-          <span class="hidden ml-2" id="calibrating-message">calibrating...</span>
+          <select id="towerTypeSelect" class="tower-select">
+            <option value="ble">BLE Tower</option>
+            <option value="emulator">Tower Emulator</option>
+          </select>
         </div>
         <hr class="tower-hr" />
 
@@ -699,8 +700,10 @@
                         <option value="west">West</option>
                       </select>
                     </div>
-                    <div class="flex justify-center">
+                    <div class="flex justify-center items-center gap-3">
                       <button id="rotateButton" onclick="rotate()" class="tower-button">Rotate</button>
+                      <button id="calibrate" onclick="calibrate()" class="tower-button">Calibrate</button>
+                      <span class="hidden text-sm text-gray-400" id="calibrating-message">calibrating...</span>
                     </div>
                   </div>
                 </div>
@@ -1176,7 +1179,7 @@
           <hr class="tower-hr" />
           Note: Web Bluetooth is not yet supported in Safari, Firefox or mobile. See <a target="_blank"
             href="https://caniuse.com/?search=web%20bluetooth" class="tower-link">support
-            matrix</a>
+            matrix</a> &mdash; <button onclick="openTroubleshooting()" style="background:none;border:none;color:inherit;cursor:pointer;padding:0;font-size:inherit;">Troubleshooting</button>
         </div>
       </div>
     </div>

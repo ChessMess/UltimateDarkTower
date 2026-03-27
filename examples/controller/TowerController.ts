@@ -1,3 +1,4 @@
+import { TowerEmulatorAdapter } from './TowerEmulatorAdapter';
 import UltimateDarkTower, {
   type TowerSide,
   type TowerCorner,
@@ -25,7 +26,31 @@ import {
   createDefaultTowerState, parseDifferentialReadings, type ParsedDifferentialReadings
 } from '../../src';
 
-const Tower = new UltimateDarkTower();
+let Tower: UltimateDarkTower = new UltimateDarkTower();
+let towerEmulatorWindow: Window | null = null;
+let currentConnectionMode: 'ble' | 'emulator' | null = null;
+
+const postStateToTowerEmulatorWindow = (state: TowerState) => {
+  towerEmulatorWindow?.postMessage({ type: 'applyState', state }, '*');
+};
+
+const postAudioEventToEmulatorWindow = (sample: number, loop: boolean, volume: number) => {
+  const name = Object.values(TOWER_AUDIO_LIBRARY).find(s => s.value === sample)?.name ?? `#${sample}`;
+  towerEmulatorWindow?.postMessage({ type: 'playAudio', name, sample, loop, volume }, '*');
+};
+
+const syncTowerEmulatorWindow = () => {
+  if (!towerEmulatorWindow) {
+    return;
+  }
+
+  if (Tower.isConnected) {
+    postStateToTowerEmulatorWindow(Tower.getCurrentTowerState());
+    return;
+  }
+
+  towerEmulatorWindow.postMessage({ type: 'showIdle' }, '*');
+};
 
 // Global reference to shared DOM output for filtering
 let sharedDOMOutput: DOMOutput;
@@ -120,6 +145,26 @@ const updateSkullDropCount = (count: number) => {
 Tower.onSkullDrop = updateSkullDropCount;
 
 async function connectToTower() {
+  const mode = (document.getElementById('towerTypeSelect') as HTMLSelectElement)?.value;
+  if (mode === 'emulator') {
+    await connectToTowerEmulator();
+    return;
+  }
+
+  // If we previously used the emulator, recreate Tower with the default BLE adapter
+  if (currentConnectionMode !== 'ble') {
+    try { await Tower.cleanup(); } catch { /* ignore */ }
+    Tower = new UltimateDarkTower();
+    Tower.onSkullDrop = updateSkullDropCount;
+    Tower.onTowerConnect = onTowerConnected;
+    Tower.onTowerDisconnect = onTowerDisconnected;
+    Tower.onCalibrationComplete = onCalibrationComplete;
+    Tower.onBatteryLevelNotify = onBatteryLevelNotify;
+    Tower.onTowerStateUpdate = onTowerStateUpdate;
+    (window as any).Tower = Tower;
+    currentConnectionMode = 'ble';
+  }
+
   logger.info("Attempting to connect to tower...", '[TC]');
   try {
     await Tower.connect();
@@ -128,7 +173,43 @@ async function connectToTower() {
   }
 }
 
+async function connectToTowerEmulator() {
+  logger.info("Connecting to Tower Emulator...", '[TC]');
+
+  // Open the popup synchronously before any await so the browser treats it
+  // as user-initiated (required for popup blockers on HTTPS/GitHub Pages).
+  towerEmulatorWindow = window.open(
+    'TowerEmulator.html',
+    'TowerEmulator',
+    'width=900,height=700,resizable=yes,scrollbars=yes'
+  );
+
+  try {
+    await Tower.cleanup();
+  } catch { /* ignore if not yet connected */ }
+
+  Tower = new UltimateDarkTower({ adapter: new TowerEmulatorAdapter({ onAudioCommand: postAudioEventToEmulatorWindow }) });
+  currentConnectionMode = 'emulator';
+
+  // Re-assign all callbacks to the new instance
+  Tower.onSkullDrop = updateSkullDropCount;
+  Tower.onTowerConnect = onTowerConnected;
+  Tower.onTowerDisconnect = onTowerDisconnected;
+  Tower.onCalibrationComplete = onCalibrationComplete;
+  Tower.onBatteryLevelNotify = onBatteryLevelNotify;
+  Tower.onTowerStateUpdate = onTowerStateUpdate;
+  (window as any).Tower = Tower;
+
+  try {
+    await Tower.connect();
+  } catch (error) {
+    logger.error(`Tower Emulator connection failed: ${error}`, '[TC]');
+  }
+}
+
 const onTowerConnected = () => {
+  syncTowerEmulatorWindow();
+
   const el = document.getElementById("tower-connection-state");
   if (el) {
     el.innerText = "Tower Connected"
@@ -184,6 +265,7 @@ const onTowerConnected = () => {
 Tower.onTowerConnect = onTowerConnected;
 
 const onTowerDisconnected = () => {
+  towerEmulatorWindow?.postMessage({ type: 'showIdle' }, '*');
   const el = document.getElementById("tower-connection-state");
   if (el) {
     el.innerText = "Tower Disconnected";
@@ -280,6 +362,7 @@ const onBatteryLevelNotify = (millivolts: number) => {
 Tower.onBatteryLevelNotify = onBatteryLevelNotify;
 
 const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: string) => {
+  postStateToTowerEmulatorWindow(newState);
   logger.debug(`Tower state updated from ${source}`, '[TC]');
 
   // Check if calibration status changed and update the UI accordingly
@@ -2306,3 +2389,19 @@ const exportChartData = () => {
 (window as any).initializeChart = initializeChart;
 (window as any).updateChartDisplayConfig = updateChartDisplayConfig;
 (window as any).toggleChartDisplay = toggleChartDisplay;
+
+// Close the emulator window when the controller page unloads
+window.addEventListener('beforeunload', () => {
+  towerEmulatorWindow?.close();
+});
+
+window.addEventListener('message', (event: MessageEvent) => {
+  if (event.source !== towerEmulatorWindow) {
+    return;
+  }
+
+  const { type } = event.data as { type?: string };
+  if (type === 'emulatorReady') {
+    syncTowerEmulatorWindow();
+  }
+});
