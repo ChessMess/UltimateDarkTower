@@ -18,6 +18,7 @@ const CH = {
   TOGGLE_LOGGING: 'toggle-logging',
   GET_LOGGING_STATE: 'get-logging-state',
   OPEN_LOG_DIR: 'open-log-dir',
+  RESEND_LAST_STATE: 'resend-last-state',
 } as const;
 
 // ─── Payload types ───────────────────────────────────────────────────────────
@@ -140,4 +141,10 @@ contextBridge.exposeInMainWorld('darkTowerSync', {
 
   /** Open the log directory in the system file manager. */
   openLogDir: (): Promise<void> => ipcRenderer.invoke(CH.OPEN_LOG_DIR),
+
+  /**
+   * Re-broadcast the last relayed tower command as a sync:state message
+   * so all connected clients can catch up.
+   */
+  resendLastState: (): Promise<SkullDropResult> => ipcRenderer.invoke(CH.RESEND_LAST_STATE),
 });

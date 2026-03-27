@@ -20,6 +20,7 @@ import {
   CLOSE_CODE_PROTOCOL_VERSION_MISMATCH,
   makeTowerCommandMessage,
   makeSyncStateMessage,
+  makeHostResendMessage,
   makeHostStatusMessage,
   makeHostLogConfigMessage,
   makeRelayPausedMessage,
@@ -245,6 +246,19 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
     this.lastCommandAt = message.timestamp;
     this.manager.broadcast(JSON.stringify(message));
     return seq;
+  }
+
+  /**
+   * Re-broadcast the last tower command as a sync:state message so clients
+   * can catch up without replaying the original command semantics.
+   *
+   * @returns `true` if a message was sent, `false` if there is no stored command.
+   */
+  resendLastCommand(): boolean {
+    if (!this.lastCommand) return false;
+    const message = makeHostResendMessage(this.lastCommand);
+    this.manager.broadcast(JSON.stringify(message));
+    return true;
   }
 
   /**

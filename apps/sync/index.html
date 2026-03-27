@@ -28,7 +28,10 @@
         <label for="player-name">Your Name (optional)</label>
         <input type="text" id="player-name" placeholder="Player 2" autocomplete="off" />
       </div>
-      <button id="connect-btn">Connect to Host</button>
+      <div class="connect-row">
+        <button id="connect-btn">Connect to Host</button>
+        <button id="disconnect-relay-btn" class="btn-disconnect" hidden>Disconnect</button>
+      </div>
     </div>
 
     <div class="card">
@@ -48,7 +51,10 @@
 
     <div class="card">
       <h2>Tower</h2>
-      <button id="tower-btn" disabled>Connect to Tower (Bluetooth)</button>
+      <div class="connect-row">
+        <button id="tower-btn" disabled>Connect to Tower (Bluetooth)</button>
+        <button id="disconnect-tower-btn" class="btn-disconnect" hidden>Disconnect</button>
+      </div>
     </div>
 
     <section id="state-section" class="card" hidden>

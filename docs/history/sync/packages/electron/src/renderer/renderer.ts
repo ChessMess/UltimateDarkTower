@@ -18,6 +18,7 @@ interface DarkTowerSyncAPI {
   toggleLogging(): Promise<{ enabled: boolean }>;
   getLoggingState(): Promise<{ enabled: boolean }>;
   openLogDir(): Promise<void>;
+  resendLastState(): Promise<{ ok: boolean; reason?: string }>;
 }
 
 declare global {
@@ -46,6 +47,8 @@ const stopBleBtnEl = document.getElementById('btn-stop-ble') as HTMLButtonElemen
 const bleControlFeedbackEl = document.getElementById('ble-control-feedback') as HTMLSpanElement;
 const relayUrlBarEl = document.getElementById('relay-url-bar') as HTMLDivElement;
 const relayUrlListEl = document.getElementById('relay-url-list') as HTMLDivElement;
+const resendBtnEl = document.getElementById('btn-resend-state') as HTMLButtonElement;
+const resendFeedbackEl = document.getElementById('resend-feedback') as HTMLSpanElement;
 const loggingStateDotEl = document.getElementById('logging-state-dot') as HTMLSpanElement;
 const loggingStateLabelEl = document.getElementById('logging-state-label') as HTMLSpanElement;
 const loggingBadgeEl = document.getElementById('logging-state-badge') as HTMLSpanElement;
@@ -302,6 +305,7 @@ async function init(): Promise<void> {
   api.onTowerCommand(({ count, lastAt }) => {
     commandCountEl.textContent = String(count);
     lastCommandAtEl.textContent = formatTimestamp(lastAt);
+    resendBtnEl.disabled = false;
   });
 
   skullDropBtnEl.addEventListener('click', () => {
@@ -355,6 +359,24 @@ async function init(): Promise<void> {
   openLogsBtnEl.addEventListener('click', () => {
     api.openLogDir().catch(() => {
       showLoggingFeedback(false, 'Could not open logs folder');
+    });
+  });
+
+  resendBtnEl.addEventListener('click', () => {
+    resendBtnEl.disabled = true;
+    resendFeedbackEl.hidden = true;
+    api.resendLastState().then(({ ok, reason }) => {
+      resendFeedbackEl.textContent = ok ? 'Sent' : (reason ?? 'Failed');
+      resendFeedbackEl.className = `action-feedback ${ok ? 'feedback-ok' : 'feedback-err'}`;
+      resendFeedbackEl.hidden = false;
+      setTimeout(() => { resendFeedbackEl.hidden = true; }, 3000);
+    }).catch(() => {
+      resendFeedbackEl.textContent = 'IPC error';
+      resendFeedbackEl.className = 'action-feedback feedback-err';
+      resendFeedbackEl.hidden = false;
+    }).finally(() => {
+      // Brief cooldown to prevent rapid re-sends
+      setTimeout(() => { resendBtnEl.disabled = false; }, 1000);
     });
   });
 }

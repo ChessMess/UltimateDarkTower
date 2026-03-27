@@ -86,6 +86,7 @@ export const IPC = {
   TOGGLE_LOGGING: 'toggle-logging',
   GET_LOGGING_STATE: 'get-logging-state',
   OPEN_LOG_DIR: 'open-log-dir',
+  RESEND_LAST_STATE: 'resend-last-state',
 } as const;
 
 // ─── Lazy-loaded host modules ───────────────────────────────────────────────
@@ -314,6 +315,15 @@ ipcMain.handle(IPC.GET_VERSION, () => app.getVersion());
 ipcMain.handle(IPC.GET_RELAY_STATUS, () => relayStatus);
 ipcMain.handle(IPC.GET_BLE_STATE, () => ({ state: bleAdapterState }));
 ipcMain.handle(IPC.GET_TOWER_STATE, () => ({ state: towerState }));
+ipcMain.handle(IPC.RESEND_LAST_STATE, (): { ok: boolean; reason?: string } => {
+  if (!relay) return { ok: false, reason: 'Relay not started yet' };
+  const sent = relay.resendLastCommand();
+  if (sent) {
+    logger?.logEvent('event', 'host', 'Operator triggered resend of last tower state');
+    return { ok: true };
+  }
+  return { ok: false, reason: 'No command has been relayed yet' };
+});
 
 // ─── Service startup ────────────────────────────────────────────────────────
 

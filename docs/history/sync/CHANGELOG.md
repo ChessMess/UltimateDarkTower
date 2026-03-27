@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 
+- **Client proceeded as connected after cancelling Bluetooth dialog** — Cancelling the browser's Bluetooth device picker left the client in a half-connected state (button showed "Connected to Tower", calibration attempted). Added a defensive `isConnected` guard after `tower.connect()` so the client correctly resets even if the library silently swallows the connection error.
+
 - **Ghost BLE connection state desync (macOS)** — After clicking "Stop BLE" while
   the companion app was connected, the host entered a state where commands flowed
   (relay count incremented) but the UI showed "Idle" with no green indicator.

@@ -133,7 +133,7 @@ input[type='text']::placeholder {
 /* ─── Buttons ─────────────────────────────────────────────────────────────── */
 
 button {
-  background: var(--accent);
+  background: #555;
   border: none;
   border-radius: 6px;
   color: #fff;
@@ -149,18 +149,59 @@ button {
 }
 
 button:hover:not(:disabled) {
-  background: #a93226;
-  box-shadow: 0 0 12px var(--accent-glow);
+  background: #666;
+  box-shadow: none;
 }
 
 button:active:not(:disabled) {
-  background: #922b21;
+  background: #777;
 }
 
 button:disabled {
-  background: var(--accent-dim);
+  background: #444;
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+/* Connected state — green */
+button.btn-connected {
+  background: var(--success);
+}
+
+button.btn-connected:hover:not(:disabled) {
+  background: #219a52;
+  box-shadow: 0 0 12px rgba(39, 174, 96, 0.3);
+}
+
+button.btn-connected:active:not(:disabled) {
+  background: #1e8449;
+}
+
+/* Connect row — side-by-side connect + disconnect */
+.connect-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.connect-row button:first-child {
+  flex: 3;
+}
+
+/* Disconnect button — 1/3 size, red */
+.btn-disconnect {
+  flex: 1;
+  background: var(--error);
+  font-size: 0.8rem;
+  padding: 0.5rem 0.4rem;
+}
+
+.btn-disconnect:hover:not(:disabled) {
+  background: #c0392b;
+  box-shadow: 0 0 12px rgba(231, 76, 60, 0.3);
+}
+
+.btn-disconnect:active:not(:disabled) {
+  background: #a93226;
 }
 
 /* Ghost variant — secondary actions */

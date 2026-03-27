@@ -25,7 +25,9 @@ export class UI {
 
   // Buttons
   readonly connectBtn: HTMLButtonElement;
+  readonly disconnectRelayBtn: HTMLButtonElement;
   readonly towerBtn: HTMLButtonElement;
+  readonly disconnectTowerBtn: HTMLButtonElement;
   readonly sendLogsBtn: HTMLButtonElement;
   readonly downloadLogsBtn: HTMLButtonElement;
   readonly toggleStateBtn: HTMLButtonElement;
@@ -46,7 +48,9 @@ export class UI {
     this.hostUrlInput = this.require<HTMLInputElement>('host-url');
     this.playerNameInput = this.require<HTMLInputElement>('player-name');
     this.connectBtn = this.require<HTMLButtonElement>('connect-btn');
+    this.disconnectRelayBtn = this.require<HTMLButtonElement>('disconnect-relay-btn');
     this.towerBtn = this.require<HTMLButtonElement>('tower-btn');
+    this.disconnectTowerBtn = this.require<HTMLButtonElement>('disconnect-tower-btn');
     this.sendLogsBtn = this.require<HTMLButtonElement>('send-logs-btn');
     this.downloadLogsBtn = this.require<HTMLButtonElement>('download-logs-btn');
     this.toggleStateBtn = this.require<HTMLButtonElement>('toggle-state-btn');

@@ -39,7 +39,8 @@ export type TowerRelayEvent =
   | { type: 'host:status'; status: HostStatus }
   | { type: 'host:log-config'; enabled: boolean }
   | { type: 'relay:tower:alert'; clientId: string; label?: string; towerConnected: boolean }
-  | { type: 'relay:version-mismatch'; reason: string };
+  | { type: 'relay:version-mismatch'; reason: string }
+  | { type: 'host:resend'; data: number[] };
 
 export type TowerRelayEventHandler = (event: TowerRelayEvent) => void;
 
@@ -64,6 +65,7 @@ export interface TowerRelayOptions {
  * ```
  */
 const MAX_RECONNECT_ATTEMPTS = 10;
+const CONNECTION_TIMEOUT_MS = 15_000;
 
 export class TowerRelay {
   private ws: WebSocket | null = null;
@@ -96,8 +98,22 @@ export class TowerRelay {
 
     return new Promise<void>((resolve, reject) => {
       const ws = new WebSocket(url);
+      let settled = false;
+
+      const timeout = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        // Disable auto-reconnect BEFORE closing so the close handler won't retry.
+        this.autoReconnect = false;
+        ws.close();
+        reject(new Error('Connection timed out — host did not respond within 15 seconds'));
+      }, CONNECTION_TIMEOUT_MS);
 
       ws.addEventListener('open', () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+
         this.ws = ws;
         this.reconnectAttempts = 0;
 
@@ -148,9 +164,11 @@ export class TowerRelay {
       });
 
       ws.addEventListener('error', (event) => {
+        clearTimeout(timeout);
         this.onEvent({ type: 'relay:error', error: event });
         // If the connection never opened, reject the promise.
-        if (this.ws === null) {
+        if (!settled && this.ws === null) {
+          settled = true;
           reject(new Error('WebSocket connection failed'));
         }
       });
@@ -235,6 +253,9 @@ export class TowerRelay {
           label: message.payload.label,
           towerConnected: message.payload.towerConnected,
         });
+        break;
+      case MessageType.HOST_RESEND:
+        this.onEvent({ type: 'host:resend', data: message.payload.data });
         break;
       default:
         // Unknown message type — ignore safely.

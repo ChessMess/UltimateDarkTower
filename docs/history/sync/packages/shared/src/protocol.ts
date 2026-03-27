@@ -52,6 +52,8 @@ export const MessageType = {
   RELAY_RESUMED: 'relay:resumed',
   /** Host → all clients: a remote player's physical tower BLE connection changed. */
   RELAY_TOWER_ALERT: 'relay:tower:alert',
+  /** Host → all clients: operator manually re-sent the last tower state. */
+  HOST_RESEND: 'host:resend',
 } as const;
 
 export type MessageTypeLiteral = (typeof MessageType)[keyof typeof MessageType];
@@ -166,6 +168,16 @@ export type RelayTowerAlertMessage = BaseMessage<
   }
 >;
 
+/**
+ * Broadcast when the host operator manually re-sends the last tower state.
+ * Carries the same data as a tower:command but uses a distinct type so logs
+ * and clients can distinguish an operator-triggered resend from a live command.
+ */
+export type HostResendMessage = BaseMessage<
+  typeof MessageType.HOST_RESEND,
+  { data: number[] }
+>;
+
 // ---------------------------------------------------------------------------
 // Union type
 // ---------------------------------------------------------------------------
@@ -183,7 +195,8 @@ export type RelayMessage =
   | HostLogConfigMessage
   | RelayPausedMessage
   | RelayResumedMessage
-  | RelayTowerAlertMessage;
+  | RelayTowerAlertMessage
+  | HostResendMessage;
 
 // ---------------------------------------------------------------------------
 // Factory helpers
@@ -258,6 +271,15 @@ export function makeRelayResumedMessage(): RelayResumedMessage {
   return {
     type: MessageType.RELAY_RESUMED,
     payload: {},
+    timestamp: now(),
+  };
+}
+
+/** Build a {@link HostResendMessage}. */
+export function makeHostResendMessage(data: number[]): HostResendMessage {
+  return {
+    type: MessageType.HOST_RESEND,
+    payload: { data },
     timestamp: now(),
   };
 }

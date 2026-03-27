@@ -31,6 +31,9 @@ export class App {
   /** Cached last command bytes for self-healing replay on tower reconnect. */
   private lastCommandBytes: number[] | null = null;
 
+  /** Interval ID for the "Connecting..." dot animation. */
+  private connectingAnimationId: ReturnType<typeof setInterval> | null = null;
+
   constructor() {
     this.ui = new UI();
     this.logger = new ClientLogger();
@@ -44,8 +47,14 @@ export class App {
     const savedName = localStorage.getItem('darkTowerSync:playerName');
     if (savedName) this.ui.playerNameInput.value = savedName;
 
+    // Disable connect button unless the URL looks like a valid ws:// or wss:// URL.
+    this.ui.hostUrlInput.addEventListener('input', () => this.validateConnectButton());
+    this.validateConnectButton();
+
     this.ui.connectBtn.addEventListener('click', () => void this.handleConnectClick());
+    this.ui.disconnectRelayBtn.addEventListener('click', () => this.handleRelayDisconnect());
     this.ui.towerBtn.addEventListener('click', () => void this.handleTowerClick());
+    this.ui.disconnectTowerBtn.addEventListener('click', () => void this.handleTowerDisconnect());
     this.ui.sendLogsBtn.addEventListener('click', () => {
       this.logger.logEvent('event', 'Sent logs to host manually');
       this.logger.sendLogs();
@@ -89,6 +98,39 @@ export class App {
   }
 
   // ---------------------------------------------------------------------------
+  // URL validation & connect button helpers
+  // ---------------------------------------------------------------------------
+
+  /** Enable the connect button only when the URL field contains a valid ws:// or wss:// URL. */
+  private validateConnectButton(): void {
+    const url = this.ui.hostUrlInput.value.trim();
+    try {
+      const parsed = new URL(url);
+      this.ui.connectBtn.disabled = parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:';
+    } catch {
+      this.ui.connectBtn.disabled = true;
+    }
+  }
+
+  /** Start cycling "Connecting.", "Connecting..", "Connecting..." on the connect button. */
+  private startConnectingAnimation(): void {
+    let dots = 0;
+    this.ui.connectBtn.textContent = 'Connecting';
+    this.connectingAnimationId = setInterval(() => {
+      dots = (dots % 3) + 1;
+      this.ui.connectBtn.textContent = 'Connecting' + '.'.repeat(dots);
+    }, 500);
+  }
+
+  /** Stop the "Connecting..." animation. */
+  private stopConnectingAnimation(): void {
+    if (this.connectingAnimationId !== null) {
+      clearInterval(this.connectingAnimationId);
+      this.connectingAnimationId = null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Event handlers
   // ---------------------------------------------------------------------------
 
@@ -99,15 +141,6 @@ export class App {
 
     if (!url) {
       this.ui.log('Error: enter the host WebSocket URL (e.g., ws://192.168.1.5:8765).');
-      return;
-    }
-
-    if (this.relay?.isConnected) {
-      this.relay.disconnect();
-      this.relay = null;
-      this.ui.setRelayState('disconnected');
-      this.ui.connectBtn.textContent = 'Connect to Host';
-      this.ui.log('Disconnected from relay.');
       return;
     }
 
@@ -129,6 +162,7 @@ export class App {
 
     this.ui.setRelayState('connecting');
     this.ui.connectBtn.disabled = true;
+    this.startConnectingAnimation();
 
     this.relay = new TowerRelay({
       label,
@@ -137,28 +171,35 @@ export class App {
     });
 
     try {
-      await this.relay.connect(url);
       this.ui.log(`Connecting to ${url}…`);
+      await this.relay.connect(url);
     } catch (err) {
+      this.stopConnectingAnimation();
+      this.relay?.disconnect();
+      this.relay = null;
       this.ui.setRelayState('error');
       this.ui.log(`Connection failed: ${String(err)}`);
+      this.ui.connectBtn.textContent = 'Connect to Host';
       this.ui.connectBtn.disabled = false;
+    }
+  }
+
+  /** Handle the relay disconnect button click. */
+  private handleRelayDisconnect(): void {
+    if (this.relay?.isConnected) {
+      this.relay.disconnect();
+      this.relay = null;
+      this.ui.setRelayState('disconnected');
+      this.ui.connectBtn.textContent = 'Connect to Host';
+      this.ui.connectBtn.classList.remove('btn-connected');
+      this.ui.connectBtn.disabled = false;
+      this.ui.disconnectRelayBtn.setAttribute('hidden', '');
+      this.ui.log('Disconnected from relay.');
     }
   }
 
   /** Handle the "Connect to Tower" button click. */
   private async handleTowerClick(): Promise<void> {
-    // Toggle: if already connected, disconnect.
-    if (this.tower?.isConnected) {
-      await this.tower.disconnect();
-      this.tower = null;
-      this.ui.setTowerState('disconnected');
-      this.ui.towerBtn.textContent = 'Connect to Tower (Bluetooth)';
-      this.ui.log('Tower disconnected.');
-      this.relay?.sendReady(false);
-      return;
-    }
-
     this.ui.setTowerState('connecting');
     this.ui.towerBtn.disabled = true;
     this.ui.log('Requesting Bluetooth device — approve in the browser prompt…');
@@ -169,14 +210,30 @@ export class App {
       tower.onTowerDisconnect = () => {
         this.ui.setTowerState('disconnected');
         this.ui.towerBtn.textContent = 'Connect to Tower (Bluetooth)';
+        this.ui.towerBtn.classList.remove('btn-connected');
         this.ui.towerBtn.disabled = false;
+        this.ui.disconnectTowerBtn.setAttribute('hidden', '');
         this.ui.log('Tower disconnected unexpectedly.');
         this.tower = null;
         this.relay?.sendReady(false);
       };
 
       await tower.connect();
+      if (!tower.isConnected) {
+        this.ui.log('Tower connection was not established.');
+        this.ui.setTowerState('disconnected');
+        this.ui.towerBtn.textContent = 'Connect to Tower (Bluetooth)';
+        this.ui.towerBtn.classList.remove('btn-connected');
+        this.ui.towerBtn.disabled = false;
+        this.ui.disconnectTowerBtn.setAttribute('hidden', '');
+        return;
+      }
       this.tower = tower;
+
+      // Update button state immediately after BLE connection, before calibration.
+      this.ui.towerBtn.textContent = 'Connected to Tower';
+      this.ui.towerBtn.classList.add('btn-connected');
+      this.ui.disconnectTowerBtn.removeAttribute('hidden');
 
       // Calibrate the tower before marking as ready.
       this.ui.setTowerState('calibrating');
@@ -184,8 +241,6 @@ export class App {
 
       tower.onCalibrationComplete = () => {
         this.ui.setTowerState('connected');
-        this.ui.towerBtn.textContent = 'Disconnect Tower';
-        this.ui.towerBtn.disabled = false;
         this.ui.log('Tower calibrated and ready.');
         this.relay?.sendReady(true);
 
@@ -205,7 +260,27 @@ export class App {
         this.ui.setTowerState('error');
         this.ui.log(`Tower connection failed: ${String(err)}`);
       }
+      // Fully reset tower button/UI state on any failure.
+      this.tower = null;
+      this.ui.towerBtn.textContent = 'Connect to Tower (Bluetooth)';
+      this.ui.towerBtn.classList.remove('btn-connected');
       this.ui.towerBtn.disabled = false;
+      this.ui.disconnectTowerBtn.setAttribute('hidden', '');
+    }
+  }
+
+  /** Handle the tower disconnect button click. */
+  private async handleTowerDisconnect(): Promise<void> {
+    if (this.tower?.isConnected) {
+      await this.tower.disconnect();
+      this.tower = null;
+      this.ui.setTowerState('disconnected');
+      this.ui.towerBtn.textContent = 'Connect to Tower (Bluetooth)';
+      this.ui.towerBtn.classList.remove('btn-connected');
+      this.ui.towerBtn.disabled = false;
+      this.ui.disconnectTowerBtn.setAttribute('hidden', '');
+      this.ui.log('Tower disconnected.');
+      this.relay?.sendReady(false);
     }
   }
 
@@ -230,9 +305,11 @@ export class App {
   private handleRelayEvent(event: TowerRelayEvent): void {
     switch (event.type) {
       case 'relay:connected':
+        this.stopConnectingAnimation();
         this.ui.setRelayState('connected');
-        this.ui.connectBtn.textContent = 'Disconnect';
-        this.ui.connectBtn.disabled = false;
+        this.ui.connectBtn.textContent = 'Connected to Host';
+        this.ui.connectBtn.classList.add('btn-connected');
+        this.ui.disconnectRelayBtn.removeAttribute('hidden');
         this.ui.towerBtn.disabled = false;
         this.ui.playerNameInput.disabled = true;
         this.ui.log('Connected to relay host.');
@@ -253,7 +330,9 @@ export class App {
         this.logger.logEvent('event', `Relay disconnected (code ${event.code})`);
         this.ui.setRelayState('disconnected');
         this.ui.connectBtn.textContent = 'Connect to Host';
+        this.ui.connectBtn.classList.remove('btn-connected');
         this.ui.connectBtn.disabled = false;
+        this.ui.disconnectRelayBtn.setAttribute('hidden', '');
         this.ui.towerBtn.disabled = true;
         this.ui.playerNameInput.disabled = false;
         this.ui.log(`Relay disconnected (code ${event.code}).`);
@@ -268,14 +347,18 @@ export class App {
       case 'relay:reconnect-failed':
         this.ui.setRelayState('disconnected');
         this.ui.connectBtn.textContent = 'Connect to Host';
+        this.ui.connectBtn.classList.remove('btn-connected');
         this.ui.connectBtn.disabled = false;
+        this.ui.disconnectRelayBtn.setAttribute('hidden', '');
         this.ui.playerNameInput.disabled = false;
         this.ui.log(`Could not reconnect after ${event.attempts} attempts. Click "Connect to Host" to try again.`);
         break;
 
       case 'relay:error':
         this.ui.setRelayState('error');
+        this.ui.connectBtn.classList.remove('btn-connected');
         this.ui.connectBtn.disabled = false;
+        this.ui.disconnectRelayBtn.setAttribute('hidden', '');
         this.ui.log('Relay connection error.');
         break;
 
@@ -314,6 +397,17 @@ export class App {
           this.ui.log('Connected — no prior tower state to sync.');
         }
         break;
+
+      case 'host:resend': {
+        this.lastCommandBytes = event.data;
+        this.ui.log('Host operator re-sent last tower state.');
+        const resendState = rtdt_unpack_state(Uint8Array.from(event.data).slice(TOWER_STATE_DATA_OFFSET));
+        this.towerDisplay?.applyState(resendState);
+        if (!this.isObserver) {
+          void this.replayOnTower(event.data);
+        }
+        break;
+      }
 
       case 'client:connected':
         this.ui.log(`Player joined: ${event.label ?? event.clientId.slice(0, 8)}`);
