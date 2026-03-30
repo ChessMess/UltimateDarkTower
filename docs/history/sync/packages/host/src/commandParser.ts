@@ -87,14 +87,29 @@ export class CommandParser {
   parse(data: Buffer | Uint8Array | number[]): ParsedCommand {
     const raw = Array.from(data);
     const valid = raw.length === TOWER_COMMAND_LENGTH;
+    if (!valid) {
+      return { raw, valid, description: `Invalid packet: expected ${TOWER_COMMAND_LENGTH} bytes, got ${raw.length}` };
+    }
 
-    return {
-      raw,
-      valid,
-      description: valid
-        ? `Valid ${TOWER_COMMAND_LENGTH}-byte tower command`
-        : `Invalid packet: expected ${TOWER_COMMAND_LENGTH} bytes, got ${raw.length}`,
+    const parts: string[] = [];
+
+    // Byte 15 (state offset 14): audio.sample (low 7 bits)
+    const audio = raw[15] & 0x7f;
+    if (audio === 0x70) parts.push('snd=TowerSeal');
+    else if (audio > 0) parts.push(`snd=0x${audio.toString(16)}`);
+
+    // Byte 19 (state offset 18): led_sequence override
+    const ledOvr = raw[19];
+    const ovrNames: Record<number, string> = {
+      0x01: 'twinkle',
+      0x02: 'flareThenFade',
+      0x03: 'flareThenFadeBase',
+      0x0e: 'sealReveal',
+      0x13: 'monthStarted',
     };
+    if (ledOvr > 0) parts.push(`ovr=${ovrNames[ledOvr] ?? '0x' + ledOvr.toString(16)}`);
+
+    return { raw, valid, description: parts.length ? parts.join(' ') : undefined };
   }
 
   /**

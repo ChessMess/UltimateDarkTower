@@ -21,10 +21,17 @@ import {
   UART_TX_CHARACTERISTIC_UUID,
   TOWER_DEVICE_NAME,
 } from 'ultimatedarktower';
-import { buildSkullDropPacket } from './commandParser';
+import { buildSkullDropPacket, TOWER_STATE_NOTIFICATION_TYPE } from './commandParser';
 
 const IS_MACOS = process.platform === 'darwin';
 let _disWarningLogged = false;
+
+// Delay (ms) before the FakeTower echoes a response for commands that trigger
+// a visual animation (ledOverride != 0). The real tower only responds after the
+// animation completes; without this delay the companion app sends the next
+// command within ~60ms, interrupting the animation on the client's physical tower.
+// Measured visually from sealReveal animation duration (~1.5-2s).
+const ANIMATION_ECHO_DELAY_MS = 1600;
 
 // ─── Device Information Service constants ────────────────────────────────────
 // Captured from the real tower via BLE sniffing (captureTower.ts / UDT controller log).
@@ -182,6 +189,38 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
           this._lastCommand = Buffer.from(data);
           this.onCommandReceived?.(data);
           this.emit('command', data);
+          // Echo a tower-state response so the companion app's state machine advances.
+          // The real tower sends a state notification after every BLE write; without
+          // this the companion has no flow control and fires command pairs within 1ms.
+          //
+          // Clear transient fields (audio, LED override) to match real tower behavior:
+          // the real tower returns these as 0 after executing an animation/sound,
+          // signalling "animation complete." Without clearing, the companion app
+          // interprets the echoed values as "still animating" and falls back to an
+          // 18-second timeout before sending the next command.
+          //
+          // When the command triggers a visual animation (ledOverride != 0), delay
+          // the echo to match the real tower's response timing. The real tower only
+          // responds after the animation finishes (~1.5s for sealReveal, similar for
+          // others). Without this delay the companion sends the next command within
+          // 60ms, interrupting the animation on the client's physical tower.
+          if (this._txUpdateValue) {
+            const response = Buffer.from(data);
+            response[0] = TOWER_STATE_NOTIFICATION_TYPE; // 0x00
+            response[15] = 0; // Clear audio (sample + loop) — real tower always returns 0
+            response[19] = 0; // Clear LED override — animation complete
+
+            const hasAnimation = data[19] !== 0;
+            if (hasAnimation) {
+              setTimeout(() => {
+                this._txUpdateValue?.(response);
+              }, ANIMATION_ECHO_DELAY_MS);
+            } else {
+              setImmediate(() => {
+                this._txUpdateValue?.(response);
+              });
+            }
+          }
           callback(Characteristic.RESULT_SUCCESS);
         },
       });

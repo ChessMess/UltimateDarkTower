@@ -31,6 +31,9 @@ export class App {
   /** Cached last command bytes for self-healing replay on tower reconnect. */
   private lastCommandBytes: number[] | null = null;
 
+  /** Serializes replayOnTower calls so concurrent BLE writes can't interleave. */
+  private replayQueue: Promise<void> = Promise.resolve();
+
   /** Interval ID for the "Connecting..." dot animation. */
   private connectingAnimationId: ReturnType<typeof setInterval> | null = null;
 
@@ -247,7 +250,7 @@ export class App {
         // Self-heal: replay last known command on tower reconnect.
         if (this.lastCommandBytes) {
           this.ui.log('Replaying last known command on reconnected tower…');
-          void this.replayOnTower(this.lastCommandBytes);
+          this.replayQueue = this.replayQueue.then(() => this.replayOnTower(this.lastCommandBytes!)).catch(() => {});
         }
       };
 
@@ -379,7 +382,7 @@ export class App {
         const state = rtdt_unpack_state(Uint8Array.from(event.data).slice(TOWER_STATE_DATA_OFFSET));
         this.towerDisplay?.applyState(state);
         if (!this.isObserver) {
-          void this.replayOnTower(event.data, event.seq);
+          this.replayQueue = this.replayQueue.then(() => this.replayOnTower(event.data, event.seq)).catch(() => {});
         }
         break;
       }
@@ -391,7 +394,7 @@ export class App {
           const syncState = rtdt_unpack_state(Uint8Array.from(event.lastCommand).slice(TOWER_STATE_DATA_OFFSET));
           this.towerDisplay?.applyState(syncState);
           if (!this.isObserver) {
-            void this.replayOnTower(event.lastCommand);
+            this.replayQueue = this.replayQueue.then(() => this.replayOnTower(event.lastCommand!)).catch(() => {});
           }
         } else {
           this.ui.log('Connected — no prior tower state to sync.');
@@ -404,7 +407,7 @@ export class App {
         const resendState = rtdt_unpack_state(Uint8Array.from(event.data).slice(TOWER_STATE_DATA_OFFSET));
         this.towerDisplay?.applyState(resendState);
         if (!this.isObserver) {
-          void this.replayOnTower(event.data);
+          this.replayQueue = this.replayQueue.then(() => this.replayOnTower(event.data)).catch(() => {});
         }
         break;
       }

@@ -22,8 +22,9 @@ Status: Source-of-truth implementation guide for the current codebase
   - [5.4 Resilience Data Flow](#54-resilience-data-flow)
 - [6. Protocol Contract](#6-protocol-contract)
 - [7. BLE Emulation Details](#7-ble-emulation-details)
-  - [7.1 macOS CoreBluetooth Peripheral-Mode Limitations](#71-macos-corebluetooth-peripheral-mode-limitations)
-  - [7.2 Device Information Service Blocked on macOS](#72-device-information-service-blocked-on-macos)
+  - [7.1 Echo Response and Animation Timing](#71-echo-response-and-animation-timing)
+  - [7.2 macOS CoreBluetooth Peripheral-Mode Limitations](#72-macos-corebluetooth-peripheral-mode-limitations)
+  - [7.3 Device Information Service Blocked on macOS](#73-device-information-service-blocked-on-macos)
 - [8. IPC Surface (Electron)](#8-ipc-surface-electron)
 - [9. Structured Logging System](#9-structured-logging-system)
   - [9.1 Overview](#91-overview)
@@ -372,9 +373,41 @@ Events emitted:
 - companion-connected
 - companion-disconnected
 - ble-adapter-state
-- ghost-connection (diagnostic — ghost BLE link detected, see 7.1)
+- ghost-connection (diagnostic — ghost BLE link detected, see 7.2)
 
-### 7.1 macOS CoreBluetooth Peripheral-Mode Limitations
+### 7.1 Echo Response and Animation Timing
+
+The real tower sends a BLE state notification (via the TX characteristic) after every command write. FakeTower must replicate this behavior for the companion app's state machine to advance correctly. Three rules govern the echo response:
+
+**1. Always echo.** Without a response, the companion app has no flow control and fires rapid command pairs within 1ms.
+
+**2. Clear transient fields.** The real tower always returns byte 15 (audio) and byte 19 (LED sequence override) as `0` in its response, regardless of what was sent. These fields are "fire-and-forget" — the tower executes the sound/animation and then reports them as complete. If the echo preserves non-zero values, the companion app interprets the response as "still animating" and falls back to an **18-second hardcoded timeout** before sending the next command.
+
+**3. Delay the echo for animations.** When byte 19 (LED override) is non-zero, the real tower delays its response until the animation finishes. FakeTower mirrors this with a configurable `ANIMATION_ECHO_DELAY_MS` delay (default 1600ms). Without this delay, the companion app sends the follow-up command within ~60ms, interrupting the animation on the client's physical tower.
+
+**Echo response construction** (in `onWriteRequest`):
+
+```
+Command received (20 bytes)
+  → Copy command bytes
+  → Set byte[0] = 0x00 (TOWER_STATE_NOTIFICATION_TYPE)
+  → Set byte[15] = 0   (clear audio)
+  → Set byte[19] = 0   (clear LED override)
+  → If original byte[19] ≠ 0: delay ANIMATION_ECHO_DELAY_MS before sending
+  → Otherwise: send immediately (setImmediate)
+```
+
+**Companion app command flow patterns** — not all commands wait for the echo:
+
+| Pattern | Example | Behavior | Echo timing impact |
+|---|---|---|---|
+| Wait-for-echo | sealReveal (`0x0e`) | Companion blocks until response arrives, then sends seal LED positions | Critical — too fast = animation interrupted, too slow = visible pause |
+| Internal timer | rotationAllDrums (`0x0f`) | Companion uses its own 8–13s timer regardless of echo | Low — echo arrives during the timer window |
+| Rapid pair | flareThenFadeBase (`0x03`) | Two commands sent 1–31ms apart without waiting for echo | None — echo is ignored for pacing |
+
+> **Full tower response documentation:** See [TOWER_TECH_NOTES.md — Tower Response Behavior](../../UltimateDarkTower/TOWER_TECH_NOTES.md#tower-response-behavior) for the complete reference on transient fields, animation timing, and response types.
+
+### 7.2 macOS CoreBluetooth Peripheral-Mode Limitations
 
 The BLE peripheral stack uses `@stoprocent/bleno`, which wraps Apple's CoreBluetooth `CBPeripheralManager` on macOS. CoreBluetooth imposes several hard platform limitations in peripheral mode that directly affect FakeTower behavior:
 
@@ -395,7 +428,7 @@ The BLE peripheral stack uses `@stoprocent/bleno`, which wraps Apple's CoreBluet
 
 **Service accumulation.** The bleno native binding's `setServices` calls `addService` per service but never calls `removeAllServices` first. After N stop/start cycles, CoreBluetooth holds N copies of the UART service. The JS-side emitters map is replaced each call, so only the latest characteristic callbacks are active — no duplicate command events occur, but the service clutter is unnecessary.
 
-### 7.2 Device Information Service Blocked on macOS
+### 7.3 Device Information Service Blocked on macOS
 
 The real tower exposes a Device Information Service (DIS, UUID `0x180A`) containing manufacturer name, model number, hardware/firmware/software revision strings. The companion app reads these immediately after BLE connect to verify the tower's firmware version.
 
@@ -636,7 +669,7 @@ Reference docs:
 
 - BLE peripheral behavior depends on platform support and permissions.
 - macOS CoreBluetooth blocks standard Bluetooth SIG 16-bit UUIDs in peripheral mode — the Device Information Service (0x180A) cannot be registered. The companion app may show a firmware-update prompt on macOS without hardware workarounds (see `docs/MACOS_BLE_PERIPHERAL_LIMITATION.md`).
-- macOS CoreBluetooth has no peripheral-initiated disconnect API and no disconnect callback. FakeTower mitigates ghost BLE connections via write-based detection (see section 7.1). Skull drops are unavailable during ghost recovery until the companion resubscribes.
+- macOS CoreBluetooth has no peripheral-initiated disconnect API and no disconnect callback. FakeTower mitigates ghost BLE connections via write-based detection (see section 7.2). Skull drops are unavailable during ghost recovery until the companion resubscribes.
 - Native module teardown in Electron requires guarded shutdown path.
 - Native modules (e.g. `@stoprocent/bleno`) must be compiled for Electron's Node.js version, not the system Node.js. The release workflow runs `electron-rebuild` to handle this; local builds use Forge's built-in native dependency preparation.
 - Relay transport is low-latency fire-and-forget and does not include delivery acknowledgements. Missed commands are corrected by the next full-state command from the companion app.

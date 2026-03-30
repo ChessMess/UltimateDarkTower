@@ -215,11 +215,12 @@ async function initApp(): Promise<void> {
 
   // ── Wire tower → relay and IPC ──────────────────────────────────────────
   tower.on('command', (data) => {
-    if (!parser.isValid(data)) {
+    const parsed = parser.parse(data);
+    if (!parsed.valid) {
       console.warn('[main] Dropping invalid command: wrong byte length', Array.from(data).length);
       return;
     }
-    logger.logCommand('companion→host', data, null, 'companion');
+    logger.logCommand('companion→host', data, null, 'companion', parsed.description);
     const seq = relay.broadcast(data);
     logger.logCommand('host→clients', data, seq, 'host');
     commandCount += 1;
