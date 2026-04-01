@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ### Added
 
 - Tests for seal overlay injection, double-dispose safety, and multi-button side selection
+- `applySeals(brokenSeals: SealIdentifier[])` method on `TowerDisplay`, `TowerSideView`, and `ITowerDisplay` — hides seal SVG overlays for broken seals on the currently displayed side; re-evaluates when switching sides
+- `SealIdentifier` re-exported from the package public API
 
 ## [0.1.0] - 2026-03-22
 

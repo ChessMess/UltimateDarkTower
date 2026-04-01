@@ -4,6 +4,7 @@ import {
   LEDGE_BASE_LIGHT_POSITIONS,
   TOWER_LAYERS,
   type TowerState,
+  type SealIdentifier,
 } from 'ultimatedarktower';
 import type { ITowerDisplay, TowerSide } from './types';
 import { injectStyles } from './styles';
@@ -80,6 +81,8 @@ export class TowerSideView implements ITowerDisplay {
   private latestState: TowerState | null = null;
   private buttons: HTMLButtonElement[] = [];
   private ledNodes: Partial<Record<LedLabel, SVGElement>> = {};
+  private sealNodes: Partial<Record<string, SVGElement>> = {};
+  private latestBrokenSeals: SealIdentifier[] = [];
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -93,6 +96,11 @@ export class TowerSideView implements ITowerDisplay {
     if (this.wrapper) this.wrapper.style.display = '';
   }
 
+  applySeals(brokenSeals: SealIdentifier[]): void {
+    this.latestBrokenSeals = brokenSeals;
+    this.updateSealVisibility();
+  }
+
   showIdle(): void {
     if (this.wrapper) this.wrapper.style.display = 'none';
   }
@@ -104,6 +112,21 @@ export class TowerSideView implements ITowerDisplay {
     }
     this.buttons = [];
     this.latestState = null;
+    this.sealNodes = {};
+    this.latestBrokenSeals = [];
+  }
+
+  private updateSealVisibility(): void {
+    const brokenLevels = new Set(
+      this.latestBrokenSeals
+        .filter(s => s.side === this.currentSide)
+        .map(s => s.level)
+    );
+    for (const level of ['top', 'middle', 'bottom'] as const) {
+      const node = this.sealNodes[level];
+      if (!node) continue;
+      node.style.display = brokenLevels.has(level) ? 'none' : '';
+    }
   }
 
   private build(): void {
@@ -173,6 +196,8 @@ export class TowerSideView implements ITowerDisplay {
       } else {
         towerSvg.appendChild(nested);
       }
+
+      this.sealNodes[door.name] = nested as unknown as SVGElement;
     }
   }
 
@@ -214,5 +239,6 @@ export class TowerSideView implements ITowerDisplay {
       btn.dataset.active = String(btn.dataset.side === side);
     }
     if (this.latestState) this.applyLedState(this.latestState);
+    this.updateSealVisibility();
   }
 }

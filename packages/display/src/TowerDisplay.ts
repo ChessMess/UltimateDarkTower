@@ -1,4 +1,4 @@
-import type { TowerState } from 'ultimatedarktower';
+import type { TowerState, SealIdentifier } from 'ultimatedarktower';
 import type { TowerDisplayOptions, ITowerDisplay, RendererType } from './types';
 import { TowerStateReadout } from './TowerStateReadout';
 import { TowerSideView } from './TowerSideView';
@@ -53,6 +53,11 @@ export class TowerDisplay implements ITowerDisplay {
   /** Update the display with a new decoded tower state. */
   applyState(state: TowerState): void {
     for (const r of this.renderers) r.applyState(state);
+  }
+
+  /** Update seal visibility — pass the current list of broken seals. */
+  applySeals(brokenSeals: SealIdentifier[]): void {
+    for (const r of this.renderers) r.applySeals(brokenSeals);
   }
 
   /** Reset the display to its idle/waiting state. */

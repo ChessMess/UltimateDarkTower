@@ -1,6 +1,6 @@
-import type { TowerState, TowerSide } from 'ultimatedarktower';
+import type { TowerState, TowerSide, SealIdentifier } from 'ultimatedarktower';
 
-export type { TowerSide };
+export type { TowerSide, SealIdentifier };
 
 /** Identifies which renderer implementation to use. */
 export type RendererType = 'readout' | 'side-view';
@@ -17,6 +17,8 @@ export interface TowerDisplayOptions {
 export interface ITowerDisplay {
   /** Update the display with a new decoded tower state. */
   applyState(state: TowerState): void;
+  /** Update seal visibility — pass the current list of broken seals. */
+  applySeals(brokenSeals: SealIdentifier[]): void;
   /** Reset the display to its idle/waiting state. */
   showIdle(): void;
   /** Remove all rendered DOM content and reset internal state. */

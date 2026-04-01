@@ -7,7 +7,7 @@ import {
   LAYER_TO_POSITION,
   LIGHT_INDEX_TO_DIRECTION,
 } from 'ultimatedarktower';
-import type { ITowerDisplay } from './types';
+import type { ITowerDisplay, SealIdentifier } from './types';
 import { injectStyles } from './styles';
 import { EFFECT_LABELS } from './effectLabels';
 
@@ -61,6 +61,8 @@ export class TowerStateReadout implements ITowerDisplay {
     this.prevBeamCount = state.beam.count;
     this.render(state, skullDrop);
   }
+
+  applySeals(_brokenSeals: SealIdentifier[]): void {}
 
   /** Reset the display to its idle/waiting state. */
   showIdle(): void {
