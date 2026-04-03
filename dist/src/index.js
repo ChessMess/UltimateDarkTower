@@ -21,7 +21,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseDifferentialReadings = exports.createDefaultTowerState = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
+exports.BOARD_GROUPINGS = exports.BOARD_LOCATION_BY_NAME = exports.BOARD_LOCATIONS = exports.seedGroupToNumber = exports.extractBits = exports.dumpSeedBits = exports.compareSeedsRaw = exports.validateSeed = exports.decodeSeed = exports.parseDifferentialReadings = exports.createDefaultTowerState = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
 var UltimateDarkTower_1 = require("./UltimateDarkTower");
 Object.defineProperty(exports, "UltimateDarkTower", { enumerable: true, get: function () { return __importDefault(UltimateDarkTower_1).default; } });
 __exportStar(require("./udtConstants"), exports);
@@ -50,6 +50,19 @@ Object.defineProperty(exports, "isCalibrated", { enumerable: true, get: function
 var udtHelpers_2 = require("./udtHelpers");
 Object.defineProperty(exports, "createDefaultTowerState", { enumerable: true, get: function () { return udtHelpers_2.createDefaultTowerState; } });
 Object.defineProperty(exports, "parseDifferentialReadings", { enumerable: true, get: function () { return udtHelpers_2.parseDifferentialReadings; } });
+// Seed decoder
+var udtSeedDecoder_1 = require("./udtSeedDecoder");
+Object.defineProperty(exports, "decodeSeed", { enumerable: true, get: function () { return udtSeedDecoder_1.decodeSeed; } });
+Object.defineProperty(exports, "validateSeed", { enumerable: true, get: function () { return udtSeedDecoder_1.validateSeed; } });
+Object.defineProperty(exports, "compareSeedsRaw", { enumerable: true, get: function () { return udtSeedDecoder_1.compareSeedsRaw; } });
+Object.defineProperty(exports, "dumpSeedBits", { enumerable: true, get: function () { return udtSeedDecoder_1.dumpSeedBits; } });
+Object.defineProperty(exports, "extractBits", { enumerable: true, get: function () { return udtSeedDecoder_1.extractBits; } });
+Object.defineProperty(exports, "seedGroupToNumber", { enumerable: true, get: function () { return udtSeedDecoder_1.seedGroupToNumber; } });
+// Game board data
+var udtGameBoard_1 = require("./udtGameBoard");
+Object.defineProperty(exports, "BOARD_LOCATIONS", { enumerable: true, get: function () { return udtGameBoard_1.BOARD_LOCATIONS; } });
+Object.defineProperty(exports, "BOARD_LOCATION_BY_NAME", { enumerable: true, get: function () { return udtGameBoard_1.BOARD_LOCATION_BY_NAME; } });
+Object.defineProperty(exports, "BOARD_GROUPINGS", { enumerable: true, get: function () { return udtGameBoard_1.BOARD_GROUPINGS; } });
 // For convenience, also export as default
 const UltimateDarkTower_2 = __importDefault(require("./UltimateDarkTower"));
 exports.default = UltimateDarkTower_2.default;

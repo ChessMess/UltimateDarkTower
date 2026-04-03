@@ -2584,29 +2584,8 @@ var UdtTowerCommands = class {
       stateWithVolume.audio = { sample: 0, loop: false, volume: actualVolume };
       await this.sendTowerStateStateful(stateWithVolume);
     }
-    this.deps.logger.info("Playing tower seal sound", "[UDT]");
-    await this.playSoundStateful(TOWER_AUDIO_LIBRARY.TowerSeal.value, false, actualVolume);
-    const sideCorners = {
-      north: ["northeast", "northwest"],
-      east: ["northeast", "southeast"],
-      south: ["southeast", "southwest"],
-      west: ["southwest", "northwest"]
-    };
-    const ledgeLights = sideCorners[seal.side].map((corner) => ({
-      position: corner,
-      style: "on"
-    }));
-    const doorwayLights = [{
-      level: seal.level,
-      position: seal.side,
-      style: "breatheFast"
-    }];
-    const lights = {
-      ledge: ledgeLights,
-      doorway: doorwayLights
-    };
-    this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - lighting ledges and doorways with breath effect`, "[UDT]");
-    await this.lights(lights);
+    this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - triggering firmware sealReveal animation`, "[UDT]");
+    await this.lightOverrides(TOWER_LIGHT_SEQUENCES.sealReveal, TOWER_AUDIO_LIBRARY.TowerSeal.value);
   }
   /**
    * Randomly rotates specified tower levels to random positions.
@@ -3556,10 +3535,203 @@ var UltimateDarkTower_default = UltimateDarkTower;
 // src/index.ts
 init_udtConstants();
 init_udtBluetoothAdapter();
+
+// src/udtSeedDecoder.ts
+var BASE = 36;
+var GROUP_SIZE = 4;
+var GROUP_MAX = Math.pow(BASE, GROUP_SIZE);
+var BITS_PER_GROUP = Math.floor(Math.log2(GROUP_MAX));
+var TOTAL_BITS = BITS_PER_GROUP * 3;
+var DISPLAY_BITS = 62;
+var SEED_REGEX = /^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/;
+function validateSeed(seed) {
+  const normalized = seed.toUpperCase().replace(/[^0-9A-Z]/g, "");
+  if (normalized.length !== 12) {
+    throw new Error(`Invalid seed length: expected 12 alphanumeric characters, got ${normalized.length}`);
+  }
+  const formatted = `${normalized.slice(0, 4)}-${normalized.slice(4, 8)}-${normalized.slice(8, 12)}`;
+  if (!SEED_REGEX.test(formatted)) {
+    throw new Error(`Invalid seed format: ${formatted}`);
+  }
+  return formatted;
+}
+function seedGroupToNumber(group) {
+  if (group.length !== GROUP_SIZE) {
+    throw new Error(`Group must be ${GROUP_SIZE} characters, got ${group.length}`);
+  }
+  const value = parseInt(group, BASE);
+  if (isNaN(value)) {
+    throw new Error(`Invalid base-36 group: ${group}`);
+  }
+  return value;
+}
+function extractBits(groups, offset, length) {
+  const combined = BigInt(groups[0]) * BigInt(GROUP_MAX) * BigInt(GROUP_MAX) + BigInt(groups[1]) * BigInt(GROUP_MAX) + BigInt(groups[2]);
+  const totalAvailable = 62;
+  if (offset + length > totalAvailable) {
+    throw new Error(`Bit range [${offset}..${offset + length - 1}] exceeds ${totalAvailable} available bits`);
+  }
+  const shift = BigInt(totalAvailable - offset - length);
+  const mask = (BigInt(1) << BigInt(length)) - BigInt(1);
+  return Number(combined >> shift & mask);
+}
+function decodeSeed(seed) {
+  const normalized = validateSeed(seed);
+  const parts = normalized.split("-");
+  const groups = [
+    seedGroupToNumber(parts[0]),
+    seedGroupToNumber(parts[1]),
+    seedGroupToNumber(parts[2])
+  ];
+  const result = {
+    raw: {
+      seed: normalized,
+      groups,
+      totalBits: DISPLAY_BITS
+    },
+    fields: {},
+    unknownRegions: []
+  };
+  result.unknownRegions.push({
+    bitOffset: 0,
+    bitLength: DISPLAY_BITS,
+    rawBits: extractBits(groups, 0, DISPLAY_BITS)
+  });
+  return result;
+}
+function compareSeedsRaw(seed1, seed2) {
+  const n1 = validateSeed(seed1);
+  const n2 = validateSeed(seed2);
+  const parts1 = n1.split("-");
+  const parts2 = n2.split("-");
+  const groups1 = [
+    seedGroupToNumber(parts1[0]),
+    seedGroupToNumber(parts1[1]),
+    seedGroupToNumber(parts1[2])
+  ];
+  const groups2 = [
+    seedGroupToNumber(parts2[0]),
+    seedGroupToNumber(parts2[1]),
+    seedGroupToNumber(parts2[2])
+  ];
+  const diffs = [];
+  for (let i = 0; i < DISPLAY_BITS; i++) {
+    const v1 = extractBits(groups1, i, 1);
+    const v2 = extractBits(groups2, i, 1);
+    if (v1 !== v2) {
+      diffs.push({ bitOffset: i, value1: v1, value2: v2 });
+    }
+  }
+  return {
+    seed1: n1,
+    seed2: n2,
+    diffs,
+    totalBitsChanged: diffs.length
+  };
+}
+function dumpSeedBits(seed) {
+  const normalized = validateSeed(seed);
+  const parts = normalized.split("-");
+  const groups = [
+    seedGroupToNumber(parts[0]),
+    seedGroupToNumber(parts[1]),
+    seedGroupToNumber(parts[2])
+  ];
+  const bits = [];
+  for (let i = 0; i < DISPLAY_BITS; i++) {
+    const value = extractBits(groups, i, 1);
+    const groupIndex = Math.floor(i / Math.ceil(DISPLAY_BITS / 3));
+    const label = `group${Math.min(groupIndex, 2) + 1}`;
+    bits.push({ position: i, value, label });
+  }
+  return { seed: normalized, bits };
+}
+
+// src/udtGameBoard.ts
+var BOARD_GROUPINGS = {
+  /** Dayside and Fivepint (North kingdom lakes). */
+  LONG_WATER: "Long Water",
+  /** Delmsmire, Arkartus, and Yellowpike (West kingdom forests). */
+  THE_GREAT_WOODS: "The Great Woods",
+  /** The Throne, The Cloister, and Archmont (South kingdom grasslands). */
+  REGAL_RUN: "Regal Run"
+};
+var BOARD_LOCATIONS = [
+  // ── North ───────────────────────────────────────────────────────────────
+  { name: "Broken Lands", terrain: "Hills", kingdom: "north" },
+  { name: "Dayside", terrain: "Lake", building: "Bazaar", kingdom: "north", grouping: BOARD_GROUPINGS.LONG_WATER },
+  { name: "Egan's End", terrain: "Grasslands", building: "Village", kingdom: "north" },
+  { name: "Fivepint", terrain: "Lake", kingdom: "north", grouping: BOARD_GROUPINGS.LONG_WATER },
+  { name: "Green Bridge", terrain: "Grasslands", kingdom: "north" },
+  { name: "Lodestone Mountains", terrain: "Mountains", kingdom: "north" },
+  { name: "Lower Ice Fangs", terrain: "Mountains", kingdom: "north" },
+  { name: "Muted Forest", terrain: "Forest", kingdom: "north" },
+  { name: "Peaks of the Djinn", terrain: "Mountains", kingdom: "north" },
+  { name: "Pearl of the North", terrain: "Grasslands", kingdom: "north" },
+  { name: "Radiant Mountains", terrain: "Mountains", building: "Citadel", kingdom: "north" },
+  { name: "Rimeweald", terrain: "Forest", kingdom: "north" },
+  { name: "The Tundra", terrain: "Desert", kingdom: "north" },
+  { name: "Tower Scar Desert", terrain: "Desert", kingdom: "north" },
+  { name: "Upper Ice Fangs", terrain: "Mountains", building: "Sanctuary", kingdom: "north" },
+  // ── East ────────────────────────────────────────────────────────────────
+  { name: "Big Sister", terrain: "Mountains", kingdom: "east" },
+  { name: "Bleak Wastes", terrain: "Desert", kingdom: "east" },
+  { name: "Copper Grove", terrain: "Forest", kingdom: "east" },
+  { name: "Dragontooth Lake", terrain: "Lake", kingdom: "east" },
+  { name: "Duwani", terrain: "Grasslands", building: "Village", kingdom: "east" },
+  { name: "Forest of Shades", terrain: "Forest", kingdom: "east" },
+  { name: "Greater Tombstones", terrain: "Hills", building: "Sanctuary", kingdom: "east" },
+  { name: "Inner Kinghills", terrain: "Hills", building: "Citadel", kingdom: "east" },
+  { name: "Jewel Hills", terrain: "Hills", kingdom: "east" },
+  { name: "Lake of Songs", terrain: "Lake", kingdom: "east" },
+  { name: "Lesser Tombstones", terrain: "Hills", kingdom: "east" },
+  { name: "Outer Kinghills", terrain: "Hills", kingdom: "east" },
+  { name: "The Decaying Wilds", terrain: "Grasslands", kingdom: "east" },
+  { name: "Three Rivers", terrain: "Grasslands", building: "Bazaar", kingdom: "east" },
+  { name: "Utar's Barrows", terrain: "Desert", kingdom: "east" },
+  // ── West ────────────────────────────────────────────────────────────────
+  { name: "Anza", terrain: "Grasslands", building: "Village", kingdom: "west" },
+  { name: "Arkartus", terrain: "Forest", building: "Sanctuary", kingdom: "west", grouping: BOARD_GROUPINGS.THE_GREAT_WOODS },
+  { name: "Ash Hills", terrain: "Hills", kingdom: "west" },
+  { name: "Cloudhold", terrain: "Mountains", kingdom: "west" },
+  { name: "Delmsmire", terrain: "Forest", kingdom: "west", grouping: BOARD_GROUPINGS.THE_GREAT_WOODS },
+  { name: "Hissing Groves", terrain: "Forest", building: "Citadel", kingdom: "west" },
+  { name: "Idran Forest", terrain: "Forest", kingdom: "west" },
+  { name: "Lonelight Hills", terrain: "Hills", kingdom: "west" },
+  { name: "Lost Lands", terrain: "Desert", kingdom: "west" },
+  { name: "Plains of Plovo", terrain: "Grasslands", building: "Bazaar", kingdom: "west" },
+  { name: "Plains of Woldra", terrain: "Grasslands", kingdom: "west" },
+  { name: "The Empty Glade", terrain: "Grasslands", kingdom: "west" },
+  { name: "The Grass Sea", terrain: "Grasslands", kingdom: "west" },
+  { name: "Weeping Waters", terrain: "Lake", kingdom: "west" },
+  { name: "Yellowpike", terrain: "Forest", kingdom: "west", grouping: BOARD_GROUPINGS.THE_GREAT_WOODS },
+  // ── South ───────────────────────────────────────────────────────────────
+  { name: "Archmont", terrain: "Grasslands", kingdom: "south", grouping: BOARD_GROUPINGS.REGAL_RUN },
+  { name: "Azkol's Bane", terrain: "Desert", kingdom: "south" },
+  { name: "Bone Hills", terrain: "Hills", kingdom: "south" },
+  { name: "Howling Desert", terrain: "Desert", building: "Citadel", kingdom: "south" },
+  { name: "Irontops", terrain: "Mountains", kingdom: "south" },
+  { name: "Little Sister", terrain: "Mountains", kingdom: "south" },
+  { name: "Middle Sister", terrain: "Mountains", kingdom: "south" },
+  { name: "Mountains of the Watchers", terrain: "Mountains", kingdom: "south" },
+  { name: "Pine Barrens", terrain: "Forest", kingdom: "south" },
+  { name: "Sands of Madness", terrain: "Desert", building: "Sanctuary", kingdom: "south" },
+  { name: "Southern Wastes", terrain: "Desert", building: "Village", kingdom: "south" },
+  { name: "The Cloister", terrain: "Grasslands", kingdom: "south", grouping: BOARD_GROUPINGS.REGAL_RUN },
+  { name: "The Emerald Expanse", terrain: "Grasslands", building: "Bazaar", kingdom: "south" },
+  { name: "The Throne", terrain: "Grasslands", kingdom: "south", grouping: BOARD_GROUPINGS.REGAL_RUN },
+  { name: "Ulamel's Hollow", terrain: "Grasslands", kingdom: "south" }
+];
+var BOARD_LOCATION_BY_NAME = Object.fromEntries(BOARD_LOCATIONS.map((loc) => [loc.name, loc]));
+
+// src/index.ts
 var index_default = UltimateDarkTower_default;
 export {
   AUDIO_COMMAND_POS,
   BATTERY_STATUS_FREQUENCY,
+  BOARD_GROUPINGS,
+  BOARD_LOCATIONS,
+  BOARD_LOCATION_BY_NAME,
   BluetoothAdapterFactory,
   BluetoothConnectionError,
   BluetoothDeviceNotFoundError,
@@ -3616,14 +3788,20 @@ export {
   VOLTAGE_LEVELS,
   VOLUME_DESCRIPTIONS,
   VOLUME_ICONS,
+  compareSeedsRaw,
   createDefaultTowerState,
+  decodeSeed,
   index_default as default,
   drumPositionCmds,
+  dumpSeedBits,
+  extractBits,
   isCalibrated,
   logger,
   milliVoltsToPercentage,
   milliVoltsToPercentageNumber,
   parseDifferentialReadings,
   rtdt_pack_state,
-  rtdt_unpack_state
+  rtdt_unpack_state,
+  seedGroupToNumber,
+  validateSeed
 };

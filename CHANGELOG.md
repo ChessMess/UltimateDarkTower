@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added
 
+- **Game board data** — New `src/udtGameBoard.ts` exports types and constants for all 60 Return to Dark Tower board locations: `TerrainType`, `BuildingType`, `BoardKingdom`, `BoardGrouping`, `BoardLocation`, `BOARD_LOCATIONS` (array), `BOARD_LOCATION_BY_NAME` (name-keyed lookup), and `BOARD_GROUPINGS` (Long Water, The Great Woods, Regal Run).
+
 - **Tower Emulator shows audio playback notifications** — When an audio command is sent while connected to the Tower Emulator, the emulator popup now briefly displays the sound name, loop state, and volume level. The notification auto-dismisses after 4 seconds. Detection is done at the adapter level by reading the audio bytes from the outgoing command packet, so all audio commands are captured regardless of which API method triggered them.
 
 ### Fixed

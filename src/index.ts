@@ -31,6 +31,18 @@ export type { TowerResponseConfig } from './udtTowerResponse';
 // Connection types
 export type { TowerEventCallbacks, DeviceInformation, ConnectionStatus } from './udtBleConnection';
 
+// Seed decoder
+export { decodeSeed, validateSeed, compareSeedsRaw, dumpSeedBits, extractBits, seedGroupToNumber } from './udtSeedDecoder';
+export type { DecodedSeed, DecodedField, SeedComparison, BitDiff, BitDump, Confidence } from './udtSeedDecoder';
+
+// Game board data
+export {
+  BOARD_LOCATIONS,
+  BOARD_LOCATION_BY_NAME,
+  BOARD_GROUPINGS,
+} from './udtGameBoard';
+export type { TerrainType, BuildingType, BoardKingdom, BoardGrouping, BoardLocation } from './udtGameBoard';
+
 // For convenience, also export as default
 import UltimateDarkTower from './UltimateDarkTower';
 export default UltimateDarkTower;
