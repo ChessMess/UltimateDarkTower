@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-15
+
 ### Fixed
 
 - `TowerSideView` now calls `injectStyles()` so side-view-only mode gets CSS
