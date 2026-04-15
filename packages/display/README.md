@@ -32,13 +32,13 @@ npm install ultimatedarktowerdisplay ultimatedarktower
 ## Quick Start
 
 ```ts
-import { TowerDisplay } from "ultimatedarktowerdisplay";
-import { createDefaultTowerState } from "ultimatedarktower";
+import { TowerDisplay } from 'ultimatedarktowerdisplay';
+import { createDefaultTowerState } from 'ultimatedarktower';
 
-const container = document.getElementById("tower");
+const container = document.getElementById('tower');
 
 if (!container) {
-  throw new Error("Missing #tower container");
+  throw new Error('Missing #tower container');
 }
 
 const display = new TowerDisplay({ container });
@@ -74,17 +74,13 @@ In most applications the flow looks like this:
 Example with a manually adjusted state:
 
 ```ts
-import { TowerDisplay } from "ultimatedarktowerdisplay";
-import {
-  createDefaultTowerState,
-  LIGHT_EFFECTS,
-  TOWER_AUDIO_LIBRARY,
-} from "ultimatedarktower";
+import { TowerDisplay } from 'ultimatedarktowerdisplay';
+import { createDefaultTowerState, LIGHT_EFFECTS, TOWER_AUDIO_LIBRARY } from 'ultimatedarktower';
 
-const container = document.getElementById("tower");
+const container = document.getElementById('tower');
 
 if (!container) {
-  throw new Error("Missing #tower container");
+  throw new Error('Missing #tower container');
 }
 
 const display = new TowerDisplay({ container });
@@ -135,7 +131,7 @@ type TowerState = {
 For a valid starting point, prefer:
 
 ```ts
-import { createDefaultTowerState } from "ultimatedarktower";
+import { createDefaultTowerState } from 'ultimatedarktower';
 
 const state = createDefaultTowerState();
 ```
@@ -159,12 +155,12 @@ Primary entry point. Composes one or both renderers into a container.
 new TowerDisplay(options: TowerDisplayOptions)
 ```
 
-| Option                | Type                              | Default                      | Description                                                                                                     |
-| --------------------- | --------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `container`           | `HTMLElement`                     | —                            | DOM element that will receive the rendered output                                                                |
-| `renderers`           | `RendererType \| RendererType[]`  | `['readout', 'side-view']`   | Which renderer(s) to show: `'readout'`, `'side-view'`, or both                                                  |
-| `onSealClick`         | `(seal: SealIdentifier) => void`  | —                            | Called whenever the user clicks a seal overlay in the side view                                                  |
-| `clickToToggleSeals`  | `boolean`                         | `true`                       | When true, clicking a seal toggles its visibility independent of game state. Set to `false` to disable.         |
+| Option               | Type                             | Default                    | Description                                                                                             |
+| -------------------- | -------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `container`          | `HTMLElement`                    | —                          | DOM element that will receive the rendered output                                                       |
+| `renderers`          | `RendererType \| RendererType[]` | `['readout', 'side-view']` | Which renderer(s) to show: `'readout'`, `'side-view'`, or both                                          |
+| `onSealClick`        | `(seal: SealIdentifier) => void` | —                          | Called whenever the user clicks a seal overlay in the side view                                         |
+| `clickToToggleSeals` | `boolean`                        | `true`                     | When true, clicking a seal toggles its visibility independent of game state. Set to `false` to disable. |
 
 Methods:
 
@@ -183,10 +179,10 @@ view.onSealClick = (seal) => console.log(seal);
 view.clickToToggleSeals = true; // default
 ```
 
-| Property              | Type                              | Default | Description                                                                 |
-| --------------------- | --------------------------------- | ------- | --------------------------------------------------------------------------- |
-| `onSealClick`         | `(seal: SealIdentifier) => void`  | —       | Callback fired on every seal click                                           |
-| `clickToToggleSeals`  | `boolean`                         | `true`  | Enables built-in click-to-toggle visibility on seal overlays                 |
+| Property             | Type                             | Default | Description                                                  |
+| -------------------- | -------------------------------- | ------- | ------------------------------------------------------------ |
+| `onSealClick`        | `(seal: SealIdentifier) => void` | —       | Callback fired on every seal click                           |
+| `clickToToggleSeals` | `boolean`                        | `true`  | Enables built-in click-to-toggle visibility on seal overlays |
 
 ### `TowerStateReadout`
 

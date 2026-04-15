@@ -6,7 +6,13 @@ This document covers the public API exported by `ultimatedarktowerdisplay`.
 
 ```ts
 import { TowerDisplay, TowerStateReadout, TowerSideView } from 'ultimatedarktowerdisplay';
-import type { TowerDisplayOptions, ITowerDisplay, RendererType, TowerSide, SealIdentifier } from 'ultimatedarktowerdisplay';
+import type {
+  TowerDisplayOptions,
+  ITowerDisplay,
+  RendererType,
+  TowerSide,
+  SealIdentifier,
+} from 'ultimatedarktowerdisplay';
 ```
 
 ---
@@ -29,11 +35,11 @@ const display = new TowerDisplay({
 new TowerDisplay(options: TowerDisplayOptions)
 ```
 
-| Parameter                    | Type                             | Default                    | Description                                                                                             |
-| ---------------------------- | -------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `options.container`          | `HTMLElement`                    | —                          | DOM element to render into                                                                               |
-| `options.renderers`          | `RendererType \| RendererType[]` | `['readout', 'side-view']` | Which renderer(s) to show                                                                               |
-| `options.onSealClick`        | `(seal: SealIdentifier) => void` | —                          | Callback fired whenever the user clicks a seal in the side view                                          |
+| Parameter                    | Type                             | Default                    | Description                                                                                                 |
+| ---------------------------- | -------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `options.container`          | `HTMLElement`                    | —                          | DOM element to render into                                                                                  |
+| `options.renderers`          | `RendererType \| RendererType[]` | `['readout', 'side-view']` | Which renderer(s) to show                                                                                   |
+| `options.onSealClick`        | `(seal: SealIdentifier) => void` | —                          | Callback fired whenever the user clicks a seal in the side view                                             |
 | `options.clickToToggleSeals` | `boolean`                        | `true`                     | When `true`, clicking a seal toggles its visibility independently of game state. Set to `false` to disable. |
 
 #### Methods
@@ -79,12 +85,13 @@ new TowerSideView(container: HTMLElement)
 
 #### Public Properties
 
-| Property             | Type                             | Default | Description                                                              |
-| -------------------- | -------------------------------- | ------- | ------------------------------------------------------------------------ |
-| `onSealClick`        | `(seal: SealIdentifier) => void` | —       | Callback fired on every seal click regardless of `clickToToggleSeals`    |
-| `clickToToggleSeals` | `boolean`                        | `true`  | Enables built-in click-to-toggle visibility on seal overlays             |
+| Property             | Type                             | Default | Description                                                           |
+| -------------------- | -------------------------------- | ------- | --------------------------------------------------------------------- |
+| `onSealClick`        | `(seal: SealIdentifier) => void` | —       | Callback fired on every seal click regardless of `clickToToggleSeals` |
+| `clickToToggleSeals` | `boolean`                        | `true`  | Enables built-in click-to-toggle visibility on seal overlays          |
 
 When `clickToToggleSeals` is `true`:
+
 - Clicking an intact seal hides it.
 - Clicking a hidden seal shows it again.
 - Toggle state is tracked per `side + level` key and is independent of `applySeals()`.
@@ -239,21 +246,21 @@ All readout elements use the `tdr-` prefix:
 
 ### Side View (`tsv-` prefix)
 
-| Class                                | Element                                        |
-| ------------------------------------ | ---------------------------------------------- |
-| `.tsv-wrapper`                       | Outer wrapper div                              |
-| `.tsv-side-selector`                 | N/E/S/W button bar                             |
-| `.tsv-side-btn`                      | Individual side selector button                |
-| `.tsv-side-btn[data-active="true"]`  | Currently selected side button                 |
-| `.tsv-svg`                           | SVG container div                              |
-| `.tsv-seal`                          | Seal overlay SVG element (all seals)           |
-| `.tsv-seal-top`                      | Top doorway seal                               |
-| `.tsv-seal-middle`                   | Middle doorway seal                            |
-| `.tsv-seal-bottom`                   | Bottom doorway seal                            |
-| `.tsv-seal[data-broken="true"]`      | Hidden seal (opacity 0)                        |
-| `.tsv-seal[data-broken="false"]`     | Visible seal                                   |
-| `.tsv-led`                           | LED marker element                             |
-| `.tsv-led[data-effect="<effect>"]`   | LED with active effect (same values as `tdr-`) |
+| Class                               | Element                                        |
+| ----------------------------------- | ---------------------------------------------- |
+| `.tsv-wrapper`                      | Outer wrapper div                              |
+| `.tsv-side-selector`                | N/E/S/W button bar                             |
+| `.tsv-side-btn`                     | Individual side selector button                |
+| `.tsv-side-btn[data-active="true"]` | Currently selected side button                 |
+| `.tsv-svg`                          | SVG container div                              |
+| `.tsv-seal`                         | Seal overlay SVG element (all seals)           |
+| `.tsv-seal-top`                     | Top doorway seal                               |
+| `.tsv-seal-middle`                  | Middle doorway seal                            |
+| `.tsv-seal-bottom`                  | Bottom doorway seal                            |
+| `.tsv-seal[data-broken="true"]`     | Hidden seal (opacity 0)                        |
+| `.tsv-seal[data-broken="false"]`    | Visible seal                                   |
+| `.tsv-led`                          | LED marker element                             |
+| `.tsv-led[data-effect="<effect>"]`  | LED with active effect (same values as `tdr-`) |
 
 ---
 
