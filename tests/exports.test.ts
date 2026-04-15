@@ -45,19 +45,42 @@ import UltimateDarkTower, {
   milliVoltsToPercentage,
   milliVoltsToPercentageNumber,
 
-  // Seed decoder
-  decodeSeed,
+  // Seed parser
+  charToValue,
+  valueToChar,
   validateSeed,
+  decodeSeed,
+  decodeRngSeed,
+  createSeed,
+  encodeSeed,
   compareSeedsRaw,
-  dumpSeedBits,
-  extractBits,
-  seedGroupToNumber,
-  type DecodedSeed,
-  type DecodedField,
-  type SeedComparison,
-  type BitDiff,
-  type BitDump,
+  dumpSeedChars,
+  TIER1_FOES,
+  TIER2_FOES,
+  TIER3_FOES,
+  ADVERSARIES,
+  ALLIES,
+  DIFFICULTIES,
+  GAME_SOURCES,
+  type Tier1Foe,
+  type Tier2Foe,
+  type Tier3Foe,
+  type Adversary,
+  type Ally,
+  type Difficulty,
+  type GameSource,
+  type ExpansionType,
   type Confidence,
+  type SeedBank,
+  type DecodedSeed,
+  type SeedConfig,
+  type CharDiff,
+  type SeedComparison,
+  type CharInfo,
+  type CharDump,
+
+  // System.Random replica
+  SystemRandom,
 
   // Game board data
   BOARD_LOCATIONS,
@@ -281,69 +304,128 @@ describe('Package Exports', () => {
     });
   });
 
-  describe('Seed Decoder Exports', () => {
-    test('decodeSeed is a function', () => {
-      expect(typeof decodeSeed).toBe('function');
+  describe('Seed Parser Exports', () => {
+    test('charToValue is a function', () => {
+      expect(typeof charToValue).toBe('function');
+    });
+
+    test('valueToChar is a function', () => {
+      expect(typeof valueToChar).toBe('function');
     });
 
     test('validateSeed is a function', () => {
       expect(typeof validateSeed).toBe('function');
     });
 
+    test('decodeSeed is a function', () => {
+      expect(typeof decodeSeed).toBe('function');
+    });
+
+    test('decodeRngSeed is a function', () => {
+      expect(typeof decodeRngSeed).toBe('function');
+    });
+
+    test('createSeed is a function', () => {
+      expect(typeof createSeed).toBe('function');
+    });
+
+    test('encodeSeed is a function', () => {
+      expect(typeof encodeSeed).toBe('function');
+    });
+
     test('compareSeedsRaw is a function', () => {
       expect(typeof compareSeedsRaw).toBe('function');
     });
 
-    test('dumpSeedBits is a function', () => {
-      expect(typeof dumpSeedBits).toBe('function');
+    test('dumpSeedChars is a function', () => {
+      expect(typeof dumpSeedChars).toBe('function');
     });
 
     test('DecodedSeed type is usable', () => {
-      const result: DecodedSeed = decodeSeed('TL7A-AAUA-N43A');
+      const result: DecodedSeed = decodeSeed('AA9A-AAGS-W634');
       expect(result).toBeDefined();
-      expect(result.raw.seed).toBe('TL7A-AAUA-N43A');
-      expect(result.raw.groups).toHaveLength(3);
-    });
-
-    test('DecodedField type is usable', () => {
-      const field: DecodedField<string> = {
-        value: 'test',
-        confidence: 'unknown',
-        rawBits: 0,
-        bitOffset: 0,
-        bitLength: 1,
-      };
-      expect(field.value).toBe('test');
-      expect(field.confidence).toBe('unknown');
-    });
-
-    test('extractBits is a function', () => {
-      expect(typeof extractBits).toBe('function');
-    });
-
-    test('seedGroupToNumber is a function', () => {
-      expect(typeof seedGroupToNumber).toBe('function');
+      expect(result.seed).toBe('AA9A-AAGS-W634');
+      expect(result.tier1Foe).toBe('Brigands');
     });
 
     test('SeedComparison type is usable', () => {
-      const comp: SeedComparison = compareSeedsRaw('TL7A-AAUA-N43A', '0000-0000-0000');
-      expect(comp.seed1).toBe('TL7A-AAUA-N43A');
+      const comp: SeedComparison = compareSeedsRaw('AA9A-AAGS-W634', 'BA9A-AAGS-W634');
+      expect(comp.seed1).toBe('AA9A-AAGS-W634');
       expect(comp.diffs.length).toBeGreaterThan(0);
     });
 
-    test('BitDiff type is usable', () => {
-      const diff: BitDiff = { bitOffset: 0, value1: 0, value2: 1 };
-      expect(diff.bitOffset).toBe(0);
+    test('CharDiff type is usable', () => {
+      const diff: CharDiff = { charIndex: 0, value1: 0, value2: 1, char1: 'a', char2: '1' };
+      expect(diff.charIndex).toBe(0);
     });
 
-    test('BitDump type is usable', () => {
-      const dump: BitDump = dumpSeedBits('0000-0000-0000');
-      expect(dump.bits).toHaveLength(62);
+    test('CharDump type is usable', () => {
+      const dump: CharDump = dumpSeedChars('AA9A-AAGS-W634');
+      expect(dump.chars).toHaveLength(12);
     });
 
     test('Confidence type is usable', () => {
       const c: Confidence = 'confirmed';
       expect(c).toBe('confirmed');
+    });
+
+    test('lookup arrays are exported', () => {
+      expect(TIER1_FOES).toHaveLength(4);
+      expect(TIER2_FOES).toHaveLength(4);
+      expect(TIER3_FOES).toHaveLength(4);
+      expect(ADVERSARIES).toHaveLength(8);
+      expect(ALLIES).toHaveLength(10);
+      expect(DIFFICULTIES).toHaveLength(2);
+      expect(GAME_SOURCES).toHaveLength(2);
+    });
+
+    test('SeedConfig type is usable', () => {
+      const config: SeedConfig = {
+        source: 'Core',
+        playerCount: 1,
+        adversary: 'Ashstrider',
+        ally: 'Gleb',
+        difficulty: 'Heroic',
+        foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+        expansions: [],
+      };
+      expect(config.source).toBe('Core');
+    });
+
+    test('SeedBank type is usable', () => {
+      const bank: SeedBank = { initializationSeed: 100, questSeed: 99, seedString: 'test' };
+      expect(bank.questSeed).toBe(99);
+    });
+
+    test('game type unions are usable', () => {
+      const t1: Tier1Foe = 'Brigands';
+      const t2: Tier2Foe = 'Frost Trolls';
+      const t3: Tier3Foe = 'Dragons';
+      const adv: Adversary = 'Ashstrider';
+      const ally: Ally = 'Gleb';
+      const diff: Difficulty = 'Heroic';
+      const src: GameSource = 'Core';
+      const exp: ExpansionType = 'Alliances';
+      expect(t1).toBe('Brigands');
+      expect(t2).toBe('Frost Trolls');
+      expect(t3).toBe('Dragons');
+      expect(adv).toBe('Ashstrider');
+      expect(ally).toBe('Gleb');
+      expect(diff).toBe('Heroic');
+      expect(src).toBe('Core');
+      expect(exp).toBe('Alliances');
+    });
+  });
+
+  describe('SystemRandom Exports', () => {
+    test('SystemRandom is a constructor', () => {
+      expect(typeof SystemRandom).toBe('function');
+      const rng = new SystemRandom(42);
+      expect(rng).toBeDefined();
+      expect(typeof rng.next).toBe('function');
+      expect(typeof rng.nextMax).toBe('function');
+      expect(typeof rng.nextRange).toBe('function');
+      expect(typeof rng.nextDouble).toBe('function');
     });
   });
 });

@@ -374,40 +374,16 @@ class UdtTowerCommands {
     async breakSeal(seal, volume) {
         // Get the volume to use
         const actualVolume = volume !== undefined ? volume : this.deps.getCurrentTowerState().audio.volume;
-        // Update tower's internal volume state first - tower firmware ignores volume in sound commands
-        // and only uses its internal global volume state
+        // Tower firmware ignores volume in sound commands — set it via state first
         if (actualVolume > 0) {
             const currentState = this.deps.getCurrentTowerState();
             const stateWithVolume = Object.assign({}, currentState);
             stateWithVolume.audio = { sample: 0, loop: false, volume: actualVolume };
             await this.sendTowerStateStateful(stateWithVolume);
         }
-        this.deps.logger.info('Playing tower seal sound', '[UDT]');
-        await this.playSoundStateful(udtConstants_1.TOWER_AUDIO_LIBRARY.TowerSeal.value, false, actualVolume);
-        // Light both corner ledges that share the same side
-        // For each cardinal direction, light both corners that include that direction
-        const sideCorners = {
-            north: ['northeast', 'northwest'],
-            east: ['northeast', 'southeast'],
-            south: ['southeast', 'southwest'],
-            west: ['southwest', 'northwest']
-        };
-        const ledgeLights = sideCorners[seal.side].map(corner => ({
-            position: corner,
-            style: 'on'
-        }));
-        // Create doorway light with light effect for the broken seal
-        const doorwayLights = [{
-                level: seal.level,
-                position: seal.side,
-                style: 'breatheFast'
-            }];
-        const lights = {
-            ledge: ledgeLights,
-            doorway: doorwayLights
-        };
-        this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - lighting ledges and doorways with breath effect`, '[UDT]');
-        await this.lights(lights);
+        // Single atomic command: firmware sealReveal animation + TowerSeal sound
+        this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - triggering firmware sealReveal animation`, '[UDT]');
+        await this.lightOverrides(udtConstants_1.TOWER_LIGHT_SEQUENCES.sealReveal, udtConstants_1.TOWER_AUDIO_LIBRARY.TowerSeal.value);
     }
     /**
      * Randomly rotates specified tower levels to random positions.

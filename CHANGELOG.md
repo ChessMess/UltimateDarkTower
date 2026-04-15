@@ -10,9 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added
 
+- **Seed parser** — New `src/udtSeedParser.ts` provides complete base-34 seed encoding and decoding, matching the game's C# `SeedParser` class. Exports `decodeSeed()`, `createSeed()`, `encodeSeed()`, `validateSeed()`, `compareSeedsRaw()`, `dumpSeedChars()`, and all related types (`DecodedSeed`, `SeedConfig`, `SeedBank`, `SeedComparison`, `CharDiff`, `CharDump`, foe/adversary/ally union types, and lookup arrays). All setup fields confirmed from developer-shared source code.
+
+- **C# System.Random replica** — New `src/udtSystemRandom.ts` implements a byte-exact TypeScript replica of .NET Framework's `System.Random` (modified Knuth subtractive generator). Exports the `SystemRandom` class with `next()`, `nextMax()`, `nextRange()`, and `nextDouble()` methods. Verified against C#-generated test vectors for multiple seeds including edge cases. This is the foundation for future game state prediction from seeds.
+
 - **Game board data** — New `src/udtGameBoard.ts` exports types and constants for all 60 Return to Dark Tower board locations: `TerrainType`, `BuildingType`, `BoardKingdom`, `BoardGrouping`, `BoardLocation`, `BOARD_LOCATIONS` (array), `BOARD_LOCATION_BY_NAME` (name-keyed lookup), and `BOARD_GROUPINGS` (Long Water, The Great Woods, Regal Run).
 
 - **Tower Emulator shows audio playback notifications** — When an audio command is sent while connected to the Tower Emulator, the emulator popup now briefly displays the sound name, loop state, and volume level. The notification auto-dismisses after 4 seconds. Detection is done at the adapter level by reading the audio bytes from the outgoing command packet, so all audio commands are captured regardless of which API method triggered them.
+
+### Changed
+
+- **`breakSeal()` now uses the firmware `sealReveal` LED override** — Previously composed ledge and doorway light states manually and sent them as a `lights()` command alongside the audio command. Now sends a single `lightOverrides(TOWER_LIGHT_SEQUENCES.sealReveal, ...)` packet that triggers the firmware's built-in seal reveal animation. The tower blocks until the animation completes before acknowledging the command, so callers no longer need an explicit delay between `breakSeal()` calls.
+
+### Removed
+
+- **Old seed decoder** — Deleted `src/udtSeedDecoder.ts` and its exports (`extractBits`, `seedGroupToNumber`, `BitDiff`, `BitDump`, `DecodedField`). The old implementation used an incorrect base-36/62-bit model. All functionality is replaced by `udtSeedParser.ts` with the confirmed base-34 encoding.
 
 ### Fixed
 

@@ -31,9 +31,19 @@ export type { TowerResponseConfig } from './udtTowerResponse';
 // Connection types
 export type { TowerEventCallbacks, DeviceInformation, ConnectionStatus } from './udtBleConnection';
 
-// Seed decoder
-export { decodeSeed, validateSeed, compareSeedsRaw, dumpSeedBits, extractBits, seedGroupToNumber } from './udtSeedDecoder';
-export type { DecodedSeed, DecodedField, SeedComparison, BitDiff, BitDump, Confidence } from './udtSeedDecoder';
+// Seed parser
+export {
+  charToValue, valueToChar, validateSeed, decodeSeed, decodeRngSeed,
+  createSeed, encodeSeed, compareSeedsRaw, dumpSeedChars,
+  TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES, DIFFICULTIES, GAME_SOURCES,
+} from './udtSeedParser';
+export type {
+  Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally, Difficulty, GameSource, ExpansionType,
+  Confidence, SeedBank, DecodedSeed, SeedConfig, CharDiff, SeedComparison, CharInfo, CharDump,
+} from './udtSeedParser';
+
+// System.Random replica (C# PRNG)
+export { SystemRandom } from './udtSystemRandom';
 
 // Game board data
 export {

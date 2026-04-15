@@ -220,58 +220,110 @@ describe('Package Exports', () => {
             expect(loc).toBeDefined();
         });
     });
-    describe('Seed Decoder Exports', () => {
-        test('decodeSeed is a function', () => {
-            expect(typeof src_1.decodeSeed).toBe('function');
+    describe('Seed Parser Exports', () => {
+        test('charToValue is a function', () => {
+            expect(typeof src_1.charToValue).toBe('function');
+        });
+        test('valueToChar is a function', () => {
+            expect(typeof src_1.valueToChar).toBe('function');
         });
         test('validateSeed is a function', () => {
             expect(typeof src_1.validateSeed).toBe('function');
         });
+        test('decodeSeed is a function', () => {
+            expect(typeof src_1.decodeSeed).toBe('function');
+        });
+        test('decodeRngSeed is a function', () => {
+            expect(typeof src_1.decodeRngSeed).toBe('function');
+        });
+        test('createSeed is a function', () => {
+            expect(typeof src_1.createSeed).toBe('function');
+        });
+        test('encodeSeed is a function', () => {
+            expect(typeof src_1.encodeSeed).toBe('function');
+        });
         test('compareSeedsRaw is a function', () => {
             expect(typeof src_1.compareSeedsRaw).toBe('function');
         });
-        test('dumpSeedBits is a function', () => {
-            expect(typeof src_1.dumpSeedBits).toBe('function');
+        test('dumpSeedChars is a function', () => {
+            expect(typeof src_1.dumpSeedChars).toBe('function');
         });
         test('DecodedSeed type is usable', () => {
-            const result = (0, src_1.decodeSeed)('TL7A-AAUA-N43A');
+            const result = (0, src_1.decodeSeed)('AA9A-AAGS-W634');
             expect(result).toBeDefined();
-            expect(result.raw.seed).toBe('TL7A-AAUA-N43A');
-            expect(result.raw.groups).toHaveLength(3);
-        });
-        test('DecodedField type is usable', () => {
-            const field = {
-                value: 'test',
-                confidence: 'unknown',
-                rawBits: 0,
-                bitOffset: 0,
-                bitLength: 1,
-            };
-            expect(field.value).toBe('test');
-            expect(field.confidence).toBe('unknown');
-        });
-        test('extractBits is a function', () => {
-            expect(typeof src_1.extractBits).toBe('function');
-        });
-        test('seedGroupToNumber is a function', () => {
-            expect(typeof src_1.seedGroupToNumber).toBe('function');
+            expect(result.seed).toBe('AA9A-AAGS-W634');
+            expect(result.tier1Foe).toBe('Brigands');
         });
         test('SeedComparison type is usable', () => {
-            const comp = (0, src_1.compareSeedsRaw)('TL7A-AAUA-N43A', '0000-0000-0000');
-            expect(comp.seed1).toBe('TL7A-AAUA-N43A');
+            const comp = (0, src_1.compareSeedsRaw)('AA9A-AAGS-W634', 'BA9A-AAGS-W634');
+            expect(comp.seed1).toBe('AA9A-AAGS-W634');
             expect(comp.diffs.length).toBeGreaterThan(0);
         });
-        test('BitDiff type is usable', () => {
-            const diff = { bitOffset: 0, value1: 0, value2: 1 };
-            expect(diff.bitOffset).toBe(0);
+        test('CharDiff type is usable', () => {
+            const diff = { charIndex: 0, value1: 0, value2: 1, char1: 'a', char2: '1' };
+            expect(diff.charIndex).toBe(0);
         });
-        test('BitDump type is usable', () => {
-            const dump = (0, src_1.dumpSeedBits)('0000-0000-0000');
-            expect(dump.bits).toHaveLength(62);
+        test('CharDump type is usable', () => {
+            const dump = (0, src_1.dumpSeedChars)('AA9A-AAGS-W634');
+            expect(dump.chars).toHaveLength(12);
         });
         test('Confidence type is usable', () => {
             const c = 'confirmed';
             expect(c).toBe('confirmed');
+        });
+        test('lookup arrays are exported', () => {
+            expect(src_1.TIER1_FOES).toHaveLength(4);
+            expect(src_1.TIER2_FOES).toHaveLength(4);
+            expect(src_1.TIER3_FOES).toHaveLength(4);
+            expect(src_1.ADVERSARIES).toHaveLength(8);
+            expect(src_1.ALLIES).toHaveLength(10);
+            expect(src_1.DIFFICULTIES).toHaveLength(2);
+            expect(src_1.GAME_SOURCES).toHaveLength(2);
+        });
+        test('SeedConfig type is usable', () => {
+            const config = {
+                source: 'Core',
+                playerCount: 1,
+                adversary: 'Ashstrider',
+                ally: 'Gleb',
+                difficulty: 'Heroic',
+                foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+                expansions: [],
+            };
+            expect(config.source).toBe('Core');
+        });
+        test('SeedBank type is usable', () => {
+            const bank = { initializationSeed: 100, questSeed: 99, seedString: 'test' };
+            expect(bank.questSeed).toBe(99);
+        });
+        test('game type unions are usable', () => {
+            const t1 = 'Brigands';
+            const t2 = 'Frost Trolls';
+            const t3 = 'Dragons';
+            const adv = 'Ashstrider';
+            const ally = 'Gleb';
+            const diff = 'Heroic';
+            const src = 'Core';
+            const exp = 'Alliances';
+            expect(t1).toBe('Brigands');
+            expect(t2).toBe('Frost Trolls');
+            expect(t3).toBe('Dragons');
+            expect(adv).toBe('Ashstrider');
+            expect(ally).toBe('Gleb');
+            expect(diff).toBe('Heroic');
+            expect(src).toBe('Core');
+            expect(exp).toBe('Alliances');
+        });
+    });
+    describe('SystemRandom Exports', () => {
+        test('SystemRandom is a constructor', () => {
+            expect(typeof src_1.SystemRandom).toBe('function');
+            const rng = new src_1.SystemRandom(42);
+            expect(rng).toBeDefined();
+            expect(typeof rng.next).toBe('function');
+            expect(typeof rng.nextMax).toBe('function');
+            expect(typeof rng.nextRange).toBe('function');
+            expect(typeof rng.nextDouble).toBe('function');
         });
     });
 });

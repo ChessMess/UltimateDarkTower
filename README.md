@@ -131,6 +131,10 @@ const tower = new UltimateDarkTower({ adapter: new MyCustomAdapter() });
 
 Comprehensive documentation with TypeScript examples, best practices, and troubleshooting guides.
 
+### 📄 [Seed Format Specification](SEED_FORMAT.md)
+
+Complete documentation of the Return to Dark Tower game seed encoding — base-34 alphabet, setup section bitwise layout, RNG seed polynomial, and what each seed field controls.
+
 ### Key Topics Covered:
 
 - **Multi-Platform Setup** - Configuration for Web, Node.js, Electron, and React Native
@@ -139,6 +143,8 @@ Comprehensive documentation with TypeScript examples, best practices, and troubl
 - **Tower Control** - Detailed coverage of all tower commands (lights, sounds, rotation)
 - **Glyph System** - Automatic tracking of glyph positions as towers rotate
 - **Seal Management** - Breaking seals and tracking game state
+- **Seed Parser** - Decode, encode, validate, and compare game seeds
+- **SystemRandom** - C# System.Random PRNG replica for game state prediction
 - **Event Handling** - Callback system for tower events
 - **Logging System** - Multi-output logging for debugging and monitoring
 - **Best Practices** - Performance tips, error handling, and common patterns
@@ -230,6 +236,9 @@ src/
 ├── udtCommandQueue.ts        # Command queue management
 ├── udtTowerResponse.ts       # Response handling
 ├── udtTowerState.ts          # Tower state management
+├── udtGameBoard.ts           # Board locations, kingdoms, and terrain data
+├── udtSeedParser.ts          # Game seed encoding/decoding (base-34)
+├── udtSystemRandom.ts        # C# System.Random PRNG replica
 ├── udtHelpers.ts             # Utility helper functions
 ├── udtLogger.ts              # Logging system
 ├── udtConstants.ts           # Constants and type definitions

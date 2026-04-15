@@ -21,7 +21,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BOARD_GROUPINGS = exports.BOARD_LOCATION_BY_NAME = exports.BOARD_LOCATIONS = exports.seedGroupToNumber = exports.extractBits = exports.dumpSeedBits = exports.compareSeedsRaw = exports.validateSeed = exports.decodeSeed = exports.parseDifferentialReadings = exports.createDefaultTowerState = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
+exports.BOARD_GROUPINGS = exports.BOARD_LOCATION_BY_NAME = exports.BOARD_LOCATIONS = exports.SystemRandom = exports.GAME_SOURCES = exports.DIFFICULTIES = exports.ALLIES = exports.ADVERSARIES = exports.TIER3_FOES = exports.TIER2_FOES = exports.TIER1_FOES = exports.dumpSeedChars = exports.compareSeedsRaw = exports.encodeSeed = exports.createSeed = exports.decodeRngSeed = exports.decodeSeed = exports.validateSeed = exports.valueToChar = exports.charToValue = exports.parseDifferentialReadings = exports.createDefaultTowerState = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
 var UltimateDarkTower_1 = require("./UltimateDarkTower");
 Object.defineProperty(exports, "UltimateDarkTower", { enumerable: true, get: function () { return __importDefault(UltimateDarkTower_1).default; } });
 __exportStar(require("./udtConstants"), exports);
@@ -50,14 +50,27 @@ Object.defineProperty(exports, "isCalibrated", { enumerable: true, get: function
 var udtHelpers_2 = require("./udtHelpers");
 Object.defineProperty(exports, "createDefaultTowerState", { enumerable: true, get: function () { return udtHelpers_2.createDefaultTowerState; } });
 Object.defineProperty(exports, "parseDifferentialReadings", { enumerable: true, get: function () { return udtHelpers_2.parseDifferentialReadings; } });
-// Seed decoder
-var udtSeedDecoder_1 = require("./udtSeedDecoder");
-Object.defineProperty(exports, "decodeSeed", { enumerable: true, get: function () { return udtSeedDecoder_1.decodeSeed; } });
-Object.defineProperty(exports, "validateSeed", { enumerable: true, get: function () { return udtSeedDecoder_1.validateSeed; } });
-Object.defineProperty(exports, "compareSeedsRaw", { enumerable: true, get: function () { return udtSeedDecoder_1.compareSeedsRaw; } });
-Object.defineProperty(exports, "dumpSeedBits", { enumerable: true, get: function () { return udtSeedDecoder_1.dumpSeedBits; } });
-Object.defineProperty(exports, "extractBits", { enumerable: true, get: function () { return udtSeedDecoder_1.extractBits; } });
-Object.defineProperty(exports, "seedGroupToNumber", { enumerable: true, get: function () { return udtSeedDecoder_1.seedGroupToNumber; } });
+// Seed parser
+var udtSeedParser_1 = require("./udtSeedParser");
+Object.defineProperty(exports, "charToValue", { enumerable: true, get: function () { return udtSeedParser_1.charToValue; } });
+Object.defineProperty(exports, "valueToChar", { enumerable: true, get: function () { return udtSeedParser_1.valueToChar; } });
+Object.defineProperty(exports, "validateSeed", { enumerable: true, get: function () { return udtSeedParser_1.validateSeed; } });
+Object.defineProperty(exports, "decodeSeed", { enumerable: true, get: function () { return udtSeedParser_1.decodeSeed; } });
+Object.defineProperty(exports, "decodeRngSeed", { enumerable: true, get: function () { return udtSeedParser_1.decodeRngSeed; } });
+Object.defineProperty(exports, "createSeed", { enumerable: true, get: function () { return udtSeedParser_1.createSeed; } });
+Object.defineProperty(exports, "encodeSeed", { enumerable: true, get: function () { return udtSeedParser_1.encodeSeed; } });
+Object.defineProperty(exports, "compareSeedsRaw", { enumerable: true, get: function () { return udtSeedParser_1.compareSeedsRaw; } });
+Object.defineProperty(exports, "dumpSeedChars", { enumerable: true, get: function () { return udtSeedParser_1.dumpSeedChars; } });
+Object.defineProperty(exports, "TIER1_FOES", { enumerable: true, get: function () { return udtSeedParser_1.TIER1_FOES; } });
+Object.defineProperty(exports, "TIER2_FOES", { enumerable: true, get: function () { return udtSeedParser_1.TIER2_FOES; } });
+Object.defineProperty(exports, "TIER3_FOES", { enumerable: true, get: function () { return udtSeedParser_1.TIER3_FOES; } });
+Object.defineProperty(exports, "ADVERSARIES", { enumerable: true, get: function () { return udtSeedParser_1.ADVERSARIES; } });
+Object.defineProperty(exports, "ALLIES", { enumerable: true, get: function () { return udtSeedParser_1.ALLIES; } });
+Object.defineProperty(exports, "DIFFICULTIES", { enumerable: true, get: function () { return udtSeedParser_1.DIFFICULTIES; } });
+Object.defineProperty(exports, "GAME_SOURCES", { enumerable: true, get: function () { return udtSeedParser_1.GAME_SOURCES; } });
+// System.Random replica (C# PRNG)
+var udtSystemRandom_1 = require("./udtSystemRandom");
+Object.defineProperty(exports, "SystemRandom", { enumerable: true, get: function () { return udtSystemRandom_1.SystemRandom; } });
 // Game board data
 var udtGameBoard_1 = require("./udtGameBoard");
 Object.defineProperty(exports, "BOARD_LOCATIONS", { enumerable: true, get: function () { return udtGameBoard_1.BOARD_LOCATIONS; } });

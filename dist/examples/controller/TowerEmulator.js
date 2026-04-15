@@ -417,6 +417,16 @@
   display: block;
 }
 
+.tsv-seal {
+  cursor: pointer;
+  pointer-events: all;
+  transition: opacity 0.3s ease;
+}
+
+.tsv-seal[data-broken="true"] {
+  opacity: 0;
+}
+
 .tsv-led {
   fill: #333 !important;
   stroke: #555 !important;
@@ -496,6 +506,8 @@
       const skullDrop = this.prevBeamCount !== null && state.beam.count > this.prevBeamCount;
       this.prevBeamCount = state.beam.count;
       this.render(state, skullDrop);
+    }
+    applySeals(_brokenSeals) {
     }
     /** Reset the display to its idle/waiting state. */
     showIdle() {
@@ -638,14 +650,24 @@
       this.latestState = null;
       this.buttons = [];
       this.ledNodes = {};
+      this.sealNodes = {};
+      this.latestBrokenSeals = [];
       this.container = container;
       injectStyles();
       this.build();
     }
     applyState(state) {
       this.latestState = state;
+      if (state.led_sequence === TOWER_LIGHT_SEQUENCES.sealReveal) {
+        const side = this.detectSealSide(state);
+        if (side) this.selectSide(side);
+      }
       this.applyLedState(state);
       if (this.wrapper) this.wrapper.style.display = "";
+    }
+    applySeals(brokenSeals) {
+      this.latestBrokenSeals = brokenSeals;
+      this.updateSealVisibility();
     }
     showIdle() {
       if (this.wrapper) this.wrapper.style.display = "none";
@@ -657,6 +679,30 @@
       }
       this.buttons = [];
       this.latestState = null;
+      this.sealNodes = {};
+      this.latestBrokenSeals = [];
+    }
+    detectSealSide(state) {
+      const SIDE_BY_INDEX = ["north", "east", "south", "west"];
+      for (let layer = 0; layer <= 2; layer++) {
+        for (let pos = 0; pos < 4; pos++) {
+          if (state.layer[layer].light[pos].effect !== LIGHT_EFFECTS.off) {
+            return SIDE_BY_INDEX[pos];
+          }
+        }
+      }
+      return null;
+    }
+    updateSealVisibility() {
+      const externalBroken = new Set(
+        this.latestBrokenSeals.filter((s) => s.side === this.currentSide).map((s) => s.level)
+      );
+      for (const level of ["top", "middle", "bottom"]) {
+        const node = this.sealNodes[level];
+        if (!node) continue;
+        const broken = externalBroken.has(level);
+        node.setAttribute("data-broken", String(broken));
+      }
     }
     build() {
       this.wrapper = document.createElement("div");
@@ -708,6 +754,14 @@
         } else {
           towerSvg.appendChild(nested);
         }
+        nested.addEventListener("click", () => {
+          var _a;
+          (_a = this.onSealClick) == null ? void 0 : _a.call(this, {
+            side: this.currentSide,
+            level: door.name
+          });
+        });
+        this.sealNodes[door.name] = nested;
       }
     }
     cacheLedNodes(towerSvg) {
@@ -743,6 +797,7 @@
         btn.dataset.active = String(btn.dataset.side === side);
       }
       if (this.latestState) this.applyLedState(this.latestState);
+      this.updateSealVisibility();
     }
   };
 
@@ -751,12 +806,15 @@
     if (!input) return ["readout", "side-view"];
     return Array.isArray(input) ? input : [input];
   }
-  function createRenderer(type, container) {
+  function createRenderer(type, container, options) {
     switch (type) {
       case "readout":
         return new TowerStateReadout(container);
-      case "side-view":
-        return new TowerSideView(container);
+      case "side-view": {
+        const view = new TowerSideView(container);
+        if (options.onSealClick) view.onSealClick = options.onSealClick;
+        return view;
+      }
       default:
         throw new Error(`Unknown renderer type: ${type}`);
     }
@@ -772,12 +830,16 @@
         const slot = document.createElement("div");
         slot.className = `td-slot td-slot-${type}`;
         this.root.appendChild(slot);
-        this.renderers.push(createRenderer(type, slot));
+        this.renderers.push(createRenderer(type, slot, options));
       }
     }
     /** Update the display with a new decoded tower state. */
     applyState(state) {
       for (const r of this.renderers) r.applyState(state);
+    }
+    /** Update seal visibility — pass the current list of broken seals. */
+    applySeals(brokenSeals) {
+      for (const r of this.renderers) r.applySeals(brokenSeals);
     }
     /** Reset the display to its idle/waiting state. */
     showIdle() {

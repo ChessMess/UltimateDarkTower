@@ -45,7 +45,7 @@
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
   // src/udtConstants.ts
-  var UART_SERVICE_UUID, UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID, TOWER_DEVICE_NAME, DIS_SERVICE_UUID, DIS_MANUFACTURER_NAME_UUID, DIS_MODEL_NUMBER_UUID, DIS_SERIAL_NUMBER_UUID, DIS_HARDWARE_REVISION_UUID, DIS_FIRMWARE_REVISION_UUID, DIS_SOFTWARE_REVISION_UUID, DIS_SYSTEM_ID_UUID, DIS_IEEE_REGULATORY_UUID, DIS_PNP_ID_UUID, TOWER_COMMAND_PACKET_SIZE, TOWER_STATE_DATA_SIZE, TOWER_STATE_RESPONSE_MIN_LENGTH, TOWER_STATE_DATA_OFFSET, TOWER_COMMAND_TYPE_TOWER_STATE, DEFAULT_CONNECTION_MONITORING_FREQUENCY, DEFAULT_CONNECTION_MONITORING_TIMEOUT, DEFAULT_BATTERY_HEARTBEAT_TIMEOUT, DEFAULT_RETRY_SEND_COMMAND_MAX, TOWER_SIDES_COUNT, TOWER_COMMANDS, TC, DRUM_PACKETS, GLYPHS, AUDIO_COMMAND_POS, SKULL_DROP_COUNT_POS, drumPositionCmds, LIGHT_EFFECTS, TOWER_MESSAGES, VOLTAGE_LEVELS, TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH, TOWER_AUDIO_LIBRARY;
+  var UART_SERVICE_UUID, UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID, TOWER_DEVICE_NAME, DIS_SERVICE_UUID, DIS_MANUFACTURER_NAME_UUID, DIS_MODEL_NUMBER_UUID, DIS_SERIAL_NUMBER_UUID, DIS_HARDWARE_REVISION_UUID, DIS_FIRMWARE_REVISION_UUID, DIS_SOFTWARE_REVISION_UUID, DIS_SYSTEM_ID_UUID, DIS_IEEE_REGULATORY_UUID, DIS_PNP_ID_UUID, TOWER_COMMAND_PACKET_SIZE, TOWER_STATE_DATA_SIZE, TOWER_STATE_RESPONSE_MIN_LENGTH, TOWER_STATE_DATA_OFFSET, TOWER_COMMAND_TYPE_TOWER_STATE, DEFAULT_CONNECTION_MONITORING_FREQUENCY, DEFAULT_CONNECTION_MONITORING_TIMEOUT, DEFAULT_BATTERY_HEARTBEAT_TIMEOUT, DEFAULT_RETRY_SEND_COMMAND_MAX, TOWER_SIDES_COUNT, TOWER_COMMANDS, TC, DRUM_PACKETS, GLYPHS, AUDIO_COMMAND_POS, SKULL_DROP_COUNT_POS, drumPositionCmds, LIGHT_EFFECTS, TOWER_LIGHT_SEQUENCES, TOWER_MESSAGES, VOLTAGE_LEVELS, TOWER_LAYERS, RING_LIGHT_POSITIONS, LEDGE_BASE_LIGHT_POSITIONS, LAYER_TO_POSITION, LIGHT_INDEX_TO_DIRECTION, STATE_DATA_LENGTH, TOWER_AUDIO_LIBRARY;
   var init_udtConstants = __esm({
     "src/udtConstants.ts"() {
       "use strict";
@@ -121,6 +121,27 @@
         breatheFast: 3,
         breathe50percent: 4,
         flicker: 5
+      };
+      TOWER_LIGHT_SEQUENCES = {
+        twinkle: 1,
+        flareThenFade: 2,
+        flareThenFadeBase: 3,
+        flareThenFlicker: 4,
+        angryStrobe01: 5,
+        angryStrobe02: 6,
+        angryStrobe03: 7,
+        gloat01: 8,
+        gloat02: 9,
+        gloat03: 10,
+        defeat: 11,
+        victory: 12,
+        dungeonIdle: 13,
+        sealReveal: 14,
+        rotationAllDrums: 15,
+        rotationDrumTop: 16,
+        rotationDrumMiddle: 17,
+        rotationDrumBottom: 18,
+        monthStarted: 19
       };
       TOWER_MESSAGES = {
         TOWER_STATE: { name: "Tower State", value: 0, critical: false },
@@ -2368,29 +2389,8 @@
         stateWithVolume.audio = { sample: 0, loop: false, volume: actualVolume };
         await this.sendTowerStateStateful(stateWithVolume);
       }
-      this.deps.logger.info("Playing tower seal sound", "[UDT]");
-      await this.playSoundStateful(TOWER_AUDIO_LIBRARY.TowerSeal.value, false, actualVolume);
-      const sideCorners = {
-        north: ["northeast", "northwest"],
-        east: ["northeast", "southeast"],
-        south: ["southeast", "southwest"],
-        west: ["southwest", "northwest"]
-      };
-      const ledgeLights = sideCorners[seal.side].map((corner) => ({
-        position: corner,
-        style: "on"
-      }));
-      const doorwayLights = [{
-        level: seal.level,
-        position: seal.side,
-        style: "breatheFast"
-      }];
-      const lights = {
-        ledge: ledgeLights,
-        doorway: doorwayLights
-      };
-      this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - lighting ledges and doorways with breath effect`, "[UDT]");
-      await this.lights(lights);
+      this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - triggering firmware sealReveal animation`, "[UDT]");
+      await this.lightOverrides(TOWER_LIGHT_SEQUENCES.sealReveal, TOWER_AUDIO_LIBRARY.TowerSeal.value);
     }
     /**
      * Randomly rotates specified tower levels to random positions.

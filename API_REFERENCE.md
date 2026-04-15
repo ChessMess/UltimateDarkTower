@@ -16,7 +16,9 @@ A comprehensive reference guide for the UltimateDarkTower library - your complet
 10. [Types and Constants](#types-and-constants)
 11. [Best Practices](#best-practices)
 12. [Common Patterns](#common-patterns)
-13. [Troubleshooting](#troubleshooting)
+13. [Seed Parser](#seed-parser)
+14. [SystemRandom (C# PRNG Replica)](#systemrandom-c-prng-replica)
+15. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -1527,6 +1529,150 @@ class SequenceManager {
     }
 }
 ```
+
+---
+
+## Seed Parser
+
+The library includes a complete seed encoder/decoder for Return to Dark Tower game seeds. Seeds are 12-character base-34 strings that determine the full initial game state. See [SEED_FORMAT.md](SEED_FORMAT.md) for the complete encoding specification.
+
+### Decoding a Seed
+
+```typescript
+import { decodeSeed } from 'ultimatedarktower';
+
+const decoded = decodeSeed('AA9A-AAGS-W634');
+
+console.log(decoded.tier1Foe);    // 'Brigands'
+console.log(decoded.tier2Foe);    // 'Frost Trolls'
+console.log(decoded.tier3Foe);    // 'Dragons'
+console.log(decoded.adversary);   // 'Ashstrider'
+console.log(decoded.ally);        // 'Zaida'
+console.log(decoded.difficulty);  // 'Heroic'
+console.log(decoded.source);      // 'Core'
+console.log(decoded.expansions);  // []
+console.log(decoded.playerCount); // 1
+console.log(decoded.rngSeed);     // 186022107
+console.log(decoded.seedBank);    // { initializationSeed: 186022107, questSeed: 186022106, seedString: 'AA9A-AAGS-W634' }
+```
+
+### Creating a Seed
+
+```typescript
+import { createSeed, encodeSeed } from 'ultimatedarktower';
+
+// Create with random RNG portion
+const { seed, rngValue } = createSeed({
+  tier1Foe: 'Brigands',
+  tier2Foe: 'Frost Trolls',
+  tier3Foe: 'Dragons',
+  adversary: 'Ashstrider',
+  ally: 'Zaida',
+  difficulty: 'Heroic',
+  source: 'Core',
+  expansions: [],
+  playerCount: 1,
+});
+
+// Create with specific RNG value (fully deterministic)
+const seed2 = encodeSeed({
+  tier1Foe: 'Brigands',
+  tier2Foe: 'Frost Trolls',
+  tier3Foe: 'Dragons',
+  adversary: 'Ashstrider',
+  ally: 'Zaida',
+  difficulty: 'Heroic',
+  source: 'Core',
+  expansions: [],
+  playerCount: 1,
+}, 186022107);
+// Returns 'AA9A-AAGS-W634'
+```
+
+### Validating and Comparing Seeds
+
+```typescript
+import { validateSeed, compareSeedsRaw, dumpSeedChars } from 'ultimatedarktower';
+
+// Validate and normalize (returns 'AA9A-AAGS-W634' uppercase with dashes)
+const normalized = validateSeed('aa9aagsw634');
+
+// Compare two seeds character-by-character
+const comparison = compareSeedsRaw('AA9A-AAGS-W634', 'AA9A-AAGS-W635');
+console.log(comparison.diffs);      // CharDiff[] — all differing characters
+console.log(comparison.setupDiffs); // CharDiff[] — setup section diffs only (chars 0–5)
+console.log(comparison.rngDiffs);   // CharDiff[] — RNG section diffs only (chars 6–11)
+
+// Dump character-level breakdown
+const dump = dumpSeedChars('AA9A-AAGS-W634');
+// dump.chars: [{ index: 0, char: 'a', value: 0, section: 'setup', field: 'Tier 1/2/3 Foe' }, ...]
+```
+
+### Types
+
+```typescript
+import type {
+  DecodedSeed,      // Full decoded seed object
+  SeedConfig,       // Config for creating seeds
+  SeedBank,         // { initializationSeed, questSeed, seedString }
+  SeedComparison,   // Result of compareSeedsRaw()
+  CharDiff,         // Single character difference
+  CharDump,         // Result of dumpSeedChars()
+  CharInfo,         // Character info in dump
+  Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally,
+  Difficulty, GameSource, ExpansionType,
+} from 'ultimatedarktower';
+```
+
+### Lookup Arrays
+
+```typescript
+import {
+  TIER1_FOES,    // ['Brigands', 'Oreks', 'Shadow Wolves', 'Spine Fiends']
+  TIER2_FOES,    // ['Frost Trolls', 'Clan of Neuri', 'Lemures', 'Widowmade Spiders']
+  TIER3_FOES,    // ['Dragons', 'Mormos', 'Striga', 'Titans']
+  ADVERSARIES,   // ['Ashstrider', 'Bane of Omens', ..., "Utuk'Ku"]
+  ALLIES,        // ['Gleb', 'Grigor', ..., 'Zaida']
+  DIFFICULTIES,  // ['Heroic', 'Gritty']
+  GAME_SOURCES,  // ['Core', 'Competitive']
+} from 'ultimatedarktower';
+```
+
+---
+
+## SystemRandom (C# PRNG Replica)
+
+A byte-exact TypeScript implementation of .NET Framework's `System.Random`, which uses a modified Knuth subtractive generator. The game uses this PRNG seeded from the RNG portion of the game seed to drive all procedural generation.
+
+### Basic Usage
+
+```typescript
+import { SystemRandom } from 'ultimatedarktower';
+
+// Create with a seed (matches C# new Random(seed))
+const rng = new SystemRandom(186022107);
+
+rng.next();             // Next() — returns [0, 2147483647)
+rng.nextMax(100);       // Next(100) — returns [0, 100)
+rng.nextRange(10, 50);  // Next(10, 50) — returns [10, 50)
+rng.nextDouble();       // NextDouble() — returns [0.0, 1.0)
+```
+
+### Using with Game Seeds
+
+```typescript
+import { decodeSeed, SystemRandom } from 'ultimatedarktower';
+
+const decoded = decodeSeed('AA9A-AAGS-W634');
+
+// Create the same two PRNG instances the game creates
+const mainRng = new SystemRandom(decoded.seedBank.initializationSeed);
+const questRng = new SystemRandom(decoded.seedBank.questSeed);
+
+// These produce identical sequences to the C# game code
+```
+
+> **Note:** To predict specific game events (rotations, spawns, quests, dungeons), you must call `Next()` in the exact same order the game does. The PRNG is stateful — each call advances the internal state. Determining this call ordering requires reverse-engineering the game's initialization sequence.
 
 ---
 

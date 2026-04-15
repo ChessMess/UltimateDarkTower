@@ -320,6 +320,67 @@ This packet structure is used by:
 
 The 20th byte (command type) is added by the command layer, while the tower state functions handle the core 19-byte data payload that contains all the actual tower state information.
 
+## Tower Response Behavior
+
+After every BLE write, the tower sends a **state notification** back to the connected app via the TX (notify) characteristic. This response uses the same 20-byte packet format as commands, with byte 0 set to `0x00` (TOWER_STATE). Understanding this response is critical for correct command flow control.
+
+### Transient Fields Are Cleared in Responses
+
+Two fields are **transient** — they appear in the command but are always returned as `0` in the tower's response:
+
+| Byte | Field | Command value | Response value | Why |
+|------|-------|---------------|----------------|-----|
+| 15 | Audio (sample + loop) | Sound to play (e.g. `0x70` = TowerSeal) | Always `0` | Tower plays the sound, then reports "no sound playing" |
+| 19 | LED Sequence Override | Animation to play (e.g. `0x0e` = sealReveal) | Always `0` | Tower starts the animation, then reports "animation complete" |
+
+All other fields (drums, LED states, beam counter, volume) are **persistent** — they echo back with the values from the command.
+
+The companion app uses these cleared fields as flow control: it waits for a response with `audio = 0` and `ledOverride = 0` before sending the next command. If these fields are not cleared, the app interprets the response as "still animating" and falls back to an **18-second hardcoded timeout**.
+
+**Code reference:** `updateTowerStateFromResponse()` in `UltimateDarkTower.ts` explicitly resets audio: `newState.audio = { sample: 0, loop: false, volume: ... }`.
+
+### Animation Response Timing
+
+The tower does **not** respond immediately. When a command includes an LED Sequence Override (byte 19 ≠ 0), the tower delays its response until the animation finishes. Observed timings:
+
+| LED Override | Name | Response delay |
+|---|---|---|
+| `0x0e` | sealReveal | ~1.5–2 seconds |
+| `0x0f` | rotationAllDrums | Duration of drum rotation (8–21 seconds, varies) |
+| `0x13` | monthStarted | ~16 seconds |
+
+For commands **without** an LED override (byte 19 = 0), the response is near-immediate.
+
+This timing matters because the companion app blocks on the response before sending subsequent commands for certain sequences (notably sealReveal). Responding too early causes the app to send the next command before the animation finishes, visually interrupting it.
+
+> **Note:** For `rotationAllDrums` (0x0f), the companion app uses its own internal timeout (~8–13s) rather than waiting for the tower response, so the tower response delay is less critical for this sequence.
+
+### Response Types
+
+The tower response byte 0 indicates the response type:
+
+| Value | Name | Description |
+|---|---|---|
+| `0` | TOWER_STATE | Normal state echo (most common — sent after every command) |
+| `1` | INVALID_STATE | Error: invalid state data received |
+| `2` | HARDWARE_FAILURE | Error: hardware failure detected |
+| `3` | MECH_JIGGLE_TRIGGERED | Drum unjam jiggle triggered |
+| `4` | MECH_DURATION | Diagnostic: rotation duration (ms) after drum rotation completes |
+| `5` | MECH_UNEXPECTED_TRIGGER | Error: unexpected mechanical trigger |
+| `6` | DIFFERENTIAL_READINGS | Diagnostic: voltage readings |
+| `7` | BATTERY_READING | Battery level in millivolts |
+| `8` | CALIBRATION_FINISHED | Calibration sequence completed |
+
+The `TOWER_STATE` (0) response is the one relevant for command flow control. The `MECH_DURATION` (4) response is sent *additionally* after drum rotations and contains the rotation time in milliseconds — it is a diagnostic value, not used for flow control.
+
+### Implications for BLE Emulators and Relays
+
+Any software that acts as a BLE peripheral mimicking the tower (e.g., for command relay) **must**:
+
+1. **Send a state notification after every write.** Without this, the companion app has no flow control and may fire commands in rapid succession (within 1ms).
+2. **Clear byte 15 (audio) and byte 19 (LED override) in the response.** Without this, the companion app waits up to 18 seconds before sending the next command.
+3. **Delay the response when byte 19 ≠ 0.** Without this, the companion app sends the next command within ~60ms, which can interrupt animations on any downstream tower hardware.
+
 ## Noble (Node.js) Platform Notes
 
 ### macOS: Service Re-Discovery Invalidates Characteristic References

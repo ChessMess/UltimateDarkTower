@@ -3536,116 +3536,390 @@ var UltimateDarkTower_default = UltimateDarkTower;
 init_udtConstants();
 init_udtBluetoothAdapter();
 
-// src/udtSeedDecoder.ts
-var BASE = 36;
-var GROUP_SIZE = 4;
-var GROUP_MAX = Math.pow(BASE, GROUP_SIZE);
-var BITS_PER_GROUP = Math.floor(Math.log2(GROUP_MAX));
-var TOTAL_BITS = BITS_PER_GROUP * 3;
-var DISPLAY_BITS = 62;
-var SEED_REGEX = /^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/;
+// src/udtSeedParser.ts
+var ALPHABET = "a123456789bcdefghijklmnpqrstuvwxyz";
+var BASE = 34;
+var SETUP_LENGTH = 6;
+var RNG_SEED_LENGTH = 6;
+var SEED_LENGTH = SETUP_LENGTH + RNG_SEED_LENGTH;
+var CHAR_TO_VALUE = /* @__PURE__ */ new Map();
+var VALUE_TO_CHAR = /* @__PURE__ */ new Map();
+for (let i = 0; i < ALPHABET.length; i++) {
+  CHAR_TO_VALUE.set(ALPHABET[i], i);
+  VALUE_TO_CHAR.set(i, ALPHABET[i]);
+}
+var TIER1_FOES = ["Brigands", "Oreks", "Shadow Wolves", "Spine Fiends"];
+var TIER2_FOES = ["Frost Trolls", "Clan of Neuri", "Lemures", "Widowmade Spiders"];
+var TIER3_FOES = ["Dragons", "Mormos", "Striga", "Titans"];
+var ADVERSARIES = [
+  "Ashstrider",
+  "Bane of Omens",
+  "Empress of Shades",
+  "Gaze Eternal",
+  "Gravemaw",
+  "Isa the Exile",
+  "Lingering Rot",
+  "Utuk'Ku"
+];
+var ALLIES = [
+  "Gleb",
+  "Grigor",
+  "Hakan",
+  "Letha",
+  "Miras",
+  "Nimet",
+  "Tomas",
+  "Vasa",
+  "Yana",
+  "Zaida"
+];
+var DIFFICULTIES = ["Heroic", "Gritty"];
+var GAME_SOURCES = ["Core", "Competitive"];
+function charToValue(c) {
+  const v = CHAR_TO_VALUE.get(c.toLowerCase());
+  if (v === void 0) {
+    throw new Error(`Invalid seed character: '${c}'`);
+  }
+  return v;
+}
+function valueToChar(v) {
+  const c = VALUE_TO_CHAR.get(v);
+  if (c === void 0) {
+    throw new Error(`Invalid seed value: ${v} (must be 0\u2013${BASE - 1})`);
+  }
+  return c;
+}
 function validateSeed(seed) {
-  const normalized = seed.toUpperCase().replace(/[^0-9A-Z]/g, "");
-  if (normalized.length !== 12) {
-    throw new Error(`Invalid seed length: expected 12 alphanumeric characters, got ${normalized.length}`);
+  const stripped = seed.replace(/[-\s]/g, "").toLowerCase();
+  if (stripped.length !== SEED_LENGTH) {
+    throw new Error(`Invalid seed length: expected ${SEED_LENGTH} characters, got ${stripped.length}`);
   }
-  const formatted = `${normalized.slice(0, 4)}-${normalized.slice(4, 8)}-${normalized.slice(8, 12)}`;
-  if (!SEED_REGEX.test(formatted)) {
-    throw new Error(`Invalid seed format: ${formatted}`);
+  for (const c of stripped) {
+    if (!CHAR_TO_VALUE.has(c)) {
+      throw new Error(`Invalid seed character: '${c}'`);
+    }
   }
-  return formatted;
-}
-function seedGroupToNumber(group) {
-  if (group.length !== GROUP_SIZE) {
-    throw new Error(`Group must be ${GROUP_SIZE} characters, got ${group.length}`);
-  }
-  const value = parseInt(group, BASE);
-  if (isNaN(value)) {
-    throw new Error(`Invalid base-36 group: ${group}`);
-  }
-  return value;
-}
-function extractBits(groups, offset, length) {
-  const combined = BigInt(groups[0]) * BigInt(GROUP_MAX) * BigInt(GROUP_MAX) + BigInt(groups[1]) * BigInt(GROUP_MAX) + BigInt(groups[2]);
-  const totalAvailable = 62;
-  if (offset + length > totalAvailable) {
-    throw new Error(`Bit range [${offset}..${offset + length - 1}] exceeds ${totalAvailable} available bits`);
-  }
-  const shift = BigInt(totalAvailable - offset - length);
-  const mask = (BigInt(1) << BigInt(length)) - BigInt(1);
-  return Number(combined >> shift & mask);
+  const upper = stripped.toUpperCase();
+  return `${upper.slice(0, 4)}-${upper.slice(4, 8)}-${upper.slice(8, 12)}`;
 }
 function decodeSeed(seed) {
   const normalized = validateSeed(seed);
-  const parts = normalized.split("-");
-  const groups = [
-    seedGroupToNumber(parts[0]),
-    seedGroupToNumber(parts[1]),
-    seedGroupToNumber(parts[2])
-  ];
-  const result = {
-    raw: {
-      seed: normalized,
-      groups,
-      totalBits: DISPLAY_BITS
-    },
-    fields: {},
-    unknownRegions: []
+  const stripped = normalized.replace(/-/g, "").toLowerCase();
+  const setup = [];
+  for (let i = 0; i < SETUP_LENGTH; i++) {
+    setup.push(charToValue(stripped[i]));
+  }
+  let rngSeed = 0;
+  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
+    const value = charToValue(stripped[SETUP_LENGTH + i]);
+    rngSeed += value * Math.round(Math.pow(BASE, i));
+  }
+  const foeByteA = setup[0];
+  const tier1 = foeByteA & 3;
+  const tier2 = (foeByteA & 12) >> 2;
+  const foeByteB = setup[1];
+  const tier3 = (foeByteA & 16) >> 4 | (foeByteB & 16) >> 3;
+  const adversaryIndex = foeByteB & 15;
+  const allyIndex = setup[2];
+  const extra = setup[3];
+  const difficultyIndex = extra & 1;
+  const expansionBits = (extra & 6) >> 1;
+  const sourceBits = (extra & 8) >> 2;
+  const playerCount = (setup[5] & 3) + 1;
+  const expansions = [];
+  if (expansionBits & 1) expansions.push("Monuments");
+  if (expansionBits & 2) expansions.push("Alliances");
+  let source;
+  switch (sourceBits) {
+    case 2:
+      source = "Competitive";
+      break;
+    default:
+      source = "Core";
+      break;
+  }
+  const seedBank = {
+    initializationSeed: rngSeed,
+    questSeed: rngSeed - 1,
+    seedString: normalized
   };
-  result.unknownRegions.push({
-    bitOffset: 0,
-    bitLength: DISPLAY_BITS,
-    rawBits: extractBits(groups, 0, DISPLAY_BITS)
-  });
-  return result;
+  return {
+    seed: normalized,
+    tier1Foe: TIER1_FOES[tier1],
+    tier2Foe: TIER2_FOES[tier2],
+    tier3Foe: TIER3_FOES[tier3],
+    adversary: ADVERSARIES[adversaryIndex],
+    ally: ALLIES[allyIndex],
+    difficulty: DIFFICULTIES[difficultyIndex],
+    source,
+    expansions,
+    playerCount,
+    rngSeed,
+    seedBank,
+    setup
+  };
+}
+function decodeRngSeed(seed) {
+  const normalized = validateSeed(seed);
+  const stripped = normalized.replace(/-/g, "").toLowerCase();
+  let rngSeed = 0;
+  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
+    const value = charToValue(stripped[SETUP_LENGTH + i]);
+    rngSeed += value * Math.round(Math.pow(BASE, i));
+  }
+  return rngSeed;
+}
+function createSeed(config) {
+  let foeByteA = 0;
+  let foeByteB = 0;
+  const tier1Index = TIER1_FOES.indexOf(config.foes[0]);
+  const tier2Index = TIER2_FOES.indexOf(config.foes[1]);
+  const tier3Index = TIER3_FOES.indexOf(config.foes[2]);
+  if (tier1Index < 0) throw new Error(`Invalid Tier 1 foe: ${config.foes[0]}`);
+  if (tier2Index < 0) throw new Error(`Invalid Tier 2 foe: ${config.foes[1]}`);
+  if (tier3Index < 0) throw new Error(`Invalid Tier 3 foe: ${config.foes[2]}`);
+  foeByteA = tier1Index & 3;
+  foeByteA |= (tier2Index & 3) << 2;
+  foeByteA |= (tier3Index & 1) << 4;
+  foeByteB |= (tier3Index >> 1 & 1) << 4;
+  const adversaryIndex = ADVERSARIES.indexOf(config.adversary);
+  if (adversaryIndex < 0) throw new Error(`Invalid adversary: ${config.adversary}`);
+  foeByteB |= adversaryIndex & 15;
+  const allyIndex = ALLIES.indexOf(config.ally);
+  if (allyIndex < 0) throw new Error(`Invalid ally: ${config.ally}`);
+  let extraByte = 0;
+  if (config.difficulty === "Gritty") extraByte |= 1;
+  for (const expansion of config.expansions) {
+    switch (expansion) {
+      case "Monuments":
+        extraByte |= 2;
+        break;
+      case "Alliances":
+        extraByte |= 4;
+        break;
+    }
+  }
+  if (config.source === "Competitive") extraByte |= 8;
+  const versionByte = 0;
+  const playerCountByte = Math.max(0, Math.min(3, config.playerCount - 1));
+  let seedStr = valueToChar(foeByteA) + valueToChar(foeByteB) + valueToChar(allyIndex) + valueToChar(extraByte) + valueToChar(versionByte) + valueToChar(playerCountByte);
+  let rngValue = 0;
+  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
+    const value = Math.floor(Math.random() * BASE);
+    seedStr += valueToChar(value);
+    rngValue += value * Math.round(Math.pow(BASE, i));
+  }
+  const upper = seedStr.toUpperCase();
+  const formatted = `${upper.slice(0, 4)}-${upper.slice(4, 8)}-${upper.slice(8, 12)}`;
+  return { seed: formatted, rngValue };
+}
+function encodeSeed(config, rngValue) {
+  let foeByteA = 0;
+  let foeByteB = 0;
+  const tier1Index = TIER1_FOES.indexOf(config.foes[0]);
+  const tier2Index = TIER2_FOES.indexOf(config.foes[1]);
+  const tier3Index = TIER3_FOES.indexOf(config.foes[2]);
+  if (tier1Index < 0) throw new Error(`Invalid Tier 1 foe: ${config.foes[0]}`);
+  if (tier2Index < 0) throw new Error(`Invalid Tier 2 foe: ${config.foes[1]}`);
+  if (tier3Index < 0) throw new Error(`Invalid Tier 3 foe: ${config.foes[2]}`);
+  foeByteA = tier1Index & 3;
+  foeByteA |= (tier2Index & 3) << 2;
+  foeByteA |= (tier3Index & 1) << 4;
+  foeByteB |= (tier3Index >> 1 & 1) << 4;
+  const adversaryIndex = ADVERSARIES.indexOf(config.adversary);
+  if (adversaryIndex < 0) throw new Error(`Invalid adversary: ${config.adversary}`);
+  foeByteB |= adversaryIndex & 15;
+  const allyIndex = ALLIES.indexOf(config.ally);
+  if (allyIndex < 0) throw new Error(`Invalid ally: ${config.ally}`);
+  let extraByte = 0;
+  if (config.difficulty === "Gritty") extraByte |= 1;
+  for (const expansion of config.expansions) {
+    switch (expansion) {
+      case "Monuments":
+        extraByte |= 2;
+        break;
+      case "Alliances":
+        extraByte |= 4;
+        break;
+    }
+  }
+  if (config.source === "Competitive") extraByte |= 8;
+  const versionByte = 0;
+  const playerCountByte = Math.max(0, Math.min(3, config.playerCount - 1));
+  let seedStr = valueToChar(foeByteA) + valueToChar(foeByteB) + valueToChar(allyIndex) + valueToChar(extraByte) + valueToChar(versionByte) + valueToChar(playerCountByte);
+  let remaining = rngValue;
+  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
+    const digit = remaining % BASE;
+    seedStr += valueToChar(digit);
+    remaining = Math.floor(remaining / BASE);
+  }
+  const upper = seedStr.toUpperCase();
+  return `${upper.slice(0, 4)}-${upper.slice(4, 8)}-${upper.slice(8, 12)}`;
 }
 function compareSeedsRaw(seed1, seed2) {
   const n1 = validateSeed(seed1);
   const n2 = validateSeed(seed2);
-  const parts1 = n1.split("-");
-  const parts2 = n2.split("-");
-  const groups1 = [
-    seedGroupToNumber(parts1[0]),
-    seedGroupToNumber(parts1[1]),
-    seedGroupToNumber(parts1[2])
-  ];
-  const groups2 = [
-    seedGroupToNumber(parts2[0]),
-    seedGroupToNumber(parts2[1]),
-    seedGroupToNumber(parts2[2])
-  ];
+  const s1 = n1.replace(/-/g, "").toLowerCase();
+  const s2 = n2.replace(/-/g, "").toLowerCase();
   const diffs = [];
-  for (let i = 0; i < DISPLAY_BITS; i++) {
-    const v1 = extractBits(groups1, i, 1);
-    const v2 = extractBits(groups2, i, 1);
+  for (let i = 0; i < SEED_LENGTH; i++) {
+    const v1 = charToValue(s1[i]);
+    const v2 = charToValue(s2[i]);
     if (v1 !== v2) {
-      diffs.push({ bitOffset: i, value1: v1, value2: v2 });
+      diffs.push({
+        charIndex: i,
+        value1: v1,
+        value2: v2,
+        char1: s1[i],
+        char2: s2[i]
+      });
     }
   }
   return {
     seed1: n1,
     seed2: n2,
     diffs,
-    totalBitsChanged: diffs.length
+    setupDiffs: diffs.filter((d) => d.charIndex < SETUP_LENGTH),
+    rngDiffs: diffs.filter((d) => d.charIndex >= SETUP_LENGTH)
   };
 }
-function dumpSeedBits(seed) {
+var SETUP_FIELD_LABELS = {
+  0: "Tier1/Tier2/Tier3lo",
+  1: "Adversary/Tier3hi",
+  2: "Ally",
+  3: "Difficulty/Expansions/Source",
+  4: "Version",
+  5: "PlayerCount"
+};
+function dumpSeedChars(seed) {
   const normalized = validateSeed(seed);
-  const parts = normalized.split("-");
-  const groups = [
-    seedGroupToNumber(parts[0]),
-    seedGroupToNumber(parts[1]),
-    seedGroupToNumber(parts[2])
-  ];
-  const bits = [];
-  for (let i = 0; i < DISPLAY_BITS; i++) {
-    const value = extractBits(groups, i, 1);
-    const groupIndex = Math.floor(i / Math.ceil(DISPLAY_BITS / 3));
-    const label = `group${Math.min(groupIndex, 2) + 1}`;
-    bits.push({ position: i, value, label });
+  const stripped = normalized.replace(/-/g, "").toLowerCase();
+  const chars = [];
+  for (let i = 0; i < SEED_LENGTH; i++) {
+    const isSetup = i < SETUP_LENGTH;
+    chars.push({
+      index: i,
+      char: stripped[i],
+      value: charToValue(stripped[i]),
+      section: isSetup ? "setup" : "rng",
+      field: isSetup ? SETUP_FIELD_LABELS[i] : void 0
+    });
   }
-  return { seed: normalized, bits };
+  return { seed: normalized, chars };
 }
+
+// src/udtSystemRandom.ts
+var INT32_MAX = 2147483647;
+var MSEED = 161803398;
+function toInt32(n) {
+  return n | 0;
+}
+var SystemRandom = class {
+  /**
+   * Create a new PRNG instance with the given seed.
+   * Matches C# `new System.Random(seed)` exactly.
+   */
+  constructor(seed) {
+    this.seedArray = new Array(56).fill(0);
+    this.inext = 0;
+    this.inextp = 0;
+    this.initialize(seed);
+  }
+  /**
+   * Replicate .NET's System.Random constructor seeding algorithm.
+   */
+  initialize(seed) {
+    let subtraction;
+    if (seed === -2147483648) {
+      subtraction = INT32_MAX;
+    } else {
+      subtraction = Math.abs(seed);
+    }
+    let mj = toInt32(MSEED - subtraction);
+    this.seedArray[55] = mj;
+    let mk = 1;
+    for (let i = 1; i < 55; i++) {
+      const ii = 21 * i % 55;
+      this.seedArray[ii] = mk;
+      mk = toInt32(mj - mk);
+      if (mk < 0) mk = toInt32(mk + INT32_MAX);
+      mj = this.seedArray[ii];
+    }
+    for (let k = 1; k < 5; k++) {
+      for (let i = 1; i < 56; i++) {
+        this.seedArray[i] = toInt32(this.seedArray[i] - this.seedArray[1 + (i + 30) % 55]);
+        if (this.seedArray[i] < 0) {
+          this.seedArray[i] = toInt32(this.seedArray[i] + INT32_MAX);
+        }
+      }
+    }
+    this.inext = 0;
+    this.inextp = 21;
+  }
+  /**
+   * Internal sample — returns value in range [0, Int32.MaxValue).
+   * Matches C#'s InternalSample().
+   */
+  internalSample() {
+    let retVal;
+    let locINext = this.inext;
+    let locINextp = this.inextp;
+    if (++locINext >= 56) locINext = 1;
+    if (++locINextp >= 56) locINextp = 1;
+    retVal = toInt32(this.seedArray[locINext] - this.seedArray[locINextp]);
+    if (retVal === INT32_MAX) retVal--;
+    if (retVal < 0) retVal = toInt32(retVal + INT32_MAX);
+    this.seedArray[locINext] = retVal;
+    this.inext = locINext;
+    this.inextp = locINextp;
+    return retVal;
+  }
+  /**
+   * Sample — returns a double in range [0.0, 1.0).
+   * Matches C#'s Sample().
+   */
+  sample() {
+    return this.internalSample() * (1 / INT32_MAX);
+  }
+  /**
+   * Returns a non-negative random integer less than Int32.MaxValue.
+   * Matches C# `Random.Next()`.
+   */
+  next() {
+    return this.internalSample();
+  }
+  /**
+   * Returns a non-negative random integer less than maxValue.
+   * Matches C# `Random.Next(maxValue)`.
+   */
+  nextMax(maxValue) {
+    if (maxValue < 0) {
+      throw new Error("maxValue must be non-negative");
+    }
+    return toInt32(this.sample() * maxValue);
+  }
+  /**
+   * Returns a random integer in range [minValue, maxValue).
+   * Matches C# `Random.Next(minValue, maxValue)`.
+   */
+  nextRange(minValue, maxValue) {
+    if (minValue > maxValue) {
+      throw new Error("minValue must be less than or equal to maxValue");
+    }
+    const range = maxValue - minValue;
+    if (range <= INT32_MAX) {
+      return toInt32(this.sample() * range) + minValue;
+    }
+    return toInt32(this.internalSample() * (1 / INT32_MAX) * range) + minValue;
+  }
+  /**
+   * Returns a random double in range [0.0, 1.0).
+   * Matches C# `Random.NextDouble()`.
+   */
+  nextDouble() {
+    return this.sample();
+  }
+};
 
 // src/udtGameBoard.ts
 var BOARD_GROUPINGS = {
@@ -3727,6 +4001,8 @@ var BOARD_LOCATION_BY_NAME = Object.fromEntries(BOARD_LOCATIONS.map((loc) => [lo
 // src/index.ts
 var index_default = UltimateDarkTower_default;
 export {
+  ADVERSARIES,
+  ALLIES,
   AUDIO_COMMAND_POS,
   BATTERY_STATUS_FREQUENCY,
   BOARD_GROUPINGS,
@@ -3745,6 +4021,7 @@ export {
   DEFAULT_CONNECTION_MONITORING_FREQUENCY,
   DEFAULT_CONNECTION_MONITORING_TIMEOUT,
   DEFAULT_RETRY_SEND_COMMAND_MAX,
+  DIFFICULTIES,
   DIS_FIRMWARE_REVISION_UUID,
   DIS_HARDWARE_REVISION_UUID,
   DIS_IEEE_REGULATORY_UUID,
@@ -3757,6 +4034,7 @@ export {
   DIS_SYSTEM_ID_UUID,
   DOMOutput,
   DRUM_PACKETS,
+  GAME_SOURCES,
   GLYPHS,
   LAYER_TO_POSITION,
   LEDGE_BASE_LIGHT_POSITIONS,
@@ -3767,7 +4045,11 @@ export {
   RING_LIGHT_POSITIONS,
   SKULL_DROP_COUNT_POS,
   STATE_DATA_LENGTH,
+  SystemRandom,
   TC,
+  TIER1_FOES,
+  TIER2_FOES,
+  TIER3_FOES,
   TOWER_AUDIO_LIBRARY,
   TOWER_COMMANDS,
   TOWER_COMMAND_HEADER_SIZE,
@@ -3788,13 +4070,16 @@ export {
   VOLTAGE_LEVELS,
   VOLUME_DESCRIPTIONS,
   VOLUME_ICONS,
+  charToValue,
   compareSeedsRaw,
   createDefaultTowerState,
+  createSeed,
+  decodeRngSeed,
   decodeSeed,
   index_default as default,
   drumPositionCmds,
-  dumpSeedBits,
-  extractBits,
+  dumpSeedChars,
+  encodeSeed,
   isCalibrated,
   logger,
   milliVoltsToPercentage,
@@ -3802,6 +4087,6 @@ export {
   parseDifferentialReadings,
   rtdt_pack_state,
   rtdt_unpack_state,
-  seedGroupToNumber,
-  validateSeed
+  validateSeed,
+  valueToChar
 };

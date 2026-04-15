@@ -2652,29 +2652,8 @@
         stateWithVolume.audio = { sample: 0, loop: false, volume: actualVolume };
         await this.sendTowerStateStateful(stateWithVolume);
       }
-      this.deps.logger.info("Playing tower seal sound", "[UDT]");
-      await this.playSoundStateful(TOWER_AUDIO_LIBRARY.TowerSeal.value, false, actualVolume);
-      const sideCorners = {
-        north: ["northeast", "northwest"],
-        east: ["northeast", "southeast"],
-        south: ["southeast", "southwest"],
-        west: ["southwest", "northwest"]
-      };
-      const ledgeLights = sideCorners[seal.side].map((corner) => ({
-        position: corner,
-        style: "on"
-      }));
-      const doorwayLights = [{
-        level: seal.level,
-        position: seal.side,
-        style: "breatheFast"
-      }];
-      const lights2 = {
-        ledge: ledgeLights,
-        doorway: doorwayLights
-      };
-      this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - lighting ledges and doorways with breath effect`, "[UDT]");
-      await this.lights(lights2);
+      this.deps.logger.info(`Breaking seal ${seal.level}-${seal.side} - triggering firmware sealReveal animation`, "[UDT]");
+      await this.lightOverrides(TOWER_LIGHT_SEQUENCES.sealReveal, TOWER_AUDIO_LIBRARY.TowerSeal.value);
     }
     /**
      * Randomly rotates specified tower levels to random positions.
