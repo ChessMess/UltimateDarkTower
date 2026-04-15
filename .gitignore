@@ -134,6 +134,7 @@ out
 
 # Claude Code configuration
 CLAUDE.md
-/.github
+/.github/chatmodes
+/.github/prompts
 /.kiro
 /.obsidian
