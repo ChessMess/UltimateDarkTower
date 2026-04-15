@@ -16,6 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Tests for seal overlay injection, double-dispose safety, and multi-button side selection
 - `applySeals(brokenSeals: SealIdentifier[])` method on `TowerDisplay`, `TowerSideView`, and `ITowerDisplay` — hides seal SVG overlays for broken seals on the currently displayed side; re-evaluates when switching sides
 - `SealIdentifier` re-exported from the package public API
+- `clickToToggleSeals` option on `TowerDisplayOptions` (default `true`) — clicking a seal in the side view toggles its visibility independently of game state; user-toggled state and game-broken state are merged so either alone can hide a seal; toggle state is per-side and is cleared on `dispose()`
+- `clickToToggleSeals` public property on `TowerSideView` for consumers using the class directly
+- Console logging on seal click: logs the side, level, and new visibility state (or notes when toggle is disabled)
 
 ## [0.1.0] - 2026-03-22
 

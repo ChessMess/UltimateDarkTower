@@ -222,6 +222,16 @@ const CSS = `
   display: block;
 }
 
+.tsv-seal {
+  cursor: pointer;
+  pointer-events: all;
+  transition: opacity 0.3s ease;
+}
+
+.tsv-seal[data-broken="true"] {
+  opacity: 0;
+}
+
 .tsv-led {
   fill: #333 !important;
   stroke: #555 !important;

@@ -8,12 +8,16 @@ function normalizeRenderers(input?: RendererType | RendererType[]): RendererType
   return Array.isArray(input) ? input : [input];
 }
 
-function createRenderer(type: RendererType, container: HTMLElement): ITowerDisplay {
+function createRenderer(type: RendererType, container: HTMLElement, options: TowerDisplayOptions): ITowerDisplay {
   switch (type) {
     case 'readout':
       return new TowerStateReadout(container);
-    case 'side-view':
-      return new TowerSideView(container);
+    case 'side-view': {
+      const view = new TowerSideView(container);
+      if (options.onSealClick) view.onSealClick = options.onSealClick;
+      view.clickToToggleSeals = options.clickToToggleSeals !== false;
+      return view;
+    }
     default:
       throw new Error(`Unknown renderer type: ${type}`);
   }
@@ -46,7 +50,7 @@ export class TowerDisplay implements ITowerDisplay {
       const slot = document.createElement('div');
       slot.className = `td-slot td-slot-${type}`;
       this.root.appendChild(slot);
-      this.renderers.push(createRenderer(type, slot));
+      this.renderers.push(createRenderer(type, slot, options));
     }
   }
 

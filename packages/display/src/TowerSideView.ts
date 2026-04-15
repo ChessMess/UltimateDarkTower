@@ -3,8 +3,10 @@ import {
   RING_LIGHT_POSITIONS,
   LEDGE_BASE_LIGHT_POSITIONS,
   TOWER_LAYERS,
+  TOWER_LIGHT_SEQUENCES,
   type TowerState,
   type SealIdentifier,
+  type TowerLevels,
 } from 'ultimatedarktower';
 import type { ITowerDisplay, TowerSide } from './types';
 import { injectStyles } from './styles';
@@ -23,15 +25,15 @@ const SIDE_LABELS: Record<TowerSide, string> = {
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const LED_BINDINGS = {
-  'top-doorway-led':     { id: 'top-doorway-led',     layer: TOWER_LAYERS.TOP_RING,    light: RING_LIGHT_POSITIONS.SOUTH },
-  'middle-doorway-led':  { id: 'middle-doorway-led',  layer: TOWER_LAYERS.MIDDLE_RING, light: RING_LIGHT_POSITIONS.SOUTH },
-  'bottom-doorway-led':  { id: 'bottom-doorway-led',  layer: TOWER_LAYERS.BOTTOM_RING, light: RING_LIGHT_POSITIONS.SOUTH },
-  'ledge-left-led':      { id: 'ledge-left-led',      layer: TOWER_LAYERS.LEDGE,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
-  'ledge-right-led':     { id: 'ledge-right-led',     layer: TOWER_LAYERS.LEDGE,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
-  'base-left-front-led': { id: 'base-left-front-led', layer: TOWER_LAYERS.BASE1,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
-  'base-right-front-led':{ id: 'base-right-front-led',layer: TOWER_LAYERS.BASE1,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
-  'base-left-back-led':  { id: 'base-left-back-led',  layer: TOWER_LAYERS.BASE2,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
-  'base-right-back-led': { id: 'base-right-back-led', layer: TOWER_LAYERS.BASE2,       light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
+  'top-doorway-led': { id: 'top-doorway-led', layer: TOWER_LAYERS.TOP_RING, light: RING_LIGHT_POSITIONS.SOUTH },
+  'middle-doorway-led': { id: 'middle-doorway-led', layer: TOWER_LAYERS.MIDDLE_RING, light: RING_LIGHT_POSITIONS.SOUTH },
+  'bottom-doorway-led': { id: 'bottom-doorway-led', layer: TOWER_LAYERS.BOTTOM_RING, light: RING_LIGHT_POSITIONS.SOUTH },
+  'ledge-left-led': { id: 'ledge-left-led', layer: TOWER_LAYERS.LEDGE, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
+  'ledge-right-led': { id: 'ledge-right-led', layer: TOWER_LAYERS.LEDGE, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
+  'base-left-front-led': { id: 'base-left-front-led', layer: TOWER_LAYERS.BASE1, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
+  'base-right-front-led': { id: 'base-right-front-led', layer: TOWER_LAYERS.BASE1, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
+  'base-left-back-led': { id: 'base-left-back-led', layer: TOWER_LAYERS.BASE2, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
+  'base-right-back-led': { id: 'base-right-back-led', layer: TOWER_LAYERS.BASE2, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
 };
 
 type LedLabel = keyof typeof LED_BINDINGS;
@@ -39,16 +41,16 @@ type LightRole = 'center' | 'left' | 'right';
 
 const CENTER_LIGHT_BY_SIDE: Record<TowerSide, number> = {
   north: RING_LIGHT_POSITIONS.NORTH,
-  east:  RING_LIGHT_POSITIONS.EAST,
+  east: RING_LIGHT_POSITIONS.EAST,
   south: RING_LIGHT_POSITIONS.SOUTH,
-  west:  RING_LIGHT_POSITIONS.WEST,
+  west: RING_LIGHT_POSITIONS.WEST,
 };
 
 const EDGE_LIGHTS_BY_SIDE: Record<TowerSide, { left: number; right: number }> = {
   north: { left: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST, right: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
-  east:  { left: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST, right: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
+  east: { left: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST, right: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
   south: { left: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST, right: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST },
-  west:  { left: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST, right: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST },
+  west: { left: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST, right: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST },
 };
 
 const LED_LIGHT_ROLES: Record<LedLabel, LightRole> = {
@@ -84,6 +86,17 @@ export class TowerSideView implements ITowerDisplay {
   private sealNodes: Partial<Record<string, SVGElement>> = {};
   private latestBrokenSeals: SealIdentifier[] = [];
 
+  /** Optional callback fired when a user clicks a seal overlay. */
+  onSealClick?: (seal: SealIdentifier) => void;
+
+  /**
+   * When true (the default), clicking a seal toggles its visibility independently
+   * of game state. Set to false to disable the built-in toggle.
+   */
+  clickToToggleSeals = true;
+
+  private userToggledSeals = new Set<string>();
+
   constructor(container: HTMLElement) {
     this.container = container;
     injectStyles();
@@ -92,6 +105,10 @@ export class TowerSideView implements ITowerDisplay {
 
   applyState(state: TowerState): void {
     this.latestState = state;
+    if (state.led_sequence === TOWER_LIGHT_SEQUENCES.sealReveal) {
+      const side = this.detectSealSide(state);
+      if (side) this.selectSide(side);
+    }
     this.applyLedState(state);
     if (this.wrapper) this.wrapper.style.display = '';
   }
@@ -114,10 +131,23 @@ export class TowerSideView implements ITowerDisplay {
     this.latestState = null;
     this.sealNodes = {};
     this.latestBrokenSeals = [];
+    this.userToggledSeals.clear();
+  }
+
+  private detectSealSide(state: TowerState): TowerSide | null {
+    const SIDE_BY_INDEX: TowerSide[] = ['north', 'east', 'south', 'west'];
+    for (let layer = 0; layer <= 2; layer++) {
+      for (let pos = 0; pos < 4; pos++) {
+        if (state.layer[layer].light[pos].effect !== LIGHT_EFFECTS.off) {
+          return SIDE_BY_INDEX[pos];
+        }
+      }
+    }
+    return null;
   }
 
   private updateSealVisibility(): void {
-    const brokenLevels = new Set(
+    const externalBroken = new Set(
       this.latestBrokenSeals
         .filter(s => s.side === this.currentSide)
         .map(s => s.level)
@@ -125,7 +155,9 @@ export class TowerSideView implements ITowerDisplay {
     for (const level of ['top', 'middle', 'bottom'] as const) {
       const node = this.sealNodes[level];
       if (!node) continue;
-      node.style.display = brokenLevels.has(level) ? 'none' : '';
+      const toggleKey = `${this.currentSide}-${level}`;
+      const broken = externalBroken.has(level) || this.userToggledSeals.has(toggleKey);
+      node.setAttribute('data-broken', String(broken));
     }
   }
 
@@ -164,6 +196,7 @@ export class TowerSideView implements ITowerDisplay {
     }
 
     this.container.appendChild(this.wrapper);
+    this.updateSealVisibility();
   }
 
   private injectSeals(towerSvg: SVGSVGElement): void {
@@ -196,6 +229,24 @@ export class TowerSideView implements ITowerDisplay {
       } else {
         towerSvg.appendChild(nested);
       }
+
+      nested.addEventListener('click', () => {
+        const seal: SealIdentifier = { side: this.currentSide, level: door.name as TowerLevels };
+        if (this.clickToToggleSeals) {
+          const key = `${this.currentSide}-${door.name}`;
+          const nowBroken = !this.userToggledSeals.has(key);
+          if (nowBroken) {
+            this.userToggledSeals.add(key);
+          } else {
+            this.userToggledSeals.delete(key);
+          }
+          console.log(`[TowerSideView] Seal clicked: ${seal.side} ${seal.level} → ${nowBroken ? 'hidden' : 'visible'}`);
+          this.updateSealVisibility();
+        } else {
+          console.log(`[TowerSideView] Seal clicked: ${seal.side} ${seal.level} (toggle disabled)`);
+        }
+        this.onSealClick?.(seal);
+      });
 
       this.sealNodes[door.name] = nested as unknown as SVGElement;
     }

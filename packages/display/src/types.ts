@@ -11,6 +11,14 @@ export interface TowerDisplayOptions {
   container: HTMLElement;
   /** Which renderer(s) to show. Defaults to ['readout', 'side-view']. */
   renderers?: RendererType | RendererType[];
+  /** Called when the user clicks a seal overlay in the side view. */
+  onSealClick?: (seal: SealIdentifier) => void;
+  /**
+   * When true (the default), clicking a seal toggles its visibility independently
+   * of game state. Set to false to disable the built-in toggle and rely solely on
+   * {@link ITowerDisplay.applySeals} for seal visibility.
+   */
+  clickToToggleSeals?: boolean;
 }
 
 /** Public interface for all display implementations. */

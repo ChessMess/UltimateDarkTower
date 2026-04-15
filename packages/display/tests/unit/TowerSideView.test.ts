@@ -199,4 +199,95 @@ describe('TowerSideView', () => {
     expect(baseLeftBack?.getAttribute('data-effect')).toBe('off');
     expect(baseRightBack?.getAttribute('data-effect')).toBe('off');
   });
+
+  describe('clickToToggleSeals', () => {
+    it('clicking a seal hides it (toggles to broken)', () => {
+      const topSeal = container.querySelector('.tsv-seal-top') as Element;
+      expect(topSeal.getAttribute('data-broken')).toBe('false');
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(topSeal.getAttribute('data-broken')).toBe('true');
+    });
+
+    it('clicking a hidden seal shows it again (toggles back)', () => {
+      const topSeal = container.querySelector('.tsv-seal-top') as Element;
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(topSeal.getAttribute('data-broken')).toBe('true');
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(topSeal.getAttribute('data-broken')).toBe('false');
+    });
+
+    it('each seal toggles independently', () => {
+      const topSeal = container.querySelector('.tsv-seal-top') as Element;
+      const midSeal = container.querySelector('.tsv-seal-middle') as Element;
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(topSeal.getAttribute('data-broken')).toBe('true');
+      expect(midSeal.getAttribute('data-broken')).toBe('false');
+    });
+
+    it('onSealClick still fires when clickToToggleSeals is enabled', () => {
+      const handler = jest.fn();
+      view.onSealClick = handler;
+      const topSeal = container.querySelector('.tsv-seal-top') as Element;
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith({ side: 'north', level: 'top' });
+    });
+
+    it('when clickToToggleSeals is false, clicking does not change visibility', () => {
+      view.clickToToggleSeals = false;
+      const topSeal = container.querySelector('.tsv-seal-top') as Element;
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(topSeal.getAttribute('data-broken')).toBe('false');
+    });
+
+    it('when clickToToggleSeals is false, onSealClick still fires', () => {
+      view.clickToToggleSeals = false;
+      const handler = jest.fn();
+      view.onSealClick = handler;
+      const topSeal = container.querySelector('.tsv-seal-top') as Element;
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    it('user-toggled seal stays hidden even after applySeals([]) does not list it', () => {
+      const topSeal = container.querySelector('.tsv-seal-top') as Element;
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(topSeal.getAttribute('data-broken')).toBe('true');
+      view.applySeals([]);
+      expect(topSeal.getAttribute('data-broken')).toBe('true');
+    });
+
+    it('seal hidden by both user toggle and applySeals remains hidden after un-toggling', () => {
+      view.applySeals([{ side: 'north', level: 'top' }]);
+      const topSeal = container.querySelector('.tsv-seal-top') as Element;
+      // Also user-toggle it hidden (redundant but valid)
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(topSeal.getAttribute('data-broken')).toBe('true');
+      // User clicks again — removes user toggle, but game still has it broken
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(topSeal.getAttribute('data-broken')).toBe('true');
+    });
+
+    it('user toggle is per-side — toggling north seal does not affect same level on other sides', () => {
+      const topSeal = container.querySelector('.tsv-seal-top') as Element;
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(topSeal.getAttribute('data-broken')).toBe('true');
+
+      // Switch to east side
+      const buttons = container.querySelectorAll('.tsv-side-btn');
+      (buttons[1] as HTMLButtonElement).click();
+      const eastTopSeal = container.querySelector('.tsv-seal-top') as Element;
+      expect(eastTopSeal.getAttribute('data-broken')).toBe('false');
+    });
+
+    it('dispose() clears user toggle state', () => {
+      const topSeal = container.querySelector('.tsv-seal-top') as Element;
+      topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      view.dispose();
+      // Rebuild in same container
+      view = new TowerSideView(container);
+      const freshTopSeal = container.querySelector('.tsv-seal-top') as Element;
+      expect(freshTopSeal.getAttribute('data-broken')).toBe('false');
+    });
+  });
 });
