@@ -5,8 +5,8 @@ This document covers the public API exported by `ultimatedarktowerdisplay`.
 ## Exports
 
 ```ts
-import { TowerDisplay, TowerStateReadout } from 'ultimatedarktowerdisplay';
-import type { TowerDisplayOptions, ITowerDisplay } from 'ultimatedarktowerdisplay';
+import { TowerDisplay, TowerStateReadout, TowerSideView } from 'ultimatedarktowerdisplay';
+import type { TowerDisplayOptions, ITowerDisplay, RendererType, TowerSide, SealIdentifier } from 'ultimatedarktowerdisplay';
 ```
 
 ---
@@ -15,7 +15,7 @@ import type { TowerDisplayOptions, ITowerDisplay } from 'ultimatedarktowerdispla
 
 ### `TowerDisplay`
 
-High-level wrapper that renders decoded tower state into a DOM container. This is the recommended entry point for most consumers.
+High-level wrapper that composes one or both renderers into a DOM container. Recommended entry point for most consumers.
 
 ```ts
 const display = new TowerDisplay({
@@ -29,35 +29,77 @@ const display = new TowerDisplay({
 new TowerDisplay(options: TowerDisplayOptions)
 ```
 
-| Parameter           | Type          | Description                |
-| ------------------- | ------------- | -------------------------- |
-| `options.container` | `HTMLElement` | DOM element to render into |
-
-On construction, a CSS stylesheet is injected (once) and the container shows an idle "Waiting for tower state..." message.
+| Parameter                    | Type                             | Default                    | Description                                                                                             |
+| ---------------------------- | -------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `options.container`          | `HTMLElement`                    | —                          | DOM element to render into                                                                               |
+| `options.renderers`          | `RendererType \| RendererType[]` | `['readout', 'side-view']` | Which renderer(s) to show                                                                               |
+| `options.onSealClick`        | `(seal: SealIdentifier) => void` | —                          | Callback fired whenever the user clicks a seal in the side view                                          |
+| `options.clickToToggleSeals` | `boolean`                        | `true`                     | When `true`, clicking a seal toggles its visibility independently of game state. Set to `false` to disable. |
 
 #### Methods
 
 ##### `applyState(state: TowerState): void`
 
-Update the display with a new decoded tower state. Renders LED grid, drum positions, audio info, skull drops, and LED sequence overrides.
+Update all renderers with a new decoded tower state. Renders LED grid, drum positions, audio info, skull drops, and LED sequence overrides.
 
-The `TowerState` type comes from the [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) package (peer dependency). Obtain it by calling `rtdt_unpack_state()` on a raw 20-byte tower command packet.
+Obtain `TowerState` from the [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) peer dependency.
 
-**Skull drop detection:** The display tracks `beam.count` across consecutive calls. When the count increases between two calls, a skull drop animation is shown.
+**Skull drop detection:** The readout tracks `beam.count` across consecutive calls. When the count increases between two calls, a skull drop animation is shown.
+
+##### `applySeals(brokenSeals: SealIdentifier[]): void`
+
+Update seal visibility in the side view. Pass the full current list of broken seals — the renderer shows seals as hidden (opacity 0) when they appear in this list for the currently displayed side. Call this whenever the set of broken seals changes.
+
+Note: if `clickToToggleSeals` is enabled, user-toggled visibility is independent and merged with this list. A seal is hidden if it appears in either.
 
 ##### `showIdle(): void`
 
-Reset the display to its idle state, showing "Waiting for tower state...". Useful when the tower disconnects or the session ends.
+Reset all renderers to their idle state.
 
 ##### `dispose(): void`
 
-Remove all rendered DOM content and reset internal state (including the beam count tracker). Call this when unmounting the display.
+Remove all rendered DOM content and reset internal state. Also clears any user seal toggle state.
+
+---
+
+### `TowerSideView`
+
+SVG side-view renderer showing one rotatable face of the tower with seal overlays and LED markers. Can be used standalone or composed via `TowerDisplay`.
+
+```ts
+const view = new TowerSideView(document.getElementById('tower')!);
+view.onSealClick = (seal) => console.log(seal.side, seal.level);
+```
+
+#### Constructor
+
+```ts
+new TowerSideView(container: HTMLElement)
+```
+
+#### Public Properties
+
+| Property             | Type                             | Default | Description                                                              |
+| -------------------- | -------------------------------- | ------- | ------------------------------------------------------------------------ |
+| `onSealClick`        | `(seal: SealIdentifier) => void` | —       | Callback fired on every seal click regardless of `clickToToggleSeals`    |
+| `clickToToggleSeals` | `boolean`                        | `true`  | Enables built-in click-to-toggle visibility on seal overlays             |
+
+When `clickToToggleSeals` is `true`:
+- Clicking an intact seal hides it.
+- Clicking a hidden seal shows it again.
+- Toggle state is tracked per `side + level` key and is independent of `applySeals()`.
+- A console message is logged on each click with the seal identity and new visibility state.
+- Toggle state is cleared on `dispose()`.
+
+#### Methods
+
+Same as `TowerDisplay`: `applyState(state)`, `applySeals(brokenSeals)`, `showIdle()`, `dispose()`.
 
 ---
 
 ### `TowerStateReadout`
 
-Lower-level DOM renderer. Same API as `TowerDisplay` but takes an `HTMLElement` directly instead of an options object. Used internally by `TowerDisplay`.
+Text-based readout renderer. Same interface as `TowerDisplay` but takes an `HTMLElement` directly.
 
 ```ts
 const readout = new TowerStateReadout(document.getElementById('tower')!);
@@ -72,7 +114,7 @@ new TowerStateReadout(container: HTMLElement)
 
 #### Methods
 
-Same as `TowerDisplay`: `applyState(state)`, `showIdle()`, `dispose()`.
+Same as `TowerDisplay`: `applyState(state)`, `applySeals(brokenSeals)`, `showIdle()`, `dispose()`.
 
 ---
 
@@ -84,20 +126,50 @@ Same as `TowerDisplay`: `applyState(state)`, `showIdle()`, `dispose()`.
 interface TowerDisplayOptions {
   /** DOM element to render into. */
   container: HTMLElement;
+  /** Which renderer(s) to show. Defaults to ['readout', 'side-view']. */
+  renderers?: RendererType | RendererType[];
+  /** Called when the user clicks a seal overlay in the side view. */
+  onSealClick?: (seal: SealIdentifier) => void;
+  /**
+   * When true (the default), clicking a seal toggles its visibility
+   * independently of game state. Set to false to disable.
+   */
+  clickToToggleSeals?: boolean;
 }
 ```
 
 ### `ITowerDisplay`
 
-Common interface implemented by both `TowerDisplay` and `TowerStateReadout`.
+Common interface implemented by `TowerDisplay`, `TowerSideView`, and `TowerStateReadout`.
 
 ```ts
 interface ITowerDisplay {
   applyState(state: TowerState): void;
+  applySeals(brokenSeals: SealIdentifier[]): void;
   showIdle(): void;
   dispose(): void;
 }
 ```
+
+### `RendererType`
+
+```ts
+type RendererType = 'readout' | 'side-view';
+```
+
+### `TowerSide`
+
+```ts
+type TowerSide = 'north' | 'east' | 'south' | 'west';
+```
+
+### `SealIdentifier`
+
+```ts
+type SealIdentifier = { side: TowerSide; level: TowerLevels };
+```
+
+`TowerLevels` is `'top' | 'middle' | 'bottom'` — imported from `ultimatedarktower`.
 
 ---
 
@@ -138,7 +210,9 @@ Three drums (Top, Middle, Bottom) showing:
 
 ## CSS Classes
 
-All rendered elements use the `tdr-` prefix. Key classes:
+### Readout (`tdr-` prefix)
+
+All readout elements use the `tdr-` prefix:
 
 | Class              | Element                       |
 | ------------------ | ----------------------------- |
@@ -162,6 +236,24 @@ All rendered elements use the `tdr-` prefix. Key classes:
 | `.tdr-skull-drop`  | Skull drop highlight          |
 | `.tdr-beam-count`  | Beam/skull count              |
 | `.tdr-led-seq`     | LED sequence override label   |
+
+### Side View (`tsv-` prefix)
+
+| Class                                | Element                                        |
+| ------------------------------------ | ---------------------------------------------- |
+| `.tsv-wrapper`                       | Outer wrapper div                              |
+| `.tsv-side-selector`                 | N/E/S/W button bar                             |
+| `.tsv-side-btn`                      | Individual side selector button                |
+| `.tsv-side-btn[data-active="true"]`  | Currently selected side button                 |
+| `.tsv-svg`                           | SVG container div                              |
+| `.tsv-seal`                          | Seal overlay SVG element (all seals)           |
+| `.tsv-seal-top`                      | Top doorway seal                               |
+| `.tsv-seal-middle`                   | Middle doorway seal                            |
+| `.tsv-seal-bottom`                   | Bottom doorway seal                            |
+| `.tsv-seal[data-broken="true"]`      | Hidden seal (opacity 0)                        |
+| `.tsv-seal[data-broken="false"]`     | Visible seal                                   |
+| `.tsv-led`                           | LED marker element                             |
+| `.tsv-led[data-effect="<effect>"]`   | LED with active effect (same values as `tdr-`) |
 
 ---
 

@@ -153,36 +153,58 @@ The example page in [example/index.html](./example/index.html) follows this patt
 
 ### `TowerDisplay`
 
-Primary entry point. Wraps `TowerStateReadout` with an options object.
+Primary entry point. Composes one or both renderers into a container.
 
 ```ts
 new TowerDisplay(options: TowerDisplayOptions)
 ```
 
-| Option      | Type          | Description                                        |
-| ----------- | ------------- | -------------------------------------------------- |
-| `container` | `HTMLElement` | DOM element that will receive the rendered readout |
+| Option                | Type                              | Default                      | Description                                                                                                     |
+| --------------------- | --------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `container`           | `HTMLElement`                     | —                            | DOM element that will receive the rendered output                                                                |
+| `renderers`           | `RendererType \| RendererType[]`  | `['readout', 'side-view']`   | Which renderer(s) to show: `'readout'`, `'side-view'`, or both                                                  |
+| `onSealClick`         | `(seal: SealIdentifier) => void`  | —                            | Called whenever the user clicks a seal overlay in the side view                                                  |
+| `clickToToggleSeals`  | `boolean`                         | `true`                       | When true, clicking a seal toggles its visibility independent of game state. Set to `false` to disable.         |
 
 Methods:
 
-- `applyState(state: TowerState): void` updates the readout with a decoded tower state
-- `showIdle(): void` replaces the readout with the idle placeholder
-- `dispose(): void` clears the container and resets internal state
+- `applyState(state: TowerState): void` — update all renderers with a new decoded tower state
+- `applySeals(brokenSeals: SealIdentifier[]): void` — hide seal overlays for broken seals; pass the current list of broken seals each time it changes
+- `showIdle(): void` — reset all renderers to their idle placeholder
+- `dispose(): void` — remove all rendered DOM and reset internal state
+
+### `TowerSideView`
+
+SVG side-view renderer. Shows a rotatable view of one tower face with seal overlays and LED markers. Can be used standalone or composed via `TowerDisplay`.
+
+```ts
+const view = new TowerSideView(container);
+view.onSealClick = (seal) => console.log(seal);
+view.clickToToggleSeals = true; // default
+```
+
+| Property              | Type                              | Default | Description                                                                 |
+| --------------------- | --------------------------------- | ------- | --------------------------------------------------------------------------- |
+| `onSealClick`         | `(seal: SealIdentifier) => void`  | —       | Callback fired on every seal click                                           |
+| `clickToToggleSeals`  | `boolean`                         | `true`  | Enables built-in click-to-toggle visibility on seal overlays                 |
 
 ### `TowerStateReadout`
 
-Lower-level renderer for callers that want to pass the container directly.
+Text-based readout renderer. Lower-level; takes a container directly.
 
 ```ts
 new TowerStateReadout(container: HTMLElement)
 ```
 
-It exposes the same methods as `TowerDisplay`.
+Exposes the same methods as `TowerDisplay` (`applyState`, `applySeals`, `showIdle`, `dispose`).
 
 ### Exported Types
 
-- `ITowerDisplay` common interface implemented by both classes
-- `TowerDisplayOptions` configuration object for `TowerDisplay`
+- `ITowerDisplay` — common interface implemented by all renderers
+- `TowerDisplayOptions` — configuration object for `TowerDisplay`
+- `RendererType` — `'readout' | 'side-view'`
+- `TowerSide` — `'north' | 'east' | 'south' | 'west'`
+- `SealIdentifier` — `{ side: TowerSide, level: TowerLevels }`
 
 `ultimatedarktowerdisplay` does not re-export tower protocol constants or helpers from `ultimatedarktower`.
 
