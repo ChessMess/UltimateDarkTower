@@ -119,7 +119,7 @@ import UltimateDarkTower, { IBluetoothAdapter } from 'ultimatedarktower';
 
 class MyCustomAdapter implements IBluetoothAdapter {
     // Implement all IBluetoothAdapter methods
-    // See API_REFERENCE.md for the full interface
+    // See docs/API_REFERENCE.md for the full interface
 }
 
 const tower = new UltimateDarkTower({ adapter: new MyCustomAdapter() });
@@ -127,11 +127,11 @@ const tower = new UltimateDarkTower({ adapter: new MyCustomAdapter() });
 
 ## Documentation
 
-### 📖 [Complete API Reference](API_REFERENCE.md)
+### 📖 [Complete API Reference](docs/API_REFERENCE.md)
 
 Comprehensive documentation with TypeScript examples, best practices, and troubleshooting guides.
 
-### 📄 [Seed Format Specification](SEED_FORMAT.md)
+### 📄 [Seed Format Specification](docs/SEED_FORMAT.md)
 
 Complete documentation of the Return to Dark Tower game seed encoding — base-34 alphabet, setup section bitwise layout, RNG seed polynomial, and what each seed field controls.
 
@@ -191,7 +191,7 @@ npm run test:integration:lights
 - All lights breathe effect for 3 seconds
 - All lights off
 
-See [API_REFERENCE.md](API_REFERENCE.md) for API details on `allLightsOn` and `allLightsOff`.
+See [API_REFERENCE.md](docs/API_REFERENCE.md) for API details on `allLightsOn` and `allLightsOff`.
 
 **Prerequisites:**
 
@@ -283,7 +283,7 @@ examples/
 - **Sounds** - Sounds show as command complete which is true even though the sound itself has not completed. This is just the way the tower works. I'll have to add time lengths to each at some point, just don't use the command complete response as a way of thinking the associated sound has finished playing and you can play another sound.
 - **Light Sequences** - Same as sound for lights that play for a duration.
 
-> See [API_REFERENCE.md](API_REFERENCE.md) for performance best practices and workarounds.
+> See [API_REFERENCE.md](docs/API_REFERENCE.md) for performance best practices and workarounds.
 
 ## Community
 
