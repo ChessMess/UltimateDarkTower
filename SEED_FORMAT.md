@@ -187,8 +187,6 @@ dungeon layouts, foe spawn locations, and companion events. Prediction is one-wa
   C#-generated test vectors, including edge cases
 - **Full base-34 seed decoder** (`udtSeedParser.ts`) including the `SeedBank`
   (`InitializationSeed` = RNG integer, `QuestSeed` = `InitializationSeed - 1`)
-- **All setup-section fields confirmed from developer-shared C# source** — foes,
-  adversary, ally, difficulty, expansions, source, player count
 
 ### What is missing (the blocker)
 
@@ -273,6 +271,6 @@ Dragons).
 
 1. **Game state prediction** — see the [Game State Prediction (Goal)](#game-state-prediction-goal)
    section above. Currently blocked on obtaining the game's initialization call
-   sequence from the developer.
+   sequence.
 2. **Expansion testing** — verify Alliances/Covenant behavior with the confirmed encoding
 3. **Main Goal** — determine where/how Main Goal is selected (not in seed setup section)
