@@ -1,232 +1,124 @@
-# UltimateDarkTowerDisplay
+# ultimatedarktowerdisplay
 
-DOM-based visual readout for decoded [Ultimate Dark Tower](https://github.com/ChessMess/ultimatedarktower) tower state.
+Composable text, 2D, and 3D renderers for [Return to Dark Tower](https://restorationgames.com/dark-tower/) tower state. Pair with [`ultimatedarktower`](https://github.com/ChessMess/ultimatedarktower) and ship a tower-aware companion app.
 
-**[Live Demo](https://chessmess.github.io/UltimateDarkTowerDisplay/)**
+[![npm](https://img.shields.io/npm/v/ultimatedarktowerdisplay.svg)](https://www.npmjs.com/package/ultimatedarktowerdisplay)
+[![license](https://img.shields.io/npm/l/ultimatedarktowerdisplay.svg)](LICENSE)
+[![live demo](https://img.shields.io/badge/live-demo-3b4a5a)](https://chessmess.github.io/UltimateDarkTowerDisplay/)
 
-This package renders a live tower dashboard into a DOM element. It is intended for tools that already know how to obtain or decode a `TowerState` and want a compact on-screen display of:
+```mermaid
+flowchart LR
+    Tower[Physical tower] -- BLE --> UDT[ultimatedarktower]
+    UDT -- TowerState --> Display[TowerDisplay]
+    Display --> Readout[readout<br/>DOM text]
+    Display --> Side[side-view<br/>SVG]
+    Display --> Three[3d-view<br/>Three.js]
+    Readout --> DOM[(your DOM)]
+    Side --> DOM
+    Three --> DOM
+```
 
-- LED layers and per-light effects
-- Drum positions and calibration status
-- Visible glyph on each calibrated drum
-- Active audio sample, loop flag, and volume
-- Beam/skull count and skull-drop transitions
-- Active LED sequence override
+The physical tower talks BLE to `ultimatedarktower`, which decodes packets into a `TowerState`. This package consumes that state and renders it as any combination of a text readout, a 2D SVG side view, and a 3D Three.js model.
 
-## What This Package Does
+## What this is, what it isn't
 
-`ultimatedarktowerdisplay` is a renderer. It does not talk to the physical tower, decode packets, or create `TowerState` objects on its own.
+This package is the visual layer. It does not open a BLE connection, decode packets, or construct `TowerState` objects. Pair it with [`ultimatedarktower`](https://github.com/ChessMess/ultimatedarktower) (UDT) for the BLE side, or feed it hand-built states for testing and demos.
 
-Use it alongside [`ultimatedarktower`](https://github.com/ChessMess/ultimatedarktower), which provides the `TowerState` type and helpers such as `createDefaultTowerState()`.
+For the full mental model see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-This package intentionally keeps a narrow API surface. It exports display components and display-specific types only. Import protocol constants such as `LIGHT_EFFECTS`, `TOWER_AUDIO_LIBRARY`, and `TOWER_LIGHT_SEQUENCES` from `ultimatedarktower`.
-
-## Installation
+## Install
 
 ```bash
 npm install ultimatedarktowerdisplay ultimatedarktower
 ```
 
-`ultimatedarktower` is a peer dependency and must be installed by the consuming app.
+`ultimatedarktower` is a peer dependency. For the 3D renderer also install `three` and `gsap` (peer dependencies). For optional skull physics see [docs/PHYSICS.md](docs/PHYSICS.md).
 
-## Quick Start
+## Quick start
+
+The recommended entry point is `TowerRenderView` — a single class that wraps a `TowerDisplay` with sensible 3D defaults and optional header chrome (title, subtitle, status badges, action row).
 
 ```ts
-import { TowerDisplay } from 'ultimatedarktowerdisplay';
+import { TowerRenderView } from 'ultimatedarktowerdisplay';
+import towerModelUrl from 'ultimatedarktowerdisplay/dist/3d/assets/tower.glb?url';
 import { createDefaultTowerState } from 'ultimatedarktower';
 
 const container = document.getElementById('tower');
+if (!container) throw new Error('Missing #tower container');
 
-if (!container) {
-  throw new Error('Missing #tower container');
-}
+const view = new TowerRenderView({ container, modelUrl: towerModelUrl });
+view.applyState(createDefaultTowerState());
 
-const display = new TowerDisplay({ container });
-const state = createDefaultTowerState();
+// Later, when a new state arrives:
+// view.applyState(nextState);
 
-display.applyState(state);
-
-// Later, when the tower sends an updated decoded state:
-// display.applyState(nextState);
-
-// Reset to the idle placeholder.
-display.showIdle();
-
-// Remove rendered DOM when tearing down the view.
-display.dispose();
+// Tear down:
+// view.dispose();
 ```
-
-Minimal HTML:
 
 ```html
 <div id="tower"></div>
 ```
 
-## Typical Integration
+`TowerRenderView` accepts every `TowerDisplay` option (renderers, lighting, camera, audio, callbacks). Advanced 3D config that isn't forwarded on the facade is reachable via `view.display.*` and `view.view3D`. The default renderer is `'3d-view'`; pass `renderers: ['readout', 'side-view']` (or any subset) to opt out of the 3D pipeline.
 
-In most applications the flow looks like this:
+### Composable alternative
 
-1. Use `ultimatedarktower` to create or decode a `TowerState`.
-2. Create a `TowerDisplay` for a container element.
-3. Call `applyState(state)` whenever a new decoded state arrives.
-4. Call `dispose()` when removing the view.
-
-Example with a manually adjusted state:
+If you'd rather wire renderers yourself — or skip the `.trv-root` wrapper entirely — instantiate `TowerDisplay` directly:
 
 ```ts
 import { TowerDisplay } from 'ultimatedarktowerdisplay';
-import { createDefaultTowerState, LIGHT_EFFECTS, TOWER_AUDIO_LIBRARY } from 'ultimatedarktower';
-
-const container = document.getElementById('tower');
-
-if (!container) {
-  throw new Error('Missing #tower container');
-}
-
 const display = new TowerDisplay({ container });
-const state = createDefaultTowerState();
-
-state.layer[0].light[0].effect = LIGHT_EFFECTS.on;
-state.layer[0].light[1].effect = LIGHT_EFFECTS.breathe;
-state.drum[0].position = 1;
-state.drum[0].calibrated = true;
-state.audio.sample = TOWER_AUDIO_LIBRARY.Ashstrider.value;
-state.audio.loop = true;
-state.beam.count = 2;
-
-display.applyState(state);
+display.applyState(createDefaultTowerState());
 ```
 
-## Expected `TowerState` Shape
+That renders the default composition: a text readout plus a 2D side view.
 
-You usually do not construct `TowerState` by hand. Start from `createDefaultTowerState()` and mutate fields you care about.
+## Renderers
 
-Conceptually, the renderer expects a state shaped like this:
+| Capability | `readout` | `side-view` | `3d-view` |
+|---|---|---|---|
+| Rendering tech | DOM text grid | Inline SVG | Three.js + WebGL2 |
+| Shows LED layers | All 6, all 4 sides | One side at a time | On the 3D model |
+| Shows drum positions | Numeric + glyph | Rotated SVG | Rotating meshes |
+| Shows audio info | Sample name + volume | No | Plays the sample (bundled default pack, swappable) |
+| Shows beam + skull count | Yes | No | No |
+| Side-aware | No | Yes | Yes |
+| Clickable seals | Optional | Yes | No (clicks land in 2D) |
+| Animations | None | LED tweens | Full (LEDs, drums, bloom) |
+| Bundle cost (rough) | <5 KB gzip | <10 KB gzip | ~150 KB gzip + 22 MB GLB + 20 MB audio |
 
-```ts
-type TowerState = {
-  drum: Array<{
-    calibrated: boolean;
-    position: number;
-  }>;
-  layer: Array<{
-    light: Array<{
-      effect: number;
-      loop: boolean;
-    }>;
-  }>;
-  audio: {
-    sample: number;
-    loop: boolean;
-    volume: number;
-  };
-  beam: {
-    count: number;
-    fault: boolean;
-  };
-  led_sequence: number;
-};
-```
+Both `TowerRenderView` and `TowerDisplay` accept any subset of `['readout', 'side-view', '3d-view']` via the `renderers` option. `TowerRenderView` defaults to `'3d-view'`; `TowerDisplay` defaults to `['readout', 'side-view']`. Full comparison and per-renderer details in [docs/RENDERERS.md](docs/RENDERERS.md).
 
-For a valid starting point, prefer:
+## Where to go next
 
-```ts
-import { createDefaultTowerState } from 'ultimatedarktower';
+- **First integration** → [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) — prerequisites, `TowerState` shape, framework patterns, UDT wiring.
+- **Mental model** → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — data flow, composition, lifecycle, subsystem map.
+- **Pick a renderer** → [docs/RENDERERS.md](docs/RENDERERS.md) — feature matrix and per-renderer deep dives.
+- **Explore the demo** → [docs/EXAMPLE.md](docs/EXAMPLE.md) — guided tour of every panel in `example/`.
+- **Full API reference** → [docs/API.md](docs/API.md) — every public class, method, option, and type.
+- **Tune the 3D scene** → [docs/LIGHTING.md](docs/LIGHTING.md) — three-point rig, bloom, skybox, ground disc, tuning recipes.
+- **Add skull physics** → [docs/PHYSICS.md](docs/PHYSICS.md) — opt-in subpath with Rapier-driven dynamics.
+- **Author LED sequences** → [docs/SEQUENCE_AUTHORING.md](docs/SEQUENCE_AUTHORING.md) — JSON schema, every track kind.
+- **Run in Electron** → [docs/ELECTRON.md](docs/ELECTRON.md) — BrowserWindow setup, CSP, BLE picker.
+- **Stuck?** → [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — predictable failure modes with fixes.
 
-const state = createDefaultTowerState();
-```
-
-The example page in [example/index.html](./example/index.html) follows this pattern.
-
-## Rendering Behavior
-
-- The constructor immediately renders an idle message: `Waiting for tower state…`
-- Styles are injected into `document.head` automatically on first use
-- A skull-drop highlight appears only when `beam.count` increases between successive `applyState()` calls
-- `dispose()` clears the container and resets internal state, including skull-drop tracking
-
-## API
-
-### `TowerDisplay`
-
-Primary entry point. Composes one or both renderers into a container.
-
-```ts
-new TowerDisplay(options: TowerDisplayOptions)
-```
-
-| Option               | Type                             | Default                    | Description                                                                                             |
-| -------------------- | -------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `container`          | `HTMLElement`                    | —                          | DOM element that will receive the rendered output                                                       |
-| `renderers`          | `RendererType \| RendererType[]` | `['readout', 'side-view']` | Which renderer(s) to show: `'readout'`, `'side-view'`, or both                                          |
-| `onSealClick`        | `(seal: SealIdentifier) => void` | —                          | Called whenever the user clicks a seal overlay in the side view                                         |
-| `clickToToggleSeals` | `boolean`                        | `true`                     | When true, clicking a seal toggles its visibility independent of game state. Set to `false` to disable. |
-
-Methods:
-
-- `applyState(state: TowerState): void` — update all renderers with a new decoded tower state
-- `applySeals(brokenSeals: SealIdentifier[]): void` — hide seal overlays for broken seals; pass the current list of broken seals each time it changes
-- `showIdle(): void` — reset all renderers to their idle placeholder
-- `dispose(): void` — remove all rendered DOM and reset internal state
-
-### `TowerSideView`
-
-SVG side-view renderer. Shows a rotatable view of one tower face with seal overlays and LED markers. Can be used standalone or composed via `TowerDisplay`.
-
-```ts
-const view = new TowerSideView(container);
-view.onSealClick = (seal) => console.log(seal);
-view.clickToToggleSeals = true; // default
-```
-
-| Property             | Type                             | Default | Description                                                  |
-| -------------------- | -------------------------------- | ------- | ------------------------------------------------------------ |
-| `onSealClick`        | `(seal: SealIdentifier) => void` | —       | Callback fired on every seal click                           |
-| `clickToToggleSeals` | `boolean`                        | `true`  | Enables built-in click-to-toggle visibility on seal overlays |
-
-### `TowerStateReadout`
-
-Text-based readout renderer. Lower-level; takes a container directly.
-
-```ts
-new TowerStateReadout(container: HTMLElement)
-```
-
-Exposes the same methods as `TowerDisplay` (`applyState`, `applySeals`, `showIdle`, `dispose`).
-
-### Exported Types
-
-- `ITowerDisplay` — common interface implemented by all renderers
-- `TowerDisplayOptions` — configuration object for `TowerDisplay`
-- `RendererType` — `'readout' | 'side-view'`
-- `TowerSide` — `'north' | 'east' | 'south' | 'west'`
-- `SealIdentifier` — `{ side: TowerSide, level: TowerLevels }`
-
-`ultimatedarktowerdisplay` does not re-export tower protocol constants or helpers from `ultimatedarktower`.
+For the full documentation index see [docs/README.md](docs/README.md).
 
 ## Development
 
-Install dependencies:
-
 ```bash
 npm install
-```
-
-Available commands:
-
-```bash
+npm run dev:example   # Vite dev server + open example/index.html
 npm run typecheck
 npm run lint
 npm test
-npm run test:coverage
 npm run build
-npm run dev
-npm run dev:example
-npm run ci
+npm run ci            # full pipeline (typecheck + lint + test + build)
 ```
 
-`npm run dev:example` starts the Vite example page and opens [example/index.html](./example/index.html).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and release process.
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).

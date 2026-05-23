@@ -1,0 +1,18 @@
+{
+  "name": "rotationDrumMiddle",
+  "description": "Same as rotationAllDrums but only layer 1 (middle ring) chases. Mirrors firmware case 0x11.",
+  "totalTicks": 1,
+  "loop": true,
+  "endBehavior": "hold",
+  "tracks": [
+    { "kind": "rotationChase",
+      "atTick": 0, "endTick": 1,
+      "chaseLayers": [1],
+      "steadyLayer": 3, "steadyLevelPwm": 180,
+      "phaseOffsetTicks": 16,
+      "lightStepTicks": 12,
+      "decayMultiplierNum": 700, "decayMultiplierDen": 768,
+      "periodTicks": 48
+    }
+  ]
+}

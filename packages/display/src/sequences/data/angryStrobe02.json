@@ -1,0 +1,18 @@
+{
+  "name": "angryStrobe02",
+  "description": "Same as angryStrobe01 with phase1Ticks=95 → phase 1 ticks 0-95 inclusive (96 calls). Mirrors firmware case 0x06.",
+  "totalTicks": 696,
+  "loop": false,
+  "endBehavior": "hold",
+  "tracks": [
+    { "kind": "flickerStep",
+      "atTick": 0, "endTick": 96,
+      "layers": [0, 1, 2, 3, 4, 5], "lights": "all",
+      "alpha": 0.4
+    },
+    { "kind": "scaleAll",
+      "atTick": 96, "endTick": 696,
+      "multiplierNum": 766, "multiplierDen": 769
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "wholeTowerBreathing",
+  "description": "Symmetric triangle breathe across all 24 LEDs in lockstep. Period 256 ticks, peak ~42/255 (PWM 255 / divisor 6 / 255). Mirrors firmware Sequence_WholeTowerBreathing (case 0x14).",
+  "totalTicks": 1,
+  "loop": true,
+  "endBehavior": "hold",
+  "tracks": [
+    { "_comment": "One breathe call per outer loop iteration. Closure-captured elapsed counter survives loop iterations.",
+      "kind": "breathe",
+      "atTick": 0, "endTick": 1,
+      "periodTicks": 256,
+      "peakPwm": 255,
+      "divisor": 6
+    }
+  ]
+}

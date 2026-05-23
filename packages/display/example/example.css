@@ -1,0 +1,1312 @@
+/* ============================================================
+   TOKENS
+   ============================================================ */
+
+:root {
+  --bg: #0b0905;
+  --bg-panel: #110d0a;
+  --bg-input: #0d0a07;
+  --bg-glass: rgba(11, 9, 5, 0.78);
+  --border: #2e1f10;
+  --border-gold: #7a5520;
+  --border-dim: rgba(122, 85, 32, 0.35);
+  --text: #e8d4ae;
+  --text-dim: #a88f6c;
+  --text-mono: #d4c48a;
+  --accent: #c87020;
+  --accent-dim: #7a4010;
+  --ember: #e08838;
+  --lume: #f0c060;
+  --red: #8b1a1a;
+  --green: #2a5a1a;
+  --green-text: #a0d890;
+  --gold: #c8a040;
+
+  --sidebar-w: clamp(260px, 20vw, 320px);
+  --config-w: clamp(320px, 26vw, 380px);
+
+  /* Spacing scale — 4 / 8 / 12 / 20 / 32 / 48 px */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1.25rem;
+  --sp-5: 2rem;
+  --sp-6: 3rem;
+
+  --grid-gap: var(--sp-4);
+  --grid-pad: var(--sp-4);
+
+  --radius: 4px;
+  --radius-card: 6px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  background-image: radial-gradient(
+    ellipse 80% 40% at 50% 0%,
+    rgba(80, 40, 10, 0.4) 0%,
+    transparent 70%
+  );
+  color: var(--text);
+  font-family: 'IM Fell English', Georgia, serif;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.045;
+  z-index: 9999;
+}
+
+/* Gothic scrollbars (WebKit + Firefox). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-dim) var(--bg);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--accent-dim) 0%, #4a2808 100%);
+  border: 2px solid var(--bg);
+  border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dim) 100%);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--bg);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+h1 {
+  font-family: 'Cinzel Decorative', 'Cinzel', serif;
+  font-size: 1.35rem;
+  font-weight: 400;
+  color: var(--gold);
+  text-shadow:
+    0 0 20px rgba(200, 160, 64, 0.35),
+    0 0 40px rgba(200, 112, 32, 0.15);
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--sp-2);
+  line-height: 1.2;
+}
+
+h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin: 0 0 var(--sp-3);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: var(--sp-3) 0 0;
+}
+
+p {
+  font-family: 'IM Fell English', Georgia, serif;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin: 0 0 0.25rem;
+  font-size: 0.9rem;
+}
+
+p strong {
+  color: var(--text);
+  font-style: normal;
+}
+p code {
+  font-style: normal;
+}
+
+code {
+  font-family: 'JetBrains Mono', Menlo, monospace;
+  font-size: 0.85em;
+  color: var(--text-mono);
+}
+
+.muted {
+  font-size: 0.78rem;
+  font-weight: normal;
+  color: var(--text-dim);
+}
+
+.readout-block {
+  display: flex;
+  justify-content: center;
+}
+
+.readout-block .tdr-box {
+  background: transparent;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+
+.app-shell {
+  /* container for the full-viewport grid */
+}
+
+.app-grid {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr var(--config-w);
+  gap: var(--grid-gap);
+  padding: var(--grid-pad);
+  align-items: stretch;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  animation: fadeUp 0.45s 0.05s ease both;
+}
+
+/* Slim ornamental rule between sidebar sections (skip after brand which has its own). */
+.app-sidebar > .sidebar-section + .sidebar-section {
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-dim);
+  position: relative;
+}
+
+.app-sidebar > .sidebar-section + .sidebar-section::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  width: 24px;
+  height: 1px;
+  transform: translateX(-50%);
+  background: var(--accent);
+  opacity: 0.5;
+  box-shadow: 0 0 6px rgba(200, 112, 32, 0.5);
+}
+
+.app-hero {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.75rem;
+  min-width: 0;
+  min-height: 480px;
+  animation: fadeUp 0.45s 0.1s ease both;
+}
+
+.app-config {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+  min-height: 0;
+  animation: fadeUp 0.45s 0.15s ease both;
+}
+
+.config-section {
+  /* Size to content, never grow past it. If combined content exceeds the
+     column, each section shrinks proportionally and gets its own scroll. */
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* When a section contains an expanded panel marked `data-expandable`, let
+   the section absorb any leftover column space so that panel can grow into
+   it. Without this, `flex: 0 1 auto` pins the section to its content height
+   and the expandable panel has nothing extra to claim. */
+.config-section:has(.panel[data-expandable='true']:not([data-collapsed='true'])) {
+  flex: 1 1 auto;
+}
+
+/* Panels inside the config column keep their natural content height — never
+   shrink below it. Combined overflow is handled by `.config-section`'s
+   scrollbar, not by clipping each panel. */
+.config-section > .panel {
+  flex: 0 0 auto;
+}
+
+/* An expandable panel absorbs any leftover space in its section — e.g. when
+   another panel is collapsed, the expandable one grows to fill the gap.
+   When collapsed itself, the [data-collapsed='true'] rule below pins it to
+   header height instead. */
+.config-section > .panel[data-expandable='true']:not([data-collapsed='true']) {
+  flex: 1 1 auto;
+}
+
+/* Collapsible panel headers in the config column. */
+.panel[data-collapse-key] > .panel-row-header {
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0;
+}
+
+.panel[data-collapse-key] > .panel-row-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.panel[data-collapse-key] > .panel-row-header h2::before {
+  content: '▾';
+  flex: 0 0 auto;
+  color: var(--text-dim);
+  font-size: 0.85em;
+  line-height: 1;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.panel[data-collapse-key] > .panel-row-header:hover h2::before {
+  color: var(--accent);
+}
+
+.panel[data-collapse-key][data-collapsed='true'] > .panel-row-header h2::before {
+  transform: rotate(-90deg);
+}
+
+.panel[data-collapse-key]:not([data-collapsed='true']) > .panel-row-header {
+  margin-bottom: 0.75rem;
+}
+
+.panel[data-collapse-key][data-collapsed='true'] > :not(.panel-row-header) {
+  display: none;
+}
+
+/* Collapsed panels shouldn't try to stretch — pin them to header height,
+   overriding `.panel-editors { height: 100% }` on Camera / Audio. */
+.panel[data-collapse-key][data-collapsed='true'] {
+  flex: 0 0 auto;
+  height: auto;
+  min-height: 0;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+
+.brand {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.brand-tagline {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sidebar-heading {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  opacity: 0.75;
+  margin: 0 0 0.2rem;
+}
+
+.preset-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-1);
+}
+
+.preset-card {
+  position: relative;
+  padding: var(--sp-3) var(--sp-2);
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow: hidden;
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out);
+}
+
+.preset-card::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(200, 112, 32, 0.18) 100%);
+  transition: height var(--dur-slow) var(--ease-out);
+  pointer-events: none;
+}
+
+.preset-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  color: var(--lume);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.4),
+    0 0 10px rgba(200, 112, 32, 0.25);
+}
+
+.preset-card:hover::before {
+  height: 100%;
+}
+
+.preset-card:active {
+  transform: translateY(0);
+}
+
+.sidebar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sidebar-row > * {
+  flex: 1;
+}
+
+.sidebar-select {
+  width: 100%;
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border-gold);
+  border-radius: 3px;
+  padding: 0.4rem 1.6rem 0.4rem 0.55rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a5520'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.sidebar-select:hover {
+  border-color: var(--accent);
+  color: var(--lume);
+}
+
+.sidebar-select option {
+  background: var(--bg-panel);
+}
+
+.primary-action {
+  width: 100%;
+  background: linear-gradient(180deg, #3a2a0a 0%, #241a04 100%);
+  border-color: var(--accent);
+  color: var(--lume);
+  box-shadow: 0 0 10px rgba(200, 112, 32, 0.2);
+}
+
+.primary-action:hover {
+  background: linear-gradient(180deg, #4a3a0e 0%, #342808 100%);
+  box-shadow: 0 0 14px rgba(200, 112, 32, 0.35);
+}
+
+.secondary-action {
+  width: 100%;
+}
+
+.toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.toggle-pill:hover {
+  color: var(--text);
+  background: rgba(200, 112, 32, 0.05);
+  border-color: var(--border-gold);
+}
+
+.toggle-pill input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 12px;
+  height: 12px;
+  cursor: pointer;
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+
+.hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.view-pills {
+  position: relative;
+  display: inline-flex;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-gold);
+  border-radius: 4px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Sliding gold underline — position derived from which pill has .active.
+   `:has()` removes the need for JS bookkeeping; pure CSS state mirror. */
+.view-pills::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: calc(100% / 3);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--accent) 20%,
+    var(--ember) 50%,
+    var(--accent) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px rgba(224, 136, 56, 0.6);
+  transform: translateX(0);
+  transition: transform var(--dur-slow) var(--ease-out);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.view-pills:has(#btn-view-2d.active)::after {
+  transform: translateX(0%);
+}
+.view-pills:has(#btn-view-3d.active)::after {
+  transform: translateX(100%);
+}
+.view-pills:has(#btn-view-2d3d.active)::after {
+  transform: translateX(200%);
+}
+
+.view-pill {
+  position: relative;
+  flex: 1 1 0;
+  text-align: center;
+  white-space: nowrap;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  /* Match the default button vertical padding so .view-pill and .ghost-action
+     (Pop Out) end up the same height. */
+  padding: 0.45rem var(--sp-4);
+  margin: 0;
+  border-right: 1px solid var(--border-dim);
+  transition:
+    color var(--dur-base) var(--ease-out),
+    background var(--dur-base) var(--ease-out);
+}
+
+.view-pill:last-child {
+  border-right: none;
+}
+
+.view-pill:hover {
+  background: rgba(200, 112, 32, 0.08);
+  box-shadow: none;
+  border-color: var(--border-dim);
+}
+
+.view-pill.active {
+  background: linear-gradient(180deg, #2a2010 0%, #1a1608 100%);
+  color: var(--lume);
+  box-shadow: none;
+}
+
+.ghost-action {
+  background: transparent;
+  border-color: var(--border-dim);
+}
+
+.ghost-action:hover {
+  background: rgba(200, 112, 32, 0.08);
+  border-color: var(--accent);
+}
+
+/* ============================================================
+   PANELS
+   ============================================================ */
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(200, 160, 64, 0.07),
+    0 4px 24px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.panel::before,
+.panel::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--bg);
+  pointer-events: none;
+}
+
+.panel::after {
+  top: -1px;
+  right: -1px;
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+}
+
+.panel::before {
+  bottom: -1px;
+  left: -1px;
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.panel-rendered {
+  overflow: hidden;
+  padding: 0;
+}
+
+.panel-rendered::after,
+.panel-rendered::before {
+  display: none;
+}
+
+/* Gothic theme overrides for the library-provided TowerRenderView chrome.
+   These re-point the facade's CSS custom properties at the example's palette
+   so the optional header/badges blend into the panel rather than the
+   library's neutral defaults. */
+#rendered-panel .trv-root {
+  --trv-accent: var(--lume);
+  --trv-border: var(--border-gold);
+  --trv-title-color: var(--ink);
+  --trv-subtitle-color: var(--text-dim);
+  --trv-badge-bg: var(--bg-panel);
+  --trv-badge-border: var(--border-gold);
+}
+
+.panel-editors {
+  gap: 0.75rem;
+}
+
+#tower {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-row-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+}
+
+.panel-row-header h2 {
+  margin: 0;
+}
+
+.state-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.15rem 0.5rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.55rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: lowercase;
+  color: var(--lume);
+  background: rgba(200, 112, 32, 0.12);
+  border: 1px solid var(--accent-dim);
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.state-badge:empty {
+  display: none;
+}
+
+.opts-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.opts-subhead {
+  font-family: 'Cinzel', serif;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 0.65rem 0 0;
+}
+
+.opts-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0;
+}
+
+.opts-row-block {
+  display: block;
+  padding-top: 0.4rem;
+}
+
+/* Side-by-side action buttons (e.g. Drop Skull / Clear Skulls). Overrides
+   the default `width: 100%` on .primary-action / .secondary-action so each
+   button takes half the row. */
+.opts-row-actions {
+  gap: 0.5rem;
+  padding-top: 0.4rem;
+}
+
+.opts-row-actions > .primary-action,
+.opts-row-actions > .secondary-action {
+  flex: 1 1 0;
+  width: auto;
+}
+
+.opts-input-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.66rem;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.opts-input-label input[type='text'] {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border-gold);
+  border-radius: 3px;
+  padding: 0.35rem 0.5rem;
+  color: var(--text);
+  font-family: 'JetBrains Mono', Menlo, monospace;
+  font-size: 0.72rem;
+}
+
+.opts-input-label input[type='text']:focus {
+  outline: 1px solid var(--accent-dim);
+  border-color: var(--accent);
+}
+
+.opts-inline-label {
+  margin-left: 0.5em;
+  font-family: 'Cinzel', serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.sliders-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem 1.2rem;
+  padding: 0.4rem 0 0.25rem;
+}
+
+.slider-label {
+  font-size: 0.66rem;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  display: grid;
+  grid-template-columns: 5.5rem 1fr 2.6rem;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.slider-label input[type='range'] {
+  flex: 1;
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.slider-label span {
+  text-align: right;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Physics-tab compact slider list (denser than sliders-grid). */
+.physics-slider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.25rem 0 0;
+}
+
+.physics-slider {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr 2.8rem;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: help;
+}
+
+.physics-slider input[type='range'] {
+  flex: 1;
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.physics-slider-value {
+  text-align: right;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Drum rotate / seal toggle grids inside sidebar sections */
+.drum-rotate-grid,
+.seal-toggle-grid {
+  display: grid;
+  grid-template-columns: 2.4rem repeat(4, 1fr);
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.drum-rotate-row-label,
+.seal-toggle-row-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: right;
+  padding-right: 0.25rem;
+}
+
+.drum-rotate-grid button,
+.seal-toggle-grid button {
+  padding: 0.35rem 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+}
+
+.drum-rotate-grid button.active,
+.seal-toggle-grid button.active {
+  background: linear-gradient(180deg, #2a2010 0%, #1a1608 100%);
+  border-color: var(--accent);
+  color: var(--lume);
+  box-shadow: 0 0 8px rgba(200, 112, 32, 0.3);
+}
+
+/* Seal action row: spans only the NESW button columns (skip the row-label col). */
+.seal-toggle-grid .seal-action-row {
+  grid-column: 2 / -1;
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.seal-toggle-grid .seal-action-row .seal-reset {
+  flex: 1;
+  padding: 0.4rem 0;
+  font-size: 0.66rem;
+}
+
+/* Dim 3D-only panels when 3D view is hidden. */
+.three-d-inactive .opts-row,
+.three-d-inactive .opts-subhead,
+.three-d-inactive .sliders-grid,
+.three-d-inactive .opts-input-label,
+.three-d-inactive .physics-slider-list,
+.three-d-inactive .panel-header-actions,
+.three-d-inactive textarea {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* ============================================================
+   CONTROLS
+   ============================================================ */
+
+button {
+  background: linear-gradient(180deg, #2a1e12 0%, #1a1208 100%);
+  color: var(--text);
+  border: 1px solid var(--border-gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.45rem 1rem;
+  border-radius: 3px;
+  cursor: pointer;
+  margin: 0;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s,
+    color 0.15s;
+}
+
+button:hover {
+  background: linear-gradient(180deg, #3a2a18 0%, #2a1a0e 100%);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(200, 112, 32, 0.25);
+  color: #f0d8a0;
+}
+
+button:active {
+  box-shadow: 0 0 16px rgba(200, 112, 32, 0.55);
+  border-color: var(--accent);
+}
+
+button.active {
+  background: linear-gradient(180deg, #2a2010 0%, #1a1608 100%);
+  border-color: var(--accent);
+  color: var(--lume);
+  box-shadow: 0 0 8px rgba(200, 112, 32, 0.3);
+}
+
+.toolbar-label {
+  font-size: 0.66rem;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.toolbar-label:hover {
+  color: var(--text);
+  background: rgba(200, 112, 32, 0.05);
+  border-color: rgba(122, 85, 32, 0.3);
+}
+
+.toolbar-label input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 12px;
+  height: 12px;
+  cursor: pointer;
+}
+
+/* ── Range sliders (gothic track + ember thumb) ── */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type='range']:focus {
+  outline: none;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  background: linear-gradient(90deg, #1a1208 0%, #2a1d10 100%);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+input[type='range']::-moz-range-track {
+  height: 4px;
+  background: linear-gradient(90deg, #1a1208 0%, #2a1d10 100%);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    var(--lume) 0%,
+    var(--accent) 50%,
+    var(--accent-dim) 100%
+  );
+  border: 1px solid var(--border-gold);
+  box-shadow:
+    0 0 6px rgba(224, 136, 56, 0.45),
+    0 1px 2px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    var(--lume) 0%,
+    var(--accent) 50%,
+    var(--accent-dim) 100%
+  );
+  border: 1px solid var(--border-gold);
+  box-shadow:
+    0 0 6px rgba(224, 136, 56, 0.45),
+    0 1px 2px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+input[type='range']:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow:
+    0 0 12px rgba(224, 136, 56, 0.7),
+    0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+input[type='range']:hover::-moz-range-thumb {
+  transform: scale(1.15);
+  box-shadow:
+    0 0 12px rgba(224, 136, 56, 0.7),
+    0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+input[type='range']:active::-webkit-slider-thumb {
+  transform: scale(1.1);
+  box-shadow:
+    0 0 16px rgba(240, 192, 96, 0.8),
+    0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+input[type='range']:active::-moz-range-thumb {
+  transform: scale(1.1);
+  box-shadow:
+    0 0 16px rgba(240, 192, 96, 0.8),
+    0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* ============================================================
+   CONFIG EDITOR (embedded JSON editors)
+   ============================================================ */
+
+.panel-header-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.panel-header-actions button {
+  font-size: 0.68rem;
+  padding: 0.3rem 0.65rem;
+  margin: 0;
+}
+
+.panel-header-actions button:disabled {
+  opacity: 0.3;
+  cursor: default;
+  box-shadow: none;
+}
+
+.panel-header-actions button[id^='btn-apply-']:not(:disabled) {
+  background: linear-gradient(180deg, #3a2a0a 0%, #241a04 100%);
+  border-color: var(--accent);
+  color: var(--lume);
+  box-shadow: 0 0 10px rgba(200, 112, 32, 0.3);
+}
+
+.panel-header-actions button[id^='btn-apply-']:not(:disabled):hover {
+  background: linear-gradient(180deg, #4a3a0e 0%, #342808 100%);
+}
+
+#sel-config-type {
+  align-self: flex-start;
+  font-family: 'Cinzel', serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border-gold);
+  border-radius: 3px;
+  padding: 0.3rem 1.6rem 0.3rem 0.5rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a5520'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+#sel-config-type:focus {
+  outline: 1px solid var(--accent-dim);
+}
+
+#sel-config-type:hover {
+  border-color: var(--accent);
+  color: var(--lume);
+}
+
+#sel-config-type option {
+  background: var(--bg-panel);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+#sel-config-type option:disabled {
+  color: var(--text-dim);
+  opacity: 0.4;
+}
+
+.config-preview {
+  margin: 0;
+  flex: 1;
+  min-height: 180px;
+  resize: none;
+  overflow: auto;
+  font-family: 'JetBrains Mono', Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-mono);
+  background: var(--bg-input);
+  border: 1px solid #2a1a0a;
+  border-radius: 3px;
+  padding: 0.9rem;
+  white-space: pre;
+  tab-size: 2;
+  caret-color: var(--accent);
+}
+
+.config-preview:focus {
+  outline: 1px solid var(--accent-dim);
+  box-shadow: inset 0 0 20px rgba(200, 112, 32, 0.04);
+}
+
+/* ============================================================
+   ERROR BANNER
+   ============================================================ */
+
+#error-banner {
+  display: block;
+  margin: 0.75rem 1rem 0;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--red);
+  background: rgba(139, 26, 26, 0.2);
+  color: #ffb8b8;
+  border-radius: 3px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+}
+
+#error-banner[hidden] {
+  display: none;
+}
+
+/* ============================================================
+   POPOUT — preserve verbatim, do not edit
+   ============================================================ */
+
+.popout-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0.5rem;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Cinzel', serif;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.popout-body > #rendered-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
+/* In the popup, drop the library's square aspect ratio so the canvas fills
+   the panel even when the window is wider or taller than 1:1. */
+.popout-body .t3v-wrapper {
+  aspect-ratio: auto;
+  max-height: none;
+  height: 100%;
+}
+
+.popout-placeholder {
+  border: 1px dashed var(--border-gold);
+  border-radius: 6px;
+  padding: 1.25rem 1rem;
+  color: var(--text-dim);
+  font-style: italic;
+  text-align: center;
+  background: var(--bg-panel);
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+/* Small laptop / tablet: single-column stack. */
+@media (max-width: 1024px) {
+  .app-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .app-sidebar {
+    overflow-y: visible;
+  }
+
+  .config-section {
+    max-height: 50vh;
+  }
+
+  .preset-card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .app-hero {
+    min-height: 60vh;
+  }
+}
+
+/* Mobile: single-column stack, smaller header. */
+@media (max-width: 640px) {
+  h1 {
+    font-size: 1.1rem;
+  }
+
+  .preset-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing! This document covers the development workflow, code standards, and release process.
 
-## Getting Started
+## Getting started
 
 ```bash
 # Clone the repository
@@ -16,21 +16,21 @@ npm install
 npm run ci
 ```
 
-### Runtime Compatibility
+### Runtime compatibility
 
 - Current supported runtime floor is Node.js 18+ (`engines.node >=18.0.0`).
 - When changing dependencies, run the full CI pipeline locally before opening a PR.
 
 ---
 
-## Development Workflow
+## Development workflow
 
 1. **Create a branch** from `main` for your changes
 2. **Make your changes** following the code standards below
 3. **Run the full CI pipeline** to verify: `npm run ci`
 4. **Open a Pull Request** into `main`
 
-### Useful Commands
+### Useful commands
 
 | Command                  | Description                                |
 | ------------------------ | ------------------------------------------ |
@@ -50,7 +50,7 @@ npm run ci
 
 ---
 
-## Code Standards
+## Code standards
 
 ### TypeScript
 
@@ -75,7 +75,7 @@ npm run ci
 
 ---
 
-## Release Process
+## Release process
 
 This project follows [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow) with tagged releases.
 
@@ -122,7 +122,7 @@ This project follows [Semantic Versioning](https://semver.org/):
 - **Minor** (0.X.0) — New features, backwards-compatible
 - **Patch** (0.0.X) — Bug fixes, backwards-compatible
 
-> The project is currently at `0.1.0` — pre-release. The public API is not yet stable.
+> The project is currently at `0.4.0` — pre-release. The public API is not yet stable.
 
 ---
 

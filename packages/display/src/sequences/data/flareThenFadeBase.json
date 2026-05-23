@@ -1,0 +1,21 @@
+{
+  "name": "flareThenFadeBase",
+  "description": "Identical to flareThenFade but the phase-1 ramp only touches layers 3-5 (ledge + base1 + base2). Phase-2 decay still affects all 6 layers (firmware decay loop is unscoped). Mirrors firmware case 0x03.",
+  "totalTicks": 225,
+  "loop": false,
+  "endBehavior": "hold",
+  "tracks": [
+    { "_comment": "Phase 1 — 25-tick exponential ramp on layers 3-5 only.",
+      "kind": "exponentialRamp",
+      "atTick": 0, "durationTicks": 25,
+      "layers": [3, 4, 5], "lights": "all",
+      "multiplierNum": 5, "multiplierDen": 4,
+      "floorLevelPwm": 5, "saturationLevelPwm": 204
+    },
+    { "_comment": "Phase 2 — decay all 6 layers (firmware decay is unscoped).",
+      "kind": "scaleAll",
+      "atTick": 25, "endTick": 225,
+      "multiplierNum": 768, "multiplierDen": 800
+    }
+  ]
+}

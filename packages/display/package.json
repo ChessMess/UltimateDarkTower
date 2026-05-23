@@ -1,16 +1,21 @@
 {
   "name": "ultimatedarktowerdisplay",
-  "version": "0.2.0",
-  "description": "DOM-based state readout for the Ultimate Dark Tower board game.",
+  "version": "0.7.0",
+  "description": "Composable text, 2D, and 3D renderers for Return to Dark Tower tower state, with optional skull physics.",
   "type": "module",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.esm.js",
-      "require": "./dist/index.cjs.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs.js"
+    },
+    "./physics": {
+      "types": "./dist/physics/index.d.ts",
+      "import": "./dist/physics.esm.js",
+      "require": "./dist/physics.cjs.js"
     }
   },
   "sideEffects": false,
@@ -18,37 +23,57 @@
     "dist",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "docs"
   ],
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly",
     "build:example": "vite build --config vite.config.example.ts",
     "dev": "vite",
     "dev:example": "vite --open /example/index.html",
-    "test": "jest --config jest.config.cjs",
+    "test": "jest --config jest.config.cjs && jest --config jest.config.snapshots.cjs",
     "test:watch": "jest --config jest.config.cjs --watch",
     "test:coverage": "jest --config jest.config.cjs --coverage",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint 'src/**/*.ts' 'tests/**/*.ts'",
-    "lint:fix": "eslint 'src/**/*.ts' 'tests/**/*.ts' --fix",
+    "test:sequence-snapshots": "jest --config jest.config.snapshots.cjs",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.example.json",
+    "lint": "eslint 'src/**/*.ts' 'tests/**/*.ts' 'example/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' 'tests/**/*.ts' 'example/**/*.ts' --fix",
     "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
     "clean": "rm -rf dist dist-example coverage",
     "ci": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "peerDependencies": {
-    "ultimatedarktower": "^2.5.0"
+    "gsap": "^3.12.0",
+    "three": "^0.170.0",
+    "ultimatedarktower": "file:../UltimateDarkTower",
+    "@dimforge/rapier3d-compat": "^0.19.3"
+  },
+  "peerDependenciesMeta": {
+    "three": {
+      "optional": true
+    },
+    "gsap": {
+      "optional": true
+    },
+    "@dimforge/rapier3d-compat": {
+      "optional": true
+    }
   },
   "devDependencies": {
+    "@dimforge/rapier3d-compat": "^0.19.3",
     "@types/jest": "^29.5.0",
+    "@types/three": "^0.184.1",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
+    "gsap": "^3.15.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "prettier": "^3.2.0",
+    "three": "^0.184.0",
     "ts-jest": "^29.1.0",
     "typescript": "^5.4.0",
-    "ultimatedarktower": "^2.5.0",
+    "ultimatedarktower": "file:../UltimateDarkTower",
     "vite": "^5.4.0"
   },
   "keywords": [
@@ -75,5 +100,8 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=7.0.0"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
   }
 }

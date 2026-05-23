@@ -5,3 +5,7 @@ coverage/
 *.tsbuildinfo
 .vite/
 .DS_Store
+/.fallow
+src/audio/assets/
+.local/
+/.playwright-mcp

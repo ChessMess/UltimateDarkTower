@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-jest.mock('../../src/TowerSide.svg?raw', () => `
+jest.mock('../../src/2d/TowerSide.svg?raw', () => `
   <svg viewBox="0 0 180 374" xmlns="http://www.w3.org/2000/svg">
     <g id="layer1">
       <circle id="base-right-back-led" />
@@ -16,7 +16,7 @@ jest.mock('../../src/TowerSide.svg?raw', () => `
   </svg>
 `);
 
-import { TowerSideView } from '../../src/TowerSideView';
+import { TowerSideView } from '../../src/2d/TowerSideView';
 import { _resetStyleInjection } from '../../src/styles';
 import { createDefaultTowerState, LIGHT_EFFECTS } from 'ultimatedarktower';
 
@@ -48,7 +48,7 @@ describe('TowerSideView', () => {
   });
 
   it('renders N/E/S/W side selector buttons', () => {
-    const buttons = container.querySelectorAll('.tsv-side-btn');
+    const buttons = container.querySelectorAll('.tower-side-btn');
     expect(buttons).toHaveLength(4);
     expect(buttons[0].textContent).toBe('N');
     expect(buttons[1].textContent).toBe('E');
@@ -57,13 +57,13 @@ describe('TowerSideView', () => {
   });
 
   it('north is active by default', () => {
-    const buttons = container.querySelectorAll('.tsv-side-btn');
+    const buttons = container.querySelectorAll('.tower-side-btn');
     expect(buttons[0].getAttribute('data-active')).toBe('true');
     expect(buttons[1].getAttribute('data-active')).toBe('false');
   });
 
   it('clicking a side button updates active state', () => {
-    const buttons = container.querySelectorAll('.tsv-side-btn');
+    const buttons = container.querySelectorAll('.tower-side-btn');
     (buttons[2] as HTMLButtonElement).click();
     expect(buttons[0].getAttribute('data-active')).toBe('false');
     expect(buttons[2].getAttribute('data-active')).toBe('true');
@@ -139,10 +139,10 @@ describe('TowerSideView', () => {
   });
 
   it('clicking multiple side buttons leaves only one active', () => {
-    const buttons = container.querySelectorAll('.tsv-side-btn');
+    const buttons = container.querySelectorAll('.tower-side-btn');
     (buttons[1] as HTMLButtonElement).click();
     (buttons[3] as HTMLButtonElement).click();
-    const activeButtons = container.querySelectorAll('.tsv-side-btn[data-active="true"]');
+    const activeButtons = container.querySelectorAll('.tower-side-btn[data-active="true"]');
     expect(activeButtons).toHaveLength(1);
     expect(activeButtons[0].textContent).toBe('W');
   });
@@ -158,7 +158,7 @@ describe('TowerSideView', () => {
     expect(ledgeLeft?.getAttribute('data-effect')).toBe('on');
     expect(ledgeRight?.getAttribute('data-effect')).toBe('off');
 
-    const buttons = container.querySelectorAll('.tsv-side-btn');
+    const buttons = container.querySelectorAll('.tower-side-btn');
     (buttons[1] as HTMLButtonElement).click();  // east
 
     // NW corner (light[3]) is not adjacent to the east face; neither side shows it
@@ -189,7 +189,7 @@ describe('TowerSideView', () => {
     expect(baseLeftFront?.getAttribute('data-effect')).toBe('on');
     expect(baseLeftBack?.getAttribute('data-effect')).toBe('on');
 
-    const buttons = container.querySelectorAll('.tsv-side-btn');
+    const buttons = container.querySelectorAll('.tower-side-btn');
     (buttons[1] as HTMLButtonElement).click();  // east — NW corner not adjacent to east face
 
     expect(ledgeLeft?.getAttribute('data-effect')).toBe('off');
@@ -274,7 +274,7 @@ describe('TowerSideView', () => {
       expect(topSeal.getAttribute('data-broken')).toBe('true');
 
       // Switch to east side
-      const buttons = container.querySelectorAll('.tsv-side-btn');
+      const buttons = container.querySelectorAll('.tower-side-btn');
       (buttons[1] as HTMLButtonElement).click();
       const eastTopSeal = container.querySelector('.tsv-seal-top') as Element;
       expect(eastTopSeal.getAttribute('data-broken')).toBe('false');
@@ -288,6 +288,32 @@ describe('TowerSideView', () => {
       view = new TowerSideView(container);
       const freshTopSeal = container.querySelector('.tsv-seal-top') as Element;
       expect(freshTopSeal.getAttribute('data-broken')).toBe('false');
+    });
+  });
+
+  describe('selectSide', () => {
+    it('public selectSide moves the active side and fires onSideChange', () => {
+      const spy = jest.fn();
+      view.onSideChange = spy;
+      view.selectSide('east');
+      const buttons = container.querySelectorAll('.tower-side-btn');
+      expect(buttons[1].getAttribute('data-active')).toBe('true');
+      expect(spy).toHaveBeenCalledWith('east');
+    });
+
+    it('selectSide to current side is a no-op (loop prevention)', () => {
+      const spy = jest.fn();
+      view.onSideChange = spy;
+      view.selectSide('north'); // already north by default
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('user button click fires onSideChange', () => {
+      const spy = jest.fn();
+      view.onSideChange = spy;
+      const buttons = container.querySelectorAll<HTMLButtonElement>('.tower-side-btn');
+      buttons[2].click(); // south
+      expect(spy).toHaveBeenCalledWith('south');
     });
   });
 });

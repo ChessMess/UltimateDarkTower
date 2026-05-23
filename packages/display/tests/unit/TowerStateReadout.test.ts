@@ -7,6 +7,7 @@ import {
   TOWER_LIGHT_SEQUENCES,
 } from 'ultimatedarktower';
 import type { TowerState } from 'ultimatedarktower';
+import { EFFECT_CYCLE } from '../../src/effectLabels';
 
 function makeState(overrides?: Partial<TowerState>): TowerState {
   const base = createDefaultTowerState();
@@ -267,5 +268,237 @@ describe('TowerStateReadout', () => {
 
     const skullDrop = container.querySelector('.tdr-skull-drop');
     expect(skullDrop).toBeNull();
+  });
+
+  describe('seal grid', () => {
+    it('renders 12 seal buttons in idle state', () => {
+      const seals = container.querySelectorAll('[data-tdr-seal]');
+      expect(seals).toHaveLength(12);
+    });
+
+    it('applySeals([]) renders all 12 seals with data-broken="false"', () => {
+      readout.applyState(makeState());
+      readout.applySeals([]);
+      const seals = container.querySelectorAll<HTMLButtonElement>('[data-tdr-seal]');
+      expect(seals).toHaveLength(12);
+      for (const s of Array.from(seals)) {
+        expect(s.getAttribute('data-broken')).toBe('false');
+        expect(s.getAttribute('aria-pressed')).toBe('false');
+      }
+    });
+
+    it('applySeals with one broken flips only that seal', () => {
+      readout.applyState(makeState());
+      readout.applySeals([{ side: 'north', level: 'top' }]);
+      const broken = container.querySelectorAll('[data-tdr-seal][data-broken="true"]');
+      expect(broken).toHaveLength(1);
+      expect(broken[0].getAttribute('data-side')).toBe('north');
+      expect(broken[0].getAttribute('data-level')).toBe('top');
+    });
+
+    it('clickToToggleSeals=true fires onSealClick with correct seal identity', () => {
+      readout.clickToToggleSeals = true;
+      const spy = jest.fn();
+      readout.onSealClick = spy;
+      readout.applyState(makeState());
+
+      const btn = container.querySelector<HTMLButtonElement>(
+        '[data-tdr-seal][data-side="east"][data-level="middle"]',
+      );
+      expect(btn).not.toBeNull();
+      expect(btn!.disabled).toBe(false);
+      btn!.click();
+      expect(spy).toHaveBeenCalledWith({ side: 'east', level: 'middle' });
+    });
+
+    it('clickToToggleSeals=false (default) disables buttons and never fires onSealClick', () => {
+      const spy = jest.fn();
+      readout.onSealClick = spy;
+      readout.applyState(makeState());
+
+      const btn = container.querySelector<HTMLButtonElement>(
+        '[data-tdr-seal][data-side="south"][data-level="bottom"]',
+      );
+      expect(btn!.disabled).toBe(true);
+      btn!.click();
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('showIdle() keeps the seal grid and preserves broken state', () => {
+      readout.applyState(makeState());
+      readout.applySeals([{ side: 'west', level: 'middle' }]);
+
+      readout.showIdle();
+
+      expect(container.querySelector('.tdr-idle')).not.toBeNull();
+      const broken = container.querySelectorAll('[data-tdr-seal][data-broken="true"]');
+      expect(broken).toHaveLength(1);
+      expect(broken[0].getAttribute('data-side')).toBe('west');
+    });
+
+    it('dispose() clears the container and detaches the click listener', () => {
+      readout.clickToToggleSeals = true;
+      const spy = jest.fn();
+      readout.onSealClick = spy;
+      readout.applyState(makeState());
+
+      readout.dispose();
+
+      expect(container.innerHTML).toBe('');
+      // No buttons to click; re-attaching DOM should not refire anything on this instance.
+      const ghost = document.createElement('button');
+      ghost.setAttribute('data-tdr-seal', '');
+      ghost.setAttribute('data-side', 'north');
+      ghost.setAttribute('data-level', 'top');
+      container.appendChild(ghost);
+      ghost.click();
+      expect(spy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('LED click', () => {
+    it('LED circles render as <button> elements', () => {
+      readout.applyState(makeState());
+      const led = container.querySelector('.tdr-led');
+      expect(led?.tagName.toLowerCase()).toBe('button');
+    });
+
+    it('LEDs are disabled when clickToToggleLeds is false (default)', () => {
+      readout.applyState(makeState());
+      const leds = container.querySelectorAll<HTMLButtonElement>('.tdr-led');
+      for (const led of Array.from(leds)) {
+        expect(led.disabled).toBe(true);
+      }
+    });
+
+    it('LEDs are enabled when clickToToggleLeds is true', () => {
+      readout.clickToToggleLeds = true;
+      readout.applyState(makeState());
+      const leds = container.querySelectorAll<HTMLButtonElement>('.tdr-led');
+      for (const led of Array.from(leds)) {
+        expect(led.disabled).toBe(false);
+      }
+    });
+
+    it('clicking an LED cycles the effect and fires onLedClick', () => {
+      readout.clickToToggleLeds = true;
+      const spy = jest.fn();
+      readout.onLedClick = spy;
+
+      const state = makeState();
+      state.layer[0].light[0].effect = LIGHT_EFFECTS.off; // start at off
+      readout.applyState(state);
+
+      const firstLed = container.querySelector<HTMLButtonElement>(
+        '[data-tdr-led][data-layer="0"][data-light="0"]',
+      );
+      expect(firstLed).not.toBeNull();
+      firstLed!.click();
+
+      // Should have advanced to the next effect in the cycle (LIGHT_EFFECTS.on)
+      const expectedNext = EFFECT_CYCLE[(EFFECT_CYCLE.indexOf(LIGHT_EFFECTS.off) + 1) % EFFECT_CYCLE.length];
+      expect(spy).toHaveBeenCalledWith(0, 0, expectedNext);
+    });
+
+    it('cycles through all 6 effects and wraps back to off', () => {
+      readout.clickToToggleLeds = true;
+      readout.applyState(makeState()); // all off by default
+
+      const getFirstLed = () =>
+        container.querySelector<HTMLButtonElement>('[data-tdr-led][data-layer="0"][data-light="0"]')!;
+
+      const visited: number[] = [];
+      for (let i = 0; i < EFFECT_CYCLE.length; i++) {
+        const led = getFirstLed();
+        const effectValue = EFFECT_CYCLE.indexOf(
+          EFFECT_CYCLE.find((v) => {
+            const mapped: Record<number, string> = {
+              0: 'off', 1: 'on', 2: 'breathe', 3: 'breathe-fast', 4: 'breathe-50', 5: 'flicker',
+            };
+            return mapped[v] === led.getAttribute('data-effect');
+          })!,
+        );
+        visited.push(effectValue);
+        led.click();
+      }
+      // After 6 clicks we should be back to the original off state
+      const finalLed = getFirstLed();
+      expect(finalLed.getAttribute('data-effect')).toBe('off');
+      expect(visited).toHaveLength(EFFECT_CYCLE.length);
+    });
+
+    it('clicking when clickToToggleLeds=false does not change the effect or fire callback', () => {
+      const spy = jest.fn();
+      readout.onLedClick = spy;
+      const state = makeState();
+      state.layer[0].light[0].effect = LIGHT_EFFECTS.off;
+      readout.applyState(state);
+
+      const led = container.querySelector<HTMLButtonElement>(
+        '[data-tdr-led][data-layer="0"][data-light="0"]',
+      )!;
+      led.click(); // button is disabled, click should not reach handler
+      expect(spy).not.toHaveBeenCalled();
+      expect(led.getAttribute('data-effect')).toBe('off');
+    });
+
+    it('override persists across subsequent applyState calls', () => {
+      readout.clickToToggleLeds = true;
+      readout.applyState(makeState()); // layer 0 light 0 = off
+
+      const led = () =>
+        container.querySelector<HTMLButtonElement>('[data-tdr-led][data-layer="0"][data-light="0"]')!;
+
+      led().click(); // off → on
+
+      // Apply a new state that also has light 0,0 = off
+      readout.applyState(makeState());
+
+      // Override should still show 'on', not the state's 'off'
+      expect(led().getAttribute('data-effect')).toBe('on');
+    });
+
+    it('overridden LED has data-overridden="true"', () => {
+      readout.clickToToggleLeds = true;
+      readout.applyState(makeState());
+
+      const led = container.querySelector<HTMLButtonElement>(
+        '[data-tdr-led][data-layer="0"][data-light="0"]',
+      )!;
+      expect(led.getAttribute('data-overridden')).toBe('false');
+      led.click();
+      const updatedLed = container.querySelector<HTMLButtonElement>(
+        '[data-tdr-led][data-layer="0"][data-light="0"]',
+      )!;
+      expect(updatedLed.getAttribute('data-overridden')).toBe('true');
+    });
+
+    it('clickToToggleLeds setter re-renders (buttons become enabled/disabled)', () => {
+      readout.applyState(makeState());
+      const disabledBefore = container.querySelector<HTMLButtonElement>('.tdr-led')!.disabled;
+      expect(disabledBefore).toBe(true);
+
+      readout.clickToToggleLeds = true;
+      const enabledAfter = container.querySelector<HTMLButtonElement>('.tdr-led')!.disabled;
+      expect(enabledAfter).toBe(false);
+    });
+
+    it('dispose() clears LED overrides (new instance starts clean)', () => {
+      readout.clickToToggleLeds = true;
+      readout.applyState(makeState());
+      container.querySelector<HTMLButtonElement>('[data-tdr-led][data-layer="0"][data-light="0"]')!.click();
+
+      readout.dispose();
+
+      // Reconstruct and verify no leftover override
+      readout = new TowerStateReadout(container);
+      readout.clickToToggleLeds = true;
+      readout.applyState(makeState());
+      const led = container.querySelector<HTMLButtonElement>(
+        '[data-tdr-led][data-layer="0"][data-light="0"]',
+      )!;
+      expect(led.getAttribute('data-overridden')).toBe('false');
+      expect(led.getAttribute('data-effect')).toBe('off');
+    });
   });
 });
