@@ -88,11 +88,11 @@ describe('UdtBleConnection', () => {
     test('should handle connection failure gracefully', async () => {
       mockAdapter.connectShouldFail = true;
 
-      await connection.connect();
+      await expect(connection.connect()).rejects.toThrow('Mock connection failed');
 
       expect(connection.isConnected).toBe(false);
-      expect(callbacks.onTowerDisconnect).toHaveBeenCalled();
       expect(callbacks.onTowerConnect).not.toHaveBeenCalled();
+      expect(callbacks.onTowerDisconnect).not.toHaveBeenCalled();
     });
   });
 
