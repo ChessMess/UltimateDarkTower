@@ -15,6 +15,9 @@ export { rtdt_unpack_state, rtdt_pack_state, isCalibrated } from './udtTowerStat
 export { createDefaultTowerState, parseDifferentialReadings, type ParsedDifferentialReadings } from './udtHelpers';
 export type { TowerResponseConfig } from './udtTowerResponse';
 export type { TowerEventCallbacks, DeviceInformation, ConnectionStatus } from './udtBleConnection';
+export { UdtDiagnosticsRecorder, InMemorySink, bytesToHex } from './udtDiagnostics';
+export type { DiagnosticsConfig, DiagnosticsSink, DiagEvent, DiagEventKind, DisconnectCause, IncidentReport, BatterySample, CommandQueueSnapshot, } from './udtDiagnostics';
+export { IndexedDBSink } from './sinks/IndexedDBSink';
 export { charToValue, valueToChar, validateSeed, decodeSeed, decodeRngSeed, createSeed, encodeSeed, compareSeedsRaw, dumpSeedChars, TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES, DIFFICULTIES, GAME_SOURCES, } from './udtSeedParser';
 export type { Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally, Difficulty, GameSource, ExpansionType, Confidence, SeedBank, DecodedSeed, SeedConfig, CharDiff, SeedComparison, CharInfo, CharDump, } from './udtSeedParser';
 export { SystemRandom } from './udtSystemRandom';

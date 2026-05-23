@@ -8,7 +8,7 @@ class UdtTowerCommands {
     constructor(dependencies) {
         this.deps = dependencies;
         // Initialize command queue with the actual send function
-        this.commandQueue = new udtCommandQueue_1.CommandQueue(this.deps.logger, (command) => this.sendTowerCommandDirect(command));
+        this.commandQueue = new udtCommandQueue_1.CommandQueue(this.deps.logger, (command) => this.sendTowerCommandDirect(command), this.deps.recorder);
     }
     /**
      * Sends a command packet to the tower via the command queue
@@ -72,8 +72,10 @@ class UdtTowerCommands {
      * @returns Promise that resolves when calibration command is sent
      */
     async calibrate() {
+        var _a;
         if (!this.deps.bleConnection.performingCalibration) {
             this.deps.logger.info('Performing Tower Calibration', '[UDT][CMD]');
+            (_a = this.deps.recorder) === null || _a === void 0 ? void 0 : _a.recordEvent('calibration_started');
             await this.sendTowerCommand(new Uint8Array([udtConstants_1.TOWER_COMMANDS.calibration]), 'calibrate');
             // flag to look for calibration complete tower response
             this.deps.bleConnection.performingCalibration = true;

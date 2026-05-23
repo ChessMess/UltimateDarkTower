@@ -5,6 +5,7 @@ import { type ConnectionStatus, type DeviceInformation } from './udtBleConnectio
 import { type TowerResponseConfig } from './udtTowerResponse';
 import { type IBluetoothAdapter } from './udtBluetoothAdapter';
 import { BluetoothPlatform } from './udtBluetoothAdapterFactory';
+import { UdtDiagnosticsRecorder, type DiagnosticsConfig, type IncidentReport } from './udtDiagnostics';
 /**
  * Configuration options for the UltimateDarkTower class.
  * All options are optional - the library will auto-detect the platform by default.
@@ -16,6 +17,8 @@ export interface UltimateDarkTowerConfig {
     adapter?: IBluetoothAdapter;
     /** Initial broken seals to restore game state (software-only, no hardware effects) */
     brokenSeals?: SealIdentifier[];
+    /** BLE disconnect diagnostics ("flight recorder"). Off by default. See docs/BLE_DIAGNOSTICS.md. */
+    diagnostics?: DiagnosticsConfig;
 }
 /**
  * @title UltimateDarkTower
@@ -40,6 +43,8 @@ export interface UltimateDarkTowerConfig {
  */
 declare class UltimateDarkTower {
     private logger;
+    private diagnosticsRecorder;
+    private beforeUnloadHandler;
     private bleConnection;
     private towerEventCallbacks;
     private responseProcessor;
@@ -66,9 +71,21 @@ declare class UltimateDarkTower {
      */
     private initializeLogger;
     /**
+     * Initialize the diagnostics recorder. Always constructed; `enabled` defaults
+     * to false, so when no config is supplied the recorder is a no-op aside from
+     * a single boolean check at each hook site.
+     */
+    private initializeDiagnostics;
+    /**
      * Initialize all tower components and their dependencies
      */
     private initializeComponents;
+    /**
+     * Browser-only: synthesize a `page_unload` incident if the page closes while
+     * connected. Without this, refreshing the page during a hang loses the
+     * lead-up context. IndexedDB writes during unload are best-effort.
+     */
+    private installBeforeUnloadHandler;
     /**
      * Set up the tower response callback after all components are initialized
      */
@@ -410,5 +427,30 @@ declare class UltimateDarkTower {
      * @returns {Promise<void>} Promise that resolves when cleanup is complete
      */
     cleanup(): Promise<void>;
+    /**
+     * Get the diagnostics recorder for direct access (live ring buffer, sinks,
+     * runtime enable/disable). Always returns a recorder; check `.enabled` to
+     * see whether capture is active.
+     */
+    getDiagnosticsRecorder(): UdtDiagnosticsRecorder;
+    /**
+     * Toggle diagnostics capture at runtime without reconstructing the tower.
+     * When enabled mid-session, the next BLE event begins populating the buffer.
+     */
+    setDiagnosticsEnabled(enabled: boolean): void;
+    /**
+     * Whether diagnostics capture is currently active.
+     */
+    isDiagnosticsEnabled(): boolean;
+    /**
+     * Get the most recent disconnect incident report, or null if none captured
+     * since this instance was created.
+     */
+    getLastIncident(): IncidentReport | null;
+    /**
+     * Export current ring buffer + last incident as JSON for sharing/analysis.
+     * Useful as a one-liner in a "copy diagnostic info" button.
+     */
+    exportDiagnosticsJSON(): string;
 }
 export default UltimateDarkTower;

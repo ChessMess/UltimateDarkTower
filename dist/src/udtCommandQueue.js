@@ -6,7 +6,7 @@ exports.CommandQueue = void 0;
  * @private
  */
 class CommandQueue {
-    constructor(logger, sendCommandFn) {
+    constructor(logger, sendCommandFn, recorder) {
         this.logger = logger;
         this.sendCommandFn = sendCommandFn;
         this.queue = [];
@@ -14,12 +14,18 @@ class CommandQueue {
         this.timeoutHandle = null;
         this.isProcessing = false;
         this.timeoutMs = 30000; // 30 seconds
+        this.recorder = null;
+        this.recorder = recorder !== null && recorder !== void 0 ? recorder : null;
+    }
+    setRecorder(recorder) {
+        this.recorder = recorder;
     }
     /**
      * Enqueue a command for processing
      */
     async enqueue(command, description) {
         return new Promise((resolve, reject) => {
+            var _a;
             const queuedCommand = {
                 id: `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 command,
@@ -30,6 +36,11 @@ class CommandQueue {
             };
             this.queue.push(queuedCommand);
             this.logger.debug(`Command queued: ${description || 'unnamed'} (queue size: ${this.queue.length})`, '[UDT]');
+            (_a = this.recorder) === null || _a === void 0 ? void 0 : _a.recordEvent('cmd_enqueued', {
+                id: queuedCommand.id,
+                description,
+                queueDepth: this.queue.length,
+            });
             // Start processing if not already running
             if (!this.isProcessing) {
                 this.processNext();
@@ -40,6 +51,7 @@ class CommandQueue {
      * Process the next command in the queue
      */
     async processNext() {
+        var _a, _b;
         if (this.isProcessing || this.queue.length === 0) {
             return;
         }
@@ -60,6 +72,11 @@ class CommandQueue {
         catch (error) {
             // Command failed to send, reject and move to next
             this.clearTimeout();
+            (_a = this.recorder) === null || _a === void 0 ? void 0 : _a.recordEvent('cmd_failed', {
+                id,
+                description,
+                error: (_b = error === null || error === void 0 ? void 0 : error.message) !== null && _b !== void 0 ? _b : String(error),
+            });
             this.currentCommand = null;
             this.isProcessing = false;
             reject(error);
@@ -86,9 +103,16 @@ class CommandQueue {
      * Handle command timeout
      */
     onTimeout() {
+        var _a;
         if (this.currentCommand) {
-            const { description, id } = this.currentCommand;
+            const { description, id, timestamp } = this.currentCommand;
             this.logger.warn(`Command timeout after ${this.timeoutMs}ms: ${description || id}`, '[UDT]');
+            (_a = this.recorder) === null || _a === void 0 ? void 0 : _a.recordEvent('cmd_timeout', {
+                id,
+                description,
+                ageMs: Date.now() - timestamp,
+                queueDepth: this.queue.length,
+            });
             const reject = this.currentCommand.reject;
             this.currentCommand = null;
             this.isProcessing = false;

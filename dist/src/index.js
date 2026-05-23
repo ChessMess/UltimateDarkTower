@@ -21,7 +21,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BOARD_GROUPINGS = exports.BOARD_LOCATION_BY_NAME = exports.BOARD_LOCATIONS = exports.SystemRandom = exports.GAME_SOURCES = exports.DIFFICULTIES = exports.ALLIES = exports.ADVERSARIES = exports.TIER3_FOES = exports.TIER2_FOES = exports.TIER1_FOES = exports.dumpSeedChars = exports.compareSeedsRaw = exports.encodeSeed = exports.createSeed = exports.decodeRngSeed = exports.decodeSeed = exports.validateSeed = exports.valueToChar = exports.charToValue = exports.parseDifferentialReadings = exports.createDefaultTowerState = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
+exports.BOARD_GROUPINGS = exports.BOARD_LOCATION_BY_NAME = exports.BOARD_LOCATIONS = exports.SystemRandom = exports.GAME_SOURCES = exports.DIFFICULTIES = exports.ALLIES = exports.ADVERSARIES = exports.TIER3_FOES = exports.TIER2_FOES = exports.TIER1_FOES = exports.dumpSeedChars = exports.compareSeedsRaw = exports.encodeSeed = exports.createSeed = exports.decodeRngSeed = exports.decodeSeed = exports.validateSeed = exports.valueToChar = exports.charToValue = exports.IndexedDBSink = exports.bytesToHex = exports.InMemorySink = exports.UdtDiagnosticsRecorder = exports.parseDifferentialReadings = exports.createDefaultTowerState = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
 var UltimateDarkTower_1 = require("./UltimateDarkTower");
 Object.defineProperty(exports, "UltimateDarkTower", { enumerable: true, get: function () { return __importDefault(UltimateDarkTower_1).default; } });
 __exportStar(require("./udtConstants"), exports);
@@ -50,6 +50,13 @@ Object.defineProperty(exports, "isCalibrated", { enumerable: true, get: function
 var udtHelpers_2 = require("./udtHelpers");
 Object.defineProperty(exports, "createDefaultTowerState", { enumerable: true, get: function () { return udtHelpers_2.createDefaultTowerState; } });
 Object.defineProperty(exports, "parseDifferentialReadings", { enumerable: true, get: function () { return udtHelpers_2.parseDifferentialReadings; } });
+// BLE disconnect diagnostics ("flight recorder") - off by default, see docs/BLE_DIAGNOSTICS.md
+var udtDiagnostics_1 = require("./udtDiagnostics");
+Object.defineProperty(exports, "UdtDiagnosticsRecorder", { enumerable: true, get: function () { return udtDiagnostics_1.UdtDiagnosticsRecorder; } });
+Object.defineProperty(exports, "InMemorySink", { enumerable: true, get: function () { return udtDiagnostics_1.InMemorySink; } });
+Object.defineProperty(exports, "bytesToHex", { enumerable: true, get: function () { return udtDiagnostics_1.bytesToHex; } });
+var IndexedDBSink_1 = require("./sinks/IndexedDBSink");
+Object.defineProperty(exports, "IndexedDBSink", { enumerable: true, get: function () { return IndexedDBSink_1.IndexedDBSink; } });
 // Seed parser
 var udtSeedParser_1 = require("./udtSeedParser");
 Object.defineProperty(exports, "charToValue", { enumerable: true, get: function () { return udtSeedParser_1.charToValue; } });

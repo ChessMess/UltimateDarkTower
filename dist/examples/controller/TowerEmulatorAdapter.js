@@ -50,7 +50,7 @@ class TowerEmulatorAdapter {
         return this.connected;
     }
     async writeCharacteristic(data) {
-        var _a, _b;
+        var _a, _b, _c, _d;
         const commandType = data[0];
         if (data.length >= 20 && commandType === TOWER_STATE_RESPONSE) {
             // Stateful command — cache it and echo back as a TOWER_STATE response
@@ -63,6 +63,13 @@ class TowerEmulatorAdapter {
                 const loop = !!(data[15] & 0x80);
                 const volume = (data[18] & 0xf0) >> 4;
                 (_b = (_a = this.options).onAudioCommand) === null || _b === void 0 ? void 0 : _b.call(_a, sample, loop, volume);
+            }
+            // LED sequence detection: state_data[18] = led_sequence byte → data[19]
+            // (after the 1-byte type prefix). Same fire-and-forget shape as audio:
+            // framework's response handler strips it before any state propagates.
+            const sequenceId = data[19];
+            if (sequenceId !== 0) {
+                (_d = (_c = this.options).onLightSequenceCommand) === null || _d === void 0 ? void 0 : _d.call(_c, sequenceId);
             }
         }
         else if (data.length === 1 && commandType === CMD_CALIBRATE) {

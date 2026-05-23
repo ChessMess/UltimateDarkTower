@@ -1,4 +1,5 @@
 import { Logger } from './udtLogger';
+import type { UdtDiagnosticsRecorder } from './udtDiagnostics';
 /**
  * Internal command queue for managing sequential tower command processing
  * @private
@@ -11,7 +12,9 @@ export declare class CommandQueue {
     private timeoutHandle;
     private isProcessing;
     private readonly timeoutMs;
-    constructor(logger: Logger, sendCommandFn: (command: Uint8Array) => Promise<void>);
+    private recorder;
+    constructor(logger: Logger, sendCommandFn: (command: Uint8Array) => Promise<void>, recorder?: UdtDiagnosticsRecorder);
+    setRecorder(recorder: UdtDiagnosticsRecorder | null): void;
     /**
      * Enqueue a command for processing
      */

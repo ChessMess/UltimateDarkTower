@@ -4,6 +4,7 @@ import { Logger } from './udtLogger';
 import { UdtCommandFactory } from './udtCommandFactory';
 import { UdtBleConnection } from './udtBleConnection';
 import { TowerResponseProcessor } from './udtTowerResponse';
+import type { UdtDiagnosticsRecorder } from './udtDiagnostics';
 export interface TowerCommandDependencies {
     logger: Logger;
     commandFactory: UdtCommandFactory;
@@ -16,6 +17,7 @@ export interface TowerCommandDependencies {
     retrySendCommandMax: number;
     getCurrentTowerState: () => TowerState;
     setTowerState: (newState: TowerState, source: string) => void;
+    recorder?: UdtDiagnosticsRecorder;
 }
 export declare class UdtTowerCommands {
     private deps;

@@ -462,6 +462,9 @@
               <button id="charts-tab" class="tower-tab-button" onclick="switchTab('charts')">
                 Charts
               </button>
+              <button id="ble-debug-tab" class="tower-tab-button" onclick="switchTab('ble-debug')">
+                BLE Debug
+              </button>
             </div>
 
             <!-- Diagnostics Tab Content -->
@@ -1005,6 +1008,83 @@
                 </div>
               </fieldset>
             </div>
+
+            <!-- BLE Debug Tab Content -->
+            <div id="ble-debug-content" class="tower-tab-content">
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Capture Settings</legend>
+                <div class="p-3 space-y-2 text-white text-sm">
+                  <div class="flex items-center space-x-3">
+                    <input type="checkbox" id="ble-debug-enabled" class="tower-checkbox"
+                      onclick="toggleDiagnosticsEnabled()" />
+                    <label for="ble-debug-enabled" class="font-semibold">Enable BLE diagnostics (flight
+                      recorder)</label>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <input type="checkbox" id="ble-debug-capture-payloads" class="tower-checkbox"
+                      onclick="toggleCapturePayloads()" />
+                    <label for="ble-debug-capture-payloads">Capture command/response payload bytes</label>
+                  </div>
+                  <p class="text-xs text-gray-400">Setting persists across page refresh. Existing connection captures
+                    starting from when toggled on.</p>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Live Status</legend>
+                <div class="p-3 grid grid-cols-2 gap-2 text-sm text-white" id="ble-debug-status-grid">
+                  <div>Session ID: <span id="ble-debug-session" class="text-yellow-300 font-mono">-</span></div>
+                  <div>Connected: <span id="ble-debug-connected" class="font-mono">-</span></div>
+                  <div>Ring buffer: <span id="ble-debug-ring-fill" class="font-mono">0 / 500</span></div>
+                  <div>Battery samples: <span id="ble-debug-batt-fill" class="font-mono">0 / 60</span></div>
+                  <div>Last heartbeat: <span id="ble-debug-last-hb" class="font-mono">-</span></div>
+                  <div>GATT: <span id="ble-debug-gatt" class="font-mono">-</span></div>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Live Event Stream</legend>
+                <div class="p-3 space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400">Last 100 events from the ring buffer</span>
+                    <button onclick="refreshBleDebug()" class="tower-button text-xs px-2 py-1">Refresh</button>
+                  </div>
+                  <div id="ble-debug-events"
+                    class="bg-black/60 border border-gray-700 rounded p-2 h-48 overflow-y-auto overflow-x-hidden font-mono text-xs space-y-0.5">
+                    <div class="text-gray-500">Diagnostics not enabled.</div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Metrics</legend>
+                <div class="p-3 grid grid-cols-2 gap-2 text-sm text-white" id="ble-debug-metrics-grid">
+                  <div>Total incidents: <span id="ble-debug-metric-total" class="font-mono">0</span></div>
+                  <div>Last incident: <span id="ble-debug-metric-last" class="font-mono">-</span></div>
+                  <div class="col-span-2">
+                    <div class="text-xs text-gray-400 mb-1">Breakdown by cause:</div>
+                    <div id="ble-debug-metric-causes" class="font-mono text-xs space-y-0.5"></div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Incident Log</legend>
+                <div class="p-3 space-y-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="refreshIncidentLog()" class="tower-button text-xs px-2 py-1">Refresh</button>
+                    <button onclick="exportAllIncidents()" class="tower-button text-xs px-2 py-1">Export All
+                      JSON</button>
+                    <button onclick="clearIncidents()" class="tower-button text-xs px-2 py-1">Clear All</button>
+                    <span class="text-xs text-gray-400">stored in IndexedDB, survives refresh</span>
+                  </div>
+                  <div id="ble-debug-incidents"
+                    class="bg-black/60 border border-gray-700 rounded p-2 max-h-72 overflow-y-auto text-xs">
+                    <div class="text-gray-500">No incidents recorded.</div>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
           </div>
 
           <!-- Right Column -->
@@ -1179,7 +1259,8 @@
           <hr class="tower-hr" />
           Note: Web Bluetooth is not yet supported in Safari, Firefox or mobile. See <a target="_blank"
             href="https://caniuse.com/?search=web%20bluetooth" class="tower-link">support
-            matrix</a> &mdash; <button onclick="openTroubleshooting()" style="background:none;border:none;color:inherit;cursor:pointer;padding:0;font-size:inherit;">Troubleshooting</button>
+            matrix</a> &mdash; <button onclick="openTroubleshooting()"
+            style="background:none;border:none;color:inherit;cursor:pointer;padding:0;font-size:inherit;">Troubleshooting</button>
         </div>
       </div>
     </div>
@@ -1197,27 +1278,39 @@
       <p>Follow these steps in order:</p>
       <ol>
         <li>When the error message displays, note which Tower level is reported as being jammed.</li>
-        <li>Turn off the Tower and replace the batteries. Ensure you are using quality, named brand batteries with at least 2100mAh capacity. Resume play. If the error displays again, proceed to the next step.</li>
-        <li>Turn off the Tower. Remove the seals from the jammed level and any skulls behind them. With the Seals now open, carefully use your fingers to force the level to rotate in a clockwise direction. You'll hear some audible clicks but don't be concerned — this is the clutch mechanism working as designed. Stop when you've heard around five clicks. Replace the seals (including the skulls). Turn on the Tower and resume play.</li>
-        <li>If the problem persists you'll have to abandon the game. Quit the app. Turn off the Tower, remove all skulls and replace all seals. Restart the app, turn on the Tower and try a new game.</li>
-        <li>If jams are still being reported, please email <a href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+        <li>Turn off the Tower and replace the batteries. Ensure you are using quality, named brand batteries with at
+          least 2100mAh capacity. Resume play. If the error displays again, proceed to the next step.</li>
+        <li>Turn off the Tower. Remove the seals from the jammed level and any skulls behind them. With the Seals now
+          open, carefully use your fingers to force the level to rotate in a clockwise direction. You'll hear some
+          audible clicks but don't be concerned — this is the clutch mechanism working as designed. Stop when you've
+          heard around five clicks. Replace the seals (including the skulls). Turn on the Tower and resume play.</li>
+        <li>If the problem persists you'll have to abandon the game. Quit the app. Turn off the Tower, remove all skulls
+          and replace all seals. Restart the app, turn on the Tower and try a new game.</li>
+        <li>If jams are still being reported, please email <a
+            href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
       </ol>
 
       <h2>Tower Disconnects From App During Play</h2>
       <p>Follow these steps in order:</p>
       <ol>
         <li>Ensure that the connected smart device is always kept within 3m / 10ft of the tower.</li>
-        <li>Some Android devices automatically shut down services to save battery life, which can cause disconnects. Visit <a href="https://dontkillmyapp.com" target="_blank">dontkillmyapp.com</a> and follow the instructions to make sure your device is playing nicely.</li>
-        <li>If that doesn't work, turn off the Tower and replace its batteries. Ensure you are using quality, named brand batteries with at least 2100mAh capacity.</li>
+        <li>Some Android devices automatically shut down services to save battery life, which can cause disconnects.
+          Visit <a href="https://dontkillmyapp.com" target="_blank">dontkillmyapp.com</a> and follow the instructions to
+          make sure your device is playing nicely.</li>
+        <li>If that doesn't work, turn off the Tower and replace its batteries. Ensure you are using quality, named
+          brand batteries with at least 2100mAh capacity.</li>
         <li>Fully restart your device (usually by pressing the sleep button until a restart prompt appears).</li>
-        <li>If you keep getting disconnected, please email <a href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+        <li>If you keep getting disconnected, please email <a
+            href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
       </ol>
 
       <h2>Tower Firmware Update Fails (Error 133)</h2>
       <ol>
-        <li>Try updating from a different device. The firmware update process requires more processing power than the main game, which may cause some lower-end devices to fail.</li>
+        <li>Try updating from a different device. The firmware update process requires more processing power than the
+          main game, which may cause some lower-end devices to fail.</li>
         <li>If the firmware update succeeds, feel free to return to your original device.</li>
-        <li>If the problem persists, please email <a href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+        <li>If the problem persists, please email <a
+            href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
       </ol>
 
       <h2>Tower Firmware Update Fails (Error 257)</h2>
@@ -1225,17 +1318,22 @@
         <li>Go into your bluetooth connections and disconnect from all other devices.</li>
         <li>Turn off your Tower and completely close the Return to Dark Tower app.</li>
         <li>Reopen the app and proceed normally.</li>
-        <li>If the problem persists, please email <a href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+        <li>If the problem persists, please email <a
+            href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
       </ol>
 
       <h2>Battery Specifications</h2>
-      <p>We recommend using name-brand rechargeable batteries for environmental reasons; however, it is also possible to use Alkaline or Lithium Iron Disulphide non-rechargeable batteries.</p>
-      <p>Note that NiMH rechargeable batteries will lose capacity over the course of a few weeks, even if not used — we recommend topping your rechargeable batteries up the night before playing!</p>
+      <p>We recommend using name-brand rechargeable batteries for environmental reasons; however, it is also possible to
+        use Alkaline or Lithium Iron Disulphide non-rechargeable batteries.</p>
+      <p>Note that NiMH rechargeable batteries will lose capacity over the course of a few weeks, even if not used — we
+        recommend topping your rechargeable batteries up the night before playing!</p>
 
       <h3>Good</h3>
       <ul>
-        <li>1.2v NiMH rechargeable cells with capacity above 2000mAh (e.g. Duracell Rechargeable AA 2500mAh, Eneloop Pro 2500mAh, Energizer Recharge Extreme 2300mAh)</li>
-        <li>1.5v Alkaline non-rechargeable cells from a name brand (e.g. Duracell Plus AA Alkaline, Duracell Optimum AA Alkaline)</li>
+        <li>1.2v NiMH rechargeable cells with capacity above 2000mAh (e.g. Duracell Rechargeable AA 2500mAh, Eneloop Pro
+          2500mAh, Energizer Recharge Extreme 2300mAh)</li>
+        <li>1.5v Alkaline non-rechargeable cells from a name brand (e.g. Duracell Plus AA Alkaline, Duracell Optimum AA
+          Alkaline)</li>
         <li>1.5v / 1.6v Lithium Iron Disulphide (LiFeS2) non-rechargeable cells (e.g. Energizer Ultimate Lithium)</li>
         <li>Mains adapters / "battery eliminators" designed for 3xAA / 4.5v operation only</li>
       </ul>

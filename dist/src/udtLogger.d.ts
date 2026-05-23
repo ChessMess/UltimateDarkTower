@@ -3,6 +3,15 @@ export type LogLevel = 'all' | 'debug' | 'info' | 'warn' | 'error';
 export interface LogOutput {
     write(level: LogLevel, message: string, timestamp: Date): void;
 }
+/**
+ * Subset of UdtDiagnosticsRecorder used by the logger to forward warn/error
+ * messages into the diagnostics ring buffer. Declared structurally to avoid
+ * a cyclic import.
+ */
+export interface DiagnosticsLogTarget {
+    enabled: boolean;
+    recordLog(level: LogLevel, message: string, context?: string): void;
+}
 export declare class ConsoleOutput implements LogOutput {
     write(level: LogLevel, message: string): void;
 }
@@ -43,7 +52,13 @@ export declare class Logger {
     private outputs;
     private enabledLevels;
     private static instance;
+    private diagnosticsTarget;
     constructor();
+    /**
+     * Bridge warn/error log lines into a diagnostics recorder so they appear
+     * in the disconnect incident ring buffer in correct chronological order.
+     */
+    setDiagnosticsTarget(target: DiagnosticsLogTarget | null): void;
     static getInstance(): Logger;
     addOutput(output: LogOutput): void;
     clearOutputs(): void;

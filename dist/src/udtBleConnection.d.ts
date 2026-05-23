@@ -1,5 +1,6 @@
 import { Logger } from './udtLogger';
 import { type IBluetoothAdapter } from './udtBluetoothAdapter';
+import type { UdtDiagnosticsRecorder, DisconnectCause, IncidentReport } from './udtDiagnostics';
 export interface TowerEventCallbacks {
     onTowerConnect: () => void;
     onTowerDisconnect: () => void;
@@ -36,6 +37,8 @@ export declare class UdtBleConnection {
     private logger;
     private callbacks;
     private responseProcessor;
+    private recorder;
+    private snapshotProviders;
     private bluetoothAdapter;
     isConnected: boolean;
     isDisposed: boolean;
@@ -71,7 +74,27 @@ export declare class UdtBleConnection {
         CALIBRATION_FINISHED: boolean;
         LOG_ALL: boolean;
     };
-    constructor(logger: Logger, callbacks: TowerEventCallbacks, adapter?: IBluetoothAdapter);
+    constructor(logger: Logger, callbacks: TowerEventCallbacks, adapter?: IBluetoothAdapter, recorder?: UdtDiagnosticsRecorder);
+    setDiagnosticsSnapshotProviders(providers: {
+        commandQueue: () => {
+            queueLength: number;
+            isProcessing: boolean;
+            currentCommand: {
+                id: string;
+                description?: string;
+                timestamp: number;
+            } | null;
+        };
+        towerState: () => unknown;
+        brokenSeals: () => string[];
+    }): void;
+    /**
+     * Record a disconnect incident with the recorder. Public so higher layers
+     * (e.g. UltimateDarkTower's beforeunload handler) can synthesize causes
+     * like 'page_unload' that aren't tied to a specific BLE detection path.
+     */
+    recordIncidentPublic(cause: DisconnectCause): IncidentReport | null;
+    private recordIncident;
     connect(): Promise<void>;
     disconnect(): Promise<void>;
     /**

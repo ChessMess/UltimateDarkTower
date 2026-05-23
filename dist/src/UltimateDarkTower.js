@@ -9,6 +9,7 @@ const udtTowerResponse_1 = require("./udtTowerResponse");
 const udtCommandFactory_1 = require("./udtCommandFactory");
 const udtTowerCommands_1 = require("./udtTowerCommands");
 const udtBluetoothAdapterFactory_1 = require("./udtBluetoothAdapterFactory");
+const udtDiagnostics_1 = require("./udtDiagnostics");
 /**
  * @title UltimateDarkTower
  * @description
@@ -32,6 +33,7 @@ const udtBluetoothAdapterFactory_1 = require("./udtBluetoothAdapterFactory");
  */
 class UltimateDarkTower {
     constructor(config) {
+        this.beforeUnloadHandler = null;
         // tower configuration
         this.retrySendCommandCountRef = { value: 0 };
         this.retrySendCommandMax = udtConstants_1.DEFAULT_RETRY_SEND_COMMAND_MAX;
@@ -66,8 +68,10 @@ class UltimateDarkTower {
         // utility
         this._logDetail = false;
         this.initializeLogger();
+        this.initializeDiagnostics(config === null || config === void 0 ? void 0 : config.diagnostics);
         this.initializeComponents(config);
         this.setupTowerResponseCallback();
+        this.installBeforeUnloadHandler();
     }
     /**
      * Initialize the logger with default console output
@@ -75,6 +79,21 @@ class UltimateDarkTower {
     initializeLogger() {
         this.logger = new udtLogger_1.Logger();
         this.logger.addOutput(new udtLogger_1.ConsoleOutput());
+    }
+    /**
+     * Initialize the diagnostics recorder. Always constructed; `enabled` defaults
+     * to false, so when no config is supplied the recorder is a no-op aside from
+     * a single boolean check at each hook site.
+     */
+    initializeDiagnostics(config) {
+        var _a, _b;
+        const sinks = (_a = config === null || config === void 0 ? void 0 : config.sinks) !== null && _a !== void 0 ? _a : ((config === null || config === void 0 ? void 0 : config.enabled) ? [new udtDiagnostics_1.InMemorySink()] : []);
+        this.diagnosticsRecorder = new udtDiagnostics_1.UdtDiagnosticsRecorder({
+            enabled: (_b = config === null || config === void 0 ? void 0 : config.enabled) !== null && _b !== void 0 ? _b : false,
+            capturePayloads: config === null || config === void 0 ? void 0 : config.capturePayloads,
+            sinks,
+        });
+        this.logger.setDiagnosticsTarget(this.diagnosticsRecorder);
     }
     /**
      * Initialize all tower components and their dependencies
@@ -90,7 +109,7 @@ class UltimateDarkTower {
         }
         // Initialize BLE connection with tower event handlers
         this.towerEventCallbacks = this.createTowerEventCallbacks();
-        this.bleConnection = new udtBleConnection_1.UdtBleConnection(this.logger, this.towerEventCallbacks, adapter);
+        this.bleConnection = new udtBleConnection_1.UdtBleConnection(this.logger, this.towerEventCallbacks, adapter, this.diagnosticsRecorder);
         // Initialize response processor
         this.responseProcessor = new udtTowerResponse_1.TowerResponseProcessor(this.logDetail);
         // Initialize command factory
@@ -98,6 +117,13 @@ class UltimateDarkTower {
         // Initialize tower commands with dependencies
         const commandDependencies = this.createCommandDependencies();
         this.towerCommands = new udtTowerCommands_1.UdtTowerCommands(commandDependencies);
+        // Wire diagnostics snapshot providers so the BLE layer can capture queue
+        // and tower state at the moment a disconnect cause fires.
+        this.bleConnection.setDiagnosticsSnapshotProviders({
+            commandQueue: () => this.towerCommands.getQueueStatus(),
+            towerState: () => this.currentTowerState,
+            brokenSeals: () => Array.from(this.brokenSeals),
+        });
         // Initialize broken seals from config (software-only, no hardware effects)
         if (config === null || config === void 0 ? void 0 : config.brokenSeals) {
             for (const seal of config.brokenSeals) {
@@ -105,6 +131,25 @@ class UltimateDarkTower {
                 this.brokenSeals.add(sealKey);
             }
         }
+    }
+    /**
+     * Browser-only: synthesize a `page_unload` incident if the page closes while
+     * connected. Without this, refreshing the page during a hang loses the
+     * lead-up context. IndexedDB writes during unload are best-effort.
+     */
+    installBeforeUnloadHandler() {
+        if (typeof window === 'undefined' || typeof window.addEventListener !== 'function')
+            return;
+        this.beforeUnloadHandler = () => {
+            var _a;
+            if (this.diagnosticsRecorder.enabled && ((_a = this.bleConnection) === null || _a === void 0 ? void 0 : _a.isConnected)) {
+                try {
+                    this.bleConnection.recordIncidentPublic('page_unload');
+                }
+                catch ( /* best-effort */_b) { /* best-effort */ }
+            }
+        };
+        window.addEventListener('beforeunload', this.beforeUnloadHandler);
     }
     /**
      * Set up the tower response callback after all components are initialized
@@ -162,7 +207,8 @@ class UltimateDarkTower {
             retrySendCommandCount: this.retrySendCommandCountRef,
             retrySendCommandMax: this.retrySendCommandMax,
             getCurrentTowerState: () => this.currentTowerState,
-            setTowerState: (newState, source) => this.setTowerState(newState, source)
+            setTowerState: (newState, source) => this.setTowerState(newState, source),
+            recorder: this.diagnosticsRecorder
         };
     }
     /**
@@ -427,6 +473,11 @@ class UltimateDarkTower {
         // Reset audio state to prevent sounds from persisting, but preserve user's volume setting
         // Tower always returns volume=0, so we keep the current volume from our local state
         newState.audio = { sample: 0, loop: false, volume: this.currentTowerState.audio.volume };
+        // Reset led_sequence to prevent light effects from persisting across subsequent commands.
+        // The real tower firmware returns 0 for this field in its responses, just like audio.
+        // Without this reset the emulator (which echoes back the exact bytes sent) causes every
+        // subsequent stateful command to re-trigger the last lighting effect.
+        newState.led_sequence = 0;
         this.setTowerState(newState, 'tower response');
     }
     //#endregion
@@ -761,7 +812,56 @@ class UltimateDarkTower {
         this.logger.info('Cleaning up UltimateDarkTower instance', '[UDT]');
         // Clear any pending commands in the queue
         this.towerCommands.clearQueue();
+        if (this.beforeUnloadHandler && typeof window !== 'undefined') {
+            window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+            this.beforeUnloadHandler = null;
+        }
+        this.logger.setDiagnosticsTarget(null);
         await this.bleConnection.cleanup();
+    }
+    //#endregion
+    //#region Diagnostics (BLE flight recorder)
+    /**
+     * Get the diagnostics recorder for direct access (live ring buffer, sinks,
+     * runtime enable/disable). Always returns a recorder; check `.enabled` to
+     * see whether capture is active.
+     */
+    getDiagnosticsRecorder() {
+        return this.diagnosticsRecorder;
+    }
+    /**
+     * Toggle diagnostics capture at runtime without reconstructing the tower.
+     * When enabled mid-session, the next BLE event begins populating the buffer.
+     */
+    setDiagnosticsEnabled(enabled) {
+        this.diagnosticsRecorder.enabled = enabled;
+    }
+    /**
+     * Whether diagnostics capture is currently active.
+     */
+    isDiagnosticsEnabled() {
+        return this.diagnosticsRecorder.enabled;
+    }
+    /**
+     * Get the most recent disconnect incident report, or null if none captured
+     * since this instance was created.
+     */
+    getLastIncident() {
+        return this.diagnosticsRecorder.getLastIncident();
+    }
+    /**
+     * Export current ring buffer + last incident as JSON for sharing/analysis.
+     * Useful as a one-liner in a "copy diagnostic info" button.
+     */
+    exportDiagnosticsJSON() {
+        return JSON.stringify({
+            schemaVersion: 1,
+            capturedAt: Date.now(),
+            sessionId: this.diagnosticsRecorder.getSessionId(),
+            ringBuffer: this.diagnosticsRecorder.getRingBuffer(),
+            batteryHistory: this.diagnosticsRecorder.getBatteryHistory(),
+            lastIncident: this.diagnosticsRecorder.getLastIncident(),
+        }, null, 2);
     }
 }
 exports.default = UltimateDarkTower;

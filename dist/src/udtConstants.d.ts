@@ -163,6 +163,8 @@ export declare const TOWER_LIGHT_SEQUENCES: {
     rotationDrumMiddle: number;
     rotationDrumBottom: number;
     monthStarted: number;
+    wholeTowerBreathing: number;
+    slowFlareThenFade: number;
 };
 export type SoundCategory = "Adversary" | "Ally" | "Battle" | "Classic" | "Unlisted" | "Dungeon" | "Foe" | "Spawn" | "Quest" | "Glyph" | "State" | "Seals";
 export declare const TOWER_MESSAGES: {

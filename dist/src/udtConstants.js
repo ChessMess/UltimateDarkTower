@@ -103,6 +103,8 @@ exports.TOWER_LIGHT_SEQUENCES = {
     rotationDrumMiddle: 0x11,
     rotationDrumBottom: 0x12,
     monthStarted: 0x13,
+    wholeTowerBreathing: 0x14,
+    slowFlareThenFade: 0x15,
 };
 // Tower Responses
 // prettier-ignore

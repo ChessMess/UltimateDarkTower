@@ -2,6 +2,14 @@ import type { IBluetoothAdapter, DeviceInformation } from '../../src';
 interface TowerEmulatorAdapterOptions {
     /** Called when a stateful command containing audio is written to the adapter. */
     onAudioCommand?: (sample: number, loop: boolean, volume: number) => void;
+    /**
+     * Called when a stateful command carries a non-zero `led_sequence` byte
+     * (a `Tower.lightOverrides(N)` call). The framework strips this field from
+     * tower state on every response, so the popup never sees it via the normal
+     * `applyState` path — this side-channel lets the controller fire a
+     * transient `playSequence(N)` on the emulator display.
+     */
+    onLightSequenceCommand?: (sequenceId: number) => void;
 }
 /**
  * A software-only Bluetooth adapter that simulates tower responses for use

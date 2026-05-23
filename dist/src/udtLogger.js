@@ -193,8 +193,16 @@ class Logger {
     constructor() {
         this.outputs = [];
         this.enabledLevels = new Set(['all']);
+        this.diagnosticsTarget = null;
         // Default to console output
         this.outputs.push(new ConsoleOutput());
+    }
+    /**
+     * Bridge warn/error log lines into a diagnostics recorder so they appear
+     * in the disconnect incident ring buffer in correct chronological order.
+     */
+    setDiagnosticsTarget(target) {
+        this.diagnosticsTarget = target;
     }
     static getInstance() {
         if (!Logger.instance) {
@@ -245,6 +253,7 @@ class Logger {
         return false;
     }
     log(level, message, context) {
+        var _a;
         if (!this.shouldLog(level))
             return;
         const contextPrefix = context ? `${context} ` : '';
@@ -258,6 +267,14 @@ class Logger {
                 console.error('Logger output error:', error);
             }
         });
+        if ((level === 'warn' || level === 'error') && ((_a = this.diagnosticsTarget) === null || _a === void 0 ? void 0 : _a.enabled)) {
+            try {
+                this.diagnosticsTarget.recordLog(level, message, context);
+            }
+            catch (error) {
+                console.error('Diagnostics log bridge error:', error);
+            }
+        }
     }
     debug(message, context) {
         this.log('debug', message, context);

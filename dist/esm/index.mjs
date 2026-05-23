@@ -125,7 +125,9 @@ var init_udtConstants = __esm({
       rotationDrumTop: 16,
       rotationDrumMiddle: 17,
       rotationDrumBottom: 18,
-      monthStarted: 19
+      monthStarted: 19,
+      wholeTowerBreathing: 20,
+      slowFlareThenFade: 21
     };
     TOWER_MESSAGES = {
       TOWER_STATE: { name: "Tower State", value: 0, critical: false },
@@ -1227,10 +1229,18 @@ var Logger = class _Logger {
   constructor() {
     this.outputs = [];
     this.enabledLevels = /* @__PURE__ */ new Set(["all"]);
+    this.diagnosticsTarget = null;
     this.outputs.push(new ConsoleOutput());
   }
   static {
     this.instance = null;
+  }
+  /**
+   * Bridge warn/error log lines into a diagnostics recorder so they appear
+   * in the disconnect incident ring buffer in correct chronological order.
+   */
+  setDiagnosticsTarget(target) {
+    this.diagnosticsTarget = target;
   }
   static getInstance() {
     if (!_Logger.instance) {
@@ -1286,6 +1296,13 @@ var Logger = class _Logger {
         console.error("Logger output error:", error);
       }
     });
+    if ((level === "warn" || level === "error") && this.diagnosticsTarget?.enabled) {
+      try {
+        this.diagnosticsTarget.recordLog(level, message, context);
+      } catch (error) {
+        console.error("Diagnostics log bridge error:", error);
+      }
+    }
   }
   debug(message, context) {
     this.log("debug", message, context);
@@ -1531,7 +1548,12 @@ var BluetoothAdapterFactory = class {
 
 // src/udtBleConnection.ts
 var UdtBleConnection = class {
-  constructor(logger2, callbacks, adapter) {
+  constructor(logger2, callbacks, adapter, recorder) {
+    this.recorder = null;
+    // Snapshot providers wired by UltimateDarkTower so the recorder can capture
+    // higher-level state (command queue, tower state, broken seals) at the
+    // moment a disconnect cause fires.
+    this.snapshotProviders = null;
     // Connection state
     this.isConnected = false;
     this.isDisposed = false;
@@ -1576,6 +1598,7 @@ var UdtBleConnection = class {
     this.logger = logger2;
     this.callbacks = callbacks;
     this.responseProcessor = new TowerResponseProcessor();
+    this.recorder = recorder ?? null;
     this.bluetoothAdapter = adapter || BluetoothAdapterFactory.create("auto" /* AUTO */);
     this.bluetoothAdapter.onCharacteristicValueChanged((data) => {
       this.onRxData(data);
@@ -1585,6 +1608,35 @@ var UdtBleConnection = class {
     });
     this.bluetoothAdapter.onBluetoothAvailabilityChanged((available) => {
       this.bleAvailabilityChange(available);
+    });
+  }
+  setDiagnosticsSnapshotProviders(providers) {
+    this.snapshotProviders = providers;
+  }
+  /**
+   * Record a disconnect incident with the recorder. Public so higher layers
+   * (e.g. UltimateDarkTower's beforeunload handler) can synthesize causes
+   * like 'page_unload' that aren't tied to a specific BLE detection path.
+   */
+  recordIncidentPublic(cause) {
+    return this.recordIncident(cause);
+  }
+  recordIncident(cause) {
+    if (!this.recorder || !this.recorder.enabled) return null;
+    const queueSnapshot = this.snapshotProviders?.commandQueue() ?? {
+      queueLength: 0,
+      isProcessing: false,
+      currentCommand: null
+    };
+    const towerState = this.snapshotProviders?.towerState() ?? null;
+    const brokenSeals = this.snapshotProviders?.brokenSeals() ?? [];
+    return this.recorder.recordIncident({
+      cause,
+      connectionStatus: this.getConnectionStatus(),
+      deviceInformation: this.getDeviceInformation(),
+      commandQueue: queueSnapshot,
+      towerState,
+      brokenSeals
     });
   }
   async connect() {
@@ -1601,6 +1653,7 @@ var UdtBleConnection = class {
       this.isConnected = true;
       this.lastSuccessfulCommand = Date.now();
       this.lastBatteryHeartbeat = Date.now();
+      this.recorder?.beginSession();
       await this.readDeviceInformation();
       if (this.enableConnectionMonitoring) {
         this.startConnectionMonitoring();
@@ -1614,6 +1667,9 @@ var UdtBleConnection = class {
   }
   async disconnect() {
     this.stopConnectionMonitoring();
+    if (this.isConnected) {
+      this.recordIncident("user_initiated");
+    }
     if (this.bluetoothAdapter.isConnected()) {
       await this.bluetoothAdapter.disconnect();
       this.logger.info("Tower disconnected", "[UDT]");
@@ -1625,6 +1681,7 @@ var UdtBleConnection = class {
    * Used by UdtTowerCommands instead of direct characteristic access.
    */
   async writeCommand(command) {
+    this.recorder?.recordCommandPayload("cmd_sent", command, { len: command.length });
     return await this.bluetoothAdapter.writeCharacteristic(command);
   }
   /**
@@ -1635,6 +1692,9 @@ var UdtBleConnection = class {
     this.lastSuccessfulCommand = Date.now();
     const { cmdKey } = this.responseProcessor.getTowerCommand(receivedData[0]);
     const isBattery = this.responseProcessor.isBatteryResponse(cmdKey);
+    if (this.recorder?.enabled && !isBattery) {
+      this.recorder.recordCommandPayload("cmd_response", receivedData, { cmdKey, len: receivedData.length });
+    }
     const shouldLogCommand = this.logTowerResponses && this.responseProcessor.shouldLogResponse(cmdKey, this.logTowerResponseConfig) && !isBattery;
     if (shouldLogCommand) {
       this.logger.info(`${cmdKey}`, "[UDT][BLE][RCVD]");
@@ -1649,6 +1709,7 @@ var UdtBleConnection = class {
       this.lastBatteryHeartbeat = Date.now();
       const millivolts = getMilliVoltsFromTowerResponse(receivedData);
       const batteryPercentage = milliVoltsToPercentage(millivolts);
+      this.recorder?.recordBattery(millivolts, milliVoltsToPercentageNumber(millivolts));
       const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
       const batteryLogFrequencyPassed = Date.now() - this.lastBatteryLog >= this.batteryLogFrequency;
       const shouldLog = this.batteryLogEnabled && (this.batteryLogOnChangeOnly ? didBatteryLevelChange || this.lastBatteryPercentage === "" : batteryLogFrequencyPassed);
@@ -1668,17 +1729,20 @@ var UdtBleConnection = class {
     const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
     const state = rtdt_unpack_state(receivedData);
     this.logger.debug(`Tower State: ${JSON.stringify(state)} `, "[UDT][BLE]");
+    this.recorder?.recordEvent("tower_state_response");
     if (this.performingCalibration) {
       this.performingCalibration = false;
       this.performingLongCommand = false;
       this.lastBatteryHeartbeat = Date.now();
       this.callbacks.onCalibrationComplete();
       this.logger.info("Tower calibration complete", "[UDT]");
+      this.recorder?.recordEvent("calibration_complete");
     }
     if (dataSkullDropCount !== this.towerSkullDropCount) {
       if (dataSkullDropCount) {
         this.callbacks.onSkullDrop(dataSkullDropCount);
         this.logger.info(`Skull drop detected: app:${this.towerSkullDropCount < 0 ? "empty" : this.towerSkullDropCount}  tower:${dataSkullDropCount}`, "[UDT]");
+        this.recorder?.recordEvent("skull_drop", { count: dataSkullDropCount });
       } else {
         this.logger.info(`Skull count reset to ${dataSkullDropCount}`, "[UDT]");
       }
@@ -1704,11 +1768,15 @@ var UdtBleConnection = class {
     this.logger.info("Bluetooth availability changed", "[UDT][BLE]");
     if (!available && this.isConnected) {
       this.logger.warn("Bluetooth became unavailable - handling disconnection", "[UDT][BLE]");
+      this.recordIncident("bt_unavailable");
       this.handleDisconnection();
     }
   }
   onTowerDeviceDisconnected() {
     this.logger.warn("Tower device disconnected unexpectedly", "[UDT][BLE]");
+    if (this.isConnected) {
+      this.recordIncident("adapter_event");
+    }
     this.handleDisconnection();
   }
   handleDisconnection() {
@@ -1741,6 +1809,7 @@ var UdtBleConnection = class {
     }
     if (!this.bluetoothAdapter.isGattConnected()) {
       this.logger.warn("GATT connection lost detected during health check", "[UDT][BLE]");
+      this.recordIncident("gatt_health_check");
       this.handleDisconnection();
       return;
     }
@@ -1758,12 +1827,17 @@ var UdtBleConnection = class {
           this.logger.info("Verifying tower connection status before triggering disconnection...", "[UDT][BLE]");
           if (this.bluetoothAdapter.isGattConnected()) {
             this.logger.info("GATT connection still available - heartbeat timeout may be temporary", "[UDT][BLE]");
+            this.recorder?.recordEvent("heartbeat_late", {
+              sinceMs: timeSinceLastBatteryHeartbeat,
+              threshold: timeoutThreshold
+            });
             this.lastBatteryHeartbeat = Date.now();
             this.logger.info("Reset battery heartbeat timer - will monitor for another timeout period", "[UDT][BLE]");
             return;
           }
         }
         this.logger.warn("Tower possibly disconnected due to battery depletion or power loss", "[UDT][BLE]");
+        this.recordIncident("heartbeat_timeout");
         this.handleDisconnection();
         return;
       }
@@ -1771,6 +1845,7 @@ var UdtBleConnection = class {
     const timeSinceLastResponse = Date.now() - this.lastSuccessfulCommand;
     if (timeSinceLastResponse > this.connectionTimeoutThreshold) {
       this.logger.warn("General connection timeout detected - no responses received", "[UDT][BLE]");
+      this.recordIncident("response_timeout");
       this.handleDisconnection();
     }
   }
@@ -2103,8 +2178,7 @@ init_udtConstants();
 
 // src/udtCommandQueue.ts
 var CommandQueue = class {
-  // 30 seconds
-  constructor(logger2, sendCommandFn) {
+  constructor(logger2, sendCommandFn, recorder) {
     this.logger = logger2;
     this.sendCommandFn = sendCommandFn;
     this.queue = [];
@@ -2112,6 +2186,12 @@ var CommandQueue = class {
     this.timeoutHandle = null;
     this.isProcessing = false;
     this.timeoutMs = 3e4;
+    // 30 seconds
+    this.recorder = null;
+    this.recorder = recorder ?? null;
+  }
+  setRecorder(recorder) {
+    this.recorder = recorder;
   }
   /**
    * Enqueue a command for processing
@@ -2128,6 +2208,11 @@ var CommandQueue = class {
       };
       this.queue.push(queuedCommand);
       this.logger.debug(`Command queued: ${description || "unnamed"} (queue size: ${this.queue.length})`, "[UDT]");
+      this.recorder?.recordEvent("cmd_enqueued", {
+        id: queuedCommand.id,
+        description,
+        queueDepth: this.queue.length
+      });
       if (!this.isProcessing) {
         this.processNext();
       }
@@ -2151,6 +2236,11 @@ var CommandQueue = class {
       await this.sendCommandFn(command);
     } catch (error) {
       this.clearTimeout();
+      this.recorder?.recordEvent("cmd_failed", {
+        id,
+        description,
+        error: error?.message ?? String(error)
+      });
       this.currentCommand = null;
       this.isProcessing = false;
       reject(error);
@@ -2176,8 +2266,14 @@ var CommandQueue = class {
    */
   onTimeout() {
     if (this.currentCommand) {
-      const { description, id } = this.currentCommand;
+      const { description, id, timestamp } = this.currentCommand;
       this.logger.warn(`Command timeout after ${this.timeoutMs}ms: ${description || id}`, "[UDT]");
+      this.recorder?.recordEvent("cmd_timeout", {
+        id,
+        description,
+        ageMs: Date.now() - timestamp,
+        queueDepth: this.queue.length
+      });
       const reject = this.currentCommand.reject;
       this.currentCommand = null;
       this.isProcessing = false;
@@ -2232,7 +2328,8 @@ var UdtTowerCommands = class {
     this.deps = dependencies;
     this.commandQueue = new CommandQueue(
       this.deps.logger,
-      (command) => this.sendTowerCommandDirect(command)
+      (command) => this.sendTowerCommandDirect(command),
+      this.deps.recorder
     );
   }
   /**
@@ -2291,6 +2388,7 @@ var UdtTowerCommands = class {
   async calibrate() {
     if (!this.deps.bleConnection.performingCalibration) {
       this.deps.logger.info("Performing Tower Calibration", "[UDT][CMD]");
+      this.deps.recorder?.recordEvent("calibration_started");
       await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]), "calibrate");
       this.deps.bleConnection.performingCalibration = true;
       this.deps.bleConnection.performingLongCommand = true;
@@ -2786,9 +2884,201 @@ var UdtTowerCommands = class {
   }
 };
 
+// src/udtDiagnostics.ts
+var RING_BUFFER_SIZE = 500;
+var RING_BUFFER_DRAIN = 50;
+var BATTERY_HISTORY_SIZE = 60;
+var PAYLOAD_MAX_BYTES = 32;
+var LIBRARY_VERSION = "3.0.0";
+function detectPlatform() {
+  if (typeof window !== "undefined" && typeof window.navigator !== "undefined") {
+    return "web";
+  }
+  if (typeof process !== "undefined" && process.versions?.node) {
+    return "node";
+  }
+  return "custom";
+}
+function makeId() {
+  const g = globalThis;
+  if (g.crypto && typeof g.crypto.randomUUID === "function") {
+    try {
+      return g.crypto.randomUUID();
+    } catch {
+    }
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 11)}`;
+}
+function bytesToHex(data, maxBytes = PAYLOAD_MAX_BYTES) {
+  const slice = data.length > maxBytes ? data.subarray(0, maxBytes) : data;
+  let out = "";
+  for (let i = 0; i < slice.length; i++) {
+    out += slice[i].toString(16).padStart(2, "0");
+  }
+  if (data.length > maxBytes) {
+    out += `..(+${data.length - maxBytes})`;
+  }
+  return out;
+}
+var InMemorySink = class {
+  constructor(maxIncidents = 50) {
+    this.incidents = [];
+    this.maxIncidents = maxIncidents;
+  }
+  onIncident(report) {
+    this.incidents.push(report);
+    if (this.incidents.length > this.maxIncidents) {
+      this.incidents.splice(0, this.incidents.length - this.maxIncidents);
+    }
+  }
+  list() {
+    return [...this.incidents];
+  }
+  get(incidentId) {
+    return this.incidents.find((r) => r.incidentId === incidentId);
+  }
+  clear() {
+    this.incidents = [];
+  }
+};
+var UdtDiagnosticsRecorder = class {
+  constructor(config) {
+    this.events = [];
+    this.batteryHistory = [];
+    this.sessionId = "";
+    this.connectedAt = null;
+    this.lastIncident = null;
+    this.enabled = config.enabled;
+    this.capturePayloads = config.capturePayloads ?? false;
+    this.sinks = config.sinks ?? [];
+  }
+  setSinks(sinks) {
+    this.sinks = sinks;
+  }
+  getSinks() {
+    return [...this.sinks];
+  }
+  addSink(sink) {
+    this.sinks.push(sink);
+  }
+  /** Mark the start of a connected session. Called from BLE connect path. */
+  beginSession() {
+    if (!this.enabled) return;
+    this.sessionId = makeId();
+    this.connectedAt = Date.now();
+    this.events = [];
+    this.batteryHistory = [];
+    this.recordEvent("connect");
+  }
+  recordEvent(kind, data) {
+    if (!this.enabled) return;
+    const event = { t: Date.now(), kind };
+    if (data) event.data = data;
+    this.events.push(event);
+    if (this.events.length > RING_BUFFER_SIZE) {
+      this.events.splice(0, RING_BUFFER_DRAIN);
+    }
+    for (const sink of this.sinks) {
+      if (sink.onEvent) {
+        try {
+          sink.onEvent(event);
+        } catch (e) {
+          console.error("Diagnostics sink onEvent error:", e);
+        }
+      }
+    }
+  }
+  recordCommandPayload(kind, data, extra) {
+    if (!this.enabled) return;
+    const payload = { ...extra };
+    if (this.capturePayloads) {
+      payload.payloadHex = bytesToHex(data);
+      payload.payloadLen = data.length;
+    }
+    this.recordEvent(kind, payload);
+  }
+  recordBattery(mv, pct) {
+    if (!this.enabled) return;
+    this.batteryHistory.push({ t: Date.now(), mv, pct });
+    if (this.batteryHistory.length > BATTERY_HISTORY_SIZE) {
+      this.batteryHistory.splice(0, this.batteryHistory.length - BATTERY_HISTORY_SIZE);
+    }
+  }
+  /** Forwards a log line into the events ring (called by Logger when bridged). */
+  recordLog(level, message, context) {
+    if (!this.enabled) return;
+    this.recordEvent("log", { level, message, context });
+  }
+  /**
+   * Capture an incident snapshot and dispatch to sinks.
+   * Must be called BEFORE the BLE layer clears state.
+   */
+  recordIncident(inputs) {
+    if (!this.enabled) return null;
+    const triggeredAt = Date.now();
+    const inFlightCommandAgeMs = inputs.commandQueue.currentCommand ? triggeredAt - inputs.commandQueue.currentCommand.timestamp : null;
+    const report = {
+      schemaVersion: 1,
+      incidentId: makeId(),
+      sessionId: this.sessionId || makeId(),
+      cause: inputs.cause,
+      triggeredAt,
+      connectedAt: this.connectedAt,
+      sessionDurationMs: this.connectedAt ? triggeredAt - this.connectedAt : 0,
+      connectionStatus: { ...inputs.connectionStatus },
+      deviceInformation: { ...inputs.deviceInformation },
+      commandQueue: {
+        queueLength: inputs.commandQueue.queueLength,
+        isProcessing: inputs.commandQueue.isProcessing,
+        currentCommand: inputs.commandQueue.currentCommand ? { ...inputs.commandQueue.currentCommand } : null
+      },
+      inFlightCommandAgeMs,
+      towerState: inputs.towerState ? JSON.parse(JSON.stringify(inputs.towerState)) : null,
+      brokenSeals: [...inputs.brokenSeals],
+      recentEvents: [...this.events],
+      batteryHistory: [...this.batteryHistory],
+      library: { version: LIBRARY_VERSION, platform: detectPlatform() },
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : void 0
+    };
+    this.lastIncident = report;
+    this.recordEvent("disconnect", { cause: inputs.cause });
+    for (const sink of this.sinks) {
+      try {
+        const result = sink.onIncident(report);
+        if (result && typeof result.then === "function") {
+          result.catch((e) => console.error("Diagnostics sink onIncident error:", e));
+        }
+      } catch (e) {
+        console.error("Diagnostics sink onIncident error:", e);
+      }
+    }
+    return report;
+  }
+  getRingBuffer() {
+    return [...this.events];
+  }
+  getBatteryHistory() {
+    return [...this.batteryHistory];
+  }
+  getSessionId() {
+    return this.sessionId;
+  }
+  getConnectedAt() {
+    return this.connectedAt;
+  }
+  getLastIncident() {
+    return this.lastIncident;
+  }
+  clearRingBuffer() {
+    this.events = [];
+    this.batteryHistory = [];
+  }
+};
+
 // src/UltimateDarkTower.ts
 var UltimateDarkTower = class {
   constructor(config) {
+    this.beforeUnloadHandler = null;
     // tower configuration
     this.retrySendCommandCountRef = { value: 0 };
     this.retrySendCommandMax = DEFAULT_RETRY_SEND_COMMAND_MAX;
@@ -2830,8 +3120,10 @@ var UltimateDarkTower = class {
     // utility
     this._logDetail = false;
     this.initializeLogger();
+    this.initializeDiagnostics(config?.diagnostics);
     this.initializeComponents(config);
     this.setupTowerResponseCallback();
+    this.installBeforeUnloadHandler();
   }
   /**
    * Initialize the logger with default console output
@@ -2839,6 +3131,20 @@ var UltimateDarkTower = class {
   initializeLogger() {
     this.logger = new Logger();
     this.logger.addOutput(new ConsoleOutput());
+  }
+  /**
+   * Initialize the diagnostics recorder. Always constructed; `enabled` defaults
+   * to false, so when no config is supplied the recorder is a no-op aside from
+   * a single boolean check at each hook site.
+   */
+  initializeDiagnostics(config) {
+    const sinks = config?.sinks ?? (config?.enabled ? [new InMemorySink()] : []);
+    this.diagnosticsRecorder = new UdtDiagnosticsRecorder({
+      enabled: config?.enabled ?? false,
+      capturePayloads: config?.capturePayloads,
+      sinks
+    });
+    this.logger.setDiagnosticsTarget(this.diagnosticsRecorder);
   }
   /**
    * Initialize all tower components and their dependencies
@@ -2851,17 +3157,39 @@ var UltimateDarkTower = class {
       adapter = BluetoothAdapterFactory.create(config.platform);
     }
     this.towerEventCallbacks = this.createTowerEventCallbacks();
-    this.bleConnection = new UdtBleConnection(this.logger, this.towerEventCallbacks, adapter);
+    this.bleConnection = new UdtBleConnection(this.logger, this.towerEventCallbacks, adapter, this.diagnosticsRecorder);
     this.responseProcessor = new TowerResponseProcessor(this.logDetail);
     this.commandFactory = new UdtCommandFactory();
     const commandDependencies = this.createCommandDependencies();
     this.towerCommands = new UdtTowerCommands(commandDependencies);
+    this.bleConnection.setDiagnosticsSnapshotProviders({
+      commandQueue: () => this.towerCommands.getQueueStatus(),
+      towerState: () => this.currentTowerState,
+      brokenSeals: () => Array.from(this.brokenSeals)
+    });
     if (config?.brokenSeals) {
       for (const seal of config.brokenSeals) {
         const sealKey = `${seal.level}-${seal.side}`;
         this.brokenSeals.add(sealKey);
       }
     }
+  }
+  /**
+   * Browser-only: synthesize a `page_unload` incident if the page closes while
+   * connected. Without this, refreshing the page during a hang loses the
+   * lead-up context. IndexedDB writes during unload are best-effort.
+   */
+  installBeforeUnloadHandler() {
+    if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
+    this.beforeUnloadHandler = () => {
+      if (this.diagnosticsRecorder.enabled && this.bleConnection?.isConnected) {
+        try {
+          this.bleConnection.recordIncidentPublic("page_unload");
+        } catch {
+        }
+      }
+    };
+    window.addEventListener("beforeunload", this.beforeUnloadHandler);
   }
   /**
    * Set up the tower response callback after all components are initialized
@@ -2917,7 +3245,8 @@ var UltimateDarkTower = class {
       retrySendCommandCount: this.retrySendCommandCountRef,
       retrySendCommandMax: this.retrySendCommandMax,
       getCurrentTowerState: () => this.currentTowerState,
-      setTowerState: (newState, source) => this.setTowerState(newState, source)
+      setTowerState: (newState, source) => this.setTowerState(newState, source),
+      recorder: this.diagnosticsRecorder
     };
   }
   /**
@@ -3209,6 +3538,7 @@ var UltimateDarkTower = class {
   updateTowerStateFromResponse(stateData) {
     const newState = rtdt_unpack_state(stateData);
     newState.audio = { sample: 0, loop: false, volume: this.currentTowerState.audio.volume };
+    newState.led_sequence = 0;
     this.setTowerState(newState, "tower response");
   }
   //#endregion
@@ -3526,7 +3856,56 @@ var UltimateDarkTower = class {
   async cleanup() {
     this.logger.info("Cleaning up UltimateDarkTower instance", "[UDT]");
     this.towerCommands.clearQueue();
+    if (this.beforeUnloadHandler && typeof window !== "undefined") {
+      window.removeEventListener("beforeunload", this.beforeUnloadHandler);
+      this.beforeUnloadHandler = null;
+    }
+    this.logger.setDiagnosticsTarget(null);
     await this.bleConnection.cleanup();
+  }
+  //#endregion
+  //#region Diagnostics (BLE flight recorder)
+  /**
+   * Get the diagnostics recorder for direct access (live ring buffer, sinks,
+   * runtime enable/disable). Always returns a recorder; check `.enabled` to
+   * see whether capture is active.
+   */
+  getDiagnosticsRecorder() {
+    return this.diagnosticsRecorder;
+  }
+  /**
+   * Toggle diagnostics capture at runtime without reconstructing the tower.
+   * When enabled mid-session, the next BLE event begins populating the buffer.
+   */
+  setDiagnosticsEnabled(enabled) {
+    this.diagnosticsRecorder.enabled = enabled;
+  }
+  /**
+   * Whether diagnostics capture is currently active.
+   */
+  isDiagnosticsEnabled() {
+    return this.diagnosticsRecorder.enabled;
+  }
+  /**
+   * Get the most recent disconnect incident report, or null if none captured
+   * since this instance was created.
+   */
+  getLastIncident() {
+    return this.diagnosticsRecorder.getLastIncident();
+  }
+  /**
+   * Export current ring buffer + last incident as JSON for sharing/analysis.
+   * Useful as a one-liner in a "copy diagnostic info" button.
+   */
+  exportDiagnosticsJSON() {
+    return JSON.stringify({
+      schemaVersion: 1,
+      capturedAt: Date.now(),
+      sessionId: this.diagnosticsRecorder.getSessionId(),
+      ringBuffer: this.diagnosticsRecorder.getRingBuffer(),
+      batteryHistory: this.diagnosticsRecorder.getBatteryHistory(),
+      lastIncident: this.diagnosticsRecorder.getLastIncident()
+    }, null, 2);
   }
   //#endregion
 };
@@ -3535,6 +3914,149 @@ var UltimateDarkTower_default = UltimateDarkTower;
 // src/index.ts
 init_udtConstants();
 init_udtBluetoothAdapter();
+
+// src/sinks/IndexedDBSink.ts
+var DB_NAME = "udt-diagnostics";
+var DB_VERSION = 1;
+var STORE_NAME = "incidents";
+function indexedDBAvailable() {
+  try {
+    return typeof indexedDB !== "undefined";
+  } catch {
+    return false;
+  }
+}
+function openDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        const store = db.createObjectStore(STORE_NAME, { keyPath: "incidentId" });
+        store.createIndex("triggeredAt", "triggeredAt", { unique: false });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+var IndexedDBSink = class {
+  constructor(maxIncidents = 50) {
+    this.dbPromise = null;
+    this.maxIncidents = maxIncidents;
+    this.available = indexedDBAvailable();
+  }
+  async getDb() {
+    if (!this.available) return null;
+    if (!this.dbPromise) {
+      this.dbPromise = openDb().catch((err) => {
+        this.available = false;
+        this.dbPromise = null;
+        throw err;
+      });
+    }
+    try {
+      return await this.dbPromise;
+    } catch {
+      return null;
+    }
+  }
+  async onIncident(report) {
+    const db = await this.getDb();
+    if (!db) return;
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      store.put(report);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    }).catch((e) => console.error("IndexedDBSink put failed:", e));
+    await this.evictOld();
+  }
+  async list() {
+    const db = await this.getDb();
+    if (!db) return [];
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const all = req.result.slice();
+        all.sort((a, b) => b.triggeredAt - a.triggeredAt);
+        resolve(all);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async get(incidentId) {
+    const db = await this.getDb();
+    if (!db) return void 0;
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(incidentId);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async delete(incidentId) {
+    const db = await this.getDb();
+    if (!db) return;
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      tx.objectStore(STORE_NAME).delete(incidentId);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    }).catch((e) => console.error("IndexedDBSink delete failed:", e));
+  }
+  async clear() {
+    const db = await this.getDb();
+    if (!db) return;
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      tx.objectStore(STORE_NAME).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    }).catch((e) => console.error("IndexedDBSink clear failed:", e));
+  }
+  /** Insert an externally-supplied report (e.g. from a JSON import). */
+  async put(report) {
+    return this.onIncident(report);
+  }
+  async evictOld() {
+    const db = await this.getDb();
+    if (!db) return;
+    await new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const countReq = store.count();
+      countReq.onsuccess = () => {
+        const total = countReq.result;
+        if (total <= this.maxIncidents) {
+          resolve();
+          return;
+        }
+        const toRemove = total - this.maxIncidents;
+        const idx = store.index("triggeredAt");
+        const cursorReq = idx.openCursor();
+        let removed = 0;
+        cursorReq.onsuccess = () => {
+          const cursor = cursorReq.result;
+          if (!cursor || removed >= toRemove) {
+            resolve();
+            return;
+          }
+          cursor.delete();
+          removed++;
+          cursor.continue();
+        };
+        cursorReq.onerror = () => resolve();
+      };
+      countReq.onerror = () => resolve();
+    });
+  }
+};
 
 // src/udtSeedParser.ts
 var ALPHABET = "a123456789bcdefghijklmnpqrstuvwxyz";
@@ -4036,6 +4558,8 @@ export {
   DRUM_PACKETS,
   GAME_SOURCES,
   GLYPHS,
+  InMemorySink,
+  IndexedDBSink,
   LAYER_TO_POSITION,
   LEDGE_BASE_LIGHT_POSITIONS,
   LED_CHANNEL_LOOKUP,
@@ -4066,10 +4590,12 @@ export {
   UART_RX_CHARACTERISTIC_UUID,
   UART_SERVICE_UUID,
   UART_TX_CHARACTERISTIC_UUID,
+  UdtDiagnosticsRecorder,
   UltimateDarkTower_default as UltimateDarkTower,
   VOLTAGE_LEVELS,
   VOLUME_DESCRIPTIONS,
   VOLUME_ICONS,
+  bytesToHex,
   charToValue,
   compareSeedsRaw,
   createDefaultTowerState,
