@@ -43,6 +43,8 @@ function getBuildConfigs() {
             tsconfig: 'tsconfig.json',
             loader: {
                 '.svg': 'text',
+                '.glb': 'file',
+                '.png': 'file',
             },
             external: ['@stoprocent/noble'],
             alias: {
@@ -64,13 +66,19 @@ function getBuildConfigs() {
             bundle: true,
             outfile: 'dist/examples/controller/TowerEmulator.js',
             platform: 'browser',
-            target: 'es2017',
-            format: 'iife',
+            // ESM + es2020 so esbuild rewrites the display package's per-file
+            // `new URL('./assets/<file>.ogg', import.meta.url)` references into
+            // emitted assets next to the bundle. The HTML loads it via
+            // <script type="module">.
+            target: 'es2020',
+            format: 'esm',
             sourcemap: true,
             minify: false,
             tsconfig: 'tsconfig.json',
             loader: {
                 '.svg': 'text',
+                '.glb': 'file',
+                '.png': 'file',
             },
             external: ['@stoprocent/noble'],
             alias: {
@@ -154,6 +162,34 @@ async function buildExamples() {
         const assetsSrcDir = path.join(__dirname, 'examples', 'assets');
         const assetsDestDir = path.join(examplesDistDir, 'assets');
         copyAssetsDir(assetsSrcDir, assetsDestDir);
+
+        // Copy display package's audio samples next to TowerEmulator.js so the
+        // display's per-file `new URL('./assets/<file>.ogg', import.meta.url)`
+        // references resolve at runtime against the bundle's URL. esbuild
+        // doesn't emit assets from `new URL(...)` expressions (unlike Vite),
+        // so we mirror the directory layout the bundle expects.
+        const emulatorAudioSrcDir = path.join(
+            __dirname,
+            '..',
+            'UltimateDarkTowerDisplay',
+            'src',
+            'audio',
+            'assets'
+        );
+        const emulatorAudioDestDir = path.join(controllerDistDir, 'assets');
+        if (fs.existsSync(emulatorAudioSrcDir)) {
+            ensureDir(emulatorAudioDestDir);
+            const oggs = fs.readdirSync(emulatorAudioSrcDir).filter((f) => f.endsWith('.ogg'));
+            oggs.forEach((file) => {
+                copyFile(
+                    path.join(emulatorAudioSrcDir, file),
+                    path.join(emulatorAudioDestDir, file)
+                );
+            });
+            console.log(`   - controller/assets/ (${oggs.length} .ogg samples for emulator audio)`);
+        } else {
+            console.log('   - emulator audio source not found - emulator will be silent');
+        }
 
         console.log('✅ Examples built successfully!');
         console.log('📁 Output directory: dist/examples/');

@@ -6,10 +6,11 @@ import {
 } from './udtConstants';
 import { Logger } from './udtLogger';
 import { TowerResponseProcessor } from './udtTowerResponse';
-import { getMilliVoltsFromTowerResponse, milliVoltsToPercentage } from './udtHelpers';
-import { rtdt_unpack_state } from './udtTowerState';
+import { getMilliVoltsFromTowerResponse, milliVoltsToPercentage, milliVoltsToPercentageNumber } from './udtHelpers';
+import { rtdt_unpack_state, type TowerState } from './udtTowerState';
 import { type IBluetoothAdapter } from './udtBluetoothAdapter';
 import { BluetoothAdapterFactory, BluetoothPlatform } from './udtBluetoothAdapterFactory';
+import type { UdtDiagnosticsRecorder, DisconnectCause, IncidentReport } from './udtDiagnostics';
 
 
 export interface TowerEventCallbacks {
@@ -51,6 +52,16 @@ export class UdtBleConnection {
     private logger: Logger;
     private callbacks: TowerEventCallbacks;
     private responseProcessor: TowerResponseProcessor;
+    private recorder: UdtDiagnosticsRecorder | null = null;
+
+    // Snapshot providers wired by UltimateDarkTower so the recorder can capture
+    // higher-level state (command queue, tower state, broken seals) at the
+    // moment a disconnect cause fires.
+    private snapshotProviders: {
+        commandQueue: () => { queueLength: number; isProcessing: boolean; currentCommand: { id: string; description?: string; timestamp: number } | null };
+        towerState: () => unknown;
+        brokenSeals: () => string[];
+    } | null = null;
 
     // Bluetooth adapter (platform-agnostic)
     private bluetoothAdapter: IBluetoothAdapter;
@@ -101,10 +112,11 @@ export class UdtBleConnection {
         LOG_ALL: false,
     };
 
-    constructor(logger: Logger, callbacks: TowerEventCallbacks, adapter?: IBluetoothAdapter) {
+    constructor(logger: Logger, callbacks: TowerEventCallbacks, adapter?: IBluetoothAdapter, recorder?: UdtDiagnosticsRecorder) {
         this.logger = logger;
         this.callbacks = callbacks;
         this.responseProcessor = new TowerResponseProcessor();
+        this.recorder = recorder ?? null;
 
         // Use provided adapter or auto-detect platform
         this.bluetoothAdapter = adapter || BluetoothAdapterFactory.create(BluetoothPlatform.AUTO);
@@ -123,6 +135,40 @@ export class UdtBleConnection {
         });
     }
 
+    setDiagnosticsSnapshotProviders(providers: {
+        commandQueue: () => { queueLength: number; isProcessing: boolean; currentCommand: { id: string; description?: string; timestamp: number } | null };
+        towerState: () => unknown;
+        brokenSeals: () => string[];
+    }): void {
+        this.snapshotProviders = providers;
+    }
+
+    /**
+     * Record a disconnect incident with the recorder. Public so higher layers
+     * (e.g. UltimateDarkTower's beforeunload handler) can synthesize causes
+     * like 'page_unload' that aren't tied to a specific BLE detection path.
+     */
+    recordIncidentPublic(cause: DisconnectCause): IncidentReport | null {
+        return this.recordIncident(cause);
+    }
+
+    private recordIncident(cause: DisconnectCause): IncidentReport | null {
+        if (!this.recorder || !this.recorder.enabled) return null;
+        const queueSnapshot = this.snapshotProviders?.commandQueue() ?? {
+            queueLength: 0, isProcessing: false, currentCommand: null
+        };
+        const towerState = (this.snapshotProviders?.towerState() ?? null) as TowerState | null;
+        const brokenSeals = this.snapshotProviders?.brokenSeals() ?? [];
+        return this.recorder.recordIncident({
+            cause,
+            connectionStatus: this.getConnectionStatus(),
+            deviceInformation: this.getDeviceInformation(),
+            commandQueue: queueSnapshot,
+            towerState,
+            brokenSeals,
+        });
+    }
+
     async connect() {
         if (this.isDisposed) {
             throw new Error('UdtBleConnection instance has been disposed and cannot reconnect');
@@ -138,6 +184,7 @@ export class UdtBleConnection {
             this.isConnected = true;
             this.lastSuccessfulCommand = Date.now();
             this.lastBatteryHeartbeat = Date.now();
+            this.recorder?.beginSession();
 
             // Read device information after successful connection
             await this.readDeviceInformation();
@@ -157,6 +204,10 @@ export class UdtBleConnection {
     async disconnect() {
         this.stopConnectionMonitoring();
 
+        if (this.isConnected) {
+            this.recordIncident('user_initiated');
+        }
+
         if (this.bluetoothAdapter.isConnected()) {
             await this.bluetoothAdapter.disconnect();
             this.logger.info("Tower disconnected", '[UDT]');
@@ -170,6 +221,7 @@ export class UdtBleConnection {
      * Used by UdtTowerCommands instead of direct characteristic access.
      */
     async writeCommand(command: Uint8Array): Promise<void> {
+        this.recorder?.recordCommandPayload('cmd_sent', command, { len: command.length });
         return await this.bluetoothAdapter.writeCharacteristic(command);
     }
 
@@ -182,6 +234,10 @@ export class UdtBleConnection {
 
         const { cmdKey } = this.responseProcessor.getTowerCommand(receivedData[0]);
         const isBattery = this.responseProcessor.isBatteryResponse(cmdKey);
+
+        if (this.recorder?.enabled && !isBattery) {
+            this.recorder.recordCommandPayload('cmd_response', receivedData, { cmdKey, len: receivedData.length });
+        }
 
         const shouldLogCommand = this.logTowerResponses &&
             this.responseProcessor.shouldLogResponse(cmdKey, this.logTowerResponseConfig) &&
@@ -204,6 +260,7 @@ export class UdtBleConnection {
 
             const millivolts = getMilliVoltsFromTowerResponse(receivedData);
             const batteryPercentage = milliVoltsToPercentage(millivolts);
+            this.recorder?.recordBattery(millivolts, milliVoltsToPercentageNumber(millivolts));
             const didBatteryLevelChange = this.lastBatteryPercentage !== "" && this.lastBatteryPercentage !== batteryPercentage;
             const batteryLogFrequencyPassed = ((Date.now() - this.lastBatteryLog) >= this.batteryLogFrequency);
 
@@ -233,18 +290,22 @@ export class UdtBleConnection {
         const state = rtdt_unpack_state(receivedData);
         this.logger.debug(`Tower State: ${JSON.stringify(state)} `, '[UDT][BLE]');
 
+        this.recorder?.recordEvent('tower_state_response');
+
         if (this.performingCalibration) {
             this.performingCalibration = false;
             this.performingLongCommand = false;
             this.lastBatteryHeartbeat = Date.now();
             this.callbacks.onCalibrationComplete();
             this.logger.info('Tower calibration complete', '[UDT]');
+            this.recorder?.recordEvent('calibration_complete');
         }
 
         if (dataSkullDropCount !== this.towerSkullDropCount) {
             if (dataSkullDropCount) {
                 this.callbacks.onSkullDrop(dataSkullDropCount);
                 this.logger.info(`Skull drop detected: app:${this.towerSkullDropCount < 0 ? 'empty' : this.towerSkullDropCount}  tower:${dataSkullDropCount}`, '[UDT]');
+                this.recorder?.recordEvent('skull_drop', { count: dataSkullDropCount });
             } else {
                 this.logger.info(`Skull count reset to ${dataSkullDropCount}`, '[UDT]');
             }
@@ -277,12 +338,16 @@ export class UdtBleConnection {
 
         if (!available && this.isConnected) {
             this.logger.warn('Bluetooth became unavailable - handling disconnection', '[UDT][BLE]');
+            this.recordIncident('bt_unavailable');
             this.handleDisconnection();
         }
     }
 
     private onTowerDeviceDisconnected() {
         this.logger.warn('Tower device disconnected unexpectedly', '[UDT][BLE]');
+        if (this.isConnected) {
+            this.recordIncident('adapter_event');
+        }
         this.handleDisconnection();
     }
 
@@ -325,6 +390,7 @@ export class UdtBleConnection {
 
         if (!this.bluetoothAdapter.isGattConnected()) {
             this.logger.warn('GATT connection lost detected during health check', '[UDT][BLE]');
+            this.recordIncident('gatt_health_check');
             this.handleDisconnection();
             return;
         }
@@ -350,6 +416,13 @@ export class UdtBleConnection {
                     if (this.bluetoothAdapter.isGattConnected()) {
                         this.logger.info('GATT connection still available - heartbeat timeout may be temporary', '[UDT][BLE]');
 
+                        // Near-miss: the heartbeat went late but the GATT is still up. This is a
+                        // strong signal worth recording for diagnostics — repeated near-misses
+                        // before a real drop are the smoking gun.
+                        this.recorder?.recordEvent('heartbeat_late', {
+                            sinceMs: timeSinceLastBatteryHeartbeat,
+                            threshold: timeoutThreshold,
+                        });
                         // Reset the last battery heartbeat to current time to give it another chance
                         this.lastBatteryHeartbeat = Date.now();
                         this.logger.info('Reset battery heartbeat timer - will monitor for another timeout period', '[UDT][BLE]');
@@ -358,6 +431,7 @@ export class UdtBleConnection {
                 }
 
                 this.logger.warn('Tower possibly disconnected due to battery depletion or power loss', '[UDT][BLE]');
+                this.recordIncident('heartbeat_timeout');
                 this.handleDisconnection();
                 return;
             }
@@ -366,6 +440,7 @@ export class UdtBleConnection {
         const timeSinceLastResponse = Date.now() - this.lastSuccessfulCommand;
         if (timeSinceLastResponse > this.connectionTimeoutThreshold) {
             this.logger.warn('General connection timeout detected - no responses received', '[UDT][BLE]');
+            this.recordIncident('response_timeout');
             this.handleDisconnection();
         }
     }

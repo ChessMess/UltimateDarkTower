@@ -31,6 +31,14 @@ export type { TowerResponseConfig } from './udtTowerResponse';
 // Connection types
 export type { TowerEventCallbacks, DeviceInformation, ConnectionStatus } from './udtBleConnection';
 
+// BLE disconnect diagnostics ("flight recorder") - off by default, see docs/BLE_DIAGNOSTICS.md
+export { UdtDiagnosticsRecorder, InMemorySink, bytesToHex } from './udtDiagnostics';
+export type {
+  DiagnosticsConfig, DiagnosticsSink, DiagEvent, DiagEventKind,
+  DisconnectCause, IncidentReport, BatterySample, CommandQueueSnapshot,
+} from './udtDiagnostics';
+export { IndexedDBSink } from './sinks/IndexedDBSink';
+
 // Seed parser
 export {
   charToValue, valueToChar, validateSeed, decodeSeed, decodeRngSeed,

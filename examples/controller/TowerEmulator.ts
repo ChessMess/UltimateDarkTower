@@ -1,4 +1,5 @@
-import { TowerDisplay } from 'ultimatedarktowerdisplay';
+import { TowerRenderView } from 'ultimatedarktowerdisplay';
+import towerModelUrl from '../../../UltimateDarkTowerDisplay/src/3d/assets/tower.glb';
 
 const root = document.getElementById('tower-display-root');
 
@@ -26,13 +27,55 @@ audioNotification.style.borderRadius = '8px';
 audioNotification.style.display = 'none';
 root.appendChild(audioNotification);
 
+const audioEnableButton = document.createElement('button');
+audioEnableButton.type = 'button';
+audioEnableButton.textContent = '🔊 Click to enable audio playback';
+audioEnableButton.style.marginBottom = '1rem';
+audioEnableButton.style.padding = '0.75rem 1rem';
+audioEnableButton.style.border = '1px solid #3a3a5a';
+audioEnableButton.style.background = '#1a1a2e';
+audioEnableButton.style.color = '#cfd0ff';
+audioEnableButton.style.borderRadius = '8px';
+audioEnableButton.style.font = 'inherit';
+audioEnableButton.style.cursor = 'pointer';
+audioEnableButton.style.width = '100%';
+audioEnableButton.style.textAlign = 'left';
+root.appendChild(audioEnableButton);
+audioEnableButton.addEventListener('click', async () => {
+  // Probe-fetch a known sample so we surface fetch/CORS failures (the most
+  // common cause being the popup loaded over file:// instead of http://) to
+  // the visible status banner. The display package's TowerSampleAudio logs
+  // these to console.error only — invisible to the user.
+  const probeUrl = new URL('./assets/Tower_Idle_01.ogg', import.meta.url).href;
+  try {
+    const res = await fetch(probeUrl);
+    if (!res.ok) {
+      setStatus(`Audio assets not reachable (HTTP ${res.status} for ${probeUrl}).\nServe the page over http:// (e.g. \`npx http-server dist\`) instead of file://.`, true);
+      return;
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    setStatus(`Audio assets not reachable: ${message}\nProbe URL: ${probeUrl}\nIf this is a file:// URL, browsers block fetch() — serve the page over http:// (e.g. \`npx http-server dist\`).`, true);
+    return;
+  }
+
+  try {
+    display?.applyAudioConfig({ enabled: true });
+    audioEnableButton.remove();
+    setStatus('Audio enabled. Rendering live tower state.');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    setStatus(`Failed to enable audio.\n\n${message}`, true);
+  }
+});
+
 let audioClearTimer: ReturnType<typeof setTimeout> | undefined;
 
 const VOLUME_LABELS: Record<number, string> = { 0: 'Loud', 1: 'Medium', 2: 'Quiet', 3: 'Mute' };
 
 const showAudioNotification = (name: string, loop: boolean, volume: number) => {
   const volLabel = VOLUME_LABELS[volume] ?? String(volume);
-  audioNotification.textContent = `\u25B6 ${name}  (loop: ${loop ? 'on' : 'off'}, vol: ${volLabel})`;
+  audioNotification.textContent = `▶ ${name}  (loop: ${loop ? 'on' : 'off'}, vol: ${volLabel})`;
   audioNotification.style.display = 'block';
   if (audioClearTimer !== undefined) clearTimeout(audioClearTimer);
   audioClearTimer = setTimeout(() => {
@@ -48,11 +91,25 @@ const setStatus = (message: string, isError = false) => {
   status.style.color = isError ? '#fca5a5' : '#cfcfcf';
 };
 
-let display: TowerDisplay | null = null;
+let display: TowerRenderView | null = null;
 
 const initializeDisplay = () => {
   try {
-    display = new TowerDisplay({ container: root });
+    display = new TowerRenderView({
+      container: root,
+      renderers: '3d-view',
+      modelUrl: towerModelUrl,
+      title: 'Tower Emulator',
+      // Match the real tower's firmware behavior: when the user fires a
+      // light-override command via `Tower.lightOverrides(N)`, the firmware
+      // plays both the LED sequence AND its bound sound sample. Enabling
+      // bindSequenceToSample makes the display's playSequence(N) also fire
+      // the bound sample (via playSampleOneShot internally).
+      audio: { bindSequenceToSample: true },
+      onLoadError: (details) => {
+        setStatus(`3D model failed to load.\n\n${String(details)}`, true);
+      },
+    });
     display.showIdle();
     setStatus('Popup ready. Waiting for tower state from the controller.');
     window.opener?.postMessage({ type: 'emulatorReady' }, '*');
@@ -92,8 +149,19 @@ window.addEventListener('message', (event: MessageEvent) => {
     display?.showIdle();
     setStatus('Waiting for tower state from the controller.');
   } else if (type === 'playAudio') {
-    const { name, loop, volume } = event.data as { name: string; loop: boolean; volume: number };
+    const { name, loop, volume, sample } = event.data as { name: string; loop: boolean; volume: number; sample: number };
     showAudioNotification(name, loop, volume);
+    // Drive audio via the display's new one-shot API (UltimateDarkTowerDisplay
+    // 0.6.0+). The framework strips audio from state, so this is the only path
+    // that actually reaches the display's audio engine for emulator playback.
+    display?.playSample(sample, { loop, volume });
+  } else if (type === 'playSequence') {
+    const { sequenceId } = event.data as { sequenceId: number };
+    // Drive LED sequences via the display's new transient API
+    // (UltimateDarkTowerDisplay 0.7.0+). The framework strips led_sequence
+    // from state — same fire-and-forget shape as audio — so this side-channel
+    // is the only path that reaches the SequenceAnimator for emulator playback.
+    display?.playSequence(sequenceId);
   }
 });
 

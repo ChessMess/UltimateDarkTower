@@ -14,6 +14,14 @@ const CMD_CALIBRATE = 4;
 interface TowerEmulatorAdapterOptions {
   /** Called when a stateful command containing audio is written to the adapter. */
   onAudioCommand?: (sample: number, loop: boolean, volume: number) => void;
+  /**
+   * Called when a stateful command carries a non-zero `led_sequence` byte
+   * (a `Tower.lightOverrides(N)` call). The framework strips this field from
+   * tower state on every response, so the popup never sees it via the normal
+   * `applyState` path — this side-channel lets the controller fire a
+   * transient `playSequence(N)` on the emulator display.
+   */
+  onLightSequenceCommand?: (sequenceId: number) => void;
 }
 
 /**
@@ -79,6 +87,14 @@ export class TowerEmulatorAdapter implements IBluetoothAdapter {
         const loop = !!(data[15] & 0x80);
         const volume = (data[18] & 0xf0) >> 4;
         this.options.onAudioCommand?.(sample, loop, volume);
+      }
+
+      // LED sequence detection: state_data[18] = led_sequence byte → data[19]
+      // (after the 1-byte type prefix). Same fire-and-forget shape as audio:
+      // framework's response handler strips it before any state propagates.
+      const sequenceId = data[19];
+      if (sequenceId !== 0) {
+        this.options.onLightSequenceCommand?.(sequenceId);
       }
     } else if (data.length === 1 && commandType === CMD_CALIBRATE) {
       // Calibration command — respond after delay with all 3 drums marked calibrated

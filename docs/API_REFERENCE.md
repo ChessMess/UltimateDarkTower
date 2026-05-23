@@ -19,6 +19,7 @@ A comprehensive reference guide for the UltimateDarkTower library - your complet
 13. [Seed Parser](#seed-parser)
 14. [SystemRandom (C# PRNG Replica)](#systemrandom-c-prng-replica)
 15. [Troubleshooting](#troubleshooting)
+16. [BLE Diagnostics (Flight Recorder)](#ble-diagnostics-flight-recorder)
 
 ---
 
@@ -77,6 +78,10 @@ interface UltimateDarkTowerConfig {
     platform?: BluetoothPlatform;
     /** Custom Bluetooth adapter (for testing or custom platforms like React Native) */
     adapter?: IBluetoothAdapter;
+    /** Initial broken seals to restore game state (software-only, no hardware effects) */
+    brokenSeals?: SealIdentifier[];
+    /** BLE disconnect diagnostics ("flight recorder"). Off by default. See [BLE Diagnostics](#ble-diagnostics-flight-recorder). */
+    diagnostics?: DiagnosticsConfig;
 }
 ```
 
@@ -1848,6 +1853,54 @@ try {
     console.error('Platform not supported - provide a custom adapter');
 }
 ```
+
+---
+
+## BLE Diagnostics (Flight Recorder)
+
+UltimateDarkTower includes an opt-in diagnostic system for capturing BLE
+disconnect incidents. Off by default, zero overhead when off. Full reference:
+[`docs/BLE_DIAGNOSTICS.md`](BLE_DIAGNOSTICS.md).
+
+### Enable
+
+```typescript
+import UltimateDarkTower, { InMemorySink, IndexedDBSink } from 'ultimatedarktower';
+
+const tower = new UltimateDarkTower({
+  diagnostics: {
+    enabled: true,
+    capturePayloads: false,
+    sinks: [new InMemorySink(), new IndexedDBSink()],
+  },
+});
+```
+
+### Public API
+
+```typescript
+tower.getDiagnosticsRecorder();   // UdtDiagnosticsRecorder
+tower.setDiagnosticsEnabled(b);   // toggle at runtime
+tower.isDiagnosticsEnabled();
+tower.getLastIncident();          // IncidentReport | null
+tower.exportDiagnosticsJSON();    // string (ring buffer + last incident)
+```
+
+### Disconnect causes captured
+
+`adapter_event`, `gatt_health_check`, `heartbeat_timeout`,
+`response_timeout`, `bt_unavailable`, `user_initiated`, `page_unload`.
+
+Each `IncidentReport` (schema version 1) contains the cause, a snapshot of
+connection state and the command queue (including in-flight command + age),
+the tower state, the last ~500 structured BLE events, and the last 60
+battery samples. See [`BLE_DIAGNOSTICS.md`](BLE_DIAGNOSTICS.md) for the
+complete schema and how to read incidents.
+
+### Sinks
+
+Implement `DiagnosticsSink` to ship reports anywhere. Built-in sinks:
+`InMemorySink`, `IndexedDBSink` (browser-only, durable across page refresh).
 
 ---
 

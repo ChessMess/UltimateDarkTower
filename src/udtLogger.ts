@@ -6,6 +6,16 @@ export interface LogOutput {
     write(level: LogLevel, message: string, timestamp: Date): void;
 }
 
+/**
+ * Subset of UdtDiagnosticsRecorder used by the logger to forward warn/error
+ * messages into the diagnostics ring buffer. Declared structurally to avoid
+ * a cyclic import.
+ */
+export interface DiagnosticsLogTarget {
+    enabled: boolean;
+    recordLog(level: LogLevel, message: string, context?: string): void;
+}
+
 export class ConsoleOutput implements LogOutput {
     write(level: LogLevel, message: string): void {
         switch (level) {
@@ -239,10 +249,19 @@ export class Logger {
     private outputs: LogOutput[] = [];
     private enabledLevels: Set<LogLevel> = new Set(['all']);
     private static instance: Logger | null = null;
+    private diagnosticsTarget: DiagnosticsLogTarget | null = null;
 
     constructor() {
         // Default to console output
         this.outputs.push(new ConsoleOutput());
+    }
+
+    /**
+     * Bridge warn/error log lines into a diagnostics recorder so they appear
+     * in the disconnect incident ring buffer in correct chronological order.
+     */
+    setDiagnosticsTarget(target: DiagnosticsLogTarget | null): void {
+        this.diagnosticsTarget = target;
     }
 
     static getInstance(): Logger {
@@ -315,6 +334,14 @@ export class Logger {
                 console.error('Logger output error:', error);
             }
         });
+
+        if ((level === 'warn' || level === 'error') && this.diagnosticsTarget?.enabled) {
+            try {
+                this.diagnosticsTarget.recordLog(level, message, context);
+            } catch (error) {
+                console.error('Diagnostics log bridge error:', error);
+            }
+        }
     }
 
     debug(message: string, context?: string): void {

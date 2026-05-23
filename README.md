@@ -135,6 +135,10 @@ Comprehensive documentation with TypeScript examples, best practices, and troubl
 
 Complete documentation of the Return to Dark Tower game seed encoding — base-34 alphabet, setup section bitwise layout, RNG seed polynomial, and what each seed field controls.
 
+### 🛠 [BLE Diagnostics (Flight Recorder)](docs/BLE_DIAGNOSTICS.md)
+
+Opt-in diagnostic system for capturing BLE disconnect incidents. Tags each detection path, snapshots connection / queue / tower state at the moment of the drop, and includes a ring buffer of recent events so you can see the lead-up. Off by default; the controller example has a "BLE Debug" tab that exposes the full UI (toggle, live event stream, persistent incident log, JSON export).
+
 ### Key Topics Covered:
 
 - **Multi-Platform Setup** - Configuration for Web, Node.js, Electron, and React Native

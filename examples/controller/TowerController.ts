@@ -23,10 +23,31 @@ import UltimateDarkTower, {
 import {
   logger, DOMOutput, ConsoleOutput,
   rtdt_pack_state, rtdt_unpack_state, type TowerState,
-  createDefaultTowerState, parseDifferentialReadings, type ParsedDifferentialReadings
+  createDefaultTowerState, parseDifferentialReadings, type ParsedDifferentialReadings,
+  IndexedDBSink, InMemorySink,
+  type IncidentReport, type DisconnectCause
 } from '../../src';
 
-let Tower: UltimateDarkTower = new UltimateDarkTower();
+// BLE Debug: persistent sink shared across Tower instances. IndexedDB-backed
+// so incidents survive page refresh.
+const DIAG_ENABLED_KEY = 'udt:diagnostics:enabled';
+const DIAG_PAYLOADS_KEY = 'udt:diagnostics:capturePayloads';
+const incidentSink = new IndexedDBSink();
+const memorySink = new InMemorySink();
+
+function readBoolStorage(key: string, fallback: boolean): boolean {
+  try { return localStorage.getItem(key) === 'true' || (localStorage.getItem(key) === null && fallback); } catch { return fallback; }
+}
+
+function buildDiagnosticsConfig() {
+  return {
+    enabled: readBoolStorage(DIAG_ENABLED_KEY, false),
+    capturePayloads: readBoolStorage(DIAG_PAYLOADS_KEY, false),
+    sinks: [memorySink, incidentSink],
+  };
+}
+
+let Tower: UltimateDarkTower = new UltimateDarkTower({ diagnostics: buildDiagnosticsConfig() });
 let towerEmulatorWindow: Window | null = null;
 let currentConnectionMode: 'ble' | 'emulator' | null = null;
 
@@ -37,6 +58,10 @@ const postStateToTowerEmulatorWindow = (state: TowerState) => {
 const postAudioEventToEmulatorWindow = (sample: number, loop: boolean, volume: number) => {
   const name = Object.values(TOWER_AUDIO_LIBRARY).find(s => s.value === sample)?.name ?? `#${sample}`;
   towerEmulatorWindow?.postMessage({ type: 'playAudio', name, sample, loop, volume }, '*');
+};
+
+const postLightSequenceEventToEmulatorWindow = (sequenceId: number) => {
+  towerEmulatorWindow?.postMessage({ type: 'playSequence', sequenceId }, '*');
 };
 
 const syncTowerEmulatorWindow = () => {
@@ -154,7 +179,7 @@ async function connectToTower() {
   // If we previously used the emulator, recreate Tower with the default BLE adapter
   if (currentConnectionMode !== 'ble') {
     try { await Tower.cleanup(); } catch { /* ignore */ }
-    Tower = new UltimateDarkTower();
+    Tower = new UltimateDarkTower({ diagnostics: buildDiagnosticsConfig() });
     Tower.onSkullDrop = updateSkullDropCount;
     Tower.onTowerConnect = onTowerConnected;
     Tower.onTowerDisconnect = onTowerDisconnected;
@@ -188,7 +213,13 @@ async function connectToTowerEmulator() {
     await Tower.cleanup();
   } catch { /* ignore if not yet connected */ }
 
-  Tower = new UltimateDarkTower({ adapter: new TowerEmulatorAdapter({ onAudioCommand: postAudioEventToEmulatorWindow }) });
+  Tower = new UltimateDarkTower({
+    adapter: new TowerEmulatorAdapter({
+      onAudioCommand: postAudioEventToEmulatorWindow,
+      onLightSequenceCommand: postLightSequenceEventToEmulatorWindow,
+    }),
+    diagnostics: buildDiagnosticsConfig(),
+  });
   currentConnectionMode = 'emulator';
 
   // Re-assign all callbacks to the new instance
@@ -2389,6 +2420,222 @@ const exportChartData = () => {
 (window as any).initializeChart = initializeChart;
 (window as any).updateChartDisplayConfig = updateChartDisplayConfig;
 (window as any).toggleChartDisplay = toggleChartDisplay;
+
+//#region BLE Debug tab
+const CAUSE_LABEL: Record<DisconnectCause, string> = {
+  adapter_event: 'Adapter event (GATT-native disconnect)',
+  gatt_health_check: 'GATT health check failed',
+  heartbeat_timeout: 'Battery heartbeat timeout',
+  response_timeout: 'Command response timeout',
+  bt_unavailable: 'Bluetooth unavailable',
+  user_initiated: 'User-initiated disconnect',
+  page_unload: 'Page unloaded while connected',
+};
+
+const EVENT_COLOR: Record<string, string> = {
+  cmd_timeout: 'text-red-400',
+  cmd_failed: 'text-red-400',
+  disconnect: 'text-red-400',
+  heartbeat_late: 'text-amber-400',
+  log: 'text-amber-300',
+  cmd_sent: 'text-blue-300',
+  cmd_response: 'text-green-300',
+  connect: 'text-green-400',
+  cmd_enqueued: 'text-gray-300',
+  tower_state_response: 'text-gray-400',
+  skull_drop: 'text-purple-300',
+  calibration_started: 'text-cyan-300',
+  calibration_complete: 'text-cyan-300',
+};
+
+function syncBleDebugCheckboxes() {
+  const enabled = readBoolStorage(DIAG_ENABLED_KEY, false);
+  const payloads = readBoolStorage(DIAG_PAYLOADS_KEY, false);
+  const enabledEl = document.getElementById('ble-debug-enabled') as HTMLInputElement | null;
+  const payloadsEl = document.getElementById('ble-debug-capture-payloads') as HTMLInputElement | null;
+  if (enabledEl) enabledEl.checked = enabled;
+  if (payloadsEl) payloadsEl.checked = payloads;
+}
+
+function toggleDiagnosticsEnabled() {
+  const el = document.getElementById('ble-debug-enabled') as HTMLInputElement | null;
+  if (!el) return;
+  try { localStorage.setItem(DIAG_ENABLED_KEY, String(el.checked)); } catch { /* ignore */ }
+  Tower.setDiagnosticsEnabled(el.checked);
+  refreshBleDebug();
+}
+
+function toggleCapturePayloads() {
+  const el = document.getElementById('ble-debug-capture-payloads') as HTMLInputElement | null;
+  if (!el) return;
+  try { localStorage.setItem(DIAG_PAYLOADS_KEY, String(el.checked)); } catch { /* ignore */ }
+  Tower.getDiagnosticsRecorder().capturePayloads = el.checked;
+}
+
+function fmtAge(ms: number): string {
+  if (ms < 0) return '-';
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+  return `${(ms / 60000).toFixed(1)}m`;
+}
+
+function refreshBleDebug() {
+  const recorder = Tower.getDiagnosticsRecorder();
+  const status = Tower.getConnectionStatus();
+  const events = recorder.getRingBuffer();
+  const battery = recorder.getBatteryHistory();
+
+  const set = (id: string, text: string) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+  set('ble-debug-session', recorder.getSessionId() || '-');
+  set('ble-debug-connected', status.isConnected ? 'yes' : 'no');
+  set('ble-debug-ring-fill', `${events.length} / 500`);
+  set('ble-debug-batt-fill', `${battery.length} / 60`);
+  set('ble-debug-last-hb', fmtAge(status.lastBatteryHeartbeatMs));
+  set('ble-debug-gatt', status.isGattConnected ? 'connected' : 'disconnected');
+
+  const eventsEl = document.getElementById('ble-debug-events');
+  if (eventsEl) {
+    if (!recorder.enabled) {
+      eventsEl.innerHTML = '<div class="text-gray-500">Diagnostics not enabled.</div>';
+    } else if (events.length === 0) {
+      eventsEl.innerHTML = '<div class="text-gray-500">No events yet. Connect to a tower.</div>';
+    } else {
+      const recent = events.slice(-100);
+      eventsEl.innerHTML = recent.map(e => {
+        const color = EVENT_COLOR[e.kind] ?? 'text-white';
+        const time = new Date(e.t).toLocaleTimeString();
+        const data = e.data ? ` ${escapeHtml(JSON.stringify(e.data))}` : '';
+        return `<div class="${color} break-all"><span class="text-gray-500">${time}</span> ${e.kind}${data}</div>`;
+      }).join('');
+      eventsEl.scrollTop = eventsEl.scrollHeight;
+    }
+  }
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+}
+
+async function refreshIncidentLog() {
+  const incidents = await incidentSink.list();
+  const totalEl = document.getElementById('ble-debug-metric-total');
+  const lastEl = document.getElementById('ble-debug-metric-last');
+  const causesEl = document.getElementById('ble-debug-metric-causes');
+  const listEl = document.getElementById('ble-debug-incidents');
+
+  if (totalEl) totalEl.textContent = String(incidents.length);
+  if (lastEl) lastEl.textContent = incidents[0] ? new Date(incidents[0].triggeredAt).toLocaleString() : '-';
+
+  if (causesEl) {
+    const counts: Record<string, number> = {};
+    for (const r of incidents) counts[r.cause] = (counts[r.cause] ?? 0) + 1;
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    causesEl.innerHTML = entries.length === 0
+      ? '<div class="text-gray-500">none</div>'
+      : entries.map(([cause, n]) => `<div><span class="text-yellow-300">${n}×</span> ${escapeHtml(CAUSE_LABEL[cause as DisconnectCause] ?? cause)}</div>`).join('');
+  }
+
+  if (listEl) {
+    if (incidents.length === 0) {
+      listEl.innerHTML = '<div class="text-gray-500">No incidents recorded.</div>';
+    } else {
+      listEl.innerHTML = incidents.map(r => renderIncidentRow(r)).join('');
+    }
+  }
+}
+
+function renderIncidentRow(r: IncidentReport): string {
+  const when = new Date(r.triggeredAt).toLocaleString();
+  const inFlight = r.commandQueue.currentCommand
+    ? `${escapeHtml(r.commandQueue.currentCommand.description ?? r.commandQueue.currentCommand.id)} @ ${r.inFlightCommandAgeMs}ms`
+    : 'none';
+  return `
+    <details class="border border-gray-700 rounded mb-1">
+      <summary class="cursor-pointer p-2 hover:bg-gray-800/50">
+        <span class="text-yellow-300">${escapeHtml(CAUSE_LABEL[r.cause] ?? r.cause)}</span>
+        <span class="text-gray-400 ml-2">${when}</span>
+        <span class="text-gray-500 ml-2">session ${escapeHtml(r.sessionId.slice(0, 8))} • ${(r.sessionDurationMs / 1000).toFixed(1)}s</span>
+      </summary>
+      <div class="p-2 bg-black/40 space-y-1">
+        <div>In-flight: <span class="font-mono">${inFlight}</span></div>
+        <div>Queue depth: <span class="font-mono">${r.commandQueue.queueLength}</span></div>
+        <div>Last heartbeat: <span class="font-mono">${fmtAge(r.connectionStatus.lastBatteryHeartbeatMs)}</span></div>
+        <div>GATT: <span class="font-mono">${r.connectionStatus.isGattConnected ? 'connected' : 'disconnected'}</span></div>
+        <div>Recent events: <span class="font-mono">${r.recentEvents.length}</span> • Battery samples: <span class="font-mono">${r.batteryHistory.length}</span></div>
+        <div>Library: <span class="font-mono">${escapeHtml(r.library.version)} (${r.library.platform})</span></div>
+        <div class="pt-2 flex gap-2">
+          <button class="tower-button text-xs px-2 py-1" onclick='exportIncident(${JSON.stringify(r.incidentId)})'>Export JSON</button>
+          <button class="tower-button text-xs px-2 py-1" onclick='deleteIncident(${JSON.stringify(r.incidentId)})'>Delete</button>
+        </div>
+      </div>
+    </details>`;
+}
+
+async function exportIncident(incidentId: string) {
+  const incident = await incidentSink.get(incidentId);
+  if (!incident) return;
+  downloadJSON(`udt-incident-${incidentId.slice(0, 8)}.json`, incident);
+}
+
+async function exportAllIncidents() {
+  const incidents = await incidentSink.list();
+  downloadJSON(`udt-incidents-${new Date().toISOString().split('T')[0]}.json`, { schemaVersion: 1, exportedAt: Date.now(), incidents });
+}
+
+async function deleteIncident(incidentId: string) {
+  await incidentSink.delete(incidentId);
+  await refreshIncidentLog();
+}
+
+async function clearIncidents() {
+  if (!confirm('Delete all stored incidents? This cannot be undone.')) return;
+  await incidentSink.clear();
+  await refreshIncidentLog();
+}
+
+function downloadJSON(filename: string, data: unknown) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Initialize the BLE Debug tab and start a 1s refresh loop. The loop only does
+// real work when the BLE Debug tab is the active one.
+function initBleDebug() {
+  syncBleDebugCheckboxes();
+  void refreshIncidentLog();
+  setInterval(() => {
+    const tab = document.getElementById('ble-debug-content');
+    if (tab && tab.classList.contains('tower-tab-content-active')) {
+      refreshBleDebug();
+    }
+  }, 1000);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initBleDebug);
+} else {
+  initBleDebug();
+}
+
+(window as any).toggleDiagnosticsEnabled = toggleDiagnosticsEnabled;
+(window as any).toggleCapturePayloads = toggleCapturePayloads;
+(window as any).refreshBleDebug = refreshBleDebug;
+(window as any).refreshIncidentLog = refreshIncidentLog;
+(window as any).exportIncident = exportIncident;
+(window as any).exportAllIncidents = exportAllIncidents;
+(window as any).deleteIncident = deleteIncident;
+(window as any).clearIncidents = clearIncidents;
+//#endregion
 
 // Close the emulator window when the controller page unloads
 window.addEventListener('beforeunload', () => {

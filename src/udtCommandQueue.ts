@@ -1,4 +1,5 @@
 import { Logger } from './udtLogger';
+import type { UdtDiagnosticsRecorder } from './udtDiagnostics';
 
 /**
  * Internal interface for queued commands
@@ -23,11 +24,19 @@ export class CommandQueue {
     private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
     private isProcessing: boolean = false;
     private readonly timeoutMs: number = 30000; // 30 seconds
+    private recorder: UdtDiagnosticsRecorder | null = null;
 
     constructor(
         private logger: Logger,
-        private sendCommandFn: (command: Uint8Array) => Promise<void>
-    ) { }
+        private sendCommandFn: (command: Uint8Array) => Promise<void>,
+        recorder?: UdtDiagnosticsRecorder
+    ) {
+        this.recorder = recorder ?? null;
+    }
+
+    setRecorder(recorder: UdtDiagnosticsRecorder | null): void {
+        this.recorder = recorder;
+    }
 
     /**
      * Enqueue a command for processing
@@ -45,6 +54,11 @@ export class CommandQueue {
 
             this.queue.push(queuedCommand);
             this.logger.debug(`Command queued: ${description || 'unnamed'} (queue size: ${this.queue.length})`, '[UDT]');
+            this.recorder?.recordEvent('cmd_enqueued', {
+                id: queuedCommand.id,
+                description,
+                queueDepth: this.queue.length,
+            });
 
             // Start processing if not already running
             if (!this.isProcessing) {
@@ -83,6 +97,11 @@ export class CommandQueue {
         } catch (error) {
             // Command failed to send, reject and move to next
             this.clearTimeout();
+            this.recorder?.recordEvent('cmd_failed', {
+                id,
+                description,
+                error: (error as Error)?.message ?? String(error),
+            });
             this.currentCommand = null;
             this.isProcessing = false;
 
@@ -118,8 +137,14 @@ export class CommandQueue {
      */
     private onTimeout(): void {
         if (this.currentCommand) {
-            const { description, id } = this.currentCommand;
+            const { description, id, timestamp } = this.currentCommand;
             this.logger.warn(`Command timeout after ${this.timeoutMs}ms: ${description || id}`, '[UDT]');
+            this.recorder?.recordEvent('cmd_timeout', {
+                id,
+                description,
+                ageMs: Date.now() - timestamp,
+                queueDepth: this.queue.length,
+            });
 
             const reject = this.currentCommand.reject;
 

@@ -39,6 +39,7 @@
         "build:examples": "node build-examples.js",
         "dev": "npm run watch",
         "dev:examples": "npm run watch:examples",
+        "dev:controller": "node dev-controller.js",
         "ci": "npm run lint && npm run type-check && npm run test:ci && npm run build",
         "prepack": "npm run ci",
         "prepublishOnly": "npm run prepack",

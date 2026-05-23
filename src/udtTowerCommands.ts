@@ -24,6 +24,7 @@ import { UdtBleConnection } from './udtBleConnection';
 import { TowerResponseProcessor } from './udtTowerResponse';
 import { CommandQueue } from './udtCommandQueue';
 import { commandToPacketString } from './udtHelpers';
+import type { UdtDiagnosticsRecorder } from './udtDiagnostics';
 
 
 export interface TowerCommandDependencies {
@@ -36,6 +37,7 @@ export interface TowerCommandDependencies {
     retrySendCommandMax: number;
     getCurrentTowerState: () => TowerState;
     setTowerState: (newState: TowerState, source: string) => void;
+    recorder?: UdtDiagnosticsRecorder;
 }
 
 export class UdtTowerCommands {
@@ -48,7 +50,8 @@ export class UdtTowerCommands {
         // Initialize command queue with the actual send function
         this.commandQueue = new CommandQueue(
             this.deps.logger,
-            (command: Uint8Array) => this.sendTowerCommandDirect(command)
+            (command: Uint8Array) => this.sendTowerCommandDirect(command),
+            this.deps.recorder
         );
     }
 
@@ -118,6 +121,7 @@ export class UdtTowerCommands {
     async calibrate(): Promise<void> {
         if (!this.deps.bleConnection.performingCalibration) {
             this.deps.logger.info('Performing Tower Calibration', '[UDT][CMD]');
+            this.deps.recorder?.recordEvent('calibration_started');
             await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]), 'calibrate');
 
             // flag to look for calibration complete tower response
