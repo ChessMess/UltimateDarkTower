@@ -21,18 +21,31 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout UltimateDarkTowerDisplay
+        uses: actions/checkout@v6
+        with:
+          path: UltimateDarkTowerDisplay
+
+      - name: Checkout UltimateDarkTower (sibling dependency)
+        uses: actions/checkout@v6
+        with:
+          repository: ChessMess/UltimateDarkTower
+          path: UltimateDarkTower
+
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: UltimateDarkTowerDisplay/package-lock.json
 
       - run: npm ci
+        working-directory: UltimateDarkTowerDisplay
       - run: npm run build:example
+        working-directory: UltimateDarkTowerDisplay
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist-example
+          path: UltimateDarkTowerDisplay/dist-example
 
       - id: deployment
         uses: actions/deploy-pages@v4

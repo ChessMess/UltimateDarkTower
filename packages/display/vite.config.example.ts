@@ -1,9 +1,32 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { resolve } from 'path';
+
+// UDT's ESM build starts with `import {createRequire} from 'module'; const
+// require = createRequire(import.meta.url);` so it can dynamically load
+// `@stoprocent/noble` (Node-only BLE adapter) in `__require("@stoprocent/noble")`.
+// In the browser example we never hit that code path (noble is externalized;
+// the example uses Web Bluetooth), but Vite's browser bundler can't resolve
+// the `module` built-in, so the import alone fails the build. Strip the
+// prelude — `require` becomes undefined, and `__require`'s `typeof require`
+// guard falls through to its Proxy fallback (never called in the browser).
+function stripUdtCreateRequirePrelude(): Plugin {
+  return {
+    name: 'strip-udt-createrequire-prelude',
+    enforce: 'pre',
+    transform(code, id) {
+      if (!id.endsWith('/UltimateDarkTower/dist/esm/index.mjs')) return null;
+      return code.replace(
+        /^import\s*\{\s*createRequire\s*\}\s*from\s*['"]module['"]\s*;\s*const\s+require\s*=\s*createRequire\(import\.meta\.url\)\s*;\s*/,
+        '',
+      );
+    },
+  };
+}
 
 export default defineConfig({
   root: 'example',
   base: '/UltimateDarkTowerDisplay/',
+  plugins: [stripUdtCreateRequirePrelude()],
   // .ogg files referenced from the library's audioLibrary.ts (which uses
   // new URL('./assets/...', import.meta.url)) live in ../src/audio/assets/.
   // Vite's default fs.allow already permits sibling directories under the
@@ -16,9 +39,12 @@ export default defineConfig({
   assetsInclude: ['**/*.glb', '**/*.ogg'],
   resolve: {
     alias: {
-      // The ESM build of ultimatedarktower uses createRequire which is not
-      // available in browsers. Alias to the CJS build instead.
-      ultimatedarktower: resolve(__dirname, 'node_modules/ultimatedarktower/dist/src/index.js'),
+      // Use UDT's ESM build (its CJS barrel re-exports constants via tsc's
+      // `__exportStar` runtime helper, which Rollup's static analyzer can't
+      // see through — `import { LIGHT_EFFECTS } from 'ultimatedarktower'`
+      // would fail at build time). The createRequire prelude is stripped
+      // by the plugin above.
+      ultimatedarktower: resolve(__dirname, 'node_modules/ultimatedarktower/dist/esm/index.mjs'),
     },
   },
   build: {
