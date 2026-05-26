@@ -206,6 +206,6 @@ export function initInitialState(
   els: DomElements
 ): void {
   syncConfigSelectorVisibility(getDisplay, els);
-  if (els.stateBadge) els.stateBadge.textContent = 'readme example';
-  applyAndShow(createReadmeExampleState(), getDisplay, getReadout, setLastState, els, false);
+  if (els.stateBadge) els.stateBadge.textContent = 'empty';
+  applyAndShow(createEmptyState(), getDisplay, getReadout, setLastState, els, false);
 }

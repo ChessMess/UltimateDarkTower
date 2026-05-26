@@ -1,4 +1,4 @@
-name: Deploy Example to GitHub Pages
+name: Deploy Example + Lighting Bake-Off to GitHub Pages
 
 on:
   push:
@@ -43,9 +43,16 @@ jobs:
       - run: npm run build:example
         working-directory: UltimateDarkTowerDisplay
 
+      - name: Assemble combined Pages artifact
+        run: |
+          mkdir -p _site
+          cp -R UltimateDarkTowerDisplay/dist-example/. _site/
+          mkdir -p _site/lighting-experiments
+          cp -R UltimateDarkTowerDisplay/docs/lighting-experiments/results/. _site/lighting-experiments/
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: UltimateDarkTowerDisplay/dist-example
+          path: _site
 
       - id: deployment
         uses: actions/deploy-pages@v4
