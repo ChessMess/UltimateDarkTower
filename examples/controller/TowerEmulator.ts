@@ -162,6 +162,10 @@ window.addEventListener('message', (event: MessageEvent) => {
     // from state — same fire-and-forget shape as audio — so this side-channel
     // is the only path that reaches the SequenceAnimator for emulator playback.
     display?.playSequence(sequenceId);
+  } else if (type === 'applySeals') {
+    const { seals } = event.data as { seals: unknown[] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    display?.applySeals(seals as any);
   }
 });
 

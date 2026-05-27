@@ -185,6 +185,38 @@
       background-color: #b91c1c;
     }
 
+    .emulator-seal-grid {
+      display: grid;
+      grid-template-columns: 3rem repeat(4, 2rem);
+      gap: 0.25rem;
+      align-items: center;
+    }
+
+    .emulator-seal-btn {
+      background-color: #374151;
+      color: white;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      padding: 0.3rem;
+      border-radius: 0.25rem;
+      transition: all 0.15s ease-in-out;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+
+    .emulator-seal-btn:hover {
+      background-color: #4b5563;
+    }
+
+    .emulator-seal-btn.seal-removed {
+      background-color: #991b1b;
+      border-color: #b91c1c;
+    }
+
+    .emulator-seal-btn.seal-removed:hover {
+      background-color: #b91c1c;
+    }
+
     /* Glyph grid cell styles */
     .glyph-cell {
       width: 2rem;
@@ -454,7 +486,7 @@
             <!-- Tab Navigation -->
             <div class="tower-tabs">
               <button id="diagnostics-tab" class="tower-tab-button tower-tab-active" onclick="switchTab('diagnostics')">
-                Diagnostics
+                Diag
               </button>
               <button id="library-tab" class="tower-tab-button" onclick="switchTab('library')">
                 Library
@@ -463,7 +495,10 @@
                 Charts
               </button>
               <button id="ble-debug-tab" class="tower-tab-button" onclick="switchTab('ble-debug')">
-                BLE Debug
+                BLE
+              </button>
+              <button id="seals-tab" class="tower-tab-button" onclick="switchTab('seals')">
+                Seals
               </button>
             </div>
 
@@ -1082,6 +1117,51 @@
                     class="bg-black/60 border border-gray-700 rounded p-2 max-h-72 overflow-y-auto text-xs">
                     <div class="text-gray-500">No incidents recorded.</div>
                   </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <!-- Seals Tab Content (Emulator only) -->
+            <div id="seals-content" class="tower-tab-content">
+              <div id="emulator-seals-notice" class="text-center text-gray-400 text-sm py-6">
+                Connect with <strong class="text-white">Tower Emulator</strong> to manage 3D seal visibility.
+              </div>
+              <fieldset id="emulator-seals-controls" class="tower-fieldset" style="display:none;">
+                <legend class="tower-legend">3D Seal Visibility</legend>
+                <p class="text-xs text-gray-400 mb-3 px-1">Toggle seals to show or hide them in the 3D emulator view.
+                </p>
+                <div class="emulator-seal-grid px-1">
+                  <span class="text-xs font-semibold text-right pr-1 text-gray-300">Top</span>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="top" data-emulator-seal-side="north"
+                    onclick="emulatorToggleSeal(this)">N</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="top" data-emulator-seal-side="east"
+                    onclick="emulatorToggleSeal(this)">E</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="top" data-emulator-seal-side="south"
+                    onclick="emulatorToggleSeal(this)">S</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="top" data-emulator-seal-side="west"
+                    onclick="emulatorToggleSeal(this)">W</button>
+                  <span class="text-xs font-semibold text-right pr-1 text-gray-300">Mid</span>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="middle" data-emulator-seal-side="north"
+                    onclick="emulatorToggleSeal(this)">N</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="middle" data-emulator-seal-side="east"
+                    onclick="emulatorToggleSeal(this)">E</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="middle" data-emulator-seal-side="south"
+                    onclick="emulatorToggleSeal(this)">S</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="middle" data-emulator-seal-side="west"
+                    onclick="emulatorToggleSeal(this)">W</button>
+                  <span class="text-xs font-semibold text-right pr-1 text-gray-300">Btm</span>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="bottom" data-emulator-seal-side="north"
+                    onclick="emulatorToggleSeal(this)">N</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="bottom" data-emulator-seal-side="east"
+                    onclick="emulatorToggleSeal(this)">E</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="bottom" data-emulator-seal-side="south"
+                    onclick="emulatorToggleSeal(this)">S</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="bottom" data-emulator-seal-side="west"
+                    onclick="emulatorToggleSeal(this)">W</button>
+                </div>
+                <div class="flex gap-2 mt-3 px-1">
+                  <button onclick="emulatorRemoveAllSeals()" class="tower-button">Remove All</button>
+                  <button onclick="emulatorReplaceAllSeals()" class="tower-button">Replace All</button>
                 </div>
               </fieldset>
             </div>

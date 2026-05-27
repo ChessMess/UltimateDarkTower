@@ -4185,6 +4185,7 @@
     }
     if (Tower.isConnected) {
       postStateToTowerEmulatorWindow(Tower.getCurrentTowerState());
+      postSealsToTowerEmulatorWindow();
       return;
     }
     towerEmulatorWindow.postMessage({ type: "showIdle" }, "*");
@@ -4300,6 +4301,7 @@
   var onTowerConnected = () => {
     var _a2;
     syncTowerEmulatorWindow();
+    updateEmulatorSealTabVisibility();
     const el = document.getElementById("tower-connection-state");
     if (el) {
       el.innerText = "Tower Connected";
@@ -4345,6 +4347,7 @@
     updateChartDataCollectionButton();
     updateChartStatus("Tower disconnected - connect to tower to collect data");
     updateCalibrationStatus();
+    updateEmulatorSealTabVisibility();
   };
   Tower.onTowerDisconnect = onTowerDisconnected;
   async function calibrate() {
@@ -4620,6 +4623,7 @@
       await Tower.breakSeal(sealIdentifier, localVolume);
       logger.info(`Broke seal at ${sealIdentifier.level}-${sealIdentifier.side}`, "[TC]");
       updateSealGrid(sealIdentifier, true);
+      postSealsToTowerEmulatorWindow();
       startBreakSealCooldown();
     }
   };
@@ -4659,6 +4663,7 @@
     logger.info("All lights cleared", "[TC]");
     Tower.resetBrokenSeals();
     resetSealGrid();
+    postSealsToTowerEmulatorWindow();
     const sealSelect = document.getElementById("sealSelect");
     if (sealSelect) {
       sealSelect.value = "";
@@ -4875,6 +4880,62 @@
       logger.info("Break seal cooldown ended", "[TC]");
     }, 1e4);
   };
+  var postSealsToTowerEmulatorWindow = () => {
+    towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.postMessage({ type: "applySeals", seals: Tower.getBrokenSeals() }, "*");
+  };
+  var refreshEmulatorSealGrid = () => {
+    const brokenSeals = Tower.getBrokenSeals();
+    const brokenKeys = new Set(brokenSeals.map((s) => `${s.level}-${s.side}`));
+    const buttons = document.querySelectorAll("[data-emulator-seal-level]");
+    buttons.forEach((btn) => {
+      const level = btn.getAttribute("data-emulator-seal-level");
+      const side = btn.getAttribute("data-emulator-seal-side");
+      if (level && side) {
+        btn.classList.toggle("seal-removed", brokenKeys.has(`${level}-${side}`));
+      }
+    });
+  };
+  var updateEmulatorSealTabVisibility = () => {
+    const notice = document.getElementById("emulator-seals-notice");
+    const controls = document.getElementById("emulator-seals-controls");
+    const isEmulatorConnected = currentConnectionMode === "emulator" && Tower.isConnected;
+    if (notice) notice.style.display = isEmulatorConnected ? "none" : "block";
+    if (controls) controls.style.display = isEmulatorConnected ? "block" : "none";
+    if (isEmulatorConnected) refreshEmulatorSealGrid();
+  };
+  var emulatorToggleSeal = (el) => {
+    const level = el.getAttribute("data-emulator-seal-level");
+    const side = el.getAttribute("data-emulator-seal-side");
+    if (!level || !side) return;
+    const seal = { level, side };
+    if (Tower.isSealBroken(seal)) {
+      Tower.markSealRestored(seal);
+    } else {
+      Tower.markSealBroken(seal);
+    }
+    refreshEmulatorSealGrid();
+    updateSealGrid(seal, Tower.isSealBroken(seal));
+    postSealsToTowerEmulatorWindow();
+  };
+  var emulatorRemoveAllSeals = () => {
+    const levels = ["top", "middle", "bottom"];
+    const sides = ["north", "east", "south", "west"];
+    for (const level of levels) {
+      for (const side of sides) {
+        Tower.markSealBroken({ level, side });
+      }
+    }
+    refreshEmulatorSealGrid();
+    const allSealSquares = document.querySelectorAll(".seal-square");
+    allSealSquares.forEach((sq) => sq.classList.add("broken"));
+    postSealsToTowerEmulatorWindow();
+  };
+  var emulatorReplaceAllSeals = () => {
+    Tower.resetBrokenSeals();
+    refreshEmulatorSealGrid();
+    resetSealGrid();
+    postSealsToTowerEmulatorWindow();
+  };
   var sealSquareClick = (element) => {
     const level = element.getAttribute("data-seal-level");
     const side = element.getAttribute("data-seal-side");
@@ -4888,6 +4949,7 @@
       element.classList.remove("broken");
       const sealKey = `${level}-${side}`;
       Tower.brokenSeals.delete(sealKey);
+      postSealsToTowerEmulatorWindow();
       if (sealSelect) {
         sealSelect.value = "";
       }
@@ -4934,6 +4996,9 @@
           updateChartStatus("Connect to tower to start collecting differential readings");
         }
       }, 100);
+    }
+    if (tabName === "seals") {
+      updateEmulatorSealTabVisibility();
     }
   };
   var moveGlyph = async () => {
@@ -5811,6 +5876,9 @@ ${"-".repeat(60)}
   window.randomizeLevels = randomizeLevels;
   window.sealSquareClick = sealSquareClick;
   window.switchTab = switchTab;
+  window.emulatorToggleSeal = emulatorToggleSeal;
+  window.emulatorRemoveAllSeals = emulatorRemoveAllSeals;
+  window.emulatorReplaceAllSeals = emulatorReplaceAllSeals;
   window.moveGlyph = moveGlyph;
   window.toggleGlyphLight = toggleGlyphLight;
   window.refreshGlyphPositions = refreshGlyphPositions;

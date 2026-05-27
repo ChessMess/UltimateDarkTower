@@ -71,6 +71,7 @@ const syncTowerEmulatorWindow = () => {
 
   if (Tower.isConnected) {
     postStateToTowerEmulatorWindow(Tower.getCurrentTowerState());
+    postSealsToTowerEmulatorWindow();
     return;
   }
 
@@ -240,6 +241,7 @@ async function connectToTowerEmulator() {
 
 const onTowerConnected = () => {
   syncTowerEmulatorWindow();
+  updateEmulatorSealTabVisibility();
 
   const el = document.getElementById("tower-connection-state");
   if (el) {
@@ -311,6 +313,7 @@ const onTowerDisconnected = () => {
 
   // Update calibration status for disconnected state
   updateCalibrationStatus();
+  updateEmulatorSealTabVisibility();
 }
 Tower.onTowerDisconnect = onTowerDisconnected;
 
@@ -694,6 +697,7 @@ const breakSeal = async () => {
 
     // Update the visual seal grid
     updateSealGrid(sealIdentifier, true);
+    postSealsToTowerEmulatorWindow();
 
     // Start cooldown and disable button
     startBreakSealCooldown();
@@ -751,6 +755,7 @@ const clearAllLights = async () => {
   // Reset all broken seals and update the visual grid
   Tower.resetBrokenSeals();
   resetSealGrid();
+  postSealsToTowerEmulatorWindow();
 
   // Reset the dropdown to default selection
   const sealSelect = document.getElementById("sealSelect") as HTMLSelectElement;
@@ -1005,6 +1010,68 @@ const startBreakSealCooldown = () => {
   }, 10000);
 }
 
+const postSealsToTowerEmulatorWindow = () => {
+  towerEmulatorWindow?.postMessage({ type: 'applySeals', seals: Tower.getBrokenSeals() }, '*');
+};
+
+const refreshEmulatorSealGrid = () => {
+  const brokenSeals = Tower.getBrokenSeals();
+  const brokenKeys = new Set(brokenSeals.map(s => `${s.level}-${s.side}`));
+  const buttons = document.querySelectorAll('[data-emulator-seal-level]') as NodeListOf<HTMLElement>;
+  buttons.forEach(btn => {
+    const level = btn.getAttribute('data-emulator-seal-level');
+    const side = btn.getAttribute('data-emulator-seal-side');
+    if (level && side) {
+      btn.classList.toggle('seal-removed', brokenKeys.has(`${level}-${side}`));
+    }
+  });
+};
+
+const updateEmulatorSealTabVisibility = () => {
+  const notice = document.getElementById('emulator-seals-notice');
+  const controls = document.getElementById('emulator-seals-controls');
+  const isEmulatorConnected = currentConnectionMode === 'emulator' && Tower.isConnected;
+  if (notice) notice.style.display = isEmulatorConnected ? 'none' : 'block';
+  if (controls) controls.style.display = isEmulatorConnected ? 'block' : 'none';
+  if (isEmulatorConnected) refreshEmulatorSealGrid();
+};
+
+const emulatorToggleSeal = (el: HTMLElement) => {
+  const level = el.getAttribute('data-emulator-seal-level') as TowerLevels;
+  const side = el.getAttribute('data-emulator-seal-side') as TowerSide;
+  if (!level || !side) return;
+  const seal: SealIdentifier = { level, side };
+  if (Tower.isSealBroken(seal)) {
+    Tower.markSealRestored(seal);
+  } else {
+    Tower.markSealBroken(seal);
+  }
+  refreshEmulatorSealGrid();
+  updateSealGrid(seal, Tower.isSealBroken(seal));
+  postSealsToTowerEmulatorWindow();
+};
+
+const emulatorRemoveAllSeals = () => {
+  const levels: TowerLevels[] = ['top', 'middle', 'bottom'];
+  const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
+  for (const level of levels) {
+    for (const side of sides) {
+      Tower.markSealBroken({ level, side });
+    }
+  }
+  refreshEmulatorSealGrid();
+  const allSealSquares = document.querySelectorAll('.seal-square') as NodeListOf<HTMLElement>;
+  allSealSquares.forEach(sq => sq.classList.add('broken'));
+  postSealsToTowerEmulatorWindow();
+};
+
+const emulatorReplaceAllSeals = () => {
+  Tower.resetBrokenSeals();
+  refreshEmulatorSealGrid();
+  resetSealGrid();
+  postSealsToTowerEmulatorWindow();
+};
+
 /**
  * Handles clicks on seal squares in the grid
  * @param element - The clicked seal square element
@@ -1028,6 +1095,7 @@ const sealSquareClick = (element: HTMLElement) => {
     // Remove from Tower's broken seals tracking
     const sealKey = `${level}-${side}`;
     (Tower as any).brokenSeals.delete(sealKey);
+    postSealsToTowerEmulatorWindow();
 
     // Reset dropdown to default
     if (sealSelect) {
@@ -1098,6 +1166,10 @@ const switchTab = (tabName: string) => {
         updateChartStatus('Connect to tower to start collecting differential readings');
       }
     }, 100); // Small delay to ensure DOM is ready
+  }
+
+  if (tabName === 'seals') {
+    updateEmulatorSealTabVisibility();
   }
 }
 
@@ -2389,6 +2461,9 @@ const exportChartData = () => {
 (window as any).randomizeLevels = randomizeLevels;
 (window as any).sealSquareClick = sealSquareClick;
 (window as any).switchTab = switchTab;
+(window as any).emulatorToggleSeal = emulatorToggleSeal;
+(window as any).emulatorRemoveAllSeals = emulatorRemoveAllSeals;
+(window as any).emulatorReplaceAllSeals = emulatorReplaceAllSeals;
 (window as any).moveGlyph = moveGlyph;
 (window as any).toggleGlyphLight = toggleGlyphLight;
 (window as any).refreshGlyphPositions = refreshGlyphPositions;

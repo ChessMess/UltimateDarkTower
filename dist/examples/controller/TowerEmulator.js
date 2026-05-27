@@ -62521,6 +62521,9 @@ ${message}`, true);
   } else if (type === "playSequence") {
     const { sequenceId } = event.data;
     display?.playSequence(sequenceId);
+  } else if (type === "applySeals") {
+    const { seals } = event.data;
+    display?.applySeals(seals);
   }
 });
 initializeDisplay();
