@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-05-28
+
 - **Tower Emulator has been added** — Utilising the UltimateDarkTowerDisplay the example app can now connect to a software rendered version of the tower. The controller and the software tower share actual packets, so this can be a useful feature for testing certain features of both the UDT library and the UDT Display Library.
 
 ### Fixed
