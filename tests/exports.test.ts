@@ -76,7 +76,6 @@ import UltimateDarkTower, {
   type SeedConfig,
   type CharDiff,
   type SeedComparison,
-  type CharInfo,
   type CharDump,
 
   // System.Random replica

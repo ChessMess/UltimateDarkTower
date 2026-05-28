@@ -13,8 +13,6 @@ import {
     type TowerSide,
     type TowerCorner,
     type TowerLevels,
-    type LedgeLight,
-    type DoorwayLight,
     type SealIdentifier
 } from './udtConstants';
 import { type TowerState } from './udtTowerState';
