@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+
+- **`rotateWithState()` no longer bounces already-rotated drums back to their old positions** — `rotateDrumStateful()` was reading the live tower state to build its 20-byte stateful packet but never updating that state after sending. Inside `rotateWithState()` the three sequential calls therefore all read the same pre-rotation state, so call 2's packet re-sent the original top-drum position (rotating it back) and call 3's packet re-sent the original middle position. Local state is now updated immediately after the command is built, so subsequent calls in the loop encode the correct cumulative positions. Same pattern as the prior `setLEDStateful` fix.
+
 ## [4.0.0] - 2026-05-28
 
 - **Tower Emulator has been added** — Utilising the UltimateDarkTowerDisplay the example app can now connect to a software rendered version of the tower. The controller and the software tower share actual packets, so this can be a useful feature for testing certain features of both the UDT library and the UDT Display Library.

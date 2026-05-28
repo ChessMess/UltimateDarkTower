@@ -2834,6 +2834,10 @@ var UdtTowerCommands = class {
   async rotateDrumStateful(drumIndex, position, playSound = false) {
     const currentState = this.deps.getCurrentTowerState();
     const command = this.deps.commandFactory.createStatefulDrumCommand(currentState, drumIndex, position, playSound);
+    if (currentState) {
+      currentState.drum[drumIndex].position = position;
+      this.deps.setTowerState(currentState, "rotateDrumStateful");
+    }
     const drumNames = ["top", "middle", "bottom"];
     const positionNames = ["north", "east", "south", "west"];
     this.deps.logger.info(`Rotating ${drumNames[drumIndex]} drum to ${positionNames[position]}${playSound ? " with sound" : ""}`, "[UDT][CMD]");

@@ -549,6 +549,14 @@ class UdtTowerCommands {
     async rotateDrumStateful(drumIndex, position, playSound = false) {
         const currentState = this.deps.getCurrentTowerState();
         const command = this.deps.commandFactory.createStatefulDrumCommand(currentState, drumIndex, position, playSound);
+        // Update local state so a subsequent rotateDrumStateful call (e.g. from
+        // rotateWithState's loop) reads the correct accumulated state when
+        // building its packet. Without this, sequential drum rotations re-send
+        // stale positions for already-rotated drums and the tower bounces back.
+        if (currentState) {
+            currentState.drum[drumIndex].position = position;
+            this.deps.setTowerState(currentState, 'rotateDrumStateful');
+        }
         const drumNames = ['top', 'middle', 'bottom'];
         const positionNames = ['north', 'east', 'south', 'west'];
         this.deps.logger.info(`Rotating ${drumNames[drumIndex]} drum to ${positionNames[position]}${playSound ? ' with sound' : ''}`, '[UDT][CMD]');
