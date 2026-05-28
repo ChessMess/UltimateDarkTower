@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [4.0.1] - 2026-05-28
+
 ### Fixed
 
 - **`rotateWithState()` no longer bounces already-rotated drums back to their old positions** — `rotateDrumStateful()` was reading the live tower state to build its 20-byte stateful packet but never updating that state after sending. Inside `rotateWithState()` the three sequential calls therefore all read the same pre-rotation state, so call 2's packet re-sent the original top-drum position (rotating it back) and call 3's packet re-sent the original middle position. Local state is now updated immediately after the command is built, so subsequent calls in the loop encode the correct cumulative positions. Same pattern as the prior `setLEDStateful` fix.
