@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebBluetoothAdapter = void 0;
+/* global BluetoothDevice, BluetoothRemoteGATTCharacteristic, BufferSource */
 const udtConstants_1 = require("../udtConstants");
 const udtBluetoothAdapter_1 = require("../udtBluetoothAdapter");
 /**
@@ -18,7 +19,6 @@ class WebBluetoothAdapter {
         this.boundOnAvailabilityChanged = null;
     }
     async connect(deviceName, serviceUuids) {
-        var _a;
         try {
             // @ts-ignore - Web Bluetooth types may not be available in all environments
             this.device = await navigator.bluetooth.requestDevice({
@@ -57,9 +57,10 @@ class WebBluetoothAdapter {
             await this.rxCharacteristic.startNotifications();
             this.boundOnCharacteristicValueChanged = (event) => {
                 const target = event.target;
-                const receivedData = new Uint8Array(target.value.byteLength);
-                for (let i = 0; i < target.value.byteLength; i++) {
-                    receivedData[i] = target.value.getUint8(i);
+                const dataView = target.value;
+                const receivedData = new Uint8Array(dataView.byteLength);
+                for (let i = 0; i < dataView.byteLength; i++) {
+                    receivedData[i] = dataView.getUint8(i);
                 }
                 if (this.characteristicCallback) {
                     this.characteristicCallback(receivedData);
@@ -74,26 +75,28 @@ class WebBluetoothAdapter {
                 error instanceof udtBluetoothAdapter_1.BluetoothConnectionError) {
                 throw error;
             }
-            const errorMsg = (_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : String(error);
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            const errorName = error instanceof Error ? error.name : '';
             if (errorMsg.includes('User cancelled')) {
                 throw new udtBluetoothAdapter_1.BluetoothUserCancelledError('User cancelled device selection', error);
             }
-            if (errorMsg.includes('not found') || (error === null || error === void 0 ? void 0 : error.name) === 'NotFoundError') {
+            if (errorMsg.includes('not found') || errorName === 'NotFoundError') {
                 throw new udtBluetoothAdapter_1.BluetoothDeviceNotFoundError('Device not found', error);
             }
             throw new udtBluetoothAdapter_1.BluetoothConnectionError(`Failed to connect: ${errorMsg}`, error);
         }
     }
     async disconnect() {
+        var _a, _b;
         if (!this.device) {
             return;
         }
-        if (this.device.gatt.connected) {
+        if ((_a = this.device.gatt) === null || _a === void 0 ? void 0 : _a.connected) {
             // Remove event listeners before disconnecting
             if (this.boundOnDeviceDisconnected) {
                 this.device.removeEventListener('gattserverdisconnected', this.boundOnDeviceDisconnected);
             }
-            await this.device.gatt.disconnect();
+            await ((_b = this.device.gatt) === null || _b === void 0 ? void 0 : _b.disconnect());
         }
         this.device = null;
         this.txCharacteristic = null;

@@ -2,6 +2,14 @@ const esbuild = require('esbuild');
 const path = require('path');
 const fs = require('fs');
 
+const displayRepoDir = path.join(__dirname, '..', 'UltimateDarkTowerDisplay');
+const displayEntryPoint = path.join(displayRepoDir, 'src', 'index.ts');
+const displayModelPath = path.join(displayRepoDir, 'src', '3d', 'assets', 'tower.glb');
+
+function hasLocalDisplayCheckout() {
+    return fs.existsSync(displayEntryPoint) && fs.existsSync(displayModelPath);
+}
+
 function ensureDir(dir) {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -29,7 +37,11 @@ function copyAssetsDir(assetsSrcDir, assetsDestDir) {
     console.log('   - assets/ directory not found - examples may not display correctly');
 }
 
-function getBuildConfigs() {
+function getBuildConfigs(displayAvailable) {
+    const define = {
+        __UDT_DISPLAY_AVAILABLE__: JSON.stringify(displayAvailable),
+    };
+
     return [
         {
             entryPoints: ['examples/controller/TowerController.ts'],
@@ -41,6 +53,7 @@ function getBuildConfigs() {
             sourcemap: true,
             minify: false,
             tsconfig: 'tsconfig.json',
+            define,
             loader: {
                 '.svg': 'text',
                 '.glb': 'file',
@@ -48,10 +61,6 @@ function getBuildConfigs() {
             },
             external: ['@stoprocent/noble'],
             alias: {
-                ultimatedarktowerdisplay: path.resolve(
-                    __dirname,
-                    '../UltimateDarkTowerDisplay/src/index.ts'
-                ),
                 ultimatedarktower: path.resolve(__dirname, 'src/index.ts'),
             },
         },
@@ -62,7 +71,11 @@ function getBuildConfigs() {
             // module-level EFFECT_LABELS (and similar constants) from initialising correctly.
             // The display package only needs runtime constant values, all of which live in
             // udtConstants.ts.
-            entryPoints: ['examples/controller/TowerEmulator.ts'],
+            entryPoints: [
+                displayAvailable
+                    ? 'examples/controller/TowerEmulator.ts'
+                    : 'examples/controller/TowerEmulatorMissing.ts',
+            ],
             bundle: true,
             outfile: 'dist/examples/controller/TowerEmulator.js',
             platform: 'browser',
@@ -75,6 +88,7 @@ function getBuildConfigs() {
             sourcemap: true,
             minify: false,
             tsconfig: 'tsconfig.json',
+            define,
             loader: {
                 '.svg': 'text',
                 '.glb': 'file',
@@ -82,10 +96,6 @@ function getBuildConfigs() {
             },
             external: ['@stoprocent/noble'],
             alias: {
-                ultimatedarktowerdisplay: path.resolve(
-                    __dirname,
-                    '../UltimateDarkTowerDisplay/src/index.ts'
-                ),
                 ultimatedarktower: path.resolve(__dirname, 'src/udtConstants.ts'),
             },
         },
@@ -99,6 +109,7 @@ function getBuildConfigs() {
             sourcemap: true,
             minify: false,
             tsconfig: 'tsconfig.json',
+            define,
             loader: {
                 '.svg': 'text',
             },
@@ -123,7 +134,15 @@ async function buildExamples() {
     const isWatch = process.argv.includes('--watch');
 
     try {
-        const buildConfigs = getBuildConfigs();
+        const displayAvailable = hasLocalDisplayCheckout();
+        if (!displayAvailable) {
+            console.log('   - UltimateDarkTowerDisplay not found at ../UltimateDarkTowerDisplay');
+            console.log(
+                '   - Tower Emulator will show setup instructions instead of the 3D display'
+            );
+        }
+
+        const buildConfigs = getBuildConfigs(displayAvailable);
 
         if (isWatch) {
             const contexts = await Promise.all(

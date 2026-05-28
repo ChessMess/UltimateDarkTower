@@ -28,6 +28,8 @@ import {
   type IncidentReport, type DisconnectCause
 } from '../../src';
 
+declare const __UDT_DISPLAY_AVAILABLE__: boolean;
+
 // BLE Debug: persistent sink shared across Tower instances. IndexedDB-backed
 // so incidents survive page refresh.
 const DIAG_ENABLED_KEY = 'udt:diagnostics:enabled';
@@ -50,6 +52,29 @@ function buildDiagnosticsConfig() {
 let Tower: UltimateDarkTower = new UltimateDarkTower({ diagnostics: buildDiagnosticsConfig() });
 let towerEmulatorWindow: Window | null = null;
 let currentConnectionMode: 'ble' | 'emulator' | null = null;
+let towerEmulatorConnectInFlight = false;
+let towerEmulatorWindowDisconnectInFlight = false;
+
+function hasOpenTowerEmulatorWindow(): boolean {
+  return !!towerEmulatorWindow && !towerEmulatorWindow.closed;
+}
+
+function showTowerEmulatorMissingPopup(): void {
+  const message = [
+    'Tower Emulator is not available in this build.',
+    '',
+    'Required dependency: UltimateDarkTowerDisplay',
+    'Expected location: ../UltimateDarkTowerDisplay (next to this repo)',
+    '',
+    'What to do:',
+    '1. Clone or place UltimateDarkTowerDisplay beside UltimateDarkTower',
+    '2. Run npm install in UltimateDarkTowerDisplay if needed',
+    '3. Rebuild this repo with npm run build',
+  ].join('\n');
+
+  logger.error(message, '[TC]');
+  window.alert(message);
+}
 
 const postStateToTowerEmulatorWindow = (state: TowerState) => {
   towerEmulatorWindow?.postMessage({ type: 'applyState', state }, '*');
@@ -77,6 +102,30 @@ const syncTowerEmulatorWindow = () => {
 
   towerEmulatorWindow.postMessage({ type: 'showIdle' }, '*');
 };
+
+async function handleTowerEmulatorWindowClosed(): Promise<void> {
+  if (!towerEmulatorWindow) {
+    return;
+  }
+
+  towerEmulatorWindow = null;
+
+  if (currentConnectionMode !== 'emulator' || !Tower.isConnected || towerEmulatorWindowDisconnectInFlight) {
+    updateEmulatorSealTabVisibility();
+    return;
+  }
+
+  towerEmulatorWindowDisconnectInFlight = true;
+  logger.warn('Tower Emulator window closed - disconnecting emulator session', '[TC]');
+
+  try {
+    await Tower.disconnect();
+  } catch (error) {
+    logger.error(`Failed to disconnect after Tower Emulator window closed: ${error}`, '[TC]');
+  } finally {
+    towerEmulatorWindowDisconnectInFlight = false;
+  }
+}
 
 // Global reference to shared DOM output for filtering
 let sharedDOMOutput: DOMOutput;
@@ -200,42 +249,93 @@ async function connectToTower() {
 }
 
 async function connectToTowerEmulator() {
+  if (!__UDT_DISPLAY_AVAILABLE__) {
+    const towerTypeSelect = document.getElementById('towerTypeSelect') as HTMLSelectElement | null;
+    if (towerTypeSelect) {
+      towerTypeSelect.value = 'ble';
+    }
+    showTowerEmulatorMissingPopup();
+    return;
+  }
+
   logger.info("Connecting to Tower Emulator...", '[TC]');
 
-  // Open the popup synchronously before any await so the browser treats it
-  // as user-initiated (required for popup blockers on HTTPS/GitHub Pages).
-  towerEmulatorWindow = window.open(
-    'TowerEmulator.html',
-    'TowerEmulator',
-    'width=900,height=700,resizable=yes,scrollbars=yes'
-  );
+  if (towerEmulatorConnectInFlight) {
+    if (hasOpenTowerEmulatorWindow()) {
+      towerEmulatorWindow?.focus();
+    }
+    logger.info('Tower Emulator connection already in progress', '[TC]');
+    return;
+  }
 
-  try {
-    await Tower.cleanup();
-  } catch { /* ignore if not yet connected */ }
+  if (currentConnectionMode === 'emulator' && Tower.isConnected) {
+    if (!hasOpenTowerEmulatorWindow()) {
+      towerEmulatorWindow = window.open(
+        'TowerEmulator.html',
+        'TowerEmulator',
+        'width=900,height=700,resizable=yes,scrollbars=yes'
+      );
+    }
 
-  Tower = new UltimateDarkTower({
-    adapter: new TowerEmulatorAdapter({
-      onAudioCommand: postAudioEventToEmulatorWindow,
-      onLightSequenceCommand: postLightSequenceEventToEmulatorWindow,
-    }),
-    diagnostics: buildDiagnosticsConfig(),
-  });
-  currentConnectionMode = 'emulator';
+    if (!towerEmulatorWindow) {
+      logger.error('Failed to open Tower Emulator window', '[TC]');
+      return;
+    }
 
-  // Re-assign all callbacks to the new instance
-  Tower.onSkullDrop = updateSkullDropCount;
-  Tower.onTowerConnect = onTowerConnected;
-  Tower.onTowerDisconnect = onTowerDisconnected;
-  Tower.onCalibrationComplete = onCalibrationComplete;
-  Tower.onBatteryLevelNotify = onBatteryLevelNotify;
-  Tower.onTowerStateUpdate = onTowerStateUpdate;
-  (window as any).Tower = Tower;
+    towerEmulatorWindow.focus();
+    syncTowerEmulatorWindow();
+    logger.info('Tower Emulator already connected', '[TC]');
+    return;
+  }
 
+  if (!hasOpenTowerEmulatorWindow()) {
+    // Open the popup synchronously before any await so the browser treats it
+    // as user-initiated (required for popup blockers on HTTPS/GitHub Pages).
+    towerEmulatorWindow = window.open(
+      'TowerEmulator.html',
+      'TowerEmulator',
+      'width=900,height=700,resizable=yes,scrollbars=yes'
+    );
+  }
+
+  if (!towerEmulatorWindow) {
+    logger.error('Failed to open Tower Emulator window', '[TC]');
+    return;
+  }
+
+  towerEmulatorWindow.focus();
+
+  if (currentConnectionMode !== 'emulator') {
+    try {
+      await Tower.cleanup();
+    } catch { /* ignore if not yet connected */ }
+
+    Tower = new UltimateDarkTower({
+      adapter: new TowerEmulatorAdapter({
+        onAudioCommand: postAudioEventToEmulatorWindow,
+        onLightSequenceCommand: postLightSequenceEventToEmulatorWindow,
+      }),
+      diagnostics: buildDiagnosticsConfig(),
+    });
+    currentConnectionMode = 'emulator';
+
+    // Re-assign all callbacks to the new instance
+    Tower.onSkullDrop = updateSkullDropCount;
+    Tower.onTowerConnect = onTowerConnected;
+    Tower.onTowerDisconnect = onTowerDisconnected;
+    Tower.onCalibrationComplete = onCalibrationComplete;
+    Tower.onBatteryLevelNotify = onBatteryLevelNotify;
+    Tower.onTowerStateUpdate = onTowerStateUpdate;
+    (window as any).Tower = Tower;
+  }
+
+  towerEmulatorConnectInFlight = true;
   try {
     await Tower.connect();
   } catch (error) {
     logger.error(`Tower Emulator connection failed: ${error}`, '[TC]');
+  } finally {
+    towerEmulatorConnectInFlight = false;
   }
 }
 
@@ -1535,6 +1635,18 @@ const initializeUI = () => {
     radio.addEventListener('change', updateBatteryFilter);
   });
 
+  const towerTypeSelect = document.getElementById('towerTypeSelect') as HTMLSelectElement | null;
+  if (towerTypeSelect && !__UDT_DISPLAY_AVAILABLE__) {
+    towerTypeSelect.addEventListener('change', () => {
+      if (towerTypeSelect.value !== 'emulator') {
+        return;
+      }
+
+      towerTypeSelect.value = 'ble';
+      showTowerEmulatorMissingPopup();
+    });
+  }
+
   // Initialize calibration status display
   updateCalibrationStatus();
 }
@@ -2717,6 +2829,14 @@ window.addEventListener('beforeunload', () => {
   towerEmulatorWindow?.close();
 });
 
+window.setInterval(() => {
+  if (!towerEmulatorWindow?.closed) {
+    return;
+  }
+
+  void handleTowerEmulatorWindowClosed();
+}, 500);
+
 window.addEventListener('message', (event: MessageEvent) => {
   if (event.source !== towerEmulatorWindow) {
     return;
@@ -2725,5 +2845,10 @@ window.addEventListener('message', (event: MessageEvent) => {
   const { type } = event.data as { type?: string };
   if (type === 'emulatorReady') {
     syncTowerEmulatorWindow();
+    return;
+  }
+
+  if (type === 'emulatorClosed') {
+    void handleTowerEmulatorWindowClosed();
   }
 });

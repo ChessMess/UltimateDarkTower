@@ -195,7 +195,7 @@ describe('WebBluetoothAdapter', () => {
                 getUint8: (i) => [0xAA, 0xBB, 0xCC][i],
             };
             const mockEvent = { target: { value: mockValue } };
-            const handler = (_a = rxChar.addEventListener.mock.calls.find((call) => call[0] === 'characteristicvaluechanged')) === null || _a === void 0 ? void 0 : _a[1];
+            const handler = (_a = rxChar.addEventListener.mock.calls.find(call => call[0] === 'characteristicvaluechanged')) === null || _a === void 0 ? void 0 : _a[1];
             expect(handler).toBeDefined();
             handler(mockEvent);
             expect(callback).toHaveBeenCalledWith(new Uint8Array([0xAA, 0xBB, 0xCC]));
@@ -208,7 +208,7 @@ describe('WebBluetoothAdapter', () => {
             const callback = jest.fn();
             adapter.onDisconnect(callback);
             await adapter.connect('ReturnToDarkTower', [udtConstants_1.UART_SERVICE_UUID]);
-            const handler = (_a = device.addEventListener.mock.calls.find((call) => call[0] === 'gattserverdisconnected')) === null || _a === void 0 ? void 0 : _a[1];
+            const handler = (_a = device.addEventListener.mock.calls.find(call => call[0] === 'gattserverdisconnected')) === null || _a === void 0 ? void 0 : _a[1];
             expect(handler).toBeDefined();
             handler();
             expect(callback).toHaveBeenCalled();
@@ -221,7 +221,7 @@ describe('WebBluetoothAdapter', () => {
             const callback = jest.fn();
             adapter.onBluetoothAvailabilityChanged(callback);
             await adapter.connect('ReturnToDarkTower', [udtConstants_1.UART_SERVICE_UUID]);
-            const handler = (_a = bluetooth.addEventListener.mock.calls.find((call) => call[0] === 'availabilitychanged')) === null || _a === void 0 ? void 0 : _a[1];
+            const handler = (_a = bluetooth.addEventListener.mock.calls.find(call => call[0] === 'availabilitychanged')) === null || _a === void 0 ? void 0 : _a[1];
             expect(handler).toBeDefined();
             handler({ value: false });
             expect(callback).toHaveBeenCalledWith(false);

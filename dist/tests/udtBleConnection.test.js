@@ -23,7 +23,7 @@ function createMockCallbacks() {
 function createMockLogger() {
     const logger = new udtLogger_1.Logger();
     // Suppress actual output during tests by clearing the outputs array
-    logger['outputs'] = [];
+    logger.clearOutputs();
     return logger;
 }
 /**

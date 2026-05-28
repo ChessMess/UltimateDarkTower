@@ -3,7 +3,7 @@
  */
 
 import UltimateDarkTower from '../src/UltimateDarkTower';
-import { GLYPHS, LIGHT_EFFECTS } from '../src/udtConstants';
+import { GLYPHS, LIGHT_EFFECTS, TowerSide } from '../src/udtConstants';
 import { MockBluetoothAdapter } from './mocks/MockBluetoothAdapter';
 
 describe('UltimateDarkTower', () => {
@@ -921,7 +921,7 @@ describe('UltimateDarkTower', () => {
 
             // Verify the result is valid
             const newPosition = darkTower.getGlyphPosition('cleanse');
-            expect(sides).toContain(newPosition as any);
+            expect(sides).toContain(newPosition as TowerSide);
           }
         }
       });

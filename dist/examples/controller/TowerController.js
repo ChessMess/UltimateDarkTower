@@ -409,7 +409,6 @@
           this.boundOnAvailabilityChanged = null;
         }
         async connect(deviceName, serviceUuids) {
-          var _a2;
           try {
             this.device = await navigator.bluetooth.requestDevice({
               filters: [{ namePrefix: deviceName }],
@@ -439,9 +438,10 @@
             await this.rxCharacteristic.startNotifications();
             this.boundOnCharacteristicValueChanged = (event) => {
               const target = event.target;
-              const receivedData = new Uint8Array(target.value.byteLength);
-              for (let i = 0; i < target.value.byteLength; i++) {
-                receivedData[i] = target.value.getUint8(i);
+              const dataView = target.value;
+              const receivedData = new Uint8Array(dataView.byteLength);
+              for (let i = 0; i < dataView.byteLength; i++) {
+                receivedData[i] = dataView.getUint8(i);
               }
               if (this.characteristicCallback) {
                 this.characteristicCallback(receivedData);
@@ -455,25 +455,27 @@
             if (error instanceof BluetoothDeviceNotFoundError || error instanceof BluetoothUserCancelledError || error instanceof BluetoothConnectionError) {
               throw error;
             }
-            const errorMsg = (_a2 = error == null ? void 0 : error.message) != null ? _a2 : String(error);
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            const errorName = error instanceof Error ? error.name : "";
             if (errorMsg.includes("User cancelled")) {
               throw new BluetoothUserCancelledError("User cancelled device selection", error);
             }
-            if (errorMsg.includes("not found") || (error == null ? void 0 : error.name) === "NotFoundError") {
+            if (errorMsg.includes("not found") || errorName === "NotFoundError") {
               throw new BluetoothDeviceNotFoundError("Device not found", error);
             }
             throw new BluetoothConnectionError(`Failed to connect: ${errorMsg}`, error);
           }
         }
         async disconnect() {
+          var _a2, _b;
           if (!this.device) {
             return;
           }
-          if (this.device.gatt.connected) {
+          if ((_a2 = this.device.gatt) == null ? void 0 : _a2.connected) {
             if (this.boundOnDeviceDisconnected) {
               this.device.removeEventListener("gattserverdisconnected", this.boundOnDeviceDisconnected);
             }
-            await this.device.gatt.disconnect();
+            await ((_b = this.device.gatt) == null ? void 0 : _b.disconnect());
           }
           this.device = null;
           this.txCharacteristic = null;
@@ -591,13 +593,15 @@
           try {
             await noble.waitForPoweredOnAsync();
           } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
             throw new BluetoothConnectionError(
-              `Bluetooth adapter not ready: ${error.message}`,
+              `Bluetooth adapter not ready: ${msg}`,
               error
             );
           }
         }
         async connect(deviceName, serviceUuids) {
+          var _a2, _b;
           try {
             await this.ensureNobleReady();
             if (this.availabilityCallback) {
@@ -625,12 +629,12 @@
             const rxUuid = this.normalizeUuid(UART_RX_CHARACTERISTIC_UUID);
             const { characteristics } = await this.peripheral.discoverAllServicesAndCharacteristicsAsync();
             this.allCharacteristics = characteristics;
-            this.txCharacteristic = characteristics.find(
+            this.txCharacteristic = (_a2 = characteristics.find(
               (c) => this.normalizeUuid(c.uuid) === txUuid
-            );
-            this.rxCharacteristic = characteristics.find(
+            )) != null ? _a2 : null;
+            this.rxCharacteristic = (_b = characteristics.find(
               (c) => this.normalizeUuid(c.uuid) === rxUuid
-            );
+            )) != null ? _b : null;
             if (!this.txCharacteristic || !this.rxCharacteristic) {
               throw new BluetoothConnectionError(
                 "TX or RX characteristic not found on device"
@@ -648,8 +652,9 @@
             if (error instanceof BluetoothDeviceNotFoundError || error instanceof BluetoothConnectionError || error instanceof BluetoothTimeoutError) {
               throw error;
             }
+            const msg = error instanceof Error ? error.message : String(error);
             throw new BluetoothConnectionError(
-              `Connection failed: ${error.message}`,
+              `Connection failed: ${msg}`,
               error
             );
           }
@@ -687,8 +692,9 @@
             const buffer = Buffer.from(data);
             await this.txCharacteristic.writeAsync(buffer, false);
           } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
             throw new BluetoothConnectionError(
-              `Write failed: ${error.message}`,
+              `Write failed: ${msg}`,
               error
             );
           }
@@ -4168,6 +4174,11 @@
   var Tower = new src_default({ diagnostics: buildDiagnosticsConfig() });
   var towerEmulatorWindow = null;
   var currentConnectionMode = null;
+  var towerEmulatorConnectInFlight = false;
+  var towerEmulatorWindowDisconnectInFlight = false;
+  function hasOpenTowerEmulatorWindow() {
+    return !!towerEmulatorWindow && !towerEmulatorWindow.closed;
+  }
   var postStateToTowerEmulatorWindow = (state) => {
     towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.postMessage({ type: "applyState", state }, "*");
   };
@@ -4190,6 +4201,25 @@
     }
     towerEmulatorWindow.postMessage({ type: "showIdle" }, "*");
   };
+  async function handleTowerEmulatorWindowClosed() {
+    if (!towerEmulatorWindow) {
+      return;
+    }
+    towerEmulatorWindow = null;
+    if (currentConnectionMode !== "emulator" || !Tower.isConnected || towerEmulatorWindowDisconnectInFlight) {
+      updateEmulatorSealTabVisibility();
+      return;
+    }
+    towerEmulatorWindowDisconnectInFlight = true;
+    logger.warn("Tower Emulator window closed - disconnecting emulator session", "[TC]");
+    try {
+      await Tower.disconnect();
+    } catch (error) {
+      logger.error(`Failed to disconnect after Tower Emulator window closed: ${error}`, "[TC]");
+    } finally {
+      towerEmulatorWindowDisconnectInFlight = false;
+    }
+  }
   var sharedDOMOutput;
   var differentialChart = null;
   var differentialReadings = [];
@@ -4267,35 +4297,79 @@
     }
   }
   async function connectToTowerEmulator() {
-    logger.info("Connecting to Tower Emulator...", "[TC]");
-    towerEmulatorWindow = window.open(
-      "TowerEmulator.html",
-      "TowerEmulator",
-      "width=900,height=700,resizable=yes,scrollbars=yes"
-    );
-    try {
-      await Tower.cleanup();
-    } catch (e) {
+    if (false) {
+      const towerTypeSelect = document.getElementById("towerTypeSelect");
+      if (towerTypeSelect) {
+        towerTypeSelect.value = "ble";
+      }
+      showTowerEmulatorMissingPopup();
+      return;
     }
-    Tower = new src_default({
-      adapter: new TowerEmulatorAdapter({
-        onAudioCommand: postAudioEventToEmulatorWindow,
-        onLightSequenceCommand: postLightSequenceEventToEmulatorWindow
-      }),
-      diagnostics: buildDiagnosticsConfig()
-    });
-    currentConnectionMode = "emulator";
-    Tower.onSkullDrop = updateSkullDropCount;
-    Tower.onTowerConnect = onTowerConnected;
-    Tower.onTowerDisconnect = onTowerDisconnected;
-    Tower.onCalibrationComplete = onCalibrationComplete;
-    Tower.onBatteryLevelNotify = onBatteryLevelNotify;
-    Tower.onTowerStateUpdate = onTowerStateUpdate;
-    window.Tower = Tower;
+    logger.info("Connecting to Tower Emulator...", "[TC]");
+    if (towerEmulatorConnectInFlight) {
+      if (hasOpenTowerEmulatorWindow()) {
+        towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.focus();
+      }
+      logger.info("Tower Emulator connection already in progress", "[TC]");
+      return;
+    }
+    if (currentConnectionMode === "emulator" && Tower.isConnected) {
+      if (!hasOpenTowerEmulatorWindow()) {
+        towerEmulatorWindow = window.open(
+          "TowerEmulator.html",
+          "TowerEmulator",
+          "width=900,height=700,resizable=yes,scrollbars=yes"
+        );
+      }
+      if (!towerEmulatorWindow) {
+        logger.error("Failed to open Tower Emulator window", "[TC]");
+        return;
+      }
+      towerEmulatorWindow.focus();
+      syncTowerEmulatorWindow();
+      logger.info("Tower Emulator already connected", "[TC]");
+      return;
+    }
+    if (!hasOpenTowerEmulatorWindow()) {
+      towerEmulatorWindow = window.open(
+        "TowerEmulator.html",
+        "TowerEmulator",
+        "width=900,height=700,resizable=yes,scrollbars=yes"
+      );
+    }
+    if (!towerEmulatorWindow) {
+      logger.error("Failed to open Tower Emulator window", "[TC]");
+      return;
+    }
+    towerEmulatorWindow.focus();
+    if (currentConnectionMode !== "emulator") {
+      try {
+        await Tower.cleanup();
+      } catch (e) {
+      }
+      Tower = new src_default({
+        adapter: new TowerEmulatorAdapter({
+          onAudioCommand: postAudioEventToEmulatorWindow,
+          onLightSequenceCommand: postLightSequenceEventToEmulatorWindow
+        }),
+        diagnostics: buildDiagnosticsConfig()
+      });
+      currentConnectionMode = "emulator";
+      Tower.onSkullDrop = updateSkullDropCount;
+      Tower.onTowerConnect = onTowerConnected;
+      Tower.onTowerDisconnect = onTowerDisconnected;
+      Tower.onCalibrationComplete = onCalibrationComplete;
+      Tower.onBatteryLevelNotify = onBatteryLevelNotify;
+      Tower.onTowerStateUpdate = onTowerStateUpdate;
+      window.Tower = Tower;
+    }
+    towerEmulatorConnectInFlight = true;
     try {
       await Tower.connect();
     } catch (error) {
       logger.error(`Tower Emulator connection failed: ${error}`, "[TC]");
+    } finally {
+      towerEmulatorConnectInFlight = false;
     }
   }
   var onTowerConnected = () => {
@@ -5255,6 +5329,16 @@
     batteryFilterRadios.forEach((radio) => {
       radio.addEventListener("change", updateBatteryFilter);
     });
+    const towerTypeSelect = document.getElementById("towerTypeSelect");
+    if (towerTypeSelect && false) {
+      towerTypeSelect.addEventListener("change", () => {
+        if (towerTypeSelect.value !== "emulator") {
+          return;
+        }
+        towerTypeSelect.value = "ble";
+        showTowerEmulatorMissingPopup();
+      });
+    }
     updateCalibrationStatus();
   };
   if (document.readyState === "loading") {
@@ -6110,6 +6194,12 @@ ${"-".repeat(60)}
   window.addEventListener("beforeunload", () => {
     towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.close();
   });
+  window.setInterval(() => {
+    if (!(towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.closed)) {
+      return;
+    }
+    void handleTowerEmulatorWindowClosed();
+  }, 500);
   window.addEventListener("message", (event) => {
     if (event.source !== towerEmulatorWindow) {
       return;
@@ -6117,6 +6207,10 @@ ${"-".repeat(60)}
     const { type } = event.data;
     if (type === "emulatorReady") {
       syncTowerEmulatorWindow();
+      return;
+    }
+    if (type === "emulatorClosed") {
+      void handleTowerEmulatorWindowClosed();
     }
   });
 })();

@@ -142,98 +142,128 @@ describe('decodeSeed', () => {
         //   Titans   (0b11): setup[0]=16, setup[1]=16
         test('Dragons: setup[0] bit4=0, setup[1] bit4=0', () => {
             // setup[0]=0 (a), setup[1]=0 (a), rest=a
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+            }, 0);
             expect((0, udtSeedParser_1.decodeSeed)(seed).tier3Foe).toBe('Dragons');
         });
         test('Mormos: setup[0] bit4=1, setup[1] bit4=0', () => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Mormos'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Mormos'], expansions: []
+            }, 0);
             expect((0, udtSeedParser_1.decodeSeed)(seed).tier3Foe).toBe('Mormos');
         });
         test('Striga: setup[0] bit4=0, setup[1] bit4=1', () => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Striga'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Striga'], expansions: []
+            }, 0);
             expect((0, udtSeedParser_1.decodeSeed)(seed).tier3Foe).toBe('Striga');
         });
         test('Titans: setup[0] bit4=1, setup[1] bit4=1', () => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Titans'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Titans'], expansions: []
+            }, 0);
             expect((0, udtSeedParser_1.decodeSeed)(seed).tier3Foe).toBe('Titans');
         });
     });
     describe('all Tier 1 foes', () => {
         test.each(udtSeedParser_1.TIER1_FOES.map((f, i) => [f, i]))('%s (index %i)', (foe) => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Heroic', foes: [foe, 'Frost Trolls', 'Dragons'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Heroic', foes: [foe, 'Frost Trolls', 'Dragons'], expansions: []
+            }, 0);
             expect((0, udtSeedParser_1.decodeSeed)(seed).tier1Foe).toBe(foe);
         });
     });
     describe('all Tier 2 foes', () => {
         test.each(udtSeedParser_1.TIER2_FOES.map((f, i) => [f, i]))('%s (index %i)', (foe) => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Heroic', foes: ['Brigands', foe, 'Dragons'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Heroic', foes: ['Brigands', foe, 'Dragons'], expansions: []
+            }, 0);
             expect((0, udtSeedParser_1.decodeSeed)(seed).tier2Foe).toBe(foe);
         });
     });
     describe('all adversaries', () => {
         test.each(udtSeedParser_1.ADVERSARIES.map((a, i) => [a, i]))('%s (index %i)', (adversary) => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary, ally: 'Gleb',
-                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary, ally: 'Gleb',
+                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+            }, 0);
             expect((0, udtSeedParser_1.decodeSeed)(seed).adversary).toBe(adversary);
         });
     });
     describe('all allies', () => {
         test.each(udtSeedParser_1.ALLIES.map((a, i) => [a, i]))('%s (index %i)', (ally) => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally,
-                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally,
+                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+            }, 0);
             expect((0, udtSeedParser_1.decodeSeed)(seed).ally).toBe(ally);
         });
     });
     describe('extra byte (setup[3]) combinations', () => {
         test('Heroic / no expansions / Core', () => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+            }, 0);
             const d = (0, udtSeedParser_1.decodeSeed)(seed);
             expect(d.difficulty).toBe('Heroic');
             expect(d.expansions).toEqual([]);
             expect(d.source).toBe('Core');
         });
         test('Gritty / no expansions / Core', () => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Gritty', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Gritty', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+            }, 0);
             const d = (0, udtSeedParser_1.decodeSeed)(seed);
             expect(d.difficulty).toBe('Gritty');
             expect(d.source).toBe('Core');
         });
         test('Heroic / Monuments / Core', () => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: ['Monuments'] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: ['Monuments']
+            }, 0);
             const d = (0, udtSeedParser_1.decodeSeed)(seed);
             expect(d.expansions).toEqual(['Monuments']);
         });
         test('Heroic / Alliances / Core', () => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: ['Alliances'] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: ['Alliances']
+            }, 0);
             const d = (0, udtSeedParser_1.decodeSeed)(seed);
             expect(d.expansions).toEqual(['Alliances']);
         });
         test('Heroic / Alliances + Monuments / Core', () => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
                 difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'],
-                expansions: ['Alliances', 'Monuments'] }, 0);
+                expansions: ['Alliances', 'Monuments']
+            }, 0);
             const d = (0, udtSeedParser_1.decodeSeed)(seed);
             expect(d.expansions).toContain('Alliances');
             expect(d.expansions).toContain('Monuments');
         });
         test('Heroic / no expansions / Competitive', () => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Competitive', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Competitive', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+            }, 0);
             expect((0, udtSeedParser_1.decodeSeed)(seed).source).toBe('Competitive');
         });
         test('Gritty / no expansions / Competitive', () => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Competitive', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Gritty', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Competitive', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Gritty', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+            }, 0);
             const d = (0, udtSeedParser_1.decodeSeed)(seed);
             expect(d.difficulty).toBe('Gritty');
             expect(d.source).toBe('Competitive');
@@ -241,8 +271,10 @@ describe('decodeSeed', () => {
     });
     describe('player count', () => {
         test.each([1, 2, 3, 4])('%i player(s)', (count) => {
-            const seed = (0, udtSeedParser_1.encodeSeed)({ source: 'Core', playerCount: count, adversary: 'Ashstrider', ally: 'Gleb',
-                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: [] }, 0);
+            const seed = (0, udtSeedParser_1.encodeSeed)({
+                source: 'Core', playerCount: count, adversary: 'Ashstrider', ally: 'Gleb',
+                difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+            }, 0);
             expect((0, udtSeedParser_1.decodeSeed)(seed).playerCount).toBe(count);
         });
     });

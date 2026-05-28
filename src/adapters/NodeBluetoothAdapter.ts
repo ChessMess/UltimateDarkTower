@@ -1,3 +1,4 @@
+import type { Noble, Peripheral, Characteristic } from '@stoprocent/noble';
 import {
     type IBluetoothAdapter,
     BluetoothConnectionError,
@@ -20,10 +21,10 @@ import {
 import { type DeviceInformation } from '../udtBleConnection';
 
 // Dynamic import to avoid breaking browser builds
-let noble: any;
+let noble: Noble | undefined;
 try {
     if (typeof process !== 'undefined' && process.versions?.node) {
-        noble = require('@stoprocent/noble');
+        noble = require('@stoprocent/noble') as unknown as Noble;
     }
 } catch {
     // @stoprocent/noble not installed - will fail on adapter usage
@@ -41,10 +42,10 @@ try {
  * - Windows: Requires Windows 10+ with BLE support
  */
 export class NodeBluetoothAdapter implements IBluetoothAdapter {
-    private peripheral: any = null;
-    private txCharacteristic: any = null;
-    private rxCharacteristic: any = null;
-    private allCharacteristics: any[] = [];
+    private peripheral: Peripheral | null = null;
+    private txCharacteristic: Characteristic | null = null;
+    private rxCharacteristic: Characteristic | null = null;
+    private allCharacteristics: Characteristic[] = [];
 
     private characteristicCallback?: (data: Uint8Array) => void;
     private disconnectCallback?: () => void;
@@ -70,9 +71,10 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
 
         try {
             await noble.waitForPoweredOnAsync();
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
             throw new BluetoothConnectionError(
-                `Bluetooth adapter not ready: ${error.message}`,
+                `Bluetooth adapter not ready: ${msg}`,
                 error
             );
         }
@@ -91,7 +93,7 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
                         this.availabilityCallback(state === 'poweredOn');
                     }
                 };
-                noble.on('stateChange', this.boundStateChangeHandler);
+                noble!.on('stateChange', this.boundStateChangeHandler);
             }
 
             // Step 3: Normalize UUIDs for Noble (strip dashes, lowercase)
@@ -131,11 +133,11 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
             this.allCharacteristics = characteristics;
 
             this.txCharacteristic = characteristics.find(
-                (c: any) => this.normalizeUuid(c.uuid) === txUuid
-            );
+                (c) => this.normalizeUuid(c.uuid) === txUuid
+            ) ?? null;
             this.rxCharacteristic = characteristics.find(
-                (c: any) => this.normalizeUuid(c.uuid) === rxUuid
-            );
+                (c) => this.normalizeUuid(c.uuid) === rxUuid
+            ) ?? null;
 
             if (!this.txCharacteristic || !this.rxCharacteristic) {
                 throw new BluetoothConnectionError(
@@ -154,7 +156,7 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
             };
             this.rxCharacteristic.on('data', this.boundDataHandler);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             await this.cleanup();
             if (
                 error instanceof BluetoothDeviceNotFoundError ||
@@ -163,8 +165,9 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
             ) {
                 throw error;
             }
+            const msg = error instanceof Error ? error.message : String(error);
             throw new BluetoothConnectionError(
-                `Connection failed: ${error.message}`,
+                `Connection failed: ${msg}`,
                 error
             );
         }
@@ -215,9 +218,10 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
             const buffer = Buffer.from(data);
             // writeAsync(buffer, withoutResponse) — false = write with response (reliable)
             await this.txCharacteristic.writeAsync(buffer, false);
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
             throw new BluetoothConnectionError(
-                `Write failed: ${error.message}`,
+                `Write failed: ${msg}`,
                 error
             );
         }
@@ -253,7 +257,7 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
             // breaking notification delivery.
             const characteristics = this.allCharacteristics;
 
-            const characteristicMap = [
+            const characteristicMap: Array<{ uuid: string; key: keyof Omit<DeviceInformation, 'lastUpdated'>; binary: boolean }> = [
                 {
                     uuid: DIS_MANUFACTURER_NAME_UUID,
                     key: 'manufacturerName',
@@ -299,7 +303,7 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
                 // (e.g. "2a29" instead of "00002a2900001000800000805f9b34fb")
                 const shortUuid = this.toShortUuid(uuid);
                 const char = characteristics.find(
-                    (c: any) => {
+                    (c) => {
                         const cUuid = this.normalizeUuid(c.uuid);
                         return cUuid === normalizedUuid || cUuid === shortUuid;
                     }
@@ -312,9 +316,9 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
                         const hexValue = Array.from(new Uint8Array(buffer))
                             .map((b: number) => b.toString(16).padStart(2, '0'))
                             .join(':');
-                        (info as any)[key] = hexValue;
+                        info[key] = hexValue;
                     } else {
-                        (info as any)[key] = buffer.toString('utf-8');
+                        info[key] = buffer.toString('utf-8');
                     }
                 } catch {
                     // Characteristic not available - skip
@@ -362,11 +366,11 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
         deviceName: string,
         serviceUuids: string[],
         timeoutMs: number
-    ): Promise<any> {
+    ): Promise<Peripheral> {
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
-                noble.stopScanning();
-                noble.removeListener('discover', onDiscover);
+                noble!.stopScanning();
+                noble!.removeListener('discover', onDiscover);
                 reject(
                     new BluetoothTimeoutError(
                         `Device scan timeout after ${timeoutMs}ms`
@@ -374,19 +378,19 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
                 );
             }, timeoutMs);
 
-            const onDiscover = (peripheral: any) => {
+            const onDiscover = (peripheral: Peripheral) => {
                 const name = peripheral.advertisement?.localName;
                 if (name && name.startsWith(deviceName)) {
                     clearTimeout(timeout);
-                    noble.stopScanning();
-                    noble.removeListener('discover', onDiscover);
+                    noble!.stopScanning();
+                    noble!.removeListener('discover', onDiscover);
                     resolve(peripheral);
                 }
             };
 
-            noble.on('discover', onDiscover);
+            noble!.on('discover', onDiscover);
             // Start scanning - noble accepts service UUIDs without dashes
-            noble.startScanning(serviceUuids, false); // false = no duplicates
+            noble!.startScanning(serviceUuids, false); // false = no duplicates
         });
     }
 

@@ -1,3 +1,4 @@
+/* global BluetoothDevice, BluetoothRemoteGATTCharacteristic, BufferSource */
 import {
     UART_SERVICE_UUID,
     UART_TX_CHARACTERISTIC_UUID,
@@ -26,9 +27,9 @@ import { type DeviceInformation } from '../udtBleConnection';
  * Uses the Web Bluetooth API (navigator.bluetooth).
  */
 export class WebBluetoothAdapter implements IBluetoothAdapter {
-    private device: any = null;
-    private txCharacteristic: any = null;
-    private rxCharacteristic: any = null;
+    private device: BluetoothDevice | null = null;
+    private txCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
+    private rxCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
 
     private characteristicCallback?: (data: Uint8Array) => void;
     private disconnectCallback?: () => void;
@@ -60,9 +61,9 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
             this.device.addEventListener('gattserverdisconnected', this.boundOnDeviceDisconnected);
 
             // Set up Bluetooth availability monitoring
-            this.boundOnAvailabilityChanged = (event: any) => {
+            this.boundOnAvailabilityChanged = (event: Event) => {
                 if (this.availabilityCallback) {
-                    this.availabilityCallback(event.value);
+                    this.availabilityCallback((event as Event & { value: boolean }).value);
                 }
             };
             // @ts-ignore
@@ -72,7 +73,7 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
             }
 
             // Connect to GATT server
-            const server = await this.device.gatt.connect();
+            const server = await this.device.gatt!.connect();
 
             // Get UART service
             const service = await server.getPrimaryService(UART_SERVICE_UUID);
@@ -84,10 +85,11 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
             // Set up RX notifications
             await this.rxCharacteristic.startNotifications();
             this.boundOnCharacteristicValueChanged = (event: Event) => {
-                const target = event.target as any;
-                const receivedData = new Uint8Array(target.value.byteLength);
-                for (let i = 0; i < target.value.byteLength; i++) {
-                    receivedData[i] = target.value.getUint8(i);
+                const target = event.target as BluetoothRemoteGATTCharacteristic;
+                const dataView = target.value!;
+                const receivedData = new Uint8Array(dataView.byteLength);
+                for (let i = 0; i < dataView.byteLength; i++) {
+                    receivedData[i] = dataView.getUint8(i);
                 }
                 if (this.characteristicCallback) {
                     this.characteristicCallback(receivedData);
@@ -98,7 +100,7 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
                 this.boundOnCharacteristicValueChanged
             );
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Re-throw our own error types
             if (error instanceof BluetoothDeviceNotFoundError ||
                 error instanceof BluetoothUserCancelledError ||
@@ -106,12 +108,13 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
                 throw error;
             }
 
-            const errorMsg = error?.message ?? String(error);
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            const errorName = error instanceof Error ? error.name : '';
 
             if (errorMsg.includes('User cancelled')) {
                 throw new BluetoothUserCancelledError('User cancelled device selection', error);
             }
-            if (errorMsg.includes('not found') || error?.name === 'NotFoundError') {
+            if (errorMsg.includes('not found') || errorName === 'NotFoundError') {
                 throw new BluetoothDeviceNotFoundError('Device not found', error);
             }
             throw new BluetoothConnectionError(`Failed to connect: ${errorMsg}`, error);
@@ -123,12 +126,12 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
             return;
         }
 
-        if (this.device.gatt.connected) {
+        if (this.device.gatt?.connected) {
             // Remove event listeners before disconnecting
             if (this.boundOnDeviceDisconnected) {
                 this.device.removeEventListener('gattserverdisconnected', this.boundOnDeviceDisconnected);
             }
-            await this.device.gatt.disconnect();
+            await this.device.gatt?.disconnect();
         }
 
         this.device = null;
@@ -148,7 +151,7 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
         if (!this.txCharacteristic) {
             throw new BluetoothConnectionError('TX characteristic not available');
         }
-        await this.txCharacteristic.writeValue(data);
+        await this.txCharacteristic.writeValue(data as unknown as BufferSource);
     }
 
     onCharacteristicValueChanged(callback: (data: Uint8Array) => void): void {
@@ -171,9 +174,9 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
         }
 
         try {
-            const disService = await this.device.gatt.getPrimaryService(DIS_SERVICE_UUID);
+            const disService = await this.device.gatt!.getPrimaryService(DIS_SERVICE_UUID);
 
-            const characteristicMap = [
+            const characteristicMap: Array<{ uuid: string; key: keyof Omit<DeviceInformation, 'lastUpdated'>; binary: boolean }> = [
                 { uuid: DIS_MANUFACTURER_NAME_UUID, key: 'manufacturerName', binary: false },
                 { uuid: DIS_MODEL_NUMBER_UUID, key: 'modelNumber', binary: false },
                 { uuid: DIS_SERIAL_NUMBER_UUID, key: 'serialNumber', binary: false },
@@ -194,9 +197,9 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
                         const hexValue = Array.from(new Uint8Array(value.buffer))
                             .map((b: number) => b.toString(16).padStart(2, '0'))
                             .join(':');
-                        (info as any)[key] = hexValue;
+                        info[key] = hexValue;
                     } else {
-                        (info as any)[key] = new TextDecoder().decode(value);
+                        info[key] = new TextDecoder().decode(value);
                     }
                 } catch {
                     // Characteristic not available - skip

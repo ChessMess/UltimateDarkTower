@@ -458,17 +458,17 @@ describe('createSeed', () => {
   });
 
   test('rejects invalid foe', () => {
-    expect(() => createSeed({ ...baseConfig, foes: ['InvalidFoe' as any, 'Frost Trolls', 'Dragons'] }))
+    expect(() => createSeed({ ...baseConfig, foes: ['InvalidFoe' as never, 'Frost Trolls', 'Dragons'] }))
       .toThrow('Invalid Tier 1 foe');
   });
 
   test('rejects invalid adversary', () => {
-    expect(() => createSeed({ ...baseConfig, adversary: 'InvalidAdversary' as any }))
+    expect(() => createSeed({ ...baseConfig, adversary: 'InvalidAdversary' as never }))
       .toThrow('Invalid adversary');
   });
 
   test('rejects invalid ally', () => {
-    expect(() => createSeed({ ...baseConfig, ally: 'InvalidAlly' as any }))
+    expect(() => createSeed({ ...baseConfig, ally: 'InvalidAlly' as never }))
       .toThrow('Invalid ally');
   });
 });

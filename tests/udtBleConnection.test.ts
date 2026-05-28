@@ -25,7 +25,7 @@ function createMockCallbacks(): TowerEventCallbacks {
 function createMockLogger(): Logger {
   const logger = new Logger();
   // Suppress actual output during tests by clearing the outputs array
-  (logger as any)['outputs'] = [];
+  logger.clearOutputs();
   return logger;
 }
 

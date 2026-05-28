@@ -454,9 +454,10 @@ var init_WebBluetoothAdapter = __esm({
           await this.rxCharacteristic.startNotifications();
           this.boundOnCharacteristicValueChanged = (event) => {
             const target = event.target;
-            const receivedData = new Uint8Array(target.value.byteLength);
-            for (let i = 0; i < target.value.byteLength; i++) {
-              receivedData[i] = target.value.getUint8(i);
+            const dataView = target.value;
+            const receivedData = new Uint8Array(dataView.byteLength);
+            for (let i = 0; i < dataView.byteLength; i++) {
+              receivedData[i] = dataView.getUint8(i);
             }
             if (this.characteristicCallback) {
               this.characteristicCallback(receivedData);
@@ -470,11 +471,12 @@ var init_WebBluetoothAdapter = __esm({
           if (error instanceof BluetoothDeviceNotFoundError || error instanceof BluetoothUserCancelledError || error instanceof BluetoothConnectionError) {
             throw error;
           }
-          const errorMsg = error?.message ?? String(error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          const errorName = error instanceof Error ? error.name : "";
           if (errorMsg.includes("User cancelled")) {
             throw new BluetoothUserCancelledError("User cancelled device selection", error);
           }
-          if (errorMsg.includes("not found") || error?.name === "NotFoundError") {
+          if (errorMsg.includes("not found") || errorName === "NotFoundError") {
             throw new BluetoothDeviceNotFoundError("Device not found", error);
           }
           throw new BluetoothConnectionError(`Failed to connect: ${errorMsg}`, error);
@@ -484,11 +486,11 @@ var init_WebBluetoothAdapter = __esm({
         if (!this.device) {
           return;
         }
-        if (this.device.gatt.connected) {
+        if (this.device.gatt?.connected) {
           if (this.boundOnDeviceDisconnected) {
             this.device.removeEventListener("gattserverdisconnected", this.boundOnDeviceDisconnected);
           }
-          await this.device.gatt.disconnect();
+          await this.device.gatt?.disconnect();
         }
         this.device = null;
         this.txCharacteristic = null;
@@ -604,8 +606,9 @@ var init_NodeBluetoothAdapter = __esm({
         try {
           await noble.waitForPoweredOnAsync();
         } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
           throw new BluetoothConnectionError(
-            `Bluetooth adapter not ready: ${error.message}`,
+            `Bluetooth adapter not ready: ${msg}`,
             error
           );
         }
@@ -640,10 +643,10 @@ var init_NodeBluetoothAdapter = __esm({
           this.allCharacteristics = characteristics;
           this.txCharacteristic = characteristics.find(
             (c) => this.normalizeUuid(c.uuid) === txUuid
-          );
+          ) ?? null;
           this.rxCharacteristic = characteristics.find(
             (c) => this.normalizeUuid(c.uuid) === rxUuid
-          );
+          ) ?? null;
           if (!this.txCharacteristic || !this.rxCharacteristic) {
             throw new BluetoothConnectionError(
               "TX or RX characteristic not found on device"
@@ -661,8 +664,9 @@ var init_NodeBluetoothAdapter = __esm({
           if (error instanceof BluetoothDeviceNotFoundError || error instanceof BluetoothConnectionError || error instanceof BluetoothTimeoutError) {
             throw error;
           }
+          const msg = error instanceof Error ? error.message : String(error);
           throw new BluetoothConnectionError(
-            `Connection failed: ${error.message}`,
+            `Connection failed: ${msg}`,
             error
           );
         }
@@ -700,8 +704,9 @@ var init_NodeBluetoothAdapter = __esm({
           const buffer = Buffer.from(data);
           await this.txCharacteristic.writeAsync(buffer, false);
         } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
           throw new BluetoothConnectionError(
-            `Write failed: ${error.message}`,
+            `Write failed: ${msg}`,
             error
           );
         }

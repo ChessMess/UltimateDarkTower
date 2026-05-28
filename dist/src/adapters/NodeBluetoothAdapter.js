@@ -45,10 +45,12 @@ class NodeBluetoothAdapter {
             await noble.waitForPoweredOnAsync();
         }
         catch (error) {
-            throw new udtBluetoothAdapter_1.BluetoothConnectionError(`Bluetooth adapter not ready: ${error.message}`, error);
+            const msg = error instanceof Error ? error.message : String(error);
+            throw new udtBluetoothAdapter_1.BluetoothConnectionError(`Bluetooth adapter not ready: ${msg}`, error);
         }
     }
     async connect(deviceName, serviceUuids) {
+        var _a, _b;
         try {
             // Step 1: Ensure Noble's BLE adapter is powered on
             await this.ensureNobleReady();
@@ -90,8 +92,8 @@ class NodeBluetoothAdapter {
             const { characteristics } = await this.peripheral.discoverAllServicesAndCharacteristicsAsync();
             // Save all discovered characteristics for readDeviceInformation()
             this.allCharacteristics = characteristics;
-            this.txCharacteristic = characteristics.find((c) => this.normalizeUuid(c.uuid) === txUuid);
-            this.rxCharacteristic = characteristics.find((c) => this.normalizeUuid(c.uuid) === rxUuid);
+            this.txCharacteristic = (_a = characteristics.find((c) => this.normalizeUuid(c.uuid) === txUuid)) !== null && _a !== void 0 ? _a : null;
+            this.rxCharacteristic = (_b = characteristics.find((c) => this.normalizeUuid(c.uuid) === rxUuid)) !== null && _b !== void 0 ? _b : null;
             if (!this.txCharacteristic || !this.rxCharacteristic) {
                 throw new udtBluetoothAdapter_1.BluetoothConnectionError('TX or RX characteristic not found on device');
             }
@@ -112,7 +114,8 @@ class NodeBluetoothAdapter {
                 error instanceof udtBluetoothAdapter_1.BluetoothTimeoutError) {
                 throw error;
             }
-            throw new udtBluetoothAdapter_1.BluetoothConnectionError(`Connection failed: ${error.message}`, error);
+            const msg = error instanceof Error ? error.message : String(error);
+            throw new udtBluetoothAdapter_1.BluetoothConnectionError(`Connection failed: ${msg}`, error);
         }
     }
     async disconnect() {
@@ -158,7 +161,8 @@ class NodeBluetoothAdapter {
             await this.txCharacteristic.writeAsync(buffer, false);
         }
         catch (error) {
-            throw new udtBluetoothAdapter_1.BluetoothConnectionError(`Write failed: ${error.message}`, error);
+            const msg = error instanceof Error ? error.message : String(error);
+            throw new udtBluetoothAdapter_1.BluetoothConnectionError(`Write failed: ${msg}`, error);
         }
     }
     onCharacteristicValueChanged(callback) {

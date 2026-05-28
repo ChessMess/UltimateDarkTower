@@ -29,6 +29,7 @@ function detectPlatform() {
     return 'custom';
 }
 function makeId() {
+    // eslint-disable-next-line no-undef -- globalThis is ES2020+ standard; recognized by TS but not ESLint's legacy env config
     const g = globalThis;
     if (g.crypto && typeof g.crypto.randomUUID === 'function') {
         try {

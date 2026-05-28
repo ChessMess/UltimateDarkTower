@@ -393,7 +393,6 @@
           this.boundOnAvailabilityChanged = null;
         }
         async connect(deviceName, serviceUuids) {
-          var _a2;
           try {
             this.device = await navigator.bluetooth.requestDevice({
               filters: [{ namePrefix: deviceName }],
@@ -423,9 +422,10 @@
             await this.rxCharacteristic.startNotifications();
             this.boundOnCharacteristicValueChanged = (event) => {
               const target = event.target;
-              const receivedData = new Uint8Array(target.value.byteLength);
-              for (let i = 0; i < target.value.byteLength; i++) {
-                receivedData[i] = target.value.getUint8(i);
+              const dataView = target.value;
+              const receivedData = new Uint8Array(dataView.byteLength);
+              for (let i = 0; i < dataView.byteLength; i++) {
+                receivedData[i] = dataView.getUint8(i);
               }
               if (this.characteristicCallback) {
                 this.characteristicCallback(receivedData);
@@ -439,25 +439,27 @@
             if (error instanceof BluetoothDeviceNotFoundError || error instanceof BluetoothUserCancelledError || error instanceof BluetoothConnectionError) {
               throw error;
             }
-            const errorMsg = (_a2 = error == null ? void 0 : error.message) != null ? _a2 : String(error);
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            const errorName = error instanceof Error ? error.name : "";
             if (errorMsg.includes("User cancelled")) {
               throw new BluetoothUserCancelledError("User cancelled device selection", error);
             }
-            if (errorMsg.includes("not found") || (error == null ? void 0 : error.name) === "NotFoundError") {
+            if (errorMsg.includes("not found") || errorName === "NotFoundError") {
               throw new BluetoothDeviceNotFoundError("Device not found", error);
             }
             throw new BluetoothConnectionError(`Failed to connect: ${errorMsg}`, error);
           }
         }
         async disconnect() {
+          var _a2, _b;
           if (!this.device) {
             return;
           }
-          if (this.device.gatt.connected) {
+          if ((_a2 = this.device.gatt) == null ? void 0 : _a2.connected) {
             if (this.boundOnDeviceDisconnected) {
               this.device.removeEventListener("gattserverdisconnected", this.boundOnDeviceDisconnected);
             }
-            await this.device.gatt.disconnect();
+            await ((_b = this.device.gatt) == null ? void 0 : _b.disconnect());
           }
           this.device = null;
           this.txCharacteristic = null;
@@ -575,13 +577,15 @@
           try {
             await noble.waitForPoweredOnAsync();
           } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
             throw new BluetoothConnectionError(
-              `Bluetooth adapter not ready: ${error.message}`,
+              `Bluetooth adapter not ready: ${msg}`,
               error
             );
           }
         }
         async connect(deviceName, serviceUuids) {
+          var _a2, _b;
           try {
             await this.ensureNobleReady();
             if (this.availabilityCallback) {
@@ -609,12 +613,12 @@
             const rxUuid = this.normalizeUuid(UART_RX_CHARACTERISTIC_UUID);
             const { characteristics } = await this.peripheral.discoverAllServicesAndCharacteristicsAsync();
             this.allCharacteristics = characteristics;
-            this.txCharacteristic = characteristics.find(
+            this.txCharacteristic = (_a2 = characteristics.find(
               (c) => this.normalizeUuid(c.uuid) === txUuid
-            );
-            this.rxCharacteristic = characteristics.find(
+            )) != null ? _a2 : null;
+            this.rxCharacteristic = (_b = characteristics.find(
               (c) => this.normalizeUuid(c.uuid) === rxUuid
-            );
+            )) != null ? _b : null;
             if (!this.txCharacteristic || !this.rxCharacteristic) {
               throw new BluetoothConnectionError(
                 "TX or RX characteristic not found on device"
@@ -632,8 +636,9 @@
             if (error instanceof BluetoothDeviceNotFoundError || error instanceof BluetoothConnectionError || error instanceof BluetoothTimeoutError) {
               throw error;
             }
+            const msg = error instanceof Error ? error.message : String(error);
             throw new BluetoothConnectionError(
-              `Connection failed: ${error.message}`,
+              `Connection failed: ${msg}`,
               error
             );
           }
@@ -671,8 +676,9 @@
             const buffer = Buffer.from(data);
             await this.txCharacteristic.writeAsync(buffer, false);
           } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
             throw new BluetoothConnectionError(
-              `Write failed: ${error.message}`,
+              `Write failed: ${msg}`,
               error
             );
           }

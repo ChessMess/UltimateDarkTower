@@ -34,7 +34,7 @@ function createMockNoble() {
       }
     }),
     _listeners: listeners,
-    _emit: (event: string, ...args: any[]) => {
+    _emit: (event: string, ...args: unknown[]) => {
       (listeners[event] || []).forEach(fn => fn(...args));
     },
   };
@@ -72,7 +72,7 @@ function createMockCharacteristic(uuid: string, options: { readable?: Buffer } =
       }
     }),
     _listeners: listeners,
-    _emit: (event: string, ...args: any[]) => {
+    _emit: (event: string, ...args: unknown[]) => {
       (listeners[event] || []).forEach(fn => fn(...args));
     },
   };
@@ -80,7 +80,7 @@ function createMockCharacteristic(uuid: string, options: { readable?: Buffer } =
 
 function createMockPeripheral(options: {
   name?: string;
-  characteristics?: any[];
+  characteristics?: ReturnType<typeof createMockCharacteristic>[];
   state?: string;
 } = {}) {
   const listeners: Record<string, Function[]> = {};
@@ -102,7 +102,7 @@ function createMockPeripheral(options: {
       }
     }),
     _listeners: listeners,
-    _emit: (event: string, ...args: any[]) => {
+    _emit: (event: string, ...args: unknown[]) => {
       (listeners[event] || []).forEach(fn => fn(...args));
     },
   };
@@ -117,7 +117,7 @@ function createStandardCharacteristics() {
 /**
  * Sets up mockNoble.startScanning to immediately emit 'discover' with the given peripheral
  */
-function setupImmediateDiscovery(peripheral: any) {
+function setupImmediateDiscovery(peripheral: ReturnType<typeof createMockPeripheral>) {
   mockNoble.startScanning.mockImplementation(() => {
     // Simulate async discovery
     setTimeout(() => {
@@ -170,7 +170,10 @@ describe('NodeBluetoothAdapter', () => {
     });
 
     test('should throw BluetoothTimeoutError when scan times out', async () => {
-      jest.spyOn(adapter as any, 'scanForDevice').mockRejectedValue(
+      jest.spyOn(
+        adapter as unknown as { scanForDevice: (...args: unknown[]) => Promise<unknown> },
+        'scanForDevice'
+      ).mockRejectedValue(
         new BluetoothTimeoutError('Device scan timeout after 10000ms')
       );
 
@@ -294,7 +297,7 @@ describe('NodeBluetoothAdapter', () => {
       await adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']);
 
       const dataHandler = rxChar.on.mock.calls.find(
-        (call: any[]) => call[0] === 'data'
+        call => call[0] === 'data'
       )?.[1];
       expect(dataHandler).toBeDefined();
 
@@ -319,7 +322,7 @@ describe('NodeBluetoothAdapter', () => {
       await adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']);
 
       const disconnectHandler = peripheral.once.mock.calls.find(
-        (call: any[]) => call[0] === 'disconnect'
+        call => call[0] === 'disconnect'
       )?.[1];
       expect(disconnectHandler).toBeDefined();
       disconnectHandler!();
@@ -341,7 +344,7 @@ describe('NodeBluetoothAdapter', () => {
       await adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']);
 
       const stateHandler = mockNoble.on.mock.calls.find(
-        (call: any[]) => call[0] === 'stateChange'
+        call => call[0] === 'stateChange'
       )?.[1];
       expect(stateHandler).toBeDefined();
 

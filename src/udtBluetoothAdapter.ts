@@ -44,7 +44,7 @@ export interface BluetoothAdapterConfig {
  * Base class for all Bluetooth-related errors
  */
 export class BluetoothError extends Error {
-  constructor(message: string, public readonly originalError?: any) {
+  constructor(message: string, public readonly originalError?: unknown) {
     super(message);
     this.name = 'BluetoothError';
   }
@@ -54,7 +54,7 @@ export class BluetoothError extends Error {
  * Error thrown when Bluetooth connection fails or is lost
  */
 export class BluetoothConnectionError extends BluetoothError {
-  constructor(message: string, originalError?: any) {
+  constructor(message: string, originalError?: unknown) {
     super(message, originalError);
     this.name = 'BluetoothConnectionError';
   }
@@ -64,7 +64,7 @@ export class BluetoothConnectionError extends BluetoothError {
  * Error thrown when the requested Bluetooth device cannot be found
  */
 export class BluetoothDeviceNotFoundError extends BluetoothError {
-  constructor(message: string, originalError?: any) {
+  constructor(message: string, originalError?: unknown) {
     super(message, originalError);
     this.name = 'BluetoothDeviceNotFoundError';
   }
@@ -75,7 +75,7 @@ export class BluetoothDeviceNotFoundError extends BluetoothError {
  * (Primarily used in Web Bluetooth environments)
  */
 export class BluetoothUserCancelledError extends BluetoothError {
-  constructor(message: string, originalError?: any) {
+  constructor(message: string, originalError?: unknown) {
     super(message, originalError);
     this.name = 'BluetoothUserCancelledError';
   }
@@ -85,7 +85,7 @@ export class BluetoothUserCancelledError extends BluetoothError {
  * Error thrown when a Bluetooth operation times out
  */
 export class BluetoothTimeoutError extends BluetoothError {
-  constructor(message: string, originalError?: any) {
+  constructor(message: string, originalError?: unknown) {
     super(message, originalError);
     this.name = 'BluetoothTimeoutError';
   }

@@ -1,4 +1,4 @@
-import { TowerRenderView } from 'ultimatedarktowerdisplay';
+import { TowerRenderView } from '../../../UltimateDarkTowerDisplay/src/index';
 import towerModelUrl from '../../../UltimateDarkTowerDisplay/src/3d/assets/tower.glb';
 
 const root = document.getElementById('tower-display-root');
@@ -126,6 +126,10 @@ window.addEventListener('error', (event: ErrorEvent) => {
 window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
   const message = event.reason instanceof Error ? event.reason.stack ?? event.reason.message : String(event.reason);
   setStatus(`Unhandled popup error: ${message}`, true);
+});
+
+window.addEventListener('beforeunload', () => {
+  window.opener?.postMessage({ type: 'emulatorClosed' }, '*');
 });
 
 window.addEventListener('message', (event: MessageEvent) => {

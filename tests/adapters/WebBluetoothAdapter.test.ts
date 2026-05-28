@@ -20,7 +20,7 @@ import {
 
 // --- Mock Factories ---
 
-function createMockCharacteristic(uuid: string, options: { readValue?: any; binary?: boolean } = {}) {
+function createMockCharacteristic(uuid: string, options: { readValue?: DataView; binary?: boolean } = {}) {
   const listeners: Record<string, Function[]> = {};
   return {
     uuid,
@@ -33,13 +33,13 @@ function createMockCharacteristic(uuid: string, options: { readValue?: any; bina
     writeValue: jest.fn().mockResolvedValue(undefined),
     readValue: jest.fn().mockResolvedValue(options.readValue ?? new DataView(new ArrayBuffer(0))),
     _listeners: listeners,
-    _fireEvent: (event: string, data: any) => {
+    _fireEvent: (event: string, data: unknown) => {
       (listeners[event] || []).forEach(fn => fn(data));
     },
   };
 }
 
-function createMockService(characteristics: Record<string, any>) {
+function createMockService(characteristics: Record<string, ReturnType<typeof createMockCharacteristic>>) {
   return {
     getCharacteristic: jest.fn((uuid: string) => {
       const char = characteristics[uuid];
@@ -49,7 +49,7 @@ function createMockService(characteristics: Record<string, any>) {
   };
 }
 
-function createMockDevice(options: { gattConnected?: boolean; services?: Record<string, any> } = {}) {
+function createMockDevice(options: { gattConnected?: boolean; services?: Record<string, ReturnType<typeof createMockService>> } = {}) {
   const deviceListeners: Record<string, Function[]> = {};
   const server = {
     connected: options.gattConnected ?? true,
@@ -72,7 +72,7 @@ function createMockDevice(options: { gattConnected?: boolean; services?: Record<
     }),
     removeEventListener: jest.fn(),
     _listeners: deviceListeners,
-    _fireEvent: (event: string, data?: any) => {
+    _fireEvent: (event: string, data?: unknown) => {
       (deviceListeners[event] || []).forEach(fn => fn(data));
     },
   };
@@ -80,7 +80,7 @@ function createMockDevice(options: { gattConnected?: boolean; services?: Record<
   return device;
 }
 
-function setupMockNavigatorBluetooth(device: any) {
+function setupMockNavigatorBluetooth(device: ReturnType<typeof createMockDevice> | null) {
   const btListeners: Record<string, Function[]> = {};
   const bluetooth = {
     requestDevice: jest.fn().mockResolvedValue(device),
@@ -90,12 +90,12 @@ function setupMockNavigatorBluetooth(device: any) {
     }),
     removeEventListener: jest.fn(),
     _listeners: btListeners,
-    _fireEvent: (event: string, data?: any) => {
+    _fireEvent: (event: string, data?: unknown) => {
       (btListeners[event] || []).forEach(fn => fn(data));
     },
   };
 
-  (global as any).navigator = { bluetooth };
+  (global as unknown as WebTestGlobal).navigator = { bluetooth };
 
   return bluetooth;
 }
@@ -121,9 +121,12 @@ function createFullMockSetup() {
   return { txChar, rxChar, uartService, device, bluetooth };
 }
 
+type MockNavigatorBluetooth = ReturnType<typeof setupMockNavigatorBluetooth>;
+type WebTestGlobal = { navigator?: { bluetooth: MockNavigatorBluetooth } };
+
 describe('WebBluetoothAdapter', () => {
   let adapter: WebBluetoothAdapter;
-  const originalNavigator = (global as any).navigator;
+  const originalNavigator = (global as unknown as WebTestGlobal).navigator;
 
   beforeEach(() => {
     adapter = new WebBluetoothAdapter();
@@ -131,9 +134,9 @@ describe('WebBluetoothAdapter', () => {
 
   afterEach(() => {
     if (originalNavigator === undefined) {
-      delete (global as any).navigator;
+      delete (global as unknown as WebTestGlobal).navigator;
     } else {
-      (global as any).navigator = originalNavigator;
+      (global as unknown as WebTestGlobal).navigator = originalNavigator;
     }
   });
 
@@ -166,7 +169,7 @@ describe('WebBluetoothAdapter', () => {
 
     test('should throw BluetoothDeviceNotFoundError when requestDevice returns null', async () => {
       setupMockNavigatorBluetooth(null);
-      (global as any).navigator.bluetooth.requestDevice.mockResolvedValue(null);
+      (global as unknown as WebTestGlobal).navigator!.bluetooth.requestDevice.mockResolvedValue(null);
 
       await expect(adapter.connect('ReturnToDarkTower', [UART_SERVICE_UUID]))
         .rejects.toBeInstanceOf(BluetoothDeviceNotFoundError);
@@ -244,7 +247,7 @@ describe('WebBluetoothAdapter', () => {
       const mockEvent = { target: { value: mockValue } };
 
       const handler = rxChar.addEventListener.mock.calls.find(
-        (call: any[]) => call[0] === 'characteristicvaluechanged'
+        call => call[0] === 'characteristicvaluechanged'
       )?.[1];
       expect(handler).toBeDefined();
       handler!(mockEvent);
@@ -262,7 +265,7 @@ describe('WebBluetoothAdapter', () => {
       await adapter.connect('ReturnToDarkTower', [UART_SERVICE_UUID]);
 
       const handler = device.addEventListener.mock.calls.find(
-        (call: any[]) => call[0] === 'gattserverdisconnected'
+        call => call[0] === 'gattserverdisconnected'
       )?.[1];
       expect(handler).toBeDefined();
       handler!();
@@ -280,7 +283,7 @@ describe('WebBluetoothAdapter', () => {
       await adapter.connect('ReturnToDarkTower', [UART_SERVICE_UUID]);
 
       const handler = bluetooth.addEventListener.mock.calls.find(
-        (call: any[]) => call[0] === 'availabilitychanged'
+        call => call[0] === 'availabilitychanged'
       )?.[1];
       expect(handler).toBeDefined();
       handler!({ value: false });

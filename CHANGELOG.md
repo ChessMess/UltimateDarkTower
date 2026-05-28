@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 - **Tower Emulator has been added** — Utilising the UltimateDarkTowerDisplay the example app can now connect to a software rendered version of the tower. The controller and the software tower share actual packets, so this can be a useful feature for testing certain features of both the UDT library and the UDT Display Library.
 
+### Fixed
+
+- **Eliminated all 85 `@typescript-eslint/no-explicit-any` lint warnings** — All `any` types across source and test files replaced with proper TypeScript types (`unknown`, type-narrowed catch blocks, typed mock helpers, typed cast chains). Also added a `no-undef` disable comment for the `globalThis` usage in `udtDiagnostics.ts`. Local interface declarations for the Web Bluetooth API (`BluetoothDevice`, `BluetoothRemoteGATTCharacteristic`, etc.) were added to `WebBluetoothAdapter.ts` since these types are not included in TypeScript's standard DOM lib. The codebase now reports `0 problems (0 errors, 0 warnings)` from ESLint.
+
 ### Added
 
 - **Tower Controller gains a "Seals" tab for 3D emulator seal visibility** — When connected in Tower Emulator mode, a new "Seals" tab appears in the left column of the Tower Controller. It shows a labeled 3×4 grid (Top/Mid/Btm × N/E/S/W) of toggle buttons: clicking a button removes the corresponding seal from the 3D emulator view (button turns dark red); clicking again restores it. "Remove All" and "Replace All" action buttons operate on all 12 seals at once. Seal state is kept in sync with the existing Library tab seal grid on all mutation paths (`breakSeal`, Library grid clicks, "Clear All Lights"). The seal state is communicated to the emulator popup via a new `applySeals` postMessage type, which calls `TowerRenderView.applySeals()` on the display. When not in emulator+connected mode the tab shows an explanatory notice.

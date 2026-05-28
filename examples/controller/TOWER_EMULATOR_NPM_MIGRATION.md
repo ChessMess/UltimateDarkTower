@@ -1,33 +1,32 @@
 # Tower Emulator — npm Migration Guide
 
-When `ultimatedarktowerdisplay` is published to npm, replace the local `file:` path reference with the versioned package. Only two files need to change.
+The emulator currently uses an explicit sibling checkout of `../UltimateDarkTowerDisplay` rather than a `file:` dependency in `package.json`. When `ultimatedarktowerdisplay` is published to npm, switch the example imports over to the published package.
 
-## Step 1 — `package.json`
+## Step 1 — `examples/controller/TowerEmulator.ts`
 
 ```diff
-- "ultimatedarktowerdisplay": "file:../../UltimateDarkTowerDisplay"
-+ "ultimatedarktowerdisplay": "^<published-version>"
+- import { TowerRenderView } from '../../../UltimateDarkTowerDisplay/src/index';
+- import towerModelUrl from '../../../UltimateDarkTowerDisplay/src/3d/assets/tower.glb';
++ import { TowerRenderView } from 'ultimatedarktowerdisplay';
++ import towerModelUrl from 'ultimatedarktowerdisplay/dist/3d/assets/tower.glb';
 ```
-
-Run `npm install` to pull the published package.
 
 ## Step 2 — `build-examples.js`
 
-Remove the `alias` entries from both esbuild calls (TowerController and TowerEmulator builds). Once the package is in `node_modules`, esbuild resolves both packages automatically.
+Remove the `ultimatedarktower` alias entries once the published display package no longer needs to consume this repo from local TypeScript source during the example build.
 
 ```diff
 - alias: {
--     "ultimatedarktowerdisplay": path.resolve(__dirname, "../UltimateDarkTowerDisplay/dist/index.esm.js"),
 -     "ultimatedarktower": path.resolve(__dirname, "src/index.ts"),
 - },
 ```
 
-> **Why both aliases?** The current local build of `ultimatedarktowerdisplay` imports `ultimatedarktower` as an external peer dep. The `ultimatedarktower` alias redirects that to our local TypeScript source so esbuild can bundle it cleanly. Once both packages are on npm and properly installed, neither alias is needed.
+> **Why keep `ultimatedarktower` aliased for now?** The local display source still imports `ultimatedarktower` as a peer dependency. The alias redirects that to this repo's local TypeScript source so esbuild can bundle the examples cleanly.
 
 ## Nothing else changes
 
 - `TowerEmulatorAdapter.ts` — no changes
-- `TowerEmulator.ts` — import path `'ultimatedarktowerdisplay'` already correct
+- `TowerEmulator.ts` — switch both sibling imports to the published package paths shown above
 - `TowerEmulator.html` — no changes
 - `TowerController.ts` — no changes
 - `TowerController.html` — no changes

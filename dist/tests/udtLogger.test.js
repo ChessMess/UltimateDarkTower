@@ -69,7 +69,7 @@ describe('Logger with BufferOutput', () => {
             constructor() {
                 super();
                 // Clear the default console output
-                this.outputs = [];
+                this.clearOutputs();
             }
         }
         logger = new TestLogger();

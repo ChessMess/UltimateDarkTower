@@ -116,6 +116,7 @@ function detectPlatform(): 'web' | 'node' | 'custom' {
 }
 
 function makeId(): string {
+    // eslint-disable-next-line no-undef -- globalThis is ES2020+ standard; recognized by TS but not ESLint's legacy env config
     const g = (globalThis as unknown as { crypto?: { randomUUID?: () => string } });
     if (g.crypto && typeof g.crypto.randomUUID === 'function') {
         try { return g.crypto.randomUUID(); } catch { /* fallthrough */ }

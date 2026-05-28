@@ -10,7 +10,7 @@ describe('BufferOutput', () => {
     test('should store log entries in buffer', () => {
         const timestamp = new Date();
         bufferOutput.write('info', 'Test message', timestamp);
-        
+
         const buffer = bufferOutput.getBuffer();
         expect(buffer).toHaveLength(1);
         expect(buffer[0]).toEqual({
@@ -25,15 +25,15 @@ describe('BufferOutput', () => {
         for (let i = 0; i < 10; i++) {
             bufferOutput.write('info', `Message ${i}`, new Date());
         }
-        
+
         expect(bufferOutput.getBufferSize()).toBe(10);
-        
+
         // Add one more entry to trigger clearing (now 11 entries, exceeds 10)
         bufferOutput.write('info', 'Message 10', new Date());
-        
+
         // Should have cleared first 3 entries, leaving 8
         expect(bufferOutput.getBufferSize()).toBe(8);
-        
+
         const buffer = bufferOutput.getBuffer();
         expect(buffer[0].message).toBe('Message 3'); // First entry should now be Message 3
         expect(buffer[7].message).toBe('Message 10'); // Last entry should be Message 10
@@ -44,7 +44,7 @@ describe('BufferOutput', () => {
         bufferOutput.write('error', 'Error message', new Date());
         bufferOutput.write('warn', 'Warning message', new Date());
         bufferOutput.write('error', 'Another error', new Date());
-        
+
         const errorEntries = bufferOutput.getEntriesByLevel('error');
         expect(errorEntries).toHaveLength(2);
         expect(errorEntries[0].message).toBe('Error message');
@@ -55,11 +55,11 @@ describe('BufferOutput', () => {
         const baseTime = new Date();
         const olderTime = new Date(baseTime.getTime() - 1000);
         const newerTime = new Date(baseTime.getTime() + 1000);
-        
+
         bufferOutput.write('info', 'Old message', olderTime);
         bufferOutput.write('info', 'Base message', baseTime);
         bufferOutput.write('info', 'New message', newerTime);
-        
+
         const recentEntries = bufferOutput.getEntriesSince(baseTime);
         expect(recentEntries).toHaveLength(2);
         expect(recentEntries[0].message).toBe('Base message');
@@ -69,7 +69,7 @@ describe('BufferOutput', () => {
     test('should clear buffer completely', () => {
         bufferOutput.write('info', 'Test message', new Date());
         expect(bufferOutput.getBufferSize()).toBe(1);
-        
+
         bufferOutput.clearBuffer();
         expect(bufferOutput.getBufferSize()).toBe(0);
     });
@@ -85,7 +85,7 @@ describe('Logger with BufferOutput', () => {
             constructor() {
                 super();
                 // Clear the default console output
-                (this as any).outputs = [];
+                this.clearOutputs();
             }
         }
         logger = new TestLogger();
@@ -96,7 +96,7 @@ describe('Logger with BufferOutput', () => {
     test('should log messages to buffer output', () => {
         logger.info('Test info message');
         logger.error('Test error message');
-        
+
         const buffer = bufferOutput.getBuffer();
         expect(buffer).toHaveLength(2);
         expect(buffer[0].level).toBe('info');
@@ -107,32 +107,35 @@ describe('Logger with BufferOutput', () => {
 
     test('should handle circular buffer with default settings', () => {
         const defaultBuffer = new BufferOutput(); // 1000 max, 100 clear
-        
+
         // Add 1000 entries directly to buffer (no logger to avoid console output)
         for (let i = 0; i < 1000; i++) {
             defaultBuffer.write('info', `Message ${i}`, new Date());
         }
-        
+
         expect(defaultBuffer.getBufferSize()).toBe(1000);
-        
+
         // Add one more to trigger clearing (now 1001 entries, exceeds 1000)
         defaultBuffer.write('info', 'Message 1000', new Date());
-        
+
         // Should have cleared first 100, leaving 901
         expect(defaultBuffer.getBufferSize()).toBe(901);
-        
+
         const buffer = defaultBuffer.getBuffer();
         expect(buffer[0].message).toBe('Message 100'); // First entry should now be Message 100
         expect(buffer[900].message).toBe('Message 1000'); // Last entry should be Message 1000
     });
 });
 
+type DOMOutputTestable = { allEntries: Array<{ level: string; message: string; timestamp: Date }> };
+type LoggerTestGlobal = { document?: Record<string, unknown> };
+
 describe('DOMOutput basic functionality', () => {
     test('should create DOMOutput instance without DOM', () => {
         // Test that DOMOutput can be instantiated (constructor won't fail if element doesn't exist)
         const domOutput = new DOMOutput('non-existent-container');
         expect(domOutput).toBeInstanceOf(DOMOutput);
-        
+
         // Test that calling methods on instance with no container doesn't throw
         expect(() => {
             domOutput.write('info', 'Test message', new Date());
@@ -143,13 +146,13 @@ describe('DOMOutput basic functionality', () => {
 
     test('should not store entries when no container exists', () => {
         const domOutput = new DOMOutput('non-existent-container');
-        
+
         // Add entries (should not be stored since no container)
         domOutput.write('debug', 'Debug message', new Date());
         domOutput.write('info', 'Info message', new Date());
-        
+
         // Access private allEntries property for testing
-        const allEntries = (domOutput as any).allEntries;
+        const allEntries = (domOutput as unknown as DOMOutputTestable).allEntries;
         expect(allEntries).toHaveLength(0);
     });
 
@@ -157,25 +160,25 @@ describe('DOMOutput basic functionality', () => {
         // Mock document.getElementById to return a dummy element
         const mockContainer = { innerHTML: '', appendChild: jest.fn(), scrollTop: 0, scrollHeight: 100 };
         const originalGetElementById = global.document?.getElementById;
-        
+
         // Mock document if it doesn't exist
         if (typeof document === 'undefined') {
-            (global as any).document = {
+            (global as unknown as LoggerTestGlobal).document = {
                 getElementById: jest.fn().mockReturnValue(mockContainer),
                 createElement: jest.fn().mockReturnValue({ className: '', textContent: '' })
             };
         } else {
-            document.getElementById = jest.fn().mockReturnValue(mockContainer as any);
+            document.getElementById = jest.fn().mockReturnValue(mockContainer as unknown as HTMLElement);
         }
 
         const domOutput = new DOMOutput('test-container');
-        
+
         // Add entries
         domOutput.write('debug', 'Debug message', new Date());
         domOutput.write('info', 'Info message', new Date());
-        
+
         // Access private allEntries property for testing
-        const allEntries = (domOutput as any).allEntries;
+        const allEntries = (domOutput as unknown as DOMOutputTestable).allEntries;
         expect(allEntries).toHaveLength(2);
         expect(allEntries[0].level).toBe('debug');
         expect(allEntries[0].message).toBe('Debug message');
@@ -191,26 +194,26 @@ describe('DOMOutput basic functionality', () => {
     test('should respect maxLines limit', () => {
         const mockContainer = { innerHTML: '', appendChild: jest.fn(), scrollTop: 0, scrollHeight: 100 };
         const originalGetElementById = global.document?.getElementById;
-        
+
         if (typeof document === 'undefined') {
-            (global as any).document = {
+            (global as unknown as LoggerTestGlobal).document = {
                 getElementById: jest.fn().mockReturnValue(mockContainer),
                 createElement: jest.fn().mockReturnValue({ className: '', textContent: '' })
             };
         } else {
-            document.getElementById = jest.fn().mockReturnValue(mockContainer as any);
+            document.getElementById = jest.fn().mockReturnValue(mockContainer as unknown as HTMLElement);
         }
 
         // Create DOMOutput with small maxLines for testing
         const domOutput = new DOMOutput('test-container', 3);
-        
+
         // Add 5 entries (exceeds maxLines of 3)
         for (let i = 0; i < 5; i++) {
             domOutput.write('info', `Message ${i}`, new Date());
         }
-        
+
         // Should only keep the last 3 entries
-        const allEntries = (domOutput as any).allEntries;
+        const allEntries = (domOutput as unknown as DOMOutputTestable).allEntries;
         expect(allEntries).toHaveLength(3);
         expect(allEntries[0].message).toBe('Message 2');
         expect(allEntries[1].message).toBe('Message 3');
@@ -224,7 +227,7 @@ describe('DOMOutput basic functionality', () => {
 
     test('should provide debug methods', () => {
         const domOutput = new DOMOutput('non-existent-container');
-        
+
         // Test debug methods don't throw and return expected values
         expect(domOutput.getEntryCount()).toBe(0);
         expect(domOutput.getEnabledLevels()).toEqual([]);
@@ -241,9 +244,9 @@ describe('DOMOutput basic functionality', () => {
         };
 
         const originalGetElementById = global.document?.getElementById;
-        
+
         if (typeof document === 'undefined') {
-            (global as any).document = {
+            (global as unknown as LoggerTestGlobal).document = {
                 getElementById: jest.fn().mockImplementation((id: string) => mockCheckboxes[id as keyof typeof mockCheckboxes] || null),
                 createElement: jest.fn().mockReturnValue({ className: '', textContent: '' })
             };
@@ -253,7 +256,7 @@ describe('DOMOutput basic functionality', () => {
 
         const domOutput = new DOMOutput('test-container');
         const enabledLevels = domOutput.getEnabledLevels();
-        
+
         expect(enabledLevels).toContain('debug');
         expect(enabledLevels).toContain('warn');
         expect(enabledLevels).not.toContain('info');

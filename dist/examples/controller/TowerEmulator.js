@@ -62495,6 +62495,9 @@ window.addEventListener("unhandledrejection", (event) => {
   const message = event.reason instanceof Error ? event.reason.stack ?? event.reason.message : String(event.reason);
   setStatus(`Unhandled popup error: ${message}`, true);
 });
+window.addEventListener("beforeunload", () => {
+  window.opener?.postMessage({ type: "emulatorClosed" }, "*");
+});
 window.addEventListener("message", (event) => {
   const { type, state } = event.data;
   if (type === "applyState" && state) {

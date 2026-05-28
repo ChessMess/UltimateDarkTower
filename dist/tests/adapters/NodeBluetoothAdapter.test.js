@@ -242,7 +242,7 @@ describe('NodeBluetoothAdapter', () => {
             const peripheral = createMockPeripheral({ characteristics: all });
             setupImmediateDiscovery(peripheral);
             await adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']);
-            const dataHandler = (_a = rxChar.on.mock.calls.find((call) => call[0] === 'data')) === null || _a === void 0 ? void 0 : _a[1];
+            const dataHandler = (_a = rxChar.on.mock.calls.find(call => call[0] === 'data')) === null || _a === void 0 ? void 0 : _a[1];
             expect(dataHandler).toBeDefined();
             const testBuffer = Buffer.from([0xAA, 0xBB, 0xCC]);
             dataHandler(testBuffer);
@@ -260,7 +260,7 @@ describe('NodeBluetoothAdapter', () => {
             const peripheral = createMockPeripheral({ characteristics: all });
             setupImmediateDiscovery(peripheral);
             await adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']);
-            const disconnectHandler = (_a = peripheral.once.mock.calls.find((call) => call[0] === 'disconnect')) === null || _a === void 0 ? void 0 : _a[1];
+            const disconnectHandler = (_a = peripheral.once.mock.calls.find(call => call[0] === 'disconnect')) === null || _a === void 0 ? void 0 : _a[1];
             expect(disconnectHandler).toBeDefined();
             disconnectHandler();
             expect(callback).toHaveBeenCalled();
@@ -276,7 +276,7 @@ describe('NodeBluetoothAdapter', () => {
             const peripheral = createMockPeripheral({ characteristics: all });
             setupImmediateDiscovery(peripheral);
             await adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']);
-            const stateHandler = (_a = mockNoble.on.mock.calls.find((call) => call[0] === 'stateChange')) === null || _a === void 0 ? void 0 : _a[1];
+            const stateHandler = (_a = mockNoble.on.mock.calls.find(call => call[0] === 'stateChange')) === null || _a === void 0 ? void 0 : _a[1];
             expect(stateHandler).toBeDefined();
             stateHandler('poweredOff');
             expect(callback).toHaveBeenCalledWith(false);

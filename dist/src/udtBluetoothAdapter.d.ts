@@ -32,31 +32,31 @@ export interface BluetoothAdapterConfig {
  * Base class for all Bluetooth-related errors
  */
 export declare class BluetoothError extends Error {
-    readonly originalError?: any | undefined;
-    constructor(message: string, originalError?: any | undefined);
+    readonly originalError?: unknown | undefined;
+    constructor(message: string, originalError?: unknown | undefined);
 }
 /**
  * Error thrown when Bluetooth connection fails or is lost
  */
 export declare class BluetoothConnectionError extends BluetoothError {
-    constructor(message: string, originalError?: any);
+    constructor(message: string, originalError?: unknown);
 }
 /**
  * Error thrown when the requested Bluetooth device cannot be found
  */
 export declare class BluetoothDeviceNotFoundError extends BluetoothError {
-    constructor(message: string, originalError?: any);
+    constructor(message: string, originalError?: unknown);
 }
 /**
  * Error thrown when user cancels the device selection dialog
  * (Primarily used in Web Bluetooth environments)
  */
 export declare class BluetoothUserCancelledError extends BluetoothError {
-    constructor(message: string, originalError?: any);
+    constructor(message: string, originalError?: unknown);
 }
 /**
  * Error thrown when a Bluetooth operation times out
  */
 export declare class BluetoothTimeoutError extends BluetoothError {
-    constructor(message: string, originalError?: any);
+    constructor(message: string, originalError?: unknown);
 }
