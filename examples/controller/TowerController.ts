@@ -1227,8 +1227,10 @@ const sealSquareClick = (element: HTMLElement) => {
 
 // Tab switching functionality
 const switchTab = (tabName: string) => {
-  // Turn off all lights when switching tabs
-  allLightsOff();
+  // Turn off all lights when switching tabs (but not the seals tab — preserve tower state)
+  if (tabName !== 'seals') {
+    allLightsOff();
+  }
 
   // Hide all tab contents
   const allTabContents = document.querySelectorAll('.tower-tab-content');
