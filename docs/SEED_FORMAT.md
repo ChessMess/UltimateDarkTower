@@ -50,7 +50,7 @@ All characters are lowercase.
 
 Each character is decoded to its base-34 value (0–33). Configuration fields are extracted
 via **bitwise masking and shifting** on these individual values. The complete encoding,
-confirmed from the developer's C# source code:
+confirmed:
 
 **setup[0]** — Foes (foeByteA):
 
