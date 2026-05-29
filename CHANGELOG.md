@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+
+- **Documentation restructured** — Slimmed `README.md` to a hero page with screenshot strip, quickstart, and a documentation map. Split the 1,900-line `docs/API_REFERENCE.md` into focused topic files under `docs/api/` (connection, adapters, commands, state, events, logging, seed, diagnostics) plus an index at `docs/api/README.md`. Added new top-level docs: `docs/README.md` (hub), `docs/GETTING_STARTED.md` (tutorial), `docs/ARCHITECTURE.md` (layer diagrams + lifecycle), `docs/EXAMPLES.md` (what each demo demonstrates), `docs/ECOSYSTEM.md` (companion repos). Renamed `docs/TOWER_TROUBLESHOOTING_RG.md` → `docs/TROUBLESHOOTING.md`. Embedded real nRF Connect screenshots of the tower's BLE service tree in `docs/TOWER_TECH_NOTES.md` and added a Mermaid layer/position anatomy diagram. Added README files for the controller and game example apps. Replaced `docs/API_REFERENCE.md` with a stub that redirects to the new `docs/api/` index. Removed the obsolete `examples/controller/TOWER_EMULATOR_NPM_MIGRATION.md`.
+
 ## [4.0.1] - 2026-05-28
 
 ### Fixed

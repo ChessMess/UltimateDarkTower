@@ -1,28 +1,81 @@
-# Tower Technical Reference Documentation
+# Tower Technical Reference
 
-## Lights Integration Test
+Wire-level technical notes for developers reverse-engineering or extending the protocol. Most application developers do **not** need this file — start with [GETTING_STARTED.md](GETTING_STARTED.md) and [api/](api/README.md) instead.
 
-The lights integration test validates the `allLightsOn` and `allLightsOff` API methods using real tower hardware.
+This document covers:
 
-**Test steps:**
+1. The **BLE service tree** the real tower exposes (with screenshots from nRF Connect).
+2. The **24-LED hardware layout** — layers, positions, channel mapping.
+3. The **20-byte command packet structure** sent over UART.
+4. **Response semantics** — transient fields, flow control, animation timing.
+5. **Platform-specific quirks** (Noble on macOS).
 
-- Turns all 24 LEDs on (solid effect) for 2 seconds
-- Turns all 24 LEDs on (breathe effect) for 3 seconds
-- Turns all 24 LEDs off
+> Most of these notes were learned the hard way during reverse engineering. If you spot a discrepancy with current hardware or firmware, please open an issue.
 
-**How to run:**
+---
 
-```bash
-npm run test:integration:lights
-```
+## BLE Services
 
-**Visual verification:**
+The tower advertises as `ReturnToDarkTower` and exposes six GATT services. The library only uses three (UART over BLE, Battery Service, and Device Information Service); the others are listed for completeness.
 
-- All lights on (solid) for 2 seconds
-- All lights breathe effect for 3 seconds
-- All lights off
+<p align="center">
+<img src="images/ble-services-overview.png" width="800" height="600">
+</p>
 
-See [API_REFERENCE.md](API_REFERENCE.md) for API details on `allLightsOn` and `allLightsOff`.
+### UART over BLE — the library's primary channel
+
+The Nordic UART Service. All command and response traffic flows through these two characteristics.
+
+| Characteristic | Properties             | Purpose                                                |
+| -------------- | ---------------------- | ------------------------------------------------------ |
+| **UART RX**    | `writeWoResp`, `write` | Client → tower. 20-byte command packets land here.     |
+| **UART TX**    | `notify`               | Tower → client. State notifications come through here. |
+
+UUIDs are exported as `UART_SERVICE_UUID`, `UART_RX_CHARACTERISTIC_UUID`, `UART_TX_CHARACTERISTIC_UUID` from [src/udtConstants.ts](../src/udtConstants.ts).
+
+<p align="center">
+<img src="images/ble-uart-service.png" width="300" height="513">
+</p>
+
+### Device Information
+
+Standard Bluetooth DIS. Read once at connect and surfaced via `getDeviceInformation()` — see [api/connection.md](api/connection.md#getdeviceinformation-deviceinformation).
+
+<p align="center">
+<img src="images/ble-device-info.png" width="300" height="754">
+</p>
+
+Sample values from a real device: Manufacturer `Restoration Games LLC`, Model `ReturnToDarkTower`, Hardware Revision `1.11`, Software Revision `1.0.0`.
+
+### Battery Service
+
+Standard BLE Battery Service. The tower notifies the percentage value at roughly 5 Hz, which the library uses both for `onBatteryLevelNotify` callbacks and for the heartbeat-based disconnect detector (see [connection.md](api/connection.md#connection-monitoring)).
+
+<p align="center">
+<img src="images/ble-battery-service.png" width="300" height="497">
+</p>
+
+### Generic Access
+
+Standard. Includes the device name (`ReturnToDarkTower`), peripheral preferred connection parameters, etc.
+
+<p align="center">
+<img src="images/ble-generic-access.png" width="300" height="643">
+</p>
+
+### Secure DFU Service (not used by this library)
+
+Nordic's Secure DFU for firmware updates. The library does not interact with this service — firmware updates happen through the official Restoration Games app. Don't do anything with this unless you know exactly what your doing as you can brick your tower.
+
+<p align="center">
+<img src="images/ble-secure-dfu.png" width="300" height="452">
+</p>
+
+### Generic Attribute
+
+Standard GATT service discovery. Not interacted with directly.
+
+---
 
 ## LED Architecture Overview
 
@@ -32,6 +85,35 @@ The Tower uses **24 individually addressable LEDs** organized into 6 logical lay
 - **Layer 3**: Ledge LEDs
 - **Layer 4**: Base1 LEDs
 - **Layer 5**: Base2 LEDs
+
+```mermaid
+flowchart TB
+  subgraph L0["Layer 0 — Top Ring (cardinal)"]
+    direction LR
+    T0[N] --- T1[E] --- T2[S] --- T3[W]
+  end
+  subgraph L1["Layer 1 — Middle Ring (cardinal)"]
+    direction LR
+    M0[N] --- M1[E] --- M2[S] --- M3[W]
+  end
+  subgraph L2["Layer 2 — Bottom Ring (cardinal)"]
+    direction LR
+    B0[N] --- B1[E] --- B2[S] --- B3[W]
+  end
+  subgraph L3["Layer 3 — Ledge (ordinal)"]
+    direction LR
+    Le0[NE] --- Le1[SE] --- Le2[SW] --- Le3[NW]
+  end
+  subgraph L4["Layer 4 — Base 1 (ordinal)"]
+    direction LR
+    Ba0[NE] --- Ba1[SE] --- Ba2[SW] --- Ba3[NW]
+  end
+  subgraph L5["Layer 5 — Base 2 (ordinal)"]
+    direction LR
+    Bb0[NE] --- Bb1[SE] --- Bb2[SW] --- Bb3[NW]
+  end
+  L0 --> L1 --> L2 --> L3 --> L4 --> L5
+```
 
 ## Layer to Physical Position Mapping
 
@@ -328,10 +410,10 @@ After every BLE write, the tower sends a **state notification** back to the conn
 
 Two fields are **transient** — they appear in the command but are always returned as `0` in the tower's response:
 
-| Byte | Field | Command value | Response value | Why |
-|------|-------|---------------|----------------|-----|
-| 15 | Audio (sample + loop) | Sound to play (e.g. `0x70` = TowerSeal) | Always `0` | Tower plays the sound, then reports "no sound playing" |
-| 19 | LED Sequence Override | Animation to play (e.g. `0x0e` = sealReveal) | Always `0` | Tower starts the animation, then reports "animation complete" |
+| Byte | Field                 | Command value                                | Response value | Why                                                           |
+| ---- | --------------------- | -------------------------------------------- | -------------- | ------------------------------------------------------------- |
+| 15   | Audio (sample + loop) | Sound to play (e.g. `0x70` = TowerSeal)      | Always `0`     | Tower plays the sound, then reports "no sound playing"        |
+| 19   | LED Sequence Override | Animation to play (e.g. `0x0e` = sealReveal) | Always `0`     | Tower starts the animation, then reports "animation complete" |
 
 All other fields (drums, LED states, beam counter, volume) are **persistent** — they echo back with the values from the command.
 
@@ -343,11 +425,11 @@ The companion app uses these cleared fields as flow control: it waits for a resp
 
 The tower does **not** respond immediately. When a command includes an LED Sequence Override (byte 19 ≠ 0), the tower delays its response until the animation finishes. Observed timings:
 
-| LED Override | Name | Response delay |
-|---|---|---|
-| `0x0e` | sealReveal | ~1.5–2 seconds |
-| `0x0f` | rotationAllDrums | Duration of drum rotation (8–21 seconds, varies) |
-| `0x13` | monthStarted | ~16 seconds |
+| LED Override | Name             | Response delay                                   |
+| ------------ | ---------------- | ------------------------------------------------ |
+| `0x0e`       | sealReveal       | ~1.5–2 seconds                                   |
+| `0x0f`       | rotationAllDrums | Duration of drum rotation (8–21 seconds, varies) |
+| `0x13`       | monthStarted     | ~16 seconds                                      |
 
 For commands **without** an LED override (byte 19 = 0), the response is near-immediate.
 
@@ -359,19 +441,19 @@ This timing matters because the companion app blocks on the response before send
 
 The tower response byte 0 indicates the response type:
 
-| Value | Name | Description |
-|---|---|---|
-| `0` | TOWER_STATE | Normal state echo (most common — sent after every command) |
-| `1` | INVALID_STATE | Error: invalid state data received |
-| `2` | HARDWARE_FAILURE | Error: hardware failure detected |
-| `3` | MECH_JIGGLE_TRIGGERED | Drum unjam jiggle triggered |
-| `4` | MECH_DURATION | Diagnostic: rotation duration (ms) after drum rotation completes |
-| `5` | MECH_UNEXPECTED_TRIGGER | Error: unexpected mechanical trigger |
-| `6` | DIFFERENTIAL_READINGS | Diagnostic: voltage readings |
-| `7` | BATTERY_READING | Battery level in millivolts |
-| `8` | CALIBRATION_FINISHED | Calibration sequence completed |
+| Value | Name                    | Description                                                      |
+| ----- | ----------------------- | ---------------------------------------------------------------- |
+| `0`   | TOWER_STATE             | Normal state echo (most common — sent after every command)       |
+| `1`   | INVALID_STATE           | Error: invalid state data received                               |
+| `2`   | HARDWARE_FAILURE        | Error: hardware failure detected                                 |
+| `3`   | MECH_JIGGLE_TRIGGERED   | Drum unjam jiggle triggered                                      |
+| `4`   | MECH_DURATION           | Diagnostic: rotation duration (ms) after drum rotation completes |
+| `5`   | MECH_UNEXPECTED_TRIGGER | Error: unexpected mechanical trigger                             |
+| `6`   | DIFFERENTIAL_READINGS   | Diagnostic: voltage readings                                     |
+| `7`   | BATTERY_READING         | Battery level in millivolts                                      |
+| `8`   | CALIBRATION_FINISHED    | Calibration sequence completed                                   |
 
-The `TOWER_STATE` (0) response is the one relevant for command flow control. The `MECH_DURATION` (4) response is sent *additionally* after drum rotations and contains the rotation time in milliseconds — it is a diagnostic value, not used for flow control.
+The `TOWER_STATE` (0) response is the one relevant for command flow control. The `MECH_DURATION` (4) response is sent _additionally_ after drum rotations and contains the rotation time in milliseconds — it is a diagnostic value, not used for flow control.
 
 ### Implications for BLE Emulators and Relays
 

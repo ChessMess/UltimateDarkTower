@@ -1,4 +1,10 @@
-# Comprehensive Troubleshooting Guide
+# Troubleshooting
+
+End-user troubleshooting for common physical / hardware / firmware issues, sourced from Restoration Games' official guidance.
+
+> **Developers:** for protocol-level disconnect debugging, see [BLE_DIAGNOSTICS.md](BLE_DIAGNOSTICS.md) (the opt-in flight recorder) and [api/connection.md](api/connection.md#error-types) (Bluetooth error types and reconnect patterns).
+
+---
 
 ## App Reports Tower Jam
 

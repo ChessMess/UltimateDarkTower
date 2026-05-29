@@ -76,18 +76,7 @@ npm run ci
 
 ## Project Architecture
 
-The library uses an **adapter pattern** for multi-platform Bluetooth support:
-
-```
-UltimateDarkTower (main API)
-  └── UdtBleConnection (connection management)
-        └── IBluetoothAdapter (platform interface)
-              ├── WebBluetoothAdapter (browsers)
-              ├── NodeBluetoothAdapter (Node.js)
-              └── Custom adapters (React Native, etc.)
-```
-
-Key source files:
+The library uses an **adapter pattern** for multi-platform Bluetooth support. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full layer diagram, lifecycle sequence, and a tour of every source file. The short version:
 
 - `src/UltimateDarkTower.ts` — Main class users interact with
 - `src/udtBleConnection.ts` — Platform-agnostic connection lifecycle
@@ -158,11 +147,25 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ## Hardware Testing
 
-This project communicates with physical hardware (the Return to Dark Tower game tower). When possible, test changes with a real tower device. The `examples/` directory contains applications useful for manual integration testing:
+This project communicates with physical hardware (the Return to Dark Tower game tower). When possible, test changes with a real tower device. The `examples/` directory contains applications useful for manual integration testing — see [docs/EXAMPLES.md](docs/EXAMPLES.md) for what each one demonstrates:
 
 - **Controller** (`examples/controller/`) — Web app replicating official app functionality
 - **Game** (`examples/game/`) — Web app with a complete tower game
 - **Node** (`examples/node/`) — CLI app for Node.js testing
+
+### Integration Tests
+
+Integration tests in `tests/integration/` require a real powered-on tower in Bluetooth range. They are excluded from `npm test` and CI runs.
+
+```bash
+# Calibration: connects, calibrates, prints glyph positions (fails after 60s)
+npm run test:integration
+
+# Lights: cycles all 24 LEDs through solid → breathe → off
+npm run test:integration:lights
+```
+
+Both tests use the Node.js adapter — you need `@stoprocent/noble` installed (it's an optional peer dependency).
 
 ## Questions?
 
