@@ -120,17 +120,80 @@
       height: 1rem;
     }
 
-    .tower-table-cell {
-      padding: 0.25rem 0.5rem;
+    /* Reusable light control grid (Doorways, Ledges, Base) */
+    .light-grid {
+      display: grid;
+      gap: 0.25rem;
+      align-items: center;
+      width: fit-content;
+      margin: 0 auto;
     }
 
-    .tower-table-cell-sm {
-      padding: 0.25rem 0.25rem 0 0.25rem;
+    .light-grid-doorways {
+      grid-template-columns: max-content repeat(4, 2rem);
     }
 
-    .tower-table-header {
-      padding: 0.25rem 0.5rem;
-      font-weight: bold;
+    .light-grid-ledges {
+      grid-template-columns: max-content 2rem;
+    }
+
+    .light-grid-base {
+      grid-template-columns: max-content repeat(2, 2rem);
+    }
+
+    .light-grid-header {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #d1d5db;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .light-grid-row-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #d1d5db;
+      text-align: right;
+      padding-right: 0.25rem;
+      padding-left: 0;
+      text-transform: uppercase;
+    }
+
+    .light-grid-cell {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      background-color: #374151;
+      border-radius: 0.25rem;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .light-grid-cell:hover {
+      background-color: #4b5563;
+    }
+
+    .light-grid-cell:has(input:checked) {
+      background-color: #d97706;
+      border-color: #f59e0b;
+    }
+
+    .light-grid-cell:has(input:checked):hover {
+      background-color: #f59e0b;
+    }
+
+    .light-grid-cell input[type="checkbox"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      margin: 0;
     }
 
     .tower-hr {
@@ -147,11 +210,24 @@
       color: #fb923c;
     }
 
-    .nested-fieldset {
+    .nested-panel {
       border: 1px solid #9ca3af;
       border-radius: 0.25rem;
       padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
       width: fit-content;
+    }
+
+    .nested-panel-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: white;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 0.25rem;
     }
 
     .seal-grid {
@@ -529,170 +605,118 @@
 
               <fieldset class="tower-fieldset">
                 <legend class="tower-legend">Lights</legend>
-                <div class="flex justify-evenly items-start py-2">
-                  <fieldset class="nested-fieldset">
-                    <legend class="tower-legend">Doorways:</legend>
-                    <table class="text-center">
-                      <thead>
-                        <tr>
-                          <td class="tower-table-header">N</td>
-                          <td class="tower-table-header">E</td>
-                          <td class="tower-table-header">S</td>
-                          <td class="tower-table-header">W</td>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="north" data-light-level="top" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="east" data-light-level="top" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="south" data-light-level="top" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="west" data-light-level="top" class="tower-checkbox" />
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="north" data-light-level="middle" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="east" data-light-level="middle" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="south" data-light-level="middle" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="west" data-light-level="middle" class="tower-checkbox" />
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="north" data-light-level="bottom" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="east" data-light-level="bottom" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="south" data-light-level="bottom" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="doorway"
-                              data-light-location="west" data-light-level="bottom" class="tower-checkbox" />
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </fieldset>
-                  <fieldset class="nested-fieldset">
-                    <legend class="tower-legend">Ledges:</legend>
-                    <table class="text-sm mx-auto">
-                      <tbody>
-                        <tr>
-                          <td class="pr-2 py-1 font-bold text-center align-middle">NE</td>
-                          <td class="tower-table-cell-sm text-center align-middle">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                              data-light-location="northeast" class="tower-checkbox" />
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="pr-2 py-1 font-bold text-center align-middle">SE</td>
-                          <td class="tower-table-cell-sm text-center align-middle">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                              data-light-location="southeast" class="tower-checkbox" />
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="pr-2 py-1 font-bold text-center align-middle">SW</td>
-                          <td class="tower-table-cell-sm text-center align-middle">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                              data-light-location="southwest" class="tower-checkbox" />
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="pr-2 py-1 font-bold text-center align-middle">NW</td>
-                          <td class="tower-table-cell-sm text-center align-middle">
-                            <input type="checkbox" onclick="singleLight(this)" data-light-type="ledge"
-                              data-light-location="northwest" class="tower-checkbox" />
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </fieldset>
-                  <fieldset class="nested-fieldset">
-                    <legend class="tower-legend">Base:</legend>
-                    <table class="text-sm">
-                      <tbody>
-                        <tr>
-                          <td class="pr-2 py-1 font-bold">N</td>
-                          <td class="tower-table-cell-sm">front</td>
-                          <td class="tower-table-cell-sm">
-                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                              data-light-location="north" data-light-base-location="a" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell-sm">back</td>
-                          <td class="tower-table-cell-sm">
-                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                              data-light-location="north" data-light-base-location="b" class="tower-checkbox" />
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="pr-2 py-1 font-bold">E</td>
-                          <td class="tower-table-cell-sm">front</td>
-                          <td class="tower-table-cell-sm">
-                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                              data-light-location="east" data-light-base-location="a" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell-sm">back</td>
-                          <td class="tower-table-cell-sm">
-                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                              data-light-location="east" data-light-base-location="b" class="tower-checkbox" />
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="pr-2 py-1 font-bold">S</td>
-                          <td class="tower-table-cell-sm">front</td>
-                          <td class="tower-table-cell-sm">
-                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                              data-light-location="south" data-light-base-location="a" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell-sm">back</td>
-                          <td class="tower-table-cell-sm">
-                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                              data-light-location="south" data-light-base-location="b" class="tower-checkbox" />
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="pr-2 py-1 font-bold">W</td>
-                          <td class="tower-table-cell-sm">front</td>
-                          <td class="tower-table-cell-sm">
-                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                              data-light-location="west" data-light-base-location="a" class="tower-checkbox" />
-                          </td>
-                          <td class="tower-table-cell-sm">back</td>
-                          <td class="tower-table-cell-sm">
-                            <input onclick="singleLight(this)" type="checkbox" data-light-type="base"
-                              data-light-location="west" data-light-base-location="b" class="tower-checkbox" />
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </fieldset>
+                <div class="flex justify-evenly items-start py-2 gap-4">
+                  <div class="nested-panel">
+                    <span class="nested-panel-label">Doorways</span>
+                    <div class="light-grid light-grid-doorways px-1 py-1">
+                      <!-- Header row -->
+                      <div></div>
+                      <div class="light-grid-header">N</div>
+                      <div class="light-grid-header">E</div>
+                      <div class="light-grid-header">S</div>
+                      <div class="light-grid-header">W</div>
+                      <!-- Top row -->
+                      <div class="light-grid-row-label">Top</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="north" data-light-level="top"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="east" data-light-level="top"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="south" data-light-level="top"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="west" data-light-level="top"
+                          class="tower-checkbox" /></label>
+                      <!-- Mid row -->
+                      <div class="light-grid-row-label">Mid</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="north" data-light-level="middle"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="east" data-light-level="middle"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="south" data-light-level="middle"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="west" data-light-level="middle"
+                          class="tower-checkbox" /></label>
+                      <!-- Btm row -->
+                      <div class="light-grid-row-label">Btm</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="north" data-light-level="bottom"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="east" data-light-level="bottom"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="south" data-light-level="bottom"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="west" data-light-level="bottom"
+                          class="tower-checkbox" /></label>
+                    </div>
+                  </div>
+                  <div class="nested-panel">
+                    <span class="nested-panel-label">Ledges</span>
+                    <div class="light-grid light-grid-ledges px-1 py-1">
+                      <div class="light-grid-row-label">NE</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="ledge" data-light-location="northeast" class="tower-checkbox" /></label>
+                      <div class="light-grid-row-label">SE</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="ledge" data-light-location="southeast" class="tower-checkbox" /></label>
+                      <div class="light-grid-row-label">SW</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="ledge" data-light-location="southwest" class="tower-checkbox" /></label>
+                      <div class="light-grid-row-label">NW</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="ledge" data-light-location="northwest" class="tower-checkbox" /></label>
+                    </div>
+                  </div>
+                  <div class="nested-panel">
+                    <span class="nested-panel-label">Base</span>
+                    <div class="light-grid light-grid-base px-1 py-1">
+                      <!-- Header row -->
+                      <div></div>
+                      <div class="light-grid-header">Frt</div>
+                      <div class="light-grid-header">Bck</div>
+                      <!-- N row -->
+                      <div class="light-grid-row-label">N</div>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="north" data-light-base-location="a"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="north" data-light-base-location="b"
+                          class="tower-checkbox" /></label>
+                      <!-- E row -->
+                      <div class="light-grid-row-label">E</div>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="east" data-light-base-location="a"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="east" data-light-base-location="b"
+                          class="tower-checkbox" /></label>
+                      <!-- S row -->
+                      <div class="light-grid-row-label">S</div>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="south" data-light-base-location="a"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="south" data-light-base-location="b"
+                          class="tower-checkbox" /></label>
+                      <!-- W row -->
+                      <div class="light-grid-row-label">W</div>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="west" data-light-base-location="a"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="west" data-light-base-location="b"
+                          class="tower-checkbox" /></label>
+                    </div>
+                  </div>
                 </div>
                 <div style="margin-bottom: 0.5rem;"></div>
                 <div class="p-1 flex flex-wrap gap-2 items-center">

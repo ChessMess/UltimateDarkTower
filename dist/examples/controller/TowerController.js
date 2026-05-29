@@ -5046,7 +5046,9 @@
     }
   };
   var switchTab = (tabName) => {
-    allLightsOff();
+    if (tabName !== "seals") {
+      allLightsOff();
+    }
     const allTabContents = document.querySelectorAll(".tower-tab-content");
     allTabContents.forEach((content) => {
       content.classList.remove("tower-tab-content-active");
