@@ -1,7 +1,5 @@
 # Return to Dark Tower — Seed Format
 
-> **Last updated:** 2026-04-09
-
 ## Overview
 
 A game seed is a 12-character string that fully determines the initial state of a game.
