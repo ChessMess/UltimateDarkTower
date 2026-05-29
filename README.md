@@ -25,7 +25,7 @@
 </strong></p>
 
 <p align="center"><em>
-  Power on your Tower and connect from Chrome / Edge / Samsung Internet. 
+  Power on your Tower and connect from Chrome / Edge / Samsung Internet or leave it in the box and use the built in Tower Emulator with full 3D rendered Tower! 
   </p><p align="center">
   iOS users: Safari and Chrome doesn't support Web Bluetooth yet on Apples platform (works fine in Chrome on Android), you can use an app on the appstore that provides this feature. </br>Open the demo in the <a href="https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055">Bluefy app</a>.
 </em></p>
