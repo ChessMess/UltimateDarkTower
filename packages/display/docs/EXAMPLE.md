@@ -133,7 +133,7 @@ See [PHYSICS](PHYSICS.md) for the full config shape and tuning ranges.
 
 [`example/lightingController.ts`](../example/lightingController.ts).
 
-The largest panel by surface area. Sliders for hemisphere intensity, key light, fill light, exposure, bloom strength/radius/threshold, ledge LED and base LED color/size/halo, seal accent intensity, ground disc visibility, board source (procedural vs image), board size and brightness, north-kingdom orientation, board thickness, edge color (wood/neoprene), and bottom-cap visibility.
+The largest panel by surface area. Sliders for hemisphere intensity, key light, fill light, key-light position, exposure, bloom strength/radius/threshold, ground disc underside intensity, ground disc visibility, board source (procedural vs image), board size and brightness, north-kingdom orientation, board thickness, edge color (wood/neoprene), and bottom-cap visibility. (The on-tower LEDs have no sliders — their color/size lives in `LightingConfig.leds`, edited via the JSON config box.)
 
 Every slider writes one nested path into `LightingConfig` and calls `display.applyLightingConfig(partial)`. The renderer deep-merges and updates only the affected subsystems.
 

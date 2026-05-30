@@ -20,7 +20,7 @@ import {
   LED_LAYOUT, RED_LIGHT_LAYOUT, LEDGE_LED_LAYOUT, BASE1_LED_LAYOUT, BASE2_LED_LAYOUT,
   BLOOM_LAYER,
 } from './constants';
-import { computeRedLightPosition, computeSealLedPose, disposeObject } from './utils';
+import { computeRedLightPosition, computeSealLedPose, disposeObject, applyHdrColor } from './utils';
 import { DEFAULT_LIGHTING, resolveLighting } from './LightingResolver';
 import { LedEffectAnimator } from './LedEffectAnimator';
 import type { LedRef } from './LedEffectAnimator';
@@ -57,8 +57,6 @@ const CONSOLE_LOGGER: Logger = {
 type Tower3DViewInternals = {
   ledRefs: Map<string, LedRef>;
   sealManager: SealManager;
-  updateLightsGate: () => void;
-  lightsGateOpen: boolean;
 };
 const internals = (view: Tower3DView): Tower3DViewInternals =>
   view as unknown as Tower3DViewInternals;
@@ -100,9 +98,6 @@ export const __testables = {
     internals(view).sealManager.sealBacklights.get(`${side}:${level}`),
   getSealBacklightCount: (view: Tower3DView): number =>
     internals(view).sealManager.sealBacklights.size,
-  /** Drive the bulk-lights gate manually for tests (rAF doesn't run in jsdom). */
-  tickLightsGate: (view: Tower3DView): void => internals(view).updateLightsGate(),
-  isLightsGateOpen: (view: Tower3DView): boolean => internals(view).lightsGateOpen,
 };
 
 function isSoundPack(v: Record<number, string> | SoundPack): v is SoundPack {
@@ -284,16 +279,6 @@ export class Tower3DView implements ITowerDisplay {
   private ledRefs: Map<string, LedRef> = new Map();
   private ledAnimator: LedEffectAnimator | null = null;
   private sequenceAnimator: SequenceAnimator | null = null;
-
-  /**
-   * Tracks whether the bulk LED-lights gate is open. When false (idle), every
-   * LED-related PointLight is `visible: false` so the fragment shader iterates
-   * zero of them per fragment (pre-fix idle perf). When true (any LED active),
-   * all 36 lights are `visible: true`. Both program variants are pre-compiled
-   * at scene init (see `prewarmLightPrograms`) so gate flips don't recompile.
-   * See `docs/framerate-issue.md`.
-   */
-  private lightsGateOpen = false;
 
   /** Optional callback fired when the selected side changes (user click or programmatic). */
   onSideChange?: (side: TowerSide) => void;
@@ -865,22 +850,23 @@ export class Tower3DView implements ITowerDisplay {
   }
 
   /**
-   * Pre-compile shader programs for both the "all 36 LED lights visible" and
-   * "all 36 LED lights invisible" states so runtime gate flips hit the program
-   * cache and never trigger a ~880 ms shader-recompile stall. Called once from
-   * the model-load callback after `buildLeds` and `buildSealBacklights`. Uses
-   * Three.js's `WebGLRenderer.compileAsync` which leverages the
+   * Pre-compile the LED proxy/halo bloom-layer shader programs (plus the
+   * BloomManager's `darkMaterial` and the `UnrealBloomPass` blur materials) at
+   * scene init, so the first sequence start doesn't pay a synchronous
+   * shader-compile stall. Called once from the model-load callback after
+   * `buildLeds` and `buildSealBacklights`. Uses Three.js's
+   * `WebGLRenderer.compileAsync`, which leverages the
    * `KHR_parallel_shader_compile` extension when available.
    */
-  private async prewarmLightPrograms(): Promise<void> {
+  private async prewarmBloomPrograms(): Promise<void> {
     if (!this.scene || !this.camera || !this.renderer) return;
 
-    // Force LED proxy meshes and halo sprites visible during prewarm. They're
-    // created `visible: false` and only become visible per-LED when a sequence
-    // runs — so without this their bloom-layer program variants would compile
-    // on the first sequence start instead of during the prewarm window.
-    // (Prewarm runs right after buildLeds + buildSealBacklights, before any
-    // state replay, so we know the meshes' resting state is `visible: false`.)
+    // LED proxy meshes and halo sprites are created `visible: false` and only
+    // become visible per-LED when a sequence runs. Force them visible for the
+    // prewarm pass so their bloom-layer program variants compile now instead of
+    // on the first sequence start, then restore the resting (invisible) state
+    // so the rendered idle scene is identical to pre-prewarm. (Prewarm runs
+    // right after buildLeds + buildSealBacklights, before any state replay.)
     const setMeshesVisible = (visible: boolean): void => {
       for (const ref of this.ledRefs.values()) {
         if (ref.proxyMesh) ref.proxyMesh.visible = visible;
@@ -891,25 +877,14 @@ export class Tower3DView implements ITowerDisplay {
         r.haloSprite.visible = visible;
       }
     };
+
+    // compileAsync covers materials in the scene graph; the follow-up render
+    // covers the BloomManager's darkMaterial swap (not in the scene graph) and
+    // the UnrealBloomPass's internal blur materials.
     setMeshesVisible(true);
-
-    // Compile + render with "36 lights visible". compileAsync covers materials
-    // in the scene graph; the follow-up render covers the BloomManager's
-    // darkMaterial swap (not in the scene graph) and the UnrealBloomPass's
-    // internal blur materials.
-    this.setBulkLightsVisible(true);
     await this.renderer.compileAsync(this.scene, this.camera);
     if (!this.scene || !this.camera || !this.renderer) return;
     this.renderOnce();
-
-    // Compile + render with "0 lights visible". Leave the gate in this state
-    // (matches lightsGateOpen = false initial; LED meshes go back to invisible
-    // below so the rendered idle scene is identical to pre-prewarm).
-    this.setBulkLightsVisible(false);
-    await this.renderer.compileAsync(this.scene, this.camera);
-    if (!this.scene || !this.camera || !this.renderer) return;
-    this.renderOnce();
-
     setMeshesVisible(false);
   }
 
@@ -918,40 +893,6 @@ export class Tower3DView implements ITowerDisplay {
     if (!this.renderer || !this.scene || !this.camera) return;
     if (this.bloomManager) this.bloomManager.render();
     else this.renderer.render(this.scene, this.camera);
-  }
-
-  /**
-   * Bulk-toggle visibility on all 36 LED-related PointLights together. Owned
-   * by Tower3DView (not LedEffectAnimator / SealManager) because the goal is
-   * a stable lights-count hash for the program cache. Per-frame visibility
-   * toggling on individual lights causes shader recompiles (see prewarm).
-   */
-  private setBulkLightsVisible(visible: boolean): void {
-    for (const ref of this.ledRefs.values()) {
-      ref.redLight.visible = visible;
-    }
-    // Accent lights respect `accentLight: false` — they stay invisible even
-    // when the gate opens, because the user opted out of atmospheric spill.
-    const accentEnabled = this.lighting.leds.sealBacklights.accentLight;
-    for (const ref of this.sealManager.sealBacklights.values()) {
-      ref.light.visible = visible && accentEnabled;
-    }
-    this.lightsGateOpen = visible;
-  }
-
-  /**
-   * Per-tick check called from the render loop. If any LED is currently lit
-   * (driver.v > 0.001), open the gate; otherwise close it. State transitions
-   * use the pre-warmed program cache → no recompile.
-   */
-  private updateLightsGate(): void {
-    let anyActive = false;
-    for (const ref of this.ledRefs.values()) {
-      if (ref.driver.v > 0.001) { anyActive = true; break; }
-    }
-    if (anyActive !== this.lightsGateOpen) {
-      this.setBulkLightsVisible(anyActive);
-    }
   }
 
   /** Toggle the shadow-catching ground disc. Builds lazily on first enable. */
@@ -998,9 +939,6 @@ export class Tower3DView implements ITowerDisplay {
     this.sequenceAnimator = null;
     this.ledAnimator?.dispose();
     this.ledAnimator = null;
-    for (const ref of this.ledRefs.values()) {
-      ref.redLight.removeFromParent();
-    }
     this.ledRefs.clear();
     this.sealManager.dispose();
     this.drumManager.dispose();
@@ -1185,11 +1123,11 @@ export class Tower3DView implements ITowerDisplay {
           this.cameraController?.snapToSide(pending);
         }
 
-        // Pre-compile shader programs for BOTH lights-gate states so runtime
-        // gate flips never trigger a shader-recompile stall. Must complete
-        // before any state-replay (`applyState` below could turn LEDs on,
-        // which would open the gate and need the program already cached).
-        await this.prewarmLightPrograms();
+        // Pre-compile the LED proxy/halo + bloom shader programs so the first
+        // sequence never triggers a synchronous shader-compile stall. Must
+        // complete before any state-replay (`applyState` below could turn LEDs
+        // on and need the program already cached).
+        await this.prewarmBloomPrograms();
         // dispose() may have been called during the await.
         if (!this.scene) return;
 
@@ -1225,44 +1163,33 @@ export class Tower3DView implements ITowerDisplay {
     this.sceneLighting?.applyLights(lighting, this.modelRadius);
     this.groundDiscManager?.updateLighting(lighting, this.modelRadius, this.modelBottomY);
 
-    const redHaloDistance = this.modelRadius * lighting.leds.red.haloDistanceFraction;
-    const ledgeColor = new THREE.Color(lighting.leds.ledgeLeds.color);
-    const baseColor = new THREE.Color(lighting.leds.baseLeds.color);
     for (const [key, ref] of this.ledRefs.entries()) {
       const layer = parseInt(key.split(':')[0], 10);
-      ref.redLight.color.setHex(lighting.leds.red.color);
-      ref.redLight.distance = redHaloDistance;
-      ref.redLight.intensity = ref.driver.v * lighting.leds.red.maxHalo;
-      // `visible` intentionally not touched here — see buildLeds for rationale.
-
+      const ledHex = layer >= 4 ? lighting.leds.baseLeds.color : lighting.leds.ledgeLeds.color;
       if (ref.proxyMesh) {
-        const col = layer >= 4 ? baseColor : ledgeColor;
-        (ref.proxyMesh.material as THREE.MeshBasicMaterial).color.copy(col);
+        applyHdrColor((ref.proxyMesh.material as THREE.MeshBasicMaterial).color, ledHex);
       }
       if (ref.haloSprite) {
-        const col = layer >= 4 ? baseColor : ledgeColor;
-        (ref.haloSprite.material as THREE.SpriteMaterial).color.copy(col);
+        applyHdrColor((ref.haloSprite.material as THREE.SpriteMaterial).color, ledHex);
       }
     }
 
     this.sealManager.updateLighting(lighting, this.modelRadius);
 
-    // Re-sync the bulk lights gate after potential config changes
-    // (e.g. accentLight flipped at runtime). Uses the current gate state.
-    this.setBulkLightsVisible(this.lightsGateOpen);
-
     this.bloomManager?.applyConfig(lighting);
   }
 
   /**
-   * Populate `ledRefs` with 24 red PointLights (6 layers × 4 lights) positioned
-   * relative to the model's bounding radius.
+   * Populate `ledRefs` with the LED visuals for 24 LEDs (6 layers × 4 lights).
+   * Ring layers (0–2) get bare refs — their glow comes from the SealManager
+   * proxies — while ledge (layer 3) and base (layers 4–5) get an HDR-bright
+   * proxy sphere + additive halo sprite. There are no per-LED PointLights; the
+   * proxy/halo materials cross the raised bloom threshold to read as bright.
    */
   private buildLeds(): void {
     if (!this.model) return;
 
-    const { red, ledgeLeds, baseLeds } = this.lighting.leds;
-    const redHaloDistance = this.modelRadius * red.haloDistanceFraction;
+    const { ledgeLeds, baseLeds } = this.lighting.leds;
 
     // Radial gradient texture shared by ledge and base halo sprites.
     const gradTex = this.createLedgeGradientTexture();
@@ -1270,17 +1197,11 @@ export class Tower3DView implements ITowerDisplay {
     for (let layer = 0; layer < TOWER_LAYER_COUNT; layer++) {
       for (let light = 0; light < LIGHTS_PER_LAYER; light++) {
         const redPos = computeRedLightPosition(layer, light, this.modelRadius);
-        const redLight = new THREE.PointLight(red.color, 0, redHaloDistance, 2);
-        // visible defaults to false. The bulk lights gate (see updateLightsGate)
-        // flips ALL 36 LED-related lights together when ANY LED becomes lit,
-        // and back to false when all LEDs go dark. Both program variants are
-        // pre-compiled at scene init (see prewarmLightPrograms) so gate
-        // transitions don't trigger shader recompiles — see docs/framerate-issue.md.
-        redLight.visible = false;
-        redLight.position.set(redPos.x, redPos.y, redPos.z);
-        this.model.add(redLight);
 
-        const ref: LedRef = { redLight, driver: { v: 0 }, tween: null };
+        // Ledge (layer 3) + base (layers 4–5) render an HDR-bright proxy sphere
+        // + halo at this position; ring layers (0–2) render through the seal
+        // proxies. There are no per-LED PointLights.
+        const ref: LedRef = { driver: { v: 0 }, tween: null };
 
         // Layer 3 = LEDGE — add ball-type LED visuals (proxy sphere + halo sprite).
         if (layer === 3) {
@@ -1289,12 +1210,12 @@ export class Tower3DView implements ITowerDisplay {
           const proxyRadius = this.modelRadius * ledgeLeds.proxy.sizeFactor;
           const proxyGeo = new THREE.SphereGeometry(proxyRadius, 8, 6);
           const proxyMat = new THREE.MeshBasicMaterial({
-            color: ledgeLeds.color,
             transparent: true,
             opacity: 0,
             depthWrite: false,
             toneMapped: false,
           });
+          applyHdrColor(proxyMat.color, ledgeLeds.color);
           const proxyMesh = new THREE.Mesh(proxyGeo, proxyMat);
           proxyMesh.position.set(x, y, z);
           proxyMesh.layers.enable(BLOOM_LAYER);
@@ -1306,7 +1227,6 @@ export class Tower3DView implements ITowerDisplay {
           ref.proxyMesh = proxyMesh;
 
           const haloMat = new THREE.SpriteMaterial({
-            color: ledgeLeds.color,
             map: gradTex,
             transparent: true,
             opacity: 0,
@@ -1314,6 +1234,7 @@ export class Tower3DView implements ITowerDisplay {
             depthWrite: false,
             toneMapped: false,
           });
+          applyHdrColor(haloMat.color, ledgeLeds.color);
           const haloSprite = new THREE.Sprite(haloMat);
           const haloScale = this.modelRadius * ledgeLeds.halo.sizeFactor;
           haloSprite.scale.setScalar(haloScale);
@@ -1332,12 +1253,12 @@ export class Tower3DView implements ITowerDisplay {
           const proxyRadius = this.modelRadius * baseLeds.proxy.sizeFactor;
           const proxyGeo = new THREE.SphereGeometry(proxyRadius, 8, 6);
           const proxyMat = new THREE.MeshBasicMaterial({
-            color: baseLeds.color,
             transparent: true,
             opacity: 0,
             depthWrite: false,
             toneMapped: false,
           });
+          applyHdrColor(proxyMat.color, baseLeds.color);
           const proxyMesh = new THREE.Mesh(proxyGeo, proxyMat);
           proxyMesh.position.set(x, y, z);
           proxyMesh.layers.enable(BLOOM_LAYER);
@@ -1349,7 +1270,6 @@ export class Tower3DView implements ITowerDisplay {
           ref.proxyMesh = proxyMesh;
 
           const haloMat = new THREE.SpriteMaterial({
-            color: baseLeds.color,
             map: gradTex,
             transparent: true,
             opacity: 0,
@@ -1357,6 +1277,7 @@ export class Tower3DView implements ITowerDisplay {
             depthWrite: false,
             toneMapped: false,
           });
+          applyHdrColor(haloMat.color, baseLeds.color);
           const haloSprite = new THREE.Sprite(haloMat);
           const haloScale = this.modelRadius * baseLeds.halo.sizeFactor;
           haloSprite.scale.setScalar(haloScale);
@@ -1405,7 +1326,6 @@ export class Tower3DView implements ITowerDisplay {
       this.cameraController?.tickDerivedSide();
       this.tickPhysicsListeners();
       this.sceneLighting?.tick();
-      this.updateLightsGate();
       if (this.renderer && this.scene && this.camera) {
         if (this.bloomManager) {
           this.bloomManager.render();

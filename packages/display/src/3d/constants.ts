@@ -129,3 +129,12 @@ export const RED_LIGHT_LAYOUT = {
 
 /** Three.js layer reserved for objects that receive selective bloom. */
 export const BLOOM_LAYER = 1;
+
+/**
+ * Multiplier applied to proxy + halo material colors to push them above the
+ * UnrealBloomPass.threshold (1.0). Combined with `toneMapped: false`, this is
+ * how the LED proxies select which pixels bloom: only HDR-bright pixels
+ * (color × opacity > threshold) get bloom-amplified. Bloom drives the perceived
+ * LED brightness — there are no per-LED PointLights.
+ */
+export const HDR_PROXY_SCALE = 3.0;

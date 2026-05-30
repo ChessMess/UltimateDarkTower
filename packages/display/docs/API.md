@@ -454,11 +454,15 @@ interface LightingConfig {
       enabled?: boolean;     // true — enable post-process bloom (UnrealBloomPass)
       strength?: number;     // 1.5 — glow intensity (0–3)
       radius?: number;       // 0.5 — bloom spread (0–1)
-      threshold?: number;    // 0.0 — luminance threshold (0 = all bright pixels)
+      threshold?: number;    // 1.0 — only HDR-bright LED proxy pixels bloom
     };
   };
   leds?: {
-    red?: { color?: number; maxHalo?: number; haloDistanceFraction?: number };
+    // On-tower LEDs are HDR-bright emissive proxies (no PointLights). Each
+    // group takes a color (+ proxy/halo options); see docs/LIGHTING.md §10–11.
+    sealBacklights?: { color?: number; enabled?: boolean /* radiusFactor, proxy, halo, ... */ };
+    ledgeLeds?: { color?: number; enabled?: boolean /* proxy, halo */ };
+    baseLeds?: { color?: number; enabled?: boolean /* proxy, halo */ };
   };
   animation?: {
     fadeS?: number; // 0.15 — on/off fade
@@ -621,7 +625,7 @@ The bundled default pack ships in the package — no consumer setup is required 
 
 ##### LED visualization
 
-`applyState()` drives 24 red `PointLight` sources (`#ff2020`) matching the physical tower's LED color. Ring layers (0–2) are inset inside the drum so light shines outward through doors/seals; ledge/base layers (3–5) sit near the outer corner surface so light shines onto the faces.
+`applyState()` drives 24 on-tower LEDs (`#ff2020`, matching the physical tower) — each rendered as an HDR-bright emissive proxy mesh + halo on a dedicated bloom layer, **not** a `PointLight`. Ring layers (0–2) light the seals through the drum cutouts (via the seal proxies); ledge/base layers (3–5) sit near the outer corner surface. A raised bloom threshold (`1.0`) selects only the HDR-bright LED pixels to amplify. See [LIGHTING §10–11](LIGHTING.md#10-on-tower-leds-hdr-emissive-proxies).
 
 All six `LIGHT_EFFECTS` values are supported:
 

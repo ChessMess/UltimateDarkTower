@@ -7,7 +7,20 @@ import {
   RED_LIGHT_LAYOUT,
   RING_AZIMUTH,
   CORNER_AZIMUTH,
+  HDR_PROXY_SCALE,
 } from './constants';
+
+/**
+ * Write the HDR-scaled version of `hex` into `target`. `hex` is treated
+ * as sRGB and converted to linear by THREE.Color, then each linear channel is
+ * multiplied by {@link HDR_PROXY_SCALE} so the result reads above the
+ * UnrealBloomPass threshold (1.0). The proxy/halo materials are
+ * `toneMapped: false` so the HDR value reaches the bloom selector as-is.
+ */
+export function applyHdrColor(target: THREE.Color, hex: number): void {
+  const base = new THREE.Color(hex);
+  target.setRGB(base.r * HDR_PROXY_SCALE, base.g * HDR_PROXY_SCALE, base.b * HDR_PROXY_SCALE);
+}
 
 const LED_Y_FRACTIONS = [
   LED_LAYOUT.topY,

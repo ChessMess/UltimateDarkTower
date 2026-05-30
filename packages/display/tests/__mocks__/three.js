@@ -116,21 +116,44 @@ class Vector3 {
 }
 class Color {
   constructor(c) {
-    this.value = c ?? 0;
+    this.value = 0;
+    this.r = 0;
+    this.g = 0;
+    this.b = 0;
+    this._absorb(c);
+  }
+  _absorb(c) {
+    if (typeof c === 'number') {
+      this.value = c;
+      this.r = ((c >> 16) & 0xff) / 255;
+      this.g = ((c >> 8) & 0xff) / 255;
+      this.b = (c & 0xff) / 255;
+    } else if (c && typeof c === 'object') {
+      this.value = c.value ?? 0;
+      this.r = c.r ?? 0;
+      this.g = c.g ?? 0;
+      this.b = c.b ?? 0;
+    }
   }
   setHex(c) {
-    this.value = c;
+    this._absorb(c);
     return this;
   }
   getHex() {
     return this.value;
   }
   set(c) {
-    this.value = c;
+    this._absorb(c);
+    return this;
+  }
+  setRGB(r, g, b) {
+    this.r = r;
+    this.g = g;
+    this.b = b;
     return this;
   }
   copy(other) {
-    this.value = other.value;
+    this._absorb(other);
     return this;
   }
 }

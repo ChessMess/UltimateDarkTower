@@ -8,17 +8,16 @@ Comprehensive reference for the lighting system in `Tower3DView` — covering bo
 
 ## 1. Overview
 
-The 3D scene is illuminated by a small fixed set of light sources, all driven from a single resolved `LightingConfig` value held on `Tower3DView`. The model is lit by a classic three-point rig (hemisphere + key + fill), per-LED red `PointLight`s drive the on-tower lights, and a separate inside-the-drum proxy/halo/accent system illuminates the seals through the GLB cutouts. A two-pass `UnrealBloomPass` pipeline amplifies bright pixels on a dedicated bloom layer. A noir ground disc catches the key-light shadow and optionally renders a canvas-drawn game board.
+The 3D scene is illuminated by a small fixed set of light sources, all driven from a single resolved `LightingConfig` value held on `Tower3DView`. The model is lit by a classic three-point rig (hemisphere + key + fill). The on-tower LEDs are **not** lights — each is an HDR-bright emissive proxy mesh + halo sprite on a dedicated bloom layer. A two-pass `UnrealBloomPass` pipeline with its `threshold` raised to `1.0` selects only those HDR-bright pixels and amplifies them, which is what makes the LEDs read as glowing. The seals are lit through the GLB cutouts by the same inside-the-drum proxy/halo system. A noir ground disc catches the key-light shadow and optionally renders a canvas-drawn game board.
 
 Light sources at a glance:
 
 - 1 × `THREE.HemisphereLight` (scene ambient)
 - 1 × `THREE.DirectionalLight` (key, camera-parented, casts shadow)
 - 1 × `THREE.RectAreaLight` (fill, camera-parented)
-- 24 × `THREE.PointLight` (red ring/ledge/base halos — 6 layers × 4 lights)
-- 12 × `THREE.PointLight` (seal accent lights — one per ring-level seal, on by default)
-- 12 × `THREE.Mesh` (seal proxy "LED bulbs", on `BLOOM_LAYER`)
-- 12 × `THREE.Sprite` (seal halo billboards, on `BLOOM_LAYER`)
+- **No per-LED `PointLight`s** — the LEDs are emissive proxies, not lights
+- 24 × `THREE.Mesh` (HDR-bright LED proxy "bulbs" on `BLOOM_LAYER` — 12 seal + 12 ledge/base)
+- 24 × `THREE.Sprite` (LED halo billboards on `BLOOM_LAYER`)
 - Optional equirectangular skybox (HDR/EXR/PNG/JPG) or solid `scene.background` color
 - Post-process: `UnrealBloomPass` with a two-composer selective-bloom pipeline
 - Renderer: `THREE.ACESFilmicToneMapping` + `THREE.SRGBColorSpace` with configurable exposure
@@ -35,7 +34,7 @@ Light sources at a glance:
 7. [Tone mapping & exposure](#7-tone-mapping--exposure)
 8. [Bloom post-processing](#8-bloom-post-processing)
 9. [Skybox & background](#9-skybox--background)
-10. [Red ring LEDs (24 PointLights)](#10-red-ring-leds-24-pointlights)
+10. [On-tower LEDs (HDR emissive proxies)](#10-on-tower-leds-hdr-emissive-proxies)
 11. [Seal backlight LEDs](#11-seal-backlight-leds)
 12. [LED effects & driver model](#12-led-effects--driver-model)
 13. [Animations](#13-animations)
@@ -57,7 +56,7 @@ File-by-file orientation. Use this table to jump straight to the code that owns 
 | [src/3d/LightingResolver.ts](../src/3d/LightingResolver.ts)   | Single source of truth for default values; shallow-merge resolver                                                                                                               | `DEFAULT_LIGHTING`, `resolveLighting()`                                                                    |
 | [src/3d/SceneLighting.ts](../src/3d/SceneLighting.ts)         | Three-point rig (hemi/key/fill); shadow camera retargeting; idle breathing tween                                                                                                | `SceneLighting` class                                                                                      |
 | [src/3d/Tower3DView.ts](../src/3d/Tower3DView.ts)             | Top-level 3D orchestration; bloom pipeline; public lighting methods; re-exports `DEFAULT_LIGHTING` + `resolveLighting`                                                          | `Tower3DView` class                                                                                        |
-| [src/3d/SealManager.ts](../src/3d/SealManager.ts)             | 12 seal nodes + per-seal proxy mesh / halo sprite / accent `PointLight`; broken-seal coupling                                                                                   | `SealManager` class, `SealBacklightRef`                                                                    |
+| [src/3d/SealManager.ts](../src/3d/SealManager.ts)             | 12 seal nodes + per-seal HDR-bright proxy mesh / halo sprite; broken-seal coupling                                                                                              | `SealManager` class, `SealBacklightRef`                                                                    |
 | [src/3d/LedEffectAnimator.ts](../src/3d/LedEffectAnimator.ts) | Maps `LIGHT_EFFECTS` enum values to GSAP tweens that drive `driver.v ∈ [0,1]`; syncs ring LEDs (layer 0–2) with their corresponding seal backlight via `SealManager.setSealLed` | `LedEffectAnimator` class, `LedRef`                                                                        |
 | [src/3d/EntranceAnimator.ts](../src/3d/EntranceAnimator.ts)   | Six-beat noir entrance timeline; auto-starts breathing on completion                                                                                                            | `EntranceAnimator` class                                                                                   |
 | [src/3d/GroundDiscManager.ts](../src/3d/GroundDiscManager.ts) | Shadow-catching disc + optional canvas board overlay                                                                                                                            | `GroundDiscManager` class                                                                                  |
@@ -239,7 +238,7 @@ The entrance cinematic dips this to `0.7 × 0.15 = 0.105` for the silhouette bea
 | `scene.bloom.enabled`          | `boolean` | `true`  | Build the bloom pipeline at all                                                                             |
 | `scene.bloom.strength`         | `number`  | `1.5`   | Glow intensity (0–3)                                                                                        |
 | `scene.bloom.radius`           | `number`  | `0.5`   | Bloom spread radius (0–1)                                                                                   |
-| `scene.bloom.threshold`        | `number`  | `0.0`   | Luminance threshold (0 = all bright pixels bloom)                                                           |
+| `scene.bloom.threshold`        | `number`  | `1.0`   | Luminance threshold — `1.0` means only HDR-bright pixels (the LED proxies/halos, scaled by `HDR_PROXY_SCALE`) bloom |
 | `scene.bloom.resolutionScale`  | `number`  | `0.5`   | Bloom render-target size as a fraction of the canvas backing buffer. Visually transparent; ~4× GPU savings. |
 
 `resolutionScale` only affects the `bloomComposer` (the offscreen target where the scene is re-rendered for bloom extraction + UnrealBloomPass blurs); `finalComposer` always renders at full canvas resolution. The bloom result is upsampled by the GPU's bilinear sampler when composited. Bloom is intrinsically a wide Gaussian blur — rendering it at half or quarter resolution is visually indistinguishable from full res because the blur smears over any aliasing introduced by the downsample. See [`docs/framerate-issue.md`](framerate-issue.md) for the perf rationale.
@@ -249,7 +248,7 @@ Selective-bloom mechanism:
 1. Meshes that should bloom call `mesh.layers.enable(BLOOM_LAYER)` (`BLOOM_LAYER = 1`, [constants.ts:99](../src/3d/constants.ts#L99)).
 2. Each frame the render loop calls `darkenNonBloom()` to swap non-bloom-layer materials to a black `MeshBasicMaterial`, renders `bloomComposer` so only bright/bloom-layer pixels contribute, calls `restoreMaterials()`, then renders the final composite via `finalComposer` ([Tower3DView.ts:598-621, 623-650](../src/3d/Tower3DView.ts#L598-L650)).
 
-Currently on `BLOOM_LAYER`: seal proxy meshes ([SealManager.ts:95](../src/3d/SealManager.ts#L95)) and seal halo sprites ([SealManager.ts:117](../src/3d/SealManager.ts#L117)). The 24 red ring `PointLight`s do not have geometry on the layer — their visual contribution is via the brightness they add to lit scene geometry, which then blooms if it crosses the threshold.
+Currently on `BLOOM_LAYER`: every LED proxy mesh and halo sprite — the 12 seal proxies/halos ([SealManager.ts](../src/3d/SealManager.ts)) plus the 12 ledge/base proxies/halos built in `buildLeds()`. Their materials are `toneMapped: false` and colored via `applyHdrColor()` (× `HDR_PROXY_SCALE`), so at peak driver value their pixels exceed the `threshold: 1.0` selector and bloom; below ≈⅓ driver they fall under the threshold and read as a dim, un-bloomed mesh. No `PointLight`s contribute to bloom.
 
 Note: `scene.bloom.enabled: false` skips constructing the pipeline entirely; the render loop falls back to a plain `renderer.render(scene, camera)` call.
 
@@ -268,11 +267,16 @@ Two ways to set what is behind the model.
 
 Runtime control via `setSkyboxUrl(url | null)` ([Tower3DView.ts:295-298](../src/3d/Tower3DView.ts#L295-L298)). Passing `null` writes `''` back into `this.lighting.scene.skyboxUrl` and reverts to the solid `scene.background` color.
 
-## 10. Red ring LEDs (24 PointLights)
+## 10. On-tower LEDs (HDR emissive proxies)
 
-24 `THREE.PointLight`s built in `buildLeds()` ([Tower3DView.ts:569-594](../src/3d/Tower3DView.ts#L569-L594)) — 6 layers × 4 lights each. Stored in `ledRefs: Map<string, LedRef>` keyed `"${layer}:${light}"`.
+The 24 on-tower LEDs (6 layers × 4 lights) are **not** lights — there are no per-LED `PointLight`s. Each is a ref in `ledRefs: Map<string, LedRef>` keyed `"${layer}:${light}"`, built in `buildLeds()` ([Tower3DView.ts](../src/3d/Tower3DView.ts)):
 
-Layer/azimuth assignment via `computeRedLightPosition()` ([utils.ts:30-39](../src/3d/utils.ts#L30-L39)):
+- **Ring layers 0–2** render through the 12 seal proxies/halos owned by `SealManager` (see [§11](#11-seal-backlight-leds)); their `LedRef` carries no geometry of its own.
+- **Ledge (layer 3) + base (layers 4–5)** each own an HDR-bright proxy sphere (`MeshBasicMaterial`, `toneMapped: false`) + additive halo sprite on `BLOOM_LAYER`, configured by `leds.ledgeLeds` / `leds.baseLeds`.
+
+There is no light intensity, distance, or decay to configure. Each LED's brightness is its proxy/halo **material opacity**, written from `driver.v`; the proxy/halo color is pushed into HDR by `applyHdrColor()` (× `HDR_PROXY_SCALE = 3.0`, [constants.ts](../src/3d/constants.ts)) so that at peak driver the pixels cross the `UnrealBloomPass.threshold` of `1.0` and bloom.
+
+Layer/azimuth assignment via `computeRedLightPosition()` ([utils.ts](../src/3d/utils.ts)):
 
 - **Layers 0–2** (top/middle/bottom rings): cardinal `RING_AZIMUTH = [0, π/2, π, -π/2]` (N/E/S/W), radial `RED_LIGHT_LAYOUT.ringInsetRadius = 0.35` (inset inside the drum)
 - **Layers 3–5** (ledge/base1/base2): corner `CORNER_AZIMUTH = [π/4, 3π/4, 5π/4, 7π/4]` (NE/SE/SW/NW), radial `RED_LIGHT_LAYOUT.cornerNearSurfaceRadius = 0.52` (near outer surface, between cardinal seal positions)
@@ -288,43 +292,21 @@ Y position from `LED_Y_FRACTIONS` keyed by layer index ([constants.ts:78-85](../
 | 4     | base1       | `-0.26`                     |
 | 5     | base2       | `0.02`                      |
 
-Light parameters:
+**Color config:** ring LEDs take `leds.sealBacklights.color`; ledge/base take `leds.ledgeLeds.color` / `leds.baseLeds.color`. All default to `0xff2020` (bright red).
 
-| Field                           | Type       | Default    | Description                                      |
-| ------------------------------- | ---------- | ---------- | ------------------------------------------------ |
-| `leds.red.color`                | `HexColor` | `0xff2020` | Light color (bright red)                         |
-| `leds.red.maxHalo`              | `number`   | `1.0`      | Intensity at `driver.v = 1`                      |
-| `leds.red.haloDistanceFraction` | `number`   | `0.20`     | `PointLight.distance` as factor of `modelRadius` |
-
-Decay is hard-coded to `2` (quadratic) in the `THREE.PointLight` constructor.
-
-**Driver model**: each LED stores `driver: { v: number }` ∈ [0,1]. Whenever the driver is updated the write callback computes:
+**Driver model**: each LED stores `driver: { v: number }` ∈ [0,1], animated by `LedEffectAnimator.setEffect()` (see [Section 12](#12-led-effects--driver-model)). The write callback drives proxy + halo opacity directly:
 
 ```ts
-redLight.intensity = driver.v * red.maxHalo;
-// `redLight.visible` is owned by Tower3DView's bulk lights gate (below),
-// NOT written per-frame here. Per-frame visibility toggling on lights
-// caused ~880 ms shader-recompile stalls on sequence transitions.
+proxyMesh.material.opacity = driver.v;
+proxyMesh.visible = driver.v > 0.001;
+haloSprite.material.opacity = driver.v * halo.opacity;
 ```
 
-`driver.v` is animated by `LedEffectAnimator.setEffect()` (see [Section 12](#12-led-effects--driver-model)).
-
-### 10.1 Bulk lights gate
-
-The 24 red `PointLight`s here and the 12 seal accent `PointLight`s (§11.3) all share a single visibility gate owned by `Tower3DView`:
-
-- **Gate closed** (no LED has `driver.v > 0.001`): all 36 lights `visible: false` → Three.js's fragment shader iterates 0 PointLights per fragment. This is the idle state.
-- **Gate open** (any LED has `driver.v > 0.001`): all 36 lights `visible: true` → fragment shader iterates 36 PointLights per fragment.
-
-Per-frame check in `Tower3DView.updateLightsGate()` (called from the render loop tick) flips the gate when state changes. `Tower3DView.setBulkLightsVisible(visible)` writes the visibility to all 36 lights in one pass, honoring `accentLight: false` (accent lights stay invisible regardless of gate state when the user has opted out of atmospheric spill).
-
-**Why bulk-toggle (vs per-LED toggle):** Three.js's shader-program cache key includes the active-lights count ([WebGLLights.js:442-451](../node_modules/three/src/renderers/webgl/WebGLLights.js#L442-L451)). Every distinct count is a separate program — varying it during gameplay (e.g. by toggling per-LED based on individual intensity) forces shader recompiles synchronously on the main thread. With the bulk gate, the count flips between only TWO values: 0 (gate closed) and 36 (gate open). Both program variants are pre-compiled at scene init via `Tower3DView.prewarmLightPrograms()` — `WebGLRenderer.compileAsync` followed by a render pass to also cache `BloomManager`'s `darkMaterial` programs and the proxy/halo mesh variants. Subsequent gate flips hit the program cache → no recompile stall.
-
-See [`docs/framerate-issue.md`](framerate-issue.md) §13 for the full investigation and measurement evidence.
+The HDR-scaled material color (set once via `applyHdrColor`) is what carries that opacity over the bloom threshold. There are no per-frame light writes, so sequence transitions never trigger a shader recompile. Program variants for the proxy/halo + bloom materials are pre-compiled once at scene init by `prewarmBloomPrograms()` so the first sequence start is stall-free.
 
 ## 11. Seal backlight LEDs
 
-This is the section that resolves the conversation that prompted this doc. Three components per ring-level seal (4 sides × 3 ring levels = 12 seals × 3 components), all parented to the **model root** — not the seal node — so they stay at fixed cardinal positions while drums rotate ([SealManager.ts:30-35](../src/3d/SealManager.ts#L30-L35)).
+Two components per ring-level seal (4 sides × 3 ring levels = 12 seals × 2 components), both parented to the **model root** — not the seal node — so they stay at fixed cardinal positions while drums rotate ([SealManager.ts](../src/3d/SealManager.ts)).
 
 ### 11.1 Proxy mesh
 
@@ -348,32 +330,22 @@ Source: [SealManager.ts:84-100](../src/3d/SealManager.ts#L84-L100).
 
 Source: [SealManager.ts:104-120](../src/3d/SealManager.ts#L104-L120).
 
-### 11.3 Accent PointLight
+> **No accent PointLight.** Earlier builds added a per-seal `PointLight` for atmospheric spill onto the drum interior. That light is gone — the HDR-bright proxy + halo (crossing the raised bloom threshold) carry the seal's glow on their own. A consequence is that the drum interior between seals reads dark rather than washed with red; see [§11.4](#114-why-the-user-perceives-an-exterior-glow).
 
-`THREE.PointLight` for atmospheric spill onto drum interior surfaces.
+### 11.3 Position
 
-- Created always with `visible: false`. Visibility is owned by Tower3DView's bulk lights gate (see [§10.1](#101-bulk-lights-gate)) — when the gate opens AND `accentLight: true`, all 12 accent lights become visible together.
-- `accentLight` default **is** `true` ([LightingResolver.ts:52](../src/3d/LightingResolver.ts#L52)). When `false`, the gate skips these 12 lights even when open (user opted out of atmospheric spill).
-- Distance `modelRadius × distanceFactor (0.20)`, decay `2.0`
-- Intensity = `driver.v × intensity (2)` — driven per-frame in `SealManager.setSealLed`.
+Both components share `(x, y, z)` computed by `computeSealLedPose(layer, lightIdx, modelRadius, radiusFactor)` ([utils.ts](../src/3d/utils.ts)) — cardinal azimuth at `radius × radiusFactor (0.15)` deep inside the drum. Light travels drum-interior → glyph/chute cutout → seal → camera; depth testing handles occlusion automatically.
 
-Source: [SealManager.ts:122-132](../src/3d/SealManager.ts#L122-L132).
+### 11.4 Why the user perceives an "exterior glow"
 
-### 11.4 Position
+There is **no** light positioned outside the drum aimed inward at the seal exterior face. The apparent exterior glow is produced by two combined effects:
 
-All three components share `(x, y, z)` computed by `computeSealLedPose(layer, lightIdx, modelRadius, radiusFactor)` ([utils.ts:46-58](../src/3d/utils.ts#L46-L58)) — cardinal azimuth at `radius × radiusFactor (0.15)` deep inside the drum. Light travels drum-interior → glyph/chute cutout → seal → camera; depth testing handles occlusion automatically.
-
-### 11.5 Why the user perceives an "exterior glow"
-
-There is **no** light positioned outside the drum aimed inward at the seal exterior face. The apparent exterior glow is produced by three combined effects:
-
-1. The **proxy mesh** is a tiny bright sphere (`MeshBasicMaterial`, on `BLOOM_LAYER`) visible through the cutout.
+1. The **proxy mesh** is a tiny HDR-bright sphere (`MeshBasicMaterial`, `toneMapped: false`, on `BLOOM_LAYER`) visible through the cutout.
 2. The **halo sprite** is a `0.14 × modelRadius` billboard whose pixels, after `UnrealBloomPass` (`strength: 1.5` by default), bleed visually well beyond the cutout edges.
-3. The **corner red `PointLight`s** on layers 3–5 sit at `cornerNearSurfaceRadius = 0.52` — close to the outer drum surface — and their omnidirectional spill lands partially on neighbouring seal exteriors.
 
-Net visual effect reads as exterior glow even though every emitter is inside the drum or near a corner. If a true exterior fill on seal faces is wanted, it is a new feature — see the recipe gap in [Section 18](#18-tuning-recipes).
+Both emitters sit inside the drum, yet the bloomed result reads as an exterior glow at the cutout. Because there is no longer an accent `PointLight`, the drum-interior surfaces *between* seals read dark — the glow is localized to the cutouts rather than washing the interior. If a true exterior fill on seal faces (or an interior wash) is wanted, it is a new feature — see the recipe gap in [Section 18](#18-tuning-recipes).
 
-### 11.6 Driver coupling and broken seals
+### 11.5 Driver coupling and broken seals
 
 Drivers for the seal backlights are not animated independently. Instead, `LedEffectAnimator.setEffect(layer, light, effect)` for layers 0–2 calls `sealManager.setSealLed(\`${side}:${level}\`, driver.v, lighting)`from inside its`write` callback ([LedEffectAnimator.ts:42-49](../src/3d/LedEffectAnimator.ts#L42-L49)). Layers 3–5 (ledge/base) do not have seal backlights — the synchronization only spans the three ring levels.
 
@@ -382,19 +354,15 @@ Broken-seal handling: `applySeals(brokenSeals, lighting)` ([SealManager.ts:193-2
 - `backlightWhenBroken: true` (default): backlight keeps its current driver
 - `backlightWhenBroken: false`: backlight driver is forced to 0
 
-`setSealLed(key, driverV, lighting)` ([SealManager.ts:150-186](../src/3d/SealManager.ts#L150-L186)) is the single write path for opacity, intensity, and visibility on all three components. It is called from both `LedEffectAnimator` and `applySeals`.
+`setSealLed(key, driverV, lighting)` ([SealManager.ts](../src/3d/SealManager.ts)) is the single write path for opacity and visibility on both components. It is called from both `LedEffectAnimator` and `applySeals`.
 
-### 11.7 Configuration
+### 11.6 Configuration
 
 | Field                                     | Type                     | Default    | Description                                     |
 | ----------------------------------------- | ------------------------ | ---------- | ----------------------------------------------- |
 | `leds.sealBacklights.enabled`             | `boolean`                | `true`     | Master enable for all seal LED visuals          |
-| `leds.sealBacklights.color`               | `HexColor`               | `0xff2020` | Color for proxy, halo, and accent               |
+| `leds.sealBacklights.color`               | `HexColor`               | `0xff2020` | Color for the proxy mesh and halo sprite        |
 | `leds.sealBacklights.radiusFactor`        | `number`                 | `0.15`     | Radial position factor (inside drum)            |
-| `leds.sealBacklights.intensity`           | `number`                 | `2`        | Accent `PointLight` intensity at `driver.v = 1` |
-| `leds.sealBacklights.distanceFactor`      | `number`                 | `0.20`     | Accent `PointLight.distance` factor             |
-| `leds.sealBacklights.decay`               | `number`                 | `2.0`      | Accent `PointLight.decay`                       |
-| `leds.sealBacklights.accentLight`         | `boolean`                | `true`     | Enable the accent `PointLight`                  |
 | `leds.sealBacklights.backlightWhenBroken` | `boolean`                | `true`     | Keep backlight on when seal is broken           |
 | `leds.sealBacklights.proxy.enabled`       | `boolean`                | `true`     | Render the proxy mesh                           |
 | `leds.sealBacklights.proxy.sizeFactor`    | `number`                 | `0.025`    | Proxy sphere radius factor                      |
@@ -405,7 +373,7 @@ Broken-seal handling: `applySeals(brokenSeals, lighting)` ([SealManager.ts:193-2
 
 ## 12. LED effects & driver model
 
-`LIGHT_EFFECTS` is exported by the peer dependency `ultimatedarktower`. `LedEffectAnimator.setEffect(layer, light, effect)` ([LedEffectAnimator.ts:29-84](../src/3d/LedEffectAnimator.ts#L29-L84)) maps each effect to a GSAP tween that writes to `driver.v`. The same `write` callback updates the red `PointLight` intensity and (for layers 0–2) the matching seal backlight.
+`LIGHT_EFFECTS` is exported by the peer dependency `ultimatedarktower`. `LedEffectAnimator.setEffect(layer, light, effect)` ([LedEffectAnimator.ts](../src/3d/LedEffectAnimator.ts)) maps each effect to a GSAP tween that writes to `driver.v`. The same `write` callback drives the ledge/base LED proxy + halo opacity and (for layers 0–2) the matching seal backlight.
 
 | Effect               | Tween target              | Easing       | Loop      | Duration source                   |
 | -------------------- | ------------------------- | ------------ | --------- | --------------------------------- |
@@ -553,10 +521,8 @@ Every spatial parameter that drives lighting placement is expressed as a **fract
 | `RED_LIGHT_LAYOUT.ringInsetRadius`         | `0.35`  | [constants.ts](../src/3d/constants.ts#L94)               | Ring layers (0–2) red light radial inset                                    |
 | `RED_LIGHT_LAYOUT.cornerNearSurfaceRadius` | `0.52`  | [constants.ts](../src/3d/constants.ts#L95)               | Ledge/base layers (3–5) red light radial position                           |
 | `SEAL_LED_RADIUS_FACTOR`                   | `0.15`  | [constants.ts](../src/3d/constants.ts#L76)               | Hard-coded constant; mirrored in `leds.sealBacklights.radiusFactor` default |
-| `leds.red.haloDistanceFraction`            | `0.20`  | [LightingResolver.ts](../src/3d/LightingResolver.ts#L39) | Red `PointLight.distance` factor                                            |
-| `leds.sealBacklights.radiusFactor`         | `0.15`  | [LightingResolver.ts](../src/3d/LightingResolver.ts#L47) | Seal proxy/halo/accent radial position                                      |
-| `leds.sealBacklights.distanceFactor`       | `0.20`  | [LightingResolver.ts](../src/3d/LightingResolver.ts#L50) | Seal accent `PointLight.distance` factor                                    |
-| `leds.sealBacklights.proxy.sizeFactor`     | `0.025` | [LightingResolver.ts](../src/3d/LightingResolver.ts#L56) | Proxy sphere radius                                                         |
+| `leds.sealBacklights.radiusFactor`         | `0.15`  | [LightingResolver.ts](../src/3d/LightingResolver.ts) | Seal proxy/halo radial position                                            |
+| `leds.sealBacklights.proxy.sizeFactor`     | `0.025` | [LightingResolver.ts](../src/3d/LightingResolver.ts) | Proxy sphere radius                                                         |
 | `leds.sealBacklights.halo.sizeFactor`      | `0.14`  | [LightingResolver.ts](../src/3d/LightingResolver.ts#L61) | Halo sprite scale                                                           |
 | `groundDisc.radiusFactor`                  | `3`     | [LightingResolver.ts](../src/3d/LightingResolver.ts#L98) | Ground disc radius                                                          |
 | `groundDisc.undersideLightIntensity`       | `0.15`  | [LightingResolver.ts](../src/3d/LightingResolver.ts#L120) | Disc edge/underside emissive intensity                                     |
@@ -585,19 +551,20 @@ Per-frame in `startRenderLoop()` ([Tower3DView.ts:623-650](../src/3d/Tower3DView
 
 1. `controls?.update()` — `OrbitControls` damping
 2. `sceneLighting?.fill.lookAt(0, 0, 0)` — `RectAreaLight` stays facing model centre as the camera orbits
-3. `updateLightsGate()` — checks if any LED has `driver.v > 0.001`; bulk-toggles all 36 LED-related `PointLight`s visible/invisible together. See [§10.1](#101-bulk-lights-gate).
-4. If `bloomComposer && finalComposer`:
+3. If `bloomComposer && finalComposer`:
    - `darkenNonBloom()` — non-`BLOOM_LAYER` meshes swapped to black material
    - `bloomComposer.render()` — renders only bloom-layer pixels into the bloom render target (at `scene.bloom.resolutionScale` of canvas, default ½; see [§8](#8-bloom-post-processing))
    - `restoreMaterials()` — restores original materials
    - `finalComposer.render()` — composites base scene + bloom render target via shader pass (at full canvas resolution)
-5. Else: `renderer.render(scene, camera)` — direct render with no post
+4. Else: `renderer.render(scene, camera)` — direct render with no post
 
 `bloomLayer` is a single `THREE.Layers` instance ([Tower3DView.ts:128](../src/3d/Tower3DView.ts#L128)) with `BLOOM_LAYER (1)` set in `initScene` ([Tower3DView.ts:418](../src/3d/Tower3DView.ts#L418)). The `darkMaterial` is a shared `MeshBasicMaterial({ color: 0x000000 })` used to mask non-bloom meshes during the bloom pass.
 
 ## 17. Full default config
 
-Verbatim copy of `DEFAULT_LIGHTING` from [LightingResolver.ts:3-104](../src/3d/LightingResolver.ts#L3-L104). Use this as the canonical starting point when overriding lighting.
+Verbatim copy of `DEFAULT_LIGHTING` from [LightingResolver.ts](../src/3d/LightingResolver.ts). Use this as the canonical starting point when overriding lighting.
+
+One value that drives the LED look lives outside this config object: `HDR_PROXY_SCALE = 3.0` ([constants.ts](../src/3d/constants.ts)). LED proxy/halo colors are multiplied by it (via `applyHdrColor`) so that, paired with `scene.bloom.threshold: 1.0`, only the HDR-bright LED pixels bloom. It is a compile-time constant, not a runtime config field.
 
 ```ts
 const DEFAULT_LIGHTING = {
@@ -629,24 +596,15 @@ const DEFAULT_LIGHTING = {
       enabled: true,
       strength: 1.5,
       radius: 0.5,
-      threshold: 0.0,
+      threshold: 1.0,
       resolutionScale: 0.5,
     },
   },
   leds: {
-    red: {
-      color: 0xff2020,
-      maxHalo: 1.0,
-      haloDistanceFraction: 0.2,
-    },
     sealBacklights: {
       enabled: true,
       color: 0xff2020,
       radiusFactor: 0.15,
-      intensity: 2,
-      distanceFactor: 0.2,
-      decay: 2.0,
-      accentLight: true,
       backlightWhenBroken: true,
       proxy: {
         enabled: true,
@@ -746,13 +704,14 @@ Bumps tone-mapping exposure and lifts the ambient floor.
 ```ts
 display.applyLightingConfig({
   leds: {
-    red: { color: 0x2020ff },
     sealBacklights: { color: 0x2020ff },
+    ledgeLeds: { color: 0x2020ff },
+    baseLeds: { color: 0x2020ff },
   },
 });
 ```
 
-`leds.red` and `leds.sealBacklights` are independent fields; both must be set. The default for both is `0xff2020`.
+`sealBacklights.color` recolors the ring + seal LEDs; `ledgeLeds.color` / `baseLeds.color` recolor the ledge and base LEDs. All default to `0xff2020`. The color is HDR-scaled (× `HDR_PROXY_SCALE`) before it reaches the proxy/halo materials.
 
 ### Disable bloom completely
 
@@ -764,16 +723,6 @@ new TowerDisplay({
 ```
 
 `enabled: false` skips constructing the bloom pipeline entirely; the render loop falls back to a plain `renderer.render(scene, camera)`. Setting `strength: 0` works visually as well but still pays the two-composer cost.
-
-### Turn off the seal accent PointLight (keep proxy + halo)
-
-```ts
-display.applyLightingConfig({
-  leds: { sealBacklights: { accentLight: false } },
-});
-```
-
-The proxy mesh and halo sprite continue to render (subject to their own `enabled` flags); only the accent `PointLight` goes silent.
 
 ### Add an HDR skybox
 
@@ -865,7 +814,7 @@ Unit-test access: `Tower3DView.__testables` ([Tower3DView.ts:42-71](../src/3d/To
 Recorded so contributors do not chase apparent bugs.
 
 - **`LightingConfig` / `DEFAULT_LIGHTING` / `resolveLighting` not in package barrel.** They are not re-exported from [src/index.ts](../src/index.ts), so consumers cannot import them by name from the published package. TypeScript inference at the option site works, but explicit type annotations and access to the default object require deep imports.
-- **No exterior light aimed at seal faces.** All seal-related emitters live inside the drum at `radiusFactor × modelRadius`. Apparent exterior glow is bloom-amplified inside-the-drum proxy/halo plus corner `PointLight` spill — see [Section 11.5](#115-why-the-user-perceives-an-exterior-glow). If a true exterior fill on seal faces is wanted, it is a new feature.
+- **No exterior light aimed at seal faces, and no interior wash.** All seal-related emitters live inside the drum at `radiusFactor × modelRadius`, and there is no accent `PointLight`. The apparent exterior glow is entirely bloom-amplified inside-the-drum proxy/halo — see [Section 11.4](#114-why-the-user-perceives-an-exterior-glow). The drum interior between seals reads dark. If a true exterior fill on seal faces (or an interior wash) is wanted, it is a new feature.
 - **`entrance.beats` resolver inconsistency.** That branch uses spread merge (`{ ...base, ...user }`, [LightingResolver.ts:213](../src/3d/LightingResolver.ts#L213)) while every other branch uses leaf-level nullish-coalesce. Consumer-visible behavior is the same for partial overrides; the inconsistency only matters if someone is reasoning about the resolver in the abstract.
 
 ## See also
@@ -874,4 +823,4 @@ Recorded so contributors do not chase apparent bugs.
 - [RENDERERS §Tower3DView](RENDERERS.md#tower3dview) — when to pick the 3D renderer.
 - [EXAMPLE §3D Options](EXAMPLE.md#panel-3d-options-lighting-and-scene) — the demo's live lighting editor.
 - [ARCHITECTURE §subsystem map](ARCHITECTURE.md#subsystem-map) — file-by-file orientation in `src/3d/`.
-- [lighting-alternatives.md](lighting-alternatives.md) — research survey of 17 alternative approaches to the current 36-PointLight design, with a comparison table and recommended experiment order.
+- [lighting-alternatives.md](lighting-alternatives.md) — research survey of alternative approaches to the previous 36-PointLight design (the bake-off that led to the current HDR-proxy LEDs), with a comparison table and recommended experiment order.

@@ -6,6 +6,8 @@
 > **Final fix (§17):** pre-warm both program variants (0-lights and 36-lights) at scene init, then bulk-toggle visibility on any-LED-active / all-dark transitions. Idle: 120 fps with 0 active lights; sequences: 36 active lights with no transition stall (cached programs).
 > Verified in Playwright on the Controller's Tower Emulator: idle restored to v-sync cap; first sequence p95 = 9.4 ms (no stall); programs count grows by +3 once then stays stable.
 > A secondary fix (bloom render-target `resolutionScale: 0.5`) also shipped — helps on ≥4 M-pixel canvases but was not the primary bug.
+>
+> **Superseded (later change):** the 36 LED `PointLight`s and the bulk-lights gate described below have since been removed entirely. The on-tower LEDs are now HDR-bright emissive proxies selected by a raised bloom threshold — see [docs/LIGHTING.md §10–11](LIGHTING.md#10-on-tower-leds-hdr-emissive-proxies) and the bake-off result in [docs/lighting-experiments/4.1-hdr-proxies.md](lighting-experiments/4.1-hdr-proxies.md). The investigation below remains as the historical record of how the PointLight design behaved.
 
 This doc is the canonical record of the investigation, the fix, and the diagnostic API. Read §1–§4 if you just want to know what was wrong and how it was fixed. Read §5 if you need to diagnose a future perf issue. Read §7–§8 if you need historical context (e.g. to understand why the fix doesn't include more changes, or why earlier attempts were reverted).
 

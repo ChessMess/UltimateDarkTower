@@ -29,16 +29,15 @@ export const DEFAULT_LIGHTING: ResolvedLightingConfig = {
       enabled: true,
       strength: 1.5,
       radius: 0.5,
-      threshold: 0.0,
+      // Only HDR-bright pixels bloom: the LED proxy/halo materials are scaled
+      // by HDR_PROXY_SCALE (toneMapped: false) so `material.color × driver.v
+      // opacity` crosses 1.0 at peak. Bloom — not per-LED PointLights — is what
+      // drives the perceived LED brightness.
+      threshold: 1.0,
       resolutionScale: 0.5,
     },
   },
   leds: {
-    red: {
-      color: 0xff2020,
-      maxHalo: 1.0,
-      haloDistanceFraction: 0.20,
-    },
     sealBacklights: {
       enabled: true,
       color: 0xff2020,
@@ -46,11 +45,6 @@ export const DEFAULT_LIGHTING: ResolvedLightingConfig = {
       // 0.15 puts the proxy between the central axis and the drum inner wall so
       // light traverses drum-interior → glyph/chute → seal → camera correctly.
       radiusFactor: 0.15,
-      // Accent PointLight (atmospheric spill onto drum interior).
-      intensity: 2,
-      distanceFactor: 0.20,
-      decay: 2.0,
-      accentLight: true,
       backlightWhenBroken: true,
       proxy: {
         enabled: true,
@@ -178,12 +172,6 @@ export function resolveLighting(
       },
     },
     leds: {
-      red: {
-        color: user?.leds?.red?.color ?? base.leds.red.color,
-        maxHalo: user?.leds?.red?.maxHalo ?? base.leds.red.maxHalo,
-        haloDistanceFraction:
-          user?.leds?.red?.haloDistanceFraction ?? base.leds.red.haloDistanceFraction,
-      },
       sealBacklights: {
         enabled:
           user?.leds?.sealBacklights?.enabled ?? base.leds.sealBacklights.enabled,
@@ -192,15 +180,6 @@ export function resolveLighting(
         radiusFactor:
           user?.leds?.sealBacklights?.radiusFactor ??
           DEFAULT_LIGHTING.leds.sealBacklights.radiusFactor,
-        intensity:
-          user?.leds?.sealBacklights?.intensity ?? base.leds.sealBacklights.intensity,
-        distanceFactor:
-          user?.leds?.sealBacklights?.distanceFactor ??
-          DEFAULT_LIGHTING.leds.sealBacklights.distanceFactor,
-        decay:
-          user?.leds?.sealBacklights?.decay ?? base.leds.sealBacklights.decay,
-        accentLight:
-          user?.leds?.sealBacklights?.accentLight ?? base.leds.sealBacklights.accentLight,
         backlightWhenBroken:
           user?.leds?.sealBacklights?.backlightWhenBroken ??
           DEFAULT_LIGHTING.leds.sealBacklights.backlightWhenBroken,

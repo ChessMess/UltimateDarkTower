@@ -73,25 +73,19 @@ export interface LightingConfigCore {
 
   /** Per-LED emissive + halo parameters. */
   leds?: {
-    red?: {
-      color?: HexColor;
-      maxHalo?: number;
-      /** Halo PointLight distance as a factor of modelRadius. */
-      haloDistanceFraction?: number;
-    };
     /**
      * Inside-the-drum LED proxies (12 total, ring layers only). Each LED is a
      * bright proxy mesh + halo sprite positioned at the cardinal azimuth,
      * deep inside the drum (between central axis and drum inner wall). Three.js
      * depth testing naturally handles glyph/chute alignment: the proxy is
-     * occluded by solid drum surfaces and visible through cutout holes.
-     * An optional atmospheric PointLight (accentLight) adds faint spill onto
-     * drum interior surfaces visible through the cutouts.
+     * occluded by solid drum surfaces and visible through cutout holes. The
+     * HDR-bright proxy + halo cross the raised bloom threshold so each seal
+     * reads as a glowing LED.
      */
     sealBacklights?: {
       /** Master enable/disable for all seal LED visuals. */
       enabled?: boolean;
-      /** Color for the proxy mesh, halo sprite, and accent PointLight. */
+      /** Color for the proxy mesh and halo sprite. */
       color?: HexColor;
       /**
        * Radial placement of the proxy mesh as a factor of modelRadius.
@@ -99,13 +93,6 @@ export interface LightingConfigCore {
        * drum-interior → glyph/chute → seal → camera in the correct order.
        */
       radiusFactor?: number;
-      /** Accent PointLight intensity at full driver (atmospheric spill only). */
-      intensity?: number;
-      /** Accent PointLight distance (max reach) as a factor of modelRadius. */
-      distanceFactor?: number;
-      decay?: number;
-      /** Enable the atmospheric accent PointLight. Defaults to true. */
-      accentLight?: boolean;
       /** Keep the backlight on when the seal is broken. Defaults to true. */
       backlightWhenBroken?: boolean;
       /** Bright proxy mesh — the directly-visible "LED bulb." */
