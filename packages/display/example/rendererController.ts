@@ -85,6 +85,14 @@ function buildViewOptions(renderers: RendererType | RendererType[], els: DomElem
     clickToToggleSeals: false, // external source of truth lives in sealController.
     onSealClick: (seal) => toggleSeal(seal, view.display, readout),
     onSideChange: (side) => { lastSide = side; },
+    onCalibrationComplete: (finalState) => {
+      // The 3D view already settled on the calibrated state internally; mirror
+      // the result to the standalone readout, remember it, and clear the status.
+      lastState = finalState;
+      readout.applyState(finalState);
+      if (els.calibratingMsg) els.calibratingMsg.hidden = true;
+      if (els.stateBadge) els.stateBadge.textContent = 'calibrated';
+    },
     debug3D: (els.debug3dCheckbox?.checked ?? false),
     camera: {
       zoomToCursor: els.chkZoomToCursor?.checked ?? true,

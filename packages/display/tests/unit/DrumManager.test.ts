@@ -4,8 +4,8 @@ import * as gsapMock from '../__mocks__/gsap.js';
 import { DrumManager } from '../../src/3d/DrumManager';
 import {
   DRUM_RADIANS_PER_SIDE,
-  DRUM_ROTATION_DURATION_S,
   DRUM_ROTATION_EASE,
+  drumRotationDurationS,
 } from '../../src/3d/constants';
 
 const TWO_PI = Math.PI * 2;
@@ -202,6 +202,22 @@ describe('DrumManager', () => {
       expect(audio.starts).toBe(0);
     });
 
+    it('snaps (no audio) when the delta is sub-epsilon floating-point residue', () => {
+      // Mirrors the post-calibration final-state apply: the drum is home but
+      // carries tiny FP drift, which must not spawn a phantom tween + buzz.
+      const root = makeRoot(['drum_top']);
+      const node = root.children[0] as THREE.Object3D;
+      node.rotation.y = 1e-6;
+      const audio = makeAudioStub();
+      const mgr = new DrumManager(audio);
+      mgr.buildDrumNodes(root);
+
+      mgr.applyDrums(makeDrums([0, 0, 0]));
+
+      expect(audio.starts).toBe(0);
+      expect(gsapMock.__getTweens()).toHaveLength(0);
+    });
+
     it('schedules a gsap tween with the correct target value, duration, and ease', () => {
       const root = makeRoot(['drum_top']);
       const mgr = new DrumManager();
@@ -212,7 +228,8 @@ describe('DrumManager', () => {
       const tweens = gsapMock.__getTweens();
       expect(tweens).toHaveLength(1);
       expect(tweens[0].vars.currentY).toBeCloseTo(DRUM_RADIANS_PER_SIDE, 10);
-      expect(tweens[0].vars.duration).toBe(DRUM_ROTATION_DURATION_S);
+      // Duration scales with the rotation angle; a single side equals the per-side rate.
+      expect(tweens[0].vars.duration).toBeCloseTo(drumRotationDurationS(DRUM_RADIANS_PER_SIDE), 10);
       expect(tweens[0].vars.ease).toBe(DRUM_ROTATION_EASE);
     });
 

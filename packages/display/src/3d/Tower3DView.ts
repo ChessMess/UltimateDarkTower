@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-import { LIGHT_EFFECTS } from 'ultimatedarktower';
+import { LIGHT_EFFECTS, TOWER_AUDIO_LIBRARY } from 'ultimatedarktower';
 import type { TowerState, SealIdentifier, TowerSide } from 'ultimatedarktower';
 
 import type { ITowerDisplay, TowerPhysicsHooks } from '../types';
@@ -9,6 +9,7 @@ import { injectStyles } from '../styles';
 import { SideButtons } from '../shared/SideButtons';
 import { DrumRotationAudio } from '../audio/DrumRotationAudio';
 import { TowerSampleAudio } from '../audio/TowerSampleAudio';
+import { CALIBRATION_SOUND_URL } from '../audio/calibrationAudio';
 import { DEFAULT_TOWER_SOUND_PACK } from '../audio/audioLibrary';
 import { DEFAULT_SEQUENCE_AUDIO_MAP } from '../audio/sequenceAudio';
 import type { SoundPack } from '../audio/soundPack';
@@ -18,7 +19,7 @@ import {
   TOWER_LAYER_COUNT, LIGHTS_PER_LAYER,
   RING_AZIMUTH, CORNER_AZIMUTH,
   LED_LAYOUT, RED_LIGHT_LAYOUT, LEDGE_LED_LAYOUT, BASE1_LED_LAYOUT, BASE2_LED_LAYOUT,
-  BLOOM_LAYER,
+  BLOOM_LAYER, DRUM_CALIBRATION_BEEP_PAUSE_S,
 } from './constants';
 import { computeRedLightPosition, computeSealLedPose, disposeObject, applyHdrColor } from './utils';
 import { DEFAULT_LIGHTING, resolveLighting } from './LightingResolver';
@@ -225,6 +226,14 @@ export class Tower3DView implements ITowerDisplay {
    */
   private stateAppliedListeners: Array<(state: TowerState) => void> = [];
   private drumAudio: DrumRotationAudio = new DrumRotationAudio();
+  // Dedicated player for the calibration command's bundled sweep recording, kept
+  // separate from `drumAudio` so the recording never plays during normal rotations.
+  // No fallback tone: it always has a real recording, so a missing/failed load
+  // degrades to silence (+ the visual sweep and Game Start) rather than a buzz.
+  // No loop: it's a finite recording of the whole sweep, so it plays once instead
+  // of restarting (replaying its opening rotation sound) if the visible sweep runs long.
+  private calibrationAudio: DrumRotationAudio = new DrumRotationAudio({ fallbackTone: false, loop: false });
+  private calibrationSoundLoaded = false;
   private towerSampleAudio: TowerSampleAudio = new TowerSampleAudio();
   // Resolved audio state. `sequenceMapOverride` holds the user-supplied
   // override; `activeSequenceMap()` resolves it against the pack/default at
@@ -581,6 +590,45 @@ export class Tower3DView implements ITowerDisplay {
   }
 
   /**
+   * Run the hardware calibration sequence: spin each drum to its home position
+   * one level at a time (top → middle → bottom), then play the Game Start
+   * sound. Resolves when the sequence finishes. Resolves immediately if the
+   * model has not loaded yet.
+   *
+   * Audio only sounds when audio is enabled (after a user gesture). The sweep
+   * plays a bundled calibration recording via a dedicated audio handle
+   * ({@link calibrationAudio}) — distinct from the normal drum-rotation audio, so
+   * it is heard only during calibration, never on ordinary drum rotations. A
+   * {@link DRUM_CALIBRATION_BEEP_PAUSE_S} pause after each drum keeps the visible
+   * sweep aligned with the recording's post-rotation beeps.
+   */
+  async runCalibrationSequence(): Promise<void> {
+    if (!this.model) return;
+    // Wait out the background decode so the very first calibration plays the real
+    // recording instead of racing the fetch and falling back to the placeholder
+    // tone. Resolves immediately once decoded (or if audio is disabled / unset).
+    await this.calibrationAudio.whenLoaded();
+    // Hold the calibration audio active across the whole sweep so the recording
+    // plays continuously rather than gapping between levels (each calibrateDrum
+    // also ref-counts the handle it's passed). No-op when audio is disabled.
+    this.calibrationAudio.startRotation();
+    try {
+      for (const level of ['top', 'middle', 'bottom'] as const) {
+        await this.drumManager.calibrateDrum(level, this.calibrationAudio);
+        // Hold between rotations so the recording's beep plays while the drums
+        // are still — keeps the visible sweep in sync with the audio.
+        if (DRUM_CALIBRATION_BEEP_PAUSE_S > 0) {
+          await new Promise<void>((resolve) =>
+            setTimeout(resolve, DRUM_CALIBRATION_BEEP_PAUSE_S * 1000));
+        }
+      }
+    } finally {
+      this.calibrationAudio.endRotation();
+    }
+    this.playSample(TOWER_AUDIO_LIBRARY.GameStart.value);
+  }
+
+  /**
    * Return the fully-resolved audio configuration. Every field is populated:
    * `pack`, `enabled`, `bindSequenceToSample`, `sequenceMap` (the effective
    * map after fallback resolution), and `drumRotationUrl`.
@@ -609,6 +657,14 @@ export class Tower3DView implements ITowerDisplay {
       this.audioState.enabled = config.enabled;
       this.towerSampleAudio.setEnabled(config.enabled);
       this.drumAudio.setEnabled(config.enabled);
+      this.calibrationAudio.setEnabled(config.enabled);
+      // Load the calibration recording on first enable rather than at construction:
+      // setUrl creates an AudioContext, and enable is the user-gesture moment, so
+      // this preserves the lazy creation that avoids the autoplay-policy warning.
+      if (config.enabled && !this.calibrationSoundLoaded) {
+        this.calibrationSoundLoaded = true;
+        this.calibrationAudio.setUrl(CALIBRATION_SOUND_URL);
+      }
     }
     if (config.bindSequenceToSample !== undefined) {
       this.audioState.bindSequenceToSample = config.bindSequenceToSample;
@@ -946,6 +1002,7 @@ export class Tower3DView implements ITowerDisplay {
     this.physicsModelLoadListeners.clear();
     this.stateAppliedListeners = [];
     this.drumAudio.dispose();
+    this.calibrationAudio.dispose();
     this.towerSampleAudio.dispose();
     if (this.model) {
       disposeObject(this.model);

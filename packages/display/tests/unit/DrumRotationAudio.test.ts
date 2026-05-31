@@ -105,6 +105,36 @@ describe('DrumRotationAudio', () => {
     expect(osc.connect).toHaveBeenCalled();
   });
 
+  it('with fallbackTone:false and no buffer, startRotation stays silent (no oscillator, no context)', () => {
+    const audio = new DrumRotationAudio({ fallbackTone: false });
+    audio.setEnabled(true);
+    audio.startRotation();
+
+    expect(createdOscillators).toHaveLength(0);
+    expect(createdContexts).toHaveLength(0);
+  });
+
+  it('plays a loaded buffer non-looping when constructed with { loop: false }', async () => {
+    const g = globalThis as unknown as { fetch?: unknown };
+    const original = g.fetch;
+    g.fetch = jest.fn(() =>
+      Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) }),
+    );
+    try {
+      const audio = new DrumRotationAudio({ loop: false });
+      audio.setUrl('mock://clip.ogg');
+      await audio.whenLoaded();
+      audio.setEnabled(true);
+      audio.startRotation();
+
+      expect(createdBufferSources).toHaveLength(1);
+      expect(createdBufferSources[0].loop).toBe(false);
+      expect(createdOscillators).toHaveLength(0); // real buffer → no fallback tone
+    } finally {
+      g.fetch = original;
+    }
+  });
+
   it('shares one source across overlapping rotations (refcount)', () => {
     const audio = new DrumRotationAudio();
     audio.setEnabled(true);

@@ -47,11 +47,44 @@ export const DRUM_LEVELS_BY_INDEX: readonly ('top' | 'middle' | 'bottom')[] = [
 /** Radians of Y-rotation per cardinal step (N→E→S→W). Sign chosen so position 0 = base orientation. Flip if drums rotate the wrong way visually. */
 export const DRUM_RADIANS_PER_SIDE = -Math.PI / 2;
 
-/** Rotation tween duration when a drum's `position` changes via applyState. */
-export const DRUM_ROTATION_DURATION_S = 0.6;
+/**
+ * ⏱️ TWEAK ME: seconds for a drum to complete one full 360° revolution.
+ *
+ * This is the single knob for drum spin speed. The real tower turns a full
+ * revolution in ~4s; raise this to slow every drum rotation down, lower it to
+ * speed them up. Rotation duration scales with the angle turned
+ * (via {@link drumRotationDurationS}), so a single 90° side takes a quarter of
+ * this and a calibration sweep (a full turn or more) takes this or longer.
+ */
+export const DRUM_SECONDS_PER_REVOLUTION = 3.8;
 
-/** Easing curve for drum rotation tweens. */
-export const DRUM_ROTATION_EASE = 'power2.inOut';
+/** Angle (radians) below which a rotation is treated as already-there: snap, no tween or audio. */
+export const DRUM_ROTATION_EPSILON = 1e-4;
+
+/** Tween seconds for a drum rotation of `angleRad`, at the constant per-revolution rate. */
+export function drumRotationDurationS(angleRad: number): number {
+  return DRUM_SECONDS_PER_REVOLUTION * (Math.abs(angleRad) / (2 * Math.PI));
+}
+
+/**
+ * Easing curve for drum rotation tweens. `'none'` (linear) so the drum turns at a
+ * constant angular velocity — matching the real tower's motor — rather than easing
+ * in and out. Combined with the angle-proportional duration, this gives a steady
+ * ~4s-per-revolution spin from start to finish.
+ */
+export const DRUM_ROTATION_EASE = 'none';
+
+/**
+ * ⏱️ TWEAK ME: pause (seconds) held after each drum finishes its calibration
+ * rotation — before the next drum spins, and before the Game Start sound.
+ *
+ * The real tower beeps after each drum homes; this gap leaves room for that beep
+ * so the visible sweep stays lined up with the bundled `drumCalibration.ogg`
+ * recording (which plays continuously across the pauses). Raise it if the drums
+ * run ahead of the beeps, lower it if they lag. Only affects the calibration
+ * command, not ordinary drum rotations.
+ */
+export const DRUM_CALIBRATION_BEEP_PAUSE_S = 0.9;
 
 /** Corner azimuths (rad) for ledge/base lights. Indexed by LEDGE_BASE_LIGHT_POSITIONS (NE=0, SE=1, SW=2, NW=3). */
 export const CORNER_AZIMUTH: readonly number[] = [

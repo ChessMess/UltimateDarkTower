@@ -51,16 +51,18 @@ function copyTowerAsset(): Plugin {
 
 // Vite lib mode unconditionally inlines `new URL(literal, import.meta.url)`
 // assets as base64 data URIs (ignoring assetsInlineLimit). For the 113 .ogg
-// files in audioLibrary.ts that would mean a 41 MB JS bundle. This plugin
-// runs *before* Vite's asset processor, intercepts each per-file new URL
-// expression, emits the .ogg as a separate Rollup asset, and substitutes a
-// ROLLUP_FILE_URL_ placeholder so the bundle references the emitted file by
-// relative path instead of inlining its bytes.
+// files in audioLibrary.ts that would mean a 41 MB JS bundle (and even a single
+// file like calibrationAudio.ts's bundled recording bloats the bundle by its
+// base64 size). This plugin runs *before* Vite's asset processor, intercepts
+// each per-file new URL expression, emits the .ogg as a separate Rollup asset,
+// and substitutes a ROLLUP_FILE_URL_ placeholder so the bundle references the
+// emitted file by relative path instead of inlining its bytes.
 //
-// The source pattern in audioLibrary.ts remains the canonical
+// The source pattern in these modules remains the canonical
 // `new URL('./assets/<file>.ogg', import.meta.url)` shape so esbuild,
 // webpack 5+, Rollup, and Parcel still detect and emit the assets on the
 // consumer side (each runs its own detector independently of Vite).
+const OGG_URL_HOSTS = ['/audio/audioLibrary.ts', '/audio/calibrationAudio.ts'];
 function emitOggsAsFiles(): Plugin {
   // Match the full `new URL('./assets/<file>.ogg', import.meta.url).href`
   // expression so the .href is part of what gets substituted — Rollup's
@@ -72,7 +74,7 @@ function emitOggsAsFiles(): Plugin {
     apply: 'build',
     enforce: 'pre',
     transform(code, id) {
-      if (!id.endsWith('/audio/audioLibrary.ts')) return null;
+      if (!OGG_URL_HOSTS.some((host) => id.endsWith(host))) return null;
       const assetsDir = resolve(dirname(id), 'assets');
       const segments: string[] = [];
       let last = 0;

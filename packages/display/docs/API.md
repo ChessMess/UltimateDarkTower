@@ -164,13 +164,15 @@ new TowerDisplay(options: TowerDisplayOptions)
 
 #### Methods
 
-##### `applyState(state: TowerState, force?: boolean): void`
+##### `applyState(state: AppliedTowerState, force?: boolean): void`
 
 Update all renderers with a new decoded tower state. Renders LED grid, drum positions, audio info, skull drops, and LED sequence overrides.
 
-Obtain `TowerState` from the [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) peer dependency.
+Obtain `TowerState` from the [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) peer dependency. `AppliedTowerState` is a `TowerState` that may additionally carry a `command` (a `TOWER_COMMANDS.*` value mirroring byte 0 of the wire packet); plain `TowerState` is still accepted.
 
 **`force`:** Pass `true` to replay tower-sample audio even when `state.audio.sample` and `state.audio.loop` match the previously-synced values — appropriate for explicit user-initiated triggers (e.g. a "Trigger Sequence" button). The default `false` preserves dedup for BLE state-mirror callers, where identical successive packets must not restart playback.
+
+**Calibration command:** when `state.command === TOWER_COMMANDS.calibration`, the incoming state is rendered as the baseline and then a [calibration sequence](#calibration-command) runs. See that section for the behavior and the `onCalibrationComplete` callback.
 
 **Skull drop detection:** The readout tracks `beam.count` across consecutive calls. When the count increases between two calls, a skull drop animation is shown.
 
@@ -557,9 +559,19 @@ view3d.applyCameraConfig({ zoomToCursor: false, elevationFactor: -0.3 });
 
 ##### Drum rotation
 
-`applyState()` rotates the three named drum meshes (`drum_top`, `drum_middle`, `drum_bottom`) around the Y axis to match `state.drum[i].position`. Rotations take the shortest arc and use a short tweened animation; the first state applied after the model loads snaps without animating. `calibrated` and `jammed` are intentionally not used to gate the rotation — the visual mirrors whatever the firmware reports.
+`applyState()` rotates the three named drum meshes (`drum_top`, `drum_middle`, `drum_bottom`) around the Y axis to match `state.drum[i].position`. Rotations take the shortest arc; the first state applied after the model loads snaps without animating, as does any rotation whose angle is below a small epsilon (already at target). `calibrated` and `jammed` are intentionally not used to gate the rotation — the visual mirrors whatever the firmware reports.
+
+Drums turn at a **constant angular velocity** with linear easing — duration scales with the angle turned, set by `DRUM_SECONDS_PER_REVOLUTION` (seconds for a full 360°, default ~4s, matching the real tower) in [`src/3d/constants.ts`](../src/3d/constants.ts). A single 90° step takes a quarter of that.
 
 Rotation audio is opt-in via `setDrumRotationSoundEnabled(true)`. While enabled, a sound plays whenever any drum is rotating. Provide an asset URL with `setDrumRotationSoundUrl(url)`; without one, a procedural sawtooth placeholder tone is used so the wiring is testable.
+
+##### Calibration command
+
+Applying a state with `command === TOWER_COMMANDS.calibration` (an [`AppliedTowerState`](#appliedtowerstate)) triggers a calibration sequence. `TowerDisplay` first renders the incoming state as a baseline, then, when a 3D view is present, runs the visible sweep: each drum homes to position 0 one level at a time (top → middle → bottom), with a `DRUM_CALIBRATION_BEEP_PAUSE_S` pause held after each (room for the real tower's post-rotation beep). The Game Start sample plays at the end, then `onCalibrationComplete` fires with the fully-calibrated state stamped `CALIBRATION_FINISHED` (0x08). Renderers without a 3D view (readout / side-view) settle on the final state immediately and still fire the callback. Re-entrant calibration commands while one is in flight are ignored.
+
+A bundled recording of the real sweep (`drumCalibration.ogg`, exported as `CALIBRATION_SOUND_URL`) plays once across the sweep via a dedicated audio handle — separate from the normal drum-rotation audio above, so it is heard only during calibration. It does not loop and has no placeholder tone: if the asset fails to load it stays silent rather than buzzing. Audio still requires `applyAudioConfig({ enabled: true })` from a user gesture. Tune the recording-to-visual sync with the two constants in [`src/3d/constants.ts`](../src/3d/constants.ts): `DRUM_SECONDS_PER_REVOLUTION` (spin speed) and `DRUM_CALIBRATION_BEEP_PAUSE_S` (inter-level pause).
+
+The underlying `Tower3DView.runCalibrationSequence()` is public for advanced callers driving the 3D view directly, but the supported entry point is `applyState` with a calibration `command`.
 
 ##### Tower sample audio
 
@@ -665,6 +677,12 @@ interface TowerDisplayOptions {
   onSideChange?: (side: TowerSide) => void;
   /** Called if the 3D GLB model fails to load. Only fires when renderers includes '3d-view'. */
   onLoadError?: (details: unknown) => void;
+  /**
+   * Called when a calibration command finishes. Receives the final calibrated
+   * state (all drums calibrated at position 0), stamped CALIBRATION_FINISHED (0x08).
+   * See the Calibration command section.
+   */
+  onCalibrationComplete?: (finalState: TowerState) => void;
   /** Optional override for the 3D view's GLB model URL. */
   modelUrl?: string;
   /** Optional override for where Draco decoder wasm/js files are loaded from. */
@@ -692,6 +710,14 @@ interface ITowerDisplay {
   dispose(): void;
 }
 ```
+
+### `AppliedTowerState`
+
+```ts
+type AppliedTowerState = TowerState & { command?: number };
+```
+
+A `TowerState` that may additionally carry a `command` — a `TOWER_COMMANDS.*` value mirroring byte 0 of the wire packet. Accepted by `applyState`; when `command` is present (e.g. `TOWER_COMMANDS.calibration`) the display runs the matching command flow. Plain `TowerState` is still accepted. See [Calibration command](#calibration-command).
 
 ### `RendererType`
 

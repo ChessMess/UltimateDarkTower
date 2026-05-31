@@ -53,6 +53,8 @@ export interface DomElements {
   btnRemoveAllSeals: HTMLElement | null;
   btnResetSeals: HTMLElement | null;
   btnEmpty: HTMLElement | null;
+  btnCalibrate: HTMLButtonElement | null;
+  calibratingMsg: HTMLElement | null;
   selSequence: HTMLSelectElement | null;
   btnTriggerSequence: HTMLButtonElement | null;
   drumRotateGrid: HTMLElement | null;
@@ -131,6 +133,8 @@ export function queryDom(): DomElements {
     btnRemoveAllSeals: document.getElementById('btn-remove-all-seals'),
     btnResetSeals: document.getElementById('btn-reset-seals'),
     btnEmpty: document.getElementById('btn-empty'),
+    btnCalibrate: document.getElementById('btn-calibrate') as HTMLButtonElement | null,
+    calibratingMsg: document.getElementById('calibrating-message'),
     selSequence: document.getElementById('sel-sequence') as HTMLSelectElement | null,
     btnTriggerSequence: document.getElementById('btn-trigger-sequence') as HTMLButtonElement | null,
     drumRotateGrid: document.getElementById('drum-rotate-grid'),

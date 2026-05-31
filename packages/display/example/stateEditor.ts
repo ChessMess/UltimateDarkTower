@@ -4,7 +4,7 @@ import type { DomElements } from './dom';
 import { refreshConfigPreview, setConfigPreviewMessage, syncConfigSelectorVisibility } from './configEditor';
 import { refreshLightingConfigBox } from './lightingController';
 import { armTowerAudioFromUserGesture, is3DViewVisible, getLastState } from './rendererController';
-import { createReadmeExampleState, createRandomState, createAllOnState, createSequenceState, createEmptyState, SEQUENCE_AUDIO_MAP } from './presets';
+import { createReadmeExampleState, createRandomState, createAllOnState, createSequenceState, createEmptyState, createCalibrationCommandState, SEQUENCE_AUDIO_MAP } from './presets';
 import { removeAllSeals, resetSeals, toggleSeal, getTower } from './sealController';
 import { clearLedOverrides } from './ledOverrideController';
 import { SEQUENCE_METADATA } from '../src/sequences/sequenceMetadata';
@@ -107,6 +107,14 @@ export function initStateEditor(
     els.btnEmpty.addEventListener('click', () => {
       setStateName('empty state', els);
       applyAndShow(createEmptyState(), getDisplay, getReadout, setLastState, els);
+    });
+  }
+
+  if (els.btnCalibrate) {
+    els.btnCalibrate.addEventListener('click', () => {
+      setStateName('calibrating…', els);
+      if (els.calibratingMsg) els.calibratingMsg.hidden = false;
+      applyAndShow(createCalibrationCommandState(), getDisplay, getReadout, setLastState, els);
     });
   }
 

@@ -1,6 +1,6 @@
 import type { TowerState, TowerSide, SealIdentifier } from 'ultimatedarktower';
 import type { LightingConfig, CameraConfig, AudioConfig } from './3d/types';
-import type { ITowerDisplay, RendererType, TowerDisplayOptions } from './types';
+import type { ITowerDisplay, RendererType, TowerDisplayOptions, AppliedTowerState } from './types';
 import { TowerDisplay } from './TowerDisplay';
 import type { Tower3DView, PerfReport } from './3d/Tower3DView';
 
@@ -34,6 +34,8 @@ export interface TowerRenderViewOptions {
   onSealClick?: (seal: SealIdentifier) => void;
   onSideChange?: (side: TowerSide) => void;
   onLoadError?: (details: unknown) => void;
+  /** Called when a calibration command finishes its sequence. See {@link TowerDisplayOptions.onCalibrationComplete}. */
+  onCalibrationComplete?: (finalState: TowerState) => void;
 
   /** Optional polished chrome — omit for a bare renderer. */
   title?: string;
@@ -115,6 +117,7 @@ export class TowerRenderView implements ITowerDisplay {
       onSealClick: options.onSealClick,
       onSideChange: options.onSideChange,
       onLoadError: options.onLoadError,
+      onCalibrationComplete: options.onCalibrationComplete,
     };
 
     this.innerDisplay = new TowerDisplay(displayOptions);
@@ -122,7 +125,7 @@ export class TowerRenderView implements ITowerDisplay {
 
   // ── State methods (ITowerDisplay) ───────────────────────────────────────
 
-  applyState(state: TowerState, force = false): void {
+  applyState(state: AppliedTowerState, force = false): void {
     this.innerDisplay.applyState(state, force);
   }
 

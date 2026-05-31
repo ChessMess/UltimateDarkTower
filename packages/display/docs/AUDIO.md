@@ -144,6 +144,12 @@ display.playSample(sampleId, { loop: false, volume: 0 });
 
 `playSample` still requires `applyAudioConfig({ enabled: true })` from a user gesture (browsers' autoplay policy). The eager AudioContext creation on `setEnabled(true)` captures that gesture so subsequent `playSample` calls from non-gesture contexts (e.g. postMessage handlers) work correctly.
 
+## Calibration sound
+
+The calibration command (`applyState` with `command === TOWER_COMMANDS.calibration`) plays a bundled recording of the real tower's calibration sweep — `drumCalibration.ogg`, exported as `CALIBRATION_SOUND_URL`. It runs on its own audio handle, deliberately separate from the drum-rotation audio (`drumRotationUrl`), so it is heard **only** during calibration and never on ordinary drum rotations. Two differences from that handle: it does **not** loop (it's a finite one-shot of the whole sweep, so it plays through once instead of restarting if the visible sweep runs long), and it has **no** placeholder tone (a missing/failed load stays silent rather than buzzing). The `GameStart` sample plays once the sweep finishes.
+
+Keep the recording aligned with the on-screen sweep via two constants in [`src/3d/constants.ts`](../src/3d/constants.ts): `DRUM_SECONDS_PER_REVOLUTION` (drum spin speed) and `DRUM_CALIBRATION_BEEP_PAUSE_S` (the pause held after each drum for the tower's post-rotation beep). See [API.md → Calibration command](API.md#calibration-command).
+
 ## Autoplay policy
 
 Browsers block AudioContext until a user gesture (click, key, touch). Set `enabled: true` from a click/keydown handler — not on page load. The example app does this via the toolbar **Audio** checkbox.

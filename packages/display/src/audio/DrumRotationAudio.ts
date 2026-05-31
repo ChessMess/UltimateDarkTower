@@ -1,10 +1,15 @@
 /**
- * Plays a looping sound while drums are rotating in the 3D view.
+ * Plays a sound while drums are rotating in the 3D view (looping by default).
  *
  * - When a URL is set, fetches and decodes the asset; that buffer is looped
- *   for the lifetime of each rotation burst.
+ *   for the lifetime of each rotation burst. Pass `{ loop: false }` for a finite
+ *   one-shot clip (e.g. a full calibration recording) that should play through
+ *   once and stop rather than restarting if the rotation outlasts it.
  * - When no URL is set, falls back to a procedural sawtooth oscillator —
- *   audible placeholder until the real recorded asset is wired in.
+ *   audible placeholder until the real recorded asset is wired in. Pass
+ *   `{ fallbackTone: false }` to disable this (a handle that always has a real
+ *   recording, e.g. the calibration sweep, stays silent on a missing/failed
+ *   load instead of buzzing).
  * - Multiple drums rotating concurrently share one underlying source via a
  *   start/end refcount; the gain ramps to silence over a short fade when the
  *   refcount returns to zero so playback never clicks off.
@@ -22,15 +27,38 @@ export class DrumRotationAudio {
   private url: string | null = null;
   private enabled = false;
   private active = 0;
+  private loadPromise: Promise<void> | null = null;
+  private readonly fallbackTone: boolean;
+  private readonly loop: boolean;
+
+  /**
+   * @param options.fallbackTone Play the sawtooth placeholder when no buffer is loaded. Default true.
+   * @param options.loop Loop the decoded buffer while a rotation is active. Default true; set false for a finite one-shot clip.
+   */
+  constructor(options: { fallbackTone?: boolean; loop?: boolean } = {}) {
+    this.fallbackTone = options.fallbackTone ?? true;
+    this.loop = options.loop ?? true;
+  }
 
   /** Pass null to clear the asset and use the procedural fallback. Decode runs in the background. */
   setUrl(url: string | null): void {
     this.url = url;
     if (url === null) {
       this.buffer = null;
+      this.loadPromise = null;
       return;
     }
-    void this.loadUrl(url);
+    this.loadPromise = this.loadUrl(url);
+  }
+
+  /**
+   * Resolve once the current URL's buffer has finished decoding (or immediately
+   * if no URL is set or the load failed). Lets callers that must hear the real
+   * recording on their first `startRotation` — e.g. the calibration sweep — wait
+   * out the background decode instead of racing it and falling back to the tone.
+   */
+  whenLoaded(): Promise<void> {
+    return this.loadPromise ?? Promise.resolve();
   }
 
   setEnabled(enabled: boolean): void {
@@ -94,6 +122,10 @@ export class DrumRotationAudio {
   }
 
   private play(): void {
+    // No real buffer and the placeholder is disabled → stay silent rather than
+    // buzz. Guarded before ensureCtx so we don't spin up an AudioContext for
+    // nothing.
+    if (!this.buffer && !this.fallbackTone) return;
     const ctx = this.ensureCtx(true);
     if (!this.gain) {
       this.gain = ctx.createGain();
@@ -107,7 +139,7 @@ export class DrumRotationAudio {
     if (this.buffer) {
       const src = ctx.createBufferSource();
       src.buffer = this.buffer;
-      src.loop = true;
+      src.loop = this.loop;
       source = src;
     } else {
       const osc = ctx.createOscillator();

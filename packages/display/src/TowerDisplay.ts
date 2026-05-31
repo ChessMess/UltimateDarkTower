@@ -1,6 +1,6 @@
 import type { TowerState, SealIdentifier, TowerSide } from 'ultimatedarktower';
 import type { LightingConfig, ResolvedLightingConfig, CameraConfig, AudioConfig } from './3d/types';
-import type { TowerDisplayOptions, ITowerDisplay, RendererType } from './types';
+import type { TowerDisplayOptions, ITowerDisplay, RendererType, AppliedTowerState } from './types';
 import type { SoundPack } from './audio/soundPack';
 import { TowerStateReadout } from './TowerStateReadout';
 import { TowerSideView } from './2d/TowerSideView';
@@ -8,6 +8,17 @@ import { Tower3DView } from './3d/Tower3DView';
 import type { PerfReport } from './3d/Tower3DView';
 import { TowerStateController } from './state/TowerStateController';
 import { injectStyles, suppressStyleInjection } from './styles';
+import { TOWER_COMMANDS, TOWER_MESSAGES, createDefaultTowerState } from 'ultimatedarktower';
+
+/** Build the post-calibration tower state: every drum calibrated, at position 0 (north). */
+function buildCalibratedState(): TowerState {
+  const state = createDefaultTowerState();
+  for (const drum of state.drum) {
+    drum.calibrated = true;
+    drum.position = 0;
+  }
+  return state;
+}
 
 function normalizeRenderers(input?: RendererType | RendererType[]): RendererType[] {
   if (!input) return ['readout', 'side-view'];
@@ -61,11 +72,15 @@ export class TowerDisplay implements ITowerDisplay {
 
   private readonly onSealClickCallback?: (seal: SealIdentifier) => void;
   private readonly onSideChangeCallback?: (side: TowerSide) => void;
+  private readonly onCalibrationCompleteCallback?: (finalState: TowerState) => void;
   private readonly state: TowerStateController;
+  /** True while a calibration sequence is running; guards against re-entrant commands. */
+  private calibrating = false;
 
   constructor(options: TowerDisplayOptions) {
     this.onSealClickCallback = options.onSealClick;
     this.onSideChangeCallback = options.onSideChange;
+    this.onCalibrationCompleteCallback = options.onCalibrationComplete;
     this.state = new TowerStateController({
       togglesEnabled: options.clickToToggleSeals !== false,
     });
@@ -128,9 +143,51 @@ export class TowerDisplay implements ITowerDisplay {
    * previous state — useful for explicit user triggers. The default
    * `false` preserves dedup for BLE state-mirror callers.
    */
-  applyState(state: TowerState, force = false): void {
+  applyState(state: AppliedTowerState, force = false): void {
+    if (state.command === TOWER_COMMANDS.calibration) {
+      // Render the baseline state the command rode in on, then run the sequence.
+      this.renderBaseState(state, force);
+      void this.runCalibration();
+      return;
+    }
+    this.renderBaseState(state, force);
+  }
+
+  /** Apply a state to all renderers. The transient `command` field (if any) is ignored by renderers. */
+  private renderBaseState(state: AppliedTowerState, force: boolean): void {
     const resolved = this.state.applyState(state);
     for (const r of this.renderers) r.applyState(resolved, force);
+  }
+
+  /**
+   * Run the calibration sequence in response to a calibration command. The 3D
+   * drum sweep + calibration audio + Game Start sound are layered in by the 3D
+   * view in a later step; the no-3D path completes immediately. Re-entrant
+   * calls while a calibration is in flight are ignored.
+   *
+   * On completion the display resolves to the fully-calibrated state and fires
+   * `onCalibrationComplete` with that state stamped `CALIBRATION_FINISHED`
+   * (0x08) — the display's representation of the tower's completion reply.
+   */
+  private async runCalibration(): Promise<void> {
+    if (this.calibrating) return;
+    this.calibrating = true;
+    try {
+      // When a 3D view is present, run the visible drum sweep + audio and wait
+      // for it; other renderers (readout/side-view) just settle on the result.
+      if (this.view3d) {
+        await this.view3d.runCalibrationSequence();
+      }
+      const finalState = buildCalibratedState();
+      this.renderBaseState(finalState, true);
+      const completed: AppliedTowerState = {
+        ...finalState,
+        command: TOWER_MESSAGES.CALIBRATION_FINISHED.value,
+      };
+      this.onCalibrationCompleteCallback?.(completed);
+    } finally {
+      this.calibrating = false;
+    }
   }
 
   /**

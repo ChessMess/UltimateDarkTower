@@ -3,8 +3,10 @@ import {
   createDefaultTowerState,
   LIGHT_EFFECTS,
   TOWER_AUDIO_LIBRARY,
+  TOWER_COMMANDS,
 } from 'ultimatedarktower';
 import { DEFAULT_SEQUENCE_AUDIO_MAP } from '../src/index';
+import type { AppliedTowerState } from '../src/index';
 
 const lightEffects = Object.values(LIGHT_EFFECTS).filter(
   (value): value is number => typeof value === 'number'
@@ -77,4 +79,13 @@ export function createSequenceState(sequenceId: number, base?: TowerState): Towe
 
 export function createEmptyState(): TowerState {
   return createDefaultTowerState();
+}
+
+/**
+ * An empty state carrying the calibration command. Sent through the normal
+ * render path; the display recognises `command` and runs the calibration
+ * sequence (rotate each drum, play Game Start, emit the completion reply).
+ */
+export function createCalibrationCommandState(): AppliedTowerState {
+  return { ...createEmptyState(), command: TOWER_COMMANDS.calibration };
 }

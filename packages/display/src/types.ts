@@ -10,6 +10,15 @@ export type { AudioConfig };
 export type { SoundPack };
 
 /**
+ * A decoded tower state that may also carry a tower *command* — a
+ * `TOWER_COMMANDS.*` value mirroring byte 0 of the wire packet. When `command`
+ * is present, a host can feed a command through the same `applyState` ingestion
+ * the display uses for plain state: e.g. `TOWER_COMMANDS.calibration` triggers
+ * the calibration sequence. Absent or `0` means a normal state render.
+ */
+export type AppliedTowerState = TowerState & { command?: number };
+
+/**
  * Narrow integration surface returned by `Tower3DView.getPhysicsHooks()`.
  * External add-ons (e.g. a physics companion package) use these to plug into
  * the render loop, observe drum/seal state, and read model bounds. The shape
@@ -81,6 +90,14 @@ export interface TowerDisplayOptions {
   onSideChange?: (side: TowerSide) => void;
   /** Called if the 3D GLB model fails to load. Only fires when `renderers` includes `'3d-view'`. */
   onLoadError?: (details: unknown) => void;
+  /**
+   * Called when a calibration command (carried as `command` on an applied
+   * state, e.g. `TOWER_COMMANDS.calibration`) finishes its sequence. Receives
+   * the final calibrated state (all drums calibrated at position 0). This is the
+   * display's representation of the tower's CALIBRATION_FINISHED (0x08) reply,
+   * which a BLE/emulator host can forward.
+   */
+  onCalibrationComplete?: (finalState: TowerState) => void;
   /**
    * URL of the GLB model for the 3D view. **Required** when `renderers` includes `'3d-view'`.
    * The package ships the model at `dist/3d/assets/tower.glb` — reference it through your

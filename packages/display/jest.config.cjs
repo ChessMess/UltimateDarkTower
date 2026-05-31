@@ -26,6 +26,8 @@ module.exports = {
     // (TowerSampleAudio.test.ts uses its own inline library), so a stub is
     // sufficient.
     '.*/audio/audioLibrary$': '<rootDir>/tests/__mocks__/audioLibrary.js',
+    // Same reason as audioLibrary: calibrationAudio.ts uses `import.meta.url`.
+    '.*/audio/calibrationAudio$': '<rootDir>/tests/__mocks__/calibrationAudio.js',
     '\\.svg\\?raw$': '<rootDir>/tests/__mocks__/svgRaw.js',
     '\\.glb\\?url$': '<rootDir>/tests/__mocks__/glbUrl.js',
     '\\.png$': '<rootDir>/tests/__mocks__/pngUrl.js',

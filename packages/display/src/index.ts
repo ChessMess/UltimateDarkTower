@@ -14,6 +14,7 @@ export type { TowerStateControllerOptions } from './state/TowerStateController';
 export { TOWER_DISPLAY_CSS } from './styles';
 export type {
   TowerDisplayOptions,
+  AppliedTowerState,
   ITowerDisplay,
   RendererType,
   TowerSide,
@@ -34,3 +35,4 @@ export {
 } from './audio/sequenceAudio';
 export { DrumRotationAudio } from './audio/DrumRotationAudio';
 export { TowerSampleAudio } from './audio/TowerSampleAudio';
+export { CALIBRATION_SOUND_URL } from './audio/calibrationAudio';
