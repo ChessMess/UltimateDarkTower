@@ -23,6 +23,12 @@
   <a href="https://chessmess.github.io/UltimateDarkTowerDisplay/">▶ Live Demo — Tower Display</a>
 </strong></p>
 
+## What this is, what it isn't
+
+This package is the visual layer. It does not open a BLE connection, decode packets, or construct `TowerState` objects. Pair it with [`ultimatedarktower`](https://github.com/ChessMess/ultimatedarktower) (UDT) for the BLE side, or feed it hand-built states for testing and demos.
+
+The physical tower talks BLE to `ultimatedarktower`, which decodes packets into a `TowerState`. This package consumes that state and renders it as any combination of a text readout, a 2D SVG side view, and a 3D Three.js model.
+
 ```mermaid
 flowchart LR
     Tower[Physical tower] -- BLE --> UDT[ultimatedarktower]
@@ -34,12 +40,6 @@ flowchart LR
     Side --> DOM
     Three --> DOM
 ```
-
-The physical tower talks BLE to `ultimatedarktower`, which decodes packets into a `TowerState`. This package consumes that state and renders it as any combination of a text readout, a 2D SVG side view, and a 3D Three.js model.
-
-## What this is, what it isn't
-
-This package is the visual layer. It does not open a BLE connection, decode packets, or construct `TowerState` objects. Pair it with [`ultimatedarktower`](https://github.com/ChessMess/ultimatedarktower) (UDT) for the BLE side, or feed it hand-built states for testing and demos.
 
 For the full mental model see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
