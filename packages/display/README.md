@@ -1,10 +1,27 @@
-# ultimatedarktowerdisplay
+<p align="center">
+  <img src="docs/tower-display-hero.png" alt="ultimatedarktowerdisplay — 3D tower render" width="420" />
+</p>
 
-Composable text, 2D, and 3D renderers for [Return to Dark Tower](https://restorationgames.com/dark-tower/) tower state. Pair with [`ultimatedarktower`](https://github.com/ChessMess/ultimatedarktower) and ship a tower-aware companion app.
+<h1 align="center">Ultimate Dark Tower Display</h1>
 
-[![npm](https://img.shields.io/npm/v/ultimatedarktowerdisplay.svg)](https://www.npmjs.com/package/ultimatedarktowerdisplay)
-[![license](https://img.shields.io/npm/l/ultimatedarktowerdisplay.svg)](LICENSE)
-[![live demo](https://img.shields.io/badge/live-demo-3b4a5a)](https://chessmess.github.io/UltimateDarkTowerDisplay/)
+<p align="center">
+  Composable text, 2D, and 3D renderers for <a href="https://restorationgames.com/dark-tower/"><em>Return to Dark Tower</em></a> tower state.<br/>
+  Pair with <a href="https://github.com/ChessMess/ultimatedarktower"><code>ultimatedarktower</code></a> and ship a tower-aware companion app.
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/ultimatedarktowerdisplay"><img alt="npm version" src="https://img.shields.io/npm/v/ultimatedarktowerdisplay.svg"></a>
+  <a href="https://www.npmjs.com/package/ultimatedarktowerdisplay"><img alt="npm downloads" src="https://img.shields.io/npm/dm/ultimatedarktowerdisplay"></a>
+  <a href="https://github.com/ChessMess/UltimateDarkTowerDisplay/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ChessMess/UltimateDarkTowerDisplay/ci.yml?branch=main&label=CI"></a>
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/npm/l/ultimatedarktowerdisplay.svg"></a>
+  <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-Ready-blue"></a>
+</p>
+
+---
+
+<p align="center"><strong>
+  <a href="https://chessmess.github.io/UltimateDarkTowerDisplay/">▶ Live Demo — Tower Display</a>
+</strong></p>
 
 ```mermaid
 flowchart LR
@@ -76,17 +93,17 @@ That renders the default composition: a text readout plus a 2D side view.
 
 ## Renderers
 
-| Capability | `readout` | `side-view` | `3d-view` |
-|---|---|---|---|
-| Rendering tech | DOM text grid | Inline SVG | Three.js + WebGL2 |
-| Shows LED layers | All 6, all 4 sides | One side at a time | On the 3D model |
-| Shows drum positions | Numeric + glyph | Rotated SVG | Rotating meshes |
-| Shows audio info | Sample name + volume | No | Plays the sample (bundled default pack, swappable) |
-| Shows beam + skull count | Yes | No | No |
-| Side-aware | No | Yes | Yes |
-| Clickable seals | Optional | Yes | No (clicks land in 2D) |
-| Animations | None | LED tweens | Full (LEDs, drums, bloom) |
-| Bundle cost (rough) | <5 KB gzip | <10 KB gzip | ~150 KB gzip + 22 MB GLB + 20 MB audio |
+| Capability               | `readout`            | `side-view`        | `3d-view`                                          |
+| ------------------------ | -------------------- | ------------------ | -------------------------------------------------- |
+| Rendering tech           | DOM text grid        | Inline SVG         | Three.js + WebGL2                                  |
+| Shows LED layers         | All 6, all 4 sides   | One side at a time | On the 3D model                                    |
+| Shows drum positions     | Numeric + glyph      | Rotated SVG        | Rotating meshes                                    |
+| Shows audio info         | Sample name + volume | No                 | Plays the sample (bundled default pack, swappable) |
+| Shows beam + skull count | Yes                  | No                 | No                                                 |
+| Side-aware               | No                   | Yes                | Yes                                                |
+| Clickable seals          | Optional             | Yes                | No (clicks land in 2D)                             |
+| Animations               | None                 | LED tweens         | Full (LEDs, drums, bloom)                          |
+| Bundle cost (rough)      | <5 KB gzip           | <10 KB gzip        | ~150 KB gzip + 22 MB GLB + 20 MB audio             |
 
 Both `TowerRenderView` and `TowerDisplay` accept any subset of `['readout', 'side-view', '3d-view']` via the `renderers` option. `TowerRenderView` defaults to `'3d-view'`; `TowerDisplay` defaults to `['readout', 'side-view']`. Full comparison and per-renderer details in [docs/RENDERERS.md](docs/RENDERERS.md).
 
