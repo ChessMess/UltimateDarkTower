@@ -330,8 +330,11 @@ export interface AudioConfig {
    */
   sequenceMap?: Record<number, number>;
   /**
-   * URL for the looping drum-rotation sound, or `null` for the procedural
-   * sawtooth fallback. Defaults to `null`.
+   * URL for the drum-rotation sound, played once per rotation and cut to the
+   * rotation's length when the drum settles. Defaults to the bundled
+   * `drumRotation.ogg` (`DRUM_ROTATION_SOUND_URL`); pass a custom URL to override,
+   * or `null` to disable it (silence — there is no procedural fallback). A
+   * missing/failed load is silent.
    */
   drumRotationUrl?: string | null;
 }

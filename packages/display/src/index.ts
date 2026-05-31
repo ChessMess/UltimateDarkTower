@@ -36,3 +36,4 @@ export {
 export { DrumRotationAudio } from './audio/DrumRotationAudio';
 export { TowerSampleAudio } from './audio/TowerSampleAudio';
 export { CALIBRATION_SOUND_URL } from './audio/calibrationAudio';
+export { DRUM_ROTATION_SOUND_URL } from './audio/drumRotationSound';

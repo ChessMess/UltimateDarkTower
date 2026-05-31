@@ -62,7 +62,10 @@ function copyTowerAsset(): Plugin {
 // `new URL('./assets/<file>.ogg', import.meta.url)` shape so esbuild,
 // webpack 5+, Rollup, and Parcel still detect and emit the assets on the
 // consumer side (each runs its own detector independently of Vite).
-const OGG_URL_HOSTS = ['/audio/audioLibrary.ts', '/audio/calibrationAudio.ts'];
+// Add any new hand-maintained `new URL('./assets/*.ogg', import.meta.url)` module
+// here, or the lib build base64-inlines its bytes instead of emitting a file.
+// See docs/AUDIO.md → "Adding a bundled sound to the library".
+const OGG_URL_HOSTS = ['/audio/audioLibrary.ts', '/audio/calibrationAudio.ts', '/audio/drumRotationSound.ts'];
 function emitOggsAsFiles(): Plugin {
   // Match the full `new URL('./assets/<file>.ogg', import.meta.url).href`
   // expression so the .href is part of what gets substituted — Rollup's

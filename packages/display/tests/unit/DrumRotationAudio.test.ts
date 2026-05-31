@@ -135,6 +135,52 @@ describe('DrumRotationAudio', () => {
     }
   });
 
+  it('starts playback when the buffer finishes decoding mid-rotation (deferred start)', async () => {
+    // Reproduces the cold-load case: the same gesture that enables audio also
+    // kicks off the decode, so the first rotation begins before the buffer is
+    // ready. With no fallback tone it stays silent until the buffer lands, then
+    // catches up.
+    const g = globalThis as unknown as { fetch?: unknown };
+    const original = g.fetch;
+    g.fetch = jest.fn(() =>
+      Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) }),
+    );
+    try {
+      const audio = new DrumRotationAudio({ fallbackTone: false, loop: false });
+      audio.setUrl('mock://clip.ogg'); // decode starts, not yet resolved
+      audio.setEnabled(true);
+      audio.startRotation(); // buffer not ready → silent, no source yet
+      expect(createdBufferSources).toHaveLength(0);
+
+      await audio.whenLoaded(); // decode resolves → deferred start fires
+      expect(createdBufferSources).toHaveLength(1);
+      expect(createdBufferSources[0].startCalls).toBe(1);
+      expect(createdBufferSources[0].loop).toBe(false);
+    } finally {
+      g.fetch = original;
+    }
+  });
+
+  it('does not deferred-start if the rotation already ended before the buffer loaded', async () => {
+    const g = globalThis as unknown as { fetch?: unknown };
+    const original = g.fetch;
+    g.fetch = jest.fn(() =>
+      Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) }),
+    );
+    try {
+      const audio = new DrumRotationAudio({ fallbackTone: false, loop: false });
+      audio.setUrl('mock://clip.ogg');
+      audio.setEnabled(true);
+      audio.startRotation();
+      audio.endRotation(); // rotation finished before decode landed
+
+      await audio.whenLoaded();
+      expect(createdBufferSources).toHaveLength(0); // nothing to catch up
+    } finally {
+      g.fetch = original;
+    }
+  });
+
   it('shares one source across overlapping rotations (refcount)', () => {
     const audio = new DrumRotationAudio();
     audio.setEnabled(true);

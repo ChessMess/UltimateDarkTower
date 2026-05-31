@@ -36,7 +36,8 @@ interface AudioConfig {
   /** Override of sequence-id → sample-id binding. Resolution order:
    *  config.sequenceMap ?? pack.sequenceMap ?? DEFAULT_SEQUENCE_AUDIO_MAP. */
   sequenceMap?: Record<number, number>;
-  /** Drum rotation loop URL, or null for the procedural fallback. Default null. */
+  /** Drum rotation sound URL. Defaults to the bundled drumRotation.ogg; pass a
+   *  custom URL to override, or null to disable (silence — no procedural fallback). */
   drumRotationUrl?: string | null;
 }
 ```
@@ -144,9 +145,34 @@ display.playSample(sampleId, { loop: false, volume: 0 });
 
 `playSample` still requires `applyAudioConfig({ enabled: true })` from a user gesture (browsers' autoplay policy). The eager AudioContext creation on `setEnabled(true)` captures that gesture so subsequent `playSample` calls from non-gesture contexts (e.g. postMessage handlers) work correctly.
 
+## Drum rotation sound
+
+When a drum turns in the 3D view, the library plays a bundled recording —
+`drumRotation.ogg`, exported as `DRUM_ROTATION_SOUND_URL`. It is the default value of `drumRotationUrl`, loaded lazily on the first `applyAudioConfig({ enabled: true })` (the user-gesture moment, so the AudioContext is created without tripping the autoplay policy).
+
+The recording is a **finite, complete-rotation clip** that handles a rotation across any number of positions. It is **played once (no loop) from the start** when the rotation begins, and **cut to the exact rotation length** — a short fade as the drum settles — so it **never plays longer than the drum turns**, whether the move is a single position or several. Net audible length is `min(clip, rotation)`:
+
+- A single-position move (~0.95 s) plays only the opening of the clip.
+- A multi-position move plays more of it (a drum rotation is one tween whose duration scales with the arc).
+
+Because audio is not time-stretched, the file must be **at least ~1.9 s** long — the longest single move is 180° (a half revolution), and at the constant `DRUM_SECONDS_PER_REVOLUTION` of 3.8 s that takes 1.9 s. Anything beyond the first ~1.9 s is never heard on this handle, so a longer "complete rotation" recording is fine; trimming it shorter is an optional size nicety with no behavioral effect.
+
+A missing or failed load is **silent** — there is no procedural placeholder tone. Override with your own URL (or `null` to disable) via `applyAudioConfig({ drumRotationUrl })` or `display.setDrumRotationSoundUrl(url)`. This is a separate audio handle from the calibration sweep below, so the two never play over each other.
+
+### Adding a bundled sound to the library
+
+To bundle a new sound shipped with the package (as `drumRotation.ogg` and `drumCalibration.ogg` are):
+
+1. Drop the `.ogg` into `src/audio/assets/`.
+2. Reference it from a small hand-maintained module via the canonical pattern: `export const MY_SOUND_URL = new URL('./assets/my-sound.ogg', import.meta.url).href;`. Keep it in its own module — `scripts/extract-audio.mjs` regenerates `audioLibrary.ts` wholesale and would wipe a hand-added export there.
+3. **Add that module's path to `OGG_URL_HOSTS` in `vite.config.ts`.** Vite's lib build inlines `new URL(literal, import.meta.url)` assets as base64 data URIs by default; the `emitOggsAsFiles` plugin emits them as separate files **only** for modules on this list. Skip this step and your asset's bytes get base64-inlined into the JS bundle.
+4. Export the URL constant from `src/index.ts` if consumers should reference it.
+
+(This is distinct from the [Bundler compatibility](#bundler-compatibility) section below, which is about *consumers* bundling the published package — not this repo's own build.)
+
 ## Calibration sound
 
-The calibration command (`applyState` with `command === TOWER_COMMANDS.calibration`) plays a bundled recording of the real tower's calibration sweep — `drumCalibration.ogg`, exported as `CALIBRATION_SOUND_URL`. It runs on its own audio handle, deliberately separate from the drum-rotation audio (`drumRotationUrl`), so it is heard **only** during calibration and never on ordinary drum rotations. Two differences from that handle: it does **not** loop (it's a finite one-shot of the whole sweep, so it plays through once instead of restarting if the visible sweep runs long), and it has **no** placeholder tone (a missing/failed load stays silent rather than buzzing). The `GameStart` sample plays once the sweep finishes.
+The calibration command (`applyState` with `command === TOWER_COMMANDS.calibration`) plays a bundled recording of the real tower's calibration sweep — `drumCalibration.ogg`, exported as `CALIBRATION_SOUND_URL`. It runs on its **own** audio handle, deliberately separate from the drum-rotation audio (`drumRotationUrl`), so it is heard **only** during calibration and never on ordinary drum rotations. Like the drum-rotation handle it is a finite one-shot (no loop) with no placeholder tone — a missing/failed load stays silent rather than buzzing — but it plays a different, longer recording (the whole multi-drum sweep) and is not cut to a single rotation's length. The `GameStart` sample plays once the sweep finishes.
 
 Keep the recording aligned with the on-screen sweep via two constants in [`src/3d/constants.ts`](../src/3d/constants.ts): `DRUM_SECONDS_PER_REVOLUTION` (drum spin speed) and `DRUM_CALIBRATION_BEEP_PAUSE_S` (the pause held after each drum for the tower's post-rotation beep). See [API.md → Calibration command](API.md#calibration-command).
 

@@ -28,6 +28,8 @@ module.exports = {
     '.*/audio/audioLibrary$': '<rootDir>/tests/__mocks__/audioLibrary.js',
     // Same reason as audioLibrary: calibrationAudio.ts uses `import.meta.url`.
     '.*/audio/calibrationAudio$': '<rootDir>/tests/__mocks__/calibrationAudio.js',
+    // Same reason as audioLibrary: drumRotationSound.ts uses `import.meta.url`.
+    '.*/audio/drumRotationSound$': '<rootDir>/tests/__mocks__/drumRotationSound.js',
     '\\.svg\\?raw$': '<rootDir>/tests/__mocks__/svgRaw.js',
     '\\.glb\\?url$': '<rootDir>/tests/__mocks__/glbUrl.js',
     '\\.png$': '<rootDir>/tests/__mocks__/pngUrl.js',

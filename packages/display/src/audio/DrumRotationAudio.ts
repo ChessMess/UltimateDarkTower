@@ -105,6 +105,14 @@ export class DrumRotationAudio {
       const arr = await res.arrayBuffer();
       if (this.url !== url) return;
       this.buffer = await ctx.decodeAudioData(arr);
+      // A rotation that began while the buffer was still decoding stayed silent
+      // (no fallback tone, nothing to play yet). Now that the buffer is ready,
+      // start it so that in-progress rotation catches up instead of playing
+      // nothing — fixes the first rotation after a cold load, where the same
+      // gesture that enables audio also kicks off this decode.
+      if (this.enabled && this.active > 0 && !this.source) {
+        this.play();
+      }
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[DrumRotationAudio] failed to load', url, err);

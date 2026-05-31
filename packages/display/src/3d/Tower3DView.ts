@@ -10,6 +10,7 @@ import { SideButtons } from '../shared/SideButtons';
 import { DrumRotationAudio } from '../audio/DrumRotationAudio';
 import { TowerSampleAudio } from '../audio/TowerSampleAudio';
 import { CALIBRATION_SOUND_URL } from '../audio/calibrationAudio';
+import { DRUM_ROTATION_SOUND_URL } from '../audio/drumRotationSound';
 import { DEFAULT_TOWER_SOUND_PACK } from '../audio/audioLibrary';
 import { DEFAULT_SEQUENCE_AUDIO_MAP } from '../audio/sequenceAudio';
 import type { SoundPack } from '../audio/soundPack';
@@ -225,7 +226,15 @@ export class Tower3DView implements ITowerDisplay {
    * after every `applyState` call.
    */
   private stateAppliedListeners: Array<(state: TowerState) => void> = [];
-  private drumAudio: DrumRotationAudio = new DrumRotationAudio();
+  // Plays the bundled drum-rotation recording (DRUM_ROTATION_SOUND_URL) while a
+  // drum is turning. The recording is a finite, complete-rotation clip, so:
+  //   - No loop: it plays once from the start; the start/end refcount + short
+  //     fade cuts it the moment the drum settles, so it never plays longer than
+  //     the rotation (single- or multi-position moves alike).
+  //   - No fallback tone: a missing/failed load degrades to silence rather than
+  //     buzzing. Loaded lazily on first enable (see `drumSoundLoaded` below).
+  private drumAudio: DrumRotationAudio = new DrumRotationAudio({ fallbackTone: false, loop: false });
+  private drumSoundLoaded = false;
   // Dedicated player for the calibration command's bundled sweep recording, kept
   // separate from `drumAudio` so the recording never plays during normal rotations.
   // No fallback tone: it always has a real recording, so a missing/failed load
@@ -249,7 +258,7 @@ export class Tower3DView implements ITowerDisplay {
       enabled: false,
       bindSequenceToSample: false,
       sequenceMapOverride: undefined,
-      drumRotationUrl: null,
+      drumRotationUrl: DRUM_ROTATION_SOUND_URL,
     };
   private drumManager: DrumManager;
 
@@ -665,6 +674,13 @@ export class Tower3DView implements ITowerDisplay {
         this.calibrationSoundLoaded = true;
         this.calibrationAudio.setUrl(CALIBRATION_SOUND_URL);
       }
+      // Likewise load the drum-rotation recording lazily on first enable, unless
+      // a consumer already supplied an explicit drumRotationUrl (drumSoundLoaded
+      // set in the branch below) or cleared it to null.
+      if (config.enabled && !this.drumSoundLoaded && this.audioState.drumRotationUrl !== null) {
+        this.drumSoundLoaded = true;
+        this.drumAudio.setUrl(this.audioState.drumRotationUrl);
+      }
     }
     if (config.bindSequenceToSample !== undefined) {
       this.audioState.bindSequenceToSample = config.bindSequenceToSample;
@@ -673,6 +689,9 @@ export class Tower3DView implements ITowerDisplay {
       this.audioState.sequenceMapOverride = config.sequenceMap;
     }
     if (config.drumRotationUrl !== undefined) {
+      // An explicit URL (or null to force silence) wins over the bundled default
+      // and suppresses the first-enable default load above.
+      this.drumSoundLoaded = true;
       this.audioState.drumRotationUrl = config.drumRotationUrl;
       this.drumAudio.setUrl(config.drumRotationUrl);
     }
