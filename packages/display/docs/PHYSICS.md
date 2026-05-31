@@ -12,7 +12,7 @@ It does **not** affect game state. Skulls are purely a visual layer driven by th
 
 MVP scope:
 
-- Up to `skull.maxCount` simultaneous skulls (default 10). Each `dropSkull()` adds one; the call is a no-op once the cap is reached. `clearSkulls()` removes every active skull.
+- Up to `skull.maxCount` simultaneous skulls (default 30). Each `dropSkull()` adds one; the call is a no-op once the cap is reached. `clearSkulls()` removes every active skull.
 - User-triggered. No state event or sequence currently spawns skulls automatically.
 - No skull-impact audio yet.
 
@@ -175,7 +175,7 @@ A deeply-nested partial. Every field is optional; missing leaves fall back to `D
 | `skull.restitution`        | `number`  | `0.2`   | Next drop      | Bounciness of the skull body. `0` = stick, `1` = perfect bounce.       |
 | `skull.angularDamping`     | `number`  | `1.0`   | Live           | Exponential decay on angular velocity (rolling resistance proxy).      |
 | `skull.linearDamping`      | `number`  | `0.0`   | Live           | Exponential decay on linear velocity. Use sparingly.                   |
-| `skull.maxCount`           | `number`  | `10`    | Live           | Maximum simultaneous skulls. Drops past the cap are no-ops; lowering this does not remove existing skulls. |
+| `skull.maxCount`           | `number`  | `30`    | Live           | Maximum simultaneous skulls. Drops past the cap are no-ops; lowering this does not remove existing skulls. |
 | `skull.modelUrl`           | `string`  | `undefined` | Next drop (async) | URL to a Draco-compressed `.glb` used as the visual mesh. `.stl` is accepted with a warn (heavier, slower); export to Draco GLB from Blender for production. Library caches loaded templates module-globally — repeated attach/detach cycles never re-fetch. See [Authoring skull models](#authoring-skull-models) for the recommended workflow. |
 | `skull.colliderShape`      | `'sphere' \| 'hull'` | `'sphere'` | Next drop | Collider shape. `'hull'` derives a convex hull from `modelUrl`'s point cloud; falls back to sphere when `modelUrl` is unset or the hull is degenerate. May need re-tuning of friction/restitution. |
 | `skull.meshFactory`        | `(r: number) => Object3D` | `undefined` | Next drop | Per-spawn visual override. Forces `colliderShape` to `'sphere'`. The consumer owns asset lifecycle — the manager only calls `removeFromParent()` on despawn. Not JSON-serializable (function). |
@@ -233,7 +233,7 @@ Copy-paste into an editor (or the example app's "Physics" config tab) to see eve
 ```json
 {
   "debug":  { "colliders": false, "sealColliders": false },
-  "skull":  { "radiusFactor": 0.025, "friction": 0.8, "restitution": 0.2, "angularDamping": 1.0, "linearDamping": 0.0, "maxCount": 10, "modelUrl": null, "colliderShape": "sphere", "density": null, "autoDropOnSkullCountIncrease": false },
+  "skull":  { "radiusFactor": 0.025, "friction": 0.8, "restitution": 0.2, "angularDamping": 1.0, "linearDamping": 0.0, "maxCount": 30, "modelUrl": null, "colliderShape": "sphere", "density": null, "autoDropOnSkullCountIncrease": false },
   "drum":   { "innerRadiusFactor": 0.30, "halfHeightFactor": 0.15, "friction": 0.15 },
   "seal":   { "friction": 0.05 },
   "static": { "friction": 0.1 },

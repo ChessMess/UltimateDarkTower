@@ -20,7 +20,7 @@ export const DEFAULT_PHYSICS: ResolvedPhysicsConfig = {
     // skull in a couple of seconds without affecting falls/slides.
     angularDamping: 1.0,
     linearDamping: 0.0,
-    maxCount: 10,
+    maxCount: 30,
     modelUrl: undefined,
     colliderShape: 'sphere',
     density: undefined,
