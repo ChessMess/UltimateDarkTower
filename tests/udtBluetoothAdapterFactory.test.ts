@@ -131,6 +131,14 @@ describe('BluetoothAdapterFactory', () => {
       expect((adapter as MockAdapterResult)._type).toBe('node');
     });
 
+    test('should create a no-op adapter for NONE platform', () => {
+      // NoopBluetoothAdapter is not mocked, so this exercises the real adapter.
+      const adapter = BluetoothAdapterFactory.create(BluetoothPlatform.NONE);
+      expect(adapter).toBeDefined();
+      expect(adapter.isConnected()).toBe(false);
+      expect(adapter.isGattConnected()).toBe(false);
+    });
+
     test('should throw for unsupported platform value', () => {
       expect(() => {
         BluetoothAdapterFactory.create('unsupported' as BluetoothPlatform);

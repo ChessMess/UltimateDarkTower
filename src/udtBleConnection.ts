@@ -63,8 +63,12 @@ export class UdtBleConnection {
         brokenSeals: () => string[];
     } | null = null;
 
-    // Bluetooth adapter (platform-agnostic)
-    private bluetoothAdapter: IBluetoothAdapter;
+    // Bluetooth adapter (platform-agnostic).
+    // Null until an adapter is provided or lazily created on first connect() —
+    // construction never triggers platform detection, so creating an
+    // UltimateDarkTower in a non-Bluetooth environment (e.g. iOS Safari) does
+    // not throw. The detection error, if any, surfaces at connect() time.
+    private bluetoothAdapter: IBluetoothAdapter | null = null;
 
     // Connection state
     isConnected: boolean = false;
@@ -118,21 +122,47 @@ export class UdtBleConnection {
         this.responseProcessor = new TowerResponseProcessor();
         this.recorder = recorder ?? null;
 
-        // Use provided adapter or auto-detect platform
-        this.bluetoothAdapter = adapter || BluetoothAdapterFactory.create(BluetoothPlatform.AUTO);
+        // If an explicit adapter was provided, wire it up now. Otherwise defer
+        // platform detection/creation until connect() so construction never
+        // throws in environments without Bluetooth.
+        if (adapter) {
+            this.bluetoothAdapter = adapter;
+            this.wireAdapterCallbacks(adapter);
+        }
+    }
 
-        // Set up adapter event callbacks
-        this.bluetoothAdapter.onCharacteristicValueChanged((data: Uint8Array) => {
+    /**
+     * Wires this connection's internal handlers onto a Bluetooth adapter.
+     * Called when an adapter is supplied at construction, or when one is
+     * lazily created on first connect().
+     */
+    private wireAdapterCallbacks(adapter: IBluetoothAdapter): void {
+        adapter.onCharacteristicValueChanged((data: Uint8Array) => {
             this.onRxData(data);
         });
 
-        this.bluetoothAdapter.onDisconnect(() => {
+        adapter.onDisconnect(() => {
             this.onTowerDeviceDisconnected();
         });
 
-        this.bluetoothAdapter.onBluetoothAvailabilityChanged((available: boolean) => {
+        adapter.onBluetoothAvailabilityChanged((available: boolean) => {
             this.bleAvailabilityChange(available);
         });
+    }
+
+    /**
+     * Returns the Bluetooth adapter, lazily creating one via platform
+     * auto-detection on first use. Platform-detection errors (e.g. no Web
+     * Bluetooth on iOS) surface here, at connect time, rather than at
+     * construction.
+     */
+    private ensureAdapter(): IBluetoothAdapter {
+        if (!this.bluetoothAdapter) {
+            const adapter = BluetoothAdapterFactory.create(BluetoothPlatform.AUTO);
+            this.bluetoothAdapter = adapter;
+            this.wireAdapterCallbacks(adapter);
+        }
+        return this.bluetoothAdapter;
     }
 
     setDiagnosticsSnapshotProviders(providers: {
@@ -175,7 +205,8 @@ export class UdtBleConnection {
         }
         this.logger.info("Looking for Tower...", '[UDT]');
         try {
-            await this.bluetoothAdapter.connect(
+            const adapter = this.ensureAdapter();
+            await adapter.connect(
                 TOWER_DEVICE_NAME,
                 [UART_SERVICE_UUID, DIS_SERVICE_UUID]
             );
@@ -208,8 +239,9 @@ export class UdtBleConnection {
             this.recordIncident('user_initiated');
         }
 
-        if (this.bluetoothAdapter.isConnected()) {
-            await this.bluetoothAdapter.disconnect();
+        const adapter = this.bluetoothAdapter;
+        if (adapter?.isConnected()) {
+            await adapter.disconnect();
             this.logger.info("Tower disconnected", '[UDT]');
         }
 
@@ -221,8 +253,12 @@ export class UdtBleConnection {
      * Used by UdtTowerCommands instead of direct characteristic access.
      */
     async writeCommand(command: Uint8Array): Promise<void> {
+        const adapter = this.bluetoothAdapter;
+        if (!adapter) {
+            throw new Error('Cannot write command: not connected (no Bluetooth adapter)');
+        }
         this.recorder?.recordCommandPayload('cmd_sent', command, { len: command.length });
-        return await this.bluetoothAdapter.writeCharacteristic(command);
+        return await adapter.writeCharacteristic(command);
     }
 
     /**
@@ -388,7 +424,7 @@ export class UdtBleConnection {
             return;
         }
 
-        if (!this.bluetoothAdapter.isGattConnected()) {
+        if (!(this.bluetoothAdapter?.isGattConnected() ?? false)) {
             this.logger.warn('GATT connection lost detected during health check', '[UDT][BLE]');
             this.recordIncident('gatt_health_check');
             this.handleDisconnection();
@@ -413,7 +449,7 @@ export class UdtBleConnection {
                     this.logger.info('Verifying tower connection status before triggering disconnection...', '[UDT][BLE]');
 
                     // Check if GATT is still connected via the adapter
-                    if (this.bluetoothAdapter.isGattConnected()) {
+                    if (this.bluetoothAdapter?.isGattConnected() ?? false) {
                         this.logger.info('GATT connection still available - heartbeat timeout may be temporary', '[UDT][BLE]');
 
                         // Near-miss: the heartbeat went late but the GATT is still up. This is a
@@ -474,7 +510,7 @@ export class UdtBleConnection {
             return false;
         }
 
-        return this.bluetoothAdapter.isGattConnected();
+        return this.bluetoothAdapter?.isGattConnected() ?? false;
     }
 
     getConnectionStatus(): ConnectionStatus {
@@ -484,7 +520,7 @@ export class UdtBleConnection {
 
         return {
             isConnected: this.isConnected,
-            isGattConnected: this.bluetoothAdapter.isGattConnected(),
+            isGattConnected: this.bluetoothAdapter?.isGattConnected() ?? false,
             lastBatteryHeartbeatMs: timeSinceLastBattery,
             lastCommandResponseMs: timeSinceLastCommand,
             batteryHeartbeatHealthy: timeSinceLastBattery >= 0 && timeSinceLastBattery < this.batteryHeartbeatTimeout,
@@ -501,9 +537,11 @@ export class UdtBleConnection {
     }
 
     private async readDeviceInformation() {
+        const adapter = this.bluetoothAdapter;
+        if (!adapter) return;
         try {
             this.logger.info('Reading device information service...', '[UDT][BLE]');
-            this.deviceInformation = await this.bluetoothAdapter.readDeviceInformation();
+            this.deviceInformation = await adapter.readDeviceInformation();
 
             // Log device information
             for (const [key, value] of Object.entries(this.deviceInformation)) {
@@ -528,7 +566,7 @@ export class UdtBleConnection {
             await this.disconnect();
         }
 
-        await this.bluetoothAdapter.cleanup();
+        await this.bluetoothAdapter?.cleanup();
     }
 
 }

@@ -84,6 +84,21 @@ describe('UdtBleConnection', () => {
             expect(callbacks.onTowerDisconnect).not.toHaveBeenCalled();
         });
     });
+    describe('deferred adapter (no adapter provided)', () => {
+        test('should construct without an adapter and without throwing', () => {
+            expect(() => new udtBleConnection_1.UdtBleConnection(logger, callbacks)).not.toThrow();
+        });
+        test('getConnectionStatus reports not connected before connect', () => {
+            const deferred = new udtBleConnection_1.UdtBleConnection(logger, callbacks);
+            const status = deferred.getConnectionStatus();
+            expect(status.isConnected).toBe(false);
+            expect(status.isGattConnected).toBe(false);
+        });
+        test('writeCommand throws a clear error when never connected', async () => {
+            const deferred = new udtBleConnection_1.UdtBleConnection(logger, callbacks);
+            await expect(deferred.writeCommand(new Uint8Array([0x00]))).rejects.toThrow(/not connected/i);
+        });
+    });
     describe('disconnect', () => {
         test('should disconnect and clear state', async () => {
             await connection.connect();

@@ -5,6 +5,16 @@ var __export = (target, all) => {
 };
 
 // src/udtConstants.ts
+var TOWER_COMMANDS = {
+  towerState: 0,
+  // not a sendable command
+  doorReset: 1,
+  unjamDrums: 2,
+  resetCounter: 3,
+  calibration: 4,
+  overwriteDrumStates: 5
+  // go no further!
+};
 var GLYPHS = {
   cleanse: { name: "Cleanse", level: "top", side: "north" },
   quest: { name: "Quest", level: "top", side: "south" },
@@ -42,6 +52,17 @@ var TOWER_LIGHT_SEQUENCES = {
   monthStarted: 19,
   wholeTowerBreathing: 20,
   slowFlareThenFade: 21
+};
+var TOWER_MESSAGES = {
+  TOWER_STATE: { name: "Tower State", value: 0, critical: false },
+  INVALID_STATE: { name: "Invalid State", value: 1, critical: true },
+  HARDWARE_FAILURE: { name: "Hardware Failure", value: 2, critical: true },
+  MECH_JIGGLE_TRIGGERED: { name: "Unjam Jiggle Triggered", value: 3, critical: true },
+  MECH_DURATION: { name: "Rotation Duration", value: 4, critical: false },
+  MECH_UNEXPECTED_TRIGGER: { name: "Unexpected Trigger", value: 5, critical: true },
+  DIFFERENTIAL_READINGS: { name: "Diff Voltage Readings", value: 6, critical: false },
+  BATTERY_READING: { name: "Battery Level", value: 7, critical: false },
+  CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false }
 };
 var TOWER_LAYERS = {
   TOP_RING: 0,
@@ -198,6 +219,28 @@ var VOLUME_DESCRIPTIONS = {
   2: "Quiet",
   3: "Mute"
 };
+
+// src/udtHelpers.ts
+function createDefaultTowerState() {
+  return {
+    drum: [
+      { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+      { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
+      { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false }
+    ],
+    layer: [
+      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
+      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] }
+    ],
+    audio: { sample: 0, loop: false, volume: 0 },
+    beam: { count: 0, fault: false },
+    led_sequence: 0
+  };
+}
 
 // ../UltimateDarkTowerDisplay/src/styles.ts
 var injected = false;
@@ -1051,8 +1094,13 @@ var DRUM_LEVELS_BY_INDEX = [
   "bottom"
 ];
 var DRUM_RADIANS_PER_SIDE = -Math.PI / 2;
-var DRUM_ROTATION_DURATION_S = 0.6;
-var DRUM_ROTATION_EASE = "power2.inOut";
+var DRUM_SECONDS_PER_REVOLUTION = 3.8;
+var DRUM_ROTATION_EPSILON = 1e-4;
+function drumRotationDurationS(angleRad) {
+  return DRUM_SECONDS_PER_REVOLUTION * (Math.abs(angleRad) / (2 * Math.PI));
+}
+var DRUM_ROTATION_EASE = "none";
+var DRUM_CALIBRATION_BEEP_PAUSE_S = 0.9;
 var CORNER_AZIMUTH = [
   Math.PI / 4,
   3 * Math.PI / 4,
@@ -1087,6 +1135,7 @@ var RED_LIGHT_LAYOUT = {
   cornerNearSurfaceRadius: 0.52
 };
 var BLOOM_LAYER = 1;
+var HDR_PROXY_SCALE = 3;
 
 // ../UltimateDarkTowerDisplay/src/shared/SideButtons.ts
 var SideButtons = class {
@@ -33149,7 +33198,11 @@ function interceptControlUp(event) {
 
 // ../UltimateDarkTowerDisplay/src/audio/DrumRotationAudio.ts
 var DrumRotationAudio = class {
-  constructor() {
+  /**
+   * @param options.fallbackTone Play the sawtooth placeholder when no buffer is loaded. Default true.
+   * @param options.loop Loop the decoded buffer while a rotation is active. Default true; set false for a finite one-shot clip.
+   */
+  constructor(options = {}) {
     this.ctx = null;
     this.buffer = null;
     this.gain = null;
@@ -33157,15 +33210,28 @@ var DrumRotationAudio = class {
     this.url = null;
     this.enabled = false;
     this.active = 0;
+    this.loadPromise = null;
+    this.fallbackTone = options.fallbackTone ?? true;
+    this.loop = options.loop ?? true;
   }
   /** Pass null to clear the asset and use the procedural fallback. Decode runs in the background. */
   setUrl(url2) {
     this.url = url2;
     if (url2 === null) {
       this.buffer = null;
+      this.loadPromise = null;
       return;
     }
-    void this.loadUrl(url2);
+    this.loadPromise = this.loadUrl(url2);
+  }
+  /**
+   * Resolve once the current URL's buffer has finished decoding (or immediately
+   * if no URL is set or the load failed). Lets callers that must hear the real
+   * recording on their first `startRotation` — e.g. the calibration sweep — wait
+   * out the background decode instead of racing it and falling back to the tone.
+   */
+  whenLoaded() {
+    return this.loadPromise ?? Promise.resolve();
   }
   setEnabled(enabled) {
     if (this.enabled === enabled) return;
@@ -33206,6 +33272,9 @@ var DrumRotationAudio = class {
       const arr = await res.arrayBuffer();
       if (this.url !== url2) return;
       this.buffer = await ctx.decodeAudioData(arr);
+      if (this.enabled && this.active > 0 && !this.source) {
+        this.play();
+      }
     } catch (err) {
       console.error("[DrumRotationAudio] failed to load", url2, err);
     }
@@ -33220,6 +33289,7 @@ var DrumRotationAudio = class {
     return this.ctx;
   }
   play() {
+    if (!this.buffer && !this.fallbackTone) return;
     const ctx = this.ensureCtx(true);
     if (!this.gain) {
       this.gain = ctx.createGain();
@@ -33232,7 +33302,7 @@ var DrumRotationAudio = class {
     if (this.buffer) {
       const src = ctx.createBufferSource();
       src.buffer = this.buffer;
-      src.loop = true;
+      src.loop = this.loop;
       source = src;
     } else {
       const osc = ctx.createOscillator();
@@ -33515,6 +33585,12 @@ var TowerSampleAudio = class {
   }
 };
 
+// ../UltimateDarkTowerDisplay/src/audio/calibrationAudio.ts
+var CALIBRATION_SOUND_URL = new URL("./assets/drumCalibration.ogg", import.meta.url).href;
+
+// ../UltimateDarkTowerDisplay/src/audio/drumRotationSound.ts
+var DRUM_ROTATION_SOUND_URL = new URL("./assets/drumRotation.ogg", import.meta.url).href;
+
 // ../UltimateDarkTowerDisplay/src/audio/audioLibrary.ts
 var A = TOWER_AUDIO_LIBRARY;
 var OFFICIAL_AUDIO_FILES = {
@@ -33787,6 +33863,10 @@ function buildSequenceAudioMap(entries) {
 var DEFAULT_SEQUENCE_AUDIO_MAP = Object.freeze(buildSequenceAudioMap(DEFAULT_SEQUENCE_AUDIO_CONFIG));
 
 // ../UltimateDarkTowerDisplay/src/3d/utils.ts
+function applyHdrColor(target, hex3) {
+  const base = new Color(hex3);
+  target.setRGB(base.r * HDR_PROXY_SCALE, base.g * HDR_PROXY_SCALE, base.b * HDR_PROXY_SCALE);
+}
 var LED_Y_FRACTIONS = [
   LED_LAYOUT.topY,
   LED_LAYOUT.middleY,
@@ -33870,16 +33950,15 @@ var DEFAULT_LIGHTING = {
       enabled: true,
       strength: 1.5,
       radius: 0.5,
-      threshold: 0,
+      // Only HDR-bright pixels bloom: the LED proxy/halo materials are scaled
+      // by HDR_PROXY_SCALE (toneMapped: false) so `material.color × driver.v
+      // opacity` crosses 1.0 at peak. Bloom — not per-LED PointLights — is what
+      // drives the perceived LED brightness.
+      threshold: 1,
       resolutionScale: 0.5
     }
   },
   leds: {
-    red: {
-      color: 16719904,
-      maxHalo: 1,
-      haloDistanceFraction: 0.2
-    },
     sealBacklights: {
       enabled: true,
       color: 16719904,
@@ -33887,11 +33966,6 @@ var DEFAULT_LIGHTING = {
       // 0.15 puts the proxy between the central axis and the drum inner wall so
       // light traverses drum-interior → glyph/chute → seal → camera correctly.
       radiusFactor: 0.15,
-      // Accent PointLight (atmospheric spill onto drum interior).
-      intensity: 2,
-      distanceFactor: 0.2,
-      decay: 2,
-      accentLight: true,
       backlightWhenBroken: true,
       proxy: {
         enabled: true,
@@ -34012,19 +34086,10 @@ function resolveLighting(user, base = DEFAULT_LIGHTING) {
       }
     },
     leds: {
-      red: {
-        color: user?.leds?.red?.color ?? base.leds.red.color,
-        maxHalo: user?.leds?.red?.maxHalo ?? base.leds.red.maxHalo,
-        haloDistanceFraction: user?.leds?.red?.haloDistanceFraction ?? base.leds.red.haloDistanceFraction
-      },
       sealBacklights: {
         enabled: user?.leds?.sealBacklights?.enabled ?? base.leds.sealBacklights.enabled,
         color: user?.leds?.sealBacklights?.color ?? base.leds.sealBacklights.color,
         radiusFactor: user?.leds?.sealBacklights?.radiusFactor ?? DEFAULT_LIGHTING.leds.sealBacklights.radiusFactor,
-        intensity: user?.leds?.sealBacklights?.intensity ?? base.leds.sealBacklights.intensity,
-        distanceFactor: user?.leds?.sealBacklights?.distanceFactor ?? DEFAULT_LIGHTING.leds.sealBacklights.distanceFactor,
-        decay: user?.leds?.sealBacklights?.decay ?? base.leds.sealBacklights.decay,
-        accentLight: user?.leds?.sealBacklights?.accentLight ?? base.leds.sealBacklights.accentLight,
         backlightWhenBroken: user?.leds?.sealBacklights?.backlightWhenBroken ?? DEFAULT_LIGHTING.leds.sealBacklights.backlightWhenBroken,
         proxy: {
           enabled: user?.leds?.sealBacklights?.proxy?.enabled ?? DEFAULT_LIGHTING.leds.sealBacklights.proxy.enabled,
@@ -38660,10 +38725,8 @@ var LedEffectAnimator = class {
     return `${side}:${level}`;
   }
   writeLed(ref, layer, sealKey4) {
-    const { driver, redLight } = ref;
+    const { driver } = ref;
     const cfg = this.getConfig();
-    const { red } = cfg.leds;
-    redLight.intensity = driver.v * red.maxHalo;
     if (sealKey4 && this.sealManager) {
       this.sealManager.setSealLed(sealKey4, driver.v, cfg);
     }
@@ -57285,12 +57348,12 @@ var SealManager = class {
         const proxyRadius = modelRadius * cfg.proxy.sizeFactor;
         const proxyGeo = new SphereGeometry(proxyRadius, 8, 6);
         const proxyMat = new MeshBasicMaterial({
-          color: cfg.color,
           transparent: true,
           opacity: 0,
           depthWrite: false,
           toneMapped: false
         });
+        applyHdrColor(proxyMat.color, cfg.color);
         const proxyMesh = new Mesh(proxyGeo, proxyMat);
         proxyMesh.position.set(x, y, z2);
         proxyMesh.layers.enable(BLOOM_LAYER);
@@ -57300,7 +57363,6 @@ var SealManager = class {
         proxyMesh.visible = false;
         model.add(proxyMesh);
         const haloMat = new SpriteMaterial({
-          color: cfg.color,
           map: gradTex,
           transparent: true,
           opacity: 0,
@@ -57308,6 +57370,7 @@ var SealManager = class {
           depthWrite: false,
           toneMapped: false
         });
+        applyHdrColor(haloMat.color, cfg.color);
         const haloSprite = new Sprite(haloMat);
         const haloScale = modelRadius * cfg.halo.sizeFactor;
         haloSprite.scale.setScalar(haloScale);
@@ -57316,17 +57379,7 @@ var SealManager = class {
         haloSprite.renderOrder = 3;
         haloSprite.visible = false;
         model.add(haloSprite);
-        const light = new PointLight(
-          cfg.color,
-          0,
-          modelRadius * cfg.distanceFactor,
-          cfg.decay
-        );
-        light.position.set(x, y, z2);
-        light.visible = false;
-        model.add(light);
         this.sealBacklights.set(key, {
-          light,
           proxyMesh,
           haloSprite,
           sealNode,
@@ -57336,9 +57389,9 @@ var SealManager = class {
     }
   }
   /**
-   * Drive proxy opacity, halo opacity, and accent PointLight intensity from
-   * `driverV` (0–1). This is the single write path — both the LedEffectAnimator
-   * (effect changes) and applySeals (broken-list changes) call through here.
+   * Drive proxy + halo opacity from `driverV` (0–1). This is the single write
+   * path — both the LedEffectAnimator (effect changes) and applySeals
+   * (broken-list changes) call through here.
    */
   setSealLed(key, driverV, lighting) {
     const ref = this.sealBacklights.get(key);
@@ -57347,7 +57400,6 @@ var SealManager = class {
     if (!cfg.enabled) {
       ref.proxyMesh.visible = false;
       ref.haloSprite.visible = false;
-      ref.light.intensity = 0;
       return;
     }
     ref.driver.v = driverV;
@@ -57363,11 +57415,6 @@ var SealManager = class {
       ref.haloSprite.visible = on;
     } else {
       ref.haloSprite.visible = false;
-    }
-    if (cfg.accentLight) {
-      ref.light.intensity = driverV * cfg.intensity;
-    } else {
-      ref.light.intensity = 0;
     }
   }
   /**
@@ -57405,8 +57452,6 @@ var SealManager = class {
   /** Reapply lighting config to all seal LED visuals. */
   updateLighting(lighting, modelRadius) {
     const cfg = lighting.leds.sealBacklights;
-    const color = new Color(cfg.color);
-    const backlightDistance = modelRadius * cfg.distanceFactor;
     for (const [key, ref] of this.sealBacklights) {
       const pose = computeSealLedPose(
         this.layerFromKey(key),
@@ -57416,17 +57461,13 @@ var SealManager = class {
       );
       const { x, y, z: z2 } = pose.position;
       ref.proxyMesh.position.set(x, y, z2);
-      ref.proxyMesh.material.color.copy(color);
+      applyHdrColor(ref.proxyMesh.material.color, cfg.color);
       const proxyRadius = modelRadius * cfg.proxy.sizeFactor;
       ref.proxyMesh.scale.setScalar(proxyRadius / ref.proxyMesh.geometry.parameters.radius);
       ref.haloSprite.position.set(x, y, z2);
-      ref.haloSprite.material.color.copy(color);
+      applyHdrColor(ref.haloSprite.material.color, cfg.color);
       const haloScale = modelRadius * cfg.halo.sizeFactor;
       ref.haloSprite.scale.setScalar(haloScale);
-      ref.light.position.set(x, y, z2);
-      ref.light.color.copy(color);
-      ref.light.distance = backlightDistance;
-      ref.light.decay = cfg.decay;
       this.setSealLed(key, ref.driver.v, lighting);
     }
   }
@@ -57474,7 +57515,6 @@ var SealManager = class {
   /** Remove all LED visuals from their parents and clear both maps. */
   dispose() {
     for (const ref of this.sealBacklights.values()) {
-      ref.light.removeFromParent();
       ref.proxyMesh.geometry.dispose();
       ref.proxyMesh.material.dispose();
       ref.proxyMesh.removeFromParent();
@@ -57568,10 +57608,11 @@ var DrumManager = class {
       const drum = drums[i];
       if (!drum) continue;
       const rawTarget = drum.position * DRUM_RADIANS_PER_SIDE;
-      const finalY = ref.currentY + shortestArcDelta(ref.currentY, rawTarget);
+      const delta = shortestArcDelta(ref.currentY, rawTarget);
+      const finalY = ref.currentY + delta;
       ref.tween?.kill();
       ref.tween = null;
-      if (!animate || finalY === ref.currentY) {
+      if (!animate || Math.abs(delta) < DRUM_ROTATION_EPSILON) {
         ref.node.rotation.y = finalY;
         ref.currentY = finalY;
         continue;
@@ -57586,7 +57627,7 @@ var DrumManager = class {
       };
       ref.tween = gsapWithCSS.to(ref, {
         currentY: finalY,
-        duration: DRUM_ROTATION_DURATION_S,
+        duration: drumRotationDurationS(delta),
         ease: DRUM_ROTATION_EASE,
         onUpdate: () => {
           ref.node.rotation.y = ref.currentY;
@@ -57598,6 +57639,49 @@ var DrumManager = class {
         onInterrupt: endOnce
       });
     }
+  }
+  /**
+   * Calibration homing sweep for a single drum level: spin it to position 0
+   * (north), adding one full extra revolution so the motion reads as a
+   * deliberate "hunt" even when the drum is already near zero. Resolves when the
+   * tween settles. Resolves immediately if the level is not present in the model.
+   *
+   * `audio` selects which rotation-audio handle to ring for this sweep, defaulting
+   * to the shared instance. The calibration command passes a dedicated player so
+   * its recording plays without touching the normal drum-rotation audio.
+   */
+  calibrateDrum(level, audio = this.audio ?? null) {
+    const ref = this.drumRefs.get(level);
+    if (!ref) return Promise.resolve();
+    const toZero = shortestArcDelta(ref.currentY, 0);
+    const fullTurn = DRUM_RADIANS_PER_SIDE * 4;
+    const sweep = toZero + fullTurn;
+    const finalY = ref.currentY + sweep;
+    ref.tween?.kill();
+    ref.tween = null;
+    audio?.startRotation();
+    return new Promise((resolve) => {
+      let ended = false;
+      const endOnce = () => {
+        if (ended) return;
+        ended = true;
+        audio?.endRotation();
+        resolve();
+      };
+      ref.tween = gsapWithCSS.to(ref, {
+        currentY: finalY,
+        duration: drumRotationDurationS(sweep),
+        ease: DRUM_ROTATION_EASE,
+        onUpdate: () => {
+          ref.node.rotation.y = ref.currentY;
+        },
+        onComplete: () => {
+          ref.tween = null;
+          endOnce();
+        },
+        onInterrupt: endOnce
+      });
+    });
   }
   /** Kill in-flight rotations and balance the audio refcount. */
   stopAll() {
@@ -60750,7 +60834,23 @@ var Tower3DView = class {
      * after every `applyState` call.
      */
     this.stateAppliedListeners = [];
-    this.drumAudio = new DrumRotationAudio();
+    // Plays the bundled drum-rotation recording (DRUM_ROTATION_SOUND_URL) while a
+    // drum is turning. The recording is a finite, complete-rotation clip, so:
+    //   - No loop: it plays once from the start; the start/end refcount + short
+    //     fade cuts it the moment the drum settles, so it never plays longer than
+    //     the rotation (single- or multi-position moves alike).
+    //   - No fallback tone: a missing/failed load degrades to silence rather than
+    //     buzzing. Loaded lazily on first enable (see `drumSoundLoaded` below).
+    this.drumAudio = new DrumRotationAudio({ fallbackTone: false, loop: false });
+    this.drumSoundLoaded = false;
+    // Dedicated player for the calibration command's bundled sweep recording, kept
+    // separate from `drumAudio` so the recording never plays during normal rotations.
+    // No fallback tone: it always has a real recording, so a missing/failed load
+    // degrades to silence (+ the visual sweep and Game Start) rather than a buzz.
+    // No loop: it's a finite recording of the whole sweep, so it plays once instead
+    // of restarting (replaying its opening rotation sound) if the visible sweep runs long.
+    this.calibrationAudio = new DrumRotationAudio({ fallbackTone: false, loop: false });
+    this.calibrationSoundLoaded = false;
     this.towerSampleAudio = new TowerSampleAudio();
     // Resolved audio state. `sequenceMapOverride` holds the user-supplied
     // override; `activeSequenceMap()` resolves it against the pack/default at
@@ -60760,7 +60860,7 @@ var Tower3DView = class {
       enabled: false,
       bindSequenceToSample: false,
       sequenceMapOverride: void 0,
-      drumRotationUrl: null
+      drumRotationUrl: DRUM_ROTATION_SOUND_URL
     };
     this.wrapper = null;
     this.canvasContainer = null;
@@ -60790,15 +60890,6 @@ var Tower3DView = class {
     this.ledRefs = /* @__PURE__ */ new Map();
     this.ledAnimator = null;
     this.sequenceAnimator = null;
-    /**
-     * Tracks whether the bulk LED-lights gate is open. When false (idle), every
-     * LED-related PointLight is `visible: false` so the fragment shader iterates
-     * zero of them per fragment (pre-fix idle perf). When true (any LED active),
-     * all 36 lights are `visible: true`. Both program variants are pre-compiled
-     * at scene init (see `prewarmLightPrograms`) so gate flips don't recompile.
-     * See `docs/framerate-issue.md`.
-     */
-    this.lightsGateOpen = false;
     this.container = container;
     this.modelUrl = options.modelUrl;
     this.dracoDecoderPath = options.dracoDecoderPath ?? DEFAULT_DRACO_DECODER_PATH;
@@ -61037,6 +61128,35 @@ var Tower3DView = class {
     return started;
   }
   /**
+   * Run the hardware calibration sequence: spin each drum to its home position
+   * one level at a time (top → middle → bottom), then play the Game Start
+   * sound. Resolves when the sequence finishes. Resolves immediately if the
+   * model has not loaded yet.
+   *
+   * Audio only sounds when audio is enabled (after a user gesture). The sweep
+   * plays a bundled calibration recording via a dedicated audio handle
+   * ({@link calibrationAudio}) — distinct from the normal drum-rotation audio, so
+   * it is heard only during calibration, never on ordinary drum rotations. A
+   * {@link DRUM_CALIBRATION_BEEP_PAUSE_S} pause after each drum keeps the visible
+   * sweep aligned with the recording's post-rotation beeps.
+   */
+  async runCalibrationSequence() {
+    if (!this.model) return;
+    await this.calibrationAudio.whenLoaded();
+    this.calibrationAudio.startRotation();
+    try {
+      for (const level of ["top", "middle", "bottom"]) {
+        await this.drumManager.calibrateDrum(level, this.calibrationAudio);
+        if (DRUM_CALIBRATION_BEEP_PAUSE_S > 0) {
+          await new Promise((resolve) => setTimeout(resolve, DRUM_CALIBRATION_BEEP_PAUSE_S * 1e3));
+        }
+      }
+    } finally {
+      this.calibrationAudio.endRotation();
+    }
+    this.playSample(TOWER_AUDIO_LIBRARY.GameStart.value);
+  }
+  /**
    * Return the fully-resolved audio configuration. Every field is populated:
    * `pack`, `enabled`, `bindSequenceToSample`, `sequenceMap` (the effective
    * map after fallback resolution), and `drumRotationUrl`.
@@ -61064,6 +61184,15 @@ var Tower3DView = class {
       this.audioState.enabled = config4.enabled;
       this.towerSampleAudio.setEnabled(config4.enabled);
       this.drumAudio.setEnabled(config4.enabled);
+      this.calibrationAudio.setEnabled(config4.enabled);
+      if (config4.enabled && !this.calibrationSoundLoaded) {
+        this.calibrationSoundLoaded = true;
+        this.calibrationAudio.setUrl(CALIBRATION_SOUND_URL);
+      }
+      if (config4.enabled && !this.drumSoundLoaded && this.audioState.drumRotationUrl !== null) {
+        this.drumSoundLoaded = true;
+        this.drumAudio.setUrl(this.audioState.drumRotationUrl);
+      }
     }
     if (config4.bindSequenceToSample !== void 0) {
       this.audioState.bindSequenceToSample = config4.bindSequenceToSample;
@@ -61072,6 +61201,7 @@ var Tower3DView = class {
       this.audioState.sequenceMapOverride = config4.sequenceMap;
     }
     if (config4.drumRotationUrl !== void 0) {
+      this.drumSoundLoaded = true;
       this.audioState.drumRotationUrl = config4.drumRotationUrl;
       this.drumAudio.setUrl(config4.drumRotationUrl);
     }
@@ -61266,14 +61396,15 @@ var Tower3DView = class {
     };
   }
   /**
-   * Pre-compile shader programs for both the "all 36 LED lights visible" and
-   * "all 36 LED lights invisible" states so runtime gate flips hit the program
-   * cache and never trigger a ~880 ms shader-recompile stall. Called once from
-   * the model-load callback after `buildLeds` and `buildSealBacklights`. Uses
-   * Three.js's `WebGLRenderer.compileAsync` which leverages the
+   * Pre-compile the LED proxy/halo bloom-layer shader programs (plus the
+   * BloomManager's `darkMaterial` and the `UnrealBloomPass` blur materials) at
+   * scene init, so the first sequence start doesn't pay a synchronous
+   * shader-compile stall. Called once from the model-load callback after
+   * `buildLeds` and `buildSealBacklights`. Uses Three.js's
+   * `WebGLRenderer.compileAsync`, which leverages the
    * `KHR_parallel_shader_compile` extension when available.
    */
-  async prewarmLightPrograms() {
+  async prewarmBloomPrograms() {
     if (!this.scene || !this.camera || !this.renderer) return;
     const setMeshesVisible = (visible) => {
       for (const ref of this.ledRefs.values()) {
@@ -61286,11 +61417,6 @@ var Tower3DView = class {
       }
     };
     setMeshesVisible(true);
-    this.setBulkLightsVisible(true);
-    await this.renderer.compileAsync(this.scene, this.camera);
-    if (!this.scene || !this.camera || !this.renderer) return;
-    this.renderOnce();
-    this.setBulkLightsVisible(false);
     await this.renderer.compileAsync(this.scene, this.camera);
     if (!this.scene || !this.camera || !this.renderer) return;
     this.renderOnce();
@@ -61301,39 +61427,6 @@ var Tower3DView = class {
     if (!this.renderer || !this.scene || !this.camera) return;
     if (this.bloomManager) this.bloomManager.render();
     else this.renderer.render(this.scene, this.camera);
-  }
-  /**
-   * Bulk-toggle visibility on all 36 LED-related PointLights together. Owned
-   * by Tower3DView (not LedEffectAnimator / SealManager) because the goal is
-   * a stable lights-count hash for the program cache. Per-frame visibility
-   * toggling on individual lights causes shader recompiles (see prewarm).
-   */
-  setBulkLightsVisible(visible) {
-    for (const ref of this.ledRefs.values()) {
-      ref.redLight.visible = visible;
-    }
-    const accentEnabled = this.lighting.leds.sealBacklights.accentLight;
-    for (const ref of this.sealManager.sealBacklights.values()) {
-      ref.light.visible = visible && accentEnabled;
-    }
-    this.lightsGateOpen = visible;
-  }
-  /**
-   * Per-tick check called from the render loop. If any LED is currently lit
-   * (driver.v > 0.001), open the gate; otherwise close it. State transitions
-   * use the pre-warmed program cache → no recompile.
-   */
-  updateLightsGate() {
-    let anyActive = false;
-    for (const ref of this.ledRefs.values()) {
-      if (ref.driver.v > 1e-3) {
-        anyActive = true;
-        break;
-      }
-    }
-    if (anyActive !== this.lightsGateOpen) {
-      this.setBulkLightsVisible(anyActive);
-    }
   }
   /** Toggle the shadow-catching ground disc. Builds lazily on first enable. */
   setGroundDiscVisible(visible) {
@@ -61376,9 +61469,6 @@ var Tower3DView = class {
     this.sequenceAnimator = null;
     this.ledAnimator?.dispose();
     this.ledAnimator = null;
-    for (const ref of this.ledRefs.values()) {
-      ref.redLight.removeFromParent();
-    }
     this.ledRefs.clear();
     this.sealManager.dispose();
     this.drumManager.dispose();
@@ -61386,6 +61476,7 @@ var Tower3DView = class {
     this.physicsModelLoadListeners.clear();
     this.stateAppliedListeners = [];
     this.drumAudio.dispose();
+    this.calibrationAudio.dispose();
     this.towerSampleAudio.dispose();
     if (this.model) {
       disposeObject(this.model);
@@ -61533,7 +61624,7 @@ var Tower3DView = class {
           this.pendingSide = null;
           this.cameraController?.snapToSide(pending);
         }
-        await this.prewarmLightPrograms();
+        await this.prewarmBloomPrograms();
         if (!this.scene) return;
         this._loadState = "ready";
         if (this.latestState) this.applyState(this.latestState);
@@ -61558,55 +61649,45 @@ var Tower3DView = class {
     this.skyboxManager?.apply(lighting.scene.skyboxUrl, lighting.scene.background);
     this.sceneLighting?.applyLights(lighting, this.modelRadius);
     this.groundDiscManager?.updateLighting(lighting, this.modelRadius, this.modelBottomY);
-    const redHaloDistance = this.modelRadius * lighting.leds.red.haloDistanceFraction;
-    const ledgeColor = new Color(lighting.leds.ledgeLeds.color);
-    const baseColor = new Color(lighting.leds.baseLeds.color);
     for (const [key, ref] of this.ledRefs.entries()) {
       const layer = parseInt(key.split(":")[0], 10);
-      ref.redLight.color.setHex(lighting.leds.red.color);
-      ref.redLight.distance = redHaloDistance;
-      ref.redLight.intensity = ref.driver.v * lighting.leds.red.maxHalo;
+      const ledHex = layer >= 4 ? lighting.leds.baseLeds.color : lighting.leds.ledgeLeds.color;
       if (ref.proxyMesh) {
-        const col = layer >= 4 ? baseColor : ledgeColor;
-        ref.proxyMesh.material.color.copy(col);
+        applyHdrColor(ref.proxyMesh.material.color, ledHex);
       }
       if (ref.haloSprite) {
-        const col = layer >= 4 ? baseColor : ledgeColor;
-        ref.haloSprite.material.color.copy(col);
+        applyHdrColor(ref.haloSprite.material.color, ledHex);
       }
     }
     this.sealManager.updateLighting(lighting, this.modelRadius);
-    this.setBulkLightsVisible(this.lightsGateOpen);
     this.bloomManager?.applyConfig(lighting);
   }
   /**
-   * Populate `ledRefs` with 24 red PointLights (6 layers × 4 lights) positioned
-   * relative to the model's bounding radius.
+   * Populate `ledRefs` with the LED visuals for 24 LEDs (6 layers × 4 lights).
+   * Ring layers (0–2) get bare refs — their glow comes from the SealManager
+   * proxies — while ledge (layer 3) and base (layers 4–5) get an HDR-bright
+   * proxy sphere + additive halo sprite. There are no per-LED PointLights; the
+   * proxy/halo materials cross the raised bloom threshold to read as bright.
    */
   buildLeds() {
     if (!this.model) return;
-    const { red, ledgeLeds, baseLeds } = this.lighting.leds;
-    const redHaloDistance = this.modelRadius * red.haloDistanceFraction;
+    const { ledgeLeds, baseLeds } = this.lighting.leds;
     const gradTex = this.createLedgeGradientTexture();
     for (let layer = 0; layer < TOWER_LAYER_COUNT; layer++) {
       for (let light = 0; light < LIGHTS_PER_LAYER; light++) {
         const redPos = computeRedLightPosition(layer, light, this.modelRadius);
-        const redLight = new PointLight(red.color, 0, redHaloDistance, 2);
-        redLight.visible = false;
-        redLight.position.set(redPos.x, redPos.y, redPos.z);
-        this.model.add(redLight);
-        const ref = { redLight, driver: { v: 0 }, tween: null };
+        const ref = { driver: { v: 0 }, tween: null };
         if (layer === 3) {
           const { x, y, z: z2 } = redPos;
           const proxyRadius = this.modelRadius * ledgeLeds.proxy.sizeFactor;
           const proxyGeo = new SphereGeometry(proxyRadius, 8, 6);
           const proxyMat = new MeshBasicMaterial({
-            color: ledgeLeds.color,
             transparent: true,
             opacity: 0,
             depthWrite: false,
             toneMapped: false
           });
+          applyHdrColor(proxyMat.color, ledgeLeds.color);
           const proxyMesh = new Mesh(proxyGeo, proxyMat);
           proxyMesh.position.set(x, y, z2);
           proxyMesh.layers.enable(BLOOM_LAYER);
@@ -61617,7 +61698,6 @@ var Tower3DView = class {
           this.model.add(proxyMesh);
           ref.proxyMesh = proxyMesh;
           const haloMat = new SpriteMaterial({
-            color: ledgeLeds.color,
             map: gradTex,
             transparent: true,
             opacity: 0,
@@ -61625,6 +61705,7 @@ var Tower3DView = class {
             depthWrite: false,
             toneMapped: false
           });
+          applyHdrColor(haloMat.color, ledgeLeds.color);
           const haloSprite = new Sprite(haloMat);
           const haloScale = this.modelRadius * ledgeLeds.halo.sizeFactor;
           haloSprite.scale.setScalar(haloScale);
@@ -61640,12 +61721,12 @@ var Tower3DView = class {
           const proxyRadius = this.modelRadius * baseLeds.proxy.sizeFactor;
           const proxyGeo = new SphereGeometry(proxyRadius, 8, 6);
           const proxyMat = new MeshBasicMaterial({
-            color: baseLeds.color,
             transparent: true,
             opacity: 0,
             depthWrite: false,
             toneMapped: false
           });
+          applyHdrColor(proxyMat.color, baseLeds.color);
           const proxyMesh = new Mesh(proxyGeo, proxyMat);
           proxyMesh.position.set(x, y, z2);
           proxyMesh.layers.enable(BLOOM_LAYER);
@@ -61656,7 +61737,6 @@ var Tower3DView = class {
           this.model.add(proxyMesh);
           ref.proxyMesh = proxyMesh;
           const haloMat = new SpriteMaterial({
-            color: baseLeds.color,
             map: gradTex,
             transparent: true,
             opacity: 0,
@@ -61664,6 +61744,7 @@ var Tower3DView = class {
             depthWrite: false,
             toneMapped: false
           });
+          applyHdrColor(haloMat.color, baseLeds.color);
           const haloSprite = new Sprite(haloMat);
           const haloScale = this.modelRadius * baseLeds.halo.sizeFactor;
           haloSprite.scale.setScalar(haloScale);
@@ -61707,7 +61788,6 @@ var Tower3DView = class {
       this.cameraController?.tickDerivedSide();
       this.tickPhysicsListeners();
       this.sceneLighting?.tick();
-      this.updateLightsGate();
       if (this.renderer && this.scene && this.camera) {
         if (this.bloomManager) {
           this.bloomManager.render();
@@ -61846,6 +61926,14 @@ var TowerStateController = class {
 };
 
 // ../UltimateDarkTowerDisplay/src/TowerDisplay.ts
+function buildCalibratedState() {
+  const state = createDefaultTowerState();
+  for (const drum of state.drum) {
+    drum.calibrated = true;
+    drum.position = 0;
+  }
+  return state;
+}
 function normalizeRenderers(input) {
   if (!input) return ["readout", "side-view"];
   return Array.isArray(input) ? input : [input];
@@ -61879,8 +61967,11 @@ var TowerDisplay = class {
   constructor(options) {
     this.renderers = [];
     this.view3d = null;
+    /** True while a calibration sequence is running; guards against re-entrant commands. */
+    this.calibrating = false;
     this.onSealClickCallback = options.onSealClick;
     this.onSideChangeCallback = options.onSideChange;
+    this.onCalibrationCompleteCallback = options.onCalibrationComplete;
     this.state = new TowerStateController({
       togglesEnabled: options.clickToToggleSeals !== false
     });
@@ -61932,8 +62023,45 @@ var TowerDisplay = class {
    * `false` preserves dedup for BLE state-mirror callers.
    */
   applyState(state, force = false) {
+    if (state.command === TOWER_COMMANDS.calibration) {
+      this.renderBaseState(state, force);
+      void this.runCalibration();
+      return;
+    }
+    this.renderBaseState(state, force);
+  }
+  /** Apply a state to all renderers. The transient `command` field (if any) is ignored by renderers. */
+  renderBaseState(state, force) {
     const resolved = this.state.applyState(state);
     for (const r of this.renderers) r.applyState(resolved, force);
+  }
+  /**
+   * Run the calibration sequence in response to a calibration command. The 3D
+   * drum sweep + calibration audio + Game Start sound are layered in by the 3D
+   * view in a later step; the no-3D path completes immediately. Re-entrant
+   * calls while a calibration is in flight are ignored.
+   *
+   * On completion the display resolves to the fully-calibrated state and fires
+   * `onCalibrationComplete` with that state stamped `CALIBRATION_FINISHED`
+   * (0x08) — the display's representation of the tower's completion reply.
+   */
+  async runCalibration() {
+    if (this.calibrating) return;
+    this.calibrating = true;
+    try {
+      if (this.view3d) {
+        await this.view3d.runCalibrationSequence();
+      }
+      const finalState = buildCalibratedState();
+      this.renderBaseState(finalState, true);
+      const completed = {
+        ...finalState,
+        command: TOWER_MESSAGES.CALIBRATION_FINISHED.value
+      };
+      this.onCalibrationCompleteCallback?.(completed);
+    } finally {
+      this.calibrating = false;
+    }
   }
   /**
    * Programmatically override a single LED effect on all active renderers.
@@ -62153,7 +62281,8 @@ var TowerRenderView = class {
       injectStyles: options.injectStyles,
       onSealClick: options.onSealClick,
       onSideChange: options.onSideChange,
-      onLoadError: options.onLoadError
+      onLoadError: options.onLoadError,
+      onCalibrationComplete: options.onCalibrationComplete
     };
     this.innerDisplay = new TowerDisplay(displayOptions);
   }

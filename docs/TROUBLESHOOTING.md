@@ -6,6 +6,21 @@ End-user troubleshooting for common physical / hardware / firmware issues, sourc
 
 ---
 
+## Can't Connect on iOS (iPhone / iPad)
+
+Apple does not implement the Web Bluetooth API in **any** iOS browser — Safari,
+Chrome, Edge, and Firefox on iOS all run on WebKit, which has no `navigator.bluetooth`.
+This is an iOS platform limitation, not a bug in this library.
+
+- **To control a physical tower on iOS**, use a Web BLE-capable browser such as
+  [Bluefy](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055).
+- **For developers:** constructing `new UltimateDarkTower()` no longer throws on iOS —
+  Bluetooth detection is deferred to `connect()`. If your app only renders state and
+  never connects, construct with `{ platform: BluetoothPlatform.NONE }` to be explicit.
+  See [api/connection.md](api/connection.md) and [api/adapters.md](api/adapters.md).
+
+---
+
 ## App Reports Tower Jam
 
 Follow these steps in order:

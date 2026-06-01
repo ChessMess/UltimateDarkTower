@@ -3,7 +3,9 @@ import { type IBluetoothAdapter } from './udtBluetoothAdapter';
 export enum BluetoothPlatform {
     WEB = 'web',
     NODE = 'node',
-    AUTO = 'auto'
+    AUTO = 'auto',
+    /** Software-only — no Bluetooth (e.g. headless rendering, iOS Safari). Returns a no-op adapter. */
+    NONE = 'none'
 }
 
 export class BluetoothAdapterFactory {
@@ -25,6 +27,10 @@ export class BluetoothAdapterFactory {
             case BluetoothPlatform.NODE: {
                 const { NodeBluetoothAdapter } = require('./adapters/NodeBluetoothAdapter');
                 return new NodeBluetoothAdapter();
+            }
+            case BluetoothPlatform.NONE: {
+                const { NoopBluetoothAdapter } = require('./adapters/NoopBluetoothAdapter');
+                return new NoopBluetoothAdapter();
             }
             default:
                 throw new Error(`Unsupported Bluetooth platform: ${detectedPlatform}`);

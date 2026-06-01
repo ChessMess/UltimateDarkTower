@@ -104,7 +104,10 @@ class UltimateDarkTower {
         if (config === null || config === void 0 ? void 0 : config.adapter) {
             adapter = config.adapter;
         }
-        else if (config === null || config === void 0 ? void 0 : config.platform) {
+        else if ((config === null || config === void 0 ? void 0 : config.platform) && config.platform !== udtBluetoothAdapterFactory_1.BluetoothPlatform.AUTO) {
+            // WEB/NODE/NONE are created eagerly (none throw from detection). AUTO and
+            // the no-config default are deferred to connect() so construction never
+            // throws in environments without Bluetooth (e.g. iOS Safari).
             adapter = udtBluetoothAdapterFactory_1.BluetoothAdapterFactory.create(config.platform);
         }
         // Initialize BLE connection with tower event handlers

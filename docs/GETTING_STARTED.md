@@ -52,6 +52,8 @@ import UltimateDarkTower from 'ultimatedarktower';
 const tower = new UltimateDarkTower();
 ```
 
+Construction never throws — Bluetooth platform detection is deferred until `connect()`, so this works even where Web Bluetooth is unavailable (e.g. iOS Safari). If your app only uses software-only state (broken seals, rendering) and never connects to a tower, make that explicit with `new UltimateDarkTower({ platform: BluetoothPlatform.NONE })`.
+
 If you need to override auto-detection (Electron in a hybrid mode, custom platforms, or testing), see [docs/api/connection.md](api/connection.md) and [docs/api/adapters.md](api/adapters.md).
 
 ---

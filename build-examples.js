@@ -65,12 +65,13 @@ function getBuildConfigs(displayAvailable) {
             },
         },
         {
-            // NOTE: alias 'ultimatedarktower' to udtConstants.ts (not index.ts) to avoid
+            // NOTE: alias 'ultimatedarktower' to udtDisplayExports.ts (not index.ts) to avoid
             // circular dependencies in UltimateDarkTower.ts that cause esbuild to wrap the
             // entire module in lazy __esm callbacks, which prevents the display package's
             // module-level EFFECT_LABELS (and similar constants) from initialising correctly.
-            // The display package only needs runtime constant values, all of which live in
-            // udtConstants.ts.
+            // udtDisplayExports.ts is a cycle-free barrel of the runtime constants
+            // (udtConstants.ts) plus the pure createDefaultTowerState helper (udtHelpers.ts)
+            // that the display package needs — neither reaches UltimateDarkTower.ts.
             entryPoints: [
                 displayAvailable
                     ? 'examples/controller/TowerEmulator.ts'
@@ -96,7 +97,7 @@ function getBuildConfigs(displayAvailable) {
             },
             external: ['@stoprocent/noble'],
             alias: {
-                ultimatedarktower: path.resolve(__dirname, 'src/udtConstants.ts'),
+                ultimatedarktower: path.resolve(__dirname, 'src/udtDisplayExports.ts'),
             },
         },
         {

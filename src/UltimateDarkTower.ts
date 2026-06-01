@@ -159,7 +159,10 @@ class UltimateDarkTower {
     let adapter: IBluetoothAdapter | undefined;
     if (config?.adapter) {
       adapter = config.adapter;
-    } else if (config?.platform) {
+    } else if (config?.platform && config.platform !== BluetoothPlatform.AUTO) {
+      // WEB/NODE/NONE are created eagerly (none throw from detection). AUTO and
+      // the no-config default are deferred to connect() so construction never
+      // throws in environments without Bluetooth (e.g. iOS Safari).
       adapter = BluetoothAdapterFactory.create(config.platform);
     }
 

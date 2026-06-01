@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Added
+
+- **`BluetoothPlatform.NONE` + no-op adapter** — a software-only mode for consumers that hold tower state (broken seals, rendering) but never open a BLE connection. `new UltimateDarkTower({ platform: BluetoothPlatform.NONE })` returns a `NoopBluetoothAdapter` that reports "not connected" and throws a clear error if `connect()`/commands are attempted.
+
+### Fixed
+
+- **`npm run build` no longer fails on the Tower Emulator bundle** — `build:examples` aliases the bundled `ultimatedarktower` specifier to a constants-only module (not `index.ts`) to dodge the `UltimateDarkTower.ts` circular dependency that breaks the display package's module-level constant init. The display's `TowerDisplay.ts` imports `createDefaultTowerState`, which lives in `udtHelpers.ts` rather than `udtConstants.ts`, so esbuild failed with *"No matching export for import 'createDefaultTowerState'"*. Added a cycle-free barrel `src/udtDisplayExports.ts` (re-exports `udtConstants` + the pure `createDefaultTowerState` helper) and pointed the emulator alias at it.
+
+- **Construction no longer throws in environments without Bluetooth** — Bluetooth platform detection is now deferred from the `UltimateDarkTower` constructor to `connect()`. Previously `new UltimateDarkTower()` with the default `AUTO` platform called `detectPlatform()` eagerly and threw *"Unable to detect Bluetooth platform"* where Web Bluetooth is unavailable (e.g. iOS Safari/Chrome — all iOS browsers use WebKit), crashing software-only consumers on load. The adapter is now created lazily on first `connect()`, so that error (if any) surfaces only when a connection is actually attempted. Explicit `WEB`/`NODE`/`NONE` still create eagerly.
+
 ### Changed
 
 - **Documentation restructured** — Slimmed `README.md` to a hero page with screenshot strip, quickstart, and a documentation map. Split the 1,900-line `docs/API_REFERENCE.md` into focused topic files under `docs/api/` (connection, adapters, commands, state, events, logging, seed, diagnostics) plus an index at `docs/api/README.md`. Added new top-level docs: `docs/README.md` (hub), `docs/GETTING_STARTED.md` (tutorial), `docs/ARCHITECTURE.md` (layer diagrams + lifecycle), `docs/EXAMPLES.md` (what each demo demonstrates), `docs/ECOSYSTEM.md` (companion repos). Renamed `docs/TOWER_TROUBLESHOOTING_RG.md` → `docs/TROUBLESHOOTING.md`. Embedded real nRF Connect screenshots of the tower's BLE service tree in `docs/TOWER_TECH_NOTES.md` and added a Mermaid layer/position anatomy diagram. Added README files for the controller and game example apps. Replaced `docs/API_REFERENCE.md` with a stub that redirects to the new `docs/api/` index. Removed the obsolete `examples/controller/TOWER_EMULATOR_NPM_MIGRATION.md`.

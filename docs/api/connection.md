@@ -32,9 +32,20 @@ import UltimateDarkTower, { BluetoothPlatform } from 'ultimatedarktower';
 const web = new UltimateDarkTower({ platform: BluetoothPlatform.WEB });
 const node = new UltimateDarkTower({ platform: BluetoothPlatform.NODE });
 
+// Software-only — never connects (broken-seal state, rendering, iOS Safari)
+const display = new UltimateDarkTower({ platform: BluetoothPlatform.NONE });
+
 // Custom adapter
 const custom = new UltimateDarkTower({ adapter: myCustomAdapter });
 ```
+
+> **Construction never throws.** With `AUTO` (the default) Bluetooth platform
+> detection is deferred until `connect()`, so you can construct an
+> `UltimateDarkTower` in any environment — including ones without Web Bluetooth
+> such as iOS Safari. The "Unable to detect Bluetooth platform" error, if any,
+> now surfaces from `connect()`, not the constructor. For instances that should
+> never connect, use `BluetoothPlatform.NONE` to make that intent explicit (its
+> no-op adapter throws clearly if `connect()`/commands are attempted).
 
 ### `BluetoothPlatform` enum
 
@@ -43,6 +54,7 @@ enum BluetoothPlatform {
   WEB  = 'web',   // Browser Web Bluetooth API
   NODE = 'node',  // Node.js @stoprocent/noble
   AUTO = 'auto',  // Auto-detect (default)
+  NONE = 'none',  // Software-only — no Bluetooth (e.g. headless rendering, iOS Safari)
 }
 ```
 

@@ -46,6 +46,7 @@ import { BluetoothAdapterFactory, BluetoothPlatform } from 'ultimatedarktower';
 const adapter = BluetoothAdapterFactory.create();                       // auto-detect
 const web    = BluetoothAdapterFactory.create(BluetoothPlatform.WEB);
 const node   = BluetoothAdapterFactory.create(BluetoothPlatform.NODE);
+const none   = BluetoothAdapterFactory.create(BluetoothPlatform.NONE);  // no-op adapter, never connects
 
 const platform = BluetoothAdapterFactory.detectPlatform();              // 'web' | 'node'
 ```
@@ -163,6 +164,7 @@ expect(/* … */);
 | Electron main | `NodeBluetoothAdapter` | Auto-detected |
 | iOS Safari / iOS Chrome | — | Not supported (use [Bluefy](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)) |
 | Firefox | — | Not supported |
+| Software-only / no Bluetooth | `NoopBluetoothAdapter` | Opt-in via `BluetoothPlatform.NONE` (never connects) |
 | React Native (iOS/Android) | Custom (`react-native-ble-plx` recommended) | Bring your own |
 | Cordova / Capacitor | Custom (platform plugin) | Bring your own |
 

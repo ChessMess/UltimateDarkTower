@@ -75,6 +75,19 @@ export declare class UdtBleConnection {
         LOG_ALL: boolean;
     };
     constructor(logger: Logger, callbacks: TowerEventCallbacks, adapter?: IBluetoothAdapter, recorder?: UdtDiagnosticsRecorder);
+    /**
+     * Wires this connection's internal handlers onto a Bluetooth adapter.
+     * Called when an adapter is supplied at construction, or when one is
+     * lazily created on first connect().
+     */
+    private wireAdapterCallbacks;
+    /**
+     * Returns the Bluetooth adapter, lazily creating one via platform
+     * auto-detection on first use. Platform-detection errors (e.g. no Web
+     * Bluetooth on iOS) surface here, at connect time, rather than at
+     * construction.
+     */
+    private ensureAdapter;
     setDiagnosticsSnapshotProviders(providers: {
         commandQueue: () => {
             queueLength: number;

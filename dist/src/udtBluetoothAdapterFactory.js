@@ -6,6 +6,8 @@ var BluetoothPlatform;
     BluetoothPlatform["WEB"] = "web";
     BluetoothPlatform["NODE"] = "node";
     BluetoothPlatform["AUTO"] = "auto";
+    /** Software-only — no Bluetooth (e.g. headless rendering, iOS Safari). Returns a no-op adapter. */
+    BluetoothPlatform["NONE"] = "none";
 })(BluetoothPlatform || (exports.BluetoothPlatform = BluetoothPlatform = {}));
 class BluetoothAdapterFactory {
     /**
@@ -25,6 +27,10 @@ class BluetoothAdapterFactory {
             case BluetoothPlatform.NODE: {
                 const { NodeBluetoothAdapter } = require('./adapters/NodeBluetoothAdapter');
                 return new NodeBluetoothAdapter();
+            }
+            case BluetoothPlatform.NONE: {
+                const { NoopBluetoothAdapter } = require('./adapters/NoopBluetoothAdapter');
+                return new NoopBluetoothAdapter();
             }
             default:
                 throw new Error(`Unsupported Bluetooth platform: ${detectedPlatform}`);

@@ -111,6 +111,13 @@ describe('BluetoothAdapterFactory', () => {
             const adapter = udtBluetoothAdapterFactory_1.BluetoothAdapterFactory.create(udtBluetoothAdapterFactory_1.BluetoothPlatform.AUTO);
             expect(adapter._type).toBe('node');
         });
+        test('should create a no-op adapter for NONE platform', () => {
+            // NoopBluetoothAdapter is not mocked, so this exercises the real adapter.
+            const adapter = udtBluetoothAdapterFactory_1.BluetoothAdapterFactory.create(udtBluetoothAdapterFactory_1.BluetoothPlatform.NONE);
+            expect(adapter).toBeDefined();
+            expect(adapter.isConnected()).toBe(false);
+            expect(adapter.isGattConnected()).toBe(false);
+        });
         test('should throw for unsupported platform value', () => {
             expect(() => {
                 udtBluetoothAdapterFactory_1.BluetoothAdapterFactory.create('unsupported');
