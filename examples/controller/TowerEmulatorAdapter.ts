@@ -88,14 +88,15 @@ export class TowerEmulatorAdapter implements IBluetoothAdapter {
   completeCalibration(): void {
     if (!this.calibrationPending) return;
     this.cancelCalibration();
-    // (2) completion — a second TOWER_STATE that the library reads while
-    // `performingCalibration` is armed, which fires onCalibrationComplete.
-    // We echo the current state (a recognised TOWER_STATE, byte 0 === 0) rather
-    // than synthesising calibrated drum bits: the library detects TOWER_STATE by
-    // byte 0 === 0, but drum[0].calibrated lives in byte 0 bit 4, so a response
-    // flagging drum 0 calibrated (byte 0 = 0x10) is no longer recognised as a
-    // TOWER_STATE and the completion would never fire. See note in the example.
-    this.rxCallback?.(new Uint8Array(this.lastStatePacket));
+    // (2) completion — a second TOWER_STATE the library reads while
+    // `performingCalibration` is armed, which fires onCalibrationComplete AND
+    // updates the tower state to all-drums-calibrated. The library strips the
+    // 1-byte command prefix (response.slice(1)) before unpacking the real state
+    // (UltimateDarkTower.updateTowerStateFromResponse), so byte 0 stays 0x00 (→
+    // recognised as TOWER_STATE) and the calibrated bits live in bytes 1–2.
+    const calibratedResponse = this.createCalibratedStateResponse();
+    this.lastStatePacket = new Uint8Array(calibratedResponse);
+    this.rxCallback?.(calibratedResponse);
   }
 
   private cancelCalibration(): void {
@@ -204,6 +205,21 @@ export class TowerEmulatorAdapter implements IBluetoothAdapter {
     response[0] = BATTERY_RESPONSE;
     response[3] = (EMULATED_BATTERY_MV >> 8) & 0xff;
     response[4] = EMULATED_BATTERY_MV & 0xff;
+    return response;
+  }
+
+  private createCalibratedStateResponse(): Uint8Array {
+    // 20-byte TOWER_STATE response with all 3 drums calibrated at position 0 (north).
+    // The library strips byte 0 (command prefix) before unpacking the state, so the
+    // state bytes are offset by one from rtdt_unpack_state's data[] indices:
+    //   Byte 0: 0x00 — command prefix / TOWER_STATE type (kept 0 so it's recognised)
+    //   Byte 1 (state data[0]): drum[0].calibrated = bit 4 → 0x10
+    //   Byte 2 (state data[1]): drum[1].calibrated = bit 1 (0x02) | drum[2].calibrated = bit 6 (0x40) → 0x42
+    //   Bytes 3–19: zero (no LEDs, no audio, beam count 0)
+    const response = new Uint8Array(20);
+    response[0] = TOWER_STATE_RESPONSE;
+    response[1] = 0x10; // drum[0].calibrated
+    response[2] = 0x42; // drum[1].calibrated | drum[2].calibrated
     return response;
   }
 }

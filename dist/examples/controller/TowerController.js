@@ -943,7 +943,9 @@
       var _a2;
       if (!this.calibrationPending) return;
       this.cancelCalibration();
-      (_a2 = this.rxCallback) == null ? void 0 : _a2.call(this, new Uint8Array(this.lastStatePacket));
+      const calibratedResponse = this.createCalibratedStateResponse();
+      this.lastStatePacket = new Uint8Array(calibratedResponse);
+      (_a2 = this.rxCallback) == null ? void 0 : _a2.call(this, calibratedResponse);
     }
     cancelCalibration() {
       this.calibrationPending = false;
@@ -1030,6 +1032,13 @@
       response[0] = BATTERY_RESPONSE;
       response[3] = EMULATED_BATTERY_MV >> 8 & 255;
       response[4] = EMULATED_BATTERY_MV & 255;
+      return response;
+    }
+    createCalibratedStateResponse() {
+      const response = new Uint8Array(20);
+      response[0] = TOWER_STATE_RESPONSE;
+      response[1] = 16;
+      response[2] = 66;
       return response;
     }
   };
@@ -1916,7 +1925,7 @@
     handleTowerStateResponse(receivedData) {
       var _a2, _b, _c;
       const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
-      const state = rtdt_unpack_state(receivedData);
+      const state = rtdt_unpack_state(receivedData.slice(TOWER_STATE_DATA_OFFSET, TOWER_STATE_RESPONSE_MIN_LENGTH));
       this.logger.debug(`Tower State: ${JSON.stringify(state)} `, "[UDT][BLE]");
       (_a2 = this.recorder) == null ? void 0 : _a2.recordEvent("tower_state_response");
       if (this.performingCalibration) {

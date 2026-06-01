@@ -3,6 +3,8 @@ import {
     UART_SERVICE_UUID,
     SKULL_DROP_COUNT_POS,
     DIS_SERVICE_UUID,
+    TOWER_STATE_DATA_OFFSET,
+    TOWER_STATE_RESPONSE_MIN_LENGTH,
 } from './udtConstants';
 import { Logger } from './udtLogger';
 import { TowerResponseProcessor } from './udtTowerResponse';
@@ -323,7 +325,11 @@ export class UdtBleConnection {
 
     private handleTowerStateResponse(receivedData: Uint8Array) {
         const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
-        const state = rtdt_unpack_state(receivedData);
+        // Strip the 1-byte command prefix before unpacking, matching the real
+        // state path (UltimateDarkTower.updateTowerStateFromResponse). Unpacking
+        // the raw packet here would be off by one and log misaligned drum/LED
+        // values. Debug log only — does not affect behaviour.
+        const state = rtdt_unpack_state(receivedData.slice(TOWER_STATE_DATA_OFFSET, TOWER_STATE_RESPONSE_MIN_LENGTH));
         this.logger.debug(`Tower State: ${JSON.stringify(state)} `, '[UDT][BLE]');
 
         this.recorder?.recordEvent('tower_state_response');

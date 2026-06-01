@@ -1630,7 +1630,7 @@
     handleTowerStateResponse(receivedData) {
       var _a2, _b, _c;
       const dataSkullDropCount = receivedData[SKULL_DROP_COUNT_POS];
-      const state = rtdt_unpack_state(receivedData);
+      const state = rtdt_unpack_state(receivedData.slice(TOWER_STATE_DATA_OFFSET, TOWER_STATE_RESPONSE_MIN_LENGTH));
       this.logger.debug(`Tower State: ${JSON.stringify(state)} `, "[UDT][BLE]");
       (_a2 = this.recorder) == null ? void 0 : _a2.recordEvent("tower_state_response");
       if (this.performingCalibration) {
