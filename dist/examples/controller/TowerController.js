@@ -4285,6 +4285,9 @@
   var postLightSequenceEventToEmulatorWindow = (sequenceId) => {
     towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.postMessage({ type: "playSequence", sequenceId }, "*");
   };
+  var postCalibrateToTowerEmulatorWindow = () => {
+    towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.postMessage({ type: "calibrate" }, "*");
+  };
   var syncTowerEmulatorWindow = () => {
     if (!towerEmulatorWindow) {
       return;
@@ -4522,6 +4525,9 @@
   async function calibrate() {
     if (!Tower.isConnected) {
       return;
+    }
+    if (currentConnectionMode === "emulator") {
+      postCalibrateToTowerEmulatorWindow();
     }
     await Tower.calibrate();
     const el = document.getElementById("calibrating-message");

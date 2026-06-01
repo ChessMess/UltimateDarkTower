@@ -1,5 +1,9 @@
 import { TowerRenderView } from '../../../UltimateDarkTowerDisplay/src/index';
 import towerModelUrl from '../../../UltimateDarkTowerDisplay/src/3d/assets/tower.glb';
+// Use the cycle-free barrel (not src/index) — the emulator bundle must not pull
+// in UltimateDarkTower.ts, which re-creates the circular dependency that breaks
+// the Display package's module-level constant init. See build-examples.js.
+import { TOWER_COMMANDS, createDefaultTowerState } from '../../src/udtDisplayExports';
 
 const root = document.getElementById('tower-display-root');
 
@@ -93,6 +97,15 @@ const setStatus = (message: string, isError = false) => {
 
 let display: TowerRenderView | null = null;
 
+// Most recent state the controller mirrored to us; used as the baseline the
+// calibration command rides in on.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let lastState: any = null;
+// True while the display is running its own calibration sweep. The controller
+// also mirrors the emulator's delayed plain calibrated-state (~1.5s in); we skip
+// applying those interim states so they don't cut the staged sweep short.
+let popupCalibrating = false;
+
 const initializeDisplay = () => {
   try {
     display = new TowerRenderView({
@@ -100,6 +113,9 @@ const initializeDisplay = () => {
       renderers: '3d-view',
       modelUrl: towerModelUrl,
       title: 'Tower Emulator',
+      // Cleared when the display's own calibration sequence settles, which
+      // re-opens the normal state-mirror path.
+      onCalibrationComplete: () => { popupCalibrating = false; },
       // Match the real tower's firmware behavior: when the user fires a
       // light-override command via `Tower.lightOverrides(N)`, the firmware
       // plays both the LED sequence AND its bound sound sample. Enabling
@@ -141,6 +157,14 @@ window.addEventListener('message', (event: MessageEvent) => {
       return;
     }
 
+    lastState = state;
+    // While our own calibration sweep is animating, ignore mirrored states —
+    // the emulator's interim calibrated-state would otherwise snap all drums to
+    // home at once and short-circuit the staged top→middle→bottom sweep.
+    if (popupCalibrating) {
+      return;
+    }
+
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       display.applyState(state as any);
@@ -149,6 +173,14 @@ window.addEventListener('message', (event: MessageEvent) => {
       const message = error instanceof Error ? error.stack ?? error.message : String(error);
       setStatus(`Failed to render tower state.\n\n${message}`, true);
     }
+  } else if (type === 'calibrate') {
+    // Stamp the calibration command onto the current/baseline state so the
+    // display runs its visual sweep + audio (matching the Display example). The
+    // sequence settles to the calibrated state and fires onCalibrationComplete.
+    popupCalibrating = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    display?.applyState({ ...(lastState ?? createDefaultTowerState()), command: TOWER_COMMANDS.calibration } as any);
+    setStatus('Calibrating…');
   } else if (type === 'showIdle') {
     display?.showIdle();
     setStatus('Waiting for tower state from the controller.');

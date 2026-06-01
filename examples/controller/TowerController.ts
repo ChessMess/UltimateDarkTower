@@ -89,6 +89,14 @@ const postLightSequenceEventToEmulatorWindow = (sequenceId: number) => {
   towerEmulatorWindow?.postMessage({ type: 'playSequence', sequenceId }, '*');
 };
 
+// Calibration's "run the animation" intent is transient and not carried by the
+// mirrored tower state (the BLE response only reports the resulting calibrated
+// flags). Like audio/LED sequences, send it as a dedicated side-channel so the
+// popup's display plays the visual sweep instead of just snapping to calibrated.
+const postCalibrateToTowerEmulatorWindow = () => {
+  towerEmulatorWindow?.postMessage({ type: 'calibrate' }, '*');
+};
+
 const syncTowerEmulatorWindow = () => {
   if (!towerEmulatorWindow) {
     return;
@@ -420,6 +428,11 @@ Tower.onTowerDisconnect = onTowerDisconnected;
 async function calibrate() {
   if (!Tower.isConnected) {
     return;
+  }
+  // Kick off the popup's visual calibration sweep on click (like the Display
+  // example) before awaiting the BLE round-trip. No-op outside emulator mode.
+  if (currentConnectionMode === 'emulator') {
+    postCalibrateToTowerEmulatorWindow();
   }
   await Tower.calibrate();
   const el = document.getElementById("calibrating-message");

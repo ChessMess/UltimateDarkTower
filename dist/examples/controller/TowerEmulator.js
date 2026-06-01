@@ -62588,6 +62588,8 @@ var setStatus = (message, isError = false) => {
   status.style.color = isError ? "#fca5a5" : "#cfcfcf";
 };
 var display = null;
+var lastState = null;
+var popupCalibrating = false;
 var initializeDisplay = () => {
   try {
     display = new TowerRenderView({
@@ -62595,6 +62597,11 @@ var initializeDisplay = () => {
       renderers: "3d-view",
       modelUrl: tower_default,
       title: "Tower Emulator",
+      // Cleared when the display's own calibration sequence settles, which
+      // re-opens the normal state-mirror path.
+      onCalibrationComplete: () => {
+        popupCalibrating = false;
+      },
       // Match the real tower's firmware behavior: when the user fires a
       // light-override command via `Tower.lightOverrides(N)`, the firmware
       // plays both the LED sequence AND its bound sound sample. Enabling
@@ -62634,6 +62641,10 @@ window.addEventListener("message", (event) => {
       setStatus("State arrived before the display initialized.", true);
       return;
     }
+    lastState = state;
+    if (popupCalibrating) {
+      return;
+    }
     try {
       display.applyState(state);
       setStatus("Rendering live tower state.");
@@ -62643,6 +62654,10 @@ window.addEventListener("message", (event) => {
 
 ${message}`, true);
     }
+  } else if (type === "calibrate") {
+    popupCalibrating = true;
+    display?.applyState({ ...lastState ?? createDefaultTowerState(), command: TOWER_COMMANDS.calibration });
+    setStatus("Calibrating\u2026");
   } else if (type === "showIdle") {
     display?.showIdle();
     setStatus("Waiting for tower state from the controller.");
