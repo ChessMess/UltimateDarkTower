@@ -1,10 +1,14 @@
 // Example pattern: a module-scoped UltimateDarkTower instance owns broken-seal state so it survives display recreation on view switches.
 
-import { UltimateDarkTower } from 'ultimatedarktower';
+import { UltimateDarkTower, BluetoothPlatform } from 'ultimatedarktower';
 import type { SealIdentifier } from 'ultimatedarktower';
 import type { TowerDisplay, TowerStateReadout } from '../src/index';
 
-const tower = new UltimateDarkTower();
+// This example is software-only: it uses the tower instance purely to track
+// broken-seal state and never opens a BLE connection. BluetoothPlatform.NONE
+// installs a no-op adapter so it also works where Web Bluetooth is unavailable
+// (e.g. iOS Safari), which would otherwise fail platform auto-detection.
+const tower = new UltimateDarkTower({ platform: BluetoothPlatform.NONE });
 
 export function getTower(): UltimateDarkTower {
   return tower;

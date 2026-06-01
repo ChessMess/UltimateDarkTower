@@ -96,6 +96,10 @@ The lib logs a warning when an `.stl` URL is supplied. STLs work but are large (
 
 This package never opens a BLE connection. All BLE belongs to [`ultimatedarktower`](https://github.com/ChessMess/ultimatedarktower). The most common confusion: Web Bluetooth's `navigator.bluetooth.requestDevice` must be called from a user gesture (button click), or it throws.
 
+### Blank screen / crash on iOS
+
+No iOS browser (Safari, Chrome, Edge, Firefox — all WebKit) implements Web Bluetooth. If you construct an `UltimateDarkTower` for software-only state (e.g. broken seals) without specifying a platform, older library versions threw *"Unable to detect Bluetooth platform"* at construction and took down the whole page on iOS. Construct with `new UltimateDarkTower({ platform: BluetoothPlatform.NONE })` for software-only use — see [`example/sealController.ts`](../example/sealController.ts). (Current `ultimatedarktower` also defers detection so the default no longer throws at construction, but `NONE` makes the intent explicit.) Users who want to drive a physical tower on iOS need a Web BLE browser such as [Bluefy](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055).
+
 The audio subsystem in `Tower3DView` has the same constraint. Browsers block audio playback until the user clicks something. Wire `applyAudioConfig({ enabled: true })` to a click handler, not to mount or to a state subscription. (See [AUDIO](AUDIO.md) for the full audio API.)
 
 Volume `3` in `TowerState.audio.volume` is the firmware's mute value. If you build a state by hand and audio is silent, check the volume.
