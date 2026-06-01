@@ -4416,7 +4416,7 @@
         towerEmulatorWindow = window.open(
           "TowerEmulator.html",
           "TowerEmulator",
-          "width=900,height=700,resizable=yes,scrollbars=yes"
+          "width=1900,height=855,resizable=yes,scrollbars=yes"
         );
       }
       if (!towerEmulatorWindow) {
@@ -4432,7 +4432,7 @@
       towerEmulatorWindow = window.open(
         "TowerEmulator.html",
         "TowerEmulator",
-        "width=900,height=700,resizable=yes,scrollbars=yes"
+        "width=900,height=900,resizable=yes,scrollbars=yes"
       );
     }
     if (!towerEmulatorWindow) {
