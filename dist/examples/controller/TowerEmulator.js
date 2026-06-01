@@ -62570,6 +62570,7 @@ ${message}`, true);
   }
 });
 var audioClearTimer;
+var statusClearTimer;
 var VOLUME_LABELS = { 0: "Loud", 1: "Medium", 2: "Quiet", 3: "Mute" };
 var showAudioNotification = (name, loop, volume) => {
   const volLabel = VOLUME_LABELS[volume] ?? String(volume);
@@ -62581,11 +62582,22 @@ var showAudioNotification = (name, loop, volume) => {
     audioClearTimer = void 0;
   }, 4e3);
 };
-var setStatus = (message, isError = false) => {
+var setStatus = (message, isError = false, persist = isError) => {
+  if (statusClearTimer !== void 0) {
+    clearTimeout(statusClearTimer);
+    statusClearTimer = void 0;
+  }
+  status.style.display = "";
   status.textContent = message;
   status.style.borderColor = isError ? "#7f1d1d" : "#3a3a3a";
   status.style.background = isError ? "#2b1414" : "#202020";
   status.style.color = isError ? "#fca5a5" : "#cfcfcf";
+  if (!persist) {
+    statusClearTimer = setTimeout(() => {
+      status.style.display = "none";
+      statusClearTimer = void 0;
+    }, 4e3);
+  }
 };
 var display = null;
 var lastState = null;
@@ -62615,7 +62627,7 @@ ${String(details)}`, true);
       }
     });
     display.showIdle();
-    setStatus("Popup ready. Waiting for tower state from the controller.");
+    setStatus("Popup ready. Waiting for tower state from the controller.", false, true);
     window.opener?.postMessage({ type: "emulatorReady" }, "*");
   } catch (error52) {
     const message = error52 instanceof Error ? error52.stack ?? error52.message : String(error52);
@@ -62657,10 +62669,10 @@ ${message}`, true);
   } else if (type === "calibrate") {
     popupCalibrating = true;
     display?.applyState({ ...lastState ?? createDefaultTowerState(), command: TOWER_COMMANDS.calibration });
-    setStatus("Calibrating\u2026");
+    setStatus("Calibrating\u2026", false, true);
   } else if (type === "showIdle") {
     display?.showIdle();
-    setStatus("Waiting for tower state from the controller.");
+    setStatus("Waiting for tower state from the controller.", false, true);
   } else if (type === "playAudio") {
     const { name, loop, volume, sample } = event.data;
     showAudioNotification(name, loop, volume);

@@ -74,6 +74,7 @@ audioEnableButton.addEventListener('click', async () => {
 });
 
 let audioClearTimer: ReturnType<typeof setTimeout> | undefined;
+let statusClearTimer: ReturnType<typeof setTimeout> | undefined;
 
 const VOLUME_LABELS: Record<number, string> = { 0: 'Loud', 1: 'Medium', 2: 'Quiet', 3: 'Mute' };
 
@@ -88,11 +89,22 @@ const showAudioNotification = (name: string, loop: boolean, volume: number) => {
   }, 4000);
 };
 
-const setStatus = (message: string, isError = false) => {
+const setStatus = (message: string, isError = false, persist = isError) => {
+  if (statusClearTimer !== undefined) {
+    clearTimeout(statusClearTimer);
+    statusClearTimer = undefined;
+  }
+  status.style.display = '';
   status.textContent = message;
   status.style.borderColor = isError ? '#7f1d1d' : '#3a3a3a';
   status.style.background = isError ? '#2b1414' : '#202020';
   status.style.color = isError ? '#fca5a5' : '#cfcfcf';
+  if (!persist) {
+    statusClearTimer = setTimeout(() => {
+      status.style.display = 'none';
+      statusClearTimer = undefined;
+    }, 4000);
+  }
 };
 
 let display: TowerRenderView | null = null;
@@ -127,7 +139,7 @@ const initializeDisplay = () => {
       },
     });
     display.showIdle();
-    setStatus('Popup ready. Waiting for tower state from the controller.');
+    setStatus('Popup ready. Waiting for tower state from the controller.', false, true);
     window.opener?.postMessage({ type: 'emulatorReady' }, '*');
   } catch (error) {
     const message = error instanceof Error ? error.stack ?? error.message : String(error);
@@ -180,10 +192,10 @@ window.addEventListener('message', (event: MessageEvent) => {
     popupCalibrating = true;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     display?.applyState({ ...(lastState ?? createDefaultTowerState()), command: TOWER_COMMANDS.calibration } as any);
-    setStatus('Calibrating…');
+    setStatus('Calibrating…', false, true);
   } else if (type === 'showIdle') {
     display?.showIdle();
-    setStatus('Waiting for tower state from the controller.');
+    setStatus('Waiting for tower state from the controller.', false, true);
   } else if (type === 'playAudio') {
     const { name, loop, volume, sample } = event.data as { name: string; loop: boolean; volume: number; sample: number };
     showAudioNotification(name, loop, volume);
