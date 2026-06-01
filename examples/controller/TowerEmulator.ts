@@ -114,8 +114,9 @@ let display: TowerRenderView | null = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let lastState: any = null;
 // True while the display is running its own calibration sweep. The controller
-// also mirrors the emulator's delayed plain calibrated-state (~1.5s in); we skip
-// applying those interim states so they don't cut the staged sweep short.
+// mirrors the calibrated state back once the adapter replies; we skip applying
+// any interim mirrored states during the sweep so they don't snap all drums to
+// home at once and cut the staged top→middle→bottom sweep short.
 let popupCalibrating = false;
 
 const initializeDisplay = () => {
@@ -126,8 +127,14 @@ const initializeDisplay = () => {
       modelUrl: towerModelUrl,
       title: 'Tower Emulator',
       // Cleared when the display's own calibration sequence settles, which
-      // re-opens the normal state-mirror path.
-      onCalibrationComplete: () => { popupCalibrating = false; },
+      // re-opens the normal state-mirror path. Also tell the controller the
+      // visual sweep has actually finished so its TowerEmulatorAdapter emits
+      // the calibrated TOWER_STATE reply now — keeping the controller's
+      // calibration-complete in sync with the popup instead of a fixed timer.
+      onCalibrationComplete: () => {
+        popupCalibrating = false;
+        window.opener?.postMessage({ type: 'calibrationComplete' }, '*');
+      },
       // Match the real tower's firmware behavior: when the user fires a
       // light-override command via `Tower.lightOverrides(N)`, the firmware
       // plays both the LED sequence AND its bound sound sample. Enabling

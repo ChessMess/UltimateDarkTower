@@ -62610,9 +62610,13 @@ var initializeDisplay = () => {
       modelUrl: tower_default,
       title: "Tower Emulator",
       // Cleared when the display's own calibration sequence settles, which
-      // re-opens the normal state-mirror path.
+      // re-opens the normal state-mirror path. Also tell the controller the
+      // visual sweep has actually finished so its TowerEmulatorAdapter emits
+      // the calibrated TOWER_STATE reply now — keeping the controller's
+      // calibration-complete in sync with the popup instead of a fixed timer.
       onCalibrationComplete: () => {
         popupCalibrating = false;
+        window.opener?.postMessage({ type: "calibrationComplete" }, "*");
       },
       // Match the real tower's firmware behavior: when the user fires a
       // light-override command via `Tower.lightOverrides(N)`, the firmware

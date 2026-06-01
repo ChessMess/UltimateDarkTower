@@ -902,7 +902,7 @@
   var BATTERY_HEARTBEAT_INTERVAL_MS = 200;
   var INITIAL_STATE_RESPONSE_DELAY_MS = 0;
   var COMMAND_RESPONSE_DELAY_MS = 50;
-  var CALIBRATION_DELAY_MS = 1500;
+  var CALIBRATION_FALLBACK_MS = 3e4;
   var TOWER_STATE_RESPONSE = 0;
   var BATTERY_RESPONSE = 7;
   var CMD_CALIBRATE = 4;
@@ -910,6 +910,9 @@
     constructor(options = {}) {
       this.options = options;
       this.connected = false;
+      // Set while a calibration command is awaiting its completion reply. The reply
+      // fires from completeCalibration() (popup-driven) or the fallback timer.
+      this.calibrationPending = false;
       // Tracks the last 20-byte stateful command so non-stateful responses preserve current state
       this.lastStatePacket = new Uint8Array(20);
     }
@@ -927,6 +930,27 @@
     async disconnect() {
       this.connected = false;
       this.stopBatteryHeartbeat();
+      this.cancelCalibration();
+    }
+    /**
+     * Emit the calibrated TOWER_STATE response that signals calibration is
+     * complete. Called by the controller when the emulator popup reports its
+     * visual sweep has finished (or by the fallback timer). No-op unless a
+     * calibration command is currently pending, so stray calls can't inject a
+     * spurious state.
+     */
+    completeCalibration() {
+      var _a2;
+      if (!this.calibrationPending) return;
+      this.cancelCalibration();
+      (_a2 = this.rxCallback) == null ? void 0 : _a2.call(this, new Uint8Array(this.lastStatePacket));
+    }
+    cancelCalibration() {
+      this.calibrationPending = false;
+      if (this.calibrationFallbackTimer) {
+        clearTimeout(this.calibrationFallbackTimer);
+        this.calibrationFallbackTimer = void 0;
+      }
     }
     isConnected() {
       return this.connected;
@@ -954,12 +978,13 @@
           (_d = (_c = this.options).onLightSequenceCommand) == null ? void 0 : _d.call(_c, sequenceId);
         }
       } else if (data.length === 1 && commandType === CMD_CALIBRATE) {
+        this.calibrationPending = true;
+        if (this.calibrationFallbackTimer) clearTimeout(this.calibrationFallbackTimer);
+        this.calibrationFallbackTimer = setTimeout(() => this.completeCalibration(), CALIBRATION_FALLBACK_MS);
         setTimeout(() => {
           var _a3;
-          const calibratedResponse = this.createCalibratedStateResponse();
-          this.lastStatePacket = new Uint8Array(calibratedResponse);
-          (_a3 = this.rxCallback) == null ? void 0 : _a3.call(this, calibratedResponse);
-        }, CALIBRATION_DELAY_MS);
+          return (_a3 = this.rxCallback) == null ? void 0 : _a3.call(this, new Uint8Array(this.lastStatePacket));
+        }, COMMAND_RESPONSE_DELAY_MS);
       } else {
         setTimeout(
           () => {
@@ -988,6 +1013,7 @@
     async cleanup() {
       this.connected = false;
       this.stopBatteryHeartbeat();
+      this.cancelCalibration();
       this.lastStatePacket = new Uint8Array(20);
       this.rxCallback = void 0;
       this.disconnectCallback = void 0;
@@ -1004,13 +1030,6 @@
       response[0] = BATTERY_RESPONSE;
       response[3] = EMULATED_BATTERY_MV >> 8 & 255;
       response[4] = EMULATED_BATTERY_MV & 255;
-      return response;
-    }
-    createCalibratedStateResponse() {
-      const response = new Uint8Array(20);
-      response[0] = TOWER_STATE_RESPONSE;
-      response[1] = 16;
-      response[2] = 66;
       return response;
     }
   };
@@ -4267,6 +4286,7 @@
     };
   }
   var Tower = new src_default({ diagnostics: buildDiagnosticsConfig() });
+  var emulatorAdapter = null;
   var towerEmulatorWindow = null;
   var currentConnectionMode = null;
   var towerEmulatorConnectInFlight = false;
@@ -4377,6 +4397,7 @@
         await Tower.cleanup();
       } catch (e) {
       }
+      emulatorAdapter = null;
       Tower = new src_default({ diagnostics: buildDiagnosticsConfig() });
       Tower.onSkullDrop = updateSkullDropCount;
       Tower.onTowerConnect = onTowerConnected;
@@ -4445,11 +4466,12 @@
         await Tower.cleanup();
       } catch (e) {
       }
+      emulatorAdapter = new TowerEmulatorAdapter({
+        onAudioCommand: postAudioEventToEmulatorWindow,
+        onLightSequenceCommand: postLightSequenceEventToEmulatorWindow
+      });
       Tower = new src_default({
-        adapter: new TowerEmulatorAdapter({
-          onAudioCommand: postAudioEventToEmulatorWindow,
-          onLightSequenceCommand: postLightSequenceEventToEmulatorWindow
-        }),
+        adapter: emulatorAdapter,
         diagnostics: buildDiagnosticsConfig()
       });
       currentConnectionMode = "emulator";
@@ -4508,6 +4530,7 @@
   };
   Tower.onTowerConnect = onTowerConnected;
   var onTowerDisconnected = () => {
+    var _a2;
     towerEmulatorWindow == null ? void 0 : towerEmulatorWindow.postMessage({ type: "showIdle" }, "*");
     const el = document.getElementById("tower-connection-state");
     if (el) {
@@ -4520,12 +4543,19 @@
     updateChartStatus("Tower disconnected - connect to tower to collect data");
     updateCalibrationStatus();
     updateEmulatorSealTabVisibility();
+    setCalibrateButtonDisabled(false);
+    (_a2 = document.getElementById("calibrating-message")) == null ? void 0 : _a2.classList.add("hidden");
   };
   Tower.onTowerDisconnect = onTowerDisconnected;
+  var setCalibrateButtonDisabled = (disabled) => {
+    const btn = document.getElementById("calibrate");
+    if (btn) btn.disabled = disabled;
+  };
   async function calibrate() {
     if (!Tower.isConnected) {
       return;
     }
+    setCalibrateButtonDisabled(true);
     if (currentConnectionMode === "emulator") {
       postCalibrateToTowerEmulatorWindow();
     }
@@ -4536,6 +4566,7 @@
     }
   }
   var onCalibrationComplete = () => {
+    setCalibrateButtonDisabled(false);
     const el = document.getElementById("calibrating-message");
     if (el) {
       el.classList.add("hidden");
@@ -6310,6 +6341,10 @@ ${"-".repeat(60)}
     const { type } = event.data;
     if (type === "emulatorReady") {
       syncTowerEmulatorWindow();
+      return;
+    }
+    if (type === "calibrationComplete") {
+      emulatorAdapter == null ? void 0 : emulatorAdapter.completeCalibration();
       return;
     }
     if (type === "emulatorClosed") {

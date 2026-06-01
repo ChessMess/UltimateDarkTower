@@ -50,6 +50,9 @@ function buildDiagnosticsConfig() {
 }
 
 let Tower: UltimateDarkTower = new UltimateDarkTower({ diagnostics: buildDiagnosticsConfig() });
+// The emulator's software BLE adapter, kept so the 'calibrationComplete' relay
+// from the popup can trigger its calibrated TOWER_STATE reply. Null in BLE mode.
+let emulatorAdapter: TowerEmulatorAdapter | null = null;
 let towerEmulatorWindow: Window | null = null;
 let currentConnectionMode: 'ble' | 'emulator' | null = null;
 let towerEmulatorConnectInFlight = false;
@@ -237,6 +240,7 @@ async function connectToTower() {
   // If we previously used the emulator, recreate Tower with the default BLE adapter
   if (currentConnectionMode !== 'ble') {
     try { await Tower.cleanup(); } catch { /* ignore */ }
+    emulatorAdapter = null;
     Tower = new UltimateDarkTower({ diagnostics: buildDiagnosticsConfig() });
     Tower.onSkullDrop = updateSkullDropCount;
     Tower.onTowerConnect = onTowerConnected;
@@ -318,11 +322,12 @@ async function connectToTowerEmulator() {
       await Tower.cleanup();
     } catch { /* ignore if not yet connected */ }
 
+    emulatorAdapter = new TowerEmulatorAdapter({
+      onAudioCommand: postAudioEventToEmulatorWindow,
+      onLightSequenceCommand: postLightSequenceEventToEmulatorWindow,
+    });
     Tower = new UltimateDarkTower({
-      adapter: new TowerEmulatorAdapter({
-        onAudioCommand: postAudioEventToEmulatorWindow,
-        onLightSequenceCommand: postLightSequenceEventToEmulatorWindow,
-      }),
+      adapter: emulatorAdapter,
       diagnostics: buildDiagnosticsConfig(),
     });
     currentConnectionMode = 'emulator';
@@ -422,13 +427,27 @@ const onTowerDisconnected = () => {
   // Update calibration status for disconnected state
   updateCalibrationStatus();
   updateEmulatorSealTabVisibility();
+
+  // An in-flight calibration won't complete after a disconnect (the adapter
+  // cancels its pending reply), so clear the calibrating UI here.
+  setCalibrateButtonDisabled(false);
+  document.getElementById("calibrating-message")?.classList.add("hidden");
 }
 Tower.onTowerDisconnect = onTowerDisconnected;
+
+// Disable the Calibrate button while a calibration is in flight so it can't be
+// spammed (which would queue overlapping commands and re-trigger the sweep).
+// Re-enabled on completion / disconnect.
+const setCalibrateButtonDisabled = (disabled: boolean) => {
+  const btn = document.getElementById("calibrate") as HTMLButtonElement | null;
+  if (btn) btn.disabled = disabled;
+};
 
 async function calibrate() {
   if (!Tower.isConnected) {
     return;
   }
+  setCalibrateButtonDisabled(true);
   // Kick off the popup's visual calibration sweep on click (like the Display
   // example) before awaiting the BLE round-trip. No-op outside emulator mode.
   if (currentConnectionMode === 'emulator') {
@@ -442,6 +461,7 @@ async function calibrate() {
 }
 
 const onCalibrationComplete = () => {
+  setCalibrateButtonDisabled(false);
   const el = document.getElementById("calibrating-message");
   if (el) {
     el.classList.add("hidden");
@@ -2860,6 +2880,14 @@ window.addEventListener('message', (event: MessageEvent) => {
   const { type } = event.data as { type?: string };
   if (type === 'emulatorReady') {
     syncTowerEmulatorWindow();
+    return;
+  }
+
+  if (type === 'calibrationComplete') {
+    // The popup's visual calibration sweep finished — have the emulator adapter
+    // emit its calibrated TOWER_STATE reply now, which drives the library's
+    // onCalibrationComplete (and our UI) in sync with the popup.
+    emulatorAdapter?.completeCalibration();
     return;
   }
 
