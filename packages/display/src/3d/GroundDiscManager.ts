@@ -127,6 +127,30 @@ export class GroundDiscManager {
     }
   }
 
+  /**
+   * Report the disc geometry derived from the model bounds + lighting config.
+   * Pure computation (mirrors {@link build}'s sizing) — valid even before the
+   * disc mesh is lazily built, so external plugins can align content on the disc
+   * top before/independently of the disc being shown.
+   *
+   * `topY` is the top surface (where on-disc content rests); `center` is the
+   * disc's geometric center on the Y axis (x = z = 0).
+   */
+  getMetrics(
+    modelRadius: number,
+    modelBottomY: number,
+    lighting: ResolvedLightingConfig,
+  ): { center: THREE.Vector3; radius: number; topY: number } {
+    const radius = modelRadius * lighting.groundDisc.radiusFactor;
+    const h = Math.max(modelRadius * lighting.boardDisc.thicknessFactor, 1e-4);
+    const centerY = modelBottomY - modelRadius * 0.002 - h / 2;
+    return {
+      center: new THREE.Vector3(0, centerY, 0),
+      radius,
+      topY: centerY + h / 2,
+    };
+  }
+
   /** Reapply the full lighting config to the disc material and geometry. */
   updateLighting(
     lighting: ResolvedLightingConfig,

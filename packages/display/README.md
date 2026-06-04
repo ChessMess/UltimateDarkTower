@@ -116,6 +116,7 @@ Both `TowerRenderView` and `TowerDisplay` accept any subset of `['readout', 'sid
 - **Full API reference** → [docs/API.md](docs/API.md) — every public class, method, option, and type.
 - **Tune the 3D scene** → [docs/LIGHTING.md](docs/LIGHTING.md) — three-point rig, bloom, skybox, ground disc, tuning recipes.
 - **Add skull physics** → [docs/PHYSICS.md](docs/PHYSICS.md) — opt-in subpath with Rapier-driven dynamics.
+- **Build a scene plugin** → [docs/SCENE_PLUGINS.md](docs/SCENE_PLUGINS.md) — own your own 3D content (boards, tokens, effects) on the generalized seam.
 - **Author LED sequences** → [docs/SEQUENCE_AUTHORING.md](docs/SEQUENCE_AUTHORING.md) — JSON schema, every track kind.
 - **Run in Electron** → [docs/ELECTRON.md](docs/ELECTRON.md) — BrowserWindow setup, CSP, BLE picker.
 - **Stuck?** → [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — predictable failure modes with fixes.

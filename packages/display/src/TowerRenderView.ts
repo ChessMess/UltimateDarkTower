@@ -44,7 +44,16 @@ export interface TowerRenderViewOptions {
   actions?: HTMLElement[];
   /** Extra class on `.trv-root` for theming hooks. */
   className?: string;
+  /**
+   * Eagerly create an absolutely-positioned overlay layer above the canvas (a HUD
+   * docking spot). Equivalent to calling {@link TowerRenderView.getOverlayContainer}.
+   * Default false.
+   */
+  overlay?: boolean;
 }
+
+/** A docking region around the canvas, created on demand by {@link TowerRenderView.getPanelSlot}. */
+export type TowerRenderViewPanelPosition = 'left' | 'right' | 'top' | 'bottom';
 
 /**
  * All-in-one render view facade. Wraps a {@link TowerDisplay} with optional
@@ -86,6 +95,12 @@ export class TowerRenderView implements ITowerDisplay {
   private badgeIndex = new Map<string, HTMLSpanElement>();
   private currentBadges: TowerRenderViewBadge[] = [];
 
+  /** Overlay HUD layer (lazy). */
+  private overlayEl: HTMLDivElement | null = null;
+  /** Docking grid wrapping the body (lazy; created on first panel slot). */
+  private dockEl: HTMLDivElement | null = null;
+  private panelSlots = new Map<TowerRenderViewPanelPosition, HTMLDivElement>();
+
   private readonly innerDisplay: TowerDisplay;
 
   constructor(options: TowerRenderViewOptions) {
@@ -121,6 +136,8 @@ export class TowerRenderView implements ITowerDisplay {
     };
 
     this.innerDisplay = new TowerDisplay(displayOptions);
+
+    if (options.overlay) this.getOverlayContainer();
   }
 
   // ── State methods (ITowerDisplay) ───────────────────────────────────────
@@ -322,6 +339,40 @@ export class TowerRenderView implements ITowerDisplay {
     return this.innerDisplay.loadState;
   }
 
+  // ── UI docking ──────────────────────────────────────────────────────────
+
+  /**
+   * The overlay layer above the canvas (a HUD docking spot). Created on demand.
+   * The layer has `pointer-events: none` so empty areas still orbit/zoom; mounted
+   * children opt back in (the bundled CSS sets `pointer-events: auto` on direct
+   * children). Mount floating/movable panels here.
+   */
+  getOverlayContainer(): HTMLElement {
+    if (!this.overlayEl) {
+      this.overlayEl = document.createElement('div');
+      this.overlayEl.className = 'trv-overlay';
+      this.bodyEl.appendChild(this.overlayEl);
+    }
+    return this.overlayEl;
+  }
+
+  /**
+   * A fixed docking region in the chrome around the canvas (an editor docking
+   * spot). Created on demand; reflows the canvas without overlapping it. Mount
+   * fixed side/top/bottom panels here.
+   */
+  getPanelSlot(position: TowerRenderViewPanelPosition): HTMLElement {
+    this.ensureDock();
+    let slot = this.panelSlots.get(position);
+    if (!slot) {
+      slot = document.createElement('div');
+      slot.className = `trv-panel trv-panel-${position}`;
+      this.dockEl!.appendChild(slot);
+      this.panelSlots.set(position, slot);
+    }
+    return slot;
+  }
+
   dispose(): void {
     this.innerDisplay.dispose();
     this.rootEl.remove();
@@ -332,9 +383,23 @@ export class TowerRenderView implements ITowerDisplay {
     this.actionsEl = null;
     this.badgeIndex.clear();
     this.currentBadges = [];
+    this.overlayEl = null;
+    this.dockEl = null;
+    this.panelSlots.clear();
   }
 
   // ── Internals ───────────────────────────────────────────────────────────
+
+  /** Lazily wrap `.trv-body` in a `.trv-dock` grid so panel slots can reflow it. */
+  private ensureDock(): void {
+    if (this.dockEl) return;
+    this.dockEl = document.createElement('div');
+    this.dockEl.className = 'trv-dock';
+    // Insert the dock where the body sits, then move the body (and its mounted
+    // display + any overlay) into the dock's center cell.
+    this.rootEl.insertBefore(this.dockEl, this.bodyEl);
+    this.dockEl.appendChild(this.bodyEl);
+  }
 
   private ensureHeader(): void {
     if (this.headerEl) return;

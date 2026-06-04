@@ -4,10 +4,19 @@ export type {
   TowerRenderViewOptions,
   TowerRenderViewBadge,
   TowerRenderViewBadgeTone,
+  TowerRenderViewPanelPosition,
 } from './TowerRenderView';
 export { TowerStateReadout } from './TowerStateReadout';
 export { TowerSideView } from './2d/TowerSideView';
 export { Tower3DView, type Tower3DViewOptions, type PerfReport, type PerfStat } from './3d/Tower3DView';
+export { attachScenePlugin } from './3d/ScenePlugin';
+export type {
+  ScenePlugin,
+  ScenePluginContext,
+  ScenePluginHandle,
+  ScenePluginModelInfo,
+  PointerTarget,
+} from './3d/ScenePlugin';
 export type { BloomFrameMetrics } from './3d/BloomManager';
 export { TowerStateController } from './state/TowerStateController';
 export type { TowerStateControllerOptions } from './state/TowerStateController';

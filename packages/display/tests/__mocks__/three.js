@@ -477,6 +477,49 @@ class AxesHelper {
   }
 }
 
+// Controllable raycaster: returns an intersection for any object flagged with
+// `__hit = true`; `__hitDistance` controls ordering. Lets pointer-contract tests
+// drive hit results deterministically without real WebGL/geometry.
+class Raycaster {
+  constructor() {
+    this.ray = { intersectPlane() { return null; } };
+  }
+  setFromCamera() { return this; }
+  intersectObjects(objects /* , recursive */) {
+    const hits = [];
+    for (const o of objects || []) {
+      if (o && o.__hit) {
+        hits.push({ object: o, distance: o.__hitDistance ?? 1, point: new Vector3(), face: null });
+      }
+    }
+    hits.sort((a, b) => a.distance - b.distance);
+    return hits;
+  }
+}
+
+class Quaternion {
+  constructor(x = 0, y = 0, z = 0, w = 1) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.w = w;
+  }
+  set(x, y, z, w) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.w = w;
+    return this;
+  }
+  copy(q) {
+    this.x = q.x;
+    this.y = q.y;
+    this.z = q.z;
+    this.w = q.w;
+    return this;
+  }
+}
+
 module.exports = {
   Layers,
   Scene,
@@ -484,6 +527,8 @@ module.exports = {
   Object3D,
   Vector2,
   Vector3,
+  Quaternion,
+  Raycaster,
   Color,
   PerspectiveCamera,
   WebGLRenderer,

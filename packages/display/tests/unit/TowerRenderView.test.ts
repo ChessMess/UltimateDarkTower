@@ -233,4 +233,83 @@ describe('TowerRenderView', () => {
     expect(view.root.contains(view.body)).toBe(true);
     view.dispose();
   });
+
+  describe('UI docking', () => {
+    it('getOverlayContainer returns an element overlapping the body, with pointer-events:none on the layer', () => {
+      view = makeView();
+      const overlay = view.getOverlayContainer();
+      expect(overlay.classList.contains('trv-overlay')).toBe(true);
+      // Mounted over the body (the canvas area).
+      expect(view.body.contains(overlay)).toBe(true);
+      // Calling again returns the same element (created on demand, once).
+      expect(view.getOverlayContainer()).toBe(overlay);
+      view.dispose();
+    });
+
+    it('the overlay option creates the overlay eagerly', () => {
+      view = makeView({ overlay: true });
+      expect(view.body.querySelector('.trv-overlay')).not.toBeNull();
+      view.dispose();
+    });
+
+    it('getPanelSlot wraps the body in a dock and places the slot beside it without overlap', () => {
+      view = makeView();
+      const right = view.getPanelSlot('right');
+      expect(right.classList.contains('trv-panel')).toBe(true);
+      expect(right.classList.contains('trv-panel-right')).toBe(true);
+
+      // A dock now wraps the body; the slot and body are siblings in it (reflow,
+      // not overlap), and the body still holds the inner display.
+      const dock = view.root.querySelector('.trv-dock');
+      expect(dock).not.toBeNull();
+      expect(dock!.contains(view.body)).toBe(true);
+      expect(dock!.contains(right)).toBe(true);
+      expect(view.body.querySelector('.td-layout')).not.toBeNull();
+
+      // Repeated calls for the same position return the same slot.
+      expect(view.getPanelSlot('right')).toBe(right);
+      // A different position creates a distinct slot in the same dock.
+      const left = view.getPanelSlot('left');
+      expect(left).not.toBe(right);
+      expect(dock!.contains(left)).toBe(true);
+      view.dispose();
+    });
+
+    it('overlay survives being moved into the dock and stays inside the body', () => {
+      view = makeView({ overlay: true });
+      const overlay = view.getOverlayContainer();
+      view.getPanelSlot('bottom');
+      // The body (with its overlay child) was reparented into the dock.
+      expect(view.body.contains(overlay)).toBe(true);
+      expect(view.root.querySelector('.trv-dock')!.contains(view.body)).toBe(true);
+      view.dispose();
+    });
+
+    it('dispose removes overlay + dock + panel slots', () => {
+      view = makeView({ overlay: true });
+      view.getPanelSlot('right');
+      expect(container.querySelector('.trv-overlay')).not.toBeNull();
+      expect(container.querySelector('.trv-dock')).not.toBeNull();
+
+      view.dispose();
+
+      expect(container.querySelector('.trv-overlay')).toBeNull();
+      expect(container.querySelector('.trv-dock')).toBeNull();
+      expect(container.querySelector('.trv-panel')).toBeNull();
+    });
+  });
+});
+
+describe('TOWER_DISPLAY_CSS docking rules', () => {
+  it('includes the overlay + panel-slot rules so injectStyles:false consumers get them', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { TOWER_DISPLAY_CSS } = jest.requireActual('../../src/styles') as { TOWER_DISPLAY_CSS: string };
+    expect(TOWER_DISPLAY_CSS).toContain('.trv-overlay');
+    expect(TOWER_DISPLAY_CSS).toContain('pointer-events: none');
+    expect(TOWER_DISPLAY_CSS).toContain('.trv-dock');
+    expect(TOWER_DISPLAY_CSS).toContain('.trv-panel-right');
+    expect(TOWER_DISPLAY_CSS).toContain('.trv-panel-left');
+    expect(TOWER_DISPLAY_CSS).toContain('.trv-panel-top');
+    expect(TOWER_DISPLAY_CSS).toContain('.trv-panel-bottom');
+  });
 });

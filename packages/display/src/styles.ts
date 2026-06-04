@@ -483,6 +483,8 @@ button.tdr-led[data-overridden="true"][data-effect="on"] {
   flex-direction: column;
   flex: 1 1 0;
   min-height: 0;
+  /* Anchor for the absolutely-positioned overlay layer. */
+  position: relative;
 }
 
 .trv-header {
@@ -568,6 +570,48 @@ button.tdr-led[data-overridden="true"][data-effect="on"] {
   display: flex;
   gap: 0.4rem;
 }
+
+/* ── UI docking (overlay HUD + panel slots) ── */
+
+/* Absolutely-positioned overlay above the canvas. The layer itself ignores
+   pointer events so empty areas still orbit/zoom; mounted children opt back in. */
+.trv-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.trv-overlay > * {
+  pointer-events: auto;
+}
+
+/* Docking grid that reflows the canvas around fixed side/top/bottom panels. */
+.trv-dock {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "top top top"
+    "left body right"
+    "bottom bottom bottom";
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+}
+.trv-dock > .trv-body {
+  grid-area: body;
+  min-width: 0;
+  min-height: 0;
+}
+.trv-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+.trv-panel-left { grid-area: left; }
+.trv-panel-right { grid-area: right; }
+.trv-panel-top { grid-area: top; }
+.trv-panel-bottom { grid-area: bottom; }
 `;
 
 /** The raw CSS string for all tower display components.

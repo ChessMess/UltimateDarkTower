@@ -5,6 +5,13 @@ import { LIGHT_EFFECTS, TOWER_AUDIO_LIBRARY } from 'ultimatedarktower';
 import type { TowerState, SealIdentifier, TowerSide } from 'ultimatedarktower';
 
 import type { ITowerDisplay, TowerPhysicsHooks } from '../types';
+import type {
+  ScenePlugin,
+  ScenePluginContext,
+  ScenePluginHandle,
+  ScenePluginModelInfo,
+  PointerTarget,
+} from './ScenePlugin';
 import { injectStyles } from '../styles';
 import { SideButtons } from '../shared/SideButtons';
 import { DrumRotationAudio } from '../audio/DrumRotationAudio';
@@ -279,9 +286,20 @@ export class Tower3DView implements ITowerDisplay {
   /** Clock for deriving `dt` for registered physics frame callbacks. */
   private readonly physicsClock = new THREE.Clock();
   private physicsFrameListeners: Set<(dt: number) => void> = new Set();
-  private physicsModelLoadListeners: Set<
-    (info: { root: THREE.Object3D; modelRadius: number; modelBottomY: number; modelTopY: number }) => void
-  > = new Set();
+  private physicsModelLoadListeners: Set<(info: ScenePluginModelInfo) => void> = new Set();
+
+  /** Attached scene plugins (see {@link ScenePlugin}). */
+  private scenePlugins: Set<{ plugin: ScenePlugin; detach: () => void }> = new Set();
+  /** Side-change subscribers fanned out alongside `onSideChange`. */
+  private sideChangeListeners: Set<(side: TowerSide) => void> = new Set();
+  /** Pointer hit-test targets registered by scene plugins. */
+  private pointerTargets: PointerTarget[] = [];
+  /** Shared raycaster for pointer hit-testing (lazy; absent in WebGL-less test envs). */
+  private pointerRaycaster: THREE.Raycaster | null = null;
+  private readonly pointerNdc = new THREE.Vector2();
+  /** The target that consumed the active pointer-down gesture, until pointer-up. */
+  private activePointerTarget: PointerTarget | null = null;
+  private pointerListenerCleanup: (() => void) | null = null;
 
   private cameraController: CameraController | null = null;
 
@@ -404,45 +422,265 @@ export class Tower3DView implements ITowerDisplay {
     return {
       scene: this.scene as THREE.Scene,
       drumNode: (level) => this.drumManager.getDrumNode(level),
-      onFrame: (cb) => {
-        this.physicsFrameListeners.add(cb);
-        return () => { this.physicsFrameListeners.delete(cb); };
-      },
+      onFrame: (cb) => this.subscribeFrame(cb),
       onSealsApplied: (cb) => this.sealManager.onSealsApplied(cb),
-      onStateApplied: (cb) => {
-        this.stateAppliedListeners.push(cb);
-        return () => {
-          const i = this.stateAppliedListeners.indexOf(cb);
-          if (i >= 0) this.stateAppliedListeners.splice(i, 1);
-        };
-      },
-      onModelLoaded: (cb) => {
-        this.physicsModelLoadListeners.add(cb);
-        // Fire immediately if the model is already loaded.
-        if (this.model) {
-          try {
-            cb({
-              root: this.model,
-              modelRadius: this.modelRadius,
-              modelBottomY: this.modelBottomY,
-              modelTopY: this.modelTopY,
-            });
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error('[Tower3DView] onModelLoaded listener threw', err);
-          }
-        }
-        return () => { this.physicsModelLoadListeners.delete(cb); };
-      },
+      onStateApplied: (cb) => this.subscribeStateApplied(cb),
+      onModelLoaded: (cb) => this.subscribeModelLoaded(cb),
       modelRadius: this.modelRadius,
       modelBottomY: this.modelBottomY,
       modelTopY: this.modelTopY,
     };
   }
 
+  // --- Shared subscription internals (used by getPhysicsHooks + scene plugins) ---
+
+  private subscribeFrame(cb: (dt: number) => void): () => void {
+    this.physicsFrameListeners.add(cb);
+    return () => { this.physicsFrameListeners.delete(cb); };
+  }
+
+  private subscribeStateApplied(cb: (state: TowerState) => void): () => void {
+    this.stateAppliedListeners.push(cb);
+    return () => {
+      const i = this.stateAppliedListeners.indexOf(cb);
+      if (i >= 0) this.stateAppliedListeners.splice(i, 1);
+    };
+  }
+
+  private subscribeModelLoaded(cb: (info: ScenePluginModelInfo) => void): () => void {
+    this.physicsModelLoadListeners.add(cb);
+    // Fire immediately if the model is already loaded.
+    if (this.model) {
+      try {
+        cb({
+          root: this.model,
+          modelRadius: this.modelRadius,
+          modelBottomY: this.modelBottomY,
+          modelTopY: this.modelTopY,
+        });
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[Tower3DView] onModelLoaded listener threw', err);
+      }
+    }
+    return () => { this.physicsModelLoadListeners.delete(cb); };
+  }
+
   /** @internal — exposed for tests; equals `physicsFrameListeners.size`. */
   get physicsFrameListenerCount(): number {
     return this.physicsFrameListeners.size;
+  }
+
+  /** @internal — exposed for tests; number of attached scene plugins. */
+  get scenePluginCount(): number {
+    return this.scenePlugins.size;
+  }
+
+  /** @internal — exposed for tests; number of registered pointer targets. */
+  get pointerTargetCount(): number {
+    return this.pointerTargets.length;
+  }
+
+  // --- Scene-plugin seam (see ScenePlugin.ts / attachScenePlugin) ---
+
+  /**
+   * Attach a {@link ScenePlugin}. Prefer the standalone `attachScenePlugin(view, plugin)`
+   * helper; this method is the public seam it wraps. Calls `plugin.attach(ctx)` once with
+   * a live context, wires its optional lifecycle methods, and returns a handle whose
+   * `detach()` removes the plugin and frees its subscriptions (idempotent).
+   */
+  registerScenePlugin(plugin: ScenePlugin): ScenePluginHandle {
+    const unsubs: Array<() => void> = [];
+    const ctx = this.createScenePluginContext(unsubs);
+
+    let detached = false;
+    const entry = {
+      plugin,
+      detach: () => {
+        if (detached) return;
+        detached = true;
+        this.scenePlugins.delete(entry);
+        for (const unsub of unsubs.splice(0)) {
+          try {
+            unsub();
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('[Tower3DView] scene plugin unsubscribe threw', err);
+          }
+        }
+        try {
+          plugin.dispose();
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error('[Tower3DView] scene plugin dispose threw', err);
+        }
+      },
+    };
+    this.scenePlugins.add(entry);
+
+    try {
+      plugin.attach(ctx);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[Tower3DView] scene plugin attach threw', err);
+    }
+
+    // Wire optional lifecycle methods AFTER attach so an immediate model-load
+    // fire (when the GLB is already loaded) reaches a fully-built plugin.
+    if (plugin.update) unsubs.push(this.subscribeFrame(plugin.update.bind(plugin)));
+    if (plugin.onStateApplied) unsubs.push(this.subscribeStateApplied(plugin.onStateApplied.bind(plugin)));
+    if (plugin.onSealsApplied) unsubs.push(this.sealManager.onSealsApplied(plugin.onSealsApplied.bind(plugin)));
+    if (plugin.onModelLoaded) unsubs.push(this.subscribeModelLoaded(plugin.onModelLoaded.bind(plugin)));
+
+    return { plugin, detach: entry.detach };
+  }
+
+  /** Register a pointer hit-test target. Returns an unsubscribe function. */
+  registerPointerTarget(target: PointerTarget): () => void {
+    this.pointerTargets.push(target);
+    return () => {
+      const i = this.pointerTargets.indexOf(target);
+      if (i >= 0) this.pointerTargets.splice(i, 1);
+      if (this.activePointerTarget === target) this.activePointerTarget = null;
+    };
+  }
+
+  /**
+   * Bind a capture-phase pointer interception layer on the canvas's parent so
+   * registered {@link PointerTarget}s can hit-test and consume pointer gestures
+   * before OrbitControls (which listens on the canvas itself) acts. Capture on the
+   * ancestor runs before the event reaches the canvas target, so a consumed
+   * pointer-down is stopped via `stopPropagation` and never starts an orbit drag.
+   * Side-select is azimuth-derived (not pointer-driven), so suppressing the drag
+   * also suppresses any spurious side change.
+   */
+  private bindPointerTargets(): void {
+    if (this.pointerListenerCleanup) this.pointerListenerCleanup();
+    const parent = this.canvasContainer;
+    // No Raycaster in WebGL-less environments (e.g. jsdom without the mock) → skip.
+    if (!parent || typeof THREE.Raycaster !== 'function') {
+      this.pointerListenerCleanup = null;
+      return;
+    }
+    const doc = parent.ownerDocument;
+
+    const onDown = (ev: PointerEvent): void => {
+      if (this.pointerTargets.length === 0) return;
+      const ray = this.updatePointerRay(ev);
+      if (!ray) return;
+      // Highest priority first; the first target that consumes (returns true) wins.
+      const sorted = [...this.pointerTargets].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+      for (const target of sorted) {
+        const objects = typeof target.objects === 'function' ? target.objects() : target.objects;
+        if (!objects || objects.length === 0) continue;
+        const hits = ray.intersectObjects(objects, true);
+        if (hits.length === 0) continue;
+        const consumed = target.onPointerDown?.(hits[0], ev) === true;
+        if (consumed) {
+          this.activePointerTarget = target;
+          ev.stopPropagation();
+          return;
+        }
+      }
+    };
+
+    const onMove = (ev: PointerEvent): void => {
+      const target = this.activePointerTarget;
+      if (!target?.onPointerMove) return;
+      target.onPointerMove(this.pickPointerHit(target, ev), ev);
+    };
+
+    const onUp = (ev: PointerEvent): void => {
+      const target = this.activePointerTarget;
+      if (!target) return;
+      this.activePointerTarget = null;
+      if (!target.onPointerUp) return;
+      const consumed = target.onPointerUp(this.pickPointerHit(target, ev), ev) === true;
+      if (consumed) ev.stopPropagation();
+    };
+
+    parent.addEventListener('pointerdown', onDown, { capture: true });
+    doc.addEventListener('pointermove', onMove, { capture: true });
+    doc.addEventListener('pointerup', onUp, { capture: true });
+    doc.addEventListener('pointercancel', onUp, { capture: true });
+
+    this.pointerListenerCleanup = () => {
+      parent.removeEventListener('pointerdown', onDown, { capture: true });
+      doc.removeEventListener('pointermove', onMove, { capture: true });
+      doc.removeEventListener('pointerup', onUp, { capture: true });
+      doc.removeEventListener('pointercancel', onUp, { capture: true });
+      this.activePointerTarget = null;
+    };
+  }
+
+  /** Update the shared raycaster from a pointer event's canvas-relative NDC. */
+  private updatePointerRay(ev: PointerEvent): THREE.Raycaster | null {
+    if (!this.camera || !this.renderer) return null;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+    this.pointerNdc.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+    this.pointerNdc.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+    if (!this.pointerRaycaster) this.pointerRaycaster = new THREE.Raycaster();
+    this.pointerRaycaster.setFromCamera(this.pointerNdc, this.camera);
+    return this.pointerRaycaster;
+  }
+
+  /** Raycast a single target's objects; return the nearest hit or null. */
+  private pickPointerHit(target: PointerTarget, ev: PointerEvent): THREE.Intersection | null {
+    const ray = this.updatePointerRay(ev);
+    if (!ray) return null;
+    const objects = typeof target.objects === 'function' ? target.objects() : target.objects;
+    if (!objects || objects.length === 0) return null;
+    const hits = ray.intersectObjects(objects, true);
+    return hits.length > 0 ? hits[0] : null;
+  }
+
+  private createScenePluginContext(unsubs: Array<() => void>): ScenePluginContext {
+    const track = (unsub: () => void): (() => void) => {
+      unsubs.push(unsub);
+      return unsub;
+    };
+    const ctx: ScenePluginContext = {
+      scene: this.scene as THREE.Scene,
+      camera: this.camera as THREE.PerspectiveCamera,
+      renderer: this.renderer as THREE.WebGLRenderer,
+      // Snapshot values; replaced below with live getters reflecting post-load bounds.
+      modelRadius: this.modelRadius,
+      modelBottomY: this.modelBottomY,
+      modelTopY: this.modelTopY,
+      drumNode: (level) => this.drumManager.getDrumNode(level),
+      registerFrameCallback: (cb) => track(this.subscribeFrame(cb)),
+      onStateApplied: (cb) => track(this.subscribeStateApplied(cb)),
+      onSealsApplied: (cb) => track(this.sealManager.onSealsApplied(cb)),
+      onModelLoaded: (cb) => track(this.subscribeModelLoaded(cb)),
+      registerPointerTarget: (target) => track(this.registerPointerTarget(target)),
+      getSide: () => this.cameraController?.getCurrentSide() ?? 'north',
+      onSideChange: (cb) => {
+        this.sideChangeListeners.add(cb);
+        return track(() => this.sideChangeListeners.delete(cb));
+      },
+      isModelLoaded: () => this._loadState === 'ready',
+    };
+    // Make bounds live (reflect post-load updates) without aliasing `this`.
+    Object.defineProperties(ctx, {
+      modelRadius: { get: () => this.modelRadius, enumerable: true },
+      modelBottomY: { get: () => this.modelBottomY, enumerable: true },
+      modelTopY: { get: () => this.modelTopY, enumerable: true },
+    });
+    return ctx;
+  }
+
+  /** Fire a side change to the view-level callback and all scene-plugin subscribers. */
+  private emitSideChange(side: TowerSide): void {
+    this.onSideChange?.(side);
+    for (const cb of this.sideChangeListeners) {
+      try {
+        cb(side);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[Tower3DView] side-change listener threw', err);
+      }
+    }
   }
 
   private tickPhysicsListeners(): void {
@@ -470,7 +708,7 @@ export class Tower3DView implements ITowerDisplay {
     // Stash the pending side so loadModel can replay the tween once the camera
     // is ready (snapToSide skips the tween before the model loads).
     this.pendingSide = this.model ? null : side;
-    this.onSideChange?.(side);
+    this.emitSideChange(side);
   }
 
   /** Turn all LEDs off, stop drum audio, and hide the canvas wrapper until the next `applyState` call. */
@@ -975,10 +1213,32 @@ export class Tower3DView implements ITowerDisplay {
     this.groundDiscManager?.setVisible(visible, this.modelRadius, this.modelBottomY, this.lighting);
   }
 
-  /** Toggle the canvas-generated game board texture on the ground disc. */
+  /**
+   * Show/hide the placeholder game-board image on the ground disc's top surface.
+   * This is the **board-surface stand-down** switch: pass `false` to suppress the
+   * built-in board image (the top cap reverts to a plain colored material) so an
+   * external plugin can own the disc surface — the disc **mesh** stays (toggle that
+   * with {@link setGroundDiscVisible}) and nothing physics depends on is removed
+   * (skull physics rests on its own board collider, not the visual disc).
+   * Defaults to visible.
+   */
   setBoardDiscEnabled(enabled: boolean): void {
     this.lighting.boardDisc.enabled = enabled;
     this.groundDiscManager?.setBoardDiscEnabled(enabled, this.lighting);
+  }
+
+  /**
+   * Report the ground-disc geometry so an external plugin can align content on it.
+   * Derived from the current model bounds + lighting config; valid even before the
+   * disc mesh is lazily built. `topY` is the top surface (where on-disc content
+   * rests); `center` is the disc's geometric center on the Y axis.
+   */
+  getDiscMetrics(): { center: THREE.Vector3; radius: number; topY: number } {
+    if (this.groundDiscManager) {
+      return this.groundDiscManager.getMetrics(this.modelRadius, this.modelBottomY, this.lighting);
+    }
+    // Post-dispose fallback.
+    return { center: new THREE.Vector3(0, this.modelBottomY, 0), radius: this.modelRadius, topY: this.modelBottomY };
   }
 
   /** Load an equirectangular image or .hdr/.exr file as the scene skybox. Pass null to clear. */
@@ -989,6 +1249,16 @@ export class Tower3DView implements ITowerDisplay {
 
   /** Cancel the render loop, release all three.js resources, and remove the canvas from the DOM. */
   dispose(): void {
+    // Detach scene plugins first, while the scene/camera/renderer are still live
+    // so plugin.dispose() can clean up its own Object3Ds.
+    for (const entry of [...this.scenePlugins]) entry.detach();
+    this.scenePlugins.clear();
+    this.sideChangeListeners.clear();
+    this.pointerListenerCleanup?.();
+    this.pointerListenerCleanup = null;
+    this.pointerTargets = [];
+    this.pointerRaycaster = null;
+    this.activePointerTarget = null;
     this.cameraController?.dispose();
     this.cameraController = null;
     this.entranceAnimator.dispose();
@@ -1148,8 +1418,9 @@ export class Tower3DView implements ITowerDisplay {
     this.resizeObserver.observe(this.canvasContainer);
 
     this.cameraController = new CameraController(this.camera, this.controls, this.sideButtons!, this.cameraConfig);
-    this.cameraController.onSideChange = (side) => this.onSideChange?.(side);
+    this.cameraController.onSideChange = (side) => this.emitSideChange(side);
     this.cameraController.bindZoomTowardCursor(this.renderer.domElement);
+    this.bindPointerTargets();
 
     if (this.lighting.scene.skyboxUrl) {
       this.skyboxManager.apply(this.lighting.scene.skyboxUrl, this.lighting.scene.background);

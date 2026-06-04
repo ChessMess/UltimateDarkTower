@@ -186,9 +186,18 @@ Other levers:
 
 The bundle itself is dominated by the 22 MB GLB. If GLB size is the bottleneck, supply your own smaller model via `modelUrl` — drum and seal naming must still match.
 
+## Scene plugin issues
+
+- **Clicking my plugin's object still orbits the camera.** The target's `onPointerDown` must return `true` to consume the gesture; returning `undefined`/`false` lets the camera handle it. Also make sure the object is actually in the target's `objects` (or the getter returns it) and, if it competes with another target, give it a higher `priority`.
+- **My content is positioned wrong / floats off the disc.** Read bounds from `getDiscMetrics()` (or `ctx.modelTopY` / `onModelLoaded`), not hardcoded numbers — the model is auto-fit and bounds are only finalized after the GLB loads. Position model-dependent content in `onModelLoaded`, or guard on `ctx.isModelLoaded()`.
+- **`onModelLoaded` never fired.** It fires once the GLB is in the scene (synchronously if already loaded when you attach). If the model failed to load, you'll see the GLB-load error above and `view.loadState === 'error'`.
+- **The placeholder board is still showing under my content.** Call `setBoardDiscEnabled(false)` to stand the built-in board image down. The disc mesh stays (use `setGroundDiscVisible(false)` to hide that too); the physics floor is independent of both.
+- **My plugin's meshes leaked after teardown.** `detach()` / `dispose()` calls your plugin's `dispose()` but cannot free your GPU resources for you — remove your `Object3D`s from the scene and call `.dispose()` on their geometries, materials, and textures there.
+
 ## See also
 
 - [GETTING_STARTED](GETTING_STARTED.md) — install and prerequisites.
 - [RENDERERS](RENDERERS.md) — capabilities and constraints per renderer.
+- [SCENE_PLUGINS](SCENE_PLUGINS.md) — author a scene plugin on the generalized seam.
 - [ELECTRON](ELECTRON.md) — deep dive on Electron integration.
 - [API](API.md) — option and method reference for every callback mentioned here.

@@ -15,6 +15,7 @@ flowchart TB
     Tuner[3D tuner<br/>style the rendered scene]:::role
     Author[Sequence author<br/>write LED animations]:::role
     Physics[Physics user<br/>drop skulls into the model]:::role
+    Plugin[Plugin author<br/>own 3D content in the scene]:::role
 
     Hobbyist --> GS1[GETTING_STARTED]:::doc
     GS1 --> EX1[EXAMPLE]:::doc
@@ -34,9 +35,12 @@ flowchart TB
 
     Physics --> PH1[PHYSICS]:::accent
     PH1 --> AR2[ARCHITECTURE §physics hooks]:::doc
+
+    Plugin --> SP1[SCENE_PLUGINS]:::accent
+    SP1 --> AR3[ARCHITECTURE §scene plugins]:::doc
 ```
 
-If you are a **hobbyist** with a Dark Tower and want it on screen with minimal code, read [GETTING_STARTED](GETTING_STARTED.md), then page through [EXAMPLE](EXAMPLE.md) to see what the demo can do. If you are an **integrator** embedding the renderer in a companion app, follow GETTING_STARTED into [ARCHITECTURE](ARCHITECTURE.md) for the mental model, then [API](API.md) for reference. If you are a **3D tuner** styling the rendered scene, jump straight to [LIGHTING](LIGHTING.md). If you are writing **LED sequences**, [SEQUENCE_AUTHORING](SEQUENCE_AUTHORING.md) is self-contained. If you are adding **skull physics**, start in [PHYSICS](PHYSICS.md).
+If you are a **hobbyist** with a Dark Tower and want it on screen with minimal code, read [GETTING_STARTED](GETTING_STARTED.md), then page through [EXAMPLE](EXAMPLE.md) to see what the demo can do. If you are an **integrator** embedding the renderer in a companion app, follow GETTING_STARTED into [ARCHITECTURE](ARCHITECTURE.md) for the mental model, then [API](API.md) for reference. If you are a **3D tuner** styling the rendered scene, jump straight to [LIGHTING](LIGHTING.md). If you are writing **LED sequences**, [SEQUENCE_AUTHORING](SEQUENCE_AUTHORING.md) is self-contained. If you are adding **skull physics**, start in [PHYSICS](PHYSICS.md). If you are building a **plugin** that owns its own 3D content in the scene (a board, tokens, effects), read [SCENE_PLUGINS](SCENE_PLUGINS.md).
 
 ## By role
 
@@ -64,6 +68,11 @@ If you are a **hobbyist** with a Dark Tower and want it on screen with minimal c
 1. [PHYSICS](PHYSICS.md) — quick start, parallel-collider model, tuning guide.
 2. [ARCHITECTURE §where physics plugs in](ARCHITECTURE.md#where-physics-plugs-in) — the `TowerPhysicsHooks` seam.
 
+### Scene-plugin / content author
+1. [SCENE_PLUGINS](SCENE_PLUGINS.md) — the plugin lifecycle, context, disc positioning, pointer targets, UI docking, a minimal example.
+2. [ARCHITECTURE §scene plugins](ARCHITECTURE.md#scene-plugins-the-generalized-seam) — where the seam sits in the system.
+3. [API §Scene plugins](API.md#scene-plugins) — type-level reference.
+
 ## By topic
 
 | Doc | Audience | Type | Lines | What it covers |
@@ -76,6 +85,7 @@ If you are a **hobbyist** with a Dark Tower and want it on screen with minimal c
 | [LIGHTING](LIGHTING.md) | 3D tuner | Reference | ~842 | Three-point rig, bloom, skybox, LEDs, animations, full default config, tuning recipes. |
 | [AUDIO](AUDIO.md) | Integrator + audio author | Guide | ~120 | `SoundPack` model, bundled official pack, custom packs, sequence binding, bundler compatibility. |
 | [PHYSICS](PHYSICS.md) | Physics user | Guide | ~236 | Skull physics MVP, opt-in subpath, config, tuning, verification checklist. |
+| [SCENE_PLUGINS](SCENE_PLUGINS.md) | Plugin author | Guide | ~170 | The scene-plugin seam: lifecycle, context, disc positioning, board hand-off, pointer targets, UI docking. |
 | [SEQUENCE_AUTHORING](SEQUENCE_AUTHORING.md) | Sequence author | Reference | ~653 | JSON schema, nine track kinds, examples, snapshot test integration. |
 | [ELECTRON](ELECTRON.md) | Electron integrator | Guide | ~182 | BrowserWindow setup, CSP, modelUrl, Web Bluetooth picker. |
 | [TROUBLESHOOTING](TROUBLESHOOTING.md) | All readers | FAQ | ~260 | Predictable failure modes: GLB load, Rapier WASM, BLE gestures, CSP, subpath resolution. |

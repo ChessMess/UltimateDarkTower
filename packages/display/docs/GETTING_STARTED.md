@@ -126,6 +126,7 @@ Behavior to know:
 - A skull-drop highlight appears only when `beam.count` increases between two successive `applyState` calls. `dispose` clears this tracking.
 - The 3D renderer loads its GLB model asynchronously. State applied before load is queued and replayed on completion. Hook `onLoadError` (and check `view.loadState`) if you need to surface failures.
 - Advanced 3D config that isn't forwarded on the facade (e.g. `setSkyboxUrl`, `setBoardDiscEnabled`) is reached via `view.display.*`; physics hooks via `view.view3D`.
+- To **own your own 3D content** in the scene from a separate package (a board, tokens, effects), attach a scene plugin with `attachScenePlugin(view.view3D, plugin)`, hand the disc surface over with `setBoardDiscEnabled(false)`, and dock DOM controls with `view.getOverlayContainer()` / `view.getPanelSlot(...)`. See [SCENE_PLUGINS](SCENE_PLUGINS.md).
 
 If you need composable control without the facade's wrapper div, instantiate `TowerDisplay` directly — same options, same state API, no chrome:
 

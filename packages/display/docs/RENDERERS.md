@@ -89,8 +89,9 @@ API surface ([API §Tower3DView](API.md#tower3dview)) is the largest of the thre
 - Audio: `applyAudioConfig`, `getAudioConfig` (plus legacy shims `setTowerAudioLibrary`, `setTowerAudioEnabled`, `setDrumRotationSoundUrl`, `setDrumRotationSoundEnabled`). Bundled official sound pack — see [AUDIO](AUDIO.md).
 - Effects: `setLedOverride`, `playEntrance`.
 - Diagnostics: `loadState` getter, `onLoadError` callback, `debug3D` option.
+- Extension: `registerScenePlugin` (via `attachScenePlugin`), `registerPointerTarget`, `getDiscMetrics`, `getPhysicsHooks` — own 3D content in the scene from an external package.
 
-For tuning the look see [LIGHTING](LIGHTING.md). For physics add-ons see [PHYSICS](PHYSICS.md).
+For tuning the look see [LIGHTING](LIGHTING.md). For physics add-ons see [PHYSICS](PHYSICS.md). To inject and own your own 3D content (a board, tokens, effects) see [SCENE_PLUGINS](SCENE_PLUGINS.md).
 
 ## Prefer `TowerRenderView` for one-call setup
 

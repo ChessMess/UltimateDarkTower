@@ -16,11 +16,13 @@ import {
   TowerSideView,
   Tower3DView,
   TowerStateController,
+  attachScenePlugin,
 } from 'ultimatedarktowerdisplay';
 import type {
   TowerRenderViewOptions,
   TowerRenderViewBadge,
   TowerRenderViewBadgeTone,
+  TowerRenderViewPanelPosition,
   TowerDisplayOptions,
   Tower3DViewOptions,
   TowerStateControllerOptions,
@@ -29,6 +31,11 @@ import type {
   RendererType,
   TowerSide,
   SealIdentifier,
+  ScenePlugin,
+  ScenePluginContext,
+  ScenePluginHandle,
+  ScenePluginModelInfo,
+  PointerTarget,
 } from 'ultimatedarktowerdisplay';
 ```
 
@@ -773,6 +780,107 @@ type SealIdentifier = { side: TowerSide; level: TowerLevels };
 ```
 
 `TowerLevels` is `'top' | 'middle' | 'bottom'` — imported from `ultimatedarktower`.
+
+---
+
+## Scene plugins
+
+The generalized seam for injecting and owning 3D content in the `Tower3DView` scene. See [SCENE_PLUGINS](SCENE_PLUGINS.md) for the author's guide.
+
+### `attachScenePlugin(view, plugin)`
+
+```ts
+function attachScenePlugin(view: Tower3DView, plugin: ScenePlugin): ScenePluginHandle;
+```
+
+Attaches a plugin to a `Tower3DView`. Calls `plugin.attach(ctx)` once (synchronously) with a live context, fans state/seal/model-load/side/frame events out to the plugin, and returns a handle. Thin wrapper over the public `view.registerScenePlugin(plugin)`.
+
+### `ScenePlugin`
+
+```ts
+interface ScenePlugin {
+  readonly id: string;
+  attach(ctx: ScenePluginContext): void;
+  onStateApplied?(state: TowerState): void;        // after every applyState, post-update
+  onSealsApplied?(brokenSeals: SealIdentifier[]): void;
+  onModelLoaded?(info: ScenePluginModelInfo): void; // fires immediately if already loaded
+  update?(dtSeconds: number): void;                 // per-frame, dt in seconds
+  dispose(): void;
+}
+```
+
+### `ScenePluginContext`
+
+```ts
+interface ScenePluginContext {
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  renderer: THREE.WebGLRenderer;
+  readonly modelRadius: number;   // live; defaults to 1 before load
+  readonly modelBottomY: number;  // live
+  readonly modelTopY: number;     // live
+  drumNode(level: 'top' | 'middle' | 'bottom'): THREE.Object3D | null;
+  registerFrameCallback(cb: (dtSeconds: number) => void): () => void;
+  onStateApplied(cb: (state: TowerState) => void): () => void;
+  onSealsApplied(cb: (broken: SealIdentifier[]) => void): () => void;
+  onModelLoaded(cb: (info: ScenePluginModelInfo) => void): () => void;
+  registerPointerTarget(target: PointerTarget): () => void;
+  getSide(): TowerSide;           // 'north' before the camera is ready
+  onSideChange(cb: (side: TowerSide) => void): () => void;
+  isModelLoaded(): boolean;
+}
+```
+
+Each subscription returns an unsubscribe function; subscriptions made through `ctx` are also torn down automatically on detach.
+
+### `ScenePluginModelInfo`
+
+```ts
+interface ScenePluginModelInfo {
+  root: THREE.Object3D;
+  modelRadius: number;
+  modelBottomY: number;
+  modelTopY: number;
+}
+```
+
+### `ScenePluginHandle`
+
+```ts
+interface ScenePluginHandle {
+  readonly plugin: ScenePlugin;
+  detach(): void;   // disposes the plugin + frees its subscriptions; idempotent
+}
+```
+
+### `PointerTarget`
+
+```ts
+interface PointerTarget {
+  objects: THREE.Object3D[] | (() => THREE.Object3D[]);
+  priority?: number;                                   // higher tested first; default 0
+  onPointerDown?(hit: THREE.Intersection, ev: PointerEvent): boolean | void; // return true to consume
+  onPointerMove?(hit: THREE.Intersection | null, ev: PointerEvent): void;
+  onPointerUp?(hit: THREE.Intersection | null, ev: PointerEvent): boolean | void;
+}
+```
+
+Registered via `ctx.registerPointerTarget(target)`. On `pointerdown` the view raycasts registered targets in priority order (capture-phase, in front of OrbitControls); the first whose `onPointerDown` returns `true` consumes the gesture (camera does not orbit) and receives `onPointerMove` / `onPointerUp` for the rest of the drag.
+
+### Related `Tower3DView` methods
+
+- `registerScenePlugin(plugin: ScenePlugin): ScenePluginHandle` — the public seam `attachScenePlugin` wraps.
+- `registerPointerTarget(target: PointerTarget): () => void` — register a pointer hit-test target directly.
+- `setBoardDiscEnabled(enabled: boolean): void` — show/hide **only** the placeholder board image on the disc top (the board-surface stand-down switch). The disc mesh and physics floor are unaffected. Default on.
+- `getDiscMetrics(): { center: THREE.Vector3; radius: number; topY: number }` — disc geometry for aligning on-disc content; valid even before the disc mesh is built. `topY` is the top surface; `center` is the disc's geometric center on the Y axis.
+- `getPhysicsHooks(): TowerPhysicsHooks` — unchanged; the original narrow physics seam.
+
+### Related `TowerRenderView` methods
+
+- `getOverlayContainer(): HTMLElement` — a `pointer-events:none` HUD layer over the canvas (children opt back in). Created on demand; also created eagerly via the `overlay: true` option.
+- `getPanelSlot(position: 'left' | 'right' | 'top' | 'bottom'): HTMLElement` — a fixed docking panel that reflows the canvas. Created on demand.
+
+Both are removed on `dispose()`, and their CSS ships in `TOWER_DISPLAY_CSS` (so they work under `injectStyles: false`).
 
 ---
 
