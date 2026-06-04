@@ -21,6 +21,7 @@
   "sideEffects": false,
   "files": [
     "dist",
+    "!dist/**/*.map",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
