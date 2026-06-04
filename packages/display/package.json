@@ -45,7 +45,7 @@
   "peerDependencies": {
     "gsap": "^3.12.0",
     "three": "^0.170.0",
-    "ultimatedarktower": "file:../UltimateDarkTower",
+    "ultimatedarktower": "^4.0.0",
     "@dimforge/rapier3d-compat": "^0.19.3"
   },
   "peerDependenciesMeta": {

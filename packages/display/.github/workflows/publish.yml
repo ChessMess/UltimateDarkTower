@@ -11,14 +11,28 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout UltimateDarkTowerDisplay
+        uses: actions/checkout@v6
+        with:
+          path: UltimateDarkTowerDisplay
+
+      - name: Checkout UltimateDarkTower (sibling dev dependency)
+        uses: actions/checkout@v6
+        with:
+          repository: ChessMess/UltimateDarkTower
+          path: UltimateDarkTower
+
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: UltimateDarkTowerDisplay/package-lock.json
           registry-url: https://registry.npmjs.org
 
       - run: npm ci
+        working-directory: UltimateDarkTowerDisplay
       - run: npm run ci
+        working-directory: UltimateDarkTowerDisplay
 
       - run: npm publish --provenance
+        working-directory: UltimateDarkTowerDisplay
