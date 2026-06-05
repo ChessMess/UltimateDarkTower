@@ -1,0 +1,13 @@
+# Publishing is whitelisted via "files": ["dist"] in package.json; this file is a
+# belt-and-suspenders guard so source, tests, the example, docs, and configs are
+# never published even if "files" is loosened.
+src
+example
+__tests__
+docs
+*.config.ts
+tsconfig*.json
+jest.config.cjs
+.eslintrc.cjs
+.prettierrc
+.github

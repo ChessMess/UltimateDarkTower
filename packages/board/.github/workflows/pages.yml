@@ -1,0 +1,61 @@
+name: Deploy Example to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout UltimateDarkTowerBoard
+        uses: actions/checkout@v6
+        with:
+          path: UltimateDarkTowerBoard
+
+      - name: Checkout UltimateDarkTower (sibling)
+        uses: actions/checkout@v6
+        with:
+          repository: ChessMess/UltimateDarkTower
+          path: UltimateDarkTower
+
+      - name: Checkout UltimateDarkTowerDisplay (sibling)
+        uses: actions/checkout@v6
+        with:
+          repository: ChessMess/UltimateDarkTowerDisplay
+          path: UltimateDarkTowerDisplay
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: UltimateDarkTowerBoard/package-lock.json
+
+      - name: Build siblings
+        run: |
+          (cd UltimateDarkTower && npm ci && npm run build)
+          (cd UltimateDarkTowerDisplay && npm ci && npm run build)
+
+      - name: Build example
+        run: npm ci && npm run build:example
+        working-directory: UltimateDarkTowerBoard
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: UltimateDarkTowerBoard/example/dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

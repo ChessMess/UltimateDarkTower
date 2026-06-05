@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BoardReadout snapshot (scaffold) matches the default-state readout 1`] = `
+"Board (v1) — focus: all
+Tokens: 0
+Space markers: 0"
+`;
