@@ -17,6 +17,7 @@ import {
   Tower3DView,
   TowerStateController,
   attachScenePlugin,
+  anchorToWorld,
 } from 'ultimatedarktowerdisplay';
 import type {
   TowerRenderViewOptions,
@@ -36,6 +37,8 @@ import type {
   ScenePluginHandle,
   ScenePluginModelInfo,
   PointerTarget,
+  BoardAnchor,
+  DiscMetrics,
 } from 'ultimatedarktowerdisplay';
 ```
 
@@ -874,6 +877,29 @@ Registered via `ctx.registerPointerTarget(target)`. On `pointerdown` the view ra
 - `setBoardDiscEnabled(enabled: boolean): void` — show/hide **only** the placeholder board image on the disc top (the board-surface stand-down switch). The disc mesh and physics floor are unaffected. Default on.
 - `getDiscMetrics(): { center: THREE.Vector3; radius: number; topY: number }` — disc geometry for aligning on-disc content; valid even before the disc mesh is built. `topY` is the top surface; `center` is the disc's geometric center on the Y axis.
 - `getPhysicsHooks(): TowerPhysicsHooks` — unchanged; the original narrow physics seam.
+
+### `anchorToWorld(anchor, discMetricsOrView, northKingdom?)`
+
+Maps a normalized `[0,1]` board-image anchor to its world position on the ground disc's top surface, so a plugin can place a token/marker exactly where the printed board art shows it. The returned `THREE.Vector3` already has `y = topY`.
+
+```ts
+// Core overload — testable, no live view:
+anchorToWorld(anchor: BoardAnchor, discMetrics: DiscMetrics, northKingdom?: 0 | 1 | 2 | 3): THREE.Vector3;
+// Convenience overload — pulls discMetrics + northKingdom from the view:
+anchorToWorld(anchor: BoardAnchor, view: Tower3DView): THREE.Vector3;
+```
+
+- `BoardAnchor` is `{ x: number; y: number }` (normalized image coords; image-y grows downward).
+- `DiscMetrics` is `{ center: THREE.Vector3; radius: number; topY: number }` — the shape returned by `getDiscMetrics()`.
+- The mapping is derived to match how the board texture is actually rendered (full image on the disc's cylinder top cap, rotated by the board-texture rotation), so it stays aligned with the printed art for any disc size/position.
+- **`northKingdom` must match the disc's current setting** — it shifts the board rotation by `nk·π/2`. The view overload reads it from `view.getLightingConfig().boardDisc.northKingdom`; with the core overload, pass the same value you configured on `boardDisc.northKingdom` (default `0`).
+
+```ts
+import { anchorToWorld } from 'ultimatedarktowerdisplay';
+
+const pos = anchorToWorld({ x: 0.62, y: 0.41 }, view.view3D!); // -> THREE.Vector3 on the disc
+token.position.copy(pos);
+```
 
 ### Related `TowerRenderView` methods
 

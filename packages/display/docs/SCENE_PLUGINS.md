@@ -107,6 +107,28 @@ token.position.set(center.x + dx, topY, center.z + dz);
 
 `getDiscMetrics()` is derived from the model bounds + lighting config, so it is valid even before the disc mesh is lazily built. Call it inside `onModelLoaded` (or after `isModelLoaded()` is true) for finalized values.
 
+### Placing content at board-image anchors
+
+When content is authored as **normalized `[0,1]` coordinates on the board image** (the layout the printed board art uses), `anchorToWorld` converts an anchor straight to a disc-top world position that matches where the art is rendered — no manual trig:
+
+```ts
+import { anchorToWorld } from 'ultimatedarktowerdisplay';
+
+// `anchor` is { x, y } in [0,1]; the result already sits at y = topY.
+const pos = anchorToWorld(anchor, view.view3D!);
+token.position.copy(pos);
+
+// Fan several tokens around one slot anchor:
+const base = anchorToWorld(anchor, view.view3D!);
+const { radius } = view.view3D!.getDiscMetrics();
+tokens.forEach((t, i) => {
+  const a = (i / tokens.length) * Math.PI * 2;
+  t.position.set(base.x + Math.cos(a) * radius * 0.03, base.y, base.z + Math.sin(a) * radius * 0.03);
+});
+```
+
+The view overload reads the disc geometry **and** the current `boardDisc.northKingdom` for you, so tokens stay aligned with the art if the north kingdom changes. (The forthcoming board package will ship the actual `BOARD_ANCHORS`; until then a consumer supplies its own normalized anchors.)
+
 ## Board-surface hand-off
 
 If your plugin paints the disc surface itself, stand the built-in placeholder board image down:

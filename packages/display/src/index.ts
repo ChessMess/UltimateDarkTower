@@ -9,6 +9,8 @@ export type {
 export { TowerStateReadout } from './TowerStateReadout';
 export { TowerSideView } from './2d/TowerSideView';
 export { Tower3DView, type Tower3DViewOptions, type PerfReport, type PerfStat } from './3d/Tower3DView';
+export { anchorToWorld } from './3d/boardMapping';
+export type { BoardAnchor, DiscMetrics } from './3d/boardMapping';
 export { attachScenePlugin } from './3d/ScenePlugin';
 export type {
   ScenePlugin,
