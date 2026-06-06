@@ -19,8 +19,9 @@ if (view.view3D) {
 - Do token placement in the plugin's `onModelLoaded`, fanning multiples around a slot anchor.
 - Mount the dockable UI into `view.getOverlayContainer()` (HUD) and/or `getPanelSlot('right')`.
 
-### Prerequisite (not shipped yet)
+### Prerequisite (one symbol still pending)
 
-Real anchor placement needs Display's **`anchorToWorld`** (a release after 0.8.0) and UDT's
-**`BOARD_ANCHORS`** (after 4.0.x). Until both land, `Board3DPlugin.onModelLoaded` is an inert
-placeholder. Keep `three` pinned to **Display's exact peer range** (single instance).
+UDT's **`BOARD_ANCHORS`** / **`BOARD_IMAGE_INFO`** ship in `4.1.0` and are re-exported here, so the
+data side is ready. Real anchor placement still needs Display's **`anchorToWorld`** (a release after
+0.8.0); until it lands, `Board3DPlugin.onModelLoaded` is an inert placeholder. Keep `three` pinned to
+**Display's exact peer range** (single instance).

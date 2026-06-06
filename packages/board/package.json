@@ -42,7 +42,7 @@
     "ci": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "peerDependencies": {
-    "ultimatedarktower": "^4.0.0",
+    "ultimatedarktower": "^4.1.0",
     "ultimatedarktowerdisplay": "^0.8.0",
     "three": "^0.170.0",
     "gsap": "^3.12.0"

@@ -5,7 +5,7 @@
 | Renderer | Entry | Notes |
 | --- | --- | --- |
 | `BoardReadout` | `.` | Deterministic text; the snapshot test target. |
-| `BoardMap2D` | `.` | SVG/canvas over the board image (stub — needs `BOARD_ANCHORS`). |
+| `BoardMap2D` | `.` | SVG/canvas over the board image (stub pending M2; `BOARD_ANCHORS` now available to place tokens). |
 | `Board3DPlugin` | `./plugin` | 3D in-scene board; a Display `ScenePlugin`. |
 
 All share the `BoardFocus` selector (`all` | `north` | `east` | `south` | `west`). The cardinal

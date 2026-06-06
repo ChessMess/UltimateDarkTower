@@ -27,7 +27,12 @@ All notable changes to this project are documented here. The format is based on
 ### Added
 
 - UDT re-exports for the setup enums `DIFFICULTIES` / `GAME_SOURCES` and the types `Difficulty` /
-  `GameSource` / `ExpansionType` (the board datasets/graph helpers remain pending upstream).
+  `GameSource` / `ExpansionType`.
+- **Board layout + adjacency re-exports** now that `ultimatedarktower@4.1.0` ships them: `BOARD_ANCHORS`,
+  `BOARD_IMAGE_INFO`, `BOARD_ADJACENCY`, and the graph helpers `neighborsOf` / `stepDistance` /
+  `shortestPath`, plus the types `Anchor` / `AnchorSlot` / `LocationAnchors` / `BoardAnchorMap` /
+  `BoardImageInfo` / `BoardAdjacency`. Re-exported from UDT (not vendored); the `ultimatedarktower` peer
+  range is bumped to `^4.1.0`. This unblocks the 2D-map / 3D-plugin token placement (M2/M3).
 - Initial repository scaffold per `UltimateDarkTowerBoard-Scaffolding-Spec.md` v0.2:
   two-entry package (`.` three-free core + `./plugin` 3D board), headless state core
   (BoardState / commands / reducer / controller / events / zod-v4 save-load), text
@@ -37,9 +42,9 @@ All notable changes to this project are documented here. The format is based on
 
 ### Notes / TODO before features
 
-- Peer ranges are pinned to currently-published siblings (`ultimatedarktower@^4.0.0`,
-  `ultimatedarktowerdisplay@^0.8.0`). **Bump to the releases that carry the board
-  datasets/graph helpers and `anchorToWorld`** once they ship (spec §2 / §12-Q2).
-- `BOARD_ANCHORS` / adjacency / `stepDistance` re-exports and the 3D placement code are
-  stubbed/pending until upstream lands them.
+- `ultimatedarktower` peer is `^4.1.0` (carries the board datasets/graph helpers).
+  `ultimatedarktowerdisplay` is still `^0.8.0` — **bump to the release that carries `anchorToWorld`**
+  once it ships (spec §2 / §12-Q2).
+- `BOARD_ANCHORS` / `BOARD_ADJACENCY` / `BOARD_IMAGE_INFO` + graph helpers are now re-exported; the 3D
+  token-placement code still needs Display's `anchorToWorld` (M3).
 - Commit the generated `package-lock.json` so CI's `npm ci` is reproducible.

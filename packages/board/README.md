@@ -37,12 +37,13 @@ npm run dev:example # the headless demo
 
 ## Heads-up on upstream prerequisites
 
-Full 3D token placement depends on symbols **not yet published** upstream (the scaffold is
-forward-built around them):
+The board datasets are in place; full 3D token placement still waits on one Display symbol:
 
-- `ultimatedarktower` board datasets/graph: only `BOARD_LOCATIONS` is shipped today (4.0.x);
-  `BOARD_ANCHORS`, adjacency, and `stepDistance` are in progress.
-- `ultimatedarktowerdisplay`'s `anchorToWorld` (planned for a release after 0.8.0).
+- `ultimatedarktower` board data/graph: **shipped in `4.1.0`** and re-exported here —
+  `BOARD_LOCATIONS`, `BOARD_ANCHORS`, `BOARD_IMAGE_INFO`, `BOARD_ADJACENCY`, and
+  `neighborsOf`/`stepDistance`/`shortestPath`.
+- `ultimatedarktowerdisplay`'s `anchorToWorld` — still pending (a release after 0.8.0); the 3D
+  plugin's token placement (M3) needs it.
 
 The `three` peer range is pinned to **Display's exact declared range** (single-instance
 requirement). The 3D path inherits Display's heavy transitive footprint (three + the board
