@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>UDT Location Marker &amp; Adjacency Tool</title>
+<style>
+  :root {
+    --bg: #14161a; --panel: #1c1f26; --panel2: #23272f; --line: #2e333d;
+    --txt: #e6e9ef; --dim: #9aa3b2; --accent: #6ea8fe; --warn: #f0ad4e; --bad: #e35d6a; --good: #4caf7d;
+    --building: #f4b400; --skull: #c9ced6; --hero: #34a853; --foe: #ea4335; --marker: #4285f4;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--txt); display: flex; flex-direction: column; overflow: hidden;
+  }
+  header {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    background: var(--panel); border-bottom: 1px solid var(--line); flex: 0 0 auto;
+  }
+  header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+  header .spacer { flex: 1; }
+  .tabs { display: flex; gap: 4px; }
+  .tab {
+    padding: 5px 12px; border: 1px solid var(--line); background: var(--panel2);
+    color: var(--dim); border-radius: 6px; cursor: pointer; font-weight: 600;
+  }
+  .tab.active { background: var(--accent); color: #0b1220; border-color: var(--accent); }
+  button {
+    font: inherit; padding: 5px 10px; border: 1px solid var(--line); background: var(--panel2);
+    color: var(--txt); border-radius: 6px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: #0b1220; border-color: var(--accent); font-weight: 600; }
+  main { flex: 1; display: flex; min-height: 0; }
+  #stage { flex: 1; position: relative; background:
+      repeating-conic-gradient(#1a1d23 0% 25%, #16191e 0% 50%) 50% / 28px 28px; overflow: hidden; }
+  #canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #hint {
+    position: absolute; left: 10px; bottom: 10px; right: 10px; pointer-events: none;
+    color: var(--dim); font-size: 12px; text-shadow: 0 1px 2px #000; display: flex; justify-content: space-between; gap: 12px;
+  }
+  #drop {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(110,168,254,.12); border: 3px dashed var(--accent); color: var(--accent);
+    font-size: 18px; font-weight: 700; z-index: 5;
+  }
+  #stage.dragover #drop { display: flex; }
+  aside {
+    width: 340px; flex: 0 0 340px; background: var(--panel); border-left: 1px solid var(--line);
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .ctx { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .ctx h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); margin: 0 0 8px; }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+  .row:last-child { margin-bottom: 0; }
+  label.sm { color: var(--dim); }
+  input[type=number], select, input[type=text] {
+    font: inherit; background: var(--panel2); color: var(--txt); border: 1px solid var(--line);
+    border-radius: 5px; padding: 4px 6px;
+  }
+  input[type=number] { width: 76px; }
+  select { max-width: 160px; }
+  .chips { display: flex; gap: 5px; flex-wrap: wrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 14px;
+    border: 1px solid var(--line); background: var(--panel2); color: var(--txt); cursor: pointer; font-weight: 600;
+  }
+  .chip .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .chip.active { outline: 2px solid var(--accent); }
+  .chip:disabled, .chip.disabled { opacity: .35; cursor: not-allowed; }
+  .checklist { flex: 1; overflow: auto; padding: 6px 0; }
+  .kgroup { padding: 6px 12px 2px; color: var(--dim); text-transform: uppercase; font-size: 11px; letter-spacing: .6px; }
+  .litem {
+    display: flex; align-items: center; gap: 8px; padding: 4px 12px; cursor: pointer; border-left: 3px solid transparent;
+  }
+  .litem:hover { background: var(--panel2); }
+  .litem.sel { background: #2a3140; border-left-color: var(--accent); }
+  .litem .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .litem .meta { color: var(--dim); font-variant-numeric: tabular-nums; font-size: 12px; }
+  .litem .badge { font-size: 10px; color: var(--building); }
+  .pips { display: flex; gap: 2px; }
+  .pip { width: 7px; height: 7px; border-radius: 50%; border: 1px solid #444a55; }
+  .footer { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .footer .grow { flex: 1; }
+  #modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 20;
+  }
+  #modal.open { display: flex; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; width: min(680px, 92vw); max-height: 82vh; display: flex; flex-direction: column; }
+  .card header { background: transparent; border: 0; }
+  .card .body { padding: 0 14px 14px; overflow: auto; }
+  .card pre { white-space: pre-wrap; word-break: break-word; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; margin: 0; font: 12px/1.5 ui-monospace, Menlo, monospace; }
+  .v-ok { color: var(--good); } .v-warn { color: var(--warn); } .v-bad { color: var(--bad); }
+  .vline { padding: 2px 0; }
+  .small { color: var(--dim); font-size: 12px; }
+  .hidden { display: none !important; }
+  a.dl { color: var(--accent); }
+  kbd { background: var(--panel2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; font: 11px ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<header>
+  <h1>UDT Location Marker</h1>
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-mode="anchors">Anchors</div>
+    <div class="tab" data-mode="adjacency">Adjacency</div>
+    <div class="tab" data-mode="calibrate">Calibrate</div>
+    <div class="tab" data-mode="distance">Distance</div>
+  </div>
+  <div class="spacer"></div>
+  <button id="btnImage">Load board image…</button>
+  <button id="btnFit">Fit</button>
+  <button id="btnValidate" class="primary">Validate</button>
+</header>
+
+<main>
+  <div id="stage">
+    <canvas id="canvas"></canvas>
+    <div id="drop">Drop board image to load</div>
+    <div id="hint"><span id="hintMode"></span><span id="hintCoord"></span></div>
+  </div>
+
+  <aside>
+    <!-- Per-mode context controls -->
+    <div class="ctx" id="ctxAnchors">
+      <h2>Anchors — slot to place</h2>
+      <div class="chips" id="slotChips"></div>
+      <div class="row small" style="margin-top:8px">Click a location below or its dot to select it, then click the board to place the active slot. Drag a dot to fine-tune. <kbd>Right-click</kbd> a dot or press <kbd>Del</kbd> to clear it.</div>
+    </div>
+
+    <div class="ctx hidden" id="ctxAdjacency">
+      <h2>Adjacency — toggle edges</h2>
+      <div class="row small">Click location A then B to toggle the undirected edge. Click an edge line to select it, then <kbd>Del</kbd> to remove. <kbd>Esc</kbd> cancels a pending pick.</div>
+      <div class="row">
+        <label class="sm">Suggest within</label>
+        <input type="number" id="suggestPct" value="6" min="0.5" max="50" step="0.5" style="width:60px" />
+        <label class="sm">% of board</label>
+        <button id="btnSuggest">Suggest</button>
+        <button id="btnApplySuggest" disabled>Apply</button>
+        <button id="btnClearSuggest" disabled>Dismiss</button>
+      </div>
+      <div class="row small" id="adjSel"></div>
+    </div>
+
+    <div class="ctx hidden" id="ctxCalibrate">
+      <h2>Calibrate — board circle &amp; north</h2>
+      <div class="row">
+        <button id="btnSetCenter">Set center</button>
+        <button id="btnSetRadius">Set radius edge</button>
+        <button id="btnResetCalib">Reset</button>
+      </div>
+      <div class="row"><label class="sm" style="width:84px">center X / Y</label>
+        <input type="number" id="ciCX" step="0.0001" /> <input type="number" id="ciCY" step="0.0001" /></div>
+      <div class="row"><label class="sm" style="width:84px">radius</label>
+        <input type="number" id="ciR" step="0.0001" /></div>
+      <div class="row"><label class="sm" style="width:84px">north °</label>
+        <input type="number" id="ciN" step="1" />
+        <button id="btnNorthFromLoc">From selected location</button></div>
+      <div class="row"><label class="sm" style="width:84px">image px</label>
+        <span class="small" id="ciWH">—</span></div>
+      <div class="row small">north° = heading (clockwise from up) of the location that should read as scene-north on Display's disc.</div>
+    </div>
+
+    <div class="ctx hidden" id="ctxDistance">
+      <h2>Distance preview (BFS)</h2>
+      <div class="row"><label class="sm" style="width:36px">From</label><select id="distFrom"></select></div>
+      <div class="row"><label class="sm" style="width:36px">To</label><select id="distTo"></select></div>
+      <div class="row small" id="distResult">Pick two locations (dropdowns or click on canvas).</div>
+      <div class="row"><button id="btnConnectivity">Connectivity report</button></div>
+    </div>
+
+    <!-- Location checklist (always visible) -->
+    <div class="checklist" id="checklist"></div>
+
+    <div class="footer">
+      <span class="small grow" id="progress"></span>
+    </div>
+    <div class="footer">
+      <button id="btnExportAnchors">Anchors .ts</button>
+      <button id="btnExportAdj">Adjacency .ts</button>
+      <button id="btnExportJson">Combined .json</button>
+      <span class="grow"></span>
+      <button id="btnImport">Import…</button>
+      <button id="btnReset">Clear all</button>
+    </div>
+  </aside>
+</main>
+
+<div id="modal"><div class="card">
+  <header><h1 id="modalTitle">—</h1><div class="spacer"></div><button id="modalClose">Close</button></header>
+  <div class="body" id="modalBody"></div>
+</div></div>
+
+<input type="file" id="fileImage" accept="image/*" class="hidden" />
+<input type="file" id="fileImport" accept=".json,.ts,.txt,application/json" class="hidden" />
+
+<script>
+"use strict";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Embedded location list — generated from UltimateDarkTower/src/udtGameBoard.ts
+// (BOARD_LOCATIONS). Regenerate with: node tools/location-marker/gen-locations.mjs
+// Load a locations.json via Import to override.
+// ─────────────────────────────────────────────────────────────────────────────
+const EMBEDDED_LOCATIONS = [{"name":"Broken Lands","kingdom":"north","terrain":"Hills","hasBuilding":false},{"name":"Dayside","kingdom":"north","terrain":"Lake","hasBuilding":true,"building":"Bazaar","grouping":"Long Water"},{"name":"Egan's End","kingdom":"north","terrain":"Grasslands","hasBuilding":true,"building":"Village"},{"name":"Fivepint","kingdom":"north","terrain":"Lake","hasBuilding":false,"grouping":"Long Water"},{"name":"Green Bridge","kingdom":"north","terrain":"Grasslands","hasBuilding":false},{"name":"Lodestone Mountains","kingdom":"north","terrain":"Mountains","hasBuilding":false},{"name":"Lower Ice Fangs","kingdom":"north","terrain":"Mountains","hasBuilding":false},{"name":"Muted Forest","kingdom":"north","terrain":"Forest","hasBuilding":false},{"name":"Peaks of the Djinn","kingdom":"north","terrain":"Mountains","hasBuilding":false},{"name":"Pearl of the North","kingdom":"north","terrain":"Grasslands","hasBuilding":false},{"name":"Radiant Mountains","kingdom":"north","terrain":"Mountains","hasBuilding":true,"building":"Citadel"},{"name":"Rimeweald","kingdom":"north","terrain":"Forest","hasBuilding":false},{"name":"The Tundra","kingdom":"north","terrain":"Desert","hasBuilding":false},{"name":"Tower Scar Desert","kingdom":"north","terrain":"Desert","hasBuilding":false},{"name":"Upper Ice Fangs","kingdom":"north","terrain":"Mountains","hasBuilding":true,"building":"Sanctuary"},{"name":"Big Sister","kingdom":"east","terrain":"Mountains","hasBuilding":false},{"name":"Bleak Wastes","kingdom":"east","terrain":"Desert","hasBuilding":false},{"name":"Copper Grove","kingdom":"east","terrain":"Forest","hasBuilding":false},{"name":"Dragontooth Lake","kingdom":"east","terrain":"Lake","hasBuilding":false},{"name":"Duwani","kingdom":"east","terrain":"Grasslands","hasBuilding":true,"building":"Village"},{"name":"Forest of Shades","kingdom":"east","terrain":"Forest","hasBuilding":false},{"name":"Greater Tombstones","kingdom":"east","terrain":"Hills","hasBuilding":true,"building":"Sanctuary"},{"name":"Inner Kinghills","kingdom":"east","terrain":"Hills","hasBuilding":true,"building":"Citadel"},{"name":"Jewel Hills","kingdom":"east","terrain":"Hills","hasBuilding":false},{"name":"Lake of Songs","kingdom":"east","terrain":"Lake","hasBuilding":false},{"name":"Lesser Tombstones","kingdom":"east","terrain":"Hills","hasBuilding":false},{"name":"Outer Kinghills","kingdom":"east","terrain":"Hills","hasBuilding":false},{"name":"The Decaying Wilds","kingdom":"east","terrain":"Grasslands","hasBuilding":false},{"name":"Three Rivers","kingdom":"east","terrain":"Grasslands","hasBuilding":true,"building":"Bazaar"},{"name":"Utar's Barrows","kingdom":"east","terrain":"Desert","hasBuilding":false},{"name":"Anza","kingdom":"west","terrain":"Grasslands","hasBuilding":true,"building":"Village"},{"name":"Arkartus","kingdom":"west","terrain":"Forest","hasBuilding":true,"building":"Sanctuary","grouping":"The Great Woods"},{"name":"Ash Hills","kingdom":"west","terrain":"Hills","hasBuilding":false},{"name":"Cloudhold","kingdom":"west","terrain":"Mountains","hasBuilding":false},{"name":"Delmsmire","kingdom":"west","terrain":"Forest","hasBuilding":false,"grouping":"The Great Woods"},{"name":"Hissing Groves","kingdom":"west","terrain":"Forest","hasBuilding":true,"building":"Citadel"},{"name":"Idran Forest","kingdom":"west","terrain":"Forest","hasBuilding":false},{"name":"Lonelight Hills","kingdom":"west","terrain":"Hills","hasBuilding":false},{"name":"Lost Lands","kingdom":"west","terrain":"Desert","hasBuilding":false},{"name":"Plains of Plovo","kingdom":"west","terrain":"Grasslands","hasBuilding":true,"building":"Bazaar"},{"name":"Plains of Woldra","kingdom":"west","terrain":"Grasslands","hasBuilding":false},{"name":"The Empty Glade","kingdom":"west","terrain":"Grasslands","hasBuilding":false},{"name":"The Grass Sea","kingdom":"west","terrain":"Grasslands","hasBuilding":false},{"name":"Weeping Waters","kingdom":"west","terrain":"Lake","hasBuilding":false},{"name":"Yellowpike","kingdom":"west","terrain":"Forest","hasBuilding":false,"grouping":"The Great Woods"},{"name":"Archmont","kingdom":"south","terrain":"Grasslands","hasBuilding":false,"grouping":"Regal Run"},{"name":"Azkol's Bane","kingdom":"south","terrain":"Desert","hasBuilding":false},{"name":"Bone Hills","kingdom":"south","terrain":"Hills","hasBuilding":false},{"name":"Howling Desert","kingdom":"south","terrain":"Desert","hasBuilding":true,"building":"Citadel"},{"name":"Irontops","kingdom":"south","terrain":"Mountains","hasBuilding":false},{"name":"Little Sister","kingdom":"south","terrain":"Mountains","hasBuilding":false},{"name":"Middle Sister","kingdom":"south","terrain":"Mountains","hasBuilding":false},{"name":"Mountains of the Watchers","kingdom":"south","terrain":"Mountains","hasBuilding":false},{"name":"Pine Barrens","kingdom":"south","terrain":"Forest","hasBuilding":false},{"name":"Sands of Madness","kingdom":"south","terrain":"Desert","hasBuilding":true,"building":"Sanctuary"},{"name":"Southern Wastes","kingdom":"south","terrain":"Desert","hasBuilding":true,"building":"Village"},{"name":"The Cloister","kingdom":"south","terrain":"Grasslands","hasBuilding":false,"grouping":"Regal Run"},{"name":"The Emerald Expanse","kingdom":"south","terrain":"Grasslands","hasBuilding":true,"building":"Bazaar"},{"name":"The Throne","kingdom":"south","terrain":"Grasslands","hasBuilding":false,"grouping":"Regal Run"},{"name":"Ulamel's Hollow","kingdom":"south","terrain":"Grasslands","hasBuilding":false}];
+
+const SLOTS = ['building', 'skull', 'hero', 'foe', 'marker'];
+const SLOT_COLORS = { building: '#f4b400', skull: '#c9ced6', hero: '#34a853', foe: '#ea4335', marker: '#4285f4' };
+const KINGDOM_ORDER = ['north', 'east', 'south', 'west'];
+const LS_KEY = 'udt-location-marker-v1';
+const HIT_DOT = 11, HIT_NODE = 16, HIT_EDGE = 7; // screen-px hit radii
+
+// ── State ────────────────────────────────────────────────────────────────────
+const state = {
+  img: null, imgW: 0, imgH: 0,
+  view: { scale: 1, x: 0, y: 0 },
+  mode: 'anchors',
+  locations: EMBEDDED_LOCATIONS.slice(),
+  byName: new Map(),
+  anchors: {},     // name -> { slot: {x,y} }   normalized [0,1]
+  adjacency: {},   // name -> [neighbor,...]      undirected, kept symmetric & sorted
+  imageInfo: { width: 0, height: 0, centerX: 0.5, centerY: 0.5, radius: 0.5, northHeadingDegrees: 0 },
+  selected: null,
+  slot: 'hero',
+  adjFirst: null,
+  selectedEdge: null,   // [a,b]
+  calibStep: null,      // 'center' | 'radius' | null
+  dist: { from: null, to: null, path: [], steps: null },
+  suggestions: [],      // [[a,b],...] previewed, not committed
+  // interaction
+  panning: false, spaceDown: false, dragSlot: null, moved: false,
+  down: null,           // {sx,sy}
+};
+
+const $ = (id) => document.getElementById(id);
+const canvas = $('canvas'), ctx = canvas.getContext('2d');
+let dpr = 1, cw = 0, ch = 0;
+
+function rebuildIndex() { state.byName = new Map(state.locations.map((l) => [l.name, l])); }
+rebuildIndex();
+
+function slotsFor(name) {
+  const loc = state.byName.get(name);
+  if (!loc) return [];
+  return loc.hasBuilding ? SLOTS.slice() : ['hero', 'foe', 'marker'];
+}
+
+// ── Coordinate transforms ────────────────────────────────────────────────────
+function worldToScreen(wx, wy) { return [wx * state.view.scale + state.view.x, wy * state.view.scale + state.view.y]; }
+function screenToWorld(sx, sy) { return [(sx - state.view.x) / state.view.scale, (sy - state.view.y) / state.view.scale]; }
+function normToScreen(n) { return worldToScreen(n.x * state.imgW, n.y * state.imgH); }
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+function r5(n) { return Math.round(n * 1e5) / 1e5; }
+
+// Reference point for a location (normalized) — used by adjacency/distance/labels.
+function refPoint(name) {
+  const a = state.anchors[name];
+  if (!a) return null;
+  for (const s of ['hero', 'building', 'skull', 'foe', 'marker']) if (a[s]) return a[s];
+  const any = Object.values(a)[0];
+  return any || null;
+}
+
+// ── Graph helpers (mirror the UDT helpers the library will ship) ──────────────
+function neighborsOf(n) { return state.adjacency[n] ? state.adjacency[n].slice() : []; }
+function hasEdge(a, b) { return !!state.adjacency[a] && state.adjacency[a].includes(b); }
+function addEdge(a, b) {
+  if (a === b) return;
+  (state.adjacency[a] ||= []); (state.adjacency[b] ||= []);
+  if (!state.adjacency[a].includes(b)) state.adjacency[a].push(b);
+  if (!state.adjacency[b].includes(a)) state.adjacency[b].push(a);
+  state.adjacency[a].sort(); state.adjacency[b].sort();
+}
+function removeEdge(a, b) {
+  if (state.adjacency[a]) state.adjacency[a] = state.adjacency[a].filter((x) => x !== b);
+  if (state.adjacency[b]) state.adjacency[b] = state.adjacency[b].filter((x) => x !== a);
+}
+function toggleEdge(a, b) { hasEdge(a, b) ? removeEdge(a, b) : addEdge(a, b); }
+function edgeList() {
+  const out = []; const seen = new Set();
+  for (const a of Object.keys(state.adjacency)) for (const b of state.adjacency[a]) {
+    const key = a < b ? a + ' ' + b : b + ' ' + a;
+    if (!seen.has(key)) { seen.add(key); out.push(a < b ? [a, b] : [b, a]); }
+  }
+  return out;
+}
+function degree(n) { return state.adjacency[n] ? state.adjacency[n].length : 0; }
+function bfs(from) {
+  const dist = new Map([[from, 0]]), prev = new Map(), q = [from];
+  for (let i = 0; i < q.length; i++) {
+    const cur = q[i];
+    for (const nb of neighborsOf(cur)) if (!dist.has(nb)) { dist.set(nb, dist.get(cur) + 1); prev.set(nb, cur); q.push(nb); }
+  }
+  return { dist, prev };
+}
+function stepDistance(a, b) { if (a === b) return 0; const { dist } = bfs(a); return dist.has(b) ? dist.get(b) : Infinity; }
+function shortestPath(a, b) {
+  if (a === b) return [a];
+  const { dist, prev } = bfs(a); if (!dist.has(b)) return [];
+  const path = [b]; let c = b; while (c !== a) { c = prev.get(c); path.push(c); } return path.reverse();
+}
+function components() {
+  const seen = new Set(), comps = [];
+  for (const loc of state.locations) {
+    if (seen.has(loc.name)) continue;
+    const comp = [], q = [loc.name]; seen.add(loc.name);
+    for (let i = 0; i < q.length; i++) { const cur = q[i]; comp.push(cur); for (const nb of neighborsOf(cur)) if (!seen.has(nb)) { seen.add(nb); q.push(nb); } }
+    comps.push(comp);
+  }
+  return comps;
+}
+
+// ── Persistence ──────────────────────────────────────────────────────────────
+function persist() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ anchors: state.anchors, adjacency: state.adjacency, imageInfo: state.imageInfo })); } catch (_) {}
+}
+function restore() {
+  try {
+    const raw = localStorage.getItem(LS_KEY); if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.anchors) state.anchors = d.anchors;
+    if (d.adjacency) state.adjacency = d.adjacency;
+    if (d.imageInfo) state.imageInfo = Object.assign(state.imageInfo, d.imageInfo);
+  } catch (_) {}
+}
+
+let drawQueued = false;
+function requestDraw() { if (!drawQueued) { drawQueued = true; requestAnimationFrame(() => { drawQueued = false; draw(); }); } }
+function markDirty() { persist(); refreshPanel(); requestDraw(); }
+
+// ── Canvas sizing ────────────────────────────────────────────────────────────
+function resizeCanvas() {
+  dpr = window.devicePixelRatio || 1;
+  const r = canvas.getBoundingClientRect();
+  cw = r.width; ch = r.height;
+  canvas.width = Math.round(cw * dpr); canvas.height = Math.round(ch * dpr);
+  requestDraw();
+}
+function fitView() {
+  if (!state.img) return;
+  const s = Math.min(cw / state.imgW, ch / state.imgH) * 0.96;
+  state.view.scale = s;
+  state.view.x = (cw - state.imgW * s) / 2;
+  state.view.y = (ch - state.imgH * s) / 2;
+  requestDraw();
+}
+
+// ── Rendering ────────────────────────────────────────────────────────────────
+function draw() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cw, ch);
+  if (state.img) {
+    ctx.save();
+    ctx.translate(state.view.x, state.view.y); ctx.scale(state.view.scale, state.view.scale);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(state.img, 0, 0);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = '#6b7280'; ctx.font = '15px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Load the board image to begin (button top-right, or drag a PNG here)', cw / 2, ch / 2);
+    ctx.textAlign = 'start';
+  }
+  if (state.mode === 'calibrate') drawCalib();
+  if (state.mode === 'adjacency' || state.mode === 'distance') drawEdges();
+  if (state.mode === 'distance') drawPath();
+  drawAnchors();
+  if (state.mode === 'adjacency') drawNodes();
+}
+
+function drawAnchors() {
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const name of Object.keys(state.anchors)) {
+    const isSel = name === state.selected;
+    for (const slot of SLOTS) {
+      const a = state.anchors[name][slot]; if (!a) continue;
+      const [x, y] = normToScreen(a);
+      const r = isSel ? 7 : 4.5;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = SLOT_COLORS[slot]; ctx.fill();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = isSel ? '#fff' : 'rgba(0,0,0,.6)'; ctx.stroke();
+      if (isSel) {
+        ctx.fillStyle = '#000'; ctx.font = 'bold 8px sans-serif';
+        ctx.fillText(slot[0].toUpperCase(), x, y + 0.5);
+      }
+    }
+    if (isSel) {
+      const rp = refPoint(name);
+      if (rp) { const [lx, ly] = normToScreen(rp);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif';
+        ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.lineWidth = 3;
+        ctx.strokeText(name, lx, ly - 14); ctx.fillText(name, lx, ly - 14);
+      }
+    }
+  }
+  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+}
+
+function drawNodes() {
+  // Reference dots for every located location, so empty-slot locations are clickable too.
+  for (const loc of state.locations) {
+    const rp = refPoint(loc.name); if (!rp) continue;
+    const [x, y] = normToScreen(rp);
+    const pending = loc.name === state.adjFirst;
+    ctx.beginPath(); ctx.arc(x, y, pending ? 9 : 5.5, 0, Math.PI * 2);
+    ctx.fillStyle = pending ? 'rgba(110,168,254,.9)' : 'rgba(255,255,255,.25)';
+    ctx.strokeStyle = pending ? '#fff' : 'rgba(255,255,255,.5)'; ctx.lineWidth = 1.5;
+    ctx.fill(); ctx.stroke();
+  }
+}
+
+function drawEdges() {
+  const onPath = new Set();
+  for (let i = 0; i + 1 < state.dist.path.length; i++) {
+    const a = state.dist.path[i], b = state.dist.path[i + 1];
+    onPath.add(a < b ? a + ' ' + b : b + ' ' + a);
+  }
+  ctx.lineWidth = 1.6;
+  for (const [a, b] of edgeList()) {
+    const pa = refPoint(a), pb = refPoint(b); if (!pa || !pb) continue;
+    const [x1, y1] = normToScreen(pa), [x2, y2] = normToScreen(pb);
+    const sel = state.selectedEdge && ((state.selectedEdge[0] === a && state.selectedEdge[1] === b) || (state.selectedEdge[0] === b && state.selectedEdge[1] === a));
+    const key = a < b ? a + ' ' + b : b + ' ' + a;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = sel ? '#fff' : (state.mode === 'distance' && onPath.has(key)) ? 'transparent' : 'rgba(110,168,254,.55)';
+    ctx.lineWidth = sel ? 3 : 1.6; ctx.stroke();
+  }
+  // Suggested (uncommitted) edges, dashed amber.
+  if (state.suggestions.length) {
+    ctx.save(); ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(240,173,78,.95)'; ctx.lineWidth = 2;
+    for (const [a, b] of state.suggestions) {
+      const pa = refPoint(a), pb = refPoint(b); if (!pa || !pb) continue;
+      const [x1, y1] = normToScreen(pa), [x2, y2] = normToScreen(pb);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+function drawPath() {
+  if (state.dist.path.length < 2) return;
+  ctx.save(); ctx.lineWidth = 4; ctx.strokeStyle = '#4caf7d'; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  state.dist.path.forEach((n, i) => { const [x, y] = normToScreen(refPoint(n)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.stroke();
+  for (const n of state.dist.path) { const [x, y] = normToScreen(refPoint(n)); ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fillStyle = '#4caf7d'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); }
+  ctx.restore();
+}
+
+function drawCalib() {
+  const ii = state.imageInfo;
+  const [cx, cy] = normToScreen({ x: ii.centerX, y: ii.centerY });
+  const rScreen = ii.radius * state.imgW * state.view.scale;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(110,168,254,.9)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cx, cy, rScreen, 0, Math.PI * 2); ctx.stroke();
+  // center cross
+  ctx.beginPath(); ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 8, cy); ctx.moveTo(cx, cy - 8); ctx.lineTo(cx, cy + 8); ctx.stroke();
+  // north heading (clockwise from up)
+  const ang = (ii.northHeadingDegrees - 90) * Math.PI / 180;
+  ctx.strokeStyle = '#f0ad4e'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * rScreen, cy + Math.sin(ang) * rScreen); ctx.stroke();
+  ctx.fillStyle = '#f0ad4e'; ctx.font = 'bold 12px sans-serif';
+  ctx.fillText('N', cx + Math.cos(ang) * (rScreen + 12), cy + Math.sin(ang) * (rScreen + 12));
+  ctx.restore();
+}
+
+// ── Hit testing ──────────────────────────────────────────────────────────────
+function nearestDot(sx, sy) {
+  let best = null, bd = HIT_DOT;
+  for (const name of Object.keys(state.anchors)) for (const slot of SLOTS) {
+    const a = state.anchors[name][slot]; if (!a) continue;
+    const [x, y] = normToScreen(a); const d = Math.hypot(x - sx, y - sy);
+    if (d < bd) { bd = d; best = { name, slot }; }
+  }
+  return best;
+}
+function nearestNode(sx, sy) {
+  let best = null, bd = HIT_NODE;
+  for (const loc of state.locations) {
+    const rp = refPoint(loc.name); if (!rp) continue;
+    const [x, y] = normToScreen(rp); const d = Math.hypot(x - sx, y - sy);
+    if (d < bd) { bd = d; best = loc.name; }
+  }
+  return best;
+}
+function nearestEdge(sx, sy) {
+  let best = null, bd = HIT_EDGE;
+  for (const [a, b] of edgeList()) {
+    const pa = refPoint(a), pb = refPoint(b); if (!pa || !pb) continue;
+    const [x1, y1] = normToScreen(pa), [x2, y2] = normToScreen(pb);
+    const d = ptSeg(sx, sy, x1, y1, x2, y2);
+    if (d < bd) { bd = d; best = [a, b]; }
+  }
+  return best;
+}
+function ptSeg(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1, l2 = dx * dx + dy * dy;
+  let t = l2 ? ((px - x1) * dx + (py - y1) * dy) / l2 : 0; t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+// ── Pointer interaction ──────────────────────────────────────────────────────
+function localPos(e) { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+
+canvas.addEventListener('contextmenu', (e) => {
+  if (state.mode !== 'anchors') return;
+  const [sx, sy] = localPos(e); const hit = nearestDot(sx, sy);
+  if (hit) { e.preventDefault(); delete state.anchors[hit.name][hit.slot]; if (!Object.keys(state.anchors[hit.name]).length) delete state.anchors[hit.name]; markDirty(); }
+});
+
+canvas.addEventListener('mousedown', (e) => {
+  const [sx, sy] = localPos(e); state.down = { sx, sy }; state.moved = false;
+  if (e.button === 1 || state.spaceDown) { state.panning = true; e.preventDefault(); return; }
+  if (e.button !== 0) return;
+  if (state.mode === 'anchors') { state.dragSlot = nearestDot(sx, sy); if (state.dragSlot) { selectLocation(state.dragSlot.name); state.slot = state.dragSlot.slot; refreshSlotChips(); } }
+});
+
+window.addEventListener('mousemove', (e) => {
+  const [sx, sy] = localPos(e);
+  if (state.img) { const [wx, wy] = screenToWorld(sx, sy); $('hintCoord').textContent = `x ${ (wx / state.imgW).toFixed(4) }  y ${ (wy / state.imgH).toFixed(4) }`; }
+  if (state.down && (Math.abs(sx - state.down.sx) > 3 || Math.abs(sy - state.down.sy) > 3)) state.moved = true;
+  if (state.panning && state.down) {
+    state.view.x += sx - state.down.sx; state.view.y += sy - state.down.sy; state.down = { sx, sy }; requestDraw(); return;
+  }
+  if (state.dragSlot && state.moved) {
+    const [wx, wy] = screenToWorld(sx, sy);
+    state.anchors[state.dragSlot.name][state.dragSlot.slot] = { x: clamp01(wx / state.imgW), y: clamp01(wy / state.imgH) };
+    requestDraw();
+  }
+});
+
+window.addEventListener('mouseup', (e) => {
+  if (!state.down) return; // gesture didn't start on the canvas (e.g. a panel button)
+  const [sx, sy] = localPos(e);
+  const wasClick = !state.moved;
+  const wasDragSlot = state.dragSlot, wasPan = state.panning;
+  state.panning = false; state.dragSlot = null; state.down = null;
+  if (wasPan) return;
+  if (e.button !== 0) return;                              // only left-button completes actions
+  if (wasDragSlot && state.moved) { markDirty(); return; } // finished dragging an anchor dot
+  if (!wasClick) return;                                   // a drag that moved nothing actionable
+  // It's a click:
+  if (state.mode === 'anchors') onClickAnchors(sx, sy, wasDragSlot);
+  else if (state.mode === 'adjacency') onClickAdjacency(sx, sy);
+  else if (state.mode === 'calibrate') onClickCalibrate(sx, sy);
+  else if (state.mode === 'distance') onClickDistance(sx, sy);
+});
+
+function onClickAnchors(sx, sy, hitDot) {
+  if (hitDot) { selectLocation(hitDot.name); state.slot = hitDot.slot; refreshSlotChips(); return; } // selected existing dot
+  if (!state.selected) { setHint('Select a location first (left list), then click to place.'); return; }
+  if (!slotsFor(state.selected).includes(state.slot)) { setHint(`${state.selected} has no “${state.slot}” slot.`); return; }
+  const [wx, wy] = screenToWorld(sx, sy);
+  (state.anchors[state.selected] ||= {})[state.slot] = { x: clamp01(wx / state.imgW), y: clamp01(wy / state.imgH) };
+  markDirty();
+}
+
+function onClickAdjacency(sx, sy) {
+  const node = nearestNode(sx, sy);
+  if (node) {
+    selectLocation(node); state.selectedEdge = null;
+    if (!state.adjFirst) { state.adjFirst = node; }
+    else { if (state.adjFirst !== node) toggleEdge(state.adjFirst, node); state.adjFirst = null; }
+    markDirty(); return;
+  }
+  const edge = nearestEdge(sx, sy);
+  if (edge) { state.selectedEdge = edge; state.adjFirst = null; markDirty(); return; }
+  state.adjFirst = null; state.selectedEdge = null; markDirty();
+}
+
+function onClickCalibrate(sx, sy) {
+  const [wx, wy] = screenToWorld(sx, sy);
+  const nx = clamp01(wx / state.imgW), ny = clamp01(wy / state.imgH);
+  if (state.calibStep === 'radius') {
+    const dx = (nx - state.imageInfo.centerX) * state.imgW, dy = (ny - state.imageInfo.centerY) * state.imgH;
+    state.imageInfo.radius = r5(Math.hypot(dx, dy) / state.imgW);
+    state.calibStep = null;
+  } else { // default: set center, then prompt for radius
+    state.imageInfo.centerX = r5(nx); state.imageInfo.centerY = r5(ny); state.calibStep = 'radius';
+  }
+  syncCalibInputs(); setHint(state.calibStep === 'radius' ? 'Now click the circle edge to set radius.' : 'Calibration updated.'); markDirty();
+}
+
+function onClickDistance(sx, sy) {
+  const node = nearestNode(sx, sy); if (!node) return;
+  if (!state.dist.from || (state.dist.from && state.dist.to)) { state.dist.from = node; state.dist.to = null; }
+  else state.dist.to = node;
+  recomputeDistance();
+}
+
+canvas.addEventListener('wheel', (e) => {
+  if (!state.img) return; e.preventDefault();
+  const [sx, sy] = localPos(e);
+  const factor = Math.exp(-e.deltaY * 0.0015);
+  const [wx, wy] = screenToWorld(sx, sy);
+  state.view.scale = Math.max(0.02, Math.min(40, state.view.scale * factor));
+  state.view.x = sx - wx * state.view.scale; state.view.y = sy - wy * state.view.scale;
+  requestDraw();
+}, { passive: false });
+
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') { state.spaceDown = true; }
+  else if (e.key === 'Escape') { state.adjFirst = null; state.selectedEdge = null; state.calibStep = null; markDirty(); }
+  else if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (state.mode === 'anchors' && state.selected && state.anchors[state.selected] && state.anchors[state.selected][state.slot]) {
+      delete state.anchors[state.selected][state.slot];
+      if (!Object.keys(state.anchors[state.selected]).length) delete state.anchors[state.selected];
+      markDirty();
+    } else if (state.mode === 'adjacency' && state.selectedEdge) {
+      removeEdge(state.selectedEdge[0], state.selectedEdge[1]); state.selectedEdge = null; markDirty();
+    }
+  }
+});
+window.addEventListener('keyup', (e) => { if (e.code === 'Space') state.spaceDown = false; });
+
+// ── Image loading ────────────────────────────────────────────────────────────
+async function loadImageFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  try {
+    const bmp = await createImageBitmap(file);
+    state.img = bmp; state.imgW = bmp.width; state.imgH = bmp.height;
+  } catch (_) {
+    await new Promise((res, rej) => { const im = new Image(); im.onload = () => { state.img = im; state.imgW = im.naturalWidth; state.imgH = im.naturalHeight; res(); }; im.onerror = rej; im.src = URL.createObjectURL(file); });
+  }
+  if (!state.imageInfo.width) { state.imageInfo.width = state.imgW; state.imageInfo.height = state.imgH; }
+  else { state.imageInfo.width = state.imgW; state.imageInfo.height = state.imgH; }
+  syncCalibInputs(); fitView(); markDirty();
+}
+async function tryAutoLoadBoard() {
+  // Convenience when served: load ./board.png if present (silently ignore failure).
+  try {
+    const im = new Image();
+    await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = 'board.png'; });
+    state.img = im; state.imgW = im.naturalWidth; state.imgH = im.naturalHeight;
+    state.imageInfo.width = state.imgW; state.imageInfo.height = state.imgH;
+    syncCalibInputs(); fitView(); markDirty();
+  } catch (_) {}
+}
+
+// ── Distance ─────────────────────────────────────────────────────────────────
+function recomputeDistance() {
+  const { from, to } = state.dist;
+  $('distFrom').value = from || ''; $('distTo').value = to || '';
+  if (from && to) {
+    const steps = stepDistance(from, to); state.dist.steps = steps;
+    state.dist.path = shortestPath(from, to);
+    $('distResult').innerHTML = steps === Infinity
+      ? `<span class="v-bad">∞ / disconnected</span> — no path from ${from} to ${to}.`
+      : `<span class="v-ok">${steps} step${steps === 1 ? '' : 's'}</span> · path: ${state.dist.path.join(' → ')}`;
+  } else { state.dist.path = []; state.dist.steps = null; $('distResult').textContent = 'Pick two locations (dropdowns or click on canvas).'; }
+  requestDraw();
+}
+
+// ── Suggestions ──────────────────────────────────────────────────────────────
+function computeSuggestions() {
+  const thr = (parseFloat($('suggestPct').value) || 0) / 100;
+  const pts = state.locations.map((l) => ({ name: l.name, rp: refPoint(l.name) })).filter((p) => p.rp);
+  const out = [];
+  for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+    const a = pts[i], b = pts[j];
+    const d = Math.hypot(a.rp.x - b.rp.x, a.rp.y - b.rp.y);
+    if (d <= thr && !hasEdge(a.name, b.name)) out.push([a.name, b.name]);
+  }
+  state.suggestions = out;
+  $('btnApplySuggest').disabled = !out.length; $('btnClearSuggest').disabled = !out.length;
+  setHint(`${out.length} suggested edge${out.length === 1 ? '' : 's'} (dashed). Apply or dismiss.`);
+  requestDraw();
+}
+
+// ── Validation ───────────────────────────────────────────────────────────────
+function validate() {
+  const lines = []; let warn = 0, bad = 0;
+  const add = (cls, txt) => { lines.push(`<div class="vline ${cls}">${cls === 'v-bad' ? '✗' : cls === 'v-warn' ? '!' : '✓'} ${txt}</div>`); };
+
+  // missing required slots
+  const missing = [];
+  for (const loc of state.locations) {
+    const req = slotsFor(loc.name), have = state.anchors[loc.name] || {};
+    const gaps = req.filter((s) => !have[s]);
+    if (gaps.length) missing.push(`${loc.name}: ${gaps.join(', ')}`);
+  }
+  if (missing.length) { warn += missing.length; add('v-warn', `${missing.length} location(s) missing required anchor slots:`); lines.push(`<pre>${missing.join('\n')}</pre>`); }
+  else add('v-ok', 'All locations have their required anchor slots.');
+
+  // out of range
+  const oor = [];
+  for (const [name, slots] of Object.entries(state.anchors)) for (const [s, a] of Object.entries(slots))
+    if (a.x < 0 || a.x > 1 || a.y < 0 || a.y > 1) oor.push(`${name}.${s} = (${a.x}, ${a.y})`);
+  if (oor.length) { bad += oor.length; add('v-bad', `${oor.length} anchor(s) outside [0,1]:`); lines.push(`<pre>${oor.join('\n')}</pre>`); }
+  else add('v-ok', 'All anchors within [0,1].');
+
+  // typos: names not in list
+  const valid = new Set(state.locations.map((l) => l.name));
+  const typos = new Set();
+  for (const k of Object.keys(state.anchors)) if (!valid.has(k)) typos.add(k);
+  for (const k of Object.keys(state.adjacency)) { if (!valid.has(k)) typos.add(k); for (const nb of state.adjacency[k]) if (!valid.has(nb)) typos.add(nb); }
+  if (typos.size) { bad += typos.size; add('v-bad', `Unknown location name(s): ${[...typos].join(', ')}`); }
+  else add('v-ok', 'No unknown location names.');
+
+  // symmetry
+  const asym = [];
+  for (const [a, list] of Object.entries(state.adjacency)) for (const b of list) if (!hasEdge(b, a)) asym.push(`${a} → ${b} (not mirrored)`);
+  if (asym.length) { bad += asym.length; add('v-bad', `Adjacency not symmetric:`); lines.push(`<pre>${asym.join('\n')}</pre>`); }
+  else add('v-ok', 'Adjacency is symmetric.');
+
+  // isolated + components
+  const iso = state.locations.filter((l) => degree(l.name) === 0).map((l) => l.name);
+  if (iso.length) { warn += iso.length; add('v-warn', `${iso.length} isolated location(s) (degree 0):`); lines.push(`<pre>${iso.join('\n')}</pre>`); }
+  else add('v-ok', 'No isolated locations.');
+
+  const comps = components().sort((a, b) => b.length - a.length);
+  if (comps.length <= 1) add('v-ok', 'Graph is a single connected component.');
+  else { add('v-warn', `${comps.length} connected components:`); lines.push(`<pre>${comps.map((c, i) => `#${i + 1} (${c.length}): ${c.slice().sort().join(', ')}`).join('\n\n')}</pre>`); }
+
+  const head = `<div class="vline ${bad ? 'v-bad' : warn ? 'v-warn' : 'v-ok'}">${bad ? bad + ' error(s), ' : ''}${warn} warning(s). Export is allowed regardless.</div><hr style="border-color:var(--line)">`;
+  openModal('Validation', head + lines.join(''));
+}
+
+// ── Export / import ──────────────────────────────────────────────────────────
+function orderedLocationNames() { return state.locations.map((l) => l.name); }
+
+function anchorsTS() {
+  const order = orderedLocationNames();
+  let body = '';
+  for (const name of order) {
+    const slots = state.anchors[name]; if (!slots || !Object.keys(slots).length) continue;
+    const parts = SLOTS.filter((s) => slots[s]).map((s) => `${s}: { x: ${r5(slots[s].x)}, y: ${r5(slots[s].y)} }`);
+    body += `  ${JSON.stringify(name)}: { ${parts.join(', ')} },\n`;
+  }
+  const ii = state.imageInfo;
+  return `// AUTO-GENERATED by tools/location-marker — do not edit by hand.\n` +
+    `// Multi-slot token anchors (normalized [0,1] on the board image) + board-circle calibration.\n` +
+    `// Slots: building, skull (buildings only); hero, foe, marker (everywhere).\n\n` +
+    `export const BOARD_ANCHORS = {\n${body}} as const;\n\n` +
+    `export const BOARD_IMAGE_INFO = {\n` +
+    `  width: ${ii.width},\n  height: ${ii.height},\n  centerX: ${r5(ii.centerX)},\n  centerY: ${r5(ii.centerY)},\n` +
+    `  radius: ${r5(ii.radius)},\n  northHeadingDegrees: ${r5(ii.northHeadingDegrees)},\n} as const;\n`;
+}
+function adjacencyTS() {
+  const order = orderedLocationNames();
+  let body = '';
+  for (const name of order) {
+    const list = state.adjacency[name]; if (!list || !list.length) continue;
+    body += `  ${JSON.stringify(name)}: [${list.slice().sort().map((n) => JSON.stringify(n)).join(', ')}],\n`;
+  }
+  return `// AUTO-GENERATED by tools/location-marker — do not edit by hand.\n` +
+    `// Undirected movement graph between board locations (symmetric).\n\n` +
+    `export const BOARD_ADJACENCY = {\n${body}} as const;\n`;
+}
+function combinedJSON() {
+  return JSON.stringify({ version: 1, imageInfo: state.imageInfo, anchors: state.anchors, adjacency: state.adjacency }, null, 2) + '\n';
+}
+function download(filename, text) {
+  const blob = new Blob([text], { type: 'text/plain' }); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function applyImport(obj) {
+  if (obj.imageInfo) state.imageInfo = Object.assign(state.imageInfo, obj.imageInfo);
+  if (obj.anchors) state.anchors = obj.anchors;
+  if (obj.adjacency) { state.adjacency = obj.adjacency; for (const k of Object.keys(state.adjacency)) addEdgeSetSanitize(k); }
+  syncCalibInputs(); markDirty();
+}
+function addEdgeSetSanitize(k) { // re-symmetrize + sort imported adjacency
+  const list = state.adjacency[k] || [];
+  for (const nb of list.slice()) addEdge(k, nb);
+}
+function importText(text, filename) {
+  const t = text.trim();
+  try {
+    if (filename.endsWith('.json') || t.startsWith('{') || t.startsWith('[')) {
+      const data = JSON.parse(t);
+      if (Array.isArray(data)) { // a locations.json
+        state.locations = data; rebuildIndex(); buildChecklist(); buildDistDropdowns(); markDirty();
+        setHint(`Loaded ${data.length} locations.`); return;
+      }
+      applyImport(data); return;
+    }
+    // .ts — extract const literals
+    const grab = (name) => { const m = t.match(new RegExp(name + '\\s*=\\s*([\\s\\S]*?)\\}\\s*as const')); return m ? m[1] + '}' : null; };
+    const obj = {};
+    const an = grab('BOARD_ANCHORS'); if (an) obj.anchors = (0, eval)('(' + an + ')');
+    const ad = grab('BOARD_ADJACENCY'); if (ad) obj.adjacency = (0, eval)('(' + ad + ')');
+    const iiM = t.match(/BOARD_IMAGE_INFO\s*=\s*([\s\S]*?)\}\s*as const/) || t.match(/BOARD_IMAGE_INFO[^=]*=\s*([\s\S]*?)\};/);
+    if (iiM) obj.imageInfo = (0, eval)('(' + iiM[1] + '})');
+    if (!Object.keys(obj).length) throw new Error('No BOARD_* consts found.');
+    applyImport(obj);
+  } catch (err) { openModal('Import failed', `<pre class="v-bad">${String(err)}</pre>`); }
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+function openModal(title, html) { $('modalTitle').textContent = title; $('modalBody').innerHTML = html; $('modal').classList.add('open'); }
+function closeModal() { $('modal').classList.remove('open'); }
+
+// ── Panel rendering ──────────────────────────────────────────────────────────
+function setHint(msg) { if (msg) $('hintMode').dataset.msg = msg; refreshHint(); }
+function refreshHint() {
+  const base = {
+    anchors: 'Anchors — select a location, pick a slot chip, click the board to place.',
+    adjacency: 'Adjacency — click A then B to toggle an edge; click a line to select it.',
+    calibrate: 'Calibrate — click center, then the circle edge; set north°.',
+    distance: 'Distance — pick From & To (click or dropdown) for BFS path.',
+  }[state.mode];
+  $('hintMode').textContent = $('hintMode').dataset.msg || base;
+  $('hintMode').dataset.msg = '';
+}
+
+function selectLocation(name) {
+  state.selected = name;
+  // keep active slot valid for this location
+  if (!slotsFor(name).includes(state.slot)) state.slot = slotsFor(name)[0] || 'hero';
+  refreshSlotChips(); refreshChecklistSel(); requestDraw();
+}
+function centerOn(name) {
+  const rp = refPoint(name);
+  if (rp && state.img) { const [wx, wy] = [rp.x * state.imgW, rp.y * state.imgH]; state.view.x = cw / 2 - wx * state.view.scale; state.view.y = ch / 2 - wy * state.view.scale; requestDraw(); }
+}
+
+function refreshSlotChips() {
+  const host = $('slotChips'); host.innerHTML = '';
+  const applicable = state.selected ? slotsFor(state.selected) : SLOTS;
+  for (const s of SLOTS) {
+    const b = document.createElement('button'); b.className = 'chip' + (s === state.slot ? ' active' : '');
+    const ok = applicable.includes(s); if (!ok) b.classList.add('disabled'); b.disabled = !ok;
+    b.innerHTML = `<span class="dot" style="background:${SLOT_COLORS[s]}"></span>${s}`;
+    b.onclick = () => { if (!ok) return; state.slot = s; refreshSlotChips(); };
+    host.appendChild(b);
+  }
+}
+
+let checklistBuilt = false;
+function buildChecklist() {
+  const host = $('checklist'); host.innerHTML = ''; checklistBuilt = true;
+  for (const k of KINGDOM_ORDER) {
+    const group = state.locations.filter((l) => l.kingdom === k);
+    if (!group.length) continue;
+    const h = document.createElement('div'); h.className = 'kgroup'; h.textContent = `${k} · ${group.length}`; host.appendChild(h);
+    for (const loc of group) {
+      const row = document.createElement('div'); row.className = 'litem'; row.dataset.name = loc.name;
+      row.innerHTML = `<span class="pips"></span><span class="nm">${loc.name}</span>${loc.hasBuilding ? '<span class="badge">⌂</span>' : ''}<span class="meta"></span>`;
+      row.onclick = () => { selectLocation(loc.name); centerOn(loc.name); };
+      host.appendChild(row);
+    }
+  }
+  refreshChecklistMeta();
+}
+function refreshChecklistSel() {
+  document.querySelectorAll('.litem').forEach((r) => r.classList.toggle('sel', r.dataset.name === state.selected));
+}
+function refreshChecklistMeta() {
+  if (!checklistBuilt) return;
+  document.querySelectorAll('.litem').forEach((row) => {
+    const name = row.dataset.name; const req = slotsFor(name); const have = state.anchors[name] || {};
+    const pipHost = row.querySelector('.pips'); pipHost.innerHTML = '';
+    for (const s of req) { const p = document.createElement('span'); p.className = 'pip'; p.title = s; if (have[s]) { p.style.background = SLOT_COLORS[s]; p.style.borderColor = SLOT_COLORS[s]; } pipHost.appendChild(p); }
+    const meta = row.querySelector('.meta');
+    meta.textContent = state.mode === 'adjacency' ? `${degree(name)}°` : `${req.filter((s) => have[s]).length}/${req.length}`;
+  });
+  refreshChecklistSel();
+}
+
+function buildDistDropdowns() {
+  for (const id of ['distFrom', 'distTo']) {
+    const sel = $(id); sel.innerHTML = '<option value="">—</option>';
+    for (const k of KINGDOM_ORDER) { const og = document.createElement('optgroup'); og.label = k;
+      for (const loc of state.locations.filter((l) => l.kingdom === k)) { const o = document.createElement('option'); o.value = loc.name; o.textContent = loc.name; og.appendChild(o); }
+      sel.appendChild(og);
+    }
+  }
+}
+
+function refreshProgress() {
+  const total = state.locations.reduce((n, l) => n + slotsFor(l.name).length, 0);
+  const filled = state.locations.reduce((n, l) => { const h = state.anchors[l.name] || {}; return n + slotsFor(l.name).filter((s) => h[s]).length; }, 0);
+  const edges = edgeList().length;
+  const comps = components().length;
+  $('progress').textContent = `Anchors ${filled}/${total} · edges ${edges} · components ${comps}`;
+}
+
+function refreshCalibPanel() {
+  $('adjSel').textContent = '';
+  if (state.mode === 'adjacency') {
+    const sel = state.selectedEdge ? `Edge: ${state.selectedEdge[0]} ↔ ${state.selectedEdge[1]} (Del to remove)` :
+      state.adjFirst ? `First: ${state.adjFirst} — click second location.` :
+      state.selected ? `${state.selected}: ${neighborsOf(state.selected).join(', ') || '(no neighbors)'}` : '';
+    $('adjSel').textContent = sel;
+  }
+}
+function syncCalibInputs() {
+  const ii = state.imageInfo;
+  $('ciCX').value = r5(ii.centerX); $('ciCY').value = r5(ii.centerY); $('ciR').value = r5(ii.radius);
+  $('ciN').value = r5(ii.northHeadingDegrees); $('ciWH').textContent = `${ii.width} × ${ii.height}`;
+}
+
+function refreshPanel() { refreshChecklistMeta(); refreshProgress(); refreshCalibPanel(); refreshHint(); }
+
+// ── Mode switching ───────────────────────────────────────────────────────────
+function setMode(mode) {
+  state.mode = mode; state.adjFirst = null; state.selectedEdge = null; state.calibStep = null; state.suggestions = [];
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.mode === mode));
+  for (const m of ['anchors', 'adjacency', 'calibrate', 'distance'])
+    $('ctx' + m[0].toUpperCase() + m.slice(1)).classList.toggle('hidden', m !== mode);
+  refreshPanel(); requestDraw();
+}
+
+// ── Wiring ───────────────────────────────────────────────────────────────────
+$('tabs').addEventListener('click', (e) => { const t = e.target.closest('.tab'); if (t) setMode(t.dataset.mode); });
+$('btnImage').onclick = () => $('fileImage').click();
+$('fileImage').onchange = (e) => loadImageFile(e.target.files[0]);
+$('btnFit').onclick = fitView;
+$('btnValidate').onclick = validate;
+$('modalClose').onclick = closeModal;
+$('modal').onclick = (e) => { if (e.target === $('modal')) closeModal(); };
+
+$('btnExportAnchors').onclick = () => download('udtBoardAnchors.ts', anchorsTS());
+$('btnExportAdj').onclick = () => download('udtBoardAdjacency.ts', adjacencyTS());
+$('btnExportJson').onclick = () => download('udtBoardData.json', combinedJSON());
+$('btnImport').onclick = () => $('fileImport').click();
+$('fileImport').onchange = (e) => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => importText(String(rd.result), f.name); rd.readAsText(f); e.target.value = ''; };
+$('btnReset').onclick = () => { if (confirm('Clear all anchors, adjacency, and calibration? (Locations & image stay.)')) { state.anchors = {}; state.adjacency = {}; state.imageInfo = { width: state.imgW, height: state.imgH, centerX: 0.5, centerY: 0.5, radius: 0.5, northHeadingDegrees: 0 }; state.selected = null; state.dist = { from: null, to: null, path: [], steps: null }; syncCalibInputs(); recomputeDistance(); markDirty(); } };
+
+// Adjacency suggestions
+$('btnSuggest').onclick = computeSuggestions;
+$('btnApplySuggest').onclick = () => { for (const [a, b] of state.suggestions) addEdge(a, b); state.suggestions = []; $('btnApplySuggest').disabled = true; $('btnClearSuggest').disabled = true; markDirty(); };
+$('btnClearSuggest').onclick = () => { state.suggestions = []; $('btnApplySuggest').disabled = true; $('btnClearSuggest').disabled = true; requestDraw(); };
+
+// Calibrate inputs
+$('btnSetCenter').onclick = () => { state.calibStep = 'center'; setHint('Click the board center.'); };
+$('btnSetRadius').onclick = () => { state.calibStep = 'radius'; setHint('Click a point on the circle edge.'); };
+$('btnResetCalib').onclick = () => { state.imageInfo.centerX = 0.5; state.imageInfo.centerY = 0.5; state.imageInfo.radius = 0.5; state.imageInfo.northHeadingDegrees = 0; syncCalibInputs(); markDirty(); };
+for (const [id, key] of [['ciCX', 'centerX'], ['ciCY', 'centerY'], ['ciR', 'radius'], ['ciN', 'northHeadingDegrees']])
+  $(id).onchange = () => { state.imageInfo[key] = parseFloat($(id).value) || 0; markDirty(); };
+$('btnNorthFromLoc').onclick = () => {
+  if (!state.selected) { setHint('Select a location first.'); return; }
+  const rp = refPoint(state.selected); if (!rp) { setHint('Selected location has no anchor.'); return; }
+  const dx = rp.x - state.imageInfo.centerX, dy = rp.y - state.imageInfo.centerY;
+  let deg = Math.atan2(dx, -dy) * 180 / Math.PI; if (deg < 0) deg += 360; // clockwise from up
+  state.imageInfo.northHeadingDegrees = r5(deg); syncCalibInputs(); markDirty();
+};
+
+// Distance dropdowns
+$('distFrom').onchange = () => { state.dist.from = $('distFrom').value || null; recomputeDistance(); };
+$('distTo').onchange = () => { state.dist.to = $('distTo').value || null; recomputeDistance(); };
+$('btnConnectivity').onclick = () => {
+  const comps = components().sort((a, b) => b.length - a.length);
+  const html = comps.map((c, i) => `<div class="vline">#${i + 1} — ${c.length} location(s)</div><pre>${c.slice().sort().join(', ')}</pre>`).join('');
+  openModal('Connectivity report', `<div class="vline ${comps.length === 1 ? 'v-ok' : 'v-warn'}">${comps.length} connected component(s).</div>` + html);
+};
+
+// Drag & drop image
+const stage = $('stage');
+['dragenter', 'dragover'].forEach((ev) => stage.addEventListener(ev, (e) => { e.preventDefault(); stage.classList.add('dragover'); }));
+['dragleave', 'drop'].forEach((ev) => stage.addEventListener(ev, (e) => { e.preventDefault(); if (ev === 'drop' || e.target === stage) stage.classList.remove('dragover'); }));
+stage.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) loadImageFile(f); });
+
+window.addEventListener('resize', resizeCanvas);
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+restore();
+buildChecklist(); buildDistDropdowns(); refreshSlotChips(); syncCalibInputs(); setMode('anchors');
+resizeCanvas();
+recomputeDistance();
+tryAutoLoadBoard();
+</script>
+</body>
+</html>

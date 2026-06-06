@@ -21,7 +21,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BOARD_GROUPINGS = exports.BOARD_LOCATION_BY_NAME = exports.BOARD_LOCATIONS = exports.SystemRandom = exports.GAME_SOURCES = exports.DIFFICULTIES = exports.ALLIES = exports.ADVERSARIES = exports.TIER3_FOES = exports.TIER2_FOES = exports.TIER1_FOES = exports.dumpSeedChars = exports.compareSeedsRaw = exports.encodeSeed = exports.createSeed = exports.decodeRngSeed = exports.decodeSeed = exports.validateSeed = exports.valueToChar = exports.charToValue = exports.IndexedDBSink = exports.bytesToHex = exports.InMemorySink = exports.UdtDiagnosticsRecorder = exports.parseDifferentialReadings = exports.createDefaultTowerState = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
+exports.shortestPath = exports.stepDistance = exports.neighborsOf = exports.BOARD_ADJACENCY = exports.BOARD_IMAGE_INFO = exports.BOARD_ANCHORS = exports.BOARD_GROUPINGS = exports.BOARD_LOCATION_BY_NAME = exports.BOARD_LOCATIONS = exports.SystemRandom = exports.GAME_SOURCES = exports.DIFFICULTIES = exports.ALLIES = exports.ADVERSARIES = exports.TIER3_FOES = exports.TIER2_FOES = exports.TIER1_FOES = exports.dumpSeedChars = exports.compareSeedsRaw = exports.encodeSeed = exports.createSeed = exports.decodeRngSeed = exports.decodeSeed = exports.validateSeed = exports.valueToChar = exports.charToValue = exports.IndexedDBSink = exports.bytesToHex = exports.InMemorySink = exports.UdtDiagnosticsRecorder = exports.parseDifferentialReadings = exports.createDefaultTowerState = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
 var UltimateDarkTower_1 = require("./UltimateDarkTower");
 Object.defineProperty(exports, "UltimateDarkTower", { enumerable: true, get: function () { return __importDefault(UltimateDarkTower_1).default; } });
 __exportStar(require("./udtConstants"), exports);
@@ -83,6 +83,16 @@ var udtGameBoard_1 = require("./udtGameBoard");
 Object.defineProperty(exports, "BOARD_LOCATIONS", { enumerable: true, get: function () { return udtGameBoard_1.BOARD_LOCATIONS; } });
 Object.defineProperty(exports, "BOARD_LOCATION_BY_NAME", { enumerable: true, get: function () { return udtGameBoard_1.BOARD_LOCATION_BY_NAME; } });
 Object.defineProperty(exports, "BOARD_GROUPINGS", { enumerable: true, get: function () { return udtGameBoard_1.BOARD_GROUPINGS; } });
+// Board layout anchors + image metadata (authored with tools/location-marker)
+var udtBoardAnchors_1 = require("./udtBoardAnchors");
+Object.defineProperty(exports, "BOARD_ANCHORS", { enumerable: true, get: function () { return udtBoardAnchors_1.BOARD_ANCHORS; } });
+Object.defineProperty(exports, "BOARD_IMAGE_INFO", { enumerable: true, get: function () { return udtBoardAnchors_1.BOARD_IMAGE_INFO; } });
+// Board movement-adjacency graph + derived BFS helpers
+var udtBoardAdjacency_1 = require("./udtBoardAdjacency");
+Object.defineProperty(exports, "BOARD_ADJACENCY", { enumerable: true, get: function () { return udtBoardAdjacency_1.BOARD_ADJACENCY; } });
+Object.defineProperty(exports, "neighborsOf", { enumerable: true, get: function () { return udtBoardAdjacency_1.neighborsOf; } });
+Object.defineProperty(exports, "stepDistance", { enumerable: true, get: function () { return udtBoardAdjacency_1.stepDistance; } });
+Object.defineProperty(exports, "shortestPath", { enumerable: true, get: function () { return udtBoardAdjacency_1.shortestPath; } });
 // For convenience, also export as default
 const UltimateDarkTower_2 = __importDefault(require("./UltimateDarkTower"));
 exports.default = UltimateDarkTower_2.default;

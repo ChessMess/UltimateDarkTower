@@ -153,6 +153,8 @@ src/
 ├── udtTowerResponse.ts       # Response parsing
 ├── udtTowerState.ts          # State tracking, pack/unpack
 ├── udtGameBoard.ts           # Locations, kingdoms, terrain
+├── udtBoardAnchors.ts        # Token layout anchors + board-image metadata
+├── udtBoardAdjacency.ts      # Movement graph + BFS helpers
 ├── udtSeedParser.ts          # Game seed encoding (base-34)
 ├── udtSystemRandom.ts        # C# System.Random replica
 ├── udtHelpers.ts             # Shared utilities

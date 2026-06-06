@@ -24,6 +24,12 @@ npm install ultimatedarktowerdisplay
 
 **When to use with UltimateDarkTower:** any time you're building a visual companion (web app, Electron app, dashboard) that needs to mirror the tower's state on screen.
 
+### [UltimateDarkTowerBoard](https://github.com/ChessMess/UltimateDarkTowerBoard)
+
+Composable state + text/2D/3D renderers for the game **board/mat** (heroes, foes, the adversary, skulls-on-buildings, monuments, space markers). It **re-exports** this library's static board data rather than vendoring a copy — including `BOARD_LOCATIONS`/`BOARD_GROUPINGS`, the enemy/setup rosters, and the board-layout datasets added here: `BOARD_ANCHORS` + `BOARD_IMAGE_INFO` (token placement) and `BOARD_ADJACENCY` + `neighborsOf`/`stepDistance`/`shortestPath` (the movement graph + helpers a host uses for move validation).
+
+**When to use with UltimateDarkTower:** rendering or editing the board's contents, or composing the board state alongside `TowerState`.
+
 ### [UltimateDarkTowerSync](https://github.com/ChessMess/UltimateDarkTowerSync)
 
 DarkTowerSync — state synchronization utility for keeping multiple devices in sync with a single tower instance.
@@ -75,16 +81,19 @@ Homage to the **classic** Dark Tower board game (1981) written for the Feather S
 ```mermaid
 flowchart LR
   Tower[Return to Dark Tower<br/>physical device]
-  UDT[UltimateDarkTower<br/>BLE driver]
-  Display[UltimateDarkTowerDisplay<br/>renderers]
+  UDT[UltimateDarkTower<br/>BLE driver + board data]
+  Display[UltimateDarkTowerDisplay<br/>tower renderers]
+  Board[UltimateDarkTowerBoard<br/>board state + renderers]
   Sync[UltimateDarkTowerSync<br/>multi-device sync]
   MCP[mcp-server-return-to-dark-tower<br/>AI bridge]
   YourApp[Your app]
 
   Tower -. Bluetooth .-> UDT
   UDT --> Display
+  UDT -- board data, anchors,<br/>adjacency, graph helpers --> Board
   UDT --> Sync
   UDT --> MCP
+  Board --> YourApp
   Display --> YourApp
   Sync --> YourApp
   MCP --> YourApp

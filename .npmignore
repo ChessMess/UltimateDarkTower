@@ -33,3 +33,6 @@ jest.config.js
 
 # Build artifacts that shouldn't be published
 dist/examples/
+
+# Dev-only tooling (already excluded by package.json "files" whitelist; belt-and-suspenders)
+tools/

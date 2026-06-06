@@ -235,7 +235,11 @@ class UdtBleConnection {
     handleTowerStateResponse(receivedData) {
         var _a, _b, _c;
         const dataSkullDropCount = receivedData[udtConstants_1.SKULL_DROP_COUNT_POS];
-        const state = (0, udtTowerState_1.rtdt_unpack_state)(receivedData);
+        // Strip the 1-byte command prefix before unpacking, matching the real
+        // state path (UltimateDarkTower.updateTowerStateFromResponse). Unpacking
+        // the raw packet here would be off by one and log misaligned drum/LED
+        // values. Debug log only — does not affect behaviour.
+        const state = (0, udtTowerState_1.rtdt_unpack_state)(receivedData.slice(udtConstants_1.TOWER_STATE_DATA_OFFSET, udtConstants_1.TOWER_STATE_RESPONSE_MIN_LENGTH));
         this.logger.debug(`Tower State: ${JSON.stringify(state)} `, '[UDT][BLE]');
         (_a = this.recorder) === null || _a === void 0 ? void 0 : _a.recordEvent('tower_state_response');
         if (this.performingCalibration) {

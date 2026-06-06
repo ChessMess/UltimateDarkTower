@@ -23,5 +23,9 @@ export type { Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally, Difficulty, GameSou
 export { SystemRandom } from './udtSystemRandom';
 export { BOARD_LOCATIONS, BOARD_LOCATION_BY_NAME, BOARD_GROUPINGS, } from './udtGameBoard';
 export type { TerrainType, BuildingType, BoardKingdom, BoardGrouping, BoardLocation } from './udtGameBoard';
+export { BOARD_ANCHORS, BOARD_IMAGE_INFO } from './udtBoardAnchors';
+export type { Anchor, AnchorSlot, LocationAnchors, BoardAnchorMap, BoardImageInfo } from './udtBoardAnchors';
+export { BOARD_ADJACENCY, neighborsOf, stepDistance, shortestPath } from './udtBoardAdjacency';
+export type { BoardAdjacency } from './udtBoardAdjacency';
 import UltimateDarkTower from './UltimateDarkTower';
 export default UltimateDarkTower;

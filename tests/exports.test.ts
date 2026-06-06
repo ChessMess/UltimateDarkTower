@@ -90,6 +90,20 @@ import UltimateDarkTower, {
   type BoardKingdom,
   type BoardGrouping,
   type BoardLocation,
+
+  // Board layout anchors + adjacency
+  BOARD_ANCHORS,
+  BOARD_IMAGE_INFO,
+  BOARD_ADJACENCY,
+  neighborsOf,
+  stepDistance,
+  shortestPath,
+  type Anchor,
+  type AnchorSlot,
+  type LocationAnchors,
+  type BoardAnchorMap,
+  type BoardImageInfo,
+  type BoardAdjacency,
 } from '../src';
 
 describe('Package Exports', () => {
@@ -300,6 +314,41 @@ describe('Package Exports', () => {
       expect(kingdom).toBe('west');
       expect(grouping).toBe('Long Water');
       expect(loc).toBeDefined();
+    });
+  });
+
+  describe('Board Layout & Adjacency Exports', () => {
+    test('BOARD_IMAGE_INFO has the expected shape', () => {
+      const info: BoardImageInfo = BOARD_IMAGE_INFO;
+      expect(typeof info.width).toBe('number');
+      expect(typeof info.height).toBe('number');
+      expect(typeof info.centerX).toBe('number');
+      expect(typeof info.centerY).toBe('number');
+      expect(typeof info.radius).toBe('number');
+      expect(typeof info.northHeadingDegrees).toBe('number');
+    });
+
+    test('BOARD_ANCHORS and BOARD_ADJACENCY each cover all 60 locations', () => {
+      expect(Object.keys(BOARD_ANCHORS)).toHaveLength(60);
+      expect(Object.keys(BOARD_ADJACENCY)).toHaveLength(60);
+    });
+
+    test('graph helpers are functions', () => {
+      expect(typeof neighborsOf).toBe('function');
+      expect(typeof stepDistance).toBe('function');
+      expect(typeof shortestPath).toBe('function');
+    });
+
+    test('type aliases are usable', () => {
+      const anchor: Anchor = { x: 0.5, y: 0.5 };
+      const slot: AnchorSlot = 'hero';
+      const locAnchors: LocationAnchors = { hero: anchor };
+      const map: BoardAnchorMap = BOARD_ANCHORS;
+      const adj: BoardAdjacency = BOARD_ADJACENCY;
+      expect(slot).toBe('hero');
+      expect(locAnchors.hero).toBe(anchor);
+      expect(map).toBeDefined();
+      expect(adj).toBeDefined();
     });
   });
 

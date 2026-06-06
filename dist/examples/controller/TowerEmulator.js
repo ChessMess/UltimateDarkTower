@@ -727,6 +727,8 @@ button.tdr-led[data-overridden="true"][data-effect="on"] {
   flex-direction: column;
   flex: 1 1 0;
   min-height: 0;
+  /* Anchor for the absolutely-positioned overlay layer. */
+  position: relative;
 }
 
 .trv-header {
@@ -812,6 +814,48 @@ button.tdr-led[data-overridden="true"][data-effect="on"] {
   display: flex;
   gap: 0.4rem;
 }
+
+/* \u2500\u2500 UI docking (overlay HUD + panel slots) \u2500\u2500 */
+
+/* Absolutely-positioned overlay above the canvas. The layer itself ignores
+   pointer events so empty areas still orbit/zoom; mounted children opt back in. */
+.trv-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.trv-overlay > * {
+  pointer-events: auto;
+}
+
+/* Docking grid that reflows the canvas around fixed side/top/bottom panels. */
+.trv-dock {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "top top top"
+    "left body right"
+    "bottom bottom bottom";
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+}
+.trv-dock > .trv-body {
+  grid-area: body;
+  min-width: 0;
+  min-height: 0;
+}
+.trv-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+.trv-panel-left { grid-area: left; }
+.trv-panel-right { grid-area: right; }
+.trv-panel-top { grid-area: top; }
+.trv-panel-bottom { grid-area: bottom; }
 `;
 function injectStyles() {
   if (injected) return;
@@ -33603,7 +33647,7 @@ var OFFICIAL_AUDIO_FILES = {
   [A.IsatheHollow.value]: "Adversary_Isa_01.ogg",
   [A.LingeringRot.value]: "Adversary_Rot_03.ogg",
   [A.UtukKu.value]: "Adversary_Utuk_03.ogg",
-  [A.Gleb.value]: "Ally_Gleb_05.ogg",
+  [A.Gleb.value]: "Ally_Gleb_01.ogg",
   [A.Grigor.value]: "Ally_Grigor_01.ogg",
   [A.Hakan.value]: "Ally_Hakan_02.ogg",
   [A.Letha.value]: "Ally_Letha_02.ogg",
@@ -33613,7 +33657,7 @@ var OFFICIAL_AUDIO_FILES = {
   [A.Vasa.value]: "Ally_Vasa_03.ogg",
   [A.Yana.value]: "Ally_Yana_01.ogg",
   [A.Zaida.value]: "Ally_Zaida_01.ogg",
-  [A.ApplyAdvantage01.value]: "Battle_Advantage_Applied_01F.ogg",
+  [A.ApplyAdvantage01.value]: "Battle_Advantage_Applied_01.ogg",
   [A.ApplyAdvantage02.value]: "Battle_Advantage_Applied_02.ogg",
   [A.ApplyAdvantage03.value]: "Battle_Advantage_Applied_03.ogg",
   [A.ApplyAdvantage04.value]: "Battle_Advantage_Applied_04.ogg",
@@ -33718,7 +33762,7 @@ var samples = {
   [A.IsatheHollow.value]: new URL("./assets/Adversary_Isa_01.ogg", import.meta.url).href,
   [A.LingeringRot.value]: new URL("./assets/Adversary_Rot_03.ogg", import.meta.url).href,
   [A.UtukKu.value]: new URL("./assets/Adversary_Utuk_03.ogg", import.meta.url).href,
-  [A.Gleb.value]: new URL("./assets/Ally_Gleb_05.ogg", import.meta.url).href,
+  [A.Gleb.value]: new URL("./assets/Ally_Gleb_01.ogg", import.meta.url).href,
   [A.Grigor.value]: new URL("./assets/Ally_Grigor_01.ogg", import.meta.url).href,
   [A.Hakan.value]: new URL("./assets/Ally_Hakan_02.ogg", import.meta.url).href,
   [A.Letha.value]: new URL("./assets/Ally_Letha_02.ogg", import.meta.url).href,
@@ -33728,7 +33772,7 @@ var samples = {
   [A.Vasa.value]: new URL("./assets/Ally_Vasa_03.ogg", import.meta.url).href,
   [A.Yana.value]: new URL("./assets/Ally_Yana_01.ogg", import.meta.url).href,
   [A.Zaida.value]: new URL("./assets/Ally_Zaida_01.ogg", import.meta.url).href,
-  [A.ApplyAdvantage01.value]: new URL("./assets/Battle_Advantage_Applied_01F.ogg", import.meta.url).href,
+  [A.ApplyAdvantage01.value]: new URL("./assets/Battle_Advantage_Applied_01.ogg", import.meta.url).href,
   [A.ApplyAdvantage02.value]: new URL("./assets/Battle_Advantage_Applied_02.ogg", import.meta.url).href,
   [A.ApplyAdvantage03.value]: new URL("./assets/Battle_Advantage_Applied_03.ogg", import.meta.url).href,
   [A.ApplyAdvantage04.value]: new URL("./assets/Battle_Advantage_Applied_04.ogg", import.meta.url).href,
@@ -56863,6 +56907,25 @@ var GroundDiscManager = class {
       topMat.needsUpdate = true;
     }
   }
+  /**
+   * Report the disc geometry derived from the model bounds + lighting config.
+   * Pure computation (mirrors {@link build}'s sizing) — valid even before the
+   * disc mesh is lazily built, so external plugins can align content on the disc
+   * top before/independently of the disc being shown.
+   *
+   * `topY` is the top surface (where on-disc content rests); `center` is the
+   * disc's geometric center on the Y axis (x = z = 0).
+   */
+  getMetrics(modelRadius, modelBottomY, lighting) {
+    const radius = modelRadius * lighting.groundDisc.radiusFactor;
+    const h = Math.max(modelRadius * lighting.boardDisc.thicknessFactor, 1e-4);
+    const centerY = modelBottomY - modelRadius * 2e-3 - h / 2;
+    return {
+      center: new Vector3(0, centerY, 0),
+      radius,
+      topY: centerY + h / 2
+    };
+  }
   /** Reapply the full lighting config to the disc material and geometry. */
   updateLighting(lighting, modelRadius, modelBottomY) {
     if (!this.disc) return;
@@ -60879,6 +60942,18 @@ var Tower3DView = class {
     this.physicsClock = new Clock();
     this.physicsFrameListeners = /* @__PURE__ */ new Set();
     this.physicsModelLoadListeners = /* @__PURE__ */ new Set();
+    /** Attached scene plugins (see {@link ScenePlugin}). */
+    this.scenePlugins = /* @__PURE__ */ new Set();
+    /** Side-change subscribers fanned out alongside `onSideChange`. */
+    this.sideChangeListeners = /* @__PURE__ */ new Set();
+    /** Pointer hit-test targets registered by scene plugins. */
+    this.pointerTargets = [];
+    /** Shared raycaster for pointer hit-testing (lazy; absent in WebGL-less test envs). */
+    this.pointerRaycaster = null;
+    this.pointerNdc = new Vector2();
+    /** The target that consumed the active pointer-down gesture, until pointer-up. */
+    this.activePointerTarget = null;
+    this.pointerListenerCleanup = null;
     this.cameraController = null;
     this.rafId = null;
     this.resizeObserver = null;
@@ -60954,46 +61029,234 @@ var Tower3DView = class {
     return {
       scene: this.scene,
       drumNode: (level) => this.drumManager.getDrumNode(level),
-      onFrame: (cb) => {
-        this.physicsFrameListeners.add(cb);
-        return () => {
-          this.physicsFrameListeners.delete(cb);
-        };
-      },
+      onFrame: (cb) => this.subscribeFrame(cb),
       onSealsApplied: (cb) => this.sealManager.onSealsApplied(cb),
-      onStateApplied: (cb) => {
-        this.stateAppliedListeners.push(cb);
-        return () => {
-          const i = this.stateAppliedListeners.indexOf(cb);
-          if (i >= 0) this.stateAppliedListeners.splice(i, 1);
-        };
-      },
-      onModelLoaded: (cb) => {
-        this.physicsModelLoadListeners.add(cb);
-        if (this.model) {
-          try {
-            cb({
-              root: this.model,
-              modelRadius: this.modelRadius,
-              modelBottomY: this.modelBottomY,
-              modelTopY: this.modelTopY
-            });
-          } catch (err) {
-            console.error("[Tower3DView] onModelLoaded listener threw", err);
-          }
-        }
-        return () => {
-          this.physicsModelLoadListeners.delete(cb);
-        };
-      },
+      onStateApplied: (cb) => this.subscribeStateApplied(cb),
+      onModelLoaded: (cb) => this.subscribeModelLoaded(cb),
       modelRadius: this.modelRadius,
       modelBottomY: this.modelBottomY,
       modelTopY: this.modelTopY
     };
   }
+  // --- Shared subscription internals (used by getPhysicsHooks + scene plugins) ---
+  subscribeFrame(cb) {
+    this.physicsFrameListeners.add(cb);
+    return () => {
+      this.physicsFrameListeners.delete(cb);
+    };
+  }
+  subscribeStateApplied(cb) {
+    this.stateAppliedListeners.push(cb);
+    return () => {
+      const i = this.stateAppliedListeners.indexOf(cb);
+      if (i >= 0) this.stateAppliedListeners.splice(i, 1);
+    };
+  }
+  subscribeModelLoaded(cb) {
+    this.physicsModelLoadListeners.add(cb);
+    if (this.model) {
+      try {
+        cb({
+          root: this.model,
+          modelRadius: this.modelRadius,
+          modelBottomY: this.modelBottomY,
+          modelTopY: this.modelTopY
+        });
+      } catch (err) {
+        console.error("[Tower3DView] onModelLoaded listener threw", err);
+      }
+    }
+    return () => {
+      this.physicsModelLoadListeners.delete(cb);
+    };
+  }
   /** @internal — exposed for tests; equals `physicsFrameListeners.size`. */
   get physicsFrameListenerCount() {
     return this.physicsFrameListeners.size;
+  }
+  /** @internal — exposed for tests; number of attached scene plugins. */
+  get scenePluginCount() {
+    return this.scenePlugins.size;
+  }
+  /** @internal — exposed for tests; number of registered pointer targets. */
+  get pointerTargetCount() {
+    return this.pointerTargets.length;
+  }
+  // --- Scene-plugin seam (see ScenePlugin.ts / attachScenePlugin) ---
+  /**
+   * Attach a {@link ScenePlugin}. Prefer the standalone `attachScenePlugin(view, plugin)`
+   * helper; this method is the public seam it wraps. Calls `plugin.attach(ctx)` once with
+   * a live context, wires its optional lifecycle methods, and returns a handle whose
+   * `detach()` removes the plugin and frees its subscriptions (idempotent).
+   */
+  registerScenePlugin(plugin) {
+    const unsubs = [];
+    const ctx = this.createScenePluginContext(unsubs);
+    let detached = false;
+    const entry = {
+      plugin,
+      detach: () => {
+        if (detached) return;
+        detached = true;
+        this.scenePlugins.delete(entry);
+        for (const unsub of unsubs.splice(0)) {
+          try {
+            unsub();
+          } catch (err) {
+            console.error("[Tower3DView] scene plugin unsubscribe threw", err);
+          }
+        }
+        try {
+          plugin.dispose();
+        } catch (err) {
+          console.error("[Tower3DView] scene plugin dispose threw", err);
+        }
+      }
+    };
+    this.scenePlugins.add(entry);
+    try {
+      plugin.attach(ctx);
+    } catch (err) {
+      console.error("[Tower3DView] scene plugin attach threw", err);
+    }
+    if (plugin.update) unsubs.push(this.subscribeFrame(plugin.update.bind(plugin)));
+    if (plugin.onStateApplied) unsubs.push(this.subscribeStateApplied(plugin.onStateApplied.bind(plugin)));
+    if (plugin.onSealsApplied) unsubs.push(this.sealManager.onSealsApplied(plugin.onSealsApplied.bind(plugin)));
+    if (plugin.onModelLoaded) unsubs.push(this.subscribeModelLoaded(plugin.onModelLoaded.bind(plugin)));
+    return { plugin, detach: entry.detach };
+  }
+  /** Register a pointer hit-test target. Returns an unsubscribe function. */
+  registerPointerTarget(target) {
+    this.pointerTargets.push(target);
+    return () => {
+      const i = this.pointerTargets.indexOf(target);
+      if (i >= 0) this.pointerTargets.splice(i, 1);
+      if (this.activePointerTarget === target) this.activePointerTarget = null;
+    };
+  }
+  /**
+   * Bind a capture-phase pointer interception layer on the canvas's parent so
+   * registered {@link PointerTarget}s can hit-test and consume pointer gestures
+   * before OrbitControls (which listens on the canvas itself) acts. Capture on the
+   * ancestor runs before the event reaches the canvas target, so a consumed
+   * pointer-down is stopped via `stopPropagation` and never starts an orbit drag.
+   * Side-select is azimuth-derived (not pointer-driven), so suppressing the drag
+   * also suppresses any spurious side change.
+   */
+  bindPointerTargets() {
+    if (this.pointerListenerCleanup) this.pointerListenerCleanup();
+    const parent = this.canvasContainer;
+    if (!parent || typeof Raycaster !== "function") {
+      this.pointerListenerCleanup = null;
+      return;
+    }
+    const doc = parent.ownerDocument;
+    const onDown = (ev) => {
+      if (this.pointerTargets.length === 0) return;
+      const ray = this.updatePointerRay(ev);
+      if (!ray) return;
+      const sorted = [...this.pointerTargets].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+      for (const target of sorted) {
+        const objects = typeof target.objects === "function" ? target.objects() : target.objects;
+        if (!objects || objects.length === 0) continue;
+        const hits = ray.intersectObjects(objects, true);
+        if (hits.length === 0) continue;
+        const consumed = target.onPointerDown?.(hits[0], ev) === true;
+        if (consumed) {
+          this.activePointerTarget = target;
+          ev.stopPropagation();
+          return;
+        }
+      }
+    };
+    const onMove = (ev) => {
+      const target = this.activePointerTarget;
+      if (!target?.onPointerMove) return;
+      target.onPointerMove(this.pickPointerHit(target, ev), ev);
+    };
+    const onUp = (ev) => {
+      const target = this.activePointerTarget;
+      if (!target) return;
+      this.activePointerTarget = null;
+      if (!target.onPointerUp) return;
+      const consumed = target.onPointerUp(this.pickPointerHit(target, ev), ev) === true;
+      if (consumed) ev.stopPropagation();
+    };
+    parent.addEventListener("pointerdown", onDown, { capture: true });
+    doc.addEventListener("pointermove", onMove, { capture: true });
+    doc.addEventListener("pointerup", onUp, { capture: true });
+    doc.addEventListener("pointercancel", onUp, { capture: true });
+    this.pointerListenerCleanup = () => {
+      parent.removeEventListener("pointerdown", onDown, { capture: true });
+      doc.removeEventListener("pointermove", onMove, { capture: true });
+      doc.removeEventListener("pointerup", onUp, { capture: true });
+      doc.removeEventListener("pointercancel", onUp, { capture: true });
+      this.activePointerTarget = null;
+    };
+  }
+  /** Update the shared raycaster from a pointer event's canvas-relative NDC. */
+  updatePointerRay(ev) {
+    if (!this.camera || !this.renderer) return null;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+    this.pointerNdc.x = (ev.clientX - rect.left) / rect.width * 2 - 1;
+    this.pointerNdc.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+    if (!this.pointerRaycaster) this.pointerRaycaster = new Raycaster();
+    this.pointerRaycaster.setFromCamera(this.pointerNdc, this.camera);
+    return this.pointerRaycaster;
+  }
+  /** Raycast a single target's objects; return the nearest hit or null. */
+  pickPointerHit(target, ev) {
+    const ray = this.updatePointerRay(ev);
+    if (!ray) return null;
+    const objects = typeof target.objects === "function" ? target.objects() : target.objects;
+    if (!objects || objects.length === 0) return null;
+    const hits = ray.intersectObjects(objects, true);
+    return hits.length > 0 ? hits[0] : null;
+  }
+  createScenePluginContext(unsubs) {
+    const track = (unsub) => {
+      unsubs.push(unsub);
+      return unsub;
+    };
+    const ctx = {
+      scene: this.scene,
+      camera: this.camera,
+      renderer: this.renderer,
+      // Snapshot values; replaced below with live getters reflecting post-load bounds.
+      modelRadius: this.modelRadius,
+      modelBottomY: this.modelBottomY,
+      modelTopY: this.modelTopY,
+      drumNode: (level) => this.drumManager.getDrumNode(level),
+      registerFrameCallback: (cb) => track(this.subscribeFrame(cb)),
+      onStateApplied: (cb) => track(this.subscribeStateApplied(cb)),
+      onSealsApplied: (cb) => track(this.sealManager.onSealsApplied(cb)),
+      onModelLoaded: (cb) => track(this.subscribeModelLoaded(cb)),
+      registerPointerTarget: (target) => track(this.registerPointerTarget(target)),
+      getSide: () => this.cameraController?.getCurrentSide() ?? "north",
+      onSideChange: (cb) => {
+        this.sideChangeListeners.add(cb);
+        return track(() => this.sideChangeListeners.delete(cb));
+      },
+      isModelLoaded: () => this._loadState === "ready"
+    };
+    Object.defineProperties(ctx, {
+      modelRadius: { get: () => this.modelRadius, enumerable: true },
+      modelBottomY: { get: () => this.modelBottomY, enumerable: true },
+      modelTopY: { get: () => this.modelTopY, enumerable: true }
+    });
+    return ctx;
+  }
+  /** Fire a side change to the view-level callback and all scene-plugin subscribers. */
+  emitSideChange(side) {
+    this.onSideChange?.(side);
+    for (const cb of this.sideChangeListeners) {
+      try {
+        cb(side);
+      } catch (err) {
+        console.error("[Tower3DView] side-change listener threw", err);
+      }
+    }
   }
   tickPhysicsListeners() {
     if (this.physicsFrameListeners.size === 0) return;
@@ -61015,7 +61278,7 @@ var Tower3DView = class {
   snapSide(side) {
     this.cameraController?.snapToSide(side);
     this.pendingSide = this.model ? null : side;
-    this.onSideChange?.(side);
+    this.emitSideChange(side);
   }
   /** Turn all LEDs off, stop drum audio, and hide the canvas wrapper until the next `applyState` call. */
   showIdle() {
@@ -61432,10 +61695,30 @@ var Tower3DView = class {
   setGroundDiscVisible(visible) {
     this.groundDiscManager?.setVisible(visible, this.modelRadius, this.modelBottomY, this.lighting);
   }
-  /** Toggle the canvas-generated game board texture on the ground disc. */
+  /**
+   * Show/hide the placeholder game-board image on the ground disc's top surface.
+   * This is the **board-surface stand-down** switch: pass `false` to suppress the
+   * built-in board image (the top cap reverts to a plain colored material) so an
+   * external plugin can own the disc surface — the disc **mesh** stays (toggle that
+   * with {@link setGroundDiscVisible}) and nothing physics depends on is removed
+   * (skull physics rests on its own board collider, not the visual disc).
+   * Defaults to visible.
+   */
   setBoardDiscEnabled(enabled) {
     this.lighting.boardDisc.enabled = enabled;
     this.groundDiscManager?.setBoardDiscEnabled(enabled, this.lighting);
+  }
+  /**
+   * Report the ground-disc geometry so an external plugin can align content on it.
+   * Derived from the current model bounds + lighting config; valid even before the
+   * disc mesh is lazily built. `topY` is the top surface (where on-disc content
+   * rests); `center` is the disc's geometric center on the Y axis.
+   */
+  getDiscMetrics() {
+    if (this.groundDiscManager) {
+      return this.groundDiscManager.getMetrics(this.modelRadius, this.modelBottomY, this.lighting);
+    }
+    return { center: new Vector3(0, this.modelBottomY, 0), radius: this.modelRadius, topY: this.modelBottomY };
   }
   /** Load an equirectangular image or .hdr/.exr file as the scene skybox. Pass null to clear. */
   setSkyboxUrl(url2) {
@@ -61444,6 +61727,14 @@ var Tower3DView = class {
   }
   /** Cancel the render loop, release all three.js resources, and remove the canvas from the DOM. */
   dispose() {
+    for (const entry of [...this.scenePlugins]) entry.detach();
+    this.scenePlugins.clear();
+    this.sideChangeListeners.clear();
+    this.pointerListenerCleanup?.();
+    this.pointerListenerCleanup = null;
+    this.pointerTargets = [];
+    this.pointerRaycaster = null;
+    this.activePointerTarget = null;
     this.cameraController?.dispose();
     this.cameraController = null;
     this.entranceAnimator.dispose();
@@ -61581,8 +61872,9 @@ var Tower3DView = class {
     this.resizeObserver = new ResizeObserver(() => this.handleResize());
     this.resizeObserver.observe(this.canvasContainer);
     this.cameraController = new CameraController(this.camera, this.controls, this.sideButtons, this.cameraConfig);
-    this.cameraController.onSideChange = (side) => this.onSideChange?.(side);
+    this.cameraController.onSideChange = (side) => this.emitSideChange(side);
     this.cameraController.bindZoomTowardCursor(this.renderer.domElement);
+    this.bindPointerTargets();
     if (this.lighting.scene.skyboxUrl) {
       this.skyboxManager.apply(this.lighting.scene.skyboxUrl, this.lighting.scene.background);
     }
@@ -62257,6 +62549,11 @@ var TowerRenderView = class {
     this.actionsEl = null;
     this.badgeIndex = /* @__PURE__ */ new Map();
     this.currentBadges = [];
+    /** Overlay HUD layer (lazy). */
+    this.overlayEl = null;
+    /** Docking grid wrapping the body (lazy; created on first panel slot). */
+    this.dockEl = null;
+    this.panelSlots = /* @__PURE__ */ new Map();
     this.rootEl = document.createElement("div");
     this.rootEl.className = options.className ? `trv-root ${options.className}` : "trv-root";
     this.bodyEl = document.createElement("div");
@@ -62285,6 +62582,7 @@ var TowerRenderView = class {
       onCalibrationComplete: options.onCalibrationComplete
     };
     this.innerDisplay = new TowerDisplay(displayOptions);
+    if (options.overlay) this.getOverlayContainer();
   }
   // ── State methods (ITowerDisplay) ───────────────────────────────────────
   applyState(state, force = false) {
@@ -62454,6 +62752,37 @@ var TowerRenderView = class {
   get loadState() {
     return this.innerDisplay.loadState;
   }
+  // ── UI docking ──────────────────────────────────────────────────────────
+  /**
+   * The overlay layer above the canvas (a HUD docking spot). Created on demand.
+   * The layer has `pointer-events: none` so empty areas still orbit/zoom; mounted
+   * children opt back in (the bundled CSS sets `pointer-events: auto` on direct
+   * children). Mount floating/movable panels here.
+   */
+  getOverlayContainer() {
+    if (!this.overlayEl) {
+      this.overlayEl = document.createElement("div");
+      this.overlayEl.className = "trv-overlay";
+      this.bodyEl.appendChild(this.overlayEl);
+    }
+    return this.overlayEl;
+  }
+  /**
+   * A fixed docking region in the chrome around the canvas (an editor docking
+   * spot). Created on demand; reflows the canvas without overlapping it. Mount
+   * fixed side/top/bottom panels here.
+   */
+  getPanelSlot(position) {
+    this.ensureDock();
+    let slot = this.panelSlots.get(position);
+    if (!slot) {
+      slot = document.createElement("div");
+      slot.className = `trv-panel trv-panel-${position}`;
+      this.dockEl.appendChild(slot);
+      this.panelSlots.set(position, slot);
+    }
+    return slot;
+  }
   dispose() {
     this.innerDisplay.dispose();
     this.rootEl.remove();
@@ -62464,8 +62793,19 @@ var TowerRenderView = class {
     this.actionsEl = null;
     this.badgeIndex.clear();
     this.currentBadges = [];
+    this.overlayEl = null;
+    this.dockEl = null;
+    this.panelSlots.clear();
   }
   // ── Internals ───────────────────────────────────────────────────────────
+  /** Lazily wrap `.trv-body` in a `.trv-dock` grid so panel slots can reflow it. */
+  ensureDock() {
+    if (this.dockEl) return;
+    this.dockEl = document.createElement("div");
+    this.dockEl.className = "trv-dock";
+    this.rootEl.insertBefore(this.dockEl, this.bodyEl);
+    this.dockEl.appendChild(this.bodyEl);
+  }
   ensureHeader() {
     if (this.headerEl) return;
     this.headerEl = document.createElement("div");

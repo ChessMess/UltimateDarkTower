@@ -1,0 +1,386 @@
+[
+  {
+    "name": "Broken Lands",
+    "kingdom": "north",
+    "terrain": "Hills",
+    "hasBuilding": false
+  },
+  {
+    "name": "Dayside",
+    "kingdom": "north",
+    "terrain": "Lake",
+    "hasBuilding": true,
+    "building": "Bazaar",
+    "grouping": "Long Water"
+  },
+  {
+    "name": "Egan's End",
+    "kingdom": "north",
+    "terrain": "Grasslands",
+    "hasBuilding": true,
+    "building": "Village"
+  },
+  {
+    "name": "Fivepint",
+    "kingdom": "north",
+    "terrain": "Lake",
+    "hasBuilding": false,
+    "grouping": "Long Water"
+  },
+  {
+    "name": "Green Bridge",
+    "kingdom": "north",
+    "terrain": "Grasslands",
+    "hasBuilding": false
+  },
+  {
+    "name": "Lodestone Mountains",
+    "kingdom": "north",
+    "terrain": "Mountains",
+    "hasBuilding": false
+  },
+  {
+    "name": "Lower Ice Fangs",
+    "kingdom": "north",
+    "terrain": "Mountains",
+    "hasBuilding": false
+  },
+  {
+    "name": "Muted Forest",
+    "kingdom": "north",
+    "terrain": "Forest",
+    "hasBuilding": false
+  },
+  {
+    "name": "Peaks of the Djinn",
+    "kingdom": "north",
+    "terrain": "Mountains",
+    "hasBuilding": false
+  },
+  {
+    "name": "Pearl of the North",
+    "kingdom": "north",
+    "terrain": "Grasslands",
+    "hasBuilding": false
+  },
+  {
+    "name": "Radiant Mountains",
+    "kingdom": "north",
+    "terrain": "Mountains",
+    "hasBuilding": true,
+    "building": "Citadel"
+  },
+  {
+    "name": "Rimeweald",
+    "kingdom": "north",
+    "terrain": "Forest",
+    "hasBuilding": false
+  },
+  {
+    "name": "The Tundra",
+    "kingdom": "north",
+    "terrain": "Desert",
+    "hasBuilding": false
+  },
+  {
+    "name": "Tower Scar Desert",
+    "kingdom": "north",
+    "terrain": "Desert",
+    "hasBuilding": false
+  },
+  {
+    "name": "Upper Ice Fangs",
+    "kingdom": "north",
+    "terrain": "Mountains",
+    "hasBuilding": true,
+    "building": "Sanctuary"
+  },
+  {
+    "name": "Big Sister",
+    "kingdom": "east",
+    "terrain": "Mountains",
+    "hasBuilding": false
+  },
+  {
+    "name": "Bleak Wastes",
+    "kingdom": "east",
+    "terrain": "Desert",
+    "hasBuilding": false
+  },
+  {
+    "name": "Copper Grove",
+    "kingdom": "east",
+    "terrain": "Forest",
+    "hasBuilding": false
+  },
+  {
+    "name": "Dragontooth Lake",
+    "kingdom": "east",
+    "terrain": "Lake",
+    "hasBuilding": false
+  },
+  {
+    "name": "Duwani",
+    "kingdom": "east",
+    "terrain": "Grasslands",
+    "hasBuilding": true,
+    "building": "Village"
+  },
+  {
+    "name": "Forest of Shades",
+    "kingdom": "east",
+    "terrain": "Forest",
+    "hasBuilding": false
+  },
+  {
+    "name": "Greater Tombstones",
+    "kingdom": "east",
+    "terrain": "Hills",
+    "hasBuilding": true,
+    "building": "Sanctuary"
+  },
+  {
+    "name": "Inner Kinghills",
+    "kingdom": "east",
+    "terrain": "Hills",
+    "hasBuilding": true,
+    "building": "Citadel"
+  },
+  {
+    "name": "Jewel Hills",
+    "kingdom": "east",
+    "terrain": "Hills",
+    "hasBuilding": false
+  },
+  {
+    "name": "Lake of Songs",
+    "kingdom": "east",
+    "terrain": "Lake",
+    "hasBuilding": false
+  },
+  {
+    "name": "Lesser Tombstones",
+    "kingdom": "east",
+    "terrain": "Hills",
+    "hasBuilding": false
+  },
+  {
+    "name": "Outer Kinghills",
+    "kingdom": "east",
+    "terrain": "Hills",
+    "hasBuilding": false
+  },
+  {
+    "name": "The Decaying Wilds",
+    "kingdom": "east",
+    "terrain": "Grasslands",
+    "hasBuilding": false
+  },
+  {
+    "name": "Three Rivers",
+    "kingdom": "east",
+    "terrain": "Grasslands",
+    "hasBuilding": true,
+    "building": "Bazaar"
+  },
+  {
+    "name": "Utar's Barrows",
+    "kingdom": "east",
+    "terrain": "Desert",
+    "hasBuilding": false
+  },
+  {
+    "name": "Anza",
+    "kingdom": "west",
+    "terrain": "Grasslands",
+    "hasBuilding": true,
+    "building": "Village"
+  },
+  {
+    "name": "Arkartus",
+    "kingdom": "west",
+    "terrain": "Forest",
+    "hasBuilding": true,
+    "building": "Sanctuary",
+    "grouping": "The Great Woods"
+  },
+  {
+    "name": "Ash Hills",
+    "kingdom": "west",
+    "terrain": "Hills",
+    "hasBuilding": false
+  },
+  {
+    "name": "Cloudhold",
+    "kingdom": "west",
+    "terrain": "Mountains",
+    "hasBuilding": false
+  },
+  {
+    "name": "Delmsmire",
+    "kingdom": "west",
+    "terrain": "Forest",
+    "hasBuilding": false,
+    "grouping": "The Great Woods"
+  },
+  {
+    "name": "Hissing Groves",
+    "kingdom": "west",
+    "terrain": "Forest",
+    "hasBuilding": true,
+    "building": "Citadel"
+  },
+  {
+    "name": "Idran Forest",
+    "kingdom": "west",
+    "terrain": "Forest",
+    "hasBuilding": false
+  },
+  {
+    "name": "Lonelight Hills",
+    "kingdom": "west",
+    "terrain": "Hills",
+    "hasBuilding": false
+  },
+  {
+    "name": "Lost Lands",
+    "kingdom": "west",
+    "terrain": "Desert",
+    "hasBuilding": false
+  },
+  {
+    "name": "Plains of Plovo",
+    "kingdom": "west",
+    "terrain": "Grasslands",
+    "hasBuilding": true,
+    "building": "Bazaar"
+  },
+  {
+    "name": "Plains of Woldra",
+    "kingdom": "west",
+    "terrain": "Grasslands",
+    "hasBuilding": false
+  },
+  {
+    "name": "The Empty Glade",
+    "kingdom": "west",
+    "terrain": "Grasslands",
+    "hasBuilding": false
+  },
+  {
+    "name": "The Grass Sea",
+    "kingdom": "west",
+    "terrain": "Grasslands",
+    "hasBuilding": false
+  },
+  {
+    "name": "Weeping Waters",
+    "kingdom": "west",
+    "terrain": "Lake",
+    "hasBuilding": false
+  },
+  {
+    "name": "Yellowpike",
+    "kingdom": "west",
+    "terrain": "Forest",
+    "hasBuilding": false,
+    "grouping": "The Great Woods"
+  },
+  {
+    "name": "Archmont",
+    "kingdom": "south",
+    "terrain": "Grasslands",
+    "hasBuilding": false,
+    "grouping": "Regal Run"
+  },
+  {
+    "name": "Azkol's Bane",
+    "kingdom": "south",
+    "terrain": "Desert",
+    "hasBuilding": false
+  },
+  {
+    "name": "Bone Hills",
+    "kingdom": "south",
+    "terrain": "Hills",
+    "hasBuilding": false
+  },
+  {
+    "name": "Howling Desert",
+    "kingdom": "south",
+    "terrain": "Desert",
+    "hasBuilding": true,
+    "building": "Citadel"
+  },
+  {
+    "name": "Irontops",
+    "kingdom": "south",
+    "terrain": "Mountains",
+    "hasBuilding": false
+  },
+  {
+    "name": "Little Sister",
+    "kingdom": "south",
+    "terrain": "Mountains",
+    "hasBuilding": false
+  },
+  {
+    "name": "Middle Sister",
+    "kingdom": "south",
+    "terrain": "Mountains",
+    "hasBuilding": false
+  },
+  {
+    "name": "Mountains of the Watchers",
+    "kingdom": "south",
+    "terrain": "Mountains",
+    "hasBuilding": false
+  },
+  {
+    "name": "Pine Barrens",
+    "kingdom": "south",
+    "terrain": "Forest",
+    "hasBuilding": false
+  },
+  {
+    "name": "Sands of Madness",
+    "kingdom": "south",
+    "terrain": "Desert",
+    "hasBuilding": true,
+    "building": "Sanctuary"
+  },
+  {
+    "name": "Southern Wastes",
+    "kingdom": "south",
+    "terrain": "Desert",
+    "hasBuilding": true,
+    "building": "Village"
+  },
+  {
+    "name": "The Cloister",
+    "kingdom": "south",
+    "terrain": "Grasslands",
+    "hasBuilding": false,
+    "grouping": "Regal Run"
+  },
+  {
+    "name": "The Emerald Expanse",
+    "kingdom": "south",
+    "terrain": "Grasslands",
+    "hasBuilding": true,
+    "building": "Bazaar"
+  },
+  {
+    "name": "The Throne",
+    "kingdom": "south",
+    "terrain": "Grasslands",
+    "hasBuilding": false,
+    "grouping": "Regal Run"
+  },
+  {
+    "name": "Ulamel's Hollow",
+    "kingdom": "south",
+    "terrain": "Grasslands",
+    "hasBuilding": false
+  }
+]

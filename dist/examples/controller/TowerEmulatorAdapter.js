@@ -5,7 +5,11 @@ const EMULATED_BATTERY_MV = 3600;
 const BATTERY_HEARTBEAT_INTERVAL_MS = 200;
 const INITIAL_STATE_RESPONSE_DELAY_MS = 0;
 const COMMAND_RESPONSE_DELAY_MS = 50;
-const CALIBRATION_DELAY_MS = 1500;
+// Safety net only. Calibration normally completes when the emulator popup
+// reports its visual sweep finished (via completeCalibration()); this fires
+// only if that signal never arrives — e.g. the popup is closed, headless, or
+// the 3D model never loaded. Comfortably above the worst-case sweep (~20s).
+const CALIBRATION_FALLBACK_MS = 30000;
 // Response type byte values (from TC constants in udtConstants.ts)
 const TOWER_STATE_RESPONSE = 0x00;
 const BATTERY_RESPONSE = 0x07;
@@ -16,7 +20,11 @@ const CMD_CALIBRATE = 4;
  *
  * Behavior:
  * - Stateful commands (byte 0 = 0x00): echoed back immediately as TOWER_STATE responses
- * - Calibration command (byte 0 = 4): after 1.5s, responds with all 3 drums calibrated
+ * - Calibration command (byte 0 = 4): answered with TWO responses, like real firmware — an
+ *   immediate ack (so Tower.calibrate() resolves and the library arms calibration tracking),
+ *   then a second TOWER_STATE emitted by completeCalibration() when the emulator popup reports
+ *   its real sweep finished (or after CALIBRATION_FALLBACK_MS) — that second one fires
+ *   onCalibrationComplete
  * - Other basic commands: echoes back the last known state packet
  * - Battery heartbeat: fires every 200ms so connection health monitoring stays satisfied
  */
@@ -24,6 +32,9 @@ class TowerEmulatorAdapter {
     constructor(options = {}) {
         this.options = options;
         this.connected = false;
+        // Set while a calibration command is awaiting its completion reply. The reply
+        // fires from completeCalibration() (popup-driven) or the fallback timer.
+        this.calibrationPending = false;
         // Tracks the last 20-byte stateful command so non-stateful responses preserve current state
         this.lastStatePacket = new Uint8Array(20);
     }
@@ -42,6 +53,36 @@ class TowerEmulatorAdapter {
     async disconnect() {
         this.connected = false;
         this.stopBatteryHeartbeat();
+        this.cancelCalibration();
+    }
+    /**
+     * Emit the calibrated TOWER_STATE response that signals calibration is
+     * complete. Called by the controller when the emulator popup reports its
+     * visual sweep has finished (or by the fallback timer). No-op unless a
+     * calibration command is currently pending, so stray calls can't inject a
+     * spurious state.
+     */
+    completeCalibration() {
+        var _a;
+        if (!this.calibrationPending)
+            return;
+        this.cancelCalibration();
+        // (2) completion — a second TOWER_STATE the library reads while
+        // `performingCalibration` is armed, which fires onCalibrationComplete AND
+        // updates the tower state to all-drums-calibrated. The library strips the
+        // 1-byte command prefix (response.slice(1)) before unpacking the real state
+        // (UltimateDarkTower.updateTowerStateFromResponse), so byte 0 stays 0x00 (→
+        // recognised as TOWER_STATE) and the calibrated bits live in bytes 1–2.
+        const calibratedResponse = this.createCalibratedStateResponse();
+        this.lastStatePacket = new Uint8Array(calibratedResponse);
+        (_a = this.rxCallback) === null || _a === void 0 ? void 0 : _a.call(this, calibratedResponse);
+    }
+    cancelCalibration() {
+        this.calibrationPending = false;
+        if (this.calibrationFallbackTimer) {
+            clearTimeout(this.calibrationFallbackTimer);
+            this.calibrationFallbackTimer = undefined;
+        }
     }
     isConnected() {
         return this.connected;
@@ -73,13 +114,20 @@ class TowerEmulatorAdapter {
             }
         }
         else if (data.length === 1 && commandType === CMD_CALIBRATE) {
-            // Calibration command — respond after delay with all 3 drums marked calibrated
-            setTimeout(() => {
-                var _a;
-                const calibratedResponse = this.createCalibratedStateResponse();
-                this.lastStatePacket = new Uint8Array(calibratedResponse);
-                (_a = this.rxCallback) === null || _a === void 0 ? void 0 : _a.call(this, calibratedResponse);
-            }, CALIBRATION_DELAY_MS);
+            // Calibration takes TWO responses, mirroring real tower firmware:
+            //   1) an immediate ack (this echo) so the library's command queue
+            //      resolves Tower.calibrate() and then arms `performingCalibration`;
+            //   2) a later TOWER_STATE (completeCalibration(), below) that the library
+            //      sees while `performingCalibration` is armed → fires onCalibrationComplete.
+            // A single response can't work: the library arms the flag only AFTER the
+            // command's ack, and handleTowerStateResponse runs before the command
+            // completes — so the completion state must arrive after the ack.
+            this.calibrationPending = true;
+            if (this.calibrationFallbackTimer)
+                clearTimeout(this.calibrationFallbackTimer);
+            this.calibrationFallbackTimer = setTimeout(() => this.completeCalibration(), CALIBRATION_FALLBACK_MS);
+            // (1) ack — echo current state so the command resolves.
+            setTimeout(() => { var _a; return (_a = this.rxCallback) === null || _a === void 0 ? void 0 : _a.call(this, new Uint8Array(this.lastStatePacket)); }, COMMAND_RESPONSE_DELAY_MS);
         }
         else {
             // Other basic commands (unjam, reset counter, etc.) — echo last known state
@@ -104,6 +152,7 @@ class TowerEmulatorAdapter {
     async cleanup() {
         this.connected = false;
         this.stopBatteryHeartbeat();
+        this.cancelCalibration();
         this.lastStatePacket = new Uint8Array(20);
         this.rxCallback = undefined;
         this.disconnectCallback = undefined;
@@ -125,11 +174,13 @@ class TowerEmulatorAdapter {
         return response;
     }
     createCalibratedStateResponse() {
-        // 20-byte TOWER_STATE response with all 3 drums calibrated at position 0 (north)
-        // Byte 0: 0x00 (TOWER_STATE response type)
-        // Byte 1 (state data[0]): drum[0].calibrated = bit 4 → 0x10
-        // Byte 2 (state data[1]): drum[1].calibrated = bit 1 (0x02) | drum[2].calibrated = bit 6 (0x40) → 0x42
-        // Bytes 3–19: all zeros (no LEDs, no audio, beam count 0)
+        // 20-byte TOWER_STATE response with all 3 drums calibrated at position 0 (north).
+        // The library strips byte 0 (command prefix) before unpacking the state, so the
+        // state bytes are offset by one from rtdt_unpack_state's data[] indices:
+        //   Byte 0: 0x00 — command prefix / TOWER_STATE type (kept 0 so it's recognised)
+        //   Byte 1 (state data[0]): drum[0].calibrated = bit 4 → 0x10
+        //   Byte 2 (state data[1]): drum[1].calibrated = bit 1 (0x02) | drum[2].calibrated = bit 6 (0x40) → 0x42
+        //   Bytes 3–19: zero (no LEDs, no audio, beam count 0)
         const response = new Uint8Array(20);
         response[0] = TOWER_STATE_RESPONSE;
         response[1] = 0x10; // drum[0].calibrated

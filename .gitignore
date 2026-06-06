@@ -132,6 +132,9 @@ out
 .yarn/install-state.gz
 .pnp.*
 
+# Dev tool: local board artwork copy/symlink (multi-MB, not committed)
+tools/location-marker/board.png
+
 # Claude Code configuration
 CLAUDE.md
 /.github/chatmodes

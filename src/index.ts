@@ -61,6 +61,14 @@ export {
 } from './udtGameBoard';
 export type { TerrainType, BuildingType, BoardKingdom, BoardGrouping, BoardLocation } from './udtGameBoard';
 
+// Board layout anchors + image metadata (authored with tools/location-marker)
+export { BOARD_ANCHORS, BOARD_IMAGE_INFO } from './udtBoardAnchors';
+export type { Anchor, AnchorSlot, LocationAnchors, BoardAnchorMap, BoardImageInfo } from './udtBoardAnchors';
+
+// Board movement-adjacency graph + derived BFS helpers
+export { BOARD_ADJACENCY, neighborsOf, stepDistance, shortestPath } from './udtBoardAdjacency';
+export type { BoardAdjacency } from './udtBoardAdjacency';
+
 // For convenience, also export as default
 import UltimateDarkTower from './UltimateDarkTower';
 export default UltimateDarkTower;

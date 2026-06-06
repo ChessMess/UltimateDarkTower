@@ -220,6 +220,37 @@ describe('Package Exports', () => {
             expect(loc).toBeDefined();
         });
     });
+    describe('Board Layout & Adjacency Exports', () => {
+        test('BOARD_IMAGE_INFO has the expected shape', () => {
+            const info = src_1.BOARD_IMAGE_INFO;
+            expect(typeof info.width).toBe('number');
+            expect(typeof info.height).toBe('number');
+            expect(typeof info.centerX).toBe('number');
+            expect(typeof info.centerY).toBe('number');
+            expect(typeof info.radius).toBe('number');
+            expect(typeof info.northHeadingDegrees).toBe('number');
+        });
+        test('BOARD_ANCHORS and BOARD_ADJACENCY each cover all 60 locations', () => {
+            expect(Object.keys(src_1.BOARD_ANCHORS)).toHaveLength(60);
+            expect(Object.keys(src_1.BOARD_ADJACENCY)).toHaveLength(60);
+        });
+        test('graph helpers are functions', () => {
+            expect(typeof src_1.neighborsOf).toBe('function');
+            expect(typeof src_1.stepDistance).toBe('function');
+            expect(typeof src_1.shortestPath).toBe('function');
+        });
+        test('type aliases are usable', () => {
+            const anchor = { x: 0.5, y: 0.5 };
+            const slot = 'hero';
+            const locAnchors = { hero: anchor };
+            const map = src_1.BOARD_ANCHORS;
+            const adj = src_1.BOARD_ADJACENCY;
+            expect(slot).toBe('hero');
+            expect(locAnchors.hero).toBe(anchor);
+            expect(map).toBeDefined();
+            expect(adj).toBeDefined();
+        });
+    });
     describe('Seed Parser Exports', () => {
         test('charToValue is a function', () => {
             expect(typeof src_1.charToValue).toBe('function');

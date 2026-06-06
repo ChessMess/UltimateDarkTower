@@ -1,0 +1,1403 @@
+{
+  "version": 1,
+  "imageInfo": {
+    "width": 4096,
+    "height": 4096,
+    "centerX": 0.5,
+    "centerY": 0.5,
+    "radius": 0.5,
+    "northHeadingDegrees": 135
+  },
+  "anchors": {
+    "Broken Lands": {
+      "hero": {
+        "x": 0.8059869853752692,
+        "y": 0.512378589122931
+      },
+      "foe": {
+        "x": 0.8355033210262631,
+        "y": 0.5064753219927322
+      },
+      "marker": {
+        "x": 0.8145139267855563,
+        "y": 0.5300883905135273
+      }
+    },
+    "Dayside": {
+      "building": {
+        "x": 0.7456424769332372,
+        "y": 0.7754019357017881
+      },
+      "skull": {
+        "x": 0.7535134997735022,
+        "y": 0.7714664242816555
+      },
+      "hero": {
+        "x": 0.7870804952912052,
+        "y": 0.8454169869115142
+      },
+      "foe": {
+        "x": 0.8239722116421138,
+        "y": 0.8123178769144374
+      },
+      "marker": {
+        "x": 0.7974239671652916,
+        "y": 0.8181791776430863
+      }
+    },
+    "Egan's End": {
+      "building": {
+        "x": 0.5708781007648942,
+        "y": 0.9152010843563266
+      },
+      "skull": {
+        "x": 0.5750597606100326,
+        "y": 0.9284430071992649
+      },
+      "hero": {
+        "x": 0.6560631848861089,
+        "y": 0.8919626103449037
+      },
+      "foe": {
+        "x": 0.6667514391559983,
+        "y": 0.9167869428427113
+      },
+      "marker": {
+        "x": 0.6336523291589214,
+        "y": 0.9164421604469085
+      }
+    },
+    "Fivepint": {
+      "marker": {
+        "x": 0.8469079483467568,
+        "y": 0.7643314859507352
+      },
+      "hero": {
+        "x": 0.8199994409773526,
+        "y": 0.7561501504928921
+      },
+      "foe": {
+        "x": 0.8383811347767975,
+        "y": 0.7360343346368957
+      }
+    },
+    "Green Bridge": {
+      "hero": {
+        "x": 0.7357369676040482,
+        "y": 0.7114891756236815
+      },
+      "foe": {
+        "x": 0.7709651744887507,
+        "y": 0.6722183876210623
+      },
+      "marker": {
+        "x": 0.7625912564587805,
+        "y": 0.6964738743285624
+      }
+    },
+    "Lodestone Mountains": {
+      "hero": {
+        "x": 0.9098269635067159,
+        "y": 0.5497896257632737
+      },
+      "foe": {
+        "x": 0.9313300770079534,
+        "y": 0.5248182681489333
+      },
+      "marker": {
+        "x": 0.9243935887817478,
+        "y": 0.5716395636758216
+      }
+    },
+    "Lower Ice Fangs": {
+      "hero": {
+        "x": 0.643995801033008,
+        "y": 0.753360087232144
+      },
+      "foe": {
+        "x": 0.6098623438485224,
+        "y": 0.7671513830642595
+      },
+      "marker": {
+        "x": 0.6539944905112917,
+        "y": 0.7785292021257546
+      }
+    },
+    "Muted Forest": {
+      "hero": {
+        "x": 0.722541781399163,
+        "y": 0.5775355786680963
+      },
+      "foe": {
+        "x": 0.7100561025919928,
+        "y": 0.5355698248995521
+      },
+      "marker": {
+        "x": 0.7447385437230212,
+        "y": 0.5487491525293429
+      }
+    },
+    "Peaks of the Djinn": {
+      "hero": {
+        "x": 0.5226323977103926,
+        "y": 0.7371553146294084
+      },
+      "foe": {
+        "x": 0.530562392813859,
+        "y": 0.7609452999398075
+      },
+      "marker": {
+        "x": 0.5340102167718878,
+        "y": 0.7871487620208267
+      }
+    },
+    "Pearl of the North": {
+      "marker": {
+        "x": 0.9009052818503581,
+        "y": 0.6696195854738303
+      },
+      "hero": {
+        "x": 0.8971514565265784,
+        "y": 0.6964738743285624
+      },
+      "foe": {
+        "x": 0.9185193852927094,
+        "y": 0.6404552502660028
+      }
+    },
+    "Radiant Mountains": {
+      "building": {
+        "x": 0.8206311710802984,
+        "y": 0.6465191219428778
+      },
+      "skull": {
+        "x": 0.8272725543454472,
+        "y": 0.648829168295973
+      },
+      "hero": {
+        "x": 0.8108134740796437,
+        "y": 0.6058045549695741
+      },
+      "foe": {
+        "x": 0.8229412174333937,
+        "y": 0.5798165334972526
+      },
+      "marker": {
+        "x": 0.8518167968470842,
+        "y": 0.5942543232040979
+      }
+    },
+    "Rimeweald": {
+      "hero": {
+        "x": 0.5822797521842916,
+        "y": 0.8309361262877931
+      },
+      "foe": {
+        "x": 0.5474567302082003,
+        "y": 0.8457617693073171
+      },
+      "marker": {
+        "x": 0.613999732598157,
+        "y": 0.8485200284737402
+      }
+    },
+    "The Tundra": {
+      "hero": {
+        "x": 0.7112283682145705,
+        "y": 0.8495543756611489
+      },
+      "foe": {
+        "x": 0.6967475075908494,
+        "y": 0.8209374368095094
+      },
+      "marker": {
+        "x": 0.727777923213109,
+        "y": 0.8736891433673508
+      }
+    },
+    "Tower Scar Desert": {
+      "marker": {
+        "x": 0.6336523291589214,
+        "y": 0.5747628062062498
+      },
+      "hero": {
+        "x": 0.6422718890539936,
+        "y": 0.5399397842301584
+      },
+      "foe": {
+        "x": 0.5864171409339263,
+        "y": 0.610275392973947
+      }
+    },
+    "Upper Ice Fangs": {
+      "building": {
+        "x": 0.6808875173839166,
+        "y": 0.6661301410940142
+      },
+      "skull": {
+        "x": 0.685714470925157,
+        "y": 0.6609584051569709
+      },
+      "foe": {
+        "x": 0.5478015126040032,
+        "y": 0.6788870897387209
+      },
+      "hero": {
+        "x": 0.6388240650959647,
+        "y": 0.7044009870281344
+      },
+      "marker": {
+        "x": 0.5915888768709695,
+        "y": 0.675784048176495
+      }
+    },
+    "Big Sister": {
+      "hero": {
+        "x": 0.2926852334322245,
+        "y": 0.6024134707057881
+      },
+      "foe": {
+        "x": 0.2865145775720706,
+        "y": 0.5606428771908998
+      },
+      "marker": {
+        "x": 0.26135728829605837,
+        "y": 0.5402322462688521
+      }
+    },
+    "Bleak Wastes": {
+      "marker": {
+        "x": 0.4592929416563812,
+        "y": 0.6774106726984284
+      },
+      "hero": {
+        "x": 0.44885029327765913,
+        "y": 0.6475067250684515
+      },
+      "foe": {
+        "x": 0.47163425337668907,
+        "y": 0.659373370953363
+      }
+    },
+    "Copper Grove": {
+      "hero": {
+        "x": 0.340443091791277,
+        "y": 0.8741996353461537
+      },
+      "foe": {
+        "x": 0.3707373424668991,
+        "y": 0.9198377272730649
+      },
+      "marker": {
+        "x": 0.3369022053486719,
+        "y": 0.9001661359252583
+      }
+    },
+    "Dragontooth Lake": {
+      "marker": {
+        "x": 0.43783511053739727,
+        "y": 0.7525344875420863
+      },
+      "hero": {
+        "x": 0.38954755216114906,
+        "y": 0.7038511295070164
+      },
+      "foe": {
+        "x": 0.3859853552317537,
+        "y": 0.7367025011892181
+      }
+    },
+    "Duwani": {
+      "building": {
+        "x": 0.21974949852663683,
+        "y": 0.7901354551301485
+      },
+      "skull": {
+        "x": 0.22093689750310194,
+        "y": 0.7925102530830788
+      },
+      "hero": {
+        "x": 0.20945870739727243,
+        "y": 0.8336734176005364
+      },
+      "foe": {
+        "x": 0.18729392650325685,
+        "y": 0.7659916759420243
+      },
+      "marker": {
+        "x": 0.16987874151510177,
+        "y": 0.7790530646831407
+      }
+    },
+    "Forest of Shades": {
+      "hero": {
+        "x": 0.3618415760436296,
+        "y": 0.5704666444841012
+      },
+      "foe": {
+        "x": 0.35392558286719544,
+        "y": 0.5435522676842252
+      },
+      "marker": {
+        "x": 0.3796525606906064,
+        "y": 0.6052970144604114
+      }
+    },
+    "Greater Tombstones": {
+      "building": {
+        "x": 0.31988681220852866,
+        "y": 0.6690207595307062
+      },
+      "skull": {
+        "x": 0.3238448087967457,
+        "y": 0.6646669632836674
+      },
+      "hero": {
+        "x": 0.2704118548558153,
+        "y": 0.6777283520247838
+      },
+      "foe": {
+        "x": 0.22133269716192364,
+        "y": 0.6654585626013109
+      },
+      "marker": {
+        "x": 0.2593294644088075,
+        "y": 0.6567509701072333
+      }
+    },
+    "Inner Kinghills": {
+      "building": {
+        "x": 0.40609935940115244,
+        "y": 0.8346101981365208
+      },
+      "skull": {
+        "x": 0.41278770045940666,
+        "y": 0.8365773572713016
+      },
+      "hero": {
+        "x": 0.4568520650784933,
+        "y": 0.8149386067887143
+      },
+      "foe": {
+        "x": 0.4336395872880816,
+        "y": 0.8759205399669145
+      },
+      "marker": {
+        "x": 0.4623601106558791,
+        "y": 0.8416919710217312
+      }
+    },
+    "Jewel Hills": {
+      "marker": {
+        "x": 0.2629331670999718,
+        "y": 0.8608182175659143
+      },
+      "foe": {
+        "x": 0.29301394117042145,
+        "y": 0.8168844554367048
+      },
+      "hero": {
+        "x": 0.27599455584108806,
+        "y": 0.8406324349660073
+      }
+    },
+    "Lake of Songs": {
+      "hero": {
+        "x": 0.11569569401829681,
+        "y": 0.716747141754813
+      },
+      "foe": {
+        "x": 0.14498486877110311,
+        "y": 0.7286211315194642
+      },
+      "marker": {
+        "x": 0.10777970084186267,
+        "y": 0.6882495663196501
+      }
+    },
+    "Lesser Tombstones": {
+      "hero": {
+        "x": 0.19168922851206452,
+        "y": 0.5889038519554017
+      },
+      "foe": {
+        "x": 0.18179423704152187,
+        "y": 0.6177972270493863
+      },
+      "marker": {
+        "x": 0.17150344591215747,
+        "y": 0.6550023949786268
+      }
+    },
+    "Outer Kinghills": {
+      "hero": {
+        "x": 0.496059166145957,
+        "y": 0.9067309779892323
+      },
+      "foe": {
+        "x": 0.4418346128873832,
+        "y": 0.9130637725303796
+      },
+      "marker": {
+        "x": 0.462416195146112,
+        "y": 0.9288957588832478
+      }
+    },
+    "The Decaying Wilds": {
+      "marker": {
+        "x": 0.34525949613488677,
+        "y": 0.7903658782956505
+      },
+      "hero": {
+        "x": 0.31399132308797195,
+        "y": 0.7741380922839605
+      },
+      "foe": {
+        "x": 0.33338550637023556,
+        "y": 0.7650347001310612
+      }
+    },
+    "Three Rivers": {
+      "building": {
+        "x": 0.10461330357128902,
+        "y": 0.595236646496549
+      },
+      "skull": {
+        "x": 0.10975869913597121,
+        "y": 0.5944450471789056
+      },
+      "hero": {
+        "x": 0.10065530698307194,
+        "y": 0.5615936754967039
+      },
+      "foe": {
+        "x": 0.056721544853862486,
+        "y": 0.608693834896487
+      },
+      "marker": {
+        "x": 0.07215773154790905,
+        "y": 0.5651558724260993
+      }
+    },
+    "Utar's Barrows": {
+      "hero": {
+        "x": 0.21227081077079327,
+        "y": 0.7226841366371386
+      },
+      "foe": {
+        "x": 0.27322395822933615,
+        "y": 0.7555355083193402
+      },
+      "marker": {
+        "x": 0.2550171739235376,
+        "y": 0.7341623267429681
+      }
+    },
+    "Archmont": {
+      "marker": {
+        "x": 0.2890559445822044,
+        "y": 0.2884919109097262
+      },
+      "hero": {
+        "x": 0.2474969804059252,
+        "y": 0.2647439313804238
+      },
+      "foe": {
+        "x": 0.22374900087662278,
+        "y": 0.2429749501452299
+      }
+    },
+    "Azkol's Bane": {
+      "hero": {
+        "x": 0.3175535200173673,
+        "y": 0.2026033849454158
+      },
+      "foe": {
+        "x": 0.35515448760542945,
+        "y": 0.20339498426305921
+      },
+      "marker": {
+        "x": 0.28509794799398736,
+        "y": 0.2200185699335709
+      }
+    },
+    "Bone Hills": {
+      "marker": {
+        "x": 0.2611190151054295,
+        "y": 0.13860107905309335
+      },
+      "hero": {
+        "x": 0.23354363908026168,
+        "y": 0.15297798450211247
+      },
+      "foe": {
+        "x": 0.2837449646645416,
+        "y": 0.10136253707038806
+      }
+    },
+    "Howling Desert": {
+      "building": {
+        "x": 0.46415731663189524,
+        "y": 0.25928135145919073
+      },
+      "skull": {
+        "x": 0.46145123955652,
+        "y": 0.2521778991363307
+      },
+      "hero": {
+        "x": 0.41950704488820345,
+        "y": 0.225455388017
+      },
+      "foe": {
+        "x": 0.4746433652989744,
+        "y": 0.20110069433862263
+      },
+      "marker": {
+        "x": 0.4448765174698465,
+        "y": 0.2000859154353569
+      }
+    },
+    "Irontops": {
+      "hero": {
+        "x": 0.44934429723430214,
+        "y": 0.357438237947359
+      },
+      "foe": {
+        "x": 0.4663585731411186,
+        "y": 0.32986337699493234
+      },
+      "marker": {
+        "x": 0.4249962817124786,
+        "y": 0.3363170678561386
+      }
+    },
+    "Little Sister": {
+      "hero": {
+        "x": 0.23451073449179244,
+        "y": 0.34804653402032876
+      },
+      "foe": {
+        "x": 0.2127239315925369,
+        "y": 0.3260440202012786
+      },
+      "marker": {
+        "x": 0.19827129996629808,
+        "y": 0.3646562748445137
+      }
+    },
+    "Middle Sister": {
+      "hero": {
+        "x": 0.1620318654408037,
+        "y": 0.46453043070941785
+      },
+      "foe": {
+        "x": 0.14930492117292174,
+        "y": 0.49904417787655536
+      },
+      "marker": {
+        "x": 0.1551291160073762,
+        "y": 0.4308795272214588
+      }
+    },
+    "Mountains of the Watchers": {
+      "hero": {
+        "x": 0.4902256039807248,
+        "y": 0.12065516190393516
+      },
+      "foe": {
+        "x": 0.4563342959976075,
+        "y": 0.09633316441016862
+      },
+      "marker": {
+        "x": 0.499396193199686,
+        "y": 0.18245695881432555
+      }
+    },
+    "Pine Barrens": {
+      "hero": {
+        "x": 0.0695746637196806,
+        "y": 0.49146594336627747
+      },
+      "foe": {
+        "x": 0.07316315515318715,
+        "y": 0.4184999508849778
+      },
+      "marker": {
+        "x": 0.0695746637196806,
+        "y": 0.4547835864904328
+      }
+    },
+    "Sands of Madness": {
+      "building": {
+        "x": 0.27132762653682596,
+        "y": 0.44720788235303016
+      },
+      "skull": {
+        "x": 0.2625557585882544,
+        "y": 0.4456129972714717
+      },
+      "hero": {
+        "x": 0.2824918221077352,
+        "y": 0.39776644482471785
+      },
+      "foe": {
+        "x": 0.30083300054565754,
+        "y": 0.33636336918471704
+      },
+      "marker": {
+        "x": 0.29963683673448865,
+        "y": 0.37464061114212016
+      }
+    },
+    "Southern Wastes": {
+      "marker": {
+        "x": 0.16606521115396752,
+        "y": 0.2251201347460144
+      },
+      "building": {
+        "x": 0.162476719720461,
+        "y": 0.2921053081714698
+      },
+      "skull": {
+        "x": 0.15529973685344792,
+        "y": 0.28931425927874244
+      },
+      "hero": {
+        "x": 0.16686265369474676,
+        "y": 0.24465747699510554
+      },
+      "foe": {
+        "x": 0.17722940672487675,
+        "y": 0.19242499057406592
+      }
+    },
+    "The Cloister": {
+      "hero": {
+        "x": 0.3502744380739698,
+        "y": 0.3056618313647167
+      },
+      "foe": {
+        "x": 0.3969248267095548,
+        "y": 0.2801436700597813
+      },
+      "marker": {
+        "x": 0.3686156165118921,
+        "y": 0.282535997682119
+      }
+    },
+    "The Emerald Expanse": {
+      "building": {
+        "x": 0.37459643556773636,
+        "y": 0.14178738923458478
+      },
+      "skull": {
+        "x": 0.37698876319007407,
+        "y": 0.14816692956081862
+      },
+      "hero": {
+        "x": 0.34070512758461907,
+        "y": 0.08955490281354517
+      },
+      "foe": {
+        "x": 0.43121485596306175,
+        "y": 0.0540687097488694
+      },
+      "marker": {
+        "x": 0.38177341843474943,
+        "y": 0.08357408375770094
+      }
+    },
+    "The Throne": {
+      "marker": {
+        "x": 0.35864758475215175,
+        "y": 0.43165775280783514
+      },
+      "hero": {
+        "x": 0.3678181739711129,
+        "y": 0.38979201941692554
+      },
+      "foe": {
+        "x": 0.33990768504383984,
+        "y": 0.46235929062783554
+      }
+    },
+    "Ulamel's Hollow": {
+      "foe": {
+        "x": 0.1030672504324083,
+        "y": 0.38022270892757476
+      },
+      "hero": {
+        "x": 0.11981354378877214,
+        "y": 0.3487237285667951
+      },
+      "marker": {
+        "x": 0.09349793994305752,
+        "y": 0.34952117110757436
+      }
+    },
+    "Anza": {
+      "building": {
+        "x": 0.6951866304055332,
+        "y": 0.132688343981324
+      },
+      "skull": {
+        "x": 0.6987607657281221,
+        "y": 0.12419977259017535
+      },
+      "hero": {
+        "x": 0.6764224199619414,
+        "y": 0.16664262954591869
+      },
+      "foe": {
+        "x": 0.7224394122402736,
+        "y": 0.16887646412253676
+      },
+      "marker": {
+        "x": 0.7465648256677487,
+        "y": 0.14609135144103244
+      }
+    },
+    "Arkartus": {
+      "building": {
+        "x": 0.8184942990348506,
+        "y": 0.2850358621066764
+      },
+      "skull": {
+        "x": 0.8283231711719702,
+        "y": 0.2778875914614986
+      },
+      "hero": {
+        "x": 0.8198345997808215,
+        "y": 0.23544473450575526
+      },
+      "foe": {
+        "x": 0.8770207649422441,
+        "y": 0.2537621780340234
+      },
+      "marker": {
+        "x": 0.8475341485308856,
+        "y": 0.240359170574315
+      }
+    },
+    "Ash Hills": {
+      "hero": {
+        "x": 0.6831239236917955,
+        "y": 0.4436381170465594
+      },
+      "foe": {
+        "x": 0.6916124950829442,
+        "y": 0.46731676355871093
+      },
+      "marker": {
+        "x": 0.716184675425743,
+        "y": 0.4534669891836789
+      }
+    },
+    "Cloudhold": {
+      "marker": {
+        "x": 0.8037509908291713,
+        "y": 0.41683210212714256
+      },
+      "hero": {
+        "x": 0.7769449759097545,
+        "y": 0.4204062374497315
+      },
+      "foe": {
+        "x": 0.7912415172001102,
+        "y": 0.44274458321591215
+      }
+    },
+    "Delmsmire": {
+      "foe": {
+        "x": 0.8399391109703841,
+        "y": 0.3489235309979532
+      },
+      "hero": {
+        "x": 0.8667451258898009,
+        "y": 0.3270319521470961
+      },
+      "marker": {
+        "x": 0.8922108400632469,
+        "y": 0.3163095461793294
+      }
+    },
+    "Hissing Groves": {
+      "marker": {
+        "x": 0.6715079838933816,
+        "y": 0.3386478919455101
+      },
+      "building": {
+        "x": 0.7050155025426527,
+        "y": 0.3868987188004604
+      },
+      "skull": {
+        "x": 0.7112702393571833,
+        "y": 0.38421811730851874
+      },
+      "hero": {
+        "x": 0.6643597132482038,
+        "y": 0.3864519518851368
+      },
+      "foe": {
+        "x": 0.64782933738123,
+        "y": 0.36053947079636717
+      }
+    },
+    "Idran Forest": {
+      "hero": {
+        "x": 0.5410520446188863,
+        "y": 0.21221285490892733
+      },
+      "foe": {
+        "x": 0.5486470821793877,
+        "y": 0.234551200675108
+      },
+      "marker": {
+        "x": 0.5839416684899532,
+        "y": 0.22293526087669405
+      }
+    },
+    "Lonelight Hills": {
+      "marker": {
+        "x": 0.5857287361512478,
+        "y": 0.302906538719621
+      },
+      "hero": {
+        "x": 0.5866222699818949,
+        "y": 0.3252448844858017
+      },
+      "foe": {
+        "x": 0.5450729468567989,
+        "y": 0.30111947105832654
+      }
+    },
+    "Lost Lands": {
+      "hero": {
+        "x": 0.563390390385067,
+        "y": 0.08935195319493346
+      },
+      "foe": {
+        "x": 0.5781336985907463,
+        "y": 0.10632909597723078
+      },
+      "marker": {
+        "x": 0.5736660294375101,
+        "y": 0.06880067509004721
+      }
+    },
+    "Plains of Plovo": {
+      "marker": {
+        "x": 0.9234845241359,
+        "y": 0.4253206735182912
+      },
+      "building": {
+        "x": 0.8823819679261274,
+        "y": 0.39717435785290356
+      },
+      "skull": {
+        "x": 0.8904237724019525,
+        "y": 0.3936002225303146
+      },
+      "hero": {
+        "x": 0.8922108400632469,
+        "y": 0.4315754103328218
+      },
+      "foe": {
+        "x": 0.9105282835915152,
+        "y": 0.4463187185385011
+      }
+    },
+    "Plains of Woldra": {
+      "hero": {
+        "x": 0.6286183600223146,
+        "y": 0.12107240418291006
+      },
+      "foe": {
+        "x": 0.5732192625221865,
+        "y": 0.15815405815477002
+      },
+      "marker": {
+        "x": 0.6085138488327521,
+        "y": 0.16798293029188952
+      }
+    },
+    "The Empty Glade": {
+      "hero": {
+        "x": 0.7264603144781862,
+        "y": 0.2935244334978251
+      },
+      "foe": {
+        "x": 0.7805191112323434,
+        "y": 0.3498170648286004
+      },
+      "marker": {
+        "x": 0.747458359498396,
+        "y": 0.32077721533256554
+      }
+    },
+    "The Grass Sea": {
+      "hero": {
+        "x": 0.5709854279455685,
+        "y": 0.3766230797480173
+      },
+      "foe": {
+        "x": 0.6228103901231077,
+        "y": 0.43425601182476353
+      },
+      "marker": {
+        "x": 0.6018123451028978,
+        "y": 0.40342909466743415
+      }
+    },
+    "Weeping Waters": {
+      "hero": {
+        "x": 0.6420213674820231,
+        "y": 0.24795420813481645
+      },
+      "foe": {
+        "x": 0.6545308411110843,
+        "y": 0.2305302984371955
+      },
+      "marker": {
+        "x": 0.6746353523006469,
+        "y": 0.24393330589690393
+      }
+    },
+    "Yellowpike": {
+      "marker": {
+        "x": 0.7653290361113405,
+        "y": 0.22338202779201766
+      },
+      "hero": {
+        "x": 0.7934753517767282,
+        "y": 0.19791631361857168
+      },
+      "foe": {
+        "x": 0.8149201637122617,
+        "y": 0.1737909001910965
+      }
+    }
+  },
+  "adjacency": {
+    "Howling Desert": [
+      "Azkol's Bane",
+      "Idran Forest",
+      "Irontops",
+      "Lonelight Hills",
+      "Mountains of the Watchers",
+      "The Cloister",
+      "The Emerald Expanse"
+    ],
+    "Mountains of the Watchers": [
+      "Howling Desert",
+      "Idran Forest",
+      "Lost Lands",
+      "Plains of Woldra",
+      "The Emerald Expanse"
+    ],
+    "The Emerald Expanse": [
+      "Azkol's Bane",
+      "Bone Hills",
+      "Howling Desert",
+      "Lost Lands",
+      "Mountains of the Watchers"
+    ],
+    "Azkol's Bane": [
+      "Archmont",
+      "Bone Hills",
+      "Howling Desert",
+      "The Cloister",
+      "The Emerald Expanse"
+    ],
+    "The Cloister": [
+      "Archmont",
+      "Azkol's Bane",
+      "Howling Desert",
+      "Irontops",
+      "Sands of Madness",
+      "The Throne"
+    ],
+    "Irontops": [
+      "Howling Desert",
+      "Lonelight Hills",
+      "The Cloister",
+      "The Grass Sea",
+      "The Throne"
+    ],
+    "Idran Forest": [
+      "Anza",
+      "Howling Desert",
+      "Lonelight Hills",
+      "Mountains of the Watchers",
+      "Plains of Woldra",
+      "Weeping Waters"
+    ],
+    "Lonelight Hills": [
+      "Hissing Groves",
+      "Howling Desert",
+      "Idran Forest",
+      "Irontops",
+      "The Grass Sea",
+      "Weeping Waters"
+    ],
+    "The Grass Sea": [
+      "Ash Hills",
+      "Hissing Groves",
+      "Irontops",
+      "Lonelight Hills",
+      "Tower Scar Desert"
+    ],
+    "The Throne": [
+      "Big Sister",
+      "Forest of Shades",
+      "Irontops",
+      "Sands of Madness",
+      "The Cloister"
+    ],
+    "Sands of Madness": [
+      "Archmont",
+      "Big Sister",
+      "Little Sister",
+      "Middle Sister",
+      "The Cloister",
+      "The Throne"
+    ],
+    "Archmont": [
+      "Azkol's Bane",
+      "Bone Hills",
+      "Little Sister",
+      "Sands of Madness",
+      "Southern Wastes",
+      "The Cloister"
+    ],
+    "Bone Hills": [
+      "Archmont",
+      "Azkol's Bane",
+      "Southern Wastes",
+      "The Emerald Expanse"
+    ],
+    "Little Sister": [
+      "Archmont",
+      "Middle Sister",
+      "Sands of Madness",
+      "Southern Wastes",
+      "Ulamel's Hollow"
+    ],
+    "Forest of Shades": [
+      "Big Sister",
+      "Bleak Wastes",
+      "Dragontooth Lake",
+      "Greater Tombstones",
+      "The Throne"
+    ],
+    "Big Sister": [
+      "Forest of Shades",
+      "Greater Tombstones",
+      "Lesser Tombstones",
+      "Middle Sister",
+      "Sands of Madness",
+      "The Throne"
+    ],
+    "Middle Sister": [
+      "Big Sister",
+      "Lesser Tombstones",
+      "Little Sister",
+      "Pine Barrens",
+      "Sands of Madness",
+      "Three Rivers",
+      "Ulamel's Hollow"
+    ],
+    "Southern Wastes": [
+      "Archmont",
+      "Bone Hills",
+      "Little Sister",
+      "Ulamel's Hollow"
+    ],
+    "Ulamel's Hollow": [
+      "Little Sister",
+      "Middle Sister",
+      "Pine Barrens",
+      "Southern Wastes"
+    ],
+    "Pine Barrens": [
+      "Middle Sister",
+      "Three Rivers",
+      "Ulamel's Hollow"
+    ],
+    "Plains of Woldra": [
+      "Anza",
+      "Idran Forest",
+      "Lost Lands",
+      "Mountains of the Watchers"
+    ],
+    "Lost Lands": [
+      "Mountains of the Watchers",
+      "Plains of Woldra",
+      "The Emerald Expanse"
+    ],
+    "Weeping Waters": [
+      "Anza",
+      "Hissing Groves",
+      "Idran Forest",
+      "Lonelight Hills",
+      "The Empty Glade",
+      "Yellowpike"
+    ],
+    "Anza": [
+      "Idran Forest",
+      "Plains of Woldra",
+      "Weeping Waters",
+      "Yellowpike"
+    ],
+    "Hissing Groves": [
+      "Ash Hills",
+      "Cloudhold",
+      "Lonelight Hills",
+      "The Empty Glade",
+      "The Grass Sea",
+      "Weeping Waters"
+    ],
+    "Ash Hills": [
+      "Broken Lands",
+      "Cloudhold",
+      "Hissing Groves",
+      "Muted Forest",
+      "The Grass Sea",
+      "Tower Scar Desert"
+    ],
+    "The Empty Glade": [
+      "Arkartus",
+      "Cloudhold",
+      "Delmsmire",
+      "Hissing Groves",
+      "Weeping Waters",
+      "Yellowpike"
+    ],
+    "Yellowpike": [
+      "Anza",
+      "Arkartus",
+      "The Empty Glade",
+      "Weeping Waters"
+    ],
+    "Arkartus": [
+      "Delmsmire",
+      "The Empty Glade",
+      "Yellowpike"
+    ],
+    "Delmsmire": [
+      "Arkartus",
+      "Cloudhold",
+      "Plains of Plovo",
+      "The Empty Glade"
+    ],
+    "Cloudhold": [
+      "Ash Hills",
+      "Broken Lands",
+      "Delmsmire",
+      "Hissing Groves",
+      "Plains of Plovo",
+      "The Empty Glade"
+    ],
+    "Plains of Plovo": [
+      "Broken Lands",
+      "Cloudhold",
+      "Delmsmire",
+      "Lodestone Mountains"
+    ],
+    "Lodestone Mountains": [
+      "Broken Lands",
+      "Pearl of the North",
+      "Plains of Plovo",
+      "Radiant Mountains"
+    ],
+    "Broken Lands": [
+      "Ash Hills",
+      "Cloudhold",
+      "Lodestone Mountains",
+      "Muted Forest",
+      "Plains of Plovo",
+      "Radiant Mountains"
+    ],
+    "Muted Forest": [
+      "Ash Hills",
+      "Broken Lands",
+      "Green Bridge",
+      "Radiant Mountains",
+      "Tower Scar Desert",
+      "Upper Ice Fangs"
+    ],
+    "Tower Scar Desert": [
+      "Ash Hills",
+      "Bleak Wastes",
+      "Muted Forest",
+      "The Grass Sea",
+      "Upper Ice Fangs"
+    ],
+    "Radiant Mountains": [
+      "Broken Lands",
+      "Fivepint",
+      "Green Bridge",
+      "Lodestone Mountains",
+      "Muted Forest",
+      "Pearl of the North"
+    ],
+    "Pearl of the North": [
+      "Fivepint",
+      "Lodestone Mountains",
+      "Radiant Mountains"
+    ],
+    "Green Bridge": [
+      "Dayside",
+      "Fivepint",
+      "Lower Ice Fangs",
+      "Muted Forest",
+      "Radiant Mountains",
+      "Upper Ice Fangs"
+    ],
+    "Fivepint": [
+      "Dayside",
+      "Green Bridge",
+      "Pearl of the North",
+      "Radiant Mountains"
+    ],
+    "Dayside": [
+      "Fivepint",
+      "Green Bridge",
+      "Lower Ice Fangs",
+      "The Tundra"
+    ],
+    "Upper Ice Fangs": [
+      "Bleak Wastes",
+      "Green Bridge",
+      "Lower Ice Fangs",
+      "Muted Forest",
+      "Peaks of the Djinn",
+      "Tower Scar Desert"
+    ],
+    "Bleak Wastes": [
+      "Dragontooth Lake",
+      "Forest of Shades",
+      "Peaks of the Djinn",
+      "Tower Scar Desert",
+      "Upper Ice Fangs"
+    ],
+    "Lower Ice Fangs": [
+      "Dayside",
+      "Green Bridge",
+      "Peaks of the Djinn",
+      "Rimeweald",
+      "The Tundra",
+      "Upper Ice Fangs"
+    ],
+    "Peaks of the Djinn": [
+      "Bleak Wastes",
+      "Dragontooth Lake",
+      "Inner Kinghills",
+      "Lower Ice Fangs",
+      "Rimeweald",
+      "Upper Ice Fangs"
+    ],
+    "Rimeweald": [
+      "Egan's End",
+      "Inner Kinghills",
+      "Lower Ice Fangs",
+      "Outer Kinghills",
+      "Peaks of the Djinn",
+      "The Tundra"
+    ],
+    "Egan's End": [
+      "Outer Kinghills",
+      "Rimeweald",
+      "The Tundra"
+    ],
+    "The Tundra": [
+      "Dayside",
+      "Egan's End",
+      "Lower Ice Fangs",
+      "Rimeweald"
+    ],
+    "Outer Kinghills": [
+      "Copper Grove",
+      "Egan's End",
+      "Inner Kinghills",
+      "Rimeweald"
+    ],
+    "Inner Kinghills": [
+      "Copper Grove",
+      "Dragontooth Lake",
+      "Outer Kinghills",
+      "Peaks of the Djinn",
+      "Rimeweald",
+      "The Decaying Wilds"
+    ],
+    "Copper Grove": [
+      "Inner Kinghills",
+      "Jewel Hills",
+      "Outer Kinghills",
+      "The Decaying Wilds"
+    ],
+    "The Decaying Wilds": [
+      "Copper Grove",
+      "Dragontooth Lake",
+      "Greater Tombstones",
+      "Inner Kinghills",
+      "Jewel Hills",
+      "Utar's Barrows"
+    ],
+    "Dragontooth Lake": [
+      "Bleak Wastes",
+      "Forest of Shades",
+      "Greater Tombstones",
+      "Inner Kinghills",
+      "Peaks of the Djinn",
+      "The Decaying Wilds"
+    ],
+    "Greater Tombstones": [
+      "Big Sister",
+      "Dragontooth Lake",
+      "Forest of Shades",
+      "Lesser Tombstones",
+      "The Decaying Wilds",
+      "Utar's Barrows"
+    ],
+    "Jewel Hills": [
+      "Copper Grove",
+      "Duwani",
+      "The Decaying Wilds",
+      "Utar's Barrows"
+    ],
+    "Utar's Barrows": [
+      "Duwani",
+      "Greater Tombstones",
+      "Jewel Hills",
+      "Lake of Songs",
+      "Lesser Tombstones",
+      "The Decaying Wilds"
+    ],
+    "Duwani": [
+      "Jewel Hills",
+      "Lake of Songs",
+      "Utar's Barrows"
+    ],
+    "Lesser Tombstones": [
+      "Big Sister",
+      "Greater Tombstones",
+      "Lake of Songs",
+      "Middle Sister",
+      "Three Rivers",
+      "Utar's Barrows"
+    ],
+    "Lake of Songs": [
+      "Duwani",
+      "Lesser Tombstones",
+      "Three Rivers",
+      "Utar's Barrows"
+    ],
+    "Three Rivers": [
+      "Lake of Songs",
+      "Lesser Tombstones",
+      "Middle Sister",
+      "Pine Barrens"
+    ]
+  }
+}
