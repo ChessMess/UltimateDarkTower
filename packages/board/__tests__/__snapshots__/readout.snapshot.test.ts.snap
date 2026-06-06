@@ -1,7 +1,25 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`BoardReadout snapshot (scaffold) matches the default-state readout 1`] = `
-"Board (v1) — focus: all
-Tokens: 0
-Space markers: 0"
+exports[`BoardReadout matches a populated readout 1`] = `
+"Board — focus: all
+Heroes (2):
+  - h1 @ Broken Lands (north)
+  - h2 @ Dayside
+Foes (1):
+  - f1 Brigands @ Dayside
+Adversary: utuk-ku @ Dayside
+Buildings (2 active):
+  - Dayside: 3 skulls, destroyed
+  - Egan's End: 0 skulls, monument: argent-oak
+Space markers (1):
+  - Broken Lands: wasteland"
+`;
+
+exports[`BoardReadout matches the default-state readout 1`] = `
+"Board — focus: all
+Heroes (0):
+Foes (0):
+Adversary: none
+Buildings (0 active):
+Space markers (0):"
 `;

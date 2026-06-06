@@ -1,7 +1,5 @@
 # Getting Started
 
-> Scaffold stub.
-
 ```bash
 npm install
 npm run ci
@@ -12,10 +10,13 @@ npm run dev:example
 import { BoardRenderView } from 'ultimatedarktowerboard';
 
 const board = new BoardRenderView();
-board.controller.dispatch({
-  type: 'addToken',
-  token: { id: 'hero-1', kind: 'hero', location: 'Broken Lands' },
-});
+
+// React to state changes (the firehose):
+board.controller.on('change', ({ state }) => console.log(state));
+
+// Mutate via named methods (or board.controller.dispatch({ type: 'placeHero', ... })):
+board.controller.placeHero('hero-1', 'Broken Lands');
+
 console.log(board.readout.getText());
 ```
 

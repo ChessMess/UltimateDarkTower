@@ -7,8 +7,10 @@ optional dockable editing UI. The 3D board is a `ScenePlugin` for
 [`ultimatedarktowerdisplay`](https://github.com/ChessMess/UltimateDarkTowerDisplay)'s
 `Tower3DView`. It enforces **no game rules**: it stores, renders, and emits events; hosts own rules.
 
-> **Status: scaffold (v0.1.0).** Structure + tooling only — feature work lands on top. See
-> [`UltimateDarkTowerBoard-Scaffolding-Spec.md`](./UltimateDarkTowerBoard-Scaffolding-Spec.md).
+> **Status: pre-release (v0.1.0).** The headless **state core** (M1) is implemented — structured
+> `BoardState`, the full command reducer, the `BoardStateController` (self/host) with events, and
+> versioned save/load. Renderers (2D/3D) and the dockable UI are next. See
+> [`docs/planning/`](./docs/planning/) for the roadmap and milestone specs.
 
 ## Two entry points
 

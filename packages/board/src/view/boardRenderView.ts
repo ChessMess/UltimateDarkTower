@@ -18,8 +18,10 @@ export class BoardRenderView {
   private currentFocus: BoardFocus = 'all';
 
   constructor(options: BoardRenderViewOptions = {}) {
-    this.controller = new BoardStateController(options.initialState ?? createDefaultBoardState());
-    this.controller.on('stateChanged', ({ state }) => this.readout.render(state, this.currentFocus));
+    this.controller = new BoardStateController({
+      initial: options.initialState ?? createDefaultBoardState(),
+    });
+    this.controller.on('change', ({ state }) => this.readout.render(state, this.currentFocus));
     this.readout.render(this.controller.getState(), this.currentFocus);
   }
 

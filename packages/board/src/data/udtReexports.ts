@@ -13,6 +13,23 @@ export type {
   BoardGrouping,
 } from 'ultimatedarktower';
 
-// Rosters (heroes are seeded per game; foes/adversaries/allies are fixed sets).
-export { TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES } from 'ultimatedarktower';
-export type { Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally } from 'ultimatedarktower';
+// Rosters + setup enums (heroes are seeded per game; foes/adversaries/allies are fixed sets).
+export {
+  TIER1_FOES,
+  TIER2_FOES,
+  TIER3_FOES,
+  ADVERSARIES,
+  ALLIES,
+  DIFFICULTIES,
+  GAME_SOURCES,
+} from 'ultimatedarktower';
+export type {
+  Tier1Foe,
+  Tier2Foe,
+  Tier3Foe,
+  Adversary,
+  Ally,
+  Difficulty,
+  GameSource,
+  ExpansionType,
+} from 'ultimatedarktower';

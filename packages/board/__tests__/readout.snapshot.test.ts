@@ -1,27 +1,31 @@
 import { BoardReadout, createDefaultBoardState } from '../src/index';
+import type { BoardState } from '../src/index';
 
-describe('BoardReadout snapshot (scaffold)', () => {
+describe('BoardReadout', () => {
   it('matches the default-state readout', () => {
     expect(BoardReadout.toText(createDefaultBoardState())).toMatchSnapshot();
   });
 
-  it('is deterministic regardless of token insertion order', () => {
-    const a = BoardReadout.toText({
-      version: 1,
-      tokens: [
-        { id: 'b', kind: 'foe', location: 'Dayside' },
-        { id: 'a', kind: 'hero', location: 'Broken Lands' },
-      ],
-      spaceMarkers: {},
-    });
-    const b = BoardReadout.toText({
-      version: 1,
-      tokens: [
-        { id: 'a', kind: 'hero', location: 'Broken Lands' },
-        { id: 'b', kind: 'foe', location: 'Dayside' },
-      ],
-      spaceMarkers: {},
-    });
-    expect(a).toBe(b);
+  it('matches a populated readout', () => {
+    const s: BoardState = {
+      heroes: { h2: { location: 'Dayside' }, h1: { location: 'Broken Lands', owner: 'north' } },
+      foes: { f1: { foe: 'Brigands', location: 'Dayside', status: 'lethal' } },
+      adversary: { id: 'utuk-ku', location: 'Dayside' },
+      buildings: {
+        Dayside: { skulls: 3, destroyed: true },
+        "Egan's End": { skulls: 0, destroyed: false, monument: 'argent-oak' },
+      },
+      spaceMarkers: { 'Broken Lands': ['wasteland'] },
+    };
+    expect(BoardReadout.toText(s)).toMatchSnapshot();
+  });
+
+  it('is deterministic regardless of hero insertion order', () => {
+    const base = (): BoardState => ({ heroes: {}, foes: {}, buildings: {}, spaceMarkers: {} });
+    const a = base();
+    a.heroes = { b: { location: 'Dayside' }, a: { location: 'Broken Lands' } };
+    const b = base();
+    b.heroes = { a: { location: 'Broken Lands' }, b: { location: 'Dayside' } };
+    expect(BoardReadout.toText(a)).toBe(BoardReadout.toText(b));
   });
 });

@@ -6,11 +6,8 @@ if (!container) throw new Error('#app not found');
 // Headless board state + deterministic readout — works with zero 3D deps.
 const board = new BoardRenderView();
 
-// Seed a couple of tokens so the readout shows something.
-board.controller.dispatch({
-  type: 'addToken',
-  token: { id: 'hero-1', kind: 'hero', location: 'Broken Lands' },
-});
+// Seed a hero so the readout shows something.
+board.controller.placeHero('hero-1', 'Broken Lands');
 
 const pre = document.createElement('pre');
 pre.textContent = board.readout.getText();

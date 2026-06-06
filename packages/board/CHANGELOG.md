@@ -6,8 +6,28 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- **M1 — state core rewrite (breaking, pre-release).** Replaced the scaffold's simple
+  `{ version, tokens[], spaceMarkers }` model with the structured `BoardState`
+  (`heroes` / `foes` / `adversary` / `buildings` / `spaceMarkers` / `selections` / `meta`), a full
+  ~21-command pure/immutable/non-validating reducer, a `BoardStateController` with `self`/`host` modes,
+  `subscribe`/`on(type)` plus ergonomic named methods, and a richer `BoardEvent` surface
+  (`change` + `tokenAdded`/`tokenMoved`/`tokenRemoved`/`buildingChanged`/`spaceMarkerChanged`/
+  `selectionChanged`). The board enforces no game rules.
+- **Serialization format break (pre-release; no published saves):** the schema version moved out of
+  `BoardState` into a `{ version, state }` save envelope; `loadState` now validates with a rewritten
+  zod schema, runs a `migrate(version, state)` hook, and throws a typed `BoardStateLoadError` on bad
+  input. `BOARD_STATE_SCHEMA_VERSION` name unchanged.
+- Migrated the existing consumers to the new shape (`renderers/readout.ts`, `view/boardRenderView.ts`,
+  `example/src/main.ts`); rewrote the reducer/serialize/readout-snapshot tests, added a controller test,
+  and regenerated the readout snapshot. Updated `docs/STATE_MODEL.md`, `docs/API.md`,
+  `docs/GETTING_STARTED.md`, and `README.md`.
+
 ### Added
 
+- UDT re-exports for the setup enums `DIFFICULTIES` / `GAME_SOURCES` and the types `Difficulty` /
+  `GameSource` / `ExpansionType` (the board datasets/graph helpers remain pending upstream).
 - Initial repository scaffold per `UltimateDarkTowerBoard-Scaffolding-Spec.md` v0.2:
   two-entry package (`.` three-free core + `./plugin` 3D board), headless state core
   (BoardState / commands / reducer / controller / events / zod-v4 save-load), text
