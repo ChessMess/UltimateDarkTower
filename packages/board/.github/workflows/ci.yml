@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: ChessMess/UltimateDarkTower
-          ref: a80f97302f510575db8fc512f6df60da11de502f
+          ref: 439e5c25d863d610c10eb75802e297e00281aea5
           path: UltimateDarkTower
 
       - name: Checkout UltimateDarkTowerDisplay (sibling)
