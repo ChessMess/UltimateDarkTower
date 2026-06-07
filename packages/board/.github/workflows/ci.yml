@@ -20,18 +20,21 @@ jobs:
 
       # Dev uses file: links to the siblings, so check them out as siblings and
       # build them first (no prepare script -> dist isn't produced on install).
+      # No ref pin: build each sibling from its default branch (main) to mirror the
+      # local file: links. The earlier CI break was a UDT build-examples.js bug
+      # (fixed upstream), not version skew — a SHA pin only adds a stale-pin foot-gun
+      # and a manual bump on every new UDT symbol. Push UDT before Board so new
+      # symbols are on UDT main when Board CI runs.
       - name: Checkout UltimateDarkTower (sibling)
         uses: actions/checkout@v6
         with:
           repository: ChessMess/UltimateDarkTower
-          ref: e1dc6fb296ada8a7a1a10ec84f2d181f0efb9fa8
           path: UltimateDarkTower
 
       - name: Checkout UltimateDarkTowerDisplay (sibling)
         uses: actions/checkout@v6
         with:
           repository: ChessMess/UltimateDarkTowerDisplay
-          ref: 8b47295f5277e93d875b200941f5cd59e18173e1
           path: UltimateDarkTowerDisplay
 
       - uses: actions/setup-node@v6

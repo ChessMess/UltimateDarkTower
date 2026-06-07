@@ -20,18 +20,19 @@ jobs:
         with:
           path: UltimateDarkTowerBoard
 
+      # Build the siblings from their default branch (main) — no SHA pin. Publishing
+      # is intentional and ordered (release UDT, then Display, then Board), so each
+      # sibling's main IS the version being published when Board's release is cut.
       - name: Checkout UltimateDarkTower (sibling)
         uses: actions/checkout@v6
         with:
           repository: ChessMess/UltimateDarkTower
-          ref: e1dc6fb296ada8a7a1a10ec84f2d181f0efb9fa8
           path: UltimateDarkTower
 
       - name: Checkout UltimateDarkTowerDisplay (sibling)
         uses: actions/checkout@v6
         with:
           repository: ChessMess/UltimateDarkTowerDisplay
-          ref: 8b47295f5277e93d875b200941f5cd59e18173e1
           path: UltimateDarkTowerDisplay
 
       - uses: actions/setup-node@v6
