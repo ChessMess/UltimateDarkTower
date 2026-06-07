@@ -11,20 +11,189 @@
         background: #14110f;
         color: #e8e2d6;
       }
+      h1 {
+        margin-top: 0;
+      }
       pre {
         background: #1f1b18;
         padding: 1rem;
         border-radius: 6px;
+        white-space: pre-wrap;
       }
-      .udt-board-ui {
-        margin-top: 1rem;
+      .columns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        align-items: flex-start;
+      }
+      .scene {
+        position: relative;
+        height: 60vh;
+        min-height: 360px;
+        margin-bottom: 1.5rem;
+        background: #0b0a09;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .map {
+        flex: 1 1 480px;
+        max-width: 720px;
+        background: #1f1b18;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .side {
+        flex: 1 1 320px;
+        min-width: 280px;
+      }
+      .selection {
+        font-weight: bold;
+      }
+      .udt-focus-controls {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+      .udt-focus-group {
+        display: inline-flex;
+        gap: 0.25rem;
+      }
+      .udt-focus-button {
+        background: #2a2420;
+        color: #e8e2d6;
+        border: 1px solid #4a3f36;
+        border-radius: 4px;
+        padding: 0.35rem 0.7rem;
+        cursor: pointer;
+        font: inherit;
+      }
+      .udt-focus-button.is-active {
+        background: #c2843a;
+        color: #14110f;
+        border-color: #c2843a;
+      }
+
+      /* Dockable editing UI (M4). Mounted into Display's overlay HUD; empty areas still orbit. */
+      .trv-overlay .udt-board-ui {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .udt-panel {
+        position: absolute;
+        width: 230px;
+        background: rgba(31, 27, 24, 0.95);
+        border: 1px solid #4a3f36;
+        border-radius: 6px;
+        box-shadow: 0 6px 18px #000a;
+        font-size: 12px;
+        color: #e8e2d6;
+        pointer-events: auto;
+      }
+      .udt-panel-title {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.35rem 0.5rem;
+        background: #2a2420;
+        border-radius: 6px 6px 0 0;
+        cursor: move;
+      }
+      .udt-panel-title-text {
+        flex: 1;
+        font-weight: bold;
+      }
+      .udt-panel-collapse,
+      .udt-panel-close {
+        background: none;
+        border: none;
+        color: #e8e2d6;
+        cursor: pointer;
+        font: inherit;
+        line-height: 1;
+        padding: 0 0.25rem;
+      }
+      .udt-panel-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        padding: 0.5rem;
+        max-height: 46vh;
+        overflow: auto;
+      }
+      .udt-board-ui button {
+        background: #2a2420;
+        color: #e8e2d6;
+        border: 1px solid #4a3f36;
+        border-radius: 4px;
+        padding: 0.25rem 0.5rem;
+        cursor: pointer;
+        font: inherit;
+      }
+      .udt-board-ui select,
+      .udt-board-ui input {
+        background: #14110f;
+        color: #e8e2d6;
+        border: 1px solid #4a3f36;
+        border-radius: 4px;
+        padding: 0.2rem;
+        font: inherit;
+        width: 100%;
+      }
+      .udt-field,
+      .udt-field-row {
+        display: flex;
+        gap: 0.4rem;
+      }
+      .udt-field {
+        flex-direction: column;
+        gap: 0.15rem;
+        flex: 1;
+      }
+      .udt-field-label {
         opacity: 0.7;
+      }
+      .udt-palette-add-row,
+      .udt-palette-confirm,
+      .udt-inspector-row {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .udt-palette-hint {
+        flex-basis: 100%;
+        opacity: 0.8;
+        font-style: italic;
+      }
+      .udt-inspector-heading {
+        font-weight: bold;
+        margin-bottom: 0.2rem;
+      }
+      .udt-inspector-empty {
+        opacity: 0.7;
+        font-style: italic;
+      }
+      .udt-summary {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .udt-summary th,
+      .udt-summary td {
+        padding: 0.1rem 0.3rem;
+        text-align: center;
+        border-bottom: 1px solid #332c26;
       }
     </style>
   </head>
   <body>
     <h1>UltimateDarkTowerBoard</h1>
-    <p>Scaffold demo — headless board state + text readout.</p>
+    <p>
+      M4 demo — 3D board (Display ScenePlugin) + 2D map + text readout + the dockable
+      editing UI (palette / inspector / summary), sharing one board state, selection, and
+      focus. Click tokens in either view; use the palette to add one (pick a space on the
+      board, then Confirm); drag the panels; N/E/S/W moves the camera.
+    </p>
     <div id="app"></div>
     <script type="module" src="./src/main.ts"></script>
   </body>

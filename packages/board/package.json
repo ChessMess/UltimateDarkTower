@@ -43,7 +43,7 @@
   },
   "peerDependencies": {
     "ultimatedarktower": "^4.1.0",
-    "ultimatedarktowerdisplay": "^0.8.0",
+    "ultimatedarktowerdisplay": "^0.9.0",
     "three": "^0.170.0",
     "gsap": "^3.12.0"
   },

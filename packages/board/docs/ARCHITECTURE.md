@@ -14,3 +14,8 @@ ultimatedarktower (data) ──► data/udtReexports ──► state/ ──► 
 - **Unidirectional state.** `BoardStateController` holds `BoardState`, runs the pure
   `applyBoardCommand` reducer on dispatch, and emits events; renderers/UI subscribe.
 - **No rules.** The library stores/renders/emits; the host owns game rules.
+- **Decoupled UI seams.** Two observables — a `SelectionStore` (active token) and a `LocationPickStore`
+  (armed add-placement) — connect the renderers (which *produce* clicks/picks) to the editing UI (which
+  *consumes* them) without either importing the other. `BoardRenderView` owns/exposes both
+  (`view.selection`, `view.locationPick`), so a click/pick from the 2D map **or** the 3D plugin drives the
+  same `ui/` panels. The UI calls only the controller's public command API.

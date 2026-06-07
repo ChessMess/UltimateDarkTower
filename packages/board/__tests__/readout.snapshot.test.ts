@@ -20,6 +20,21 @@ describe('BoardReadout', () => {
     expect(BoardReadout.toText(s)).toMatchSnapshot();
   });
 
+  it('narrows to a single kingdom when focus.kingdom is set', () => {
+    // Broken Lands = north, Big Sister = east. The filter keeps only in-kingdom entries.
+    const s: BoardState = {
+      heroes: { hn: { location: 'Broken Lands' }, he: { location: 'Big Sister' } },
+      foes: {
+        fn: { foe: 'Brigands', location: 'Broken Lands', status: 'ready' },
+        fe: { foe: 'Dragons', location: 'Big Sister', status: 'ready' },
+      },
+      adversary: { id: 'utuk-ku', location: 'Big Sister' },
+      buildings: { Duwani: { skulls: 1, destroyed: false } }, // east
+      spaceMarkers: { 'Broken Lands': ['wasteland'], 'Big Sister': ['power-skull'] },
+    };
+    expect(BoardReadout.toText(s, { kingdom: 'north', angle: 'overhead' })).toMatchSnapshot();
+  });
+
   it('is deterministic regardless of hero insertion order', () => {
     const base = (): BoardState => ({ heroes: {}, foes: {}, buildings: {}, spaceMarkers: {} });
     const a = base();

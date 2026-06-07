@@ -17,6 +17,7 @@ export * from './renderers/readout';
 export * from './renderers/map2d';
 
 export * from './view/boardRenderView';
+export * from './view/focusControls';
 export * from './ui';
 
 export * from './data/udtReexports';

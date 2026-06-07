@@ -1,37 +1,114 @@
-import { BoardRenderView, mountBoardUI, applyBoardCommand } from '../../src/index';
+import { BoardRenderView } from '../../src/index';
+import type { TokenSelection } from '../../src/index';
+import { TowerRenderView } from 'ultimatedarktowerdisplay';
+import { attachBoard3D } from '../../src/plugin/index';
+import type { Board3DHandle } from '../../src/plugin/index';
 
-const container = document.getElementById('app');
-if (!container) throw new Error('#app not found');
+const app = document.getElementById('app');
+if (!app) throw new Error('#app not found');
 
-// Headless board state + deterministic readout — works with zero 3D deps.
-const board = new BoardRenderView();
-
-// Seed a hero so the readout shows something.
-board.controller.placeHero('hero-1', 'Broken Lands');
-
+// Layout: focus controls on top; the 3D board scene (with the docked editing UI as a HUD
+// overlay); then the 2D map + readout.
+const controls = document.createElement('div');
+const scene = document.createElement('div');
+scene.className = 'scene';
+const columns = document.createElement('div');
+columns.className = 'columns';
+const mapHost = document.createElement('div');
+mapHost.className = 'map';
+const side = document.createElement('div');
+side.className = 'side';
+const selectionInfo = document.createElement('p');
+selectionInfo.className = 'selection';
+selectionInfo.textContent = 'Click a token (2D or 3D) to select it; use the palette to add one.';
 const pre = document.createElement('pre');
-pre.textContent = board.readout.getText();
-container.appendChild(pre);
+side.append(selectionInfo, pre);
+columns.append(mapHost, side);
+app.append(controls, scene, columns);
 
-mountBoardUI(container, board.controller);
+const logSelection = (sel: TokenSelection): void => {
+  selectionInfo.textContent = `Selected ${sel.kind}: ${sel.id} @ ${sel.location}`;
+  // eslint-disable-next-line no-console
+  console.log('token selected', sel);
+};
 
-// `applyBoardCommand` is re-exported for hosts that want the pure reducer.
-void applyBoardCommand;
+// 3D board first so its overlay HUD can host the editing UI (the real docking seam).
+const tower = new TowerRenderView({ container: scene, modelUrl: './tower.glb', overlay: true });
 
-// ---------------------------------------------------------------------------
-// 3D path — uncomment once you supply a tower `modelUrl` and the Display release
-// carrying `anchorToWorld` lands (spec §2 / §7 / §12-Q2). It pulls in three +
-// ultimatedarktowerdisplay, so it is intentionally off in the scaffold demo.
-//
-// import { TowerRenderView, attachScenePlugin } from 'ultimatedarktowerdisplay';
-// import { Board3DPlugin } from '../../src/plugin/index';
-//
-// const view = new TowerRenderView({ container, modelUrl: '/tower.glb', overlay: true });
-// view.view3D?.setBoardDiscEnabled(false); // hide Display's board texture (disc mesh stays)
-// if (view.view3D) {
-//   attachScenePlugin(
-//     view.view3D,
-//     new Board3DPlugin({ boardState: board.controller.getState(), assetBaseUrl: '/tokens/' })
-//   );
-// }
-// ---------------------------------------------------------------------------
+// 2D map + readout + shared focus controls + the dockable editing UI (the three-free `.` entry).
+// The UI mounts into Display's overlay container — `src/ui` never imports Display; the example
+// just passes that element as the host.
+const view = new BoardRenderView({
+  mapContainer: mapHost,
+  controlsContainer: controls,
+  uiContainer: tower.view3D ? tower.getOverlayContainer() : undefined,
+  ui: {
+    panels: {
+      palette: { corner: 'tl' },
+      inspector: { corner: 'tr' },
+      summary: { corner: 'br' },
+    },
+    // NOTE: hero + monument *add* categories are intentionally absent — UDT 4.1.0 exposes no
+    // HEROES/MONUMENTS rosters yet (see the M4 spec §8). They slot in as `ui.rosters` defaults
+    // with no API change once UDT ships them. The inspector still edits an already-placed hero.
+  },
+  assetBaseUrl: './tokens/',
+  boardImageUrl: './board.png',
+  onTokenSelect: logSelection,
+  // Fan a focus change from the controls/2D out to the 3D camera, then refresh.
+  onFocusChange: (focus) => {
+    board3d?.setFocus(focus);
+    refresh();
+  },
+});
+
+const refresh = (): void => {
+  pre.textContent = view.readout.getText();
+};
+
+// Seed a setup that exercises real art (foes/adversary/monument/skull/wasteland) + the hero fallback.
+const board = view.controller;
+board.placeHero('hero-1', 'Broken Lands', 'north'); // no hero art → labeled fallback
+board.spawnFoe('foe-1', 'Brigands', 'Dayside');
+board.spawnFoe('foe-2', 'Dragons', 'Radiant Mountains');
+board.spawnFoe('foe-3', 'Frost Trolls', 'Lower Ice Fangs');
+board.selectAdversary("Utuk'Ku");
+board.placeAdversary('Upper Ice Fangs');
+board.addSkull('Dayside', 2);
+board.setMonument("Egan's End", 'argent-oak'); // monument shown in place of the building
+board.setSpaceMarker('Broken Lands', 'wasteland', true);
+
+let board3d: Board3DHandle | undefined;
+
+// 3D board: a Display ScenePlugin attached to a live Tower3DView. The tower GLB is example-only
+// (in example/public/, never bundled into the npm tarball). Token clicks + armed space picks are
+// fed into the SAME shared stores the 2D map uses, so the docked UI reacts to both renderers.
+if (tower.view3D) {
+  board3d = attachBoard3D(tower.view3D, {
+    assetBaseUrl: './tokens/',
+    boardImageUrl: './board.png', // render our own board (hides Display's placeholder)
+    boardState: board.getState(),
+    locationPick: view.locationPick, // armed space-pick from the palette works in 3D too
+    onTokenSelect: (sel) => {
+      view.selection.set(sel); // shared selection → the inspector
+      logSelection(sel);
+    },
+    // The plugin reflects camera side changes here (it's the focus source of truth in 3D). This
+    // demo keeps the focus CONTROLS canonical so the 2D/readout can show `all` (the 3D camera
+    // always faces a side, which has no `all` equivalent), so we just log them.
+    onFocusChange: (focus) => {
+      // eslint-disable-next-line no-console
+      console.log('3D camera side →', focus.kingdom);
+    },
+  });
+}
+
+// Keep the 3D plugin in sync with the controller (BoardRenderView re-renders the 2D map/readout
+// itself; here we also push state into the 3D plugin + refresh the readout text).
+view.controller.subscribe((event) => {
+  if (event.type !== 'change') return;
+  refresh();
+  board3d?.setBoardState(event.state);
+});
+
+refresh();

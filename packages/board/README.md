@@ -7,9 +7,10 @@ optional dockable editing UI. The 3D board is a `ScenePlugin` for
 [`ultimatedarktowerdisplay`](https://github.com/ChessMess/UltimateDarkTowerDisplay)'s
 `Tower3DView`. It enforces **no game rules**: it stores, renders, and emits events; hosts own rules.
 
-> **Status: pre-release (v0.1.0).** The headless **state core** (M1) is implemented — structured
+> **Status: pre-release (v0.1.0).** Implemented: the headless **state core** (M1) — structured
 > `BoardState`, the full command reducer, the `BoardStateController` (self/host) with events, and
-> versioned save/load. Renderers (2D/3D) and the dockable UI are next. See
+> versioned save/load; the **readout + 2D map + shared focus controls** (M2); the **3D board plugin**
+> (M3); and the **dockable editing UI** — palette / inspector / summary (M4). See
 > [`docs/planning/`](./docs/planning/) for the roadmap and milestone specs.
 
 ## Two entry points
@@ -20,12 +21,18 @@ optional dockable editing UI. The 3D board is a `ScenePlugin` for
 | `ultimatedarktowerboard/plugin` | `Board3DPlugin` — the 3D board `ScenePlugin` | `three` + `ultimatedarktowerdisplay` |
 
 ```ts
-// Headless / readout / 2D — three-free:
-import { BoardRenderView, BOARD_LOCATIONS } from 'ultimatedarktowerboard';
+// Headless / readout / 2D / editing UI — three-free:
+import { BoardRenderView, mountBoardUI, BOARD_LOCATIONS } from 'ultimatedarktowerboard';
 
 // 3D board (opt-in):
 import { Board3DPlugin } from 'ultimatedarktowerboard/plugin';
 ```
+
+The optional editing UI (`mountBoardUI`, or `BoardRenderView`'s `uiContainer`) ships three movable,
+configurable panels — a token **palette**, a selection **inspector**, and a per-kingdom **summary** — that
+call only the controller's public command API. It mounts into any element; pass Display's
+`getOverlayContainer()` / `getPanelSlot()` to dock it into the 3D scene. See
+[`docs/RENDERERS.md`](./docs/RENDERERS.md).
 
 ## Quick start (scaffold)
 
@@ -35,15 +42,19 @@ npm run ci          # typecheck + lint + test + build
 npm run dev:example # the headless demo
 ```
 
-## Heads-up on upstream prerequisites
+## Upstream prerequisites
 
-The board datasets are in place; full 3D token placement still waits on one Display symbol:
+Both upstream dependencies are in place:
 
 - `ultimatedarktower` board data/graph: **shipped in `4.1.0`** and re-exported here —
   `BOARD_LOCATIONS`, `BOARD_ANCHORS`, `BOARD_IMAGE_INFO`, `BOARD_ADJACENCY`, and
   `neighborsOf`/`stepDistance`/`shortestPath`.
-- `ultimatedarktowerdisplay`'s `anchorToWorld` — still pending (a release after 0.8.0); the 3D
-  plugin's token placement (M3) needs it.
+- `ultimatedarktowerdisplay`'s `anchorToWorld`: **shipped in `0.9.0`** (peer `^0.9.0`); the 3D plugin's
+  token placement uses it.
+
+> **Deferred:** the palette's **hero** and **monument** *add* categories — UDT does not yet export
+> `HEROES`/`MONUMENTS` rosters, and Board re-exports rather than vendors that data. They slot in as UI
+> roster defaults with no API change once UDT ships them (see the M4 spec §8).
 
 The `three` peer range is pinned to **Display's exact declared range** (single-instance
 requirement). The 3D path inherits Display's heavy transitive footprint (three + the board

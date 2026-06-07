@@ -17,6 +17,10 @@ export default defineConfig({
     alias: {
       ultimatedarktower: resolve(__dirname, 'node_modules/ultimatedarktower/dist/src/index.js'),
     },
+    // Single `three` instance shared with the file-linked Display package — the
+    // 3D plugin builds Object3Ds with the consumer's `three`, so a duplicate
+    // copy would silently fail to render (see ROADMAP §2 "single three").
+    dedupe: ['three'],
   },
   optimizeDeps: {
     include: ['ultimatedarktower'],
@@ -24,5 +28,12 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, 'example/dist'),
     emptyOutDir: true,
+    commonjsOptions: {
+      // `ultimatedarktower` is a symlinked sibling that resolves OUTSIDE node_modules,
+      // so Rollup's commonjs plugin skips it by default and can't see its CJS named
+      // exports (re-exported via Object.defineProperty). Opt it in explicitly so the
+      // production example build resolves BOARD_LOCATIONS/BOARD_ANCHORS/etc.
+      include: [/ultimatedarktower/i, /node_modules/],
+    },
   },
 });
