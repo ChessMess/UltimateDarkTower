@@ -1,4 +1,4 @@
-import type { BoardKingdom } from '../data/udtReexports';
+import type { BoardKingdom, FoeStatus } from '../data/udtReexports';
 import { BOARD_LOCATIONS } from '../data/udtReexports';
 
 /** A `BOARD_LOCATIONS[n].name`. Kept as a string — the board never validates it. */
@@ -8,8 +8,12 @@ export type HeroId = string;
 /** Caller-assigned instance id for a placed foe. */
 export type FoeId = string;
 
-/** In-play foe power progression. Tracked in state but NOT rendered (lethality is not shown). */
-export type FoeStatus = 'ready' | 'savage' | 'lethal';
+/**
+ * In-play foe power progression (ready → savage → lethal). Tracked in state but NOT rendered
+ * (lethality is not shown). Re-exported from UDT (`ultimatedarktower`) so this stays the single
+ * source of truth; importers keep getting it from `'../state/boardState'`.
+ */
+export type { FoeStatus };
 
 /**
  * A per-space overlay. Open set across expansions (Covenant wasteland, Alliances

@@ -59,3 +59,18 @@ export type {
 // NOTE: UDT's `HeroId` (a hero *identity* id) is deliberately NOT re-exported — this package's
 // own `HeroId` (a caller-assigned *instance* id, in state/boardState) owns that name. Use a
 // `Hero`'s `id` field for the identity.
+
+// Foe in-play status + foe/adversary identity metadata (level/tier/source). `FoeStatus` is the
+// ready→savage→lethal progression this package tracks in board state (was a local copy).
+export {
+  FOE_STATUSES,
+  FOES,
+  ADVERSARY_ROSTER,
+  ALL_FOES,
+  FOE_BY_ID,
+  FOE_BY_NAME,
+} from 'ultimatedarktower';
+export type { FoeStatus, FoeLevel, FoeName, Foe } from 'ultimatedarktower';
+// NOTE: UDT's `FoeId` (a foe *identity* id) is deliberately NOT re-exported — this package's own
+// `FoeId` (a caller-assigned *instance* id, in state/boardState) owns that name, mirroring `HeroId`
+// above. Use a `Foe`'s `id` field for the identity.

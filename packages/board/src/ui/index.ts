@@ -16,6 +16,7 @@ import {
   BOARD_LOCATIONS,
   BOARD_LOCATION_BY_NAME,
   DIFFICULTIES,
+  FOE_STATUSES,
   HEROES,
   MONUMENTS,
   TIER1_FOES,
@@ -79,7 +80,6 @@ const KINGDOMS: { value: BoardKingdom; label: string }[] = [
   { value: 'south', label: 'S' },
   { value: 'west', label: 'W' },
 ];
-const FOE_STATUSES: FoeStatus[] = ['ready', 'savage', 'lethal'];
 const BUILDING_LOCATIONS = BOARD_LOCATIONS.filter((l) => l.building).map((l) => l.name);
 
 /**
