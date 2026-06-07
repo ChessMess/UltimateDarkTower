@@ -16,6 +16,7 @@ import {
   BOARD_LOCATIONS,
   BOARD_LOCATION_BY_NAME,
   DIFFICULTIES,
+  MONUMENTS,
   TIER1_FOES,
   TIER2_FOES,
   TIER3_FOES,
@@ -34,12 +35,13 @@ export interface PanelPlacement {
   y?: number;
 }
 
-/** Roster lists the palette offers. Default from the UDT re-exports (heroes/monuments deferred). */
+/** Roster lists the palette offers. Default from the UDT re-exports (heroes deferred — no UDT roster). */
 export interface BoardUIRosters {
   foes: string[];
   adversaries: string[];
   allies: string[];
   markers: string[];
+  monuments: string[];
 }
 
 export interface BoardUIOptions {
@@ -131,6 +133,7 @@ function resolveRosters(r?: Partial<BoardUIRosters>): BoardUIRosters {
     adversaries: r?.adversaries ?? [...ADVERSARIES],
     allies: r?.allies ?? [...ALLIES],
     markers: r?.markers ?? ['wasteland', 'power-skull'],
+    monuments: r?.monuments ?? [...MONUMENTS],
   };
 }
 
@@ -249,7 +252,7 @@ function makeDraggable(panel: HTMLElement, handle: HTMLElement): void {
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
-type AddKind = 'foe' | 'adversary' | 'marker' | 'skull';
+type AddKind = 'foe' | 'adversary' | 'marker' | 'skull' | 'monument';
 
 function buildPalette(
   body: HTMLElement,
@@ -264,6 +267,7 @@ function buildPalette(
       { value: 'adversary', label: 'Adversary' },
       { value: 'marker', label: 'Space marker' },
       { value: 'skull', label: 'Skull' },
+      { value: 'monument', label: 'Monument' },
     ],
     'udt-palette-kind'
   );
@@ -292,9 +296,20 @@ function buildPalette(
   markerCustom.className = 'udt-palette-marker-custom';
   const markerRow = fieldRow('Marker', markerSelect, '', markerCustom);
 
+  // Monuments sit on a building (setMonument), so the kind targets building spaces only.
+  const monumentSelect = makeSelect(
+    rosters.monuments.map((m) => ({ value: m, label: m })),
+    'udt-palette-monument'
+  );
+  const monumentCustom = document.createElement('input');
+  monumentCustom.type = 'text';
+  monumentCustom.placeholder = 'custom…';
+  monumentCustom.className = 'udt-palette-monument-custom';
+  const monumentRow = fieldRow('Monument', monumentSelect, '', monumentCustom);
+
   const detail = document.createElement('div');
   detail.className = 'udt-palette-detail';
-  detail.append(foeRow, adversaryRow, markerRow);
+  detail.append(foeRow, adversaryRow, markerRow, monumentRow);
 
   const addBtn = makeButton('Add', 'udt-palette-add');
 
@@ -314,6 +329,7 @@ function buildPalette(
     foeRow.style.display = kind === 'foe' ? '' : 'none';
     adversaryRow.style.display = kind === 'adversary' ? '' : 'none';
     markerRow.style.display = kind === 'marker' ? '' : 'none';
+    monumentRow.style.display = kind === 'monument' ? '' : 'none';
   };
   kindSelect.addEventListener('change', showDetail);
   showDetail();
@@ -325,8 +341,14 @@ function buildPalette(
 
   addBtn.addEventListener('click', () => {
     const kind = kindSelect.value as AddKind;
-    const targets: PendingPlacement['targets'] = kind === 'skull' ? 'buildings' : 'all';
-    const label = placementLabel(kind, foeType.value, adversaryId.value, markerValue(markerSelect, markerCustom));
+    const targets: PendingPlacement['targets'] =
+      kind === 'skull' || kind === 'monument' ? 'buildings' : 'all';
+    const label = placementLabel(kind, {
+      foe: foeType.value,
+      adversary: adversaryId.value,
+      marker: markerValue(markerSelect, markerCustom),
+      monument: markerValue(monumentSelect, monumentCustom),
+    });
     // Rebuild the location select for the right target set.
     const fresh = makeLocationSelect(targets, undefined, 'udt-palette-location');
     locationSelect.replaceWith(fresh);
@@ -359,6 +381,11 @@ function buildPalette(
       case 'skull':
         controller.addSkull(loc, 1);
         break;
+      case 'monument': {
+        const monument = markerValue(monumentSelect, monumentCustom);
+        if (monument) controller.setMonument(loc, monument);
+        break;
+      }
     }
     closeConfirm();
   });
@@ -812,19 +839,24 @@ function markerValue(select: HTMLSelectElement, custom: HTMLInputElement): strin
   return custom.value.trim() || select.value;
 }
 
-function placementLabel(kind: AddKind, foe: string, adversary: string, marker: string): string {
+function placementLabel(
+  kind: AddKind,
+  values: { foe: string; adversary: string; marker: string; monument: string }
+): string {
   switch (kind) {
     case 'foe':
-      return `${foe} (foe)`;
+      return `${values.foe} (foe)`;
     case 'adversary':
-      return `${adversary} (adversary)`;
+      return `${values.adversary} (adversary)`;
     case 'marker':
-      return `${marker} (marker)`;
+      return `${values.marker} (marker)`;
     case 'skull':
       return 'skull';
+    case 'monument':
+      return `${values.monument} (monument)`;
   }
 }
 
 function toSelectionKind(kind: AddKind): TokenSelection['kind'] {
-  return kind === 'skull' ? 'building' : kind;
+  return kind === 'skull' || kind === 'monument' ? 'building' : kind;
 }

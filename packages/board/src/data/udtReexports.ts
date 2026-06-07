@@ -35,6 +35,7 @@ export {
   TIER3_FOES,
   ADVERSARIES,
   ALLIES,
+  MONUMENTS,
   DIFFICULTIES,
   GAME_SOURCES,
 } from 'ultimatedarktower';
@@ -44,6 +45,7 @@ export type {
   Tier3Foe,
   Adversary,
   Ally,
+  Monument,
   Difficulty,
   GameSource,
   ExpansionType,

@@ -83,6 +83,26 @@ describe('Palette', () => {
     expect(controller.getState().buildings['Dayside'].skulls).toBe(1);
   });
 
+  it('adds a monument onto a building space (targets buildings; setMonument)', () => {
+    const { controller, host } = setup();
+    const kind = $<HTMLSelectElement>(host, '.udt-palette-kind');
+    kind.value = 'monument';
+    kind.dispatchEvent(new Event('change'));
+    // Default roster comes from UDT's MONUMENTS re-export.
+    const monument = $<HTMLSelectElement>(host, '.udt-palette-monument');
+    expect(Array.from(monument.options).map((o) => o.value)).toContain('Argent Oak');
+    monument.value = 'Argent Oak';
+
+    $<HTMLButtonElement>(host, '.udt-palette-add').click();
+    const loc = $<HTMLSelectElement>(host, '.udt-palette-location');
+    const options = Array.from(loc.querySelectorAll('option')).map((o) => o.value);
+    expect(options).toContain("Egan's End"); // a building
+    expect(options).not.toContain('Broken Lands'); // not a building
+    loc.value = "Egan's End";
+    $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
+    expect(controller.getState().buildings["Egan's End"].monument).toBe('Argent Oak');
+  });
+
   it('Setup section dispatches setSelections', () => {
     const { controller, host } = setup();
     $<HTMLSelectElement>(host, '.udt-setup-difficulty').value = 'Heroic';

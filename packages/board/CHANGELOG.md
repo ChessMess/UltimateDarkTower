@@ -23,10 +23,13 @@ All notable changes to this project are documented here. The format is based on
     gain an *armed* space-pick mode (`locationPick`) — the 2D map draws clickable space targets at the
     anchors; the 3D plugin raycasts invisible on-disc discs via a second pointer target. A location dropdown
     is the renderer-less fallback. No state mutation until **Confirm**.
-  - **Deferred (documented):** the palette's **hero** and **monument** *add* categories — UDT 4.1.0 exposes
-    no `HEROES`/`MONUMENTS` rosters and Board re-exports rather than vendors that data; they slot in as
-    `ui.rosters` defaults with no API change once UDT ships them (M4 spec §8). The inspector still edits an
-    already-placed hero, and a building's monument via a free-text id.
+  - **Monument palette category:** added `MONUMENTS` (the 8 Covenant monuments) to `ultimatedarktower`
+    and re-exported it here, so the palette has a roster-driven **Monument** category (dropdown + free-text,
+    building-targeted) that calls `setMonument`. `BoardUIRosters` gained `monuments` (default from the
+    re-export). The example art already lives under `tokens/monuments/<kebab(name)>.png`.
+  - **Deferred (documented):** the palette's **hero** *add* category — UDT exposes no `HEROES` roster yet
+    and Board re-exports rather than vendors that data; it slots in as a `ui.rosters` default with no API
+    change once UDT ships it (M4 spec §8). The inspector still edits an already-placed hero.
   - Example: the editing UI is docked into Display's overlay HUD; tests are plain jsdom (no three-harness
     re-port; the 3D pick reuses the existing M3 integration harness).
 - **M3 — `Board3DPlugin` (the Display ScenePlugin).** The `ultimatedarktowerboard/plugin` subpath now
