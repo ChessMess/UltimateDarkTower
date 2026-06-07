@@ -52,10 +52,9 @@ Both upstream dependencies are in place:
 - `ultimatedarktowerdisplay`'s `anchorToWorld`: **shipped in `0.9.0`** (peer `^0.9.0`); the 3D plugin's
   token placement uses it.
 
-> **Deferred:** the palette's **hero** *add* category — UDT does not yet export a `HEROES` roster, and
-> Board re-exports rather than vendors that data. It slots in as a UI roster default with no API change
-> once UDT ships it (see the M4 spec §8). *(Monuments are resolved: `MONUMENTS` was added to UDT and is
-> re-exported as the palette's monument roster.)*
+> **Palette rosters from UDT:** the editing UI's hero / foe / adversary / marker / monument categories all
+> source their lists from `ultimatedarktower` re-exports — `HEROES` and `MONUMENTS` were added to UDT for
+> this (re-exported, not vendored). No hero art exists, so heroes render via the programmatic fallback.
 
 The `three` peer range is pinned to **Display's exact declared range** (single-instance
 requirement). The 3D path inherits Display's heavy transitive footprint (three + the board

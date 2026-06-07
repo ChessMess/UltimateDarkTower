@@ -28,14 +28,17 @@ export type {
   BoardAdjacency,
 } from 'ultimatedarktower';
 
-// Rosters + setup enums (heroes are seeded per game; foes/adversaries/allies are fixed sets).
+// Rosters + setup enums (fixed reference rosters: foes/adversaries/allies/heroes/monuments).
 export {
   TIER1_FOES,
   TIER2_FOES,
   TIER3_FOES,
   ADVERSARIES,
   ALLIES,
+  HEROES,
+  HERO_BY_ID,
   MONUMENTS,
+  MONUMENT_BY_ID,
   DIFFICULTIES,
   GAME_SOURCES,
 } from 'ultimatedarktower';
@@ -45,8 +48,14 @@ export type {
   Tier3Foe,
   Adversary,
   Ally,
+  Hero,
   Monument,
+  MonumentId,
+  ContentSource,
   Difficulty,
   GameSource,
   ExpansionType,
 } from 'ultimatedarktower';
+// NOTE: UDT's `HeroId` (a hero *identity* id) is deliberately NOT re-exported — this package's
+// own `HeroId` (a caller-assigned *instance* id, in state/boardState) owns that name. Use a
+// `Hero`'s `id` field for the identity.

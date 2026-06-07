@@ -48,10 +48,9 @@ const view = new BoardRenderView({
       inspector: { corner: 'tr' },
       summary: { corner: 'br' },
     },
-    // The palette's Monument category is roster-driven from UDT's re-exported `MONUMENTS`; the art
-    // resolves under `tokens/monuments/<kebab(name)>.png`. NOTE: a hero *add* category is still
-    // absent — UDT exposes no HEROES roster yet (M4 spec §8); it slots in as a `ui.rosters` default
-    // with no API change once UDT ships it. The inspector still edits an already-placed hero.
+    // The palette's Hero + Monument categories are roster-driven from UDT's re-exported `HEROES` /
+    // `MONUMENTS`; monument art resolves under `tokens/monuments/<kebab(id)>.png` (no hero art exists,
+    // so heroes use the programmatic fallback). Pass `ui.rosters` to override either list.
   },
   assetBaseUrl: './tokens/',
   boardImageUrl: './board.png',

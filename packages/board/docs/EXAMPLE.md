@@ -35,9 +35,8 @@ The three HUD panels are docked into Display's overlay (`tower.getOverlayContain
 collapse/close it; the **summary** updates live. To add a token: in the **palette** choose a kind (foe /
 adversary / marker / skull), click **Add**, then click a space on the 2D map **or** the 3D board (or pick
 from the location dropdown) and **Confirm** — both renderers feed the same shared `selection`/`locationPick`
-stores the UI reads. The **inspector** edits/removes whatever is selected. Monuments come from UDT's
-re-exported `MONUMENTS` roster. *Hero add is deferred until UDT ships a `HEROES` roster (M4 spec §8); a
-hero placed in code can still be edited.*
+stores the UI reads. The **inspector** edits/removes whatever is selected. The Hero and Monument categories
+come from UDT's re-exported `HEROES` / `MONUMENTS` rosters (heroes have no art → programmatic fallback).
 
 ## 3D path
 

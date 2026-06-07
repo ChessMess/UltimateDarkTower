@@ -23,13 +23,13 @@ All notable changes to this project are documented here. The format is based on
     gain an *armed* space-pick mode (`locationPick`) — the 2D map draws clickable space targets at the
     anchors; the 3D plugin raycasts invisible on-disc discs via a second pointer target. A location dropdown
     is the renderer-less fallback. No state mutation until **Confirm**.
-  - **Monument palette category:** added `MONUMENTS` (the 8 Covenant monuments) to `ultimatedarktower`
-    and re-exported it here, so the palette has a roster-driven **Monument** category (dropdown + free-text,
-    building-targeted) that calls `setMonument`. `BoardUIRosters` gained `monuments` (default from the
-    re-export). The example art already lives under `tokens/monuments/<kebab(name)>.png`.
-  - **Deferred (documented):** the palette's **hero** *add* category — UDT exposes no `HEROES` roster yet
-    and Board re-exports rather than vendors that data; it slots in as a `ui.rosters` default with no API
-    change once UDT ships it (M4 spec §8). The inspector still edits an already-placed hero.
+  - **Hero + Monument palette categories:** added `HEROES` (14) and `MONUMENTS` (8) to `ultimatedarktower`
+    as `{ id, name, source }` rosters (`HERO_BY_ID`/`MONUMENT_BY_ID`, shared `ContentSource`) and
+    re-exported them here. The palette gained roster-driven **Hero** (`placeHero(hero.id, loc)` — the
+    identity id doubles as the singleton instance id) and **Monument** (`setMonument(loc, id)`, building-
+    targeted) categories. `BoardUIRosters` gained `heroes` + `monuments` (a `RosterEntry = {id,name}` list,
+    default from the re-exports, overridable via `ui.rosters`). UDT's `HeroId` is deliberately not
+    re-exported (Board's instance-id `HeroId` owns that name). No remaining roster gap.
   - Example: the editing UI is docked into Display's overlay HUD; tests are plain jsdom (no three-harness
     re-port; the 3D pick reuses the existing M3 integration harness).
 - **M3 — `Board3DPlugin` (the Display ScenePlugin).** The `ultimatedarktowerboard/plugin` subpath now

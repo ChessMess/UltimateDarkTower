@@ -80,9 +80,9 @@ Three movable / dockable / show-hide-configurable panels:
 
 - **Palette** — add a foe (type + status), adversary, space marker, or skull. Click **Add**, pick a space
   (click the 2D/3D board while armed, or use the location dropdown), then **Confirm**. A collapsible
-  **Setup** section dispatches `setSelections`. Monuments are roster-driven from UDT's re-exported
-  `MONUMENTS` (building-targeted → `setMonument`). *(Hero add is deferred until UDT ships a `HEROES`
-  roster — see the M4 spec; the inspector still edits an already-placed hero.)*
+  **Setup** section dispatches `setSelections`. The Hero and Monument categories are roster-driven from
+  UDT's re-exported `HEROES` / `MONUMENTS` (a placed hero uses its identity id as the instance id;
+  monuments are building-targeted → `setMonument`).
 - **Inspector** — edits the active `selection`: move/remove a hero or foe, set foe status, place/clear the
   adversary, change a building's skulls / destroy-restore / monument, or remove a marker.
 - **Summary** — per-kingdom counts (heroes, foes, skulls, razed, markers, adversary).

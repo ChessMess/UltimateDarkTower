@@ -16,6 +16,7 @@ import {
   BOARD_LOCATIONS,
   BOARD_LOCATION_BY_NAME,
   DIFFICULTIES,
+  HEROES,
   MONUMENTS,
   TIER1_FOES,
   TIER2_FOES,
@@ -35,13 +36,20 @@ export interface PanelPlacement {
   y?: number;
 }
 
-/** Roster lists the palette offers. Default from the UDT re-exports (heroes deferred — no UDT roster). */
+/** A roster entry with a stable id + display name (heroes/monuments). */
+export interface RosterEntry {
+  id: string;
+  name: string;
+}
+
+/** Roster lists the palette offers. Default from the UDT re-exports. */
 export interface BoardUIRosters {
   foes: string[];
   adversaries: string[];
   allies: string[];
   markers: string[];
-  monuments: string[];
+  heroes: ReadonlyArray<RosterEntry>;
+  monuments: ReadonlyArray<RosterEntry>;
 }
 
 export interface BoardUIOptions {
@@ -133,7 +141,8 @@ function resolveRosters(r?: Partial<BoardUIRosters>): BoardUIRosters {
     adversaries: r?.adversaries ?? [...ADVERSARIES],
     allies: r?.allies ?? [...ALLIES],
     markers: r?.markers ?? ['wasteland', 'power-skull'],
-    monuments: r?.monuments ?? [...MONUMENTS],
+    heroes: r?.heroes ?? HEROES,
+    monuments: r?.monuments ?? MONUMENTS,
   };
 }
 
@@ -252,7 +261,7 @@ function makeDraggable(panel: HTMLElement, handle: HTMLElement): void {
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
-type AddKind = 'foe' | 'adversary' | 'marker' | 'skull' | 'monument';
+type AddKind = 'hero' | 'foe' | 'adversary' | 'marker' | 'skull' | 'monument';
 
 function buildPalette(
   body: HTMLElement,
@@ -263,6 +272,7 @@ function buildPalette(
 ): void {
   const kindSelect = makeSelect(
     [
+      { value: 'hero', label: 'Hero' },
       { value: 'foe', label: 'Foe' },
       { value: 'adversary', label: 'Adversary' },
       { value: 'marker', label: 'Space marker' },
@@ -273,6 +283,12 @@ function buildPalette(
   );
 
   // Per-kind detail controls (shown/hidden by the kind selector).
+  const heroSelect = makeSelect(
+    rosters.heroes.map((h) => ({ value: h.id, label: h.name })),
+    'udt-palette-hero'
+  );
+  const heroRow = fieldRow('Hero', heroSelect);
+
   const foeType = makeFoeSelect(rosters.foes, 'udt-palette-foe-type');
   const foeStatus = makeSelect(
     FOE_STATUSES.map((s) => ({ value: s, label: s })),
@@ -298,7 +314,7 @@ function buildPalette(
 
   // Monuments sit on a building (setMonument), so the kind targets building spaces only.
   const monumentSelect = makeSelect(
-    rosters.monuments.map((m) => ({ value: m, label: m })),
+    rosters.monuments.map((m) => ({ value: m.id, label: m.name })),
     'udt-palette-monument'
   );
   const monumentCustom = document.createElement('input');
@@ -309,7 +325,7 @@ function buildPalette(
 
   const detail = document.createElement('div');
   detail.className = 'udt-palette-detail';
-  detail.append(foeRow, adversaryRow, markerRow, monumentRow);
+  detail.append(heroRow, foeRow, adversaryRow, markerRow, monumentRow);
 
   const addBtn = makeButton('Add', 'udt-palette-add');
 
@@ -326,6 +342,7 @@ function buildPalette(
 
   const showDetail = (): void => {
     const kind = kindSelect.value as AddKind;
+    heroRow.style.display = kind === 'hero' ? '' : 'none';
     foeRow.style.display = kind === 'foe' ? '' : 'none';
     adversaryRow.style.display = kind === 'adversary' ? '' : 'none';
     markerRow.style.display = kind === 'marker' ? '' : 'none';
@@ -344,10 +361,11 @@ function buildPalette(
     const targets: PendingPlacement['targets'] =
       kind === 'skull' || kind === 'monument' ? 'buildings' : 'all';
     const label = placementLabel(kind, {
+      hero: optionText(heroSelect),
       foe: foeType.value,
       adversary: adversaryId.value,
       marker: markerValue(markerSelect, markerCustom),
-      monument: markerValue(monumentSelect, monumentCustom),
+      monument: monumentCustom.value.trim() || optionText(monumentSelect),
     });
     // Rebuild the location select for the right target set.
     const fresh = makeLocationSelect(targets, undefined, 'udt-palette-location');
@@ -366,6 +384,10 @@ function buildPalette(
     if (!loc) return;
     const state = controller.getState();
     switch (kind) {
+      case 'hero':
+        // Heroes are singletons → the chosen hero's identity id is the instance id.
+        controller.placeHero(heroSelect.value, loc);
+        break;
       case 'foe':
         controller.spawnFoe(genId('foe', state), foeType.value, loc, foeStatus.value as FoeStatus);
         break;
@@ -841,9 +863,11 @@ function markerValue(select: HTMLSelectElement, custom: HTMLInputElement): strin
 
 function placementLabel(
   kind: AddKind,
-  values: { foe: string; adversary: string; marker: string; monument: string }
+  values: { hero: string; foe: string; adversary: string; marker: string; monument: string }
 ): string {
   switch (kind) {
+    case 'hero':
+      return `${values.hero} (hero)`;
     case 'foe':
       return `${values.foe} (foe)`;
     case 'adversary':
@@ -858,5 +882,11 @@ function placementLabel(
 }
 
 function toSelectionKind(kind: AddKind): TokenSelection['kind'] {
-  return kind === 'skull' || kind === 'monument' ? 'building' : kind;
+  if (kind === 'skull' || kind === 'monument') return 'building';
+  return kind; // 'hero' | 'foe' | 'adversary' | 'marker'
+}
+
+/** The display text of a `<select>`'s current option (falls back to its value). */
+function optionText(select: HTMLSelectElement): string {
+  return select.options[select.selectedIndex]?.text ?? select.value;
 }

@@ -36,7 +36,10 @@ describe('Palette', () => {
 
   it('a board-pick fills the location select; Confirm uses it', () => {
     const { controller, locationPick, host } = setup();
-    $<HTMLButtonElement>(host, '.udt-palette-add').click(); // arms (default kind = foe)
+    const kind = $<HTMLSelectElement>(host, '.udt-palette-kind');
+    kind.value = 'foe';
+    kind.dispatchEvent(new Event('change'));
+    $<HTMLButtonElement>(host, '.udt-palette-add').click(); // arms
     expect(locationPick.isArmed()).toBe(true);
 
     locationPick.pick('Radiant Mountains'); // simulate a 2D/3D space click
@@ -83,15 +86,32 @@ describe('Palette', () => {
     expect(controller.getState().buildings['Dayside'].skulls).toBe(1);
   });
 
-  it('adds a monument onto a building space (targets buildings; setMonument)', () => {
+  it('adds a hero (identity id as the instance id) on Confirm', () => {
+    const { controller, host } = setup();
+    const kind = $<HTMLSelectElement>(host, '.udt-palette-kind');
+    kind.value = 'hero';
+    kind.dispatchEvent(new Event('change'));
+    // Default roster comes from UDT's HEROES re-export (objects → option value = id, text = name).
+    const hero = $<HTMLSelectElement>(host, '.udt-palette-hero');
+    expect(Array.from(hero.options).map((o) => o.text)).toContain('Archwright');
+    hero.value = 'archwright';
+
+    $<HTMLButtonElement>(host, '.udt-palette-add').click();
+    $<HTMLSelectElement>(host, '.udt-palette-location').value = 'Broken Lands';
+    $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
+    expect(controller.getState().heroes['archwright']).toEqual({ location: 'Broken Lands' });
+  });
+
+  it('adds a monument onto a building space (targets buildings; setMonument by id)', () => {
     const { controller, host } = setup();
     const kind = $<HTMLSelectElement>(host, '.udt-palette-kind');
     kind.value = 'monument';
     kind.dispatchEvent(new Event('change'));
-    // Default roster comes from UDT's MONUMENTS re-export.
+    // Default roster comes from UDT's MONUMENTS re-export (option value = id, text = name).
     const monument = $<HTMLSelectElement>(host, '.udt-palette-monument');
-    expect(Array.from(monument.options).map((o) => o.value)).toContain('Argent Oak');
-    monument.value = 'Argent Oak';
+    expect(Array.from(monument.options).map((o) => o.text)).toContain('Argent Oak');
+    expect(Array.from(monument.options).map((o) => o.value)).toContain('argent-oak');
+    monument.value = 'argent-oak';
 
     $<HTMLButtonElement>(host, '.udt-palette-add').click();
     const loc = $<HTMLSelectElement>(host, '.udt-palette-location');
@@ -100,7 +120,7 @@ describe('Palette', () => {
     expect(options).not.toContain('Broken Lands'); // not a building
     loc.value = "Egan's End";
     $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
-    expect(controller.getState().buildings["Egan's End"].monument).toBe('Argent Oak');
+    expect(controller.getState().buildings["Egan's End"].monument).toBe('argent-oak');
   });
 
   it('Setup section dispatches setSelections', () => {
@@ -114,6 +134,9 @@ describe('Palette', () => {
   it('generateId mints non-colliding foe ids', () => {
     const { controller, host } = setup();
     controller.spawnFoe('foe-1', 'Oreks', 'Dayside');
+    const kind = $<HTMLSelectElement>(host, '.udt-palette-kind');
+    kind.value = 'foe';
+    kind.dispatchEvent(new Event('change'));
     $<HTMLButtonElement>(host, '.udt-palette-add').click();
     $<HTMLSelectElement>(host, '.udt-palette-location').value = 'Dayside';
     $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
