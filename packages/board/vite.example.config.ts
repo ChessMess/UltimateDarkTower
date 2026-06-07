@@ -7,9 +7,13 @@ import { resolve } from 'path';
 // `createRequire` (which browsers can't run). Alias it to its CJS build and
 // pre-bundle it, exactly as Display's example config does.
 //
-// The 3D path (TowerRenderView + Board3DPlugin) is wired but commented out in
-// example/src/main.ts until a tower modelUrl is supplied and Display ships
-// anchorToWorld; the scaffold demo renders the headless board readout.
+// The demo composes the full board: the 3D board (TowerRenderView + Board3DPlugin via
+// Display 0.9's `anchorToWorld`) alongside the 2D map, the text readout, the shared focus
+// controls, and the dockable editing UI — all over one shared state/selection/focus.
+//
+// `base: './'` keeps the built asset URLs relative so the bundle and the runtime-loaded
+// `./board.png` / `./tokens/` / `./tower.glb` resolve under the GitHub Pages project subpath
+// (`/UltimateDarkTowerBoard/`). Set an absolute `base` if you fork under a different repo name.
 export default defineConfig({
   root: resolve(__dirname, 'example'),
   base: './',

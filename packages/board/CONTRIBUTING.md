@@ -9,8 +9,8 @@ siblings:
 
 ```
 Documents/GitHub/
-├─ UltimateDarkTower/          # 4.0.x — build it (npm run build) so dist/ exists
-├─ UltimateDarkTowerDisplay/   # 0.8.x — build it (npm run build) so dist/ exists
+├─ UltimateDarkTower/          # 4.1.x — build it (npm run build) so dist/ exists
+├─ UltimateDarkTowerDisplay/   # 0.9.x — build it (npm run build) so dist/ exists
 └─ UltimateDarkTowerBoard/     # this repo
 ```
 

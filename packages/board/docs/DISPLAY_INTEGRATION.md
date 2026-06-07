@@ -49,7 +49,7 @@ buildings at `nk = 0`. Pass a different value only if you re-enable and rotate t
 
 - Selection is wired through `ctx.registerPointerTarget`; a token `onPointerDown` consumes the gesture
   (so orbit / side-select don't fire) and emits `onTokenSelect({ kind, id, location })`. It is renderer-local
-  UI state — never written to `BoardState`. (Add/move/delete editing is M4.)
+  UI state — never written to `BoardState`. (Add/move/delete editing lives in the dockable UI.)
 - The 3D camera is the focus source of truth: `setFocus({ kingdom, angle })` maps `kingdom` → `selectSide`
   (cardinal identity; `all` leaves the camera put) and `angle` → `applyCameraConfig` (overhead/isometric,
   tunable). Camera side changes are reflected back via the `onFocusChange` option. Because the camera always

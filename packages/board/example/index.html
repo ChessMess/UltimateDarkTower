@@ -189,12 +189,22 @@
   <body>
     <h1>UltimateDarkTowerBoard</h1>
     <p>
-      M4 demo — 3D board (Display ScenePlugin) + 2D map + text readout + the dockable
-      editing UI (palette / inspector / summary), sharing one board state, selection, and
-      focus. Click tokens in either view; use the palette to add one (pick a space on the
-      board, then Confirm); drag the panels; N/E/S/W moves the camera.
+      Live demo — the 3D board (a Display ScenePlugin) + the 2D overhead map + the text readout
+      + the dockable editing UI (palette / inspector / summary), all sharing one board state,
+      selection, and focus. Click a token in either view to select it; use the palette to add one
+      (click a space on the board, then Confirm); drag the panels to reposition them; N/E/S/W moves
+      the camera and narrows the map/readout.
     </p>
     <div id="app"></div>
+    <footer style="margin-top: 2rem; opacity: 0.7; font-size: 0.85rem">
+      <a href="https://github.com/ChessMess/UltimateDarkTowerBoard" style="color: #c2843a"
+        >UltimateDarkTowerBoard</a
+      >
+      — composable state + renderers for the <em>Return to Dark Tower</em> game board ·
+      <a href="https://github.com/ChessMess/UltimateDarkTowerBoard/tree/main/docs" style="color: #c2843a"
+        >docs</a
+      >
+    </footer>
     <script type="module" src="./src/main.ts"></script>
   </body>
 </html>

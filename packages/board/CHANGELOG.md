@@ -70,9 +70,37 @@ All notable changes to this project are documented here. The format is based on
 - Example app rewritten to render the readout + 2D map + focus controls over a seeded state, with curated
   board/token art under `example/public/` (loaded via `assetBaseUrl`, never bundled into the library).
   This `tokens/` tree stages the future standalone board-assets package.
+- UDT re-exports for the setup enums `DIFFICULTIES` / `GAME_SOURCES` and the types `Difficulty` /
+  `GameSource` / `ExpansionType`.
+- **Board layout + adjacency re-exports** now that `ultimatedarktower@4.1.0` ships them: `BOARD_ANCHORS`,
+  `BOARD_IMAGE_INFO`, `BOARD_ADJACENCY`, and the graph helpers `neighborsOf` / `stepDistance` /
+  `shortestPath`, plus the types `Anchor` / `AnchorSlot` / `LocationAnchors` / `BoardAnchorMap` /
+  `BoardImageInfo` / `BoardAdjacency`. Re-exported from UDT (not vendored); the `ultimatedarktower` peer
+  range is bumped to `^4.1.0`. This unblocks the 2D-map / 3D-plugin token placement (M2/M3).
+- Initial repository scaffold per `UltimateDarkTowerBoard-Scaffolding-Spec.md` v0.2:
+  two-entry package (`.` three-free core + `./plugin` 3D board), headless state core
+  (BoardState / commands / reducer / controller / events / zod-v4 save-load), text
+  readout + 2D map renderer stubs, `Board3DPlugin` implementing Display's `ScenePlugin`,
+  UDT data re-exports (`BOARD_LOCATIONS` + rosters), example app, stub test suites,
+  docs stubs, and CI/Pages/Publish workflows.
 
 ### Changed
 
+- **M5 — docs, example & GitHub Pages polish (docs-only; no library code or public API changed).**
+  Reconciled the docs set to the shipped M1–M4 surface: de-stubbed the "stub / curate / scaffold"
+  framing; rewrote the two stale `docs/TROUBLESHOOTING.md` entries (the obsolete "3D renders nothing —
+  expected for now" and "commit `package-lock.json`" notes); fleshed out `docs/ARCHITECTURE.md`
+  (controlled `host` vs uncontrolled `self` ownership + the data-flow narrative); gave `docs/README.md`
+  a role-based "pick your path"; and audited `docs/API.md` — documenting the previously-omitted public
+  `syncFocusControls` plus the `FocusControlsOptions` / `BoardMap2DOptions` / `BoardRenderViewOptions` /
+  `BoardStateControllerOptions` / `RosterEntry` types, and normalizing stray internal `(M3)/(M4)` jargon.
+  `README.md` gained CI / TypeScript / License badges, a Live-Demo link, and an ecosystem + See-also
+  section; `CONTRIBUTING.md` sibling versions were corrected (UDT `4.1.x`, Display `0.9.x`); the example
+  copy/footer were refreshed, and the GitHub Pages build was **verified** deploy-ready (`base: './'` →
+  relative asset URLs, public `board.png`/`tower.glb`/`tokens/**` at the dist root, all serving `200`
+  under a project subpath). Ecosystem cross-links: added Board to `ultimatedarktowerdisplay`'s
+  related-projects (`docs/README.md`) and de-staled its `SCENE_PLUGINS.md` (UDT's `ECOSYSTEM.md` already
+  carried a Board entry). Spec: `docs/planning/UltimateDarkTowerBoard-M5-DocsExamplePages-Spec.md`.
 - **`ultimatedarktowerdisplay` peer bumped `^0.8.0` → `^0.9.0`** (carries `anchorToWorld` +
   `attachScenePlugin` + the `ScenePlugin*` types) for M3. Still an optional peer; only `./plugin` imports it.
 - **`BoardFocus` is now an object (breaking, pre-release):**
@@ -98,24 +126,8 @@ All notable changes to this project are documented here. The format is based on
   and regenerated the readout snapshot. Updated `docs/STATE_MODEL.md`, `docs/API.md`,
   `docs/GETTING_STARTED.md`, and `README.md`.
 
-### Added
-
-- UDT re-exports for the setup enums `DIFFICULTIES` / `GAME_SOURCES` and the types `Difficulty` /
-  `GameSource` / `ExpansionType`.
-- **Board layout + adjacency re-exports** now that `ultimatedarktower@4.1.0` ships them: `BOARD_ANCHORS`,
-  `BOARD_IMAGE_INFO`, `BOARD_ADJACENCY`, and the graph helpers `neighborsOf` / `stepDistance` /
-  `shortestPath`, plus the types `Anchor` / `AnchorSlot` / `LocationAnchors` / `BoardAnchorMap` /
-  `BoardImageInfo` / `BoardAdjacency`. Re-exported from UDT (not vendored); the `ultimatedarktower` peer
-  range is bumped to `^4.1.0`. This unblocks the 2D-map / 3D-plugin token placement (M2/M3).
-- Initial repository scaffold per `UltimateDarkTowerBoard-Scaffolding-Spec.md` v0.2:
-  two-entry package (`.` three-free core + `./plugin` 3D board), headless state core
-  (BoardState / commands / reducer / controller / events / zod-v4 save-load), text
-  readout + 2D map renderer stubs, `Board3DPlugin` implementing Display's `ScenePlugin`,
-  UDT data re-exports (`BOARD_LOCATIONS` + rosters), example app, stub test suites,
-  docs stubs, and CI/Pages/Publish workflows.
-
-### Notes / TODO before features
+### Notes
 
 - Peers: `ultimatedarktower` `^4.1.0` (board datasets/graph helpers), `ultimatedarktowerdisplay` `^0.9.0`
-  (`anchorToWorld`; consumed by M3). Both build from their `main` in Board CI.
-- Commit the generated `package-lock.json` so CI's `npm ci` is reproducible.
+  (`anchorToWorld`). Both build from their `main` in Board CI (`package-lock.json` is committed for
+  reproducible `npm ci`).
