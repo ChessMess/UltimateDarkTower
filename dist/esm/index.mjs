@@ -4195,16 +4195,6 @@ var ALLIES = [
 ];
 var DIFFICULTIES = ["Heroic", "Gritty"];
 var GAME_SOURCES = ["Core", "Competitive"];
-var MONUMENTS = [
-  "Arch of the Golden Sun",
-  "Argent Oak",
-  "Cenotaph of the First Prophet",
-  "Colossus of Bjorn",
-  "Endless Necropolis",
-  "Moonstone Temple",
-  "Nightmare Cage",
-  "Tower Shard"
-];
 function charToValue(c) {
   const v = CHAR_TO_VALUE.get(c.toLowerCase());
   if (v === void 0) {
@@ -4437,6 +4427,52 @@ function dumpSeedChars(seed) {
   }
   return { seed: normalized, chars };
 }
+
+// src/udtHeroes.ts
+var HEROES = [
+  // Base (4)
+  { id: "brutal-warlord", name: "Brutal Warlord", source: "base" },
+  { id: "orphaned-scion", name: "Orphaned Scion", source: "base" },
+  { id: "relic-hunter", name: "Relic Hunter", source: "base" },
+  { id: "spymaster", name: "Spymaster", source: "base" },
+  // Alliances (2)
+  { id: "archwright", name: "Archwright", source: "alliances" },
+  { id: "haunted-recluse", name: "Haunted Recluse", source: "alliances" },
+  // Covenant (4)
+  { id: "devious-swindler", name: "Devious Swindler", source: "covenant" },
+  { id: "relentless-warden", name: "Relentless Warden", source: "covenant" },
+  { id: "reverent-astromancer", name: "Reverent Astromancer", source: "covenant" },
+  { id: "undaunted-aegis", name: "Undaunted Aegis", source: "covenant" },
+  // Expeditions (4, unreleased — provisional)
+  { id: "jocular-druid", name: "Jocular Druid", source: "expeditions" },
+  { id: "grizzled-mariner", name: "Grizzled Mariner", source: "expeditions" },
+  { id: "clever-tinkerer", name: "Clever Tinkerer", source: "expeditions" },
+  { id: "enlightened-ascetic", name: "Enlightened Ascetic", source: "expeditions" }
+];
+var HERO_BY_ID = Object.freeze(
+  HEROES.reduce((acc, hero) => {
+    acc[hero.id] = hero;
+    return acc;
+  }, {})
+);
+
+// src/udtMonuments.ts
+var MONUMENTS = [
+  { id: "arch-of-the-golden-sun", name: "Arch of the Golden Sun", source: "covenant" },
+  { id: "argent-oak", name: "Argent Oak", source: "covenant" },
+  { id: "cenotaph-of-the-first-prophet", name: "Cenotaph of the First Prophet", source: "covenant" },
+  { id: "colossus-of-bjorn", name: "Colossus of Bjorn", source: "covenant" },
+  { id: "endless-necropolis", name: "Endless Necropolis", source: "covenant" },
+  { id: "moonstone-temple", name: "Moonstone Temple", source: "covenant" },
+  { id: "nightmare-cage", name: "Nightmare Cage", source: "covenant" },
+  { id: "tower-shard", name: "Tower Shard", source: "covenant" }
+];
+var MONUMENT_BY_ID = Object.freeze(
+  MONUMENTS.reduce((acc, monument) => {
+    acc[monument.id] = monument;
+    return acc;
+  }, {})
+);
 
 // src/udtSystemRandom.ts
 var INT32_MAX = 2147483647;
@@ -5379,6 +5415,8 @@ export {
   DRUM_PACKETS,
   GAME_SOURCES,
   GLYPHS,
+  HEROES,
+  HERO_BY_ID,
   InMemorySink,
   IndexedDBSink,
   LAYER_TO_POSITION,
@@ -5388,6 +5426,7 @@ export {
   LIGHT_INDEX_TO_DIRECTION,
   Logger,
   MONUMENTS,
+  MONUMENT_BY_ID,
   RING_LIGHT_POSITIONS,
   SKULL_DROP_COUNT_POS,
   STATE_DATA_LENGTH,

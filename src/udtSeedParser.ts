@@ -52,16 +52,6 @@ export type Ally =
   | 'Vasa'
   | 'Yana'
   | 'Zaida';
-/** The 8 Covenant monuments (a reference roster — monuments are not seed-encoded). */
-export type Monument =
-  | 'Arch of the Golden Sun'
-  | 'Argent Oak'
-  | 'Cenotaph of the First Prophet'
-  | 'Colossus of Bjorn'
-  | 'Endless Necropolis'
-  | 'Moonstone Temple'
-  | 'Nightmare Cage'
-  | 'Tower Shard';
 export type Difficulty = 'Heroic' | 'Gritty';
 export type GameSource = 'Core' | 'Competitive';
 export type ExpansionType = 'Alliances' | 'Monuments';
@@ -88,18 +78,6 @@ export const ALLIES: readonly Ally[] = [
 ];
 export const DIFFICULTIES: readonly Difficulty[] = ['Heroic', 'Gritty'];
 export const GAME_SOURCES: readonly GameSource[] = ['Core', 'Competitive'];
-
-// The 8 Covenant monuments — a reference roster (not seed-encoded). Alphabetical by name.
-export const MONUMENTS: readonly Monument[] = [
-  'Arch of the Golden Sun',
-  'Argent Oak',
-  'Cenotaph of the First Prophet',
-  'Colossus of Bjorn',
-  'Endless Necropolis',
-  'Moonstone Temple',
-  'Nightmare Cage',
-  'Tower Shard',
-];
 
 // ── Interfaces ─────────────────────────────────────────────────────────────
 

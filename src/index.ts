@@ -43,12 +43,18 @@ export { IndexedDBSink } from './sinks/IndexedDBSink';
 export {
   charToValue, valueToChar, validateSeed, decodeSeed, decodeRngSeed,
   createSeed, encodeSeed, compareSeedsRaw, dumpSeedChars,
-  TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES, DIFFICULTIES, GAME_SOURCES, MONUMENTS,
+  TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES, DIFFICULTIES, GAME_SOURCES,
 } from './udtSeedParser';
 export type {
-  Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally, Difficulty, GameSource, ExpansionType, Monument,
+  Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally, Difficulty, GameSource, ExpansionType,
   Confidence, SeedBank, DecodedSeed, SeedConfig, CharDiff, SeedComparison, CharInfo, CharDump,
 } from './udtSeedParser';
+
+// Hero + monument reference rosters (board content; not seed-encoded)
+export { HEROES, HERO_BY_ID } from './udtHeroes';
+export type { Hero, HeroId, ContentSource } from './udtHeroes';
+export { MONUMENTS, MONUMENT_BY_ID } from './udtMonuments';
+export type { Monument, MonumentId } from './udtMonuments';
 
 // System.Random replica (C# PRNG)
 export { SystemRandom } from './udtSystemRandom';
