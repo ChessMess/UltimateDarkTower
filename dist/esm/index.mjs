@@ -4474,6 +4474,49 @@ var MONUMENT_BY_ID = Object.freeze(
   }, {})
 );
 
+// src/udtFoes.ts
+var FOE_STATUSES = ["ready", "savage", "lethal"];
+var FOES = [
+  // Tier 1 — level 2
+  { id: "brigands", name: "Brigands", kind: "foe", level: 2, tier: 1, source: "base" },
+  { id: "oreks", name: "Oreks", kind: "foe", level: 2, tier: 1, source: "base" },
+  { id: "shadow-wolves", name: "Shadow Wolves", kind: "foe", level: 2, tier: 1, source: "base" },
+  { id: "spine-fiends", name: "Spine Fiends", kind: "foe", level: 2, tier: 1, source: "base" },
+  // Tier 2 — level 3
+  { id: "frost-trolls", name: "Frost Trolls", kind: "foe", level: 3, tier: 2, source: "base" },
+  { id: "clan-of-neuri", name: "Clan of Neuri", kind: "foe", level: 3, tier: 2, source: "base" },
+  { id: "lemures", name: "Lemures", kind: "foe", level: 3, tier: 2, source: "base" },
+  { id: "widowmade-spiders", name: "Widowmade Spiders", kind: "foe", level: 3, tier: 2, source: "base" },
+  // Tier 3 — level 4
+  { id: "dragons", name: "Dragons", kind: "foe", level: 4, tier: 3, source: "base" },
+  { id: "mormos", name: "Mormos", kind: "foe", level: 4, tier: 3, source: "base" },
+  { id: "striga", name: "Striga", kind: "foe", level: 4, tier: 3, source: "base" },
+  { id: "titans", name: "Titans", kind: "foe", level: 4, tier: 3, source: "base" }
+];
+var ADVERSARY_ROSTER = [
+  { id: "ashstrider", name: "Ashstrider", kind: "adversary", level: 5, source: "base" },
+  { id: "bane-of-omens", name: "Bane of Omens", kind: "adversary", level: 5, source: "base" },
+  { id: "empress-of-shades", name: "Empress of Shades", kind: "adversary", level: 5, source: "base" },
+  { id: "gaze-eternal", name: "Gaze Eternal", kind: "adversary", level: 5, source: "base" },
+  { id: "gravemaw", name: "Gravemaw", kind: "adversary", level: 5, source: "base" },
+  { id: "isa-the-exile", name: "Isa the Exile", kind: "adversary", level: 5, source: "base" },
+  { id: "lingering-rot", name: "Lingering Rot", kind: "adversary", level: 5, source: "base" },
+  { id: "utuk-ku", name: "Utuk'Ku", kind: "adversary", level: 5, source: "base" }
+];
+var ALL_FOES = [...FOES, ...ADVERSARY_ROSTER];
+var FOE_BY_ID = Object.freeze(
+  ALL_FOES.reduce((acc, foe) => {
+    acc[foe.id] = foe;
+    return acc;
+  }, {})
+);
+var FOE_BY_NAME = Object.freeze(
+  ALL_FOES.reduce((acc, foe) => {
+    acc[foe.name] = foe;
+    return acc;
+  }, {})
+);
+
 // src/udtSystemRandom.ts
 var INT32_MAX = 2147483647;
 var MSEED = 161803398;
@@ -5378,7 +5421,9 @@ function shortestPath(a, b) {
 var index_default = UltimateDarkTower_default;
 export {
   ADVERSARIES,
+  ADVERSARY_ROSTER,
   ALLIES,
+  ALL_FOES,
   AUDIO_COMMAND_POS,
   BATTERY_STATUS_FREQUENCY,
   BOARD_ADJACENCY,
@@ -5413,6 +5458,10 @@ export {
   DIS_SYSTEM_ID_UUID,
   DOMOutput,
   DRUM_PACKETS,
+  FOES,
+  FOE_BY_ID,
+  FOE_BY_NAME,
+  FOE_STATUSES,
   GAME_SOURCES,
   GLYPHS,
   HEROES,

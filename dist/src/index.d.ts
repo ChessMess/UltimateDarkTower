@@ -24,6 +24,8 @@ export { HEROES, HERO_BY_ID } from './udtHeroes';
 export type { Hero, HeroId, ContentSource } from './udtHeroes';
 export { MONUMENTS, MONUMENT_BY_ID } from './udtMonuments';
 export type { Monument, MonumentId } from './udtMonuments';
+export { FOE_STATUSES, FOES, ADVERSARY_ROSTER, ALL_FOES, FOE_BY_ID, FOE_BY_NAME } from './udtFoes';
+export type { FoeStatus, FoeLevel, FoeId, FoeName, Foe } from './udtFoes';
 export { SystemRandom } from './udtSystemRandom';
 export { BOARD_LOCATIONS, BOARD_LOCATION_BY_NAME, BOARD_GROUPINGS, } from './udtGameBoard';
 export type { TerrainType, BuildingType, BoardKingdom, BoardGrouping, BoardLocation } from './udtGameBoard';

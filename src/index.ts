@@ -56,6 +56,12 @@ export type { Hero, HeroId, ContentSource } from './udtHeroes';
 export { MONUMENTS, MONUMENT_BY_ID } from './udtMonuments';
 export type { Monument, MonumentId } from './udtMonuments';
 
+// Foe in-play status + foe/adversary identity metadata (additive; the seed-parser foe enums above
+// are untouched). FoeStatus is the ready→savage→lethal progression; FOES/ADVERSARY_ROSTER carry
+// level/tier/source keyed by the same names.
+export { FOE_STATUSES, FOES, ADVERSARY_ROSTER, ALL_FOES, FOE_BY_ID, FOE_BY_NAME } from './udtFoes';
+export type { FoeStatus, FoeLevel, FoeId, FoeName, Foe } from './udtFoes';
+
 // System.Random replica (C# PRNG)
 export { SystemRandom } from './udtSystemRandom';
 

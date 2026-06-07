@@ -21,8 +21,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BOARD_IMAGE_INFO = exports.BOARD_ANCHORS = exports.BOARD_GROUPINGS = exports.BOARD_LOCATION_BY_NAME = exports.BOARD_LOCATIONS = exports.SystemRandom = exports.MONUMENT_BY_ID = exports.MONUMENTS = exports.HERO_BY_ID = exports.HEROES = exports.GAME_SOURCES = exports.DIFFICULTIES = exports.ALLIES = exports.ADVERSARIES = exports.TIER3_FOES = exports.TIER2_FOES = exports.TIER1_FOES = exports.dumpSeedChars = exports.compareSeedsRaw = exports.encodeSeed = exports.createSeed = exports.decodeRngSeed = exports.decodeSeed = exports.validateSeed = exports.valueToChar = exports.charToValue = exports.IndexedDBSink = exports.bytesToHex = exports.InMemorySink = exports.UdtDiagnosticsRecorder = exports.parseDifferentialReadings = exports.createDefaultTowerState = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
-exports.shortestPath = exports.stepDistance = exports.neighborsOf = exports.BOARD_ADJACENCY = void 0;
+exports.FOE_BY_NAME = exports.FOE_BY_ID = exports.ALL_FOES = exports.ADVERSARY_ROSTER = exports.FOES = exports.FOE_STATUSES = exports.MONUMENT_BY_ID = exports.MONUMENTS = exports.HERO_BY_ID = exports.HEROES = exports.GAME_SOURCES = exports.DIFFICULTIES = exports.ALLIES = exports.ADVERSARIES = exports.TIER3_FOES = exports.TIER2_FOES = exports.TIER1_FOES = exports.dumpSeedChars = exports.compareSeedsRaw = exports.encodeSeed = exports.createSeed = exports.decodeRngSeed = exports.decodeSeed = exports.validateSeed = exports.valueToChar = exports.charToValue = exports.IndexedDBSink = exports.bytesToHex = exports.InMemorySink = exports.UdtDiagnosticsRecorder = exports.parseDifferentialReadings = exports.createDefaultTowerState = exports.isCalibrated = exports.rtdt_pack_state = exports.rtdt_unpack_state = exports.BluetoothAdapterFactory = exports.BluetoothPlatform = exports.BluetoothTimeoutError = exports.BluetoothUserCancelledError = exports.BluetoothDeviceNotFoundError = exports.BluetoothConnectionError = exports.BluetoothError = exports.milliVoltsToPercentageNumber = exports.milliVoltsToPercentage = exports.BufferOutput = exports.DOMOutput = exports.ConsoleOutput = exports.Logger = exports.logger = exports.UltimateDarkTower = void 0;
+exports.shortestPath = exports.stepDistance = exports.neighborsOf = exports.BOARD_ADJACENCY = exports.BOARD_IMAGE_INFO = exports.BOARD_ANCHORS = exports.BOARD_GROUPINGS = exports.BOARD_LOCATION_BY_NAME = exports.BOARD_LOCATIONS = exports.SystemRandom = void 0;
 var UltimateDarkTower_1 = require("./UltimateDarkTower");
 Object.defineProperty(exports, "UltimateDarkTower", { enumerable: true, get: function () { return __importDefault(UltimateDarkTower_1).default; } });
 __exportStar(require("./udtConstants"), exports);
@@ -83,6 +83,16 @@ Object.defineProperty(exports, "HERO_BY_ID", { enumerable: true, get: function (
 var udtMonuments_1 = require("./udtMonuments");
 Object.defineProperty(exports, "MONUMENTS", { enumerable: true, get: function () { return udtMonuments_1.MONUMENTS; } });
 Object.defineProperty(exports, "MONUMENT_BY_ID", { enumerable: true, get: function () { return udtMonuments_1.MONUMENT_BY_ID; } });
+// Foe in-play status + foe/adversary identity metadata (additive; the seed-parser foe enums above
+// are untouched). FoeStatus is the ready→savage→lethal progression; FOES/ADVERSARY_ROSTER carry
+// level/tier/source keyed by the same names.
+var udtFoes_1 = require("./udtFoes");
+Object.defineProperty(exports, "FOE_STATUSES", { enumerable: true, get: function () { return udtFoes_1.FOE_STATUSES; } });
+Object.defineProperty(exports, "FOES", { enumerable: true, get: function () { return udtFoes_1.FOES; } });
+Object.defineProperty(exports, "ADVERSARY_ROSTER", { enumerable: true, get: function () { return udtFoes_1.ADVERSARY_ROSTER; } });
+Object.defineProperty(exports, "ALL_FOES", { enumerable: true, get: function () { return udtFoes_1.ALL_FOES; } });
+Object.defineProperty(exports, "FOE_BY_ID", { enumerable: true, get: function () { return udtFoes_1.FOE_BY_ID; } });
+Object.defineProperty(exports, "FOE_BY_NAME", { enumerable: true, get: function () { return udtFoes_1.FOE_BY_NAME; } });
 // System.Random replica (C# PRNG)
 var udtSystemRandom_1 = require("./udtSystemRandom");
 Object.defineProperty(exports, "SystemRandom", { enumerable: true, get: function () { return udtSystemRandom_1.SystemRandom; } });
