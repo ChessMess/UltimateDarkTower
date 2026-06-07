@@ -4195,6 +4195,16 @@ var ALLIES = [
 ];
 var DIFFICULTIES = ["Heroic", "Gritty"];
 var GAME_SOURCES = ["Core", "Competitive"];
+var MONUMENTS = [
+  "Arch of the Golden Sun",
+  "Argent Oak",
+  "Cenotaph of the First Prophet",
+  "Colossus of Bjorn",
+  "Endless Necropolis",
+  "Moonstone Temple",
+  "Nightmare Cage",
+  "Tower Shard"
+];
 function charToValue(c) {
   const v = CHAR_TO_VALUE.get(c.toLowerCase());
   if (v === void 0) {
@@ -5377,6 +5387,7 @@ export {
   LIGHT_EFFECTS,
   LIGHT_INDEX_TO_DIRECTION,
   Logger,
+  MONUMENTS,
   RING_LIGHT_POSITIONS,
   SKULL_DROP_COUNT_POS,
   STATE_DATA_LENGTH,

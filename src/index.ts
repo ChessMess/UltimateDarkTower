@@ -43,10 +43,10 @@ export { IndexedDBSink } from './sinks/IndexedDBSink';
 export {
   charToValue, valueToChar, validateSeed, decodeSeed, decodeRngSeed,
   createSeed, encodeSeed, compareSeedsRaw, dumpSeedChars,
-  TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES, DIFFICULTIES, GAME_SOURCES,
+  TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES, DIFFICULTIES, GAME_SOURCES, MONUMENTS,
 } from './udtSeedParser';
 export type {
-  Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally, Difficulty, GameSource, ExpansionType,
+  Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally, Difficulty, GameSource, ExpansionType, Monument,
   Confidence, SeedBank, DecodedSeed, SeedConfig, CharDiff, SeedComparison, CharInfo, CharDump,
 } from './udtSeedParser';
 

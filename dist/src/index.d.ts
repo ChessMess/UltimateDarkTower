@@ -18,8 +18,8 @@ export type { TowerEventCallbacks, DeviceInformation, ConnectionStatus } from '.
 export { UdtDiagnosticsRecorder, InMemorySink, bytesToHex } from './udtDiagnostics';
 export type { DiagnosticsConfig, DiagnosticsSink, DiagEvent, DiagEventKind, DisconnectCause, IncidentReport, BatterySample, CommandQueueSnapshot, } from './udtDiagnostics';
 export { IndexedDBSink } from './sinks/IndexedDBSink';
-export { charToValue, valueToChar, validateSeed, decodeSeed, decodeRngSeed, createSeed, encodeSeed, compareSeedsRaw, dumpSeedChars, TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES, DIFFICULTIES, GAME_SOURCES, } from './udtSeedParser';
-export type { Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally, Difficulty, GameSource, ExpansionType, Confidence, SeedBank, DecodedSeed, SeedConfig, CharDiff, SeedComparison, CharInfo, CharDump, } from './udtSeedParser';
+export { charToValue, valueToChar, validateSeed, decodeSeed, decodeRngSeed, createSeed, encodeSeed, compareSeedsRaw, dumpSeedChars, TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES, DIFFICULTIES, GAME_SOURCES, MONUMENTS, } from './udtSeedParser';
+export type { Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally, Difficulty, GameSource, ExpansionType, Monument, Confidence, SeedBank, DecodedSeed, SeedConfig, CharDiff, SeedComparison, CharInfo, CharDump, } from './udtSeedParser';
 export { SystemRandom } from './udtSystemRandom';
 export { BOARD_LOCATIONS, BOARD_LOCATION_BY_NAME, BOARD_GROUPINGS, } from './udtGameBoard';
 export type { TerrainType, BuildingType, BoardKingdom, BoardGrouping, BoardLocation } from './udtGameBoard';

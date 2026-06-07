@@ -15,6 +15,8 @@ export type Tier2Foe = 'Frost Trolls' | 'Clan of Neuri' | 'Lemures' | 'Widowmade
 export type Tier3Foe = 'Dragons' | 'Mormos' | 'Striga' | 'Titans';
 export type Adversary = 'Ashstrider' | 'Bane of Omens' | 'Empress of Shades' | 'Gaze Eternal' | 'Gravemaw' | 'Isa the Exile' | 'Lingering Rot' | "Utuk'Ku";
 export type Ally = 'Gleb' | 'Grigor' | 'Hakan' | 'Letha' | 'Miras' | 'Nimet' | 'Tomas' | 'Vasa' | 'Yana' | 'Zaida';
+/** The 8 Covenant monuments (a reference roster — monuments are not seed-encoded). */
+export type Monument = 'Arch of the Golden Sun' | 'Argent Oak' | 'Cenotaph of the First Prophet' | 'Colossus of Bjorn' | 'Endless Necropolis' | 'Moonstone Temple' | 'Nightmare Cage' | 'Tower Shard';
 export type Difficulty = 'Heroic' | 'Gritty';
 export type GameSource = 'Core' | 'Competitive';
 export type ExpansionType = 'Alliances' | 'Monuments';
@@ -26,6 +28,7 @@ export declare const ADVERSARIES: readonly Adversary[];
 export declare const ALLIES: readonly Ally[];
 export declare const DIFFICULTIES: readonly Difficulty[];
 export declare const GAME_SOURCES: readonly GameSource[];
+export declare const MONUMENTS: readonly Monument[];
 export interface SeedBank {
     initializationSeed: number;
     questSeed: number;

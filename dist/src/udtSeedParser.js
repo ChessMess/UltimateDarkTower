@@ -12,7 +12,7 @@
  * Ported from the official C# SeedParser implementation.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GAME_SOURCES = exports.DIFFICULTIES = exports.ALLIES = exports.ADVERSARIES = exports.TIER3_FOES = exports.TIER2_FOES = exports.TIER1_FOES = void 0;
+exports.MONUMENTS = exports.GAME_SOURCES = exports.DIFFICULTIES = exports.ALLIES = exports.ADVERSARIES = exports.TIER3_FOES = exports.TIER2_FOES = exports.TIER1_FOES = void 0;
 exports.charToValue = charToValue;
 exports.valueToChar = valueToChar;
 exports.validateSeed = validateSeed;
@@ -55,6 +55,17 @@ exports.ALLIES = [
 ];
 exports.DIFFICULTIES = ['Heroic', 'Gritty'];
 exports.GAME_SOURCES = ['Core', 'Competitive'];
+// The 8 Covenant monuments — a reference roster (not seed-encoded). Alphabetical by name.
+exports.MONUMENTS = [
+    'Arch of the Golden Sun',
+    'Argent Oak',
+    'Cenotaph of the First Prophet',
+    'Colossus of Bjorn',
+    'Endless Necropolis',
+    'Moonstone Temple',
+    'Nightmare Cage',
+    'Tower Shard',
+];
 // ── Character Conversion ───────────────────────────────────────────────────
 function charToValue(c) {
     const v = CHAR_TO_VALUE.get(c.toLowerCase());
