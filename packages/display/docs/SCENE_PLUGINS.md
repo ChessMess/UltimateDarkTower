@@ -127,7 +127,7 @@ tokens.forEach((t, i) => {
 });
 ```
 
-The view overload reads the disc geometry **and** the current `boardDisc.northKingdom` for you, so tokens stay aligned with the art if the north kingdom changes. (The forthcoming board package will ship the actual `BOARD_ANCHORS`; until then a consumer supplies its own normalized anchors.)
+The view overload reads the disc geometry **and** the current `boardDisc.northKingdom` for you, so tokens stay aligned with the art if the north kingdom changes. ([`ultimatedarktowerboard`](https://github.com/ChessMess/UltimateDarkTowerBoard) ships the real `BOARD_ANCHORS` and a ready-made `Board3DPlugin` built on this seam; a consumer can also supply its own normalized anchors.)
 
 ## Board-surface hand-off
 

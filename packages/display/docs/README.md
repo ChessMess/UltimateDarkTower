@@ -110,6 +110,7 @@ Terms used across the docs.
 ## External resources
 
 - [ultimatedarktower](https://github.com/ChessMess/ultimatedarktower) — the BLE/decoding library this renderer pairs with.
+- [ultimatedarktowerboard](https://github.com/ChessMess/UltimateDarkTowerBoard) — state + renderers for the game board/mat; its 3D board attaches to this renderer as a `ScenePlugin` (see [SCENE_PLUGINS](SCENE_PLUGINS.md)).
 - [Return to Dark Tower](https://restorationgames.com/dark-tower/) — the board game and physical peripheral.
 - [Live demo](https://chessmess.github.io/UltimateDarkTowerDisplay/) — interactive playground deployed from `example/`.
 
