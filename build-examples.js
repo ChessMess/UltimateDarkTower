@@ -7,7 +7,16 @@ const displayEntryPoint = path.join(displayRepoDir, 'src', 'index.ts');
 const displayModelPath = path.join(displayRepoDir, 'src', '3d', 'assets', 'tower.glb');
 
 function hasLocalDisplayCheckout() {
-    return fs.existsSync(displayEntryPoint) && fs.existsSync(displayModelPath);
+    // Require node_modules to be present in addition to source files: TowerEmulator.ts
+    // bundles the Display source directly (via relative path imports), which pulls in
+    // three/gsap/etc. from Display's node_modules. Without them esbuild cannot resolve
+    // those deps (e.g. in CI where the sibling repo is checked out but not yet `npm ci`'d).
+    const displayNodeModules = path.join(displayRepoDir, 'node_modules');
+    return (
+        fs.existsSync(displayEntryPoint) &&
+        fs.existsSync(displayModelPath) &&
+        fs.existsSync(displayNodeModules)
+    );
 }
 
 function ensureDir(dir) {
