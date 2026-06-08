@@ -105,6 +105,20 @@ Useful for "Save logs" buttons in debug UIs and for asserting on log content in 
 
 ---
 
+## Types
+
+Exported for typing custom outputs and filtering captured logs:
+
+- `LogLevel` — `'all' | 'debug' | 'info' | 'warn' | 'error'`.
+- `LogOutput` — the output interface implemented by `ConsoleOutput` / `DOMOutput` / `BufferOutput`; implement
+  it to add your own sink.
+
+```typescript
+import type { LogLevel, LogOutput } from 'ultimatedarktower';
+```
+
+---
+
 ## See also
 
 - [events.md](events.md) — `onBatteryLevelNotify` always fires; logging is independent.

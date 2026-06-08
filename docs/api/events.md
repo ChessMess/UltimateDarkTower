@@ -96,6 +96,18 @@ await tower.calibrate();
 
 ---
 
+## `TowerEventCallbacks`
+
+The core callbacks above are bundled into the exported `TowerEventCallbacks` interface — handy for typing a
+wiring helper. (`onTowerStateUpdate` is a separate assignable property, not part of this interface.)
+
+```typescript
+import type { TowerEventCallbacks } from 'ultimatedarktower';
+// { onTowerConnect; onTowerDisconnect; onBatteryLevelNotify; onCalibrationComplete; onSkullDrop; onTowerResponse? }
+```
+
+---
+
 ## See also
 
 - [connection.md](connection.md) — the lifecycle these events report on.

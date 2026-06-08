@@ -100,6 +100,18 @@ import {
 
 ---
 
+## Low-level char helpers
+
+The base-34 alphabet primitives the codec is built on — rarely needed directly, but exported for tooling.
+
+| Export | Signature | Purpose |
+|---|---|---|
+| `charToValue` | `(c: string) => number` | A single seed char → its base-34 value. |
+| `valueToChar` | `(v: number) => string` | A base-34 value → its seed char. |
+| `decodeRngSeed` | `(seed: string) => number` | Decode just the RNG portion of a seed to its integer. |
+
+---
+
 ## Types
 
 ```typescript
@@ -111,6 +123,7 @@ import type {
   CharDiff,
   CharDump,
   CharInfo,
+  Confidence,              // 'confirmed' | 'suspected' | 'unknown' — per-field decode confidence
   Tier1Foe, Tier2Foe, Tier3Foe,
   Adversary, Ally,
   Difficulty, GameSource, ExpansionType,

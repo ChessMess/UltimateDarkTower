@@ -80,6 +80,10 @@ const allCal = isCalibrated(state);
 const fresh = createDefaultTowerState();
 ```
 
+`parseDifferentialReadings(response: Uint8Array): ParsedDifferentialReadings | null` decodes a raw
+`DIFFERENTIAL_READINGS` tower response into its structured readings, returning `null` if the bytes aren't
+that response type.
+
 ---
 
 ## Glyph tracking

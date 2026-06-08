@@ -51,6 +51,7 @@ The full documentation set for [UltimateDarkTower](../README.md). Start here if 
 | **[SEED_FORMAT.md](SEED_FORMAT.md)** | Game seed encoding spec (base-34, RNG polynomial) | Seed format implementer |
 | **[API_REFERENCE.md](API_REFERENCE.md)** | Redirect to `api/` — kept for backward links | — |
 | **[api/](api/README.md)** | The API surface, split by topic | App developer |
+| **[API_STYLE.md](API_STYLE.md)** | The shared UDT-family API-doc standard every reference follows | Contributor |
 | **[api/connection.md](api/connection.md)** | Constructor, connect / disconnect, status, monitoring | App developer |
 | **[api/adapters.md](api/adapters.md)** | `IBluetoothAdapter`, built-in adapters, custom adapter walkthrough | Platform integrator |
 | **[api/commands.md](api/commands.md)** | Calibration, audio, lights, rotation, stateful variants | App developer |
@@ -59,6 +60,7 @@ The full documentation set for [UltimateDarkTower](../README.md). Start here if 
 | **[api/logging.md](api/logging.md)** | Logger config, outputs, response logging | App developer |
 | **[api/seed.md](api/seed.md)** | Seed parser + SystemRandom PRNG | Seed-aware app developer |
 | **[api/diagnostics.md](api/diagnostics.md)** | Flight recorder API | App developer debugging BLE |
+| **[api/board-data.md](api/board-data.md)** | Board geometry + hero/monument/foe reference rosters | Board-data consumer |
 
 ---
 

@@ -1,6 +1,8 @@
 # API Reference
 
-The complete API surface of UltimateDarkTower, split by topic. New to the library? Start with the [Getting Started tutorial](../GETTING_STARTED.md) instead — it walks through the same calls in the order you'll actually use them.
+*Docs: [Index](../README.md) > App developer > API*
+
+The complete API surface of UltimateDarkTower, split by topic. New to the library? Start with the [Getting Started tutorial](../GETTING_STARTED.md) instead — it walks through the same calls in the order you'll actually use them. **Changelog:** [../../CHANGELOG.md](../../CHANGELOG.md). This reference follows the shared [API documentation standard](../API_STYLE.md) used across the UDT-family repos (split into topic pages here because the surface is large).
 
 ---
 
@@ -16,6 +18,7 @@ The complete API surface of UltimateDarkTower, split by topic. New to the librar
 | **[Logging](logging.md)** | Logger configuration, log levels, console / DOM / buffer outputs, response logging |
 | **[Seed parser](seed.md)** | Decode / encode / validate game seeds, `SystemRandom` PRNG replica |
 | **[Diagnostics](diagnostics.md)** | Flight-recorder API (cross-link to [BLE_DIAGNOSTICS.md](../BLE_DIAGNOSTICS.md) for the conceptual doc) |
+| **[Board data](board-data.md)** | Board geometry (locations / anchors / adjacency + graph helpers) and the hero / monument / foe reference rosters |
 
 ---
 

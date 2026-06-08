@@ -130,6 +130,24 @@ const tower = new UltimateDarkTower({
 
 ---
 
+## Exported types
+
+Beyond `DiagnosticsConfig`, `DiagnosticsSink`, `DiagEvent`, and `IncidentReport` (above), these are exported
+for typing custom sinks and incident handlers:
+
+| Type | Purpose |
+|---|---|
+| `DisconnectCause` | Union of the disconnect-cause tags (`adapter_event` \| `gatt_health_check` \| … — see [Disconnect causes](#disconnect-causes)). |
+| `DiagEventKind` | The `kind` discriminator on a `DiagEvent`. |
+| `BatterySample` | One timestamped reading in `IncidentReport.batteryHistory`. |
+| `CommandQueueSnapshot` | The `IncidentReport.commandQueue` shape (queue depth + in-flight command). |
+
+```typescript
+import type { DisconnectCause, DiagEventKind, BatterySample, CommandQueueSnapshot } from 'ultimatedarktower';
+```
+
+---
+
 ## See also
 
 - [../BLE_DIAGNOSTICS.md](../BLE_DIAGNOSTICS.md) — conceptual doc with the full `IncidentReport` schema.
