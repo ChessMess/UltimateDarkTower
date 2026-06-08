@@ -4,3 +4,4 @@ example/dist
 coverage
 *.tsbuildinfo
 .DS_Store
+docs/planning
