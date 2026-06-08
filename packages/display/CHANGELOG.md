@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Documentation
+
+- **API reference: complete coverage + shared family standard.** `docs/API.md` now documents the
+  previously-undocumented public surface — the audio exports (`DEFAULT_TOWER_SOUND_PACK`,
+  `buildOfficialSoundPack`, `DrumRotationAudio`, `TowerSampleAudio`, the sound-URL constants, …), the
+  `./physics` subpath (`attachSkullPhysics`, `DEFAULT_PHYSICS`, `resolvePhysics`, `PhysicsConfig`,
+  `ResolvedPhysicsConfig`, `SkullPhysicsHandle`, …), and `PerfReport`/`PerfStat` — with a complete
+  copy-paste Exports block for both entry points (verified: every public export has an entry). Added
+  `docs/API_STYLE.md`, the API-documentation standard shared across the UDT-family repos, and a changelog
+  pointer to the API page.
+
 ### Added
 
 - **`anchorToWorld` — place on-disc content at normalized board-image anchors.** New exported `anchorToWorld(anchor, discMetricsOrView, northKingdom?)` maps a normalized `[0,1]` board-image anchor to its `THREE.Vector3` world position on the ground disc's top surface, so a scene plugin can render a token/marker exactly where the printed board art shows it. The mapping is derived from the existing board-texture rotation (`getBoardTextureRotation`) and the disc's cylinder-cap layout, so art and placed tokens stay aligned for any disc size/position and for every `boardDisc.northKingdom`. A live-view overload reads the disc geometry and current north kingdom for you. New type exports: `BoardAnchor`, `DiscMetrics`. The board rendering and all existing APIs are unchanged. See [docs/API.md](docs/API.md) and [docs/SCENE_PLUGINS.md](docs/SCENE_PLUGINS.md).

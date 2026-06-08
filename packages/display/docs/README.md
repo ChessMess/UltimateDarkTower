@@ -82,6 +82,7 @@ If you are a **hobbyist** with a Dark Tower and want it on screen with minimal c
 | [RENDERERS](RENDERERS.md) | Hobbyist + integrator | Reference | ~240 | Feature matrix, per-renderer deep dives, idle states, compat, bundle size. |
 | [EXAMPLE](EXAMPLE.md) | Hobbyist + integrator | Walkthrough | ~290 | Tour of `example/`, one section per toolbar panel, patterns to lift. |
 | [API](API.md) | Integrator | Reference | ~680 | Canonical reference for every public class, method, option, and type. |
+| [API_STYLE](API_STYLE.md) | Contributor | Standard | ~70 | The shared UDT-family API-doc standard every reference follows. |
 | [LIGHTING](LIGHTING.md) | 3D tuner | Reference | ~842 | Three-point rig, bloom, skybox, LEDs, animations, full default config, tuning recipes. |
 | [AUDIO](AUDIO.md) | Integrator + audio author | Guide | ~120 | `SoundPack` model, bundled official pack, custom packs, sequence binding, bundler compatibility. |
 | [PHYSICS](PHYSICS.md) | Physics user | Guide | ~236 | Skull physics MVP, opt-in subpath, config, tuning, verification checklist. |

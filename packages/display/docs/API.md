@@ -2,44 +2,36 @@
 
 *Docs: [Index](README.md) > Integrator > API*
 
-**Before reading:** [GETTING_STARTED](GETTING_STARTED.md) covers prerequisites and the first render. [RENDERERS](RENDERERS.md) compares the three renderers at a glance.
+**Before reading:** [GETTING_STARTED](GETTING_STARTED.md) covers prerequisites and the first render. [RENDERERS](RENDERERS.md) compares the three renderers at a glance. **Changelog:** [../CHANGELOG.md](../CHANGELOG.md).
 
-This document covers the public API exported by `ultimatedarktowerdisplay`.
+This document covers the public API exported by `ultimatedarktowerdisplay`. It follows the shared [API documentation standard](API_STYLE.md) used across the UDT-family repos.
 
 ## Exports
 
 ```ts
+// Main entry — renderers, controller, scene-plugin seam, audio
 import {
-  TowerRenderView,
-  TowerDisplay,
-  TowerStateReadout,
-  TowerSideView,
-  Tower3DView,
-  TowerStateController,
-  attachScenePlugin,
-  anchorToWorld,
+  TowerRenderView, TowerDisplay, TowerStateReadout, TowerSideView, Tower3DView,
+  TowerStateController, attachScenePlugin, anchorToWorld, TOWER_DISPLAY_CSS,
+  // audio (see "Audio exports")
+  DEFAULT_TOWER_SOUND_PACK, buildOfficialSoundPack, hasDefaultAudioAsset,
+  DEFAULT_SEQUENCE_AUDIO_MAP, buildSequenceAudioMap,
+  DrumRotationAudio, TowerSampleAudio, CALIBRATION_SOUND_URL, DRUM_ROTATION_SOUND_URL,
 } from 'ultimatedarktowerdisplay';
 import type {
-  TowerRenderViewOptions,
-  TowerRenderViewBadge,
-  TowerRenderViewBadgeTone,
-  TowerRenderViewPanelPosition,
-  TowerDisplayOptions,
-  Tower3DViewOptions,
-  TowerStateControllerOptions,
-  CameraConfig,
-  ITowerDisplay,
-  RendererType,
-  TowerSide,
-  SealIdentifier,
-  ScenePlugin,
-  ScenePluginContext,
-  ScenePluginHandle,
-  ScenePluginModelInfo,
-  PointerTarget,
-  BoardAnchor,
-  DiscMetrics,
+  TowerRenderViewOptions, TowerRenderViewBadge, TowerRenderViewBadgeTone, TowerRenderViewPanelPosition,
+  TowerDisplayOptions, Tower3DViewOptions, PerfReport, PerfStat, BloomFrameMetrics,
+  TowerStateControllerOptions, CameraConfig, AudioConfig, SoundPack, TowerPhysicsHooks,
+  ITowerDisplay, RendererType, TowerSide, SealIdentifier, AppliedTowerState,
+  ScenePlugin, ScenePluginContext, ScenePluginHandle, ScenePluginModelInfo, PointerTarget,
+  BoardAnchor, DiscMetrics,
 } from 'ultimatedarktowerdisplay';
+
+// `./physics` subpath — opt-in skull physics (pulls @dimforge/rapier3d; see "Physics")
+import { attachSkullPhysics, DEFAULT_PHYSICS, resolvePhysics } from 'ultimatedarktowerdisplay/physics';
+import type {
+  PhysicsConfig, ResolvedPhysicsConfig, SkullPhysicsHandle, SkullTemplate, DeepRequired,
+} from 'ultimatedarktowerdisplay/physics';
 ```
 
 ---
@@ -784,6 +776,13 @@ type SealIdentifier = { side: TowerSide; level: TowerLevels };
 
 `TowerLevels` is `'top' | 'middle' | 'bottom'` — imported from `ultimatedarktower`.
 
+### `PerfReport` / `PerfStat`
+
+Diagnostic-only perf snapshot returned by `Tower3DView.collectPerfReport(durationMs = 3000)`. `PerfStat` is
+`{ median; p95; max }` (milliseconds); `PerfReport` bundles `fps`, `frames`, `durationMs`, `bloomEnabled`,
+the per-stage `frameMs` / `bloom*Ms` `PerfStat`s, and `drawCalls` / `triangles`. See
+[framerate-issue.md](framerate-issue.md) for interpretation.
+
 ---
 
 ## Scene plugins
@@ -907,6 +906,60 @@ token.position.copy(pos);
 - `getPanelSlot(position: 'left' | 'right' | 'top' | 'bottom'): HTMLElement` — a fixed docking panel that reflows the canvas. Created on demand.
 
 Both are removed on `dispose()`, and their CSS ships in `TOWER_DISPLAY_CSS` (so they work under `injectStyles: false`).
+
+---
+
+## Audio exports
+
+The bundled audio system. The default pack ships in the package — no consumer setup is required for audio
+to work; pass these to `AudioConfig` (see [`TowerDisplayOptions`](#towerdisplayoptions)) only to customize.
+See [AUDIO](AUDIO.md) for the full guide (pack authoring, sequence binding, bundler-compatibility notes).
+
+| Export | Type | Purpose |
+|---|---|---|
+| `DEFAULT_TOWER_SOUND_PACK` | `SoundPack` | The bundled official sound pack (the default `AudioConfig.pack`). |
+| `buildOfficialSoundPack(baseUrl)` | `(string) => SoundPack` | Build the official pack against a custom asset base URL. |
+| `hasDefaultAudioAsset(sample)` | `(number) => boolean` | Whether the bundled pack has a sample for an audio index. |
+| `DEFAULT_SEQUENCE_AUDIO_MAP` | `Readonly<Record<number, number>>` | Default LED-sequence → audio-sample mapping. |
+| `buildSequenceAudioMap(entries)` | fn | Build a sequence → audio map from named `{ sequence: audio }` entries. |
+| `DrumRotationAudio` | class | Pitch/rate-driven drum-rotation loop player. |
+| `TowerSampleAudio` | class | One-shot sample player (backs `TowerDisplay.playSample`). |
+| `CALIBRATION_SOUND_URL` | `string` | Bundled calibration-sound asset URL. |
+| `DRUM_ROTATION_SOUND_URL` | `string` | Bundled drum-rotation-sound asset URL. |
+
+---
+
+## Physics (`./physics` subpath)
+
+Opt-in skull physics. Imported from `ultimatedarktowerdisplay/physics`, which pulls `@dimforge/rapier3d` —
+the main entry never does. See [PHYSICS](PHYSICS.md) for the guide, tuning, and the verification checklist.
+
+### `attachSkullPhysics(view, config?)`
+
+`(view: Tower3DView, config?: PhysicsConfig): SkullPhysicsHandle` — attach physics-driven skulls to a live
+`Tower3DView`. Returns immediately; Rapier's WASM init runs in the background and `dropSkull()` calls made
+before it resolves are queued. Internally a [`ScenePlugin`](#sceneplugin) attached via `attachScenePlugin`.
+
+```ts
+import { attachSkullPhysics } from 'ultimatedarktowerdisplay/physics';
+
+const skulls = attachSkullPhysics(view.view3D!, { skull: { maxCount: 8 } });
+skulls.dropSkull();
+skulls.applyPhysicsConfig({ skull: { restitution: 0.4 } }); // live tuning
+```
+
+`SkullPhysicsHandle` — `{ dropSkull(): void; clearSkulls(): void; getPhysicsConfig():
+ResolvedPhysicsConfig; applyPhysicsConfig(partial: PhysicsConfig): void; dispose(): void }`.
+
+Supporting exports:
+
+- `DEFAULT_PHYSICS: ResolvedPhysicsConfig` — the fully-resolved default config.
+- `resolvePhysics(user?, base?): ResolvedPhysicsConfig` — merge a partial `PhysicsConfig` over the defaults.
+- `PhysicsConfig` — nested, fully-optional config (grouped `skull` / `drum` / `seal` / `static` / `board` /
+  `oob`); pass any subset.
+- `ResolvedPhysicsConfig` — `PhysicsConfig` with every leaf required (`DeepRequired<PhysicsConfig>`).
+- `SkullTemplate` — a preprocessed skull model (decimated mesh + hull points) for `skull.modelUrl`.
+- `DeepRequired<T>` — utility type making every nested property required (re-exported from the main types).
 
 ---
 
