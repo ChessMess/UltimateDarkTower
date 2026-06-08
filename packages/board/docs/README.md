@@ -19,4 +19,5 @@ Audience-tiered docs (mirrors `ultimatedarktowerdisplay`). Pick your path:
 | Plug the 3D board into Display | [DISPLAY_INTEGRATION.md](./DISPLAY_INTEGRATION.md) |
 | Run / read the example app | [EXAMPLE.md](./EXAMPLE.md) |
 | Look up the public API | [API.md](./API.md) |
+| Write/maintain API docs to the family standard | [API_STYLE.md](./API_STYLE.md) |
 | Fix a problem | [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) |

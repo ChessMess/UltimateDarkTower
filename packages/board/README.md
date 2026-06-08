@@ -38,6 +38,19 @@ import { BoardRenderView, mountBoardUI, BOARD_LOCATIONS } from 'ultimatedarktowe
 import { Board3DPlugin } from 'ultimatedarktowerboard/plugin';
 ```
 
+Minimal usage — build a view, mutate state through the controller, read the text readout:
+
+```ts
+import { BoardRenderView } from 'ultimatedarktowerboard';
+
+const view = new BoardRenderView({ mapContainer: document.getElementById('map')! });
+view.controller.placeHero('hero-1', 'Broken Lands');
+console.log(view.readout.getText());
+```
+
+For the guided walkthrough (install → first render → editing UI) see
+[docs/GETTING_STARTED.md](./docs/GETTING_STARTED.md) and [docs/API.md](./docs/API.md) for the full reference.
+
 The optional editing UI (`mountBoardUI`, or `BoardRenderView`'s `uiContainer`) ships three movable,
 configurable panels — a token **palette**, a selection **inspector**, and a per-kingdom **summary** — that
 call only the controller's public command API. It mounts into any element; pass Display's

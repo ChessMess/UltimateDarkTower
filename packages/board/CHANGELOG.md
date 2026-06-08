@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Documentation
+
+- **API reference rewritten to the shared family standard.** Replaced the terse symbol-list `docs/API.md`
+  with a full per-symbol reference — descriptions, copy-paste runnable examples, parameter tables, a command
+  table, and the UDT re-export table — covering both the `.` and `./plugin` entry points (verified: every
+  public export has an entry; all snippets typecheck). Added `docs/API_STYLE.md`, the hand-authored
+  API-documentation standard now shared across the UDT-family repos, linked from CONTRIBUTING and the docs
+  index. README gains a minimal runnable usage snippet.
+
 ### Added
 
 - **M4 — dockable editing UI.** `mountBoardUI(host, options)` (in the three-free `.` entry) renders three
