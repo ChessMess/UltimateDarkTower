@@ -4,7 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
-Composable **state + renderers** for the *Return to Dark Tower* game board. It owns a
+Composable **state + renderers** for the _Return to Dark Tower_ game board. It owns a
 `BoardState` (heroes, foes, adversary, skulls-on-buildings, monuments, space markers),
 renders it three ways — text readout, 2D overhead map, 3D in-scene board — and ships an
 optional dockable editing UI. The 3D board is a `ScenePlugin` for
@@ -12,23 +12,21 @@ optional dockable editing UI. The 3D board is a `ScenePlugin` for
 `Tower3DView`. It enforces **no game rules**: it stores, renders, and emits events; hosts own rules.
 
 **▶ [Live Demo](https://chessmess.github.io/UltimateDarkTowerBoard/)** — the 3D board + 2D map +
-readout + editing UI over one shared state. *(Goes live once the project is on `main` and GitHub
-Pages is enabled.)*
+readout + editing UI over one shared state. _(Goes live once the project is on `main` and GitHub
+Pages is enabled.)_
 
 > **Status: pre-release (v0.1.0, not yet published to npm).** Implemented: the headless **state core**
 > (structured `BoardState`, the full command reducer, the `BoardStateController` with `self`/`host`
 > modes + events, versioned save/load); the **text readout**, **2D overhead map**, and **shared focus
 > controls**; the **3D board plugin** (a Display `ScenePlugin`); and the optional **dockable editing
-> UI** (palette / inspector / summary). See [`docs/`](./docs/) for the docs set and
-> [`docs/planning/`](./docs/planning/) for the roadmap (the completed milestone specs are under
-> [`docs/planning/archive/`](./docs/planning/archive/)).
+> UI** (palette / inspector / summary). See [`docs/`](./docs/) for the docs set.
 
 ## Two entry points
 
-| Import | What you get | Heavy deps |
-| --- | --- | --- |
-| `ultimatedarktowerboard` | headless `BoardState` + controller/reducer/commands/events/save-load, the text **readout** and **2D map** renderers, and re-exports of UDT board data | **none** (no `three`, no Display) |
-| `ultimatedarktowerboard/plugin` | `Board3DPlugin` — the 3D board `ScenePlugin` | `three` + `ultimatedarktowerdisplay` |
+| Import                          | What you get                                                                                                                                          | Heavy deps                           |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `ultimatedarktowerboard`        | headless `BoardState` + controller/reducer/commands/events/save-load, the text **readout** and **2D map** renderers, and re-exports of UDT board data | **none** (no `three`, no Display)    |
+| `ultimatedarktowerboard/plugin` | `Board3DPlugin` — the 3D board `ScenePlugin`                                                                                                          | `three` + `ultimatedarktowerdisplay` |
 
 ```ts
 // Headless / readout / 2D / editing UI — three-free:
@@ -85,7 +83,7 @@ image + audio; ~100 MB installed).
 
 ## Ecosystem
 
-Part of the *Return to Dark Tower* family — the **board-domain** sibling to the tower-domain Display:
+Part of the _Return to Dark Tower_ family — the **board-domain** sibling to the tower-domain Display:
 
 - [ultimatedarktower](https://github.com/ChessMess/UltimateDarkTower) — BLE driver + the static board
   data this package re-exports (locations, rosters, `BOARD_ANCHORS`, `BOARD_ADJACENCY` + graph helpers).

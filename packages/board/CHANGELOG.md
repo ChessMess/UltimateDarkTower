@@ -20,7 +20,7 @@ All notable changes to this project are documented here. The format is based on
 - **M4 — dockable editing UI.** `mountBoardUI(host, options)` (in the three-free `.` entry) renders three
   movable / dockable / show-hide-configurable panels — a token **palette** (add foe/adversary/marker/skull),
   a selection **inspector** (move/remove, foe status, building skulls + destroy/restore + monument, marker
-  remove, adversary place/clear), and a per-kingdom **summary**. The UI is a *dumb-container client*: it
+  remove, adversary place/clear), and a per-kingdom **summary**. The UI is a _dumb-container client_: it
   calls **only** the controller's public named command methods and reads state/selection — strip it out and
   the host keeps every endpoint. It mounts into any element, so a consumer can dock it into Display's
   `getOverlayContainer()` / `getPanelSlot()` (the example does); `src/ui` never imports Display.
@@ -29,7 +29,7 @@ All notable changes to this project are documented here. The format is based on
     `ui` options and owns/exposes `view.selection` / `view.locationPick`, so a click or space-pick from the
     2D map **or** the 3D plugin drives the same panels.
   - **Click-a-space-then-confirm add flow.** The palette arms a placement; `BoardMap2D` and `Board3DPlugin`
-    gain an *armed* space-pick mode (`locationPick`) — the 2D map draws clickable space targets at the
+    gain an _armed_ space-pick mode (`locationPick`) — the 2D map draws clickable space targets at the
     anchors; the 3D plugin raycasts invisible on-disc discs via a second pointer target. A location dropdown
     is the renderer-less fallback. No state mutation until **Confirm**.
   - **Hero + Monument palette categories:** added `HEROES` (14) and `MONUMENTS` (8) to `ultimatedarktower`
@@ -124,7 +124,7 @@ All notable changes to this project are documented here. The format is based on
   relative asset URLs, public `board.png`/`tower.glb`/`tokens/**` at the dist root, all serving `200`
   under a project subpath). Ecosystem cross-links: added Board to `ultimatedarktowerdisplay`'s
   related-projects (`docs/README.md`) and de-staled its `SCENE_PLUGINS.md` (UDT's `ECOSYSTEM.md` already
-  carried a Board entry). Spec: `docs/planning/UltimateDarkTowerBoard-M5-DocsExamplePages-Spec.md`.
+  carried a Board entry).
 - **`ultimatedarktowerdisplay` peer bumped `^0.8.0` → `^0.9.0`** (carries `anchorToWorld` +
   `attachScenePlugin` + the `ScenePlugin*` types) for M3. Still an optional peer; only `./plugin` imports it.
 - **`BoardFocus` is now an object (breaking, pre-release):**
