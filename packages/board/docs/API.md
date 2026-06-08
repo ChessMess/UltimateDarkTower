@@ -15,9 +15,9 @@
   resolveTokenImage?, onTokenSelect?, locationPick?, onLocationPick? }`), `BoardRenderer`,
   `TokenSelection`, `TokenArtRef`, `kebab(value)`
 - **Focus:** `BoardFocus` (`{ kingdom: BoardKingdom | 'all'; angle: BoardViewAngle }`), `BoardViewAngle`,
-  `DEFAULT_FOCUS`, `focusEquals(a, b)`, `mountFocusControls(host, { focus, onChange })` → unmount fn,
-  `syncFocusControls(host, focus)` (reflect an external focus change into already-mounted controls),
-  `FocusControlsOptions`
+  `DEFAULT_FOCUS`, `focusEquals(a, b)`, `mountFocusControls(host, { focus, onChange })` →
+  `FocusControlsHandle` (`{ setFocus(focus), unmount() }` — call `setFocus` to reflect an external focus
+  change into already-mounted controls), `FocusControlsOptions`, `FocusControlsHandle`
 - **Stores (UI seams):** `createSelectionStore()` → `SelectionStore` (`get`/`set`/`subscribe`);
   `createLocationPickStore()` → `LocationPickStore` (`arm`/`disarm`/`isArmed`/`getPending`/`pick`/`subscribe`);
   `PendingPlacement` (`{ kind, label, targets: 'all' | 'buildings' }`), `LocationPickEvent`

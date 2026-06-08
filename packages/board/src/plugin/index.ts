@@ -26,6 +26,15 @@ import type { BoardFocus, BoardViewAngle } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
 import { KIND_TINT, defaultTokenImagePath } from '../renderers/assetPaths';
 import type { TokenArtRef, TokenSelection } from '../renderers/assetPaths';
+import {
+  MAX_FANNED_SKULLS,
+  fanOffset,
+  selectionKey,
+  heroEntries,
+  foeEntries,
+  markerEntries,
+} from '../renderers/tokenLayout';
+import type { LocatedEntry } from '../renderers/tokenLayout';
 // Type-only — the store INSTANCE is supplied by the caller; no runtime UI dependency.
 import type { LocationPickStore } from '../ui/stores';
 
@@ -35,7 +44,6 @@ export type { TokenSelection, TokenArtRef } from '../renderers/assetPaths';
 const SLOT_FACTOR = 0.05;
 const SKULL_FACTOR = 0.03;
 const FAN_FACTOR = 0.04;
-const MAX_FANNED_SKULLS = 3;
 /** The token pointer target outranks OrbitControls so clicks select before they orbit. */
 const POINTER_PRIORITY = 10;
 /** The armed space-pick target outranks tokens so a placement click wins over selection. */
@@ -276,7 +284,7 @@ export class Board3DPlugin implements ScenePlugin {
 
     // Heroes (fanned), at the `hero` slot. No hero art exists → fallback.
     this.placeFanned(
-      groupByLocation(Object.entries(state.heroes).map(([id, h]) => ({ id, location: h.location }))),
+      heroEntries(state),
       'hero',
       (e) => ({ kind: 'hero', id: e.id, location: e.location }),
       (e) => ({ kind: 'hero', id: e.id })
@@ -284,9 +292,7 @@ export class Board3DPlugin implements ScenePlugin {
 
     // Foes (fanned), at the `foe` slot. Art id = foe type; selection id = instance id.
     this.placeFanned(
-      groupByLocation(
-        Object.entries(state.foes).map(([id, f]) => ({ id, location: f.location, art: f.foe }))
-      ),
+      foeEntries(state),
       'foe',
       (e) => ({ kind: 'foe', id: e.id, location: e.location }),
       (e) => ({ kind: 'foe', id: e.art ?? e.id })
@@ -316,7 +322,7 @@ export class Board3DPlugin implements ScenePlugin {
           const count = Math.min(b.skulls, MAX_FANNED_SKULLS);
           const radius = this.fanRadius();
           for (let i = 0; i < count; i++) {
-            const pos = base.clone().add(fanOffset(i, count, radius));
+            const pos = base.clone().add(fanVec3(i, count, radius));
             this.addToken({ kind: 'building', id: loc, location: loc }, { kind: 'skull', id: 'skull' }, pos, this.skullSize());
           }
         }
@@ -335,12 +341,8 @@ export class Board3DPlugin implements ScenePlugin {
     }
 
     // Space markers (fanned), at the `marker` slot.
-    const markerEntries: LocatedEntry[] = [];
-    for (const [loc, markers] of Object.entries(state.spaceMarkers)) {
-      for (const m of markers) markerEntries.push({ id: m, location: loc, art: m });
-    }
     this.placeFanned(
-      groupByLocation(markerEntries),
+      markerEntries(state),
       'marker',
       (e) => ({ kind: 'marker', id: e.id, location: e.location }),
       (e) => ({ kind: 'marker', id: e.art ?? e.id })
@@ -362,7 +364,7 @@ export class Board3DPlugin implements ScenePlugin {
       if (!anchor) continue;
       const base = this.worldAt(anchor);
       entries.forEach((entry, i) => {
-        const pos = base.clone().add(fanOffset(i, entries.length, radius));
+        const pos = base.clone().add(fanVec3(i, entries.length, radius));
         this.addToken(toSelection(entry), toArt(entry), pos, this.tokenSize());
       });
     }
@@ -522,31 +524,10 @@ export class Board3DPlugin implements ScenePlugin {
 
 // ── module-local helpers ──────────────────────────────────────────────────────
 
-interface LocatedEntry {
-  id: string;
-  location: LocationName;
-  art?: string;
-}
-
-function groupByLocation(entries: LocatedEntry[]): Map<LocationName, LocatedEntry[]> {
-  const map = new Map<LocationName, LocatedEntry[]>();
-  for (const entry of entries) {
-    const list = map.get(entry.location);
-    if (list) list.push(entry);
-    else map.set(entry.location, [entry]);
-  }
-  return map;
-}
-
-/** Fan offset in the disc plane (x/z), matching the 2D map's radial fan. */
-function fanOffset(index: number, count: number, radius: number): THREE.Vector3 {
-  if (count <= 1) return new THREE.Vector3(0, 0, 0);
-  const angle = (2 * Math.PI * index) / count;
-  return new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
-}
-
-function selectionKey(selection: TokenSelection): string {
-  return `${selection.kind} ${selection.id} ${selection.location}`;
+/** Lift the shared planar fan offset into the disc plane (x/z), matching the 2D map's fan. */
+function fanVec3(index: number, count: number, radius: number): THREE.Vector3 {
+  const off = fanOffset(index, count, radius);
+  return new THREE.Vector3(off.dx, 0, off.dy);
 }
 
 /** Walk up from a raycast hit to the owning token's `TokenSelection`. */

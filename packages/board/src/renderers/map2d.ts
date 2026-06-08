@@ -5,6 +5,15 @@ import type { BoardFocus, BoardRenderer } from './shared';
 import { DEFAULT_FOCUS, focusEquals } from './shared';
 import { KIND_TINT, defaultTokenImagePath, normalizeAssetBaseUrl } from './assetPaths';
 import type { TokenSelection, TokenArtRef } from './assetPaths';
+import {
+  MAX_FANNED_SKULLS,
+  fanOffset,
+  selectionKey,
+  heroEntries,
+  foeEntries,
+  markerEntries,
+} from './tokenLayout';
+import type { LocatedEntry } from './tokenLayout';
 // Type-only — no runtime dependency on the UI layer (the store instance is supplied by the caller).
 import type { LocationPickStore } from '../ui/stores';
 
@@ -23,7 +32,6 @@ const FAN_RADIUS = 55;
 const SELECTION_RING_R = 95;
 const DIM_OPACITY = 0.22;
 const VIEWBOX_PAD = 250;
-const MAX_FANNED_SKULLS = 3;
 const SPACE_HIT_R = 130;
 
 export interface BoardMap2DOptions {
@@ -180,7 +188,7 @@ export class BoardMap2D implements BoardRenderer {
     this.renderFannedByLocation(
       root,
       focus,
-      groupByLocation(Object.entries(state.heroes).map(([id, h]) => ({ id, location: h.location }))),
+      heroEntries(state),
       'hero',
       (entry) => ({ kind: 'hero', id: entry.id, location: entry.location }),
       (entry) => ({ kind: 'hero', id: entry.id })
@@ -190,9 +198,7 @@ export class BoardMap2D implements BoardRenderer {
     this.renderFannedByLocation(
       root,
       focus,
-      groupByLocation(
-        Object.entries(state.foes).map(([id, f]) => ({ id, location: f.location, art: f.foe }))
-      ),
+      foeEntries(state),
       'foe',
       (entry) => ({ kind: 'foe', id: entry.id, location: entry.location }),
       (entry) => ({ kind: 'foe', id: entry.art ?? entry.id })
@@ -224,7 +230,13 @@ export class BoardMap2D implements BoardRenderer {
           const count = Math.min(b.skulls, MAX_FANNED_SKULLS);
           const group = this.makeSelectableGroup({ kind: 'building', id: loc, location: loc }, px, opacity);
           for (let i = 0; i < count; i++) {
-            this.appendArt(group, { kind: 'skull', id: 'skull' }, SKULL_SIZE, fanOffset(i, count));
+            this.appendArtOrFallback(
+              group,
+              { kind: 'skull', id: 'skull' },
+              'building',
+              SKULL_SIZE,
+              fanOffset(i, count, FAN_RADIUS)
+            );
           }
           root.appendChild(group);
         }
@@ -234,7 +246,7 @@ export class BoardMap2D implements BoardRenderer {
         if (px) {
           const group = this.makeSelectableGroup({ kind: 'building', id: loc, location: loc }, px, opacity);
           if (b.monument) {
-            this.appendArt(group, { kind: 'monument', id: b.monument }, SLOT_SIZE, { dx: 0, dy: 0 });
+            this.appendArtOrFallback(group, { kind: 'monument', id: b.monument }, 'building', SLOT_SIZE);
           }
           if (b.destroyed) group.appendChild(razedOverlay(SLOT_SIZE));
           root.appendChild(group);
@@ -243,14 +255,10 @@ export class BoardMap2D implements BoardRenderer {
     }
 
     // Space markers (fanned), at the `marker` slot.
-    const markerEntries: LocatedEntry[] = [];
-    for (const [loc, markers] of Object.entries(state.spaceMarkers)) {
-      for (const m of markers) markerEntries.push({ id: m, location: loc, art: m });
-    }
     this.renderFannedByLocation(
       root,
       focus,
-      groupByLocation(markerEntries),
+      markerEntries(state),
       'marker',
       (entry) => ({ kind: 'marker', id: entry.id, location: entry.location }),
       (entry) => ({ kind: 'marker', id: entry.art ?? entry.id })
@@ -271,7 +279,7 @@ export class BoardMap2D implements BoardRenderer {
       if (!px) continue;
       const opacity = this.dim(loc, focus);
       entries.forEach((entry, i) => {
-        const off = fanOffset(i, entries.length);
+        const off = fanOffset(i, entries.length, FAN_RADIUS);
         const center = { x: px.x + off.dx, y: px.y + off.dy };
         const selection = toSelection(entry);
         const group = this.makeSelectableGroup(selection, center, opacity);
@@ -308,40 +316,40 @@ export class BoardMap2D implements BoardRenderer {
     return group;
   }
 
-  /** Append the art image (with an error→fallback handler) or, when there is no art, the fallback directly. */
+  /**
+   * Append the art image (with an error→fallback handler) or, when there is no art, the fallback
+   * disc directly. `off` positions both the image and the fallback within the group, so skull
+   * fans (and any future offset art) get the same graceful fallback as centered tokens.
+   */
   private appendArtOrFallback(
     group: SVGGElement,
     art: TokenArtRef,
     kind: TokenSelection['kind'],
-    size: number
+    size: number,
+    off: Offset = { dx: 0, dy: 0 }
   ): void {
+    const addFallback = (): void => {
+      const disc = fallbackDisc(kind, art.id, size);
+      if (off.dx !== 0 || off.dy !== 0) {
+        disc.setAttribute('transform', `translate(${off.dx} ${off.dy})`);
+      }
+      group.appendChild(disc);
+    };
     const url = this.resolve(art);
     if (url === null) {
-      group.appendChild(fallbackDisc(kind, art.id, size));
+      addFallback();
       return;
     }
-    const image = makeImage(url, size, { dx: 0, dy: 0 });
+    const image = makeImage(url, size, off);
     image.addEventListener(
       'error',
       () => {
         image.remove();
-        group.appendChild(fallbackDisc(kind, art.id, size));
+        addFallback();
       },
       { once: true }
     );
     group.appendChild(image);
-  }
-
-  /** Append art at an offset (used for skull fans inside one selectable group). */
-  private appendArt(group: SVGGElement, art: TokenArtRef, size: number, off: Offset): void {
-    const url = this.resolve(art);
-    if (url === null) {
-      const disc = fallbackDisc('building', art.id, size);
-      disc.setAttribute('transform', `translate(${off.dx} ${off.dy})`);
-      group.appendChild(disc);
-      return;
-    }
-    group.appendChild(makeImage(url, size, off));
   }
 
   // ── focus / selection ──────────────────────────────────────────────────────
@@ -437,32 +445,11 @@ interface Offset {
   dx: number;
   dy: number;
 }
-interface LocatedEntry {
-  id: string;
-  location: LocationName;
-  art?: string;
-}
-
-function groupByLocation(entries: LocatedEntry[]): Map<LocationName, LocatedEntry[]> {
-  const map = new Map<LocationName, LocatedEntry[]>();
-  for (const entry of entries) {
-    const list = map.get(entry.location);
-    if (list) list.push(entry);
-    else map.set(entry.location, [entry]);
-  }
-  return map;
-}
 
 function anchorPx(loc: LocationName, slot: AnchorSlot): Point | null {
   const anchor = BOARD_ANCHORS[loc]?.[slot];
   if (!anchor) return null;
   return { x: anchor.x * BOARD_IMAGE_INFO.width, y: anchor.y * BOARD_IMAGE_INFO.height };
-}
-
-function fanOffset(index: number, count: number): Offset {
-  if (count <= 1) return { dx: 0, dy: 0 };
-  const angle = (2 * Math.PI * index) / count;
-  return { dx: Math.cos(angle) * FAN_RADIUS, dy: Math.sin(angle) * FAN_RADIUS };
 }
 
 function makeImage(url: string, size: number, off: Offset): SVGImageElement {
@@ -522,8 +509,4 @@ function razedOverlay(size: number): SVGGElement {
 function setHref(element: SVGImageElement, url: string): void {
   element.setAttribute('href', url);
   element.setAttributeNS(XLINK_NS, 'xlink:href', url); // legacy fallback for older renderers
-}
-
-function selectionKey(selection: TokenSelection): string {
-  return `${selection.kind} ${selection.id} ${selection.location}`;
 }

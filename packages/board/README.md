@@ -20,7 +20,8 @@ Pages is enabled.)*
 > modes + events, versioned save/load); the **text readout**, **2D overhead map**, and **shared focus
 > controls**; the **3D board plugin** (a Display `ScenePlugin`); and the optional **dockable editing
 > UI** (palette / inspector / summary). See [`docs/`](./docs/) for the docs set and
-> [`docs/planning/`](./docs/planning/) for the roadmap and milestone specs.
+> [`docs/planning/`](./docs/planning/) for the roadmap (the completed milestone specs are under
+> [`docs/planning/archive/`](./docs/planning/archive/)).
 
 ## Two entry points
 

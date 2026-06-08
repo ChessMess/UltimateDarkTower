@@ -8,6 +8,14 @@ export interface FocusControlsOptions {
   onChange: (next: BoardFocus) => void;
 }
 
+/** Handle returned by {@link mountFocusControls}. */
+export interface FocusControlsHandle {
+  /** Re-render the pressed state when the focus changes elsewhere (the view facade's fan-out). */
+  setFocus(focus: BoardFocus): void;
+  /** Remove the controls from the DOM. */
+  unmount(): void;
+}
+
 interface KingdomChoice {
   label: string;
   value: BoardKingdom | 'all';
@@ -31,8 +39,11 @@ const ANGLES: { label: string; value: BoardViewAngle }[] = [
  *
  * The Isometric angle has no visible effect on the 2D map (it is reserved for the 3D camera
  * in M3); it is wired here so the focus surface is stable.
+ *
+ * Returns a {@link FocusControlsHandle}: `setFocus` re-renders the pressed state when the focus
+ * changes elsewhere (the view facade's fan-out), and `unmount` removes the controls.
  */
-export function mountFocusControls(host: HTMLElement, options: FocusControlsOptions): () => void {
+export function mountFocusControls(host: HTMLElement, options: FocusControlsOptions): FocusControlsHandle {
   let focus = options.focus;
   const root = document.createElement('div');
   root.className = 'udt-focus-controls';
@@ -59,22 +70,12 @@ export function mountFocusControls(host: HTMLElement, options: FocusControlsOpti
   };
   reflect(focus);
 
-  // Re-render the pressed state when the focus changes elsewhere (fan-out).
-  (root as ControlsRoot).__setFocus = reflect;
-
-  return () => {
-    root.remove();
+  return {
+    setFocus: reflect,
+    unmount: () => {
+      root.remove();
+    },
   };
-}
-
-/** The view facade calls this to keep the controls' pressed state in sync after a fan-out. */
-export function syncFocusControls(host: HTMLElement, focus: BoardFocus): void {
-  const root = host.querySelector<HTMLElement>('.udt-focus-controls') as ControlsRoot | null;
-  root?.__setFocus?.(focus);
-}
-
-interface ControlsRoot extends HTMLElement {
-  __setFocus?: (focus: BoardFocus) => void;
 }
 
 function makeGroup(label: string): HTMLElement {

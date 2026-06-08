@@ -6,7 +6,8 @@ import { BoardMap2D } from '../renderers/map2d';
 import type { TokenSelection } from '../renderers/map2d';
 import type { BoardFocus } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
-import { mountFocusControls, syncFocusControls } from './focusControls';
+import { mountFocusControls } from './focusControls';
+import type { FocusControlsHandle } from './focusControls';
 import {
   createLocationPickStore,
   createSelectionStore,
@@ -54,10 +55,9 @@ export class BoardRenderView {
   readonly locationPick: LocationPickStore = createLocationPickStore();
 
   private currentFocus: BoardFocus = DEFAULT_FOCUS;
-  private readonly controlsContainer?: HTMLElement;
   private readonly onFocusChange?: (focus: BoardFocus) => void;
   private readonly unsubscribe: () => void;
-  private unmountControls?: () => void;
+  private controls?: FocusControlsHandle;
   private ui?: BoardUIHandle;
 
   constructor(options: BoardRenderViewOptions = {}) {
@@ -66,7 +66,6 @@ export class BoardRenderView {
       mode: options.mode,
     });
     this.onFocusChange = options.onFocusChange;
-    this.controlsContainer = options.controlsContainer;
 
     if (options.mapContainer) {
       this.map2d = new BoardMap2D(options.mapContainer, {
@@ -82,8 +81,8 @@ export class BoardRenderView {
       });
     }
 
-    if (this.controlsContainer) {
-      this.unmountControls = mountFocusControls(this.controlsContainer, {
+    if (options.controlsContainer) {
+      this.controls = mountFocusControls(options.controlsContainer, {
         focus: this.currentFocus,
         onChange: (next) => this.setFocus(next),
       });
@@ -113,15 +112,15 @@ export class BoardRenderView {
     if (focusEquals(this.currentFocus, focus)) return;
     this.currentFocus = focus;
     this.renderAll(this.controller.getState());
-    if (this.controlsContainer) syncFocusControls(this.controlsContainer, focus);
+    this.controls?.setFocus(focus);
     this.onFocusChange?.(focus);
   }
 
   dispose(): void {
     this.unsubscribe();
     this.map2d?.dispose();
-    this.unmountControls?.();
-    this.unmountControls = undefined;
+    this.controls?.unmount();
+    this.controls = undefined;
     this.ui?.dispose();
     this.ui = undefined;
   }

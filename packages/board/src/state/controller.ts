@@ -11,6 +11,7 @@ import { createDefaultBoardState } from './boardState';
 import type { BoardCommand } from './commands';
 import { applyBoardCommand } from './reducer';
 import type { BoardEvent, BoardEventListener, BoardEventType } from './events';
+import { createEmitter } from '../util/emitter';
 
 export interface BoardStateControllerOptions {
   /** Starting state. Defaults to `createDefaultBoardState()`. */
@@ -33,7 +34,7 @@ export interface BoardStateControllerOptions {
 export class BoardStateController {
   private state: BoardState;
   private readonly mode: 'self' | 'host';
-  private readonly listeners = new Set<BoardEventListener>();
+  private readonly events = createEmitter<BoardEvent>();
 
   constructor(options: BoardStateControllerOptions = {}) {
     this.state = options.initial ?? createDefaultBoardState();
@@ -47,7 +48,7 @@ export class BoardStateController {
   /** Wholesale-set the held state (bypasses the reducer) and emit `change`. The commit path in both modes. */
   applyState(next: BoardState): void {
     this.state = next;
-    this.emit({ type: 'change', state: next, command: { type: 'replaceState', state: next } });
+    this.events.emit({ type: 'change', state: next, command: { type: 'replaceState', state: next } });
   }
 
   /**
@@ -61,12 +62,12 @@ export class BoardStateController {
 
     if (this.mode === 'self') {
       this.state = next;
-      this.emit({ type: 'change', state: next, command });
+      this.events.emit({ type: 'change', state: next, command });
       for (const event of deriveSpecificEvents(command, prev, next)) {
-        this.emit(event);
+        this.events.emit(event);
       }
     } else {
-      this.emit({ type: 'change', state: next, command });
+      this.events.emit({ type: 'change', state: next, command });
     }
     return next;
   }
@@ -77,10 +78,7 @@ export class BoardStateController {
 
   /** Subscribe to the full event firehose. Returns an unsubscribe function. */
   subscribe(listener: BoardEventListener): () => void {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
+    return this.events.subscribe(listener);
   }
 
   /** Subscribe to a single event type. Returns an unsubscribe function. */
@@ -149,13 +147,6 @@ export class BoardStateController {
   }
   setSelections(selections: BoardState['selections']): void {
     this.dispatch({ type: 'setSelections', selections });
-  }
-
-  private emit(event: BoardEvent): void {
-    // Iterate a copy so a listener may unsubscribe (or subscribe) during emit.
-    for (const listener of [...this.listeners]) {
-      listener(event);
-    }
   }
 }
 

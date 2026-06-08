@@ -113,6 +113,7 @@ export function applyBoardCommand(state: BoardState, command: BoardCommand): Boa
       return { ...state, adversary: { ...state.adversary, id: command.id } };
 
     case 'placeAdversary':
+      warnUnknownLocation(command.location);
       return {
         ...state,
         adversary: { ...state.adversary, id: state.adversary?.id ?? '', location: command.location },

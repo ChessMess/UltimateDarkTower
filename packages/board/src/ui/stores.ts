@@ -4,6 +4,7 @@
 // and Display-free (the CI grep enforces it).
 import type { TokenSelection } from '../renderers/assetPaths';
 import type { LocationName } from '../state/boardState';
+import { createEmitter } from '../util/emitter';
 
 /** A single active-selection slot the inspector reads and the renderers/palette write. */
 export interface SelectionStore {
@@ -46,51 +47,37 @@ export interface LocationPickStore {
 
 export function createSelectionStore(): SelectionStore {
   let current: TokenSelection | null = null;
-  const listeners = new Set<(selection: TokenSelection | null) => void>();
+  const emitter = createEmitter<TokenSelection | null>();
   return {
     get: () => current,
     set(selection) {
       current = selection;
-      // Iterate a copy so a listener may (un)subscribe during emit.
-      for (const listener of [...listeners]) listener(current);
+      emitter.emit(current);
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    subscribe: emitter.subscribe,
   };
 }
 
 export function createLocationPickStore(): LocationPickStore {
   let pending: PendingPlacement | null = null;
-  const listeners = new Set<(event: LocationPickEvent) => void>();
-  const emit = (event: LocationPickEvent): void => {
-    for (const listener of [...listeners]) listener(event);
-  };
+  const emitter = createEmitter<LocationPickEvent>();
   return {
     arm(request) {
       pending = request;
-      emit({ type: 'armed', pending: request });
+      emitter.emit({ type: 'armed', pending: request });
     },
     disarm() {
       if (!pending) return;
       pending = null;
-      emit({ type: 'disarmed' });
+      emitter.emit({ type: 'disarmed' });
     },
     isArmed: () => pending !== null,
     getPending: () => pending,
     pick(location) {
       // A pick is only meaningful while armed; ignore stray picks.
       if (!pending) return;
-      emit({ type: 'picked', location });
+      emitter.emit({ type: 'picked', location });
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    subscribe: emitter.subscribe,
   };
 }

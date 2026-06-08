@@ -86,6 +86,21 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **Internal quality pass (no public behavior change unless noted):**
+  - The 2D map (`renderers/map2d.ts`) and 3D plugin (`plugin/index.ts`) now share one three-free
+    `renderers/tokenLayout.ts` (location grouping, fan offset, selection key, and per-kind entry
+    builders) instead of each duplicating it — the slot/fan conventions now have a single source.
+  - Collapsed the 2D map's `appendArt` into `appendArtOrFallback` so **skull and monument art that
+    fails to load now falls back to the programmatic disc** like every other token kind (previously
+    a 404 left a broken `<image>`).
+  - `placeAdversary` now emits the same dev-only unknown-location warning as the other
+    location-bearing commands.
+  - The selection / location-pick stores (`ui/stores.ts`) and `BoardStateController` share a small
+    internal `createEmitter` subscribe/notify helper; public surfaces are unchanged.
+- **Removed `syncFocusControls(host, focus)` (breaking, pre-release).** `mountFocusControls` now
+  returns `{ setFocus, unmount }`; call `handle.setFocus(focus)` to fan a focus change into the
+  controls (and `handle.unmount()` to remove them). `BoardRenderView` handles this internally, so
+  consumers using the facade are unaffected.
 - **M5 — docs, example & GitHub Pages polish (docs-only; no library code or public API changed).**
   Reconciled the docs set to the shipped M1–M4 surface: de-stubbed the "stub / curate / scaffold"
   framing; rewrote the two stale `docs/TROUBLESHOOTING.md` entries (the obsolete "3D renders nothing —
