@@ -279,6 +279,13 @@ export interface CameraConfig {
    */
   targetHeightFactor?: number;
   /**
+   * Multiplies the fitted camera distance (the auto-computed "everything in
+   * frame" distance). `1` (default) keeps the standard framing; `>1` pulls the
+   * camera back (zooms out), `<1` pushes it in. Lets callers zoom independently
+   * of `elevationFactor`/`targetHeightFactor`.
+   */
+  distanceFactor?: number;
+  /**
    * When `true`, scroll-wheel zoom-in moves the camera toward the point under
    * the cursor rather than the orbit target. Zoom-out always uses the standard
    * OrbitControls behavior. Defaults to `true`.

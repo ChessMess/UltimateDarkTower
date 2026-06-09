@@ -173,15 +173,6 @@ export function initLightingController(getDisplay: () => TowerDisplay, els: DomE
     });
   }
 
-  if (els.chkZoomToCursor) {
-    els.chkZoomToCursor.addEventListener('change', () => {
-      getDisplay().setZoomToCursor(els.chkZoomToCursor!.checked);
-    });
-  }
-
-  if (els.chkPreserveViewOnSideSelect) {
-    els.chkPreserveViewOnSideSelect.addEventListener('change', () => {
-      getDisplay().setPreserveViewOnSideSelect(els.chkPreserveViewOnSideSelect!.checked);
-    });
-  }
+  // zoom-to-cursor + preserve-view toggles are bound in cameraTuneController,
+  // alongside the rest of the camera config.
 }

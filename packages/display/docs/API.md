@@ -260,7 +260,7 @@ Toggle whether scroll-wheel zoom-in moves the camera toward the cursor (`true`) 
 
 ##### `getCameraConfig(): Required<CameraConfig> | undefined`
 
-Return a snapshot of the current resolved camera configuration (all four fields guaranteed present) on the 3D view. Returns `undefined` when no 3D renderer is active.
+Return a snapshot of the current resolved camera configuration (all five fields guaranteed present) on the 3D view. Returns `undefined` when no 3D renderer is active.
 
 ##### `applyCameraConfig(config: CameraConfig): void`
 
@@ -548,11 +548,13 @@ Toggle whether side-button snaps preserve the current orbit state. See [`TowerDi
 
 ##### `getCameraConfig(): Required<CameraConfig>`
 
-Return a snapshot of the current resolved camera configuration (all four fields guaranteed present). Reflects values that were last applied via the constructor `camera` option or `applyCameraConfig`. Returns synthesized defaults post-`dispose()`.
+Return a snapshot of the current resolved camera configuration (all five fields guaranteed present). Reflects values that were last applied via the constructor `camera` option or `applyCameraConfig`. Returns synthesized defaults post-`dispose()`.
 
 ##### `applyCameraConfig(config: CameraConfig): void`
 
-Apply a partial camera configuration at runtime. Any fields provided overwrite the corresponding current values; omitted fields are unchanged. If the model is loaded, `elevationFactor` / `targetHeightFactor` changes immediately refit the camera.
+Apply a partial camera configuration at runtime. Any fields provided overwrite the corresponding current values; omitted fields are unchanged. If the model is loaded, framing changes (`elevationFactor` / `targetHeightFactor` / `distanceFactor`) refit the camera immediately.
+
+> **Setting the initial framing (avoiding a default-camera flash).** The camera is fitted **once when the model loads**, reading whatever `CameraConfig` factors are current at that moment. Configure your framing _before_ load — via the constructor `camera` option, or an `applyCameraConfig(...)` call made before the GLB resolves (factors set pre-load are stored and applied by the on-load fit). Do **not** set the initial framing from a post-load hook such as a scene plugin's `onModelLoaded`: that fires _after_ the fit (and after a shader prewarm that renders a frame or two), so the view briefly shows the default framing and then snaps to yours.
 
 ```ts
 view3d.applyCameraConfig({ preserveViewOnSideSelect: true });
@@ -750,6 +752,7 @@ Camera framing and behavior options. All fields are optional — unset fields fa
 interface CameraConfig {
   elevationFactor?: number; // default: -0.5
   targetHeightFactor?: number; // default: -0.15
+  distanceFactor?: number; // default: 1
   zoomToCursor?: boolean; // default: true
   preserveViewOnSideSelect?: boolean; // default: false
 }
@@ -759,6 +762,7 @@ interface CameraConfig {
 | -------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `elevationFactor`          | `-0.5`  | Camera eye height as a fraction of `modelRadius`. Negative values place the eye below the model's geometric centre.                                                               |
 | `targetHeightFactor`       | `-0.15` | Vertical position of the orbit target (look-at point) as a fraction of `modelRadius`. Negative values aim the camera lower.                                                       |
+| `distanceFactor`           | `1`     | Multiplies the auto-fitted camera distance (the "everything in frame" distance). `>1` pulls the camera back (zooms out), `<1` pushes it in — independent of the tilt factors.     |
 | `zoomToCursor`             | `true`  | When `true`, scroll-wheel zoom-in moves the camera toward the cursor rather than the orbit target. Zoom-out always uses standard OrbitControls behavior.                          |
 | `preserveViewOnSideSelect` | `false` | When `true`, selecting a cardinal side via the side buttons or `selectSide` rotates only the azimuth while keeping the current orbit target, tilt, pan, and zoom distance intact. |
 

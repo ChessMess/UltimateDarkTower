@@ -1,6 +1,7 @@
 import { queryDom } from './dom';
 import { initRendererController, getDisplay, getReadout, setLastState, onViewChange } from './rendererController';
 import { initLightingController } from './lightingController';
+import { initCameraTuneController, syncCameraTuneControls } from './cameraTuneController';
 import { initStateEditor, initInitialState, refreshDrumRotateActive } from './stateEditor';
 import { initConfigEditor, syncConfigSelectorVisibility } from './configEditor';
 import { initLayoutManager } from './layoutManager';
@@ -24,11 +25,16 @@ initConfigEditor(
 
 initLightingController(getDisplay, els);
 
+initCameraTuneController(getDisplay, els);
+
 initStateEditor(getDisplay, getReadout, setLastState, els);
 
 initPhysicsController();
 
-onViewChange(() => syncConfigSelectorVisibility(getDisplay, els));
+onViewChange(() => {
+  syncConfigSelectorVisibility(getDisplay, els);
+  syncCameraTuneControls(getDisplay, els);
+});
 
 initInitialState(getDisplay, getReadout, setLastState, els);
 

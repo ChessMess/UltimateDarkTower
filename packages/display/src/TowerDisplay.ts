@@ -320,6 +320,15 @@ export class TowerDisplay implements ITowerDisplay {
     this.view3d?.applyCameraConfig(config);
   }
 
+  /**
+   * Read the live camera framing back as the three preset factors
+   * (`elevationFactor`, `targetHeightFactor`, `distanceFactor`). Returns
+   * undefined when no 3D view is active.
+   */
+  getLiveCameraFactors(): Pick<Required<CameraConfig>, 'elevationFactor' | 'targetHeightFactor' | 'distanceFactor'> | undefined {
+    return this.view3d?.getLiveCameraFactors();
+  }
+
   /** Enable or disable zoom-toward-cursor on scroll-wheel zoom-in. No-op when no 3D view is active. */
   setZoomToCursor(enabled: boolean): void {
     this.view3d?.setZoomToCursor(enabled);

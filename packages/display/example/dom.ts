@@ -45,6 +45,13 @@ export interface DomElements {
   chkBoardBottomCap: HTMLInputElement | null;
   btnBoardEdgeWood: HTMLButtonElement | null;
   btnBoardEdgeNeoprene: HTMLButtonElement | null;
+  rngElevationFactor: HTMLInputElement | null;
+  lblElevationFactor: HTMLElement | null;
+  rngTargetHeightFactor: HTMLInputElement | null;
+  lblTargetHeightFactor: HTMLElement | null;
+  rngDistanceFactor: HTMLInputElement | null;
+  lblDistanceFactor: HTMLElement | null;
+  btnCameraSnapshot: HTMLButtonElement | null;
   btnEntrance: HTMLElement | null;
   btnReadme: HTMLElement | null;
   btnRandom: HTMLElement | null;
@@ -125,6 +132,13 @@ export function queryDom(): DomElements {
     chkBoardBottomCap: document.getElementById('chk-board-bottom-cap') as HTMLInputElement | null,
     btnBoardEdgeWood: document.getElementById('btn-board-edge-wood') as HTMLButtonElement | null,
     btnBoardEdgeNeoprene: document.getElementById('btn-board-edge-neoprene') as HTMLButtonElement | null,
+    rngElevationFactor: document.getElementById('rng-elevation-factor') as HTMLInputElement | null,
+    lblElevationFactor: document.getElementById('lbl-elevation-factor'),
+    rngTargetHeightFactor: document.getElementById('rng-target-height-factor') as HTMLInputElement | null,
+    lblTargetHeightFactor: document.getElementById('lbl-target-height-factor'),
+    rngDistanceFactor: document.getElementById('rng-distance-factor') as HTMLInputElement | null,
+    lblDistanceFactor: document.getElementById('lbl-distance-factor'),
+    btnCameraSnapshot: document.getElementById('btn-camera-snapshot') as HTMLButtonElement | null,
     btnEntrance: document.getElementById('btn-entrance'),
     btnReadme: document.getElementById('btn-readme'),
     btnRandom: document.getElementById('btn-random'),

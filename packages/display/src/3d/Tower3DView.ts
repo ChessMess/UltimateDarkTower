@@ -989,6 +989,7 @@ export class Tower3DView implements ITowerDisplay {
     return this.cameraController?.getCameraConfig() ?? {
       elevationFactor: this.cameraConfig.elevationFactor ?? -0.5,
       targetHeightFactor: this.cameraConfig.targetHeightFactor ?? -0.15,
+      distanceFactor: this.cameraConfig.distanceFactor ?? 1,
       zoomToCursor: this.cameraConfig.zoomToCursor ?? true,
       preserveViewOnSideSelect: false,
     };
@@ -997,6 +998,16 @@ export class Tower3DView implements ITowerDisplay {
   /** Update the camera elevation and/or look-target height and refit immediately. */
   applyCameraConfig(config: CameraConfig): void {
     this.cameraController?.applyCameraConfig(config);
+  }
+
+  /**
+   * Read the live camera framing back as the three preset factors
+   * (`elevationFactor`, `targetHeightFactor`, `distanceFactor`). Useful for
+   * tuning by eye, then copying the numbers into a `CameraConfig`. Falls back to
+   * the stored config when no camera controller is active (e.g. post-dispose).
+   */
+  getLiveCameraFactors(): Pick<Required<CameraConfig>, 'elevationFactor' | 'targetHeightFactor' | 'distanceFactor'> {
+    return this.cameraController?.getLiveCameraFactors() ?? this.getCameraConfig();
   }
 
   /** Enable or disable zoom-toward-cursor on scroll-wheel zoom-in. */

@@ -12,7 +12,8 @@ export type {
   DeepRequired,
 } from './types';
 export { DEFAULT_PHYSICS, resolvePhysics } from './PhysicsResolver';
-export type { SkullTemplate } from './SkullModelLoader';
+export { loadSkullModel, clearSkullModelCache } from './SkullModelLoader';
+export type { SkullTemplate, LoadSkullModelOptions } from './SkullModelLoader';
 
 /**
  * Attach physics-driven skulls to a Tower3DView. Returns immediately with a

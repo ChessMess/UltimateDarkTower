@@ -151,10 +151,6 @@
               <label class="toolbar-label"><input type="checkbox" id="chk-debug3d" /> Debug</label>
               <label class="toolbar-label"><input type="checkbox" id="chk-ground-disc" checked /> Ground Disc</label>
               <label class="toolbar-label"><input type="checkbox" id="chk-board-disc" checked /> Board Disc</label>
-              <label class="toolbar-label"><input type="checkbox" id="chk-zoom-to-cursor" checked /> Zoom to
-                Cursor</label>
-              <label class="toolbar-label"><input type="checkbox" id="chk-preserve-view-on-side-select" /> Preserve
-                View On Direction Select</label>
             </div>
             <div class="opts-row opts-row-block">
               <label class="opts-input-label">Skybox URL
@@ -251,6 +247,60 @@
               <span class="opts-inline-label">Edge:</span>
               <button id="btn-board-edge-wood">Wood</button>
               <button id="btn-board-edge-neoprene">Neoprene</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" data-3d-only="true" data-collapse-key="camera" data-expandable="true">
+          <div class="panel-row-header">
+            <h2>3D Camera</h2>
+          </div>
+          <div id="camera-options" class="opts-block">
+            <p class="opts-note">
+              The board-facing camera is defined by three factors, each a multiple of the model's
+              radius: <strong>Elevation</strong> sets eye height, <strong>Target Height</strong> sets
+              the look-at point (raise the board in frame by lowering it), and
+              <strong>Distance</strong> zooms in / out of the auto-fitted framing.
+            </p>
+            <p class="opts-note">
+              <strong>Zoom to Cursor</strong> points scroll-wheel zoom at the cursor instead of the
+              orbit centre; <strong>Preserve View On Direction Select</strong> keeps your current
+              tilt / zoom when picking a side instead of snapping back to the fitted framing.
+            </p>
+            <p class="opts-note">
+              Drag the sliders to tune live, or orbit &amp; zoom the 3D view by hand and click
+              <strong>Snapshot view &amp; copy</strong> to capture the current framing and copy the
+              full camera config (factors plus the toggles) to your clipboard. Paste it into a
+              <code>CameraConfig</code> (e.g. for UDT Board). The snapshot re-faces north &mdash; the
+              preset always loads facing the north side.
+            </p>
+            <div class="sliders-grid">
+              <label class="slider-label">
+                Elevation
+                <input type="range" id="rng-elevation-factor" min="-1.5" max="5" step="0.01" value="-0.5" />
+                <span id="lbl-elevation-factor">-0.50</span>
+              </label>
+              <label class="slider-label">
+                Target Height
+                <input type="range" id="rng-target-height-factor" min="-3" max="3" step="0.01" value="-0.15" />
+                <span id="lbl-target-height-factor">-0.15</span>
+              </label>
+              <label class="slider-label">
+                Distance
+                <input type="range" id="rng-distance-factor" min="0.3" max="3" step="0.01" value="1" />
+                <span id="lbl-distance-factor">1.00</span>
+              </label>
+            </div>
+            <div class="opts-row">
+              <label class="toolbar-label"><input type="checkbox" id="chk-zoom-to-cursor" checked /> Zoom to
+                Cursor</label>
+              <label class="toolbar-label"><input type="checkbox" id="chk-preserve-view-on-side-select" /> Preserve
+                View On Direction Select</label>
+            </div>
+            <div class="opts-row">
+              <button id="btn-camera-snapshot"
+                title="Capture the current 3D view as elevation / target-height / distance factors, apply them, and copy the JSON to the clipboard">Snapshot
+                view &amp; copy</button>
             </div>
           </div>
         </div>

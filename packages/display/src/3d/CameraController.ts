@@ -23,6 +23,7 @@ export class CameraController {
   private modelRadius = 1;
   private elevationFactor: number;
   private targetHeightFactor: number;
+  private distanceFactor: number;
   private zoomToCursor: boolean;
   private preserveViewOnSideSelect: boolean;
   private wheelCleanup: (() => void) | null = null;
@@ -38,14 +39,14 @@ export class CameraController {
   ) {
     this.elevationFactor = config.elevationFactor ?? -0.5;
     this.targetHeightFactor = config.targetHeightFactor ?? -0.15;
+    this.distanceFactor = config.distanceFactor ?? 1;
     this.zoomToCursor = config.zoomToCursor ?? true;
     this.preserveViewOnSideSelect = config.preserveViewOnSideSelect ?? false;
   }
 
   fitToModel(modelRadius: number, debugLog?: (label: string, data: Record<string, unknown>) => void): void {
     this.modelRadius = modelRadius;
-    const fovRad = (this.camera.fov * Math.PI) / 180;
-    const distance = (modelRadius / Math.sin(fovRad / 2)) * 1.15;
+    const distance = this.fitBaseDistance() * this.distanceFactor;
     const targetY = modelRadius * this.targetHeightFactor;
 
     const minFar = 1000;
@@ -62,6 +63,9 @@ export class CameraController {
     debugLog?.('fitToView', {
       radius: modelRadius,
       distance,
+      elevationFactor: this.elevationFactor,
+      targetHeightFactor: this.targetHeightFactor,
+      distanceFactor: this.distanceFactor,
       cameraPosition: this.camera.position.toArray(),
       target: this.controls.target.toArray(),
       near: this.camera.near,
@@ -129,14 +133,36 @@ export class CameraController {
     return {
       elevationFactor: this.elevationFactor,
       targetHeightFactor: this.targetHeightFactor,
+      distanceFactor: this.distanceFactor,
       zoomToCursor: this.zoomToCursor,
       preserveViewOnSideSelect: this.preserveViewOnSideSelect,
+    };
+  }
+
+  /**
+   * Express the current *live* camera framing as the three preset factors
+   * (eye height, target height, distance multiplier). Reading these back after
+   * a hand orbit/zoom lets a developer tune by eye, then paste the numbers into
+   * a `CameraConfig`. Azimuth is dropped — re-applying these factors snaps the
+   * camera back to the north face at the same height/distance framing, which is
+   * exactly the board-facing preset semantics.
+   */
+  getLiveCameraFactors(): Pick<Required<CameraConfig>, 'elevationFactor' | 'targetHeightFactor' | 'distanceFactor'> {
+    const base = this.fitBaseDistance();
+    const dx = this.camera.position.x - this.controls.target.x;
+    const dz = this.camera.position.z - this.controls.target.z;
+    const horizontalDist = Math.sqrt(dx * dx + dz * dz);
+    return {
+      elevationFactor: this.camera.position.y / this.modelRadius,
+      targetHeightFactor: this.controls.target.y / this.modelRadius,
+      distanceFactor: base > 0 ? horizontalDist / base : 1,
     };
   }
 
   applyCameraConfig(config: CameraConfig): void {
     if (config.elevationFactor !== undefined) this.elevationFactor = config.elevationFactor;
     if (config.targetHeightFactor !== undefined) this.targetHeightFactor = config.targetHeightFactor;
+    if (config.distanceFactor !== undefined) this.distanceFactor = config.distanceFactor;
     if (config.zoomToCursor !== undefined) this.setZoomToCursor(config.zoomToCursor);
     if (config.preserveViewOnSideSelect !== undefined) {
       this.setPreserveViewOnSideSelect(config.preserveViewOnSideSelect);
@@ -309,6 +335,17 @@ export class CameraController {
     this.wheelCleanup = () => {
       canvas.removeEventListener('wheel', onWheel);
     };
+  }
+
+  /**
+   * The auto-fit camera distance before `distanceFactor` is applied: the
+   * trigonometric "everything in frame" distance for the current FOV and
+   * model radius, plus 15% padding. Shared by `fitToModel` (forward) and
+   * `getLiveCameraFactors` (inverse) so the snapshot round-trips exactly.
+   */
+  private fitBaseDistance(): number {
+    const fovRad = (this.camera.fov * Math.PI) / 180;
+    return (this.modelRadius / Math.sin(fovRad / 2)) * 1.15;
   }
 
   private updateSideButtons(): void {
