@@ -1,5 +1,5 @@
 import type { TowerState, SealIdentifier, TowerSide } from 'ultimatedarktower';
-import type { LightingConfig, ResolvedLightingConfig, CameraConfig, AudioConfig } from './3d/types';
+import type { LightingConfig, ResolvedLightingConfig, CameraConfig, ApplyCameraConfigOptions, AudioConfig } from './3d/types';
 import type { TowerDisplayOptions, ITowerDisplay, RendererType, AppliedTowerState } from './types';
 import type { SoundPack } from './audio/soundPack';
 import { TowerStateReadout } from './TowerStateReadout';
@@ -292,6 +292,11 @@ export class TowerDisplay implements ITowerDisplay {
     this.view3d?.setBoardDiscEnabled(enabled);
   }
 
+  /** Orient the game board so its north section faces the given cardinal direction. No-op when no 3D view is active. */
+  setGameBoardKingdom(side: TowerSide): void {
+    this.view3d?.setGameBoardKingdom(side);
+  }
+
   /** Set an equirectangular skybox image or .hdr URL on the 3D view. Pass null to clear. No-op otherwise. */
   setSkyboxUrl(url: string | null): void {
     this.view3d?.setSkyboxUrl(url);
@@ -316,8 +321,8 @@ export class TowerDisplay implements ITowerDisplay {
   }
 
   /** Apply a new camera config to the 3D view. No-op when no 3D view is active. */
-  applyCameraConfig(config: CameraConfig): void {
-    this.view3d?.applyCameraConfig(config);
+  applyCameraConfig(config: CameraConfig, options?: ApplyCameraConfigOptions): void {
+    this.view3d?.applyCameraConfig(config, options);
   }
 
   /**

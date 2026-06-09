@@ -424,12 +424,13 @@ button.tdr-led[data-overridden="true"][data-effect="on"] {
 .t3v-controls {
   display: flex;
   gap: 0.25rem;
-  margin-bottom: 0.5rem;
+  margin: 0.5rem;
   align-items: center;
 }
 
 
-.t3v-reset-btn {
+.t3v-reset-btn,
+.t3v-center-btn {
   padding: 0.3rem 0.7rem;
   border: 1px solid #444;
   background: #1a1a1a;
@@ -440,7 +441,8 @@ button.tdr-led[data-overridden="true"][data-effect="on"] {
   margin-left: 0.25rem;
 }
 
-.t3v-reset-btn:hover {
+.t3v-reset-btn:hover,
+.t3v-center-btn:hover {
   background: #2a2a2a;
   color: #e8e8e8;
 }

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import gsap from 'gsap';
 import type { TowerSide } from '../types';
-import type { CameraConfig } from './types';
+import type { CameraConfig, ApplyCameraConfigOptions } from './types';
 import { SIDE_AZIMUTH } from './constants';
 import { polarToXZ } from './utils';
 import { SideButtons } from '../shared/SideButtons';
@@ -129,6 +129,30 @@ export class CameraController {
     this.tweenCameraTo({ x: p.x, y: p.y, z: p.z }, { x: t.x, y: t.y, z: t.z });
   }
 
+  /**
+   * Re-center the tower in the frame while preserving the current orbit angle,
+   * elevation, and zoom distance. Moves the orbit target back onto the tower
+   * axis (the default framing point) and translates the camera by the same
+   * delta, so the camera-to-target offset — and therefore the framing — is
+   * unchanged; only the off-center pan is removed. Unlike {@link resetView},
+   * this keeps the viewpoint the user has orbited/zoomed to (and the active
+   * side, since the azimuth is preserved).
+   */
+  centerView(): void {
+    if (!this.defaultCamera) return;
+
+    const targetY = this.modelRadius * this.targetHeightFactor;
+    // Preserve the camera-to-target offset (angle + zoom); only recenter the target.
+    const offsetX = this.camera.position.x - this.controls.target.x;
+    const offsetY = this.camera.position.y - this.controls.target.y;
+    const offsetZ = this.camera.position.z - this.controls.target.z;
+
+    this.tweenCameraTo(
+      { x: offsetX, y: targetY + offsetY, z: offsetZ },
+      { x: 0, y: targetY, z: 0 },
+    );
+  }
+
   getCameraConfig(): Required<CameraConfig> {
     return {
       elevationFactor: this.elevationFactor,
@@ -159,7 +183,7 @@ export class CameraController {
     };
   }
 
-  applyCameraConfig(config: CameraConfig): void {
+  applyCameraConfig(config: CameraConfig, options: ApplyCameraConfigOptions = {}): void {
     if (config.elevationFactor !== undefined) this.elevationFactor = config.elevationFactor;
     if (config.targetHeightFactor !== undefined) this.targetHeightFactor = config.targetHeightFactor;
     if (config.distanceFactor !== undefined) this.distanceFactor = config.distanceFactor;
@@ -167,7 +191,52 @@ export class CameraController {
     if (config.preserveViewOnSideSelect !== undefined) {
       this.setPreserveViewOnSideSelect(config.preserveViewOnSideSelect);
     }
-    if (this.defaultCamera) this.fitToModel(this.modelRadius);
+    if (!this.defaultCamera) return;
+    if (options.preserveView) {
+      this.reframePreservingView(config);
+    } else {
+      this.fitToModel(this.modelRadius);
+    }
+  }
+
+  /**
+   * Re-apply the framing factors to the *current* live view instead of the
+   * north fit: keep the current azimuth and pan, change only the dimension(s)
+   * present in `config`, and leave the others at their live values. This lets a
+   * tuning slider update one factor without snapping the camera back to north.
+   * The stored north fit (used by {@link resetView} and non-preserving side
+   * snaps) is refreshed to the new factors without moving the live camera.
+   */
+  private reframePreservingView(config: CameraConfig): void {
+    const dx = this.camera.position.x - this.controls.target.x;
+    const dz = this.camera.position.z - this.controls.target.z;
+    const azimuth = Math.atan2(dx, dz);
+    const currentHoriz = Math.sqrt(dx * dx + dz * dz);
+
+    const horiz = config.distanceFactor !== undefined
+      ? this.fitBaseDistance() * this.distanceFactor
+      : currentHoriz;
+    const cameraY = config.elevationFactor !== undefined
+      ? this.modelRadius * this.elevationFactor
+      : this.camera.position.y;
+    const targetY = config.targetHeightFactor !== undefined
+      ? this.modelRadius * this.targetHeightFactor
+      : this.controls.target.y;
+
+    const xz = polarToXZ(azimuth, horiz);
+    this.controls.target.set(this.controls.target.x, targetY, this.controls.target.z);
+    this.camera.position.set(this.controls.target.x + xz.x, cameraY, this.controls.target.z + xz.z);
+    this.camera.lookAt(this.controls.target);
+    this.controls.update();
+
+    this.defaultCamera = {
+      position: new THREE.Vector3(
+        0,
+        this.modelRadius * this.elevationFactor,
+        this.fitBaseDistance() * this.distanceFactor,
+      ),
+      target: new THREE.Vector3(0, this.modelRadius * this.targetHeightFactor, 0),
+    };
   }
 
   setZoomToCursor(enabled: boolean): void {

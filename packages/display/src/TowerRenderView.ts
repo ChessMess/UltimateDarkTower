@@ -1,5 +1,5 @@
 import type { TowerState, TowerSide, SealIdentifier } from 'ultimatedarktower';
-import type { LightingConfig, CameraConfig, AudioConfig } from './3d/types';
+import type { LightingConfig, CameraConfig, ApplyCameraConfigOptions, AudioConfig } from './3d/types';
 import type { ITowerDisplay, RendererType, TowerDisplayOptions, AppliedTowerState } from './types';
 import { TowerDisplay } from './TowerDisplay';
 import type { Tower3DView, PerfReport } from './3d/Tower3DView';
@@ -172,8 +172,8 @@ export class TowerRenderView implements ITowerDisplay {
     this.innerDisplay.applyLightingConfig(config);
   }
 
-  applyCameraConfig(config: CameraConfig): void {
-    this.innerDisplay.applyCameraConfig(config);
+  applyCameraConfig(config: CameraConfig, options?: ApplyCameraConfigOptions): void {
+    this.innerDisplay.applyCameraConfig(config, options);
   }
 
   applyAudioConfig(config: AudioConfig): void {

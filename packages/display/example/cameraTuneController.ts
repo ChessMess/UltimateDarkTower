@@ -44,18 +44,20 @@ function bindCameraSlider(
   rng.addEventListener('input', () => {
     const v = parseFloat(rng.value);
     if (lbl) lbl.textContent = v.toFixed(2);
-    apply(v); // applyCameraConfig re-fits the live camera, so the view updates as you drag
+    apply(v); // preserveView: re-frames the live camera in place, keeping your current angle/zoom
     refreshCameraConfigBox(getDisplay, els); // keep the 3D Camera Config JSON box in sync to copy
   });
 }
 
 export function initCameraTuneController(getDisplay: () => TowerDisplay, els: DomElements): void {
+  // Sliders tune one factor against the *current* view (preserveView) so dragging
+  // one doesn't snap the camera back to the north fit and lose your orbited angle.
   bindCameraSlider(els.rngElevationFactor, els.lblElevationFactor,
-    v => getDisplay().applyCameraConfig({ elevationFactor: v }), getDisplay, els);
+    v => getDisplay().applyCameraConfig({ elevationFactor: v }, { preserveView: true }), getDisplay, els);
   bindCameraSlider(els.rngTargetHeightFactor, els.lblTargetHeightFactor,
-    v => getDisplay().applyCameraConfig({ targetHeightFactor: v }), getDisplay, els);
+    v => getDisplay().applyCameraConfig({ targetHeightFactor: v }, { preserveView: true }), getDisplay, els);
   bindCameraSlider(els.rngDistanceFactor, els.lblDistanceFactor,
-    v => getDisplay().applyCameraConfig({ distanceFactor: v }), getDisplay, els);
+    v => getDisplay().applyCameraConfig({ distanceFactor: v }, { preserveView: true }), getDisplay, els);
 
   if (els.chkZoomToCursor) {
     els.chkZoomToCursor.addEventListener('change', () => {

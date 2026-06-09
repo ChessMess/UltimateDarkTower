@@ -22,12 +22,12 @@ import { DEFAULT_TOWER_SOUND_PACK } from '../audio/audioLibrary';
 import { DEFAULT_SEQUENCE_AUDIO_MAP } from '../audio/sequenceAudio';
 import type { SoundPack } from '../audio/soundPack';
 
-import type { LightingConfig, ResolvedLightingConfig, CameraConfig, AudioConfig } from './types';
+import type { LightingConfig, ResolvedLightingConfig, CameraConfig, ApplyCameraConfigOptions, AudioConfig } from './types';
 import {
   TOWER_LAYER_COUNT, LIGHTS_PER_LAYER,
   RING_AZIMUTH, CORNER_AZIMUTH,
   LED_LAYOUT, RED_LIGHT_LAYOUT, LEDGE_LED_LAYOUT, BASE1_LED_LAYOUT, BASE2_LED_LAYOUT,
-  BLOOM_LAYER, DRUM_CALIBRATION_BEEP_PAUSE_S,
+  BLOOM_LAYER, DRUM_CALIBRATION_BEEP_PAUSE_S, SIDES,
 } from './constants';
 import { computeRedLightPosition, computeSealLedPose, disposeObject, applyHdrColor } from './utils';
 import { DEFAULT_LIGHTING, resolveLighting } from './LightingResolver';
@@ -995,9 +995,13 @@ export class Tower3DView implements ITowerDisplay {
     };
   }
 
-  /** Update the camera elevation and/or look-target height and refit immediately. */
-  applyCameraConfig(config: CameraConfig): void {
-    this.cameraController?.applyCameraConfig(config);
+  /**
+   * Update the camera elevation and/or look-target height and refit immediately.
+   * Pass `{ preserveView: true }` to apply the change to the current live view
+   * (keeping the orbit angle/zoom) instead of snapping to the north fit.
+   */
+  applyCameraConfig(config: CameraConfig, options?: ApplyCameraConfigOptions): void {
+    this.cameraController?.applyCameraConfig(config, options);
   }
 
   /**
@@ -1239,6 +1243,18 @@ export class Tower3DView implements ITowerDisplay {
   }
 
   /**
+   * Orient the game board so its north section faces the given cardinal
+   * direction. The default board orientation already puts the board's north on
+   * the tower's north face (`'north'`); pass `'east'`/`'south'`/`'west'` to
+   * rotate the board in 90° steps. Mirrors the on-disc `anchorToWorld` mapping,
+   * so token placements rotate with the art.
+   */
+  setGameBoardKingdom(side: TowerSide): void {
+    this.lighting.boardDisc.northKingdom = SIDES.indexOf(side) as 0 | 1 | 2 | 3;
+    this.groundDiscManager?.refreshBoardOrientation(this.lighting);
+  }
+
+  /**
    * Report the ground-disc geometry so an external plugin can align content on it.
    * Derived from the current model bounds + lighting config; valid even before the
    * disc mesh is lazily built. `topY` is the top surface (where on-disc content
@@ -1345,6 +1361,13 @@ export class Tower3DView implements ITowerDisplay {
     // is highlighted before the GLB finishes loading, matching the 2D view.
     this.sideButtons.setActive('north');
     for (const btn of this.sideButtons.buttons) controls.appendChild(btn);
+
+    const centerBtn = document.createElement('button');
+    centerBtn.className = 't3v-center-btn';
+    centerBtn.textContent = 'Center';
+    centerBtn.title = 'Center the tower in the view (keeps your current angle and zoom)';
+    centerBtn.addEventListener('click', () => this.cameraController?.centerView());
+    controls.appendChild(centerBtn);
 
     const resetBtn = document.createElement('button');
     resetBtn.className = 't3v-reset-btn';

@@ -118,6 +118,63 @@ describe('CameraController', () => {
 
     expect(midRadiusA).toBeCloseTo(midRadiusB, 10);
   });
+
+  it('centerView recenters the target on the tower axis while preserving the camera-to-target offset', () => {
+    const { camera, controls, controller } = makeController();
+    // Hand-orbit + pan to a custom, off-center view.
+    camera.position.set(12, 8, 4);
+    controls.target.set(3, 2, -1);
+    const off = { x: 12 - 3, y: 8 - 2, z: 4 - -1 }; // preserved offset
+
+    controller.centerView();
+
+    const tl = (gsapMock.__getTimelines() as { children: { target: unknown; vars: Record<string, number> }[] }[]).at(-1)!;
+    const posTween = tl.children.find((c) => c.target === camera.position)!;
+    const tgtTween = tl.children.find((c) => c.target === controls.target)!;
+
+    // Target returns to the tower axis at the default framing height (10 * -0.15).
+    expect(tgtTween.vars.x).toBeCloseTo(0, 10);
+    expect(tgtTween.vars.y).toBeCloseTo(-1.5, 10);
+    expect(tgtTween.vars.z).toBeCloseTo(0, 10);
+    // Camera keeps the same offset from the (recentered) target → same angle + zoom.
+    expect(posTween.vars.x).toBeCloseTo(0 + off.x, 10);
+    expect(posTween.vars.y).toBeCloseTo(-1.5 + off.y, 10);
+    expect(posTween.vars.z).toBeCloseTo(0 + off.z, 10);
+  });
+
+  it('applyCameraConfig with preserveView keeps the current azimuth/elevation and changes only the given factor', () => {
+    const { camera, controls, controller } = makeController();
+    // Orbit due east at a custom eye height; pan the target off-axis.
+    camera.position.set(20, 3, 0);
+    controls.target.set(0, -1.5, 0);
+
+    controller.applyCameraConfig({ distanceFactor: 2 }, { preserveView: true });
+
+    const dx = camera.position.x - controls.target.x;
+    const dz = camera.position.z - controls.target.z;
+    // Still looking from the east (no snap back to north).
+    expect(Math.atan2(dx, dz)).toBeCloseTo(Math.PI / 2, 9);
+    // Elevation untouched (elevationFactor not in the config).
+    expect(camera.position.y).toBeCloseTo(3, 10);
+    // Horizontal distance now reflects the new distanceFactor.
+    const fov = (camera.fov * Math.PI) / 180;
+    const base = (10 / Math.sin(fov / 2)) * 1.15;
+    expect(Math.sqrt(dx * dx + dz * dz)).toBeCloseTo(base * 2, 6);
+  });
+
+  it('applyCameraConfig without preserveView snaps to the north fit (snapshot-button behavior)', () => {
+    const { camera, controls, controller } = makeController();
+    camera.position.set(20, 3, 0); // east
+    controls.target.set(5, 0, 5); // panned off-axis
+
+    controller.applyCameraConfig({ distanceFactor: 1.5 });
+
+    expect(camera.position.x).toBeCloseTo(0, 10);
+    expect(camera.position.z).toBeGreaterThan(0); // due north (+Z)
+    expect(controls.target.x).toBeCloseTo(0, 10);
+    expect(controls.target.z).toBeCloseTo(0, 10);
+    expect(controls.target.y).toBeCloseTo(-1.5, 10);
+  });
 });
 
 describe('CameraController – tickDerivedSide', () => {

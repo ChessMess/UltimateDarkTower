@@ -299,6 +299,18 @@ export interface CameraConfig {
   preserveViewOnSideSelect?: boolean;
 }
 
+/** Options for {@link CameraConfig} application. */
+export interface ApplyCameraConfigOptions {
+  /**
+   * When `true`, apply only the changed framing factor(s) to the *current* live
+   * view — preserving the orbit angle (azimuth), pan, and any dimension not being
+   * changed — instead of snapping back to the north-facing fitted default.
+   * Used by the live tuning sliders so dragging one doesn't reset the viewpoint.
+   * Defaults to `false` (snap to the fitted north preset).
+   */
+  preserveView?: boolean;
+}
+
 /** Fully-resolved lighting config (all nested fields required) used internally by Tower3DView. */
 export type ResolvedLightingConfig = DeepRequired<LightingConfigCore>;
 

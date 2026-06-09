@@ -128,6 +128,18 @@ export class GroundDiscManager {
   }
 
   /**
+   * Re-apply the board texture rotation for the current `northKingdom` (no
+   * geometry rebuild). Used by the live `setGameBoardKingdom` orientation knob.
+   * If the image is still loading, `startImageLoad` re-applies on resolve from
+   * the same `lighting` object, so the change isn't lost.
+   */
+  refreshBoardOrientation(lighting: ResolvedLightingConfig): void {
+    if (this.imageTexture) {
+      this.imageTexture.rotation = getBoardTextureRotation(lighting.boardDisc.northKingdom);
+    }
+  }
+
+  /**
    * Report the disc geometry derived from the model bounds + lighting config.
    * Pure computation (mirrors {@link build}'s sizing) — valid even before the
    * disc mesh is lazily built, so external plugins can align content on the disc
@@ -263,6 +275,9 @@ export class GroundDiscManager {
         return null;
       }
       this.imageTexture = tex;
+      // Re-apply rotation from the live config: northKingdom may have changed
+      // (e.g. via setGameBoardKingdom) while this image was loading.
+      tex.rotation = getBoardTextureRotation(lighting.boardDisc.northKingdom);
       this.swapMaterialMap(tex, lighting);
       return tex;
     });
