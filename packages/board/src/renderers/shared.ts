@@ -10,8 +10,8 @@ export type BoardViewAngle = 'overhead' | 'isometric';
  */
 export type BoardFocus = { kingdom: BoardKingdom | 'all'; angle: BoardViewAngle };
 
-/** The default focus: the whole board, overhead. */
-export const DEFAULT_FOCUS: BoardFocus = { kingdom: 'all', angle: 'overhead' };
+/** The default focus: the whole board, isometric. */
+export const DEFAULT_FOCUS: BoardFocus = { kingdom: 'all', angle: 'isometric' };
 
 /** Structural equality for two focuses — the early-return / fan-out loop guard. */
 export function focusEquals(a: BoardFocus, b: BoardFocus): boolean {

@@ -23,8 +23,11 @@ selectionInfo.className = 'selection';
 selectionInfo.textContent = 'Click a token (2D or 3D) to select it; use the palette to add one.';
 const pre = document.createElement('pre');
 side.append(selectionInfo, pre);
+const views = document.createElement('div');
+views.className = 'views';
 columns.append(mapHost, side);
-app.append(controls, scene, columns);
+views.append(columns, scene);
+app.append(controls, views);
 
 const logSelection = (sel: TokenSelection): void => {
   selectionInfo.textContent = `Selected ${sel.kind}: ${sel.id} @ ${sel.location}`;
@@ -88,6 +91,13 @@ if (tower.view3D) {
     assetBaseUrl: './tokens/',
     boardImageUrl: './board.png', // render our own board (hides Display's placeholder)
     boardState: board.getState(),
+    // Render skulls as a real 3D model (reusing Display's GLB) instead of the flat sprite.
+    // The seam is general: return a model URL (or `{ url, scale, rotation }`) for any token
+    // kind, or null to keep the sprite. `scale` shrinks the model vs the kind's default size.
+    resolveTokenModel: (art) => (art.kind === 'skull' ? { url: './skull_1.glb', scale: 0.6 } : null),
+    // Tuning aid: logs `{ elevationFactor, targetHeightFactor }` to the console as you orbit,
+    // ready to paste into the view-angle presets. Remove for production.
+    debugCamera: true,
     locationPick: view.locationPick, // armed space-pick from the palette works in 3D too
     onTokenSelect: (sel) => {
       view.selection.set(sel); // shared selection → the inspector

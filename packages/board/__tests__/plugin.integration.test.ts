@@ -127,6 +127,19 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
     expect(selections).toEqual([{ kind: 'hero', id: 'h1', location: 'Broken Lands' }]);
   });
 
+  it('applies the initial camera config on model load without any setFocus call', async () => {
+    const applyCamera = jest.spyOn(Tower3DView.prototype, 'applyCameraConfig');
+    view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
+    handle = attachBoard3D(view, { boardState: makeState() });
+    await flushModelLoad();
+
+    // The isometric preset must be applied at startup so the camera matches the UI selection.
+    expect(applyCamera).toHaveBeenCalledWith(
+      expect.objectContaining({ elevationFactor: 3, targetHeightFactor: -0.3, distanceFactor: 1.7 })
+    );
+    applyCamera.mockRestore();
+  });
+
   it('drives the camera from setFocus (kingdom → side, angle → CameraConfig)', async () => {
     const selectSide = jest.spyOn(Tower3DView.prototype, 'selectSide');
     const applyCamera = jest.spyOn(Tower3DView.prototype, 'applyCameraConfig');
@@ -136,7 +149,11 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
 
     handle.setFocus({ kingdom: 'east', angle: 'overhead' });
     expect(selectSide).toHaveBeenCalledWith('east');
-    expect(applyCamera).toHaveBeenCalledTimes(1);
+    // Verify setFocus applied the overhead camera config (startup also calls applyCameraConfig,
+    // so we check the specific overhead call rather than an exact invocation count).
+    expect(applyCamera).toHaveBeenCalledWith(
+      expect.objectContaining({ elevationFactor: 9 }) // overhead preset
+    );
     selectSide.mockRestore();
     applyCamera.mockRestore();
   });

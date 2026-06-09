@@ -28,6 +28,10 @@ export default defineConfig({
       external: [
         'ultimatedarktower',
         'ultimatedarktowerdisplay',
+        // The 3D plugin reuses Display's `loadSkullModel` (which bundles the GLTF/
+        // DRACO loaders). Externalize the subpath so those loaders stay in Display's
+        // chunk instead of being pulled into the board's plugin bundle.
+        'ultimatedarktowerdisplay/physics',
         'three',
         /^three\/.*/,
         'gsap',

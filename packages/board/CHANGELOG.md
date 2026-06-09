@@ -17,6 +17,20 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **3D model tokens — the `resolveTokenModel` seam.** `Board3DPlugin` can now render a token as a real GLB
+  model in place of its flat sprite, via the new `resolveTokenModel(art) => TokenModelRef | null` option
+  (mirrors `resolveTokenImage`; keyed on `{ kind, id }`, so it works for **any** token kind — skulls today,
+  foes/monuments as model art lands). `TokenModelRef` is a model-URL string or `{ url, scale?, rotation?,
+  dracoDecoderPath? }`. Models load by **reusing Display's `loadSkullModel`** (load-once / cache-per-URL,
+  normalized to a unit bounding sphere), imported from the externalized `ultimatedarktowerdisplay/physics`
+  subpath so the GLTF / DRACO loaders stay in Display's chunk — never the board's bundle. Clones **share**
+  geometry/material (load-once-clone-many) and skip disposal of the shared template; the async load is
+  generation-guarded so a re-render can't populate a cleared token. Resolution order in `addToken` is
+  `tokenFactory` → `resolveTokenModel` → sprite (unchanged when unset). The example renders the two Dayside
+  skulls as `skull_1.glb` at `scale: 0.6`.
+- **`debugCamera` tuning aid.** A dev-only `Board3DPlugin` option that logs the live camera's
+  `{ elevationFactor, targetHeightFactor, distanceFactor }` on every camera move, ready to paste into the
+  view-angle presets in `angleToCameraConfig`.
 - **M4 — dockable editing UI.** `mountBoardUI(host, options)` (in the three-free `.` entry) renders three
   movable / dockable / show-hide-configurable panels — a token **palette** (add foe/adversary/marker/skull),
   a selection **inspector** (move/remove, foe status, building skulls + destroy/restore + monument, marker
@@ -95,6 +109,16 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **3D camera angle presets corrected; zoom decoupled from tilt.** `overhead` is now a steep, near-top-down
+  framing and `isometric` a pulled-back oblique 3/4 view. Previously `isometric` placed the eye _below_ the
+  board plane (an edge-on / from-below view) and `overhead` was only a shallow ~36° tilt. The presets use the
+  new `distanceFactor` knob in `ultimatedarktowerdisplay`'s `CameraConfig` to pull the camera back without
+  steepening. `DEFAULT_FOCUS` is now `{ kingdom: 'all', angle: 'isometric' }` (was `overhead`); the readout
+  snapshot/header and the focus-controls/readout tests were updated to match.
+- **No default-camera flash on load.** `Board3DPlugin` pre-seeds the view angle in `attach` (before the GLB
+  loads), so Display's on-load `fitToModel` frames the board at the selected angle on the first rendered
+  frame — previously the 3D view briefly showed Display's default camera and then snapped to the board's
+  framing once the model loaded.
 - **Internal quality pass (no public behavior change unless noted):**
   - The 2D map (`renderers/map2d.ts`) and 3D plugin (`plugin/index.ts`) now share one three-free
     `renderers/tokenLayout.ts` (location grouping, fan offset, selection key, and per-kind entry
@@ -154,4 +178,7 @@ All notable changes to this project are documented here. The format is based on
 
 - Peers: `ultimatedarktower` `^4.1.0` (board datasets/graph helpers), `ultimatedarktowerdisplay` `^0.9.0`
   (`anchorToWorld`). Both build from their `main` in Board CI (`package-lock.json` is committed for
-  reproducible `npm ci`).
+  reproducible `npm ci`). The 3D-model token seam and the camera presets additionally rely on
+  `ultimatedarktowerdisplay` symbols that are on its `main` ahead of the next release: `loadSkullModel`
+  (now exported from the `./physics` subpath) and the `CameraConfig.distanceFactor` knob — so Display must
+  land on `main` before this Board change goes green in CI.

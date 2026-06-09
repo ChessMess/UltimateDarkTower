@@ -15,7 +15,7 @@ function makeView(onFocusChange?: (f: BoardFocus) => void): {
 describe('BoardRenderView', () => {
   it('renders the readout + map at the default focus on construction', () => {
     const { view, mapContainer } = makeView();
-    expect(view.readout.getText()).toContain('focus: all/overhead');
+    expect(view.readout.getText()).toContain('focus: all/isometric');
     expect(mapContainer.querySelector('svg')).not.toBeNull();
   });
 

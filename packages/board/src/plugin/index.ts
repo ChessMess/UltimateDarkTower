@@ -10,6 +10,11 @@
 // conventions as the 2D map (`renderers/map2d.ts` + the shared `renderers/assetPaths.ts`).
 import * as THREE from 'three';
 import { attachScenePlugin, anchorToWorld } from 'ultimatedarktowerdisplay';
+// Reuse Display's model loader (load-once/cache-per-URL, GLTF+DRACO, normalized to a
+// unit-bounding-sphere mesh). Externalized via `vite.config.ts` so its loaders stay in
+// Display's chunk, not the board's plugin bundle.
+import { loadSkullModel } from 'ultimatedarktowerdisplay/physics';
+import type { SkullTemplate } from 'ultimatedarktowerdisplay/physics';
 import type {
   ScenePlugin,
   ScenePluginContext,
@@ -51,6 +56,27 @@ const SPACE_POINTER_PRIORITY = 20;
 /** Scale bump applied to the selected token. */
 const SELECTED_SCALE = 1.35;
 
+/**
+ * A 3D model to render in place of a token's 2D sprite. A bare `string` is the model
+ * URL with defaults; the object form tunes per-model placement.
+ *
+ * The model is normalized to a unit bounding sphere (centered, radius 1) by Display's
+ * loader, so `scale` multiplies the token kind's default world size and the model rests
+ * on the disc regardless of `rotation`.
+ */
+export type TokenModelRef =
+  | string
+  | {
+    /** Consumer-hosted `.glb` URL (Draco-compressed ok). Never bundled. */
+    url: string;
+    /** Multiplies the token kind's default world size. Default `1`. */
+    scale?: number;
+    /** Euler rotation (radians) to correct the model's native up/forward axis. */
+    rotation?: { x?: number; y?: number; z?: number };
+    /** Draco decoder source for THIS model; defaults to Display's gstatic CDN. `null` → uncompressed. */
+    dracoDecoderPath?: string | null;
+  };
+
 /** Context handed to a custom `tokenFactory` so it can build with the consumer's `three`. */
 export interface TokenBuildContext {
   selection: TokenSelection;
@@ -85,6 +111,20 @@ export interface Board3DPluginOptions {
   northKingdom?: 0 | 1 | 2 | 3;
   /** Override the default `${assetBaseUrl}${group}/${kebab(id)}.png` convention. `null` → fallback. */
   resolveTokenImage?: (ref: TokenArtRef) => string | null;
+  /**
+   * Map a token to a 3D model rendered in place of its 2D sprite. Return `null`/`undefined`
+   * to fall back to the sprite. Mirrors {@link resolveTokenImage} for the 3D path and works
+   * for ANY token kind (skulls today; foes/monuments as models become available). A consumer
+   * `tokenFactory` still takes precedence over this.
+   */
+  resolveTokenModel?: (art: TokenArtRef) => TokenModelRef | null | undefined;
+  /**
+   * When set, logs the live camera's `{ elevationFactor, targetHeightFactor, distanceFactor }`
+   * (the knobs {@link angleToCameraConfig} produces) to the console whenever the camera moves —
+   * tune with orbit + scroll, then paste the values into the presets to lock in a framing. A
+   * tuning aid; leave off in production.
+   */
+  debugCamera?: boolean;
   /** Fired when a token is clicked. Selection is renderer-local — never written to BoardState. */
   onTokenSelect?: (selection: TokenSelection) => void;
   /** Fired when the camera side (the focus source of truth) changes. */
@@ -147,6 +187,11 @@ export class Board3DPlugin implements ScenePlugin {
   private currentFocus: BoardFocus = DEFAULT_FOCUS;
   private readonly unsubs: Array<() => void> = [];
   private readonly loader = new THREE.TextureLoader();
+  /** Bumped on every `clearTokens()` so an async model load can detect its token was cleared. */
+  private modelGen = 0;
+  /** `debugCamera` state: last-logged camera position + time, to log on move and throttle. */
+  private readonly lastLoggedCam = new THREE.Vector3(NaN, NaN, NaN);
+  private lastCamLogTime = 0;
 
   constructor(
     private readonly view3D: Tower3DView,
@@ -184,6 +229,15 @@ export class Board3DPlugin implements ScenePlugin {
         })
       );
     }
+    // Camera-tuning logger: prints the live `{ elevationFactor, targetHeightFactor }` whenever
+    // the camera moves (renders are on-demand, so this is quiet when idle).
+    if (this.options.debugCamera) {
+      this.unsubs.push(ctx.registerFrameCallback(() => this.logCameraIfMoved()));
+    }
+    // Pre-seed the camera with the current view angle while the model is still loading: Display's
+    // on-load `fitToModel` reads these factors, so the board opens at the default view selection
+    // instead of flashing Display's default camera and then switching once tokens are placed.
+    this.applyAngleConfig(this.currentFocus.angle);
   }
 
   onModelLoaded(_info: ScenePluginModelInfo): void {
@@ -202,6 +256,8 @@ export class Board3DPlugin implements ScenePlugin {
     }
     this.renderTokens();
     if (this.spacePickEnabled()) this.buildSpaceTargets();
+    // (Camera angle is pre-seeded in `attach`, before the model loads, so there's no default-view
+    // flash — see `applyAngleConfig`.)
   }
 
   /**
@@ -250,7 +306,43 @@ export class Board3DPlugin implements ScenePlugin {
     if (focusEquals(this.currentFocus, focus)) return;
     this.currentFocus = focus;
     if (focus.kingdom !== 'all') this.view3D.selectSide(kingdomToSide(focus.kingdom));
-    this.view3D.applyCameraConfig(angleToCameraConfig(focus.angle));
+    this.applyAngleConfig(focus.angle);
+  }
+
+  /**
+   * Push a view angle's camera config to Display. Applied from {@link attach} BEFORE the model
+   * loads, it pre-seeds the camera factors so Display's on-load `fitToModel` frames the board at
+   * the default angle on the very first frame — instead of flashing Display's default camera and
+   * then switching.
+   */
+  private applyAngleConfig(angle: BoardViewAngle): void {
+    this.view3D.applyCameraConfig(angleToCameraConfig(angle));
+  }
+
+  /**
+   * `debugCamera` aid: log the live camera framing as the three preset factors
+   * `{ elevationFactor, targetHeightFactor, distanceFactor }` (via Display's `getLiveCameraFactors`,
+   * which reads the real orbit target). Orbit + scroll to tune, then paste the values into
+   * {@link angleToCameraConfig} — they round-trip exactly. (Azimuth is side-driven, not captured;
+   * a horizontal pan moves the look-target off the vertical axis, which the preset can't reproduce.)
+   * Logs only on movement, throttled.
+   */
+  private logCameraIfMoved(): void {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    const cam = ctx.camera;
+    if (cam.position.distanceToSquared(this.lastLoggedCam) < 1e-6) return; // idle → stay quiet
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (now - this.lastCamLogTime < 200) return; // throttle while dragging
+    this.lastCamLogTime = now;
+    this.lastLoggedCam.copy(cam.position);
+
+    const f = this.view3D.getLiveCameraFactors();
+    const r = (n: number): number => +n.toFixed(2);
+    // eslint-disable-next-line no-console
+    console.log(
+      `[board3d] camera → { elevationFactor: ${r(f.elevationFactor)}, targetHeightFactor: ${r(f.targetHeightFactor)}, distanceFactor: ${r(f.distanceFactor)} }`
+    );
   }
 
   dispose(): void {
@@ -371,10 +463,56 @@ export class Board3DPlugin implements ScenePlugin {
   }
 
   private addToken(selection: TokenSelection, art: TokenArtRef, position: THREE.Vector3, size: number): void {
-    const node = this.options.tokenFactory
-      ? this.options.tokenFactory({ selection, art, position, size, disc: this.disc as DiscMetrics, three: THREE })
-      : this.buildSprite(selection, art, position, size);
+    let node: THREE.Object3D | null;
+    if (this.options.tokenFactory) {
+      // Consumer override wins — full control, builds with the consumer's `three`.
+      node = this.options.tokenFactory({ selection, art, position, size, disc: this.disc as DiscMetrics, three: THREE });
+    } else {
+      const model = this.options.resolveTokenModel?.(art);
+      node = model
+        ? this.buildModelToken(model, position, size)
+        : this.buildSprite(selection, art, position, size);
+    }
     if (node) this.register(node, selection);
+  }
+
+  /**
+   * A 3D model token. Returns a `THREE.Group` synchronously (so selection/highlight work
+   * immediately), then loads the GLB (cached per-URL by Display) and adds the cloned mesh.
+   * If the token is cleared by a re-render before the load resolves, the load is dropped.
+   */
+  private buildModelToken(ref: TokenModelRef, position: THREE.Vector3, size: number): THREE.Group {
+    const model = typeof ref === 'string' ? { url: ref } : ref;
+    const group = new THREE.Group();
+    group.position.set(position.x, position.y, position.z);
+    group.renderOrder = 10;
+    const gen = this.modelGen;
+    loadSkullModel(model.url, { dracoDecoderPath: model.dracoDecoderPath })
+      .then((template) => {
+        // Token cleared (re-render) or plugin torn down before the load resolved → drop it.
+        if (gen !== this.modelGen || group.parent === null) return;
+        group.add(this.cloneModelMesh(template, size, model));
+      })
+      .catch(() => {
+        // Load/Draco error → leave the (empty) group; the token still selects via its anchor.
+      });
+    return group;
+  }
+
+  /**
+   * Clone the loaded template per the standard "load once, clone many, share geometry/material"
+   * pattern: `Mesh.clone()` shares the template's geometry + material by reference (the memory
+   * win). The clone is tagged `shared` so {@link disposeObject} never disposes those singletons
+   * (Display's module cache owns them).
+   */
+  private cloneModelMesh(template: SkullTemplate, size: number, model: { scale?: number; rotation?: { x?: number; y?: number; z?: number } }): THREE.Object3D {
+    const mesh = (template.template as THREE.Mesh).clone();
+    mesh.userData.shared = true;
+    const s = size * (model.scale ?? 1);
+    mesh.scale.setScalar(s); // template is normalized to a unit bounding sphere (radius 1)
+    mesh.position.y = s; // lift so the sphere's bottom rests on the disc (rotation-invariant)
+    if (model.rotation) mesh.rotation.set(model.rotation.x ?? 0, model.rotation.y ?? 0, model.rotation.z ?? 0);
+    return mesh;
   }
 
   /** Programmatic "razed" marker for a destroyed building (no art). */
@@ -425,6 +563,7 @@ export class Board3DPlugin implements ScenePlugin {
   }
 
   private clearTokens(): void {
+    this.modelGen++; // invalidate in-flight model loads from the previous render
     for (const node of this.tokens) {
       node.removeFromParent();
       disposeObject(node);
@@ -560,15 +699,32 @@ function kingdomToSide(kingdom: BoardKingdom): TowerSide {
   return kingdom as TowerSide;
 }
 
-/** Overhead = high eye / top-down; isometric = Display's default oblique tilt. Tunable. */
+/**
+ * Map the board's view angle to Display's camera config. The camera sits at
+ * `(0, modelRadius·elevationFactor, distance)` with `distance ≈ 3·modelRadius`
+ * (fov 45°), looking at `modelRadius·targetHeightFactor`, so the angle above the
+ * board plane is `atan((elevationFactor − targetHeightFactor) / 3)`.
+ *
+ * Overhead → a steep ~70° top-down (reads like the 2D map while keeping token
+ * height). Isometric → a ~35° oblique 3/4 view. (Display's own default
+ * `elevationFactor: -0.5` puts the eye BELOW the board — fine for viewing the
+ * tower's sides, wrong for a board, so the board overrides both.) Tunable.
+ */
 function angleToCameraConfig(angle: BoardViewAngle): CameraConfig {
+  // `distanceFactor` (Display ≥ the zoom-knob build) decouples zoom from tilt: raise it to pull
+  // the camera back without steepening. `elevationFactor` sets the tilt, `targetHeightFactor` the
+  // vertical framing. Hand-tune with `debugCamera` (orbit + scroll) and paste the logged trio here.
   return angle === 'overhead'
-    ? { elevationFactor: 2, targetHeightFactor: -0.15 }
-    : { elevationFactor: -0.5, targetHeightFactor: -0.15 };
+    ? { elevationFactor: 9, targetHeightFactor: -0.2, distanceFactor: 1.3 } // steep, near top-down
+    : { elevationFactor: 3, targetHeightFactor: -0.3, distanceFactor: 1.7 }; // oblique 3/4, pulled back
 }
 
 function disposeObject(object: THREE.Object3D): void {
   object.traverse((node) => {
+    // Model-token clones share the loader's cached geometry/material (one per URL, owned by
+    // Display's module cache and reused across re-renders) — disposing them here would corrupt
+    // every other clone, so skip flagged nodes. They're freed by the GC once removed.
+    if (node.userData.shared === true) return;
     if (node instanceof THREE.Mesh) {
       node.geometry.dispose();
       disposeMaterial(node.material);

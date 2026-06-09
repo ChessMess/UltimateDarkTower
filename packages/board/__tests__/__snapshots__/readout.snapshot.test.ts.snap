@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`BoardReadout matches a populated readout 1`] = `
-"Board — focus: all/overhead
+"Board — focus: all/isometric
 Heroes (2):
   - h1 @ Broken Lands (north)
   - h2 @ Dayside
@@ -16,7 +16,7 @@ Space markers (1):
 `;
 
 exports[`BoardReadout matches the default-state readout 1`] = `
-"Board — focus: all/overhead
+"Board — focus: all/isometric
 Heroes (0):
 Foes (0):
 Adversary: none

@@ -21,17 +21,17 @@ describe('mountFocusControls', () => {
     });
 
     clickButton(host, 'N');
-    clickButton(host, 'Isometric');
+    clickButton(host, 'Overhead');
 
-    expect(changes[0]).toEqual({ kingdom: 'north', angle: 'overhead' });
-    expect(changes[1]).toEqual({ kingdom: 'north', angle: 'isometric' });
+    expect(changes[0]).toEqual({ kingdom: 'north', angle: 'isometric' });
+    expect(changes[1]).toEqual({ kingdom: 'north', angle: 'overhead' });
   });
 
   it('reflects the active focus as pressed and unmounts cleanly', () => {
     const host = document.createElement('div');
     const controls = mountFocusControls(host, {
       focus: { kingdom: 'east', angle: 'overhead' },
-      onChange: () => {},
+      onChange: () => { },
     });
     const east = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === 'E');
     expect(east?.getAttribute('aria-pressed')).toBe('true');
