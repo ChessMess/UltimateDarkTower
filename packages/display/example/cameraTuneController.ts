@@ -10,9 +10,10 @@ const SNAPSHOT_LABEL = 'Snapshot view & copy';
 const round3 = (n: number): number => Math.round(n * 1000) / 1000;
 
 /**
- * Push the camera's three framing factors (elevation, target height, distance)
- * into the sliders + numeric labels. Called on init, on view change, and after
- * a snapshot so the controls always reflect the live camera.
+ * Push the full camera config into the panel controls: the three framing-factor
+ * sliders (elevation, target height, distance) plus the zoom-to-cursor and
+ * preserve-view toggles. Called on init, on view change, and after a snapshot so
+ * the controls always reflect the live camera.
  */
 export function syncCameraTuneControls(getDisplay: () => TowerDisplay, els: DomElements): void {
   const cfg = getDisplay().getCameraConfig();
@@ -27,6 +28,9 @@ export function syncCameraTuneControls(getDisplay: () => TowerDisplay, els: DomE
     if (rng) rng.value = String(val);
     if (lbl) lbl.textContent = val.toFixed(2);
   }
+
+  if (els.chkZoomToCursor) els.chkZoomToCursor.checked = cfg.zoomToCursor;
+  if (els.chkPreserveViewOnSideSelect) els.chkPreserveViewOnSideSelect.checked = cfg.preserveViewOnSideSelect;
 }
 
 function bindCameraSlider(
@@ -53,26 +57,41 @@ export function initCameraTuneController(getDisplay: () => TowerDisplay, els: Do
   bindCameraSlider(els.rngDistanceFactor, els.lblDistanceFactor,
     v => getDisplay().applyCameraConfig({ distanceFactor: v }), getDisplay, els);
 
-  // Read the hand-orbited live camera back into the three factors, apply them
-  // (snaps to the north face at the same framing), surface the numbers in the
-  // sliders + JSON box, and copy the factors to the clipboard ready to paste
-  // into a CameraConfig.
+  if (els.chkZoomToCursor) {
+    els.chkZoomToCursor.addEventListener('change', () => {
+      getDisplay().setZoomToCursor(els.chkZoomToCursor!.checked);
+      refreshCameraConfigBox(getDisplay, els);
+    });
+  }
+
+  if (els.chkPreserveViewOnSideSelect) {
+    els.chkPreserveViewOnSideSelect.addEventListener('change', () => {
+      getDisplay().setPreserveViewOnSideSelect(els.chkPreserveViewOnSideSelect!.checked);
+      refreshCameraConfigBox(getDisplay, els);
+    });
+  }
+
+  // Read the hand-orbited live camera back into the three framing factors, apply
+  // them (snaps to the north face at the same framing), surface the numbers in
+  // the sliders + JSON box, then copy the full resolved camera config (factors
+  // plus the toggles) to the clipboard ready to paste into a CameraConfig.
   const btn = els.btnCameraSnapshot;
   if (btn) {
     let resetTimer: ReturnType<typeof setTimeout> | null = null;
     btn.addEventListener('click', () => {
       const live = getDisplay().getLiveCameraFactors();
       if (!live) return;
-      const factors = {
+      getDisplay().applyCameraConfig({
         elevationFactor: round3(live.elevationFactor),
         targetHeightFactor: round3(live.targetHeightFactor),
         distanceFactor: round3(live.distanceFactor),
-      };
-      getDisplay().applyCameraConfig(factors);
+      });
       syncCameraTuneControls(getDisplay, els);
       refreshCameraConfigBox(getDisplay, els);
 
-      navigator.clipboard.writeText(JSON.stringify(factors, null, 2)).then(() => {
+      const fullConfig = getDisplay().getCameraConfig();
+      if (!fullConfig) return;
+      navigator.clipboard.writeText(JSON.stringify(fullConfig, null, 2)).then(() => {
         if (resetTimer !== null) clearTimeout(resetTimer);
         btn.textContent = 'Copied!';
         resetTimer = setTimeout(() => {

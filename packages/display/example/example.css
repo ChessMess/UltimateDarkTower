@@ -279,41 +279,28 @@ code {
   gap: var(--sp-3);
   min-width: 0;
   min-height: 0;
+  /* The whole config column is one scroll area: every panel — across both
+     sections — shares a single scrollbar, rather than each section scrolling
+     independently. */
+  overflow-y: auto;
   animation: fadeUp 0.45s 0.15s ease both;
 }
 
+/* Sections are transparent groupings only: natural height, no internal scroll.
+   Overflow is owned by `.app-config`, so the column scrolls as one. */
 .config-section {
-  /* Size to content, never grow past it. If combined content exceeds the
-     column, each section shrinks proportionally and gets its own scroll. */
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
-  overflow-y: auto;
   min-height: 0;
 }
 
-/* When a section contains an expanded panel marked `data-expandable`, let
-   the section absorb any leftover column space so that panel can grow into
-   it. Without this, `flex: 0 1 auto` pins the section to its content height
-   and the expandable panel has nothing extra to claim. */
-.config-section:has(.panel[data-expandable='true']:not([data-collapsed='true'])) {
-  flex: 1 1 auto;
-}
-
-/* Panels inside the config column keep their natural content height — never
-   shrink below it. Combined overflow is handled by `.config-section`'s
-   scrollbar, not by clipping each panel. */
+/* Every config panel keeps its natural content height and never shrinks: the
+   column's single scrollbar absorbs any overflow, so no panel's border box is
+   ever crushed smaller than the controls inside it. */
 .config-section > .panel {
   flex: 0 0 auto;
-}
-
-/* An expandable panel absorbs any leftover space in its section — e.g. when
-   another panel is collapsed, the expandable one grows to fill the gap.
-   When collapsed itself, the [data-collapsed='true'] rule below pins it to
-   header height instead. */
-.config-section > .panel[data-expandable='true']:not([data-collapsed='true']) {
-  flex: 1 1 auto;
 }
 
 /* Collapsible panel headers in the config column. */
@@ -1308,8 +1295,10 @@ input[type='range']:active::-moz-range-thumb {
     overflow-y: visible;
   }
 
-  .config-section {
-    max-height: 50vh;
+  /* Stacked single-column layout: the page itself scrolls, so the config
+     column and its sections flow at natural height (no nested scrollboxes). */
+  .app-config {
+    overflow-y: visible;
   }
 
   .preset-card-grid {
