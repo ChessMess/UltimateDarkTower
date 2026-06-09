@@ -31,6 +31,7 @@ export type {
   TowerSide,
   SealIdentifier,
   CameraConfig,
+  ApplyCameraConfigOptions,
   AudioConfig,
   SoundPack,
   TowerPhysicsHooks,

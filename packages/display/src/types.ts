@@ -1,11 +1,12 @@
 import type { TowerState, TowerSide, SealIdentifier } from 'ultimatedarktower';
 import type * as THREE from 'three';
-import type { LightingConfig, CameraConfig, AudioConfig } from './3d/types';
+import type { LightingConfig, CameraConfig, ApplyCameraConfigOptions, AudioConfig } from './3d/types';
 import type { SoundPack } from './audio/soundPack';
 
 export type { TowerState, TowerSide, SealIdentifier };
 export type { LightingConfig };
 export type { CameraConfig };
+export type { ApplyCameraConfigOptions };
 export type { AudioConfig };
 export type { SoundPack };
 

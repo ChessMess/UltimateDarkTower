@@ -21,7 +21,7 @@ import {
 import type {
   TowerRenderViewOptions, TowerRenderViewBadge, TowerRenderViewBadgeTone, TowerRenderViewPanelPosition,
   TowerDisplayOptions, Tower3DViewOptions, PerfReport, PerfStat, BloomFrameMetrics,
-  TowerStateControllerOptions, CameraConfig, AudioConfig, SoundPack, TowerPhysicsHooks,
+  TowerStateControllerOptions, CameraConfig, ApplyCameraConfigOptions, AudioConfig, SoundPack, TowerPhysicsHooks,
   ITowerDisplay, RendererType, TowerSide, SealIdentifier, AppliedTowerState,
   ScenePlugin, ScenePluginContext, ScenePluginHandle, ScenePluginModelInfo, PointerTarget,
   BoardAnchor, DiscMetrics,
@@ -82,7 +82,7 @@ The facade implements `ITowerDisplay` and forwards the common-path API to the in
 - `applyState(state, force?)`, `applySeals(brokenSeals)`, `selectSide(side)`, `setLedOverride(layer, light, effect)`, `clearLedOverrides()`, `showIdle()`
 - `applyLightingConfig(config)`, `applyCameraConfig(config)`, `applyAudioConfig(config)`, `setSceneLights(opts)`, `playEntrance()`
 
-Advanced 3D config not forwarded directly (e.g. `setSkyboxUrl`, `setBoardDiscEnabled`, `setZoomToCursor`, `setPreserveViewOnSideSelect`, `setDrumRotationSoundUrl`, `setTowerAudioEnabled`, `getLightingConfig`, `getCameraConfig`, `getAudioConfig`) is reached via `view.display.x(...)`.
+Advanced 3D config not forwarded directly (e.g. `setSkyboxUrl`, `setBoardDiscEnabled`, `setGameBoardKingdom`, `setZoomToCursor`, `setPreserveViewOnSideSelect`, `setDrumRotationSoundUrl`, `setTowerAudioEnabled`, `getLightingConfig`, `getCameraConfig`, `getAudioConfig`) is reached via `view.display.x(...)`.
 
 **Chrome mutators:**
 
@@ -262,13 +262,17 @@ Toggle whether scroll-wheel zoom-in moves the camera toward the cursor (`true`) 
 
 Return a snapshot of the current resolved camera configuration (all five fields guaranteed present) on the 3D view. Returns `undefined` when no 3D renderer is active.
 
-##### `applyCameraConfig(config: CameraConfig): void`
+##### `applyCameraConfig(config: CameraConfig, options?: ApplyCameraConfigOptions): void`
 
-Apply a partial camera configuration at runtime. Any fields provided overwrite the corresponding current values; omitted fields are unchanged. No-op when no 3D view is active.
+Apply a partial camera configuration at runtime. Any fields provided overwrite the corresponding current values; omitted fields are unchanged. By default a framing change snaps the camera back to the fitted north preset; pass `{ preserveView: true }` to instead apply only the changed factor(s) to the **current live view** — keeping the orbit angle, pan, and any dimension not being changed (used by live tuning sliders so dragging one doesn't reset the viewpoint). No-op when no 3D view is active.
 
 ##### `setBoardDiscEnabled(enabled: boolean): void`
 
 Show or hide the game board texture on the ground disc. The texture source is governed by `lighting.boardDisc.source` (`'image'` loads `src/3d/assets/board.png`; `'procedural'` uses the canvas-drawn fallback). No-op when no 3D view is active. See [LIGHTING.md §14](LIGHTING.md#14-ground-disc--game-board) for the full board configuration (size, brightness, north-kingdom rotation, source toggle).
+
+##### `setGameBoardKingdom(side: TowerSide): void`
+
+Orient the game board so its north section faces the given cardinal direction (`'north'` | `'east'` | `'south'` | `'west'`) — a friendlier, live alternative to setting `lighting.boardDisc.northKingdom` (`0…3`) directly. `'north'` (the default) aligns the board's north with the tower's north face; each other value rotates the board in a 90° step. Rotates the on-disc art and keeps `anchorToWorld` token placement in sync. No-op when no 3D view is active.
 
 ##### `setSkyboxUrl(url: string | null): void`
 
@@ -534,6 +538,10 @@ Resolve a partial `LightingConfig` over the defaults and apply it to the live sc
 
 Show or hide the noir ground disc.
 
+##### `setGameBoardKingdom(side: TowerSide): void`
+
+Orient the board so its north section faces the given cardinal direction. See [`TowerDisplay#setGameBoardKingdom`](#setgameboardkingdomside-towerside-void).
+
 ##### `playEntrance(): void`
 
 Trigger the cinematic entrance sequence. See [`TowerDisplay#playEntrance`](#playentrance-void).
@@ -550,9 +558,9 @@ Toggle whether side-button snaps preserve the current orbit state. See [`TowerDi
 
 Return a snapshot of the current resolved camera configuration (all five fields guaranteed present). Reflects values that were last applied via the constructor `camera` option or `applyCameraConfig`. Returns synthesized defaults post-`dispose()`.
 
-##### `applyCameraConfig(config: CameraConfig): void`
+##### `applyCameraConfig(config: CameraConfig, options?: ApplyCameraConfigOptions): void`
 
-Apply a partial camera configuration at runtime. Any fields provided overwrite the corresponding current values; omitted fields are unchanged. If the model is loaded, framing changes (`elevationFactor` / `targetHeightFactor` / `distanceFactor`) refit the camera immediately.
+Apply a partial camera configuration at runtime. Any fields provided overwrite the corresponding current values; omitted fields are unchanged. If the model is loaded, framing changes (`elevationFactor` / `targetHeightFactor` / `distanceFactor`) refit the camera immediately — snapping to the north preset by default, or, with `{ preserveView: true }`, reframing the current live view in place (keeping the orbit angle/zoom). See [`TowerDisplay#applyCameraConfig`](#applycameraconfigconfig-cameraconfig-options-applycameraconfigoptions-void).
 
 > **Setting the initial framing (avoiding a default-camera flash).** The camera is fitted **once when the model loads**, reading whatever `CameraConfig` factors are current at that moment. Configure your framing _before_ load — via the constructor `camera` option, or an `applyCameraConfig(...)` call made before the GLB resolves (factors set pre-load are stored and applied by the on-load fit). Do **not** set the initial framing from a post-load hook such as a scene plugin's `onModelLoaded`: that fires _after_ the fit (and after a shader prewarm that renders a frame or two), so the view briefly shows the default framing and then snaps to yours.
 
@@ -765,6 +773,20 @@ interface CameraConfig {
 | `distanceFactor`           | `1`     | Multiplies the auto-fitted camera distance (the "everything in frame" distance). `>1` pulls the camera back (zooms out), `<1` pushes it in — independent of the tilt factors.     |
 | `zoomToCursor`             | `true`  | When `true`, scroll-wheel zoom-in moves the camera toward the cursor rather than the orbit target. Zoom-out always uses standard OrbitControls behavior.                          |
 | `preserveViewOnSideSelect` | `false` | When `true`, selecting a cardinal side via the side buttons or `selectSide` rotates only the azimuth while keeping the current orbit target, tilt, pan, and zoom distance intact. |
+
+### `ApplyCameraConfigOptions`
+
+Options for the second argument of `applyCameraConfig`.
+
+```ts
+interface ApplyCameraConfigOptions {
+  preserveView?: boolean; // default: false
+}
+```
+
+| Field          | Default | Description                                                                                                                                                                                                                                       |
+| -------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preserveView` | `false` | When `true`, apply only the changed framing factor(s) to the **current live view** — preserving the orbit angle, pan, and any dimension not being changed — instead of snapping back to the fitted north preset. Used by the live tuning sliders. |
 
 ### `TowerSide`
 

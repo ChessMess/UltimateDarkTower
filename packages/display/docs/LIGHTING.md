@@ -468,7 +468,7 @@ All beat values live under `entrance.beats.*` and are merged via spread (`{ ...b
 | `boardDisc.enabled`         | `boolean`                 | `true`     | Render the game board texture on the disc                                                                                                                                                 |
 | `boardDisc.opacity`         | `number`                  | `0.9`      | Material opacity when board overlay is active                                                                                                                                             |
 | `boardDisc.source`          | `'image' \| 'procedural'` | `'image'`  | Texture source — see "Image vs procedural" below                                                                                                                                          |
-| `boardDisc.northKingdom`    | `0 \| 1 \| 2 \| 3`        | `0`        | Which of the four kingdoms faces the +Z direction. Rotates the image texture in 90° steps. No effect on `'procedural'`                                                                    |
+| `boardDisc.northKingdom`    | `0 \| 1 \| 2 \| 3`        | `0`        | Which of the four kingdoms faces the +Z (tower-north) direction. Rotates the image texture in 90° steps; `0` aligns the board's north with the tower's north. No effect on `'procedural'`. Also settable by cardinal name via `setGameBoardKingdom(side)` |
 | `boardDisc.brightness`      | `number`                  | `1`        | Per-board diffuse-color multiplier on top of scene lighting. `0` = black, `1` = native texture brightness, up to `2` for over-bright. Stacks with `scene.exposure` and key/hemi intensity |
 | `boardDisc.thicknessFactor` | `number`                  | `0.06`     | Cylinder height as a fraction of `modelRadius`. Values `0.01`–`0.04` look natural; clamped to a minimum of `1e-4` to avoid degenerate geometry                                            |
 | `boardDisc.edgeColor`       | `HexColor`                | `0x5c3318` | Color of the board's side-wall. Two common presets: `0x5c3318` (medium warm wood/cardboard), `0x0e0e0e` (near-black neoprene mat)                                                         |
@@ -485,13 +485,14 @@ Both paths produce a texture set as `material.map` on a `MeshStandardMaterial` w
 
 ### Texture rotation calibration
 
-The orientation calibration for `board.png` lives in [`GameBoardImageTexture.ts`](../src/3d/GameBoardImageTexture.ts) as `BASE_NORTH_OFFSET = Math.PI / 1.35`. This is specific to the shipped asset — if `board.png` is re-exported with a different orientation, retune this constant once and the per-kingdom 90° steps from `northKingdom` continue to work.
+The orientation calibration for `board.png` lives in [`GameBoardImageTexture.ts`](../src/3d/GameBoardImageTexture.ts) as `BASE_NORTH_OFFSET = Math.PI / 1.35 - Math.PI / 2`. The `Math.PI / 1.35` term is the fine angular calibration of the shipped asset; the `- Math.PI / 2` corrects a one-cardinal-step offset so that at `northKingdom = 0` the board's north section lines up with the tower's north (+Z) face. This is specific to the shipped asset — if `board.png` is re-exported with a different orientation, retune this constant once and the per-kingdom 90° steps from `northKingdom` continue to work.
 
 Runtime control:
 
 ```ts
 display.setGroundDiscVisible(true); // toggle visibility (no config field — method only)
 display.setBoardDiscEnabled(false); // toggle board overlay; writes to lighting.boardDisc.enabled
+display.setGameBoardKingdom('east'); // friendly cardinal setter for northKingdom — board's north -> east
 display.applyLightingConfig({
   // resize the disc (and the board texture with it)
   groundDisc: { radiusFactor: 4 },
@@ -501,7 +502,7 @@ display.applyLightingConfig({
   boardDisc: { brightness: 0.6 },
 });
 display.applyLightingConfig({
-  // rotate to a different north kingdom
+  // rotate to a different north kingdom (or use display.setGameBoardKingdom(side))
   boardDisc: { northKingdom: 2 },
 });
 ```
