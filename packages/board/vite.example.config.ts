@@ -1,5 +1,8 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { tokenArtDevPlugin } from './example/tokenArtDevPlugin';
+
+const exampleDir = resolve(__dirname, 'example');
 
 // Standalone app build for the GitHub Pages demo. Output goes to example/dist.
 //
@@ -15,8 +18,10 @@ import { resolve } from 'path';
 // `./board.png` / `./tokens/` / `./tower.glb` resolve under the GitHub Pages project subpath
 // (`/UltimateDarkTowerBoard/`). Set an absolute `base` if you fork under a different repo name.
 export default defineConfig({
-  root: resolve(__dirname, 'example'),
+  root: exampleDir,
   base: './',
+  // Dev-only: backs the Token Art Forge tool (`/tokens.html`) with read/list/save endpoints.
+  plugins: [tokenArtDevPlugin({ exampleDir })],
   resolve: {
     alias: {
       ultimatedarktower: resolve(__dirname, 'node_modules/ultimatedarktower/dist/src/index.js'),
@@ -32,6 +37,13 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, 'example/dist'),
     emptyOutDir: true,
+    // Multi-page: the demo (index.html) + the Token Art Forge tool (tokens.html).
+    rollupOptions: {
+      input: {
+        main: resolve(exampleDir, 'index.html'),
+        tokens: resolve(exampleDir, 'tokens.html'),
+      },
+    },
     commonjsOptions: {
       // `ultimatedarktower` is a symlinked sibling that resolves OUTSIDE node_modules,
       // so Rollup's commonjs plugin skips it by default and can't see its CJS named

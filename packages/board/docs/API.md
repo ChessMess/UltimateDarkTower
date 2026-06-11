@@ -192,6 +192,12 @@ without mutating held state — only `applyState(next)` commits. `applyState` is
   `placeAdversary(location)`, `clearAdversary()`, `addSkull(location, n?)`, `removeSkull(location, n?)`,
   `setSkulls(location, n)`, `destroyBuilding(location)`, `restoreBuilding(location)`,
   `setMonument(location, monumentId)`, `setSpaceMarker(location, marker, on)`, `setSelections(selections)`.
+- `moveToken(id, location): 'hero' | 'foe' | 'adversary' | null` — **resolver convenience** for callers
+  that hold only an instance id. Resolves the kind from current state (order: heroes → foes → adversary;
+  on a cross-kind id collision the earlier kind wins) and delegates to the matching command above,
+  returning the kind moved or `null` if nothing matches (a no-op). The adversary matches only when one
+  exists with a non-empty id; it is never created. Not a `BoardCommand` — reducer-only users dispatch
+  `moveHero`/`moveFoe` directly.
 
 ### `BoardStateControllerOptions`
 
@@ -296,6 +302,11 @@ click-to-select. Display-/three-free and jsdom-testable. Implements `BoardRender
 bundled** — it loads at runtime from `assetBaseUrl` by the `${group}/${kebab(id)}.png` convention, falling
 back to a programmatic labeled disc when missing.
 
+**Mouse zoom/pan** is on by default: scroll the wheel to zoom toward the cursor, drag to pan once zoomed
+in, and double-click (or call [`resetView()`](#methods)) to return to the focus view. Zoom/pan stay inside
+the current focus region and never touch `BoardState`. Pass `enableZoom: false` to opt out (e.g. when the
+map lives in a scroll container and you don't want the wheel hijacked).
+
 ```ts
 import { BoardMap2D } from 'ultimatedarktowerboard';
 
@@ -317,10 +328,18 @@ map.render(controller.getState());
 |---|---|---|---|
 | `assetBaseUrl` | `string` | `''` | Token-art root, e.g. `'./tokens/'`. Empty → all tokens use the fallback. |
 | `boardImageUrl` | `string` | — | Base-layer board image. Omit to draw tokens over a blank board. |
-| `resolveTokenImage` | `(ref: TokenArtRef) => string \| null` | convention | Override the default art path; `null` → fallback. |
+| `tokenArt` | `TokenArtConfig` | — | Per-token art overrides. The 2D map uses each entry's `image2d`. See [Per-token art](#per-token-art-tokenart). |
+| `resolveTokenImage` | `(ref: TokenArtRef, view: '2d' \| '3d') => string \| null` | convention | Override the default art path; `null` → fallback. `view` is `'2d'` here. |
 | `onTokenSelect` | `(sel: TokenSelection) => void` | — | Fired on a token click. Selection is renderer-local — never written to `BoardState`. |
 | `locationPick` | `LocationPickStore` | — | Drives the armed space-pick (the editing add flow); see [Stores](#stores-ui-seams). |
 | `onLocationPick` | `(location: LocationName) => void` | — | Fired when a space is clicked while armed. |
+| `enableZoom` | `boolean` | `true` | Mouse zoom/pan: wheel to zoom toward the cursor, drag to pan, double-click to reset. `false` opts out. |
+| `maxZoom` | `number` | `8` | Max zoom-in factor relative to the focus view. |
+
+#### Methods
+
+`render(state, focus?)` / `dispose()` (the `BoardRenderer` contract), plus `resetView()` — returns the map
+to its focus view, dropping any manual zoom/pan (also bound to double-click).
 
 ### `TokenSelection` / `TokenArtRef` / `kebab()`
 
@@ -331,6 +350,44 @@ map.render(controller.getState());
   'adversary' | 'monument' | 'marker' | 'skull'` and `id` is the *art* id (foe type, adversary id, monument
   id, marker name; `'skull'` for skulls).
 - **`kebab(value)`** — `(string) => string`. The id slug used in art paths: `kebab("Utuk'Ku")` → `utuk-ku`.
+
+### Per-token art (`tokenArt`)
+
+`tokenArt` lets one token use **different art in the 2D map vs the 3D view** — and, in 3D, a flat image
+or a GLB model. It is a declarative table keyed by token kind → **art id**, passed to **both** the 2D
+renderer and the 3D plugin (the same object). Tokens with no entry render exactly as before.
+
+```ts
+type TokenArtConfig = Partial<Record<TokenArtRef['kind'], Record<string, TokenArt>>>;
+
+interface TokenArt {
+  image2d?: string;        // image for the 2D map, and the 3D billboard when image3d is unset
+  image3d?: string;        // 3D billboard image when it should differ from image2d (defaults to image2d)
+  model3d?: TokenModelRef; // GLB model rendered in place of the 3D sprite (preferred over image3d/image2d)
+}
+
+// A `.glb` URL with optional placement (also accepted by `resolveTokenModel`):
+type TokenModelRef = string | { url: string; scale?: number; rotation?: { x?; y?; z? }; dracoDecoderPath?: string | null };
+```
+
+```ts
+const tokenArt: TokenArtConfig = {
+  foe:  { Dragons: { image2d: './tokens/foes/dragons.png', model3d: { url: './dragon.glb', scale: 0.8 } } },
+  hero: { 'brutal-warlord': { image2d: './heroes/warlord.png' } }, // heroes have no convention art
+};
+new BoardMap2D(el, { tokenArt, assetBaseUrl: './tokens/' }); // 2D reads image2d
+attachBoard3D(view, { tokenArt, assetBaseUrl: './tokens/' }); // 3D reads model3d, else image3d ?? image2d
+```
+
+- **Art id key** — for `foe` this is the foe **type** (e.g. `"Brigands"`), so all instances of a type share
+  one entry; for `hero`/`adversary`/`monument`/`marker` it is the id/name; for `skull` it is `"skull"`. There
+  is no `building` key (a building's overlay is configured under `monument`). Keys are kebab-insensitive
+  (`"Brigands"` and `"brigands"` both match).
+- **Precedence (image, per view)** — 2D: `image2d` → `resolveTokenImage(ref, '2d')` → convention → `null`.
+  3D billboard: `image3d ?? image2d` → `resolveTokenImage(ref, '3d')` → convention → `null` (so a single
+  `image2d` drives both views; the `${assetBaseUrl}${group}/${kebab(id)}.png` convention is the fallback).
+- **Precedence (3D model)** — `tokenFactory` → `tokenArt.model3d` → `resolveTokenModel(ref)`; if a model
+  results it renders in place of the sprite, otherwise the sprite uses the image precedence above.
 
 ## Focus & view controls
 
@@ -414,6 +471,10 @@ view.dispose();
 | `ui` | `Omit<BoardUIOptions, 'controller'\|'selection'\|'locationPick'>` | — | Editing-UI config (panels/rosters/…); the view supplies the controller + stores. |
 | `assetBaseUrl` | `string` | — | Token-art root for the 2D map. |
 | `boardImageUrl` | `string` | — | Base-layer board image for the 2D map. |
+| `tokenArt` | `TokenArtConfig` | — | Per-token art for the 2D map (the `image2d` slot); pass the same object to the 3D plugin. See [Per-token art](#per-token-art-tokenart). |
+| `resolveTokenImage` | `(ref: TokenArtRef, view: '2d' \| '3d') => string \| null` | convention | Override the 2D-map art path; `null` → fallback. |
+| `enableZoom` | `boolean` | `true` | Mouse zoom/pan on the 2D map (forwarded to `BoardMap2D`). |
+| `maxZoom` | `number` | `8` | Max 2D-map zoom-in factor (forwarded to `BoardMap2D`). |
 | `onTokenSelect` | `(sel: TokenSelection) => void` | — | Forwarded from the 2D map (also updates `selection`). |
 | `onFocusChange` | `(focus: BoardFocus) => void` | — | Fired whenever the focus changes. |
 
@@ -550,9 +611,12 @@ controller.subscribe((e) => { if (e.type === 'change') board?.setBoardState(e.st
 | `assetBaseUrl` | `string` | — | Token-art root, loaded at runtime (never bundled). |
 | `boardImageUrl` | `string` | — | When set, the plugin renders its **own** board on the disc and hides Display's; without it, Display's board stays. |
 | `northKingdom` | `0 \| 1 \| 2 \| 3` | `0` | Which kingdom faces +Z on the disc. Board-owned, not read from Display's lighting config. |
-| `resolveTokenImage` | `(ref: TokenArtRef) => string \| null` | convention | Override the default art path; `null` → fallback. |
+| `tokenArt` | `TokenArtConfig` | — | Per-token art. The 3D path uses each entry's `model3d` (preferred), else its image as a billboard (`image3d ?? image2d`); pass the same object to the 2D map. See [Per-token art](#per-token-art-tokenart). |
+| `resolveTokenImage` | `(ref: TokenArtRef, view: '2d' \| '3d') => string \| null` | convention | Override the default sprite-art path; `null` → fallback. `view` is `'3d'` here. |
+| `resolveTokenModel` | `(ref: TokenArtRef) => TokenModelRef \| null \| undefined` | — | Map a token to a GLB model rendered in place of its sprite. A per-token `tokenArt.model3d` is preferred over this; `tokenFactory` over both. |
 | `onTokenSelect` | `(sel: TokenSelection) => void` | — | Fired on a token click. Renderer-local — never written to `BoardState`. |
 | `onFocusChange` | `(focus: BoardFocus) => void` | — | Fired when the camera side (the focus source of truth) changes. |
+| `debugCamera` | `boolean` | `false` | Logs the live camera's `{ elevationFactor, targetHeightFactor, distanceFactor }` on move — a preset-tuning aid; leave off in production. |
 | `locationPick` | `LocationPickStore` | — | Enables the armed in-scene space-pick (the editing add flow), mirroring the 2D map. |
 | `onLocationPick` | `(location: LocationName) => void` | — | Fired when a space is clicked while armed. |
 | `tokenFactory` | `(ctx: TokenBuildContext) => THREE.Object3D \| null` | sprite | Seam for real 3D models; default builds a `THREE.Sprite` billboard. `null` skips the token. |

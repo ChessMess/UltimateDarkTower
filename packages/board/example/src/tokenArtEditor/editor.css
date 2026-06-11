@@ -1,0 +1,742 @@
+/* Token Art Forge — a dark "arcane workshop" console for editing per-token 2D/3D art.
+   Obsidian base + an ember glow (the tower's light), engraved Cinzel headings over an Outfit
+   body, with JetBrains Mono for the live JSON. Cohesive with the demo's warm palette, dialed up. */
+
+:root {
+  --bg: #0c0a09;
+  --bg-deep: #070605;
+  --raised: #16110d;
+  --panel: #1b1510;
+  --panel-2: #211a13;
+  --border: #392d22;
+  --border-bright: #5b4733;
+  --ember: #e6913a;
+  --ember-bright: #f7bd66;
+  --ember-deep: #b4501a;
+  --gold: #d9b370;
+  --text: #ece3d4;
+  --muted: #a2937c;
+  --faint: #6c5d4c;
+  --good: #79d39b;
+  --danger: #e07a55;
+  --font-display: 'Cinzel', 'Times New Roman', serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --radius: 12px;
+  --shadow: 0 18px 50px -22px rgba(0, 0, 0, 0.9);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(230, 145, 58, 0.16), transparent 55%),
+    radial-gradient(90% 60% at 85% 15%, rgba(180, 80, 26, 0.1), transparent 60%),
+    radial-gradient(100% 100% at 50% 120%, rgba(0, 0, 0, 0.65), transparent 70%), var(--bg);
+  background-attachment: fixed;
+}
+
+/* Fine grain so flat panels read as forged metal, not plastic. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.forge-boot {
+  font-family: var(--font-display);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  padding: 6rem 1rem;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+#forge {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 3rem) clamp(1rem, 3vw, 2.5rem) 7rem;
+}
+
+/* ── header ─────────────────────────────────────────────────────────── */
+.forge-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  animation: rise 0.6s both;
+}
+
+.forge-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 180px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--ember), transparent);
+}
+
+.forge-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.9rem, 4.5vw, 3rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  background: linear-gradient(180deg, var(--ember-bright), var(--ember-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 30px rgba(230, 145, 58, 0.25);
+}
+
+.forge-kicker {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 0.55rem;
+  -webkit-text-fill-color: var(--faint);
+}
+
+.forge-sub {
+  margin: 0.65rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 46ch;
+}
+
+.forge-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.7rem;
+}
+
+.back-link {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--gold);
+  text-decoration: none;
+  border: 1px solid var(--border-bright);
+  border-radius: 999px;
+  padding: 0.4rem 0.95rem;
+  transition:
+    background 0.18s,
+    border-color 0.18s,
+    transform 0.18s;
+}
+
+.back-link:hover {
+  background: rgba(230, 145, 58, 0.1);
+  border-color: var(--ember);
+  transform: translateY(-1px);
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.mode-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--faint);
+  box-shadow: 0 0 0 0 currentColor;
+}
+
+.mode-badge.is-live {
+  color: var(--good);
+}
+
+.mode-badge.is-live::before {
+  background: var(--good);
+  box-shadow: 0 0 10px 1px var(--good);
+}
+
+.mode-badge.is-static {
+  color: var(--gold);
+}
+
+.mode-badge.is-static::before {
+  background: var(--gold);
+}
+
+/* ── controls ───────────────────────────────────────────────────────── */
+.forge-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1.75rem 0;
+  animation: rise 0.6s 0.05s both;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.control-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+select,
+input[type='text'],
+input[type='number'] {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  width: 100%;
+  transition:
+    border-color 0.18s,
+    box-shadow 0.18s,
+    background 0.18s;
+}
+
+select {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23d9b370' stroke-width='1.6'%3E%3Cpath d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  padding-right: 2.2rem;
+}
+
+select:focus,
+input:focus {
+  outline: none;
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px rgba(230, 145, 58, 0.15);
+  background: var(--panel-2);
+}
+
+option {
+  background: var(--panel);
+  color: var(--text);
+}
+
+/* ── slot grid ──────────────────────────────────────────────────────── */
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.1rem;
+}
+
+@media (max-width: 860px) {
+  .slot-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.slot {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  animation: rise 0.55s both;
+}
+
+.slot:nth-child(1) {
+  animation-delay: 0.08s;
+}
+
+.slot:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.slot:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.slot-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.slot-icon {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  color: var(--ember);
+  opacity: 0.9;
+}
+
+.slot-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  flex: 1;
+}
+
+.slot-tag {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-bright);
+  color: var(--gold);
+}
+
+.slot-tag.tag-2d {
+  color: #8fc7e0;
+  border-color: #355b6b;
+}
+
+.slot-tag.tag-3d {
+  color: var(--ember-bright);
+  border-color: var(--ember-deep);
+}
+
+/* preview */
+.slot-preview {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+  margin: 0.9rem;
+  /* inset the art so it doesn't butt against the frame */
+  padding: 0.5rem;
+  border-radius: 9px;
+  overflow: hidden;
+  background-color: #100c09;
+  /* transparency checkerboard for PNG art */
+  background-image:
+    linear-gradient(45deg, #221a13 25%, transparent 25%),
+    linear-gradient(-45deg, #221a13 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #221a13 75%),
+    linear-gradient(-45deg, transparent 75%, #221a13 75%);
+  background-size: 18px 18px;
+  background-position:
+    0 0,
+    0 9px,
+    9px -9px,
+    -9px 0;
+  border: 1px solid var(--border);
+}
+
+.slot-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6));
+}
+
+/* a convention-default image (no saved override) reads as a dimmed preview + tag */
+.slot-preview.is-default img {
+  opacity: 0.8;
+}
+
+.preview-tag {
+  position: absolute;
+  top: 0.45rem;
+  left: 0.45rem;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: rgba(7, 6, 5, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  backdrop-filter: blur(3px);
+}
+
+.preview-empty {
+  position: absolute;
+  inset: 0.5rem;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.5rem;
+  border: 1.5px dashed var(--border-bright);
+  border-radius: 7px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.preview-empty svg {
+  width: 34px;
+  height: 34px;
+  opacity: 0.6;
+}
+
+.preview-empty span {
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* a model slot hosts a live <model-viewer>; swap the PNG checkerboard for a lit "stage" */
+.slot-preview.has-model {
+  background-image: radial-gradient(120% 90% at 50% 12%, rgba(230, 145, 58, 0.12), transparent 60%);
+  background-color: #0b0807;
+}
+
+.slot-preview .model-view {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border-radius: 7px;
+  --poster-color: transparent;
+  --progress-bar-color: var(--ember);
+  --progress-mask: transparent;
+}
+
+/* fields */
+.slot-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0 1rem 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.field > label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.field-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.field-row .field {
+  flex: 1;
+}
+
+.slot-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.2rem;
+}
+
+/* ── buttons ────────────────────────────────────────────────────────── */
+.btn {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  border: 1px solid var(--border-bright);
+  background: var(--panel);
+  color: var(--text);
+  transition:
+    transform 0.15s,
+    background 0.18s,
+    border-color 0.18s,
+    box-shadow 0.18s,
+    opacity 0.18s;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--ember);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--ember-bright), var(--ember-deep));
+  border-color: var(--ember-deep);
+  color: #1a0f06;
+  font-weight: 600;
+  box-shadow: 0 8px 22px -8px rgba(230, 145, 58, 0.6);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 10px 28px -8px rgba(247, 189, 102, 0.7);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.3rem;
+  opacity: 0.8;
+}
+
+.btn-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* ── code panels ────────────────────────────────────────────────────── */
+.code-wrap {
+  margin-top: 1.75rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.1rem;
+  animation: rise 0.6s 0.18s both;
+}
+
+/* the per-token JSON rides in the third slot-grid cell (where the 3D-model card used to be) —
+   stretch it to the row height so it matches the other cards, with the <pre> filling the body */
+.slot-grid .code {
+  display: flex;
+  flex-direction: column;
+  animation: rise 0.55s 0.2s both;
+}
+
+.slot-grid .code pre {
+  flex: 1;
+  max-height: none;
+}
+
+@media (max-width: 860px) {
+  .code-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+.code {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.9rem;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid var(--border);
+}
+
+.code-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.code-head h3 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+}
+
+/* clarifies the two panels aren't duplicate data: one entry vs the whole file */
+.code-note {
+  font-family: var(--font-body);
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.code pre {
+  margin: 0;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: #d6c9b3;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow: auto;
+  tab-size: 2;
+}
+
+.code pre .k {
+  color: var(--ember-bright);
+}
+
+.code pre .s {
+  color: #9ccf8f;
+}
+
+.code pre .n {
+  color: #e0a0c4;
+}
+
+.code pre .p {
+  color: var(--faint);
+}
+
+.copy-btn {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  transition:
+    color 0.18s,
+    border-color 0.18s;
+}
+
+.copy-btn:hover {
+  color: var(--ember);
+  border-color: var(--ember);
+}
+
+/* ── save bar ───────────────────────────────────────────────────────── */
+.save-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 1.2rem;
+  transform: translateX(-50%);
+  width: min(1100px, calc(100% - 2rem));
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 1rem 0.7rem 1.3rem;
+  background: rgba(20, 15, 11, 0.92);
+  border: 1px solid var(--border-bright);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px -18px rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 50;
+}
+
+.save-target {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.save-target .save-kicker {
+  color: var(--faint);
+  margin-right: 0.4rem;
+}
+
+.save-status {
+  flex: 1;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-align: right;
+  min-height: 1.2em;
+  transition: color 0.2s;
+}
+
+.save-status.ok {
+  color: var(--good);
+}
+
+.save-status.err {
+  color: var(--danger);
+}
+
+.save-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+  }
+}

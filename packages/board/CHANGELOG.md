@@ -6,6 +6,42 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **Mouse zoom/pan on the 2D map (`BoardMap2D`).** Scroll the wheel to zoom toward the cursor, drag to
+  pan once zoomed in, and double-click (or call the new `resetView()`) to return to the focus view. On by
+  default; pass `enableZoom: false` to opt out (or set `maxZoom`, default `8`) — both also forwarded
+  through `BoardRenderView`. Pure presentation: it only rewrites the SVG `viewBox` (a new DOM-free
+  `src/renderers/zoom.ts` does the math) and stays inside the current focus region; `BoardState`,
+  selection, and focus are untouched.
+- **`BoardStateController.moveToken(id, location)`.** A resolver convenience for callers that hold only
+  a token instance id: it resolves the kind from current state (heroes → foes → adversary, earlier kind
+  wins on a collision), delegates to the existing `moveHero`/`moveFoe`/`placeAdversary` command, and
+  returns the moved kind (`'hero' | 'foe' | 'adversary'`) or `null` on a no-op. Also exported a named
+  `TokenKind` type (previously inlined on `BoardEvent`).
+- **Token Art Forge split into reusable card modules.** The `example/src/tokenArtEditor/` directory now
+  has four focused files instead of one monolithic `main.ts`:
+  - `helpers.ts` — shared DOM utilities (`el`, `makeInput`, `field`, `slotHead`, `rowFields`, `actions`,
+    `emptyState`, `numStr`), the `ICON` SVG strings, and the JSON `highlight`/`escapeHtml` functions.
+  - `imageSlot.ts` — self-contained image-picker card component (used for both 2D and 3D image slots).
+  - `modelSlot.ts` — self-contained GLB model card component (URL, scale, rotation, `<model-viewer>`
+    preview); receives an `onUpdate` callback so it has no coupling back to `main.ts`'s module scope.
+  - `main.ts` — trimmed to state management, boot, UI scaffolding, and persistence.
+
+### Changed
+
+- **Inspector remove action is now labelled “Remove” for every token type.** The adversary case
+  previously read “Clear”; it now matches heroes, foes, and markers for consistency. The underlying
+  command is unchanged (`controller.clearAdversary()`), and the button keeps its `.udt-inspector-remove`
+  class, so existing selectors and tests are unaffected.
+
+### Fixed
+
+- **TypeScript CSS side-effect import error in example source.** `import './editor.css'` in the Token
+  Art Forge now type-checks cleanly. Added `example/tsconfig.json` (the example folder was excluded from
+  the root tsconfig, leaving VS Code without a project config for example files) and
+  `example/src/vite-env.d.ts` (Vite triple-slash reference + explicit `declare module '*.css'`).
+
 ### Documentation
 
 - **API reference rewritten to the shared family standard.** Replaced the terse symbol-list `docs/API.md`
@@ -17,6 +53,19 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **Per-token 2D-vs-3D art — the `tokenArt` config.** A token can now use **different art in the 2D map
+  vs the 3D view** (and, in 3D, a flat image or a GLB model), declared per token instead of in branching
+  callback logic. `tokenArt: TokenArtConfig` is a table keyed by token kind → **art id** (the foe *type* for
+  foes, so instances share an entry; the id/name otherwise; `"skull"` for skulls — `building` lives under
+  `monument`; keys are kebab-insensitive). Each `TokenArt` entry sets `image2d`, `image3d`, and/or `model3d`
+  (a `TokenModelRef`). Pass the **same object** to both `BoardMap2D` / `BoardRenderView` (reads `image2d`)
+  and the `Board3DPlugin` (reads `model3d`, then `image3d`). Resolution is layered on the existing seam, so
+  tokens with no entry render exactly as before: image precedence is `tokenArt` → `resolveTokenImage(ref,
+  view)` → the `${assetBaseUrl}${group}/${kebab(id)}.png` convention → fallback; 3D-model precedence is
+  `tokenFactory` → `tokenArt.model3d` → `resolveTokenModel`. `resolveTokenImage` gains a `view: '2d' | '3d'`
+  argument (additive — existing one-arg callbacks are unaffected); `BoardRenderView` now forwards
+  `tokenArt` + `resolveTokenImage` to its 2D map. Heroes — which have no convention art — can finally be
+  given art this way. The example renders `Dragons` as its flat foe PNG in 2D but as a GLB model in 3D.
 - **3D model tokens — the `resolveTokenModel` seam.** `Board3DPlugin` can now render a token as a real GLB
   model in place of its flat sprite, via the new `resolveTokenModel(art) => TokenModelRef | null` option
   (mirrors `resolveTokenImage`; keyed on `{ kind, id }`, so it works for **any** token kind — skulls today,

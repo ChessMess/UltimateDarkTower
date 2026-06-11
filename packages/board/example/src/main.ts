@@ -1,124 +1,156 @@
-import { BoardRenderView } from '../../src/index';
-import type { TokenSelection } from '../../src/index';
+// Demo composition root. Builds the two persistent renderers (2D map via
+// BoardRenderView, 3D board via TowerRenderView + attachBoard3D) once, mounts the
+// dockable editing UI directly so we own its handle, seeds a board, then wires the
+// shell controllers. Everything shares ONE controller / selection / focus.
+import { BoardRenderView, mountBoardUI } from '../../src/index';
+import type { BoardFocus, BoardUIHandle, TokenSelection } from '../../src/index';
 import { TowerRenderView } from 'ultimatedarktowerdisplay';
 import { attachBoard3D } from '../../src/plugin/index';
 import type { Board3DHandle } from '../../src/plugin/index';
+// Per-token 2D-vs-3D art overrides, authored as per-kind JSON (see ./tokenArt/*.json).
+import { tokenArt } from './tokenArt';
+import { queryDom } from './dom';
+import { seedBoard } from './presets';
+import { initDisplayModeController } from './displayModeController';
+import { initInstructionsController } from './instructionsController';
+import { initJsonController } from './jsonController';
+import { initLayoutManager } from './layoutManager';
+import { initMapControls } from './mapControlsController';
+import { initPanelCollapseController } from './panelCollapseController';
+import { initPipController } from './pipController';
+import { initPanelPositions } from './positions';
+import { initPopOutController } from './popOutController';
+import { initSidebarController } from './sidebarController';
 
-const app = document.getElementById('app');
-if (!app) throw new Error('#app not found');
+const els = queryDom();
 
-// Layout: focus controls on top; the 3D board scene (with the docked editing UI as a HUD
-// overlay); then the 2D map + readout.
-const controls = document.createElement('div');
-const scene = document.createElement('div');
-scene.className = 'scene';
-const columns = document.createElement('div');
-columns.className = 'columns';
-const mapHost = document.createElement('div');
-mapHost.className = 'map';
-const side = document.createElement('div');
-side.className = 'side';
-const selectionInfo = document.createElement('p');
-selectionInfo.className = 'selection';
-selectionInfo.textContent = 'Click a token (2D or 3D) to select it; use the palette to add one.';
-const pre = document.createElement('pre');
-side.append(selectionInfo, pre);
-const views = document.createElement('div');
-views.className = 'views';
-columns.append(mapHost, side);
-views.append(columns, scene);
-app.append(controls, views);
+// The live 3D board (tower + plugin handle). Declared up front because the
+// controller subscribe loop below references it, and seeding fires that loop
+// before `create3D` runs.
+interface Board3D {
+  tower: TowerRenderView;
+  handle: Board3DHandle;
+}
+let current3D: Board3D | undefined;
+// Set once the 2D map control bar is mounted (declared up front for the focus
+// handler below); a no-op until then.
+let reflectMapFocus: (focus: BoardFocus) => void = () => {};
 
 const logSelection = (sel: TokenSelection): void => {
-  selectionInfo.textContent = `Selected ${sel.kind}: ${sel.id} @ ${sel.location}`;
   // eslint-disable-next-line no-console
   console.log('token selected', sel);
 };
 
-// 3D board first so its overlay HUD can host the editing UI (the real docking seam).
-const tower = new TowerRenderView({ container: scene, modelUrl: './tower.glb', overlay: true });
-
-// 2D map + readout + shared focus controls + the dockable editing UI (the three-free `.` entry).
-// The UI mounts into Display's overlay container — `src/ui` never imports Display; the example
-// just passes that element as the host.
+// 2D map + readout. The map has wheel-zoom / drag-pan / double-click-reset on by
+// default; the kingdom focus is driven by the on-map N/E/S/W/All bar below.
 const view = new BoardRenderView({
-  mapContainer: mapHost,
-  controlsContainer: controls,
-  uiContainer: tower.view3D ? tower.getOverlayContainer() : undefined,
-  ui: {
-    panels: {
-      palette: { corner: 'tl' },
-      inspector: { corner: 'tr' },
-      summary: { corner: 'br' },
-    },
-    // The palette's Hero + Monument categories are roster-driven from UDT's re-exported `HEROES` /
-    // `MONUMENTS`; monument art resolves under `tokens/monuments/<kebab(id)>.png` (no hero art exists,
-    // so heroes use the programmatic fallback). Pass `ui.rosters` to override either list.
-  },
+  mapContainer: els.mapHost,
   assetBaseUrl: './tokens/',
   boardImageUrl: './board.png',
+  tokenArt, // 2D map reads each token's `image2d`
   onTokenSelect: logSelection,
-  // Fan a focus change from the controls/2D out to the 3D camera, then refresh.
+  // Fan a focus change out to the 3D camera + the 2D map's control bar, then refresh.
   onFocusChange: (focus) => {
-    board3d?.setFocus(focus);
+    current3D?.handle.setFocus(focus);
+    reflectMapFocus(focus);
     refresh();
   },
 });
 
-const refresh = (): void => {
-  pre.textContent = view.readout.getText();
-};
+// N/E/S/W/All bar stacked above the 2D map (drives the shared focus).
+reflectMapFocus = initMapControls(els, view).reflect;
 
-// Seed a setup that exercises real art (foes/adversary/monument/skull/wasteland) + the hero fallback.
-const board = view.controller;
-board.placeHero('hero-1', 'Broken Lands', 'north'); // no hero art → labeled fallback
-board.spawnFoe('foe-1', 'Brigands', 'Dayside');
-board.spawnFoe('foe-2', 'Dragons', 'Radiant Mountains');
-board.spawnFoe('foe-3', 'Frost Trolls', 'Lower Ice Fangs');
-board.selectAdversary("Utuk'Ku");
-board.placeAdversary('Upper Ice Fangs');
-board.addSkull('Dayside', 2);
-board.setMonument("Egan's End", 'argent-oak'); // monument shown in place of the building
-board.setSpaceMarker('Broken Lands', 'wasteland', true);
+// The dockable editing UI (palette + inspector). Mounted DIRECTLY (not via
+// BoardRenderView's `ui` option) so we keep the handle and can toggle each
+// panel's visibility from the sidebar. The host overlays the whole hero, so the
+// floating panels work in every display mode (including 2D-only). The per-kingdom
+// summary panel is omitted here — the docked Board Status readout covers it.
+const ui: BoardUIHandle = mountBoardUI(els.heroOverlay, {
+  controller: view.controller,
+  selection: view.selection,
+  locationPick: view.locationPick,
+  panels: {
+    palette: { corner: 'tl' },
+    inspector: { corner: 'tr' },
+    summary: false, // built but hidden — not shown in this demo
+  },
+});
 
-let board3d: Board3DHandle | undefined;
+// The library cascades each floating panel down 16px; align the Inspector's top
+// (and inset) with the Palette's so the two top panels sit on the same line.
+alignPanelTops(els.heroOverlay);
+// Then restore any positions the user previously dragged the panels to (overrides
+// the alignment above) and keep persisting them after each drag.
+initPanelPositions(els.heroOverlay);
 
-// 3D board: a Display ScenePlugin attached to a live Tower3DView. The tower GLB is example-only
-// (in example/public/, never bundled into the npm tarball). Token clicks + armed space picks are
-// fed into the SAME shared stores the 2D map uses, so the docked UI reacts to both renderers.
-if (tower.view3D) {
-  board3d = attachBoard3D(tower.view3D, {
+const jsonCtl = initJsonController(els, view);
+
+function refresh(): void {
+  els.readout.textContent = view.readout.getText();
+  jsonCtl.refreshPreview();
+}
+
+// Push controller changes into the 3D plugin + refresh the readout/JSON. (The 2D
+// map + readout text are re-rendered by BoardRenderView itself on every change;
+// here we also drive the 3D board and the example's own panels.)
+view.controller.subscribe((event) => {
+  if (event.type !== 'change') return;
+  refresh();
+  current3D?.handle.setBoardState(event.state);
+});
+
+// Seed before building the 3D so it attaches with the populated state.
+seedBoard(view.controller);
+
+// ── 3D board factory (re-used by the pop-out controller) ────────────────────
+function create3D(container: HTMLElement): void {
+  // The tower GLB is example-only (example/public/, never bundled).
+  const tower = new TowerRenderView({ container, modelUrl: './tower.glb' });
+  if (!tower.view3D) {
+    current3D = undefined;
+    return;
+  }
+  const handle = attachBoard3D(tower.view3D, {
     assetBaseUrl: './tokens/',
     boardImageUrl: './board.png', // render our own board (hides Display's placeholder)
-    boardState: board.getState(),
-    // Render skulls as a real 3D model (reusing Display's GLB) instead of the flat sprite.
-    // The seam is general: return a model URL (or `{ url, scale, rotation }`) for any token
-    // kind, or null to keep the sprite. `scale` shrinks the model vs the kind's default size.
-    resolveTokenModel: (art) => (art.kind === 'skull' ? { url: './skull_1.glb', scale: 0.6 } : null),
-    // Tuning aid: logs `{ elevationFactor, targetHeightFactor }` to the console as you orbit,
-    // ready to paste into the view-angle presets. Remove for production.
-    debugCamera: true,
+    boardState: view.controller.getState(),
+    tokenArt, // shared table: 3D renders `model3d`, else the image as a billboard
     locationPick: view.locationPick, // armed space-pick from the palette works in 3D too
     onTokenSelect: (sel) => {
       view.selection.set(sel); // shared selection → the inspector
       logSelection(sel);
     },
-    // The plugin reflects camera side changes here (it's the focus source of truth in 3D). This
-    // demo keeps the focus CONTROLS canonical so the 2D/readout can show `all` (the 3D camera
-    // always faces a side, which has no `all` equivalent), so we just log them.
-    onFocusChange: (focus) => {
-      // eslint-disable-next-line no-console
-      console.log('3D camera side →', focus.kingdom);
-    },
   });
+  current3D = { tower, handle };
 }
 
-// Keep the 3D plugin in sync with the controller (BoardRenderView re-renders the 2D map/readout
-// itself; here we also push state into the 3D plugin + refresh the readout text).
-view.controller.subscribe((event) => {
-  if (event.type !== 'change') return;
-  refresh();
-  board3d?.setBoardState(event.state);
-});
+function dispose3D(): void {
+  current3D?.handle.dispose();
+  current3D?.tower.dispose();
+  current3D = undefined;
+}
+
+create3D(els.scene3d);
+
+// ── Shell controllers ───────────────────────────────────────────────────────
+initPanelCollapseController();
+initLayoutManager(els);
+initInstructionsController(els);
+initSidebarController(els, view, ui, jsonCtl);
+initPipController(els);
+initDisplayModeController(els);
+initPopOutController(els, { create3D, dispose3D });
 
 refresh();
+
+/** Put the Inspector panel on the same line as the Palette (defeat the 16px cascade). */
+function alignPanelTops(host: HTMLElement): void {
+  const panels = Array.from(host.querySelectorAll<HTMLElement>('.udt-panel'));
+  const find = (title: string): HTMLElement | undefined =>
+    panels.find((p) => p.querySelector('.udt-panel-title-text')?.textContent === title);
+  const palette = find('Palette');
+  const inspector = find('Inspector');
+  if (!palette || !inspector) return;
+  inspector.style.top = palette.style.top; // same horizontal line
+  inspector.style.right = palette.style.left; // mirror the palette's inset
+}

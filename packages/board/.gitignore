@@ -5,3 +5,4 @@ coverage
 *.tsbuildinfo
 .DS_Store
 docs/planning
+.playwright-mcp

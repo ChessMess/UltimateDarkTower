@@ -1,6 +1,9 @@
 import type { BoardState, BuildingState, LocationName, SpaceMarker } from './boardState';
 import type { BoardCommand } from './commands';
 
+/** The instance-token kinds carried on the board (heroes, foes, and the singleton adversary). */
+export type TokenKind = 'hero' | 'foe' | 'adversary';
+
 /**
  * The event surface a `BoardStateController` emits.
  *
@@ -13,7 +16,7 @@ export type BoardEvent =
   | { type: 'change'; state: BoardState; command: BoardCommand }
   | {
       type: 'tokenAdded' | 'tokenMoved' | 'tokenRemoved';
-      kind: 'hero' | 'foe' | 'adversary';
+      kind: TokenKind;
       id: string;
       location?: LocationName;
     }

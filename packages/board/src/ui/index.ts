@@ -568,7 +568,7 @@ function renderAdversary(body: HTMLElement, controller: BoardStateController, st
   move.addEventListener('change', () => controller.placeAdversary(move.value));
   body.append(
     labeled('Location', move),
-    removeButton('Clear', () => controller.clearAdversary())
+    removeButton('Remove', () => controller.clearAdversary())
   );
 }
 

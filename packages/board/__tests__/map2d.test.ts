@@ -55,6 +55,32 @@ describe('BoardMap2D', () => {
     expect(hero.querySelector('circle')).not.toBeNull();
   });
 
+  it('uses a per-token tokenArt.image2d override for the 2D map (kebab-insensitive key)', () => {
+    const host = document.createElement('div');
+    const map = new BoardMap2D(host, {
+      assetBaseUrl: '/t/',
+      // `image3d` must NOT affect 2D; the lowercase key matches the `Brigands` foe type.
+      tokenArt: { foe: { brigands: { image2d: '/custom/brigands-2d.png', image3d: '/custom/brigands-3d.png' } } },
+    });
+    map.render(populated());
+    const foe = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-1"]') as SVGGElement;
+    expect(foe.querySelector('image')?.getAttribute('href')).toBe('/custom/brigands-2d.png');
+    // A foe without an entry still uses the default convention.
+    const dragons = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-2"]') as SVGGElement;
+    expect(dragons.querySelector('image')?.getAttribute('href')).toBe('/t/foes/dragons.png');
+  });
+
+  it('renders hero art from tokenArt (heroes have no default art)', () => {
+    const host = document.createElement('div');
+    const map = new BoardMap2D(host, {
+      tokenArt: { hero: { 'hero-1': { image2d: '/heroes/hero-1.png' } } },
+    });
+    map.render(populated());
+    const hero = host.querySelector('.udt-token[data-kind="hero"]') as SVGGElement;
+    expect(hero.querySelector('image')?.getAttribute('href')).toBe('/heroes/hero-1.png');
+    expect(hero.querySelector('circle')).toBeNull();
+  });
+
   it('fires onTokenSelect and draws a selection ring on click', () => {
     const onTokenSelect = jest.fn();
     const { map, host } = makeMap(onTokenSelect);
@@ -73,6 +99,78 @@ describe('BoardMap2D', () => {
     map.render(createDefaultBoardState(), { kingdom: 'north', angle: 'overhead' });
     const narrowed = host.querySelector('svg')?.getAttribute('viewBox');
     expect(narrowed).not.toBe(full);
+  });
+
+  it('wheel zooms in (shrinks the viewBox); double-click resets to base', () => {
+    const { map, host } = makeMap();
+    map.render(createDefaultBoardState());
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    const base = svg.getAttribute('viewBox');
+    expect(base).toBe(`0 0 ${BOARD_IMAGE_INFO.width} ${BOARD_IMAGE_INFO.height}`);
+
+    // jsdom getBoundingClientRect() is all-zero → the handler centers on (0.5, 0.5).
+    svg.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
+    const zoomed = svg.getAttribute('viewBox') as string;
+    expect(zoomed).not.toBe(base);
+    const [, , w] = zoomed.split(' ').map(Number);
+    expect(w).toBeLessThan(BOARD_IMAGE_INFO.width); // zoomed in
+
+    svg.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(svg.getAttribute('viewBox')).toBe(base);
+  });
+
+  it('wheel never zooms out past the base view', () => {
+    const { map, host } = makeMap();
+    map.render(createDefaultBoardState());
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    const base = svg.getAttribute('viewBox');
+    svg.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true, cancelable: true }));
+    expect(svg.getAttribute('viewBox')).toBe(base); // already fully out → unchanged
+  });
+
+  it('enableZoom: false ignores the wheel', () => {
+    const host = document.createElement('div');
+    const map = new BoardMap2D(host, { boardImageUrl: '/b.png', enableZoom: false });
+    map.render(createDefaultBoardState());
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    const base = svg.getAttribute('viewBox');
+    svg.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
+    expect(svg.getAttribute('viewBox')).toBe(base);
+  });
+
+  it('a pan-drag suppresses the trailing token-select click', () => {
+    const onTokenSelect = jest.fn();
+    const { map, host } = makeMap(onTokenSelect);
+    map.render(populated());
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    // Zoom in first — panning the base view is a no-op (drag only engages when zoomed).
+    svg.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
+
+    // A drag past the threshold; mousemove/mouseup go to `document` (the panel-drag idiom).
+    const foe = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-1"]') as SVGGElement;
+    svg.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: 0, clientY: 0, bubbles: true }));
+    document.dispatchEvent(new MouseEvent('mousemove', { clientX: 50, clientY: 50 }));
+    document.dispatchEvent(new MouseEvent('mouseup', {}));
+    foe.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(onTokenSelect).not.toHaveBeenCalled();
+
+    // A subsequent plain click (no drag) still selects.
+    foe.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(onTokenSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('focus change resets a manual zoom', () => {
+    const { map, host } = makeMap();
+    map.render(createDefaultBoardState(), { kingdom: 'all', angle: 'overhead' });
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    svg.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
+    expect(svg.getAttribute('viewBox')).not.toBe(`0 0 ${BOARD_IMAGE_INFO.width} ${BOARD_IMAGE_INFO.height}`);
+    // Re-render at a new focus → fresh svg at the kingdom base, manual zoom dropped.
+    map.render(createDefaultBoardState(), { kingdom: 'north', angle: 'overhead' });
+    const next = host.querySelector('svg') as SVGSVGElement;
+    expect(map.resetView).toBeDefined();
+    // The new view is the (non-full) kingdom base, i.e. not a zoomed-in fraction of it.
+    expect(next.getAttribute('viewBox')).not.toBe(svg.getAttribute('viewBox'));
   });
 
   it('dispose() empties the container', () => {

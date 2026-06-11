@@ -29,8 +29,8 @@ import type { AnchorSlot, BoardKingdom } from '../data/udtReexports';
 import { BOARD_ANCHORS } from '../data/udtReexports';
 import type { BoardFocus, BoardViewAngle } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
-import { KIND_TINT, defaultTokenImagePath } from '../renderers/assetPaths';
-import type { TokenArtRef, TokenSelection } from '../renderers/assetPaths';
+import { KIND_TINT, lookupTokenArt, resolveTokenImageFor } from '../renderers/assetPaths';
+import type { TokenArtRef, TokenSelection, TokenArtConfig, TokenModelRef, BoardView } from '../renderers/assetPaths';
 import {
   MAX_FANNED_SKULLS,
   fanOffset,
@@ -43,7 +43,7 @@ import type { LocatedEntry } from '../renderers/tokenLayout';
 // Type-only — the store INSTANCE is supplied by the caller; no runtime UI dependency.
 import type { LocationPickStore } from '../ui/stores';
 
-export type { TokenSelection, TokenArtRef } from '../renderers/assetPaths';
+export type { TokenSelection, TokenArtRef, TokenArt, TokenArtConfig, TokenModelRef, BoardView } from '../renderers/assetPaths';
 
 /** Token sizes / fan radius, as a fraction of the disc radius (world units). */
 const SLOT_FACTOR = 0.05;
@@ -55,27 +55,6 @@ const POINTER_PRIORITY = 10;
 const SPACE_POINTER_PRIORITY = 20;
 /** Scale bump applied to the selected token. */
 const SELECTED_SCALE = 1.35;
-
-/**
- * A 3D model to render in place of a token's 2D sprite. A bare `string` is the model
- * URL with defaults; the object form tunes per-model placement.
- *
- * The model is normalized to a unit bounding sphere (centered, radius 1) by Display's
- * loader, so `scale` multiplies the token kind's default world size and the model rests
- * on the disc regardless of `rotation`.
- */
-export type TokenModelRef =
-  | string
-  | {
-    /** Consumer-hosted `.glb` URL (Draco-compressed ok). Never bundled. */
-    url: string;
-    /** Multiplies the token kind's default world size. Default `1`. */
-    scale?: number;
-    /** Euler rotation (radians) to correct the model's native up/forward axis. */
-    rotation?: { x?: number; y?: number; z?: number };
-    /** Draco decoder source for THIS model; defaults to Display's gstatic CDN. `null` → uncompressed. */
-    dracoDecoderPath?: string | null;
-  };
 
 /** Context handed to a custom `tokenFactory` so it can build with the consumer's `three`. */
 export interface TokenBuildContext {
@@ -109,13 +88,24 @@ export interface Board3DPluginOptions {
    * NOT read from Display's lighting config. Passed to `anchorToWorld`.
    */
   northKingdom?: 0 | 1 | 2 | 3;
-  /** Override the default `${assetBaseUrl}${group}/${kebab(id)}.png` convention. `null` → fallback. */
-  resolveTokenImage?: (ref: TokenArtRef) => string | null;
+  /**
+   * Per-token art overrides, keyed by kind → art id. The 3D path renders a per-token `model3d`
+   * (GLB), else the token's image as a sprite billboard (`image3d ?? image2d`); pass the SAME
+   * object to the 2D map for its `image2d` slot. A per-token `model3d` is preferred over
+   * {@link resolveTokenModel}, an `image3d`/`image2d` over {@link resolveTokenImage}. See {@link TokenArtConfig}.
+   */
+  tokenArt?: TokenArtConfig;
+  /**
+   * Override the default `${assetBaseUrl}${group}/${kebab(id)}.png` convention for the 3D
+   * sprite. `null` → fallback. `view` is `'3d'` here; the same callback shape is reused by
+   * the 2D map.
+   */
+  resolveTokenImage?: (ref: TokenArtRef, view: BoardView) => string | null;
   /**
    * Map a token to a 3D model rendered in place of its 2D sprite. Return `null`/`undefined`
    * to fall back to the sprite. Mirrors {@link resolveTokenImage} for the 3D path and works
-   * for ANY token kind (skulls today; foes/monuments as models become available). A consumer
-   * `tokenFactory` still takes precedence over this.
+   * for ANY token kind (skulls today; foes/monuments as models become available). A per-token
+   * `tokenArt.model3d` takes precedence over this, and a consumer `tokenFactory` over both.
    */
   resolveTokenModel?: (art: TokenArtRef) => TokenModelRef | null | undefined;
   /**
@@ -468,7 +458,7 @@ export class Board3DPlugin implements ScenePlugin {
       // Consumer override wins — full control, builds with the consumer's `three`.
       node = this.options.tokenFactory({ selection, art, position, size, disc: this.disc as DiscMetrics, three: THREE });
     } else {
-      const model = this.options.resolveTokenModel?.(art);
+      const model = this.resolveModel(art);
       node = model
         ? this.buildModelToken(model, position, size)
         : this.buildSprite(selection, art, position, size);
@@ -556,10 +546,19 @@ export class Board3DPlugin implements ScenePlugin {
     this.tokens.push(node);
   }
 
+  /** The 3D model for a token: a per-token `tokenArt.model3d` override, else the callback. */
+  private resolveModel(art: TokenArtRef): TokenModelRef | null | undefined {
+    const override = lookupTokenArt(this.options.tokenArt, art);
+    if (override?.model3d != null) return override.model3d;
+    return this.options.resolveTokenModel?.(art);
+  }
+
   private resolveArt(art: TokenArtRef): string | null {
-    return this.options.resolveTokenImage
-      ? this.options.resolveTokenImage(art)
-      : defaultTokenImagePath(art, this.options.assetBaseUrl);
+    return resolveTokenImageFor(art, '3d', {
+      tokenArt: this.options.tokenArt,
+      resolveTokenImage: this.options.resolveTokenImage,
+      assetBaseUrl: this.options.assetBaseUrl,
+    });
   }
 
   private clearTokens(): void {

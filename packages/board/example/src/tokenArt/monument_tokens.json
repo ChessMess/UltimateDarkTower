@@ -1,0 +1,26 @@
+{
+  "arch-of-the-golden-sun": {
+    "image2d": "./tokens/monuments/arch-of-the-golden-sun.png"
+  },
+  "argent-oak": {
+    "image2d": "./tokens/monuments/argent-oak.png"
+  },
+  "cenotaph-of-the-first-prophet": {
+    "image2d": "./tokens/monuments/cenotaph-of-the-first-prophet.png"
+  },
+  "colossus-of-bjorn": {
+    "image2d": "./tokens/monuments/colossus-of-bjorn.png"
+  },
+  "endless-necropolis": {
+    "image2d": "./tokens/monuments/endless-necropolis.png"
+  },
+  "moonstone-temple": {
+    "image2d": "./tokens/monuments/moonstone-temple.png"
+  },
+  "nightmare-cage": {
+    "image2d": "./tokens/monuments/nightmare-cage.png"
+  },
+  "tower-shard": {
+    "image2d": "./tokens/monuments/tower-shard.png"
+  }
+}

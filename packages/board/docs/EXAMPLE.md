@@ -21,7 +21,13 @@ Assets live in `example/public/` and are loaded at runtime (never bundled):
 - `board.png` — the base layer (`boardImageUrl: './board.png'`).
 - `tokens/{foes,adversaries,monuments,markers}/*.png` — token art (`assetBaseUrl: './tokens/'`), named
   by the `kebab(UDT id)` convention. This tree is the staging ground for a future standalone board-assets
-  package. Heroes have no art, so they render as the programmatic labeled fallback disc.
+  package. Heroes have no convention art, so by default they render as the programmatic labeled fallback disc.
+
+**Per-token overrides** (different 2D vs 3D art, or a 3D model) live in
+[`example/src/tokenArt/`](../example/src/tokenArt) as per-kind JSON (`foe_tokens.json`, `hero_tokens.json`,
+…), merged into a `TokenArtConfig` by [`index.ts`](../example/src/tokenArt/index.ts) and passed to both
+renderers. The demo points `Dragons` at its flat foe PNG in 2D but the GLB model in 3D. Edit these by hand,
+or use the **Token Art Forge** (below) — heroes can be given art this way too.
 
 Try the controls: **N / E / S / W** zoom the 2D map to a kingdom, narrow the readout, and move the 3D
 camera to that side; **All** restores the full board. **Overhead / Isometric** tilts the 3D camera
@@ -51,3 +57,15 @@ The example keeps the **focus controls canonical** so `All` can show the whole b
 faces a side (no `all` equivalent), so the plugin's `onFocusChange` is logged rather than fanned back into
 the shared filter. Apps that want the 3D camera to be the focus source of truth can wire `onFocusChange`
 into their shared focus instead.
+
+## Token Art Forge
+
+A small in-browser editor for the per-token art above — open [`/tokens.html`](../example/tokens.html)
+(linked from the demo footer), or run `npm run dev:example` and visit `/tokens.html`. Pick a **token type**
+then a **token**; review/replace its **2D image**, **3D image**, and **3D model** (URL + scale/rotation),
+with a live JSON preview. Under `vite dev` a tiny dev-only middleware
+([`example/tokenArtDevPlugin.ts`](../example/tokenArtDevPlugin.ts), `apply: 'serve'`) reads the JSON +
+lists `example/public` art, and **Save** writes the kind's `<kind>_tokens.json` straight to disk (the demo
+HMR-reloads with the new art). On the static GitHub-Pages build there is no such endpoint, so the tool
+shows a **Preview** badge and falls back to **Copy JSON** / **Download**. Source:
+[`example/src/tokenArtEditor/`](../example/src/tokenArtEditor).

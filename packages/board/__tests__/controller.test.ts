@@ -54,6 +54,76 @@ describe('BoardStateController — self mode (default)', () => {
   });
 });
 
+describe('BoardStateController — moveToken (kind resolver)', () => {
+  const A = GENERIC;
+  const B = BUILDING;
+
+  it('resolves a hero by id and emits tokenMoved {kind:hero}', () => {
+    const c = new BoardStateController();
+    c.placeHero('h1', A);
+    const moved: BoardEvent[] = [];
+    c.on('tokenMoved', (e) => moved.push(e));
+
+    expect(c.moveToken('h1', B)).toBe('hero');
+    expect(c.getState().heroes.h1.location).toBe(B);
+    expect(moved).toEqual([{ type: 'tokenMoved', kind: 'hero', id: 'h1', location: B }]);
+  });
+
+  it('resolves a foe by id and emits tokenMoved {kind:foe}', () => {
+    const c = new BoardStateController();
+    c.spawnFoe('f1', 'goblin', A);
+    const moved: BoardEvent[] = [];
+    c.on('tokenMoved', (e) => moved.push(e));
+
+    expect(c.moveToken('f1', B)).toBe('foe');
+    expect(c.getState().foes.f1.location).toBe(B);
+    expect(moved).toEqual([{ type: 'tokenMoved', kind: 'foe', id: 'f1', location: B }]);
+  });
+
+  it('resolves the adversary by id and emits tokenMoved {kind:adversary}', () => {
+    const c = new BoardStateController();
+    c.selectAdversary('ad1');
+    c.placeAdversary(A);
+    const moved: BoardEvent[] = [];
+    c.on('tokenMoved', (e) => moved.push(e));
+
+    expect(c.moveToken('ad1', B)).toBe('adversary');
+    expect(c.getState().adversary).toEqual({ id: 'ad1', location: B });
+    expect(moved).toEqual([{ type: 'tokenMoved', kind: 'adversary', id: 'ad1', location: B }]);
+  });
+
+  it('on a cross-kind id collision the hero wins and the foe is untouched', () => {
+    const c = new BoardStateController();
+    c.placeHero('x', A);
+    c.spawnFoe('x', 'goblin', A);
+
+    expect(c.moveToken('x', B)).toBe('hero');
+    expect(c.getState().heroes.x.location).toBe(B);
+    expect(c.getState().foes.x.location).toBe(A); // foe untouched
+  });
+
+  it('returns null and is a no-op for an unknown id', () => {
+    const c = new BoardStateController();
+    c.placeHero('h1', A);
+    const before = c.getState();
+    const events: BoardEvent[] = [];
+    c.subscribe((e) => events.push(e));
+
+    expect(c.moveToken('nope', B)).toBeNull();
+    expect(c.getState()).toBe(before); // identity unchanged
+    expect(events).toHaveLength(0); // nothing dispatched
+  });
+
+  it('does not match an adversary that has no real id (empty-id placeholder)', () => {
+    const c = new BoardStateController();
+    c.placeAdversary(A); // placed before selectAdversary → id is ''
+    expect(c.getState().adversary).toEqual({ id: '', location: A });
+
+    expect(c.moveToken('', B)).toBeNull();
+    expect(c.getState().adversary).toEqual({ id: '', location: A }); // not moved
+  });
+});
+
 describe('BoardStateController — host mode', () => {
   it('dispatch does not mutate held state but emits the projected change intent', () => {
     const c = new BoardStateController({ mode: 'host' });

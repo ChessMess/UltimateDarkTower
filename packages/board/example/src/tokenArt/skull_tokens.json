@@ -1,0 +1,9 @@
+{
+  "skull": {
+    "image2d": "./tokens/markers/grey-skull.png",
+    "model3d": {
+      "url": "./skull_1.glb",
+      "scale": 0.6
+    }
+  }
+}

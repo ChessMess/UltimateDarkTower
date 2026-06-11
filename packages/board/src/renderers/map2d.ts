@@ -3,8 +3,10 @@ import type { AnchorSlot, BoardKingdom } from '../data/udtReexports';
 import { BOARD_ANCHORS, BOARD_IMAGE_INFO, BOARD_LOCATION_BY_NAME } from '../data/udtReexports';
 import type { BoardFocus, BoardRenderer } from './shared';
 import { DEFAULT_FOCUS, focusEquals } from './shared';
-import { KIND_TINT, defaultTokenImagePath, normalizeAssetBaseUrl } from './assetPaths';
-import type { TokenSelection, TokenArtRef } from './assetPaths';
+import { KIND_TINT, normalizeAssetBaseUrl, resolveTokenImageFor } from './assetPaths';
+import { panRect, rectToViewBox, zoomRect } from './zoom';
+import type { Rect } from './zoom';
+import type { TokenSelection, TokenArtRef, TokenArtConfig, BoardView } from './assetPaths';
 import {
   MAX_FANNED_SKULLS,
   fanOffset,
@@ -19,8 +21,8 @@ import type { LocationPickStore } from '../ui/stores';
 
 // Re-export the shared token-art convention so existing consumers keep importing
 // `TokenSelection`/`TokenArtRef`/`kebab` from here (and via the package barrel).
-export { kebab } from './assetPaths';
-export type { TokenSelection, TokenArtRef } from './assetPaths';
+export { kebab, lookupTokenArt, resolveTokenImageFor } from './assetPaths';
+export type { TokenSelection, TokenArtRef, TokenArt, TokenArtConfig, TokenModelRef, BoardView } from './assetPaths';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
@@ -34,13 +36,28 @@ const DIM_OPACITY = 0.22;
 const VIEWBOX_PAD = 250;
 const SPACE_HIT_R = 130;
 
+/** Mouse-zoom tuning. One wheel notch scales the view by `WHEEL_STEP`; `DEFAULT_MAX_ZOOM`
+ *  caps how far in you can go (base width ÷ this). `DRAG_THRESHOLD_PX` is the movement that
+ *  turns a click into a pan (and suppresses the trailing token-select click). */
+const WHEEL_STEP = 1.15;
+const DEFAULT_MAX_ZOOM = 8;
+const DRAG_THRESHOLD_PX = 4;
+
 export interface BoardMap2DOptions {
   /** Token-art root, e.g. `'./tokens/'`. Art is loaded at runtime — never bundled. */
   assetBaseUrl?: string;
   /** Base-layer board image, e.g. `'./board.png'`. Omit to draw tokens over a blank board. */
   boardImageUrl?: string;
-  /** Override the default `{assetBaseUrl}{group}/{kebab(id)}.png` convention. Return `null` for "no art" (→ fallback). */
-  resolveTokenImage?: (ref: TokenArtRef) => string | null;
+  /**
+   * Per-token art overrides, keyed by kind → art id. Used here for the 2D `image2d` slot;
+   * pass the SAME object to the 3D plugin for the `image3d`/`model3d` slots. See {@link TokenArtConfig}.
+   */
+  tokenArt?: TokenArtConfig;
+  /**
+   * Override the default `{assetBaseUrl}{group}/{kebab(id)}.png` convention. Return `null` for "no art"
+   * (→ fallback). `view` is `'2d'` here; the same callback shape is reused by the 3D plugin.
+   */
+  resolveTokenImage?: (ref: TokenArtRef, view: BoardView) => string | null;
   /** Fired when a token is clicked. Selection is renderer-local UI state — it is never written to BoardState. */
   onTokenSelect?: (selection: TokenSelection) => void;
   /**
@@ -50,6 +67,14 @@ export interface BoardMap2DOptions {
   locationPick?: LocationPickStore;
   /** Fired when a space target is clicked while armed (in addition to `locationPick.pick`). */
   onLocationPick?: (location: LocationName) => void;
+  /**
+   * Mouse zoom/pan: scroll the wheel to zoom toward the cursor, drag to pan once zoomed in,
+   * double-click (or {@link BoardMap2D.resetView}) to return to the focus view. Default `true`.
+   * Set `false` for embeds that don't want the wheel to hijack page scroll over the map.
+   */
+  enableZoom?: boolean;
+  /** Max zoom-in factor relative to the current focus view (default `8`). */
+  maxZoom?: number;
 }
 
 /**
@@ -66,6 +91,8 @@ export class BoardMap2D implements BoardRenderer {
   private readonly onTokenSelect?: (selection: TokenSelection) => void;
   private readonly locationPick?: LocationPickStore;
   private readonly onLocationPick?: (location: LocationName) => void;
+  private readonly enableZoom: boolean;
+  private readonly maxZoom: number;
   private readonly unsubPick?: () => void;
 
   private svg?: SVGSVGElement;
@@ -74,6 +101,21 @@ export class BoardMap2D implements BoardRenderer {
   private lastState?: BoardState;
   private lastFocus: BoardFocus = DEFAULT_FOCUS;
   private readonly onClick = (event: Event): void => this.handleClick(event);
+
+  /** The focus-derived view (recomputed each render); zoom/pan stay inside it. */
+  private baseViewBox: Rect = { x: 0, y: 0, w: BOARD_IMAGE_INFO.width, h: BOARD_IMAGE_INFO.height };
+  /** Present once the user has zoomed/panned; cleared by focus change or `resetView`. */
+  private userViewBox?: Rect;
+  /** In-flight drag-pan state (mouse events; jsdom has no PointerEvent). */
+  private panStart?: { clientX: number; clientY: number; view: Rect };
+  private panMoved = false;
+  /** Set when a pan-drag occurs so the trailing `click` doesn't select a token. */
+  private suppressClick = false;
+  private readonly onWheel = (event: WheelEvent): void => this.handleWheel(event);
+  private readonly onMouseDown = (event: MouseEvent): void => this.handleMouseDown(event);
+  private readonly onMouseMove = (event: MouseEvent): void => this.handleMouseMove(event);
+  private readonly onMouseUp = (): void => this.handleMouseUp();
+  private readonly onDblClick = (): void => this.resetView();
 
   constructor(
     private readonly container: HTMLElement,
@@ -84,7 +126,14 @@ export class BoardMap2D implements BoardRenderer {
     this.onTokenSelect = options.onTokenSelect;
     this.locationPick = options.locationPick;
     this.onLocationPick = options.onLocationPick;
-    this.resolve = options.resolveTokenImage ?? ((ref) => defaultTokenImagePath(ref, this.assetBaseUrl));
+    this.enableZoom = options.enableZoom ?? true;
+    this.maxZoom = options.maxZoom ?? DEFAULT_MAX_ZOOM;
+    this.resolve = (ref) =>
+      resolveTokenImageFor(ref, '2d', {
+        tokenArt: options.tokenArt,
+        resolveTokenImage: options.resolveTokenImage,
+        assetBaseUrl: this.assetBaseUrl,
+      });
     // Re-render to add/remove the space-pick layer when the armed state changes.
     this.unsubPick = this.locationPick?.subscribe((event) => {
       if (event.type === 'armed' || event.type === 'disarmed') this.rerender();
@@ -93,17 +142,22 @@ export class BoardMap2D implements BoardRenderer {
 
   render(state: BoardState, focus: BoardFocus = DEFAULT_FOCUS): void {
     if (this.lastState === state && this.svg && focusEquals(this.lastFocus, focus)) return;
+    // A focus change re-bases the view, so any manual zoom/pan is dropped; a plain state
+    // change (token moved) keeps the current zoom by re-applying `userViewBox` below.
+    if (!focusEquals(this.lastFocus, focus)) this.userViewBox = undefined;
     this.lastState = state;
     this.lastFocus = focus;
 
     const { width, height } = BOARD_IMAGE_INFO;
+    this.baseViewBox = this.focusViewBox(focus, width, height);
     const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('viewBox', this.focusViewBox(focus, width, height));
+    svg.setAttribute('viewBox', rectToViewBox(this.userViewBox ?? this.baseViewBox));
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     svg.setAttribute('class', 'udt-board-map');
     svg.style.width = '100%';
     svg.style.height = 'auto';
     svg.style.display = 'block';
+    if (this.enableZoom) svg.style.cursor = 'grab';
 
     if (this.boardImageUrl) {
       const image = document.createElementNS(SVG_NS, 'image');
@@ -133,6 +187,11 @@ export class BoardMap2D implements BoardRenderer {
     }
 
     svg.addEventListener('click', this.onClick);
+    if (this.enableZoom) {
+      svg.addEventListener('wheel', this.onWheel, { passive: false });
+      svg.addEventListener('mousedown', this.onMouseDown);
+      svg.addEventListener('dblclick', this.onDblClick);
+    }
 
     this.container.replaceChildren(svg);
     this.svg = svg;
@@ -142,11 +201,22 @@ export class BoardMap2D implements BoardRenderer {
 
   dispose(): void {
     this.svg?.removeEventListener('click', this.onClick);
+    this.svg?.removeEventListener('wheel', this.onWheel);
+    this.svg?.removeEventListener('mousedown', this.onMouseDown);
+    this.svg?.removeEventListener('dblclick', this.onDblClick);
+    this.endPan(); // drop any in-flight drag's document listeners
     this.unsubPick?.();
     this.container.replaceChildren();
     this.svg = undefined;
     this.selectionLayer = undefined;
     this.lastState = undefined;
+  }
+
+  /** Return the 2D map to its focus view, dropping any manual zoom/pan. */
+  resetView(): void {
+    if (!this.userViewBox) return;
+    this.userViewBox = undefined;
+    this.svg?.setAttribute('viewBox', rectToViewBox(this.baseViewBox));
   }
 
   /** Force a full re-render at the last state/focus (used when the armed state toggles). */
@@ -359,8 +429,9 @@ export class BoardMap2D implements BoardRenderer {
     return BOARD_LOCATION_BY_NAME[loc]?.kingdom === (focus.kingdom as BoardKingdom) ? 1 : DIM_OPACITY;
   }
 
-  private focusViewBox(focus: BoardFocus, width: number, height: number): string {
-    if (focus.kingdom === 'all') return `0 0 ${width} ${height}`;
+  private focusViewBox(focus: BoardFocus, width: number, height: number): Rect {
+    const full: Rect = { x: 0, y: 0, w: width, h: height };
+    if (focus.kingdom === 'all') return full;
     let minX = Infinity;
     let minY = Infinity;
     let maxX = -Infinity;
@@ -375,15 +446,88 @@ export class BoardMap2D implements BoardRenderer {
         maxY = Math.max(maxY, anchor.y * height);
       }
     }
-    if (!Number.isFinite(minX)) return `0 0 ${width} ${height}`;
-    const x = minX - VIEWBOX_PAD;
-    const y = minY - VIEWBOX_PAD;
-    const w = maxX - minX + VIEWBOX_PAD * 2;
-    const h = maxY - minY + VIEWBOX_PAD * 2;
-    return `${x} ${y} ${w} ${h}`;
+    if (!Number.isFinite(minX)) return full;
+    return {
+      x: minX - VIEWBOX_PAD,
+      y: minY - VIEWBOX_PAD,
+      w: maxX - minX + VIEWBOX_PAD * 2,
+      h: maxY - minY + VIEWBOX_PAD * 2,
+    };
   }
 
+  // ── mouse zoom / pan ─────────────────────────────────────────────────────────
+
+  /** The view currently applied to the svg (manual zoom/pan if any, else the focus base). */
+  private currentViewBox(): Rect {
+    return this.userViewBox ?? this.baseViewBox;
+  }
+
+  /** Wheel toward the cursor. Reads the cursor's fractional position from the svg rect;
+   *  jsdom (and hidden elements) report a zero-size rect, so we fall back to the center. */
+  private handleWheel(event: WheelEvent): void {
+    if (!this.svg) return;
+    event.preventDefault();
+    const rect = this.svg.getBoundingClientRect();
+    const fx = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0.5;
+    const fy = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5;
+    const factor = event.deltaY < 0 ? 1 / WHEEL_STEP : WHEEL_STEP;
+    const next = zoomRect(this.currentViewBox(), this.baseViewBox, fx, fy, factor, this.maxZoom);
+    this.applyView(next);
+  }
+
+  private handleMouseDown(event: MouseEvent): void {
+    // Only the primary button, and only when zoomed in (panning the base view is a no-op).
+    if (event.button !== 0 || !this.userViewBox) return;
+    this.panStart = { clientX: event.clientX, clientY: event.clientY, view: this.userViewBox };
+    this.panMoved = false;
+    document.addEventListener('mousemove', this.onMouseMove);
+    document.addEventListener('mouseup', this.onMouseUp);
+    if (this.svg) this.svg.style.cursor = 'grabbing';
+  }
+
+  private handleMouseMove(event: MouseEvent): void {
+    if (!this.panStart || !this.svg) return;
+    const dxPx = event.clientX - this.panStart.clientX;
+    const dyPx = event.clientY - this.panStart.clientY;
+    // Flag a real drag from the pixel delta alone (no layout needed) so the trailing click is
+    // suppressed even where `getBoundingClientRect` reports nothing (jsdom / hidden element).
+    if (Math.abs(dxPx) > DRAG_THRESHOLD_PX || Math.abs(dyPx) > DRAG_THRESHOLD_PX) this.panMoved = true;
+    const rect = this.svg.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return; // no layout → can't translate the view
+    // A drag moves the content under the cursor, so pan the view in the opposite direction.
+    const view = this.panStart.view;
+    const next = panRect(view, this.baseViewBox, (-dxPx * view.w) / rect.width, (-dyPx * view.h) / rect.height);
+    this.applyView(next);
+  }
+
+  private handleMouseUp(): void {
+    if (this.panMoved) this.suppressClick = true; // swallow the trailing click
+    this.endPan();
+  }
+
+  /** Drop the in-flight drag's document listeners (also called from `dispose`). */
+  private endPan(): void {
+    if (!this.panStart) return;
+    this.panStart = undefined;
+    document.removeEventListener('mousemove', this.onMouseMove);
+    document.removeEventListener('mouseup', this.onMouseUp);
+    if (this.svg) this.svg.style.cursor = 'grab';
+  }
+
+  /** Write a new view to the svg; collapse back to "no manual view" once fully zoomed out
+   *  (width reaches the base) so `currentViewBox()` returns the exact base, free of drift. */
+  private applyView(next: Rect): void {
+    this.userViewBox = next.w >= this.baseViewBox.w ? undefined : next;
+    this.svg?.setAttribute('viewBox', rectToViewBox(this.currentViewBox()));
+  }
+
+  // ── focus / selection (cont.) ────────────────────────────────────────────────
+
   private handleClick(event: Event): void {
+    if (this.suppressClick) {
+      this.suppressClick = false; // this click closed a pan-drag — don't select
+      return;
+    }
     const target = event.target as Element | null;
 
     // Armed: a click on a space target reports a location; other clicks are ignored.

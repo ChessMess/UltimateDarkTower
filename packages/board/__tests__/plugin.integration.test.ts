@@ -1,3 +1,11 @@
+// Stub Display's GLB loader: the real one awaits a bloom prewarm + DRACO setup that throws
+// WebGL-free in jsdom. `buildModelToken` builds (and registers) the token's `THREE.Group`
+// synchronously before this resolves, so a never-resolving promise is enough to exercise the
+// model branch. Only the per-token-model test calls it; the other tests never load a model.
+jest.mock('ultimatedarktowerdisplay/physics', () => ({
+  loadSkullModel: () => new Promise(() => {}),
+}));
+
 import * as THREE from 'three';
 import { Tower3DView } from 'ultimatedarktowerdisplay';
 import type { PointerTarget } from 'ultimatedarktowerdisplay';
@@ -67,6 +75,24 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
     expect(tokens.length).toBe(EXPECTED_TOKENS);
     const kinds = new Set(tokens.map((t) => (t.userData.selection as TokenSelection).kind));
     expect(kinds).toEqual(new Set(['hero', 'foe', 'marker', 'building']));
+  });
+
+  it('renders a per-token tokenArt.model3d as a Group (vs the default Sprite), preferred over resolveTokenModel', async () => {
+    view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
+    handle = attachBoard3D(view, {
+      boardState: makeState(),
+      assetBaseUrl: './tokens/',
+      // The callback returns null for everything; the per-token table must still drive the model.
+      resolveTokenModel: () => null,
+      tokenArt: { foe: { Brigands: { model3d: { url: 'mock://foe.glb' } } } },
+    });
+    await flushModelLoad();
+
+    const tokens = tokensOf(registeredTarget());
+    const foe = tokens.find((t) => (t.userData.selection as TokenSelection).kind === 'foe');
+    const hero = tokens.find((t) => (t.userData.selection as TokenSelection).kind === 'hero');
+    expect(foe).toBeInstanceOf(THREE.Group); // model token (the Group is built synchronously)
+    expect(hero).toBeInstanceOf(THREE.Sprite); // no entry → default sprite billboard
   });
 
   it('renders its own board + hides Display’s placeholder only when boardImageUrl is set', async () => {

@@ -10,7 +10,7 @@ import type {
 import { createDefaultBoardState } from './boardState';
 import type { BoardCommand } from './commands';
 import { applyBoardCommand } from './reducer';
-import type { BoardEvent, BoardEventListener, BoardEventType } from './events';
+import type { BoardEvent, BoardEventListener, BoardEventType, TokenKind } from './events';
 import { createEmitter } from '../util/emitter';
 
 export interface BoardStateControllerOptions {
@@ -108,6 +108,30 @@ export class BoardStateController {
   }
   moveFoe(foeId: FoeId, location: LocationName): void {
     this.dispatch({ type: 'moveFoe', foeId, location });
+  }
+  /**
+   * Move whichever token carries `id` to `location`, resolving its kind from current state.
+   * Order is heroes → foes → adversary; on a cross-kind id collision the earlier kind wins.
+   * Returns the kind moved, or `null` if nothing matches (a no-op — nothing is dispatched, no
+   * event fires). The adversary matches only when one exists with a non-empty id equal to `id`,
+   * so this never creates an adversary. Delegates to the existing commands, so the correct
+   * `tokenMoved` event is emitted for free and host-mode behaves like the other named methods.
+   */
+  moveToken(id: string, location: LocationName): TokenKind | null {
+    const s = this.getState();
+    if (id in s.heroes) {
+      this.dispatch({ type: 'moveHero', heroId: id, location });
+      return 'hero';
+    }
+    if (id in s.foes) {
+      this.dispatch({ type: 'moveFoe', foeId: id, location });
+      return 'foe';
+    }
+    if (s.adversary && s.adversary.id !== '' && s.adversary.id === id) {
+      this.dispatch({ type: 'placeAdversary', location });
+      return 'adversary';
+    }
+    return null;
   }
   setFoeStatus(foeId: FoeId, status: FoeStatus): void {
     this.dispatch({ type: 'setFoeStatus', foeId, status });

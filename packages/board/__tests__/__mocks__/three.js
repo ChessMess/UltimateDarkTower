@@ -39,7 +39,10 @@ class Group {
     this.children = [];
     this.position = new Vector3();
     // Board extension: the 3D plugin owns a token Group it adds to / removes from
-    // the scene and tags with userData.
+    // the scene and tags with userData; model tokens are Groups, so `register()`
+    // reads `scale` (`baseScale = scale.clone()`) and `applyHighlight` rescales it.
+    this.scale = new Vector3(1, 1, 1);
+    this.renderOrder = 0;
     this.parent = null;
     this.userData = {};
   }

@@ -5,248 +5,146 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>UltimateDarkTowerBoard — Example</title>
-  <style>
-    body {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      margin: 2rem;
-      background: #14110f;
-      color: #e8e2d6;
-    }
-
-    h1 {
-      margin-top: 0;
-    }
-
-    pre {
-      background: #1f1b18;
-      padding: 1rem;
-      border-radius: 6px;
-      white-space: pre-wrap;
-    }
-
-    .columns {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-      align-items: flex-start;
-    }
-
-    .views {
-      display: flex;
-      gap: 1.5rem;
-      align-items: stretch;
-      margin-bottom: 1.5rem;
-    }
-
-    .views > .scene,
-    .views > .columns {
-      flex: 1 1 0;
-      min-width: 0;
-    }
-
-    @media (max-width: 800px) and (max-height: 900px) {
-      .views {
-        flex-direction: column;
-      }
-    }
-
-    .scene {
-      position: relative;
-      min-height: 360px;
-      background: #0b0a09;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .map {
-      flex: 1 1 480px;
-      max-width: 720px;
-      background: #1f1b18;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .side {
-      flex: 1 1 320px;
-      min-width: 280px;
-    }
-
-    .selection {
-      font-weight: bold;
-    }
-
-    .udt-focus-controls {
-      display: flex;
-      gap: 1.5rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .udt-focus-group {
-      display: inline-flex;
-      gap: 0.25rem;
-    }
-
-    .udt-focus-button {
-      background: #2a2420;
-      color: #e8e2d6;
-      border: 1px solid #4a3f36;
-      border-radius: 4px;
-      padding: 0.35rem 0.7rem;
-      cursor: pointer;
-      font: inherit;
-    }
-
-    .udt-focus-button.is-active {
-      background: #c2843a;
-      color: #14110f;
-      border-color: #c2843a;
-    }
-
-    /* Dockable editing UI (M4). Mounted into Display's overlay HUD; empty areas still orbit. */
-    .trv-overlay .udt-board-ui {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-
-    .udt-panel {
-      position: absolute;
-      width: 230px;
-      background: rgba(31, 27, 24, 0.95);
-      border: 1px solid #4a3f36;
-      border-radius: 6px;
-      box-shadow: 0 6px 18px #000a;
-      font-size: 12px;
-      color: #e8e2d6;
-      pointer-events: auto;
-    }
-
-    .udt-panel-title {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      padding: 0.35rem 0.5rem;
-      background: #2a2420;
-      border-radius: 6px 6px 0 0;
-      cursor: move;
-    }
-
-    .udt-panel-title-text {
-      flex: 1;
-      font-weight: bold;
-    }
-
-    .udt-panel-collapse,
-    .udt-panel-close {
-      background: none;
-      border: none;
-      color: #e8e2d6;
-      cursor: pointer;
-      font: inherit;
-      line-height: 1;
-      padding: 0 0.25rem;
-    }
-
-    .udt-panel-body {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      padding: 0.5rem;
-      max-height: 46vh;
-      overflow: auto;
-    }
-
-    .udt-board-ui button {
-      background: #2a2420;
-      color: #e8e2d6;
-      border: 1px solid #4a3f36;
-      border-radius: 4px;
-      padding: 0.25rem 0.5rem;
-      cursor: pointer;
-      font: inherit;
-    }
-
-    .udt-board-ui select,
-    .udt-board-ui input {
-      background: #14110f;
-      color: #e8e2d6;
-      border: 1px solid #4a3f36;
-      border-radius: 4px;
-      padding: 0.2rem;
-      font: inherit;
-      width: 100%;
-    }
-
-    .udt-field,
-    .udt-field-row {
-      display: flex;
-      gap: 0.4rem;
-    }
-
-    .udt-field {
-      flex-direction: column;
-      gap: 0.15rem;
-      flex: 1;
-    }
-
-    .udt-field-label {
-      opacity: 0.7;
-    }
-
-    .udt-palette-add-row,
-    .udt-palette-confirm,
-    .udt-inspector-row {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .udt-palette-hint {
-      flex-basis: 100%;
-      opacity: 0.8;
-      font-style: italic;
-    }
-
-    .udt-inspector-heading {
-      font-weight: bold;
-      margin-bottom: 0.2rem;
-    }
-
-    .udt-inspector-empty {
-      opacity: 0.7;
-      font-style: italic;
-    }
-
-    .udt-summary {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    .udt-summary th,
-    .udt-summary td {
-      padding: 0.1rem 0.3rem;
-      text-align: center;
-      border-bottom: 1px solid #332c26;
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&family=JetBrains+Mono:wght@400&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="./example.css" />
 </head>
 
-<body>
-  <h1>Ultimate Dark Tower Board</h1>
-  <p>
-    Live demo — the 3D board (a Display ScenePlugin) + the 2D overhead map + the text readout
-    + the dockable editing UI (palette / inspector / summary), all sharing one board state,
-    selection, and focus. Click a token in either view to select it; use the palette to add one
-    (click a space on the board, then Confirm); drag the panels to reposition them; N/E/S/W moves
-    the camera and narrows the map/readout.
-  </p>
-  <div id="app"></div>
-  <footer style="margin-top: 2rem; opacity: 0.7; font-size: 0.85rem">
-    <a href="https://github.com/ChessMess/UltimateDarkTowerBoard" style="color: #c2843a">Ultimate Dark Tower Board</a>
-    — composable state + renderers for the <em>Return to Dark Tower</em> game board ·
-    <a href="https://github.com/ChessMess/UltimateDarkTowerBoard/tree/main/docs" style="color: #c2843a">docs</a>
-  </footer>
+<body class="app-shell">
+  <div id="error-banner" hidden></div>
+
+  <div class="app-grid">
+
+    <!-- ============ LEFT SIDEBAR ============ -->
+    <aside class="app-sidebar" id="sidebar">
+      <header class="brand">
+        <h1>Ultimate Dark Tower Board</h1>
+        <p class="brand-tagline">
+          Composable state + 2D / 3D renderers for the <em>Return to Dark Tower</em> game board.
+          Configure a board, then copy the JSON for your own app.
+        </p>
+      </header>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Settings</h2>
+        <div class="opts-row opts-row-actions">
+          <button id="btn-reset-board" class="secondary-action"
+            title="Reset the board and restore the default layout (panel/PiP positions, sizes, view) — like a first visit">Reset
+            Board</button>
+          <button id="btn-reset-zoom" class="secondary-action">Reset 2D Zoom</button>
+        </div>
+        <div class="sidebar-row">
+          <button id="btn-instructions-toggle" class="secondary-action" aria-expanded="true">Hide Help</button>
+        </div>
+        <label class="toggle-pill"><input type="checkbox" id="chk-panel-palette" checked /> Palette</label>
+        <label class="toggle-pill"><input type="checkbox" id="chk-panel-inspector" checked /> Inspector</label>
+      </section>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Presets</h2>
+        <div class="preset-card-grid">
+          <button id="btn-preset-seed" class="preset-card">Seed Demo</button>
+          <button id="btn-preset-random" class="preset-card">Randomize</button>
+          <button id="btn-preset-clear" class="preset-card">Clear</button>
+        </div>
+      </section>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Quick Edit</h2>
+        <div class="sidebar-row">
+          <select id="sel-quick-foe" class="sidebar-select" aria-label="Foe type"></select>
+        </div>
+        <div class="sidebar-row">
+          <button id="btn-quick-add-foe" class="secondary-action">Add Foe</button>
+        </div>
+        <div class="sidebar-row">
+          <button id="btn-quick-add-skull" class="secondary-action">+ Skull</button>
+          <button id="btn-quick-remove-skull" class="secondary-action">− Skull</button>
+        </div>
+      </section>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Project</h2>
+        <div class="link-list">
+          <a href="https://github.com/ChessMess/UltimateDarkTowerBoard" target="_blank" rel="noopener">GitHub Repo ↗</a>
+          <a href="https://github.com/ChessMess/UltimateDarkTowerBoard/tree/main/docs" target="_blank"
+            rel="noopener">Documentation ↗</a>
+          <a href="./tokens.html">Token Art Forge ↗</a>
+        </div>
+      </section>
+    </aside>
+
+    <!-- ============ CENTER HERO ============ -->
+    <main class="app-hero">
+      <div class="hero-header">
+        <div class="view-pills" role="tablist" aria-label="Display mode">
+          <button id="btn-view-2d" class="view-pill">2D</button>
+          <button id="btn-view-3d" class="view-pill">3D</button>
+          <button id="btn-view-2d3d" class="view-pill">2D + 3D</button>
+          <button id="btn-view-pip" class="view-pill">PiP</button>
+        </div>
+        <div class="hero-header-right">
+          <button id="btn-pip-swap" class="ghost-action" hidden title="Swap which view is large">Swap ⇄</button>
+          <button id="btn-pop-out" class="ghost-action" title="Open the board in a separate resizable window">Pop Out
+            ⤴</button>
+        </div>
+      </div>
+
+      <section id="instructions" class="instructions">
+        <div class="instructions-body">
+          <p>
+            Click a token in either view to select it. Use the <strong>Palette</strong> to add one (Add → pick a
+            space → Confirm) and the <strong>Inspector</strong> to edit the selection; drag panels by their title
+            bar. Each view's <strong>N/E/S/W</strong> bar zooms to a kingdom (<strong>All</strong> restores the
+            whole board). On the 2D map: scroll to zoom, drag to pan, double-click to reset. The right column has
+            the live board <strong>JSON</strong> — edit it and hit Apply, or Copy it for your own app.
+          </p>
+        </div>
+      </section>
+
+      <!-- Initial classes match the default mode (pip-3dbig) so there's no
+           layout flash before displayModeController runs. -->
+      <div class="panel panel-rendered mode-pip" id="rendered-panel">
+        <div id="hero-overlay"></div>
+        <div id="scene-2d" class="render-pane is-mini">
+          <div id="map-2d-controls" role="group" aria-label="2D kingdom view"></div>
+          <div id="map-2d-host" class="map-host"></div>
+        </div>
+        <div id="scene-3d" class="render-pane is-big"></div>
+      </div>
+    </main>
+
+    <!-- ============ RIGHT CONFIG COLUMN ============ -->
+    <aside id="config-column" class="app-config">
+      <section class="config-section">
+        <div class="panel" data-collapse-key="status">
+          <div class="panel-row-header">
+            <h2>Board Status</h2>
+          </div>
+          <pre id="readout" class="config-preview readout-text" aria-live="polite"></pre>
+        </div>
+
+        <div class="panel panel-editors" data-collapse-key="json">
+          <div class="panel-row-header">
+            <h2>JSON</h2>
+            <div class="panel-header-actions">
+              <button id="btn-copy-config">Copy JSON</button>
+              <button id="btn-apply-config" disabled>Apply</button>
+            </div>
+          </div>
+          <textarea id="config-preview" class="config-preview" spellcheck="false" wrap="off"
+            aria-label="Board state JSON"></textarea>
+        </div>
+
+
+      </section>
+    </aside>
+
+  </div><!-- /.app-grid -->
+
   <script type="module" src="./src/main.ts"></script>
 </body>
 

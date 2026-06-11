@@ -1,0 +1,34 @@
+{
+  "ashstrider": {
+    "image2d": "./tokens/foes/Adversary-Token-Ashstrider.png",
+    "image3d": "./tokens/adversaries/ashstrider.png"
+  },
+  "bane-of-omens": {
+    "image2d": "./tokens/foes/Adversary-Token-Bane.png",
+    "image3d": "./tokens/adversaries/bane-of-omens.png"
+  },
+  "empress-of-shades": {
+    "image2d": "./tokens/foes/Adversary-Token-Empress.png",
+    "image3d": "./tokens/adversaries/empress-of-shades.png"
+  },
+  "gaze-eternal": {
+    "image2d": "./tokens/foes/Adversary-Token-Gaze.png",
+    "image3d": "./tokens/adversaries/gaze-eternal.png"
+  },
+  "gravemaw": {
+    "image2d": "./tokens/foes/Adversary-Token-Gravemaw.png",
+    "image3d": "./tokens/adversaries/gravemaw.png"
+  },
+  "isa-the-exile": {
+    "image2d": "./tokens/foes/Adversary-Token-Isa.png",
+    "image3d": "./tokens/adversaries/isa-the-exile.png"
+  },
+  "lingering-rot": {
+    "image2d": "./tokens/foes/Adversary-Token-Lingering-Rot.png",
+    "image3d": "./tokens/adversaries/lingering-rot.png"
+  },
+  "utuk-ku": {
+    "image2d": "./tokens/foes/Adversary-Token-Utuk-Ku.png",
+    "image3d": "./tokens/adversaries/utuk-ku.png"
+  }
+}

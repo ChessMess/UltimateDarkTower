@@ -3,7 +3,7 @@ import type { BoardState } from '../state/boardState';
 import { createDefaultBoardState } from '../state/boardState';
 import { BoardReadout } from '../renderers/readout';
 import { BoardMap2D } from '../renderers/map2d';
-import type { TokenSelection } from '../renderers/map2d';
+import type { TokenSelection, TokenArtRef, TokenArtConfig, BoardView } from '../renderers/map2d';
 import type { BoardFocus } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
 import { mountFocusControls } from './focusControls';
@@ -34,6 +34,17 @@ export interface BoardRenderViewOptions {
   assetBaseUrl?: string;
   /** Base-layer board image for the 2D map. */
   boardImageUrl?: string;
+  /**
+   * Per-token art overrides for the 2D map (the `image2d` slot). Pass the SAME object to the
+   * 3D plugin (`attachBoard3D`) for the `image3d`/`model3d` slots. See {@link TokenArtConfig}.
+   */
+  tokenArt?: TokenArtConfig;
+  /** Override the default 2D-map art path; `null` → fallback. `view` is `'2d'` here. */
+  resolveTokenImage?: (ref: TokenArtRef, view: BoardView) => string | null;
+  /** Mouse zoom/pan on the 2D map (wheel to zoom, drag to pan, double-click to reset). Default `true`. */
+  enableZoom?: boolean;
+  /** Max 2D-map zoom-in factor relative to the focus view (default `8`). */
+  maxZoom?: number;
   /** Forwarded to the 2D map: fired when a token is clicked (in addition to updating `selection`). */
   onTokenSelect?: (selection: TokenSelection) => void;
   /** Fired whenever the focus changes (from `setFocus` or a control click). */
@@ -71,6 +82,10 @@ export class BoardRenderView {
       this.map2d = new BoardMap2D(options.mapContainer, {
         assetBaseUrl: options.assetBaseUrl,
         boardImageUrl: options.boardImageUrl,
+        tokenArt: options.tokenArt,
+        resolveTokenImage: options.resolveTokenImage,
+        enableZoom: options.enableZoom,
+        maxZoom: options.maxZoom,
         // Route a token click into the shared selection store AND the user callback.
         onTokenSelect: (selection) => {
           this.selection.set(selection);
