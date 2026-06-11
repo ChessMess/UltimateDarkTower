@@ -664,6 +664,12 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Frame the 2D viewport to match the 3D view's `.t3v-canvas` (Display lib).
+     Pure-black fill so the letterbox matches the 3D renderer's black background. */
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  background: #000;
+  overflow: hidden;
 }
 
 /* Contain-fit the 2D SVG map inside its pane in every mode (overrides the
