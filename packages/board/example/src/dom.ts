@@ -54,7 +54,6 @@ export interface DomElements {
   btnCopyConfig: HTMLButtonElement;
   btnApplyConfig: HTMLButtonElement;
   btnResetBoard: HTMLButtonElement;
-  btnResetZoom: HTMLButtonElement;
 }
 
 export function queryDom(): DomElements {
@@ -98,6 +97,5 @@ export function queryDom(): DomElements {
     btnCopyConfig: byId('btn-copy-config'),
     btnApplyConfig: byId('btn-apply-config'),
     btnResetBoard: byId('btn-reset-board'),
-    btnResetZoom: byId('btn-reset-zoom'),
   };
 }

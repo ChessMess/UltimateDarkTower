@@ -82,7 +82,6 @@ export function initSidebarController(
     clearStoredState();
     window.location.reload();
   });
-  els.btnResetZoom.addEventListener('click', () => view.map2d?.resetView());
 
   // ── Floating-panel visibility ───────────────────────────────────────────
   const vis = readPanelVis();
