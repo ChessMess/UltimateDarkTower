@@ -1,7 +1,7 @@
 # Ultimate Dark Tower Board
 
 <p align="center">
-  <img src="docs/readme-header-shot.png" alt="ultimatedarktowerdisplay — 3D tower render" width="420" />
+  <img src="docs/readme-header-shot.png" alt="ultimate dark tower board" width="966" />
 </p>
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ChessMess/UltimateDarkTowerBoard/ci.yml?branch=main&label=CI)](https://github.com/ChessMess/UltimateDarkTowerBoard/actions/workflows/ci.yml)
