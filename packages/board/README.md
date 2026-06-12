@@ -1,4 +1,8 @@
-# UltimateDarkTowerBoard
+# Ultimate Dark Tower Board
+
+<p align="center">
+  <img src="docs/readme-header-shot.png" alt="ultimatedarktowerdisplay — 3D tower render" width="420" />
+</p>
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ChessMess/UltimateDarkTowerBoard/ci.yml?branch=main&label=CI)](https://github.com/ChessMess/UltimateDarkTowerBoard/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)](https://www.typescriptlang.org/)
