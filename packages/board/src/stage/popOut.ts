@@ -42,6 +42,7 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
   let placeholder: HTMLElement | null = null;
   let pollTimer: number | null = null;
   let beforeUnload: (() => void) | null = null;
+  let popupHide: (() => void) | null = null;
 
   const buildPopupDocument = (win: Window): HTMLElement => {
     const doc = win.document;
@@ -105,6 +106,16 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
     win.dispatchEvent(new Event('resize'));
 
     hooks.toggleButton.textContent = POP_IN_LABEL;
+
+    // Restore as the popup unloads — WHILE its document is still alive — so the panel's
+    // 2D map + controls + editing UI keep their event listeners on the way back. (A node
+    // moved out only AFTER the window is destroyed loses every listener registered on it,
+    // which is why the 2D side went dead after a close.) The 500ms poll stays as a
+    // fallback in case `pagehide` doesn't fire; `restore()` is idempotent.
+    popupHide = () => restore();
+    win.addEventListener('pagehide', popupHide);
+    win.addEventListener('beforeunload', popupHide);
+
     pollTimer = window.setInterval(() => {
       if (popup && popup.closed) restore();
     }, 500);
@@ -115,6 +126,10 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
   };
 
   const restore = (): void => {
+    const win = popup;
+    if (!win) return; // already restored (pagehide + poll can both fire — claim it once)
+    popup = null;
+
     if (pollTimer !== null) {
       window.clearInterval(pollTimer);
       pollTimer = null;
@@ -122,6 +137,15 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
     if (beforeUnload) {
       window.removeEventListener('beforeunload', beforeUnload);
       beforeUnload = null;
+    }
+    if (popupHide) {
+      try {
+        win.removeEventListener('pagehide', popupHide);
+        win.removeEventListener('beforeunload', popupHide);
+      } catch {
+        // the popup window may already be torn down — ignore
+      }
+      popupHide = null;
     }
 
     hooks.dispose3D();
@@ -134,7 +158,6 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
     hooks.setLayoutSuspended(false);
     window.dispatchEvent(new Event('resize'));
     hooks.toggleButton.textContent = POP_OUT_LABEL;
-    popup = null;
   };
 
   hooks.toggleButton.addEventListener('click', () => {
