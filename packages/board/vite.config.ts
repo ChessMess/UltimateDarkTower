@@ -1,17 +1,21 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
-// Library build. Two entries:
+// Library build. Three entries:
 //  - `index`  -> the headless core + readout/2D renderers + UDT data re-exports (three-free)
 //  - `plugin` -> the Board3DPlugin (imports three + ultimatedarktowerdisplay)
+//  - `stage`  -> BoardStageView, the all-in-one render stage (three-free statically; the
+//               3D tower is a dynamic import of `src/plugin/stageTower`, emitted as a
+//               shared chunk alongside the plugin entry — never bundled into `stage`).
 // Each emits its own ESM + CJS bundle. fileName matches the §2 package.json
-// `exports` map: dist/index.{esm,cjs}.js and dist/plugin.{esm,cjs}.js.
+// `exports` map: dist/index.{esm,cjs}.js, dist/plugin.{esm,cjs}.js, dist/stage.{esm,cjs}.js.
 export default defineConfig({
   build: {
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
         plugin: resolve(__dirname, 'src/plugin/index.ts'),
+        stage: resolve(__dirname, 'src/stage/index.ts'),
       },
       formats: ['es', 'cjs'],
       // ESM keeps `.esm.js` (a `.js` under "type":"module" is ESM — correct).

@@ -7,11 +7,12 @@
 [RENDERERS](RENDERERS.md) compares the readout / 2D map / 3D board at a glance. This page is for lookup.
 **Changelog:** [../CHANGELOG.md](../CHANGELOG.md).
 
-`ultimatedarktowerboard` has **two entry points**:
+`ultimatedarktowerboard` has **three entry points**:
 
 | Import | What you get | Heavy deps |
 | --- | --- | --- |
 | `ultimatedarktowerboard` (`.`) | headless `BoardState` + controller/reducer/commands/events/save-load, the **readout** and **2D map** renderers, the dockable **editing UI**, and UDT data re-exports | **none** (no `three`, no Display) |
+| `ultimatedarktowerboard/stage` | `BoardStageView` — the all-in-one render stage (2D + 3D + every control) | **none statically** — the 3D tower is **lazy-loaded** |
 | `ultimatedarktowerboard/plugin` | `Board3DPlugin` / `attachBoard3D` — the 3D board, a Display `ScenePlugin` | `three` + `ultimatedarktowerdisplay` |
 
 ## Exports
@@ -38,6 +39,10 @@ import type {
   BoardUIOptions, BoardUIHandle, PanelId, PanelPlacement, BoardUIRosters, RosterEntry,
   SelectionStore, LocationPickStore, PendingPlacement, LocationPickEvent,
 } from 'ultimatedarktowerboard';
+
+// `./stage` — the all-in-one render stage (three-free statically; lazy-loads the 3D tower)
+import { BoardStageView, BOARD_STAGE_CSS, injectStageStyles } from 'ultimatedarktowerboard/stage';
+import type { BoardStageViewOptions, DisplayMode } from 'ultimatedarktowerboard/stage';
 
 // `./plugin` — the 3D board (imports three + ultimatedarktowerdisplay)
 import { attachBoard3D, Board3DPlugin } from 'ultimatedarktowerboard/plugin';
@@ -649,6 +654,65 @@ TokenSelection; art: TokenArtRef | null; position: THREE.Vector3; size: number; 
 typeof THREE }`. Build `Object3D`s with `ctx.three`, never a bundled copy.
 
 `TokenSelection` and `TokenArtRef` are also re-exported from this subpath for convenience.
+
+---
+
+# `ultimatedarktowerboard/stage` (the all-in-one stage)
+
+> Three-free in its **static** graph: the 3D tower (Display + `three`) is reached only via a dynamic
+> `import()`, so a 2D-only app never loads `three`. The 3D chunk is fetched on first enable. Full guide:
+> [STAGE.md](STAGE.md).
+
+### `BoardStageView`
+
+`class BoardStageView` — a plain, framework-agnostic component that composes the 2D map + readout
+([`BoardRenderView`](#boardrenderview)), the focus bar ([`mountFocusControls`](#mountfocuscontrolshost-options)),
+the editing UI ([`mountBoardUI`](#mountboarduihost-options)), and a lazily-loaded 3D tower, plus the render-stage
+chrome (mode switch / swap / PiP / pop-out / Spin-Pan). Mounts into and fills `container`.
+
+```ts
+import { BoardStageView } from 'ultimatedarktowerboard/stage';
+
+const stage = new BoardStageView({
+  container: document.getElementById('board')!,
+  assetBaseUrl: './tokens/',
+  boardImageUrl: './board.png',
+  modelUrl: './tower.glb',        // omit for a 2D-only stage (no `three` is loaded)
+});
+stage.controller.spawnFoe('foe-1', 'Brigands', 'Dayside'); // mutate via the shared controller
+await stage.setTowerEnabled(false); // turn the 3D tower off at runtime (drops to 2D)
+```
+
+**Getters:** `controller`, `view` (inner `BoardRenderView`), `readout`, `selection`, `locationPick`,
+`focus`, `map2d`, `tower3D` (Display view or `null`), `editingUI`, `root`, `mode`.
+
+**Methods:** `setDisplayMode(mode)`, `swap()`, `setDragMode('rotate' | 'pan')`, `setFocus(focus)`,
+`setTowerEnabled(on): Promise<void>`, `popOut()` / `popIn()`, `resetLayout()`, `dispose()`.
+
+### `BoardStageViewOptions`
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `container` | `HTMLElement` | — | **Required.** The stage fills this element (you size it). |
+| `initialState` | `BoardState` | empty board | Seeds the shared controller. |
+| `assetBaseUrl` / `boardImageUrl` / `tokenArt` | — | — | Token art + board image, shared by both renderers. |
+| `resolveTokenImage` | `(ref, view) => string \| null` | convention | Override the token-art path. |
+| `modelUrl` | `string` | — | Tower GLB; required to enable the 3D tower. |
+| `tower3D` | `'auto' \| boolean` | `'auto'` | `'auto'` = on iff `modelUrl` set; `true` forces on; `false` 2D-only. |
+| `towerToggle` | `boolean` | `false` | Add a built-in Tower 3D on/off button (the mode pills already cover showing/hiding 3D). |
+| `defaultMode` | `DisplayMode` | `pip-3dbig` / `2d` | Initial mode (a stored preference wins). |
+| `editingUI` | `boolean \| BoardUIOptions` | `true` | Mount the palette/inspector; `false` to skip; object to configure. |
+| `enableZoom` / `maxZoom` / `dragMode` | — | `true` / `8` / `'rotate'` | Forwarded to the 2D map. |
+| `persist` | `boolean \| { prefix }` | `true` | Persist mode/drag/PiP inset (default prefix `udtb.stage`). |
+| `injectStyles` | `boolean` | `true` | Inject `BOARD_STAGE_CSS`. |
+| `onTokenSelect` / `onFocusChange` / `onModeChange` / `onTowerToggle` / `onPopOut` | callbacks | — | — |
+
+`DisplayMode = '2d' | '3d' | '2d3d' | 'pip-2dbig' | 'pip-3dbig'`.
+
+### `BOARD_STAGE_CSS` / `injectStageStyles(doc?)`
+
+The stage's CSS as a string, and an idempotent injector (called automatically unless `injectStyles: false`).
+Scoped under `.bsv-root`; themeable via `--bsv-*` variables that fall back to the host's theme tokens.
 
 ---
 

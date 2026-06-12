@@ -8,6 +8,11 @@
 
 All visual renderers implement `BoardRenderer` (`render(state, focus?)`, optional `dispose()`).
 
+> **Want all of it wired together?** `BoardStageView` (`./stage`) is the batteries-included component
+> that composes the 2D map + readout + the 3D tower + every control (mode switch / PiP / pop-out /
+> Spin-Pan / focus bar / editing UI) and lazy-loads the 3D stack. See [STAGE.md](./STAGE.md). The
+> sections below describe the lower-level pieces it orchestrates.
+
 ## Focus / view controls
 
 ```ts

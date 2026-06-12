@@ -17,6 +17,11 @@
       "types": "./dist/plugin/index.d.ts",
       "import": "./dist/plugin.esm.js",
       "require": "./dist/plugin.cjs"
+    },
+    "./stage": {
+      "types": "./dist/stage/index.d.ts",
+      "import": "./dist/stage.esm.js",
+      "require": "./dist/stage.cjs"
     }
   },
   "files": ["dist"],
