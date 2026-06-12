@@ -5,7 +5,9 @@ import {
   createDefaultBoardState,
   createLocationPickStore,
 } from '../src/index';
-import type { BoardState, TokenSelection } from '../src/index';
+import type { BoardState, TokenSelection, DragMode } from '../src/index';
+
+const IDENTITY_ROTATE = `rotate(0 ${BOARD_IMAGE_INFO.width / 2} ${BOARD_IMAGE_INFO.height / 2})`;
 
 function populated(): BoardState {
   const s = createDefaultBoardState();
@@ -15,12 +17,16 @@ function populated(): BoardState {
   return s;
 }
 
-function makeMap(onTokenSelect?: (s: TokenSelection) => void): { map: BoardMap2D; host: HTMLElement } {
+function makeMap(
+  onTokenSelect?: (s: TokenSelection) => void,
+  dragMode?: DragMode
+): { map: BoardMap2D; host: HTMLElement } {
   const host = document.createElement('div');
   const map = new BoardMap2D(host, {
     assetBaseUrl: '/t/',
     boardImageUrl: '/board.png',
     onTokenSelect,
+    dragMode,
   });
   return { map, host };
 }
@@ -29,7 +35,8 @@ describe('BoardMap2D', () => {
   it('renders the board image base layer', () => {
     const { map, host } = makeMap();
     map.render(createDefaultBoardState());
-    const image = host.querySelector('svg > image');
+    // The board image lives inside the rotate layer (so a drag-spin turns it with the tokens).
+    const image = host.querySelector('svg .udt-board-rotate > image');
     expect(image).not.toBeNull();
     expect(image?.getAttribute('href')).toBe('/board.png');
   });
@@ -140,7 +147,7 @@ describe('BoardMap2D', () => {
 
   it('a pan-drag suppresses the trailing token-select click', () => {
     const onTokenSelect = jest.fn();
-    const { map, host } = makeMap(onTokenSelect);
+    const { map, host } = makeMap(onTokenSelect, 'pan'); // pan mode (default is rotate)
     map.render(populated());
     const svg = host.querySelector('svg') as SVGSVGElement;
     // Zoom in first — panning the base view is a no-op (drag only engages when zoomed).
@@ -157,6 +164,79 @@ describe('BoardMap2D', () => {
     // A subsequent plain click (no drag) still selects.
     foe.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(onTokenSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('default drag-spins the board: rotate-layer transform changes and the trailing click is suppressed', () => {
+    const onTokenSelect = jest.fn();
+    const { map, host } = makeMap(onTokenSelect); // default dragMode: 'rotate'
+    map.render(populated());
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    const rotateLayer = host.querySelector('.udt-board-rotate') as SVGGElement;
+    expect(rotateLayer).not.toBeNull();
+    expect(rotateLayer.getAttribute('transform')).toBe(IDENTITY_ROTATE); // identity at rest
+
+    // jsdom getBoundingClientRect() is all-zero → the pivot collapses to (0,0); a drag from
+    // (10,0) to (0,10) sweeps a 90° angle about it, so the board spins.
+    const foe = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-1"]') as SVGGElement;
+    svg.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: 10, clientY: 0, bubbles: true }));
+    document.dispatchEvent(new MouseEvent('mousemove', { clientX: 0, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('mouseup', {}));
+    expect(rotateLayer.getAttribute('transform')).not.toBe(IDENTITY_ROTATE);
+
+    // The drag swallows the trailing click (no selection); a later plain click still selects.
+    foe.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(onTokenSelect).not.toHaveBeenCalled();
+    foe.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(onTokenSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('resetView clears the spin; setDragMode("pan") stops spinning on drag', () => {
+    const { map, host } = makeMap();
+    map.render(populated());
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    const rotateLayer = host.querySelector('.udt-board-rotate') as SVGGElement;
+
+    const spin = (): void => {
+      svg.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: 10, clientY: 0, bubbles: true }));
+      document.dispatchEvent(new MouseEvent('mousemove', { clientX: 0, clientY: 10 }));
+      document.dispatchEvent(new MouseEvent('mouseup', {}));
+    };
+
+    spin();
+    expect(rotateLayer.getAttribute('transform')).not.toBe(IDENTITY_ROTATE);
+
+    map.resetView();
+    expect(rotateLayer.getAttribute('transform')).toBe(IDENTITY_ROTATE);
+
+    // In pan mode a drag at base zoom is a no-op, so the board no longer spins.
+    map.setDragMode('pan');
+    spin();
+    expect(rotateLayer.getAttribute('transform')).toBe(IDENTITY_ROTATE);
+  });
+
+  it('middle-button drag runs the OTHER action: no spin in spin mode', () => {
+    const { map, host } = makeMap(); // default dragMode: 'rotate'
+    map.render(populated());
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    const rotateLayer = host.querySelector('.udt-board-rotate') as SVGGElement;
+    // Middle-button (button 1) → pan, not spin, so the rotate transform is untouched.
+    svg.dispatchEvent(new MouseEvent('mousedown', { button: 1, clientX: 10, clientY: 0, bubbles: true, cancelable: true }));
+    document.dispatchEvent(new MouseEvent('mousemove', { clientX: 0, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('mouseup', {}));
+    expect(rotateLayer.getAttribute('transform')).toBe(IDENTITY_ROTATE);
+  });
+
+  it('middle-button drag runs the OTHER action: spins while in pan mode', () => {
+    const { map, host } = makeMap(undefined, 'pan');
+    map.render(populated());
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    const rotateLayer = host.querySelector('.udt-board-rotate') as SVGGElement;
+    expect(rotateLayer.getAttribute('transform')).toBe(IDENTITY_ROTATE);
+    // Middle-button press-and-hold → spin even though the active mode is pan.
+    svg.dispatchEvent(new MouseEvent('mousedown', { button: 1, clientX: 10, clientY: 0, bubbles: true, cancelable: true }));
+    document.dispatchEvent(new MouseEvent('mousemove', { clientX: 0, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('mouseup', {}));
+    expect(rotateLayer.getAttribute('transform')).not.toBe(IDENTITY_ROTATE);
   });
 
   it('focus change resets a manual zoom', () => {

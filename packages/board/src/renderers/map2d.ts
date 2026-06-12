@@ -6,6 +6,8 @@ import { DEFAULT_FOCUS, focusEquals } from './shared';
 import { KIND_TINT, normalizeAssetBaseUrl, resolveTokenImageFor } from './assetPaths';
 import { panRect, rectToViewBox, zoomRect } from './zoom';
 import type { Rect } from './zoom';
+import { pointerAngleDeg, viewBoxPointToClient } from './rotate';
+import type { ClientPoint } from './rotate';
 import type { TokenSelection, TokenArtRef, TokenArtConfig, BoardView } from './assetPaths';
 import {
   MAX_FANNED_SKULLS,
@@ -75,7 +77,17 @@ export interface BoardMap2DOptions {
   enableZoom?: boolean;
   /** Max zoom-in factor relative to the current focus view (default `8`). */
   maxZoom?: number;
+  /**
+   * What a left-drag does on the map. `'rotate'` (default) spins the whole board (image + tokens)
+   * about its center — grab a point and it follows the cursor, like a lazy-susan. `'pan'` is the
+   * classic "move the image around" once zoomed in. Switch at runtime with {@link BoardMap2D.setDragMode}.
+   * Wheel-zoom and double-click-reset work in both modes.
+   */
+  dragMode?: DragMode;
 }
+
+/** Left-drag behavior on the 2D map; see {@link BoardMap2DOptions.dragMode}. */
+export type DragMode = 'rotate' | 'pan';
 
 /**
  * 2D overhead map renderer. Draws the board image and places tokens via UDT's
@@ -93,9 +105,11 @@ export class BoardMap2D implements BoardRenderer {
   private readonly onLocationPick?: (location: LocationName) => void;
   private readonly enableZoom: boolean;
   private readonly maxZoom: number;
+  private dragMode: DragMode;
   private readonly unsubPick?: () => void;
 
   private svg?: SVGSVGElement;
+  private rotateLayer?: SVGGElement;
   private selectionLayer?: SVGGElement;
   private selectedKey: string | null = null;
   private lastState?: BoardState;
@@ -109,7 +123,12 @@ export class BoardMap2D implements BoardRenderer {
   /** In-flight drag-pan state (mouse events; jsdom has no PointerEvent). */
   private panStart?: { clientX: number; clientY: number; view: Rect };
   private panMoved = false;
-  /** Set when a pan-drag occurs so the trailing `click` doesn't select a token. */
+  /** In-flight grab-&-spin state: the on-screen pivot (board center) plus the angle/rotation at grab. */
+  private rotateStart?: { pivot: ClientPoint; downX: number; downY: number; startAngle: number; startRotation: number };
+  private rotateMoved = false;
+  /** Current spin about the board center, in degrees (applied to `rotateLayer`). */
+  private rotationDeg = 0;
+  /** Set when a pan/rotate drag occurs so the trailing `click` doesn't select a token. */
   private suppressClick = false;
   private readonly onWheel = (event: WheelEvent): void => this.handleWheel(event);
   private readonly onMouseDown = (event: MouseEvent): void => this.handleMouseDown(event);
@@ -128,6 +147,7 @@ export class BoardMap2D implements BoardRenderer {
     this.onLocationPick = options.onLocationPick;
     this.enableZoom = options.enableZoom ?? true;
     this.maxZoom = options.maxZoom ?? DEFAULT_MAX_ZOOM;
+    this.dragMode = options.dragMode ?? 'rotate';
     this.resolve = (ref) =>
       resolveTokenImageFor(ref, '2d', {
         tokenArt: options.tokenArt,
@@ -157,7 +177,15 @@ export class BoardMap2D implements BoardRenderer {
     svg.style.width = '100%';
     svg.style.height = 'auto';
     svg.style.display = 'block';
-    if (this.enableZoom) svg.style.cursor = 'grab';
+    const interactive = this.isInteractive();
+    if (interactive) svg.style.cursor = 'grab';
+
+    // All content lives in a single rotate layer so a drag-spin turns the whole board
+    // (image + tokens + selection ring) about its center, like a lazy-susan. The pivot is
+    // the fixed board center, so re-renders re-apply the same transform from `rotationDeg`.
+    const rotate = document.createElementNS(SVG_NS, 'g');
+    rotate.setAttribute('class', 'udt-board-rotate');
+    rotate.setAttribute('transform', this.rotateTransform());
 
     if (this.boardImageUrl) {
       const image = document.createElementNS(SVG_NS, 'image');
@@ -166,35 +194,38 @@ export class BoardMap2D implements BoardRenderer {
       image.setAttribute('y', '0');
       image.setAttribute('width', String(width));
       image.setAttribute('height', String(height));
-      svg.appendChild(image);
+      rotate.appendChild(image);
     }
 
     const tokens = document.createElementNS(SVG_NS, 'g');
     tokens.setAttribute('class', 'udt-board-tokens');
     this.renderTokens(tokens, state, focus);
-    svg.appendChild(tokens);
+    rotate.appendChild(tokens);
 
     const selectionLayer = document.createElementNS(SVG_NS, 'g');
     selectionLayer.setAttribute('class', 'udt-board-selection');
-    svg.appendChild(selectionLayer);
+    rotate.appendChild(selectionLayer);
 
     // Armed space-pick: clickable targets at the anchors, drawn on top (M4 editing).
     if (this.locationPick?.isArmed()) {
       const spaces = document.createElementNS(SVG_NS, 'g');
       spaces.setAttribute('class', 'udt-board-spaces');
       this.renderSpaceTargets(spaces, focus);
-      svg.appendChild(spaces);
+      rotate.appendChild(spaces);
     }
 
+    svg.appendChild(rotate);
+
     svg.addEventListener('click', this.onClick);
-    if (this.enableZoom) {
-      svg.addEventListener('wheel', this.onWheel, { passive: false });
+    if (this.enableZoom) svg.addEventListener('wheel', this.onWheel, { passive: false });
+    if (interactive) {
       svg.addEventListener('mousedown', this.onMouseDown);
       svg.addEventListener('dblclick', this.onDblClick);
     }
 
     this.container.replaceChildren(svg);
     this.svg = svg;
+    this.rotateLayer = rotate;
     this.selectionLayer = selectionLayer;
     this.redrawSelection();
   }
@@ -204,19 +235,55 @@ export class BoardMap2D implements BoardRenderer {
     this.svg?.removeEventListener('wheel', this.onWheel);
     this.svg?.removeEventListener('mousedown', this.onMouseDown);
     this.svg?.removeEventListener('dblclick', this.onDblClick);
-    this.endPan(); // drop any in-flight drag's document listeners
+    this.endDrag(); // drop any in-flight drag's document listeners
     this.unsubPick?.();
     this.container.replaceChildren();
     this.svg = undefined;
+    this.rotateLayer = undefined;
     this.selectionLayer = undefined;
     this.lastState = undefined;
   }
 
-  /** Return the 2D map to its focus view, dropping any manual zoom/pan. */
+  /** Return the 2D map to its focus view, dropping any manual zoom/pan and spin. */
   resetView(): void {
-    if (!this.userViewBox) return;
+    if (!this.userViewBox && this.rotationDeg === 0) return;
     this.userViewBox = undefined;
+    this.rotationDeg = 0;
     this.svg?.setAttribute('viewBox', rectToViewBox(this.baseViewBox));
+    this.rotateLayer?.setAttribute('transform', this.rotateTransform());
+  }
+
+  /**
+   * Switch what a left-drag does (`'rotate'` spin vs `'pan'`). Takes effect immediately; any
+   * in-flight drag is cancelled. When zoom is off, this also (un)binds the drag listeners so
+   * a rotate-only map still responds to the mouse.
+   */
+  setDragMode(mode: DragMode): void {
+    if (this.dragMode === mode) return;
+    const wasInteractive = this.isInteractive();
+    this.dragMode = mode;
+    this.endDrag();
+    const nowInteractive = this.isInteractive();
+    if (this.svg && wasInteractive !== nowInteractive) {
+      if (nowInteractive) {
+        this.svg.addEventListener('mousedown', this.onMouseDown);
+        this.svg.addEventListener('dblclick', this.onDblClick);
+      } else {
+        this.svg.removeEventListener('mousedown', this.onMouseDown);
+        this.svg.removeEventListener('dblclick', this.onDblClick);
+      }
+    }
+    if (this.svg) this.svg.style.cursor = nowInteractive ? 'grab' : '';
+  }
+
+  /** The map responds to the mouse when zoom is on, or whenever drag-spin is enabled. */
+  private isInteractive(): boolean {
+    return this.enableZoom || this.dragMode === 'rotate';
+  }
+
+  /** The `rotate(...)` transform for the content layer — spin about the board center. */
+  private rotateTransform(): string {
+    return `rotate(${this.rotationDeg} ${BOARD_IMAGE_INFO.width / 2} ${BOARD_IMAGE_INFO.height / 2})`;
   }
 
   /** Force a full re-render at the last state/focus (used when the armed state toggles). */
@@ -476,8 +543,19 @@ export class BoardMap2D implements BoardRenderer {
   }
 
   private handleMouseDown(event: MouseEvent): void {
-    // Only the primary button, and only when zoomed in (panning the base view is a no-op).
-    if (event.button !== 0 || !this.userViewBox) return;
+    const primary = event.button === 0;
+    const middle = event.button === 1;
+    if (!primary && !middle) return;
+    // The middle button runs the OTHER drag action: a quick pan while in spin mode, or a
+    // press-and-hold spin while in pan mode (the left button always does the active mode).
+    const action: DragMode = middle ? (this.dragMode === 'rotate' ? 'pan' : 'rotate') : this.dragMode;
+    if (middle) event.preventDefault(); // suppress the browser's middle-click autoscroll
+    if (action === 'rotate') {
+      this.beginRotate(event);
+      return;
+    }
+    // Pan: only when zoomed in (panning the base view is a no-op).
+    if (!this.userViewBox) return;
     this.panStart = { clientX: event.clientX, clientY: event.clientY, view: this.userViewBox };
     this.panMoved = false;
     document.addEventListener('mousemove', this.onMouseMove);
@@ -485,7 +563,30 @@ export class BoardMap2D implements BoardRenderer {
     if (this.svg) this.svg.style.cursor = 'grabbing';
   }
 
+  /** Pin the spin pivot (board center on screen) and the grab angle for a grab-&-spin. */
+  private beginRotate(event: MouseEvent): void {
+    if (!this.svg) return;
+    const rect = this.svg.getBoundingClientRect();
+    const { width, height } = BOARD_IMAGE_INFO;
+    const pivot = viewBoxPointToClient(width / 2, height / 2, this.currentViewBox(), rect);
+    this.rotateStart = {
+      pivot,
+      downX: event.clientX,
+      downY: event.clientY,
+      startAngle: pointerAngleDeg(pivot, { x: event.clientX, y: event.clientY }),
+      startRotation: this.rotationDeg,
+    };
+    this.rotateMoved = false;
+    document.addEventListener('mousemove', this.onMouseMove);
+    document.addEventListener('mouseup', this.onMouseUp);
+    this.svg.style.cursor = 'grabbing';
+  }
+
   private handleMouseMove(event: MouseEvent): void {
+    if (this.rotateStart) {
+      this.dragRotate(event);
+      return;
+    }
     if (!this.panStart || !this.svg) return;
     const dxPx = event.clientX - this.panStart.clientX;
     const dyPx = event.clientY - this.panStart.clientY;
@@ -500,18 +601,32 @@ export class BoardMap2D implements BoardRenderer {
     this.applyView(next);
   }
 
-  private handleMouseUp(): void {
-    if (this.panMoved) this.suppressClick = true; // swallow the trailing click
-    this.endPan();
+  /** Spin the board so the grabbed point tracks the cursor's angle around the board center. */
+  private dragRotate(event: MouseEvent): void {
+    const start = this.rotateStart;
+    if (!start || !this.rotateLayer) return;
+    // Flag a real drag from the pixel delta so the trailing click doesn't select a token.
+    if (Math.abs(event.clientX - start.downX) > DRAG_THRESHOLD_PX || Math.abs(event.clientY - start.downY) > DRAG_THRESHOLD_PX) {
+      this.rotateMoved = true;
+    }
+    const angle = pointerAngleDeg(start.pivot, { x: event.clientX, y: event.clientY });
+    this.rotationDeg = start.startRotation + (angle - start.startAngle);
+    this.rotateLayer.setAttribute('transform', this.rotateTransform());
   }
 
-  /** Drop the in-flight drag's document listeners (also called from `dispose`). */
-  private endPan(): void {
-    if (!this.panStart) return;
+  private handleMouseUp(): void {
+    if (this.panMoved || this.rotateMoved) this.suppressClick = true; // swallow the trailing click
+    this.endDrag();
+  }
+
+  /** Drop the in-flight drag's document listeners (also called from `dispose`/`setDragMode`). */
+  private endDrag(): void {
+    if (!this.panStart && !this.rotateStart) return;
     this.panStart = undefined;
+    this.rotateStart = undefined;
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);
-    if (this.svg) this.svg.style.cursor = 'grab';
+    if (this.svg) this.svg.style.cursor = this.isInteractive() ? 'grab' : '';
   }
 
   /** Write a new view to the svg; collapse back to "no manual view" once fully zoomed out

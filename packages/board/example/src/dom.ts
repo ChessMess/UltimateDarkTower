@@ -20,6 +20,7 @@ export interface DomElements {
   scene3d: HTMLElement;
   mapHost: HTMLElement;
   mapControls: HTMLElement;
+  mapDragMode: HTMLElement;
 
   // Display-mode pills
   btnView2d: HTMLButtonElement;
@@ -69,6 +70,7 @@ export function queryDom(): DomElements {
     scene3d: byId('scene-3d'),
     mapHost: byId('map-2d-host'),
     mapControls: byId('map-2d-controls'),
+    mapDragMode: byId('map-2d-dragmode'),
 
     btnView2d: byId('btn-view-2d'),
     btnView3d: byId('btn-view-3d'),

@@ -12,6 +12,7 @@ import { tokenArt } from './tokenArt';
 import { queryDom } from './dom';
 import { seedBoard } from './presets';
 import { initDisplayModeController } from './displayModeController';
+import { initDragModeController } from './dragModeController';
 import { initInstructionsController } from './instructionsController';
 import { initJsonController } from './jsonController';
 import { initLayoutManager } from './layoutManager';
@@ -41,8 +42,9 @@ const logSelection = (sel: TokenSelection): void => {
   console.log('token selected', sel);
 };
 
-// 2D map + readout. The map has wheel-zoom / drag-pan / double-click-reset on by
-// default; the kingdom focus is driven by the on-map N/E/S/W/All bar below.
+// 2D map + readout. The map has wheel-zoom / drag-spin / double-click-reset on by
+// default (drag flips to pan via the Spin/Pan toggle); the kingdom focus is driven
+// by the on-map N/E/S/W/All bar below.
 const view = new BoardRenderView({
   mapContainer: els.mapHost,
   assetBaseUrl: './tokens/',
@@ -59,6 +61,9 @@ const view = new BoardRenderView({
 
 // N/E/S/W/All bar stacked above the 2D map (drives the shared focus).
 reflectMapFocus = initMapControls(els, view).reflect;
+
+// Spin / Pan toggle for the 2D map's left-drag (default Spin = rotate about center).
+initDragModeController(els, view);
 
 // The dockable editing UI (palette + inspector). Mounted DIRECTLY (not via
 // BoardRenderView's `ui` option) so we keep the handle and can toggle each

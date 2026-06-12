@@ -31,8 +31,11 @@ or use the **Token Art Forge** (below) — heroes can be given art this way too.
 
 Try the controls: **N / E / S / W** zoom the 2D map to a kingdom, narrow the readout, and move the 3D
 camera to that side; **All** restores the full board. **Overhead / Isometric** tilts the 3D camera
-(`CameraConfig`) and is inert on the 2D map. Clicking a token in **either** the 2D map or the 3D scene logs
-a `TokenSelection`, highlights it, and populates the **inspector**.
+(`CameraConfig`) and is inert on the 2D map. The **Spin / Pan** toggle (under the N/E/S/W bar) sets what a
+left-drag does on the 2D map: **Spin** (default) rotates the whole board about its center — like the 3D
+board's mouse-orbit — and **Pan** moves the zoomed-in view (`view.setDragMode(...)`); the choice is
+persisted. Clicking a token in **either** the 2D map or the 3D scene logs a `TokenSelection`, highlights
+it, and populates the **inspector**.
 
 ## Editing UI
 

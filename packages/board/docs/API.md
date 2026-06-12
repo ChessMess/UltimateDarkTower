@@ -302,10 +302,15 @@ click-to-select. Display-/three-free and jsdom-testable. Implements `BoardRender
 bundled** — it loads at runtime from `assetBaseUrl` by the `${group}/${kebab(id)}.png` convention, falling
 back to a programmatic labeled disc when missing.
 
-**Mouse zoom/pan** is on by default: scroll the wheel to zoom toward the cursor, drag to pan once zoomed
-in, and double-click (or call [`resetView()`](#methods)) to return to the focus view. Zoom/pan stay inside
-the current focus region and never touch `BoardState`. Pass `enableZoom: false` to opt out (e.g. when the
-map lives in a scroll container and you don't want the wheel hijacked).
+**Mouse interaction** is on by default. Scroll the wheel to zoom toward the cursor, and double-click
+(or call [`resetView()`](#methods)) to return to the focus view — dropping zoom **and** spin. What a
+**left-drag** does is set by [`dragMode`](#boardmap2doptions): `'rotate'` (the default) **spins** the
+whole board about its center — grab a point and it follows the cursor, like a lazy-susan — while `'pan'`
+moves the zoomed-in view. Switch at runtime with [`setDragMode()`](#methods). The **middle mouse button**
+always runs the *other* action — a quick pan while in spin mode, or a press-and-hold spin while in pan
+mode. Zoom/pan/spin stay inside the current focus region and never touch `BoardState`. Pass
+`enableZoom: false` to drop wheel-zoom (e.g. when the map lives in a scroll container); drag-spin still
+works in that case.
 
 ```ts
 import { BoardMap2D } from 'ultimatedarktowerboard';
@@ -333,13 +338,16 @@ map.render(controller.getState());
 | `onTokenSelect` | `(sel: TokenSelection) => void` | — | Fired on a token click. Selection is renderer-local — never written to `BoardState`. |
 | `locationPick` | `LocationPickStore` | — | Drives the armed space-pick (the editing add flow); see [Stores](#stores-ui-seams). |
 | `onLocationPick` | `(location: LocationName) => void` | — | Fired when a space is clicked while armed. |
-| `enableZoom` | `boolean` | `true` | Mouse zoom/pan: wheel to zoom toward the cursor, drag to pan, double-click to reset. `false` opts out. |
+| `enableZoom` | `boolean` | `true` | Wheel-zoom toward the cursor + double-click-reset. `false` opts out (drag-spin still works). |
 | `maxZoom` | `number` | `8` | Max zoom-in factor relative to the focus view. |
+| `dragMode` | `'rotate' \| 'pan'` | `'rotate'` | What a left-drag does: `'rotate'` spins the board about its center (grab & spin); `'pan'` moves the zoomed-in view. |
 
 #### Methods
 
-`render(state, focus?)` / `dispose()` (the `BoardRenderer` contract), plus `resetView()` — returns the map
-to its focus view, dropping any manual zoom/pan (also bound to double-click).
+`render(state, focus?)` / `dispose()` (the `BoardRenderer` contract), plus:
+
+- `resetView()` — returns the map to its focus view, dropping any manual zoom/pan **and spin** (also bound to double-click).
+- `setDragMode('rotate' | 'pan')` — switches the left-drag behavior at runtime (spin vs pan).
 
 ### `TokenSelection` / `TokenArtRef` / `kebab()`
 
@@ -457,7 +465,8 @@ view.dispose();
 #### Fields & methods
 
 `controller`, `readout`, `map2d?` (built only with `mapContainer`), `selection` (`SelectionStore`),
-`locationPick` (`LocationPickStore`), `focus` (getter), `setFocus(focus)`, `dispose()`.
+`locationPick` (`LocationPickStore`), `focus` (getter), `setFocus(focus)`,
+`setDragMode('rotate' | 'pan')` (forwarded to the 2D map), `dispose()`.
 
 ### `BoardRenderViewOptions`
 
@@ -473,8 +482,9 @@ view.dispose();
 | `boardImageUrl` | `string` | — | Base-layer board image for the 2D map. |
 | `tokenArt` | `TokenArtConfig` | — | Per-token art for the 2D map (the `image2d` slot); pass the same object to the 3D plugin. See [Per-token art](#per-token-art-tokenart). |
 | `resolveTokenImage` | `(ref: TokenArtRef, view: '2d' \| '3d') => string \| null` | convention | Override the 2D-map art path; `null` → fallback. |
-| `enableZoom` | `boolean` | `true` | Mouse zoom/pan on the 2D map (forwarded to `BoardMap2D`). |
+| `enableZoom` | `boolean` | `true` | 2D-map wheel-zoom + double-click-reset (forwarded to `BoardMap2D`). |
 | `maxZoom` | `number` | `8` | Max 2D-map zoom-in factor (forwarded to `BoardMap2D`). |
+| `dragMode` | `'rotate' \| 'pan'` | `'rotate'` | 2D-map left-drag behavior: spin about center vs pan (forwarded to `BoardMap2D`). |
 | `onTokenSelect` | `(sel: TokenSelection) => void` | — | Forwarded from the 2D map (also updates `selection`). |
 | `onFocusChange` | `(focus: BoardFocus) => void` | — | Fired whenever the focus changes. |
 

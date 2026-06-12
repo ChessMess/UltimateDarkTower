@@ -38,6 +38,12 @@ const DEFAULT_FOCUS: BoardFocus = { kingdom: 'all', angle: 'overhead' };
   **programmatic labeled disc**. Heroes always use the fallback (no hero art exists yet).
 - `northHeadingDegrees` is **not** applied — `BOARD_ANCHORS` are normalized against the upright board
   image (that field is for the 3D disc only).
+- **Mouse interaction.** Wheel zooms toward the cursor; double-click resets (zoom **and** spin). A
+  **left-drag** follows `dragMode`: `'rotate'` (default) spins the whole board about its center — grab a
+  point and it tracks the cursor, like a lazy-susan (the image + tokens share one rotate layer) — while
+  `'pan'` moves the zoomed-in view. Flip it live with `setDragMode('rotate' | 'pan')`. The **middle mouse
+  button** runs the other action (a quick pan while spinning; a press-and-hold spin while panning).
+  `enableZoom: false` drops wheel-zoom but leaves drag-spin working.
 - **Click-to-select** fires `onTokenSelect({ kind, id, location })` and draws a selection ring. Selection
   is renderer-local UI state — it is never written to `BoardState`. Add/move/delete editing lives in the
   dockable UI (below).

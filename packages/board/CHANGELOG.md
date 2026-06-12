@@ -8,6 +8,16 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **Mouse-spin the 2D map — the `dragMode` option (`BoardMap2D`).** A left-drag can now **spin** the whole
+  board (image + tokens) about its center — grab a point and it tracks the cursor, like a lazy-susan —
+  mirroring the 3D board's mouse-orbit. `dragMode: 'rotate' | 'pan'` (default `'rotate'`) selects the
+  left-drag behavior (`'pan'` keeps the classic move-the-zoomed-view drag); switch at runtime via the new
+  `setDragMode()` (on `BoardMap2D`, forwarded through `BoardRenderView`). The **middle mouse button** always
+  runs the *other* action — a quick pan while spinning, a press-and-hold spin while panning.
+  `resetView()` / double-click now also clears the spin. Pure presentation: a new DOM-free
+  `src/renderers/rotate.ts` does the angle/pivot math and all content rides one `.udt-board-rotate` SVG
+  layer; `BoardState`, selection, and focus are untouched. The example gains a persisted **Spin / Pan**
+  toggle on the 2D control row and a wider default picture-in-picture inset.
 - **Mouse zoom/pan on the 2D map (`BoardMap2D`).** Scroll the wheel to zoom toward the cursor, drag to
   pan once zoomed in, and double-click (or call the new `resetView()`) to return to the focus view. On by
   default; pass `enableZoom: false` to opt out (or set `maxZoom`, default `8`) — both also forwarded

@@ -655,8 +655,42 @@ code {
   align-items: stretch;
   justify-content: flex-start;
 }
-#map-2d-controls {
+/* One row for the 2D map's controls: [Spin Pan]  [N E S W]  [All]. The two bars
+   keep the display lib's `t3v-controls` look; the row owns the between-group gaps
+   (which widen on larger viewports for a grouped feel), and wraps if the pane is tiny. */
+#map-2d-toolbar {
   flex: 0 0 auto;
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.5rem; /* breathing room at the row's start/end, mirroring the 3D bar's edge margin */
+}
+#map-2d-toolbar .t3v-controls {
+  margin: 0.35rem 0; /* drop the lib's side margins; the row's `gap`/padding own horizontal spacing */
+  /* `flex-basis: 0` so growth is purely proportional to button count; set `flex-grow`
+     per-bar below (setting it here would out-specify them). Every button ends up the
+     same width (the lib's `.tower-side-btn` is `flex: 1` within its own bar). */
+  flex-basis: 0;
+  flex-shrink: 1;
+}
+#map-2d-dragmode {
+  flex-grow: 2; /* Spin, Pan */
+}
+#map-2d-controls {
+  flex-grow: 5; /* N, E, S, W, All */
+}
+/* Set "All" apart from N/E/S/W so the kingdom bar reads as two clusters. */
+#map-2d-controls .tower-side-btn:last-child {
+  margin-left: 0.5rem;
+}
+@media (min-width: 1100px) {
+  #map-2d-toolbar {
+    gap: 1.1rem;
+  }
+  #map-2d-controls .tower-side-btn:last-child {
+    margin-left: 1rem;
+  }
 }
 .map-host {
   flex: 1;
@@ -710,7 +744,9 @@ code {
 #rendered-panel.mode-pip .render-pane.is-mini {
   position: absolute;
   inset: auto var(--sp-3) var(--sp-3) auto;
-  width: clamp(180px, 28%, 320px);
+  /* Default inset is ~1/4 wider than before (28% → 35%); kept square since both the 2D
+     map and 3D canvas are square (a wider box would just letterbox the content). */
+  width: clamp(225px, 35%, 400px);
   aspect-ratio: 1;
   height: auto;
   z-index: 4;

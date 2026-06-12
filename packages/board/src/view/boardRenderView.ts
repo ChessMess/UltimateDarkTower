@@ -3,7 +3,7 @@ import type { BoardState } from '../state/boardState';
 import { createDefaultBoardState } from '../state/boardState';
 import { BoardReadout } from '../renderers/readout';
 import { BoardMap2D } from '../renderers/map2d';
-import type { TokenSelection, TokenArtRef, TokenArtConfig, BoardView } from '../renderers/map2d';
+import type { TokenSelection, TokenArtRef, TokenArtConfig, BoardView, DragMode } from '../renderers/map2d';
 import type { BoardFocus } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
 import { mountFocusControls } from './focusControls';
@@ -45,6 +45,11 @@ export interface BoardRenderViewOptions {
   enableZoom?: boolean;
   /** Max 2D-map zoom-in factor relative to the focus view (default `8`). */
   maxZoom?: number;
+  /**
+   * What a left-drag does on the 2D map: `'rotate'` (default) spins the board about its center,
+   * `'pan'` moves the zoomed view. Switch at runtime with {@link BoardRenderView.setDragMode}.
+   */
+  dragMode?: DragMode;
   /** Forwarded to the 2D map: fired when a token is clicked (in addition to updating `selection`). */
   onTokenSelect?: (selection: TokenSelection) => void;
   /** Fired whenever the focus changes (from `setFocus` or a control click). */
@@ -86,6 +91,7 @@ export class BoardRenderView {
         resolveTokenImage: options.resolveTokenImage,
         enableZoom: options.enableZoom,
         maxZoom: options.maxZoom,
+        dragMode: options.dragMode,
         // Route a token click into the shared selection store AND the user callback.
         onTokenSelect: (selection) => {
           this.selection.set(selection);
@@ -129,6 +135,11 @@ export class BoardRenderView {
     this.renderAll(this.controller.getState());
     this.controls?.setFocus(focus);
     this.onFocusChange?.(focus);
+  }
+
+  /** Switch the 2D map's left-drag behavior (`'rotate'` spin vs `'pan'`). No-op without a map. */
+  setDragMode(mode: DragMode): void {
+    this.map2d?.setDragMode(mode);
   }
 
   dispose(): void {

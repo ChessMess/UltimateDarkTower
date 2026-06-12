@@ -98,7 +98,8 @@
             Click a token in either view to select it. Use the <strong>Palette</strong> to add one (Add → pick a
             space → Confirm) and the <strong>Inspector</strong> to edit the selection; drag panels by their title
             bar. Each view's <strong>N/E/S/W</strong> bar zooms to a kingdom (<strong>All</strong> restores the
-            whole board). On the 2D map: scroll to zoom, drag to pan, double-click to reset. The right column has
+            whole board). On the 2D map: scroll to zoom, drag to spin the board (flip to <strong>Pan</strong> with
+            the Spin/Pan toggle), double-click to reset. The right column has
             the live board <strong>JSON</strong> — edit it and hit Apply, or Copy it for your own app.
           </p>
         </div>
@@ -109,7 +110,10 @@
       <div class="panel panel-rendered mode-pip" id="rendered-panel">
         <div id="hero-overlay"></div>
         <div id="scene-2d" class="render-pane is-mini">
-          <div id="map-2d-controls" role="group" aria-label="2D kingdom view"></div>
+          <div id="map-2d-toolbar">
+            <div id="map-2d-dragmode" role="group" aria-label="2D mouse drag mode"></div>
+            <div id="map-2d-controls" role="group" aria-label="2D kingdom view"></div>
+          </div>
           <div id="map-2d-host" class="map-host"></div>
         </div>
         <div id="scene-3d" class="render-pane is-big"></div>
