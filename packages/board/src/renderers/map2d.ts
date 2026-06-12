@@ -91,9 +91,9 @@ export type DragMode = 'rotate' | 'pan';
 
 /**
  * 2D overhead map renderer. Draws the board image and places tokens via UDT's
- * normalized `BOARD_ANCHORS` (resolution-independent, authored upright against the
- * same `board.png` Display textures — so `northHeadingDegrees` is NOT applied here).
- * Inline SVG: jsdom-testable, DOM hit-testing for click-to-select, crisp scaling.
+ * normalized `BOARD_ANCHORS` (resolution-independent). Each token is rotated so
+ * its "up" faces inward toward the central tower, matching the board's radially-printed
+ * spaces. Inline SVG: jsdom-testable, DOM hit-testing for click-to-select, crisp scaling.
  * Display-/three-free.
  */
 export class BoardMap2D implements BoardRenderer {
@@ -447,7 +447,7 @@ export class BoardMap2D implements BoardRenderer {
     group.setAttribute('data-location', selection.location);
     group.setAttribute('data-cx', String(center.x));
     group.setAttribute('data-cy', String(center.y));
-    group.setAttribute('transform', `translate(${center.x} ${center.y})`);
+    group.setAttribute('transform', `translate(${center.x} ${center.y}) rotate(${inwardAlignDeg(center)})`);
     if (opacity < 1) group.setAttribute('opacity', String(opacity));
     group.style.cursor = 'pointer';
     return group;
@@ -703,6 +703,21 @@ interface Point {
 interface Offset {
   dx: number;
   dy: number;
+}
+
+const BOARD_CENTER: Point = {
+  x: BOARD_IMAGE_INFO.width / 2,
+  y: BOARD_IMAGE_INFO.height / 2,
+};
+
+/**
+ * Degrees to rotate a token at `center` so its "up" points inward toward the board center,
+ * matching the board's radially-printed spaces. Composes with the lazy-susan layer rotation.
+ */
+function inwardAlignDeg(center: Point): number {
+  const deg =
+    Math.atan2(center.y - BOARD_CENTER.y, center.x - BOARD_CENTER.x) * (180 / Math.PI) - 90;
+  return Math.round(deg * 100) / 100;
 }
 
 function anchorPx(loc: LocationName, slot: AnchorSlot): Point | null {

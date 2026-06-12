@@ -49,7 +49,10 @@ describe('BoardMap2D', () => {
     const a = BOARD_ANCHORS['Dayside'].foe!;
     const cx = a.x * BOARD_IMAGE_INFO.width;
     const cy = a.y * BOARD_IMAGE_INFO.height;
-    expect(foe.getAttribute('transform')).toBe(`translate(${cx} ${cy})`);
+    const bx = BOARD_IMAGE_INFO.width / 2;
+    const by = BOARD_IMAGE_INFO.height / 2;
+    const deg = Math.round((Math.atan2(cy - by, cx - bx) * (180 / Math.PI) - 90) * 100) / 100;
+    expect(foe.getAttribute('transform')).toBe(`translate(${cx} ${cy}) rotate(${deg})`);
     expect(foe.querySelector('image')?.getAttribute('href')).toBe('/t/foes/brigands.png');
   });
 
