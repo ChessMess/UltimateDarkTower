@@ -321,16 +321,6 @@ export class BoardMap2D implements BoardRenderer {
   // ── token placement ───────────────────────────────────────────────────────
 
   private renderTokens(root: SVGGElement, state: BoardState, focus: BoardFocus): void {
-    // Heroes (fanned by shared location), at the `hero` slot. No hero art exists → always the fallback.
-    this.renderFannedByLocation(
-      root,
-      focus,
-      heroEntries(state),
-      'hero',
-      (entry) => ({ kind: 'hero', id: entry.id, location: entry.location }),
-      (entry) => ({ kind: 'hero', id: entry.id })
-    );
-
     // Foes (fanned), at the `foe` slot. Art id = foe *type*; selection id = instance id.
     this.renderFannedByLocation(
       root,
@@ -399,6 +389,17 @@ export class BoardMap2D implements BoardRenderer {
       'marker',
       (entry) => ({ kind: 'marker', id: entry.id, location: entry.location }),
       (entry) => ({ kind: 'marker', id: entry.art ?? entry.id })
+    );
+
+    // Heroes (fanned by shared location), at the `hero` slot — rendered last so they always
+    // paint on top of foes, buildings, and markers.
+    this.renderFannedByLocation(
+      root,
+      focus,
+      heroEntries(state),
+      'hero',
+      (entry) => ({ kind: 'hero', id: entry.id, location: entry.location }),
+      (entry) => ({ kind: 'hero', id: entry.id })
     );
   }
 
