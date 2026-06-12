@@ -159,6 +159,25 @@ describe('BoardStageView — lazy 3D tower', () => {
     expect(stage.mode).toBe('2d'); // a 3D mode falls back to 2D when the tower is off
   });
 
+  it('keeps the 3D pane PiP move/resize handles across a tower build + dispose', async () => {
+    const { container, stage } = mount({ tower3D: false, modelUrl: 'mock://tower.glb' });
+    const pane3d = container.querySelector('.bsv-pane-3d') as HTMLElement;
+    const handles = () => pane3d.querySelectorAll(':scope > .bsv-pip-handle').length;
+    const corners = () => pane3d.querySelectorAll(':scope > .bsv-pip-corner').length;
+    expect(handles()).toBe(1);
+    expect(corners()).toBe(4);
+
+    // Building the tower clears only its inner host — the pane's own handles must remain,
+    // so the 3D view stays draggable/resizable when it is the PiP inset (regression).
+    await stage.setTowerEnabled(true);
+    expect(handles()).toBe(1);
+    expect(corners()).toBe(4);
+
+    await stage.setTowerEnabled(false);
+    expect(handles()).toBe(1);
+    expect(corners()).toBe(4);
+  });
+
   it('tower3D:true without a modelUrl warns and stays 2D-only', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     const { stage } = mount({ tower3D: true }); // no modelUrl

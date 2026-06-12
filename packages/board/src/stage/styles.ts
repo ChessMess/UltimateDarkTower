@@ -123,6 +123,9 @@ export const BOARD_STAGE_CSS = `
 /* 2D pane stacks a control bar above the map. */
 .bsv-pane-2d { flex-direction: column; align-items: stretch; justify-content: flex-start; }
 
+/* The tower builds into this host (siblings: the pane's PiP handles, which survive a
+   tower rebuild). It fills the pane and anchors the Display view's absolute layout. */
+.bsv-pane-3d-host { position: absolute; inset: 0; }
 /* Display's 3D view fills the pane (decoupled from its square aspect-ratio default). */
 .bsv-pane .trv-root { width: 100%; height: 100%; }
 .bsv-pane .t3v-wrapper {

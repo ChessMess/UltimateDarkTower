@@ -8,8 +8,8 @@
 export interface PopOutHooks {
   /** The render panel (`.bsv-panel`) moved into the popup; the toolbar stays behind. */
   panel: HTMLElement;
-  /** The 3D pane element (handed to `create3D` when rebuilding in the popup). */
-  pane3d: HTMLElement;
+  /** The inner 3D tower host (handed to `create3D` when rebuilding in the popup). */
+  towerHost: HTMLElement;
   /** The Pop-Out / Pop-In button (its label toggles). */
   toggleButton: HTMLButtonElement;
   /** Rebuild the 3D view into `container` (no-op when the tower is off). */
@@ -102,7 +102,7 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
     hooks.panel.parentNode?.insertBefore(placeholder, hooks.panel);
     wrapper.appendChild(hooks.panel);
 
-    hooks.create3D(hooks.pane3d);
+    hooks.create3D(hooks.towerHost);
     win.dispatchEvent(new Event('resize'));
 
     hooks.toggleButton.textContent = POP_IN_LABEL;
@@ -153,7 +153,7 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
       placeholder.parentNode.replaceChild(hooks.panel, placeholder);
     }
     placeholder = null;
-    hooks.create3D(hooks.pane3d);
+    hooks.create3D(hooks.towerHost);
 
     hooks.setLayoutSuspended(false);
     window.dispatchEvent(new Event('resize'));

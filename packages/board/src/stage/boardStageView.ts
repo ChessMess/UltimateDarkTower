@@ -95,6 +95,9 @@ interface StageElements {
   overlay: HTMLDivElement;
   pane2d: HTMLDivElement;
   pane3d: HTMLDivElement;
+  /** Inner host the 3D tower builds into; cleared on rebuild so the pane's own PiP
+   * handles (direct children of `pane3d`) survive. */
+  tower3dHost: HTMLDivElement;
   mapHost: HTMLDivElement;
   dragHost: HTMLDivElement;
   kingdomHost: HTMLDivElement;
@@ -214,7 +217,7 @@ export class BoardStageView {
     // Pop-out (works 2D-only too; rebuilds the 3D tower in the popup when active).
     this.popOutCtl = createPopOut({
       panel: this.els.panel,
-      pane3d: this.els.pane3d,
+      towerHost: this.els.tower3dHost,
       toggleButton: this.els.popOut,
       create3D: (container) => this.buildTower(container),
       dispose3D: () => this.disposeTowerHandle(),
@@ -325,7 +328,7 @@ export class BoardStageView {
         return;
       }
       if (!this.towerModule) this.towerModule = await import('../plugin/stageTower');
-      this.buildTower(this.els.pane3d);
+      this.buildTower(this.els.tower3dHost);
       this.towerEnabled = Boolean(this.tower);
     } else {
       this.disposeTowerHandle();
@@ -396,7 +399,10 @@ export class BoardStageView {
   private disposeTowerHandle(): void {
     this.tower?.dispose();
     this.tower = null;
-    this.els.pane3d.replaceChildren();
+    // Clear only the tower's own DOM — the PiP move/resize handles live on `pane3d`
+    // (siblings of the host), so they survive a tower rebuild and the 3D inset stays
+    // draggable/resizable.
+    this.els.tower3dHost.replaceChildren();
   }
 
   /** Reflect tower on/off in the UI: show/hide the 3D-mode pills + the toggle button's active state. */
@@ -458,6 +464,10 @@ function buildDom(container: HTMLElement): StageElements {
   const mapHost = div('bsv-map-host');
   pane2d.append(paneToolbar, mapHost);
   const pane3d = div('bsv-pane bsv-pane-3d');
+  // The tower builds into this inner host; PiP handles attach to `pane3d` itself so a
+  // tower rebuild (which clears the host) never strips the inset's drag/resize handles.
+  const tower3dHost = div('bsv-pane-3d-host');
+  pane3d.append(tower3dHost);
   panel.append(overlay, pane2d, pane3d);
 
   root.append(toolbar, panel);
@@ -469,6 +479,7 @@ function buildDom(container: HTMLElement): StageElements {
     overlay,
     pane2d,
     pane3d,
+    tower3dHost,
     mapHost,
     dragHost,
     kingdomHost,
