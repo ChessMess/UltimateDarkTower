@@ -45,6 +45,11 @@ import type { LocationPickStore } from '../ui/stores';
 
 export type { TokenSelection, TokenArtRef, TokenArt, TokenArtConfig, TokenModelRef, BoardView } from '../renderers/assetPaths';
 
+// The lazily-loaded 3D adapter used by the `./stage` entry's `BoardStageView`.
+// Advertised here too for advanced consumers wiring their own 3D shell.
+export { createBoardTower3D, STAGE_TOWER_CSS } from './stageTower';
+export type { BoardTower3DOptions, BoardTower3DHandle } from './stageTower';
+
 /** Token sizes / fan radius, as a fraction of the disc radius (world units). */
 const SLOT_FACTOR = 0.05;
 const SKULL_FACTOR = 0.03;

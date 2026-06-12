@@ -8,6 +8,20 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **`BoardStageView` — a batteries-included render stage (new `ultimatedarktowerboard/stage` entry).** One
+  `new BoardStageView({ container })` gives a consumer everything the demo shows: the 2D map + readout, the
+  **2D / 3D / 2D+3D / PiP** display switcher with a big↔mini **swap**, a movable/resizable **PiP inset**,
+  **Pop Out** into a window, the **Spin / Pan** drag toggle, the **N / E / S / W + All** kingdom-zoom bar (the
+  All button set apart in its own group), the dockable **palette / inspector** editing UI, and a **3D tower
+  that can be turned on/off** at runtime (`tower3D` option / `setTowerEnabled()`; an optional built-in toggle
+  button via `towerToggle`). It is the board-domain analog of Display's `TowerRenderView` and a plain
+  framework-agnostic class — it orchestrates the existing `BoardRenderView`, `mountBoardUI`, and
+  `attachBoard3D` rather than reimplementing them. The stage's **static graph is `three`-free**: the 3D tower
+  (Display + `three`) is reached only via a dynamic `import('../plugin/stageTower')`, so a **2D-only app never
+  loads `three`** and the 3D stack is fetched as a separate chunk on first enable. CSS is injected
+  automatically (`BOARD_STAGE_CSS` / `injectStageStyles`), scoped under `.bsv-root` and themeable via
+  `--bsv-*` variables. The example app is now a thin wrapper that mounts the stage; all its former
+  render-stage controllers moved into the component. See [docs/STAGE.md](./docs/STAGE.md).
 - **Mouse-spin the 2D map — the `dragMode` option (`BoardMap2D`).** A left-drag can now **spin** the whole
   board (image + tokens) about its center — grab a point and it tracks the cursor, like a lazy-susan —
   mirroring the 3D board's mouse-orbit. `dragMode: 'rotate' | 'pan'` (default `'rotate'`) selects the

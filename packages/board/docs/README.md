@@ -8,6 +8,7 @@ Audience-tiered docs (mirrors `ultimatedarktowerdisplay`). Pick your path:
   [ARCHITECTURE](./ARCHITECTURE.md) for the mental model, then [API](./API.md) for reference.
 - **Working with state** (commands / events / save-load) → [STATE_MODEL](./STATE_MODEL.md).
 - **Rendering** (readout / 2D / 3D + focus controls) → [RENDERERS](./RENDERERS.md).
+- **The all-in-one stage** (the whole interactive UI in one component) → [STAGE](./STAGE.md).
 - **Plugging the 3D board into Display** → [DISPLAY_INTEGRATION](./DISPLAY_INTEGRATION.md).
 
 | If you want to… | Read |

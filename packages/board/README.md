@@ -29,22 +29,42 @@ optional dockable editing UI. The 3D board is a `ScenePlugin` for
 > controls**; the **3D board plugin** (a Display `ScenePlugin`); and the optional **dockable editing
 > UI** (palette / inspector / summary). See [`docs/`](./docs/) for the docs set.
 
-## Two entry points
+## Three entry points
 
-| Import                          | What you get                                                                                                                                          | Heavy deps                           |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `ultimatedarktowerboard`        | headless `BoardState` + controller/reducer/commands/events/save-load, the text **readout** and **2D map** renderers, and re-exports of UDT board data | **none** (no `three`, no Display)    |
-| `ultimatedarktowerboard/plugin` | `Board3DPlugin` — the 3D board `ScenePlugin`                                                                                                          | `three` + `ultimatedarktowerdisplay` |
+| Import                          | What you get                                                                                                                                          | Heavy deps                                  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `ultimatedarktowerboard`        | headless `BoardState` + controller/reducer/commands/events/save-load, the text **readout** and **2D map** renderers, and re-exports of UDT board data | **none** (no `three`, no Display)           |
+| `ultimatedarktowerboard/stage`  | `BoardStageView` — the **all-in-one render stage** (2D + 3D, mode switch / PiP / pop-out / Spin-Pan / focus bar / editing UI, tower on-off)            | **none statically** — 3D is **lazy-loaded** |
+| `ultimatedarktowerboard/plugin` | `Board3DPlugin` — the 3D board `ScenePlugin`                                                                                                           | `three` + `ultimatedarktowerdisplay`        |
 
 ```ts
 // Headless / readout / 2D / editing UI — three-free:
 import { BoardRenderView, mountBoardUI, BOARD_LOCATIONS } from 'ultimatedarktowerboard';
 
-// 3D board (opt-in):
+// The whole interactive stage in one component (the 3D tower is loaded on demand):
+import { BoardStageView } from 'ultimatedarktowerboard/stage';
+
+// Just the 3D board, for your own Display scene:
 import { Board3DPlugin } from 'ultimatedarktowerboard/plugin';
 ```
 
-Minimal usage — build a view, mutate state through the controller, read the text readout:
+**Fastest path — the stage.** `BoardStageView` does everything the demo does in one component. Its
+static graph is `three`-free, so a 2D-only stage never loads `three`; the 3D tower is fetched lazily
+the first time it's enabled and can be toggled on/off at runtime. See [docs/STAGE.md](./docs/STAGE.md).
+
+```ts
+import { BoardStageView } from 'ultimatedarktowerboard/stage';
+
+const stage = new BoardStageView({
+  container: document.getElementById('board')!,
+  assetBaseUrl: './tokens/',
+  boardImageUrl: './board.png',
+  modelUrl: './tower.glb', // omit for a 2D-only stage
+});
+stage.controller.spawnFoe('foe-1', 'Brigands', 'Dayside');
+```
+
+Minimal usage of the lower-level 2D facade — build a view, mutate state through the controller, read the text readout:
 
 ```ts
 import { BoardRenderView } from 'ultimatedarktowerboard';
@@ -102,6 +122,7 @@ Part of the _Return to Dark Tower_ family — the **board-domain** sibling to th
 
 - [docs/](./docs/) — the full docs set ([getting started](./docs/GETTING_STARTED.md),
   [state model](./docs/STATE_MODEL.md), [renderers](./docs/RENDERERS.md),
+  [the all-in-one stage](./docs/STAGE.md),
   [Display integration](./docs/DISPLAY_INTEGRATION.md), [API](./docs/API.md)).
 - [CHANGELOG.md](./CHANGELOG.md) — release history.
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — development workflow.

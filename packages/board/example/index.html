@@ -78,46 +78,23 @@
 
     <!-- ============ CENTER HERO ============ -->
     <main class="app-hero">
-      <div class="hero-header">
-        <div class="view-pills" role="tablist" aria-label="Display mode">
-          <button id="btn-view-2d" class="view-pill">2D</button>
-          <button id="btn-view-3d" class="view-pill">3D</button>
-          <button id="btn-view-2d3d" class="view-pill">2D + 3D</button>
-          <button id="btn-view-pip" class="view-pill">PiP</button>
-        </div>
-        <div class="hero-header-right">
-          <button id="btn-pip-swap" class="ghost-action" hidden title="Swap which view is large">Swap ⇄</button>
-          <button id="btn-pop-out" class="ghost-action" title="Open the board in a separate resizable window">Pop Out
-            ⤴</button>
-        </div>
-      </div>
-
       <section id="instructions" class="instructions">
         <div class="instructions-body">
           <p>
             Click a token in either view to select it. Use the <strong>Palette</strong> to add one (Add → pick a
             space → Confirm) and the <strong>Inspector</strong> to edit the selection; drag panels by their title
-            bar. Each view's <strong>N/E/S/W</strong> bar zooms to a kingdom (<strong>All</strong> restores the
-            whole board). On the 2D map: scroll to zoom, drag to spin the board (flip to <strong>Pan</strong> with
-            the Spin/Pan toggle), double-click to reset. The right column has
-            the live board <strong>JSON</strong> — edit it and hit Apply, or Copy it for your own app.
+            bar. The <strong>N/E/S/W</strong> bar zooms to a kingdom (<strong>All</strong> restores the whole
+            board). On the 2D map: scroll to zoom, drag to spin the board (flip to <strong>Pan</strong> with the
+            Spin/Pan toggle), double-click to reset. Switch <strong>2D / 3D / 2D+3D / PiP</strong> from the stage
+            toolbar, or <strong>Pop Out</strong> into a window. The right column has the live board
+            <strong>JSON</strong> — edit it and hit Apply, or Copy it for your own app.
           </p>
         </div>
       </section>
 
-      <!-- Initial classes match the default mode (pip-3dbig) so there's no
-           layout flash before displayModeController runs. -->
-      <div class="panel panel-rendered mode-pip" id="rendered-panel">
-        <div id="hero-overlay"></div>
-        <div id="scene-2d" class="render-pane is-mini">
-          <div id="map-2d-toolbar">
-            <div id="map-2d-dragmode" role="group" aria-label="2D mouse drag mode"></div>
-            <div id="map-2d-controls" role="group" aria-label="2D kingdom view"></div>
-          </div>
-          <div id="map-2d-host" class="map-host"></div>
-        </div>
-        <div id="scene-3d" class="render-pane is-big"></div>
-      </div>
+      <!-- The all-in-one render stage (2D map + 3D tower + controls) mounts here,
+           via BoardStageView (ultimatedarktowerboard/stage). -->
+      <div id="board-stage"></div>
     </main>
 
     <!-- ============ RIGHT CONFIG COLUMN ============ -->

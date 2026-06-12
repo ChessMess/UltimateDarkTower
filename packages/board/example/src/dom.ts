@@ -1,5 +1,5 @@
-// Typed handles to every shell element the controllers touch. One query pass at
-// boot; everything downstream reads from this struct.
+// Typed handles to the demo's page-chrome elements (the render stage is owned by
+// BoardStageView and mounts itself into #board-stage). One query pass at boot.
 
 function byId<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -11,24 +11,10 @@ export interface DomElements {
   banner: HTMLElement;
   grid: HTMLElement;
   sidebar: HTMLElement;
-
-  // Hero / render stage
   hero: HTMLElement;
-  renderedPanel: HTMLElement;
-  heroOverlay: HTMLElement;
-  scene2d: HTMLElement;
-  scene3d: HTMLElement;
-  mapHost: HTMLElement;
-  mapControls: HTMLElement;
-  mapDragMode: HTMLElement;
 
-  // Display-mode pills
-  btnView2d: HTMLButtonElement;
-  btnView3d: HTMLButtonElement;
-  btnView2d3d: HTMLButtonElement;
-  btnViewPip: HTMLButtonElement;
-  btnPipSwap: HTMLButtonElement;
-  btnPopOut: HTMLButtonElement;
+  // The stage mounts into here.
+  boardStage: HTMLElement;
 
   // Instructions
   instructions: HTMLElement;
@@ -62,22 +48,9 @@ export function queryDom(): DomElements {
     banner: byId('error-banner'),
     grid: document.querySelector('.app-grid') as HTMLElement,
     sidebar: byId('sidebar'),
-
     hero: document.querySelector('.app-hero') as HTMLElement,
-    renderedPanel: byId('rendered-panel'),
-    heroOverlay: byId('hero-overlay'),
-    scene2d: byId('scene-2d'),
-    scene3d: byId('scene-3d'),
-    mapHost: byId('map-2d-host'),
-    mapControls: byId('map-2d-controls'),
-    mapDragMode: byId('map-2d-dragmode'),
 
-    btnView2d: byId('btn-view-2d'),
-    btnView3d: byId('btn-view-3d'),
-    btnView2d3d: byId('btn-view-2d3d'),
-    btnViewPip: byId('btn-view-pip'),
-    btnPipSwap: byId('btn-pip-swap'),
-    btnPopOut: byId('btn-pop-out'),
+    boardStage: byId('board-stage'),
 
     instructions: byId('instructions'),
     btnInstructionsToggle: byId('btn-instructions-toggle'),
