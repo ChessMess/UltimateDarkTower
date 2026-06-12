@@ -15,11 +15,15 @@ optional dockable editing UI. The 3D board is a `ScenePlugin` for
 [`ultimatedarktowerdisplay`](https://github.com/ChessMess/UltimateDarkTowerDisplay)'s
 `Tower3DView`. It enforces **no game rules**: it stores, renders, and emits events; hosts own rules.
 
-**▶ [Live Demo](https://chessmess.github.io/UltimateDarkTowerBoard/)** — the 3D board + 2D map +
-readout + editing UI over one shared state. _(Goes live once the project is on `main` and GitHub
-Pages is enabled.)_
+---
 
-> **Status: pre-release (v0.1.0, not yet published to npm).** Implemented: the headless **state core**
+<p align="center"><strong>
+  <a href="https://chessmess.github.io/UltimateDarkTowerBoard/">▶ Live Web Demo — Board Example </a>
+</strong></p>
+
+---
+
+> **Current Status: pre-release (v0.1.0, not yet published to npm).** Implemented: the headless **state core**
 > (structured `BoardState`, the full command reducer, the `BoardStateController` with `self`/`host`
 > modes + events, versioned save/load); the **text readout**, **2D overhead map**, and **shared focus
 > controls**; the **3D board plugin** (a Display `ScenePlugin`); and the optional **dockable editing
