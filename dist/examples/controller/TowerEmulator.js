@@ -668,12 +668,13 @@ button.tdr-led[data-overridden="true"][data-effect="on"] {
 .t3v-controls {
   display: flex;
   gap: 0.25rem;
-  margin-bottom: 0.5rem;
+  margin: 0.5rem;
   align-items: center;
 }
 
 
-.t3v-reset-btn {
+.t3v-reset-btn,
+.t3v-center-btn {
   padding: 0.3rem 0.7rem;
   border: 1px solid #444;
   background: #1a1a1a;
@@ -684,7 +685,8 @@ button.tdr-led[data-overridden="true"][data-effect="on"] {
   margin-left: 0.25rem;
 }
 
-.t3v-reset-btn:hover {
+.t3v-reset-btn:hover,
+.t3v-center-btn:hover {
   background: #2a2a2a;
   color: #e8e8e8;
 }
@@ -54908,13 +54910,13 @@ var CameraController = class {
     this.wheelCleanup = null;
     this.elevationFactor = config4.elevationFactor ?? -0.5;
     this.targetHeightFactor = config4.targetHeightFactor ?? -0.15;
+    this.distanceFactor = config4.distanceFactor ?? 1;
     this.zoomToCursor = config4.zoomToCursor ?? true;
     this.preserveViewOnSideSelect = config4.preserveViewOnSideSelect ?? false;
   }
   fitToModel(modelRadius, debugLog) {
     this.modelRadius = modelRadius;
-    const fovRad = this.camera.fov * Math.PI / 180;
-    const distance = modelRadius / Math.sin(fovRad / 2) * 1.15;
+    const distance = this.fitBaseDistance() * this.distanceFactor;
     const targetY = modelRadius * this.targetHeightFactor;
     const minFar = 1e3;
     const maxFar = 5e4;
@@ -54928,6 +54930,9 @@ var CameraController = class {
     debugLog?.("fitToView", {
       radius: modelRadius,
       distance,
+      elevationFactor: this.elevationFactor,
+      targetHeightFactor: this.targetHeightFactor,
+      distanceFactor: this.distanceFactor,
       cameraPosition: this.camera.position.toArray(),
       target: this.controls.target.toArray(),
       near: this.camera.near,
@@ -54980,22 +54985,98 @@ var CameraController = class {
     const t = this.defaultCamera.target;
     this.tweenCameraTo({ x: p.x, y: p.y, z: p.z }, { x: t.x, y: t.y, z: t.z });
   }
+  /**
+   * Re-center the tower in the frame while preserving the current orbit angle,
+   * elevation, and zoom distance. Moves the orbit target back onto the tower
+   * axis (the default framing point) and translates the camera by the same
+   * delta, so the camera-to-target offset — and therefore the framing — is
+   * unchanged; only the off-center pan is removed. Unlike {@link resetView},
+   * this keeps the viewpoint the user has orbited/zoomed to (and the active
+   * side, since the azimuth is preserved).
+   */
+  centerView() {
+    if (!this.defaultCamera) return;
+    const targetY = this.modelRadius * this.targetHeightFactor;
+    const offsetX = this.camera.position.x - this.controls.target.x;
+    const offsetY = this.camera.position.y - this.controls.target.y;
+    const offsetZ = this.camera.position.z - this.controls.target.z;
+    this.tweenCameraTo(
+      { x: offsetX, y: targetY + offsetY, z: offsetZ },
+      { x: 0, y: targetY, z: 0 }
+    );
+  }
   getCameraConfig() {
     return {
       elevationFactor: this.elevationFactor,
       targetHeightFactor: this.targetHeightFactor,
+      distanceFactor: this.distanceFactor,
       zoomToCursor: this.zoomToCursor,
       preserveViewOnSideSelect: this.preserveViewOnSideSelect
     };
   }
-  applyCameraConfig(config4) {
+  /**
+   * Express the current *live* camera framing as the three preset factors
+   * (eye height, target height, distance multiplier). Reading these back after
+   * a hand orbit/zoom lets a developer tune by eye, then paste the numbers into
+   * a `CameraConfig`. Azimuth is dropped — re-applying these factors snaps the
+   * camera back to the north face at the same height/distance framing, which is
+   * exactly the board-facing preset semantics.
+   */
+  getLiveCameraFactors() {
+    const base = this.fitBaseDistance();
+    const dx = this.camera.position.x - this.controls.target.x;
+    const dz = this.camera.position.z - this.controls.target.z;
+    const horizontalDist = Math.sqrt(dx * dx + dz * dz);
+    return {
+      elevationFactor: this.camera.position.y / this.modelRadius,
+      targetHeightFactor: this.controls.target.y / this.modelRadius,
+      distanceFactor: base > 0 ? horizontalDist / base : 1
+    };
+  }
+  applyCameraConfig(config4, options = {}) {
     if (config4.elevationFactor !== void 0) this.elevationFactor = config4.elevationFactor;
     if (config4.targetHeightFactor !== void 0) this.targetHeightFactor = config4.targetHeightFactor;
+    if (config4.distanceFactor !== void 0) this.distanceFactor = config4.distanceFactor;
     if (config4.zoomToCursor !== void 0) this.setZoomToCursor(config4.zoomToCursor);
     if (config4.preserveViewOnSideSelect !== void 0) {
       this.setPreserveViewOnSideSelect(config4.preserveViewOnSideSelect);
     }
-    if (this.defaultCamera) this.fitToModel(this.modelRadius);
+    if (!this.defaultCamera) return;
+    if (options.preserveView) {
+      this.reframePreservingView(config4);
+    } else {
+      this.fitToModel(this.modelRadius);
+    }
+  }
+  /**
+   * Re-apply the framing factors to the *current* live view instead of the
+   * north fit: keep the current azimuth and pan, change only the dimension(s)
+   * present in `config`, and leave the others at their live values. This lets a
+   * tuning slider update one factor without snapping the camera back to north.
+   * The stored north fit (used by {@link resetView} and non-preserving side
+   * snaps) is refreshed to the new factors without moving the live camera.
+   */
+  reframePreservingView(config4) {
+    const dx = this.camera.position.x - this.controls.target.x;
+    const dz = this.camera.position.z - this.controls.target.z;
+    const azimuth = Math.atan2(dx, dz);
+    const currentHoriz = Math.sqrt(dx * dx + dz * dz);
+    const horiz = config4.distanceFactor !== void 0 ? this.fitBaseDistance() * this.distanceFactor : currentHoriz;
+    const cameraY = config4.elevationFactor !== void 0 ? this.modelRadius * this.elevationFactor : this.camera.position.y;
+    const targetY = config4.targetHeightFactor !== void 0 ? this.modelRadius * this.targetHeightFactor : this.controls.target.y;
+    const xz = polarToXZ(azimuth, horiz);
+    this.controls.target.set(this.controls.target.x, targetY, this.controls.target.z);
+    this.camera.position.set(this.controls.target.x + xz.x, cameraY, this.controls.target.z + xz.z);
+    this.camera.lookAt(this.controls.target);
+    this.controls.update();
+    this.defaultCamera = {
+      position: new Vector3(
+        0,
+        this.modelRadius * this.elevationFactor,
+        this.fitBaseDistance() * this.distanceFactor
+      ),
+      target: new Vector3(0, this.modelRadius * this.targetHeightFactor, 0)
+    };
   }
   setZoomToCursor(enabled) {
     this.zoomToCursor = enabled;
@@ -55122,6 +55203,16 @@ var CameraController = class {
     this.wheelCleanup = () => {
       canvas.removeEventListener("wheel", onWheel);
     };
+  }
+  /**
+   * The auto-fit camera distance before `distanceFactor` is applied: the
+   * trigonometric "everything in frame" distance for the current FOV and
+   * model radius, plus 15% padding. Shared by `fitToModel` (forward) and
+   * `getLiveCameraFactors` (inverse) so the snapshot round-trips exactly.
+   */
+  fitBaseDistance() {
+    const fovRad = this.camera.fov * Math.PI / 180;
+    return this.modelRadius / Math.sin(fovRad / 2) * 1.15;
   }
   updateSideButtons() {
     this.sideButtons.setActive(this.currentSide);
@@ -56798,7 +56889,7 @@ function drawSkullMotif(ctx, x, y, size, rotation) {
 var board_default = "./board-KA5DECEU.png";
 
 // ../UltimateDarkTowerDisplay/src/3d/GameBoardImageTexture.ts
-var BASE_NORTH_OFFSET = Math.PI / 1.35;
+var BASE_NORTH_OFFSET = Math.PI / 1.35 - Math.PI / 2;
 function getBoardTextureRotation(northKingdom) {
   return BASE_NORTH_OFFSET + northKingdom * (Math.PI / 2);
 }
@@ -56905,6 +56996,17 @@ var GroundDiscManager = class {
       topMat.opacity = 1;
       topMat.transparent = false;
       topMat.needsUpdate = true;
+    }
+  }
+  /**
+   * Re-apply the board texture rotation for the current `northKingdom` (no
+   * geometry rebuild). Used by the live `setGameBoardKingdom` orientation knob.
+   * If the image is still loading, `startImageLoad` re-applies on resolve from
+   * the same `lighting` object, so the change isn't lost.
+   */
+  refreshBoardOrientation(lighting) {
+    if (this.imageTexture) {
+      this.imageTexture.rotation = getBoardTextureRotation(lighting.boardDisc.northKingdom);
     }
   }
   /**
@@ -57020,6 +57122,7 @@ var GroundDiscManager = class {
         return null;
       }
       this.imageTexture = tex;
+      tex.rotation = getBoardTextureRotation(lighting.boardDisc.northKingdom);
       this.swapMaterialMap(tex, lighting);
       return tex;
     });
@@ -61517,13 +61620,27 @@ var Tower3DView = class {
     return this.cameraController?.getCameraConfig() ?? {
       elevationFactor: this.cameraConfig.elevationFactor ?? -0.5,
       targetHeightFactor: this.cameraConfig.targetHeightFactor ?? -0.15,
+      distanceFactor: this.cameraConfig.distanceFactor ?? 1,
       zoomToCursor: this.cameraConfig.zoomToCursor ?? true,
       preserveViewOnSideSelect: false
     };
   }
-  /** Update the camera elevation and/or look-target height and refit immediately. */
-  applyCameraConfig(config4) {
-    this.cameraController?.applyCameraConfig(config4);
+  /**
+   * Update the camera elevation and/or look-target height and refit immediately.
+   * Pass `{ preserveView: true }` to apply the change to the current live view
+   * (keeping the orbit angle/zoom) instead of snapping to the north fit.
+   */
+  applyCameraConfig(config4, options) {
+    this.cameraController?.applyCameraConfig(config4, options);
+  }
+  /**
+   * Read the live camera framing back as the three preset factors
+   * (`elevationFactor`, `targetHeightFactor`, `distanceFactor`). Useful for
+   * tuning by eye, then copying the numbers into a `CameraConfig`. Falls back to
+   * the stored config when no camera controller is active (e.g. post-dispose).
+   */
+  getLiveCameraFactors() {
+    return this.cameraController?.getLiveCameraFactors() ?? this.getCameraConfig();
   }
   /** Enable or disable zoom-toward-cursor on scroll-wheel zoom-in. */
   setZoomToCursor(enabled) {
@@ -61709,6 +61826,17 @@ var Tower3DView = class {
     this.groundDiscManager?.setBoardDiscEnabled(enabled, this.lighting);
   }
   /**
+   * Orient the game board so its north section faces the given cardinal
+   * direction. The default board orientation already puts the board's north on
+   * the tower's north face (`'north'`); pass `'east'`/`'south'`/`'west'` to
+   * rotate the board in 90° steps. Mirrors the on-disc `anchorToWorld` mapping,
+   * so token placements rotate with the art.
+   */
+  setGameBoardKingdom(side) {
+    this.lighting.boardDisc.northKingdom = SIDES.indexOf(side);
+    this.groundDiscManager?.refreshBoardOrientation(this.lighting);
+  }
+  /**
    * Report the ground-disc geometry so an external plugin can align content on it.
    * Derived from the current model bounds + lighting config; valid even before the
    * disc mesh is lazily built. `topY` is the top surface (where on-disc content
@@ -61805,6 +61933,12 @@ var Tower3DView = class {
     this.sideButtons = new SideButtons((side) => this.snapSide(side));
     this.sideButtons.setActive("north");
     for (const btn of this.sideButtons.buttons) controls.appendChild(btn);
+    const centerBtn = document.createElement("button");
+    centerBtn.className = "t3v-center-btn";
+    centerBtn.textContent = "Center";
+    centerBtn.title = "Center the tower in the view (keeps your current angle and zoom)";
+    centerBtn.addEventListener("click", () => this.cameraController?.centerView());
+    controls.appendChild(centerBtn);
     const resetBtn = document.createElement("button");
     resetBtn.className = "t3v-reset-btn";
     resetBtn.textContent = "Reset";
@@ -62431,6 +62565,10 @@ var TowerDisplay = class {
   setBoardDiscEnabled(enabled) {
     this.view3d?.setBoardDiscEnabled(enabled);
   }
+  /** Orient the game board so its north section faces the given cardinal direction. No-op when no 3D view is active. */
+  setGameBoardKingdom(side) {
+    this.view3d?.setGameBoardKingdom(side);
+  }
   /** Set an equirectangular skybox image or .hdr URL on the 3D view. Pass null to clear. No-op otherwise. */
   setSkyboxUrl(url2) {
     this.view3d?.setSkyboxUrl(url2);
@@ -62451,8 +62589,16 @@ var TowerDisplay = class {
     return this.view3d?.getCameraConfig();
   }
   /** Apply a new camera config to the 3D view. No-op when no 3D view is active. */
-  applyCameraConfig(config4) {
-    this.view3d?.applyCameraConfig(config4);
+  applyCameraConfig(config4, options) {
+    this.view3d?.applyCameraConfig(config4, options);
+  }
+  /**
+   * Read the live camera framing back as the three preset factors
+   * (`elevationFactor`, `targetHeightFactor`, `distanceFactor`). Returns
+   * undefined when no 3D view is active.
+   */
+  getLiveCameraFactors() {
+    return this.view3d?.getLiveCameraFactors();
   }
   /** Enable or disable zoom-toward-cursor on scroll-wheel zoom-in. No-op when no 3D view is active. */
   setZoomToCursor(enabled) {
@@ -62607,8 +62753,8 @@ var TowerRenderView = class {
   applyLightingConfig(config4) {
     this.innerDisplay.applyLightingConfig(config4);
   }
-  applyCameraConfig(config4) {
-    this.innerDisplay.applyCameraConfig(config4);
+  applyCameraConfig(config4, options) {
+    this.innerDisplay.applyCameraConfig(config4, options);
   }
   applyAudioConfig(config4) {
     this.innerDisplay.applyAudioConfig(config4);
