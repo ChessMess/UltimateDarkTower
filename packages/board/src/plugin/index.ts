@@ -29,7 +29,7 @@ import type { AnchorSlot, BoardKingdom } from '../data/udtReexports';
 import { BOARD_ANCHORS } from '../data/udtReexports';
 import type { BoardFocus, BoardViewAngle } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
-import { KIND_TINT, lookupTokenArt, resolveTokenImageFor } from '../renderers/assetPaths';
+import { KIND_TINT, KIND_Z_3D, lookupTokenArt, resolveTokenImageFor } from '../renderers/assetPaths';
 import type { TokenArtRef, TokenSelection, TokenArtConfig, TokenModelRef, BoardView } from '../renderers/assetPaths';
 import {
   MAX_FANNED_SKULLS,
@@ -469,7 +469,7 @@ export class Board3DPlugin implements ScenePlugin {
         : this.buildSprite(selection, art, position, size);
     }
     if (node) {
-      if (selection.kind === 'hero') node.renderOrder = 11;
+      node.renderOrder = KIND_Z_3D[selection.kind];
       this.register(node, selection);
     }
   }

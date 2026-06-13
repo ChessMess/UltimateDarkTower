@@ -3,7 +3,7 @@ import type { AnchorSlot, BoardKingdom } from '../data/udtReexports';
 import { BOARD_ANCHORS, BOARD_IMAGE_INFO, BOARD_LOCATION_BY_NAME } from '../data/udtReexports';
 import type { BoardFocus, BoardRenderer } from './shared';
 import { DEFAULT_FOCUS, focusEquals } from './shared';
-import { KIND_TINT, normalizeAssetBaseUrl, resolveTokenImageFor } from './assetPaths';
+import { KIND_TINT, KIND_Z_2D, normalizeAssetBaseUrl, resolveTokenImageFor } from './assetPaths';
 import { panRect, rectToViewBox, zoomRect } from './zoom';
 import type { Rect } from './zoom';
 import { pointerAngleDeg, viewBoxPointToClient } from './rotate';
@@ -321,86 +321,82 @@ export class BoardMap2D implements BoardRenderer {
   // ── token placement ───────────────────────────────────────────────────────
 
   private renderTokens(root: SVGGElement, state: BoardState, focus: BoardFocus): void {
-    // Foes (fanned), at the `foe` slot. Art id = foe *type*; selection id = instance id.
-    this.renderFannedByLocation(
-      root,
-      focus,
-      foeEntries(state),
-      'foe',
-      (entry) => ({ kind: 'foe', id: entry.id, location: entry.location }),
-      (entry) => ({ kind: 'foe', id: entry.art ?? entry.id })
-    );
-
-    // Adversary, placed at its location's `foe` slot (falls back to `building`).
-    const adversary = state.adversary;
-    if (adversary?.location) {
-      const px = anchorPx(adversary.location, 'foe') ?? anchorPx(adversary.location, 'building');
-      if (px) {
-        root.appendChild(
-          this.makeToken(
-            { kind: 'adversary', id: adversary.id, location: adversary.location },
-            { kind: 'adversary', id: adversary.id },
-            px,
-            SLOT_SIZE,
-            this.dim(adversary.location, focus)
-          )
-        );
-      }
-    }
-
-    // Buildings: skull stacks + monument/razed overlays.
-    for (const [loc, b] of Object.entries(state.buildings)) {
-      const opacity = this.dim(loc, focus);
-      if (b.skulls > 0) {
-        const px = anchorPx(loc, 'skull');
-        if (px) {
-          const count = Math.min(b.skulls, MAX_FANNED_SKULLS);
-          const group = this.makeSelectableGroup({ kind: 'building', id: loc, location: loc }, px, opacity);
-          for (let i = 0; i < count; i++) {
-            this.appendArtOrFallback(
-              group,
-              { kind: 'skull', id: 'skull' },
-              'building',
-              SKULL_SIZE,
-              fanOffset(i, count, FAN_RADIUS)
-            );
+    const layers: Array<{ z: number; render: () => void }> = [
+      {
+        z: KIND_Z_2D.foe,
+        render: () => this.renderFannedByLocation(
+          root, focus, foeEntries(state), 'foe',
+          (entry) => ({ kind: 'foe', id: entry.id, location: entry.location }),
+          (entry) => ({ kind: 'foe', id: entry.art ?? entry.id })
+        ),
+      },
+      {
+        z: KIND_Z_2D.adversary,
+        render: () => {
+          const adversary = state.adversary;
+          if (adversary?.location) {
+            const px = anchorPx(adversary.location, 'foe') ?? anchorPx(adversary.location, 'building');
+            if (px) {
+              root.appendChild(
+                this.makeToken(
+                  { kind: 'adversary', id: adversary.id, location: adversary.location },
+                  { kind: 'adversary', id: adversary.id },
+                  px,
+                  SLOT_SIZE,
+                  this.dim(adversary.location, focus)
+                )
+              );
+            }
           }
-          root.appendChild(group);
-        }
-      }
-      if (b.monument || b.destroyed) {
-        const px = anchorPx(loc, 'building');
-        if (px) {
-          const group = this.makeSelectableGroup({ kind: 'building', id: loc, location: loc }, px, opacity);
-          if (b.monument) {
-            this.appendArtOrFallback(group, { kind: 'monument', id: b.monument }, 'building', SLOT_SIZE);
+        },
+      },
+      {
+        z: KIND_Z_2D.building,
+        render: () => {
+          for (const [loc, b] of Object.entries(state.buildings)) {
+            const opacity = this.dim(loc, focus);
+            if (b.skulls > 0) {
+              const px = anchorPx(loc, 'skull');
+              if (px) {
+                const count = Math.min(b.skulls, MAX_FANNED_SKULLS);
+                const group = this.makeSelectableGroup({ kind: 'building', id: loc, location: loc }, px, opacity);
+                for (let i = 0; i < count; i++) {
+                  this.appendArtOrFallback(group, { kind: 'skull', id: 'skull' }, 'building', SKULL_SIZE, fanOffset(i, count, FAN_RADIUS));
+                }
+                root.appendChild(group);
+              }
+            }
+            if (b.monument || b.destroyed) {
+              const px = anchorPx(loc, 'building');
+              if (px) {
+                const group = this.makeSelectableGroup({ kind: 'building', id: loc, location: loc }, px, opacity);
+                if (b.monument) this.appendArtOrFallback(group, { kind: 'monument', id: b.monument }, 'building', SLOT_SIZE);
+                if (b.destroyed) group.appendChild(razedOverlay(SLOT_SIZE));
+                root.appendChild(group);
+              }
+            }
           }
-          if (b.destroyed) group.appendChild(razedOverlay(SLOT_SIZE));
-          root.appendChild(group);
-        }
-      }
-    }
-
-    // Space markers (fanned), at the `marker` slot.
-    this.renderFannedByLocation(
-      root,
-      focus,
-      markerEntries(state),
-      'marker',
-      (entry) => ({ kind: 'marker', id: entry.id, location: entry.location }),
-      (entry) => ({ kind: 'marker', id: entry.art ?? entry.id })
-    );
-
-    // Heroes (fanned by shared location), at the `hero` slot — rendered last so they always
-    // paint on top of foes, buildings, and markers.
-    this.renderFannedByLocation(
-      root,
-      focus,
-      heroEntries(state),
-      'hero',
-      (entry) => ({ kind: 'hero', id: entry.id, location: entry.location }),
-      (entry) => ({ kind: 'hero', id: entry.id })
-    );
+        },
+      },
+      {
+        z: KIND_Z_2D.marker,
+        render: () => this.renderFannedByLocation(
+          root, focus, markerEntries(state), 'marker',
+          (entry) => ({ kind: 'marker', id: entry.id, location: entry.location }),
+          (entry) => ({ kind: 'marker', id: entry.art ?? entry.id })
+        ),
+      },
+      {
+        z: KIND_Z_2D.hero,
+        render: () => this.renderFannedByLocation(
+          root, focus, heroEntries(state), 'hero',
+          (entry) => ({ kind: 'hero', id: entry.id, location: entry.location }),
+          (entry) => ({ kind: 'hero', id: entry.id })
+        ),
+      },
+    ];
+    layers.sort((a, b) => a.z - b.z);
+    for (const { render } of layers) render();
   }
 
   /** Place a group of same-location entries at `slot`, fanning when more than one shares the slot. */

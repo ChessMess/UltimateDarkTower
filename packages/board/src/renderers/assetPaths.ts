@@ -31,6 +31,24 @@ export const KIND_TINT: Record<TokenSelection['kind'], string> = {
   marker: '#14b8a6',
 };
 
+/** 2D SVG render order — higher value = appended later = paints on top (SVG painters algorithm). */
+export const KIND_Z_2D: Record<TokenSelection['kind'], number> = {
+  building:  1,
+  foe:       2,
+  adversary: 3,
+  marker:    4,
+  hero:      5,
+};
+
+/** 3D Three.js renderOrder — higher value = drawn on top for coplanar objects. */
+export const KIND_Z_3D: Record<TokenSelection['kind'], number> = {
+  building:  10,
+  foe:       10,
+  adversary: 10,
+  marker:    10,
+  hero:      11,
+};
+
 /** `Foo Bar` / `Utuk'Ku` → `foo-bar` / `utuk-ku`. */
 export function kebab(value: string): string {
   return value
