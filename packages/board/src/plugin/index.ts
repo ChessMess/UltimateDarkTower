@@ -468,7 +468,10 @@ export class Board3DPlugin implements ScenePlugin {
         ? this.buildModelToken(model, position, size)
         : this.buildSprite(selection, art, position, size);
     }
-    if (node) this.register(node, selection);
+    if (node) {
+      if (selection.kind === 'hero') node.renderOrder = 11;
+      this.register(node, selection);
+    }
   }
 
   /**
