@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FOE_BY_NAME = exports.FOE_BY_ID = exports.ALL_FOES = exports.ADVERSARY_ROSTER = exports.FOES = exports.FOE_STATUSES = void 0;
-/** The statuses in progression order (ready → savage → lethal). */
-exports.FOE_STATUSES = ['ready', 'savage', 'lethal'];
+/** The statuses in progression order, lowest → highest threat. */
+exports.FOE_STATUSES = ['panicked', 'unsteady', 'ready', 'savage', 'lethal'];
 /** The 12 tiered foes (Tier 1→level 2, Tier 2→level 3, Tier 3→level 4). Names match the seed unions. */
 exports.FOES = [
     // Tier 1 — level 2

@@ -7,8 +7,8 @@ const udtFoes_1 = require("../src/udtFoes");
 const udtSeedParser_1 = require("../src/udtSeedParser");
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 describe('FOE_STATUSES', () => {
-    test('is the ordered ready → savage → lethal progression', () => {
-        expect(udtFoes_1.FOE_STATUSES).toEqual(['ready', 'savage', 'lethal']);
+    test('is the ordered panicked → unsteady → ready → savage → lethal progression', () => {
+        expect(udtFoes_1.FOE_STATUSES).toEqual(['panicked', 'unsteady', 'ready', 'savage', 'lethal']);
     });
 });
 describe('FOES', () => {

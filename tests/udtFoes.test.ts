@@ -14,8 +14,8 @@ import { TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES } from '../src/udtSeedP
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 describe('FOE_STATUSES', () => {
-  test('is the ordered ready → savage → lethal progression', () => {
-    expect(FOE_STATUSES).toEqual(['ready', 'savage', 'lethal']);
+  test('is the ordered panicked → unsteady → ready → savage → lethal progression', () => {
+    expect(FOE_STATUSES).toEqual(['panicked', 'unsteady', 'ready', 'savage', 'lethal']);
   });
 });
 

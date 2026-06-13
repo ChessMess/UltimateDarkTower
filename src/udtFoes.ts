@@ -7,17 +7,22 @@
  * exactly as-is. Here we attach `level`/`tier`/`source` metadata keyed by the same foe names and
  * add the in-play `FoeStatus` progression the board package tracks.
  *
- * `FoeStatus` (ready → savage → lethal) is the in-play power progression and is DISTINCT from a
- * foe's `level` (the number on its card: 2–4 for foes, 5 for adversaries), which is identity.
+ * `FoeStatus` (panicked → unsteady → ready → savage → lethal) is the in-play power progression and
+ * is DISTINCT from a foe's `level` (the number on its card: 2–4 for foes, 5 for adversaries), which
+ * is identity. The five statuses match the official game's foe-status track (rules glossary): the app
+ * can surface any of them, so consumers must model all five.
  */
 import type { ContentSource } from './udtHeroes';
 import type { Tier1Foe, Tier2Foe, Tier3Foe, Adversary } from './udtSeedParser';
 
-/** In-play power progression a foe advances through. Distinct from identity `level`/`tier`. */
-export type FoeStatus = 'ready' | 'savage' | 'lethal';
+/**
+ * In-play power progression a foe advances through, ascending threat (the official game's
+ * foe-status track). Distinct from identity `level`/`tier`.
+ */
+export type FoeStatus = 'panicked' | 'unsteady' | 'ready' | 'savage' | 'lethal';
 
-/** The statuses in progression order (ready → savage → lethal). */
-export const FOE_STATUSES: readonly FoeStatus[] = ['ready', 'savage', 'lethal'];
+/** The statuses in progression order, lowest → highest threat. */
+export const FOE_STATUSES: readonly FoeStatus[] = ['panicked', 'unsteady', 'ready', 'savage', 'lethal'];
 
 /** A foe's identity level (the number on its card). Foes are 2–4; adversaries are 5. */
 export type FoeLevel = 2 | 3 | 4 | 5;

@@ -4475,7 +4475,7 @@ var MONUMENT_BY_ID = Object.freeze(
 );
 
 // src/udtFoes.ts
-var FOE_STATUSES = ["ready", "savage", "lethal"];
+var FOE_STATUSES = ["panicked", "unsteady", "ready", "savage", "lethal"];
 var FOES = [
   // Tier 1 — level 2
   { id: "brigands", name: "Brigands", kind: "foe", level: 2, tier: 1, source: "base" },
