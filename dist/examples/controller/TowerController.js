@@ -4420,6 +4420,8 @@
       Tower.onBatteryLevelNotify = onBatteryLevelNotify;
       Tower.onTowerStateUpdate = onTowerStateUpdate;
       window.Tower = Tower;
+      Tower.setLoggerOutputs([new ConsoleOutput(), sharedDOMOutput]);
+      Tower.logDetail = true;
       currentConnectionMode = "ble";
     }
     logger.info("Attempting to connect to tower...", "[TC]");
@@ -4496,6 +4498,8 @@
       Tower.onBatteryLevelNotify = onBatteryLevelNotify;
       Tower.onTowerStateUpdate = onTowerStateUpdate;
       window.Tower = Tower;
+      Tower.setLoggerOutputs([new ConsoleOutput(), sharedDOMOutput]);
+      Tower.logDetail = true;
     }
     towerEmulatorConnectInFlight = true;
     try {

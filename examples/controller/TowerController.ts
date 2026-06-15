@@ -249,6 +249,8 @@ async function connectToTower() {
     Tower.onBatteryLevelNotify = onBatteryLevelNotify;
     Tower.onTowerStateUpdate = onTowerStateUpdate;
     (window as any).Tower = Tower;
+    Tower.setLoggerOutputs([new ConsoleOutput(), sharedDOMOutput]);
+    Tower.logDetail = true;
     currentConnectionMode = 'ble';
   }
 
@@ -340,6 +342,8 @@ async function connectToTowerEmulator() {
     Tower.onBatteryLevelNotify = onBatteryLevelNotify;
     Tower.onTowerStateUpdate = onTowerStateUpdate;
     (window as any).Tower = Tower;
+    Tower.setLoggerOutputs([new ConsoleOutput(), sharedDOMOutput]);
+    Tower.logDetail = true;
   }
 
   towerEmulatorConnectInFlight = true;
