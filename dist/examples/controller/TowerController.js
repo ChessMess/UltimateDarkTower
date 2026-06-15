@@ -1615,9 +1615,8 @@
           return [towerCommand.name, commandToPacketString(command)];
         case TC.BATTERY: {
           const millivolts = getMilliVoltsFromTowerResponse(command);
-          const retval = [towerCommand.name, milliVoltsToPercentage(millivolts)];
+          const retval = [towerCommand.name, `${milliVoltsToPercentage(millivolts)} (${(millivolts / 1e3).toFixed(2)}mv)`];
           if (this.logDetail) {
-            retval.push(`${millivolts}mv`);
             retval.push(commandToPacketString(command));
           }
           return retval;
