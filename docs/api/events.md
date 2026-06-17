@@ -73,6 +73,16 @@ tower.onTowerStateUpdate = (newState, oldState, source) => {
 };
 ```
 
+### `onTowerResponse: (response: Uint8Array) => void`
+
+Fires with the **raw, verbatim bytes** of every non-battery tower notification (tower-state responses, command acknowledgements). Use this when you need the exact packet rather than the decoded `TowerState` from `onTowerStateUpdate` — for example a relay forwarding the tower's exact 20-byte state to other consumers.
+
+```typescript
+tower.onTowerResponse = (bytes) => {
+  if (bytes.length === 20) relay.broadcast(bytes); // forward verbatim
+};
+```
+
 ---
 
 ## Recommended pattern

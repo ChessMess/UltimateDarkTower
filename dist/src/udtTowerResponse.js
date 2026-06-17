@@ -51,9 +51,8 @@ class TowerResponseProcessor {
                 return [towerCommand.name, (0, udtHelpers_1.commandToPacketString)(command)];
             case udtConstants_1.TC.BATTERY: {
                 const millivolts = (0, udtHelpers_1.getMilliVoltsFromTowerResponse)(command);
-                const retval = [towerCommand.name, (0, udtHelpers_1.milliVoltsToPercentage)(millivolts)];
+                const retval = [towerCommand.name, `${(0, udtHelpers_1.milliVoltsToPercentage)(millivolts)} (${(millivolts / 1000).toFixed(2)}mv)`];
                 if (this.logDetail) {
-                    retval.push(`${millivolts}mv`);
                     retval.push((0, udtHelpers_1.commandToPacketString)(command));
                 }
                 return retval;

@@ -65,6 +65,13 @@ declare class UltimateDarkTower {
     onSkullDrop: (towerSkullCount: number) => void;
     onBatteryLevelNotify: (millivolts: number) => void;
     onTowerStateUpdate: (newState: TowerState, oldState: TowerState, source: string) => void;
+    /**
+     * Called with the raw bytes of every non-battery tower notification (e.g.
+     * tower-state responses). Use this when you need the verbatim packet rather
+     * than the decoded `TowerState` from {@link onTowerStateUpdate} — for example
+     * a relay forwarding the tower's exact 20-byte state to other consumers.
+     */
+    onTowerResponse: (response: Uint8Array) => void;
     constructor(config?: UltimateDarkTowerConfig);
     /**
      * Initialize the logger with default console output

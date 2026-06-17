@@ -1508,9 +1508,8 @@ var TowerResponseProcessor = class {
         return [towerCommand.name, commandToPacketString(command)];
       case TC.BATTERY: {
         const millivolts = getMilliVoltsFromTowerResponse(command);
-        const retval = [towerCommand.name, milliVoltsToPercentage(millivolts)];
+        const retval = [towerCommand.name, `${milliVoltsToPercentage(millivolts)} (${(millivolts / 1e3).toFixed(2)}mv)`];
         if (this.logDetail) {
-          retval.push(`${millivolts}mv`);
           retval.push(commandToPacketString(command));
         }
         return retval;
@@ -3220,6 +3219,15 @@ var UltimateDarkTower = class {
       void oldState;
       void source;
     };
+    /**
+     * Called with the raw bytes of every non-battery tower notification (e.g.
+     * tower-state responses). Use this when you need the verbatim packet rather
+     * than the decoded `TowerState` from {@link onTowerStateUpdate} — for example
+     * a relay forwarding the tower's exact 20-byte state to other consumers.
+     */
+    this.onTowerResponse = (response) => {
+      void response;
+    };
     // utility
     this._logDetail = false;
     this.initializeLogger();
@@ -3307,6 +3315,7 @@ var UltimateDarkTower = class {
           this.updateTowerStateFromResponse(stateData);
         }
       }
+      this.onTowerResponse(response);
     };
   }
   /**

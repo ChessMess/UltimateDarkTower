@@ -3040,6 +3040,15 @@
         void oldState;
         void source;
       };
+      /**
+       * Called with the raw bytes of every non-battery tower notification (e.g.
+       * tower-state responses). Use this when you need the verbatim packet rather
+       * than the decoded `TowerState` from {@link onTowerStateUpdate} — for example
+       * a relay forwarding the tower's exact 20-byte state to other consumers.
+       */
+      this.onTowerResponse = (response) => {
+        void response;
+      };
       // utility
       this._logDetail = false;
       this.initializeLogger();
@@ -3129,6 +3138,7 @@
             this.updateTowerStateFromResponse(stateData);
           }
         }
+        this.onTowerResponse(response);
       };
     }
     /**

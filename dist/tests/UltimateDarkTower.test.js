@@ -66,6 +66,16 @@ describe('UltimateDarkTower', () => {
             expect(darkTower.onTowerConnect).toBe(mockConnectCallback);
             expect(darkTower.onTowerDisconnect).toBe(mockDisconnectCallback);
         });
+        test('onTowerResponse fires with the raw verbatim bytes of a tower-state notification', async () => {
+            const received = [];
+            darkTower.onTowerResponse = (bytes) => received.push(Array.from(bytes));
+            await darkTower.connect();
+            // 20-byte tower-state response (byte 0 = 0x00 → non-battery, routed to onTowerResponse).
+            const packet = new Uint8Array([0x00, 0x11, 0x00, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0]);
+            mockAdapter.simulateResponse(packet);
+            expect(received).toEqual([Array.from(packet)]);
+            await darkTower.disconnect();
+        });
     });
     describe('State Management', () => {
         test('should track drum positions in tower state', () => {
