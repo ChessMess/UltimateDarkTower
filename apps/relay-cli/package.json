@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "ultimatedarktowerrelay-core": "*",
+    "ultimatedarktowerrelay-client": "*",
     "ultimatedarktowerrelay-shared": "*",
     "ws": "^8.18.0"
   },

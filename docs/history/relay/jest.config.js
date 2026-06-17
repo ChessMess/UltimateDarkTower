@@ -25,6 +25,8 @@ module.exports = {
     '^ultimatedarktowerrelay-shared/(.*)$': '<rootDir>/packages/shared/src/$1',
     '^ultimatedarktowerrelay-core$': '<rootDir>/packages/core/src/index.ts',
     '^ultimatedarktowerrelay-core/(.*)$': '<rootDir>/packages/core/src/$1',
+    '^ultimatedarktowerrelay-client$': '<rootDir>/packages/client/src/index.ts',
+    '^ultimatedarktowerrelay-client/(.*)$': '<rootDir>/packages/client/src/$1',
     '^ultimatedarktower$': '<rootDir>/node_modules/ultimatedarktower/dist/src/index.js',
   },
   collectCoverageFrom: [

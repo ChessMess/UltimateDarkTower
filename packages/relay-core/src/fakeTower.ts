@@ -22,8 +22,12 @@ import {
   TOWER_DEVICE_NAME,
 } from 'ultimatedarktower';
 import { buildSkullDropPacket, TOWER_STATE_NOTIFICATION_TYPE } from './commandParser';
+import {
+  resolveDeviceInfo,
+  shouldExposeDeviceInfoService,
+  type DeviceInformation,
+} from './deviceInfo';
 
-const IS_MACOS = process.platform === 'darwin';
 let _disWarningLogged = false;
 
 // Delay (ms) before the FakeTower echoes a response for commands that trigger
@@ -33,20 +37,16 @@ let _disWarningLogged = false;
 // Measured visually from sealReveal animation duration (~1.5-2s).
 const ANIMATION_ECHO_DELAY_MS = 1600;
 
-// ─── Device Information Service constants ────────────────────────────────────
-// Captured from the real tower via BLE sniffing (captureTower.ts / UDT controller log).
+// ─── Device Information Service UUIDs ─────────────────────────────────────────
+// The DIS *values* (manufacturer, firmware revision, …) are resolved per-instance
+// from FakeTowerOptions.deviceInfo — see ./deviceInfo. The app reads the firmware
+// revision to gate its "checking firmware" screen.
 const DIS_SERVICE_UUID = '180a';
 const DIS_MANUFACTURER_NAME_UUID = '2a29';
 const DIS_MODEL_NUMBER_UUID = '2a24';
 const DIS_HARDWARE_REVISION_UUID = '2a27';
 const DIS_FIRMWARE_REVISION_UUID = '2a26';
 const DIS_SOFTWARE_REVISION_UUID = '2a28';
-
-const DIS_MANUFACTURER_NAME = 'Restoration Games LLC';
-const DIS_MODEL_NUMBER = 'ReturnToDarkTower';
-const DIS_HARDWARE_REVISION = '1.11';
-const DIS_FIRMWARE_REVISION = '79556657694099f3ca293f534b9cc5b55bfeaa31';
-const DIS_SOFTWARE_REVISION = '1.0.0';
 
 // First notification the real tower sends immediately upon subscription.
 // Pattern observed: 07 00 00 0c 10
@@ -55,6 +55,18 @@ import type { FakeTowerState } from 'ultimatedarktowerrelay-shared';
 
 /** Callback invoked when a tower command is intercepted. */
 export type CommandReceivedCallback = (data: Buffer) => void;
+
+/** Construction options for {@link FakeTower}. */
+export interface FakeTowerOptions {
+  /**
+   * Overrides for the Device Information Service identity the app reads after
+   * connecting. Omitted fields fall back to `DEFAULT_DEVICE_INFO` (see
+   * ./deviceInfo). The `firmwareRevision` is the value the app gates its
+   * "checking firmware" screen on. Has effect only where the DIS can be exposed
+   * (non-macOS — CoreBluetooth blocks 0x180A in peripheral mode).
+   */
+  deviceInfo?: Partial<DeviceInformation>;
+}
 
 interface FakeTowerEventMap {
   'state-change': [state: FakeTowerState];
@@ -103,6 +115,8 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
   private _skullDropCount = 0;
   /** Guards against concurrent startAdvertising() calls during the async BLE wait. */
   private _isStarting = false;
+  /** Resolved Device Information Service identity presented to the companion app. */
+  private readonly _deviceInfo: DeviceInformation;
 
   // Stored handler refs so we can remove them in stopAdvertising.
   private readonly _onAccept = (address: string): void => {
@@ -130,8 +144,9 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
     console.error('[FakeTower] servicesSetError:', err);
   };
 
-  constructor() {
+  constructor(options: FakeTowerOptions = {}) {
     super();
+    this._deviceInfo = resolveDeviceInfo(options.deviceInfo);
     // Track raw CoreBluetooth adapter state from the moment bleno initializes.
     // This fires immediately with the current state and again on each change.
     bleno.on('stateChange', this._onStateChange);
@@ -278,11 +293,11 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
       const disService = new PrimaryService({
         uuid: DIS_SERVICE_UUID,
         characteristics: [
-          makeReadChar(DIS_MANUFACTURER_NAME_UUID, DIS_MANUFACTURER_NAME),
-          makeReadChar(DIS_MODEL_NUMBER_UUID, DIS_MODEL_NUMBER),
-          makeReadChar(DIS_HARDWARE_REVISION_UUID, DIS_HARDWARE_REVISION),
-          makeReadChar(DIS_FIRMWARE_REVISION_UUID, DIS_FIRMWARE_REVISION),
-          makeReadChar(DIS_SOFTWARE_REVISION_UUID, DIS_SOFTWARE_REVISION),
+          makeReadChar(DIS_MANUFACTURER_NAME_UUID, this._deviceInfo.manufacturerName),
+          makeReadChar(DIS_MODEL_NUMBER_UUID, this._deviceInfo.modelNumber),
+          makeReadChar(DIS_HARDWARE_REVISION_UUID, this._deviceInfo.hardwareRevision),
+          makeReadChar(DIS_FIRMWARE_REVISION_UUID, this._deviceInfo.firmwareRevision),
+          makeReadChar(DIS_SOFTWARE_REVISION_UUID, this._deviceInfo.softwareRevision),
         ],
       });
 
@@ -297,17 +312,17 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
       await bleno.startAdvertisingAsync(TOWER_DEVICE_NAME, []);
       console.log('[FakeTower] advertising started — setting services…');
       const services = [uartService];
-      if (IS_MACOS) {
-        if (!_disWarningLogged) {
-          console.warn(
-            '[FakeTower] macOS detected — skipping Device Information Service (0x180A). ' +
-            'CoreBluetooth blocks standard Bluetooth SIG UUIDs in peripheral mode. ' +
-            'See docs/MACOS_BLE_PERIPHERAL_LIMITATION.md for workarounds.',
-          );
-          _disWarningLogged = true;
-        }
-      } else {
+      if (shouldExposeDeviceInfoService(process.platform)) {
         services.push(disService);
+        console.log(`[FakeTower] exposing Device Information Service (firmware: ${this._deviceInfo.firmwareRevision})`);
+      } else if (!_disWarningLogged) {
+        console.warn(
+          '[FakeTower] macOS detected — skipping Device Information Service (0x180A). ' +
+          'CoreBluetooth blocks standard Bluetooth SIG UUIDs in peripheral mode, so the ' +
+          'companion app will stall on "checking firmware". Run on Linux (e.g. Raspberry Pi) ' +
+          'or Windows for a standalone fake tower. See docs/MACOS_BLE_PERIPHERAL_LIMITATION.md.',
+        );
+        _disWarningLogged = true;
       }
       await bleno.setServicesAsync(services);
       console.log('[FakeTower] services set — tower ready');

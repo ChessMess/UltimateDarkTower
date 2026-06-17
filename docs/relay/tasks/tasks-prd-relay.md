@@ -90,11 +90,17 @@ style (`ultimatedarktowerrelay-*`).
         EventLog is Phase 4).
 
 - [ ] 3.0 Phase 3 — Client SDK + UTDD BridgeSource (PRD §12.3)
-  - [ ] 3.1 `packages/client` framework-agnostic SDK (handshake, subscriptions, participant actions,
-        auto-reconnect with backoff, version-mismatch close code).
-  - [ ] 3.2 Publish `ultimatedarktowerrelay-client`.
-  - [ ] 3.3 (In UTDD) implement `BridgeSource` against `src/sources/types.ts`; swap `ManualSource` →
-        bridge.
+  - [x] 3.1 `packages/client` framework-agnostic SDK (`RelayClient`): handshake, decoded-state +
+        event subscriptions, participant `dropSkull()`, auto-reconnect with backoff, version-mismatch
+        close code, isomorphic WebSocket (injectable for Node). `mockConsumer` refactored to use it.
+  - [x] 3.2 `ultimatedarktowerrelay-client` is publish-ready (package metadata + `exports` +
+        `publishConfig`). Actual `npm publish` is a manual release step (deferred).
+  - [ ] 3.3 (In UTDD — separate session, UTDD read-only here) implement `BridgeSource` against
+        `src/sources/types.ts`; swap `ManualSource` → bridge.
+  - [x] 3.4 (Owner-directed, resolves §11 Q4) Configurable FakeTower **DIS** (`deviceInfo` option +
+        `TOWER_DIS_*` env) so a non-macOS host (Raspberry Pi / Windows) clears the app's "checking
+        firmware" screen standalone; BLE-free `deviceInfo` tests; `docs/MACOS_BLE_PERIPHERAL_LIMITATION.md`
+        + `docs/SETUP.md`.
 
 - [ ] 4.0 Phase 4 — Electron GUI + event log/replay + Sync adoption (PRD §12.4)
   - [ ] 4.1 `packages/electron` operator GUI over `core` (status, BLE permissions, log viewer, manual

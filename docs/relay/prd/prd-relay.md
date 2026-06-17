@@ -171,7 +171,11 @@ is **not** carried by the relay (see §8) and stays manual in the consumer.
    name; the app scans by name prefix and would otherwise never match.
 3. **FR-1.3** It MUST expose the Device Information Service identity the app reads after connecting
    (manufacturer, model, hardware/firmware/software revision), as captured from a real tower — subject
-   to the macOS limitation in §6.
+   to the macOS limitation in §6. **Confirmed (resolves §11 Q4):** the app *requires* the DIS firmware
+   revision — without it it stalls on the "checking firmware" screen. The DIS identity is now
+   **configurable** (`FakeTower({ deviceInfo })` / `TOWER_DIS_*` env) so the firmware revision can match
+   what the app accepts as current; it is exposed on all **non-macOS** hosts (Linux/Raspberry Pi, Windows).
+   See `docs/MACOS_BLE_PERIPHERAL_LIMITATION.md`.
 4. **FR-1.4** It MUST accept the app's connection, intercept every 20-byte write to the command
    characteristic, and emit it for decoding and relay.
 
@@ -351,7 +355,12 @@ settled before any public or hosted build. (Mirrors UTDD's stance in
    light-off command after Continue.
 3. **Which opcodes need synthesized responses,** and with exactly what timing/format? Validate against
    captured real-tower sessions before finalizing FR-3 packet shapes.
-4. **Does the app tolerate the macOS-skipped DIS,** or must the relay expose DIS on a non-macOS host?
+4. **Does the app tolerate the macOS-skipped DIS? — RESOLVED (no).** The app *requires* the DIS firmware
+   revision and stalls on "checking firmware" without it. macOS CoreBluetooth cannot expose the DIS, so a
+   **non-macOS host (Linux/Raspberry Pi, Windows) is required for a standalone fake tower**; on macOS the
+   workaround is a real-tower handoff. The DIS firmware value is configurable (`TOWER_DIS_FIRMWARE_REVISION`
+   / `FakeTower({ deviceInfo })`); the exact value the current app accepts is still to be validated against
+   the live app. See `docs/MACOS_BLE_PERIPHERAL_LIMITATION.md` + `docs/SETUP.md`.
 5. **Simultaneous modes?** Can fake-tower mode and real-tower mirror mode run at the same time, or are
    they mutually exclusive?
 6. **Participant authority model** when multiple participants could report the same action.

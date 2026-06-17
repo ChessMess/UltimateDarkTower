@@ -31,10 +31,28 @@ import {
   NotificationSynthesizer,
   type TowerSource,
   type NotificationSink,
+  type DeviceInformation,
 } from 'ultimatedarktowerrelay-core';
 import { PROTOCOL_VERSION } from 'ultimatedarktowerrelay-shared';
 
 const DEFAULT_PORT = 8765;
+
+/**
+ * Read Device Information Service overrides from `TOWER_DIS_*` env vars (only the
+ * ones set). The firmware revision gates the official app's "checking firmware"
+ * screen; override it if the app reports the fake tower as out of date. Effective
+ * only on non-macOS hosts (see docs/MACOS_BLE_PERIPHERAL_LIMITATION.md).
+ */
+function readDeviceInfoFromEnv(): Partial<DeviceInformation> {
+  const env = process.env;
+  const info: Partial<DeviceInformation> = {};
+  if (env['TOWER_DIS_MANUFACTURER']) info.manufacturerName = env['TOWER_DIS_MANUFACTURER'];
+  if (env['TOWER_DIS_MODEL']) info.modelNumber = env['TOWER_DIS_MODEL'];
+  if (env['TOWER_DIS_HARDWARE_REVISION']) info.hardwareRevision = env['TOWER_DIS_HARDWARE_REVISION'];
+  if (env['TOWER_DIS_FIRMWARE_REVISION']) info.firmwareRevision = env['TOWER_DIS_FIRMWARE_REVISION'];
+  if (env['TOWER_DIS_SOFTWARE_REVISION']) info.softwareRevision = env['TOWER_DIS_SOFTWARE_REVISION'];
+  return info;
+}
 
 async function main(): Promise<void> {
   const useMock = process.env['TOWER_SOURCE'] === 'mock';
@@ -49,7 +67,7 @@ async function main(): Promise<void> {
   // return traffic through them.
   const source: TowerSource & NotificationSink = useMock
     ? new MockTower({ intervalMs: 3000 })
-    : new FakeTower();
+    : new FakeTower({ deviceInfo: readDeviceInfoFromEnv() });
   const parser = new CommandParser();
   const observer = new ObserverDisplay();
 

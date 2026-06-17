@@ -10,6 +10,7 @@
     "build": "tsc --build",
     "build:shared": "tsc --build packages/shared",
     "build:core": "tsc --build packages/core",
+    "build:client": "tsc --build packages/client",
     "build:cli": "tsc --build packages/cli",
     "start": "npm run build && node packages/cli/dist/index.js",
     "start:mock": "npm run build && TOWER_SOURCE=mock node packages/cli/dist/index.js",

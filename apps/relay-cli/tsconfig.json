@@ -15,7 +15,7 @@
     "skipLibCheck": true,
     "strict": true
   },
-  "references": [{ "path": "../core" }, { "path": "../shared" }],
+  "references": [{ "path": "../core" }, { "path": "../client" }, { "path": "../shared" }],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
 }

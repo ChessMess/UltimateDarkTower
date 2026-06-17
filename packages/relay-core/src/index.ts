@@ -18,6 +18,11 @@ export {
 export { ObserverDisplay } from './observerDisplay';
 export { MockTower } from './mockTower';
 export { NotificationSynthesizer } from './notificationSynthesizer';
+export {
+  DEFAULT_DEVICE_INFO,
+  resolveDeviceInfo,
+  shouldExposeDeviceInfoService,
+} from './deviceInfo';
 
 export type { HostLoggerOptions } from './logger';
 export type { RelayServerOptions } from './relayServer';
@@ -26,3 +31,5 @@ export type { ParsedCommand } from './commandParser';
 export type { MockTowerOptions } from './mockTower';
 export type { TowerSource, TowerSourceEventMap } from './towerSource';
 export type { NotificationSink, NotificationSynthesizerOptions } from './notificationSynthesizer';
+export type { FakeTowerOptions } from './fakeTower';
+export type { DeviceInformation } from './deviceInfo';
