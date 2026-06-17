@@ -3,6 +3,8 @@ dist/
 .vite/
 out/
 *.tsbuildinfo
+# E2E harness build artifact (rebuild with esbuild — see examples/replay-e2e/README.md)
+examples/replay-e2e/app.js
 .DS_Store
 coverage/
 *.log
