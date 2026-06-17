@@ -1,0 +1,105 @@
+# Tasks — UltimateDarkTowerRelay (from `docs/prd/prd-relay.md`)
+
+Implementation roadmap generated per the `../ai-dev-tasks` PRD→tasks workflow. One **parent task per PRD
+§12 phase**. Phase 1 sub-tasks are concrete and built first; Phases 2–5 are coarser placeholders that
+will be expanded when their phase begins.
+
+The relay is a disciplined **extraction/port** from `UltimateDarkTowerSync`'s `host`/`shared`/`client`
+packages, built on the published `ultimatedarktower` core lib. Locked decisions: LAN-only v1; hybrid
+state (authoritative last-command snapshot + append-only semantic event log); npm-workspaces monorepo
+(`shared` / `core` / `cli` / `electron` / `client`); package naming mirrors the UDT family's unscoped
+style (`ultimatedarktowerrelay-*`).
+
+## Relevant Files
+
+- `package.json` — root npm-workspaces manifest, scripts, shared devDependencies.
+- `tsconfig.json` — root composite project references (shared → core → cli).
+- `.eslintrc.js`, `.prettierrc`, `jest.config.js` — shared lint/format/test tooling (ported from Sync).
+- `.github/workflows/ci.yml` — CI: lint → type-check → test → build on Node 18/20 (macOS + Ubuntu).
+- `packages/shared/src/{version,types,protocol,logging,index}.ts` — protocol envelope, `MessageType`,
+  message factories, `LogEntry` format, `PROTOCOL_VERSION`.
+- `packages/core/src/fakeTower.ts` — BLE peripheral (`@stoprocent/bleno`): advertising, command
+  interception, per-write echo + animation timing, `injectSkullDrop`, DIS identity, ghost-connection
+  recovery.
+- `packages/core/src/relayServer.ts` — WebSocket relay: `seq` assignment, broadcast, `sync:state`
+  catch-up, handshake, ping/pong, paused/resumed, observer mode.
+- `packages/core/src/connectionManager.ts` — client lifecycle, handshake timeout, dead-client detection.
+- `packages/core/src/commandParser.ts` — 20-byte validation + `buildSkullDropPacket`.
+- `packages/core/src/logger.ts` — JSONL logging (`HostLogger`), `seq` correlation, on/off toggle.
+- `packages/core/src/observerDisplay.ts` — decoded last-snapshot `TowerState` store.
+- `packages/core/src/towerSource.ts` — `TowerSource` seam (FakeTower / MockTower), seeds FR-5.1.
+- `packages/core/src/mockTower.ts` — BLE-free canned-command source for headless verification.
+- `packages/core/src/index.ts` — library barrel re-exporting the core classes.
+- `packages/core/src/commandParser.test.ts` — unit tests for `CommandParser` / `buildSkullDropPacket`.
+- `packages/core/src/towerState.roundtrip.test.ts` — `rtdt_pack_state` / `rtdt_unpack_state` round-trips.
+- `packages/core/src/relayServer.integration.test.ts` — mock WS consumer receives `sync:state` + a
+  relayed `tower:command`.
+- `packages/cli/src/index.ts` — headless daemon (`main()`): wires the tower source → relay; `RELAY_PORT`;
+  `TOWER_SOURCE=fake|mock`; SIGINT/SIGTERM graceful shutdown.
+- `packages/cli/src/mockConsumer.ts` — tiny WebSocket consumer for the demo/verification.
+
+### Notes
+
+- Unit/integration tests are co-located as `*.test.ts` under `packages/*/src` and run with `npm test`
+  (jest + ts-jest, compiled to CommonJS). Jest `moduleNameMapper` resolves `ultimatedarktower` to its
+  installed `dist`, and the workspace packages to their `src/index.ts`.
+- Build order is shared → core → cli via composite project references (`tsc --build`).
+- Tests stay BLE-free by importing the specific source modules under test (never the `core` barrel, which
+  re-exports `FakeTower`/bleno). `npm run start:mock` exercises the full relay path with no BLE hardware.
+- The official app's reaction cannot be unit-tested without the app (PRD §13); real-tower captures + a
+  mock BLE central are deferred to later phases.
+
+## Tasks
+
+- [x] 0.0 Repo initialization
+  - [x] 0.1 `git init`; create `feature/phase-1-scaffold` branch; add `.gitignore` (ported from Sync).
+  - [x] 0.2 Write this roadmap (`docs/tasks/tasks-prd-relay.md`).
+
+- [x] 1.0 Phase 1 — Scaffold + relay parity (PRD §12.1)  ← **built this session**
+  - [x] 1.1 Root workspace tooling: `package.json` (`workspaces`, scripts, devDeps), root composite
+        `tsconfig.json`, `.eslintrc.js`, `.prettierrc`, `jest.config.js`.
+  - [x] 1.2 Port `packages/shared` (`version`, `types`, `protocol`, `logging`, `index`) +
+        `package.json`/`tsconfig.json`.
+  - [x] 1.3 Port `packages/core`: `commandParser`, `connectionManager`, `relayServer`, `logger`,
+        `observerDisplay`, `fakeTower` (verbatim), `index` barrel + `package.json`/`tsconfig.json`.
+  - [x] 1.4 Add the `TowerSource` seam + `MockTower` (BLE-free canned-command source).
+  - [x] 1.5 Port `packages/cli` `index.ts` daemon (`RELAY_PORT`, `TOWER_SOURCE=fake|mock`,
+        SIGINT/SIGTERM) + `mockConsumer.ts`.
+  - [x] 1.6 Unit tests: `commandParser`, `rtdt_pack`/`unpack` round-trip.
+  - [x] 1.7 Integration test: mock WS consumer receives `sync:state` on connect and a relayed
+        `tower:command` with monotonic `seq`.
+  - [x] 1.8 Wire npm scripts (`build`, `start`, `start:mock`, `mock:consumer`, `lint`, `type-check`,
+        `test`, `ci`) and `.github/workflows/ci.yml`.
+  - [x] 1.9 Verify: `npm install`, `npm run ci` green; `start:mock` + `mock:consumer` demo. **← STOP
+        for review (you are here).**
+
+- [ ] 2.0 Phase 2 — NotificationSynthesizer (PRD §12.2)
+  - [ ] 2.1 `NotificationSynthesizer` in `core`; wire a participant-reported `dropSkull()` →
+        `injectSkullDrop()` / `buildSkullDropPacket`.
+  - [ ] 2.2 Calibration-complete response (`TOWER_COMMANDS.calibration` → `CALIBRATION_FINISHED`),
+        validated against captures.
+  - [ ] 2.3 Resolve the periodic-heartbeat decision (fallback only if a capture shows a timeout).
+  - [ ] 2.4 Encode all synthesized notifications via `rtdt_pack_state` over the last-command baseline.
+  - [ ] 2.5 Introduce the `RelayEvent` semantic-event union in `shared`.
+
+- [ ] 3.0 Phase 3 — Client SDK + UTDD BridgeSource (PRD §12.3)
+  - [ ] 3.1 `packages/client` framework-agnostic SDK (handshake, subscriptions, participant actions,
+        auto-reconnect with backoff, version-mismatch close code).
+  - [ ] 3.2 Publish `ultimatedarktowerrelay-client`.
+  - [ ] 3.3 (In UTDD) implement `BridgeSource` against `src/sources/types.ts`; swap `ManualSource` →
+        bridge.
+
+- [ ] 4.0 Phase 4 — Electron GUI + event log/replay + Sync adoption (PRD §12.4)
+  - [ ] 4.1 `packages/electron` operator GUI over `core` (status, BLE permissions, log viewer, manual
+        controls) + Electron Forge config.
+  - [ ] 4.2 `EventLog` (append-only JSONL semantic events) + replay/export.
+  - [ ] 4.3 Real-tower source via `@stoprocent/noble` (`NodeBluetoothAdapter`) + physical-tower-replay
+        consumer; full live-play resilience.
+  - [ ] 4.4 Port the log-analysis CLI (`analyzeLogs`).
+  - [ ] 4.5 Migrate `UltimateDarkTowerSync` onto the relay's `core` + `client`; remove Sync's custom
+        fake-tower/relay code.
+
+- [ ] 5.0 Phase 5 — Future (PRD §12.5)
+  - [ ] 5.1 Internet reach (Tailscale / hosted rooms, `wss`, auth, NAT traversal).
+  - [ ] 5.2 Multi-participant action reconciliation.
+  - [ ] 5.3 Derived higher-level game-event stream built on the event log.

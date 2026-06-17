@@ -1,0 +1,14 @@
+{
+  "name": "ultimatedarktowerrelay-shared",
+  "version": "0.1.0",
+  "description": "Shared types, WebSocket protocol constants, and message schemas for UltimateDarkTowerRelay.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  }
+}

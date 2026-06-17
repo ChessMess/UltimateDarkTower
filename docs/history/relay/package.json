@@ -1,0 +1,64 @@
+{
+  "name": "ultimatedarktowerrelay",
+  "version": "0.1.0",
+  "description": "Fake-tower BLE peripheral + WebSocket relay + consumer SDK for Return to Dark Tower — connect the official companion app as a fake tower and relay tower traffic to digital consumers over the LAN.",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "build:shared": "tsc --build packages/shared",
+    "build:core": "tsc --build packages/core",
+    "build:cli": "tsc --build packages/cli",
+    "start": "npm run build && node packages/cli/dist/index.js",
+    "start:mock": "npm run build && TOWER_SOURCE=mock node packages/cli/dist/index.js",
+    "mock:consumer": "npm run build && node packages/cli/dist/mockConsumer.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js",
+    "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js --fix",
+    "format": "prettier --write \"packages/*/src/**/*.{ts,js}\"",
+    "type-check": "tsc --build",
+    "ci": "npm run lint && npm run type-check && npm run test && npm run build",
+    "clean": "tsc --build --clean && rm -rf coverage"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChessMess/UltimateDarkTowerRelay.git"
+  },
+  "homepage": "https://github.com/ChessMess/UltimateDarkTowerRelay#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=7.0.0"
+  },
+  "keywords": [
+    "ReturnToDarkTower",
+    "BLE",
+    "BoardGame",
+    "Tower",
+    "RestorationGames",
+    "WebSocket",
+    "relay",
+    "bluetooth",
+    "UltimateDarkTower"
+  ],
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.0",
+    "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
+    "eslint": "^8.57.1",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "ultimatedarktower": "^4.0.1"
+  }
+}
