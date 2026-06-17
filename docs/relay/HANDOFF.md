@@ -5,8 +5,10 @@ A working handoff for continuing this repo in a fresh session. Canonical specs:
 (the roadmap — one parent task per PRD §12 phase).
 
 **Done so far:** Phase 1 (scaffold/relay parity), Phase 2 (NotificationSynthesizer), Phase 3 (client SDK +
-configurable DIS), and Phase 4 **FR-5.1** (real-tower source — hardware-validated live). **Next: FR-5.2 —
-the physical-tower-replay consumer.**
+configurable DIS), Phase 4 **FR-5.1** (real-tower source — hardware-validated live), and **FR-5.2** (the
+physical-tower-replay consumer `PhysicalTowerReplay` — unit-tested **and hardware-validated live**: a
+physical tower mirrored relayed rotations end-to-end in Chrome). **Next: FR-5.3 real-tower resilience +
+the relay→tower write-back path.**
 
 ## What this is
 
@@ -41,7 +43,7 @@ npm-workspaces monorepo; unscoped package names like the UDT family (root privat
 |---|---|---|
 | `packages/shared` | `ultimatedarktowerrelay-shared` | protocol envelope/`MessageType`/factories (+`client:action`), `LogEntry`, **`RelayEvent` union** (`relayEvents.ts`), `PROTOCOL_VERSION='0.1.0'` |
 | `packages/core` | `ultimatedarktowerrelay-core` | `fakeTower` (configurable **DIS** via `deviceInfo`), `relayServer` (+`onClientAction`), `connectionManager`, `commandParser`, `logger`, `observerDisplay`, `towerSource` seam, `mockTower`, **`notificationSynthesizer`**, **`deviceInfo`**, **`realTower`** (FR-5.1); `index.ts` barrel |
-| `packages/client` | `ultimatedarktowerrelay-client` | **`RelayClient`** SDK (`relayClient.ts`): handshake, decoded-`state` + event subscriptions, participant `dropSkull()`, backoff reconnect, version-mismatch, isomorphic WebSocket (injectable for Node). Publish-ready (not published) |
+| `packages/client` | `ultimatedarktowerrelay-client` | **`RelayClient`** SDK (`relayClient.ts`): handshake, decoded-`state` + event subscriptions, participant `dropSkull()`, backoff reconnect, version-mismatch, isomorphic WebSocket (injectable for Node). **`PhysicalTowerReplay`** (`physicalTowerReplay.ts`, FR-5.2): writes relayed 20-byte commands to a local tower via an injected `TowerWriter`. Publish-ready (not published) |
 | `packages/cli` | `ultimatedarktowerrelay-cli` | headless daemon: `TOWER_SOURCE=fake\|mock\|real`, `TOWER_DIS_*` env, SIGINT/SIGTERM; `mockConsumer.ts` (SDK-backed, `MOCK_ROLE=participant`) |
 
 Tooling: TS strict + composite refs, ESLint(`.eslintrc.js`, legacy)/Prettier, Jest(ts-jest→CJS),
@@ -87,26 +89,50 @@ live** (a real skull drop relayed end-to-end with correct decoded count).
 - Client SDK is **isomorphic**: browser global `WebSocket`, or inject `webSocketImpl` (e.g. `ws`) in Node.
 - Keep `core` headless/library-style. Don't commit/push unless asked. `package-lock.json` committed for CI.
 
-## Next: FR-5.2 — physical-tower-replay consumer (PRD §12.4 / tasks 4.3 remainder)
+## FR-5.2 — physical-tower-replay consumer (DONE)
 
-Add a consumer mode where the client SDK **writes relayed commands to a local real tower via Web Bluetooth**
-— the consumer type Sync's remote players use (each remote player's tower mirrors the relayed/master state).
+`PhysicalTowerReplay` (`packages/client/src/physicalTowerReplay.ts`) is the "remote mirror" consumer Sync's
+remote players use: each remote player runs a `RelayClient` **and** a `PhysicalTowerReplay` that writes every
+relayed 20-byte command to their own physical tower so it mirrors the host's master tower. (Digital,
+screen-only consumers like UTDD render `RelayClient`'s decoded `state` events instead and don't use it.)
 
-1. Study how Sync's browser client replays (`../UltimateDarkTowerSync/packages/client/src/app.ts`) and UDT's
-   `WebBluetoothAdapter` + `UltimateDarkTower` class (connect via Web Bluetooth; `sendTowerState`/command
-   writes a 20-byte packet to the tower's write characteristic).
-2. Design where replay lives: keep `RelayClient` transport-only; add a thin **`PhysicalTowerReplay`** consumer
-   in `packages/client` that subscribes to `RelayClient` (`'tower:command'`/`'state'`) and writes each
-   relayed 20-byte packet to a local tower via a UDT tower driver. Keep it framework-agnostic; Web Bluetooth
-   is browser-only, so the tower driver is injected (don't hard-couple the SDK to a browser global).
-3. Resilience touches (FR-5.3) that pair naturally: replay the last command on local-tower reconnect;
-   gate on tower-ready (`client:ready`).
-4. **Unit-test** the replay decision/write logic with a mock tower-writer (no browser/hardware). Real
-   end-to-end needs a browser + a physical tower (owner's hardware step) — call that out; don't guess byte
-   shapes beyond the validated 20-byte state.
+Design decisions (locked):
+- **Composition, not a new subscriber API.** `RelayClient` stays transport-only (its single `onEvent` is
+  unchanged). The app fans `onEvent` out to both its own UI handler and `replay.handleEvent(event)` — the
+  same shape Sync's `app.ts` uses (render *and* replay in one switch). It replays the raw-bearing events
+  `tower:command` / non-null `sync:state` / `host:resend` (not `state`, which would double-write).
+- **Injected `TowerWriter`, browser-free SDK.** The local tower is an injected `TowerWriter`
+  (`{ isConnected; isCalibrated; sendTowerCommandDirect(Uint8Array) }`) — UDT's `UltimateDarkTower`
+  satisfies it structurally. `physicalTowerReplay.ts` has **zero runtime imports** (no `ultimatedarktower`
+  value, no browser global), so it is unit-tested with a mock writer (no browser/BLE/hardware).
+- **Lifecycle stays in the app.** Web Bluetooth connect/calibrate needs a user gesture, so the browser app
+  owns it and calls `replay.setTower(tower)` / `replay.replayLast()` / `client.sendReady(...)` on the
+  tower's `onCalibrationComplete` / `onTowerDisconnect`. Writes are **tower-ready-gated**
+  (`isConnected && isCalibrated`) and **serialized** through a promise queue so concurrent commands can't
+  interleave BLE writes; `replayLast()` self-heals a tower that reconnects mid-session (FR-5.3 touch).
 
-Out of scope for this slice: Electron GUI (4.1), EventLog persistence/replay (4.2), analyzeLogs CLI (4.4),
-Sync migration (4.5), UTDD `BridgeSource` (3.3).
+Browser wiring (the owner's app / future Sync client) — callbacks assigned **before** connect/calibrate:
+```ts
+const replay = new PhysicalTowerReplay({ onLog });
+const client = new RelayClient({ label, observer: false,
+  onEvent: (e) => { replay.handleEvent(e); appUiHandler(e); } });
+const tower = new UltimateDarkTower();        // auto Web Bluetooth on connect()
+tower.onTowerDisconnect    = () => { replay.setTower(null);  client.sendReady(false); };
+tower.onCalibrationComplete = () => { replay.setTower(tower); client.sendReady(true); void replay.replayLast(); };
+await tower.connect(); await tower.calibrate();
+```
+
+**Hardware-validated live (2026-06-17).** Real end-to-end in Chrome: a physical tower mirrored relayed
+rotation commands from a running host relay. Tower-ready gate held writes until calibration; `replayLast()`
+self-heal fired on calibration-complete; steady-state per-command writes rotated the drums; no write errors.
+Re-validate with the throwaway harness in `examples/replay-e2e/` (host injector + browser page; see its
+`README.md`). VSCode's embedded browser can't show the Web Bluetooth chooser — use real Chrome/Edge.
+
+## Next: FR-5.3 resilience + relay→tower write-back (PRD §12.4 / tasks 4.3 remainder)
+
+Real-tower-specific resilience and the relay→tower write-back path. Out of scope (separate slices): Electron
+GUI (4.1), EventLog persistence/replay (4.2), analyzeLogs CLI (4.4), Sync migration (4.5), UTDD
+`BridgeSource` (3.3).
 
 ## Workflow
 

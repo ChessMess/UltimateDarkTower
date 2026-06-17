@@ -109,9 +109,13 @@ style (`ultimatedarktowerrelay-*`).
   - [~] 4.3 Real-tower source (FR-5.1): `RealTower` `TowerSource` via UDT's `NodeBluetoothAdapter`
         (`@stoprocent/noble`, optional dep), selectable `TOWER_SOURCE=real`, BLE-free mock-adapter tests,
         read-only mirror. **Hardware-validated live (2026-06-17)** — physical skull drop relayed
-        end-to-end with correct decoded count. **Remaining:** FR-5.2 physical-tower-replay consumer
-        (client SDK Web Bluetooth) ← **next** · FR-5.3 real-tower-specific resilience · relay→tower
-        write-back path.
+        end-to-end with correct decoded count.
+        **FR-5.2 done + hardware-validated (2026-06-17):** `PhysicalTowerReplay` (client SDK) — a thin
+        consumer that writes each relayed 20-byte command to a local tower via an injected UDT tower driver
+        (Web Bluetooth in the browser); tower-ready gated, serialized writes, `replayLast()` self-heal on
+        reconnect; BLE/browser-free unit tests with a mock writer. **Confirmed live:** a physical tower
+        mirrored relayed rotations end-to-end in Chrome (harness: `examples/replay-e2e/`).
+        **Remaining:** FR-5.3 real-tower-specific resilience · relay→tower write-back path ← **next**.
   - [ ] 4.4 Port the log-analysis CLI (`analyzeLogs`).
   - [ ] 4.5 Migrate `UltimateDarkTowerSync` onto the relay's `core` + `client`; remove Sync's custom
         fake-tower/relay code.

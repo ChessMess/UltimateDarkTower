@@ -241,7 +241,17 @@ is **not** carried by the relay (see §8) and stays manual in the consumer.
    > selector — single tower is the common case).
 2. **FR-5.2** The client SDK MUST support a **physical-tower-replay consumer** (writes relayed commands
    to a local real tower via Web Bluetooth) alongside digital and observer consumers — this is the
-   consumer type Sync's remote players use. *(Next up.)*
+   consumer type Sync's remote players use.
+   > **Implemented + hardware-validated (Phase 4, 2026-06-17).** `PhysicalTowerReplay` (`packages/client`)
+   > is a thin consumer that subscribes to `RelayClient` events (via `handleEvent`, composition —
+   > `RelayClient` stays transport-only) and writes each relayed 20-byte command to a local tower through
+   > an **injected** `TowerWriter` (UDT's `UltimateDarkTower` satisfies it structurally; Web Bluetooth
+   > lives in the browser app, not the SDK). Writes are tower-ready-gated (`isConnected && isCalibrated`)
+   > and serialized; `replayLast()` re-syncs a tower that reconnects mid-session (FR-5.3). Unit-tested
+   > BLE/browser-free with a mock writer. **Confirmed live:** a physical tower mirrored relayed rotation
+   > commands end-to-end in Chrome — the tower-ready gate held writes until calibration, `replayLast()`
+   > fired on calibration-complete, and steady-state per-command writes drove the drums (genuine commands
+   > built with `rtdt_pack_state`, no guessed bytes). Harness: `examples/replay-e2e/`.
 3. **FR-5.3** The relay MUST provide Sync's live-play resilience as first-class features: `relay:paused`
    / `relay:resumed` ("Game Paused" on app disconnect/reconnect), WebSocket reconnect with backoff,
    ping/pong keepalive, handshake timeout, dead-client detection, and observer mode.

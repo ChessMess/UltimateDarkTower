@@ -15,3 +15,6 @@ export type {
   WebSocketLike,
   WebSocketConstructor,
 } from './relayClient';
+
+export { PhysicalTowerReplay } from './physicalTowerReplay';
+export type { TowerWriter, PhysicalTowerReplayOptions } from './physicalTowerReplay';
