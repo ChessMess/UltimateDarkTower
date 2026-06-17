@@ -18,6 +18,9 @@
     "ultimatedarktower": "^4.0.1",
     "ws": "^8.18.0"
   },
+  "optionalDependencies": {
+    "@stoprocent/noble": "^2.3.10"
+  },
   "devDependencies": {
     "@types/ws": "^8.5.10"
   },

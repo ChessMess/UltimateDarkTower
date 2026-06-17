@@ -17,6 +17,7 @@ export {
 } from './commandParser';
 export { ObserverDisplay } from './observerDisplay';
 export { MockTower } from './mockTower';
+export { RealTower } from './realTower';
 export { NotificationSynthesizer } from './notificationSynthesizer';
 export {
   DEFAULT_DEVICE_INFO,
@@ -29,6 +30,7 @@ export type { RelayServerOptions } from './relayServer';
 export type { CommandReceivedCallback } from './fakeTower';
 export type { ParsedCommand } from './commandParser';
 export type { MockTowerOptions } from './mockTower';
+export type { RealTowerOptions } from './realTower';
 export type { TowerSource, TowerSourceEventMap } from './towerSource';
 export type { NotificationSink, NotificationSynthesizerOptions } from './notificationSynthesizer';
 export type { FakeTowerOptions } from './fakeTower';

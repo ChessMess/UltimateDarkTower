@@ -93,6 +93,26 @@ official app via **Phone Link** (Windows 11).
 
 ---
 
+## Real master tower (`TOWER_SOURCE=real`)
+
+Instead of advertising a fake tower, the relay can connect to a **physical** tower as a
+BLE central and relay its state to consumers (PRD FR-5.1 — the "master tower → remote
+mirrors" model). This needs the optional native dependency **`@stoprocent/noble`**
+(installed automatically where its prebuild is available; if its build fails the relay
+still runs in fake/mock mode, and `TOWER_SOURCE=real` prints a clear error).
+
+```bash
+TOWER_SOURCE=real npm start
+```
+
+The relay scans for `ReturnToDarkTower`, connects, subscribes to its notifications, and
+broadcasts each 20-byte state packet to consumers. This mode is **read-only** — it
+mirrors the tower's state outward; it does not drive/write to the tower, and it must be
+the sole BLE connection to that tower (the official app can't be connected to the same
+tower at the same time). Works on Linux/Raspberry Pi or macOS as a central.
+
+---
+
 ## Consumers
 
 Any consumer connects with the SDK (`ultimatedarktowerrelay-client`) to

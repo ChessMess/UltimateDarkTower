@@ -106,8 +106,10 @@ style (`ultimatedarktowerrelay-*`).
   - [ ] 4.1 `packages/electron` operator GUI over `core` (status, BLE permissions, log viewer, manual
         controls) + Electron Forge config.
   - [ ] 4.2 `EventLog` (append-only JSONL semantic events) + replay/export.
-  - [ ] 4.3 Real-tower source via `@stoprocent/noble` (`NodeBluetoothAdapter`) + physical-tower-replay
-        consumer; full live-play resilience.
+  - [~] 4.3 Real-tower source (FR-5.1): `RealTower` `TowerSource` via UDT's `NodeBluetoothAdapter`
+        (`@stoprocent/noble`, optional dep), selectable `TOWER_SOURCE=real`, BLE-free mock-adapter tests,
+        read-only mirror. **Remaining:** FR-5.2 physical-tower-replay consumer (client SDK Web Bluetooth) +
+        FR-5.3 real-tower-specific resilience + a relay→tower write-back path.
   - [ ] 4.4 Port the log-analysis CLI (`analyzeLogs`).
   - [ ] 4.5 Migrate `UltimateDarkTowerSync` onto the relay's `core` + `client`; remove Sync's custom
         fake-tower/relay code.
