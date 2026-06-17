@@ -234,9 +234,14 @@ is **not** carried by the relay (see §8) and stays manual in the consumer.
 1. **FR-5.1** The relay's `core` MUST support a selectable tower source: the **synthesized fake tower**
    (no hardware) or a **real tower** driven via `@stoprocent/noble` (`NodeBluetoothAdapter`), so a host
    with a real "master" tower can drive the relay.
+   > **Implemented + hardware-validated (Phase 4, 2026-06-17).** `RealTower` (`core`), selectable via
+   > `TOWER_SOURCE=real`; read-only mirror (relays 20-byte state, filters battery beats); noble is an
+   > optional dep loaded lazily. Confirmed live: a physical skull drop relayed end-to-end with the correct
+   > decoded count. Towers share the BLE name `ReturnToDarkTower`, so selection is by name (no address
+   > selector — single tower is the common case).
 2. **FR-5.2** The client SDK MUST support a **physical-tower-replay consumer** (writes relayed commands
    to a local real tower via Web Bluetooth) alongside digital and observer consumers — this is the
-   consumer type Sync's remote players use.
+   consumer type Sync's remote players use. *(Next up.)*
 3. **FR-5.3** The relay MUST provide Sync's live-play resilience as first-class features: `relay:paused`
    / `relay:resumed` ("Game Paused" on app disconnect/reconnect), WebSocket reconnect with backoff,
    ping/pong keepalive, handshake timeout, dead-client detection, and observer mode.
