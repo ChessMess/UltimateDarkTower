@@ -28,7 +28,9 @@ import {
   HostLogger,
   CommandParser,
   ObserverDisplay,
+  NotificationSynthesizer,
   type TowerSource,
+  type NotificationSink,
 } from 'ultimatedarktowerrelay-core';
 import { PROTOCOL_VERSION } from 'ultimatedarktowerrelay-shared';
 
@@ -40,6 +42,24 @@ async function main(): Promise<void> {
 
   const port = Number(process.env['RELAY_PORT'] ?? DEFAULT_PORT);
   const logger = new HostLogger('./logs', process.env['LOGGING'] !== '0');
+
+  // Select the tower source. The MockTower re-emits a canned command every few
+  // seconds so the relay path can be observed without a real companion app.
+  // Both sources also satisfy NotificationSink so the synthesizer can send the
+  // return traffic through them.
+  const source: TowerSource & NotificationSink = useMock
+    ? new MockTower({ intervalMs: 3000 })
+    : new FakeTower();
+  const parser = new CommandParser();
+  const observer = new ObserverDisplay();
+
+  // NotificationSynthesizer closes the tower→app return loop: participant-driven
+  // skull drops + a calibration-complete reply. Constructed before the relay so
+  // the relay's onClientAction can drive it. Semantic events are logged here
+  // (the persistent EventLog is Phase 4).
+  const synth = new NotificationSynthesizer(source);
+  synth.on('event', (event) => logger.logEvent('event', 'host', `RelayEvent: ${event.type}`));
+
   const relay = new RelayServer({
     port,
     onClientLog: (clientId, entries) => {
@@ -52,13 +72,14 @@ async function main(): Promise<void> {
       logger.logEvent('event', 'host', `Client disconnected: ${label ?? clientId.slice(0, 8)}`),
     onClientReady: (clientId, ready, label) =>
       logger.logEvent('event', 'host', `Client ${label ?? clientId.slice(0, 8)} tower: ${ready ? 'connected' : 'disconnected'}`),
+    onClientAction: (clientId, action, label) => {
+      logger.logEvent('event', 'host', `Action '${action}' from ${label ?? clientId.slice(0, 8)}`);
+      if (action === 'dropSkull') {
+        const sent = synth.dropSkull();
+        if (!sent) logger.logEvent('warn', 'host', 'dropSkull: no companion app subscriber — notification not sent');
+      }
+    },
   });
-
-  // Select the tower source. The MockTower re-emits a canned command every few
-  // seconds so the relay path can be observed without a real companion app.
-  const source: TowerSource = useMock ? new MockTower({ intervalMs: 3000 }) : new FakeTower();
-  const parser = new CommandParser();
-  const observer = new ObserverDisplay();
 
   // Wire tower commands → relay broadcast.
   source.on('command', (data) => {
@@ -71,6 +92,9 @@ async function main(): Promise<void> {
     const seq = relay.broadcast(data);
     logger.logCommand('host→clients', data, seq, 'host');
   });
+  // Separate raw listener so the synthesizer sees every command (incl. a short
+  // calibration packet that the 20-byte broadcast path above would drop).
+  source.on('command', (data) => synth.onCommand(data));
   source.on('state-change', (state) => {
     relay.setFakeTowerState(state);
     logger.logEvent('event', 'host', `Tower source state: ${state}`);
@@ -81,6 +105,7 @@ async function main(): Promise<void> {
   });
   source.on('companion-disconnected', () => {
     logger.logEvent('event', 'host', 'Companion app disconnected');
+    synth.reset();
     relay.broadcastPaused('Companion app disconnected from tower source');
   });
   if (source instanceof FakeTower) {
@@ -102,6 +127,7 @@ async function main(): Promise<void> {
   // Graceful shutdown.
   const shutdown = async (): Promise<void> => {
     console.log('\nShutting down…');
+    synth.destroy();
     await source.stopAdvertising();
     await relay.stop();
     await logger.close();

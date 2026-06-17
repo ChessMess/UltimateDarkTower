@@ -1,24 +1,33 @@
 /**
  * mockConsumer — a tiny WebSocket consumer for verifying the relay end-to-end.
  *
- * Connects to the relay, completes the `client:hello` handshake as an observer,
- * and logs every `sync:state` and `tower:command` it receives. Pair it with
- * `npm run start:mock` (relay + MockTower) to confirm the
- * source → relay → consumer seam without any BLE hardware.
+ * Connects to the relay, completes the `client:hello` handshake, and logs every
+ * `sync:state` and `tower:command` it receives. Pair it with `npm run start:mock`
+ * (relay + MockTower) to confirm the source → relay → consumer seam without any
+ * BLE hardware.
  *
  * Environment:
  *   RELAY_PORT  port to connect to (default 8765).
  *   RELAY_HOST  host to connect to (default 127.0.0.1).
+ *   MOCK_ROLE   'participant' connects non-observer and fires one `dropSkull`
+ *               action ~2s after connecting, to demo the synthesis loop.
+ *               Anything else (default) connects as a read-only observer.
  */
 
 import WebSocket from 'ws';
-import { MessageType, PROTOCOL_VERSION, type RelayMessage } from 'ultimatedarktowerrelay-shared';
+import {
+  MessageType,
+  PROTOCOL_VERSION,
+  makeClientActionMessage,
+  type RelayMessage,
+} from 'ultimatedarktowerrelay-shared';
 
 const port = Number(process.env['RELAY_PORT'] ?? 8765);
 const host = process.env['RELAY_HOST'] ?? '127.0.0.1';
 const url = `ws://${host}:${port}`;
+const isParticipant = process.env['MOCK_ROLE'] === 'participant';
 
-console.log(`[mock-consumer] connecting to ${url} …`);
+console.log(`[mock-consumer] connecting to ${url} … (role: ${isParticipant ? 'participant' : 'observer'})`);
 const ws = new WebSocket(url);
 
 ws.on('open', () => {
@@ -26,10 +35,19 @@ ws.on('open', () => {
   ws.send(
     JSON.stringify({
       type: MessageType.CLIENT_HELLO,
-      payload: { label: 'mock-consumer', protocolVersion: PROTOCOL_VERSION, observer: true },
+      payload: { label: 'mock-consumer', protocolVersion: PROTOCOL_VERSION, observer: !isParticipant },
       timestamp: new Date().toISOString(),
     })
   );
+
+  // As a participant, report a player action so the relay's synthesizer sends
+  // the matching tower→app skull-drop notification (visible in the relay logs).
+  if (isParticipant) {
+    setTimeout(() => {
+      console.log('[mock-consumer] reporting dropSkull action');
+      ws.send(JSON.stringify(makeClientActionMessage('dropSkull')));
+    }, 2000);
+  }
 });
 
 ws.on('message', (raw: WebSocket.RawData) => {

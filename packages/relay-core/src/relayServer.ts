@@ -48,6 +48,12 @@ export interface RelayServerOptions {
   onClientDisconnected?: (clientId: string, label?: string) => void;
   /** Called when a client sends CLIENT_READY (tower BLE connect/disconnect). */
   onClientReady?: (clientId: string, ready: boolean, label?: string) => void;
+  /**
+   * Called when a *participant* client reports a player action via CLIENT_ACTION
+   * (e.g. `dropSkull`). Actions from observer clients are rejected and never
+   * reach this callback (PRD §4.4).
+   */
+  onClientAction?: (clientId: string, action: 'dropSkull', label?: string) => void;
 }
 
 interface RelayServerEventMap {
@@ -83,6 +89,7 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
   private readonly onClientConnected?: (clientId: string, label?: string, observer?: boolean) => void;
   private readonly onClientDisconnected?: (clientId: string, label?: string) => void;
   private readonly onClientReady?: (clientId: string, ready: boolean, label?: string) => void;
+  private readonly onClientAction?: (clientId: string, action: 'dropSkull', label?: string) => void;
 
   constructor(options: RelayServerOptions = {}) {
     super();
@@ -92,6 +99,7 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
     this.onClientConnected = options.onClientConnected;
     this.onClientDisconnected = options.onClientDisconnected;
     this.onClientReady = options.onClientReady;
+    this.onClientAction = options.onClientAction;
   }
 
   /**
@@ -173,6 +181,14 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
 
                 this.emit('client-change', this.manager.getAll());
                 this.onClientReady?.(clientId, ready, client.label);
+              }
+            } else if (msg.type === MessageType.CLIENT_ACTION && msg.payload) {
+              const client = this.manager.get(clientId);
+              const action = (msg.payload as { action?: string }).action;
+              if (client && !client.observer && action === 'dropSkull') {
+                this.onClientAction?.(clientId, action, client.label);
+              } else if (client?.observer) {
+                console.warn(`[relay] Ignoring action '${action ?? 'unknown'}' from observer ${clientId}`);
               }
             } else if (msg.type === MessageType.CLIENT_LOG && msg.payload) {
               const entries = (msg.payload as { entries?: LogEntry[] }).entries;

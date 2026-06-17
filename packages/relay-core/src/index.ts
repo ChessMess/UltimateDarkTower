@@ -17,6 +17,7 @@ export {
 } from './commandParser';
 export { ObserverDisplay } from './observerDisplay';
 export { MockTower } from './mockTower';
+export { NotificationSynthesizer } from './notificationSynthesizer';
 
 export type { HostLoggerOptions } from './logger';
 export type { RelayServerOptions } from './relayServer';
@@ -24,3 +25,4 @@ export type { CommandReceivedCallback } from './fakeTower';
 export type { ParsedCommand } from './commandParser';
 export type { MockTowerOptions } from './mockTower';
 export type { TowerSource, TowerSourceEventMap } from './towerSource';
+export type { NotificationSink, NotificationSynthesizerOptions } from './notificationSynthesizer';

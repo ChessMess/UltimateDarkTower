@@ -381,6 +381,15 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
   }
 
   /**
+   * The last 20-byte command received from the companion app, as a number array,
+   * or null if none received yet. Used by the {@link NotificationSynthesizer} as
+   * the baseline for synthesized notifications (satisfies `NotificationSink`).
+   */
+  getLastCommand(): number[] | null {
+    return this._lastCommand ? Array.from(this._lastCommand) : null;
+  }
+
+  /**
    * Inject a skull-drop event to the companion app by sending a crafted tower state
    * notification with an incremented skull-drop count at byte {@link SKULL_DROP_COUNT_POS}.
    *

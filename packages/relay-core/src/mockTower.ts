@@ -10,6 +10,7 @@
 
 import { EventEmitter } from 'events';
 import type { TowerSource, TowerSourceEventMap } from './towerSource';
+import type { NotificationSink } from './notificationSynthesizer';
 
 /**
  * A plausible 20-byte tower-state command (byte 0 = tower-state header). It is
@@ -38,11 +39,13 @@ export interface MockTowerOptions {
  * await tower.startAdvertising(); // emits one canned command immediately
  * ```
  */
-export class MockTower extends EventEmitter<TowerSourceEventMap> implements TowerSource {
+export class MockTower extends EventEmitter<TowerSourceEventMap> implements TowerSource, NotificationSink {
   private _advertising = false;
   private _timer: ReturnType<typeof setInterval> | null = null;
   private readonly _command: Buffer;
   private readonly _intervalMs: number;
+  /** Last command emitted — baseline for synthesized notifications (NotificationSink). */
+  private _lastCommand: number[] | null = null;
 
   constructor(options: MockTowerOptions = {}) {
     super();
@@ -88,11 +91,27 @@ export class MockTower extends EventEmitter<TowerSourceEventMap> implements Towe
 
   /** Emit one canned 20-byte command, as if the companion app had written it. */
   inject(): void {
+    this._lastCommand = Array.from(this._command);
     this.emit('command', Buffer.from(this._command));
   }
 
   /** Returns true while the mock source is "advertising". */
   isAdvertising(): boolean {
     return this._advertising;
+  }
+
+  // ─── NotificationSink ────────────────────────────────────────────────────
+  // Lets the NotificationSynthesizer drive a BLE-free demo (`start:mock`): the
+  // synthesized notification has no companion app to reach, so it is logged.
+
+  /** Log a synthesized notification (no real BLE peer). Always "succeeds". */
+  sendTxNotification(data: Buffer): boolean {
+    console.log('[MockTower] notification (no companion app):', data.toString('hex'));
+    return true;
+  }
+
+  /** The last canned command emitted, as the synthesizer's baseline. */
+  getLastCommand(): number[] | null {
+    return this._lastCommand;
   }
 }

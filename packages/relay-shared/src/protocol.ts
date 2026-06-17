@@ -40,6 +40,8 @@ export const MessageType = {
   CLIENT_HELLO: 'client:hello',
   /** Client → host: tower is calibrated and ready (or no longer ready). */
   CLIENT_READY: 'client:ready',
+  /** Client → host: a participant reports a player action (e.g. dropped a skull). */
+  CLIENT_ACTION: 'client:action',
   /** Client → host: batch of structured log entries for centralized storage. */
   CLIENT_LOG: 'client:log',
   /** Host → clients: enable or disable automatic client log submission. */
@@ -132,6 +134,18 @@ export type ClientReadyMessage = BaseMessage<
   }
 >;
 
+/**
+ * Sent by a *participant* client to report a player action the physical tower
+ * would normally detect (e.g. a dropped skull), so the relay can synthesize the
+ * matching tower→app notification. Observers MUST NOT send this; the relay
+ * rejects actions from observer clients (PRD §4.4). The `action` field is a
+ * string literal kept extensible for future actions.
+ */
+export type ClientActionMessage = BaseMessage<
+  typeof MessageType.CLIENT_ACTION,
+  { action: 'dropSkull' }
+>;
+
 /** Batch of structured log entries sent from a client to the host for centralized storage. */
 export type ClientLogMessage = BaseMessage<
   typeof MessageType.CLIENT_LOG,
@@ -189,6 +203,7 @@ export type RelayMessage =
   | HostStatusMessage
   | ClientHelloMessage
   | ClientReadyMessage
+  | ClientActionMessage
   | ClientLogMessage
   | HostLogConfigMessage
   | RelayPausedMessage
@@ -251,6 +266,15 @@ export function makeClientReadyMessage(ready: boolean): ClientReadyMessage {
   return {
     type: MessageType.CLIENT_READY,
     payload: { ready },
+    timestamp: now(),
+  };
+}
+
+/** Build a {@link ClientActionMessage}. */
+export function makeClientActionMessage(action: 'dropSkull'): ClientActionMessage {
+  return {
+    type: MessageType.CLIENT_ACTION,
+    payload: { action },
     timestamp: now(),
   };
 }

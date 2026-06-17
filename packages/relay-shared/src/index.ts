@@ -9,4 +9,5 @@
 export * from './types';
 export * from './protocol';
 export * from './logging';
+export * from './relayEvents';
 export { PROTOCOL_VERSION } from './version';

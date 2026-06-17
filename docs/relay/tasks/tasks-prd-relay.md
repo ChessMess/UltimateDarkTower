@@ -73,14 +73,21 @@ style (`ultimatedarktowerrelay-*`).
   - [x] 1.9 Verify: `npm install`, `npm run ci` green; `start:mock` + `mock:consumer` demo. **← STOP
         for review (you are here).**
 
-- [ ] 2.0 Phase 2 — NotificationSynthesizer (PRD §12.2)
-  - [ ] 2.1 `NotificationSynthesizer` in `core`; wire a participant-reported `dropSkull()` →
-        `injectSkullDrop()` / `buildSkullDropPacket`.
-  - [ ] 2.2 Calibration-complete response (`TOWER_COMMANDS.calibration` → `CALIBRATION_FINISHED`),
-        validated against captures.
-  - [ ] 2.3 Resolve the periodic-heartbeat decision (fallback only if a capture shows a timeout).
-  - [ ] 2.4 Encode all synthesized notifications via `rtdt_pack_state` over the last-command baseline.
-  - [ ] 2.5 Introduce the `RelayEvent` semantic-event union in `shared`.
+- [x] 2.0 Phase 2 — NotificationSynthesizer (PRD §12.2)
+  - [x] 2.1 `NotificationSynthesizer` in `core`; participant-reported `dropSkull()` (new `client:action`
+        wire message, observer-gated) → `buildSkullDropPacket`. Drives the count out of `FakeTower`'s
+        operator-only `injectSkullDrop()` (left as dormant legacy) into the synthesizer.
+  - [x] 2.2 Calibration-complete response (`TOWER_COMMANDS.calibration` → fully-calibrated state, all
+        drums calibrated at pos 0). **Reply type byte is a configurable API** (default `0x00` tower-state
+        response, settable to `0x08` `CALIBRATION_FINISHED`) — exact bytes/timing capture-pending
+        (no real captures exist; PRD §11 Q3 / §13). Grounded in UDT central detection + Display
+        `buildCalibratedState`.
+  - [x] 2.3 Periodic-heartbeat decision: NO periodic beat by default (initial heartbeat + echoes
+        suffice). Implemented as an opt-in fallback (`heartbeatIntervalMs`), disabled by default.
+  - [x] 2.4 Synthesized calibration reply encoded via `rtdt_pack_state` over the last-command baseline;
+        skull drop keeps the byte-preserving `buildSkullDropPacket`.
+  - [x] 2.5 `RelayEvent` semantic-event union added in `shared` (type + emission points; persistent
+        EventLog is Phase 4).
 
 - [ ] 3.0 Phase 3 — Client SDK + UTDD BridgeSource (PRD §12.3)
   - [ ] 3.1 `packages/client` framework-agnostic SDK (handshake, subscriptions, participant actions,
