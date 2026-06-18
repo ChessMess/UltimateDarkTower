@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "ultimatedarktowerrelay-shared": "*",
-    "ultimatedarktower": "^4.0.1"
+    "ultimatedarktower": "^4.1.0"
   },
   "devDependencies": {
     "ws": "^8.18.0",

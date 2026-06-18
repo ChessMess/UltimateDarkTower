@@ -105,7 +105,13 @@ style (`ultimatedarktowerrelay-*`).
 - [ ] 4.0 Phase 4 — Electron GUI + event log/replay + Sync adoption (PRD §12.4)
   - [ ] 4.1 `packages/electron` operator GUI over `core` (status, BLE permissions, log viewer, manual
         controls) + Electron Forge config.
-  - [ ] 4.2 `EventLog` (append-only JSONL semantic events) + replay/export.
+  - [x] 4.2 `EventLog` (append-only JSONL semantic events) + replay/export. **Done:** `EventLog`
+        (`core`) appends `RelayEvent`s with its own monotonic `seq` to `events-{date}.jsonl` (own
+        stream, separate from `HostLogger`; `enabled` toggle + size rotation). All 8 event types now
+        emit (CLI wires app-connected/-disconnected + consumer-joined/-left; synthesizer covers the
+        rest; real mode appends `command-received` directly). Replay/export via `loadEventLog` /
+        `replayEventLog` (sync or realtime-paced) / `exportEventLog` (json|jsonl) + a thin
+        `replayEvents` CLI (`npm run replay:events`). BLE-free unit tests (`eventLog.test.ts`).
   - [~] 4.3 Real-tower source (FR-5.1): `RealTower` `TowerSource` via UDT's `NodeBluetoothAdapter`
         (`@stoprocent/noble`, optional dep), selectable `TOWER_SOURCE=real`, BLE-free mock-adapter tests,
         read-only mirror. **Hardware-validated live (2026-06-17)** — physical skull drop relayed
@@ -125,9 +131,10 @@ style (`ultimatedarktowerrelay-*`).
         1-disconnect → 1-reconnect → resume, no listener cascade. (An earlier hand-rolled stall/raw-adapter
         attempt was removed — the tower streams ~1–2 notifications/sec, so silence-based stall was wrong.)
         **Write-back done:** `TOWER_SOURCE=bridge` (FakeTower + RealTower) forwards app commands onto a real
-        master tower via `RealTower.sendToTower` (resolves §11 Q5). **Cross-repo:** relay consumes the new UDT
-        hook via `npm link`; needs a UDT publish + dep-bump before relay CI/ship. Bridge needs on-hardware
-        validation on a non-macOS host (concurrent BLE central+peripheral caveat).
+        master tower via `RealTower.sendToTower` (resolves §11 Q5). **Cross-repo (done 2026-06-18):** the UDT
+        `onTowerResponse` hook is published in `ultimatedarktower@4.1.0`; relay deps bumped to `^4.1.0` and the
+        `npm link` removed, so relay CI is green against the registry. Bridge needs on-hardware validation on a
+        non-macOS host (concurrent BLE central+peripheral caveat).
         **Remaining:** FR-5.3 real-tower-specific resilience · relay→tower write-back path ← **next**.
   - [ ] 4.4 Port the log-analysis CLI (`analyzeLogs`).
   - [ ] 4.5 Migrate `UltimateDarkTowerSync` onto the relay's `core` + `client`; remove Sync's custom

@@ -8,32 +8,32 @@ later. Captured 2026-06-17 on the owner's macOS machine (npm global prefix `/opt
 > hook and this repo bumps its `ultimatedarktower` dependency, the relay uses the **local** UDT
 > build via `npm link`. (See HANDOFF "locked decisions".)
 
-## 1. Active link FROM this work — `ultimatedarktower` (clean up after UDT publishes)
+## 1. ~~Active link FROM this work — `ultimatedarktower`~~ ✅ RESOLVED (2026-06-18)
 
-Two symlinks make this work:
+**Cleaned up.** `ultimatedarktower@4.1.0` (with the public `onTowerResponse` hook) was published to
+npm; the relay's `packages/{core,client}/package.json` were bumped `^4.0.1` → `^4.1.0`, both the
+relay-root and global `npm link` symlinks were removed, and `npm install` restored the published copy.
+`require.resolve('ultimatedarktower')` now resolves inside the relay's own `node_modules` (a real dir,
+not a symlink, version 4.1.0), and `npm run ci` is green against the registry copy with no link.
 
-| Symlink | Points to |
+<details><summary>Historical: how the link was created &amp; removed</summary>
+
+Two symlinks made it work while the hook was unpublished:
+
+| Symlink | Pointed to |
 |---|---|
 | `node_modules/ultimatedarktower` (relay root) | `../../UltimateDarkTower` |
 | `/opt/homebrew/lib/node_modules/ultimatedarktower` (global) | `~/Documents/GitHub/UltimateDarkTower` |
 
-Created with:
 ```bash
-cd ~/Documents/GitHub/UltimateDarkTower      && npm link            # global link
-cd ~/Documents/GitHub/UltimateDarkTowerRelay && npm link ultimatedarktower   # consume it
+# created:
+cd ~/Documents/GitHub/UltimateDarkTower      && npm link
+cd ~/Documents/GitHub/UltimateDarkTowerRelay && npm link ultimatedarktower
+# removed (after publishing 4.1.0 + bumping the dep):
+cd ~/Documents/GitHub/UltimateDarkTowerRelay && npm unlink ultimatedarktower && npm install
+cd ~/Documents/GitHub/UltimateDarkTower      && npm rm -g ultimatedarktower
 ```
-
-**Clean up** once `ultimatedarktower` is published with the `onTowerResponse` hook **and** this
-repo's `packages/{core,client}/package.json` dependency is bumped to that version:
-```bash
-cd ~/Documents/GitHub/UltimateDarkTowerRelay
-npm unlink ultimatedarktower    # remove the relay's link
-npm install                     # restore the published ultimatedarktower
-cd ~/Documents/GitHub/UltimateDarkTower
-npm rm -g ultimatedarktower     # remove the global link (a.k.a. `npm unlink`)
-```
-Verify after cleanup: `node -p "require.resolve('ultimatedarktower')"` from the relay should
-resolve **inside the relay's `node_modules`**, not into `~/Documents/GitHub/UltimateDarkTower`.
+</details>
 
 ## 2. Pre-existing global link — `ultimatedarktowerdisplay` (NOT from this work)
 

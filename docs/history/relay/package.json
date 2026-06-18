@@ -15,6 +15,7 @@
     "start": "npm run build && node packages/cli/dist/index.js",
     "start:mock": "npm run build && TOWER_SOURCE=mock node packages/cli/dist/index.js",
     "mock:consumer": "npm run build && node packages/cli/dist/mockConsumer.js",
+    "replay:events": "npm run build && node packages/cli/dist/replayEvents.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -58,8 +59,5 @@
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "ultimatedarktower": "^4.0.1"
   }
 }

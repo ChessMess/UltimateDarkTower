@@ -9,9 +9,11 @@ configurable DIS), Phase 4 **FR-5.1** (real-tower source — hardware-validated 
 physical-tower-replay consumer `PhysicalTowerReplay` — unit-tested **and hardware-validated live**: a
 physical tower mirrored relayed rotations end-to-end in Chrome), and **FR-5.3** (real-tower resilience —
 `RealTower` rebuilt on UDT's high-level class for monitored reconnect + initial-retry, **hardware-validated
-clean reconnect**, via a new UDT `onTowerResponse` hook consumed by npm link; plus the app→real-tower bridge
-write-back `TOWER_SOURCE=bridge`, code-complete, hardware-validation pending). **Next: EventLog (4.2) / Electron
-GUI (4.1) / Sync migration (4.5).**
+clean reconnect**, via a new UDT `onTowerResponse` hook (published in `ultimatedarktower@4.1.0`, consumed
+from the registry — link removed); plus the app→real-tower bridge
+write-back `TOWER_SOURCE=bridge`, code-complete, hardware-validation pending), and **FR-6 / task 4.2 EventLog**
+(append-only JSONL semantic-event log with its own monotonic `seq` + replay/export + thin `replayEvents` CLI;
+all 8 `RelayEvent` types now emit). **Next: Electron GUI (4.1) / analyzeLogs CLI (4.4) / Sync migration (4.5).**
 
 ## What this is
 
@@ -37,7 +39,7 @@ core lib, and is the shared bridge Sync will later consume.
   - `../UltimateDarkTowerDigital/src/sources/types.ts` — the `TowerStateSource` seam a future UTDD
     `BridgeSource` (task 3.3) wraps; the relay's `RelayClient` is designed to map onto it.
 
-## Current state (verified — `npm run ci` green, 71 tests)
+## Current state (verified — `npm run ci` green, 101 tests)
 
 npm-workspaces monorepo; unscoped package names like the UDT family (root private `ultimatedarktowerrelay`).
 `main` contains Phases 1→4(FR-5.1) as four commits.
@@ -45,9 +47,9 @@ npm-workspaces monorepo; unscoped package names like the UDT family (root privat
 | Package | Name | Contents |
 |---|---|---|
 | `packages/shared` | `ultimatedarktowerrelay-shared` | protocol envelope/`MessageType`/factories (+`client:action`), `LogEntry`, **`RelayEvent` union** (`relayEvents.ts`), `PROTOCOL_VERSION='0.1.0'` |
-| `packages/core` | `ultimatedarktowerrelay-core` | `fakeTower` (configurable **DIS** via `deviceInfo`), `relayServer` (+`onClientAction`), `connectionManager`, `commandParser`, `logger`, `observerDisplay`, `towerSource` seam, `mockTower`, **`notificationSynthesizer`**, **`deviceInfo`**, **`realTower`** (FR-5.1); `index.ts` barrel |
+| `packages/core` | `ultimatedarktowerrelay-core` | `fakeTower` (configurable **DIS** via `deviceInfo`), `relayServer` (+`onClientAction`), `connectionManager`, `commandParser`, `logger`, **`eventLog`** (FR-6: append-only `RelayEvent` JSONL + `loadEventLog`/`replayEventLog`/`exportEventLog`), `observerDisplay`, `towerSource` seam, `mockTower`, **`notificationSynthesizer`**, **`deviceInfo`**, **`realTower`** (FR-5.1); `index.ts` barrel |
 | `packages/client` | `ultimatedarktowerrelay-client` | **`RelayClient`** SDK (`relayClient.ts`): handshake, decoded-`state` + event subscriptions, participant `dropSkull()`, backoff reconnect, version-mismatch, isomorphic WebSocket (injectable for Node). **`PhysicalTowerReplay`** (`physicalTowerReplay.ts`, FR-5.2): writes relayed 20-byte commands to a local tower via an injected `TowerWriter`. Publish-ready (not published) |
-| `packages/cli` | `ultimatedarktowerrelay-cli` | headless daemon: `TOWER_SOURCE=fake\|mock\|real`, `TOWER_DIS_*` env, SIGINT/SIGTERM; `mockConsumer.ts` (SDK-backed, `MOCK_ROLE=participant`) |
+| `packages/cli` | `ultimatedarktowerrelay-cli` | headless daemon: `TOWER_SOURCE=fake\|mock\|real`, `TOWER_DIS_*` env, SIGINT/SIGTERM; `mockConsumer.ts` (SDK-backed, `MOCK_ROLE=participant`); `replayEvents.ts` (EventLog inspect/replay/export — `npm run replay:events`) |
 
 Tooling: TS strict + composite refs, ESLint(`.eslintrc.js`, legacy)/Prettier, Jest(ts-jest→CJS),
 `.github/workflows/ci.yml` (lint→type-check→test→build, Node 18/20, macOS+Ubuntu).
@@ -76,11 +78,12 @@ live** (a real skull drop relayed end-to-end with correct decoded count).
   tower actually streams ~1–2 notifications/sec; it false-positived) and reusing the raw adapter leaked
   noble listeners → a `bluetooth-unavailable` cascade. Both are gone — the high-level class's monitoring
   replaces them.
-- **`onTowerResponse` hook added to UDT (sibling repo).** New public assignable callback delivering the
-  raw verbatim notification bytes (the public `onTowerStateUpdate` is decoded). The relay consumes the
-  modified UDT via **`npm link`** to the local repo for now; **before the relay's GitHub CI / ship works,
-  UDT must publish the hook and the relay must bump its `ultimatedarktower` dep** (published 4.0.1 lacks it).
-  The active links + cleanup steps are inventoried in `docs/DEV_LINKS.md`.
+- **`onTowerResponse` hook added to UDT (sibling repo) — published + consumed from the registry
+  (2026-06-18).** New public assignable callback delivering the raw verbatim notification bytes (the
+  public `onTowerStateUpdate` is decoded). Shipped in **`ultimatedarktower@4.1.0`**; the relay's
+  `packages/{core,client}` deps are bumped to `^4.1.0` and the dev `npm link` is **removed** — `npm run
+  ci` is green against the registry copy with no symlink. (UDT's CI `npm audit` step was also scoped to
+  `--omit=dev` to unblock the publish — see below.) `docs/DEV_LINKS.md` §1 is now marked resolved.
 - **Write-back / bridge mode (resolves §11 Q5).** `RealTower.sendToTower(data)` writes verbatim via the
   driver (`sendTowerCommandDirect`). `TOWER_SOURCE=bridge` runs FakeTower (app connects) **+** RealTower
   (relay drives a real master tower), forwarding every app command onto the real tower while broadcasting
@@ -177,12 +180,38 @@ dead-client, observer) was already ported in Phases 1–3 (`connectionManager.ts
 - ✅ reconnect-on-drop — power-cycle produced a clean **1 disconnect → 1 reconnect attempt → resume**, with
   **no `bluetooth-unavailable` cascade and no `MaxListeners` leak** (the failure mode of the earlier
   hand-rolled raw-adapter version, now removed).
+- ✅ **UDT publish + relay dep-bump done (2026-06-18):** `ultimatedarktower@4.1.0` published; relay deps
+  bumped to `^4.1.0`; npm link removed; `npm run ci` green against the registry copy — GitHub CI no
+  longer needs the symlink.
 - ⏳ pending: bridge mode (app → FakeTower → real tower) on a non-macOS host; concurrent central+peripheral
-  BLE caveat. And the **UDT publish + relay dep-bump** so GitHub CI passes without the npm link.
+  BLE caveat.
 
-## Next: EventLog (4.2) / Electron GUI (4.1) / Sync migration (4.5)
+## FR-6 / task 4.2 — EventLog (DONE)
 
-Out of scope here / future slices: EventLog persistence/replay (4.2), Electron operator GUI (4.1),
+The hybrid state model's append-only half (PRD §7): `EventLog` (`packages/core/src/eventLog.ts`) is a
+**separate stream from `HostLogger`** — `HostLogger` keeps the byte/command + human debug log; `EventLog`
+persists the structured `RelayEvent`s. Modeled on `HostLogger` (session-timestamp naming, `enabled` toggle,
+size-based rotation), it writes one JSON object per line to `events-{date}.jsonl` and assigns each event its
+**own monotonic `seq`** (independent of the relay's command-broadcast `seq`, per `relayEvents.ts` + §7).
+- **No `ultimatedarktower` import** (only the `RelayEvent` type from shared + `node:fs`) → loads BLE-free;
+  tests import `./eventLog` directly and run against a temp dir (`eventLog.test.ts`, 11 cases).
+- **All 8 event types now emit** (`relayEvents.ts` previously only had 4 wired): the CLI is the composition
+  root — it appends `app-connected`/`-disconnected` (source `companion-*`), `consumer-joined`/`-left`
+  (relay `onClientConnected`/`onClientDisconnected`), and routes the synthesizer's stream
+  (`command-received`/`skull-dropped`/`calibration-complete`/`heartbeat`) into the log. **Real-mode gap
+  closed:** the synthesizer only runs for sink-capable sources, so `TOWER_SOURCE=real` has no synth —
+  `command-received` is appended directly from the universal `source.on('command')` handler (the branches
+  are mutually exclusive, so no double-emit).
+- **Replay/export (FR-6.3):** `loadEventLog(path)` (JSONL → `RelayEvent[]`, skips malformed, sorts by seq),
+  `replayEventLog(events, onEvent, { realtime?, speed? })` (sync or wall-clock-paced, delay clamped to 10s),
+  `exportEventLog(events, 'json'|'jsonl')`. Thin CLI `packages/cli/src/replayEvents.ts`
+  (`npm run replay:events -- --file … [--replay [--realtime] [--speed n]] [--export json|jsonl]`) imports
+  those helpers **bleno-free** via `ultimatedarktowerrelay-core/dist/eventLog` (NOT the `core` barrel, which
+  pulls in FakeTower→bleno — a log reader must never init Bluetooth).
+
+## Next: Electron GUI (4.1) / analyzeLogs CLI (4.4) / Sync migration (4.5)
+
+Out of scope here / future slices: Electron operator GUI (4.1; a log viewer could render the EventLog),
 analyzeLogs CLI (4.4), Sync migration (4.5), UTDD `BridgeSource` (3.3).
 
 ## Workflow
