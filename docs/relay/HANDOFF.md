@@ -80,6 +80,7 @@ live** (a real skull drop relayed end-to-end with correct decoded count).
   raw verbatim notification bytes (the public `onTowerStateUpdate` is decoded). The relay consumes the
   modified UDT via **`npm link`** to the local repo for now; **before the relay's GitHub CI / ship works,
   UDT must publish the hook and the relay must bump its `ultimatedarktower` dep** (published 4.0.1 lacks it).
+  The active links + cleanup steps are inventoried in `docs/DEV_LINKS.md`.
 - **Write-back / bridge mode (resolves §11 Q5).** `RealTower.sendToTower(data)` writes verbatim via the
   driver (`sendTowerCommandDirect`). `TOWER_SOURCE=bridge` runs FakeTower (app connects) **+** RealTower
   (relay drives a real master tower), forwarding every app command onto the real tower while broadcasting
