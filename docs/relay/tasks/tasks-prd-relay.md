@@ -103,17 +103,21 @@ style (`ultimatedarktowerrelay-*`).
         + `docs/SETUP.md`.
 
 - [ ] 4.0 Phase 4 — Electron GUI + event log/replay + Sync adoption (PRD §12.4)
-  - [~] 4.1 `packages/electron` operator GUI over `core` (status, BLE permissions, log viewer, manual
+  - [x] 4.1 `packages/electron` operator GUI over `core` (status, BLE permissions, log viewer, manual
         controls) + Electron Forge config. **Slice A done:** ported Sync's Electron lifecycle/IPC/Forge
         skeleton, rewired to the relay composition root (`main.ts` = source-swappable
         `buildSource`/`wireSource`/`switchSource`), with runtime **fake/mock/real** source switching,
         synthesizer-driven skull drop, EventLog wiring, status dashboard, manual controls, client list +
         LAN URLs. **Electron 42 / Node 24** (bumped off Sync's EOL E35); Forge/Vite build; vite-built so
         out of root `tsc --build` + Jest, type-checked via `tsc --noEmit -p packages/electron/tsconfig.json`.
-        `npm run ci` green (118 tests); Vite bundles main+preload clean. `electron-rebuild` scoped to the
-        electron scripts (no global postinstall) — keeps CLI Node-ABI by default. ⏳ Owner: GUI launch +
-        `make:electron` packaging + @stoprocent rebuild vs Electron-42 ABI. **Slice B (next):** in-GUI
-        **log viewer** reusing `logAnalysis.ts` + `loadEventLog`.
+        `electron-rebuild` scoped to the electron scripts (no global postinstall) — keeps CLI Node-ABI
+        by default. **Slice B done (log viewer):** relocated the pure `logAnalysis` helpers into `core`
+        (+ new BLE/fs-free `buildSessionSummary`/`buildCommandTimeline` builders, unit-tested) so both the
+        CLI and the GUI consume them; main-process IPC (`logs:list`/`logs:analyze`/`logs:load-events`)
+        runs the analysis with `fs` (the renderer never reads files) and ships structured results to a new
+        read-only **Logs** panel (file list + summary / decoded command timeline / anomalies / event log).
+        `npm run ci` green (123 tests); renderer bundles clean via Vite. ⏳ Owner: GUI launch +
+        `make:electron` packaging + @stoprocent rebuild vs Electron-42 ABI.
   - [x] 4.2 `EventLog` (append-only JSONL semantic events) + replay/export. **Done:** `EventLog`
         (`core`) appends `RelayEvent`s with its own monotonic `seq` to `events-{date}.jsonl` (own
         stream, separate from `HostLogger`; `enabled` toggle + size rotation). All 8 event types now
@@ -151,7 +155,9 @@ style (`ultimatedarktowerrelay-*`).
         anomaly detection, per-client latency. Pure analysis helpers split into `logAnalysis.ts`
         (reuses shared `decodeCommand`/`bytesFromHex`/`formatLogEntry` + UDT
         `TOWER_LIGHT_SEQUENCES`/`TOWER_AUDIO_LIBRARY`) with a thin `analyzeLogs.ts` CLI; BLE/fs-free
-        unit tests (`logAnalysis.test.ts`, 17 cases). Scoped to `session-*` files (ignores the
+        unit tests (`logAnalysis.test.ts`, 17 cases). **Relocated to `core` in Slice B** (so the GUI can
+        reuse it too); the CLI now imports it bleno-free via `ultimatedarktowerrelay-core/dist/logAnalysis`
+        (the `replayEvents`→`eventLog` pattern). Scoped to `session-*` files (ignores the
         EventLog's `events-*`); MISSING_SEQ guarded on the presence of client-side log entries (the
         bundled SDK doesn't emit `client:log`, so relay logs are host-only and the check would
         otherwise false-positive every seq).

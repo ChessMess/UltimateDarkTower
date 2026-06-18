@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog, screen } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -8,8 +8,15 @@ import {
   makeAppDisconnectedEvent,
   makeConsumerJoinedEvent,
   makeConsumerLeftEvent,
+  type RelayEvent,
 } from 'ultimatedarktowerrelay-shared';
-import type { NotificationSink, DeviceInformation, TowerSource } from 'ultimatedarktowerrelay-core';
+import type {
+  NotificationSink,
+  DeviceInformation,
+  TowerSource,
+  SessionSummary,
+  TimelineRow,
+} from 'ultimatedarktowerrelay-core';
 
 // ─── Early file logging (captures output when launched from Finder) ─────────
 // Set up BEFORE any native module imports so load failures are captured.
@@ -98,10 +105,46 @@ export const IPC = {
   GET_LOGGING_STATE: 'get-logging-state',
   OPEN_LOG_DIR: 'open-log-dir',
   RESEND_LAST_STATE: 'resend-last-state',
+  LOGS_LIST: 'logs:list',
+  LOGS_ANALYZE: 'logs:analyze',
+  LOGS_LOAD_EVENTS: 'logs:load-events',
+  RESIZE_CONTENT_HEIGHT: 'window:resize-content-height',
 } as const;
 
 /** Tower source the GUI can drive. (`bridge` stays CLI-only.) */
 export type SourceMode = 'fake' | 'mock' | 'real';
+
+// ─── Log-viewer (FR-7.3) payload shapes ─────────────────────────────────────
+// Analysis runs here in main (it has `fs`); the renderer renders the results
+// read-only. Caps bound the IPC payload + DOM; the CLIs remain the unbounded path.
+const TIMELINE_LIMIT = 500;
+const EVENT_LIMIT = 2000;
+
+/** A log file the viewer can list (a `session-*` or `events-*` JSONL). */
+interface LogFileInfo {
+  name: string;
+  sizeBytes: number;
+  mtimeMs: number;
+}
+
+interface LogListResult {
+  sessions: LogFileInfo[];
+  events: LogFileInfo[];
+}
+
+type LogAnalysisResult =
+  | {
+      ok: true;
+      fileCount: number;
+      summary: SessionSummary;
+      timeline: { rows: TimelineRow[]; total: number };
+      anomalies: Array<{ type: string; message: string }>;
+    }
+  | { ok: false; reason: string };
+
+type EventLogResult =
+  | { ok: true; events: RelayEvent[]; total: number; truncated: boolean }
+  | { ok: false; reason: string };
 
 // ─── Lazy-loaded core modules ───────────────────────────────────────────────
 // Loaded inside initApp() so the file logging above captures any native module
@@ -118,6 +161,13 @@ let CommandParser: CoreModule['CommandParser'];
 let ObserverDisplay: CoreModule['ObserverDisplay'];
 let NotificationSynthesizer: CoreModule['NotificationSynthesizer'];
 let pruneOldLogs: CoreModule['pruneOldLogs'];
+// Log-viewer (FR-7.3) — pure, BLE-free analysis helpers (the GUI runs them in main).
+let loadEventLog: CoreModule['loadEventLog'];
+let selectLogFiles: CoreModule['selectLogFiles'];
+let parseLogLines: CoreModule['parseLogLines'];
+let detectAnomalies: CoreModule['detectAnomalies'];
+let buildSessionSummary: CoreModule['buildSessionSummary'];
+let buildCommandTimeline: CoreModule['buildCommandTimeline'];
 
 type Synth = InstanceType<CoreModule['NotificationSynthesizer']>;
 
@@ -181,17 +231,109 @@ function getLocalIPs(): string[] {
   return ips;
 }
 
+// ─── Window sizing + persisted state ────────────────────────────────────────
+
+// Default window size on first run (no persisted state). Width is the operator's
+// to adjust (persisted); height is auto-fit to the rendered content (the renderer
+// measures and asks main to resize on load + whenever the Logging section
+// collapses/expands), so the launch height naturally matches the layout.
+const DEFAULT_WIDTH = 860;
+const DEFAULT_HEIGHT = 900;
+/** Lower bound for the auto-fit content height (px). */
+const MIN_CONTENT_HEIGHT = 240;
+/** Slack kept below the display work area so the window never fills the screen. */
+const SCREEN_MARGIN = 48;
+
+interface WindowState {
+  x?: number;
+  y?: number;
+  width: number;
+  height: number;
+}
+
+function windowStateFile(): string {
+  return path.join(app.getPath('userData'), 'window-state.json');
+}
+
+/** Read the persisted window bounds, or null if absent/invalid. */
+function loadWindowState(): WindowState | null {
+  try {
+    const s = JSON.parse(fs.readFileSync(windowStateFile(), 'utf-8')) as WindowState;
+    if (typeof s.width === 'number' && typeof s.height === 'number') return s;
+  } catch {
+    /* no/invalid state */
+  }
+  return null;
+}
+
+/** True if the saved position lands on a currently-connected display. */
+function isOnScreen(s: WindowState): boolean {
+  if (typeof s.x !== 'number' || typeof s.y !== 'number') return false;
+  return screen.getAllDisplays().some((d) => {
+    const a = d.workArea;
+    return (
+      s.x! >= a.x - 50 &&
+      s.y! >= a.y - 50 &&
+      s.x! <= a.x + a.width - 100 &&
+      s.y! <= a.y + a.height - 100
+    );
+  });
+}
+
+function saveWindowStateNow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  try {
+    const b = mainWindow.getBounds();
+    fs.writeFileSync(windowStateFile(), JSON.stringify({ x: b.x, y: b.y, width: b.width, height: b.height }));
+  } catch {
+    /* best-effort */
+  }
+}
+
+let _saveStateTimer: ReturnType<typeof setTimeout> | null = null;
+function saveWindowStateDebounced(): void {
+  if (_saveStateTimer) clearTimeout(_saveStateTimer);
+  _saveStateTimer = setTimeout(saveWindowStateNow, 400);
+}
+
+/**
+ * Resize the window's content area to `desired` px tall (the renderer's measured
+ * content height), clamped so the window never exceeds the display work area.
+ * Width and position are preserved. Also reveals the window the first time, so
+ * the user never sees a pre-fit size jump.
+ */
+function resizeToContentHeight(desired: number): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (Number.isFinite(desired)) {
+    const [w, contentH] = mainWindow.getContentSize();
+    const [, fullH] = mainWindow.getSize();
+    const chrome = fullH - contentH; // title bar / frame
+    const display = screen.getDisplayMatching(mainWindow.getBounds());
+    const maxContent = display.workArea.height - chrome - SCREEN_MARGIN;
+    const clamped = Math.max(MIN_CONTENT_HEIGHT, Math.min(Math.ceil(desired), maxContent));
+    if (Math.abs(clamped - contentH) > 1) {
+      mainWindow.setContentSize(w, clamped, false);
+    }
+  }
+  if (!mainWindow.isVisible()) mainWindow.show();
+}
+
 // ─── Window ──────────────────────────────────────────────────────────────────
 
 function createWindow(): void {
+  const saved = loadWindowState();
+  const restorePos = saved !== null && isOnScreen(saved);
+
   mainWindow = new BrowserWindow({
-    // Sized to fit the full dashboard without scrollbars: the renderer is a
-    // 740px-max layout with 1.5rem side padding (≈788px wide) and ≈820px of
-    // stacked cards. Below 600px the grid collapses to a single column.
-    width: 860,
-    height: 920,
+    // Width + position are restored from the last run; height is auto-fit to the
+    // rendered content (see resizeToContentHeight). Start hidden and reveal after
+    // the renderer's first measurement so the launch size matches the layout.
+    width: saved?.width ?? DEFAULT_WIDTH,
+    height: saved?.height ?? DEFAULT_HEIGHT,
+    ...(restorePos ? { x: saved!.x, y: saved!.y } : {}),
     minWidth: 520,
-    minHeight: 600,
+    minHeight: 360,
+    show: false,
     title: 'Dark Tower Relay — Operator Console',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -207,6 +349,16 @@ function createWindow(): void {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
+
+  // Persist size/position the operator sets (debounced); flush on close.
+  mainWindow.on('resize', saveWindowStateDebounced);
+  mainWindow.on('move', saveWindowStateDebounced);
+  mainWindow.on('close', saveWindowStateNow);
+
+  // Safety net: reveal the window even if the renderer never reports a height.
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) mainWindow.show();
+  }, 1800);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -363,6 +515,12 @@ async function initApp(): Promise<void> {
     ObserverDisplay = core.ObserverDisplay;
     NotificationSynthesizer = core.NotificationSynthesizer;
     pruneOldLogs = core.pruneOldLogs;
+    loadEventLog = core.loadEventLog;
+    selectLogFiles = core.selectLogFiles;
+    parseLogLines = core.parseLogLines;
+    detectAnomalies = core.detectAnomalies;
+    buildSessionSummary = core.buildSessionSummary;
+    buildCommandTimeline = core.buildCommandTimeline;
   } catch (err) {
     console.error('[main] FATAL: Failed to load core modules:', err);
     dialog.showErrorBox(
@@ -483,6 +641,90 @@ async function initApp(): Promise<void> {
     await shell.openPath(logger.getLogDir());
   });
 
+  // ── Log viewer (FR-7.3) — analysis runs HERE in main (it has fs); the
+  //    renderer only renders the structured results. The renderer never reads
+  //    files: main owns `logDir` and validates every requested filename.
+  const fileInfo = (name: string): LogFileInfo => {
+    try {
+      const st = fs.statSync(path.join(logDir, name));
+      return { name, sizeBytes: st.size, mtimeMs: st.mtimeMs };
+    } catch {
+      return { name, sizeBytes: 0, mtimeMs: 0 };
+    }
+  };
+
+  ipcMain.handle(IPC.LOGS_LIST, (): LogListResult => {
+    let files: string[];
+    try {
+      files = fs.readdirSync(logDir);
+    } catch {
+      return { sessions: [], events: [] };
+    }
+    const sessions = selectLogFiles(files, null).map(fileInfo);
+    const events = files
+      .filter((f) => /^events-.*\.jsonl$/.test(f))
+      .sort()
+      .map(fileInfo);
+    return { sessions, events };
+  });
+
+  ipcMain.handle(IPC.LOGS_ANALYZE, (_e, arg: { session: string | null }): LogAnalysisResult => {
+    let files: string[];
+    try {
+      files = fs.readdirSync(logDir);
+    } catch {
+      return { ok: false, reason: 'No log directory yet' };
+    }
+    const session = arg?.session ?? null;
+    const selected = selectLogFiles(files, session);
+    if (selected.length === 0) {
+      return {
+        ok: false,
+        reason: session ? `No session logs match "${session}"` : 'No session logs found',
+      };
+    }
+    try {
+      const contents = selected.map((f) => fs.readFileSync(path.join(logDir, f), 'utf-8'));
+      const entries = parseLogLines(contents);
+      if (entries.length === 0) {
+        return { ok: false, reason: 'No log entries found' };
+      }
+      return {
+        ok: true,
+        fileCount: selected.length,
+        summary: buildSessionSummary(entries),
+        timeline: buildCommandTimeline(entries, { limit: TIMELINE_LIMIT }),
+        anomalies: detectAnomalies(entries).map(({ type, message }) => ({ type, message })),
+      };
+    } catch (err) {
+      return { ok: false, reason: err instanceof Error ? err.message : String(err) };
+    }
+  });
+
+  ipcMain.handle(IPC.LOGS_LOAD_EVENTS, (_e, arg: { file: string }): EventLogResult => {
+    const name = path.basename(String(arg?.file ?? ''));
+    if (!/^events-.*\.jsonl$/.test(name)) {
+      return { ok: false, reason: 'Invalid event-log file' };
+    }
+    const full = path.join(logDir, name);
+    if (!fs.existsSync(full)) {
+      return { ok: false, reason: 'Event-log file not found' };
+    }
+    let all: RelayEvent[];
+    try {
+      all = loadEventLog(full);
+    } catch (err) {
+      return { ok: false, reason: err instanceof Error ? err.message : String(err) };
+    }
+    const truncated = all.length > EVENT_LIMIT;
+    return {
+      ok: true,
+      events: truncated ? all.slice(-EVENT_LIMIT) : all,
+      total: all.length,
+      truncated,
+    };
+  });
+
   console.log('[main] IPC handlers registered');
 
   // ── Start services ─────────────────────────────────────────────────────
@@ -504,6 +746,12 @@ ipcMain.handle(IPC.RESEND_LAST_STATE, (): { ok: boolean; reason?: string } => {
     return { ok: true };
   }
   return { ok: false, reason: 'No command has been relayed yet' };
+});
+
+// Fit the window to the renderer's measured content height (on load + whenever
+// the Logging section collapses/expands). One-way; clamped to the display.
+ipcMain.on(IPC.RESIZE_CONTENT_HEIGHT, (_e, desired: number) => {
+  resizeToContentHeight(desired);
 });
 
 // ─── Service startup ────────────────────────────────────────────────────────

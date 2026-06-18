@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { FakeTowerState, ConnectedClient } from 'ultimatedarktowerrelay-shared';
+import type { FakeTowerState, ConnectedClient, RelayEvent } from 'ultimatedarktowerrelay-shared';
+import type { SessionSummary, TimelineRow } from 'ultimatedarktowerrelay-core';
 
 // ─── IPC channel names (must match main.ts IPC constants) ───────────────────
 const CH = {
@@ -22,6 +23,10 @@ const CH = {
   GET_LOGGING_STATE: 'get-logging-state',
   OPEN_LOG_DIR: 'open-log-dir',
   RESEND_LAST_STATE: 'resend-last-state',
+  LOGS_LIST: 'logs:list',
+  LOGS_ANALYZE: 'logs:analyze',
+  LOGS_LOAD_EVENTS: 'logs:load-events',
+  RESIZE_CONTENT_HEIGHT: 'window:resize-content-height',
 } as const;
 
 // ─── Payload types ───────────────────────────────────────────────────────────
@@ -61,6 +66,34 @@ export interface ActionResult {
   ok: boolean;
   reason?: string;
 }
+
+// ─── Log-viewer (FR-7.3) payload types ──────────────────────────────────────
+
+/** A log file the viewer can list. */
+export interface LogFileInfo {
+  name: string;
+  sizeBytes: number;
+  mtimeMs: number;
+}
+
+export interface LogListResult {
+  sessions: LogFileInfo[];
+  events: LogFileInfo[];
+}
+
+export type LogAnalysisResult =
+  | {
+      ok: true;
+      fileCount: number;
+      summary: SessionSummary;
+      timeline: { rows: TimelineRow[]; total: number };
+      anomalies: Array<{ type: string; message: string }>;
+    }
+  | { ok: false; reason: string };
+
+export type EventLogResult =
+  | { ok: true; events: RelayEvent[]; total: number; truncated: boolean }
+  | { ok: false; reason: string };
 
 // ─── contextBridge API ───────────────────────────────────────────────────────
 
@@ -149,4 +182,23 @@ contextBridge.exposeInMainWorld('darkTowerRelay', {
 
   /** Re-broadcast the last relayed tower command so all clients can catch up. */
   resendLastState: (): Promise<ActionResult> => ipcRenderer.invoke(CH.RESEND_LAST_STATE),
+
+  /** List the session + event log files in the app's log directory. */
+  listLogs: (): Promise<LogListResult> => ipcRenderer.invoke(CH.LOGS_LIST),
+
+  /** Analyze the session logs (optionally filtered to a session prefix). */
+  analyzeLogs: (session: string | null): Promise<LogAnalysisResult> =>
+    ipcRenderer.invoke(CH.LOGS_ANALYZE, { session }),
+
+  /** Load a semantic event-log file (`events-*.jsonl`) for read-only display. */
+  loadEventLogFile: (file: string): Promise<EventLogResult> =>
+    ipcRenderer.invoke(CH.LOGS_LOAD_EVENTS, { file }),
+
+  /**
+   * Ask the main process to fit the window's content area to `height` px
+   * (clamped to the display). Fire-and-forget; called on load and whenever a
+   * collapsible section toggles.
+   */
+  resizeContentHeight: (height: number): void =>
+    ipcRenderer.send(CH.RESIZE_CONTENT_HEIGHT, height),
 });

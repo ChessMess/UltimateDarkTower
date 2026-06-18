@@ -15,9 +15,10 @@ write-back `TOWER_SOURCE=bridge`, code-complete, hardware-validation pending), a
 (append-only JSONL semantic-event log with its own monotonic `seq` + replay/export + thin `replayEvents` CLI;
 all 8 `RelayEvent` types now emit), and **FR-8.2 / task 4.4 analyzeLogs** (read-only log-analysis CLI over the
 `HostLogger` `session-*.jsonl` logs — summary/timeline/correlation/LED/anomalies/per-client, BLE-free unit-tested),
-and **task 4.1 Slice A — the Electron operator GUI** (`packages/electron` over `core`, with runtime
-**fake/mock/real source switching**; Electron 42 + Forge/Vite). **Next: 4.1 Slice B (in-GUI log
-viewer) / Sync migration (4.5).**
+and **task 4.1 — the Electron operator GUI** (`packages/electron` over `core`, with runtime
+**fake/mock/real source switching**; Electron 42 + Forge/Vite). **Slice A** = status dashboard +
+manual controls; **Slice B** = the in-GUI **log viewer** (Logs panel over the same JSONL the relay
+writes). **Next: Sync migration (4.5).**
 
 ## What this is
 
@@ -43,7 +44,7 @@ core lib, and is the shared bridge Sync will later consume.
   - `../UltimateDarkTowerDigital/src/sources/types.ts` — the `TowerStateSource` seam a future UTDD
     `BridgeSource` (task 3.3) wraps; the relay's `RelayClient` is designed to map onto it.
 
-## Current state (verified — `npm run ci` green, 118 tests; Electron GUI not unit-tested, matching Sync)
+## Current state (verified — `npm run ci` green, 123 tests; Electron GUI not unit-tested, matching Sync)
 
 npm-workspaces monorepo; unscoped package names like the UDT family (root private `ultimatedarktowerrelay`).
 `main` contains Phases 1→4(FR-5.1) as four commits.
@@ -51,9 +52,9 @@ npm-workspaces monorepo; unscoped package names like the UDT family (root privat
 | Package | Name | Contents |
 |---|---|---|
 | `packages/shared` | `ultimatedarktowerrelay-shared` | protocol envelope/`MessageType`/factories (+`client:action`), `LogEntry`, **`RelayEvent` union** (`relayEvents.ts`), `PROTOCOL_VERSION='0.1.0'` |
-| `packages/core` | `ultimatedarktowerrelay-core` | `fakeTower` (configurable **DIS** via `deviceInfo`), `relayServer` (+`onClientAction`), `connectionManager`, `commandParser`, `logger`, **`eventLog`** (FR-6: append-only `RelayEvent` JSONL + `loadEventLog`/`replayEventLog`/`exportEventLog`), `observerDisplay`, `towerSource` seam, `mockTower`, **`notificationSynthesizer`**, **`deviceInfo`**, **`realTower`** (FR-5.1); `index.ts` barrel |
+| `packages/core` | `ultimatedarktowerrelay-core` | `fakeTower` (configurable **DIS** via `deviceInfo`), `relayServer` (+`onClientAction`), `connectionManager`, `commandParser`, `logger`, **`eventLog`** (FR-6: append-only `RelayEvent` JSONL + `loadEventLog`/`replayEventLog`/`exportEventLog`), `observerDisplay`, `towerSource` seam, `mockTower`, **`notificationSynthesizer`**, **`deviceInfo`**, **`realTower`** (FR-5.1), **`logAnalysis`** (pure session-log analysis helpers — relocated from `cli` in 4.1 Slice B); `index.ts` barrel |
 | `packages/client` | `ultimatedarktowerrelay-client` | **`RelayClient`** SDK (`relayClient.ts`): handshake, decoded-`state` + event subscriptions, participant `dropSkull()`, backoff reconnect, version-mismatch, isomorphic WebSocket (injectable for Node). **`PhysicalTowerReplay`** (`physicalTowerReplay.ts`, FR-5.2): writes relayed 20-byte commands to a local tower via an injected `TowerWriter`. Publish-ready (not published) |
-| `packages/cli` | `ultimatedarktowerrelay-cli` | headless daemon: `TOWER_SOURCE=fake\|mock\|real`, `TOWER_DIS_*` env, SIGINT/SIGTERM; `mockConsumer.ts` (SDK-backed, `MOCK_ROLE=participant`); `replayEvents.ts` (EventLog inspect/replay/export — `npm run replay:events`); **`analyzeLogs.ts`** + pure `logAnalysis.ts` (FR-8.2 log analysis over `session-*.jsonl` — `npm run analyze:logs`) |
+| `packages/cli` | `ultimatedarktowerrelay-cli` | headless daemon: `TOWER_SOURCE=fake\|mock\|real`, `TOWER_DIS_*` env, SIGINT/SIGTERM; `mockConsumer.ts` (SDK-backed, `MOCK_ROLE=participant`); `replayEvents.ts` (EventLog inspect/replay/export — `npm run replay:events`); **`analyzeLogs.ts`** (FR-8.2 log analysis over `session-*.jsonl` — `npm run analyze:logs`; the pure helpers now live in `core/logAnalysis`, imported bleno-free via `…-core/dist/logAnalysis`) |
 | `packages/electron` | `ultimatedarktowerrelay-electron` | **operator GUI** (FR-7.3, task 4.1 Slice A): Vite + Electron Forge app over `core`. Main process is the relay composition root made **source-swappable** (`buildSource`/`wireSource`/`switchSource` — fake/mock/real, synth + EventLog) + IPC; renderer = status dashboard, source selector, manual controls (skull drop/resend/start-stop/logging toggle), client list + LAN URLs. **Electron 42 / Node 24.** Not in root `tsc --build` refs or Jest — vite-built; type-checked via `tsc --noEmit -p packages/electron/tsconfig.json`. Run with `npm run start:electron`; package `npm run make:electron` |
 
 Tooling: TS strict + composite refs, ESLint(`.eslintrc.js`, legacy)/Prettier, Jest(ts-jest→CJS),
@@ -222,12 +223,16 @@ prints a session summary, command timeline (with decoded LED-override / audio na
 correlation matrix, LED-override analysis, anomaly detection, and per-client latency. Flags:
 `--dir <path>` (default `./logs`), `--session <date>` (filename prefix filter), `--led-focus`,
 `--seq <n>`, `--anomalies`.
-- **Pure logic split out for testing.** `packages/cli/src/logAnalysis.ts` holds the fs/console-free
+- **Pure logic split out for testing.** `logAnalysis.ts` holds the fs/console-free
   helpers (`ledSeqName`/`audioName` from UDT `TOWER_LIGHT_SEQUENCES`/`TOWER_AUDIO_LIBRARY`,
   `selectLogFiles`, `parseLogLines`, `detectAnomalies`); `analyzeLogs.ts` is the thin CLI (argv + fs +
-  the `print*` reporters). Reuses the shared `decodeCommand`/`bytesFromHex`/`formatLogEntry` decoder —
-  **no `core` import**, so reading logs never initializes Bluetooth. Unit-tested BLE/fs-free in
-  `logAnalysis.test.ts` (17 cases, in-memory fixtures).
+  the `print*` reporters). Reuses the shared `decodeCommand`/`bytesFromHex`/`formatLogEntry` decoder.
+  Unit-tested BLE/fs-free (`logAnalysis.test.ts`, in-memory fixtures). **Relocated `cli`→`core` in 4.1
+  Slice B** so the Electron GUI can reuse it; the CLI now imports it bleno-free via the
+  `ultimatedarktowerrelay-core/dist/logAnalysis` subpath (NOT the `core` barrel — same pattern
+  `replayEvents` uses for `eventLog`), so reading logs still never initializes Bluetooth. Slice B also
+  added pure `buildSessionSummary`/`buildCommandTimeline` data-builders (the structured form of the
+  `print*` reporters) for the GUI, with their own unit tests (22 cases total now).
 - **Two relay-specific deviations from the verbatim port:** (1) scoped to `session-*` filenames so it
   ignores the EventLog's `events-*.jsonl` (read by `replayEvents`) in the same dir; (2) MISSING_SEQ is
   gated on the presence of `client←host` entries — the bundled `RelayClient` SDK doesn't emit
@@ -235,7 +240,7 @@ correlation matrix, LED-override analysis, anomaly detection, and per-client lat
   broadcast seq. The correlation / per-client sections degrade gracefully on host-only data and grow
   richer once a consumer reports logs back.
 
-## Electron operator GUI (task 4.1 / FR-7.3) — Slice A (DONE)
+## Electron operator GUI (task 4.1 / FR-7.3) — Slices A + B (DONE)
 
 `packages/electron` is a disciplined port of `../UltimateDarkTowerSync/packages/electron` (lifecycle/IPC/
 Forge skeleton) with the wiring swapped for the relay's composition. **`src/main/main.ts` is the relay
@@ -290,13 +295,47 @@ packaged).
   now deprecates — **not our config**, and the build output is correct. Clears when Forge updates the
   plugin; pinning `vite@^7` would also silence it (optional downgrade, not done).
 
-## Next: 4.1 Slice B (in-GUI log viewer) / Sync migration (4.5)
+### Slice B — in-GUI log viewer (DONE)
 
-- **Slice B (log viewer):** add main-process IPC reusing `packages/cli/src/logAnalysis.ts`
-  (`selectLogFiles`/`parseLogLines`/`detectAnomalies`/`ledSeqName`/`audioName`, via a Vite alias to its
-  src) + `core`'s `loadEventLog`; render summary/timeline/anomalies/event-log read-only in a new panel.
-  Analysis runs in **main** (fs), results to the renderer over IPC.
-- Other future slices: Sync migration (4.5), UTDD `BridgeSource` (3.3).
+The "Logs" panel in the operator console surfaces the two JSONL streams the relay already writes to the
+app's `userData/logs` (`session-*.jsonl` from `HostLogger`, `events-*.jsonl` from `EventLog`),
+read-only. **Analysis runs in the main process** (it has `fs`); the renderer never reads files.
+- **Helpers relocated to `core`.** The pure `logAnalysis` helpers moved `cli`→`core` (they import only
+  shared + UDT constants — BLE-free), plus two new pure data-builders `buildSessionSummary` /
+  `buildCommandTimeline` (the structured form of the CLI's `print*` reporters — the GUI builds data
+  objects, it does NOT call the console reporters). All are re-exported from the `core` barrel and
+  unit-tested in `core/src/logAnalysis.test.ts`. The CLI's `analyzeLogs` now imports them bleno-free via
+  `ultimatedarktowerrelay-core/dist/logAnalysis` (NOT the barrel — the `replayEvents`→`eventLog`
+  pattern). Electron `main` already loads the `core` barrel, so it consumes them directly (bleno is
+  loaded regardless there).
+- **IPC (main → renderer):** `logs:list` (`selectLogFiles` for sessions + an `events-*` filter, with
+  size/mtime), `logs:analyze` (`parseLogLines` → `buildSessionSummary` + `buildCommandTimeline({limit:
+  500})` + `detectAnomalies`, anomalies trimmed to `{type,message}`), `logs:load-events`
+  (`loadEventLog`, capped to the last 2000 with a `truncated`/`total` flag). Every requested filename is
+  `path.basename`'d + pattern-validated against the fixed `logDir` — the renderer can't read arbitrary
+  paths. Caps bound the IPC payload + DOM; the CLIs remain the unbounded path.
+- **Renderer:** the recording controls (Pause/Resume, Open Logs Folder) and the log viewer (Refresh +
+  session select→Analyze + event-file select→Load Events; Summary / color-coded Anomalies / scrollable
+  decoded Command Timeline / scrollable Event Log) are **merged into one collapsible "Logging"
+  section** (full-width, sibling under the dashboard grid). A chevron control before the title
+  collapses/expands the body; the **ON/OFF recording badge** (color-coded green/grey) lives in the
+  always-visible header, so state is clear when collapsed. **Starts collapsed by default.** The file
+  lists populate via a **guarded, non-awaited** `refreshLogs()` (not in the critical `init()` await
+  chain) so a not-yet-registered IPC handler can't abort init. Renderer/preload use **type-only**
+  imports from shared/core (the empty preload/renderer Vite configs erase them).
+- **Window sizing/state.** Width + position are **persisted** to `userData/window-state.json` (saved
+  debounced on resize/move + flushed on close, restored on launch if still on-screen). **Height
+  auto-fits the rendered content**: the renderer measures `#app` height + body padding and asks main
+  (`window:resize-content-height`, one-way IPC) to `setContentSize` to fit — on first paint and
+  whenever the Logging section collapses/expands (or analysis results render) — **clamped to the
+  display work area** (`screen.getDisplayMatching`), so the launch height matches the layout and the
+  window grows/shrinks with the section but never exceeds the screen. The window is created
+  `show: false` and revealed after the first measurement (with a 1.8s safety net) to avoid a size jump.
+- `npm run ci` green (**123 tests**); the renderer + `index.html` + `styles.css` bundle clean via Vite.
+  ⏳ Owner validation (repo convention): GUI launch + the Logs panel against real on-disk logs +
+  window auto-fit/persistence (the GUI/windowing paths can't be exercised headlessly).
+
+## Next: Sync migration (4.5) / UTDD `BridgeSource` (3.3)
 
 ## Workflow
 

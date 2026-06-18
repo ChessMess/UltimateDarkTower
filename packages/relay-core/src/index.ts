@@ -11,6 +11,15 @@ export { RelayServer } from './relayServer';
 export { HostLogger, pruneOldLogs } from './logger';
 export { EventLog, loadEventLog, replayEventLog, exportEventLog } from './eventLog';
 export {
+  ledSeqName,
+  audioName,
+  selectLogFiles,
+  parseLogLines,
+  detectAnomalies,
+  buildSessionSummary,
+  buildCommandTimeline,
+} from './logAnalysis';
+export {
   CommandParser,
   buildSkullDropPacket,
   TOWER_COMMAND_LENGTH,
@@ -28,6 +37,7 @@ export {
 
 export type { HostLoggerOptions } from './logger';
 export type { EventLogOptions, ReplayOptions } from './eventLog';
+export type { Anomaly, SessionSummary, TimelineRow } from './logAnalysis';
 export type { RelayServerOptions } from './relayServer';
 export type { CommandReceivedCallback } from './fakeTower';
 export type { ParsedCommand } from './commandParser';

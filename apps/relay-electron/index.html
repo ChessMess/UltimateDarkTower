@@ -74,11 +74,23 @@
         </div>
       </section>
 
-      <!-- Logging -->
-      <section class="card" id="card-logging">
-        <h2>Logging &nbsp;<span class="badge" id="logging-state-badge">ON</span></h2>
-        <div class="status-row">
+    </div>
+
+    <!-- Logging + log viewer (FR-7.3) — collapsible -->
+    <section class="card card-full collapsible collapsed" id="card-logging">
+      <div class="card-header">
+        <button class="collapse-toggle" id="logging-collapse-toggle" type="button"
+          aria-expanded="false" aria-controls="logging-body" title="Collapse / expand">▾</button>
+        <h2>Logging</h2>
+        <span class="logging-status" id="logging-status" title="Recording state">
           <span id="logging-state-dot" class="dot state-connected"></span>
+          <span class="badge" id="logging-state-badge">ON</span>
+        </span>
+      </div>
+
+      <div class="card-body" id="logging-body">
+        <!-- Recording status + controls -->
+        <div class="status-row">
           <span id="logging-state-label">Active — recording to file</span>
         </div>
         <div class="card-actions">
@@ -86,9 +98,52 @@
           <button id="btn-open-logs" class="text-btn">Open Logs Folder</button>
           <span id="logging-feedback" class="action-feedback" hidden></span>
         </div>
-      </section>
 
-    </div>
+        <!-- Log viewer -->
+        <div class="logs-divider"></div>
+        <div class="logs-toolbar">
+          <button id="btn-logs-refresh" class="text-btn">Refresh</button>
+          <span class="logs-group">
+            <select id="logs-session-select" aria-label="Session log">
+              <option value="">All sessions</option>
+            </select>
+            <button id="btn-logs-analyze" class="text-btn">Analyze</button>
+          </span>
+          <span class="logs-group">
+            <select id="logs-event-select" aria-label="Event log file">
+              <option value="">— event log —</option>
+            </select>
+            <button id="btn-logs-load-events" class="text-btn">Load Events</button>
+          </span>
+          <span id="logs-feedback" class="action-feedback" hidden></span>
+        </div>
+
+        <div class="logs-output">
+          <p class="logs-hint" id="logs-hint">Click “Refresh” to list log files, then “Analyze” a session or “Load Events”.</p>
+
+          <div class="logs-block" id="logs-summary" hidden>
+            <h3>Summary</h3>
+            <div class="logs-summary-body" id="logs-summary-body"></div>
+          </div>
+
+          <div class="logs-block" id="logs-anomalies" hidden>
+            <h3>Anomalies &nbsp;<span class="badge" id="logs-anomaly-count">0</span></h3>
+            <ul class="logs-anomaly-list" id="logs-anomaly-list"></ul>
+          </div>
+
+          <div class="logs-block" id="logs-timeline" hidden>
+            <h3>Command Timeline &nbsp;<span class="logs-meta" id="logs-timeline-meta"></span></h3>
+            <div class="logs-scroll" id="logs-timeline-body"></div>
+          </div>
+
+          <div class="logs-block" id="logs-events" hidden>
+            <h3>Event Log &nbsp;<span class="logs-meta" id="logs-events-meta"></span></h3>
+            <div class="logs-scroll" id="logs-events-body"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </div>
   <script type="module" src="/src/renderer/renderer.ts"></script>
 </body>

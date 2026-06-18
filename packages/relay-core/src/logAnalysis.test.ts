@@ -13,6 +13,8 @@ import {
   selectLogFiles,
   parseLogLines,
   detectAnomalies,
+  buildSessionSummary,
+  buildCommandTimeline,
 } from './logAnalysis';
 
 // ---------------------------------------------------------------------------
@@ -190,5 +192,101 @@ describe('detectAnomalies', () => {
     expect(anomalies).toHaveLength(1);
     expect(anomalies[0].type).toBe('ERROR');
     expect(anomalies[0].message).toContain('boom');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildSessionSummary
+// ---------------------------------------------------------------------------
+
+/** A non-command event LogEntry at the given ms. */
+function evt(level: LogEntry['level'], src: string, note: string, tsMs: number): LogEntry {
+  return { ts: new Date(tsMs).toISOString(), seq: null, dir: null, hex: null, src, level, note };
+}
+
+describe('buildSessionSummary', () => {
+  it('returns an empty/zeroed summary for no entries', () => {
+    expect(buildSessionSummary([])).toEqual({
+      firstTs: null,
+      lastTs: null,
+      durationMs: 0,
+      totalEntries: 0,
+      commandCount: 0,
+      eventCount: 0,
+      maxSeq: 0,
+      sources: [],
+    });
+  });
+
+  it('computes counts, duration, maxSeq, and distinct sources', () => {
+    const entries: LogEntry[] = [
+      cmd('companion→host', null, 'companion', HEX, { tsMs: 1000 }),
+      cmd('host→clients', 1, 'host', HEX, { tsMs: 1500 }),
+      cmd('host→clients', 5, 'host', HEX, { tsMs: 2000 }),
+      evt('event', 'host', 'Client connected', 3000),
+    ];
+    const summary = buildSessionSummary(entries);
+
+    expect(summary.firstTs).toBe(entries[0].ts);
+    expect(summary.lastTs).toBe(entries[3].ts);
+    expect(summary.durationMs).toBe(2000); // 3000 - 1000
+    expect(summary.totalEntries).toBe(4);
+    expect(summary.commandCount).toBe(3);
+    expect(summary.eventCount).toBe(1);
+    expect(summary.maxSeq).toBe(5);
+    expect(summary.sources).toEqual(['companion', 'host']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildCommandTimeline
+// ---------------------------------------------------------------------------
+
+describe('buildCommandTimeline', () => {
+  // 20-byte packet: byte 15 (audio) = 0x01, byte 19 (ledOverride) = 0x0e.
+  const HEX_LED_AUDIO = '00'.repeat(15) + '01' + '00'.repeat(3) + '0e';
+
+  it('includes only command entries and decodes LED/audio extras', () => {
+    const entries: LogEntry[] = [
+      evt('event', 'host', 'ignored', 0),
+      cmd('host→clients', 1, 'host', HEX_LED_AUDIO, { tsMs: 1000 }),
+    ];
+    const { rows, total } = buildCommandTimeline(entries);
+
+    expect(total).toBe(1);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].deltaMs).toBeNull(); // first row
+    expect(rows[0].extras).toEqual([
+      'ledOverride=0x0e (sealReveal)',
+      'audio=Ashstrider (Adversary)',
+    ]);
+    expect(rows[0].text).toContain('host→clients');
+  });
+
+  it('computes inter-command deltas and emits no extras for a zero packet', () => {
+    const entries: LogEntry[] = [
+      cmd('host→clients', 1, 'host', HEX, { tsMs: 1000 }),
+      cmd('host→clients', 2, 'host', HEX, { tsMs: 1250 }),
+    ];
+    const { rows } = buildCommandTimeline(entries);
+
+    expect(rows[0].deltaMs).toBeNull();
+    expect(rows[1].deltaMs).toBe(250);
+    expect(rows[0].extras).toEqual([]);
+  });
+
+  it('caps to the most-recent `limit` rows while reporting the full total', () => {
+    const entries: LogEntry[] = [
+      cmd('host→clients', 1, 'host', HEX, { tsMs: 1000 }),
+      cmd('host→clients', 2, 'host', HEX, { tsMs: 2000 }),
+      cmd('host→clients', 3, 'host', HEX, { tsMs: 3000 }),
+    ];
+    const { rows, total } = buildCommandTimeline(entries, { limit: 2 });
+
+    expect(total).toBe(3);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].text).toContain('#2'); // most-recent two: seq 2 then 3
+    expect(rows[1].text).toContain('#3');
+    expect(rows[0].deltaMs).toBeNull(); // delta is relative to the slice
   });
 });

@@ -22,8 +22,10 @@
  *   --seq <n>          Focus on a specific sequence number.
  *   --anomalies        Show only anomalies.
  *
- * Imports only the shared byte decoder + UDT constants (via `./logAnalysis`) —
- * never the relay `core` package, so it never initializes Bluetooth.
+ * The pure analysis helpers live in `core` (`logAnalysis.ts`); this CLI imports
+ * them via the `ultimatedarktowerrelay-core/dist/logAnalysis` subpath (NOT the
+ * `core` barrel, which pulls in FakeTower → bleno), so reading logs never
+ * initializes Bluetooth — the same pattern `replayEvents` uses for `eventLog`.
  */
 
 import { readFileSync, readdirSync } from 'node:fs';
@@ -42,7 +44,7 @@ import {
   selectLogFiles,
   parseLogLines,
   detectAnomalies,
-} from './logAnalysis';
+} from 'ultimatedarktowerrelay-core/dist/logAnalysis';
 
 // ---------------------------------------------------------------------------
 // CLI argument parsing
