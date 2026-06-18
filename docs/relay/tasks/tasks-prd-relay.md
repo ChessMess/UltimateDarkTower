@@ -115,6 +115,19 @@ style (`ultimatedarktowerrelay-*`).
         (Web Bluetooth in the browser); tower-ready gated, serialized writes, `replayLast()` self-heal on
         reconnect; BLE/browser-free unit tests with a mock writer. **Confirmed live:** a physical tower
         mirrored relayed rotations end-to-end in Chrome (harness: `examples/replay-e2e/`).
+        **FR-5.3 done; real-mode hardware-validated (2026-06-17):** generic resilience (paused/resumed,
+        WS reconnect+backoff, ping/pong, handshake timeout, dead-client, observer) was already ported
+        (Phases 1–3); this slice rebuilt `RealTower` onto UDT's **high-level `UltimateDarkTower` class**,
+        which owns disconnect *detection* (GATT health + verified battery-heartbeat → `onTowerDisconnect`).
+        `RealTower` adds reconnect-on-drop (capped backoff) + initial-connect retry per UDT's documented
+        `onTowerDisconnect → connect()` pattern, and relays raw bytes via a new UDT public `onTowerResponse`
+        hook. **Confirmed live:** initial-retry connected on power-up; a power-cycle gave a clean
+        1-disconnect → 1-reconnect → resume, no listener cascade. (An earlier hand-rolled stall/raw-adapter
+        attempt was removed — the tower streams ~1–2 notifications/sec, so silence-based stall was wrong.)
+        **Write-back done:** `TOWER_SOURCE=bridge` (FakeTower + RealTower) forwards app commands onto a real
+        master tower via `RealTower.sendToTower` (resolves §11 Q5). **Cross-repo:** relay consumes the new UDT
+        hook via `npm link`; needs a UDT publish + dep-bump before relay CI/ship. Bridge needs on-hardware
+        validation on a non-macOS host (concurrent BLE central+peripheral caveat).
         **Remaining:** FR-5.3 real-tower-specific resilience · relay→tower write-back path ← **next**.
   - [ ] 4.4 Port the log-analysis CLI (`analyzeLogs`).
   - [ ] 4.5 Migrate `UltimateDarkTowerSync` onto the relay's `core` + `client`; remove Sync's custom

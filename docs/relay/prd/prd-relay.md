@@ -255,6 +255,20 @@ is **not** carried by the relay (see §8) and stays manual in the consumer.
 3. **FR-5.3** The relay MUST provide Sync's live-play resilience as first-class features: `relay:paused`
    / `relay:resumed` ("Game Paused" on app disconnect/reconnect), WebSocket reconnect with backoff,
    ping/pong keepalive, handshake timeout, dead-client detection, and observer mode.
+   > **Implemented (Phase 4, 2026-06-17).** The client/server/FakeTower resilience was ported in
+   > Phases 1–3 — handshake timeout (10s) + ping/pong keepalive (20s) + dead-client termination
+   > (`connectionManager.ts`), `relay:paused`/`relay:resumed` (`relayServer.ts`, wired in the CLI),
+   > WS reconnect+backoff + observer mode (`relayClient.ts`). This slice closes the **real-tower** gaps by
+   > rebuilding `RealTower` onto UDT's **high-level `UltimateDarkTower` class**, which owns the disconnect
+   > *detection* (GATT health check + battery-heartbeat timeout with GATT verification → `onTowerDisconnect`).
+   > `RealTower` adds the reconnect *policy*: **reconnect on drop** with capped exponential backoff
+   > (re-emitting `companion-disconnected`/`companion-connected` → relay pause/resume) and **initial-connect
+   > retry** in the background (start the relay before the tower is powered), following UDT's documented
+   > `onTowerDisconnect → connect()` pattern. Verbatim relaying uses a new public `onTowerResponse` hook
+   > added to UDT (the raw bytes; `onTowerStateUpdate` is decoded). **Hardware-validated (2026-06-17):**
+   > initial-retry connected on power-up after retrying `1→2→4→8→16→30s`, and a power-cycle gave a clean
+   > 1-disconnect → 1-reconnect → resume with no listener cascade. (An earlier hand-rolled stall/raw-adapter
+   > version was wrong — the tower actually streams ~1–2 notifications/sec — and is removed.)
 4. **FR-5.4** The relay MUST expose enough of `core` + `client` for Sync to **drop its own fake-tower /
    relay code and depend on this repo** without losing functionality.
 
@@ -376,8 +390,12 @@ settled before any public or hosted build. (Mirrors UTDD's stance in
    workaround is a real-tower handoff. The DIS firmware value is configurable (`TOWER_DIS_FIRMWARE_REVISION`
    / `FakeTower({ deviceInfo })`); the exact value the current app accepts is still to be validated against
    the live app. See `docs/MACOS_BLE_PERIPHERAL_LIMITATION.md` + `docs/SETUP.md`.
-5. **Simultaneous modes?** Can fake-tower mode and real-tower mirror mode run at the same time, or are
-   they mutually exclusive?
+5. **Simultaneous modes? — RESOLVED (yes, via bridge mode).** `TOWER_SOURCE=bridge` runs a `FakeTower`
+   (the app connects to it) and a `RealTower` together: every app→tower command is forwarded verbatim
+   onto a real master tower the relay drives as central, while the same commands broadcast to mirror /
+   digital consumers. **Caveat:** this needs the host BLE stack to act as peripheral (bleno) *and*
+   central (noble) at once — not guaranteed on every adapter; may require a second BLE dongle or a
+   specific platform. Hardware-validation item.
 6. **Participant authority model** when multiple participants could report the same action.
 7. **Electron packaging** — signing/notarization (macOS) and per-platform BLE entitlements.
 8. **Sync migration path** — how Sync adopts the relay's `core` + `client` (npm dependency vs. shared

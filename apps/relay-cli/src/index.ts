@@ -8,10 +8,12 @@
  *   node dist/index.js                     # fake BLE tower (companion app connects)
  *   TOWER_SOURCE=mock node dist/index.js   # BLE-free canned-command source
  *   TOWER_SOURCE=real node dist/index.js   # connect to a physical tower, relay its state
+ *   TOWER_SOURCE=bridge node dist/index.js # app drives FakeTower; forward to a real master tower
  *
  * Environment:
  *   RELAY_PORT    TCP port for the WebSocket relay (default 8765).
- *   TOWER_SOURCE  'fake' (default) → BLE FakeTower; 'mock' → MockTower; 'real' → RealTower.
+ *   TOWER_SOURCE  'fake' (default) → BLE FakeTower; 'mock' → MockTower; 'real' → RealTower;
+ *                 'bridge' → FakeTower (app connects) + RealTower (commands forwarded to it).
  *   TOWER_DIS_*   Device Information Service overrides for the fake tower (see readDeviceInfoFromEnv).
  *   LOGGING       '0' disables JSONL file logging (default enabled).
  *
@@ -63,7 +65,9 @@ async function main(): Promise<void> {
       ? 'real'
       : process.env['TOWER_SOURCE'] === 'mock'
         ? 'mock'
-        : 'fake';
+        : process.env['TOWER_SOURCE'] === 'bridge'
+          ? 'bridge'
+          : 'fake';
   console.log(`UltimateDarkTowerRelay v${PROTOCOL_VERSION} (source: ${sourceMode})`);
 
   const port = Number(process.env['RELAY_PORT'] ?? DEFAULT_PORT);
@@ -77,12 +81,24 @@ async function main(): Promise<void> {
   // through them); a real tower generates its own notifications, so no synthesizer.
   let source: TowerSource;
   let sink: NotificationSink | null = null;
+  let bridgeTarget: RealTower | null = null;
   if (sourceMode === 'real') {
+    // RealTower drives the tower via UDT's high-level UltimateDarkTower class,
+    // which monitors the connection (GATT health + verified battery heartbeat)
+    // and fires onTowerDisconnect; RealTower reconnects with backoff.
     source = new RealTower();
   } else if (sourceMode === 'mock') {
     const mock = new MockTower({ intervalMs: 3000 });
     source = mock;
     sink = mock;
+  } else if (sourceMode === 'bridge') {
+    // Bridge: the app drives a FakeTower (broadcast source + notification sink),
+    // and every app→tower command is forwarded onto a real master tower the relay
+    // drives as central (write-back). Resolves PRD §11 Q5 (simultaneous fake+real).
+    const fake = new FakeTower({ deviceInfo: readDeviceInfoFromEnv() });
+    source = fake;
+    sink = fake;
+    bridgeTarget = new RealTower({ reconnect: true });
   } else {
     const fake = new FakeTower({ deviceInfo: readDeviceInfoFromEnv() });
     source = fake;
@@ -137,6 +153,28 @@ async function main(): Promise<void> {
   // Separate raw listener so the synthesizer (fake/mock only) sees every command
   // (incl. a short calibration packet the 20-byte broadcast path above would drop).
   if (synth) source.on('command', (data) => synth.onCommand(data));
+
+  // Bridge mode: forward every app→tower command verbatim onto the real master
+  // tower (incl. short packets like calibration), and log the real tower's own
+  // lifecycle. It is a write-only target — its notifications are not broadcast,
+  // and the app/FakeTower owns pause/resume.
+  if (bridgeTarget) {
+    const real = bridgeTarget;
+    source.on('command', (data) => {
+      void real.sendToTower(data).catch((err) =>
+        logger.logEvent('warn', 'host', `Bridge write to real tower failed: ${String(err)}`),
+      );
+    });
+    real.on('state-change', (state) =>
+      logger.logEvent('event', 'host', `Bridge real-tower state: ${state}`),
+    );
+    real.on('companion-connected', () =>
+      logger.logEvent('event', 'host', 'Bridge: real master tower connected'),
+    );
+    real.on('companion-disconnected', () =>
+      logger.logEvent('event', 'host', 'Bridge: real master tower disconnected — reconnecting'),
+    );
+  }
   source.on('state-change', (state) => {
     relay.setFakeTowerState(state);
     logger.logEvent('event', 'host', `Tower source state: ${state}`);
@@ -160,12 +198,17 @@ async function main(): Promise<void> {
   console.log(`Relay server listening on ws://0.0.0.0:${port}`);
 
   await source.startAdvertising();
+  if (bridgeTarget) {
+    await bridgeTarget.startAdvertising(); // connects to the real master tower (retries in background)
+  }
   console.log(
     sourceMode === 'real'
       ? 'Connecting to real tower — relaying its state to consumers.'
       : sourceMode === 'mock'
         ? 'Mock tower source running — emitting canned commands.'
-        : 'Advertising fake tower — open the companion app to connect.'
+        : sourceMode === 'bridge'
+          ? 'Bridge mode — app drives the fake tower; commands forwarded to the real master tower.'
+          : 'Advertising fake tower — open the companion app to connect.'
   );
 
   // Graceful shutdown.
@@ -173,6 +216,7 @@ async function main(): Promise<void> {
     console.log('\nShutting down…');
     synth?.destroy();
     await source.stopAdvertising();
+    if (bridgeTarget) await bridgeTarget.stopAdvertising();
     await relay.stop();
     await logger.close();
     process.exit(0);

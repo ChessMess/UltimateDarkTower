@@ -7,8 +7,11 @@ A working handoff for continuing this repo in a fresh session. Canonical specs:
 **Done so far:** Phase 1 (scaffold/relay parity), Phase 2 (NotificationSynthesizer), Phase 3 (client SDK +
 configurable DIS), Phase 4 **FR-5.1** (real-tower source — hardware-validated live), and **FR-5.2** (the
 physical-tower-replay consumer `PhysicalTowerReplay` — unit-tested **and hardware-validated live**: a
-physical tower mirrored relayed rotations end-to-end in Chrome). **Next: FR-5.3 real-tower resilience +
-the relay→tower write-back path.**
+physical tower mirrored relayed rotations end-to-end in Chrome), and **FR-5.3** (real-tower resilience —
+`RealTower` rebuilt on UDT's high-level class for monitored reconnect + initial-retry, **hardware-validated
+clean reconnect**, via a new UDT `onTowerResponse` hook consumed by npm link; plus the app→real-tower bridge
+write-back `TOWER_SOURCE=bridge`, code-complete, hardware-validation pending). **Next: EventLog (4.2) / Electron
+GUI (4.1) / Sync migration (4.5).**
 
 ## What this is
 
@@ -55,10 +58,33 @@ live** (a real skull drop relayed end-to-end with correct decoded count).
 
 ## Locked decisions / resolved facts — do not re-litigate
 
-- **Real-tower mode (FR-5.1) is done + hardware-validated.** `RealTower` connects as a BLE **central** via
-  UDT's `NodeBluetoothAdapter`, **read-only** (relays the tower's 20-byte state; battery beats filtered);
-  must be the **sole** connection (official app disconnected). `@stoprocent/noble` is an **optional**
-  dependency (lazy-loaded; injectable mock adapter keeps it out of tests).
+- **Real-tower mode (FR-5.1/FR-5.3) drives the tower via UDT's high-level `UltimateDarkTower` class**
+  (not the raw `NodeBluetoothAdapter`). The class runs the connection monitoring (GATT health + verified
+  battery-heartbeat) and fires `onTowerDisconnect`; `RealTower` wraps an injected `TowerDriver` (the class
+  satisfies it structurally), relays the tower's raw 20-byte state via the new public **`onTowerResponse`**
+  hook, and must be the **sole** connection to the tower. `@stoprocent/noble` is an **optional** dependency
+  (the driver is constructed lazily at connect; tests inject a mock `TowerDriver`, so no noble).
+- **Real-tower resilience (FR-5.3) is done + hardware-validated (2026-06-17).** `RealTower` reconnects on
+  drop with capped exponential backoff (`1→2→4→8→16→30s`; re-emits `companion-disconnected`/`-connected`
+  → relay pause/resume) and retries the initial connect in the background (`reconnect: true`, default —
+  start the relay before the tower is on). Reconnect uses UDT's **documented pattern**: on
+  `onTowerDisconnect`, call `connect()` again (not `cleanup()`, which disposes the instance). Drop
+  *detection* is the library's job (don't hand-roll it). **Confirmed live:** initial-retry connected on
+  power-up; a power-cycle produced a clean **1 disconnect → 1 reconnect → resume**, no listener cascade.
+  The test helper sets `reconnect: false` to keep plain tests timer-free.
+- **No hand-rolled stall detection.** An earlier custom notification-silence "stall" timer was wrong (the
+  tower actually streams ~1–2 notifications/sec; it false-positived) and reusing the raw adapter leaked
+  noble listeners → a `bluetooth-unavailable` cascade. Both are gone — the high-level class's monitoring
+  replaces them.
+- **`onTowerResponse` hook added to UDT (sibling repo).** New public assignable callback delivering the
+  raw verbatim notification bytes (the public `onTowerStateUpdate` is decoded). The relay consumes the
+  modified UDT via **`npm link`** to the local repo for now; **before the relay's GitHub CI / ship works,
+  UDT must publish the hook and the relay must bump its `ultimatedarktower` dep** (published 4.0.1 lacks it).
+- **Write-back / bridge mode (resolves §11 Q5).** `RealTower.sendToTower(data)` writes verbatim via the
+  driver (`sendTowerCommandDirect`). `TOWER_SOURCE=bridge` runs FakeTower (app connects) **+** RealTower
+  (relay drives a real master tower), forwarding every app command onto the real tower while broadcasting
+  to consumers. **Caveat:** needs the host BLE stack to be peripheral (bleno) *and* central (noble) at once
+  — may need a 2nd dongle; hardware-validation pending.
 - **No `TOWER_ADDRESS` selector.** All towers advertise as `ReturnToDarkTower`; name-based scan is the
   deliberate choice (single tower is the common case; the owner powers multiple towers on sequentially).
 - **DIS / "checking firmware" (resolves §11 Q4):** the official app needs the DIS firmware revision;
@@ -128,11 +154,35 @@ self-heal fired on calibration-complete; steady-state per-command writes rotated
 Re-validate with the throwaway harness in `examples/replay-e2e/` (host injector + browser page; see its
 `README.md`). VSCode's embedded browser can't show the Web Bluetooth chooser — use real Chrome/Edge.
 
-## Next: FR-5.3 resilience + relay→tower write-back (PRD §12.4 / tasks 4.3 remainder)
+## FR-5.3 — real-tower resilience + app→real-tower bridge (DONE)
 
-Real-tower-specific resilience and the relay→tower write-back path. Out of scope (separate slices): Electron
-GUI (4.1), EventLog persistence/replay (4.2), analyzeLogs CLI (4.4), Sync migration (4.5), UTDD
-`BridgeSource` (3.3).
+Generic resilience (paused/resumed, WS reconnect+backoff, ping/pong keepalive, handshake timeout,
+dead-client, observer) was already ported in Phases 1–3 (`connectionManager.ts`, `relayServer.ts`,
+`relayClient.ts`). This slice closed the real-tower gaps and added write-back:
+- **`RealTower` rebuilt onto the high-level `UltimateDarkTower` class** (via an injected `TowerDriver`).
+  The library does the disconnect *detection* (GATT health + verified battery-heartbeat → `onTowerDisconnect`);
+  `RealTower` adds the reconnect *policy* — reconnect-on-drop (capped backoff) + initial-connect retry,
+  per UDT's documented `onTowerDisconnect → connect()` pattern. Relays the raw 20-byte state via UDT's new
+  public `onTowerResponse` hook. Options: `reconnect`/`reconnectBaseMs`/`reconnectMaxMs`.
+- **Bridge write-back:** `RealTower.sendToTower(data)` (→ `sendTowerCommandDirect`) + `TOWER_SOURCE=bridge`
+  (FakeTower forwards every app command verbatim onto a real master tower). See locked-decisions for the
+  dual-role BLE caveat.
+- **Tests:** `realTower.test.ts` rewritten with a mock `TowerDriver` (reconnect/initial-retry via Jest fake
+  timers; verbatim write; no-op-when-disconnected). Bridge CLI wiring is hardware-validated (can't be
+  unit-tested without bleno). Drop *detection* is covered by the UDT repo's own tests.
+
+**Hardware validation (2026-06-17, `TOWER_SOURCE=real` on macOS):**
+- ✅ initial-connect retry — started with the tower off, retried `1→2→4→8→16→30s`, connected on power-up.
+- ✅ reconnect-on-drop — power-cycle produced a clean **1 disconnect → 1 reconnect attempt → resume**, with
+  **no `bluetooth-unavailable` cascade and no `MaxListeners` leak** (the failure mode of the earlier
+  hand-rolled raw-adapter version, now removed).
+- ⏳ pending: bridge mode (app → FakeTower → real tower) on a non-macOS host; concurrent central+peripheral
+  BLE caveat. And the **UDT publish + relay dep-bump** so GitHub CI passes without the npm link.
+
+## Next: EventLog (4.2) / Electron GUI (4.1) / Sync migration (4.5)
+
+Out of scope here / future slices: EventLog persistence/replay (4.2), Electron operator GUI (4.1),
+analyzeLogs CLI (4.4), Sync migration (4.5), UTDD `BridgeSource` (3.3).
 
 ## Workflow
 

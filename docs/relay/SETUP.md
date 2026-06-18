@@ -23,7 +23,7 @@ Environment:
 | Var | Default | Purpose |
 |---|---|---|
 | `RELAY_PORT` | `8765` | WebSocket relay port |
-| `TOWER_SOURCE` | `fake` | `fake` (real BLE) or `mock` (BLE-free) |
+| `TOWER_SOURCE` | `fake` | `fake` (real BLE) · `mock` (BLE-free) · `real` (drive from a physical master tower) · `bridge` (app→FakeTower→real tower) |
 | `LOGGING` | on | set `0` to disable JSONL logging |
 | `TOWER_DIS_FIRMWARE_REVISION` | captured value | DIS firmware revision the app gates on |
 | `TOWER_DIS_{MANUFACTURER,MODEL,HARDWARE_REVISION,SOFTWARE_REVISION}` | captured values | other DIS fields |
@@ -110,6 +110,39 @@ broadcasts each 20-byte state packet to consumers. This mode is **read-only** �
 mirrors the tower's state outward; it does not drive/write to the tower, and it must be
 the sole BLE connection to that tower (the official app can't be connected to the same
 tower at the same time). Works on Linux/Raspberry Pi or macOS as a central.
+
+`TOWER_SOURCE=real` is **resilient** (FR-5.3): it drives the tower through UDT's high-level
+`UltimateDarkTower` class, which monitors the connection (GATT health check + battery-heartbeat
+timeout with verification) and reports drops; the relay then retries the initial connect in the
+background (so you can start it before powering the tower on) and reconnects with backoff when the
+tower drops (showing "Game Paused", then resuming).
+
+---
+
+## Bridge mode — app drives a real tower (`TOWER_SOURCE=bridge`)
+
+Runs a **FakeTower** (the official app connects to it, as in `fake` mode) **and** a
+**RealTower** together: every command the app writes is forwarded **verbatim** onto a
+physical master tower the relay drives as a BLE central, while the same commands are
+broadcast to mirror / digital consumers. This lets the app drive a real tower *through*
+the relay (PRD §11 Q5 — simultaneous fake + real).
+
+```bash
+TOWER_SOURCE=bridge npm start
+```
+
+Requirements & caveats:
+- Needs **both** `@stoprocent/bleno` (peripheral, for the app) **and** `@stoprocent/noble`
+  (central, for the real tower).
+- The app needs the DIS, so — like standalone `fake` mode — bridge mode realistically runs
+  on **Linux/Raspberry Pi or Windows**, not macOS.
+- ⚠️ **Concurrent BLE roles:** the host's adapter must act as peripheral *and* central at the
+  same time. Not all adapters/stacks support this, and the two native addons may contend for
+  the HCI device — you may need a **second BLE dongle**. This is a hardware constraint to
+  validate on your setup.
+- The real tower is a **write-only target** here: its own notifications aren't broadcast (the
+  app/FakeTower is the source of truth), and the RealTower reconnects in the background if it
+  drops.
 
 ---
 

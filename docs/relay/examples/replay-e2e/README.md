@@ -13,6 +13,10 @@ Web Bluetooth. Not shipped code — it's the exact wiring documented in `docs/HA
 - `index.html` — minimal UI (Connect to Host / Connect to Tower + a log).
 - `module-shim.js` — browser stub for Node's `module` builtin (UDT's ESM build calls
   `createRequire` only on the Node-adapter path, never taken in the browser).
+- `noble-probe.cjs` — a Node BLE diagnostic: connects to the tower via UDT's Node adapter
+  and logs every notification with a timestamp. Used to confirm the tower streams ~1–2
+  notifications/sec (`node examples/replay-e2e/noble-probe.cjs`, tower on + not held by
+  another central).
 
 ## Run
 ```sh
