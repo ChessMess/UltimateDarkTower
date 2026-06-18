@@ -103,8 +103,17 @@ style (`ultimatedarktowerrelay-*`).
         + `docs/SETUP.md`.
 
 - [ ] 4.0 Phase 4 — Electron GUI + event log/replay + Sync adoption (PRD §12.4)
-  - [ ] 4.1 `packages/electron` operator GUI over `core` (status, BLE permissions, log viewer, manual
-        controls) + Electron Forge config.
+  - [~] 4.1 `packages/electron` operator GUI over `core` (status, BLE permissions, log viewer, manual
+        controls) + Electron Forge config. **Slice A done:** ported Sync's Electron lifecycle/IPC/Forge
+        skeleton, rewired to the relay composition root (`main.ts` = source-swappable
+        `buildSource`/`wireSource`/`switchSource`), with runtime **fake/mock/real** source switching,
+        synthesizer-driven skull drop, EventLog wiring, status dashboard, manual controls, client list +
+        LAN URLs. **Electron 42 / Node 24** (bumped off Sync's EOL E35); Forge/Vite build; vite-built so
+        out of root `tsc --build` + Jest, type-checked via `tsc --noEmit -p packages/electron/tsconfig.json`.
+        `npm run ci` green (118 tests); Vite bundles main+preload clean. `electron-rebuild` scoped to the
+        electron scripts (no global postinstall) — keeps CLI Node-ABI by default. ⏳ Owner: GUI launch +
+        `make:electron` packaging + @stoprocent rebuild vs Electron-42 ABI. **Slice B (next):** in-GUI
+        **log viewer** reusing `logAnalysis.ts` + `loadEventLog`.
   - [x] 4.2 `EventLog` (append-only JSONL semantic events) + replay/export. **Done:** `EventLog`
         (`core`) appends `RelayEvent`s with its own monotonic `seq` to `events-{date}.jsonl` (own
         stream, separate from `HostLogger`; `enabled` toggle + size rotation). All 8 event types now

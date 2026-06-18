@@ -14,8 +14,10 @@ from the registry — link removed); plus the app→real-tower bridge
 write-back `TOWER_SOURCE=bridge`, code-complete, hardware-validation pending), and **FR-6 / task 4.2 EventLog**
 (append-only JSONL semantic-event log with its own monotonic `seq` + replay/export + thin `replayEvents` CLI;
 all 8 `RelayEvent` types now emit), and **FR-8.2 / task 4.4 analyzeLogs** (read-only log-analysis CLI over the
-`HostLogger` `session-*.jsonl` logs — summary/timeline/correlation/LED/anomalies/per-client, BLE-free unit-tested).
-**Next: Electron GUI (4.1) / Sync migration (4.5).**
+`HostLogger` `session-*.jsonl` logs — summary/timeline/correlation/LED/anomalies/per-client, BLE-free unit-tested),
+and **task 4.1 Slice A — the Electron operator GUI** (`packages/electron` over `core`, with runtime
+**fake/mock/real source switching**; Electron 42 + Forge/Vite). **Next: 4.1 Slice B (in-GUI log
+viewer) / Sync migration (4.5).**
 
 ## What this is
 
@@ -41,7 +43,7 @@ core lib, and is the shared bridge Sync will later consume.
   - `../UltimateDarkTowerDigital/src/sources/types.ts` — the `TowerStateSource` seam a future UTDD
     `BridgeSource` (task 3.3) wraps; the relay's `RelayClient` is designed to map onto it.
 
-## Current state (verified — `npm run ci` green, 101 tests)
+## Current state (verified — `npm run ci` green, 118 tests; Electron GUI not unit-tested, matching Sync)
 
 npm-workspaces monorepo; unscoped package names like the UDT family (root private `ultimatedarktowerrelay`).
 `main` contains Phases 1→4(FR-5.1) as four commits.
@@ -52,6 +54,7 @@ npm-workspaces monorepo; unscoped package names like the UDT family (root privat
 | `packages/core` | `ultimatedarktowerrelay-core` | `fakeTower` (configurable **DIS** via `deviceInfo`), `relayServer` (+`onClientAction`), `connectionManager`, `commandParser`, `logger`, **`eventLog`** (FR-6: append-only `RelayEvent` JSONL + `loadEventLog`/`replayEventLog`/`exportEventLog`), `observerDisplay`, `towerSource` seam, `mockTower`, **`notificationSynthesizer`**, **`deviceInfo`**, **`realTower`** (FR-5.1); `index.ts` barrel |
 | `packages/client` | `ultimatedarktowerrelay-client` | **`RelayClient`** SDK (`relayClient.ts`): handshake, decoded-`state` + event subscriptions, participant `dropSkull()`, backoff reconnect, version-mismatch, isomorphic WebSocket (injectable for Node). **`PhysicalTowerReplay`** (`physicalTowerReplay.ts`, FR-5.2): writes relayed 20-byte commands to a local tower via an injected `TowerWriter`. Publish-ready (not published) |
 | `packages/cli` | `ultimatedarktowerrelay-cli` | headless daemon: `TOWER_SOURCE=fake\|mock\|real`, `TOWER_DIS_*` env, SIGINT/SIGTERM; `mockConsumer.ts` (SDK-backed, `MOCK_ROLE=participant`); `replayEvents.ts` (EventLog inspect/replay/export — `npm run replay:events`); **`analyzeLogs.ts`** + pure `logAnalysis.ts` (FR-8.2 log analysis over `session-*.jsonl` — `npm run analyze:logs`) |
+| `packages/electron` | `ultimatedarktowerrelay-electron` | **operator GUI** (FR-7.3, task 4.1 Slice A): Vite + Electron Forge app over `core`. Main process is the relay composition root made **source-swappable** (`buildSource`/`wireSource`/`switchSource` — fake/mock/real, synth + EventLog) + IPC; renderer = status dashboard, source selector, manual controls (skull drop/resend/start-stop/logging toggle), client list + LAN URLs. **Electron 42 / Node 24.** Not in root `tsc --build` refs or Jest — vite-built; type-checked via `tsc --noEmit -p packages/electron/tsconfig.json`. Run with `npm run start:electron`; package `npm run make:electron` |
 
 Tooling: TS strict + composite refs, ESLint(`.eslintrc.js`, legacy)/Prettier, Jest(ts-jest→CJS),
 `.github/workflows/ci.yml` (lint→type-check→test→build, Node 18/20, macOS+Ubuntu).
@@ -232,10 +235,68 @@ correlation matrix, LED-override analysis, anomaly detection, and per-client lat
   broadcast seq. The correlation / per-client sections degrade gracefully on host-only data and grow
   richer once a consumer reports logs back.
 
-## Next: Electron GUI (4.1) / Sync migration (4.5)
+## Electron operator GUI (task 4.1 / FR-7.3) — Slice A (DONE)
 
-Out of scope here / future slices: Electron operator GUI (4.1; a log viewer could render the EventLog),
-Sync migration (4.5), UTDD `BridgeSource` (3.3).
+`packages/electron` is a disciplined port of `../UltimateDarkTowerSync/packages/electron` (lifecycle/IPC/
+Forge skeleton) with the wiring swapped for the relay's composition. **`src/main/main.ts` is the relay
+composition root** (mirrors `packages/cli/src/index.ts`) made **runtime source-swappable**:
+`buildSource(mode)` (fake→`FakeTower`+sink, mock→`MockTower`+sink, real→`RealTower`, no sink),
+`wireSource()` (attaches the command/state/lifecycle handlers + builds the `NotificationSynthesizer`
+for sink-capable sources, routing its events to the `EventLog`), `switchSource(mode)` (pause →
+`stopAdvertising`+`removeAllListeners`+`destroy` → rebuild/rewire/start; relay+logger+eventLog stay up).
+`bridge` is **not** offered in the GUI (dual-role bleno+noble caveat) — env `TOWER_SOURCE=bridge` falls
+back to fake.
+
+Locked decisions / gotchas:
+- **`ble-adapter-state` + `ghost-connection` are FakeTower-only** (not on `TowerSource`) — wired under
+  `instanceof FakeTower`; the renderer's BLE-adapter panel reads `n/a` for mock/real. **Skull drop** goes
+  through `currentSynth.dropSkull()` (emits the EventLog `skull-dropped` event) and is disabled for the
+  real source (it self-reports). **Logging toggle** flips **both** `HostLogger` and `EventLog` + relay
+  `broadcastLogConfig`.
+- **"Stop BLE" on macOS does NOT drop an already-connected companion app** — `bleno.disconnect()` is a
+  no-op on macOS (CoreBluetooth has no peripheral-initiated disconnect API; see the comment in
+  `fakeTower.ts` + `docs/MACOS_BLE_PERIPHERAL_LIMITATION.md`). It stops advertising and the relay goes
+  idle/paused, but the OS keeps the GATT link until the process exits. On **Linux/Pi** (the real
+  deployment target) `bleno.disconnect()` works and the button disconnects the app. macOS-only dev
+  limitation — not fixable from our side.
+- **Electron 42 (Node 24).** Bumped off Sync's EOL `electron@^35`; `@electron-forge/*@^7.11`, `vite@^8`,
+  `@electron/rebuild@^4`. Electron 42 has **no postinstall binary download** (fetches on first run), so
+  adding electron to the workspace does **not** bloat `npm ci`; `ci.yml` is unchanged. `@types/node@^24`
+  already matched. Doc-review caveats: macOS OS-notifications need code-signing (N/A — none used);
+  Linux/Pi defaults to **Wayland** (may need `--ozone-platform=x11` for the GUI on an X11 Pi).
+- **`npm run start:electron` is the single happy-path command** — a smart launcher
+  (`scripts/start-electron.mjs`) that (1) incrementally builds `shared`+`core`, (2) ensures
+  `@stoprocent/{bleno,noble}` match the Electron ABI, (3) clears `ELECTRON_RUN_AS_NODE` (cross-platform,
+  and VS Code's terminal sets it) and launches `electron-forge start`. No sequencing knowledge needed;
+  just run it. The other electron scripts stay for specific needs.
+- **Native ABI:** `electron-rebuild` is **scoped to the electron scripts** (no global `postinstall`), so
+  a plain `npm install` keeps the natives at the **Node** ABI (147) for the CLI; `start:electron` flips
+  them to the **Electron** ABI (146). `rebuild:electron` runs **without `--force`**, so `@electron/rebuild`
+  cache-restores (keyed by ABI+electron version+source hash) — only the first launch per Electron version
+  compiles; repeats are ~0.4s (verified). To return to the **Node CLI** afterwards, run **`npm run
+  rebuild:node`** (`= npm rebuild @stoprocent/bleno @stoprocent/noble`); the next `start:electron`
+  re-restores the Electron ABI from cache. ⏳ Owner validation: GUI launch +
+  `make:electron` packaging + the @stoprocent rebuild against Electron 42's Node-24 ABI (fall back to
+  `electron@^41` if it fails). The Electron main is not unit-tested (matches Sync); `npm run ci` (118
+  tests) covers the rest, and Vite bundles main+preload cleanly.
+
+Build/run: `npm run start:electron` (dev), `npm run make:electron` (package). Logs go to the app's
+`userData/logs` (`session-*.jsonl` + `events-*.jsonl`), same formats the CLI writes. **`make:electron`
+validated 2026-06-18** — darwin/arm64 `.zip` + `.dmg` produced (Vite bundles built, natives rebuilt +
+packaged).
+- **Known benign warning:** `make` prints `inlineDynamicImports option is deprecated, please use
+  codeSplitting: false instead`. It comes from `@electron-forge/plugin-vite`
+  (`dist/config/vite.preload.config.js` hardcodes `inlineDynamicImports: true`), which Vite 8/rolldown
+  now deprecates — **not our config**, and the build output is correct. Clears when Forge updates the
+  plugin; pinning `vite@^7` would also silence it (optional downgrade, not done).
+
+## Next: 4.1 Slice B (in-GUI log viewer) / Sync migration (4.5)
+
+- **Slice B (log viewer):** add main-process IPC reusing `packages/cli/src/logAnalysis.ts`
+  (`selectLogFiles`/`parseLogLines`/`detectAnomalies`/`ledSeqName`/`audioName`, via a Vite alias to its
+  src) + `core`'s `loadEventLog`; render summary/timeline/anomalies/event-log read-only in a new panel.
+  Analysis runs in **main** (fs), results to the renderer over IPC.
+- Other future slices: Sync migration (4.5), UTDD `BridgeSource` (3.3).
 
 ## Workflow
 

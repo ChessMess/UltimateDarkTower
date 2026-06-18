@@ -1,0 +1,541 @@
+/* ─── Design tokens ───────────────────────────────────────────────────────── */
+
+:root {
+  --bg: #161616;
+  --fg: #e8e8e8;
+  --accent: #c0392b;
+  --accent-dim: #7b241c;
+  --accent-glow: rgba(192, 57, 43, 0.2);
+  --card: #222222;
+  --card-top: rgba(255, 255, 255, 0.055);
+  --border: #383838;
+  --input-bg: #0d0d0d;
+  --success: #27ae60;
+  --warning: #f39c12;
+  --error: #e74c3c;
+  --muted: #888;
+  --radius: 10px;
+}
+
+/* ─── Reset ───────────────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+  overflow-y: auto;
+}
+
+#app {
+  max-width: 740px;
+  margin: 0 auto;
+}
+
+/* ─── Relay banner ────────────────────────────────────────────────────────── */
+
+.relay-banner {
+  border: 1px solid color-mix(in srgb, var(--warning) 55%, black);
+  background: color-mix(in srgb, var(--warning) 18%, black);
+  color: #fce8bf;
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+/* ─── Header ──────────────────────────────────────────────────────────────── */
+
+header {
+  margin-bottom: 2rem;
+}
+
+h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  margin-bottom: 0.3rem;
+  text-shadow: 0 0 32px var(--accent-glow);
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+}
+
+.version-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.45rem;
+  vertical-align: middle;
+  color: var(--muted);
+}
+
+/* ─── Dashboard grid ──────────────────────────────────────────────────────── */
+
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+/* Commands card spans full width */
+#card-commands {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  #card-commands {
+    grid-column: auto;
+  }
+}
+
+/* ─── Cards ───────────────────────────────────────────────────────────────── */
+
+.card {
+  background: linear-gradient(180deg, #272727 0%, #1f1f1f 100%);
+  border: 1px solid var(--border);
+  border-top: 1px solid var(--card-top);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+  padding: 1.25rem 1.5rem;
+}
+
+.card h2 {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ─── Status row & dots ───────────────────────────────────────────────────── */
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--muted);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+/* BLE tower card uses a slightly larger dot */
+#card-tower .dot {
+  width: 14px;
+  height: 14px;
+}
+
+.dot.state-idle {
+  background: var(--muted);
+}
+
+.dot.state-advertising {
+  background: var(--warning);
+  box-shadow: 0 0 10px rgba(243, 156, 18, 0.55);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.dot.state-connected {
+  background: var(--success);
+  box-shadow: 0 0 10px rgba(39, 174, 96, 0.5);
+}
+
+.dot.state-error {
+  background: var(--error);
+  box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── BLE Tower state ─────────────────────────────────────────────────────── */
+
+#card-tower .status-row {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* ─── BLE adapter diagnostics ─────────────────────────────────────────────── */
+
+.ble-detail {
+  margin-top: 0.85rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.ble-adapter-row {
+  color: var(--muted);
+}
+
+.ble-state-poweredOn {
+  color: var(--success);
+}
+
+.ble-state-unauthorized,
+.ble-state-poweredOff,
+.ble-state-unsupported {
+  color: var(--error);
+}
+
+.ble-state-resetting,
+.ble-state-unknown {
+  color: var(--warning);
+}
+
+.ble-help {
+  margin-top: 0.5rem;
+  color: #fce8bf;
+  background: color-mix(in srgb, var(--warning) 12%, black);
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, black);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  line-height: 1.45;
+}
+
+.ble-help-error {
+  color: #fbb;
+  background: color-mix(in srgb, var(--error) 12%, black);
+  border-color: color-mix(in srgb, var(--error) 35%, black);
+  font-family: ui-monospace, monospace;
+  font-size: 0.73rem;
+  word-break: break-all;
+}
+
+/* ─── Relay URL bar ──────────────────────────────────────────────────────── */
+
+.relay-url-bar {
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.relay-url-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.relay-url-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.relay-url-row:last-child {
+  margin-bottom: 0;
+}
+
+.relay-url-value {
+  font-family: ui-monospace, monospace;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--fg);
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  user-select: all;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.relay-url-copy {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.relay-url-copy:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #555;
+  color: var(--fg);
+}
+
+.relay-url-copy:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Client list ─────────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-block;
+  background: var(--accent-dim);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 2px 8px;
+  text-transform: none;
+  letter-spacing: 0;
+  vertical-align: middle;
+}
+
+#client-list {
+  list-style: none;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+#client-list li {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.45rem 0.75rem;
+  font-family: ui-monospace, monospace;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  overflow: hidden;
+}
+
+#client-list li.empty {
+  color: var(--muted);
+  font-family: inherit;
+  font-style: italic;
+  border-color: transparent;
+  background: transparent;
+}
+
+#client-list li.client-alert {
+  border-left: 3px solid var(--warning);
+}
+
+.client-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-health {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.health-relay {
+  color: var(--success);
+}
+
+.health-tower.tower-ok {
+  color: var(--success);
+}
+
+.health-tower.tower-disconnected {
+  color: var(--error);
+  font-weight: 700;
+}
+
+.client-alert-banner {
+  margin-top: 0.65rem;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.8rem;
+  color: #fce8bf;
+  background: color-mix(in srgb, var(--warning) 15%, black);
+  border: 1px solid color-mix(in srgb, var(--warning) 45%, black);
+  border-radius: 6px;
+  line-height: 1.45;
+  animation: fadeIn 0.2s ease;
+}
+
+/* ─── Card actions ────────────────────────────────────────────────────────── */
+
+.card-actions {
+  margin-top: 0.9rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.icon-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.3rem 0.55rem;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    opacity 0.15s;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #555;
+}
+
+.icon-btn:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.icon-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.text-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0.38rem 0.8rem;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    opacity 0.15s;
+}
+
+.text-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #555;
+}
+
+.text-btn:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.text-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ─── Action feedback ─────────────────────────────────────────────────────── */
+
+.action-feedback {
+  font-size: 0.78rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.action-feedback.feedback-ok {
+  color: var(--success);
+}
+
+.action-feedback.feedback-err {
+  color: var(--error);
+}
+
+/* ─── Command stats ───────────────────────────────────────────────────────── */
+
+.stat-big {
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+  text-shadow: 0 0 24px var(--accent-glow);
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.stat-label span {
+  color: var(--muted);
+}
+
+/* ─── Tower source selector ───────────────────────────────────────────────── */
+
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.source-row label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+#source-select {
+  background: var(--input-bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.55rem;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+#source-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* BLE adapter panel only applies to the fake source; faded "n/a" otherwise. */
+.ble-detail.source-na {
+  opacity: 0.4;
+}

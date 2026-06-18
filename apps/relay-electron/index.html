@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dark Tower Relay</title>
+  <link rel="stylesheet" href="./src/renderer/styles.css" />
+</head>
+
+<body>
+  <div id="app">
+    <header>
+      <h1>Dark Tower Relay</h1>
+      <p class="subtitle">Operator Console &nbsp;·&nbsp; <span id="version" class="version-badge">—</span></p>
+    </header>
+
+    <div id="relay-banner" class="relay-banner" hidden></div>
+
+    <div class="dashboard">
+
+      <!-- Tower source + BLE status -->
+      <section class="card" id="card-tower">
+        <h2>Tower Source</h2>
+        <div class="source-row">
+          <label for="source-select">Source</label>
+          <select id="source-select">
+            <option value="fake">Fake — companion app connects</option>
+            <option value="mock">Mock — canned commands</option>
+            <option value="real">Real — physical tower</option>
+          </select>
+          <span id="source-feedback" class="action-feedback" hidden></span>
+        </div>
+        <div class="status-row">
+          <span id="tower-state-dot" class="dot state-idle"></span>
+          <span id="tower-state">Idle</span>
+        </div>
+        <div id="ble-adapter-detail" class="ble-detail">
+          <div class="ble-adapter-row">Adapter: <span id="ble-adapter-state-label">unknown</span></div>
+          <div id="ble-adapter-help" class="ble-help"></div>
+          <div id="ble-error-detail" class="ble-help ble-help-error" hidden></div>
+        </div>
+        <div class="card-actions">
+          <button id="btn-start-advertising" class="text-btn" disabled>Start Advertising</button>
+          <button id="btn-stop-ble" class="text-btn" disabled>Stop BLE</button>
+          <span id="ble-control-feedback" class="action-feedback" hidden></span>
+        </div>
+        <div class="card-actions">
+          <button id="btn-skull-drop" class="icon-btn" title="Trigger skull drop" disabled>&#128128;</button>
+          <span id="skull-drop-feedback" class="action-feedback" hidden></span>
+        </div>
+      </section>
+
+      <!-- Relay clients -->
+      <section class="card" id="card-clients">
+        <h2>Relay Clients &nbsp;<span class="badge" id="client-count">0</span></h2>
+        <div id="relay-url-bar" class="relay-url-bar" hidden>
+          <span class="relay-url-label">Clients connect to:</span>
+          <div id="relay-url-list"></div>
+        </div>
+        <ul id="client-list">
+          <li class="empty">No clients connected</li>
+        </ul>
+      </section>
+
+      <!-- Command traffic -->
+      <section class="card" id="card-commands">
+        <h2>Commands Relayed</h2>
+        <div class="stat-big" id="command-count">0</div>
+        <div class="stat-label">Last: <span id="last-command-at">—</span></div>
+        <div class="card-actions">
+          <button id="btn-resend-state" class="icon-btn" title="Resend last state to all clients" disabled>&#x1F504;</button>
+          <span id="resend-feedback" class="action-feedback" hidden></span>
+        </div>
+      </section>
+
+      <!-- Logging -->
+      <section class="card" id="card-logging">
+        <h2>Logging &nbsp;<span class="badge" id="logging-state-badge">ON</span></h2>
+        <div class="status-row">
+          <span id="logging-state-dot" class="dot state-connected"></span>
+          <span id="logging-state-label">Active — recording to file</span>
+        </div>
+        <div class="card-actions">
+          <button id="btn-toggle-logging" class="text-btn">Pause Logging</button>
+          <button id="btn-open-logs" class="text-btn">Open Logs Folder</button>
+          <span id="logging-feedback" class="action-feedback" hidden></span>
+        </div>
+      </section>
+
+    </div>
+  </div>
+  <script type="module" src="/src/renderer/renderer.ts"></script>
+</body>
+
+</html>

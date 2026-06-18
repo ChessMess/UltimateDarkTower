@@ -1,0 +1,40 @@
+{
+  "name": "ultimatedarktowerrelay-electron",
+  "version": "0.1.0",
+  "description": "UltimateDarkTowerRelay desktop operator console — Electron GUI over the relay core (selectable fake/mock/real tower source, WebSocket relay, status, manual controls).",
+  "main": ".vite/build/main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "rebuild": "electron-rebuild -f -w @stoprocent/bleno,@stoprocent/noble"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "dependencies": {
+    "ultimatedarktowerrelay-core": "*",
+    "ultimatedarktowerrelay-shared": "*",
+    "electron-squirrel-startup": "^1.0.1",
+    "@stoprocent/bleno": "^0.12.4",
+    "@stoprocent/noble": "^2.3.10",
+    "ultimatedarktower": "^4.1.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.2",
+    "@electron-forge/maker-deb": "^7.11.2",
+    "@electron-forge/maker-dmg": "^7.11.2",
+    "@electron-forge/maker-zip": "^7.11.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.11.2",
+    "@electron-forge/plugin-vite": "^7.11.2",
+    "@electron/rebuild": "^4.0.4",
+    "@types/electron-squirrel-startup": "^1.0.2",
+    "electron": "^42.4.1",
+    "typescript": "^5.9.0",
+    "vite": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}
