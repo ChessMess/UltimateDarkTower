@@ -6,9 +6,12 @@
  * `RelayEvent`s for replay, audit, and debugging. This file defines that event
  * union and small factory helpers.
  *
- * Phase 2 introduces the type and the emission points only — the persistent
- * `EventLog` (JSONL append/replay) and the monotonic `seq` it assigns are
- * Phase 4. Until then `seq` is left undefined.
+ * Phase 2 introduced this type + the synthesizer's emission points. Phase 4
+ * (task 4.2) added the persistent `EventLog` (`core`, JSONL append + replay/
+ * export) which assigns the monotonic `seq`, and wired the remaining emission
+ * points in the CLI, so all eight event types are now emitted. `seq` is set by
+ * `EventLog.append`; it is left undefined on freshly-built events (they carry an
+ * ordering via emission, and `EventLog` stamps the `seq` when it persists them).
  *
  * Note: like `logging.ts`, this module has NO dependency on `ultimatedarktower`.
  * Payloads use primitives (numbers / number arrays) so the wire/event format is
@@ -52,8 +55,9 @@ export interface BaseRelayEvent<T extends RelayEventTypeLiteral, P> {
   /** ISO-8601 timestamp set when the event was created. */
   timestamp: string;
   /**
-   * Monotonic sequence number assigned by the Phase-4 `EventLog`. Undefined
-   * until then — events are emitted in order regardless.
+   * Monotonic sequence number assigned by `EventLog.append` (its own counter,
+   * independent of the relay's command-broadcast `seq`). Undefined on a
+   * freshly-built event until it is appended to the log.
    */
   seq?: number;
 }

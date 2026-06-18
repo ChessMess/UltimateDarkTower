@@ -9,6 +9,7 @@
 export { FakeTower } from './fakeTower';
 export { RelayServer } from './relayServer';
 export { HostLogger, pruneOldLogs } from './logger';
+export { EventLog, loadEventLog, replayEventLog, exportEventLog } from './eventLog';
 export {
   CommandParser,
   buildSkullDropPacket,
@@ -26,6 +27,7 @@ export {
 } from './deviceInfo';
 
 export type { HostLoggerOptions } from './logger';
+export type { EventLogOptions, ReplayOptions } from './eventLog';
 export type { RelayServerOptions } from './relayServer';
 export type { CommandReceivedCallback } from './fakeTower';
 export type { ParsedCommand } from './commandParser';

@@ -18,7 +18,7 @@
  *   LOGGING       '0' disables JSONL file logging (default enabled).
  *
  * Steps:
- *   1. Construct the logger, parser, observer.
+ *   1. Construct the logger, the semantic-event log, parser, observer.
  *   2. Select the tower source (fake / mock / real); build the synthesizer for sink-capable sources.
  *   3. Wire source 'command' → broadcast; lifecycle events → paused/resumed.
  *   4. Start the relay, then start the source.
@@ -31,6 +31,7 @@ import {
   RealTower,
   RelayServer,
   HostLogger,
+  EventLog,
   CommandParser,
   ObserverDisplay,
   NotificationSynthesizer,
@@ -38,7 +39,14 @@ import {
   type NotificationSink,
   type DeviceInformation,
 } from 'ultimatedarktowerrelay-core';
-import { PROTOCOL_VERSION } from 'ultimatedarktowerrelay-shared';
+import {
+  PROTOCOL_VERSION,
+  makeCommandReceivedEvent,
+  makeAppConnectedEvent,
+  makeAppDisconnectedEvent,
+  makeConsumerJoinedEvent,
+  makeConsumerLeftEvent,
+} from 'ultimatedarktowerrelay-shared';
 
 const DEFAULT_PORT = 8765;
 
@@ -71,7 +79,12 @@ async function main(): Promise<void> {
   console.log(`UltimateDarkTowerRelay v${PROTOCOL_VERSION} (source: ${sourceMode})`);
 
   const port = Number(process.env['RELAY_PORT'] ?? DEFAULT_PORT);
-  const logger = new HostLogger('./logs', process.env['LOGGING'] !== '0');
+  const loggingEnabled = process.env['LOGGING'] !== '0';
+  const logger = new HostLogger('./logs', loggingEnabled);
+  // Append-only JSONL log of semantic RelayEvents (PRD §7 / FR-6), separate from
+  // the HostLogger's byte/command + human-readable debug log. EventLog assigns its
+  // own monotonic seq across all semantic events.
+  const eventLog = new EventLog('./logs', { enabled: loggingEnabled });
 
   // Select the tower source:
   //   fake → real BLE peripheral the companion app connects to (default)
@@ -110,10 +123,10 @@ async function main(): Promise<void> {
   // NotificationSynthesizer closes the tower→app return loop for the fake/mock
   // sources (participant skull drops + calibration reply). Not used for a real
   // tower, which generates its own notifications. Constructed before the relay
-  // so onClientAction can drive it; semantic events are logged here (persistent
-  // EventLog is a later Phase-4 slice).
+  // so onClientAction can drive it; its semantic events (command-received,
+  // skull-dropped, calibration-complete, heartbeat) are persisted to the EventLog.
   const synth = sink ? new NotificationSynthesizer(sink) : null;
-  synth?.on('event', (event) => logger.logEvent('event', 'host', `RelayEvent: ${event.type}`));
+  synth?.on('event', (event) => eventLog.append(event));
 
   const relay = new RelayServer({
     port,
@@ -121,10 +134,14 @@ async function main(): Promise<void> {
       logger.logEvent('event', 'host', `Received ${entries.length} log entries from ${clientId.slice(0, 8)}`);
       logger.writeClientEntries(clientId, entries);
     },
-    onClientConnected: (clientId, label, observer) =>
-      logger.logEvent('event', 'host', `Client connected: ${label ?? clientId.slice(0, 8)}${observer ? ' (observer)' : ''}`),
-    onClientDisconnected: (clientId, label) =>
-      logger.logEvent('event', 'host', `Client disconnected: ${label ?? clientId.slice(0, 8)}`),
+    onClientConnected: (clientId, label, observer) => {
+      logger.logEvent('event', 'host', `Client connected: ${label ?? clientId.slice(0, 8)}${observer ? ' (observer)' : ''}`);
+      eventLog.append(makeConsumerJoinedEvent(clientId, label, observer));
+    },
+    onClientDisconnected: (clientId, label) => {
+      logger.logEvent('event', 'host', `Client disconnected: ${label ?? clientId.slice(0, 8)}`);
+      eventLog.append(makeConsumerLeftEvent(clientId, label));
+    },
     onClientReady: (clientId, ready, label) =>
       logger.logEvent('event', 'host', `Client ${label ?? clientId.slice(0, 8)} tower: ${ready ? 'connected' : 'disconnected'}`),
     onClientAction: (clientId, action, label) => {
@@ -152,7 +169,11 @@ async function main(): Promise<void> {
   });
   // Separate raw listener so the synthesizer (fake/mock only) sees every command
   // (incl. a short calibration packet the 20-byte broadcast path above would drop).
+  // The synthesizer emits the command-received RelayEvent itself; in real mode there
+  // is no synthesizer, so append command-received here so the event log still records
+  // the tower's commands (no double-emit — the branches are mutually exclusive).
   if (synth) source.on('command', (data) => synth.onCommand(data));
+  else source.on('command', (data) => eventLog.append(makeCommandReceivedEvent(Array.from(data))));
 
   // Bridge mode: forward every app→tower command verbatim onto the real master
   // tower (incl. short packets like calibration), and log the real tower's own
@@ -181,10 +202,12 @@ async function main(): Promise<void> {
   });
   source.on('companion-connected', () => {
     logger.logEvent('event', 'host', 'Companion app connected');
+    eventLog.append(makeAppConnectedEvent());
     relay.broadcastResumed();
   });
   source.on('companion-disconnected', () => {
     logger.logEvent('event', 'host', 'Companion app disconnected');
+    eventLog.append(makeAppDisconnectedEvent());
     synth?.reset();
     relay.broadcastPaused('Companion app disconnected from tower source');
   });
@@ -196,6 +219,7 @@ async function main(): Promise<void> {
 
   await relay.start();
   console.log(`Relay server listening on ws://0.0.0.0:${port}`);
+  if (loggingEnabled) console.log(`Event log: ${eventLog.getPath()}`);
 
   await source.startAdvertising();
   if (bridgeTarget) {
@@ -219,6 +243,7 @@ async function main(): Promise<void> {
     if (bridgeTarget) await bridgeTarget.stopAdvertising();
     await relay.stop();
     await logger.close();
+    await eventLog.close();
     process.exit(0);
   };
 
