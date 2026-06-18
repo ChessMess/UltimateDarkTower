@@ -50,4 +50,9 @@ jobs:
               run: npm ci
 
             - name: Audit dependencies
-              run: npm audit
+              # Audit only production dependencies: this library ships zero runtime
+              # deps, so consumers are never exposed to the dev-only advisories in the
+              # jest/ts-jest toolchain (notably @istanbuljs/load-nyc-config → js-yaml@3.x,
+              # which has no patched 3.x and cannot be forced to 4.x without breaking
+              # coverage). `npm audit --omit=dev` reflects real downstream risk.
+              run: npm audit --omit=dev
