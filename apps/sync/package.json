@@ -13,8 +13,8 @@
   "license": "MIT",
   "dependencies": {
     "@dark-tower-sync/shared": "*",
-    "ultimatedarktower": "^2.1.0",
-    "ultimatedarktowerdisplay": "^0.1.0"
+    "ultimatedarktower": "^4.0.1",
+    "ultimatedarktowerdisplay": ">=0.8.0 <1.0.0"
   },
   "devDependencies": {
     "vite": "^5.4.0"

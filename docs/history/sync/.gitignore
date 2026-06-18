@@ -15,3 +15,6 @@ yarn-error.log*
 memory/
 logs/
 .claude/
+
+# Extracted, non-architecture tooling kept locally (e.g. seed-decoder, destined for its own repo).
+_local/

@@ -72,6 +72,6 @@
     "vite": "^5.4.0"
   },
   "dependencies": {
-    "ultimatedarktower": "^3.0.0"
+    "ultimatedarktower": "^4.0.1"
   }
 }

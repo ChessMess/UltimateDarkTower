@@ -17,5 +17,5 @@ module.exports = {
     'no-extra-boolean-cast': 'warn',
     'no-case-declarations': 'warn',
   },
-  ignorePatterns: ['dist/', 'node_modules/', '*.js', 'vite.config.ts'],
+  ignorePatterns: ['dist/', 'node_modules/', '*.js', 'vite.config.ts', '_local/'],
 };

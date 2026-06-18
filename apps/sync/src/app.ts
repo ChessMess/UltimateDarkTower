@@ -5,7 +5,7 @@
  * (Web Bluetooth) into the top-level event loop.
  */
 
-import { UltimateDarkTower, BluetoothUserCancelledError, rtdt_unpack_state, TOWER_STATE_DATA_OFFSET } from 'ultimatedarktower';
+import { UltimateDarkTower, BluetoothUserCancelledError, rtdt_unpack_state, TOWER_STATE_DATA_OFFSET, TOWER_LIGHT_SEQUENCES, LIGHT_EFFECTS, type TowerState, type SealIdentifier, type TowerSide, type TowerLevels } from 'ultimatedarktower';
 import { UI } from './ui';
 import { TowerRelay, type TowerRelayEvent } from './towerRelay';
 import { ClientLogger } from './clientLogger';
@@ -27,6 +27,9 @@ export class App {
   private relay: TowerRelay | null = null;
   private tower: UltimateDarkTower | null = null;
   private towerDisplay: TowerDisplay | null = null;
+
+  /** Tracked broken seals for display. */
+  private brokenSeals: SealIdentifier[] = [];
 
   /** Cached last command bytes for self-healing replay on tower reconnect. */
   private lastCommandBytes: number[] | null = null;
@@ -73,13 +76,19 @@ export class App {
       const container = document.getElementById('tower-visualizer');
       if (container) {
         document.getElementById('visualizer-section')?.removeAttribute('hidden');
-        this.towerDisplay = new TowerDisplay({ container });
+        this.towerDisplay = new TowerDisplay({
+          container,
+          onSealClick: (seal) => this.handleSealClick(seal),
+        });
       }
       this.ui.log('Observer mode — tower display active. Connect to a host to begin.');
     } else {
       const container = document.getElementById('tower-display');
       if (container) {
-        this.towerDisplay = new TowerDisplay({ container });
+        this.towerDisplay = new TowerDisplay({
+          container,
+          onSealClick: (seal) => this.handleSealClick(seal),
+        });
       }
       this.ui.toggleStateBtn.removeAttribute('hidden');
       this.ui.toggleStateBtn.addEventListener('click', () => {
@@ -130,6 +139,44 @@ export class App {
     if (this.connectingAnimationId !== null) {
       clearInterval(this.connectingAnimationId);
       this.connectingAnimationId = null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Seal management
+  // ---------------------------------------------------------------------------
+
+  /** Toggle a seal's broken state when clicked in the display. */
+  private handleSealClick(seal: SealIdentifier): void {
+    const idx = this.brokenSeals.findIndex(s => s.side === seal.side && s.level === seal.level);
+    if (idx >= 0) {
+      this.brokenSeals.splice(idx, 1);
+    } else {
+      this.brokenSeals.push(seal);
+    }
+    this.towerDisplay?.applySeals(this.brokenSeals);
+  }
+
+  /** Detect which seal was broken from a sealReveal tower state. */
+  private detectBrokenSeal(state: TowerState): SealIdentifier | null {
+    const SIDE_BY_INDEX: TowerSide[] = ['north', 'east', 'south', 'west'];
+    const LEVEL_BY_LAYER: TowerLevels[] = ['top', 'middle', 'bottom'];
+    for (let layer = 0; layer <= 2; layer++) {
+      for (let pos = 0; pos < 4; pos++) {
+        if (state.layer[layer].light[pos].effect !== LIGHT_EFFECTS.off) {
+          return { side: SIDE_BY_INDEX[pos], level: LEVEL_BY_LAYER[layer] };
+        }
+      }
+    }
+    return null;
+  }
+
+  /** Add a seal to brokenSeals if not already present, and update the display. */
+  private markSealBroken(seal: SealIdentifier): void {
+    const exists = this.brokenSeals.some(s => s.side === seal.side && s.level === seal.level);
+    if (!exists) {
+      this.brokenSeals.push(seal);
+      this.towerDisplay?.applySeals(this.brokenSeals);
     }
   }
 
@@ -380,6 +427,10 @@ export class App {
         this.logger.logCommand('client←host', event.data, event.seq);
         this.ui.log(`Command received: [${event.data.slice(0, 4).join(', ')}…]`);
         const state = rtdt_unpack_state(Uint8Array.from(event.data).slice(TOWER_STATE_DATA_OFFSET));
+        if (state.led_sequence === TOWER_LIGHT_SEQUENCES.sealReveal) {
+          const seal = this.detectBrokenSeal(state);
+          if (seal) this.markSealBroken(seal);
+        }
         this.towerDisplay?.applyState(state);
         if (!this.isObserver) {
           this.replayQueue = this.replayQueue.then(() => this.replayOnTower(event.data, event.seq)).catch(() => {});

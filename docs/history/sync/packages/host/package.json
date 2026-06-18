@@ -18,7 +18,7 @@
     "@dark-tower-sync/shared": "*",
     "@stoprocent/bleno": "^0.12.4",
     "@stoprocent/noble": "^2.3.10",
-    "ultimatedarktower": "^2.1.0",
+    "ultimatedarktower": "^4.0.1",
     "ws": "^8.18.0"
   },
   "devDependencies": {

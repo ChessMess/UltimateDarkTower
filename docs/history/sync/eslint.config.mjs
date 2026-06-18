@@ -17,7 +17,7 @@ function normalizeGlobals(...sets) {
 // Use `npm run lint:flat:preview` to evaluate compatibility before any major ESLint upgrade.
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', '*.js', 'packages/client/public/**'],
+    ignores: ['dist/**', 'node_modules/**', '*.js', 'packages/client/public/**', '_local/**'],
   },
   // Base ESLint recommended rules (equivalent to 'extends: ["eslint:recommended"]' in legacy config)
   js.configs.recommended,
