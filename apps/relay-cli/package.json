@@ -9,12 +9,14 @@
     "dev": "tsc --build --watch",
     "start": "node dist/index.js",
     "replay": "node dist/replayEvents.js",
+    "analyze": "node dist/analyzeLogs.js",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
     "ultimatedarktowerrelay-core": "*",
     "ultimatedarktowerrelay-client": "*",
     "ultimatedarktowerrelay-shared": "*",
+    "ultimatedarktower": "^4.1.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

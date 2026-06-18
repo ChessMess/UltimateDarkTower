@@ -13,7 +13,9 @@ clean reconnect**, via a new UDT `onTowerResponse` hook (published in `ultimated
 from the registry — link removed); plus the app→real-tower bridge
 write-back `TOWER_SOURCE=bridge`, code-complete, hardware-validation pending), and **FR-6 / task 4.2 EventLog**
 (append-only JSONL semantic-event log with its own monotonic `seq` + replay/export + thin `replayEvents` CLI;
-all 8 `RelayEvent` types now emit). **Next: Electron GUI (4.1) / analyzeLogs CLI (4.4) / Sync migration (4.5).**
+all 8 `RelayEvent` types now emit), and **FR-8.2 / task 4.4 analyzeLogs** (read-only log-analysis CLI over the
+`HostLogger` `session-*.jsonl` logs — summary/timeline/correlation/LED/anomalies/per-client, BLE-free unit-tested).
+**Next: Electron GUI (4.1) / Sync migration (4.5).**
 
 ## What this is
 
@@ -49,7 +51,7 @@ npm-workspaces monorepo; unscoped package names like the UDT family (root privat
 | `packages/shared` | `ultimatedarktowerrelay-shared` | protocol envelope/`MessageType`/factories (+`client:action`), `LogEntry`, **`RelayEvent` union** (`relayEvents.ts`), `PROTOCOL_VERSION='0.1.0'` |
 | `packages/core` | `ultimatedarktowerrelay-core` | `fakeTower` (configurable **DIS** via `deviceInfo`), `relayServer` (+`onClientAction`), `connectionManager`, `commandParser`, `logger`, **`eventLog`** (FR-6: append-only `RelayEvent` JSONL + `loadEventLog`/`replayEventLog`/`exportEventLog`), `observerDisplay`, `towerSource` seam, `mockTower`, **`notificationSynthesizer`**, **`deviceInfo`**, **`realTower`** (FR-5.1); `index.ts` barrel |
 | `packages/client` | `ultimatedarktowerrelay-client` | **`RelayClient`** SDK (`relayClient.ts`): handshake, decoded-`state` + event subscriptions, participant `dropSkull()`, backoff reconnect, version-mismatch, isomorphic WebSocket (injectable for Node). **`PhysicalTowerReplay`** (`physicalTowerReplay.ts`, FR-5.2): writes relayed 20-byte commands to a local tower via an injected `TowerWriter`. Publish-ready (not published) |
-| `packages/cli` | `ultimatedarktowerrelay-cli` | headless daemon: `TOWER_SOURCE=fake\|mock\|real`, `TOWER_DIS_*` env, SIGINT/SIGTERM; `mockConsumer.ts` (SDK-backed, `MOCK_ROLE=participant`); `replayEvents.ts` (EventLog inspect/replay/export — `npm run replay:events`) |
+| `packages/cli` | `ultimatedarktowerrelay-cli` | headless daemon: `TOWER_SOURCE=fake\|mock\|real`, `TOWER_DIS_*` env, SIGINT/SIGTERM; `mockConsumer.ts` (SDK-backed, `MOCK_ROLE=participant`); `replayEvents.ts` (EventLog inspect/replay/export — `npm run replay:events`); **`analyzeLogs.ts`** + pure `logAnalysis.ts` (FR-8.2 log analysis over `session-*.jsonl` — `npm run analyze:logs`) |
 
 Tooling: TS strict + composite refs, ESLint(`.eslintrc.js`, legacy)/Prettier, Jest(ts-jest→CJS),
 `.github/workflows/ci.yml` (lint→type-check→test→build, Node 18/20, macOS+Ubuntu).
@@ -209,10 +211,31 @@ size-based rotation), it writes one JSON object per line to `events-{date}.jsonl
   those helpers **bleno-free** via `ultimatedarktowerrelay-core/dist/eventLog` (NOT the `core` barrel, which
   pulls in FakeTower→bleno — a log reader must never init Bluetooth).
 
-## Next: Electron GUI (4.1) / analyzeLogs CLI (4.4) / Sync migration (4.5)
+## FR-8.2 / task 4.4 — analyzeLogs CLI (DONE)
+
+Read-only log-analysis CLI over the `HostLogger` `session-*.jsonl` command/all logs (PRD FR-8.2),
+ported from Sync's `analyzeLogs.ts`. `npm run analyze:logs` (or `node packages/cli/dist/analyzeLogs.js`)
+prints a session summary, command timeline (with decoded LED-override / audio names), per-seq
+correlation matrix, LED-override analysis, anomaly detection, and per-client latency. Flags:
+`--dir <path>` (default `./logs`), `--session <date>` (filename prefix filter), `--led-focus`,
+`--seq <n>`, `--anomalies`.
+- **Pure logic split out for testing.** `packages/cli/src/logAnalysis.ts` holds the fs/console-free
+  helpers (`ledSeqName`/`audioName` from UDT `TOWER_LIGHT_SEQUENCES`/`TOWER_AUDIO_LIBRARY`,
+  `selectLogFiles`, `parseLogLines`, `detectAnomalies`); `analyzeLogs.ts` is the thin CLI (argv + fs +
+  the `print*` reporters). Reuses the shared `decodeCommand`/`bytesFromHex`/`formatLogEntry` decoder —
+  **no `core` import**, so reading logs never initializes Bluetooth. Unit-tested BLE/fs-free in
+  `logAnalysis.test.ts` (17 cases, in-memory fixtures).
+- **Two relay-specific deviations from the verbatim port:** (1) scoped to `session-*` filenames so it
+  ignores the EventLog's `events-*.jsonl` (read by `replayEvents`) in the same dir; (2) MISSING_SEQ is
+  gated on the presence of `client←host` entries — the bundled `RelayClient` SDK doesn't emit
+  `client:log` today, so relay logs are host-only and the unguarded check would false-positive every
+  broadcast seq. The correlation / per-client sections degrade gracefully on host-only data and grow
+  richer once a consumer reports logs back.
+
+## Next: Electron GUI (4.1) / Sync migration (4.5)
 
 Out of scope here / future slices: Electron operator GUI (4.1; a log viewer could render the EventLog),
-analyzeLogs CLI (4.4), Sync migration (4.5), UTDD `BridgeSource` (3.3).
+Sync migration (4.5), UTDD `BridgeSource` (3.3).
 
 ## Workflow
 

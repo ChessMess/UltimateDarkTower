@@ -16,6 +16,7 @@
     "start:mock": "npm run build && TOWER_SOURCE=mock node packages/cli/dist/index.js",
     "mock:consumer": "npm run build && node packages/cli/dist/mockConsumer.js",
     "replay:events": "npm run build && node packages/cli/dist/replayEvents.js",
+    "analyze:logs": "npm run build && node packages/cli/dist/analyzeLogs.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

@@ -136,7 +136,16 @@ style (`ultimatedarktowerrelay-*`).
         `npm link` removed, so relay CI is green against the registry. Bridge needs on-hardware validation on a
         non-macOS host (concurrent BLE central+peripheral caveat).
         **Remaining:** FR-5.3 real-tower-specific resilience · relay→tower write-back path ← **next**.
-  - [ ] 4.4 Port the log-analysis CLI (`analyzeLogs`).
+  - [x] 4.4 Port the log-analysis CLI (`analyzeLogs`). **Done:** read-only CLI over the `HostLogger`
+        `session-*.jsonl` logs (`npm run analyze:logs` / `-- --dir --session --led-focus --seq
+        --anomalies`) — session summary, command timeline, per-seq correlation, LED-override analysis,
+        anomaly detection, per-client latency. Pure analysis helpers split into `logAnalysis.ts`
+        (reuses shared `decodeCommand`/`bytesFromHex`/`formatLogEntry` + UDT
+        `TOWER_LIGHT_SEQUENCES`/`TOWER_AUDIO_LIBRARY`) with a thin `analyzeLogs.ts` CLI; BLE/fs-free
+        unit tests (`logAnalysis.test.ts`, 17 cases). Scoped to `session-*` files (ignores the
+        EventLog's `events-*`); MISSING_SEQ guarded on the presence of client-side log entries (the
+        bundled SDK doesn't emit `client:log`, so relay logs are host-only and the check would
+        otherwise false-positive every seq).
   - [ ] 4.5 Migrate `UltimateDarkTowerSync` onto the relay's `core` + `client`; remove Sync's custom
         fake-tower/relay code.
 

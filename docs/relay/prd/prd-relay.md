@@ -291,6 +291,15 @@ is **not** carried by the relay (see §8) and stays manual in the consumer.
 1. **FR-8.1** Structured logging with a master on/off toggle, carrying over Sync's JSONL format and
    monotonic `seq` correlation.
 2. **FR-8.2** A log-analysis CLI (carry over Sync's `analyzeLogs.ts`).
+   > **Implemented (Phase 4, task 4.4).** `analyzeLogs` (`packages/cli`, `npm run analyze:logs`) is a
+   > read-only CLI over the `HostLogger` `session-*.jsonl` logs: session summary, command timeline,
+   > per-seq correlation, LED-override analysis, anomaly detection, and per-client latency
+   > (`--dir`/`--session`/`--led-focus`/`--seq`/`--anomalies`). Pure analysis logic lives in a
+   > BLE/fs-free, unit-tested `logAnalysis.ts` (reusing the shared `decodeCommand` decoder + UDT
+   > `TOWER_LIGHT_SEQUENCES`/`TOWER_AUDIO_LIBRARY` for human-readable names); it never imports `core`,
+   > so reading logs never initializes Bluetooth. It is scoped to `session-*` files (the EventLog's
+   > `events-*` stream is read by `replayEvents`); the MISSING_SEQ anomaly is gated on the presence of
+   > client-side entries, since the bundled SDK does not currently report logs back via `client:log`.
 3. **FR-8.3** Graceful shutdown on SIGINT/SIGTERM (stop advertising, close relay, flush logs).
 4. **FR-8.4** Configurable LAN bind host/port (`RELAY_PORT`, default `8765`).
 
