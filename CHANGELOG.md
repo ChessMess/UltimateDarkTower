@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-06-18
+
 ### Added
 
 - **`onTowerResponse` public callback (`UltimateDarkTower`).** A new assignable hook that fires with the **raw, verbatim bytes** (`Uint8Array`) of every non-battery tower notification (tower-state responses, command acknowledgements). It complements the decoded `onTowerStateUpdate` for consumers that need the exact packet rather than the parsed `TowerState` — e.g. a relay forwarding the tower's 20-byte state to other consumers. Documented in `docs/api/events.md`.
