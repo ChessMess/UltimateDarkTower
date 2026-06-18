@@ -188,6 +188,30 @@ describe('RelayClient.dropSkull()', () => {
   });
 });
 
+// ─── sendRaw (pre-serialized escape hatch) ───────────────────────────────────
+
+describe('RelayClient.sendRaw()', () => {
+  it('sends a pre-serialized message verbatim when connected', async () => {
+    const { client, socket } = await connectedClient();
+    const raw = JSON.stringify({
+      type: MessageType.CLIENT_LOG,
+      payload: { entries: [{ note: 'hello' }] },
+    });
+    const before = socket.sent.length;
+    client.sendRaw(raw);
+    expect(socket.sent.length).toBe(before + 1);
+    // Verbatim — not re-serialized.
+    expect(socket.sent[socket.sent.length - 1]).toBe(raw);
+  });
+
+  it('is a no-op when not connected', () => {
+    MockWebSocket.reset();
+    const client = new RelayClient({ webSocketImpl: MockCtor });
+    expect(() => client.sendRaw('{"type":"client:log"}')).not.toThrow();
+    expect(MockWebSocket.instances.length).toBe(0);
+  });
+});
+
 // ─── reconnect / version mismatch ────────────────────────────────────────────
 
 describe('RelayClient reconnect behavior', () => {

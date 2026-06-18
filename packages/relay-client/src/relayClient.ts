@@ -254,6 +254,18 @@ export class RelayClient {
     this.ws!.send(JSON.stringify(makeClientReadyMessage(ready)));
   }
 
+  /**
+   * Send a pre-serialized client→host message verbatim. An escape hatch for
+   * consumers that build their own messages — e.g. a client-side logger pushing
+   * `client:log` batches the host persists (the relay accepts `client:log`).
+   * No-op when not connected. Prefer the typed methods (`dropSkull`, `sendReady`)
+   * for the actions they cover.
+   */
+  sendRaw(json: string): void {
+    if (!this.isConnected) return;
+    this.ws!.send(json);
+  }
+
   /** Close the WebSocket connection cleanly (no auto-reconnect). */
   disconnect(): void {
     this.autoReconnect = false;
