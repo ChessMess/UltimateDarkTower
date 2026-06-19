@@ -93,19 +93,17 @@ drop in by depending on the published package.
 ## Architecture
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph HOST["Host — this repo (relay)"]
         APP["Companion App\n(phone, BLE central)"]
         EMU["TowerEmulator\nBLE peripheral"]
-        SYNTH["NotificationSynthesizer"]
         RELAY["RelayServer\nWebSocket :8765"]
         APP -->|"BLE write 20 bytes"| EMU
         EMU --> RELAY
-        SYNTH -->|"tower→app notifications"| EMU
     end
 
     subgraph P["Participant consumer"]
-        WS1["RelayClient + PhysicalTowerReplay"]
+        WS1["RelayClient +\nPhysicalTowerReplay"]
         T1["Physical Tower 🗼\nWeb Bluetooth"]
         WS1 --> T1
     end
@@ -114,14 +112,14 @@ flowchart TD
         WS2["RelayClient → renderer"]
     end
 
-    RELAY -->|tower:command| WS1
-    RELAY -->|tower:command| WS2
-    WS1 -->|client:action dropSkull| RELAY
-    RELAY --> SYNTH
+    RELAY -->|"tower:command"| WS1
+    RELAY -->|"tower:command"| WS2
 ```
 
-For the full design — packages, data flow, the hybrid state model, tower sources, and the event log —
-see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The host intercepts the app's commands and broadcasts them; the participant-reported `client:action`
+(e.g. a skull drop) and the synthesized tower→app return traffic are shown in [How It Works](#how-it-works)
+above. For the full design — packages, data flow, the hybrid state model, tower sources, and the event
+log — see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
