@@ -49,6 +49,27 @@ consume it. Listed here for awareness only — remove if you no longer need it:
 `node_modules/ultimatedarktowerrelay-{shared,core,cli,client} -> packages/*` are created by
 **npm workspaces**, not by `npm link`. They are normal and should NOT be cleaned up.
 
+## 4. ⏳ Active link TO `UltimateDarkTowerSync` — relay `client` + `shared` (task 4.5, added 2026-06-18)
+
+The Sync migration (task 4.5) makes Sync consume this repo's published-shaped packages. **Until they are
+published** (the §11-Q8 "publish at cutover" step), Sync's `packages/client/package.json` depends on them
+via **`file:`** — the same pattern Sync already uses for `ultimatedarktower` in its seed-decoder:
+
+| Sync dependency | Points to |
+|---|---|
+| `ultimatedarktowerrelay-client` | `file:../../../UltimateDarkTowerRelay/packages/client` |
+| `ultimatedarktowerrelay-shared` | `file:../../../UltimateDarkTowerRelay/packages/shared` |
+
+**Implications while this is active:**
+- The relay must be **checked out as a sibling and built** (`npm run build`) before Sync's
+  `npm install` / type-check / `vite build` — the `file:` targets resolve to the relay's `dist/`.
+- Sync's **isolated GitHub CI cannot `npm ci`** (the relay sibling isn't present) — expected; Sync CI goes
+  green again only after the cutover.
+
+**Cleanup (the cutover — mirrors §1):** publish `ultimatedarktowerrelay-{shared,core,client}` to npm, then
+in Sync swap the two `file:` specifiers → versioned ranges (`^0.1.0`) and `npm install`. Mark this section
+✅ RESOLVED at that point.
+
 ## How to re-check the link state
 ```bash
 # linked (symlinked) packages in the relay's node_modules

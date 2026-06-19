@@ -120,10 +120,12 @@ export interface Anomaly {
 /**
  * Scan command/event entries for desync and integrity problems.
  *
- * Relay-specific note: the bundled SDK does not (currently) report its logs
- * back via `client:log`, so relay sessions are typically host-only. The
- * MISSING_SEQ check is therefore skipped unless at least one `client←host`
- * entry is present — otherwise every broadcast seq would be a false positive.
+ * Relay-specific note: the relay's bundled consumers (mockConsumer) don't
+ * report their logs back by default — the SDK supports it via
+ * `RelayClient.sendRaw` (e.g. Sync's ClientLogger), but relay-only sessions are
+ * typically host-only. The MISSING_SEQ check is therefore skipped unless at
+ * least one `client←host` entry is present — otherwise every broadcast seq
+ * would be a false positive.
  */
 export function detectAnomalies(entries: LogEntry[]): Anomaly[] {
   const anomalies: Anomaly[] = [];

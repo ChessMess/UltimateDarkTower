@@ -159,10 +159,18 @@ style (`ultimatedarktowerrelay-*`).
         reuse it too); the CLI now imports it bleno-free via `ultimatedarktowerrelay-core/dist/logAnalysis`
         (the `replayEvents`→`eventLog` pattern). Scoped to `session-*` files (ignores the
         EventLog's `events-*`); MISSING_SEQ guarded on the presence of client-side log entries (the
-        bundled SDK doesn't emit `client:log`, so relay logs are host-only and the check would
-        otherwise false-positive every seq).
-  - [ ] 4.5 Migrate `UltimateDarkTowerSync` onto the relay's `core` + `client`; remove Sync's custom
-        fake-tower/relay code.
+        relay's bundled consumers don't report logs by default — the SDK now supports it via
+        `RelayClient.sendRaw`, e.g. Sync's `ClientLogger` — so relay-only logs are host-only and the
+        check would otherwise false-positive every seq).
+  - [x] 4.5 Migrate `UltimateDarkTowerSync` onto the relay's `core` + `client`; remove Sync's custom
+        fake-tower/relay code. **Done:** Sync is now **client-only** on top of the relay — it deleted its
+        own `host`/`electron`/`shared` packages and rewired its `client` onto the published SDK
+        (`RelayClient` + `PhysicalTowerReplay`). Added **`RelayClient.sendRaw`** (FR-5.4 client→host emit
+        seam for `ClientLogger`; unit-tested). Migrated Sync's protocol + BLE-emulation reference docs into
+        the relay as **`docs/PROTOCOL.md`** (made relay-accurate: `client:action` + `host:resend`) and
+        **`docs/FAKE_TOWER.md`** (echo timing); Sync keeps pointer stubs and rewrote its product docs to
+        "client-only on the relay." Resolves **§11 Q8** (`file:` deps in dev → publish at cutover; tracked
+        in `docs/DEV_LINKS.md` §4). Remaining owner-gated step: the cutover publish + Sync `file:`→`^0.1.0`.
 
 - [ ] 5.0 Phase 5 — Future (PRD §12.5)
   - [ ] 5.1 Internet reach (Tailscale / hosted rooms, `wss`, auth, NAT traversal).

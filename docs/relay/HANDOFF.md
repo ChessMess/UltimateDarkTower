@@ -18,7 +18,9 @@ all 8 `RelayEvent` types now emit), and **FR-8.2 / task 4.4 analyzeLogs** (read-
 and **task 4.1 — the Electron operator GUI** (`packages/electron` over `core`, with runtime
 **fake/mock/real source switching**; Electron 42 + Forge/Vite). **Slice A** = status dashboard +
 manual controls; **Slice B** = the in-GUI **log viewer** (Logs panel over the same JSONL the relay
-writes). **Next: Sync migration (4.5).**
+writes), and **task 4.5 — Sync migration** (Sync now consumes this repo **client-only**; this repo gained
+`RelayClient.sendRaw` and the `docs/PROTOCOL.md` + `docs/FAKE_TOWER.md` reference docs). **Next: UTDD
+`BridgeSource` (3.3).**
 
 ## What this is
 
@@ -34,6 +36,8 @@ core lib, and is the shared bridge Sync will later consume.
   open questions (§11 — Q4 resolved), reuse map (§14).
 - `docs/tasks/tasks-prd-relay.md` — the roadmap (2.x/3.x done; 4.3 partial = FR-5.1 done).
 - `docs/SETUP.md` — per-platform run guide (macOS / Raspberry Pi / Windows; fake/mock/**real** modes).
+- `docs/PROTOCOL.md` — the client↔host WebSocket message protocol (incl. `client:action` + `host:resend`).
+- `docs/FAKE_TOWER.md` — the BLE return-traffic / echo-timing behavior the companion app's state machine needs.
 - `docs/MACOS_BLE_PERIPHERAL_LIMITATION.md` — why macOS can't expose the DIS ("checking firmware").
 - Sibling repos to lift/evolve from (**do not modify** Sync/UDT/UTDD without explicit approval):
   - `../UltimateDarkTowerSync/packages/{shared,host,client,electron}` — origin of most ported code;
@@ -235,8 +239,9 @@ correlation matrix, LED-override analysis, anomaly detection, and per-client lat
   `print*` reporters) for the GUI, with their own unit tests (22 cases total now).
 - **Two relay-specific deviations from the verbatim port:** (1) scoped to `session-*` filenames so it
   ignores the EventLog's `events-*.jsonl` (read by `replayEvents`) in the same dir; (2) MISSING_SEQ is
-  gated on the presence of `client←host` entries — the bundled `RelayClient` SDK doesn't emit
-  `client:log` today, so relay logs are host-only and the unguarded check would false-positive every
+  gated on the presence of `client←host` entries — the relay's bundled consumers (`mockConsumer`) don't
+  report logs back by default (the SDK now **supports** it via `RelayClient.sendRaw`, e.g. Sync's
+  `ClientLogger`), so relay-only sessions are host-only and the unguarded check would false-positive every
   broadcast seq. The correlation / per-client sections degrade gracefully on host-only data and grow
   richer once a consumer reports logs back.
 
@@ -335,7 +340,24 @@ read-only. **Analysis runs in the main process** (it has `fs`); the renderer nev
   ⏳ Owner validation (repo convention): GUI launch + the Logs panel against real on-disk logs +
   window auto-fit/persistence (the GUI/windowing paths can't be exercised headlessly).
 
-## Next: Sync migration (4.5) / UTDD `BridgeSource` (3.3)
+## Sync migration (task 4.5) — DONE
+
+`UltimateDarkTowerSync` now consumes this repo and is a **client-only** product: **the relay is what the
+host runs; Sync is what the clients run.** Sync deleted its own `host`/`electron`/`shared` packages and its
+`client` rewired onto this repo's published SDK — `RelayClient` (transport) + `PhysicalTowerReplay` (the
+remote-mirror replay consumer). Cross-repo changes that landed here:
+- **`RelayClient.sendRaw(json)`** — the transport escape hatch a consumer uses to send pre-serialized
+  client→host messages (e.g. Sync's `ClientLogger`'s `client:log` batches). Closes the client→host emit gap
+  (FR-5.4); unit-tested.
+- **Reference docs migrated in:** `docs/PROTOCOL.md` (the wire protocol, made relay-accurate with
+  `client:action` + `host:resend`) and `docs/FAKE_TOWER.md` (the echo-timing behavior, from Sync's old
+  technical spec). Sync keeps short pointer stubs.
+- **§11 Q8 resolved** (how Sync consumes the relay): `file:` deps during development → **publish at
+  cutover**. The interim `file:` dependency is tracked in `docs/DEV_LINKS.md` §4; the cutover (publish
+  `ultimatedarktowerrelay-{shared,core,client}` + Sync swaps `file:`→`^0.1.0`) is the remaining owner-gated
+  step. Sync's GitHub CI stays red on `npm ci` until then (the relay sibling isn't present).
+
+## Next: UTDD `BridgeSource` (3.3)
 
 ## Workflow
 

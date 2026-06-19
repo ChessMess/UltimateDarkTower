@@ -299,7 +299,8 @@ is **not** carried by the relay (see §8) and stays manual in the consumer.
    > `TOWER_LIGHT_SEQUENCES`/`TOWER_AUDIO_LIBRARY` for human-readable names); it never imports `core`,
    > so reading logs never initializes Bluetooth. It is scoped to `session-*` files (the EventLog's
    > `events-*` stream is read by `replayEvents`); the MISSING_SEQ anomaly is gated on the presence of
-   > client-side entries, since the bundled SDK does not currently report logs back via `client:log`.
+   > client-side entries, since the relay's bundled consumers don't report logs back by default (the SDK
+   > supports it via `RelayClient.sendRaw`, e.g. Sync's `ClientLogger`).
 3. **FR-8.3** Graceful shutdown on SIGINT/SIGTERM (stop advertising, close relay, flush logs).
 4. **FR-8.4** Configurable LAN bind host/port (`RELAY_PORT`, default `8765`).
 
@@ -407,9 +408,12 @@ settled before any public or hosted build. (Mirrors UTDD's stance in
    specific platform. Hardware-validation item.
 6. **Participant authority model** when multiple participants could report the same action.
 7. **Electron packaging** — signing/notarization (macOS) and per-platform BLE entitlements.
-8. **Sync migration path** — how Sync adopts the relay's `core` + `client` (npm dependency vs. shared
-   workspace), what stays in Sync (its multiplayer UX, hosted client) vs. moves into the relay, and the
-   version/release sequencing for the cutover.
+8. **Sync migration path — RESOLVED (task 4.5).** Sync adopts the relay as a **published npm dependency**
+   (not a shared workspace): it became **client-only**, deleting its own `host`/`electron`/`shared` packages
+   and rewiring its `client` onto this repo's published `client` + `shared` SDK (`RelayClient` +
+   `PhysicalTowerReplay`). The relay is what the host runs; Sync is what the clients run. **Sequencing:**
+   develop against `file:` deps now → **publish at cutover**, then Sync swaps `file:`→`^0.1.0` (tracked in
+   `docs/DEV_LINKS.md` §4; the publish is the one remaining owner-gated step).
 
 ---
 
@@ -433,8 +437,9 @@ settled before any public or hosted build. (Mirrors UTDD's stance in
 ## 13. Test strategy
 
 > **Constraint:** the official app's reaction cannot be unit-tested without the app. Rely on **recorded
-> real-tower/app captures** (Sync's structured logs and `docs/{PROTOCOL,TECHNICAL_SPECIFICATION,
-> TOWER_EMULATOR,TESTING}.md`) plus a **mock BLE central** harness for automated peripheral-side tests.
+> real-tower/app captures** (Sync's structured logs), this repo's own protocol/BLE reference
+> (`docs/PROTOCOL.md`, `docs/FAKE_TOWER.md`), and Sync's remaining `docs/{TOWER_EMULATOR,TESTING}.md`
+> captures, plus a **mock BLE central** harness for automated peripheral-side tests.
 
 - **Unit:** `NotificationSynthesizer` output bytes compared against captured real-tower notifications;
   `CommandParser` 20-byte validation; `EventLog` append/replay ordering; `rtdt_pack_state` /
