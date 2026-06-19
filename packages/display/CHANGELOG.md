@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-19
+
+### Fixed
+
+- **`three` peer range corrected.** The published peer was `^0.170.0`, but the bundle statically imports
+  `HDRLoader` (`three/examples/jsm/loaders/HDRLoader.js`, added in three r171) and the library is built and
+  tested against three 0.184. The peer is now **`>=0.184.0`** (kept `optional` — three remains optional for
+  text/2D-only consumers). Caret on a `0.x` version locks the minor (`^0.170.0` = `>=0.170.0 <0.171.0`), so
+  the old range could never resolve a three with `HDRLoader`. This fixes consumers' `vite build` failing with
+  *"Rollup failed to resolve … HDRLoader.js"* or *"`Color`/`Vector3` is not exported by
+  `__vite-optional-peer-dep:three`"*.
+
 ### Documentation
 
 - **Camera-config timing documented.** `docs/API.md` (`applyCameraConfig`) and `docs/SCENE_PLUGINS.md` now
