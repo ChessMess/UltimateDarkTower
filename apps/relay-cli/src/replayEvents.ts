@@ -22,7 +22,7 @@
  *   --export <fmt>    Serialize to 'json' (pretty array) or 'jsonl' (one per line) and exit.
  *
  * Imports the EventLog helpers from the core package's bleno-free `eventLog`
- * module directly (NOT the `core` barrel, which pulls in FakeTower → bleno) — a
+ * module directly (NOT the `core` barrel, which pulls in TowerEmulator → bleno) — a
  * log reader must never initialize Bluetooth.
  */
 

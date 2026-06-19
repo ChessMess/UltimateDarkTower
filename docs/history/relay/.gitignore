@@ -17,3 +17,5 @@ yarn-error.log*
 memory/
 logs/
 .claude/
+# Local working/planning notes (PRD, tasks, handoff, dev-link checklist) — not published
+planning/

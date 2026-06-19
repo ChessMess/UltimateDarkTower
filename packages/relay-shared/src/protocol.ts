@@ -46,9 +46,9 @@ export const MessageType = {
   CLIENT_LOG: 'client:log',
   /** Host → clients: enable or disable automatic client log submission. */
   HOST_LOG_CONFIG: 'host:log-config',
-  /** Host → all clients: game paused because the companion app disconnected from FakeTower. */
+  /** Host → all clients: game paused because the companion app disconnected from TowerEmulator. */
   RELAY_PAUSED: 'relay:paused',
-  /** Host → all clients: game can resume, companion app reconnected to FakeTower. */
+  /** Host → all clients: game can resume, companion app reconnected to TowerEmulator. */
   RELAY_RESUMED: 'relay:resumed',
   /** Host → all clients: a remote player's physical tower BLE connection changed. */
   RELAY_TOWER_ALERT: 'relay:tower:alert',
@@ -158,13 +158,13 @@ export type HostLogConfigMessage = BaseMessage<
   { enabled: boolean }
 >;
 
-/** Broadcast when the companion app disconnects from FakeTower — game should pause. */
+/** Broadcast when the companion app disconnects from TowerEmulator — game should pause. */
 export type RelayPausedMessage = BaseMessage<
   typeof MessageType.RELAY_PAUSED,
   { reason: string }
 >;
 
-/** Broadcast when the companion app reconnects to FakeTower — game can resume. */
+/** Broadcast when the companion app reconnects to TowerEmulator — game can resume. */
 export type RelayResumedMessage = BaseMessage<
   typeof MessageType.RELAY_RESUMED,
   Record<string, never>

@@ -535,7 +535,7 @@ h1 {
   cursor: not-allowed;
 }
 
-/* BLE adapter panel only applies to the fake source; faded "n/a" otherwise. */
+/* BLE adapter panel only applies to the emulator source; faded "n/a" otherwise. */
 .ble-detail.source-na {
   opacity: 0.4;
 }

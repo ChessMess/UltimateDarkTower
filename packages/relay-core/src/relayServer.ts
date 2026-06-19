@@ -26,7 +26,7 @@ import {
   makeRelayTowerAlertMessage,
   PROTOCOL_VERSION,
   type TowerCommandBytes,
-  type FakeTowerState,
+  type TowerEmulatorState,
   type ConnectedClient,
   type ClientConnectedMessage,
   type ClientDisconnectedMessage,
@@ -79,7 +79,7 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
   private manager: ConnectionManager = new ConnectionManager();
   private lastCommand: number[] | null = null;
   private lastCommandAt: string | null = null;
-  private fakeTowerState: FakeTowerState = 'idle';
+  private towerEmulatorState: TowerEmulatorState = 'idle';
   private statusInterval: ReturnType<typeof setInterval> | null = null;
   private _seq = 0;
 
@@ -284,15 +284,15 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
   }
 
   /**
-   * Update the reported fake tower state (used in host:status messages).
+   * Update the reported tower emulator state (used in host:status messages).
    */
-  setFakeTowerState(state: FakeTowerState): void {
-    this.fakeTowerState = state;
+  setTowerEmulatorState(state: TowerEmulatorState): void {
+    this.towerEmulatorState = state;
   }
 
   /**
    * Broadcast an immediate relay:paused message to all clients.
-   * Called when the companion app disconnects from FakeTower.
+   * Called when the companion app disconnects from TowerEmulator.
    */
   broadcastPaused(reason: string): void {
     const message = makeRelayPausedMessage(reason);
@@ -303,7 +303,7 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
 
   /**
    * Broadcast an immediate relay:resumed message to all clients.
-   * Called when the companion app reconnects to FakeTower.
+   * Called when the companion app reconnects to TowerEmulator.
    */
   broadcastResumed(): void {
     const message = makeRelayResumedMessage();
@@ -314,8 +314,8 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
   private broadcastStatus(): void {
     const message = makeHostStatusMessage({
       relaying: this.wss !== null,
-      fakeTowerState: this.fakeTowerState,
-      appConnected: this.fakeTowerState === 'connected',
+      towerEmulatorState: this.towerEmulatorState,
+      appConnected: this.towerEmulatorState === 'connected',
       clientCount: this.manager.count,
       towersConnected: this.manager.towersConnected,
       observerCount: this.manager.observersConnected,

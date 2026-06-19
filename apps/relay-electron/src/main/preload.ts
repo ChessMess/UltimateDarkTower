@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { FakeTowerState, ConnectedClient, RelayEvent } from 'ultimatedarktowerrelay-shared';
+import type { TowerEmulatorState, ConnectedClient, RelayEvent } from 'ultimatedarktowerrelay-shared';
 import type { SessionSummary, TimelineRow } from 'ultimatedarktowerrelay-core';
 
 // ─── IPC channel names (must match main.ts IPC constants) ───────────────────
@@ -31,10 +31,10 @@ const CH = {
 
 // ─── Payload types ───────────────────────────────────────────────────────────
 
-export type SourceMode = 'fake' | 'mock' | 'real';
+export type SourceMode = 'emulator' | 'mock' | 'real';
 
 export interface TowerStatePayload {
-  state: FakeTowerState;
+  state: TowerEmulatorState;
   detail?: string;
 }
 
@@ -107,7 +107,7 @@ contextBridge.exposeInMainWorld('darkTowerRelay', {
   /** Resolves to the current tower state. */
   getTowerState: (): Promise<TowerStatePayload> => ipcRenderer.invoke(CH.GET_TOWER_STATE),
 
-  /** Resolves to the current raw BLE adapter state (or "n/a" for non-fake sources). */
+  /** Resolves to the current raw BLE adapter state (or "n/a" for non-emulator sources). */
   getBleAdapterState: (): Promise<BleAdapterStatePayload> => ipcRenderer.invoke(CH.GET_BLE_STATE),
 
   /** Resolves to the active tower source mode. */
@@ -159,13 +159,13 @@ contextBridge.exposeInMainWorld('darkTowerRelay', {
   },
 
   /**
-   * Trigger a one-shot skull drop notification (fake/mock sources only).
+   * Trigger a one-shot skull drop notification (emulator/mock sources only).
    * Resolves with { ok: false, reason } if the source generates its own
    * notifications (real) or no companion app is connected.
    */
   triggerSkullDrop: (): Promise<ActionResult> => ipcRenderer.invoke(CH.TRIGGER_SKULL_DROP),
 
-  /** Start the current source (BLE advertising for fake; connect for real). */
+  /** Start the current source (BLE advertising for the emulator; connect for real). */
   startTowerAdvertising: (): Promise<ActionResult> => ipcRenderer.invoke(CH.TOWER_START_ADVERTISING),
 
   /** Stop the current source. */

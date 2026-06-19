@@ -1,12 +1,12 @@
 /**
  * deviceInfo — the BLE Device Information Service (DIS, 0x180A) identity the
- * fake tower presents to the official companion app.
+ * tower emulator presents to the official companion app.
  *
  * Why this matters: the official app reads the DIS **firmware revision** to
  * decide whether the tower needs a firmware update. Without a DIS it stalls on
- * the "checking firmware" screen and never proceeds. So a standalone fake tower
+ * the "checking firmware" screen and never proceeds. So a standalone tower emulator
  * must expose a DIS whose firmware revision the app accepts as "up to date"
- * (otherwise the app may try to flash the fake tower).
+ * (otherwise the app may try to flash the tower emulator).
  *
  * Platform note: macOS CoreBluetooth blocks standard Bluetooth SIG UUIDs (incl.
  * 0x180A) in peripheral mode, so the DIS can only be exposed on non-macOS hosts

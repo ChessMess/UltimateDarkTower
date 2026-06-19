@@ -1,9 +1,9 @@
-import type { FakeTowerState, ConnectedClient, RelayEvent } from 'ultimatedarktowerrelay-shared';
+import type { TowerEmulatorState, ConnectedClient, RelayEvent } from 'ultimatedarktowerrelay-shared';
 import type { SessionSummary, TimelineRow } from 'ultimatedarktowerrelay-core';
 
 // ─── Window type augmentation ─────────────────────────────────────────────────
 
-type SourceMode = 'fake' | 'mock' | 'real';
+type SourceMode = 'emulator' | 'mock' | 'real';
 interface ActionResult { ok: boolean; reason?: string }
 
 interface LogFileInfo { name: string; sizeBytes: number; mtimeMs: number }
@@ -24,11 +24,11 @@ type EventLogResult =
 interface DarkTowerRelayAPI {
   getVersion(): Promise<string>;
   getRelayStatus(): Promise<{ running: boolean; port: number; message: string; urls: string[] }>;
-  getTowerState(): Promise<{ state: FakeTowerState; detail?: string }>;
+  getTowerState(): Promise<{ state: TowerEmulatorState; detail?: string }>;
   getBleAdapterState(): Promise<{ state: string }>;
   getSource(): Promise<{ source: SourceMode }>;
   setSource(mode: SourceMode): Promise<ActionResult>;
-  onTowerState(cb: (payload: { state: FakeTowerState; detail?: string }) => void): () => void;
+  onTowerState(cb: (payload: { state: TowerEmulatorState; detail?: string }) => void): () => void;
   onRelayClientChange(cb: (payload: { clients: ConnectedClient[] }) => void): () => void;
   onTowerCommand(cb: (payload: { count: number; lastAt: string }) => void): () => void;
   onRelayStatus(cb: (payload: { running: boolean; port: number; message: string; urls: string[] }) => void): () => void;
@@ -109,29 +109,29 @@ const logsEventsBodyEl = document.getElementById('logs-events-body') as HTMLDivE
 
 // ─── Source + tower state ─────────────────────────────────────────────────────
 
-let currentSource: SourceMode = 'fake';
-let lastTowerState: FakeTowerState = 'idle';
+let currentSource: SourceMode = 'emulator';
+let lastTowerState: TowerEmulatorState = 'idle';
 
-const STATE_LABEL: Record<FakeTowerState, string> = {
+const STATE_LABEL: Record<TowerEmulatorState, string> = {
   idle: 'Idle',
   advertising: 'Advertising',
   connected: 'Connected',
   error: 'Error',
 };
 
-const STATE_CLASS: Record<FakeTowerState, string> = {
+const STATE_CLASS: Record<TowerEmulatorState, string> = {
   idle: 'state-idle',
   advertising: 'state-advertising',
   connected: 'state-connected',
   error: 'state-error',
 };
 
-/** Skull drop only applies to sink-capable sources (fake/mock), and only when connected. */
+/** Skull drop only applies to sink-capable sources (emulator/mock), and only when connected. */
 function skullDropAvailable(): boolean {
   return currentSource !== 'real' && lastTowerState === 'connected';
 }
 
-function setTowerState(state: FakeTowerState, detail?: string): void {
+function setTowerState(state: TowerEmulatorState, detail?: string): void {
   lastTowerState = state;
   towerStateEl.textContent = STATE_LABEL[state] ?? state;
   towerStateDotEl.className = `dot ${STATE_CLASS[state] ?? ''}`;
@@ -159,8 +159,8 @@ function setSourceUI(mode: SourceMode): void {
   currentSource = mode;
   sourceSelectEl.value = mode;
 
-  // The BLE-adapter panel only means something for the fake (peripheral) source.
-  if (mode === 'fake') {
+  // The BLE-adapter panel only means something for the emulator (peripheral) source.
+  if (mode === 'emulator') {
     bleAdapterDetailEl.classList.remove('source-na');
   } else {
     bleAdapterDetailEl.classList.add('source-na');
@@ -532,7 +532,7 @@ async function init(): Promise<void> {
   setTowerState(currentTowerState);
   setClients([]);
   setRelayStatus(await api.getRelayStatus());
-  if (source === 'fake') {
+  if (source === 'emulator') {
     const { state: initialBleState } = await api.getBleAdapterState();
     setBleAdapterState(initialBleState);
   }

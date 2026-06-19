@@ -5,28 +5,28 @@
  * commands into the relay so any connected consumer receives them.
  *
  * Usage:
- *   node dist/index.js                     # fake BLE tower (companion app connects)
+ *   node dist/index.js                     # tower emulator (companion app connects)
  *   TOWER_SOURCE=mock node dist/index.js   # BLE-free canned-command source
  *   TOWER_SOURCE=real node dist/index.js   # connect to a physical tower, relay its state
- *   TOWER_SOURCE=bridge node dist/index.js # app drives FakeTower; forward to a real master tower
+ *   TOWER_SOURCE=bridge node dist/index.js # app drives TowerEmulator; forward to a real master tower
  *
  * Environment:
  *   RELAY_PORT    TCP port for the WebSocket relay (default 8765).
- *   TOWER_SOURCE  'fake' (default) → BLE FakeTower; 'mock' → MockTower; 'real' → RealTower;
- *                 'bridge' → FakeTower (app connects) + RealTower (commands forwarded to it).
- *   TOWER_DIS_*   Device Information Service overrides for the fake tower (see readDeviceInfoFromEnv).
+ *   TOWER_SOURCE  'emulator' (default; legacy 'fake' accepted) → BLE TowerEmulator; 'mock' → MockTower;
+ *                 'real' → RealTower; 'bridge' → TowerEmulator (app connects) + RealTower (forwarded to it).
+ *   TOWER_DIS_*   Device Information Service overrides for the tower emulator (see readDeviceInfoFromEnv).
  *   LOGGING       '0' disables JSONL file logging (default enabled).
  *
  * Steps:
  *   1. Construct the logger, the semantic-event log, parser, observer.
- *   2. Select the tower source (fake / mock / real); build the synthesizer for sink-capable sources.
+ *   2. Select the tower source (emulator / mock / real); build the synthesizer for sink-capable sources.
  *   3. Wire source 'command' → broadcast; lifecycle events → paused/resumed.
  *   4. Start the relay, then start the source.
  *   5. Gracefully shut down on SIGINT/SIGTERM.
  */
 
 import {
-  FakeTower,
+  TowerEmulator,
   MockTower,
   RealTower,
   RelayServer,
@@ -53,7 +53,7 @@ const DEFAULT_PORT = 8765;
 /**
  * Read Device Information Service overrides from `TOWER_DIS_*` env vars (only the
  * ones set). The firmware revision gates the official app's "checking firmware"
- * screen; override it if the app reports the fake tower as out of date. Effective
+ * screen; override it if the app reports the tower emulator as out of date. Effective
  * only on non-macOS hosts (see docs/MACOS_BLE_PERIPHERAL_LIMITATION.md).
  */
 function readDeviceInfoFromEnv(): Partial<DeviceInformation> {
@@ -68,6 +68,9 @@ function readDeviceInfoFromEnv(): Partial<DeviceInformation> {
 }
 
 async function main(): Promise<void> {
+  // TOWER_SOURCE: 'emulator' (default) | 'mock' | 'real' | 'bridge'. The legacy
+  // value 'fake' is accepted as a back-compat alias for 'emulator' (anything not
+  // real/mock/bridge falls through to the emulator).
   const sourceMode =
     process.env['TOWER_SOURCE'] === 'real'
       ? 'real'
@@ -75,7 +78,7 @@ async function main(): Promise<void> {
         ? 'mock'
         : process.env['TOWER_SOURCE'] === 'bridge'
           ? 'bridge'
-          : 'fake';
+          : 'emulator';
   console.log(`UltimateDarkTowerRelay v${PROTOCOL_VERSION} (source: ${sourceMode})`);
 
   const port = Number(process.env['RELAY_PORT'] ?? DEFAULT_PORT);
@@ -87,10 +90,10 @@ async function main(): Promise<void> {
   const eventLog = new EventLog('./logs', { enabled: loggingEnabled });
 
   // Select the tower source:
-  //   fake → real BLE peripheral the companion app connects to (default)
-  //   mock → BLE-free canned commands (headless verification)
-  //   real → connect to a physical tower as a central and relay its state (FR-5.1)
-  // fake/mock are NotificationSink-capable (the synthesizer sends return traffic
+  //   emulator → real BLE peripheral the companion app connects to (default)
+  //   mock     → BLE-free canned commands (headless verification)
+  //   real     → connect to a physical tower as a central and relay its state (FR-5.1)
+  // emulator/mock are NotificationSink-capable (the synthesizer sends return traffic
   // through them); a real tower generates its own notifications, so no synthesizer.
   let source: TowerSource;
   let sink: NotificationSink | null = null;
@@ -105,22 +108,22 @@ async function main(): Promise<void> {
     source = mock;
     sink = mock;
   } else if (sourceMode === 'bridge') {
-    // Bridge: the app drives a FakeTower (broadcast source + notification sink),
+    // Bridge: the app drives a TowerEmulator (broadcast source + notification sink),
     // and every app→tower command is forwarded onto a real master tower the relay
-    // drives as central (write-back). Resolves PRD §11 Q5 (simultaneous fake+real).
-    const fake = new FakeTower({ deviceInfo: readDeviceInfoFromEnv() });
-    source = fake;
-    sink = fake;
+    // drives as central (write-back). Resolves PRD §11 Q5 (simultaneous emulator+real).
+    const emulator = new TowerEmulator({ deviceInfo: readDeviceInfoFromEnv() });
+    source = emulator;
+    sink = emulator;
     bridgeTarget = new RealTower({ reconnect: true });
   } else {
-    const fake = new FakeTower({ deviceInfo: readDeviceInfoFromEnv() });
-    source = fake;
-    sink = fake;
+    const emulator = new TowerEmulator({ deviceInfo: readDeviceInfoFromEnv() });
+    source = emulator;
+    sink = emulator;
   }
   const parser = new CommandParser();
   const observer = new ObserverDisplay();
 
-  // NotificationSynthesizer closes the tower→app return loop for the fake/mock
+  // NotificationSynthesizer closes the tower→app return loop for the emulator/mock
   // sources (participant skull drops + calibration reply). Not used for a real
   // tower, which generates its own notifications. Constructed before the relay
   // so onClientAction can drive it; its semantic events (command-received,
@@ -167,7 +170,7 @@ async function main(): Promise<void> {
     const seq = relay.broadcast(data);
     logger.logCommand('host→clients', data, seq, 'host');
   });
-  // Separate raw listener so the synthesizer (fake/mock only) sees every command
+  // Separate raw listener so the synthesizer (emulator/mock only) sees every command
   // (incl. a short calibration packet the 20-byte broadcast path above would drop).
   // The synthesizer emits the command-received RelayEvent itself; in real mode there
   // is no synthesizer, so append command-received here so the event log still records
@@ -178,7 +181,7 @@ async function main(): Promise<void> {
   // Bridge mode: forward every app→tower command verbatim onto the real master
   // tower (incl. short packets like calibration), and log the real tower's own
   // lifecycle. It is a write-only target — its notifications are not broadcast,
-  // and the app/FakeTower owns pause/resume.
+  // and the app/TowerEmulator owns pause/resume.
   if (bridgeTarget) {
     const real = bridgeTarget;
     source.on('command', (data) => {
@@ -197,7 +200,7 @@ async function main(): Promise<void> {
     );
   }
   source.on('state-change', (state) => {
-    relay.setFakeTowerState(state);
+    relay.setTowerEmulatorState(state);
     logger.logEvent('event', 'host', `Tower source state: ${state}`);
   });
   source.on('companion-connected', () => {
@@ -211,7 +214,7 @@ async function main(): Promise<void> {
     synth?.reset();
     relay.broadcastPaused('Companion app disconnected from tower source');
   });
-  if (source instanceof FakeTower) {
+  if (source instanceof TowerEmulator) {
     source.on('ghost-connection', (fromState) => {
       logger.logEvent('event', 'host', `Ghost BLE connection detected (was ${fromState}) — recovering`);
     });
@@ -231,8 +234,8 @@ async function main(): Promise<void> {
       : sourceMode === 'mock'
         ? 'Mock tower source running — emitting canned commands.'
         : sourceMode === 'bridge'
-          ? 'Bridge mode — app drives the fake tower; commands forwarded to the real master tower.'
-          : 'Advertising fake tower — open the companion app to connect.'
+          ? 'Bridge mode — app drives the tower emulator; commands forwarded to the real master tower.'
+          : 'Advertising tower emulator — open the companion app to connect.'
   );
 
   // Graceful shutdown.

@@ -1,8 +1,8 @@
 /**
  * RelayClient — framework-agnostic consumer SDK for UltimateDarkTowerRelay.
  *
- * A consumer (UTDD's BridgeSource, Sync's client, an observer/visualizer, …) uses
- * RelayClient to:
+ * A consumer (a tower-mirror client, a screen-only visualizer, or any other
+ * digital consumer) uses RelayClient to:
  *   1. Open a WebSocket to the host relay and complete the CLIENT_HELLO handshake.
  *   2. Receive `sync:state` on connect to catch up to the current tower state.
  *   3. Receive `tower:command` messages, decoded into a `TowerState`.
@@ -114,7 +114,7 @@ const CONNECTION_TIMEOUT_MS = 15_000;
  *
  * @example
  * ```ts
- * const client = new RelayClient({ label: 'UTDD', onEvent: handle });
+ * const client = new RelayClient({ label: 'Player 2', onEvent: handle });
  * await client.connect('ws://192.168.1.5:8765');
  * client.dropSkull(); // participant action
  * ```

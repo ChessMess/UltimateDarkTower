@@ -2,8 +2,8 @@
  * app.ts — throwaway browser harness for FR-5.2 PhysicalTowerReplay E2E.
  * NOT shipped code; bundled with esbuild and served over http://localhost for a
  * manual validation against a real tower. It is the exact wiring documented in
- * docs/HANDOFF.md: RelayClient (transport) + PhysicalTowerReplay (mirror writes)
- * + UltimateDarkTower (Web Bluetooth local tower).
+ * docs/API.md / docs/GETTING_STARTED.md: RelayClient (transport) +
+ * PhysicalTowerReplay (mirror writes) + UltimateDarkTower (Web Bluetooth local tower).
  */
 
 import { RelayClient, PhysicalTowerReplay, type RelayClientEvent } from 'ultimatedarktowerrelay-client';

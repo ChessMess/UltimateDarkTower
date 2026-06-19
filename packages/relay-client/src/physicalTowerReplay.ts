@@ -4,11 +4,11 @@
  *
  * This is the FR-5.2 "remote mirror" consumer Sync's remote players use. The
  * host has a master tower (a real tower, or the official app driving a
- * FakeTower) whose 20-byte state is relayed over WebSocket; each remote player
+ * TowerEmulator) whose 20-byte state is relayed over WebSocket; each remote player
  * runs a {@link RelayClient} *and* a PhysicalTowerReplay that writes every
  * relayed command to their own tower so it physically mirrors the master.
- * (Digital, screen-only consumers — UTDD — render `RelayClient`'s decoded
- * `state` events instead and do not use this class.)
+ * (Screen-only consumers render `RelayClient`'s decoded `state` events instead
+ * and do not use this class.)
  *
  * Design:
  *   - **Transport stays in `RelayClient`.** PhysicalTowerReplay exposes

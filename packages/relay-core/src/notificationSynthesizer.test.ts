@@ -2,7 +2,7 @@
  * notificationSynthesizer.test.ts — unit tests for NotificationSynthesizer.
  *
  * BLE-free: imports the specific source module + a stub NotificationSink, never
- * the `core` barrel (which re-exports FakeTower → bleno). Asserts the synthesized
+ * the `core` barrel (which re-exports TowerEmulator → bleno). Asserts the synthesized
  * notification bytes against the expected packet shapes (PRD §13).
  */
 

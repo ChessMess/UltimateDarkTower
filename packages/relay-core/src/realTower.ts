@@ -83,7 +83,7 @@ function errMessage(err: unknown): string {
  *
  * The `TowerSource` method names (`startAdvertising`/`stopAdvertising`) read
  * awkwardly for a central — they mean "begin/stop connecting" — but are kept so
- * RealTower is interchangeable with `FakeTower` / `MockTower`.
+ * RealTower is interchangeable with `TowerEmulator` / `MockTower`.
  *
  * @example
  * ```ts

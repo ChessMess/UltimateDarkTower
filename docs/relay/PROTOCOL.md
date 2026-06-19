@@ -1,10 +1,12 @@
 # UltimateDarkTowerRelay WebSocket Protocol
 
+*Docs: [Index](README.md) > Protocol-level developer > Protocol*
+
 This document describes the WebSocket message protocol between the **relay host** (`packages/core`'s
-`RelayServer`, run by `packages/cli` or `packages/electron`) and connected **consumer clients** (the published
+`RelayServer`, run by `packages/cli` or `packages/electron`) and connected **consumer clients** (the
 `packages/client` SDK — `RelayClient`). Consumers may be *participants* (a remote player driving a physical
-tower, e.g. [UltimateDarkTowerSync](../../UltimateDarkTowerSync)) or screen-only *observers*/digital consumers
-(e.g. a visualizer or UTDD). The protocol is intentionally a low-churn **superset** of the protocol Sync
+tower, e.g. [UltimateDarkTowerSync](../../UltimateDarkTowerSync)) or screen-only *observers* / digital
+consumers (e.g. a visualizer). The protocol is intentionally a low-churn **superset** of the protocol Sync
 originally defined.
 
 > This is the **client-facing wire protocol**. The relay also maintains a separate, append-only **semantic
@@ -78,8 +80,8 @@ The canonical definitions live in `packages/shared/src/protocol.ts` (`MessageTyp
 | `client:ready`        | Client → host  | Tower calibrated & ready to receive commands            |
 | `client:action`       | Client → host  | Participant reports a player action (e.g. dropped a skull) |
 | `client:log`          | Client → host  | Batch of structured log entries for centralized storage |
-| `relay:paused`        | Host → clients | Game paused — companion app disconnected from FakeTower  |
-| `relay:resumed`       | Host → clients | Game resumed — companion app reconnected to FakeTower    |
+| `relay:paused`        | Host → clients | Game paused — companion app disconnected from TowerEmulator  |
+| `relay:resumed`       | Host → clients | Game resumed — companion app reconnected to TowerEmulator    |
 | `relay:tower:alert`   | Host → clients | A remote player's tower BLE connection changed           |
 
 ---
@@ -88,7 +90,7 @@ The canonical definitions live in `packages/shared/src/protocol.ts` (`MessageTyp
 
 ### `tower:command`
 
-Sent by the host each time the official companion app writes a 20-byte command to the fake tower's BLE
+Sent by the host each time the official companion app writes a 20-byte command to the tower emulator's BLE
 characteristic (or, in `TOWER_SOURCE=real`, each verbatim state notification from a real master tower).
 Tower-bearing clients replay this on their local physical tower (via `PhysicalTowerReplay`); observers decode
 it for display.
@@ -213,7 +215,7 @@ health in the UI. The payload is the `HostStatus` type (`packages/shared/src/typ
   "type": "host:status",
   "payload": {
     "relaying": true,
-    "fakeTowerState": "connected",
+    "towerEmulatorState": "connected",
     "appConnected": true,
     "clientCount": 3,
     "towersConnected": 2,
@@ -227,8 +229,8 @@ health in the UI. The payload is the `HostStatus` type (`packages/shared/src/typ
 | Field                    | Type             | Description                                                       |
 | ------------------------ | ---------------- | ----------------------------------------------------------------- |
 | `payload.relaying`       | boolean          | Whether the relay is actively forwarding commands                 |
-| `payload.fakeTowerState` | string           | BLE peripheral state: `idle \| advertising \| connected \| error` |
-| `payload.appConnected`   | boolean          | Whether the companion app is connected to the fake tower          |
+| `payload.towerEmulatorState` | string           | BLE peripheral state: `idle \| advertising \| connected \| error` |
+| `payload.appConnected`   | boolean          | Whether the companion app is connected to the tower emulator          |
 | `payload.clientCount`    | number           | Number of currently connected clients                             |
 | `payload.towersConnected`| number           | How many clients have their physical tower BLE connection active  |
 | `payload.observerCount`  | number           | How many connected clients are observers (no physical tower)      |
@@ -245,7 +247,7 @@ Sent by the client **immediately** after the WebSocket `open` event fires.
   "type": "client:hello",
   "payload": {
     "label": "Player 2",
-    "protocolVersion": "0.1.0",
+    "protocolVersion": "0.2.0",
     "observer": true
   },
   "timestamp": "2026-06-18T12:00:00.100Z"
@@ -374,14 +376,14 @@ automatic log submission timer.
 
 ### `relay:paused`
 
-Broadcast immediately when the companion app disconnects from FakeTower. All clients should display a pause
+Broadcast immediately when the companion app disconnects from TowerEmulator. All clients should display a pause
 overlay until `relay:resumed` is received.
 
 ```json
 {
   "type": "relay:paused",
   "payload": {
-    "reason": "Companion app disconnected from FakeTower"
+    "reason": "Companion app disconnected from TowerEmulator"
   },
   "timestamp": "2026-06-18T12:10:00.000Z"
 }
@@ -395,7 +397,7 @@ overlay until `relay:resumed` is received.
 
 ### `relay:resumed`
 
-Broadcast when the companion app reconnects to FakeTower. Clients should dismiss any pause overlay.
+Broadcast when the companion app reconnects to TowerEmulator. Clients should dismiss any pause overlay.
 
 ```json
 {
@@ -510,3 +512,8 @@ separately in `host:status.observerCount` and rejects `client:action` from them.
 6. **`client:action` is participant-only.** Observers send `client:hello` with `observer: true`, receive all
    `tower:command` messages, but never send `client:ready` or `client:action`. They decode commands client-side
    using `rtdt_unpack_state()` and display the tower state visually.
+
+---
+
+**See also:** [API.md](API.md) (the SDK that speaks this protocol) · [ARCHITECTURE.md](ARCHITECTURE.md) ·
+[TOWER_EMULATOR.md](TOWER_EMULATOR.md) · [GETTING_STARTED.md](GETTING_STARTED.md)

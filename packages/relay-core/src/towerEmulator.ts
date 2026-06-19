@@ -1,9 +1,9 @@
 /**
- * FakeTower — BLE peripheral that mimics the Return to Dark Tower hardware.
+ * TowerEmulator — BLE peripheral that mimics the Return to Dark Tower hardware.
  *
  * Advertises a Nordic UART GATT service with the same UUID and characteristic
  * as the real tower. When the official companion app connects and writes a
- * 20-byte command to the RX characteristic, FakeTower fires `onCommandReceived`
+ * 20-byte command to the RX characteristic, TowerEmulator fires `onCommandReceived`
  * (and emits the 'command' event) so the relay server can broadcast it.
  *
  * Uses @stoprocent/bleno for BLE peripheral mode on macOS/Linux.
@@ -30,7 +30,7 @@ import {
 
 let _disWarningLogged = false;
 
-// Delay (ms) before the FakeTower echoes a response for commands that trigger
+// Delay (ms) before the TowerEmulator echoes a response for commands that trigger
 // a visual animation (ledOverride != 0). The real tower only responds after the
 // animation completes; without this delay the companion app sends the next
 // command within ~60ms, interrupting the animation on the client's physical tower.
@@ -39,7 +39,7 @@ const ANIMATION_ECHO_DELAY_MS = 1600;
 
 // ─── Device Information Service UUIDs ─────────────────────────────────────────
 // The DIS *values* (manufacturer, firmware revision, …) are resolved per-instance
-// from FakeTowerOptions.deviceInfo — see ./deviceInfo. The app reads the firmware
+// from TowerEmulatorOptions.deviceInfo — see ./deviceInfo. The app reads the firmware
 // revision to gate its "checking firmware" screen.
 const DIS_SERVICE_UUID = '180a';
 const DIS_MANUFACTURER_NAME_UUID = '2a29';
@@ -51,13 +51,13 @@ const DIS_SOFTWARE_REVISION_UUID = '2a28';
 // First notification the real tower sends immediately upon subscription.
 // Pattern observed: 07 00 00 0c 10
 const INITIAL_HEARTBEAT = Buffer.from([0x07, 0x00, 0x00, 0x0c, 0x10]);
-import type { FakeTowerState } from 'ultimatedarktowerrelay-shared';
+import type { TowerEmulatorState } from 'ultimatedarktowerrelay-shared';
 
 /** Callback invoked when a tower command is intercepted. */
 export type CommandReceivedCallback = (data: Buffer) => void;
 
-/** Construction options for {@link FakeTower}. */
-export interface FakeTowerOptions {
+/** Construction options for {@link TowerEmulator}. */
+export interface TowerEmulatorOptions {
   /**
    * Overrides for the Device Information Service identity the app reads after
    * connecting. Omitted fields fall back to `DEFAULT_DEVICE_INFO` (see
@@ -68,43 +68,43 @@ export interface FakeTowerOptions {
   deviceInfo?: Partial<DeviceInformation>;
 }
 
-interface FakeTowerEventMap {
-  'state-change': [state: FakeTowerState];
+interface TowerEmulatorEventMap {
+  'state-change': [state: TowerEmulatorState];
   'command': [data: Buffer];
   'companion-connected': [address: string];
   'companion-disconnected': [address: string];
   /** Raw CoreBluetooth adapter state — fires immediately on init and on each change. */
   'ble-adapter-state': [state: BlenoState];
   /** Diagnostic: ghost BLE connection detected via write in non-connected state. */
-  'ghost-connection': [state: FakeTowerState];
+  'ghost-connection': [state: TowerEmulatorState];
 }
 
 /**
- * FakeTower emulates the Return to Dark Tower BLE peripheral so the official
+ * TowerEmulator emulates the Return to Dark Tower BLE peripheral so the official
  * companion app believes it is connected to a real tower.
  *
  * Events:
- *   'state-change'          — FakeTowerState changed
+ *   'state-change'          — TowerEmulatorState changed
  *   'command'               — 20-byte command received from companion app
  *   'companion-connected'   — companion app connected via BLE
  *   'companion-disconnected'— companion app disconnected
  *
  * @example
  * ```ts
- * const tower = new FakeTower();
+ * const tower = new TowerEmulator();
  * tower.on('command', (data) => relayServer.broadcast(data));
  * tower.on('state-change', (state) => console.log('tower state:', state));
  * await tower.startAdvertising();
  * ```
  */
-export class FakeTower extends EventEmitter<FakeTowerEventMap> {
+export class TowerEmulator extends EventEmitter<TowerEmulatorEventMap> {
   /**
    * Legacy callback — fires on every intercepted command.
    * Prefer listening to the 'command' event for new code.
    */
   onCommandReceived: CommandReceivedCallback | null = null;
 
-  private _state: FakeTowerState = 'idle';
+  private _state: TowerEmulatorState = 'idle';
   private _bleAdapterState: BlenoState = 'unknown';
   private _advertising = false;
   private _txUpdateValue: ((data?: Buffer) => void) | null = null;
@@ -127,7 +127,7 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
 
   private readonly _onDisconnect = (address: string): void => {
     // After disconnect the peripheral keeps advertising automatically.
-    console.log('[FakeTower] companion disconnected:', address);
+    console.log('[TowerEmulator] companion disconnected:', address);
     this._txUpdateValue = null;
     this._connectedAddress = 'unknown';
     this._skullDropCount = 0;
@@ -141,10 +141,10 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
   };
 
   private readonly _onServicesSetError = (err: Error): void => {
-    console.error('[FakeTower] servicesSetError:', err);
+    console.error('[TowerEmulator] servicesSetError:', err);
   };
 
-  constructor(options: FakeTowerOptions = {}) {
+  constructor(options: TowerEmulatorOptions = {}) {
     super();
     this._deviceInfo = resolveDeviceInfo(options.deviceInfo);
     // Track raw CoreBluetooth adapter state from the moment bleno initializes.
@@ -158,13 +158,13 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
     return this._bleAdapterState;
   }
 
-  private setState(state: FakeTowerState): void {
+  private setState(state: TowerEmulatorState): void {
     this._state = state;
     this.emit('state-change', state);
   }
 
   /**
-   * Start advertising as the fake tower BLE peripheral.
+   * Start advertising as the tower emulator BLE peripheral.
    *
    * Waits for Bluetooth to be powered on (up to 10 s), then begins advertising
    * as "ReturnToDarkTower" with the Nordic UART service UUID. Sets up the GATT
@@ -175,7 +175,7 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
   async startAdvertising(): Promise<void> {
     if (this._advertising || this._isStarting) return;
     this._isStarting = true;
-    console.log(`[FakeTower] startAdvertising called (was ${this._state})`);
+    console.log(`[TowerEmulator] startAdvertising called (was ${this._state})`);
 
     // Register stored handler refs (removed in stopAdvertising).
     bleno.on('accept', this._onAccept);
@@ -193,14 +193,14 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
           // state, the companion BLE link survived a stop/start cycle (macOS
           // CoreBluetooth has no peripheral-initiated disconnect API).
           if (this._state === 'advertising') {
-            console.log('[FakeTower] ghost connection detected via write — promoting to connected');
+            console.log('[TowerEmulator] ghost connection detected via write — promoting to connected');
             this.emit('ghost-connection', this._state);
             this.setState('connected');
             this.emit('companion-connected', this._connectedAddress);
           } else if (this._state === 'idle') {
-            console.warn('[FakeTower] command received in idle state — BLE link still alive (macOS limitation)');
+            console.warn('[TowerEmulator] command received in idle state — BLE link still alive (macOS limitation)');
           }
-          console.log('[FakeTower] command received:', data.toString('hex'));
+          console.log('[TowerEmulator] command received:', data.toString('hex'));
           this._lastCommand = Buffer.from(data);
           this.onCommandReceived?.(data);
           this.emit('command', data);
@@ -247,7 +247,7 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
         uuid: UART_RX_CHARACTERISTIC_UUID,
         properties: ['notify'],
         onSubscribe: (_handle: unknown, _maxValueSize: number, updateValueCallback: (data?: Buffer) => void) => {
-          console.log('[FakeTower] companion subscribed to state notifications');
+          console.log('[TowerEmulator] companion subscribed to state notifications');
           this._txUpdateValue = updateValueCallback;
           // Some reconnect paths do not emit a new `accept` event, but do resubscribe.
           // Promote state to connected immediately so host UI reflects the active session.
@@ -261,7 +261,7 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
           setImmediate(() => { updateValueCallback(INITIAL_HEARTBEAT); });
         },
         onUnsubscribe: () => {
-          console.log('[FakeTower] companion unsubscribed from state notifications');
+          console.log('[TowerEmulator] companion unsubscribed from state notifications');
           this._txUpdateValue = null;
           // Some companion disconnect paths only surface as notify unsubscribe.
           // Mirror disconnect behavior so UI state does not remain stale.
@@ -301,36 +301,36 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
         ],
       });
 
-      console.log('[FakeTower] waiting for poweredOn…');
+      console.log('[TowerEmulator] waiting for poweredOn…');
       await bleno.waitForPoweredOnAsync();
-      console.log('[FakeTower] poweredOn — starting advertising…');
+      console.log('[TowerEmulator] poweredOn — starting advertising…');
       // Advertise with no service UUIDs — the UART UUID is 128-bit (18 bytes) and
       // causes CoreBluetooth to truncate "ReturnToDarkTower" to "ReturnTo" in the
       // 31-byte advertisement packet. The companion app scans by name prefix so the
       // truncated name is never matched. Omitting the UUID here lets the full name
       // fit; services are discoverable via GATT enumeration after connection.
       await bleno.startAdvertisingAsync(TOWER_DEVICE_NAME, []);
-      console.log('[FakeTower] advertising started — setting services…');
+      console.log('[TowerEmulator] advertising started — setting services…');
       const services = [uartService];
       if (shouldExposeDeviceInfoService(process.platform)) {
         services.push(disService);
-        console.log(`[FakeTower] exposing Device Information Service (firmware: ${this._deviceInfo.firmwareRevision})`);
+        console.log(`[TowerEmulator] exposing Device Information Service (firmware: ${this._deviceInfo.firmwareRevision})`);
       } else if (!_disWarningLogged) {
         console.warn(
-          '[FakeTower] macOS detected — skipping Device Information Service (0x180A). ' +
+          '[TowerEmulator] macOS detected — skipping Device Information Service (0x180A). ' +
           'CoreBluetooth blocks standard Bluetooth SIG UUIDs in peripheral mode, so the ' +
           'companion app will stall on "checking firmware". Run on Linux (e.g. Raspberry Pi) ' +
-          'or Windows for a standalone fake tower. See docs/MACOS_BLE_PERIPHERAL_LIMITATION.md.',
+          'or Windows for a standalone tower emulator. See docs/MACOS_BLE_PERIPHERAL_LIMITATION.md.',
         );
         _disWarningLogged = true;
       }
       await bleno.setServicesAsync(services);
-      console.log('[FakeTower] services set — tower ready');
+      console.log('[TowerEmulator] services set — tower ready');
       this._advertising = true;
       this._isStarting = false;
       this.setState('advertising');
     } catch (err) {
-      console.error('[FakeTower] startAdvertising failed:', err);
+      console.error('[TowerEmulator] startAdvertising failed:', err);
       this._advertising = false;
       this._isStarting = false;
       bleno.removeListener('accept', this._onAccept);
@@ -348,7 +348,7 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
     if (!this._advertising) return;
     this._advertising = false;
 
-    console.log(`[FakeTower] stopAdvertising (was ${this._state})`);
+    console.log(`[TowerEmulator] stopAdvertising (was ${this._state})`);
 
     const wasConnected = this._state === 'connected';
 
@@ -417,7 +417,7 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
    */
   injectSkullDrop(): boolean {
     if (!this._txUpdateValue) {
-      console.log('[FakeTower] injectSkullDrop: no companion subscriber — notification not sent');
+      console.log('[TowerEmulator] injectSkullDrop: no companion subscriber — notification not sent');
       return false;
     }
 
@@ -427,7 +427,7 @@ export class FakeTower extends EventEmitter<FakeTowerEventMap> {
     const lastCommandArray = this._lastCommand ? Array.from(this._lastCommand) : null;
     const packet = buildSkullDropPacket(lastCommandArray, this._skullDropCount);
 
-    console.log(`[FakeTower] skull drop notification sent (count=${this._skullDropCount}):`, packet.toString('hex'));
+    console.log(`[TowerEmulator] skull drop notification sent (count=${this._skullDropCount}):`, packet.toString('hex'));
     this._txUpdateValue(packet);
     return true;
   }

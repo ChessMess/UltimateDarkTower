@@ -24,9 +24,9 @@
 
 /** Discriminant values for every semantic relay event. */
 export const RelayEventType = {
-  /** The official companion app connected to the fake tower. */
+  /** The official companion app connected to the tower emulator. */
   APP_CONNECTED: 'app-connected',
-  /** The official companion app disconnected from the fake tower. */
+  /** The official companion app disconnected from the tower emulator. */
   APP_DISCONNECTED: 'app-disconnected',
   /** A 20-byte command was received from the companion app. */
   COMMAND_RECEIVED: 'command-received',

@@ -77,7 +77,7 @@ describe('buildSkullDropPacket()', () => {
   });
 
   it('truncates counts > 255 to the low byte', () => {
-    // The public API wraps in FakeTower, but the builder should not throw.
+    // The public API wraps in TowerEmulator, but the builder should not throw.
     const packet = buildSkullDropPacket(null, 256);
     expect(packet[SKULL_POS]).toBe(0); // 256 & 0xff = 0
   });

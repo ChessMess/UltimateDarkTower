@@ -11,7 +11,7 @@
  *
  * This module imports only `ultimatedarktowerrelay-shared` (the byte decoder /
  * `LogEntry` type) and `ultimatedarktower` (constants for human-readable names) —
- * it does NOT touch the BLE-bearing parts of `core` (FakeTower → bleno). Import it
+ * it does NOT touch the BLE-bearing parts of `core` (TowerEmulator → bleno). Import it
  * via the `ultimatedarktowerrelay-core/dist/logAnalysis` subpath (NOT the `core`
  * barrel) when you need to keep a log reader Bluetooth-free, exactly as
  * `replayEvents` does for `eventLog`.

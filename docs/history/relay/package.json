@@ -1,7 +1,7 @@
 {
   "name": "ultimatedarktowerrelay",
   "version": "0.1.0",
-  "description": "Fake-tower BLE peripheral + WebSocket relay + consumer SDK for Return to Dark Tower — connect the official companion app as a fake tower and relay tower traffic to digital consumers over the LAN.",
+  "description": "Tower-emulator BLE peripheral + WebSocket relay + consumer SDK for Return to Dark Tower — connect the official companion app to an emulated tower and relay tower traffic to digital consumers over the LAN.",
   "private": true,
   "workspaces": [
     "packages/*"

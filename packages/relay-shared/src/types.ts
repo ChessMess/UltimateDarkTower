@@ -50,8 +50,8 @@ export interface ConnectedClient {
 // Host status
 // ---------------------------------------------------------------------------
 
-/** Status of the host's BLE peripheral (fake tower). */
-export type FakeTowerState =
+/** Status of the host's BLE peripheral (tower emulator). */
+export type TowerEmulatorState =
   | 'idle'
   | 'advertising'
   | 'connected'
@@ -61,9 +61,9 @@ export type FakeTowerState =
 export interface HostStatus {
   /** Whether the host is actively relaying commands. */
   relaying: boolean;
-  /** State of the fake BLE tower peripheral. */
-  fakeTowerState: FakeTowerState;
-  /** Whether the companion app is currently connected to the fake tower. */
+  /** State of the tower-emulator BLE peripheral. */
+  towerEmulatorState: TowerEmulatorState;
+  /** Whether the companion app is currently connected to the tower emulator. */
   appConnected: boolean;
   /** Number of clients currently connected to the relay server. */
   clientCount: number;

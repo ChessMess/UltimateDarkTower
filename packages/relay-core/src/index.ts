@@ -6,7 +6,7 @@
  * mirroring how Sync's host package re-exports its classes.
  */
 
-export { FakeTower } from './fakeTower';
+export { TowerEmulator } from './towerEmulator';
 export { RelayServer } from './relayServer';
 export { HostLogger, pruneOldLogs } from './logger';
 export { EventLog, loadEventLog, replayEventLog, exportEventLog } from './eventLog';
@@ -39,11 +39,11 @@ export type { HostLoggerOptions } from './logger';
 export type { EventLogOptions, ReplayOptions } from './eventLog';
 export type { Anomaly, SessionSummary, TimelineRow } from './logAnalysis';
 export type { RelayServerOptions } from './relayServer';
-export type { CommandReceivedCallback } from './fakeTower';
+export type { CommandReceivedCallback } from './towerEmulator';
 export type { ParsedCommand } from './commandParser';
 export type { MockTowerOptions } from './mockTower';
 export type { RealTowerOptions } from './realTower';
 export type { TowerSource, TowerSourceEventMap } from './towerSource';
 export type { NotificationSink, NotificationSynthesizerOptions } from './notificationSynthesizer';
-export type { FakeTowerOptions } from './fakeTower';
+export type { TowerEmulatorOptions } from './towerEmulator';
 export type { DeviceInformation } from './deviceInfo';

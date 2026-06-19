@@ -33,7 +33,7 @@ export interface ParsedCommand {
 
 /**
  * Build a 20-byte tower-state notification packet suitable for sending to the
- * companion app via the fake tower's BLE notify characteristic.
+ * companion app via the tower emulator's BLE notify characteristic.
  *
  * The packet is derived from `lastCommand` (the most recent command received
  * from the companion app) so all state bytes — drum positions, LEDs, audio —
@@ -64,7 +64,7 @@ export function buildSkullDropPacket(lastCommand: number[] | null, skullCount: n
 
 /**
  * CommandParser validates and annotates raw 20-byte tower command packets
- * intercepted from the official companion app via the fake BLE peripheral.
+ * intercepted from the official companion app via the tower-emulator BLE peripheral.
  *
  * @example
  * ```ts

@@ -15,7 +15,7 @@
 
 import { TOWER_DEVICE_NAME } from 'ultimatedarktower';
 import { RealTower, type RealTowerOptions, type TowerDriver } from './realTower';
-import type { FakeTowerState } from 'ultimatedarktowerrelay-shared';
+import type { TowerEmulatorState } from 'ultimatedarktowerrelay-shared';
 
 /** Minimal mock implementing the TowerDriver surface, plus test controls. */
 class MockDriver implements TowerDriver {
@@ -55,7 +55,7 @@ function makeTower(
 ): {
   tower: RealTower;
   commands: Buffer[];
-  states: FakeTowerState[];
+  states: TowerEmulatorState[];
   connected: string[];
   disconnected: string[];
 } {
@@ -63,7 +63,7 @@ function makeTower(
   // tests pass `reconnect: true` (+ tuned backoff).
   const tower = new RealTower({ driver: mock, reconnect: false, ...options });
   const commands: Buffer[] = [];
-  const states: FakeTowerState[] = [];
+  const states: TowerEmulatorState[] = [];
   const connected: string[] = [];
   const disconnected: string[] = [];
   tower.on('command', (d) => commands.push(d));

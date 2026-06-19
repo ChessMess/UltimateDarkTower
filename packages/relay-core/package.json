@@ -1,7 +1,7 @@
 {
   "name": "ultimatedarktowerrelay-core",
   "version": "0.1.0",
-  "description": "UltimateDarkTowerRelay core — headless fake BLE tower peripheral and WebSocket relay engine.",
+  "description": "UltimateDarkTowerRelay core — headless BLE tower-emulator peripheral and WebSocket relay engine.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

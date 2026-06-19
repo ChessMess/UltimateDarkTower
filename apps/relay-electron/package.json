@@ -1,7 +1,7 @@
 {
   "name": "ultimatedarktowerrelay-electron",
   "version": "0.1.0",
-  "description": "UltimateDarkTowerRelay desktop operator console — Electron GUI over the relay core (selectable fake/mock/real tower source, WebSocket relay, status, manual controls).",
+  "description": "UltimateDarkTowerRelay desktop operator console — Electron GUI over the relay core (selectable emulator/mock/real tower source, WebSocket relay, status, manual controls).",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",

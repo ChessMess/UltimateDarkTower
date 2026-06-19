@@ -24,7 +24,7 @@
  *
  * The pure analysis helpers live in `core` (`logAnalysis.ts`); this CLI imports
  * them via the `ultimatedarktowerrelay-core/dist/logAnalysis` subpath (NOT the
- * `core` barrel, which pulls in FakeTower → bleno), so reading logs never
+ * `core` barrel, which pulls in TowerEmulator → bleno), so reading logs never
  * initializes Bluetooth — the same pattern `replayEvents` uses for `eventLog`.
  */
 

@@ -112,7 +112,7 @@ export const IPC = {
 } as const;
 
 /** Tower source the GUI can drive. (`bridge` stays CLI-only.) */
-export type SourceMode = 'fake' | 'mock' | 'real';
+export type SourceMode = 'emulator' | 'mock' | 'real';
 
 // ─── Log-viewer (FR-7.3) payload shapes ─────────────────────────────────────
 // Analysis runs here in main (it has `fs`); the renderer renders the results
@@ -151,7 +151,7 @@ type EventLogResult =
 // load failures (e.g. @stoprocent/bleno ABI mismatch). Importing the core barrel
 // initializes bleno (CoreBluetooth); noble stays lazy until a real tower connects.
 type CoreModule = typeof import('ultimatedarktowerrelay-core');
-let FakeTower: CoreModule['FakeTower'];
+let TowerEmulator: CoreModule['TowerEmulator'];
 let MockTower: CoreModule['MockTower'];
 let RealTower: CoreModule['RealTower'];
 let RelayServer: CoreModule['RelayServer'];
@@ -179,7 +179,7 @@ let parser: InstanceType<CoreModule['CommandParser']>;
 let observer: InstanceType<CoreModule['ObserverDisplay']>;
 
 // Swappable source + its synthesizer (rebuilt by switchSource). Typed as the
-// TowerSource seam (its `on` overloads cover the 4 common events); FakeTower's
+// TowerSource seam (its `on` overloads cover the 4 common events); TowerEmulator's
 // extra events (ble-adapter-state / ghost-connection) are reached via instanceof.
 let currentMode: SourceMode = readSourceMode();
 let currentSource: TowerSource | null = null;
@@ -196,10 +196,13 @@ let relayStatus: { running: boolean; port: number; message: string; urls: string
 let bleAdapterState = 'unknown';
 let mainWindow: BrowserWindow | null = null;
 
-/** Initial source from `TOWER_SOURCE` env; `bridge` falls back to fake (GUI-unsupported). */
+/**
+ * Initial source from `TOWER_SOURCE` env; `bridge` falls back to the emulator
+ * (GUI-unsupported). The legacy value `fake` is accepted as an alias for `emulator`.
+ */
 function readSourceMode(): SourceMode {
   const v = process.env['TOWER_SOURCE'];
-  return v === 'real' ? 'real' : v === 'mock' ? 'mock' : 'fake';
+  return v === 'real' ? 'real' : v === 'mock' ? 'mock' : 'emulator';
 }
 
 /**
@@ -377,15 +380,15 @@ function buildSource(mode: SourceMode): { source: TowerSource; sink: Notificatio
     const mock = new MockTower({ intervalMs: 3000 });
     return { source: mock, sink: mock };
   }
-  const fake = new FakeTower({ deviceInfo: readDeviceInfoFromEnv() });
-  return { source: fake, sink: fake };
+  const emulator = new TowerEmulator({ deviceInfo: readDeviceInfoFromEnv() });
+  return { source: emulator, sink: emulator };
 }
 
 /**
  * Attach every source listener (mirrors the CLI composition root) and build the
  * synthesizer for sink-capable sources. The synthesizer's semantic events are
  * persisted to the EventLog. `command-received` is emitted by the synthesizer
- * (fake/mock) or appended directly here (real) — never both.
+ * (emulator/mock) or appended directly here (real) — never both.
  */
 function wireSource(source: TowerSource, sink: NotificationSink | null): void {
   currentSynth = sink ? new NotificationSynthesizer(sink) : null;
@@ -407,7 +410,7 @@ function wireSource(source: TowerSource, sink: NotificationSink | null): void {
     });
   });
 
-  // Synthesizer (fake/mock) sees every command incl. short calibration packets and
+  // Synthesizer (emulator/mock) sees every command incl. short calibration packets and
   // emits the command-received event itself; in real mode there is no synthesizer,
   // so append command-received here (branches are mutually exclusive — no double-emit).
   if (currentSynth) {
@@ -419,7 +422,7 @@ function wireSource(source: TowerSource, sink: NotificationSink | null): void {
 
   source.on('state-change', (state) => {
     towerState = state;
-    relay.setFakeTowerState(state);
+    relay.setTowerEmulatorState(state);
     logger.logEvent('event', 'host', `Tower source state: ${state}`);
     mainWindow?.webContents.send(IPC.TOWER_STATE, { state });
   });
@@ -437,8 +440,8 @@ function wireSource(source: TowerSource, sink: NotificationSink | null): void {
     relay.broadcastPaused('Companion app disconnected from tower source');
   });
 
-  // BLE-adapter-state + ghost-connection are FakeTower-only (not on TowerSource).
-  if (source instanceof FakeTower) {
+  // BLE-adapter-state + ghost-connection are TowerEmulator-only (not on TowerSource).
+  if (source instanceof TowerEmulator) {
     source.on('ble-adapter-state', (state) => {
       bleAdapterState = state;
       mainWindow?.webContents.send(IPC.BLE_ADAPTER_STATE, { state });
@@ -458,8 +461,8 @@ async function teardownSource(): Promise<void> {
   // TowerSource doesn't declare EventEmitter members, but every concrete source
   // extends EventEmitter — drop the listeners we attached in wireSource().
   (old as unknown as { removeAllListeners(): void }).removeAllListeners();
-  // Only FakeTower owns bleno listeners that must be torn down before re-creation.
-  if (old instanceof FakeTower) {
+  // Only TowerEmulator owns bleno listeners that must be torn down before re-creation.
+  if (old instanceof TowerEmulator) {
     try { old.destroy(); } catch { /* best-effort */ }
   }
   currentSynth = null;
@@ -479,8 +482,8 @@ async function switchSource(mode: SourceMode): Promise<{ ok: boolean; reason?: s
   wireSource(source, sink);
   mainWindow?.webContents.send(IPC.SOURCE_CHANGED, { source: mode });
 
-  // Non-fake sources have no BLE-adapter state; reflect that in the UI.
-  if (mode !== 'fake') {
+  // Non-emulator sources have no BLE-adapter state; reflect that in the UI.
+  if (mode !== 'emulator') {
     bleAdapterState = 'n/a';
     mainWindow?.webContents.send(IPC.BLE_ADAPTER_STATE, { state: 'n/a' });
   }
@@ -505,7 +508,7 @@ async function initApp(): Promise<void> {
 
   try {
     const core = await import('ultimatedarktowerrelay-core');
-    FakeTower = core.FakeTower;
+    TowerEmulator = core.TowerEmulator;
     MockTower = core.MockTower;
     RealTower = core.RealTower;
     RelayServer = core.RelayServer;
@@ -622,7 +625,7 @@ async function initApp(): Promise<void> {
   });
 
   ipcMain.handle(IPC.SET_SOURCE, (_e, mode: SourceMode): Promise<{ ok: boolean; reason?: string }> => {
-    if (mode !== 'fake' && mode !== 'mock' && mode !== 'real') {
+    if (mode !== 'emulator' && mode !== 'mock' && mode !== 'real') {
       return Promise.resolve({ ok: false, reason: `Unknown source '${String(mode)}'` });
     }
     return switchSource(mode);
@@ -806,7 +809,7 @@ async function shutdown(): Promise<void> {
   try { if (relay) await relay.stop(); } catch { /* best-effort */ }
   try { if (logger) await logger.close(); } catch { /* best-effort */ }
   try { if (eventLog) await eventLog.close(); } catch { /* best-effort */ }
-  try { if (currentSource instanceof FakeTower) currentSource.destroy(); } catch { /* best-effort */ }
+  try { if (currentSource instanceof TowerEmulator) currentSource.destroy(); } catch { /* best-effort */ }
 }
 
 // ─── Lifecycle ───────────────────────────────────────────────────────────────

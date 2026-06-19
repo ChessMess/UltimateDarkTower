@@ -1,7 +1,8 @@
 # `replay-e2e` — manual E2E for FR-5.2 `PhysicalTowerReplay`
 
 A throwaway harness for validating the physical-tower-replay consumer against a **real tower** over
-Web Bluetooth. Not shipped code — it's the exact wiring documented in `docs/HANDOFF.md`:
+Web Bluetooth. Not shipped code — it's the exact wiring documented in
+[../../docs/API.md](../../docs/API.md) and [../../docs/GETTING_STARTED.md](../../docs/GETTING_STARTED.md):
 `RelayClient` (transport) + `PhysicalTowerReplay` (mirror writes) + UDT's `UltimateDarkTower`
 (Web Bluetooth). First validated live on 2026-06-17 (drums physically mirrored relayed rotations).
 

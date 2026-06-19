@@ -3,7 +3,7 @@
  *
  * The official companion app expects a real tower to send notifications back
  * over BLE: a skull-drop count when a skull falls, a calibration-complete reply
- * after a calibration command, and a periodic battery heartbeat. `FakeTower`
+ * after a calibration command, and a periodic battery heartbeat. `TowerEmulator`
  * already sends an initial heartbeat (on subscribe) and a per-write echo after
  * every command. This class supplies the *rest* of the return traffic so a
  * digital consumer with no physical tower can play a full game against the app:
@@ -20,7 +20,7 @@
  *     as an opt-in fallback, disabled by default.
  *
  * It is headless and BLE-free: it targets a {@link NotificationSink} (satisfied
- * by both `FakeTower` and `MockTower`) and emits semantic {@link RelayEvent}s for
+ * by both `TowerEmulator` and `MockTower`) and emits semantic {@link RelayEvent}s for
  * the future event log, so it can be unit-tested without Bluetooth.
  *
  * > **Capture-pending (PRD §11 Q3 / §13):** the exact bytes/timing the official
@@ -54,15 +54,15 @@ const COMMAND_HEADER_SIZE = 1;
 
 /**
  * The first notification a real tower sends on subscribe (`07 00 00 0c 10`).
- * `FakeTower` sends this once; the optional periodic heartbeat fallback reuses
+ * `TowerEmulator` sends this once; the optional periodic heartbeat fallback reuses
  * the same bytes.
  */
 const DEFAULT_HEARTBEAT_PACKET = [0x07, 0x00, 0x00, 0x0c, 0x10];
 
 /**
- * The notification target the synthesizer sends to. Satisfied by `FakeTower`
+ * The notification target the synthesizer sends to. Satisfied by `TowerEmulator`
  * (real BLE) and `MockTower` (BLE-free). Kept minimal so the synthesizer never
- * imports the bleno-backed `FakeTower` directly (tests stay BLE-free).
+ * imports the bleno-backed `TowerEmulator` directly (tests stay BLE-free).
  */
 export interface NotificationSink {
   /** Send a raw notification buffer to the companion app. Returns false if no subscriber is active. */
@@ -108,8 +108,8 @@ interface SynthesizerEventMap {
  *
  * @example
  * ```ts
- * const synth = new NotificationSynthesizer(fakeTower);
- * fakeTower.on('command', (d) => synth.onCommand(d)); // calibration detection
+ * const synth = new NotificationSynthesizer(towerEmulator);
+ * towerEmulator.on('command', (d) => synth.onCommand(d)); // calibration detection
  * synth.on('event', (e) => logger.logEvent('event', 'host', e.type));
  * relay = new RelayServer({ onClientAction: () => synth.dropSkull() });
  * ```
