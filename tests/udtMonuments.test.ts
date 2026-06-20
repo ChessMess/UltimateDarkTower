@@ -1,7 +1,7 @@
 /**
  * Integrity tests for the Covenant monument roster.
  */
-import { MONUMENTS, MONUMENT_BY_ID } from '../src/udtMonuments';
+import { MONUMENTS, MONUMENT_BY_ID } from '../src/data/udtMonuments';
 
 describe('MONUMENTS', () => {
   test('has the 8 Covenant monuments, all sourced from covenant', () => {

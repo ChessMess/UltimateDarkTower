@@ -18,7 +18,7 @@ import {
   ADVERSARIES,
   ALLIES,
   type SeedConfig,
-} from '../src/udtSeedParser';
+} from '../src/seed/udtSeedParser';
 
 // ── charToValue / valueToChar ──────────────────────────────────────────────
 

@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * Integrity tests for the Covenant monument roster.
  */
-const udtMonuments_1 = require("../src/udtMonuments");
+const udtMonuments_1 = require("../src/data/udtMonuments");
 describe('MONUMENTS', () => {
     test('has the 8 Covenant monuments, all sourced from covenant', () => {
         expect(udtMonuments_1.MONUMENTS).toHaveLength(8);

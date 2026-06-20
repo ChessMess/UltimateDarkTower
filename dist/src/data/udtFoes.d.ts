@@ -13,7 +13,7 @@
  * can surface any of them, so consumers must model all five.
  */
 import type { ContentSource } from './udtHeroes';
-import type { Tier1Foe, Tier2Foe, Tier3Foe, Adversary } from './udtSeedParser';
+import type { Tier1Foe, Tier2Foe, Tier3Foe, Adversary } from '../seed/udtSeedParser';
 /**
  * In-play power progression a foe advances through, ascending threat (the official game's
  * foe-status track). Distinct from identity `level`/`tier`.

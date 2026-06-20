@@ -6,7 +6,7 @@
  * Test vectors generated from the actual .NET algorithm.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-const udtSystemRandom_1 = require("../src/udtSystemRandom");
+const udtSystemRandom_1 = require("../src/seed/udtSystemRandom");
 // ── Test Vectors ───────────────────────────────────────────────────────────
 // Generated using .NET Framework's System.Random algorithm (Knuth subtractive).
 describe('SystemRandom', () => {

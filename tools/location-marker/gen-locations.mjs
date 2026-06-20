@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Regenerate `locations.json` from the library's source of truth
- * (`src/udtGameBoard.ts` → `BOARD_LOCATIONS`).
+ * (`src/data/board/udtGameBoard.ts` → `BOARD_LOCATIONS`).
  *
  * The location-marker tool embeds an inline copy of this list so it runs as a
  * single self-contained `index.html`. When the board data changes upstream,
@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const srcPath = resolve(here, '../../src/udtGameBoard.ts');
+const srcPath = resolve(here, '../../src/data/board/udtGameBoard.ts');
 const src = readFileSync(srcPath, 'utf8');
 
 // --- Resolve the BOARD_GROUPINGS enum (KEY: 'Value') so we can dereference

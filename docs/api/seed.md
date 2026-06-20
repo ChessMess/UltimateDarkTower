@@ -4,14 +4,24 @@ The library includes a complete encoder/decoder for Return to Dark Tower game se
 
 > The seed _format_ (base-34 alphabet, bitwise layout of the setup section, RNG polynomial) is documented separately in [SEED_FORMAT.md](../SEED_FORMAT.md). This page covers the **API surface** for working with seeds in code.
 
+> **v5.0.0:** every seed export (functions, lookup arrays, types, and `SystemRandom`) now lives under the **`seed`** namespace. Import it once and reach members via `seed.*`:
+>
+> ```typescript
+> import { seed } from 'ultimatedarktower';
+> seed.decodeSeed('AA9A-AAGS-W634');
+> // (or destructure: const { decodeSeed } = seed;)
+> ```
+>
+> The examples below show the namespaced form.
+
 ---
 
 ## Decoding a seed
 
 ```typescript
-import { decodeSeed } from 'ultimatedarktower';
+import { seed } from 'ultimatedarktower';
 
-const decoded = decodeSeed('AA9A-AAGS-W634');
+const decoded = seed.decodeSeed('AA9A-AAGS-W634');
 
 console.log(decoded.tier1Foe);    // 'Brigands'
 console.log(decoded.tier2Foe);    // 'Frost Trolls'
@@ -35,9 +45,9 @@ console.log(decoded.seedBank);    // { initializationSeed, questSeed, seedString
 ### `createSeed(config)` — random RNG portion
 
 ```typescript
-import { createSeed } from 'ultimatedarktower';
+import { seed as seedApi } from 'ultimatedarktower';
 
-const { seed, rngValue } = createSeed({
+const { seed, rngValue } = seedApi.createSeed({
   tier1Foe: 'Brigands',
   tier2Foe: 'Frost Trolls',
   tier3Foe: 'Dragons',
@@ -53,9 +63,9 @@ const { seed, rngValue } = createSeed({
 ### `encodeSeed(config, rngValue)` — deterministic
 
 ```typescript
-import { encodeSeed } from 'ultimatedarktower';
+import { seed as seedApi } from 'ultimatedarktower';
 
-const seed = encodeSeed({ /* …same config… */ }, 186022107);
+const seed = seedApi.encodeSeed({ /* …same config… */ }, 186022107);
 // 'AA9A-AAGS-W634'
 ```
 
@@ -64,11 +74,8 @@ const seed = encodeSeed({ /* …same config… */ }, 186022107);
 ## Validating and comparing seeds
 
 ```typescript
-import {
-  validateSeed,
-  compareSeedsRaw,
-  dumpSeedChars,
-} from 'ultimatedarktower';
+import { seed } from 'ultimatedarktower';
+const { validateSeed, compareSeedsRaw, dumpSeedChars } = seed;
 
 const normalized = validateSeed('aa9aagsw634');
 // 'AA9A-AAGS-W634' — uppercased, dashes inserted
@@ -87,7 +94,8 @@ const dump = dumpSeedChars('AA9A-AAGS-W634');
 ## Lookup arrays
 
 ```typescript
-import {
+import { seed } from 'ultimatedarktower';
+const {
   TIER1_FOES,    // ['Brigands', 'Oreks', 'Shadow Wolves', 'Spine Fiends']
   TIER2_FOES,    // ['Frost Trolls', 'Clan of Neuri', 'Lemures', 'Widowmade Spiders']
   TIER3_FOES,    // ['Dragons', 'Mormos', 'Striga', 'Titans']
@@ -95,7 +103,7 @@ import {
   ALLIES,        // ['Gleb', 'Grigor', …, 'Zaida']
   DIFFICULTIES,  // ['Heroic', 'Gritty']
   GAME_SOURCES,  // ['Core', 'Competitive']
-} from 'ultimatedarktower';
+} = seed;
 ```
 
 ---
@@ -114,20 +122,22 @@ The base-34 alphabet primitives the codec is built on — rarely needed directly
 
 ## Types
 
+Types live under the same `seed` namespace — reference them as `seed.DecodedSeed`, etc.:
+
 ```typescript
-import type {
-  DecodedSeed,
-  SeedConfig,
-  SeedBank,
-  SeedComparison,
-  CharDiff,
-  CharDump,
-  CharInfo,
-  Confidence,              // 'confirmed' | 'suspected' | 'unknown' — per-field decode confidence
-  Tier1Foe, Tier2Foe, Tier3Foe,
-  Adversary, Ally,
-  Difficulty, GameSource, ExpansionType,
-} from 'ultimatedarktower';
+import { seed } from 'ultimatedarktower';
+
+type Decoded = seed.DecodedSeed;
+type Config = seed.SeedConfig;
+type Bank = seed.SeedBank;
+type Comparison = seed.SeedComparison;
+type Diff = seed.CharDiff;
+type Dump = seed.CharDump;
+type Info = seed.CharInfo;
+type Conf = seed.Confidence;        // 'confirmed' | 'suspected' | 'unknown' — per-field decode confidence
+type T1 = seed.Tier1Foe;            // also Tier2Foe, Tier3Foe
+type Adv = seed.Adversary;          // also Ally
+type Diff2 = seed.Difficulty;       // also GameSource, ExpansionType
 ```
 
 ---
@@ -137,9 +147,9 @@ import type {
 A byte-exact TypeScript implementation of .NET Framework's `System.Random` (modified Knuth subtractive generator). The game uses this PRNG seeded from the RNG portion of the game seed to drive procedural generation.
 
 ```typescript
-import { SystemRandom } from 'ultimatedarktower';
+import { seed } from 'ultimatedarktower';
 
-const rng = new SystemRandom(186022107);
+const rng = new seed.SystemRandom(186022107);
 
 rng.next();             // Next() — [0, 2147483647)
 rng.nextMax(100);       // Next(100) — [0, 100)
@@ -150,12 +160,12 @@ rng.nextDouble();       // NextDouble() — [0.0, 1.0)
 ### Using with game seeds
 
 ```typescript
-import { decodeSeed, SystemRandom } from 'ultimatedarktower';
+import { seed } from 'ultimatedarktower';
 
-const decoded = decodeSeed('AA9A-AAGS-W634');
+const decoded = seed.decodeSeed('AA9A-AAGS-W634');
 
-const mainRng  = new SystemRandom(decoded.seedBank.initializationSeed);
-const questRng = new SystemRandom(decoded.seedBank.questSeed);
+const mainRng  = new seed.SystemRandom(decoded.seedBank.initializationSeed);
+const questRng = new seed.SystemRandom(decoded.seedBank.questSeed);
 
 // These produce identical sequences to the C# game code.
 ```

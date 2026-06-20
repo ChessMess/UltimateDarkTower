@@ -26,7 +26,7 @@ npm install ultimatedarktowerdisplay
 
 ### [UltimateDarkTowerBoard](https://github.com/ChessMess/UltimateDarkTowerBoard)
 
-Composable state + text/2D/3D renderers for the game **board/mat** (heroes, foes, the adversary, skulls-on-buildings, monuments, space markers). It **re-exports** this library's static board data rather than vendoring a copy — including `BOARD_LOCATIONS`/`BOARD_GROUPINGS`, the enemy/setup rosters, the foe status + foe/adversary metadata (`FOE_STATUSES`, `FOES`/`ADVERSARY_ROSTER` with level/tier/source), and the board-layout datasets added here: `BOARD_ANCHORS` + `BOARD_IMAGE_INFO` (token placement) and `BOARD_ADJACENCY` + `neighborsOf`/`stepDistance`/`shortestPath` (the movement graph + helpers a host uses for move validation).
+Composable state + text/2D/3D renderers for the game **board/mat** (heroes, foes, the adversary, skulls-on-buildings, monuments, space markers). It **re-exports** this library's static board data rather than vendoring a copy. As of v5.0.0 that data lives under the `data` namespace (`data.board`, `data.heroes`, `data.monuments`, `data.foes`), with seed rosters under `seed` — including `data.board.BOARD_LOCATIONS`/`BOARD_GROUPINGS`, the enemy/setup rosters, the foe status + foe/adversary metadata (`data.foes.FOE_STATUSES`, `data.foes.FOES`/`ADVERSARY_ROSTER` with level/tier/source), and the board-layout datasets: `data.board.BOARD_ANCHORS` + `BOARD_IMAGE_INFO` (token placement) and `data.board.BOARD_ADJACENCY` + `neighborsOf`/`stepDistance`/`shortestPath` (the movement graph + helpers a host uses for move validation).
 
 **When to use with UltimateDarkTower:** rendering or editing the board's contents, or composing the board state alongside `TowerState`.
 

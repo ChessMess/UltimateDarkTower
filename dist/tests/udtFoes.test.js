@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * Integrity tests for the foe status type + foe/adversary identity metadata.
  */
-const udtFoes_1 = require("../src/udtFoes");
-const udtSeedParser_1 = require("../src/udtSeedParser");
+const udtFoes_1 = require("../src/data/udtFoes");
+const udtSeedParser_1 = require("../src/seed/udtSeedParser");
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 describe('FOE_STATUSES', () => {
     test('is the ordered panicked → unsteady → ready → savage → lethal progression', () => {

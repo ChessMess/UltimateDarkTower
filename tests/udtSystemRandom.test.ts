@@ -5,7 +5,7 @@
  * Test vectors generated from the actual .NET algorithm.
  */
 
-import { SystemRandom } from '../src/udtSystemRandom';
+import { SystemRandom } from '../src/seed/udtSystemRandom';
 
 // ── Test Vectors ───────────────────────────────────────────────────────────
 // Generated using .NET Framework's System.Random algorithm (Knuth subtractive).

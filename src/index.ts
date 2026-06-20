@@ -39,47 +39,14 @@ export type {
 } from './udtDiagnostics';
 export { IndexedDBSink } from './sinks/IndexedDBSink';
 
-// Seed parser
-export {
-  charToValue, valueToChar, validateSeed, decodeSeed, decodeRngSeed,
-  createSeed, encodeSeed, compareSeedsRaw, dumpSeedChars,
-  TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES, DIFFICULTIES, GAME_SOURCES,
-} from './udtSeedParser';
-export type {
-  Tier1Foe, Tier2Foe, Tier3Foe, Adversary, Ally, Difficulty, GameSource, ExpansionType,
-  Confidence, SeedBank, DecodedSeed, SeedConfig, CharDiff, SeedComparison, CharInfo, CharDump,
-} from './udtSeedParser';
+// Game / board reference data — grouped by domain sub-namespaces (heroes, monuments, foes,
+// board, content, inventory). e.g. data.heroes.HEROES, data.board.BOARD_LOCATIONS,
+// data.content.HEROES (gameplay), data.inventory.expansions. See docs/api/board-data.md.
+export * as data from './data';
 
-// Hero + monument reference rosters (board content; not seed-encoded)
-export { HEROES, HERO_BY_ID } from './udtHeroes';
-export type { Hero, HeroId, ContentSource } from './udtHeroes';
-export { MONUMENTS, MONUMENT_BY_ID } from './udtMonuments';
-export type { Monument, MonumentId } from './udtMonuments';
-
-// Foe in-play status + foe/adversary identity metadata (additive; the seed-parser foe enums above
-// are untouched). FoeStatus is the ready→savage→lethal progression; FOES/ADVERSARY_ROSTER carry
-// level/tier/source keyed by the same names.
-export { FOE_STATUSES, FOES, ADVERSARY_ROSTER, ALL_FOES, FOE_BY_ID, FOE_BY_NAME } from './udtFoes';
-export type { FoeStatus, FoeLevel, FoeId, FoeName, Foe } from './udtFoes';
-
-// System.Random replica (C# PRNG)
-export { SystemRandom } from './udtSystemRandom';
-
-// Game board data
-export {
-  BOARD_LOCATIONS,
-  BOARD_LOCATION_BY_NAME,
-  BOARD_GROUPINGS,
-} from './udtGameBoard';
-export type { TerrainType, BuildingType, BoardKingdom, BoardGrouping, BoardLocation } from './udtGameBoard';
-
-// Board layout anchors + image metadata (authored with tools/location-marker)
-export { BOARD_ANCHORS, BOARD_IMAGE_INFO } from './udtBoardAnchors';
-export type { Anchor, AnchorSlot, LocationAnchors, BoardAnchorMap, BoardImageInfo } from './udtBoardAnchors';
-
-// Board movement-adjacency graph + derived BFS helpers
-export { BOARD_ADJACENCY, neighborsOf, stepDistance, shortestPath } from './udtBoardAdjacency';
-export type { BoardAdjacency } from './udtBoardAdjacency';
+// Seed encode/decode + RNG subsystem. e.g. seed.decodeSeed(...), seed.TIER1_FOES,
+// seed.SystemRandom. See docs/api/seed.md.
+export * as seed from './seed';
 
 // For convenience, also export as default
 import UltimateDarkTower from './UltimateDarkTower';

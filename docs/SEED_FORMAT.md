@@ -165,7 +165,7 @@ the game tracks mutable state (e.g., foe counts) and acts accordingly.
 Replicating procedural generation externally requires:
 
 1. **Exact C# System.Random implementation** — matching .NET Framework's Knuth subtractive
-   generator algorithm (implemented in `udtSystemRandom.ts`)
+   generator algorithm (implemented in `src/seed/udtSystemRandom.ts`)
 2. **Identical call ordering** — `System.Random` is stateful; calling `Next()` in a different
    sequence produces different results
 3. **Matching game logic** — the exact order the game queries the PRNG for each system
@@ -181,9 +181,9 @@ dungeon layouts, foe spawn locations, and companion events. Prediction is one-wa
 
 ### What we already have
 
-- **Byte-exact `System.Random` replica** (`udtSystemRandom.ts`) — verified against
+- **Byte-exact `System.Random` replica** (`src/seed/udtSystemRandom.ts`) — verified against
   C#-generated test vectors, including edge cases
-- **Full base-34 seed decoder** (`udtSeedParser.ts`) including the `SeedBank`
+- **Full base-34 seed decoder** (`src/seed/udtSeedParser.ts`) including the `SeedBank`
   (`InitializationSeed` = RNG integer, `QuestSeed` = `InitializationSeed - 1`)
 
 ### What is missing (the blocker)

@@ -39,6 +39,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const src_1 = __importStar(require("../src"));
+// Rebind the namespaced members to local names so the assertions below read unchanged.
+// This also serves as the export-contract check for the new `data`/`seed` surface.
+const { BOARD_LOCATIONS, BOARD_LOCATION_BY_NAME, BOARD_GROUPINGS, BOARD_ANCHORS, BOARD_IMAGE_INFO, BOARD_ADJACENCY, neighborsOf, stepDistance, shortestPath, } = src_1.data.board;
+const { charToValue, valueToChar, validateSeed, decodeSeed, decodeRngSeed, createSeed, encodeSeed, compareSeedsRaw, dumpSeedChars, TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES, DIFFICULTIES, GAME_SOURCES, SystemRandom, } = src_1.seed;
 describe('Package Exports', () => {
     describe('Tower State Types', () => {
         test('TowerState type is usable', () => {
@@ -161,10 +165,10 @@ describe('Package Exports', () => {
     });
     describe('Game Board Exports', () => {
         test('BOARD_LOCATIONS contains 60 entries', () => {
-            expect(src_1.BOARD_LOCATIONS).toHaveLength(60);
+            expect(BOARD_LOCATIONS).toHaveLength(60);
         });
         test('every location has required fields', () => {
-            for (const loc of src_1.BOARD_LOCATIONS) {
+            for (const loc of BOARD_LOCATIONS) {
                 expect(typeof loc.name).toBe('string');
                 expect(loc.name.length).toBeGreaterThan(0);
                 expect(['Hills', 'Lake', 'Desert', 'Mountains', 'Grasslands', 'Forest']).toContain(loc.terrain);
@@ -173,46 +177,46 @@ describe('Package Exports', () => {
                     expect(['Bazaar', 'Village', 'Sanctuary', 'Citadel']).toContain(loc.building);
                 }
                 if (loc.grouping !== undefined) {
-                    expect(Object.values(src_1.BOARD_GROUPINGS)).toContain(loc.grouping);
+                    expect(Object.values(BOARD_GROUPINGS)).toContain(loc.grouping);
                 }
             }
         });
         test('BOARD_LOCATION_BY_NAME has 60 entries', () => {
-            expect(Object.keys(src_1.BOARD_LOCATION_BY_NAME)).toHaveLength(60);
+            expect(Object.keys(BOARD_LOCATION_BY_NAME)).toHaveLength(60);
         });
         test('BOARD_LOCATION_BY_NAME lookup returns correct location', () => {
-            const dayside = src_1.BOARD_LOCATION_BY_NAME['Dayside'];
+            const dayside = BOARD_LOCATION_BY_NAME['Dayside'];
             expect(dayside).toBeDefined();
             expect(dayside.terrain).toBe('Lake');
             expect(dayside.building).toBe('Bazaar');
             expect(dayside.kingdom).toBe('north');
-            expect(dayside.grouping).toBe(src_1.BOARD_GROUPINGS.LONG_WATER);
+            expect(dayside.grouping).toBe(BOARD_GROUPINGS.LONG_WATER);
         });
         test('grouping members are correct', () => {
-            const longWater = src_1.BOARD_LOCATIONS.filter((l) => l.grouping === src_1.BOARD_GROUPINGS.LONG_WATER);
+            const longWater = BOARD_LOCATIONS.filter((l) => l.grouping === BOARD_GROUPINGS.LONG_WATER);
             expect(longWater.map((l) => l.name).sort()).toEqual(['Dayside', 'Fivepint']);
-            const greatWoods = src_1.BOARD_LOCATIONS.filter((l) => l.grouping === src_1.BOARD_GROUPINGS.THE_GREAT_WOODS);
+            const greatWoods = BOARD_LOCATIONS.filter((l) => l.grouping === BOARD_GROUPINGS.THE_GREAT_WOODS);
             expect(greatWoods.map((l) => l.name).sort()).toEqual(['Arkartus', 'Delmsmire', 'Yellowpike']);
-            const regalRun = src_1.BOARD_LOCATIONS.filter((l) => l.grouping === src_1.BOARD_GROUPINGS.REGAL_RUN);
+            const regalRun = BOARD_LOCATIONS.filter((l) => l.grouping === BOARD_GROUPINGS.REGAL_RUN);
             expect(regalRun.map((l) => l.name).sort()).toEqual(['Archmont', 'The Cloister', 'The Throne']);
         });
         test('each kingdom has 15 locations', () => {
             const kingdoms = ['north', 'east', 'west', 'south'];
             for (const k of kingdoms) {
-                expect(src_1.BOARD_LOCATIONS.filter((l) => l.kingdom === k)).toHaveLength(15);
+                expect(BOARD_LOCATIONS.filter((l) => l.kingdom === k)).toHaveLength(15);
             }
         });
         test('BOARD_GROUPINGS has expected values', () => {
-            expect(src_1.BOARD_GROUPINGS.LONG_WATER).toBe('Long Water');
-            expect(src_1.BOARD_GROUPINGS.THE_GREAT_WOODS).toBe('The Great Woods');
-            expect(src_1.BOARD_GROUPINGS.REGAL_RUN).toBe('Regal Run');
+            expect(BOARD_GROUPINGS.LONG_WATER).toBe('Long Water');
+            expect(BOARD_GROUPINGS.THE_GREAT_WOODS).toBe('The Great Woods');
+            expect(BOARD_GROUPINGS.REGAL_RUN).toBe('Regal Run');
         });
         test('type aliases are usable', () => {
             const terrain = 'Forest';
             const building = 'Citadel';
             const kingdom = 'west';
-            const grouping = src_1.BOARD_GROUPINGS.LONG_WATER;
-            const loc = src_1.BOARD_LOCATIONS[0];
+            const grouping = BOARD_GROUPINGS.LONG_WATER;
+            const loc = BOARD_LOCATIONS[0];
             expect(terrain).toBe('Forest');
             expect(building).toBe('Citadel');
             expect(kingdom).toBe('west');
@@ -222,7 +226,7 @@ describe('Package Exports', () => {
     });
     describe('Board Layout & Adjacency Exports', () => {
         test('BOARD_IMAGE_INFO has the expected shape', () => {
-            const info = src_1.BOARD_IMAGE_INFO;
+            const info = BOARD_IMAGE_INFO;
             expect(typeof info.width).toBe('number');
             expect(typeof info.height).toBe('number');
             expect(typeof info.centerX).toBe('number');
@@ -231,20 +235,20 @@ describe('Package Exports', () => {
             expect(typeof info.northHeadingDegrees).toBe('number');
         });
         test('BOARD_ANCHORS and BOARD_ADJACENCY each cover all 60 locations', () => {
-            expect(Object.keys(src_1.BOARD_ANCHORS)).toHaveLength(60);
-            expect(Object.keys(src_1.BOARD_ADJACENCY)).toHaveLength(60);
+            expect(Object.keys(BOARD_ANCHORS)).toHaveLength(60);
+            expect(Object.keys(BOARD_ADJACENCY)).toHaveLength(60);
         });
         test('graph helpers are functions', () => {
-            expect(typeof src_1.neighborsOf).toBe('function');
-            expect(typeof src_1.stepDistance).toBe('function');
-            expect(typeof src_1.shortestPath).toBe('function');
+            expect(typeof neighborsOf).toBe('function');
+            expect(typeof stepDistance).toBe('function');
+            expect(typeof shortestPath).toBe('function');
         });
         test('type aliases are usable', () => {
             const anchor = { x: 0.5, y: 0.5 };
             const slot = 'hero';
             const locAnchors = { hero: anchor };
-            const map = src_1.BOARD_ANCHORS;
-            const adj = src_1.BOARD_ADJACENCY;
+            const map = BOARD_ANCHORS;
+            const adj = BOARD_ADJACENCY;
             expect(slot).toBe('hero');
             expect(locAnchors.hero).toBe(anchor);
             expect(map).toBeDefined();
@@ -253,40 +257,40 @@ describe('Package Exports', () => {
     });
     describe('Seed Parser Exports', () => {
         test('charToValue is a function', () => {
-            expect(typeof src_1.charToValue).toBe('function');
+            expect(typeof charToValue).toBe('function');
         });
         test('valueToChar is a function', () => {
-            expect(typeof src_1.valueToChar).toBe('function');
+            expect(typeof valueToChar).toBe('function');
         });
         test('validateSeed is a function', () => {
-            expect(typeof src_1.validateSeed).toBe('function');
+            expect(typeof validateSeed).toBe('function');
         });
         test('decodeSeed is a function', () => {
-            expect(typeof src_1.decodeSeed).toBe('function');
+            expect(typeof decodeSeed).toBe('function');
         });
         test('decodeRngSeed is a function', () => {
-            expect(typeof src_1.decodeRngSeed).toBe('function');
+            expect(typeof decodeRngSeed).toBe('function');
         });
         test('createSeed is a function', () => {
-            expect(typeof src_1.createSeed).toBe('function');
+            expect(typeof createSeed).toBe('function');
         });
         test('encodeSeed is a function', () => {
-            expect(typeof src_1.encodeSeed).toBe('function');
+            expect(typeof encodeSeed).toBe('function');
         });
         test('compareSeedsRaw is a function', () => {
-            expect(typeof src_1.compareSeedsRaw).toBe('function');
+            expect(typeof compareSeedsRaw).toBe('function');
         });
         test('dumpSeedChars is a function', () => {
-            expect(typeof src_1.dumpSeedChars).toBe('function');
+            expect(typeof dumpSeedChars).toBe('function');
         });
         test('DecodedSeed type is usable', () => {
-            const result = (0, src_1.decodeSeed)('AA9A-AAGS-W634');
+            const result = decodeSeed('AA9A-AAGS-W634');
             expect(result).toBeDefined();
             expect(result.seed).toBe('AA9A-AAGS-W634');
             expect(result.tier1Foe).toBe('Brigands');
         });
         test('SeedComparison type is usable', () => {
-            const comp = (0, src_1.compareSeedsRaw)('AA9A-AAGS-W634', 'BA9A-AAGS-W634');
+            const comp = compareSeedsRaw('AA9A-AAGS-W634', 'BA9A-AAGS-W634');
             expect(comp.seed1).toBe('AA9A-AAGS-W634');
             expect(comp.diffs.length).toBeGreaterThan(0);
         });
@@ -295,7 +299,7 @@ describe('Package Exports', () => {
             expect(diff.charIndex).toBe(0);
         });
         test('CharDump type is usable', () => {
-            const dump = (0, src_1.dumpSeedChars)('AA9A-AAGS-W634');
+            const dump = dumpSeedChars('AA9A-AAGS-W634');
             expect(dump.chars).toHaveLength(12);
         });
         test('Confidence type is usable', () => {
@@ -303,13 +307,13 @@ describe('Package Exports', () => {
             expect(c).toBe('confirmed');
         });
         test('lookup arrays are exported', () => {
-            expect(src_1.TIER1_FOES).toHaveLength(4);
-            expect(src_1.TIER2_FOES).toHaveLength(4);
-            expect(src_1.TIER3_FOES).toHaveLength(4);
-            expect(src_1.ADVERSARIES).toHaveLength(8);
-            expect(src_1.ALLIES).toHaveLength(10);
-            expect(src_1.DIFFICULTIES).toHaveLength(2);
-            expect(src_1.GAME_SOURCES).toHaveLength(2);
+            expect(TIER1_FOES).toHaveLength(4);
+            expect(TIER2_FOES).toHaveLength(4);
+            expect(TIER3_FOES).toHaveLength(4);
+            expect(ADVERSARIES).toHaveLength(8);
+            expect(ALLIES).toHaveLength(10);
+            expect(DIFFICULTIES).toHaveLength(2);
+            expect(GAME_SOURCES).toHaveLength(2);
         });
         test('SeedConfig type is usable', () => {
             const config = {
@@ -348,13 +352,36 @@ describe('Package Exports', () => {
     });
     describe('SystemRandom Exports', () => {
         test('SystemRandom is a constructor', () => {
-            expect(typeof src_1.SystemRandom).toBe('function');
-            const rng = new src_1.SystemRandom(42);
+            expect(typeof SystemRandom).toBe('function');
+            const rng = new SystemRandom(42);
             expect(rng).toBeDefined();
             expect(typeof rng.next).toBe('function');
             expect(typeof rng.nextMax).toBe('function');
             expect(typeof rng.nextRange).toBe('function');
             expect(typeof rng.nextDouble).toBe('function');
+        });
+    });
+    describe('Grouped data namespace (v5)', () => {
+        test('data exposes all domain sub-namespaces', () => {
+            expect(Object.keys(src_1.data).sort()).toEqual(['board', 'content', 'foes', 'heroes', 'inventory', 'monuments']);
+        });
+        test('data.heroes / monuments / foes board rosters resolve', () => {
+            expect(src_1.data.heroes.HEROES.length).toBeGreaterThan(0);
+            expect(typeof src_1.data.heroes.HERO_BY_ID).toBe('object');
+            expect(src_1.data.monuments.MONUMENTS.length).toBe(8);
+            expect(src_1.data.foes.FOES.length).toBeGreaterThan(0);
+            expect(src_1.data.foes.FOE_STATUSES.length).toBe(5);
+        });
+        test('data.content exposes gameplay content (distinct from the board roster)', () => {
+            expect(src_1.data.content.HEROES.Spymaster.name).toBe('Spymaster');
+            expect(src_1.data.content.heroes.length).toBe(10);
+            expect(src_1.data.content.COMPANIONS.Gleb.title).toBe('The Outlaw King');
+            expect(src_1.data.content.kingdomVirtues.length).toBe(4);
+        });
+        test('data.inventory exposes box component data', () => {
+            expect(src_1.data.inventory.expansions.length).toBe(4);
+            expect(src_1.data.inventory.EXPANSIONS['Base Game'].name).toBe('Base Game');
+            expect(src_1.data.inventory.sleeves.length).toBeGreaterThan(0);
         });
     });
 });

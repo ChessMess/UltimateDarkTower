@@ -8,8 +8,8 @@ import {
   ALL_FOES,
   FOE_BY_ID,
   FOE_BY_NAME,
-} from '../src/udtFoes';
-import { TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES } from '../src/udtSeedParser';
+} from '../src/data/udtFoes';
+import { TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES } from '../src/seed/udtSeedParser';
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 

@@ -1,13 +1,13 @@
 /**
  * Integrity + behavior tests for the board adjacency graph and its BFS helpers.
  */
-import { BOARD_LOCATIONS } from '../src/udtGameBoard';
+import { BOARD_LOCATIONS } from '../src/data/board/udtGameBoard';
 import {
   BOARD_ADJACENCY,
   neighborsOf,
   stepDistance,
   shortestPath,
-} from '../src/udtBoardAdjacency';
+} from '../src/data/board/udtBoardAdjacency';
 
 const locationNames = new Set(BOARD_LOCATIONS.map((l) => l.name));
 

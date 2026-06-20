@@ -3,8 +3,8 @@
  * Generate the library's board-layout data modules from the location-marker
  * tool's combined export (`udtBoardData.json`):
  *
- *   src/udtBoardAnchors.ts    <- imageInfo + anchors  (BOARD_IMAGE_INFO, BOARD_ANCHORS)
- *   src/udtBoardAdjacency.ts  <- adjacency            (BOARD_ADJACENCY + graph helpers)
+ *   src/data/board/udtBoardAnchors.ts    <- imageInfo + anchors  (BOARD_IMAGE_INFO, BOARD_ANCHORS)
+ *   src/data/board/udtBoardAdjacency.ts  <- adjacency            (BOARD_ADJACENCY + graph helpers)
  *
  * The data is inlined as typed `const`s (the `udtGameBoard.ts` convention) rather
  * than imported as JSON, because `tsc` does not copy `.json` into `dist/` and the
@@ -21,7 +21,7 @@ import { dirname, resolve } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const data = JSON.parse(readFileSync(resolve(here, 'udtBoardData.json'), 'utf8'));
-const srcDir = resolve(here, '../../src');
+const srcDir = resolve(here, '../../src/data/board');
 
 const round5 = (n) => Number(n.toFixed(5));
 
@@ -158,4 +158,4 @@ export function shortestPath(a: string, b: string): readonly string[] {
 
 writeFileSync(resolve(srcDir, 'udtBoardAnchors.ts'), anchorsFile);
 writeFileSync(resolve(srcDir, 'udtBoardAdjacency.ts'), adjacencyFile);
-console.log('Wrote src/udtBoardAnchors.ts and src/udtBoardAdjacency.ts');
+console.log('Wrote src/data/board/udtBoardAnchors.ts and src/data/board/udtBoardAdjacency.ts');

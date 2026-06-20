@@ -7,18 +7,26 @@ commands — start with the [Getting Started tutorial](../GETTING_STARTED.md) fo
 mainly so [UltimateDarkTowerBoard](https://github.com/ChessMess/UltimateDarkTowerBoard) can **re-export**
 them rather than vendor a copy; you can use them directly too. **Changelog:** [../../CHANGELOG.md](../../CHANGELOG.md).
 
+> **v5.0.0:** this reference data now lives under the **`data`** namespace, grouped by domain
+> (`data.board`, `data.heroes`, `data.monuments`, `data.foes`, plus `data.content` /
+> `data.inventory`). Import `data` once and destructure (or access) per domain:
+
 ```ts
-import {
+import { data } from 'ultimatedarktower';
+
+const {
   BOARD_LOCATIONS, BOARD_LOCATION_BY_NAME, BOARD_GROUPINGS,
   BOARD_ANCHORS, BOARD_IMAGE_INFO,
   BOARD_ADJACENCY, neighborsOf, stepDistance, shortestPath,
-  HEROES, HERO_BY_ID, MONUMENTS, MONUMENT_BY_ID,
-  FOE_STATUSES, FOES, ADVERSARY_ROSTER, ALL_FOES, FOE_BY_ID, FOE_BY_NAME,
-} from 'ultimatedarktower';
+} = data.board;
+const { HEROES, HERO_BY_ID } = data.heroes;
+const { MONUMENTS, MONUMENT_BY_ID } = data.monuments;
+const { FOE_STATUSES, FOES, ADVERSARY_ROSTER, ALL_FOES, FOE_BY_ID, FOE_BY_NAME } = data.foes;
 ```
 
-> The seed-parser foe/adversary/ally **enums** (`TIER1_FOES`, `ADVERSARIES`, `ALLIES`, …) and their types
-> live in [seed.md](seed.md). This page covers the board geometry and the foe/hero/monument **metadata**.
+> The seed-parser foe/adversary/ally **enums** (`seed.TIER1_FOES`, `seed.ADVERSARIES`, `seed.ALLIES`, …)
+> and their types live in [seed.md](seed.md). This page covers the board geometry and the
+> foe/hero/monument **metadata**.
 
 ---
 
@@ -62,7 +70,8 @@ just provides the graph).
 | `shortestPath` | `(a: string, b: string) => string[]` | A shortest path (inclusive), or `[]` if unreachable. |
 
 ```ts
-import { neighborsOf, stepDistance, shortestPath } from 'ultimatedarktower';
+import { data } from 'ultimatedarktower';
+const { neighborsOf, stepDistance, shortestPath } = data.board;
 
 neighborsOf('Broken Lands');                 // -> adjacent location names
 stepDistance('Broken Lands', 'Green Bridge'); // -> hop count (-1 if unreachable)

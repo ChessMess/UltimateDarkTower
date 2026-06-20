@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * Integrity tests for the hero roster.
  */
-const udtHeroes_1 = require("../src/udtHeroes");
+const udtHeroes_1 = require("../src/data/udtHeroes");
 describe('HEROES', () => {
     test('has the 14 heroes with the expected per-source counts', () => {
         expect(udtHeroes_1.HEROES).toHaveLength(14);

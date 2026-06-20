@@ -4,7 +4,7 @@
  * comparison, and dump utilities.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-const udtSeedParser_1 = require("../src/udtSeedParser");
+const udtSeedParser_1 = require("../src/seed/udtSeedParser");
 // ── charToValue / valueToChar ──────────────────────────────────────────────
 describe('charToValue / valueToChar', () => {
     const expectedMappings = [

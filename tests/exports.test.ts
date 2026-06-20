@@ -45,7 +45,37 @@ import UltimateDarkTower, {
   milliVoltsToPercentage,
   milliVoltsToPercentageNumber,
 
-  // Seed parser
+  // Grouped reference-data + seed namespaces (v5: data.*, seed.*)
+  data,
+  seed,
+} from '../src';
+
+// Rebind the namespaced members to local names so the assertions below read unchanged.
+// This also serves as the export-contract check for the new `data`/`seed` surface.
+const {
+  BOARD_LOCATIONS,
+  BOARD_LOCATION_BY_NAME,
+  BOARD_GROUPINGS,
+  BOARD_ANCHORS,
+  BOARD_IMAGE_INFO,
+  BOARD_ADJACENCY,
+  neighborsOf,
+  stepDistance,
+  shortestPath,
+} = data.board;
+type TerrainType = data.board.TerrainType;
+type BuildingType = data.board.BuildingType;
+type BoardKingdom = data.board.BoardKingdom;
+type BoardGrouping = data.board.BoardGrouping;
+type BoardLocation = data.board.BoardLocation;
+type Anchor = data.board.Anchor;
+type AnchorSlot = data.board.AnchorSlot;
+type LocationAnchors = data.board.LocationAnchors;
+type BoardAnchorMap = data.board.BoardAnchorMap;
+type BoardImageInfo = data.board.BoardImageInfo;
+type BoardAdjacency = data.board.BoardAdjacency;
+
+const {
   charToValue,
   valueToChar,
   validateSeed,
@@ -62,49 +92,23 @@ import UltimateDarkTower, {
   ALLIES,
   DIFFICULTIES,
   GAME_SOURCES,
-  type Tier1Foe,
-  type Tier2Foe,
-  type Tier3Foe,
-  type Adversary,
-  type Ally,
-  type Difficulty,
-  type GameSource,
-  type ExpansionType,
-  type Confidence,
-  type SeedBank,
-  type DecodedSeed,
-  type SeedConfig,
-  type CharDiff,
-  type SeedComparison,
-  type CharDump,
-
-  // System.Random replica
   SystemRandom,
-
-  // Game board data
-  BOARD_LOCATIONS,
-  BOARD_LOCATION_BY_NAME,
-  BOARD_GROUPINGS,
-  type TerrainType,
-  type BuildingType,
-  type BoardKingdom,
-  type BoardGrouping,
-  type BoardLocation,
-
-  // Board layout anchors + adjacency
-  BOARD_ANCHORS,
-  BOARD_IMAGE_INFO,
-  BOARD_ADJACENCY,
-  neighborsOf,
-  stepDistance,
-  shortestPath,
-  type Anchor,
-  type AnchorSlot,
-  type LocationAnchors,
-  type BoardAnchorMap,
-  type BoardImageInfo,
-  type BoardAdjacency,
-} from '../src';
+} = seed;
+type Tier1Foe = seed.Tier1Foe;
+type Tier2Foe = seed.Tier2Foe;
+type Tier3Foe = seed.Tier3Foe;
+type Adversary = seed.Adversary;
+type Ally = seed.Ally;
+type Difficulty = seed.Difficulty;
+type GameSource = seed.GameSource;
+type ExpansionType = seed.ExpansionType;
+type Confidence = seed.Confidence;
+type SeedBank = seed.SeedBank;
+type DecodedSeed = seed.DecodedSeed;
+type SeedConfig = seed.SeedConfig;
+type CharDiff = seed.CharDiff;
+type SeedComparison = seed.SeedComparison;
+type CharDump = seed.CharDump;
 
 describe('Package Exports', () => {
   describe('Tower State Types', () => {
@@ -474,6 +478,35 @@ describe('Package Exports', () => {
       expect(typeof rng.nextMax).toBe('function');
       expect(typeof rng.nextRange).toBe('function');
       expect(typeof rng.nextDouble).toBe('function');
+    });
+  });
+
+  describe('Grouped data namespace (v5)', () => {
+    test('data exposes all domain sub-namespaces', () => {
+      expect(Object.keys(data).sort()).toEqual(
+        ['board', 'content', 'foes', 'heroes', 'inventory', 'monuments'],
+      );
+    });
+
+    test('data.heroes / monuments / foes board rosters resolve', () => {
+      expect(data.heroes.HEROES.length).toBeGreaterThan(0);
+      expect(typeof data.heroes.HERO_BY_ID).toBe('object');
+      expect(data.monuments.MONUMENTS.length).toBe(8);
+      expect(data.foes.FOES.length).toBeGreaterThan(0);
+      expect(data.foes.FOE_STATUSES.length).toBe(5);
+    });
+
+    test('data.content exposes gameplay content (distinct from the board roster)', () => {
+      expect(data.content.HEROES.Spymaster.name).toBe('Spymaster');
+      expect(data.content.heroes.length).toBe(10);
+      expect(data.content.COMPANIONS.Gleb.title).toBe('The Outlaw King');
+      expect(data.content.kingdomVirtues.length).toBe(4);
+    });
+
+    test('data.inventory exposes box component data', () => {
+      expect(data.inventory.expansions.length).toBe(4);
+      expect(data.inventory.EXPANSIONS['Base Game'].name).toBe('Base Game');
+      expect(data.inventory.sleeves.length).toBeGreaterThan(0);
     });
   });
 });

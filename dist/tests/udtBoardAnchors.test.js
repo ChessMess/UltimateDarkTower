@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * Integrity tests for the board layout anchors + image metadata.
  */
-const udtGameBoard_1 = require("../src/udtGameBoard");
-const udtBoardAnchors_1 = require("../src/udtBoardAnchors");
+const udtGameBoard_1 = require("../src/data/board/udtGameBoard");
+const udtBoardAnchors_1 = require("../src/data/board/udtBoardAnchors");
 describe('BOARD_ANCHORS', () => {
     test('has an entry for every board location and no unknown names', () => {
         const locationNames = new Set(udtGameBoard_1.BOARD_LOCATIONS.map((l) => l.name));

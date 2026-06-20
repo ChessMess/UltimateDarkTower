@@ -1,8 +1,8 @@
 /**
  * Integrity tests for the board layout anchors + image metadata.
  */
-import { BOARD_LOCATIONS } from '../src/udtGameBoard';
-import { BOARD_ANCHORS, BOARD_IMAGE_INFO } from '../src/udtBoardAnchors';
+import { BOARD_LOCATIONS } from '../src/data/board/udtGameBoard';
+import { BOARD_ANCHORS, BOARD_IMAGE_INFO } from '../src/data/board/udtBoardAnchors';
 
 describe('BOARD_ANCHORS', () => {
   test('has an entry for every board location and no unknown names', () => {

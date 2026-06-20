@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * Integrity + behavior tests for the board adjacency graph and its BFS helpers.
  */
-const udtGameBoard_1 = require("../src/udtGameBoard");
-const udtBoardAdjacency_1 = require("../src/udtBoardAdjacency");
+const udtGameBoard_1 = require("../src/data/board/udtGameBoard");
+const udtBoardAdjacency_1 = require("../src/data/board/udtBoardAdjacency");
 const locationNames = new Set(udtGameBoard_1.BOARD_LOCATIONS.map((l) => l.name));
 describe('BOARD_ADJACENCY', () => {
     test('covers all 60 locations and references only valid names', () => {

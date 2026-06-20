@@ -56,8 +56,8 @@ asymmetry, name typos, and the component breakdown. Export is allowed despite wa
 
 ## Export / import
 
-- **Anchors .ts** → `udtBoardAnchors.ts` (`BOARD_ANCHORS` + `BOARD_IMAGE_INFO`, `as const`).
-- **Adjacency .ts** → `udtBoardAdjacency.ts` (`BOARD_ADJACENCY`, neighbor arrays sorted).
+- **Anchors .ts** → `src/data/board/udtBoardAnchors.ts` (`BOARD_ANCHORS` + `BOARD_IMAGE_INFO`, `as const`).
+- **Adjacency .ts** → `src/data/board/udtBoardAdjacency.ts` (`BOARD_ADJACENCY`, neighbor arrays sorted).
 - **Combined .json** → `udtBoardData.json` (anchors + adjacency + image info) — round-trips
   via **Import**.
 - **Import** accepts the combined `.json`, a previously exported `.ts`, or a
@@ -69,7 +69,7 @@ Working state autosaves to `localStorage` on every change; the board image is no
 ## Keeping the location list in sync
 
 The 60-location list is embedded inline in `index.html` (so it's truly single-file). It
-was generated from the library's source of truth, `src/udtGameBoard.ts` → `BOARD_LOCATIONS`.
+was generated from the library's source of truth, `src/data/board/udtGameBoard.ts` → `BOARD_LOCATIONS`.
 When that changes, regenerate and paste the printed block back into `index.html`:
 
 ```sh

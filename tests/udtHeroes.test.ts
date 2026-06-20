@@ -1,7 +1,7 @@
 /**
  * Integrity tests for the hero roster.
  */
-import { HEROES, HERO_BY_ID, type ContentSource } from '../src/udtHeroes';
+import { HEROES, HERO_BY_ID, type ContentSource } from '../src/data/udtHeroes';
 
 describe('HEROES', () => {
   test('has the 14 heroes with the expected per-source counts', () => {

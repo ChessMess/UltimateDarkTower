@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING — reference/game data and the seed subsystem moved off the flat root API into the `data` and `seed` namespaces.** The library's exports are now split by concern: tower control / BLE / protocol stay at the root (`UltimateDarkTower`, adapters, state, logger, diagnostics, helpers, all `udtConstants` like `GLYPHS`/`TOWER_AUDIO_LIBRARY` — unchanged), while browseable reference data lives under `data.*` and the seed encode/decode + RNG subsystem under `seed.*`. The modules also moved on disk into `src/data/` (with `src/data/board/`) and `src/seed/`. Migrate imports:
+
+  | Old (flat, `'ultimatedarktower'`) | New |
+  |---|---|
+  | `HEROES`, `HERO_BY_ID`, `Hero`, `HeroId`, `ContentSource` | `data.heroes.*` |
+  | `MONUMENTS`, `MONUMENT_BY_ID`, `Monument`, `MonumentId` | `data.monuments.*` |
+  | `FOE_STATUSES`, `FOES`, `ADVERSARY_ROSTER`, `ALL_FOES`, `FOE_BY_ID`, `FOE_BY_NAME`, `FoeStatus`/`FoeLevel`/`FoeId`/`FoeName`/`Foe` | `data.foes.*` |
+  | `BOARD_LOCATIONS`, `BOARD_LOCATION_BY_NAME`, `BOARD_GROUPINGS`, `BOARD_ANCHORS`, `BOARD_IMAGE_INFO`, `BOARD_ADJACENCY`, `neighborsOf`, `stepDistance`, `shortestPath` + board types | `data.board.*` |
+  | seed fns (`charToValue`…`dumpSeedChars`), rosters (`TIER1_FOES`…`GAME_SOURCES`), seed types | `seed.*` |
+  | `SystemRandom` | `seed.SystemRandom` |
+
+  Example: `import { HEROES } from 'ultimatedarktower'` → `import { data } from 'ultimatedarktower'; data.heroes.HEROES`. Sub-namespacing also lets the two distinct hero/foe datasets coexist (board roster `data.heroes.HEROES` vs gameplay content `data.content.HEROES`). This is a major (v5.0.0) change; downstream consumers (`ultimatedarktowerboard`, `ultimatedarktowerdigital`) migrate to the namespaces and bump their dependency.
+
+### Added
+
+- **`data.content` — gameplay reference content** (`src/data/udtGameContent.ts`). Keyed records with derived union types for the 10 playable heroes (`HEROES` with `defaultVirtues`/`unlockableVirtues`/`bannerAction`), the level 2–4 `FOES` and level-5 `ADVERSARIES`, `COMPANIONS`, and `KINGDOM_VIRTUES` (keyed East/North/South/West), plus list views (`heroes`/`foes`/`adversaries`/`companions`/`kingdomVirtues`). Uses the official spreadsheet wording — intentionally **not** reconciled with `TOWER_AUDIO_LIBRARY` keys (e.g. "Isa The Exile" vs the audio cue `IsatheHollow`).
+- **`data.inventory` — box component counts** (`src/data/udtBoxInventory.ts`). `expansions` / `EXPANSIONS` (Base Game, Alliances, Covenant, Dark Horde) of categorized `Component` line-items, plus `coffers`, `coffers2`, `skullsPack`, and `sleeves`.
+
 ## [4.1.0] - 2026-06-18
 
 ### Added

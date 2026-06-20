@@ -4170,279 +4170,23 @@ var IndexedDBSink = class {
   }
 };
 
-// src/udtSeedParser.ts
-var ALPHABET = "a123456789bcdefghijklmnpqrstuvwxyz";
-var BASE = 34;
-var SETUP_LENGTH = 6;
-var RNG_SEED_LENGTH = 6;
-var SEED_LENGTH = SETUP_LENGTH + RNG_SEED_LENGTH;
-var CHAR_TO_VALUE = /* @__PURE__ */ new Map();
-var VALUE_TO_CHAR = /* @__PURE__ */ new Map();
-for (let i = 0; i < ALPHABET.length; i++) {
-  CHAR_TO_VALUE.set(ALPHABET[i], i);
-  VALUE_TO_CHAR.set(i, ALPHABET[i]);
-}
-var TIER1_FOES = ["Brigands", "Oreks", "Shadow Wolves", "Spine Fiends"];
-var TIER2_FOES = ["Frost Trolls", "Clan of Neuri", "Lemures", "Widowmade Spiders"];
-var TIER3_FOES = ["Dragons", "Mormos", "Striga", "Titans"];
-var ADVERSARIES = [
-  "Ashstrider",
-  "Bane of Omens",
-  "Empress of Shades",
-  "Gaze Eternal",
-  "Gravemaw",
-  "Isa the Exile",
-  "Lingering Rot",
-  "Utuk'Ku"
-];
-var ALLIES = [
-  "Gleb",
-  "Grigor",
-  "Hakan",
-  "Letha",
-  "Miras",
-  "Nimet",
-  "Tomas",
-  "Vasa",
-  "Yana",
-  "Zaida"
-];
-var DIFFICULTIES = ["Heroic", "Gritty"];
-var GAME_SOURCES = ["Core", "Competitive"];
-function charToValue(c) {
-  const v = CHAR_TO_VALUE.get(c.toLowerCase());
-  if (v === void 0) {
-    throw new Error(`Invalid seed character: '${c}'`);
-  }
-  return v;
-}
-function valueToChar(v) {
-  const c = VALUE_TO_CHAR.get(v);
-  if (c === void 0) {
-    throw new Error(`Invalid seed value: ${v} (must be 0\u2013${BASE - 1})`);
-  }
-  return c;
-}
-function validateSeed(seed) {
-  const stripped = seed.replace(/[-\s]/g, "").toLowerCase();
-  if (stripped.length !== SEED_LENGTH) {
-    throw new Error(`Invalid seed length: expected ${SEED_LENGTH} characters, got ${stripped.length}`);
-  }
-  for (const c of stripped) {
-    if (!CHAR_TO_VALUE.has(c)) {
-      throw new Error(`Invalid seed character: '${c}'`);
-    }
-  }
-  const upper = stripped.toUpperCase();
-  return `${upper.slice(0, 4)}-${upper.slice(4, 8)}-${upper.slice(8, 12)}`;
-}
-function decodeSeed(seed) {
-  const normalized = validateSeed(seed);
-  const stripped = normalized.replace(/-/g, "").toLowerCase();
-  const setup = [];
-  for (let i = 0; i < SETUP_LENGTH; i++) {
-    setup.push(charToValue(stripped[i]));
-  }
-  let rngSeed = 0;
-  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
-    const value = charToValue(stripped[SETUP_LENGTH + i]);
-    rngSeed += value * Math.round(Math.pow(BASE, i));
-  }
-  const foeByteA = setup[0];
-  const tier1 = foeByteA & 3;
-  const tier2 = (foeByteA & 12) >> 2;
-  const foeByteB = setup[1];
-  const tier3 = (foeByteA & 16) >> 4 | (foeByteB & 16) >> 3;
-  const adversaryIndex = foeByteB & 15;
-  const allyIndex = setup[2];
-  const extra = setup[3];
-  const difficultyIndex = extra & 1;
-  const expansionBits = (extra & 6) >> 1;
-  const sourceBits = (extra & 8) >> 2;
-  const playerCount = (setup[5] & 3) + 1;
-  const expansions = [];
-  if (expansionBits & 1) expansions.push("Monuments");
-  if (expansionBits & 2) expansions.push("Alliances");
-  let source;
-  switch (sourceBits) {
-    case 2:
-      source = "Competitive";
-      break;
-    default:
-      source = "Core";
-      break;
-  }
-  const seedBank = {
-    initializationSeed: rngSeed,
-    questSeed: rngSeed - 1,
-    seedString: normalized
-  };
-  return {
-    seed: normalized,
-    tier1Foe: TIER1_FOES[tier1],
-    tier2Foe: TIER2_FOES[tier2],
-    tier3Foe: TIER3_FOES[tier3],
-    adversary: ADVERSARIES[adversaryIndex],
-    ally: ALLIES[allyIndex],
-    difficulty: DIFFICULTIES[difficultyIndex],
-    source,
-    expansions,
-    playerCount,
-    rngSeed,
-    seedBank,
-    setup
-  };
-}
-function decodeRngSeed(seed) {
-  const normalized = validateSeed(seed);
-  const stripped = normalized.replace(/-/g, "").toLowerCase();
-  let rngSeed = 0;
-  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
-    const value = charToValue(stripped[SETUP_LENGTH + i]);
-    rngSeed += value * Math.round(Math.pow(BASE, i));
-  }
-  return rngSeed;
-}
-function createSeed(config) {
-  let foeByteA = 0;
-  let foeByteB = 0;
-  const tier1Index = TIER1_FOES.indexOf(config.foes[0]);
-  const tier2Index = TIER2_FOES.indexOf(config.foes[1]);
-  const tier3Index = TIER3_FOES.indexOf(config.foes[2]);
-  if (tier1Index < 0) throw new Error(`Invalid Tier 1 foe: ${config.foes[0]}`);
-  if (tier2Index < 0) throw new Error(`Invalid Tier 2 foe: ${config.foes[1]}`);
-  if (tier3Index < 0) throw new Error(`Invalid Tier 3 foe: ${config.foes[2]}`);
-  foeByteA = tier1Index & 3;
-  foeByteA |= (tier2Index & 3) << 2;
-  foeByteA |= (tier3Index & 1) << 4;
-  foeByteB |= (tier3Index >> 1 & 1) << 4;
-  const adversaryIndex = ADVERSARIES.indexOf(config.adversary);
-  if (adversaryIndex < 0) throw new Error(`Invalid adversary: ${config.adversary}`);
-  foeByteB |= adversaryIndex & 15;
-  const allyIndex = ALLIES.indexOf(config.ally);
-  if (allyIndex < 0) throw new Error(`Invalid ally: ${config.ally}`);
-  let extraByte = 0;
-  if (config.difficulty === "Gritty") extraByte |= 1;
-  for (const expansion of config.expansions) {
-    switch (expansion) {
-      case "Monuments":
-        extraByte |= 2;
-        break;
-      case "Alliances":
-        extraByte |= 4;
-        break;
-    }
-  }
-  if (config.source === "Competitive") extraByte |= 8;
-  const versionByte = 0;
-  const playerCountByte = Math.max(0, Math.min(3, config.playerCount - 1));
-  let seedStr = valueToChar(foeByteA) + valueToChar(foeByteB) + valueToChar(allyIndex) + valueToChar(extraByte) + valueToChar(versionByte) + valueToChar(playerCountByte);
-  let rngValue = 0;
-  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
-    const value = Math.floor(Math.random() * BASE);
-    seedStr += valueToChar(value);
-    rngValue += value * Math.round(Math.pow(BASE, i));
-  }
-  const upper = seedStr.toUpperCase();
-  const formatted = `${upper.slice(0, 4)}-${upper.slice(4, 8)}-${upper.slice(8, 12)}`;
-  return { seed: formatted, rngValue };
-}
-function encodeSeed(config, rngValue) {
-  let foeByteA = 0;
-  let foeByteB = 0;
-  const tier1Index = TIER1_FOES.indexOf(config.foes[0]);
-  const tier2Index = TIER2_FOES.indexOf(config.foes[1]);
-  const tier3Index = TIER3_FOES.indexOf(config.foes[2]);
-  if (tier1Index < 0) throw new Error(`Invalid Tier 1 foe: ${config.foes[0]}`);
-  if (tier2Index < 0) throw new Error(`Invalid Tier 2 foe: ${config.foes[1]}`);
-  if (tier3Index < 0) throw new Error(`Invalid Tier 3 foe: ${config.foes[2]}`);
-  foeByteA = tier1Index & 3;
-  foeByteA |= (tier2Index & 3) << 2;
-  foeByteA |= (tier3Index & 1) << 4;
-  foeByteB |= (tier3Index >> 1 & 1) << 4;
-  const adversaryIndex = ADVERSARIES.indexOf(config.adversary);
-  if (adversaryIndex < 0) throw new Error(`Invalid adversary: ${config.adversary}`);
-  foeByteB |= adversaryIndex & 15;
-  const allyIndex = ALLIES.indexOf(config.ally);
-  if (allyIndex < 0) throw new Error(`Invalid ally: ${config.ally}`);
-  let extraByte = 0;
-  if (config.difficulty === "Gritty") extraByte |= 1;
-  for (const expansion of config.expansions) {
-    switch (expansion) {
-      case "Monuments":
-        extraByte |= 2;
-        break;
-      case "Alliances":
-        extraByte |= 4;
-        break;
-    }
-  }
-  if (config.source === "Competitive") extraByte |= 8;
-  const versionByte = 0;
-  const playerCountByte = Math.max(0, Math.min(3, config.playerCount - 1));
-  let seedStr = valueToChar(foeByteA) + valueToChar(foeByteB) + valueToChar(allyIndex) + valueToChar(extraByte) + valueToChar(versionByte) + valueToChar(playerCountByte);
-  let remaining = rngValue;
-  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
-    const digit = remaining % BASE;
-    seedStr += valueToChar(digit);
-    remaining = Math.floor(remaining / BASE);
-  }
-  const upper = seedStr.toUpperCase();
-  return `${upper.slice(0, 4)}-${upper.slice(4, 8)}-${upper.slice(8, 12)}`;
-}
-function compareSeedsRaw(seed1, seed2) {
-  const n1 = validateSeed(seed1);
-  const n2 = validateSeed(seed2);
-  const s1 = n1.replace(/-/g, "").toLowerCase();
-  const s2 = n2.replace(/-/g, "").toLowerCase();
-  const diffs = [];
-  for (let i = 0; i < SEED_LENGTH; i++) {
-    const v1 = charToValue(s1[i]);
-    const v2 = charToValue(s2[i]);
-    if (v1 !== v2) {
-      diffs.push({
-        charIndex: i,
-        value1: v1,
-        value2: v2,
-        char1: s1[i],
-        char2: s2[i]
-      });
-    }
-  }
-  return {
-    seed1: n1,
-    seed2: n2,
-    diffs,
-    setupDiffs: diffs.filter((d) => d.charIndex < SETUP_LENGTH),
-    rngDiffs: diffs.filter((d) => d.charIndex >= SETUP_LENGTH)
-  };
-}
-var SETUP_FIELD_LABELS = {
-  0: "Tier1/Tier2/Tier3lo",
-  1: "Adversary/Tier3hi",
-  2: "Ally",
-  3: "Difficulty/Expansions/Source",
-  4: "Version",
-  5: "PlayerCount"
-};
-function dumpSeedChars(seed) {
-  const normalized = validateSeed(seed);
-  const stripped = normalized.replace(/-/g, "").toLowerCase();
-  const chars = [];
-  for (let i = 0; i < SEED_LENGTH; i++) {
-    const isSetup = i < SETUP_LENGTH;
-    chars.push({
-      index: i,
-      char: stripped[i],
-      value: charToValue(stripped[i]),
-      section: isSetup ? "setup" : "rng",
-      field: isSetup ? SETUP_FIELD_LABELS[i] : void 0
-    });
-  }
-  return { seed: normalized, chars };
-}
+// src/data/index.ts
+var data_exports = {};
+__export(data_exports, {
+  board: () => board_exports,
+  content: () => udtGameContent_exports,
+  foes: () => udtFoes_exports,
+  heroes: () => udtHeroes_exports,
+  inventory: () => udtBoxInventory_exports,
+  monuments: () => udtMonuments_exports
+});
 
-// src/udtHeroes.ts
+// src/data/udtHeroes.ts
+var udtHeroes_exports = {};
+__export(udtHeroes_exports, {
+  HEROES: () => HEROES,
+  HERO_BY_ID: () => HERO_BY_ID
+});
 var HEROES = [
   // Base (4)
   { id: "brutal-warlord", name: "Brutal Warlord", source: "base" },
@@ -4470,7 +4214,12 @@ var HERO_BY_ID = Object.freeze(
   }, {})
 );
 
-// src/udtMonuments.ts
+// src/data/udtMonuments.ts
+var udtMonuments_exports = {};
+__export(udtMonuments_exports, {
+  MONUMENTS: () => MONUMENTS,
+  MONUMENT_BY_ID: () => MONUMENT_BY_ID
+});
 var MONUMENTS = [
   { id: "arch-of-the-golden-sun", name: "Arch of the Golden Sun", source: "covenant" },
   { id: "argent-oak", name: "Argent Oak", source: "covenant" },
@@ -4488,7 +4237,16 @@ var MONUMENT_BY_ID = Object.freeze(
   }, {})
 );
 
-// src/udtFoes.ts
+// src/data/udtFoes.ts
+var udtFoes_exports = {};
+__export(udtFoes_exports, {
+  ADVERSARY_ROSTER: () => ADVERSARY_ROSTER,
+  ALL_FOES: () => ALL_FOES,
+  FOES: () => FOES,
+  FOE_BY_ID: () => FOE_BY_ID,
+  FOE_BY_NAME: () => FOE_BY_NAME,
+  FOE_STATUSES: () => FOE_STATUSES
+});
 var FOE_STATUSES = ["panicked", "unsteady", "ready", "savage", "lethal"];
 var FOES = [
   // Tier 1 — level 2
@@ -4531,120 +4289,21 @@ var FOE_BY_NAME = Object.freeze(
   }, {})
 );
 
-// src/udtSystemRandom.ts
-var INT32_MAX = 2147483647;
-var MSEED = 161803398;
-function toInt32(n) {
-  return n | 0;
-}
-var SystemRandom = class {
-  /**
-   * Create a new PRNG instance with the given seed.
-   * Matches C# `new System.Random(seed)` exactly.
-   */
-  constructor(seed) {
-    this.seedArray = new Array(56).fill(0);
-    this.inext = 0;
-    this.inextp = 0;
-    this.initialize(seed);
-  }
-  /**
-   * Replicate .NET's System.Random constructor seeding algorithm.
-   */
-  initialize(seed) {
-    let subtraction;
-    if (seed === -2147483648) {
-      subtraction = INT32_MAX;
-    } else {
-      subtraction = Math.abs(seed);
-    }
-    let mj = toInt32(MSEED - subtraction);
-    this.seedArray[55] = mj;
-    let mk = 1;
-    for (let i = 1; i < 55; i++) {
-      const ii = 21 * i % 55;
-      this.seedArray[ii] = mk;
-      mk = toInt32(mj - mk);
-      if (mk < 0) mk = toInt32(mk + INT32_MAX);
-      mj = this.seedArray[ii];
-    }
-    for (let k = 1; k < 5; k++) {
-      for (let i = 1; i < 56; i++) {
-        this.seedArray[i] = toInt32(this.seedArray[i] - this.seedArray[1 + (i + 30) % 55]);
-        if (this.seedArray[i] < 0) {
-          this.seedArray[i] = toInt32(this.seedArray[i] + INT32_MAX);
-        }
-      }
-    }
-    this.inext = 0;
-    this.inextp = 21;
-  }
-  /**
-   * Internal sample — returns value in range [0, Int32.MaxValue).
-   * Matches C#'s InternalSample().
-   */
-  internalSample() {
-    let retVal;
-    let locINext = this.inext;
-    let locINextp = this.inextp;
-    if (++locINext >= 56) locINext = 1;
-    if (++locINextp >= 56) locINextp = 1;
-    retVal = toInt32(this.seedArray[locINext] - this.seedArray[locINextp]);
-    if (retVal === INT32_MAX) retVal--;
-    if (retVal < 0) retVal = toInt32(retVal + INT32_MAX);
-    this.seedArray[locINext] = retVal;
-    this.inext = locINext;
-    this.inextp = locINextp;
-    return retVal;
-  }
-  /**
-   * Sample — returns a double in range [0.0, 1.0).
-   * Matches C#'s Sample().
-   */
-  sample() {
-    return this.internalSample() * (1 / INT32_MAX);
-  }
-  /**
-   * Returns a non-negative random integer less than Int32.MaxValue.
-   * Matches C# `Random.Next()`.
-   */
-  next() {
-    return this.internalSample();
-  }
-  /**
-   * Returns a non-negative random integer less than maxValue.
-   * Matches C# `Random.Next(maxValue)`.
-   */
-  nextMax(maxValue) {
-    if (maxValue < 0) {
-      throw new Error("maxValue must be non-negative");
-    }
-    return toInt32(this.sample() * maxValue);
-  }
-  /**
-   * Returns a random integer in range [minValue, maxValue).
-   * Matches C# `Random.Next(minValue, maxValue)`.
-   */
-  nextRange(minValue, maxValue) {
-    if (minValue > maxValue) {
-      throw new Error("minValue must be less than or equal to maxValue");
-    }
-    const range = maxValue - minValue;
-    if (range <= INT32_MAX) {
-      return toInt32(this.sample() * range) + minValue;
-    }
-    return toInt32(this.internalSample() * (1 / INT32_MAX) * range) + minValue;
-  }
-  /**
-   * Returns a random double in range [0.0, 1.0).
-   * Matches C# `Random.NextDouble()`.
-   */
-  nextDouble() {
-    return this.sample();
-  }
-};
+// src/data/board/index.ts
+var board_exports = {};
+__export(board_exports, {
+  BOARD_ADJACENCY: () => BOARD_ADJACENCY,
+  BOARD_ANCHORS: () => BOARD_ANCHORS,
+  BOARD_GROUPINGS: () => BOARD_GROUPINGS,
+  BOARD_IMAGE_INFO: () => BOARD_IMAGE_INFO,
+  BOARD_LOCATIONS: () => BOARD_LOCATIONS,
+  BOARD_LOCATION_BY_NAME: () => BOARD_LOCATION_BY_NAME,
+  neighborsOf: () => neighborsOf,
+  shortestPath: () => shortestPath,
+  stepDistance: () => stepDistance
+});
 
-// src/udtGameBoard.ts
+// src/data/board/udtGameBoard.ts
 var BOARD_GROUPINGS = {
   /** Dayside and Fivepint (North kingdom lakes). */
   LONG_WATER: "Long Water",
@@ -4721,7 +4380,7 @@ var BOARD_LOCATIONS = [
 ];
 var BOARD_LOCATION_BY_NAME = Object.fromEntries(BOARD_LOCATIONS.map((loc) => [loc.name, loc]));
 
-// src/udtBoardAnchors.ts
+// src/data/board/udtBoardAnchors.ts
 var BOARD_IMAGE_INFO = {
   width: 4096,
   height: 4096,
@@ -5065,7 +4724,7 @@ var BOARD_ANCHORS = {
   }
 };
 
-// src/udtBoardAdjacency.ts
+// src/data/board/udtBoardAdjacency.ts
 var BOARD_ADJACENCY = {
   "Howling Desert": [
     "Azkol's Bane",
@@ -5431,21 +5090,1397 @@ function shortestPath(a, b) {
   return [];
 }
 
+// src/data/udtGameContent.ts
+var udtGameContent_exports = {};
+__export(udtGameContent_exports, {
+  ADVERSARIES: () => ADVERSARIES,
+  COMPANIONS: () => COMPANIONS,
+  FOES: () => FOES2,
+  HEROES: () => HEROES2,
+  KINGDOM_VIRTUES: () => KINGDOM_VIRTUES,
+  adversaries: () => adversaries,
+  companions: () => companions,
+  foes: () => foes,
+  heroes: () => heroes,
+  kingdomVirtues: () => kingdomVirtues
+});
+var HEROES2 = {
+  Spymaster: {
+    name: "Spymaster",
+    expansion: "Base Game",
+    bannerAction: "Place your hero on any space in your current kingdom.",
+    defaultVirtues: [
+      { name: "Alert", ability: "+1 Stealth Advantage." },
+      { name: "Swift", ability: "Your base move is 4." }
+    ],
+    unlockableVirtues: [
+      { name: "Resourceful", ability: "At the end of each month, gain 15 warriors." },
+      {
+        name: "Fortunate",
+        ability: "You may Reinforce twice per turn at the same building."
+      },
+      {
+        name: "Unseen",
+        ability: "When you complete a monthly quest, you may remove a foe instead of gaining spirit."
+      }
+    ]
+  },
+  "Brutal Warlord": {
+    name: "Brutal Warlord",
+    expansion: "Base Game",
+    bannerAction: "Gain 5 warriors.",
+    defaultVirtues: [
+      { name: "Baleful", ability: "+1 Melee Advantage." },
+      { name: "Veteran", ability: "+1 Wild Advantage when you Battle." }
+    ],
+    unlockableVirtues: [
+      { name: "Inspiring", ability: "After you Reinforce, also gain 6 warriors." },
+      {
+        name: "Callous",
+        ability: "After you Battle, if you lost at least 10 warriors, gain a treasure from the market."
+      },
+      { name: "Relentless", ability: "If you double your move, gain +1 Wild Advantage." }
+    ]
+  },
+  "Orphaned Scion": {
+    name: "Orphaned Scion",
+    expansion: "Base Game",
+    bannerAction: "Gain 1 spirit.",
+    defaultVirtues: [
+      { name: "Arcane", ability: "+1 Magic Advantage." },
+      { name: "Generous", ability: "After you Cleanse, remove 1 skull from any building." }
+    ],
+    unlockableVirtues: [
+      {
+        name: "Infused",
+        ability: "At the start of your turn, remove 1 skull from a building in your home kingdom."
+      },
+      {
+        name: "Blessed",
+        ability: "Spend 1 spirit to prevent up to 6 warrior losses from a battle card or dungeon room."
+      },
+      {
+        name: "Anointed",
+        ability: "+1 Wild Advantage for each building with no skulls on or adjacent to your space."
+      }
+    ]
+  },
+  "Relic Hunter": {
+    name: "Relic Hunter",
+    expansion: "Base Game",
+    bannerAction: "Gain 1 potion.",
+    defaultVirtues: [
+      { name: "Precise", ability: "+1 Humanoid Advantage." },
+      {
+        name: "Prepared",
+        ability: "When you Reinforce at a bazaar, spend 1 less spirit to gain a treasure."
+      }
+    ],
+    unlockableVirtues: [
+      { name: "Crafty", ability: "When you spend a potion, double the number on it." },
+      {
+        name: "Lucky",
+        ability: "When you spend (not lose) a treasure, gain the top card of the treasure deck."
+      },
+      { name: "Inventive", ability: "Spend 4 potions to remove a foe from your space." }
+    ]
+  },
+  "Haunted Recluse": {
+    name: "Haunted Recluse",
+    expansion: "Alliances",
+    bannerAction: "Move 1 skull from any building to any other building with 2 or fewer skulls.",
+    defaultVirtues: [
+      { name: "Spiritreaver", ability: "+1 Undead Advantage." },
+      {
+        name: "Skullweaver",
+        ability: "When a skull emerges in your home kingdom, you can place it on any building with 2 or fewer skulls in any kingdom."
+      }
+    ],
+    unlockableVirtues: [
+      {
+        name: "Shadowspinner",
+        ability: "+1 Wild Advantage for each building with skulls on or adjacent to your space."
+      },
+      {
+        name: "Soulreaper",
+        ability: "Prevent up to 2 warrior losses per battle card for each skull on or adjacent to your space."
+      },
+      {
+        name: "Sinbearer",
+        ability: "At the end of the month you can spend up to 12 warriors to remove all skulls from your current kingdom."
+      }
+    ]
+  },
+  Archwright: {
+    name: "Archwright",
+    expansion: "Alliances",
+    bannerAction: "Place a battlement on any space or move a battlement up to 2 spaces.",
+    defaultVirtues: [
+      { name: "Innovative", ability: "+1 Beast Advantage." },
+      { name: "Clever", ability: "Battlements give you +2 Wild Advantages (instead of +1)." }
+    ],
+    unlockableVirtues: [
+      {
+        name: "Tactical",
+        ability: "While on a battlement, you can Battle a foe on an adjacent space. (Terrain advantages use the space you are on.)"
+      },
+      {
+        name: "Wily",
+        ability: "Battlements give you advantages when you Quest (in addition to when you Battle)."
+      },
+      {
+        name: "Exalted",
+        ability: "While on a battlement, you may Cleanse to remove skulls from all adjacent buildings."
+      }
+    ]
+  },
+  "Relentless Warden": {
+    name: "Relentless Warden",
+    expansion: "Covenant",
+    bannerAction: "Place quarry token on a foe if it is not already, else move quarry token up to 2 spaces.",
+    defaultVirtues: [
+      { name: "Perceptive", ability: "+1 Wild Advantage vs. your quarry." },
+      {
+        name: "Guarded",
+        ability: "Prevent up to 3 warrior losses per battle card when you Battle your quarry."
+      }
+    ],
+    unlockableVirtues: [
+      { name: "Keen-Eyed", ability: "+2 Wild Advantages vs. your quarry." },
+      {
+        name: "Instinctive",
+        ability: "You may remove your quarry token to ignore your quarry during its strike event."
+      },
+      {
+        name: "Inspiring",
+        ability: "When you defeat your quarry, remove all skulls on or adjacent to your space."
+      }
+    ]
+  },
+  "Undaunted Aegis": {
+    name: "Undaunted Aegis",
+    expansion: "Covenant",
+    bannerAction: "For each corruption you have, gain 3 warriors. You may spend 10 warriors to remove one of your corruptions.",
+    defaultVirtues: [
+      {
+        name: "Ascetic",
+        ability: "Gain 1 spirit for each battle card you spend no advantages on."
+      },
+      {
+        name: "Iron-Willed",
+        ability: "You can have an additional corruption. Start the game with 1 random corruption."
+      }
+    ],
+    unlockableVirtues: [
+      { name: "Emboldened", ability: "+1 Wild Advantage for each corruption you have." },
+      {
+        name: "Resolute",
+        ability: "When you Reinforce, spend 1 less spirit for each corruption you have."
+      },
+      {
+        name: "Steeled",
+        ability: "Once per turn, if another hero would gain a corruption, you may gain it instead and gain 2 spirit."
+      }
+    ]
+  },
+  "Devious Swindler": {
+    name: "Devious Swindler",
+    expansion: "Covenant",
+    bannerAction: "Roll the haggle die and gain the result.",
+    defaultVirtues: [
+      {
+        name: "Inventive",
+        ability: "When you Battle, gain all advantages in the treasure market."
+      },
+      {
+        name: "Joyful",
+        ability: "When you roll the haggle die, ignore the Cancelled symbol."
+      }
+    ],
+    unlockableVirtues: [
+      {
+        name: "Fortuitous",
+        ability: "After you roll the haggle die, you may reroll once and take either result."
+      },
+      {
+        name: "Opportunistic",
+        ability: "When any player gains a treasure from the treasure market, you gain a blessing."
+      },
+      {
+        name: "Calculating",
+        ability: "You may ignore warrior and spirit losses on critical hit battle cards."
+      }
+    ]
+  },
+  "Reverent Astromancer": {
+    name: "Reverent Astromancer",
+    expansion: "Covenant",
+    bannerAction: "Remove a skull on or adjacent to your space.",
+    defaultVirtues: [
+      {
+        name: "Well Versed",
+        ability: "If you remove a skull with your Banner action, gain a blessing."
+      },
+      {
+        name: "Pious",
+        ability: "At the start of each month, prepare spells equal to the month number."
+      }
+    ],
+    unlockableVirtues: [
+      { name: "Exalted", ability: "You can prepare invocations." },
+      { name: "Zealous", ability: "Whenever you cast a spell, gain a blessing." },
+      {
+        name: "Bounteous",
+        ability: "Once per turn, when you cast a spell, gain the top card of the treasure deck."
+      }
+    ]
+  }
+};
+var heroes = Object.values(HEROES2);
+var FOES2 = {
+  Brigands: { name: "Brigands", level: 2 },
+  Oreks: { name: "Oreks", level: 2 },
+  "Shadow Wolves": { name: "Shadow Wolves", level: 2 },
+  "Spine Fiend": { name: "Spine Fiend", level: 2 },
+  "Clan Of Neuri": { name: "Clan Of Neuri", level: 3 },
+  "Frost Troll": { name: "Frost Troll", level: 3 },
+  Lemure: { name: "Lemure", level: 3 },
+  "Widowmade Spider": { name: "Widowmade Spider", level: 3 },
+  Dragon: { name: "Dragon", level: 4 },
+  Mormo: { name: "Mormo", level: 4 },
+  Striga: { name: "Striga", level: 4 },
+  Titan: { name: "Titan", level: 4 }
+};
+var foes = Object.values(FOES2);
+var ADVERSARIES = {
+  Ashstrider: { name: "Ashstrider", level: 5 },
+  "Bane Of Omens": { name: "Bane Of Omens", level: 5 },
+  "Empress Of Shades": { name: "Empress Of Shades", level: 5 },
+  "Gaze Eternal": { name: "Gaze Eternal", level: 5 },
+  Gravemaw: { name: "Gravemaw", level: 5 },
+  "Isa The Exile": { name: "Isa The Exile", level: 5 },
+  "Lingering Rot": { name: "Lingering Rot", level: 5 },
+  "U'tuk-Ku The Ice Herald": { name: "U'tuk-Ku The Ice Herald", level: 5 }
+};
+var adversaries = Object.values(ADVERSARIES);
+var COMPANIONS = {
+  Gleb: { name: "Gleb", title: "The Outlaw King" },
+  Grigor: { name: "Grigor", title: "The Unbreakable" },
+  Hakan: { name: "Hakan", title: "The Artificer" },
+  Letha: { name: "Letha", title: "The Dryad" },
+  Miras: { name: "Miras", title: "The Horselord" },
+  Nimet: { name: "Nimet", title: "The Fathomless" },
+  Tomas: { name: "Tomas", title: "The Scout" },
+  Vasa: { name: "Vasa", title: "The Devine" },
+  Yana: { name: "Yana", title: "The Assassin" },
+  Zaida: { name: "Zaida", title: "The Efreet" }
+};
+var companions = Object.values(COMPANIONS);
+var KINGDOM_VIRTUES = {
+  East: { name: "Champion of the East", ability: "+2 Wild Advantages in hills." },
+  North: { name: "Champion of the North", ability: "+2 Wild Advantages in mountains." },
+  South: { name: "Champion of the South", ability: "+2 Wild Advantages in deserts." },
+  West: { name: "Champion of the West", ability: "+2 Wild Advantages in forests." }
+};
+var kingdomVirtues = Object.values(KINGDOM_VIRTUES);
+
+// src/data/udtBoxInventory.ts
+var udtBoxInventory_exports = {};
+__export(udtBoxInventory_exports, {
+  EXPANSIONS: () => EXPANSIONS,
+  coffers: () => coffers,
+  coffers2: () => coffers2,
+  expansions: () => expansions,
+  skullsPack: () => skullsPack,
+  sleeves: () => sleeves
+});
+var expansions = [
+  {
+    name: "Base Game",
+    categories: [
+      {
+        name: "Manuals / Sheets",
+        section: "Misc",
+        components: [
+          { name: "Are You Ready To Take On The Tower", count: 1 },
+          { name: "Re-Pack Sheet", count: 1 },
+          { name: "Rulebook", count: 1 }
+        ]
+      },
+      {
+        name: "Tower",
+        section: "Misc",
+        components: [
+          { name: "Seals", count: 12 },
+          { name: "Tower", count: 1 }
+        ]
+      },
+      {
+        name: "Boards",
+        section: "Misc",
+        components: [
+          { name: "Brutal Warlord", count: 1 },
+          { name: "Game Board", count: 1 },
+          { name: "Orphaned Scion", count: 1 },
+          { name: "Relic Hunter", count: 1 },
+          { name: "Spymaster", count: 1 }
+        ]
+      },
+      {
+        name: "Minis",
+        section: "Misc",
+        components: [
+          { name: "Bazaars", count: 4 },
+          { name: "Citadels", count: 4 },
+          { name: "Hero Figures", count: 4 },
+          { name: "Sanctuaries", count: 4 },
+          { name: "Villages", count: 4 }
+        ]
+      },
+      {
+        name: "Mini Bases",
+        section: "Misc",
+        components: [
+          { color: "Blue", count: 1 },
+          { color: "Brown", count: 1 },
+          { color: "Green", count: 1 },
+          { color: "White", count: 1 }
+        ]
+      },
+      {
+        name: "Dungeons",
+        section: "Tokens",
+        components: [
+          { name: "Cave", count: 1 },
+          { name: "Encampment", count: 1 },
+          { name: "Fortress", count: 1 },
+          { name: "Ruins", count: 1 },
+          { name: "Shrine", count: 1 },
+          { name: "Tomb", count: 1 }
+        ]
+      },
+      {
+        name: "Foes / Adversaries",
+        section: "Tokens",
+        components: [
+          { name: "Brigands", level: 2, count: 8 },
+          { name: "Oreks", level: 2, count: 6 },
+          { name: "Shadow Wolves", level: 2, count: 8 },
+          { name: "Spine Fiend", level: 2, count: 6 },
+          { name: "Clan Of Neuri", level: 3, count: 5 },
+          { name: "Frost Troll", level: 3, count: 4 },
+          { name: "Lemure", level: 3, count: 6 },
+          { name: "Widowmade Spider", level: 3, count: 5 },
+          { name: "Dragon", level: 4, count: 2 },
+          { name: "Mormo", level: 4, count: 4 },
+          { name: "Striga", level: 4, count: 2 },
+          { name: "Titan", level: 4, count: 1 },
+          { name: "Ashstrider", level: 5, count: 1 },
+          { name: "Bane Of Omens", level: 5, count: 1 },
+          { name: "Empress Of Shades", level: 5, count: 1 },
+          { name: "Gaze Eternal", level: 5, count: 1 },
+          { name: "Gravemaw", level: 5, count: 1 },
+          { name: "Isa The Exile", level: 5, count: 1 },
+          { name: "Lingering Rot", level: 5, count: 1 },
+          { name: "U'tuk-Ku The Ice Herald", level: 5, count: 1 }
+        ]
+      },
+      {
+        name: "Quest Markers & Bases",
+        section: "Tokens",
+        components: [
+          { name: "Adversary", count: 1 },
+          { name: "Companion", count: 1 },
+          { name: "Main Goal", count: 1 }
+        ]
+      },
+      {
+        name: "Special",
+        section: "Tokens",
+        components: [
+          { name: "Caravans", type: "Eastern", count: 1 },
+          { name: "Caravans", type: "Northern", count: 1 },
+          { name: "Caravans", type: "Western", count: 1 },
+          { name: "River Of Fire", count: 4 },
+          { name: "Siege Trees", count: 8 },
+          { name: "Spores", count: 8 }
+        ]
+      },
+      {
+        name: "Spirits",
+        section: "Tokens",
+        components: [
+          { name: "1's", count: 25 },
+          { name: "5's", count: 19 }
+        ]
+      },
+      {
+        name: "Virtues",
+        section: "Tokens",
+        components: [
+          { name: "Anointed", count: 1 },
+          { name: "Blessed", count: 1 },
+          { name: "Callous", count: 1 },
+          { name: "Champion Of The East", count: 1 },
+          { name: "Champion Of The North", count: 1 },
+          { name: "Champion Of The South", count: 1 },
+          { name: "Champion Of The West", count: 1 },
+          { name: "Crafty", count: 1 },
+          { name: "Fortunate", count: 1 },
+          { name: "Infused", count: 1 },
+          { name: "Inspiring", count: 1 },
+          { name: "Inventive", count: 1 },
+          { name: "Lucky", count: 1 },
+          { name: "Relentless", count: 1 },
+          { name: "Resourceful", count: 1 },
+          { name: "Unseen", count: 1 }
+        ]
+      },
+      {
+        name: "Warriors",
+        section: "Tokens",
+        components: [
+          { name: "1's", count: 30 },
+          { name: "5's", count: 25 }
+        ]
+      },
+      {
+        name: "Companion",
+        section: "Cards",
+        components: [
+          { name: "Gleb", description: "The Outlaw King", count: 1 },
+          { name: "Grigor", description: "The Unbreakable", count: 1 },
+          { name: "Hakan", description: "The Artificer", count: 1 },
+          { name: "Letha", description: "The Dryad", count: 1 },
+          { name: "Miras", description: "The Horselord", count: 1 },
+          { name: "Nimet", description: "The Fathomless", count: 1 },
+          { name: "Tomas", description: "The Scout", count: 1 },
+          { name: "Vasa", description: "The Devine", count: 1 },
+          { name: "Yana", description: "The Assassin", count: 1 },
+          { name: "Zaida", description: "The Efreet", count: 1 }
+        ]
+      },
+      {
+        name: "Corruption",
+        section: "Cards",
+        components: [
+          { name: "Cruel", count: 1 },
+          { name: "Cursed", count: 1 },
+          { name: "Feeble", count: 1 },
+          { name: "Feral", count: 1 },
+          { name: "Feverish", count: 1 },
+          { name: "Greedy", count: 1 },
+          { name: "Lost", count: 1 },
+          { name: "Selfish", count: 1 },
+          { name: "Suspicious", count: 1 },
+          { name: "Tempted", count: 1 },
+          { name: "Uncertain", count: 1 },
+          { name: "Weak", count: 1 }
+        ]
+      },
+      {
+        name: "Foes",
+        section: "Cards",
+        components: [
+          { name: "Brigands", level: 2, count: 1 },
+          { name: "Oreks", level: 2, count: 1 },
+          { name: "Shadow Wolves", level: 2, count: 1 },
+          { name: "Spine Fiend", level: 2, count: 1 },
+          { name: "Clan Of Neuri", level: 3, count: 1 },
+          { name: "Frost Troll", level: 3, count: 1 },
+          { name: "Lemure", level: 3, count: 1 },
+          { name: "Widowmade Spider", level: 3, count: 1 },
+          { name: "Dragon", level: 4, count: 1 },
+          { name: "Mormo", level: 4, count: 1 },
+          { name: "Striga", level: 4, count: 1 },
+          { name: "Titan", level: 4, count: 1 },
+          { name: "Ashstrider", level: 5, count: 1 },
+          { name: "Bane Of Omens", level: 5, count: 1 },
+          { name: "Empress Of Shades", level: 5, count: 1 },
+          { name: "Gaze Eternal", level: 5, count: 1 },
+          { name: "Gravemaw", level: 5, count: 1 },
+          { name: "Isa The Exile", level: 5, count: 1 },
+          { name: "Lingering Rot", level: 5, count: 1 },
+          { name: "U'tuk-Ku The Ice Herald", level: 5, count: 1 }
+        ]
+      },
+      {
+        name: "Gear",
+        section: "Cards",
+        components: [
+          { name: "Blessed Scepters", count: 3 },
+          { name: "Brass Talismans", count: 3 },
+          { name: "Dusky Cloaks", count: 3 },
+          { name: "LeaTher Armor", count: 3 },
+          { name: "Longswords", count: 3 },
+          { name: "Trusted Maps", count: 3 }
+        ]
+      },
+      {
+        name: "Heroic Tests",
+        section: "Cards",
+        components: [
+          { name: "Finish Building The Shrine", type: "Compassion", count: 1 },
+          { name: "Suffer With The Silent Sisters", type: "Compassion", count: 1 },
+          { name: "Guide Abandoned Pilgrims", type: "Compassion", count: 1 },
+          { name: "Hold A Moonless Vigil", type: "Compassion", count: 1 },
+          { name: "Perform The Song Of Peril", type: "Prowess", count: 1 },
+          { name: "Race To The Golden Obelisk", type: "Prowess", count: 1 },
+          { name: "Solve The Riddle Of The Marid", type: "Prowess", count: 1 },
+          { name: "Survive The Drowned Barrows", type: "Prowess", count: 1 },
+          { name: "Consecrate Akartus", type: "Sacrifice", count: 1 },
+          { name: "Lay Plovo's Ghost To Rest", type: "Sacrifice", count: 1 },
+          { name: "Repair The Weeping Damn", type: "Sacrifice", count: 1 },
+          { name: "Supply The WatchTowers", type: "Sacrifice", count: 1 },
+          { name: "Activate The Ley Lines", type: "Valor", count: 1 },
+          { name: "Impress The Winter Fey", type: "Valor", count: 1 },
+          { name: "Protect The Radiant Castle", type: "Valor", count: 1 },
+          { name: "Win Egan's Tournament", type: "Valor", count: 1 }
+        ]
+      },
+      {
+        name: "Potions",
+        section: "Cards",
+        components: [
+          { name: "Potion Of Dragon Teeth", count: 3 },
+          { name: "Potion Of Fortune's Favor", count: 3 },
+          { name: "Potion Of one Thousand Strides", count: 3 },
+          { name: "Potion Of Purifying Breath", count: 3 },
+          { name: "Potion Of The Golden Sun", count: 3 },
+          { name: "Potion Of The Siren's Song", count: 3 }
+        ]
+      },
+      {
+        name: "Quest Items",
+        section: "Cards",
+        components: [
+          { name: "Amulet Of Annihilation", count: 1 },
+          { name: "Amulet Of Hope", count: 4 },
+          { name: "Bezoar", count: 1 },
+          { name: "Dragon Scales", count: 1 },
+          { name: "Fulminating Silver", count: 1 },
+          { name: "Golden Wolf Pelt", count: 1 },
+          { name: "Herbal Remedy", count: 1 },
+          { name: "Horn Of The Elements", count: 1 },
+          { name: "Mark Of The Outlaw", count: 1 },
+          { name: "Orb Of Pure Snow", count: 1 },
+          { name: "Relic Of Light", count: 1 },
+          { name: "Smuggler's Coin", count: 1 },
+          { name: "The Black Mark", count: 1 },
+          { name: "Tomas's Map", count: 1 },
+          { name: "Tools Of The Saboteur", count: 1 },
+          { name: "Turquoise Urn", count: 1 },
+          { name: "Wraps Of Invisibility", count: 1 }
+        ]
+      },
+      {
+        name: "Treasures",
+        section: "Cards",
+        components: [
+          { name: "Acorns Of The White Oak", count: 1 },
+          { name: "Amulet Of The Marid", count: 1 },
+          { name: "Axe Of Soul Rending", count: 1 },
+          { name: "Azkol's Banner", count: 1 },
+          { name: "Azkol's Horn", count: 1 },
+          { name: "Azkol's Idol", count: 1 },
+          { name: "Circlet Of Conviction", count: 1 },
+          { name: "Cloak Of Stars", count: 1 },
+          { name: "Crown Of Azkol", count: 1 },
+          { name: "Golden Mace Of Azkol", count: 1 },
+          { name: "Hallowed Reliquary", count: 1 },
+          { name: "Kamaria's Carpet", count: 1 },
+          { name: "Lamp Of Darkness", count: 1 },
+          { name: "Lamp Of Hope", count: 1 },
+          { name: "Necklace Of Haggling", count: 1 },
+          { name: "Oakstone Bow", count: 1 },
+          { name: "Scroll Of Burning Sands", count: 1 },
+          { name: "Scroll Of The Great Serpent", count: 1 },
+          { name: "Scroll Of Twilight Shadow", count: 1 },
+          { name: "Spear Of Atish", count: 1 },
+          { name: "Tears Of The Shedu", count: 1 },
+          { name: "White Cauldron", count: 1 }
+        ]
+      }
+    ]
+  },
+  {
+    name: "Alliances",
+    categories: [
+      {
+        name: "Boards",
+        section: "Misc",
+        components: [
+          { name: "Arcane Scouts", count: 1 },
+          { name: "Archwright", count: 1 },
+          { name: "Druids Circle", count: 1 },
+          { name: "Heroic Action", count: 4 },
+          { name: "Hunted Recluse", count: 1 },
+          { name: "Influence Vessel", count: 1 },
+          { name: "Paladins Order", count: 1 },
+          { name: "Thieves Guild", count: 1 }
+        ]
+      },
+      {
+        name: "Mini Bases",
+        section: "Misc",
+        components: [
+          { color: "Brown", count: 1 },
+          { color: "Yellow", count: 1 }
+        ]
+      },
+      {
+        name: "Flags",
+        section: "Misc",
+        components: [
+          { type: "Arcane Scouts", count: 1 },
+          { type: "Druids Circle", count: 1 },
+          { type: "Paladins Order", count: 1 },
+          { type: "Thieves Guild", count: 1 }
+        ]
+      },
+      {
+        name: "Skulls",
+        section: "Misc",
+        components: [
+          { color: "Blue (Frost)", count: 11 },
+          { color: "Green (Blight)", count: 11 },
+          { color: "Purple (Omen)", count: 11 },
+          { color: "Red (Fire)", count: 11 }
+        ]
+      },
+      {
+        name: "Influence",
+        section: "Tokens",
+        components: [
+          { name: "1's", count: 17 },
+          { name: "5's", count: 23 }
+        ]
+      },
+      {
+        name: "Virtues",
+        section: "Tokens",
+        components: [
+          { name: "Exalted", count: 1 },
+          { name: "Shadowspinner", count: 1 },
+          { name: "Sinbearer", count: 1 },
+          { name: "Soulreaper", count: 1 },
+          { name: "Tactical", count: 1 },
+          { name: "Wily", count: 1 }
+        ]
+      },
+      {
+        name: "Companion",
+        section: "Cards",
+        components: [
+          { name: "Amani", description: "The Vizier", count: 1 },
+          { name: "Berat", description: "The Wizard", count: 1 },
+          { name: "Burgoyn", description: "The Herbalist", count: 1 },
+          { name: "Ema", description: "The Grand Merchant", count: 1 },
+          { name: "Haraswa", description: "The Pegasus", count: 1 },
+          { name: "Lukas", description: "The Plunderer", count: 1 },
+          { name: "Maxim", description: "The Beast", count: 1 },
+          { name: "Omar", description: "The Healer", count: 1 },
+          { name: "Oola", description: "The Nomad", count: 1 },
+          { name: "Ruska", description: "The Barbarian", count: 1 },
+          { name: "Sanzhar", description: "The Zealot", count: 1 },
+          { name: "Xyr", description: "The Oracle", count: 1 }
+        ]
+      },
+      {
+        name: "Treasures",
+        section: "Cards",
+        components: [
+          { name: "Coffer Of The Master Thief", count: 1 },
+          { name: "Crystal Blade", count: 1 },
+          { name: "Crystal Platemail", count: 1 },
+          { name: "Crystal Shield", count: 1 },
+          { name: "Diadem Of The Emmisary", count: 1 },
+          { name: "Druid's Incense", count: 1 },
+          { name: "Everlasting Brazier", count: 1 },
+          { name: "Ewer Of The Silent Child", count: 1 },
+          { name: "Forbidden Grimoire", count: 1 },
+          { name: "Iron Hound Of Azkol", count: 1 },
+          { name: "Jeweled Goblet Of Azkol", count: 1 },
+          { name: "Paladin's Greatshield", count: 1 },
+          { name: "Ring Of The Emmisary", count: 1 },
+          { name: "Robes Of The Last Sultan", count: 1 },
+          { name: "Scroll Of Forged Friendship", count: 1 },
+          { name: "Standard Of The Scouts", count: 1 },
+          { name: "Staff Of Wishes", count: 1 },
+          { name: "Trebblok's Hammer", count: 1 },
+          { name: "Vestments Of The Emmisary", count: 1 },
+          { name: "Zemayir's Teeth", count: 1 }
+        ]
+      }
+    ]
+  },
+  {
+    name: "Covenant",
+    categories: [
+      {
+        name: "Boards",
+        section: "Misc",
+        components: [
+          { name: "Devious Swindler", count: 1 },
+          { name: "Relentless Warden", count: 1 },
+          { name: "Reverent Astromancer", count: 1 },
+          { name: "Undaunted Aegis", count: 1 }
+        ]
+      },
+      {
+        name: "Mini Bases",
+        section: "Misc",
+        components: [
+          { color: "Blue", count: 1 },
+          { color: "Brown", count: 1 },
+          { color: "Green", count: 1 },
+          { color: "Orange", count: 1 }
+        ]
+      },
+      {
+        name: "Monuments",
+        section: "Misc",
+        components: [
+          { type: "Arch of the Golden Sun", count: 1 },
+          { type: "Argent Oak", count: 1 },
+          { type: "Cenotaph of the First Prophet", count: 1 },
+          { type: "Colossus of Bjorn", count: 1 },
+          { type: "Endless Necropolis", count: 1 },
+          { type: "Moonstone Temple", count: 1 },
+          { type: "Nightmare Cage", count: 1 },
+          { type: "Tower Shard", count: 1 }
+        ]
+      },
+      {
+        name: "Foundation",
+        section: "Tokens",
+        components: [
+          { name: "Arch of the Golden Sun / Nightmare Cage", count: 1 },
+          { name: "Argent Oak / Moonstone Temple", count: 1 },
+          { name: "Cenotaph of the First Prophet / Tower Shard", count: 1 },
+          { name: "Colossus of Bjorn / Endless Necropolis", count: 1 }
+        ]
+      },
+      {
+        name: "Virtues",
+        section: "Tokens",
+        components: [
+          { name: "Bounteous", count: 1 },
+          { name: "Exalted", count: 1 },
+          { name: "Zealous", count: 1 },
+          { name: "Emboldened", count: 1 },
+          { name: "Resolute", count: 1 },
+          { name: "Steeled", count: 1 },
+          { name: "Keen-Eyed", count: 1 },
+          { name: "Inspiring", count: 1 },
+          { name: "Instinctive", count: 1 },
+          { name: "Calculating", count: 1 },
+          { name: "Opportunistic", count: 1 },
+          { name: "Fortuitous", count: 1 }
+        ]
+      },
+      {
+        name: "Corruption",
+        section: "Cards",
+        components: [
+          { name: "Aquaphobic", count: 1 },
+          { name: "Arrogant", count: 1 },
+          { name: "Crestfallen", count: 1 },
+          { name: "Disreputable", count: 1 },
+          { name: "Fatigued", count: 1 },
+          { name: "Indolent", count: 1 },
+          { name: "Inobservant", count: 1 },
+          { name: "Reckless", count: 1 },
+          { name: "Shaken", count: 1 },
+          { name: "Snobby", count: 1 },
+          { name: "Timid", count: 1 },
+          { name: "Vain", count: 1 }
+        ]
+      },
+      {
+        name: "Invocation",
+        section: "Cards",
+        components: [
+          { name: "Abate the Darkness", count: 1 },
+          { name: "Celestial Jaunt", count: 1 },
+          { name: "Commanding Rebuke", count: 1 },
+          { name: "Smite the Wicked", count: 1 }
+        ]
+      },
+      {
+        name: "Monument",
+        section: "Cards",
+        components: [
+          { name: "Arch of the Golden Sun", description: "Bazaar", count: 1 },
+          { name: "Argent Oak", description: "Sanctuary", count: 1 },
+          { name: "Cenotaph of the First Prophet", description: "Citadel", count: 1 },
+          { name: "Colossus of Bjorn", description: "Village", count: 1 },
+          { name: "Endless Necropolis", description: "Village", count: 1 },
+          { name: "Moonstone Temple", description: "Sanctuary", count: 1 },
+          { name: "Nightmare Cage", description: "Bazaar", count: 1 },
+          { name: "Tower Shard", description: "Citadel", count: 1 }
+        ]
+      },
+      {
+        name: "Spell",
+        section: "Cards",
+        components: [
+          { name: "Aura of Friendship", count: 1 },
+          { name: "Bestow Blessing", count: 1 },
+          { name: "Bounty of the Gods", count: 1 },
+          { name: "Ritual of Warding", count: 1 },
+          { name: "Soothing Word", count: 1 },
+          { name: "Winds of Change", count: 1 }
+        ]
+      },
+      {
+        name: "Treasures",
+        section: "Cards",
+        components: [
+          { name: "Archwright's Sledge", count: 1 },
+          { name: "Azkol's Chakram", count: 1 },
+          { name: "Azkol's Ichor", count: 1 },
+          { name: "Azkol's Scroll", count: 1 },
+          { name: "Azkol's Vambraces", count: 1 },
+          { name: "Beacon Stone", count: 1 },
+          { name: "Brutal Warlord's Bell", count: 1 },
+          { name: "Everfilled Chest", count: 1 },
+          { name: "Grim Whisper", count: 1 },
+          { name: "Haunted Recluse's Effigy", count: 1 },
+          { name: "Opal of Protection", count: 1 },
+          { name: "Orhpaned Scion's Charm", count: 1 },
+          { name: "Relic Hunter's Flagon", count: 1 },
+          { name: "Sanctified Flask", count: 1 },
+          { name: "Spymaster's Journal", count: 1 },
+          { name: "Tent of Revelry", count: 1 },
+          { name: "The Iron Wall", count: 1 },
+          { name: "Wand of Celerity", count: 1 },
+          { name: "Wand of Conflagration", count: 1 },
+          { name: "Wand of Pacification", count: 1 }
+        ]
+      }
+    ]
+  },
+  {
+    name: "Dark Horde",
+    categories: [
+      {
+        name: "Storage Tray 1 (Top)",
+        section: "Minis",
+        components: [
+          { name: "Briagands", count: 8 },
+          { name: "Clan Of Neuri", count: 5 },
+          { name: "Isa The Exile", count: 1 },
+          { name: "Lemure", count: 6 },
+          { name: "Mormo", count: 4 },
+          { name: "Oreks", count: 6 },
+          { name: "Shadow Wolves", count: 8 },
+          { name: "Spine Fiend", count: 6 },
+          { name: "Widowmade Spider", count: 5 }
+        ]
+      },
+      {
+        name: "Storage Tray 2 (Bottom)",
+        section: "Minis",
+        components: [
+          { name: "Frost Trolls", count: 4 },
+          { name: "Gravemaw", count: 1 },
+          { name: "Dragon", count: 2 },
+          { name: "Empress Of Shades", count: 1 },
+          { name: "Bane Of Omens", count: 1 },
+          { name: "Lingering Rot", count: 1 },
+          { name: "Striga", count: 2 },
+          { name: "Ashstrider", count: 1 },
+          { name: "Titan", count: 1 },
+          { name: "Gaze Eternal", count: 1 },
+          { name: "U'tuk-Ku The Ice Herald", count: 1 },
+          { name: "Main Goal Marker", count: 1 },
+          { name: "Guild Quest Marker", count: 1 },
+          { name: "Adversary Quest Marker", count: 1 },
+          { name: "Companion Quest Marker", count: 1 }
+        ]
+      }
+    ]
+  }
+];
+var EXPANSIONS = expansions.reduce(
+  (acc, e) => {
+    acc[e.name] = e;
+    return acc;
+  },
+  {}
+);
+var coffers = [
+  {
+    resource: "Influence",
+    denominations: [
+      { name: "1's", count: 8 },
+      { name: "5's", count: 17 }
+    ],
+    total: 25
+  },
+  {
+    resource: "Spirits",
+    denominations: [
+      { name: "1's", count: 24 },
+      { name: "5's", count: 16 }
+    ],
+    total: 40
+  },
+  {
+    resource: "Warriors",
+    denominations: [
+      { name: "1's", count: 28 },
+      { name: "5's", count: 22 }
+    ],
+    total: 50
+  }
+];
+var coffers2 = {
+  tokens: [
+    { name: "Advantage", count: 10 },
+    { name: "Charge", count: 10 },
+    { name: "Foundation", count: 4 },
+    { name: "Guild", count: 4 },
+    { name: "Protection", count: 6 },
+    { name: "Quarry", count: 1 },
+    { name: "Wasteland", count: 32 }
+  ],
+  total: 67
+};
+var skullsPack = {
+  tokens: [
+    { name: "White (Normal)", count: 10 },
+    { name: "Black (Doom)", count: 2 },
+    { name: "Blue (Frost)", count: 2 },
+    { name: "Green (Blight)", count: 2 },
+    { name: "Purple (Omen)", count: 2 },
+    { name: "Red (Fire)", count: 2 }
+  ],
+  total: 20
+};
+var sleeves = [
+  { name: "Printed Large Sleeves", purposes: ["Monuments", "Treasure Cards"] },
+  {
+    name: "Printed Mini Sleeves",
+    purposes: ["Gear", "Heroic Tests", "Invocations", "Potions", "Quest Items", "Spells"]
+  },
+  { name: "Clear Large Sleeves", purposes: ["Companions", "Foes"] },
+  { name: "Clear Mini Sleeves", purposes: ["Blessings", "Corruptions"] }
+];
+
+// src/seed/index.ts
+var seed_exports = {};
+__export(seed_exports, {
+  ADVERSARIES: () => ADVERSARIES2,
+  ALLIES: () => ALLIES,
+  DIFFICULTIES: () => DIFFICULTIES,
+  GAME_SOURCES: () => GAME_SOURCES,
+  SystemRandom: () => SystemRandom,
+  TIER1_FOES: () => TIER1_FOES,
+  TIER2_FOES: () => TIER2_FOES,
+  TIER3_FOES: () => TIER3_FOES,
+  charToValue: () => charToValue,
+  compareSeedsRaw: () => compareSeedsRaw,
+  createSeed: () => createSeed,
+  decodeRngSeed: () => decodeRngSeed,
+  decodeSeed: () => decodeSeed,
+  dumpSeedChars: () => dumpSeedChars,
+  encodeSeed: () => encodeSeed,
+  validateSeed: () => validateSeed,
+  valueToChar: () => valueToChar
+});
+
+// src/seed/udtSeedParser.ts
+var ALPHABET = "a123456789bcdefghijklmnpqrstuvwxyz";
+var BASE = 34;
+var SETUP_LENGTH = 6;
+var RNG_SEED_LENGTH = 6;
+var SEED_LENGTH = SETUP_LENGTH + RNG_SEED_LENGTH;
+var CHAR_TO_VALUE = /* @__PURE__ */ new Map();
+var VALUE_TO_CHAR = /* @__PURE__ */ new Map();
+for (let i = 0; i < ALPHABET.length; i++) {
+  CHAR_TO_VALUE.set(ALPHABET[i], i);
+  VALUE_TO_CHAR.set(i, ALPHABET[i]);
+}
+var TIER1_FOES = ["Brigands", "Oreks", "Shadow Wolves", "Spine Fiends"];
+var TIER2_FOES = ["Frost Trolls", "Clan of Neuri", "Lemures", "Widowmade Spiders"];
+var TIER3_FOES = ["Dragons", "Mormos", "Striga", "Titans"];
+var ADVERSARIES2 = [
+  "Ashstrider",
+  "Bane of Omens",
+  "Empress of Shades",
+  "Gaze Eternal",
+  "Gravemaw",
+  "Isa the Exile",
+  "Lingering Rot",
+  "Utuk'Ku"
+];
+var ALLIES = [
+  "Gleb",
+  "Grigor",
+  "Hakan",
+  "Letha",
+  "Miras",
+  "Nimet",
+  "Tomas",
+  "Vasa",
+  "Yana",
+  "Zaida"
+];
+var DIFFICULTIES = ["Heroic", "Gritty"];
+var GAME_SOURCES = ["Core", "Competitive"];
+function charToValue(c) {
+  const v = CHAR_TO_VALUE.get(c.toLowerCase());
+  if (v === void 0) {
+    throw new Error(`Invalid seed character: '${c}'`);
+  }
+  return v;
+}
+function valueToChar(v) {
+  const c = VALUE_TO_CHAR.get(v);
+  if (c === void 0) {
+    throw new Error(`Invalid seed value: ${v} (must be 0\u2013${BASE - 1})`);
+  }
+  return c;
+}
+function validateSeed(seed) {
+  const stripped = seed.replace(/[-\s]/g, "").toLowerCase();
+  if (stripped.length !== SEED_LENGTH) {
+    throw new Error(`Invalid seed length: expected ${SEED_LENGTH} characters, got ${stripped.length}`);
+  }
+  for (const c of stripped) {
+    if (!CHAR_TO_VALUE.has(c)) {
+      throw new Error(`Invalid seed character: '${c}'`);
+    }
+  }
+  const upper = stripped.toUpperCase();
+  return `${upper.slice(0, 4)}-${upper.slice(4, 8)}-${upper.slice(8, 12)}`;
+}
+function decodeSeed(seed) {
+  const normalized = validateSeed(seed);
+  const stripped = normalized.replace(/-/g, "").toLowerCase();
+  const setup = [];
+  for (let i = 0; i < SETUP_LENGTH; i++) {
+    setup.push(charToValue(stripped[i]));
+  }
+  let rngSeed = 0;
+  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
+    const value = charToValue(stripped[SETUP_LENGTH + i]);
+    rngSeed += value * Math.round(Math.pow(BASE, i));
+  }
+  const foeByteA = setup[0];
+  const tier1 = foeByteA & 3;
+  const tier2 = (foeByteA & 12) >> 2;
+  const foeByteB = setup[1];
+  const tier3 = (foeByteA & 16) >> 4 | (foeByteB & 16) >> 3;
+  const adversaryIndex = foeByteB & 15;
+  const allyIndex = setup[2];
+  const extra = setup[3];
+  const difficultyIndex = extra & 1;
+  const expansionBits = (extra & 6) >> 1;
+  const sourceBits = (extra & 8) >> 2;
+  const playerCount = (setup[5] & 3) + 1;
+  const expansions2 = [];
+  if (expansionBits & 1) expansions2.push("Monuments");
+  if (expansionBits & 2) expansions2.push("Alliances");
+  let source;
+  switch (sourceBits) {
+    case 2:
+      source = "Competitive";
+      break;
+    default:
+      source = "Core";
+      break;
+  }
+  const seedBank = {
+    initializationSeed: rngSeed,
+    questSeed: rngSeed - 1,
+    seedString: normalized
+  };
+  return {
+    seed: normalized,
+    tier1Foe: TIER1_FOES[tier1],
+    tier2Foe: TIER2_FOES[tier2],
+    tier3Foe: TIER3_FOES[tier3],
+    adversary: ADVERSARIES2[adversaryIndex],
+    ally: ALLIES[allyIndex],
+    difficulty: DIFFICULTIES[difficultyIndex],
+    source,
+    expansions: expansions2,
+    playerCount,
+    rngSeed,
+    seedBank,
+    setup
+  };
+}
+function decodeRngSeed(seed) {
+  const normalized = validateSeed(seed);
+  const stripped = normalized.replace(/-/g, "").toLowerCase();
+  let rngSeed = 0;
+  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
+    const value = charToValue(stripped[SETUP_LENGTH + i]);
+    rngSeed += value * Math.round(Math.pow(BASE, i));
+  }
+  return rngSeed;
+}
+function createSeed(config) {
+  let foeByteA = 0;
+  let foeByteB = 0;
+  const tier1Index = TIER1_FOES.indexOf(config.foes[0]);
+  const tier2Index = TIER2_FOES.indexOf(config.foes[1]);
+  const tier3Index = TIER3_FOES.indexOf(config.foes[2]);
+  if (tier1Index < 0) throw new Error(`Invalid Tier 1 foe: ${config.foes[0]}`);
+  if (tier2Index < 0) throw new Error(`Invalid Tier 2 foe: ${config.foes[1]}`);
+  if (tier3Index < 0) throw new Error(`Invalid Tier 3 foe: ${config.foes[2]}`);
+  foeByteA = tier1Index & 3;
+  foeByteA |= (tier2Index & 3) << 2;
+  foeByteA |= (tier3Index & 1) << 4;
+  foeByteB |= (tier3Index >> 1 & 1) << 4;
+  const adversaryIndex = ADVERSARIES2.indexOf(config.adversary);
+  if (adversaryIndex < 0) throw new Error(`Invalid adversary: ${config.adversary}`);
+  foeByteB |= adversaryIndex & 15;
+  const allyIndex = ALLIES.indexOf(config.ally);
+  if (allyIndex < 0) throw new Error(`Invalid ally: ${config.ally}`);
+  let extraByte = 0;
+  if (config.difficulty === "Gritty") extraByte |= 1;
+  for (const expansion of config.expansions) {
+    switch (expansion) {
+      case "Monuments":
+        extraByte |= 2;
+        break;
+      case "Alliances":
+        extraByte |= 4;
+        break;
+    }
+  }
+  if (config.source === "Competitive") extraByte |= 8;
+  const versionByte = 0;
+  const playerCountByte = Math.max(0, Math.min(3, config.playerCount - 1));
+  let seedStr = valueToChar(foeByteA) + valueToChar(foeByteB) + valueToChar(allyIndex) + valueToChar(extraByte) + valueToChar(versionByte) + valueToChar(playerCountByte);
+  let rngValue = 0;
+  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
+    const value = Math.floor(Math.random() * BASE);
+    seedStr += valueToChar(value);
+    rngValue += value * Math.round(Math.pow(BASE, i));
+  }
+  const upper = seedStr.toUpperCase();
+  const formatted = `${upper.slice(0, 4)}-${upper.slice(4, 8)}-${upper.slice(8, 12)}`;
+  return { seed: formatted, rngValue };
+}
+function encodeSeed(config, rngValue) {
+  let foeByteA = 0;
+  let foeByteB = 0;
+  const tier1Index = TIER1_FOES.indexOf(config.foes[0]);
+  const tier2Index = TIER2_FOES.indexOf(config.foes[1]);
+  const tier3Index = TIER3_FOES.indexOf(config.foes[2]);
+  if (tier1Index < 0) throw new Error(`Invalid Tier 1 foe: ${config.foes[0]}`);
+  if (tier2Index < 0) throw new Error(`Invalid Tier 2 foe: ${config.foes[1]}`);
+  if (tier3Index < 0) throw new Error(`Invalid Tier 3 foe: ${config.foes[2]}`);
+  foeByteA = tier1Index & 3;
+  foeByteA |= (tier2Index & 3) << 2;
+  foeByteA |= (tier3Index & 1) << 4;
+  foeByteB |= (tier3Index >> 1 & 1) << 4;
+  const adversaryIndex = ADVERSARIES2.indexOf(config.adversary);
+  if (adversaryIndex < 0) throw new Error(`Invalid adversary: ${config.adversary}`);
+  foeByteB |= adversaryIndex & 15;
+  const allyIndex = ALLIES.indexOf(config.ally);
+  if (allyIndex < 0) throw new Error(`Invalid ally: ${config.ally}`);
+  let extraByte = 0;
+  if (config.difficulty === "Gritty") extraByte |= 1;
+  for (const expansion of config.expansions) {
+    switch (expansion) {
+      case "Monuments":
+        extraByte |= 2;
+        break;
+      case "Alliances":
+        extraByte |= 4;
+        break;
+    }
+  }
+  if (config.source === "Competitive") extraByte |= 8;
+  const versionByte = 0;
+  const playerCountByte = Math.max(0, Math.min(3, config.playerCount - 1));
+  let seedStr = valueToChar(foeByteA) + valueToChar(foeByteB) + valueToChar(allyIndex) + valueToChar(extraByte) + valueToChar(versionByte) + valueToChar(playerCountByte);
+  let remaining = rngValue;
+  for (let i = 0; i < RNG_SEED_LENGTH; i++) {
+    const digit = remaining % BASE;
+    seedStr += valueToChar(digit);
+    remaining = Math.floor(remaining / BASE);
+  }
+  const upper = seedStr.toUpperCase();
+  return `${upper.slice(0, 4)}-${upper.slice(4, 8)}-${upper.slice(8, 12)}`;
+}
+function compareSeedsRaw(seed1, seed2) {
+  const n1 = validateSeed(seed1);
+  const n2 = validateSeed(seed2);
+  const s1 = n1.replace(/-/g, "").toLowerCase();
+  const s2 = n2.replace(/-/g, "").toLowerCase();
+  const diffs = [];
+  for (let i = 0; i < SEED_LENGTH; i++) {
+    const v1 = charToValue(s1[i]);
+    const v2 = charToValue(s2[i]);
+    if (v1 !== v2) {
+      diffs.push({
+        charIndex: i,
+        value1: v1,
+        value2: v2,
+        char1: s1[i],
+        char2: s2[i]
+      });
+    }
+  }
+  return {
+    seed1: n1,
+    seed2: n2,
+    diffs,
+    setupDiffs: diffs.filter((d) => d.charIndex < SETUP_LENGTH),
+    rngDiffs: diffs.filter((d) => d.charIndex >= SETUP_LENGTH)
+  };
+}
+var SETUP_FIELD_LABELS = {
+  0: "Tier1/Tier2/Tier3lo",
+  1: "Adversary/Tier3hi",
+  2: "Ally",
+  3: "Difficulty/Expansions/Source",
+  4: "Version",
+  5: "PlayerCount"
+};
+function dumpSeedChars(seed) {
+  const normalized = validateSeed(seed);
+  const stripped = normalized.replace(/-/g, "").toLowerCase();
+  const chars = [];
+  for (let i = 0; i < SEED_LENGTH; i++) {
+    const isSetup = i < SETUP_LENGTH;
+    chars.push({
+      index: i,
+      char: stripped[i],
+      value: charToValue(stripped[i]),
+      section: isSetup ? "setup" : "rng",
+      field: isSetup ? SETUP_FIELD_LABELS[i] : void 0
+    });
+  }
+  return { seed: normalized, chars };
+}
+
+// src/seed/udtSystemRandom.ts
+var INT32_MAX = 2147483647;
+var MSEED = 161803398;
+function toInt32(n) {
+  return n | 0;
+}
+var SystemRandom = class {
+  /**
+   * Create a new PRNG instance with the given seed.
+   * Matches C# `new System.Random(seed)` exactly.
+   */
+  constructor(seed) {
+    this.seedArray = new Array(56).fill(0);
+    this.inext = 0;
+    this.inextp = 0;
+    this.initialize(seed);
+  }
+  /**
+   * Replicate .NET's System.Random constructor seeding algorithm.
+   */
+  initialize(seed) {
+    let subtraction;
+    if (seed === -2147483648) {
+      subtraction = INT32_MAX;
+    } else {
+      subtraction = Math.abs(seed);
+    }
+    let mj = toInt32(MSEED - subtraction);
+    this.seedArray[55] = mj;
+    let mk = 1;
+    for (let i = 1; i < 55; i++) {
+      const ii = 21 * i % 55;
+      this.seedArray[ii] = mk;
+      mk = toInt32(mj - mk);
+      if (mk < 0) mk = toInt32(mk + INT32_MAX);
+      mj = this.seedArray[ii];
+    }
+    for (let k = 1; k < 5; k++) {
+      for (let i = 1; i < 56; i++) {
+        this.seedArray[i] = toInt32(this.seedArray[i] - this.seedArray[1 + (i + 30) % 55]);
+        if (this.seedArray[i] < 0) {
+          this.seedArray[i] = toInt32(this.seedArray[i] + INT32_MAX);
+        }
+      }
+    }
+    this.inext = 0;
+    this.inextp = 21;
+  }
+  /**
+   * Internal sample — returns value in range [0, Int32.MaxValue).
+   * Matches C#'s InternalSample().
+   */
+  internalSample() {
+    let retVal;
+    let locINext = this.inext;
+    let locINextp = this.inextp;
+    if (++locINext >= 56) locINext = 1;
+    if (++locINextp >= 56) locINextp = 1;
+    retVal = toInt32(this.seedArray[locINext] - this.seedArray[locINextp]);
+    if (retVal === INT32_MAX) retVal--;
+    if (retVal < 0) retVal = toInt32(retVal + INT32_MAX);
+    this.seedArray[locINext] = retVal;
+    this.inext = locINext;
+    this.inextp = locINextp;
+    return retVal;
+  }
+  /**
+   * Sample — returns a double in range [0.0, 1.0).
+   * Matches C#'s Sample().
+   */
+  sample() {
+    return this.internalSample() * (1 / INT32_MAX);
+  }
+  /**
+   * Returns a non-negative random integer less than Int32.MaxValue.
+   * Matches C# `Random.Next()`.
+   */
+  next() {
+    return this.internalSample();
+  }
+  /**
+   * Returns a non-negative random integer less than maxValue.
+   * Matches C# `Random.Next(maxValue)`.
+   */
+  nextMax(maxValue) {
+    if (maxValue < 0) {
+      throw new Error("maxValue must be non-negative");
+    }
+    return toInt32(this.sample() * maxValue);
+  }
+  /**
+   * Returns a random integer in range [minValue, maxValue).
+   * Matches C# `Random.Next(minValue, maxValue)`.
+   */
+  nextRange(minValue, maxValue) {
+    if (minValue > maxValue) {
+      throw new Error("minValue must be less than or equal to maxValue");
+    }
+    const range = maxValue - minValue;
+    if (range <= INT32_MAX) {
+      return toInt32(this.sample() * range) + minValue;
+    }
+    return toInt32(this.internalSample() * (1 / INT32_MAX) * range) + minValue;
+  }
+  /**
+   * Returns a random double in range [0.0, 1.0).
+   * Matches C# `Random.NextDouble()`.
+   */
+  nextDouble() {
+    return this.sample();
+  }
+};
+
 // src/index.ts
 var index_default = UltimateDarkTower_default;
 export {
-  ADVERSARIES,
-  ADVERSARY_ROSTER,
-  ALLIES,
-  ALL_FOES,
   AUDIO_COMMAND_POS,
   BATTERY_STATUS_FREQUENCY,
-  BOARD_ADJACENCY,
-  BOARD_ANCHORS,
-  BOARD_GROUPINGS,
-  BOARD_IMAGE_INFO,
-  BOARD_LOCATIONS,
-  BOARD_LOCATION_BY_NAME,
   BluetoothAdapterFactory,
   BluetoothConnectionError,
   BluetoothDeviceNotFoundError,
@@ -5459,7 +6494,6 @@ export {
   DEFAULT_CONNECTION_MONITORING_FREQUENCY,
   DEFAULT_CONNECTION_MONITORING_TIMEOUT,
   DEFAULT_RETRY_SEND_COMMAND_MAX,
-  DIFFICULTIES,
   DIS_FIRMWARE_REVISION_UUID,
   DIS_HARDWARE_REVISION_UUID,
   DIS_IEEE_REGULATORY_UUID,
@@ -5472,14 +6506,7 @@ export {
   DIS_SYSTEM_ID_UUID,
   DOMOutput,
   DRUM_PACKETS,
-  FOES,
-  FOE_BY_ID,
-  FOE_BY_NAME,
-  FOE_STATUSES,
-  GAME_SOURCES,
   GLYPHS,
-  HEROES,
-  HERO_BY_ID,
   InMemorySink,
   IndexedDBSink,
   LAYER_TO_POSITION,
@@ -5488,16 +6515,10 @@ export {
   LIGHT_EFFECTS,
   LIGHT_INDEX_TO_DIRECTION,
   Logger,
-  MONUMENTS,
-  MONUMENT_BY_ID,
   RING_LIGHT_POSITIONS,
   SKULL_DROP_COUNT_POS,
   STATE_DATA_LENGTH,
-  SystemRandom,
   TC,
-  TIER1_FOES,
-  TIER2_FOES,
-  TIER3_FOES,
   TOWER_AUDIO_LIBRARY,
   TOWER_COMMANDS,
   TOWER_COMMAND_HEADER_SIZE,
@@ -5520,26 +6541,16 @@ export {
   VOLUME_DESCRIPTIONS,
   VOLUME_ICONS,
   bytesToHex,
-  charToValue,
-  compareSeedsRaw,
   createDefaultTowerState,
-  createSeed,
-  decodeRngSeed,
-  decodeSeed,
+  data_exports as data,
   index_default as default,
   drumPositionCmds,
-  dumpSeedChars,
-  encodeSeed,
   isCalibrated,
   logger,
   milliVoltsToPercentage,
   milliVoltsToPercentageNumber,
-  neighborsOf,
   parseDifferentialReadings,
   rtdt_pack_state,
   rtdt_unpack_state,
-  shortestPath,
-  stepDistance,
-  validateSeed,
-  valueToChar
+  seed_exports as seed
 };
