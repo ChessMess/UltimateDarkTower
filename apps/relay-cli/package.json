@@ -16,7 +16,7 @@
     "ultimatedarktowerrelay-core": "*",
     "ultimatedarktowerrelay-client": "*",
     "ultimatedarktowerrelay-shared": "*",
-    "ultimatedarktower": "^4.1.0",
+    "ultimatedarktower": "^5.0.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

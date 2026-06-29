@@ -15,7 +15,7 @@
   "dependencies": {
     "ultimatedarktowerrelay-shared": "*",
     "@stoprocent/bleno": "^0.12.4",
-    "ultimatedarktower": "^4.1.0",
+    "ultimatedarktower": "^5.0.0",
     "ws": "^8.18.0"
   },
   "optionalDependencies": {
