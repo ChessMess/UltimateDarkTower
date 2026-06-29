@@ -58,6 +58,12 @@ All notable changes to this project are documented here. The format is based on
   previously read “Clear”; it now matches heroes, foes, and markers for consistency. The underlying
   command is unchanged (`controller.clearAdversary()`), and the button keeps its `.udt-inspector-remove`
   class, so existing selectors and tests are unaffected.
+- **Upgraded to three r185.** Bumped the `three` / `@types/three` dev dependencies to `^0.185.0` to stay in
+  lockstep with the sibling `ultimatedarktowerdisplay` — Board and Display must share a single `three`
+  instance at runtime (Board clones meshes produced by Display's loader). The `three` peer range is
+  unchanged (`^0.170.0` already permits r185). No source changes — the board uses no API affected by the
+  r184 → r185 migration. Verified against the r185 Display build with typecheck, the full test suite, and a
+  live ScenePlugin render.
 
 ### Fixed
 
