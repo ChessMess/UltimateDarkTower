@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-06-20
+
 ### Changed
 
 - **BREAKING — reference/game data and the seed subsystem moved off the flat root API into the `data` and `seed` namespaces.** The library's exports are now split by concern: tower control / BLE / protocol stay at the root (`UltimateDarkTower`, adapters, state, logger, diagnostics, helpers, all `udtConstants` like `GLYPHS`/`TOWER_AUDIO_LIBRARY` — unchanged), while browseable reference data lives under `data.*` and the seed encode/decode + RNG subsystem under `seed.*`. The modules also moved on disk into `src/data/` (with `src/data/board/`) and `src/seed/`. Migrate imports:
