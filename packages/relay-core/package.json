@@ -5,15 +5,48 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc --build",
     "dev": "tsc --build --watch",
+    "prepack": "npm run build",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
+  "keywords": [
+    "ReturnToDarkTower",
+    "BoardGame",
+    "Tower",
+    "RestorationGames",
+    "BLE",
+    "bluetooth",
+    "WebSocket",
+    "relay",
+    "emulator",
+    "UltimateDarkTower"
+  ],
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChessMess/UltimateDarkTowerRelay.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/ChessMess/UltimateDarkTowerRelay/issues"
+  },
+  "homepage": "https://github.com/ChessMess/UltimateDarkTowerRelay#readme",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/chessmess"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
-    "ultimatedarktowerrelay-shared": "*",
+    "ultimatedarktowerrelay-shared": "^0.1.0",
     "@stoprocent/bleno": "^0.12.4",
     "ultimatedarktower": "^5.0.0",
     "ws": "^8.18.0"

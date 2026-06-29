@@ -1,6 +1,7 @@
 {
   "name": "ultimatedarktowerrelay-cli",
   "version": "0.1.0",
+  "private": true,
   "description": "UltimateDarkTowerRelay CLI — headless relay daemon (BLE tower emulator + WebSocket relay) for servers, Raspberry Pi, Docker, or an always-on host.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,9 +14,9 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "ultimatedarktowerrelay-core": "*",
-    "ultimatedarktowerrelay-client": "*",
-    "ultimatedarktowerrelay-shared": "*",
+    "ultimatedarktowerrelay-core": "^0.1.0",
+    "ultimatedarktowerrelay-client": "^0.1.0",
+    "ultimatedarktowerrelay-shared": "^0.1.0",
     "ultimatedarktower": "^5.0.0",
     "ws": "^8.18.0"
   },

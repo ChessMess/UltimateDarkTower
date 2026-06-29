@@ -4,11 +4,42 @@
   "description": "Shared types, WebSocket protocol constants, and message schemas for UltimateDarkTowerRelay.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "sideEffects": false,
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc --build",
+    "prepack": "npm run build",
     "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "keywords": [
+    "ReturnToDarkTower",
+    "BoardGame",
+    "Tower",
+    "RestorationGames",
+    "WebSocket",
+    "protocol",
+    "UltimateDarkTower"
+  ],
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChessMess/UltimateDarkTowerRelay.git",
+    "directory": "packages/shared"
+  },
+  "bugs": {
+    "url": "https://github.com/ChessMess/UltimateDarkTowerRelay/issues"
+  },
+  "homepage": "https://github.com/ChessMess/UltimateDarkTowerRelay#readme",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/chessmess"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
