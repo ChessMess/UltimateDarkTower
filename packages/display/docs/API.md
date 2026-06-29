@@ -1075,7 +1075,7 @@ All readout elements use the `tdr-` prefix:
 
 ## Peer dependency
 
-This package requires [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) `^2.5.0` as a peer dependency. It provides:
+This package requires [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) `^4.0.0 || ^5.0.0` as a peer dependency. It provides:
 
 - `TowerState` — the state type passed to `applyState()`
 - `GLYPHS`, `TOWER_AUDIO_LIBRARY`, `TOWER_LIGHT_SEQUENCES`, `VOLUME_DESCRIPTIONS`, `LAYER_TO_POSITION`, `LIGHT_INDEX_TO_DIRECTION`, `LIGHT_EFFECTS` — lookup constants used for rendering
