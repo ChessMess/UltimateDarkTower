@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+
+- **Upgraded to three r185.** Bumped the `three` / `@types/three` dev dependencies to `^0.185.0` and raised
+  the `three` peer range to **`>=0.185.0`** (the new built-and-tested floor; kept `optional`). The upgrade
+  required no source changes — the renderer uses no API affected by the r184 → r185 migration (no
+  `BufferGeometryUtils.toTrianglesDrawMode`, `GTAONode` AO params, deprecated `Matrix3`/`Matrix4` methods,
+  `DRACOLoader.setDecoderConfig`, or `LWOLoader`). Verified with typecheck, the full test suite, a
+  production build, and a live render pass (models, HDR skybox, lighting, selective bloom, skull physics) —
+  no regression and no shader recompile on sequence transitions.
+- **Replaced deprecated `THREE.Clock` with `THREE.Timer`.** `Tower3DView`'s physics-frame `dt` source now
+  uses `THREE.Timer` (`update()` / `getDelta()` / `reset()`), silencing the `THREE.Clock: This module has
+  been deprecated` console warning. The dt cadence is preserved — the timer is advanced only while
+  physics-frame listeners are attached, matching the previous `Clock.getDelta()` behavior.
+
 ## [0.9.0] - 2026-06-19
 
 ### Fixed

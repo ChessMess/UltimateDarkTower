@@ -460,6 +460,18 @@ class Clock {
   getElapsedTime() { return 0; }
 }
 
+// Mirrors the core THREE.Timer API surface used by Tower3DView (update/getDelta/reset).
+class Timer {
+  update() { return this; }
+  getDelta() { return 0; }
+  getElapsed() { return 0; }
+  reset() { return this; }
+  setTimescale() { return this; }
+  connect() {}
+  disconnect() {}
+  dispose() {}
+}
+
 class AxesHelper {
   constructor(size) {
     this.size = size;
@@ -546,6 +558,7 @@ module.exports = {
   CylinderGeometry,
   AxesHelper,
   Clock,
+  Timer,
   TextureLoader,
   MOUSE: {
     ROTATE: 0,

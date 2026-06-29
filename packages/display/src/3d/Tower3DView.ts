@@ -283,8 +283,8 @@ export class Tower3DView implements ITowerDisplay {
   private modelBottomY = -1;
   private modelTopY = 1;
 
-  /** Clock for deriving `dt` for registered physics frame callbacks. */
-  private readonly physicsClock = new THREE.Clock();
+  /** Timer for deriving `dt` for registered physics frame callbacks. */
+  private readonly physicsTimer = new THREE.Timer();
   private physicsFrameListeners: Set<(dt: number) => void> = new Set();
   private physicsModelLoadListeners: Set<(info: ScenePluginModelInfo) => void> = new Set();
 
@@ -685,7 +685,10 @@ export class Tower3DView implements ITowerDisplay {
 
   private tickPhysicsListeners(): void {
     if (this.physicsFrameListeners.size === 0) return;
-    const dt = this.physicsClock.getDelta();
+    // Advance the timer only while listeners are attached, matching the
+    // previous Clock.getDelta() cadence (dt spans from the last ticked frame).
+    this.physicsTimer.update();
+    const dt = this.physicsTimer.getDelta();
     for (const cb of this.physicsFrameListeners) {
       try {
         cb(dt);
@@ -1700,7 +1703,7 @@ export class Tower3DView implements ITowerDisplay {
   }
 
   private startRenderLoop(): void {
-    this.physicsClock.start();
+    this.physicsTimer.reset();
     const tick = () => {
       this.rafId = requestAnimationFrame(tick);
       this.controls?.update();
