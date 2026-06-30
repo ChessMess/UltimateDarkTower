@@ -1,0 +1,63 @@
+bit_index,baseline_bit,fields_touched
+1,0,
+2,1,Foe Level 2|Foe Level 3
+3,0,Foe Level 3|Foe Level 4
+4,0,Foe Level 2|Foe Level 3|Foe Level 4
+5,1,Foe Level 2|Foe Level 3
+6,0,Foe Level 3|Foe Level 4
+7,1,Adversary|Foe Level 2|Foe Level 3|Foe Level 4
+8,1,Foe Level 2|Foe Level 3|Foe Level 4
+9,0,Foe Level 2|Foe Level 3|Foe Level 4
+10,0,Adversary|Foe Level 2|Foe Level 3|Foe Level 4
+11,1,Adversary|Foe Level 2|Foe Level 3|Foe Level 4
+12,0,Adversary|Foe Level 2|Foe Level 3|Foe Level 4
+13,0,Foe Level 3|Foe Level 4
+14,1,Adversary|Foe Level 2|Foe Level 3|Foe Level 4
+15,0,Foe Level 2|Foe Level 3|Foe Level 4|Main Goal
+16,1,Foe Level 2|Foe Level 3|Foe Level 4|Main Goal
+17,1,Difficulty|Foe Level 2|Foe Level 4|Game Type
+18,0,Adversary|Foe Level 2|Foe Level 3|Foe Level 4|Game Type|Main Goal
+19,0,Adversary|Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Type|Main Goal
+20,0,Foe Level 2|Foe Level 4|Game Type|Main Goal
+21,1,Foe Level 2|Foe Level 3|Foe Level 4
+22,0,Adversary|Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Type|Main Goal
+23,1,Adversary|Foe Level 3|Foe Level 4|Game Type|Main Goal
+24,0,Adversary|Foe Level 2|Foe Level 3|Foe Level 4|Game Type
+25,1,Difficulty|Foe Level 2|Game Type|Main Goal
+26,1,Adversary|Foe Level 2|Foe Level 3|Foe Level 4|Game Type|Player Count
+27,0,Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Type|Player Count
+28,0,Foe Level 2|Foe Level 3|Foe Level 4|Game Type|Player Count
+29,1,Foe Level 3|Foe Level 4|Game Mode|Game Type|Main Goal|Player Count
+30,0,Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Player Count
+31,0,Adversary|Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Main Goal|Player Count
+32,0,Adversary|Foe Level 2|Foe Level 4|Game Mode|Game Type|Player Count
+33,0,Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type
+34,1,Foe Level 2|Foe Level 3|Game Mode|Game Type|Player Count
+35,0,Foe Level 2|Foe Level 3|Game Mode|Game Type|Main Goal|Player Count
+36,0,Difficulty|Foe Level 2|Foe Level 3|Player Count
+37,1,Adversary|Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Main Goal|Player Count
+38,0,Adversary|Difficulty|Foe Level 3|Foe Level 4|Game Mode|Game Type|Player Count
+39,1,Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Type|Player Count
+40,0,Adversary|Foe Level 3|Foe Level 4|Game Mode|Game Type|Player Count
+41,1,Adversary|Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Main Goal|Player Count
+42,0,Adversary|Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Main Goal
+43,0,Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Type|Main Goal|Player Count
+44,0,Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Player Count
+45,0,Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Main Goal
+46,1,Adversary|Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Type|Main Goal|Player Count
+47,1,Difficulty|Foe Level 2|Foe Level 3|Game Mode|Player Count
+48,1,Adversary|Foe Level 2|Foe Level 4|Game Mode|Game Type|Main Goal|Player Count
+49,1,Foe Level 2|Foe Level 3|Game Mode|Game Type|Main Goal|Player Count
+50,0,Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Player Count
+51,0,Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Main Goal|Player Count
+52,0,Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Main Goal|Player Count
+53,1,Adversary|Foe Level 2|Game Mode|Game Type|Player Count
+54,0,Adversary|Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Player Count
+55,1,Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Type|Player Count
+56,1,Adversary|Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Main Goal|Player Count
+57,0,Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Player Count
+58,1,Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Player Count
+59,0,Adversary|Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Type|Player Count
+60,0,Adversary|Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Player Count
+61,0,Adversary|Difficulty|Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Player Count
+62,0,Foe Level 2|Foe Level 3|Foe Level 4|Game Mode|Game Type|Player Count

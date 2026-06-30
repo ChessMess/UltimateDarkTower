@@ -1,0 +1,653 @@
+/* ─── Design tokens ───────────────────────────────────────────────────────── */
+
+:root {
+  --bg: #161616;
+  --fg: #e8e8e8;
+  --accent: #c0392b;
+  --accent-dim: #7b241c;
+  --accent-glow: rgba(192, 57, 43, 0.2);
+  --card: #222222;
+  --card-top: rgba(255, 255, 255, 0.055);
+  --border: #383838;
+  --input-bg: #0d0d0d;
+  --success: #27ae60;
+  --warning: #f39c12;
+  --error: #e74c3c;
+  --muted: #888;
+  --radius: 10px;
+}
+
+/* ─── Reset ───────────────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5rem max(1.25rem, env(safe-area-inset-right))
+           2rem     max(1.25rem, env(safe-area-inset-left));
+  padding-top: max(2rem, env(safe-area-inset-top));
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
+/* ─── Header ──────────────────────────────────────────────────────────────── */
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+header h1 {
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 32px var(--accent-glow);
+}
+
+header p {
+  color: var(--muted);
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ─── Cards ───────────────────────────────────────────────────────────────── */
+
+.card {
+  background: linear-gradient(180deg, #272727 0%, #202020 100%);
+  border: 1px solid var(--border);
+  border-top: 1px solid var(--card-top);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 1rem;
+}
+
+.card h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--fg);
+}
+
+/* ─── Forms ───────────────────────────────────────────────────────────────── */
+
+.field {
+  margin-bottom: 0.8rem;
+}
+
+.field label {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+.field-row {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.field-row .field {
+  flex: 1;
+}
+
+/* ─── Buttons ─────────────────────────────────────────────────────────────── */
+
+button {
+  padding: 0.65rem 1.2rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.15s, opacity 0.15s;
+  background: var(--accent);
+  color: #fff;
+}
+
+button:hover {
+  opacity: 0.88;
+}
+
+button:active {
+  opacity: 0.7;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg);
+}
+
+.btn-ghost:hover {
+  border-color: var(--muted);
+}
+
+.btn-sm {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.2rem;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+}
+
+.btn-icon:hover {
+  color: var(--error);
+}
+
+.btn-danger {
+  color: var(--error);
+}
+
+.btn-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* ─── Seed Status ─────────────────────────────────────────────────────────── */
+
+.seed-status {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 0.3rem;
+  min-height: 1.1em;
+}
+
+.seed-status.valid {
+  color: var(--success);
+}
+
+.seed-status.invalid {
+  color: var(--error);
+}
+
+/* ─── Session List ────────────────────────────────────────────────────────── */
+
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.session-item:last-child {
+  border-bottom: none;
+}
+
+.session-item.active {
+  background: rgba(192, 57, 43, 0.07);
+  margin: 0 -0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  border-radius: 4px;
+}
+
+.session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.session-meta {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.session-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.active-badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--success);
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--success);
+  border-radius: 4px;
+}
+
+/* ─── Variant History ─────────────────────────────────────────────────────── */
+
+.variant-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.variant-item:last-child {
+  border-bottom: none;
+}
+
+.variant-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.variant-info code {
+  font-size: 0.85rem;
+  color: var(--fg);
+}
+
+.variant-meta {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.variant-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* ─── Bit Map ─────────────────────────────────────────────────────────────── */
+
+.bitmap-header {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+
+.bitmap-grid {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 2px;
+  margin-bottom: 0.6rem;
+}
+
+.bitmap-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 3px;
+  cursor: default;
+  min-width: 20px;
+  transition: transform 0.1s;
+}
+
+.bitmap-cell:hover {
+  transform: scale(1.15);
+  z-index: 1;
+}
+
+.bitmap-unknown {
+  background: #333;
+  color: #777;
+}
+
+.bitmap-confirmed {
+  background: var(--success);
+  color: #fff;
+}
+
+.bitmap-suspected {
+  background: var(--warning);
+  color: #000;
+}
+
+.bitmap-changed {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.bitmap-legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+/* ─── Comparison ──────────────────────────────────────────────────────────── */
+
+.comparison-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+}
+
+.comparison-summary code {
+  font-size: 0.85rem;
+}
+
+.comparison-summary .diff-detail {
+  grid-column: 1 / -1;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.section-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+/* ─── Field Mapping Table ─────────────────────────────────────────────────── */
+
+.mapping-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.mapping-table th {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.mapping-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.confidence-badge {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.confidence-confirmed {
+  background: rgba(39, 174, 96, 0.2);
+  color: var(--success);
+}
+
+.confidence-suspected {
+  background: rgba(243, 156, 18, 0.2);
+  color: var(--warning);
+}
+
+.confidence-unknown {
+  background: rgba(136, 136, 136, 0.2);
+  color: var(--muted);
+}
+
+.mapping-form {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.input-sm {
+  padding: 0.35rem 0.5rem !important;
+  font-size: 0.8rem !important;
+}
+
+.input-num {
+  width: 70px !important;
+}
+
+/* ─── Baseline Config Grid (new baseline form) ───────────────────────────── */
+
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem 0.8rem;
+  margin-bottom: 1rem;
+}
+
+/* ─── Baseline Config Readout (read-only display) ─────────────────────────── */
+
+.config-readout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 1rem;
+}
+
+.config-readout-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.config-readout-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.config-readout-value {
+  font-size: 0.8rem;
+  color: var(--fg);
+  font-weight: 500;
+}
+
+/* ─── Change Summary (variant panel) ──────────────────────────────────────── */
+
+.change-summary {
+  min-height: 1.6em;
+  margin: 0.4rem 0 0.2rem;
+  font-size: 0.85rem;
+}
+
+.change-from {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.change-arrow {
+  color: var(--accent);
+  margin: 0 0.3rem;
+}
+
+.change-to {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.change-same {
+  color: var(--warning);
+  font-size: 0.75rem;
+}
+
+/* ─── Game Event Log ─────────────────────────────────────────────────────── */
+
+.event-month-group {
+  margin-bottom: 0.8rem;
+}
+
+.event-month-header {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.3rem;
+}
+
+.event-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.event-item:last-child {
+  border-bottom: none;
+}
+
+.event-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.event-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  flex-shrink: 0;
+}
+
+.event-type-badge {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  background: rgba(192, 57, 43, 0.15);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.event-detail {
+  font-size: 0.8rem;
+  color: var(--fg);
+}
+
+.event-notes {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ─── Edit Mode ──────────────────────────────────────────────────────────── */
+
+.event-actions .btn-icon[data-edit-event] {
+  font-size: 0.85rem;
+}
+
+.event-actions .btn-icon[data-edit-event]:hover {
+  color: var(--accent);
+}
+
+#cancel-edit-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  margin-left: 0.5rem;
+}
+
+#events-panel.editing {
+  border-left: 3px solid var(--accent);
+}
+
+/* ─── Misc ────────────────────────────────────────────────────────────────── */
+
+.empty-msg {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+code {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+footer {
+  text-align: center;
+  margin-top: 2rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
