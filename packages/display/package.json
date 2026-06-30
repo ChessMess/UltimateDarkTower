@@ -1,6 +1,6 @@
 {
   "name": "ultimatedarktowerdisplay",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Composable text, 2D, and 3D renderers for Return to Dark Tower tower state, with optional skull physics.",
   "type": "module",
   "main": "dist/index.cjs.js",

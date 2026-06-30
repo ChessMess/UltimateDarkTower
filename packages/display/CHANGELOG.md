@@ -6,8 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-06-29
+
 ### Changed
 
+- **`ultimatedarktower` peer broadened to `^4.0.0 || ^5.0.0`.** The renderer now supports UDT 5 alongside
+  UDT 4 — the tower-state shape it consumes is unchanged across the major bump. This lets consumers on UDT 5
+  (e.g. via the relay client SDK, which depends on `ultimatedarktower@^5.0.0`) install Display without a
+  peer-dependency conflict.
 - **Upgraded to three r185.** Bumped the `three` / `@types/three` dev dependencies to `^0.185.0` and raised
   the `three` peer range to **`>=0.185.0`** (the new built-and-tested floor; kept `optional`). The upgrade
   required no source changes — the renderer uses no API affected by the r184 → r185 migration (no
