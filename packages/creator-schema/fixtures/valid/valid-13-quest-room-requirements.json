@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "0.4.0",
+  "meta": {
+    "title": "v0.4 fixture: quest requirements, room improveOnce, room enterRequirement",
+    "scenarioVersion": "0.1.0",
+    "designer": { "name": "Test" },
+    "pins": { "udt": "4.1.0" }
+  },
+  "setup": {
+    "mode": "coop",
+    "difficulty": { "profile": "heroic", "skullSupply": 24 },
+    "playerCountScaling": { "turnsPerMonth": { "1": 6, "2": 7, "3": 8, "4": 9 } },
+    "monthEnd": { "resolution": "randomInRange", "default": { "minTurn": 3, "maxTurn": 6 } },
+    "selections": {
+      "adversaryId": "ashstrider",
+      "foes": { "tier1": "brigands", "tier2": "frost-trolls", "tier3": "dragons" },
+      "mainGoalId": "recover-azkols-treasures"
+    },
+    "board": { "boardStateRef": "board-main" }
+  },
+  "library": {
+    "buildingTypes": {
+      "citadel":   { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"resource.gain","resource":"warriors","amount":2}]}, "skullCapacity": 3 },
+      "sanctuary": { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"corruption.remove","all":true}]}, "skullCapacity": 3 },
+      "village":   { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"resource.gain","resource":"spirit","amount":1}]}, "skullCapacity": 3 },
+      "bazaar":    { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"market.refresh"}]}, "skullCapacity": 3 }
+    },
+    "quests": {
+      "side-quest": {
+        "id": "side-quest",
+        "name": "Side Quest",
+        "requirements": [
+          {
+            "label": "Vault must be cleared first",
+            "condition": {
+              "subject": "flag",
+              "comparator": "eq",
+              "value": true,
+              "key": "vaultCleared"
+            }
+          }
+        ]
+      }
+    },
+    "dungeons": {
+      "warded-vault": {
+        "id": "warded-vault",
+        "name": "Warded Vault",
+        "trait": "Magic",
+        "grid": { "cols": 2, "rows": 1 },
+        "masterBitmap": "vault-bitmap",
+        "rooms": [
+          {
+            "id": "vault-entry",
+            "cell": { "col": 0, "row": 0 },
+            "exits": { "E": "door" },
+            "isEntrance": true,
+            "improveOnce": {
+              "effects": [{ "op": "resource.gain", "resource": "spirit", "amount": 1 }]
+            }
+          },
+          {
+            "id": "vault-target",
+            "cell": { "col": 1, "row": 0 },
+            "exits": { "W": "door" },
+            "isTarget": true,
+            "enterRequirement": {
+              "spiritCost": 2,
+              "condition": {
+                "subject": "counter",
+                "comparator": "gte",
+                "value": 1,
+                "key": "questProgress"
+              },
+              "onFail": [{ "op": "corruption.gain" }]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "graph": {
+    "entry": "n-start",
+    "nodes": [
+      { "id": "n-start", "kind": "lifecycle.gameStart" }
+    ]
+  }
+}

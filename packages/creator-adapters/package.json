@@ -1,0 +1,26 @@
+{
+  "name": "@udtc/adapters",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "echo 'adapters: no emit (type-check only for now)'",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@udtc/engine": "workspace:*",
+    "@udtc/schema": "workspace:*",
+    "ultimatedarktower": "4.1.0",
+    "ultimatedarktowerdisplay": "file:../../../UltimateDarkTowerDisplay",
+    "ultimatedarktowerboard": "file:../../../UltimateDarkTowerBoard"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0"
+  }
+}

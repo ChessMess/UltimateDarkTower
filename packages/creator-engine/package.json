@@ -1,0 +1,17 @@
+{
+  "name": "@udtc/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "scripts": {
+    "test": "node test/run-all.js",
+    "build": "echo 'engine: no emit (CommonJS JS + hand-written .d.ts)'",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.0",
+    "ajv-formats": "^3.0.0"
+  }
+}

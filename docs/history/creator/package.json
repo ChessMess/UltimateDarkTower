@@ -1,0 +1,41 @@
+{
+  "name": "ultimate-dark-tower-creator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChessMess/UltimateDarkTowerCreator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ChessMess/UltimateDarkTowerCreator/issues"
+  },
+  "homepage": "https://github.com/ChessMess/UltimateDarkTowerCreator#readme",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r --workspace-concurrency=1 build",
+    "test": "pnpm -r --workspace-concurrency=1 test",
+    "validate:golden": "node packages/schema/test/conformance_test.js",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md}\" --ignore-path .gitignore",
+    "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.39.0",
+    "eslint-plugin-react-hooks": "^7.1.0",
+    "eslint-plugin-react-refresh": "^0.5.0",
+    "globals": "^17.0.0",
+    "prettier": "^3.8.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.61.0"
+  }
+}
