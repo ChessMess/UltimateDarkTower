@@ -1,9 +1,6 @@
 {
   "files": [],
-  "references": [
-    { "path": "packages/shared" },
-    { "path": "packages/host" }
-  ],
+  "references": [],
   "compilerOptions": {
     "target": "es2017",
     "module": "commonjs",

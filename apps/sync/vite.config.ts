@@ -77,8 +77,20 @@ export default defineConfig({
   plugins: [udtCjsForBuild()],
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    // Production source maps are not deployed to GitHub Pages — they roughly double
+    // the artifact size (~34 MB map alongside the bundle) for no end-user benefit.
+    sourcemap: false,
     target: 'es2020',
+    commonjsOptions: {
+      // The relay SDK (ultimatedarktowerrelay-{client,shared}) is a `file:` dep that
+      // resolves — via symlink — to the relay's CommonJS `dist/` OUTSIDE node_modules.
+      // Rollup's commonjs plugin only transforms node_modules by default, so without this
+      // it parses the CJS (`__exportStar`) as ESM and can't see named exports like
+      // `makeCommandLogEntry` ("not exported by …/dist/index.js"). Include the relay path so
+      // its CJS named exports resolve. (After the publish cutover the packages live under
+      // node_modules and this include is effectively a no-op.)
+      include: [/node_modules/, /UltimateDarkTowerRelay/],
+    },
     rollupOptions: {
       // @stoprocent/noble is a Node-only BLE adapter — never loaded in the browser.
       external: ['@stoprocent/noble'],
@@ -86,12 +98,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // Point to shared source during dev so the package doesn't need to be
-      // built first. After `npm install` the workspace symlink is in place but
-      // the shared dist/ may not exist yet — this alias bypasses that.
-      '@dark-tower-sync/shared': fileURLToPath(
-        new URL('../shared/src/index.ts', import.meta.url)
-      ),
+      // The relay SDK (ultimatedarktowerrelay-{client,shared}) is consumed as a
+      // file: dependency resolving to the relay's built dist/, so no source alias
+      // is needed here — the relay must be built first (see DEV_LINKS in the relay repo).
       // For local development with npm link:
       // 'ultimatedarktowerdisplay': fileURLToPath(new URL('../../UltimateDarkTowerDisplay/src/index.ts', import.meta.url)),
     },

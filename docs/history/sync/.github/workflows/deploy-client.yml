@@ -24,7 +24,6 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build:shared
       - name: Build client for GitHub Pages
         run: npx vite build --base=/UltimateDarkTowerSync/
         working-directory: packages/client

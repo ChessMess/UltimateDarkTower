@@ -1,6 +1,11 @@
 # Contributing to DarkTowerSync
 
-Thank you for your interest in contributing to DarkTowerSync! This document covers the monorepo structure, development workflow, code standards, and release process.
+Thank you for your interest in contributing to DarkTowerSync! This document covers the project structure,
+development workflow, code standards, and release process.
+
+DarkTowerSync is **client-only**: it is the browser multiplayer client on top of
+[UltimateDarkTowerRelay](../UltimateDarkTowerRelay). The tower-emulator / relay / host / electron code now lives in
+the relay — contribute host/protocol changes there.
 
 ## Getting Started
 
@@ -9,12 +14,27 @@ Thank you for your interest in contributing to DarkTowerSync! This document cove
 git clone https://github.com/ChessMess/DarkTowerSync.git
 cd DarkTowerSync
 
-# Install all workspace dependencies
+# Install dependencies (see the relay prerequisite below first)
 npm install
 
 # Verify everything works
 npm run ci
 ```
+
+### Relay dependency (interim `file:` prerequisite)
+
+The client consumes the relay's published packages (`ultimatedarktowerrelay-client`,
+`ultimatedarktowerrelay-shared`). **Until those are published to npm**, `packages/client/package.json`
+references them via `file:` deps, so you must:
+
+1. Check out **UltimateDarkTowerRelay as a sibling directory** (`../UltimateDarkTowerRelay`).
+2. Build it: `cd ../UltimateDarkTowerRelay && npm install && npm run build`.
+3. Then `npm install` here — the `file:` targets resolve to the relay's `dist/`.
+
+This is described in the relay's [CONTRIBUTING.md](../UltimateDarkTowerRelay/CONTRIBUTING.md) (Releasing). It
+goes away at the cutover, when the relay packages are published and the client switches to versioned ranges.
+Until then, GitHub CI / deploy cannot `npm ci` (the sibling isn't present) — see
+[docs/plans/MIGRATION_FOLLOWUPS.md](docs/plans/MIGRATION_FOLLOWUPS.md).
 
 ### Runtime Compatibility
 
@@ -23,62 +43,51 @@ npm run ci
 
 ---
 
-## Monorepo Structure
+## Project Structure
 
-This project uses **npm workspaces** with three packages:
+This project is an npm-workspaces repo with a **single package**:
 
-| Package                 | Path               | Purpose                                        |
-| ----------------------- | ------------------ | ---------------------------------------------- |
-| `@dark-tower-sync/shared` | `packages/shared` | Shared types, protocol constants, message factories |
-| `@dark-tower-sync/host`   | `packages/host`   | Fake BLE tower peripheral + WebSocket relay server |
-| `@dark-tower-sync/client` | `packages/client` | Browser client — WebSocket receiver + Web Bluetooth replay |
+| Package                   | Path              | Purpose                                                        |
+| ------------------------- | ----------------- | -------------------------------------------------------------- |
+| `@dark-tower-sync/client` | `packages/client` | Browser client — relay WebSocket receiver (`RelayClient`) + Web Bluetooth replay (`PhysicalTowerReplay`) + visualizer (`TowerDisplay`) + `ClientLogger` |
 
-### Which package to work in
+Protocol/types come from `ultimatedarktowerrelay-shared`; transport + replay from
+`ultimatedarktowerrelay-client`; the visualizer from `ultimatedarktowerdisplay`; Web Bluetooth from
+`ultimatedarktower`.
 
-- **New protocol message types or shared types** → `packages/shared/src/`
-- **BLE peripheral (fake tower), relay server, command parsing** → `packages/host/src/`
-- **Browser UI, WebSocket client, Web Bluetooth tower replay** → `packages/client/src/`
+### Where to work
 
-### Cross-package imports
-
-The host and client reference shared using the workspace protocol:
-
-```ts
-import { MessageType, PROTOCOL_VERSION } from '@dark-tower-sync/shared';
-```
-
-After `npm install`, npm creates a symlink so imports resolve to `packages/shared/src/`.
-Build `shared` first before building `host` or `client` (`npm run build:shared`).
+- **Browser UI, WebSocket client wiring, Web Bluetooth tower replay, client logging** → `packages/client/src/`.
+- **Tower emulator / relay server / protocol / host logging / log analysis** → the
+  [UltimateDarkTowerRelay](../UltimateDarkTowerRelay) repo.
+- **Wire protocol / shared types** → the relay's `packages/shared` (consumed here as
+  `ultimatedarktowerrelay-shared`).
 
 ---
 
 ## Development Workflow
 
-1. **Create a branch** from `main` for your changes
-2. **Make your changes** following the code standards below
-3. **Run the full CI pipeline** to verify: `npm run ci`
-4. **Open a Pull Request** into `main`
+1. **Create a branch** from `main` for your changes.
+2. **Make your changes** following the code standards below.
+3. **Run the full CI pipeline** to verify: `npm run ci`.
+4. **Open a Pull Request** into `main`.
 
 ### Useful Commands
 
-| Command                     | Description                                         |
+| Command                     | Description                                          |
 | --------------------------- | --------------------------------------------------- |
-| `npm test`                  | Run test suite                                      |
+| `npm test`                  | Run the test suite                                  |
 | `npm run test:watch`        | Run tests in watch mode                             |
 | `npm run test:coverage`     | Run tests with coverage report                      |
 | `npm run lint`              | Check code with ESLint                              |
 | `npm run lint:fix`          | Auto-fix lint issues                                |
 | `npm run lint:flat:preview` | Run ESLint using flat config preview mode           |
 | `npm run format`            | Format code with Prettier                           |
-| `npm run type-check`        | TypeScript type checking across all packages        |
-| `npm run build`             | Build all packages (shared first)                   |
-| `npm run build:shared`      | Build the shared package only                       |
-| `npm run build:host`        | Build the host package only                         |
-| `npm run build:client`      | Build the client package (Vite) only                |
-| `npm run dev:host`          | Run host in TypeScript watch mode                   |
-| `npm run dev:client`        | Run Vite dev server for the client                  |
+| `npm run type-check`        | TypeScript type checking (`tsc --noEmit`, client)   |
+| `npm run build`             | Build the client (Vite) — alias `build:client`      |
+| `npm run dev:client`        | Run the Vite dev server for the client              |
 | `npm run ci`                | Full CI pipeline (lint + type-check + test + build) |
-| `npm run clean`             | Remove all dist/ directories                        |
+| `npm run clean`             | Remove the client `dist/` and coverage              |
 
 ### ESLint 9 Migration Readiness
 
@@ -92,90 +101,60 @@ Build `shared` first before building `host` or `client` (`npm run build:shared`)
 
 ### TypeScript
 
-- `strict: true` is enabled across all packages — no implicit `any`, strict null checks.
+- `strict: true` is enabled — no implicit `any`, strict null checks.
 - Use explicit return types for public methods and exported functions.
 - Export types for all public API surfaces.
 - Add JSDoc comments for public classes and methods.
 
 ### Style
 
-- **ESLint** for code quality — run `npm run lint`
-- **Prettier** for formatting — run `npm run format`
+- **ESLint** for code quality — run `npm run lint`.
+- **Prettier** for formatting — run `npm run format`.
 - Single quotes, trailing commas (ES5), 100-character print width, 2-space indent.
 - One class per file with a descriptive filename matching the class name.
 
 ### Testing
 
-- Tests live in `tests/unit/` mirroring the package structure (e.g., `tests/unit/shared/`).
-- Use [Jest](https://jestjs.io/) as the test framework with `ts-jest` for TypeScript.
-- Run `npm run test:coverage` and aim for high coverage on new code in `packages/shared` and `packages/host`.
-- The `packages/client` package is excluded from Jest coverage (browser environment — test manually).
+- Client unit tests live in `tests/unit/client/`.
+- Use [Jest](https://jestjs.io/) with `ts-jest`.
+- Keep tests **browser/BLE-free** — inject mocks. See [docs/TESTING.md](docs/TESTING.md).
 
 ---
 
 ## Hardware Testing
 
-DarkTowerSync communicates with physical hardware. Integration tests that require a real tower or BLE adapter live in `tests/integration/` and are **not run by the CI pipeline** automatically.
-
-### Requirements for hardware testing
+DarkTowerSync drives physical hardware (the player's tower via Web Bluetooth) and connects to a relay host.
+End-to-end checks require:
 
 - A physical **Return to Dark Tower** game tower.
-- A Bluetooth adapter supporting **peripheral mode** (BLE advertising).
-- The official **Return to Dark Tower companion app** running on a phone.
-- A browser with **Web Bluetooth** support (Chrome or Edge) for client testing.
+- A browser with **Web Bluetooth** (Chrome or Edge).
+- A running **relay host** ([UltimateDarkTowerRelay](../UltimateDarkTowerRelay) — `TOWER_SOURCE=mock` works
+  for a BLE-free host, or a real tower-emulator host with the companion app).
 
-Contributions that include hardware-validated integration tests are especially welcome.
+Contributions that include hardware-validated reports are especially welcome.
 
 ---
 
 ## Release Process
 
-This project follows [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow) with tagged releases.
+DarkTowerSync follows [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow); the
+client deploys to GitHub Pages via `.github/workflows/deploy-client.yml`.
 
-### Steps
+1. **Create a release branch** from `main`: `git checkout -b release/vX.Y.Z`.
+2. **Update version** in root `package.json` and `packages/client/package.json`.
+3. **Update `CHANGELOG.md`** — move `[Unreleased]` items into a new `[X.Y.Z] - YYYY-MM-DD` section.
+4. **Run the full CI pipeline**: `npm run ci`.
+5. **Open a PR** into `main`; after merge, **tag** (`git tag vX.Y.Z && git push origin vX.Y.Z`) and create a
+   GitHub Release.
 
-1. **Create a release branch** from `main`:
-
-   ```bash
-   git checkout -b release/vX.Y.Z
-   ```
-
-2. **Update version** in root `package.json` and all `packages/*/package.json` files.
-
-3. **Update `CHANGELOG.md`** — move the `[Unreleased]` items into a new `[X.Y.Z] - YYYY-MM-DD` section.
-
-4. **Run the full CI pipeline**:
-
-   ```bash
-   npm run ci
-   ```
-
-5. **Open a Pull Request** from the release branch into `main`.
-
-6. **After merge, tag the release**:
-
-   ```bash
-   git checkout main && git pull
-   git tag vX.Y.Z
-   git push origin vX.Y.Z
-   ```
-
-7. **Create a GitHub Release** from the tag with the changelog content as release notes.
-
-8. **Delete the release branch**:
-   ```bash
-   git push origin --delete release/vX.Y.Z
-   ```
+> The published client depends on the relay packages being on npm. Coordinate releases with the relay's
+> publish cutover (see [docs/plans/MIGRATION_FOLLOWUPS.md](docs/plans/MIGRATION_FOLLOWUPS.md)).
 
 ### Versioning
 
-This project follows [Semantic Versioning](https://semver.org/):
-
-- **Major** (X.0.0) — Breaking changes to the WebSocket protocol or public API
-- **Minor** (0.X.0) — New features, backwards-compatible
-- **Patch** (0.0.X) — Bug fixes, backwards-compatible
-
-> The project is currently at `0.1.0` — pre-release. The public API and protocol are not yet stable.
+[Semantic Versioning](https://semver.org/): **Major** = breaking protocol/API changes, **Minor** = new
+backwards-compatible features, **Patch** = backwards-compatible fixes. The project is currently pre-`1.0`; the
+public API and protocol are not yet stable.
 
 ---
 

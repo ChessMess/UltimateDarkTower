@@ -122,7 +122,7 @@ export class UI {
 
   /**
    * Show a full-screen pause overlay with a message.
-   * Used when the host's companion app disconnects from FakeTower.
+   * Used when the host's companion app disconnects from TowerEmulator.
    */
   showPauseOverlay(message: string): void {
     if (this.pauseOverlay) {

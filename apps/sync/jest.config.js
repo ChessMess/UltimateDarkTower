@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/tests', '<rootDir>/packages'],
+  roots: ['<rootDir>/tests'],
   testMatch: ['**/__tests__/**/*.+(ts|tsx|js)', '**/*.(test|spec).+(ts|tsx|js)'],
   // Explicit ts-jest config: always compile to CommonJS for Jest, regardless
   // of what individual package tsconfigs specify (some use ESNext/bundler).
@@ -21,17 +21,15 @@ module.exports = {
     ],
   },
   moduleNameMapper: {
-    '^@dark-tower-sync/shared$': '<rootDir>/packages/shared/src/index.ts',
-    '^@dark-tower-sync/shared/(.*)$': '<rootDir>/packages/shared/src/$1',
-    '^@dark-tower-sync/host$': '<rootDir>/packages/host/src/index.ts',
-    '^@dark-tower-sync/host/(.*)$': '<rootDir>/packages/host/src/$1',
+    // The relay SDK (ultimatedarktowerrelay-*) resolves via node_modules (file: deps → built dist).
+    // ultimatedarktower's CJS entry is mapped so the relay shared dist can require it under jest.
     '^ultimatedarktower$': '<rootDir>/node_modules/ultimatedarktower/dist/src/index.js',
   },
   collectCoverageFrom: [
-    'packages/*/src/**/*.{ts,tsx}',
-    '!packages/*/src/**/*.d.ts',
-    '!packages/*/src/index.ts',
-    '!packages/client/src/**',
+    // Only the logic modules covered by the remaining unit tests. The browser/UI
+    // entrypoints (app.ts, ui.ts) pull in three/rapier/Display and can't be
+    // instrumented under the node test environment, so they're not collected.
+    'packages/client/src/clientLogger.ts',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],

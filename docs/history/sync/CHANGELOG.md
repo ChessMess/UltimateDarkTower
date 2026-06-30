@@ -65,6 +65,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Remove unused `bytes` variable and `void bytes` suppressor in
   `logger.test.ts` setEnabled test
 
+## [0.3.0] - 2026-06-18
+
+### Changed
+
+- **Migrated onto [UltimateDarkTowerRelay](../UltimateDarkTowerRelay).** DarkTowerSync is now **client-only**: it consumes the relay's published `ultimatedarktowerrelay-client` (`RelayClient` + `PhysicalTowerReplay`) and `ultimatedarktowerrelay-shared` packages. The relay is what the host runs; DarkTowerSync is what the clients run.
+- The browser client was rewired off its bundled `TowerRelay` onto the relay SDK's `RelayClient`; tower mirroring now uses `PhysicalTowerReplay` (replacing the in-repo `replayOnTower` / `replayQueue` / `lastCommandBytes`). `ClientLogger` sends its `client:log` batches via `RelayClient.sendRaw` and imports protocol types from `ultimatedarktowerrelay-shared`.
+
+### Removed
+
+- **Removed the bundled `host`, `electron`, and `shared` packages** — the fake BLE tower, WebSocket relay server, connection manager, command parser, host logger, log-analysis CLI, and the Electron operator app now live in (and are consumed from) the relay.
+- Removed the host/shared/integration test suites and the Electron `release.yml` workflow.
+- Extracted the unrelated `seed-decoder` tool out of the workspace.
+
+### Notes
+
+- Until the relay packages are published to npm, the client depends on them via `file:` and requires the relay checked out as a sibling and built. GitHub CI / deploy stay red on `npm ci` until the publish cutover — see [docs/MIGRATION_FOLLOWUPS.md](docs/MIGRATION_FOLLOWUPS.md).
+
 ## [0.1.3] - 2026-03-22
 
 ### Added

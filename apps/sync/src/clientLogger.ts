@@ -13,7 +13,7 @@ import {
   type LogEntry,
   makeCommandLogEntry,
   makeEventLogEntry,
-} from '@dark-tower-sync/shared';
+} from 'ultimatedarktowerrelay-shared';
 
 const MAX_ENTRIES = 500;
 const AUTO_SEND_INTERVAL_MS = 30_000;

@@ -7,14 +7,8 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build:shared && npm run build:host && npm run build:client",
-    "build:shared": "npm run build -w packages/shared",
-    "build:host": "npm run build -w packages/host",
+    "build": "npm run build:client",
     "build:client": "npm run build -w packages/client",
-    "start:electron": "npm run build:shared && npm run build:host && env -u ELECTRON_RUN_AS_NODE npm run start -w packages/electron",
-    "make:electron": "npm run build:shared && npm run build:host && npm run make -w packages/electron",
-    "package:electron": "npm run build:shared && npm run build:host && npm run package -w packages/electron",
-    "dev:host": "npm run dev -w packages/host",
     "dev:client": "npm run dev -w packages/client",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -23,21 +17,20 @@
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js --fix",
     "lint:flat:preview": "ESLINT_USE_FLAT_CONFIG=true eslint .",
     "format": "prettier --write \"packages/*/src/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
-    "type-check": "tsc --build && tsc --noEmit -p packages/client/tsconfig.json && tsc --noEmit -p packages/electron/tsconfig.json",
-    "postinstall": "cd packages/electron && npx @electron/rebuild || true",
+    "type-check": "tsc --noEmit -p packages/client/tsconfig.json",
     "ci": "npm run lint && npm run type-check && npm run test && npm run build",
-    "clean": "rm -rf packages/shared/dist packages/host/dist packages/client/dist coverage"
+    "clean": "rm -rf packages/client/dist coverage"
   },
   "author": "ChessMess",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ChessMess/DarkTowerSync.git"
+    "url": "https://github.com/ChessMess/UltimateDarkTowerSync.git"
   },
   "bugs": {
-    "url": "https://github.com/ChessMess/DarkTowerSync/issues"
+    "url": "https://github.com/ChessMess/UltimateDarkTowerSync/issues"
   },
-  "homepage": "https://github.com/ChessMess/DarkTowerSync#readme",
+  "homepage": "https://github.com/ChessMess/UltimateDarkTowerSync#readme",
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=7.0.0"
@@ -70,8 +63,5 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vite": "^5.4.0"
-  },
-  "dependencies": {
-    "ultimatedarktower": "^4.0.1"
   }
 }

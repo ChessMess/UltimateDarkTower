@@ -1,19 +1,20 @@
 # DarkTowerSync Troubleshooting
 
-Common issues and recovery steps during a live game session.
+Common issues and recovery steps during a live game session. DarkTowerSync is the **client**; for host-side
+issues (the relay, the tower emulator, BLE permissions, the operator app) see
+[UltimateDarkTowerRelay](../../UltimateDarkTowerRelay) — its
+[docs/SETUP.md](../../UltimateDarkTowerRelay/docs/SETUP.md) and
+[MACOS_BLE_PERIPHERAL_LIMITATION.md](../../UltimateDarkTowerRelay/docs/MACOS_BLE_PERIPHERAL_LIMITATION.md).
 
 ---
 
 ## Table of Contents
 
 - ["My tower stopped responding mid-game"](#my-tower-stopped-responding-mid-game)
-- ["The host's tower disconnected"](#the-hosts-tower-disconnected)
 - ["A player dropped off the relay entirely"](#a-player-dropped-off-the-relay-entirely)
 - ["The companion app keeps disconnecting"](#the-companion-app-keeps-disconnecting)
-- ["Bluetooth permission denied on macOS"](#bluetooth-permission-denied-on-macos)
 - ["Web Bluetooth not available in my browser"](#web-bluetooth-not-available-in-my-browser)
-- ["The Electron app quits immediately on launch"](#the-electron-app-quits-immediately-on-launch)
-- ["DarkTowerSync is damaged and can't be opened"](#darktowersync-is-damaged-and-cant-be-opened)
+- [Host-side issues (the relay)](#host-side-issues-the-relay)
 
 ---
 
@@ -24,15 +25,6 @@ Common issues and recovery steps during a live game session.
 3. Click **Connect to Tower (Bluetooth)** in your browser client.
 4. Approve the Bluetooth pairing prompt — your tower will sync to the current state automatically.
 5. Tell the host you're back — they resume from where they left off.
-
----
-
-## "The host's tower disconnected"
-
-1. All client screens will show a **"Game Paused"** overlay automatically.
-2. **Host:** check that the companion app is still open and in the foreground on the iPhone.
-3. **Host:** the fake tower re-advertises automatically — re-open the companion app and connect to the tower as normal.
-4. Once reconnected, the companion app re-establishes state; the overlay clears and the host can resume.
 
 ---
 
@@ -47,66 +39,37 @@ Common issues and recovery steps during a live game session.
 
 ## "The companion app keeps disconnecting"
 
-- On the iPhone, go to **Settings → Display & Brightness → Auto-Lock** and set it to **Never** while hosting. iOS aggressively suspends backgrounded apps and kills BLE connections.
-- Keep the iPhone within BLE range (~10 m / 30 ft) of the Mac running the host.
-- If using **iPhone Mirroring**, keep the mirroring window focused — switching away may cause iOS to background the app.
+This is a **host-side** concern, but it pauses the game for everyone:
 
----
-
-## "Bluetooth permission denied on macOS"
-
-1. Go to **System Settings → Privacy & Security → Bluetooth**.
-2. Add your terminal app (Terminal, iTerm2, VS Code, etc.) to the allowed list.
-3. If running the Electron app, add **DarkTowerSync** (or **Electron** during development).
-4. Restart the host after granting permission.
+- On the iPhone, go to **Settings → Display & Brightness → Auto-Lock** and set it to **Never** while hosting.
+  iOS aggressively suspends backgrounded apps and kills BLE connections.
+- Keep the iPhone within BLE range (~10 m / 30 ft) of the machine running the relay host.
+- If using **iPhone Mirroring**, keep the mirroring window focused — switching away may cause iOS to
+  background the app.
 
 ---
 
 ## "Web Bluetooth not available in my browser"
 
-Web Bluetooth requires Chrome 70+, Edge 79+, or a specialized browser like Bluefy (iOS). Firefox and Safari do not support it.
+Web Bluetooth requires Chrome 70+, Edge 79+, or a specialized browser like Bluefy (iOS). Firefox and Safari do
+not support it.
 
 The client page must be served over `https://` or `localhost`. When hosting on a LAN, either:
+
 - Access via `localhost` on the same machine, or
 - Use a tunneling tool like `ngrok` that provides an HTTPS URL.
 
 ---
 
-## "The Electron app quits immediately on launch"
+## Host-side issues (the relay)
 
-1. Check the startup log for errors:
-   ```
-   cat ~/Library/Application\ Support/@dark-tower-sync/electron/startup.log
-   ```
-   If that file doesn't exist, check the fallback location:
-   ```
-   cat /tmp/DarkTowerSync/startup.log
-   ```
-2. You can also run the app from Terminal to see console output:
-   ```
-   /Applications/DarkTowerSync.app/Contents/MacOS/dark-tower-sync
-   ```
-3. Common causes:
-   - **Native module ABI mismatch** — the app was built with a different Node.js version than Electron expects. Rebuild with `electron-rebuild` or use a locally-built DMG.
-   - **`ELECTRON_RUN_AS_NODE=1` set in environment** — this makes Electron run as plain Node.js (no window, silent exit). Unset it: `env -u ELECTRON_RUN_AS_NODE /Applications/DarkTowerSync.app/Contents/MacOS/dark-tower-sync`
-   - **macOS Gatekeeper** — unsigned apps downloaded from the internet are blocked. See ["DarkTowerSync is damaged and can't be opened"](#darktowersync-is-damaged-and-cant-be-opened) below.
+The host runs [UltimateDarkTowerRelay](../../UltimateDarkTowerRelay), not this repo. For:
 
----
+- **the host's tower / companion app disconnecting**, **the "Game Paused" overlay**, the tower emulator
+  re-advertising,
+- **Bluetooth permission denied on macOS**,
+- the **DIS / "checking firmware"** stall,
+- the **operator GUI** (Electron app) not launching or being blocked by Gatekeeper,
 
-## "DarkTowerSync is damaged and can't be opened"
-
-This is macOS Gatekeeper blocking the app because it is not code-signed or notarized. It is **not** actually damaged — macOS adds a quarantine flag to all files downloaded from the internet, and unsigned apps are rejected.
-
-**Fix — remove the quarantine flag:**
-
-```
-xattr -cr /Applications/DarkTowerSync.app
-```
-
-Then open the app normally. You only need to do this once per download.
-
-**Alternative** — if you prefer not to use the terminal:
-
-1. Open **System Settings → Privacy & Security**.
-2. Scroll down — you should see a message about DarkTowerSync being blocked.
-3. Click **"Open Anyway"** and confirm.
+see the relay's [docs/SETUP.md](../../UltimateDarkTowerRelay/docs/SETUP.md) and
+[MACOS_BLE_PERIPHERAL_LIMITATION.md](../../UltimateDarkTowerRelay/docs/MACOS_BLE_PERIPHERAL_LIMITATION.md).

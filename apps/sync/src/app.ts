@@ -1,15 +1,18 @@
 /**
  * App — main application controller for the DarkTowerSync client.
  *
- * Wires together the UI, TowerRelay (WebSocket), and UltimateDarkTower
+ * Wires together the UI, RelayClient (WebSocket), and UltimateDarkTower
  * (Web Bluetooth) into the top-level event loop.
  */
 
-import { UltimateDarkTower, BluetoothUserCancelledError, rtdt_unpack_state, TOWER_STATE_DATA_OFFSET, TOWER_LIGHT_SEQUENCES, LIGHT_EFFECTS, type TowerState, type SealIdentifier, type TowerSide, type TowerLevels } from 'ultimatedarktower';
+import { UltimateDarkTower, BluetoothUserCancelledError, rtdt_unpack_state, TOWER_STATE_DATA_OFFSET } from 'ultimatedarktower';
 import { UI } from './ui';
-import { TowerRelay, type TowerRelayEvent } from './towerRelay';
+import { RelayClient, PhysicalTowerReplay, type RelayClientEvent } from 'ultimatedarktowerrelay-client';
 import { ClientLogger } from './clientLogger';
-import { TowerDisplay } from 'ultimatedarktowerdisplay';
+// Type-only import: the runtime value is pulled in via a dynamic import() in
+// loadTowerDisplay() so the heavy visualizer (three / rapier / model / audio)
+// is code-split into its own chunk instead of the main bundle.
+import type { TowerDisplay } from 'ultimatedarktowerdisplay';
 
 /**
  * App is the top-level controller.
@@ -24,18 +27,16 @@ export class App {
   private readonly ui: UI;
   private readonly logger: ClientLogger;
   private readonly isObserver: boolean = new URLSearchParams(window.location.search).has('observer');
-  private relay: TowerRelay | null = null;
+  private relay: RelayClient | null = null;
   private tower: UltimateDarkTower | null = null;
   private towerDisplay: TowerDisplay | null = null;
 
-  /** Tracked broken seals for display. */
-  private brokenSeals: SealIdentifier[] = [];
-
-  /** Cached last command bytes for self-healing replay on tower reconnect. */
-  private lastCommandBytes: number[] | null = null;
-
-  /** Serializes replayOnTower calls so concurrent BLE writes can't interleave. */
-  private replayQueue: Promise<void> = Promise.resolve();
+  /**
+   * Mirrors relayed commands onto the local physical tower (FR-5.2). Owns the
+   * serialized write queue, tower-ready gate, and last-command self-heal — so
+   * the app no longer tracks any of that itself.
+   */
+  private readonly replay: PhysicalTowerReplay;
 
   /** Interval ID for the "Connecting..." dot animation. */
   private connectingAnimationId: ReturnType<typeof setInterval> | null = null;
@@ -43,6 +44,9 @@ export class App {
   constructor() {
     this.ui = new UI();
     this.logger = new ClientLogger();
+    this.replay = new PhysicalTowerReplay({
+      onLog: (message, error) => this.logger.logEvent(error ? 'error' : 'event', message),
+    });
   }
 
   /** Bind UI events and initialize the application. */
@@ -76,19 +80,13 @@ export class App {
       const container = document.getElementById('tower-visualizer');
       if (container) {
         document.getElementById('visualizer-section')?.removeAttribute('hidden');
-        this.towerDisplay = new TowerDisplay({
-          container,
-          onSealClick: (seal) => this.handleSealClick(seal),
-        });
+        void this.loadTowerDisplay(container);
       }
       this.ui.log('Observer mode — tower display active. Connect to a host to begin.');
     } else {
       const container = document.getElementById('tower-display');
       if (container) {
-        this.towerDisplay = new TowerDisplay({
-          container,
-          onSealClick: (seal) => this.handleSealClick(seal),
-        });
+        void this.loadTowerDisplay(container);
       }
       this.ui.toggleStateBtn.removeAttribute('hidden');
       this.ui.toggleStateBtn.addEventListener('click', () => {
@@ -107,6 +105,19 @@ export class App {
     }
     this.ui.setRelayState('disconnected');
     this.ui.setTowerState('disconnected');
+  }
+
+  /**
+   * Lazy-load the 3D tower visualizer. `ultimatedarktowerdisplay` and its
+   * three / rapier / model / audio payload are the bulk of the bundle, so they
+   * are code-split into a separate chunk and fetched only here. Any tower state
+   * that arrives before the chunk finishes loading is harmless — every
+   * `applyState`/`showIdle` call is null-guarded and the relay re-syncs full
+   * state, so the visualizer catches up on the next update.
+   */
+  private async loadTowerDisplay(container: HTMLElement): Promise<void> {
+    const { TowerDisplay } = await import('ultimatedarktowerdisplay');
+    this.towerDisplay = new TowerDisplay({ container });
   }
 
   // ---------------------------------------------------------------------------
@@ -139,44 +150,6 @@ export class App {
     if (this.connectingAnimationId !== null) {
       clearInterval(this.connectingAnimationId);
       this.connectingAnimationId = null;
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Seal management
-  // ---------------------------------------------------------------------------
-
-  /** Toggle a seal's broken state when clicked in the display. */
-  private handleSealClick(seal: SealIdentifier): void {
-    const idx = this.brokenSeals.findIndex(s => s.side === seal.side && s.level === seal.level);
-    if (idx >= 0) {
-      this.brokenSeals.splice(idx, 1);
-    } else {
-      this.brokenSeals.push(seal);
-    }
-    this.towerDisplay?.applySeals(this.brokenSeals);
-  }
-
-  /** Detect which seal was broken from a sealReveal tower state. */
-  private detectBrokenSeal(state: TowerState): SealIdentifier | null {
-    const SIDE_BY_INDEX: TowerSide[] = ['north', 'east', 'south', 'west'];
-    const LEVEL_BY_LAYER: TowerLevels[] = ['top', 'middle', 'bottom'];
-    for (let layer = 0; layer <= 2; layer++) {
-      for (let pos = 0; pos < 4; pos++) {
-        if (state.layer[layer].light[pos].effect !== LIGHT_EFFECTS.off) {
-          return { side: SIDE_BY_INDEX[pos], level: LEVEL_BY_LAYER[layer] };
-        }
-      }
-    }
-    return null;
-  }
-
-  /** Add a seal to brokenSeals if not already present, and update the display. */
-  private markSealBroken(seal: SealIdentifier): void {
-    const exists = this.brokenSeals.some(s => s.side === seal.side && s.level === seal.level);
-    if (!exists) {
-      this.brokenSeals.push(seal);
-      this.towerDisplay?.applySeals(this.brokenSeals);
     }
   }
 
@@ -214,10 +187,15 @@ export class App {
     this.ui.connectBtn.disabled = true;
     this.startConnectingAnimation();
 
-    this.relay = new TowerRelay({
+    this.relay = new RelayClient({
       label,
       observer: this.isObserver,
-      onEvent: (event) => this.handleRelayEvent(event),
+      onEvent: (event) => {
+        // Fan out: mirror onto the local tower *and* drive the UI (the relay's
+        // PhysicalTowerReplay owns the write queue / tower-ready gate / self-heal).
+        this.replay.handleEvent(event);
+        this.handleRelayEvent(event);
+      },
     });
 
     try {
@@ -265,6 +243,7 @@ export class App {
         this.ui.disconnectTowerBtn.setAttribute('hidden', '');
         this.ui.log('Tower disconnected unexpectedly.');
         this.tower = null;
+        this.replay.setTower(null);
         this.relay?.sendReady(false);
       };
 
@@ -292,13 +271,11 @@ export class App {
       tower.onCalibrationComplete = () => {
         this.ui.setTowerState('connected');
         this.ui.log('Tower calibrated and ready.');
+        this.replay.setTower(tower);
         this.relay?.sendReady(true);
-
-        // Self-heal: replay last known command on tower reconnect.
-        if (this.lastCommandBytes) {
-          this.ui.log('Replaying last known command on reconnected tower…');
-          this.replayQueue = this.replayQueue.then(() => this.replayOnTower(this.lastCommandBytes!)).catch(() => {});
-        }
+        // Self-heal: replay the last relayed command on (re)calibration so a
+        // tower that connected/reconnected mid-session catches up immediately.
+        void this.replay.replayLast();
       };
 
       await tower.calibrate();
@@ -324,6 +301,7 @@ export class App {
     if (this.tower?.isConnected) {
       await this.tower.disconnect();
       this.tower = null;
+      this.replay.setTower(null);
       this.ui.setTowerState('disconnected');
       this.ui.towerBtn.textContent = 'Connect to Tower (Bluetooth)';
       this.ui.towerBtn.classList.remove('btn-connected');
@@ -334,25 +312,12 @@ export class App {
     }
   }
 
-  /** Replay a 20-byte command on the local physical tower. */
-  private async replayOnTower(data: number[], seq: number | null = null): Promise<void> {
-    if (!this.tower?.isConnected || !this.tower.isCalibrated) return;
-    try {
-      await this.tower.sendTowerCommandDirect(new Uint8Array(data));
-      this.logger.logCommand('client→tower', data, seq);
-      this.ui.log('Command replayed on tower.');
-    } catch (err) {
-      this.logger.logEvent('error', `Tower write failed: ${String(err)}`);
-      this.ui.log(`Tower write failed: ${String(err)}`);
-    }
-  }
-
   // ---------------------------------------------------------------------------
   // Relay event handling
   // ---------------------------------------------------------------------------
 
-  /** Handle events from {@link TowerRelay} and update the UI accordingly. */
-  private handleRelayEvent(event: TowerRelayEvent): void {
+  /** Handle events from {@link RelayClient} and update the UI accordingly. */
+  private handleRelayEvent(event: RelayClientEvent): void {
     switch (event.type) {
       case 'relay:connected':
         this.stopConnectingAnimation();
@@ -423,43 +388,27 @@ export class App {
         break;
 
       case 'tower:command': {
-        this.lastCommandBytes = event.data;
         this.logger.logCommand('client←host', event.data, event.seq);
         this.ui.log(`Command received: [${event.data.slice(0, 4).join(', ')}…]`);
         const state = rtdt_unpack_state(Uint8Array.from(event.data).slice(TOWER_STATE_DATA_OFFSET));
-        if (state.led_sequence === TOWER_LIGHT_SEQUENCES.sealReveal) {
-          const seal = this.detectBrokenSeal(state);
-          if (seal) this.markSealBroken(seal);
-        }
         this.towerDisplay?.applyState(state);
-        if (!this.isObserver) {
-          this.replayQueue = this.replayQueue.then(() => this.replayOnTower(event.data, event.seq)).catch(() => {});
-        }
         break;
       }
 
       case 'sync:state':
         if (event.lastCommand) {
-          this.lastCommandBytes = event.lastCommand;
           this.ui.log('Received full tower state sync from host.');
           const syncState = rtdt_unpack_state(Uint8Array.from(event.lastCommand).slice(TOWER_STATE_DATA_OFFSET));
           this.towerDisplay?.applyState(syncState);
-          if (!this.isObserver) {
-            this.replayQueue = this.replayQueue.then(() => this.replayOnTower(event.lastCommand!)).catch(() => {});
-          }
         } else {
           this.ui.log('Connected — no prior tower state to sync.');
         }
         break;
 
       case 'host:resend': {
-        this.lastCommandBytes = event.data;
         this.ui.log('Host operator re-sent last tower state.');
         const resendState = rtdt_unpack_state(Uint8Array.from(event.data).slice(TOWER_STATE_DATA_OFFSET));
         this.towerDisplay?.applyState(resendState);
-        if (!this.isObserver) {
-          this.replayQueue = this.replayQueue.then(() => this.replayOnTower(event.data)).catch(() => {});
-        }
         break;
       }
 
