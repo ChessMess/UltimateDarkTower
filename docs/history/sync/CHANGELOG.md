@@ -6,81 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-29
+
+### Changed
+
+- **Migrated onto [UltimateDarkTowerRelay](https://github.com/ChessMess/UltimateDarkTowerRelay).** DarkTowerSync is now **client-only**: it consumes the relay's published `ultimatedarktowerrelay-client` (`RelayClient` + `PhysicalTowerReplay`) and `ultimatedarktowerrelay-shared` packages. The relay is what the host runs; DarkTowerSync is what the clients run.
+- The browser client was rewired off its bundled `TowerRelay` onto the relay SDK's `RelayClient`; tower mirroring now uses `PhysicalTowerReplay` (replacing the in-repo `replayOnTower` / `replayQueue` / `lastCommandBytes`). `ClientLogger` sends its `client:log` batches via `RelayClient.sendRaw` and imports protocol types from `ultimatedarktowerrelay-shared`.
+- **Cut over to the published dependencies** (off the interim `file:` deps): `ultimatedarktowerrelay-{client,shared}` → `^0.1.0`, `ultimatedarktower` `^4.1.0` → `^5.0.0` (the relay client SDK requires UDT 5), `ultimatedarktowerdisplay` `^0.9.0` → `^0.10.0` (adds the UDT 5 peer), and `three` `^0.184.0` → `^0.185.0`. A clean `npm ci` now resolves entirely from the npm registry, so GitHub CI and the GitHub Pages deploy run green with no sibling checkouts.
+- **Client reconnect attempts capped at 10** — the client no longer retries indefinitely after losing the WebSocket connection to the host. After 10 failed attempts it stops, re-enables the "Connect to Host" button, and logs a message prompting the user to reconnect manually. The exponential backoff (1 s → 30 s max) is otherwise unchanged.
+
 ### Fixed
 
 - **Client proceeded as connected after cancelling Bluetooth dialog** — Cancelling the browser's Bluetooth device picker left the client in a half-connected state (button showed "Connected to Tower", calibration attempted). Added a defensive `isConnected` guard after `tower.connect()` so the client correctly resets even if the library silently swallows the connection error.
+- **Log cap removing text nodes** — `UI.log()` used `firstChild!` to trim entries beyond the 200-entry cap, which could skip over whitespace text nodes. Changed to `firstElementChild!` so only `<p>` element nodes are removed.
 
-- **Ghost BLE connection state desync (macOS)** — After clicking "Stop BLE" while
-  the companion app was connected, the host entered a state where commands flowed
-  (relay count incremented) but the UI showed "Idle" with no green indicator.
-  Toggling Start Advertising / Stop BLE had no effect on the actual BLE connection.
+### Performance
 
-  **Root cause:** macOS CoreBluetooth has no peripheral-initiated disconnect API.
-  `CBPeripheralManager` has no `disconnect` method and `CBPeripheralManagerDelegate`
-  has no `didDisconnectCentral:` callback (confirmed via Apple documentation). The
-  `bleno.disconnect()` call maps to an empty Objective-C method — a platform
-  limitation, not a bleno bug. When Stop BLE is pressed, the companion app's BLE
-  link survives the stop/start cycle. On the next Start Advertising, neither the
-  `accept` event (blocked by bleno's native `connectedCentrals` set which never
-  clears known centrals) nor `onSubscribe` (companion doesn't resubscribe since it
-  believes it already is) fires, leaving FakeTower stuck in `advertising` state.
-
-  **Fixes applied:**
-  - `onWriteRequest` now detects ghost connections: if a BLE write arrives while in
-    `advertising` state, the state machine promotes to `connected` and emits
-    `companion-connected`. A write can only arrive on an active BLE link.
-  - `stopAdvertising()` now explicitly emits `companion-disconnected` when stopping
-    from `connected` state, since `bleno.disconnect()` cannot trigger it on macOS.
-  - New `ghost-connection` diagnostic event emitted and logged to session JSONL for
-    post-session troubleshooting.
-  - Diagnostic `console.log` entries added to `startAdvertising()` and
-    `stopAdvertising()` showing prior state, aiding startup log analysis.
-
-- **Duplicate `client:disconnected` broadcasts** — `RelayServer` registered both
-  `close` and `error` handlers that called the same cleanup function. When a
-  socket error preceded close (which always follows), cleanup ran twice,
-  broadcasting a duplicate disconnect notification. Added a guard flag so cleanup
-  executes at most once per client.
-- **Map mutation during broadcast iteration** — `ConnectionManager.broadcast()`
-  called `this.remove(id)` inside a `for…of` loop over the clients map when a
-  send threw. While ES spec allows this, it can skip entries unpredictably.
-  Failed client IDs are now collected and removed after the loop completes.
-- **Log cap removing text nodes** — `UI.log()` used `firstChild!` to trim
-  entries beyond the 200-entry cap, which could skip over whitespace text nodes.
-  Changed to `firstElementChild!` so only `<p>` element nodes are removed.
-
-### Changed
-
-- **Client reconnect attempts capped at 10** — the client no longer retries indefinitely after losing the WebSocket connection to the host. After 10 failed attempts it stops, re-enables the "Connect to Host" button, and logs a message prompting the user to reconnect manually. The exponential backoff (1 s → 30 s max) is otherwise unchanged.
-- Remove stale scaffolding log messages from host entry point
-  ("Implement FakeTower and RelayServer to proceed") that were leftover from
-  initial development
-- Simplify redundant ternary in `CommandParser.parse()`
-  (`Array.from(data instanceof Buffer ? data : data)` → `Array.from(data)`)
-- Bump `@dark-tower-sync/shared` version from 0.1.2 → 0.1.3 for consistency
-  with host and client packages
-
-### Tests
-
-- Remove unused `bytes` variable and `void bytes` suppressor in
-  `logger.test.ts` setEnabled test
-
-## [0.3.0] - 2026-06-18
-
-### Changed
-
-- **Migrated onto [UltimateDarkTowerRelay](../UltimateDarkTowerRelay).** DarkTowerSync is now **client-only**: it consumes the relay's published `ultimatedarktowerrelay-client` (`RelayClient` + `PhysicalTowerReplay`) and `ultimatedarktowerrelay-shared` packages. The relay is what the host runs; DarkTowerSync is what the clients run.
-- The browser client was rewired off its bundled `TowerRelay` onto the relay SDK's `RelayClient`; tower mirroring now uses `PhysicalTowerReplay` (replacing the in-repo `replayOnTower` / `replayQueue` / `lastCommandBytes`). `ClientLogger` sends its `client:log` batches via `RelayClient.sendRaw` and imports protocol types from `ultimatedarktowerrelay-shared`.
+- **Lighter deploy artifact.** Disabled production source maps and lazy-load the 3D visualizer via dynamic `import()`: the main bundle drops from ~32 MB to ~176 KB (three / rapier / tower model / audio now load on demand, only when the visualizer is shown), and the total Pages artifact from ~73 MB to ~40 MB.
 
 ### Removed
 
 - **Removed the bundled `host`, `electron`, and `shared` packages** — the fake BLE tower, WebSocket relay server, connection manager, command parser, host logger, log-analysis CLI, and the Electron operator app now live in (and are consumed from) the relay.
 - Removed the host/shared/integration test suites and the Electron `release.yml` workflow.
 - Extracted the unrelated `seed-decoder` tool out of the workspace.
-
-### Notes
-
-- Until the relay packages are published to npm, the client depends on them via `file:` and requires the relay checked out as a sibling and built. GitHub CI / deploy stay red on `npm ci` until the publish cutover — see [docs/MIGRATION_FOLLOWUPS.md](docs/MIGRATION_FOLLOWUPS.md).
 
 ## [0.1.3] - 2026-03-22
 

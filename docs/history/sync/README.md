@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-green.svg)](https://nodejs.org/)
-[![version](https://img.shields.io/badge/version-0.2.0-orange.svg)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.3.0-orange.svg)](CHANGELOG.md)
 
 Remote multiplayer tower synchronization for **Return to Dark Tower** — the **browser client** that connects to an [UltimateDarkTowerRelay](https://github.com/ChessMess/UltimateDarkTowerRelay) host and mirrors the host's tower on every player's own physical tower in real time.
 
