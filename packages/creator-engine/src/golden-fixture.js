@@ -22,7 +22,7 @@ const golden = {
     description: "Playable golden MVP fixture — drives to a clean win and a clean loss (rules-engine §9).",
     scenarioVersion: "0.1.0",
     designer: { name: "ChessMess" },
-    pins: { udt: "4.1.0" },
+    pins: { udt: "5.0.0" },
     provenance: { importedSeed: { seed: "AA9A-AAGS-W634" } }
   },
   setup: {
@@ -100,7 +100,11 @@ const golden = {
     entry: "n-start",
     nodes: [
       { id: "n-start",   kind: "lifecycle.gameStart",    wires: { out: ["n-setup"] } },
-      { id: "n-setup",   kind: "lifecycle.boardSetup",   wires: { out: ["n-banner"] } },
+      { id: "n-setup",   kind: "lifecycle.boardSetup",   props: { spawns: [
+          { foeId: "brigands",     location: "Delmsmire" },
+          { foeId: "frost-trolls", location: "The Tundra" },
+          { foeId: "dragons",      location: "Dragontooth Lake" }
+        ] }, wires: { out: ["n-banner"] } },
       { id: "n-banner",  kind: "action.banner", props: { title: "Recover Azkol's Treasures" }, wires: { out: ["n-month"] } },
       { id: "n-month",   kind: "lifecycle.startMonth",   wires: { out: ["n-turn"] } },
       { id: "n-turn",    kind: "lifecycle.playerTurn",   wires: { out: ["n-astart"] } },
@@ -272,8 +276,8 @@ const goldenAuthoredLossSeal = cloneAuthoredLossSeal();
 // key selects, value is the threshold). The driver, like the seal clone, is a spliced `effect.apply`
 // carrying a `foe.spawn` (foeId "brigands" — the tier1 foe of the golden setup; location "the-tower"):
 // each plain action spawns one foe onto the space (state.foes maintained headless by foe.spawn/foe.move),
-// and the guard `foeOnSpace gte 2 key:"the-tower"` fires on the SECOND. (`heroAtLocation`, the sibling
-// enum subject, stays unimplemented — heroes carry no headless position; it waits for the Board, E2.)
+// and the guard `foeOnSpace gte 2 key:"the-tower"` fires on the SECOND. (`heroAtLocation` is now
+// implemented: heroes carry `location` in engine state, set by hero.placeOrMove and action.move.)
 // `foe.spawn` requires foeId (matches the $defs/foeId pattern) + a free-string location, and `effect.apply`
 // + `foe.spawn` are both in the closed schema vocabularies, so the clone stays L1-valid under ajv strict.
 function cloneAuthoredLossFoe() {

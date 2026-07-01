@@ -16,7 +16,7 @@
   "dependencies": {
     "@udtc/engine": "workspace:*",
     "@udtc/schema": "workspace:*",
-    "ultimatedarktower": "4.1.0",
+    "ultimatedarktower": "5.0.0",
     "ultimatedarktowerdisplay": "file:../../../UltimateDarkTowerDisplay",
     "ultimatedarktowerboard": "file:../../../UltimateDarkTowerBoard"
   },

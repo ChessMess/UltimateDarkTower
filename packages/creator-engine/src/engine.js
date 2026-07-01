@@ -13,7 +13,7 @@
 
 const pcg32 = require("./pcg32");
 
-const ENGINE_VERSION = "0.1.0";
+const ENGINE_VERSION = "0.2.0";
 const SUPPORTED_SCHEMA_RANGE = ">=0.4.0 <0.5.0"; // semver-range, same-minor pre-1.0 (§8)
 
 // The four board kingdoms in canonical clockwise order (schema $defs/kingdom). Seating, home-kingdom
@@ -61,6 +61,7 @@ function evalCondition(cond, state) {
     case "counter": lhs = state.counters[key] || 0; break;
     case "sealsRemoved": lhs = state.sealsRemoved; break;
     case "foeOnSpace": lhs = (state.foes || []).filter(f => f.location === key).length; break;
+    case "heroAtLocation": lhs = Object.values(state.heroes).filter(h => h.location === key).length; break;
     case "supply": lhs = state.skulls.supply; break;
     case "month": lhs = state.clock.month; break;
     case "endOfMonth": lhs = (state.clock.turnInMonth >= state.clock.turnsThisMonth); break;
@@ -180,8 +181,11 @@ function applyEffect(eff, state, directives) {
       dir(directives, "board.mutate", { command: "removeToken", args: { tokenTypeId: eff.tokenTypeId, target: eff.target } }); break;
     }
     // ----- hero / board placement -----
-    case "hero.placeOrMove":
-      dir(directives, "board.mutate", { command: "placeHero", args: { hero: eff.hero || state.clock.activeHero, to: eff.to } }); break;
+    case "hero.placeOrMove": {
+      const heroId = eff.hero || state.clock.activeHero;
+      state.heroes[heroId].location = eff.to ?? null;
+      dir(directives, "board.mutate", { command: "placeHero", args: { hero: heroId, to: eff.to } }); break;
+    }
     case "board.placeMonument":
       state.monuments.push(eff.location);
       dir(directives, "board.mutate", { command: "placeMonument", args: { location: eff.location } }); break;
@@ -401,10 +405,16 @@ function interpretNode(node, state, directives) {
     case "lifecycle.gameStart":
       dir(directives, "log.entry", { event: "gameStart" });
       return { goto: next };
-    case "lifecycle.boardSetup":
+    case "lifecycle.boardSetup": {
       dir(directives, "board.mutate", { command: "setupBoard", args: {} });
+      // Author-defined initial foe placement — each entry runs the shared foe.spawn effect
+      // so a setup spawn is byte-identical to an authored effect.apply foe.spawn.
+      const spawns = (node.props && node.props.spawns) || [];
+      for (const sp of spawns)
+        applyEffect({ op: "foe.spawn", foeId: sp.foeId, location: sp.location, status: sp.status }, state, directives);
       dir(directives, "ui.update", { delta: { phase: "setup" } });
       return { goto: next };
+    }
     case "lifecycle.startMonth": {
       state.clock.month += 1;
       state.clock.turnInMonth = 0;
@@ -601,9 +611,12 @@ function resume(pending, state, input, directives) {
       applyTrade(state, directives, input.value || {});
       return { goto: next };
     }
-    case "moveTarget": // action.move — split-move allowed; Board validates the path
-      dir(directives, "board.mutate", { command: "moveHero", args: { hero: state.clock.activeHero, to: (input.value || {}).to } });
+    case "moveTarget": { // action.move — split-move allowed; Board validates the path
+      const moveTo = (input.value || {}).to;
+      if (moveTo != null) state.heroes[state.clock.activeHero].location = moveTo;
+      dir(directives, "board.mutate", { command: "moveHero", args: { hero: state.clock.activeHero, to: moveTo } });
       return { goto: next };
+    }
     case "dungeonRoomAdvantage": { // dungeon.room — spend 1 Advantage to improve this room (once)
       const dc = state.clock.dungeon; if (!dc) throw fault("dungeonRoomAdvantage with no active dungeon");
       const ds = dungeonState(state, dc.dungeonId);
@@ -792,7 +805,7 @@ function makeHero() {
   // Hero rich-data (real 7+1 split, banner, move value, 3+3 virtues, Advantage pool) is injected
   // content (§10.3, D2-blocked); the engine starts every hero from the documented placeholder.
   return { warriors: 7, spirit: 1, corruption: 0, advantages: 6, virtues: { active: [], inactive: [] },
-           items: { gear: [], treasure: [], potions: [], questItems: [] }, companions: [], counters: {} };
+           items: { gear: [], treasure: [], potions: [], questItems: [] }, companions: [], counters: {}, location: null };
 }
 
 function init(scenario, opts) {

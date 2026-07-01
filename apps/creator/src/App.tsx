@@ -5,6 +5,7 @@ import { CreatorCanvas } from './canvas';
 import { PalettePanel, InspectorPanel, ProblemsPanel } from './editors';
 import { SimulatorPanel } from './simulator';
 import { useCreatorStore } from './store';
+import { ThemeToggle } from '@udtc/theme';
 
 type BottomTab = 'problems' | 'simulator';
 
@@ -31,6 +32,8 @@ export default function App() {
               <span className="subtitle">v{schemaDoc.meta.scenarioVersion}</span>
             </>
           )}
+          <span style={{ flex: 1 }} />
+          <ThemeToggle />
         </div>
 
         {/* Left: Palette */}
@@ -60,7 +63,7 @@ export default function App() {
                 <span
                   style={{
                     marginLeft: 6,
-                    background: '#DC2626',
+                    background: 'var(--c-danger)',
                     color: '#fff',
                     borderRadius: 10,
                     padding: '1px 6px',

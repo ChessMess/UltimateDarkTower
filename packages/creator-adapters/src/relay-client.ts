@@ -25,6 +25,7 @@ export interface RelayStatus {
 type RelayInbound =
   | { type: 'relay:status'; relaying: boolean; targetKind: 'tower' | 'emulator' | null; targetState: string; calibrated: boolean }
   | { type: 'tower:observed'; observed: 'skullCounter'; value: number }
+  | { type: 'tower:seals'; seals: string[] }
   | { type: 'relay:sync'; lastCommand: number[] | null }
   | { type: 'relay:ack' }
   | { type: 'relay:paused' }
@@ -35,6 +36,8 @@ export interface RelayClientCallbacks {
   onObserved: (observed: 'skullCounter', value: number) => void;
   onSync: (lastCommand: number[] | null) => void;
   onAck: () => void;
+  /** Inbound seal mirror — the relay echoes the latest broken-seal set back to the source. */
+  onSeals: (seals: string[]) => void;
   onConnStateChange: (state: RelayConnState) => void;
 }
 
@@ -47,6 +50,7 @@ export class RelayClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectDelay = 1000;
   private lastCommand: number[] = [];
+  private lastSeals: string[] = [];
   private seq = 0;
   private url = '';
   private destroyed = false;
@@ -110,6 +114,17 @@ export class RelayClient {
     }
   }
 
+  // Send the full broken-seal set as a sidecar (Appendix B, Protocol R12).
+  // Emulator renders visually via applySeals; physical tower ignores the sidecar.
+  sendSeals(brokenSeals: string[]): void {
+    this.lastSeals = brokenSeals;
+    if (this.mode === 'stub') {
+      // stub: no-op (emulator seal state is driven by display().applySeals directly)
+    } else if (this.ws?.readyState === WebSocket.OPEN) {
+      this.send({ type: 'tower:seals', seals: brokenSeals });
+    }
+  }
+
   // ---- private ----
 
   private setConnState(s: RelayConnState): void {
@@ -139,6 +154,8 @@ export class RelayClient {
       if (this.destroyed) return;
       // Protocol §7: relay asks player to re-send last command
       this.cbs.onSync(this.lastCommand.length > 0 ? this.lastCommand : null);
+      // Re-emit last seals so the display stays in sync after resync
+      if (this.lastSeals.length > 0) this.cbs.onSeals(this.lastSeals);
       // Then restore target state
       setTimeout(() => {
         if (!this.destroyed) {
@@ -201,6 +218,10 @@ export class RelayClient {
         break;
       case 'tower:observed':
         this.cbs.onObserved(msg.observed, msg.value);
+        break;
+      case 'tower:seals':
+        this.lastSeals = msg.seals;
+        this.cbs.onSeals(msg.seals);
         break;
       case 'relay:sync':
         this.setConnState('resyncing');

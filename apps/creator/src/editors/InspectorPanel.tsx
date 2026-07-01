@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
+import { getUDTReferenceLayer } from '@udtc/adapters';
 import { useCreatorStore } from '../store';
 import { categoryFor } from '../types';
+import type { ScenarioDoc, SchemaNode } from '../types';
 
 export function InspectorPanel() {
   const { schemaDoc, rfNodes, selectedNodeId, validationResults } = useCreatorStore();
@@ -33,8 +35,8 @@ export function InspectorPanel() {
   const style = {
     panel: {
       width: 260,
-      background: '#F8FAFC',
-      borderLeft: '1px solid #E2E8F0',
+      background: 'var(--c-surface)',
+      borderLeft: '1px solid var(--c-border)',
       display: 'flex',
       flexDirection: 'column' as const,
       fontSize: 12,
@@ -45,41 +47,44 @@ export function InspectorPanel() {
       fontWeight: 700,
       fontSize: 11,
       letterSpacing: '0.08em',
-      color: '#64748B',
+      color: 'var(--c-text-muted)',
       textTransform: 'uppercase' as const,
-      borderBottom: '1px solid #E2E8F0',
+      borderBottom: '1px solid var(--c-border)',
     },
     section: {
       padding: '10px 12px',
-      borderBottom: '1px solid #F1F5F9',
+      borderBottom: '1px solid var(--c-border)',
     },
     label: {
       fontSize: 10,
-      color: '#94A3B8',
+      color: 'var(--c-text-faint)',
       textTransform: 'uppercase' as const,
       letterSpacing: '0.06em',
       marginBottom: 4,
     },
     value: {
       fontSize: 12,
-      color: '#1E293B',
+      color: 'var(--c-text)',
     },
     input: {
       width: '100%',
       padding: '4px 8px',
-      border: '1px solid #CBD5E1',
+      border: '1px solid var(--c-border-strong)',
       borderRadius: 4,
       fontSize: 12,
       fontFamily: 'inherit',
+      background: 'var(--c-surface-raised)',
+      color: 'var(--c-text)',
       boxSizing: 'border-box' as const,
     },
     btn: {
       padding: '4px 10px',
-      border: '1px solid #CBD5E1',
+      border: '1px solid var(--c-border-strong)',
       borderRadius: 4,
       fontSize: 11,
       cursor: 'pointer',
-      background: '#fff',
+      background: 'var(--c-surface-raised)',
+      color: 'var(--c-text-2)',
     },
     btnDanger: {
       padding: '4px 10px',
@@ -88,7 +93,7 @@ export function InspectorPanel() {
       fontSize: 11,
       cursor: 'pointer',
       background: '#FEF2F2',
-      color: '#DC2626',
+      color: 'var(--c-danger)',
     },
   };
 
@@ -96,7 +101,7 @@ export function InspectorPanel() {
     return (
       <div style={style.panel}>
         <div style={style.header}>Inspector</div>
-        <div style={{ padding: 12, color: '#94A3B8', fontStyle: 'italic', fontSize: 11 }}>
+        <div style={{ padding: 12, color: 'var(--c-text-faint)', fontStyle: 'italic', fontSize: 11 }}>
           No scenario loaded
         </div>
       </div>
@@ -107,7 +112,7 @@ export function InspectorPanel() {
     return (
       <div style={style.panel}>
         <div style={style.header}>Inspector</div>
-        <div style={{ padding: 12, color: '#94A3B8', fontStyle: 'italic', fontSize: 11 }}>
+        <div style={{ padding: 12, color: 'var(--c-text-faint)', fontStyle: 'italic', fontSize: 11 }}>
           Select a node to inspect
         </div>
 
@@ -115,18 +120,18 @@ export function InspectorPanel() {
         <div style={style.section}>
           <div style={style.label}>Scenario</div>
           <div style={{ ...style.value, fontWeight: 700 }}>{schemaDoc.meta.title}</div>
-          <div style={{ color: '#64748B', marginTop: 2 }}>v{schemaDoc.meta.scenarioVersion}</div>
-          <div style={{ color: '#64748B' }}>by {schemaDoc.meta.designer?.name}</div>
-          <div style={{ marginTop: 6, color: '#64748B' }}>Entry: <code>{schemaDoc.graph.entry}</code></div>
-          <div style={{ color: '#64748B' }}>{schemaDoc.graph.nodes.length} nodes</div>
+          <div style={{ color: 'var(--c-text-muted)', marginTop: 2 }}>v{schemaDoc.meta.scenarioVersion}</div>
+          <div style={{ color: 'var(--c-text-muted)' }}>by {schemaDoc.meta.designer?.name}</div>
+          <div style={{ marginTop: 6, color: 'var(--c-text-muted)' }}>Entry: <code>{schemaDoc.graph.entry}</code></div>
+          <div style={{ color: 'var(--c-text-muted)' }}>{schemaDoc.graph.nodes.length} nodes</div>
         </div>
 
         {/* L1 errors */}
         {validationResults && validationResults.l1.errors.length > 0 && (
           <div style={{ ...style.section, background: '#FEF2F2' }}>
-            <div style={{ ...style.label, color: '#DC2626' }}>L1 Schema Errors</div>
+            <div style={{ ...style.label, color: 'var(--c-danger)' }}>L1 Schema Errors</div>
             {validationResults.l1.errors.slice(0, 5).map((e, i) => (
-              <div key={i} style={{ fontSize: 11, color: '#B91C1C', marginBottom: 2 }}>
+              <div key={i} style={{ fontSize: 11, color: 'var(--c-danger)', marginBottom: 2 }}>
                 {e}
               </div>
             ))}
@@ -148,7 +153,7 @@ export function InspectorPanel() {
       {nodeErrors.length > 0 && (
         <div style={{ padding: '8px 12px', background: '#FEF2F2', borderBottom: '1px solid #FECACA' }}>
           {nodeErrors.map((e, i) => (
-            <div key={i} style={{ fontSize: 11, color: '#B91C1C' }}>⚠ {e}</div>
+            <div key={i} style={{ fontSize: 11, color: 'var(--c-danger)' }}>⚠ {e}</div>
           ))}
         </div>
       )}
@@ -179,13 +184,13 @@ export function InspectorPanel() {
           <pre
             style={{
               fontSize: 10,
-              background: '#F1F5F9',
+              background: 'var(--c-surface)',
               padding: 8,
               borderRadius: 4,
               overflow: 'auto',
               maxHeight: 180,
               margin: 0,
-              color: '#1E293B',
+              color: 'var(--c-text)',
             }}
           >
             {JSON.stringify(sn.props, null, 2)}
@@ -197,7 +202,7 @@ export function InspectorPanel() {
         <div style={style.section}>
           <div style={style.label}>Wires</div>
           {Object.entries(sn.wires).map(([handle, targets]) => (
-            <div key={handle} style={{ fontSize: 11, color: '#1E293B', marginBottom: 2 }}>
+            <div key={handle} style={{ fontSize: 11, color: 'var(--c-text)', marginBottom: 2 }}>
               <span style={{ color: cat.color, fontFamily: 'monospace' }}>{handle}</span>
               {' → '}
               <span style={{ fontFamily: 'monospace' }}>{targets.join(', ')}</span>
@@ -213,7 +218,7 @@ export function InspectorPanel() {
           </button>
         )}
         {isEntry && (
-          <span style={{ fontSize: 11, color: '#059669', fontWeight: 600 }}>✓ Entry node</span>
+          <span style={{ fontSize: 11, color: 'var(--c-success)', fontWeight: 600 }}>✓ Entry node</span>
         )}
         <button style={style.btnDanger} onClick={handleDelete}>
           Delete
@@ -231,6 +236,15 @@ export function InspectorPanel() {
       {/* Props editor for tower.op */}
       {sn.kind === 'tower.op' && (
         <TowerOpEditor sn={sn} onUpdate={(props) => updateNodeProps(sn.id, props)} />
+      )}
+
+      {/* Props editor for lifecycle.boardSetup — initial foe placement */}
+      {sn.kind === 'lifecycle.boardSetup' && (
+        <BoardSetupEditor
+          sn={sn}
+          schemaDoc={schemaDoc}
+          onUpdate={(props) => updateNodeProps(sn.id, props)}
+        />
       )}
     </div>
   );
@@ -263,8 +277,8 @@ function EffectApplyEditor({
   );
 
   return (
-    <div style={{ padding: '8px 12px', borderTop: '1px solid #F1F5F9' }}>
-      <div style={{ fontSize: 10, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 4 }}>
+    <div style={{ padding: '8px 12px', borderTop: '1px solid var(--c-border)' }}>
+      <div style={{ fontSize: 10, color: 'var(--c-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>
         Edit Effects (JSON)
       </div>
       <textarea
@@ -275,11 +289,13 @@ function EffectApplyEditor({
           width: '100%',
           fontSize: 10,
           fontFamily: 'monospace',
-          border: '1px solid #CBD5E1',
+          border: '1px solid var(--c-border-strong)',
           borderRadius: 4,
           padding: 6,
           boxSizing: 'border-box',
           resize: 'vertical',
+          background: 'var(--c-surface-raised)',
+          color: 'var(--c-text)',
         }}
       />
     </div>
@@ -311,19 +327,143 @@ function TowerOpEditor({
   );
 
   return (
-    <div style={{ padding: '8px 12px', borderTop: '1px solid #F1F5F9' }}>
-      <div style={{ fontSize: 10, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 4 }}>
+    <div style={{ padding: '8px 12px', borderTop: '1px solid var(--c-border)' }}>
+      <div style={{ fontSize: 10, color: 'var(--c-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>
         Tower Channel
       </div>
       <select
         value={currentChannel}
         onChange={handleChannelChange}
-        style={{ width: '100%', padding: '4px 8px', border: '1px solid #CBD5E1', borderRadius: 4, fontSize: 12 }}
+        style={{ width: '100%', padding: '4px 8px', border: '1px solid var(--c-border-strong)', borderRadius: 4, fontSize: 12,
+                 background: 'var(--c-surface-raised)', color: 'var(--c-text)' }}
       >
         {TOWER_CHANNELS.map((ch) => (
           <option key={ch} value={ch}>{ch}</option>
         ))}
       </select>
+    </div>
+  );
+}
+
+const FOE_STATUSES = ['panicked', 'unsteady', 'ready', 'savage', 'lethal'] as const;
+
+// UDT board-location vocabulary (60 named spaces) — resolved once at load, like NewScenarioDialog.
+const BOARD_LOCATION_NAMES: string[] = Object.keys(getUDTReferenceLayer().boardLocationByName);
+
+type SpawnRow = { foeId?: string; location?: string; status?: string };
+
+// The foes an author can place = those the scenario declares (library.foes keys ∪ tier selections),
+// falling back to the full UDT foe roster if the scenario hasn't declared any yet.
+function scenarioFoeIds(schemaDoc: ScenarioDoc): string[] {
+  const asObj = (v: unknown): Record<string, unknown> | undefined =>
+    v && typeof v === 'object' ? (v as Record<string, unknown>) : undefined;
+
+  const foesLib = asObj(asObj(schemaDoc.library)?.['foes']);
+  const fromLib = foesLib ? Object.keys(foesLib) : [];
+
+  const foesSel = asObj(asObj(schemaDoc.setup['selections'])?.['foes']);
+  const fromSel = foesSel
+    ? ['tier1', 'tier2', 'tier3']
+        .map((k) => foesSel[k])
+        .filter((v): v is string => typeof v === 'string')
+    : [];
+
+  const ids = [...new Set([...fromLib, ...fromSel])];
+  return ids.length ? ids : Object.keys(getUDTReferenceLayer().foeById);
+}
+
+function BoardSetupEditor({
+  sn,
+  schemaDoc,
+  onUpdate,
+}: {
+  sn: SchemaNode;
+  schemaDoc: ScenarioDoc;
+  onUpdate: (props: Record<string, unknown>) => void;
+}) {
+  const raw = sn.props?.spawns;
+  const spawns: SpawnRow[] = Array.isArray(raw) ? (raw as SpawnRow[]) : [];
+  const foeIds = scenarioFoeIds(schemaDoc);
+
+  const commit = (next: SpawnRow[]) => onUpdate({ spawns: next });
+  const updateRow = (i: number, patch: SpawnRow) =>
+    commit(spawns.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  const addRow = () =>
+    commit([...spawns, { foeId: foeIds[0] ?? '', location: BOARD_LOCATION_NAMES[0] ?? '' }]);
+  const removeRow = (i: number) => commit(spawns.filter((_, idx) => idx !== i));
+
+  // Keep a hand-authored foe/location that isn't in the option list visible + selectable.
+  const withCurrent = (options: string[], current?: string) =>
+    current && !options.includes(current) ? [current, ...options] : options;
+
+  const selectStyle = {
+    flex: 1,
+    minWidth: 0,
+    padding: '3px 4px',
+    border: '1px solid var(--c-border-strong)',
+    borderRadius: 4,
+    fontSize: 11,
+    background: 'var(--c-surface-raised)',
+    color: 'var(--c-text)',
+  } as const;
+
+  return (
+    <div style={{ padding: '8px 12px', borderTop: '1px solid var(--c-border)' }}>
+      <div style={{ fontSize: 10, color: 'var(--c-text-faint)', textTransform: 'uppercase', marginBottom: 6 }}>
+        Foe Spawns (setup)
+      </div>
+      {spawns.length === 0 && (
+        <div style={{ fontSize: 11, color: 'var(--c-text-faint)', fontStyle: 'italic', marginBottom: 6 }}>
+          No foes placed at setup.
+        </div>
+      )}
+      {spawns.map((row, i) => (
+        <div key={i} style={{ display: 'flex', gap: 4, marginBottom: 4, alignItems: 'center' }}>
+          <select
+            value={row.foeId ?? ''}
+            onChange={(e) => updateRow(i, { foeId: e.target.value })}
+            style={selectStyle}
+            title="Foe"
+          >
+            {withCurrent(foeIds, row.foeId).map((id) => (
+              <option key={id} value={id}>{id}</option>
+            ))}
+          </select>
+          <select
+            value={row.location ?? ''}
+            onChange={(e) => updateRow(i, { location: e.target.value })}
+            style={selectStyle}
+            title="Board location"
+          >
+            {withCurrent(BOARD_LOCATION_NAMES, row.location).map((loc) => (
+              <option key={loc} value={loc}>{loc}</option>
+            ))}
+          </select>
+          <select
+            value={row.status ?? 'ready'}
+            onChange={(e) => updateRow(i, { status: e.target.value })}
+            style={selectStyle}
+            title="Starting status"
+          >
+            {FOE_STATUSES.map((st) => (
+              <option key={st} value={st}>{st}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => removeRow(i)}
+            title="Remove spawn"
+            style={{ padding: '2px 6px', border: '1px solid #FCA5A5', borderRadius: 4, fontSize: 11, cursor: 'pointer', background: '#FEF2F2', color: 'var(--c-danger)' }}
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+      <button
+        onClick={addRow}
+        style={{ marginTop: 4, padding: '4px 10px', border: '1px solid var(--c-border-strong)', borderRadius: 4, fontSize: 11, cursor: 'pointer', background: 'var(--c-surface-raised)', color: 'var(--c-text-2)' }}
+      >
+        + Add spawn
+      </button>
     </div>
   );
 }

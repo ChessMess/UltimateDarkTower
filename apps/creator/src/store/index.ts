@@ -84,7 +84,8 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   isDirty: false,
 
   loadScenario(doc, autoLayout = false) {
-    let { nodes, edges } = deriveRF(doc);
+    const { nodes: derivedNodes, edges } = deriveRF(doc);
+    let nodes = derivedNodes;
     if (autoLayout) nodes = applyDagreLayout(nodes, edges);
     const results = revalidate(doc);
     const annotated = annotateErrors(nodes, results);
@@ -135,9 +136,9 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       ...schemaDoc,
       graph: { ...schemaDoc.graph, nodes: [...schemaDoc.graph.nodes, newNode] },
     };
-    let { nodes, edges } = deriveRF(updated);
+    const { nodes: derivedNodes, edges } = deriveRF(updated);
     // Set position for the new node
-    nodes = nodes.map((n) => (n.id === id ? { ...n, position } : n));
+    const nodes = derivedNodes.map((n) => (n.id === id ? { ...n, position } : n));
     const results = revalidate(updated);
     const annotated = annotateErrors(nodes, results);
     set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });

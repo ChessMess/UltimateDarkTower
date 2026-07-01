@@ -1,0 +1,85 @@
+/* UDTC semantic color tokens — light defaults, dark overrides via data-theme or OS preference. */
+
+:root {
+  /* Structural surfaces */
+  --c-bg: #f1f5f9;
+  --c-surface: #f8fafc;
+  --c-surface-raised: #ffffff;
+  --c-canvas-bg: #f0f4f8;
+
+  /* Borders */
+  --c-border: #e2e8f0;
+  --c-border-strong: #cbd5e1;
+
+  /* Text */
+  --c-text: #1e293b;
+  --c-text-2: #374151;
+  --c-text-muted: #6b7280;
+  --c-text-faint: #9ca3af;
+
+  /* Top bar */
+  --c-topbar-bg: #1e293b;
+  --c-topbar-fg: #f1f5f9;
+  --c-topbar-muted: #64748b;
+
+  /* Semantic accents */
+  --c-primary: #2563eb;
+  --c-primary-fg: #ffffff;
+  --c-success: #059669;
+  --c-danger: #dc2626;
+  --c-warning: #f59e0b;
+}
+
+/* Explicit dark theme */
+:root[data-theme='dark'] {
+  --c-bg: #0f172a;
+  --c-surface: #1e293b;
+  --c-surface-raised: #1e293b;
+  --c-canvas-bg: #0f172a;
+
+  --c-border: #334155;
+  --c-border-strong: #475569;
+
+  --c-text: #f1f5f9;
+  --c-text-2: #cbd5e1;
+  --c-text-muted: #94a3b8;
+  --c-text-faint: #64748b;
+
+  --c-topbar-bg: #0f172a;
+  --c-topbar-fg: #f1f5f9;
+  --c-topbar-muted: #475569;
+
+  --c-primary: #3b82f6;
+  --c-primary-fg: #ffffff;
+  --c-success: #10b981;
+  --c-danger: #f87171;
+  --c-warning: #fbbf24;
+}
+
+/* OS-default dark when no explicit preference is stored */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --c-bg: #0f172a;
+    --c-surface: #1e293b;
+    --c-surface-raised: #1e293b;
+    --c-canvas-bg: #0f172a;
+
+    --c-border: #334155;
+    --c-border-strong: #475569;
+
+    --c-text: #f1f5f9;
+    --c-text-2: #cbd5e1;
+    --c-text-muted: #94a3b8;
+    --c-text-faint: #64748b;
+
+    --c-topbar-bg: #0f172a;
+    --c-topbar-fg: #f1f5f9;
+    --c-topbar-muted: #475569;
+
+    --c-primary: #3b82f6;
+    --c-primary-fg: #ffffff;
+    --c-success: #10b981;
+    --c-danger: #f87171;
+    --c-warning: #fbbf24;
+  }
+}

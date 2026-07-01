@@ -5,7 +5,7 @@
 import Ajv from 'ajv/dist/2020';
 import addFormats from 'ajv-formats';
 import { scenarioSchema } from '@udtc/schema';
-import { validateRefs, validateGraph, createBoardAdapter } from '@udtc/adapters';
+import { validateRefs, validateGraph, createBoardAdapter, createDisplayAdapter, createResolver } from '@udtc/adapters';
 import { init, step } from '@udtc/engine';
 import type { Input, Directive, StepResult } from '@udtc/engine';
 import { RelayClient } from '../relay';
@@ -18,11 +18,34 @@ const PLAYER_COUNT = 1;
 // Module-level singletons — survive component remounts.
 let _relay: RelayClient | null = null;
 let _board: ReturnType<typeof createBoardAdapter> | null = null;
+let _display: ReturnType<typeof createDisplayAdapter> | null = null;
+// The all-in-one board stage (2D/3D/PiP switcher, pop-out, kingdom-zoom) shown for the
+// emulator target. Its `tower3D` is a Display TowerRenderView the engine drives directly.
+let _stage: import('ultimatedarktowerboard/stage').BoardStageView | null = null;
+// Bumped on every mount/unmount. mountDisplay is async (dynamic import), so a mode flip
+// (lite→emulator) mid-load could resolve two views into the same container — this token lets
+// a superseded async mount bail instead of appending an orphaned view.
+let _mountGen = 0;
 let _cmdSeq = 0;
+
+// Which preview the emulator/tower shell renders. 'emulator' brings up the full 3D tower
+// with the in-scene game board overlaid on its ground disc; 'lite' is the lightweight
+// readout + side-view (a real physical tower/board is on the table).
+export type DisplayMode = 'lite' | 'emulator';
+
+// Board/tower art served from apps/player/public/assets (Vite serves public/ at web root).
+const TOWER_MODEL_URL = '/assets/tower.glb';
+const BOARD_IMAGE_URL = '/assets/board.png';
+const BOARD_ASSET_BASE = '/assets/tokens/';
 
 function board(): ReturnType<typeof createBoardAdapter> {
   if (!_board) _board = createBoardAdapter();
   return _board;
+}
+
+function display(): ReturnType<typeof createDisplayAdapter> {
+  if (!_display) _display = createDisplayAdapter({ resolver: createResolver() });
+  return _display;
 }
 
 function relay(): RelayClient {
@@ -52,6 +75,10 @@ function relay(): RelayClient {
       onAck: () => {
         usePlayerStore.getState().addLog('relay:ack');
       },
+      onSeals: (seals) => {
+        // tower:seals inbound mirror — re-apply to local display
+        display().applySeals(seals);
+      },
       onConnStateChange: (state) => {
         usePlayerStore.getState().setRelayConnState(state);
         if (state === 'connected') usePlayerStore.getState().addLog('Relay connected');
@@ -61,6 +88,102 @@ function relay(): RelayClient {
     });
   }
   return _relay;
+}
+
+// ---- Tower view lifecycle (called from UI shell) ----
+
+export function mountDisplay(el: HTMLElement, mode: DisplayMode = 'lite'): void {
+  // Supersede any in-flight or existing mount, then tear it down synchronously so the async
+  // build below starts from a clean container.
+  _mountGen += 1;
+  const gen = _mountGen;
+  teardownDisplay();
+
+  if (mode !== 'emulator') {
+    // Real tower: lightweight readout + side-view (the physical board is on the table).
+    import('ultimatedarktowerdisplay').then(({ TowerRenderView }) => {
+      const view = new TowerRenderView({
+        container: el,
+        renderers: ['readout', 'side-view'],
+        title: 'Tower Preview',
+      });
+      if (gen !== _mountGen) {
+        view.dispose(); // a newer mount/unmount superseded this one — don't leave it in the DOM
+        return;
+      }
+      display().mount(view);
+    });
+    return;
+  }
+
+  // Emulator: the all-in-one board stage (2D map + 3D tower with the board on its ground disc,
+  // plus the 2D/3D/2D+3D/PiP switcher, pop-out and kingdom-zoom). The engine drives the tower.
+  mountStage(el, gen);
+}
+
+async function mountStage(el: HTMLElement, gen: number): Promise<void> {
+  const { BoardStageView } = await import('ultimatedarktowerboard/stage');
+  if (gen !== _mountGen) return;
+
+  const stage = new BoardStageView({
+    container: el,
+    modelUrl: TOWER_MODEL_URL,
+    boardImageUrl: BOARD_IMAGE_URL,
+    assetBaseUrl: BOARD_ASSET_BASE,
+    // Build the tower explicitly below so its readiness is deterministic (avoid the ctor's
+    // fire-and-forget auto-build racing our own).
+    tower3D: false,
+    // A live runtime, not an editor — the engine owns board state via board.mutate directives.
+    editingUI: false,
+    // Don't restore a stored 2d/3d layout preference in the runtime.
+    persist: false,
+    // Seed with real state only if the board adapter has resolved; an empty {} would throw in
+    // the renderers. Otherwise start from the stage's own empty default and push state on ready.
+    initialState: board().isReady() ? board().getState() : undefined,
+  });
+
+  await stage.setTowerEnabled(true);
+  if (gen !== _mountGen) {
+    stage.dispose();
+    return;
+  }
+  stage.setDisplayMode('3d'); // open on the combined tower + board; pills let the user switch
+
+  // Drive the engine's tower.program (lights / drums / seals) into the stage's TowerRenderView.
+  const towerView = stage.tower3D;
+  if (towerView) display().mount(towerView);
+  else usePlayerStore.getState().addLog('3D tower unavailable — board shown without live tower');
+
+  _stage = stage;
+  board().onReady(() => {
+    if (gen === _mountGen) syncBoardStage();
+  });
+}
+
+// Push the live board state into the stage's controller (updates both the 2D map and the 3D
+// board). Guarded on isReady() so the renderers never receive the empty {} placeholder.
+function syncBoardStage(): void {
+  if (_stage && board().isReady()) _stage.controller.applyState(board().getState());
+}
+
+// Tear down the current preview. The stage owns its tower (the TowerRenderView the display
+// adapter drives), so detach the adapter WITHOUT disposing before disposing the stage; in lite
+// mode the adapter owns its own view and must dispose it.
+function teardownDisplay(): void {
+  if (_stage) {
+    _display?.unmount();
+    _stage.dispose();
+    _stage = null;
+  } else {
+    _display?.dispose();
+  }
+  _display = null;
+}
+
+export function unmountDisplay(): void {
+  // Bump the generation so any in-flight mountDisplay bails instead of appending its view.
+  _mountGen += 1;
+  teardownDisplay();
 }
 
 // ---- L1–L4 validation ----
@@ -181,11 +304,30 @@ function dispatchDirective(d: Directive): void {
   const store = usePlayerStore.getState();
   switch (d.type) {
     case 'tower.program': {
-      // For MVP: send an empty byte array; Display adapter not yet wired (build guide §12).
-      // The relay ACKs the command; no physical tower commands are issued in stub mode.
-      _cmdSeq += 1;
-      relay().sendCommand([], _cmdSeq);
-      store.addLog(`tower.program: ${JSON.stringify(d.ops ?? []).slice(0, 100)}`);
+      const { snapshots } = display().program(d.ops ?? []);
+
+      // Schedule snapshots by pre-resolved delay — NOT by ack (guardrail §11).
+      let elapsed = 0;
+      for (const snap of snapshots) {
+        elapsed += snap.delayMs;
+        const doSend = () => {
+          _cmdSeq += 1;
+          relay().sendCommand(snap.data, _cmdSeq);
+          store.saveCheckpoint(
+            JSON.stringify(usePlayerStore.getState().engineState),
+            snap.data,
+          );
+        };
+        if (snap.delayMs === 0) doSend();
+        else setTimeout(doSend, elapsed);
+      }
+
+      if (d.brokenSeals) {
+        display().applySeals(d.brokenSeals);
+        relay().sendSeals(d.brokenSeals);
+      }
+
+      store.addLog(`tower.program: ${snapshots.length} snapshot(s), ops=${d.ops?.length ?? 0}`);
       break;
     }
     case 'ui.update':
@@ -196,6 +338,7 @@ function dispatchDirective(d: Directive): void {
       break;
     case 'board.mutate':
       board().mutate(d);
+      syncBoardStage();
       store.addLog(`board.mutate: ${d.command}`);
       break;
     case 'log.entry':

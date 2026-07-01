@@ -516,6 +516,24 @@ ok("authored loss (foeOnSpace): the guard holds at one foe (turn 1 ends awaiting
 ok("authored loss (foeOnSpace): the stream replays byte-identically (lockstep determinism)", identical(goldenAuthoredLossFoe, afOpts, afStream));
 
 // =====================================================================================
+// heroAtLocation (unit) — ENGINE_VERSION 0.2.0: heroes carry location in engine state
+// =====================================================================================
+// Build a minimal run state and directly poke hero1.location to verify evalCondition.
+// This mirrors the foeOnSpace unit tests directly above.
+const { __internals: _heroAtLocInternals } = require("../src/engine");
+const _halBase = _heroAtLocInternals.makeTestState();
+// Simulate hero.placeOrMove: set location directly on the hero
+_halBase.heroes.hero1.location = "the-village";
+ok("heroAtLocation (unit): gte 1 is true when hero1 is on the space",
+   engine.evalCondition(cond("heroAtLocation", "gte", 1, "the-village"), _halBase) === true);
+ok("heroAtLocation (unit): gte 2 is false when only one hero is on the space",
+   engine.evalCondition(cond("heroAtLocation", "gte", 2, "the-village"), _halBase) === false);
+ok("heroAtLocation (unit): eq 0 is true for a different space (location-keyed, not global)",
+   engine.evalCondition(cond("heroAtLocation", "eq", 0, "elsewhere"), _halBase) === true);
+ok("heroAtLocation (unit): null location does not match any key",
+   engine.evalCondition(cond("heroAtLocation", "gte", 1, "null"), _halBase) === false);
+
+// =====================================================================================
 // L1: the corpus fixtures (supply variants + the authored-loss clone) stay schema-valid (§9 / L1)
 // =====================================================================================
 const ajv = new Ajv({ strict: true, allErrors: true });

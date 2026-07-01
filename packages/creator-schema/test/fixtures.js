@@ -19,7 +19,7 @@ const base = {
     description: "MVP golden fixture — the recommended first game.",
     scenarioVersion: "0.1.0",
     designer: { name: "ChessMess" },
-    pins: { udt: "4.1.0" },
+    pins: { udt: "5.0.0" },
     provenance: {
       importedSeed: {
         seed: "AA9A-AAGS-W634",

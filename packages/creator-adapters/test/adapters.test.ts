@@ -11,7 +11,7 @@ const golden = {
     description: 'MVP golden fixture.',
     scenarioVersion: '0.1.0',
     designer: { name: 'ChessMess' },
-    pins: { udt: '4.1.0' },
+    pins: { udt: '5.0.0' },
     provenance: {
       importedSeed: {
         seed: 'AA9A-AAGS-W634',
@@ -158,6 +158,54 @@ describe('validateRefs (L2)', () => {
     };
     const result = validateRefs(good);
     expect(result.ok).toBe(true);
+  });
+
+  it('accepts a boardSetup node with valid spawns', () => {
+    const good = structuredClone(golden);
+    (good.graph.nodes as unknown[]).push({
+      id: 'n-setup',
+      kind: 'lifecycle.boardSetup',
+      props: { spawns: [{ foeId: 'brigands', location: 'Delmsmire', status: 'ready' }] },
+    });
+    const result = validateRefs(good);
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('rejects a boardSetup spawn at an unknown location', () => {
+    const bad = structuredClone(golden);
+    (bad.graph.nodes as unknown[]).push({
+      id: 'n-setup',
+      kind: 'lifecycle.boardSetup',
+      props: { spawns: [{ foeId: 'brigands', location: 'Narnia' }] },
+    });
+    const result = validateRefs(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('n-setup') && e.includes('Narnia'))).toBe(true);
+  });
+
+  it('rejects a boardSetup spawn with an out-of-roster foe', () => {
+    const bad = structuredClone(golden);
+    (bad.graph.nodes as unknown[]).push({
+      id: 'n-setup',
+      kind: 'lifecycle.boardSetup',
+      props: { spawns: [{ foeId: 'giant-spider', location: 'Delmsmire' }] },
+    });
+    const result = validateRefs(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('n-setup') && e.includes('giant-spider'))).toBe(
+      true,
+    );
+  });
+
+  it('rejects a foe.spawn effect at an unknown location', () => {
+    const bad = structuredClone(golden);
+    (bad.graph.nodes[2] as Record<string, unknown>).props = {
+      effects: [{ op: 'foe.spawn', foeId: 'brigands', location: 'Narnia' }],
+    };
+    const result = validateRefs(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('foe.spawn') && e.includes('Narnia'))).toBe(true);
   });
 });
 

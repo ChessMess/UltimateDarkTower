@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { handleInput } from '../game';
+import { useState, useEffect, useRef } from 'react';
+import { handleInput, mountDisplay, unmountDisplay, type DisplayMode } from '../game';
 import { usePlayerStore } from '../store';
 import { fmtStatus } from '../utils';
 import type { ActionChoice } from '../types';
@@ -32,7 +32,7 @@ function StatusBar() {
       <Stat label="Turn" value={clock?.turnInMonth ?? '—'} />
       {h && <Stat label="Warriors" value={h.warriors} />}
       {h && <Stat label="Spirit" value={h.spirit} />}
-      {h && <Stat label="Corruption" value={h.corruption} color={h.corruption >= 2 ? '#DC2626' : undefined} />}
+      {h && <Stat label="Corruption" value={h.corruption} color={h.corruption >= 2 ? 'var(--c-danger)' : undefined} />}
       {h && <Stat label="Advantages" value={h.advantages} />}
       <Stat label="Skull supply" value={skulls?.supply ?? '—'} />
     </div>
@@ -42,10 +42,10 @@ function StatusBar() {
 function Stat({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <span style={{ fontSize: 10, color: 'var(--c-text-faint)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
         {label}
       </span>
-      <span style={{ fontSize: 18, fontWeight: 700, color: color ?? '#111827', lineHeight: 1.2 }}>
+      <span style={{ fontSize: 18, fontWeight: 700, color: color ?? 'var(--c-text)', lineHeight: 1.2 }}>
         {value}
       </span>
     </div>
@@ -100,7 +100,7 @@ function ActionInput() {
   }
 
   return (
-    <div style={{ color: '#6B7280', fontSize: 12, marginBottom: 12 }}>
+    <div style={{ color: 'var(--c-text-muted)', fontSize: 12, marginBottom: 12 }}>
       Awaiting: <strong>{awaiting.id}</strong>
     </div>
   );
@@ -118,10 +118,11 @@ function SkullInput() {
           max={20}
           value={count}
           onChange={(e) => setCount(Number(e.target.value))}
-          style={{ width: 60, padding: '4px 8px', border: '1px solid #D1D5DB', borderRadius: 5, fontSize: 13 }}
+          style={{ width: 60, padding: '4px 8px', border: '1px solid var(--c-border-strong)', borderRadius: 5, fontSize: 13,
+                   background: 'var(--c-surface-raised)', color: 'var(--c-text)' }}
         />
         <button
-          style={{ ...actionBtn, background: '#3B82F6', color: '#fff', borderColor: '#2563EB' }}
+          style={{ ...actionBtn, background: 'var(--c-primary)', color: '#fff', borderColor: 'var(--c-primary)' }}
           onClick={() => handleInput({ requestId: 'skullCounter', value: count, kind: 'observed' })}
         >
           Submit
@@ -175,10 +176,11 @@ function AdvantageInput() {
           max={10}
           value={spend}
           onChange={(e) => setSpend(Number(e.target.value))}
-          style={{ width: 60, padding: '4px 8px', border: '1px solid #D1D5DB', borderRadius: 5, fontSize: 13 }}
+          style={{ width: 60, padding: '4px 8px', border: '1px solid var(--c-border-strong)', borderRadius: 5, fontSize: 13,
+                   background: 'var(--c-surface-raised)', color: 'var(--c-text)' }}
         />
         <button
-          style={{ ...actionBtn, background: '#059669', color: '#fff', borderColor: '#047857' }}
+          style={{ ...actionBtn, background: 'var(--c-success)', color: '#fff', borderColor: 'var(--c-success)' }}
           onClick={() => handleInput({ requestId: 'advantageSpend', value: { spend }, kind: 'decision' })}
         >
           Spend
@@ -206,16 +208,16 @@ function OutcomePanel() {
         padding: '20px 24px',
         borderRadius: 8,
         background: won ? '#ECFDF5' : '#FEF2F2',
-        border: `2px solid ${won ? '#059669' : '#DC2626'}`,
+        border: `2px solid ${won ? 'var(--c-success)' : 'var(--c-danger)'}`,
         textAlign: 'center',
       }}
     >
       <div style={{ fontSize: 36 }}>{won ? '🏆' : '💀'}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: won ? '#059669' : '#DC2626', marginTop: 8 }}>
+      <div style={{ fontSize: 22, fontWeight: 700, color: won ? 'var(--c-success)' : 'var(--c-danger)', marginTop: 8 }}>
         {won ? 'Victory!' : 'Defeat'}
       </div>
       {outcome?.reason && (
-        <div style={{ fontSize: 13, color: '#6B7280', marginTop: 6 }}>{outcome.reason}</div>
+        <div style={{ fontSize: 13, color: 'var(--c-text-muted)', marginTop: 6 }}>{outcome.reason}</div>
       )}
     </div>
   );
@@ -228,9 +230,9 @@ function EventLog() {
       style={{
         fontFamily: 'monospace',
         fontSize: 11,
-        color: '#374151',
-        background: '#F9FAFB',
-        border: '1px solid #E5E7EB',
+        color: 'var(--c-text-2)',
+        background: 'var(--c-surface)',
+        border: '1px solid var(--c-border)',
         borderRadius: 6,
         padding: '8px 10px',
         height: 220,
@@ -240,10 +242,59 @@ function EventLog() {
       }}
     >
       {log.map((line, i) => (
-        <div key={i} style={{ padding: '1px 0', borderBottom: '1px solid #F3F4F6' }}>
+        <div key={i} style={{ padding: '1px 0', borderBottom: '1px solid var(--c-border)' }}>
           {line}
         </div>
       ))}
+    </div>
+  );
+}
+
+// ---- Tower preview ----
+
+function TowerView() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  // The emulator target renders the full 3D tower + in-scene board; a real tower stays lite.
+  const targetKind = usePlayerStore((s) => s.relayStatus?.targetKind ?? null);
+  const mode: DisplayMode = targetKind === 'emulator' ? 'emulator' : 'lite';
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    mountDisplay(el, mode);
+    return () => { unmountDisplay(); };
+  }, [mode]);
+  return (
+    <div
+      ref={containerRef}
+      style={{ width: '100%', height: mode === 'emulator' ? 600 : 320, borderRadius: 8, overflow: 'hidden', background: '#0F172A' }}
+    />
+  );
+}
+
+// ---- Collapsible event log (collapsed by default) ----
+
+function CollapsibleLog() {
+  const [open, setOpen] = useState(false);
+  const logCount = usePlayerStore((s) => s.log.length);
+  return (
+    <div style={{ background: 'var(--c-surface-raised)', border: '1px solid var(--c-border)', borderRadius: 8, padding: 14 }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontSize: 12, fontWeight: 600, color: 'var(--c-text-muted)',
+        }}
+      >
+        <span style={{ display: 'inline-block', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>▸</span>
+        Event log
+        <span style={{ fontWeight: 400, color: 'var(--c-text-faint)' }}>({logCount})</span>
+      </button>
+      {open && (
+        <div style={{ marginTop: 8 }}>
+          <EventLog />
+        </div>
+      )}
     </div>
   );
 }
@@ -258,40 +309,40 @@ export function GamePanel() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
       {phase === 'idle' && (
-        <div style={{ color: '#9CA3AF', fontSize: 14, textAlign: 'center', paddingTop: 40 }}>
+        <div style={{ color: 'var(--c-text-faint)', fontSize: 14, textAlign: 'center', paddingTop: 40 }}>
           Load a scenario to begin.
         </div>
       )}
 
       {phase === 'validating' && (
-        <div style={{ color: '#F59E0B', fontSize: 14, textAlign: 'center', paddingTop: 40 }}>
+        <div style={{ color: 'var(--c-warning)', fontSize: 14, textAlign: 'center', paddingTop: 40 }}>
           Validating…
         </div>
       )}
 
       {(phase === 'connecting' || phase === 'waiting') && (
-        <div style={{ color: '#3B82F6', fontSize: 14, textAlign: 'center', paddingTop: 40 }}>
+        <div style={{ color: 'var(--c-primary)', fontSize: 14, textAlign: 'center', paddingTop: 40 }}>
           {phase === 'connecting' ? 'Connecting to relay…' : 'Waiting for target calibration…'}
         </div>
       )}
 
       {phase === 'error' && (
-        <div style={{ color: '#DC2626', fontSize: 13, textAlign: 'center', paddingTop: 40 }}>
+        <div style={{ color: 'var(--c-danger)', fontSize: 13, textAlign: 'center', paddingTop: 40 }}>
           Validation failed. Check the Scenario panel.
         </div>
       )}
 
       {(phase === 'playing' || phase === 'ended') && (
         <>
-          {/* Status bar */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, padding: 14 }}>
+          {/* Status bar — at the top */}
+          <div style={{ background: 'var(--c-surface-raised)', border: '1px solid var(--c-border)', borderRadius: 8, padding: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#374151' }}>Game State</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-text-2)' }}>Game State</span>
               <span
                 style={{
                   fontSize: 12,
                   fontWeight: 600,
-                  color: status === 'won' ? '#059669' : status === 'lost' ? '#DC2626' : '#6B7280',
+                  color: status === 'won' ? 'var(--c-success)' : status === 'lost' ? 'var(--c-danger)' : 'var(--c-text-muted)',
                 }}
               >
                 {fmtStatus(status)}
@@ -301,9 +352,12 @@ export function GamePanel() {
             <StatusBar />
           </div>
 
+          {/* Emulator / tower preview */}
+          <TowerView />
+
           {/* Input area */}
           {phase === 'playing' && (
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, padding: 14 }}>
+            <div style={{ background: 'var(--c-surface-raised)', border: '1px solid var(--c-border)', borderRadius: 8, padding: 14 }}>
               <ActionInput />
             </div>
           )}
@@ -311,18 +365,15 @@ export function GamePanel() {
           {/* Outcome */}
           {phase === 'ended' && <OutcomePanel />}
 
-          {/* Event log */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, padding: 14 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', marginBottom: 6 }}>Event log</div>
-            <EventLog />
-          </div>
+          {/* Event log — collapsed by default */}
+          <CollapsibleLog />
         </>
       )}
 
       {/* Log always visible once connected */}
       {(phase === 'connecting' || phase === 'waiting') && (
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, padding: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', marginBottom: 6 }}>Event log</div>
+        <div style={{ background: 'var(--c-surface-raised)', border: '1px solid var(--c-border)', borderRadius: 8, padding: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-muted)', marginBottom: 6 }}>Event log</div>
           <EventLog />
         </div>
       )}
@@ -334,16 +385,17 @@ export function GamePanel() {
 
 const awaitLabelStyle: React.CSSProperties = {
   fontSize: 12,
-  color: '#6B7280',
+  color: 'var(--c-text-muted)',
   fontWeight: 600,
   marginBottom: 6,
 };
 
 const actionBtn: React.CSSProperties = {
   padding: '6px 14px',
-  border: '1px solid #D1D5DB',
+  border: '1px solid var(--c-border-strong)',
   borderRadius: 6,
-  background: '#F9FAFB',
+  background: 'var(--c-surface)',
+  color: 'var(--c-text-2)',
   fontSize: 13,
   cursor: 'pointer',
   fontWeight: 600,

@@ -4,7 +4,7 @@
     "title": "INVALID: tradeAsset warriors with extra property (additionalProperties: false)",
     "scenarioVersion": "0.1.0",
     "designer": { "name": "Test" },
-    "pins": { "udt": "4.1.0" }
+    "pins": { "udt": "5.0.0" }
   },
   "setup": {
     "mode": "coop",

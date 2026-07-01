@@ -8,6 +8,7 @@ export { createBoardAdapter } from './board';
 export type { BoardState, BoardMutateCommand } from './board';
 
 export { createDisplayAdapter } from './display';
+export type { DisplayAdapter, ScheduledSnapshot } from './display';
 
 export { createRelayClient, RelayClient } from './relay-client';
 export type { RelayConnState, RelayTargetState, RelayStatus, RelayClientCallbacks } from './relay-client';

@@ -25,6 +25,7 @@ export interface HeroState {
   items: { gear: string[]; treasure: string[]; potions: string[]; questItems: string[] };
   companions: string[];
   counters: Record<string, number>;
+  location: string | null;
 }
 
 export interface FoeInstance {

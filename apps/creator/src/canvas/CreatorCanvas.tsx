@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -21,6 +21,7 @@ import engineModule from '@udtc/engine';
 import { ScenarioNode, type ScenarioRFNode } from './NodeTypes';
 import { useCreatorStore } from '../store';
 import type { ScenarioDoc } from '../types';
+import { NewScenarioDialog } from '../editors/NewScenarioDialog';
 
 const nodeTypes: NodeTypes = { scenarioNode: ScenarioNode };
 
@@ -35,6 +36,12 @@ export function CreatorCanvas() {
     useCreatorStore();
   const { fitView, screenToFlowPosition } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newDialogOpen, setNewDialogOpen] = useState(false);
+
+  const handleNew = useCallback(() => {
+    if (isDirty && !window.confirm('Discard unsaved changes and start a new scenario?')) return;
+    setNewDialogOpen(true);
+  }, [isDirty]);
 
   const onNodesChange: OnNodesChange<ScenarioRFNode> = useCallback(
     (changes) => {
@@ -170,7 +177,8 @@ export function CreatorCanvas() {
         fitView
         proOptions={{ hideAttribution: false }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#E2E8F0" />
+        {/* Dot color is themed via --xy-background-pattern-dots-color-default in App.css */}
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         <MiniMap nodeStrokeWidth={3} zoomable pannable />
         <Controls />
 
@@ -180,8 +188,8 @@ export function CreatorCanvas() {
             style={{
               display: 'flex',
               gap: 8,
-              background: '#fff',
-              border: '1px solid #E2E8F0',
+              background: 'var(--c-surface-raised)',
+              border: '1px solid var(--c-border)',
               borderRadius: 8,
               padding: '6px 12px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
@@ -189,6 +197,14 @@ export function CreatorCanvas() {
               fontSize: 13,
             }}
           >
+            <button
+              className="toolbar-btn"
+              onClick={handleNew}
+              title="Create a new scenario from scratch"
+              style={{ background: '#2563EB', color: '#fff' }}
+            >
+              New
+            </button>
             <button className="toolbar-btn" onClick={handleLoadGolden} title="Load the golden MVP fixture">
               Load Golden
             </button>
@@ -214,17 +230,17 @@ export function CreatorCanvas() {
             >
               Export JSON
             </button>
-            <span style={{ color: '#6B7280', fontSize: 12 }}>|</span>
+            <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
             <button className="toolbar-btn" onClick={() => { applyLayout(); setTimeout(() => fitView({ padding: 0.2 }), 50); }} disabled={!schemaDoc}>
               Auto-layout
             </button>
             {schemaDoc && (
               <>
-                <span style={{ color: '#6B7280', fontSize: 12 }}>|</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: hasErrors ? '#DC2626' : '#059669' }}>
+                <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: hasErrors ? 'var(--c-danger)' : 'var(--c-success)' }}>
                   {hasErrors ? `⚠ ${(validationResults.l1.errors.length + validationResults.l2.errors.length + validationResults.l3.errors.length)} error(s)` : '✓ Valid'}
                 </span>
-                {isDirty && <span style={{ color: '#F59E0B', fontSize: 11 }}>●</span>}
+                {isDirty && <span style={{ color: 'var(--c-warning)', fontSize: 11 }}>●</span>}
               </>
             )}
           </div>
@@ -236,12 +252,55 @@ export function CreatorCanvas() {
             <div style={{ textAlign: 'center', color: '#94A3B8', padding: 40 }}>
               <div style={{ fontSize: 48 }}>📋</div>
               <div style={{ fontSize: 18, fontWeight: 600, marginTop: 12 }}>No scenario loaded</div>
-              <div style={{ fontSize: 13, marginTop: 8 }}>Click "Load Golden" to start with the MVP fixture,</div>
-              <div style={{ fontSize: 13 }}>or "Import JSON" to open an existing scenario.</div>
+              <div style={{ fontSize: 13, marginTop: 8, marginBottom: 16 }}>
+                Start fresh, load the golden fixture, or import an existing file.
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                <button
+                  onClick={handleNew}
+                  style={{
+                    padding: '8px 20px',
+                    background: '#2563EB',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
+                >
+                  New Scenario
+                </button>
+                <button
+                  onClick={handleLoadGolden}
+                  style={{
+                    padding: '8px 20px',
+                    background: '#F1F5F9',
+                    color: '#374151',
+                    border: '1px solid #D1D5DB',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                  }}
+                >
+                  Load Golden
+                </button>
+              </div>
             </div>
           </Panel>
         )}
       </ReactFlow>
+
+      {newDialogOpen && (
+        <NewScenarioDialog
+          onClose={() => setNewDialogOpen(false)}
+          onConfirm={(doc) => {
+            loadScenario(doc, true);
+            setNewDialogOpen(false);
+            setTimeout(() => fitView({ padding: 0.2 }), 100);
+          }}
+        />
+      )}
 
       {/* Selection highlight */}
       {selectedNodeId && (

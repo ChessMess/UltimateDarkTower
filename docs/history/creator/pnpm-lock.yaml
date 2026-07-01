@@ -41,6 +41,9 @@ importers:
       '@dagrejs/dagre':
         specifier: ^1.0.0
         version: 1.1.8
+      '@dimforge/rapier3d-compat':
+        specifier: ^0.19.3
+        version: 0.19.3
       '@udtc/adapters':
         specifier: workspace:*
         version: link:../../packages/adapters
@@ -50,24 +53,33 @@ importers:
       '@udtc/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@udtc/theme':
+        specifier: workspace:*
+        version: link:../../packages/theme
       '@xyflow/react':
         specifier: ^12.0.0
         version: 12.11.1(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      gsap:
+        specifier: ^3.15.0
+        version: 3.15.0
       react:
         specifier: ^19.2.0
         version: 19.2.7
       react-dom:
         specifier: ^19.2.0
         version: 19.2.7(react@19.2.7)
+      three:
+        specifier: ^0.185.0
+        version: 0.185.0
       ultimatedarktower:
-        specifier: 4.1.0
-        version: 4.1.0
+        specifier: 5.0.0
+        version: 5.0.0
       ultimatedarktowerboard:
         specifier: file:../../../UltimateDarkTowerBoard
-        version: file:../UltimateDarkTowerBoard(ultimatedarktower@4.1.0)(ultimatedarktowerdisplay@file:../UltimateDarkTowerDisplay(ultimatedarktower@4.1.0))
+        version: file:../UltimateDarkTowerBoard(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0)(ultimatedarktowerdisplay@file:../UltimateDarkTowerDisplay(@dimforge/rapier3d-compat@0.19.3)(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0))
       ultimatedarktowerdisplay:
         specifier: file:../../../UltimateDarkTowerDisplay
-        version: file:../UltimateDarkTowerDisplay(ultimatedarktower@4.1.0)
+        version: file:../UltimateDarkTowerDisplay(@dimforge/rapier3d-compat@0.19.3)(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0)
       zustand:
         specifier: ^5.0.0
         version: 5.0.14(@types/react@19.2.17)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
@@ -99,6 +111,9 @@ importers:
 
   apps/player:
     dependencies:
+      '@dimforge/rapier3d-compat':
+        specifier: ^0.19.3
+        version: 0.19.3
       '@udtc/adapters':
         specifier: workspace:*
         version: link:../../packages/adapters
@@ -108,21 +123,30 @@ importers:
       '@udtc/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@udtc/theme':
+        specifier: workspace:*
+        version: link:../../packages/theme
+      gsap:
+        specifier: ^3.15.0
+        version: 3.15.0
       react:
         specifier: ^19.2.0
         version: 19.2.7
       react-dom:
         specifier: ^19.2.0
         version: 19.2.7(react@19.2.7)
+      three:
+        specifier: ^0.185.0
+        version: 0.185.0
       ultimatedarktower:
-        specifier: 4.1.0
-        version: 4.1.0
+        specifier: 5.0.0
+        version: 5.0.0
       ultimatedarktowerboard:
         specifier: file:../../../UltimateDarkTowerBoard
-        version: file:../UltimateDarkTowerBoard(ultimatedarktower@4.1.0)(ultimatedarktowerdisplay@file:../UltimateDarkTowerDisplay(ultimatedarktower@4.1.0))
+        version: file:../UltimateDarkTowerBoard(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0)(ultimatedarktowerdisplay@file:../UltimateDarkTowerDisplay(@dimforge/rapier3d-compat@0.19.3)(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0))
       ultimatedarktowerdisplay:
         specifier: file:../../../UltimateDarkTowerDisplay
-        version: file:../UltimateDarkTowerDisplay(ultimatedarktower@4.1.0)
+        version: file:../UltimateDarkTowerDisplay(@dimforge/rapier3d-compat@0.19.3)(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0)
       zustand:
         specifier: ^5.0.0
         version: 5.0.14(@types/react@19.2.17)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
@@ -161,14 +185,14 @@ importers:
         specifier: workspace:*
         version: link:../schema
       ultimatedarktower:
-        specifier: 4.1.0
-        version: 4.1.0
+        specifier: 5.0.0
+        version: 5.0.0
       ultimatedarktowerboard:
         specifier: file:../../../UltimateDarkTowerBoard
-        version: file:../UltimateDarkTowerBoard(ultimatedarktower@4.1.0)(ultimatedarktowerdisplay@file:../UltimateDarkTowerDisplay(ultimatedarktower@4.1.0))
+        version: file:../UltimateDarkTowerBoard(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0)(ultimatedarktowerdisplay@file:../UltimateDarkTowerDisplay(@dimforge/rapier3d-compat@0.19.3)(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0))
       ultimatedarktowerdisplay:
         specifier: file:../../../UltimateDarkTowerDisplay
-        version: file:../UltimateDarkTowerDisplay(ultimatedarktower@4.1.0)
+        version: file:../UltimateDarkTowerDisplay(@dimforge/rapier3d-compat@0.19.3)(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0)
     devDependencies:
       vitest:
         specifier: ^4.1.0
@@ -194,6 +218,16 @@ importers:
       json-schema-to-typescript:
         specifier: ^15.0.0
         version: 15.0.4
+
+  packages/theme:
+    dependencies:
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.2.17
 
 packages:
 
@@ -305,6 +339,9 @@ packages:
   '@dagrejs/graphlib@2.2.4':
     resolution: {integrity: sha512-mepCf/e9+SKYy1d02/UkvSy6+6MoyXhVxP8lLDfA7BPE1X1d4dR0sZznmbM8/XVJ1GPM+Svnx7Xj6ZweByWUkw==}
     engines: {node: '>17.0.0'}
+
+  '@dimforge/rapier3d-compat@0.19.3':
+    resolution: {integrity: sha512-mMVdSj1PRTT108s9Swbu2GQOmHbn8kbJANRV5xfczL3s0T4vkgZAuoMRgvBzQcHanpKusbC0ZJj6z3mC3aj3vg==}
 
   '@emnapi/core@1.11.1':
     resolution: {integrity: sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ==}
@@ -1025,6 +1062,9 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
+  gsap@3.15.0:
+    resolution: {integrity: sha512-dMW4CWBTUK1AEEDeZc1g4xpPGIrSf9fJF960qbTZmN/QwZIWY5wgliS6JWl9/25fpTGJrMRtSjGtOmPnfjZB+A==}
+
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
@@ -1413,6 +1453,9 @@ packages:
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
 
+  three@0.185.0:
+    resolution: {integrity: sha512-+yRrcRO2iZa8uzvNNl0d7cL4huhgKgBvVJ0njcTe8xFqZ6DMAFZdCKDP91SEAuj25bNAj7k1QQdf+srZywVK6w==}
+
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
@@ -1468,8 +1511,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  ultimatedarktower@4.1.0:
-    resolution: {integrity: sha512-DLJfe6n0qyqbCFcb+8jxGFm24pmx4PWW06dKlmnGf/vATqoEcm2AuQxrt3JjyUa789aznM3eTLQPzpNl65PrSQ==}
+  ultimatedarktower@5.0.0:
+    resolution: {integrity: sha512-QG6oTXJYWSTodBnwzEQmYQzF4ukgoawZ8wB58HnZtCzkWWnpKukVgiZqDa2vn21O5EYv6LUIE9P9bHheavXxng==}
     engines: {node: '>=18.0.0', npm: '>=7.0.0'}
     peerDependencies:
       '@stoprocent/noble': ^2.0.0
@@ -1854,6 +1897,8 @@ snapshots:
       '@dagrejs/graphlib': 2.2.4
 
   '@dagrejs/graphlib@2.2.4': {}
+
+  '@dimforge/rapier3d-compat@0.19.3': {}
 
   '@emnapi/core@1.11.1':
     dependencies:
@@ -2577,6 +2622,8 @@ snapshots:
 
   gopd@1.2.0: {}
 
+  gsap@3.15.0: {}
+
   has-flag@4.0.0: {}
 
   has-symbols@1.1.0: {}
@@ -2919,6 +2966,8 @@ snapshots:
 
   symbol-tree@3.2.4: {}
 
+  three@0.185.0: {}
+
   tinybench@2.9.0: {}
 
   tinyexec@1.2.4: {}
@@ -2968,19 +3017,25 @@ snapshots:
 
   typescript@5.9.3: {}
 
-  ultimatedarktower@4.1.0: {}
+  ultimatedarktower@5.0.0: {}
 
-  ultimatedarktowerboard@file:../UltimateDarkTowerBoard(ultimatedarktower@4.1.0)(ultimatedarktowerdisplay@file:../UltimateDarkTowerDisplay(ultimatedarktower@4.1.0)):
+  ultimatedarktowerboard@file:../UltimateDarkTowerBoard(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0)(ultimatedarktowerdisplay@file:../UltimateDarkTowerDisplay(@dimforge/rapier3d-compat@0.19.3)(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0)):
     dependencies:
-      ultimatedarktower: 4.1.0
+      ultimatedarktower: 5.0.0
       zod: 4.4.3
     optionalDependencies:
-      ultimatedarktowerdisplay: file:../UltimateDarkTowerDisplay(ultimatedarktower@4.1.0)
+      gsap: 3.15.0
+      three: 0.185.0
+      ultimatedarktowerdisplay: file:../UltimateDarkTowerDisplay(@dimforge/rapier3d-compat@0.19.3)(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0)
 
-  ultimatedarktowerdisplay@file:../UltimateDarkTowerDisplay(ultimatedarktower@4.1.0):
+  ultimatedarktowerdisplay@file:../UltimateDarkTowerDisplay(@dimforge/rapier3d-compat@0.19.3)(gsap@3.15.0)(three@0.185.0)(ultimatedarktower@5.0.0):
     dependencies:
-      ultimatedarktower: 4.1.0
+      ultimatedarktower: 5.0.0
       zod: 4.4.3
+    optionalDependencies:
+      '@dimforge/rapier3d-compat': 0.19.3
+      gsap: 3.15.0
+      three: 0.185.0
 
   undici-types@6.21.0: {}
 

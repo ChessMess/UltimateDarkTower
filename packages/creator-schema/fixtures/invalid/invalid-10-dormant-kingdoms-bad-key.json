@@ -4,7 +4,7 @@
     "title": "INVALID: dormantKingdoms.byPlayerCount with key '5' (additionalProperties: false allows only 1-4)",
     "scenarioVersion": "0.1.0",
     "designer": { "name": "Test" },
-    "pins": { "udt": "4.1.0" }
+    "pins": { "udt": "5.0.0" }
   },
   "setup": {
     "mode": "coop",

@@ -737,7 +737,18 @@
           "if": { "properties": { "kind": { "const": "media.showImage" } }, "required": ["kind"] },
           "then": { "properties": { "props": {
             "type": "object", "additionalProperties": false, "required": ["imageRef"],
-            "properties": { "imageRef": { "$ref": "#/$defs/resourceKey" } } } } } }
+            "properties": { "imageRef": { "$ref": "#/$defs/resourceKey" } } } } } },
+        { "$comment": "v0.4 — lifecycle.boardSetup: initial foe placement (spawn foe at a board location). Mirrors the foe.spawn effect; L2 resolves foeId in the roster + location in BOARD_LOCATIONS.",
+          "if": { "properties": { "kind": { "const": "lifecycle.boardSetup" } }, "required": ["kind"] },
+          "then": { "properties": { "props": {
+            "type": "object", "additionalProperties": false,
+            "properties": { "spawns": { "type": "array", "items": {
+              "type": "object", "additionalProperties": false, "required": ["foeId", "location"],
+              "properties": {
+                "foeId": { "$ref": "#/$defs/foeId" },
+                "location": { "type": "string" },
+                "status": { "$ref": "#/$defs/foeStatus" }
+              } } } } } } } }
       ]
     },
 

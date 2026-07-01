@@ -5,7 +5,7 @@ export function ProblemsPanel() {
 
   if (!validationResults) {
     return (
-      <div style={{ padding: '6px 12px', color: '#94A3B8', fontSize: 11, fontStyle: 'italic' }}>
+      <div style={{ padding: '6px 12px', color: 'var(--c-text-faint)', fontSize: 11, fontStyle: 'italic' }}>
         No scenario loaded
       </div>
     );
@@ -16,7 +16,7 @@ export function ProblemsPanel() {
 
   if (allOk) {
     return (
-      <div style={{ padding: '6px 12px', color: '#059669', fontSize: 12, fontWeight: 600 }}>
+      <div style={{ padding: '6px 12px', color: 'var(--c-success)', fontSize: 12, fontWeight: 600 }}>
         ✓ All validation layers pass — Export is enabled
       </div>
     );
@@ -35,7 +35,7 @@ export function ProblemsPanel() {
   ) {
     if (result.ok) {
       return (
-        <span style={{ fontSize: 11, color: '#059669', marginRight: 12 }}>
+        <span style={{ fontSize: 11, color: 'var(--c-success)', marginRight: 12 }}>
           {level} ✓
         </span>
       );
@@ -48,7 +48,7 @@ export function ProblemsPanel() {
             fontWeight: 700,
             color,
             padding: '3px 8px',
-            background: '#FEF2F2',
+            background: 'color-mix(in srgb, var(--c-danger) 10%, var(--c-surface-raised))',
             borderLeft: `3px solid ${color}`,
           }}
         >
@@ -62,7 +62,7 @@ export function ProblemsPanel() {
               style={{
                 padding: '2px 8px 2px 16px',
                 fontSize: 11,
-                color: '#B91C1C',
+                color: 'var(--c-danger)',
                 cursor: nodeId ? 'pointer' : 'default',
                 textDecoration: nodeId ? 'underline' : 'none',
               }}
@@ -82,9 +82,9 @@ export function ProblemsPanel() {
       <div
         style={{
           padding: '4px 12px',
-          borderBottom: '1px solid #E2E8F0',
+          borderBottom: '1px solid var(--c-border)',
           fontSize: 11,
-          color: '#DC2626',
+          color: 'var(--c-danger)',
           fontWeight: 600,
           display: 'flex',
           alignItems: 'center',
@@ -92,7 +92,7 @@ export function ProblemsPanel() {
         }}
       >
         ⚠ {totalErrors} problem{totalErrors !== 1 ? 's' : ''} — Export blocked
-        <span style={{ fontSize: 10, color: '#64748B', fontWeight: 400 }}>
+        <span style={{ fontSize: 10, color: 'var(--c-text-muted)', fontWeight: 400 }}>
           {!l1.ok && '[L1 Schema] '}
           {!l2.ok && '[L2 Refs] '}
           {!l3.ok && '[L3 Graph]'}

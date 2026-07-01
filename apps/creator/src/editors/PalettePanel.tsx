@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NODE_CATEGORIES, NODE_KINDS, categoryFor, type NodeKind } from '../types';
 import { useCreatorStore } from '../store';
 import { useReactFlow } from '@xyflow/react';
@@ -12,6 +13,28 @@ for (const kind of NODE_KINDS) {
 export function PalettePanel() {
   const { schemaDoc, addNode } = useCreatorStore();
   const { getViewport } = useReactFlow();
+
+  // Which category prefixes are currently collapsed. Default: all collapsed.
+  const [collapsed, setCollapsed] = useState<Set<string>>(
+    () => new Set(NODE_CATEGORIES.map((c) => c.prefix)),
+  );
+
+  function toggleCategory(prefix: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(prefix)) next.delete(prefix);
+      else next.add(prefix);
+      return next;
+    });
+  }
+
+  function expandAll() {
+    setCollapsed(new Set());
+  }
+
+  function collapseAll() {
+    setCollapsed(new Set(NODE_CATEGORIES.map((c) => c.prefix)));
+  }
 
   function handleDragStart(e: React.DragEvent, kind: NodeKind) {
     e.dataTransfer.setData('application/node-kind', kind);
@@ -29,8 +52,8 @@ export function PalettePanel() {
     <div
       style={{
         width: 200,
-        background: '#F8FAFC',
-        borderRight: '1px solid #E2E8F0',
+        background: 'var(--c-surface)',
+        borderRight: '1px solid var(--c-border)',
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
@@ -39,20 +62,49 @@ export function PalettePanel() {
     >
       <div
         style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
           padding: '10px 12px 6px',
           fontWeight: 700,
           fontSize: 11,
           letterSpacing: '0.08em',
-          color: '#64748B',
+          color: 'var(--c-text-muted)',
           textTransform: 'uppercase',
-          borderBottom: '1px solid #E2E8F0',
+          borderBottom: '1px solid var(--c-border)',
         }}
       >
-        Node Palette
+        <span>Node Palette</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+          <button
+            type="button"
+            className="palette-allbtn"
+            onClick={expandAll}
+            title="Expand all categories"
+            aria-label="Expand all categories"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m7 6 5 5 5-5" />
+              <path d="m7 13 5 5 5-5" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="palette-allbtn"
+            onClick={collapseAll}
+            title="Collapse all categories"
+            aria-label="Collapse all categories"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m17 11-5-5-5 5" />
+              <path d="m17 18-5-5-5 5" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {!schemaDoc && (
-        <div style={{ padding: 12, color: '#94A3B8', fontSize: 11, fontStyle: 'italic' }}>
+        <div style={{ padding: 12, color: 'var(--c-text-faint)', fontSize: 11, fontStyle: 'italic' }}>
           Load a scenario to add nodes
         </div>
       )}
@@ -60,56 +112,50 @@ export function PalettePanel() {
       {NODE_CATEGORIES.map((cat) => {
         const kinds = KINDS_BY_PREFIX[cat.prefix] ?? [];
         if (kinds.length === 0) return null;
+        // `--cat-accent` drives the theme-reactive color-mix() rules in App.css.
+        const accentVar = { '--cat-accent': cat.color } as React.CSSProperties;
+        const isCollapsed = collapsed.has(cat.prefix);
         return (
-          <div key={cat.prefix} style={{ marginBottom: 2 }}>
+          <div key={cat.prefix} className="palette-category" style={accentVar}>
             <div
-              style={{
-                padding: '5px 12px',
-                background: cat.bgColor,
-                color: cat.textColor,
-                fontWeight: 700,
-                fontSize: 10,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                borderLeft: `3px solid ${cat.color}`,
+              className="palette-category-header"
+              style={accentVar}
+              role="button"
+              tabIndex={0}
+              aria-expanded={!isCollapsed}
+              onClick={() => toggleCategory(cat.prefix)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleCategory(cat.prefix);
+                }
               }}
             >
+              <span className={`palette-chevron${isCollapsed ? '' : ' palette-chevron--open'}`}>▸</span>
               {cat.label}
             </div>
-            {kinds.map((kind) => {
-              const label = kind.split('.')[1];
-              return (
-                <div
-                  key={kind}
-                  draggable={!!schemaDoc}
-                  onDragStart={(e) => handleDragStart(e, kind)}
-                  onDoubleClick={() => handleDoubleClick(kind)}
-                  style={{
-                    padding: '4px 12px 4px 18px',
-                    cursor: schemaDoc ? 'grab' : 'default',
-                    color: schemaDoc ? cat.textColor : '#CBD5E1',
-                    fontSize: 11,
-                    userSelect: 'none',
-                    borderBottom: '1px solid #F1F5F9',
-                    transition: 'background 0.1s',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (schemaDoc) (e.currentTarget as HTMLElement).style.background = cat.bgColor;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = 'transparent';
-                  }}
-                  title={schemaDoc ? `Drag or double-click to add ${kind}` : 'Load a scenario first'}
-                >
-                  {label}
-                </div>
-              );
-            })}
+            {!isCollapsed &&
+              kinds.map((kind) => {
+                const label = kind.split('.')[1];
+                return (
+                  <div
+                    key={kind}
+                    className={`palette-item${schemaDoc ? '' : ' palette-item--disabled'}`}
+                    style={accentVar}
+                    draggable={!!schemaDoc}
+                    onDragStart={(e) => handleDragStart(e, kind)}
+                    onDoubleClick={() => handleDoubleClick(kind)}
+                    title={schemaDoc ? `Drag or double-click to add ${kind}` : 'Load a scenario first'}
+                  >
+                    {label}
+                  </div>
+                );
+              })}
           </div>
         );
       })}
 
-      <div style={{ padding: '8px 12px', color: '#94A3B8', fontSize: 10, marginTop: 'auto', borderTop: '1px solid #E2E8F0' }}>
+      <div style={{ padding: '8px 12px', color: 'var(--c-text-faint)', fontSize: 10, marginTop: 'auto', borderTop: '1px solid var(--c-border)' }}>
         Drag to canvas or double-click to add
       </div>
     </div>

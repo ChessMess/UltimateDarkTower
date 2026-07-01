@@ -48,7 +48,7 @@ export function LoadPanel() {
             const r = validationResults[layer];
             if (r.ok) return null;
             return (
-              <div key={layer} style={{ color: '#DC2626', fontSize: 12, marginTop: 2 }}>
+              <div key={layer} style={{ color: 'var(--c-danger)', fontSize: 12, marginTop: 2 }}>
                 <strong>{layer.toUpperCase()}</strong> {r.errors[0]}
               </div>
             );
@@ -56,7 +56,7 @@ export function LoadPanel() {
         </div>
       )}
       {validationError && phase === 'error' && (
-        <div style={{ color: '#DC2626', fontSize: 11, marginTop: 6 }}>
+        <div style={{ color: 'var(--c-danger)', fontSize: 11, marginTop: 6 }}>
           {validationError.split('\n')[0]}
         </div>
       )}
@@ -65,8 +65,8 @@ export function LoadPanel() {
 }
 
 const panelStyle: React.CSSProperties = {
-  background: '#fff',
-  border: '1px solid #E2E8F0',
+  background: 'var(--c-surface-raised)',
+  border: '1px solid var(--c-border)',
   borderRadius: 8,
   padding: 14,
 };
@@ -75,14 +75,15 @@ const headStyle: React.CSSProperties = {
   margin: '0 0 10px',
   fontSize: 13,
   fontWeight: 700,
-  color: '#374151',
+  color: 'var(--c-text-2)',
 };
 
 const btnStyle: React.CSSProperties = {
   padding: '5px 12px',
-  border: '1px solid #D1D5DB',
+  border: '1px solid var(--c-border-strong)',
   borderRadius: 6,
-  background: '#F9FAFB',
+  background: 'var(--c-surface)',
+  color: 'var(--c-text-2)',
   fontSize: 13,
   cursor: 'pointer',
 };

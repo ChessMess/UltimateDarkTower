@@ -65,22 +65,67 @@ export function validateRefs(scenario: unknown): L2Result {
     }
   }
 
-  // tower.op nodes: light.named sequenceId must be a key in TOWER_LIGHT_SEQUENCES
+  // Node-level ref checks.
   const graph = obj(s['graph']);
   const nodes = graph ? arr(graph['nodes']) : undefined;
+
+  // Resolve a foe-placement pair {foeId, location} against the UDT roster + board locations.
+  const checkSpawn = (foeId: string | undefined, location: string | undefined, ctx: string): void => {
+    if (foeId !== undefined) {
+      const f = udt.foeById[foeId];
+      if (!f || f.kind !== 'foe') {
+        errors.push(`${ctx} foeId "${foeId}" is not in the UDT foe roster`);
+      }
+    }
+    if (location !== undefined && !(location in udt.boardLocationByName)) {
+      errors.push(`${ctx} location "${location}" is not a known board location (UDT BOARD_LOCATIONS)`);
+    }
+  };
+
   if (nodes) {
     for (const node of nodes) {
       const n = obj(node);
-      if (!n || str(n['kind']) !== 'tower.op') continue;
+      if (!n) continue;
+      const kind = str(n['kind']);
+      const id = str(n['id']) ?? '?';
       const props = obj(n['props']);
-      const towerOp = props ? obj(props['towerOp']) : undefined;
-      if (!towerOp) continue;
-      if (str(towerOp['channel']) === 'light.named') {
-        const seqId = str(towerOp['sequenceId']);
-        if (seqId !== undefined && !(seqId in udt.lightSequences)) {
-          errors.push(
-            `node "${str(n['id']) ?? '?'}" tower.op light.named sequenceId "${seqId}" is not in TOWER_LIGHT_SEQUENCES`,
-          );
+
+      // tower.op: light.named sequenceId must be a key in TOWER_LIGHT_SEQUENCES
+      if (kind === 'tower.op') {
+        const towerOp = props ? obj(props['towerOp']) : undefined;
+        if (towerOp && str(towerOp['channel']) === 'light.named') {
+          const seqId = str(towerOp['sequenceId']);
+          if (seqId !== undefined && !(seqId in udt.lightSequences)) {
+            errors.push(
+              `node "${id}" tower.op light.named sequenceId "${seqId}" is not in TOWER_LIGHT_SEQUENCES`,
+            );
+          }
+        }
+        continue;
+      }
+
+      // lifecycle.boardSetup: each initial spawn resolves foeId + location
+      if (kind === 'lifecycle.boardSetup') {
+        const spawns = props ? arr(props['spawns']) : undefined;
+        for (const sp of spawns ?? []) {
+          const s2 = obj(sp);
+          if (s2) checkSpawn(str(s2['foeId']), str(s2['location']), `node "${id}" boardSetup spawn`);
+        }
+        continue;
+      }
+
+      // effect.apply carrying foe.spawn effect(s): resolve foeId + location
+      if (kind === 'effect.apply' && props) {
+        const effs: unknown[] = [];
+        const single = obj(props['effect']);
+        if (single) effs.push(single);
+        const many = arr(props['effects']);
+        if (many) effs.push(...many);
+        for (const e of effs) {
+          const eo = obj(e);
+          if (eo && str(eo['op']) === 'foe.spawn') {
+            checkSpawn(str(eo['foeId']), str(eo['location']), `node "${id}" foe.spawn`);
+          }
         }
       }
     }

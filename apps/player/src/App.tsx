@@ -1,4 +1,5 @@
 import { LoadPanel, RelayPanel, GamePanel } from './ui';
+import { ThemeToggle } from '@udtc/theme';
 
 export default function App() {
   return (
@@ -7,7 +8,8 @@ export default function App() {
         display: 'flex',
         height: '100dvh',
         fontFamily: 'system-ui, sans-serif',
-        background: '#F1F5F9',
+        background: 'var(--c-bg)',
+        color: 'var(--c-text)',
         overflow: 'hidden',
       }}
     >
@@ -21,15 +23,18 @@ export default function App() {
           gap: 12,
           padding: 16,
           overflowY: 'auto',
-          borderRight: '1px solid #E2E8F0',
-          background: '#F8FAFC',
+          borderRight: '1px solid var(--c-border)',
+          background: 'var(--c-surface)',
         }}
       >
         <header style={{ marginBottom: 4 }}>
-          <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1E293B' }}>
-            UDT Player
-          </h1>
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#94A3B8' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>
+              UDT Player
+            </h1>
+            <ThemeToggle />
+          </div>
+          <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--c-text-faint)' }}>
             Live table runtime
           </p>
         </header>
@@ -38,7 +43,7 @@ export default function App() {
       </aside>
 
       {/* Main — game panel */}
-      <main style={{ flex: 1, padding: 16, overflowY: 'auto' }}>
+      <main style={{ flex: 1, padding: 16, overflowY: 'auto', background: 'var(--c-bg)' }}>
         <GamePanel />
       </main>
     </div>

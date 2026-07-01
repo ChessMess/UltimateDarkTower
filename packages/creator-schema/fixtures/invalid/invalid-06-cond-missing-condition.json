@@ -4,7 +4,7 @@
     "title": "INVALID: cond.check props missing required 'condition'",
     "scenarioVersion": "0.1.0",
     "designer": { "name": "Test" },
-    "pins": { "udt": "4.1.0" }
+    "pins": { "udt": "5.0.0" }
   },
   "setup": {
     "mode": "coop",
