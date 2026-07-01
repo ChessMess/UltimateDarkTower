@@ -11,3 +11,88 @@ body,
   width: 100%;
   height: 100%;
 }
+
+/* App shell: full-width top bar over a sidebar + main content row.
+ * Mirrors the Creator's .creator-topbar styling for a consistent look. */
+.player-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--c-bg);
+  color: var(--c-text);
+  overflow: hidden;
+}
+
+/* Top bar spans the full width */
+.player-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  flex-shrink: 0;
+  padding: 0 16px;
+  background: var(--c-topbar-bg);
+  color: var(--c-topbar-fg);
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--c-border);
+  z-index: 10;
+}
+
+.player-topbar .title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-topbar-fg);
+  letter-spacing: -0.01em;
+}
+
+.player-topbar .subtitle {
+  font-size: 11px;
+  color: var(--c-topbar-muted);
+}
+
+.player-topbar .switch-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-topbar-fg);
+  text-decoration: none;
+  padding: 4px 10px;
+  border: 1px solid var(--c-topbar-muted);
+  border-radius: 6px;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.player-topbar .switch-link:hover {
+  border-color: var(--c-warning);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+/* Content row: sidebar + main */
+.player-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.player-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  border-right: 1px solid var(--c-border);
+  background: var(--c-surface);
+}
+
+.player-main {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--c-bg);
+}
