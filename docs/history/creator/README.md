@@ -108,7 +108,7 @@ dependencies, the build only runs on a machine that has the full repo constellat
 To publish an update, build and push from such a machine:
 
 ```bash
-./deploy/deploy.sh
+npm run deploy   # or: pnpm deploy  /  ./deploy/deploy.sh
 ```
 
 This builds both apps (`GH_PAGES=1 pnpm build`), assembles `site/`, and force-pushes it to
