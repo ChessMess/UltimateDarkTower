@@ -10,6 +10,7 @@ const _require = createRequire(import.meta.url);
 const udtCjsPath = _require.resolve('ultimatedarktower');
 
 export default defineConfig({
+  base: process.env.GH_PAGES ? '/UltimateDarkTowerCreator/player/' : '/',
   plugins: [react()],
   resolve: {
     alias: {

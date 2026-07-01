@@ -1,12 +1,24 @@
 import { useRef } from 'react';
 import { golden } from '@udtc/engine';
-import { loadGame } from '../game';
+import { loadGame, resumeSession, discardSession } from '../game';
 import { usePlayerStore } from '../store';
+
+// Human-friendly "saved N ago" for the resume banner.
+function relativeTime(ts: number): string {
+  const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (s < 60) return `${s}s ago`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}
 
 export function LoadPanel() {
   const phase = usePlayerStore((s) => s.phase);
   const validationError = usePlayerStore((s) => s.validationError);
   const validationResults = usePlayerStore((s) => s.validationResults);
+  const resumable = usePlayerStore((s) => s.resumable);
   const fileRef = useRef<HTMLInputElement>(null);
   const busy = phase === 'validating';
 
@@ -33,6 +45,28 @@ export function LoadPanel() {
   return (
     <section style={panelStyle}>
       <h3 style={headStyle}>Scenario</h3>
+
+      {/* Resume prompt — a saved in-progress game was found on load (page-refresh recovery) */}
+      {resumable && phase === 'idle' && (
+        <div style={resumeCardStyle}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-text-2)' }}>Resume session?</div>
+          <div style={{ fontSize: 11, color: 'var(--c-text-muted)', margin: '4px 0 8px' }}>
+            {resumable.scenarioName} · checkpoint #{resumable.seq} · saved {relativeTime(resumable.savedAt)}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              style={{ ...btnStyle, background: 'var(--c-primary)', color: '#fff', borderColor: 'var(--c-primary)' }}
+              onClick={() => void resumeSession()}
+            >
+              Resume
+            </button>
+            <button style={btnStyle} onClick={() => discardSession()}>
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 8 }}>
         <button style={btnStyle} onClick={handleLoadGolden} disabled={busy}>
           Load Golden
@@ -76,6 +110,14 @@ const headStyle: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 700,
   color: 'var(--c-text-2)',
+};
+
+const resumeCardStyle: React.CSSProperties = {
+  background: 'var(--c-surface)',
+  border: '1px solid var(--c-primary)',
+  borderRadius: 6,
+  padding: 10,
+  marginBottom: 10,
 };
 
 const btnStyle: React.CSSProperties = {

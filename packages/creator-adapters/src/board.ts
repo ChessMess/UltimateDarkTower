@@ -16,6 +16,7 @@ export type BoardMutateCommand = { command: string; args: Record<string, unknown
 // Minimal interface covering the BoardStateController methods we call.
 type BoardCtrl = {
   getState(): BoardState;
+  applyState(next: BoardState): void;
   spawnFoe(foeId: string, instanceId: string, location: string): void;
   moveFoe(foeId: string, location: string): void;
   removeFoe(instanceId: string): void;
@@ -32,6 +33,7 @@ type BoardCtrl = {
 
 export function createBoardAdapter(): {
   getState: () => BoardState;
+  loadState: (state: BoardState) => void;
   mutate: (cmd: BoardMutateCommand) => void;
   onReady: (cb: () => void) => void;
   isReady: () => boolean;
@@ -139,6 +141,13 @@ export function createBoardAdapter(): {
 
   return {
     getState: () => ctrl?.getState() ?? ({} as BoardState),
+    // Restore a full BoardState (e.g. resuming a saved session). Committed via the
+    // controller's applyState; if the async import hasn't resolved yet, queue it so it
+    // runs the moment `ctrl` exists (same pattern as onReady).
+    loadState: (state: BoardState) => {
+      if (ctrl) ctrl.applyState(state);
+      else readyCbs.push(() => ctrl?.applyState(state));
+    },
     mutate,
     // Fires once the board controller has finished its async import + init (immediately if
     // already ready). Consumers that render live state (e.g. the 3D board plugin) use this

@@ -50,6 +50,10 @@ dist/
 dist-ssr/
 packages/*/dist/
 apps/*/dist/
+site/
+
+# Playwright / chrome-devtools MCP scratch output
+.playwright-mcp/
 
 # Vite
 *.local

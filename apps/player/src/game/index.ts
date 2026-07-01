@@ -6,11 +6,13 @@ import Ajv from 'ajv/dist/2020';
 import addFormats from 'ajv-formats';
 import { scenarioSchema } from '@udtc/schema';
 import { validateRefs, validateGraph, createBoardAdapter, createDisplayAdapter, createResolver } from '@udtc/adapters';
-import { init, step } from '@udtc/engine';
-import type { Input, Directive, StepResult } from '@udtc/engine';
+import type { BoardState } from '@udtc/adapters';
+import { init, step, deserialize, ENGINE_VERSION } from '@udtc/engine';
+import type { Input, Directive, StepResult, EngineState } from '@udtc/engine';
 import { RelayClient } from '../relay';
 import { usePlayerStore } from '../store';
-import type { ValidationResults } from '../types';
+import type { ValidationResults, SavedSession, SavedSessionMeta } from '../types';
+import { saveSession, loadSession, clearSession } from './persistence';
 
 const PLAYER_SEED = 'player-runtime-seed';
 const PLAYER_COUNT = 1;
@@ -28,15 +30,22 @@ let _stage: import('ultimatedarktowerboard/stage').BoardStageView | null = null;
 let _mountGen = 0;
 let _cmdSeq = 0;
 
+// Boot-detected saved session awaiting a user Resume decision (see checkForResumableSession).
+let _stashedSession: SavedSession | null = null;
+// Debounce timer for session persistence — the setTimeout-scheduled tower snapshots would
+// otherwise trigger a burst of IndexedDB writes; coalesce them into one.
+let _saveTimer: ReturnType<typeof setTimeout> | null = null;
+const SAVE_DEBOUNCE_MS = 200;
+
 // Which preview the emulator/tower shell renders. 'emulator' brings up the full 3D tower
 // with the in-scene game board overlaid on its ground disc; 'lite' is the lightweight
 // readout + side-view (a real physical tower/board is on the table).
 export type DisplayMode = 'lite' | 'emulator';
 
 // Board/tower art served from apps/player/public/assets (Vite serves public/ at web root).
-const TOWER_MODEL_URL = '/assets/tower.glb';
-const BOARD_IMAGE_URL = '/assets/board.png';
-const BOARD_ASSET_BASE = '/assets/tokens/';
+const TOWER_MODEL_URL = `${import.meta.env.BASE_URL}assets/tower.glb`;
+const BOARD_IMAGE_URL = `${import.meta.env.BASE_URL}assets/board.png`;
+const BOARD_ASSET_BASE = `${import.meta.env.BASE_URL}assets/tokens/`;
 
 function board(): ReturnType<typeof createBoardAdapter> {
   if (!_board) _board = createBoardAdapter();
@@ -112,6 +121,7 @@ export function mountDisplay(el: HTMLElement, mode: DisplayMode = 'lite'): void 
         return;
       }
       display().mount(view);
+      applyRestoredSeals();
     });
     return;
   }
@@ -151,8 +161,10 @@ async function mountStage(el: HTMLElement, gen: number): Promise<void> {
 
   // Drive the engine's tower.program (lights / drums / seals) into the stage's TowerRenderView.
   const towerView = stage.tower3D;
-  if (towerView) display().mount(towerView);
-  else usePlayerStore.getState().addLog('3D tower unavailable — board shown without live tower');
+  if (towerView) {
+    display().mount(towerView);
+    applyRestoredSeals();
+  } else usePlayerStore.getState().addLog('3D tower unavailable — board shown without live tower');
 
   _stage = stage;
   board().onReady(() => {
@@ -164,6 +176,16 @@ async function mountStage(el: HTMLElement, gen: number): Promise<void> {
 // board). Guarded on isReady() so the renderers never receive the empty {} placeholder.
 function syncBoardStage(): void {
   if (_stage && board().isReady()) _stage.controller.applyState(board().getState());
+}
+
+// Re-apply broken seals from the authoritative engine state after a (re)mount. The display
+// adapter is recreated on every mount (teardownDisplay disposes it), so seals — like board
+// state — must be pushed back in from engine state, not left to the adapter's own memory.
+// This also keeps seals visible across lite⟷emulator target switches during normal play.
+function applyRestoredSeals(): void {
+  const seals =
+    (usePlayerStore.getState().engineState as { brokenSeals?: string[] } | null)?.brokenSeals ?? [];
+  if (seals.length > 0) display().applySeals(seals);
 }
 
 // Tear down the current preview. The stage owns its tower (the TowerRenderView the display
@@ -227,6 +249,11 @@ export function validateScenario(doc: unknown): ValidationResults {
 
 export function loadGame(doc: unknown): void {
   const store = usePlayerStore.getState();
+  // Loading a new scenario supersedes any saved session; drop the stashed resume payload
+  // and clear storage (a fresh checkpoint is persisted below once the engine initialises).
+  _stashedSession = null;
+  store.setResumable(null);
+  void clearSession();
   store.setPhase('validating');
   store.addLog('Validating scenario (L1–L4)…');
 
@@ -245,6 +272,7 @@ export function loadGame(doc: unknown): void {
   store.setEngineResult(initResult.state, initResult.status, initResult.awaiting, initResult.directives);
   store.saveCheckpoint(JSON.stringify(initResult.state), []);
   dispatchAll(initResult.directives);
+  persistSession();
 
   store.addLog(`Engine ready — status: ${initResult.status}`);
   if (initResult.awaiting) store.addLog(`Awaiting: ${initResult.awaiting.id}`);
@@ -260,6 +288,132 @@ export function selectTarget(target: 'tower' | 'emulator'): void {
   usePlayerStore.getState().setPhase('waiting');
   usePlayerStore.getState().addLog(`Requesting target: ${target}`);
   relay().requestTarget(target);
+}
+
+// ---- Session persistence (page-refresh recovery) ----
+
+function scenarioTitle(scenario: unknown): string {
+  const t = (scenario as { meta?: { title?: unknown } })?.meta?.title;
+  return typeof t === 'string' && t.length > 0 ? t : 'Untitled scenario';
+}
+
+// Snapshot the recoverable slice of the store (+ derived board state) to IndexedDB.
+// Debounced so bursts of tower-snapshot checkpoints collapse into a single write.
+function persistSession(): void {
+  if (_saveTimer !== null) clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    _saveTimer = null;
+    const store = usePlayerStore.getState();
+    if (!store.engineState || !store.scenario) return;
+    const cp = store.checkpoint;
+    const session: SavedSession = {
+      version: 1,
+      engineVersion: ENGINE_VERSION,
+      scenario: store.scenario,
+      serializedState: cp?.serializedState ?? JSON.stringify(store.engineState),
+      status: store.status,
+      awaiting: store.awaiting,
+      boardState: board().isReady() ? board().getState() : null,
+      lastCommand: cp?.lastCommand ?? [],
+      seq: cp?.seq ?? 0,
+      log: store.log,
+      scenarioName: scenarioTitle(store.scenario),
+      savedAt: Date.now(),
+    };
+    void saveSession(session);
+  }, SAVE_DEBOUNCE_MS);
+}
+
+// Read any saved session on boot; if it's a valid, resumable in-progress game, stash the
+// payload and expose its meta so the LoadPanel can offer Resume/Discard. Incompatible or
+// corrupt snapshots are discarded silently. Returns the meta (or null).
+export async function checkForResumableSession(): Promise<SavedSessionMeta | null> {
+  const saved = await loadSession();
+  if (!saved) return null;
+
+  const compatible =
+    saved.version === 1 &&
+    saved.engineVersion === ENGINE_VERSION &&
+    typeof saved.serializedState === 'string' &&
+    saved.serializedState.length > 0;
+  if (!compatible) {
+    await clearSession();
+    return null;
+  }
+
+  _stashedSession = saved;
+  const meta: SavedSessionMeta = {
+    scenarioName: saved.scenarioName,
+    seq: saved.seq,
+    savedAt: saved.savedAt,
+  };
+  usePlayerStore.getState().setResumable(meta);
+  return meta;
+}
+
+// Restore the saved session: engine state + board view + seals into the store/adapters,
+// then re-run the normal relay connect/target handshake to bring transport back to 'playing'.
+// Reads the payload fresh from IndexedDB (falling back to the boot-time stash) so it can't
+// silently no-op if the module-level stash desynced from the store (e.g. Vite HMR).
+export async function resumeSession(): Promise<void> {
+  const store = usePlayerStore.getState();
+  const saved = _stashedSession ?? (await loadSession());
+  if (!saved) {
+    store.addLog('No saved session to resume.');
+    store.setResumable(null);
+    return;
+  }
+
+  let engineState: EngineState;
+  try {
+    engineState = deserialize(saved.serializedState);
+  } catch (e) {
+    store.addLog(`Saved session could not be restored: ${String(e)}`);
+    void clearSession();
+    store.setResumable(null);
+    _stashedSession = null;
+    return;
+  }
+
+  store.hydrateFromSession({
+    scenario: saved.scenario,
+    engineState,
+    status: saved.status,
+    awaiting: saved.awaiting,
+    checkpoint: {
+      serializedState: saved.serializedState,
+      lastCommand: saved.lastCommand,
+      seq: saved.seq,
+      timestamp: saved.savedAt,
+    },
+    log: saved.log,
+  });
+  _stashedSession = null;
+  store.addLog(`Resumed session — checkpoint #${saved.seq}`);
+
+  // Restore derived board-view state (applied when the adapter is ready; the mounted stage
+  // picks it up via syncBoardStage). Broken seals are re-applied from engine state after the
+  // tower view mounts (applyRestoredSeals), since the display adapter is rebuilt on mount.
+  if (saved.boardState) board().loadState(saved.boardState as BoardState);
+
+  // Terminal games restore straight to the ended screen — no transport needed.
+  if (saved.status === 'won' || saved.status === 'lost' || saved.status === 'ended') {
+    store.setPhase('ended');
+    return;
+  }
+
+  // Live game: reconnect. The existing handshake + RelayPanel target-picker path resumes
+  // to 'playing' exactly as on a fresh load.
+  store.setPhase('connecting');
+  store.addLog(`Connecting to relay (${store.relayUrl})…`);
+  relay().connect(store.relayUrl);
+}
+
+// Discard the saved session and return to a clean load screen.
+export function discardSession(): void {
+  void clearSession();
+  _stashedSession = null;
+  usePlayerStore.getState().reset();
 }
 
 // ---- Input submission ----
@@ -284,6 +438,7 @@ export function handleInput(input: Input): void {
   const serialized = JSON.stringify(result.state);
   const lastCmd = store.checkpoint?.lastCommand ?? [];
   store.saveCheckpoint(serialized, lastCmd);
+  persistSession();
 
   if (result.awaiting) store.addLog(`Awaiting: ${result.awaiting.id}`);
 
@@ -317,6 +472,7 @@ function dispatchDirective(d: Directive): void {
             JSON.stringify(usePlayerStore.getState().engineState),
             snap.data,
           );
+          persistSession();
         };
         if (snap.delayMs === 0) doSend();
         else setTimeout(doSend, elapsed);

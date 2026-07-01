@@ -29,6 +29,8 @@ export interface Checkpoint {
   timestamp: number;
 }
 
+export type { SavedSession, SavedSessionMeta } from '../game/persistence';
+
 export interface ValidationResults {
   l1: { ok: boolean; errors: string[] };
   l2: { ok: boolean; errors: string[] };

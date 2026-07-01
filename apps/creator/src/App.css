@@ -71,6 +71,24 @@ body,
   color: var(--c-topbar-muted);
 }
 
+.creator-topbar .switch-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-topbar-fg);
+  text-decoration: none;
+  padding: 4px 10px;
+  border: 1px solid var(--c-topbar-muted);
+  border-radius: 6px;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.creator-topbar .switch-link:hover {
+  border-color: var(--c-warning);
+  background: rgba(245, 158, 11, 0.12);
+}
+
 /* Palette — left sidebar */
 .creator-palette {
   grid-column: 1;

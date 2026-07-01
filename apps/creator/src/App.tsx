@@ -33,6 +33,9 @@ export default function App() {
             </>
           )}
           <span style={{ flex: 1 }} />
+          <a className="switch-link" href="../player/">
+            Player →
+          </a>
           <ThemeToggle />
         </div>
 
