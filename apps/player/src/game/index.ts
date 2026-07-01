@@ -157,7 +157,7 @@ async function mountStage(el: HTMLElement, gen: number): Promise<void> {
     stage.dispose();
     return;
   }
-  stage.setDisplayMode('3d'); // open on the combined tower + board; pills let the user switch
+  stage.setDisplayMode('2d3d'); // open on the combined 2D map + 3D tower; pills let the user switch
 
   // Drive the engine's tower.program (lights / drums / seals) into the stage's TowerRenderView.
   const towerView = stage.tower3D;
