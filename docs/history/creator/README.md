@@ -1,19 +1,50 @@
-# UltimateDarkTowerCreator
+<h1 align="center">Ultimate Dark Tower Creator &amp; Player</h1>
 
-Scenario authoring tool and live table runtime for custom *Return to Dark Tower* scenarios.
+<p align="center">
+  Author and play custom scenarios for Restoration Games' <a href="https://restorationgames.com/dark-tower/"><em>Return to Dark Tower</em></a>.<br/>
+  A node-based scenario <strong>Creator</strong> and a live-table <strong>Player</strong>, sharing one deterministic rules engine — both running entirely in the browser.
+</p>
+
+<p align="center">
+  <a href="https://chessmess.github.io/UltimateDarkTowerCreator/"><img alt="Live site" src="https://img.shields.io/badge/Live-GitHub%20Pages-f59e0b"></a>
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/License-MIT-green.svg"></a>
+  <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-Ready-blue"></a>
+  <img alt="status" src="https://img.shields.io/badge/status-pre--release%20v0.1.0-orange">
+</p>
+
+---
+
+<p align="center"><strong>
+  <a href="https://chessmess.github.io/UltimateDarkTowerCreator/">▶ Live Site — Creator &amp; Player</a>
+</strong></p>
+
+<p align="center">
+  <a href="https://chessmess.github.io/UltimateDarkTowerCreator/creator/">Open the Creator</a>
+  &nbsp;·&nbsp;
+  <a href="https://chessmess.github.io/UltimateDarkTowerCreator/player/">Open the Player</a>
+</p>
+
+<p align="center"><em>
+  No account, no server, nothing to install — the Player drives a full 3D tower emulator right in the page.
+</em></p>
+
+> **Status: pre-release (v0.1.0), in active development.** Features may change, break, or be
+> removed at any time, and scenarios or saved games may not survive future updates. Expect rough edges.
+
+---
 
 ## Overview
 
 Two applications sharing a common rules engine and schema:
 
 - **Creator** (`apps/creator`) — node-based visual scenario editor (React Flow canvas, embedded simulator)
-- **Player** (`apps/player`) — live table runtime that drives the physical tower via the Relay
+- **Player** (`apps/player`) — live table runtime that drives the tower emulator (or, later, a physical tower via the Relay)
 
 Three shared packages:
 
 - **`@udtc/schema`** — Canonical JSON Schema v0.4 (draft 2020-12), TypeScript types, and L1 validator (ajv strict)
 - **`@udtc/engine`** — Pure `(EngineState, Input) → StepResult` reducer; headless, deterministic, 242-assertion test suite
-- **`@udtc/adapters`** — Ecosystem wrappers (UDT, Display, Board stub, Relay stub) and L2/L3 validators
+- **`@udtc/adapters`** — Ecosystem wrappers (UDT, Display, Board, Relay) and L2/L3 validators
 
 ## Architecture
 
@@ -67,6 +98,34 @@ Start the Player dev server:
 pnpm --filter @udtc/player dev
 ```
 
+## Deploying the live site
+
+The public site above is the two apps built with GitHub Pages base paths, plus a landing page
+([`deploy/index.html`](deploy/index.html)), published to the `gh-pages` branch.
+
+Because the apps depend on locally-built sibling repos (see [Ecosystem](#ecosystem)) via `file:`
+dependencies, the build only runs on a machine that has the full repo constellation checked out.
+To publish an update, build and push from such a machine:
+
+```bash
+./deploy/deploy.sh
+```
+
+This builds both apps (`GH_PAGES=1 pnpm build`), assembles `site/`, and force-pushes it to
+`gh-pages`, which GitHub Pages serves at
+<https://chessmess.github.io/UltimateDarkTowerCreator/>.
+
+## Ecosystem
+
+This repo composes the wider *Return to Dark Tower* toolchain rather than reimplementing it:
+
+| Repo | Role |
+|---|---|
+| [`UltimateDarkTower`](https://github.com/ChessMess/UltimateDarkTower) | BLE driver + 3D tower emulator for the physical tower |
+| [`UltimateDarkTowerDisplay`](https://github.com/ChessMess/UltimateDarkTowerDisplay) | Composable text / 2D / 3D tower-state renderers |
+| [`UltimateDarkTowerBoard`](https://github.com/ChessMess/UltimateDarkTowerBoard) | `BoardState` core + board renderers (2D map / 3D in-scene board) |
+| [`UltimateDarkTowerRelay`](https://github.com/ChessMess/UltimateDarkTowerRelay) | Relays the official companion app's tower traffic to digital consumers |
+
 ## Planning docs
 
 The `planning/` directory contains the complete design corpus:
@@ -80,6 +139,11 @@ The `planning/` directory contains the complete design corpus:
 | `player-app-prd-v0_3.md` | Player PRD (runtime loop, Relay client, persistence) |
 | `creator-ui-architecture-v0_3.md` | Frontend architecture (React Flow, Zustand, node registry) |
 | `creator-block-catalog-v0_3.md` | Node block palette (categories A–K) |
+
+## Disclaimer
+
+Unofficial fan tool — not affiliated with, sponsored by, or endorsed by Restoration Games.
+*Return to Dark Tower* and all related marks are property of their respective owners.
 
 ## License
 
