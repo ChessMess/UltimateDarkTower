@@ -5,10 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.0] — 2026-06-29
 
-Initial development toward the `0.1.0` release. The packages are version `0.1.0` and **publish-ready but
-not yet on npm**; downstream repos consume them via `file:` deps until the cutover.
+Initial release. All three publishable packages (`shared`, `core`, `client`) are live on npm.
 
 ### Added
 

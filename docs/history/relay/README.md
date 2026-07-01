@@ -85,8 +85,7 @@ can integrate without re-implementing the transport. Consumers fall into two rol
 The SDK is built for **N independent consumers**, not a single integration — additional digital consumers
 drop in by depending on the published package.
 
-> The client SDK is **publish-ready but not yet on npm**; until the cutover, downstream repos consume it
-> via `file:` deps against a sibling checkout.
+> The client SDK is published on npm: `npm install ultimatedarktowerrelay-client`. Downstream repos can swap any `file:` specifiers to `^0.1.0`.
 
 ---
 

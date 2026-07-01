@@ -86,11 +86,9 @@ committed for reproducible CI installs.
 
 ## Releasing (publish cutover)
 
-The packages are version `0.1.0` and publish-ready but not yet on npm. Downstream repos consume them via
-`file:` deps against a sibling checkout until the cutover: publish
-`ultimatedarktowerrelay-{shared,core,client}`, then downstream consumers swap their `file:` specifiers to a
-versioned range. Bump `PROTOCOL_VERSION` (in `packages/shared`) alongside the package version on any
-breaking wire-protocol change.
+`ultimatedarktowerrelay-{shared,core,client}` are published on npm at `0.1.0`. Downstream consumers should
+depend on a versioned range (e.g. `^0.1.0`) rather than `file:` specifiers. Bump `PROTOCOL_VERSION` (in
+`packages/shared`) alongside the package version on any breaking wire-protocol change.
 
 ---
 
