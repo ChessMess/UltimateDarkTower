@@ -24,11 +24,11 @@ export function LoadPanel() {
 
   // The shipped golden scenario is the base-game fidelity build (full turn structure, buildings,
   // events, monthly quests); the compact legacy fixture stays available for regression play.
-  function handleLoadGolden() {
+  function handleLoadSampleScenario() {
     loadGame(goldenFull);
   }
 
-  function handleLoadGoldenCompact() {
+  function handleLoadSampleCompact() {
     loadGame(golden);
   }
 
@@ -55,13 +55,21 @@ export function LoadPanel() {
       {/* Resume prompt — a saved in-progress game was found on load (page-refresh recovery) */}
       {resumable && phase === 'idle' && (
         <div style={resumeCardStyle}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-text-2)' }}>Resume session?</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-text-2)' }}>
+            Resume session?
+          </div>
           <div style={{ fontSize: 11, color: 'var(--c-text-muted)', margin: '4px 0 8px' }}>
-            {resumable.scenarioName} · checkpoint #{resumable.seq} · saved {relativeTime(resumable.savedAt)}
+            {resumable.scenarioName} · checkpoint #{resumable.seq} · saved{' '}
+            {relativeTime(resumable.savedAt)}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
-              style={{ ...btnStyle, background: 'var(--c-primary)', color: '#fff', borderColor: 'var(--c-primary)' }}
+              style={{
+                ...btnStyle,
+                background: 'var(--c-primary)',
+                color: '#fff',
+                borderColor: 'var(--c-primary)',
+              }}
               onClick={() => void resumeSession()}
             >
               Resume
@@ -74,16 +82,27 @@ export function LoadPanel() {
       )}
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <button style={scenarioBtnStyle} onClick={handleLoadGolden} disabled={busy}>
-          Load Golden
+        <button style={scenarioBtnStyle} onClick={handleLoadSampleScenario} disabled={busy}>
+          Load Sample Scenario
         </button>
-        <button style={scenarioBtnStyle} onClick={handleLoadGoldenCompact} disabled={busy} title="The compact single-action regression fixture">
-          Golden (Compact)
+        <button
+          style={scenarioBtnStyle}
+          onClick={handleLoadSampleCompact}
+          disabled={busy}
+          title="Compact sample scenario for quick verification"
+        >
+          Sample (Compact)
         </button>
         <button style={scenarioBtnStyle} onClick={() => fileRef.current?.click()} disabled={busy}>
           Import JSON
         </button>
-        <input ref={fileRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFile} />
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".json"
+          style={{ display: 'none' }}
+          onChange={handleFile}
+        />
       </div>
       {validationResults && !validationResults.allOk && (
         <div style={{ marginTop: 8 }}>
@@ -139,7 +158,7 @@ const btnStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-// Smaller variant for the scenario-loader row (Load Golden / Golden (Compact) / Import JSON),
+// Smaller variant for the scenario-loader row (Load Sample Scenario / Sample (Compact) / Import JSON),
 // which is too tight for the default button size in the sidebar's fixed width.
 const scenarioBtnStyle: React.CSSProperties = {
   ...btnStyle,

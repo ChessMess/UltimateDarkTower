@@ -97,12 +97,9 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
     [rfEdges, rfNodes, syncFromRF],
   );
 
-  const onNodesDelete = useCallback(
-    (deleted: ScenarioRFNode[]) => {
-      for (const n of deleted) useCreatorStore.getState().deleteNode(n.id);
-    },
-    [],
-  );
+  const onNodesDelete = useCallback((deleted: ScenarioRFNode[]) => {
+    for (const n of deleted) useCreatorStore.getState().deleteNode(n.id);
+  }, []);
 
   // Import
   const handleImport = useCallback(
@@ -144,8 +141,8 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
     clearDraft();
   }, [validationResults, exportScenario, schemaDoc]);
 
-  const handleLoadGolden = useCallback(() => {
-    if (isDirty && !window.confirm('Discard unsaved changes and load the golden fixture?')) return;
+  const handleLoadSampleScenario = useCallback(() => {
+    if (isDirty && !window.confirm('Discard unsaved changes and load the sample scenario?')) return;
     loadScenario(BASE_SCENARIO, true);
     setTimeout(() => fitView({ padding: 0.2 }), 100);
   }, [isDirty, loadScenario, fitView]);
@@ -171,7 +168,13 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleImport} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        style={{ display: 'none' }}
+        onChange={handleImport}
+      />
 
       <ReactFlow
         nodes={rfNodes}
@@ -204,6 +207,8 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
             style={{
               display: 'flex',
               gap: 8,
+              width: 'max-content',
+              maxWidth: 'calc(100vw - 64px)',
               background: 'var(--c-surface-raised)',
               border: '1px solid var(--c-border)',
               borderRadius: 8,
@@ -221,10 +226,18 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
             >
               New
             </button>
-            <button className="toolbar-btn" onClick={handleLoadGolden} title="Load the golden MVP fixture">
-              Load Golden
+            <button
+              className="toolbar-btn"
+              onClick={handleLoadSampleScenario}
+              title="Load the sample scenario"
+            >
+              Load Sample Scenario
             </button>
-            <button className="toolbar-btn" onClick={() => fileInputRef.current?.click()} title="Import JSON scenario">
+            <button
+              className="toolbar-btn"
+              onClick={() => fileInputRef.current?.click()}
+              title="Import JSON scenario"
+            >
               Import JSON
             </button>
             <button
@@ -247,7 +260,14 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
               Export JSON
             </button>
             <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
-            <button className="toolbar-btn" onClick={() => { applyLayout(); setTimeout(() => fitView({ padding: 0.2 }), 50); }} disabled={!schemaDoc}>
+            <button
+              className="toolbar-btn"
+              onClick={() => {
+                applyLayout();
+                setTimeout(() => fitView({ padding: 0.2 }), 50);
+              }}
+              disabled={!schemaDoc}
+            >
               Auto-layout
             </button>
             <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
@@ -282,8 +302,16 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
             {schemaDoc && (
               <>
                 <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: hasErrors ? 'var(--c-danger)' : 'var(--c-success)' }}>
-                  {hasErrors ? `⚠ ${(validationResults.l1.errors.length + validationResults.l2.errors.length + validationResults.l3.errors.length)} error(s)` : '✓ Valid'}
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: hasErrors ? 'var(--c-danger)' : 'var(--c-success)',
+                  }}
+                >
+                  {hasErrors
+                    ? `⚠ ${validationResults.l1.errors.length + validationResults.l2.errors.length + validationResults.l3.errors.length} error(s)`
+                    : '✓ Valid'}
                 </span>
                 {isDirty && <span style={{ color: 'var(--c-warning)', fontSize: 11 }}>●</span>}
               </>
@@ -293,12 +321,15 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
 
         {/* Empty state */}
         {!schemaDoc && (
-          <Panel position="top-left" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+          <Panel
+            position="top-left"
+            style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+          >
             <div style={{ textAlign: 'center', color: '#94A3B8', padding: 40 }}>
               <div style={{ fontSize: 48 }}>📋</div>
               <div style={{ fontSize: 18, fontWeight: 600, marginTop: 12 }}>No scenario loaded</div>
               <div style={{ fontSize: 13, marginTop: 8, marginBottom: 16 }}>
-                Start fresh, load the golden fixture, or import an existing file.
+                Start fresh, load the sample scenario, or import an existing file.
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                 <button
@@ -317,7 +348,7 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
                   New Scenario
                 </button>
                 <button
-                  onClick={handleLoadGolden}
+                  onClick={handleLoadSampleScenario}
                   style={{
                     padding: '8px 20px',
                     background: '#F1F5F9',
@@ -328,7 +359,7 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
                     fontSize: 13,
                   }}
                 >
-                  Load Golden
+                  Load Sample Scenario
                 </button>
               </div>
             </div>
