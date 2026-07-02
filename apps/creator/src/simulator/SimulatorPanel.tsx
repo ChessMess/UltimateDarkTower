@@ -34,7 +34,13 @@ function defaultInputFor(awaiting: InputRequest, state: EngineState): Input {
   switch (awaiting.id) {
     case 'action': {
       const opts = awaiting.options?.map((o) => o.id) ?? [];
-      const value = (opts.includes('pass') ? 'pass' : opts[0] ?? 'pass') as ActionChoice;
+      // legacy loop: 'pass' is the safe no-op; full-turn loop: 'endTurn' is (quest would fault
+      // without a questId, and everything else burns a latch without progressing the walk).
+      const value = (opts.includes('pass')
+        ? 'pass'
+        : opts.includes('endTurn')
+          ? 'endTurn'
+          : (opts[0] ?? 'pass')) as ActionChoice;
       return { requestId: 'action', value, kind: 'decision' };
     }
     case 'skullCounter':

@@ -9,6 +9,9 @@ const suites = [
   'dungeon_test.js',
   'lockstep_test.js',
   'corpus_test.js',
+  'fixture_test.js',
+  'full_turn_test.js',
+  'events_test.js',
 ];
 
 let allPassed = true;

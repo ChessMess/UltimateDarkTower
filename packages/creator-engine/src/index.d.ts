@@ -12,7 +12,33 @@ export type FoeStatus = 'panicked' | 'unsteady' | 'ready' | 'savage' | 'lethal';
 
 export type Kingdom = 'north' | 'south' | 'east' | 'west';
 
-export type ActionChoice = 'quest' | 'cleanse' | 'reinforce' | 'pass' | 'battle' | 'trade' | 'move' | 'dungeon';
+export type ActionChoice =
+  | 'quest' | 'cleanse' | 'reinforce' | 'pass' | 'battle' | 'trade' | 'move' | 'dungeon'
+  // full-turn protocol (scenarios whose actionMiddle carries props.turn === "full"):
+  | 'banner' | 'endTurn';
+
+/** Full-turn action decision: `{ choice, ...args }`; a bare ActionChoice string stays valid. */
+export interface ActionDecision {
+  choice: ActionChoice;
+  /** quest: which library quest to attempt (required in the full-turn protocol) */
+  questId?: string;
+  /** reinforce: pay the building's enhanced cost instead of taking the free effect */
+  enhanced?: boolean;
+}
+
+/** Observed emergence with app-named building placements (rules.md §Placing Skulls). */
+export interface SkullObservation {
+  count: number;
+  placements?: Array<{ kingdom: Kingdom; type?: 'citadel' | 'sanctuary' | 'village' | 'bazaar'; location?: string }>;
+}
+
+export interface BuildingState {
+  kingdom: Kingdom;
+  type: 'citadel' | 'sanctuary' | 'village' | 'bazaar';
+  location: string;
+  skulls: number;
+  destroyed: boolean;
+}
 
 export type CardinalDirection = 'N' | 'E' | 'S' | 'W';
 
@@ -71,6 +97,7 @@ export interface DungeonCursor {
 
 export interface ClockLatches {
   bannerUsed: boolean;
+  moveUsed: boolean;
   heroicActionUsed: boolean;
   reinforceUsed: boolean;
   tradeUsed: boolean;
@@ -132,6 +159,10 @@ export interface EngineState {
   quests: Record<string, { complete: boolean }>;
   mainGoalComplete: boolean;
   dungeons: Record<string, DungeonRunState>;
+  /** Buildings registry (full-turn scenarios authoring setup.board.boardState.buildings) */
+  buildings?: BuildingState[];
+  /** Currently issued monthly quests (full-turn scenarios with a lifecycle.newQuests node) */
+  activeQuests?: Array<{ questId: string; kind: 'companion' | 'adversary'; expiresMonth: number }>;
   tower: TowerMirror;
   rng: string;
   outcome: Outcome;
@@ -242,14 +273,14 @@ export interface TradeDecision {
 }
 
 export type Input =
-  | { requestId: 'action'; value: ActionChoice; kind: 'decision' }
+  | { requestId: 'action'; value: ActionChoice | ActionDecision; kind: 'decision' }
   | { requestId: 'target'; value: { foeId?: string; adversary?: boolean }; kind: 'decision' }
   | { requestId: 'advantageSpend'; value: { spend?: number; retreat?: boolean; improve?: boolean }; kind: 'decision' }
   | { requestId: 'trade'; value: TradeDecision; kind: 'decision' }
   | { requestId: 'moveTarget'; value: { to: unknown }; kind: 'decision' }
   | { requestId: 'dungeonRoomAdvantage'; value: { improve?: boolean }; kind: 'decision' }
   | { requestId: 'dungeonMove'; value: { leave?: boolean; direction?: CardinalDirection }; kind: 'decision' }
-  | { requestId: 'skullCounter'; value: number; kind: 'observed' }
+  | { requestId: 'skullCounter'; value: number | SkullObservation; kind: 'observed' }
   | { kind: 'control' };
 
 // ---- public API (§2.3) ----
@@ -275,5 +306,12 @@ export declare function deserialize(blob: string): EngineState;
 export declare function digest(state: EngineState): string;
 export declare function evalCondition(condition: unknown, state: EngineState): boolean;
 
-/** The playable golden MVP scenario used by the engine test suite (lockstep_test). */
+/** The compact golden regression scenario used by the engine test suites (frozen semantics). */
 export declare const golden: unknown;
+
+/**
+ * The base-game fidelity golden scenario shipped in Creator/Player: full turn structure
+ * (banner + move + one heroic action + reinforce), building-based Reinforce/Cleanse,
+ * end-of-turn events, monthly quests, and a located final confrontation.
+ */
+export declare const goldenFull: unknown;

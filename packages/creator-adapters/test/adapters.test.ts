@@ -298,3 +298,30 @@ describe('createResolver', () => {
     expect(resolver.resolveLightSequence('notReal')).toBeNull();
   });
 });
+
+// ---- the shipped goldenFull scenario resolves clean through L2 + L3 ----
+
+describe('goldenFull (base-game fidelity scenario)', () => {
+  it('passes L2 reference resolution', async () => {
+    const { goldenFull } = await import('@udtc/engine');
+    const result = validateRefs(goldenFull);
+    expect(result.errors).toHaveLength(0);
+    expect(result.ok).toBe(true);
+  });
+
+  it('passes L3 graph checks (trigger/newQuests chains are engine-fired roots)', async () => {
+    const { goldenFull } = await import('@udtc/engine');
+    const result = validateGraph(goldenFull);
+    expect(result.errors).toHaveLength(0);
+    expect(result.ok).toBe(true);
+  });
+
+  it('still flags a genuinely orphaned node', async () => {
+    const { goldenFull } = await import('@udtc/engine');
+    const bad = structuredClone(goldenFull) as { graph: { nodes: Array<Record<string, unknown>> } };
+    bad.graph.nodes.push({ id: 'n-orphan', kind: 'media.narration', props: { text: 'lost' } });
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('n-orphan'))).toBe(true);
+  });
+});

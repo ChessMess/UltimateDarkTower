@@ -7,12 +7,15 @@
 // actionMiddle(decision) → actionEnd(observed skullCounter) → winCheck → endOfMonth?]* →
 // newMonthCheck → month≥6? → lossChecks → gameEnd.
 
-const buildingType = (freeEffect, enhancedEffect) => ({
+// Building Reinforce effects per rules.md §Reinforce + buildings.md (base game): free effect or
+// a spirit-cost enhanced effect; every building holds 3 skulls and the 4th destroys it (schema
+// pins skullCapacity=3 / destroyOnSkull=4).
+const buildingType = (freeEffect, cost, enhancedEffect) => ({
   free: [freeEffect],
-  enhanced: { cost: { resource: "spirit", amount: 1 }, effects: [enhancedEffect] },
-  skullCapacity: 3
+  enhanced: { cost: { resource: "spirit", amount: cost }, effects: [enhancedEffect] },
+  skullCapacity: 3,
+  destroyOnSkull: 4
 });
-const effGainWarriors = { op: "resource.gain", resource: "warriors", amount: 1 };
 const cond = (subject, comparator, value, key) => (key === undefined ? { subject, comparator, value } : { subject, comparator, value, key });
 
 const golden = {
@@ -40,16 +43,51 @@ const golden = {
   },
   library: {
     buildingTypes: {
-      citadel:   buildingType(effGainWarriors, { op: "resource.gain", resource: "warriors", amount: 2 }),
-      sanctuary: buildingType(effGainWarriors, { op: "corruption.remove", all: true }),
-      village:   buildingType(effGainWarriors, { op: "resource.gain", resource: "spirit", amount: 1 }),
-      bazaar:    buildingType(effGainWarriors, { op: "market.refresh" })
+      // rules.md §Reinforce / buildings.md — the real base-game effects.
+      citadel:   buildingType({ op: "item.gain", itemType: "potion" }, 5, { op: "virtue.activate" }),
+      sanctuary: buildingType({ op: "resource.gain", resource: "spirit", amount: 1 }, 5, { op: "corruption.remove", all: true }),
+      village:   buildingType({ op: "resource.gain", resource: "warriors", amount: 6 }, 1, { op: "resource.gain", resource: "warriors", amount: 12 }),
+      bazaar:    buildingType({ op: "item.gain", itemType: "gear" }, 2, { op: "item.gain", itemType: "treasure", from: "market" })
+    },
+    // Selected foes with author-editable defaults (schema library.foes — level is engine-owned,
+    // derived from setup.selections.foes tiers: tier1→2, tier2→3, tier3→4).
+    foes: {
+      brigands: {
+        foeId: "brigands", startingStatus: "ready", traits: ["Humanoid", "Melee"],
+        strike: { cadence: "monthly", effects: [{ op: "resource.lose", resource: "warriors", amount: 1 }] },
+        movement: { pattern: "stationary", note: "board adjacency deferred to the Board adapter" }
+      },
+      "frost-trolls": {
+        foeId: "frost-trolls", startingStatus: "ready", traits: ["Beast", "Melee"],
+        strike: { cadence: "monthly", effects: [{ op: "resource.lose", resource: "warriors", amount: 1 }] },
+        movement: { pattern: "stationary", note: "board adjacency deferred to the Board adapter" }
+      },
+      dragons: {
+        foeId: "dragons", startingStatus: "ready", traits: ["Beast", "Magic"],
+        strike: { cadence: "monthly", effects: [{ op: "resource.lose", resource: "warriors", amount: 1 }] },
+        movement: { pattern: "stationary", note: "board adjacency deferred to the Board adapter" }
+      }
+    },
+    // The selected ally (setup.selections.allyId) — granted by completing her monthly companion quest.
+    companions: {
+      zaida: {
+        id: "zaida", name: "Zaida",
+        abilities: [{ op: "resource.gain", resource: "spirit", amount: 1 }],
+        grantedByQuestId: "zaida-escort"
+      }
     },
     quests: {
+      // Main goal (rules.md §Completing the Main Goal): requires the two Azkol relic quests done,
+      // taken at the Tower; completion spawns the adversary on the board.
       "recover-azkols-treasures": {
         id: "recover-azkols-treasures",
         name: "Recover Azkol's Treasures",
         isMainGoal: true,
+        requirements: [
+          { label: "The vault relic is recovered", condition: cond("flag", "eq", true, "vaultCleared") },
+          { label: "The shrine relic is recovered", condition: cond("flag", "eq", true, "shrineRelicFound") },
+          { label: "Stand before the Dark Tower", condition: cond("heroAtLocation", "gte", 1, "the-tower") }
+        ],
         outcomes: { success: [{ op: "flag.set", name: "goalDone", value: true }], failure: [{ op: "corruption.gain" }] }
       },
       "azkol-vault": {
@@ -57,6 +95,77 @@ const golden = {
         name: "Plunder the Azkol Vault",
         spawnsDungeonId: "azkol-vault-dungeon",
         outcomes: { success: [{ op: "resource.gain", resource: "spirit", amount: 1 }], failure: [] }
+      },
+      // Location quest (rules.md §Completing a Quest: be at the location, spend resources).
+      "azkol-shrine": {
+        id: "azkol-shrine",
+        name: "Cleanse Azkol's Shrine",
+        requirements: [
+          { label: "At Azkol's Bane", condition: cond("heroAtLocation", "gte", 1, "Azkol's Bane") },
+          { label: "2 warriors to spend", condition: cond("resource", "gte", 2, "warriors") }
+        ],
+        outcomes: {
+          success: [
+            { op: "resource.spend", resource: "warriors", amount: 2 },
+            { op: "flag.set", name: "shrineRelicFound", value: true },
+            { op: "item.gain", itemType: "questItem" }
+          ],
+          failure: []
+        }
+      },
+      // Monthly companion quest (issued month 2; completing it grants Zaida — rules.md §Monthly Quests).
+      "zaida-escort": {
+        id: "zaida-escort",
+        name: "Escort Zaida through the Great Woods",
+        requirements: [{ label: "Reach Delmsmire", condition: cond("heroAtLocation", "gte", 1, "Delmsmire") }],
+        outcomes: { success: [{ op: "resource.gain", resource: "spirit", amount: 1 }], failure: [] }
+      },
+      // Monthly adversary quests (issued months 2–6; failing one lets Ashstrider advance —
+      // rules.md §Monthly Quests: "the world gets worse" = a scenario-determined skull).
+      "adv-quest-m2": {
+        id: "adv-quest-m2", name: "Disrupt the Ashstrider's Scouts",
+        requirements: [
+          { label: "Reach The Tundra", condition: cond("heroAtLocation", "gte", 1, "The Tundra") },
+          { label: "1 warrior to spend", condition: cond("resource", "gte", 1, "warriors") }
+        ],
+        outcomes: { success: [{ op: "resource.spend", resource: "warriors", amount: 1 }],
+                    failure: [{ op: "skull.place", count: 1, kingdom: "north" }] }
+      },
+      "adv-quest-m3": {
+        id: "adv-quest-m3", name: "Burn the Ashstrider's Totems",
+        requirements: [
+          { label: "Reach Broken Lands", condition: cond("heroAtLocation", "gte", 1, "Broken Lands") },
+          { label: "1 warrior to spend", condition: cond("resource", "gte", 1, "warriors") }
+        ],
+        outcomes: { success: [{ op: "resource.spend", resource: "warriors", amount: 1 }],
+                    failure: [{ op: "skull.place", count: 1, kingdom: "north" }] }
+      },
+      "adv-quest-m4": {
+        id: "adv-quest-m4", name: "Scatter the Ash Cults",
+        requirements: [
+          { label: "Reach Muted Forest", condition: cond("heroAtLocation", "gte", 1, "Muted Forest") },
+          { label: "1 warrior to spend", condition: cond("resource", "gte", 1, "warriors") }
+        ],
+        outcomes: { success: [{ op: "resource.spend", resource: "warriors", amount: 1 }],
+                    failure: [{ op: "skull.place", count: 1, kingdom: "north" }] }
+      },
+      "adv-quest-m5": {
+        id: "adv-quest-m5", name: "Break the Siege Lines",
+        requirements: [
+          { label: "Reach Green Bridge", condition: cond("heroAtLocation", "gte", 1, "Green Bridge") },
+          { label: "1 warrior to spend", condition: cond("resource", "gte", 1, "warriors") }
+        ],
+        outcomes: { success: [{ op: "resource.spend", resource: "warriors", amount: 1 }],
+                    failure: [{ op: "skull.place", count: 1, kingdom: "north" }] }
+      },
+      "adv-quest-m6": {
+        id: "adv-quest-m6", name: "Hold the Last Road",
+        requirements: [
+          { label: "Reach Pearl of the North", condition: cond("heroAtLocation", "gte", 1, "Pearl of the North") },
+          { label: "1 warrior to spend", condition: cond("resource", "gte", 1, "warriors") }
+        ],
+        outcomes: { success: [{ op: "resource.spend", resource: "warriors", amount: 1 }],
+                    failure: [{ op: "skull.place", count: 1, kingdom: "north" }] }
       }
     },
     dungeons: {
@@ -85,8 +194,24 @@ const golden = {
       }
     },
     battleDefs: {
-      // Ashstrider (adversary, level 5): 5 authored battle cards. Clearing all 5 with spent
-      // Advantages defeats it. Author-editable defaults, advantage-keyed (schema v0.4 §battleDefs).
+      // Battle cards per foe (rules.md §Battle: cards drawn = foe level; tier1=2, tier2=3, tier3=4,
+      // adversary=5). Author-editable defaults, advantage-keyed (schema v0.4 §battleDefs).
+      brigands: { cards: [
+        { advantage: "Humanoid", strikes: 1 },
+        { advantage: "Melee",    strikes: 1 }
+      ] },
+      "frost-trolls": { cards: [
+        { advantage: "Beast", strikes: 1 },
+        { advantage: "Melee", strikes: 2 },
+        { advantage: "Wild",  strikes: 1 }
+      ] },
+      dragons: { cards: [
+        { advantage: "Beast", strikes: 2 },
+        { advantage: "Magic", strikes: 2 },
+        { advantage: "Wild",  strikes: 1 },
+        { advantage: "Magic", strikes: 1, critical: true, note: "dragonfire — cannot be improved" }
+      ] },
+      // Ashstrider (adversary, level 5): clearing all 5 cards with spent Advantages defeats it.
       ashstrider: { cards: [
         { advantage: "Magic",    strikes: 1 },
         { advantage: "Beast",    strikes: 1 },
@@ -293,4 +418,77 @@ function cloneAuthoredLossFoe() {
 }
 const goldenAuthoredLossFoe = cloneAuthoredLossFoe();
 
-module.exports = { golden, goldenLowSupply, goldenAmpleSupply, goldenAuthoredLoss, goldenAuthoredLossFlag, goldenWardedVault, goldenAuthoredLossResource, goldenAuthoredLossSeal, goldenAuthoredLossFoe };
+// ============================= goldenFull — the base-game fidelity scenario =============================
+// The scenario actually shipped in Creator/Player. `golden` above stays FROZEN as the compact
+// regression fixture (every corpus stream depends on its single-action turn); goldenFull opts into
+// the engine's full-turn fidelity via lifecycle.actionMiddle props.turn = "full" and adds:
+//   - month 1 = exactly 1 turn per player (rules.md §Turns Per Month)
+//   - the real 16-building board registry + hero start at the home citadel (boardState, opaque at L1)
+//   - a full turn: optional banner + move + ONE heroic action (quest/cleanse/battle/dungeon,
+//     then +2 spirit) + reinforce, in any order, then the mandatory skull drop (rules.md §Taking Your Turn)
+//   - end-of-turn events (foes strike/grow, tower stirs, new wares — rules.md §Events)
+//   - monthly companion + adversary quests from month 2 (rules.md §Monthly Quests)
+//   - a located final confrontation: the main goal spawns Ashstrider at the Tower (rules.md §Main Goal)
+function buildGoldenFull() {
+  const c = JSON.parse(JSON.stringify(golden));
+  c.meta.description = "Base-game fidelity golden scenario — full turn structure, buildings, events, monthly quests (rules.md).";
+  // month 1 is exactly one turn per player (rules.md:62)
+  c.setup.monthEnd.perMonth["1"] = { minTurn: 1, maxTurn: 1 };
+  // the real board: one building of each type per kingdom (buildings.md), heroes start at the citadel
+  c.setup.board = { boardState: {
+    home: { north: "Radiant Mountains", east: "Inner Kinghills", west: "Hissing Groves", south: "Howling Desert" },
+    buildings: [
+      { kingdom: "north", type: "citadel",   location: "Radiant Mountains" },
+      { kingdom: "north", type: "sanctuary", location: "Upper Ice Fangs" },
+      { kingdom: "north", type: "village",   location: "Egan's End" },
+      { kingdom: "north", type: "bazaar",    location: "Dayside" },
+      { kingdom: "east",  type: "citadel",   location: "Inner Kinghills" },
+      { kingdom: "east",  type: "sanctuary", location: "Greater Tombstones" },
+      { kingdom: "east",  type: "village",   location: "Duwani" },
+      { kingdom: "east",  type: "bazaar",    location: "Three Rivers" },
+      { kingdom: "west",  type: "citadel",   location: "Hissing Groves" },
+      { kingdom: "west",  type: "sanctuary", location: "Arkartus" },
+      { kingdom: "west",  type: "village",   location: "Anza" },
+      { kingdom: "west",  type: "bazaar",    location: "Plains of Plovo" },
+      { kingdom: "south", type: "citadel",   location: "Howling Desert" },
+      { kingdom: "south", type: "sanctuary", location: "Sands of Madness" },
+      { kingdom: "south", type: "village",   location: "Southern Wastes" },
+      { kingdom: "south", type: "bazaar",    location: "The Emerald Expanse" }
+    ]
+  } };
+  const nodes = c.graph.nodes;
+  const node = (id) => nodes.find(n => n.id === id);
+  // the full-turn discriminator + the action loop: performed actions return to Action: Middle
+  node("n-amid").props = { turn: "full" };
+  node("n-amid").wires = { out: ["n-aend"], battle: ["n-bsel"], dungeon: ["n-dsub"], trade: ["n-trade"], move: ["n-move"] };
+  node("n-bend").wires = { out: ["n-amid"] };
+  node("n-dsub").wires = { enter: ["n-room-a"], completed: ["n-amid"], left: ["n-amid"] };
+  node("n-trade").wires = { out: ["n-amid"] };
+  const aendIdx = nodes.findIndex(n => n.id === "n-aend");
+  nodes.splice(aendIdx, 0,
+    // the Move step (rules.md §Movement) — target-set until Board adjacency ships
+    { id: "n-move", kind: "action.move", wires: { out: ["n-amid"] } });
+  // monthly quests, issued at each month rollover from month 2 (rules.md §Monthly Quests)
+  nodes.push(
+    { id: "n-newq", kind: "lifecycle.newQuests", props: { monthly: {
+      "2": { companion: "zaida-escort", adversary: "adv-quest-m2" },
+      "3": { adversary: "adv-quest-m3" },
+      "4": { adversary: "adv-quest-m4" },
+      "5": { adversary: "adv-quest-m5" },
+      "6": { adversary: "adv-quest-m6" }
+    } }, wires: { out: ["n-month"] } },
+    // end-of-turn events (rules.md §Events) — scheduled by turn-of-month
+    { id: "n-trig-stirs",  kind: "trigger.schedule", props: { trigger: { on: "schedule", turn: 1 } }, wires: { out: ["n-ev-stirs"] } },
+    { id: "n-ev-stirs",    kind: "event.towerStirs", props: { level: "top" }, wires: {} },
+    { id: "n-trig-wares",  kind: "trigger.schedule", props: { trigger: { on: "schedule", turn: 1 } }, wires: { out: ["n-ev-wares"] } },
+    { id: "n-ev-wares",    kind: "event.newWares", props: { cards: ["azkol-idol", "wyrm-scale", "warded-lantern"] }, wires: {} },
+    { id: "n-trig-strike", kind: "trigger.schedule", props: { trigger: { on: "schedule", turn: 2 } }, wires: { out: ["n-ev-strike"] } },
+    { id: "n-ev-strike",   kind: "event.foesStrike", wires: {} },
+    { id: "n-trig-grow",   kind: "trigger.schedule", props: { trigger: { on: "schedule", turn: 3 } }, wires: { out: ["n-ev-grow"] } },
+    { id: "n-ev-grow",     kind: "event.foesGrow", wires: {} }
+  );
+  return c;
+}
+const goldenFull = buildGoldenFull();
+
+module.exports = { golden, goldenFull, goldenLowSupply, goldenAmpleSupply, goldenAuthoredLoss, goldenAuthoredLossFlag, goldenWardedVault, goldenAuthoredLossResource, goldenAuthoredLossSeal, goldenAuthoredLossFoe };

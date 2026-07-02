@@ -2,7 +2,10 @@
 // Runs after L1 (schema) and L2 (reference resolution). Validates:
 //   - entry node id exists in nodes
 //   - every wire target id exists in nodes
-//   - all nodes are reachable from entry (no orphan nodes)
+//   - all nodes are reachable from a graph ROOT (no orphan nodes). Roots are the entry node
+//     plus the engine-fired roots that are entered by the spine rather than by a wire:
+//     trigger.schedule / trigger.onState (end-of-turn event chains) and lifecycle.newQuests
+//     (routed from newMonthCheck at each month rollover).
 //   - skull supply > 0
 //   - no skull.dropTrigger op carries a count (skull invariant, belt-and-suspenders)
 
@@ -31,11 +34,17 @@ export function validateGraph(scenario: unknown): L3Result {
   const entry = str(graph['entry']);
   const rawNodes = arr(graph['nodes']) ?? [];
 
-  // Build id → node map
+  // Build id → node map; collect the engine-fired roots (entered by the spine, not a wire)
+  const ENGINE_ROOT_KINDS = new Set(['trigger.schedule', 'trigger.onState', 'lifecycle.newQuests']);
   const nodeIds = new Set<string>();
+  const engineRoots: string[] = [];
   for (const n of rawNodes) {
-    const id = str(obj(n)?.['id']);
-    if (id) nodeIds.add(id);
+    const node = obj(n);
+    const id = str(node?.['id']);
+    if (!id) continue;
+    nodeIds.add(id);
+    const kind = str(node?.['kind']);
+    if (kind && ENGINE_ROOT_KINDS.has(kind)) engineRoots.push(id);
   }
 
   // Entry must exist
@@ -80,10 +89,10 @@ export function validateGraph(scenario: unknown): L3Result {
     adjacency.set(id, neighbors);
   }
 
-  // Reachability from entry (BFS) — detect orphan nodes
+  // Reachability from the roots (BFS) — detect orphan nodes
   if (entry && nodeIds.has(entry)) {
     const visited = new Set<string>();
-    const queue = [entry];
+    const queue = [entry, ...engineRoots];
     while (queue.length > 0) {
       const cur = queue.shift()!;
       if (visited.has(cur)) continue;

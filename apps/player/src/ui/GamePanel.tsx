@@ -5,16 +5,19 @@ import { fmtStatus } from '../utils';
 import type { ActionChoice } from '../types';
 
 // ---- Action buttons ----
-// The engine's full action vocabulary (RE-Contract §5.3)
+// The engine's full action vocabulary (RE-Contract §5.3 + the full-turn protocol,
+// planning/engine-notes-full-turn.md): the engine's awaiting.options filters what renders.
 const ACTION_BUTTONS: Array<{ id: ActionChoice; label: string }> = [
+  { id: 'banner', label: 'Banner' },
+  { id: 'move', label: 'Move' },
   { id: 'quest', label: 'Quest' },
   { id: 'battle', label: 'Battle' },
   { id: 'cleanse', label: 'Cleanse' },
-  { id: 'reinforce', label: 'Reinforce' },
-  { id: 'move', label: 'Move' },
   { id: 'dungeon', label: 'Dungeon' },
+  { id: 'reinforce', label: 'Reinforce' },
   { id: 'trade', label: 'Trade' },
   { id: 'pass', label: 'Pass' },
+  { id: 'endTurn', label: 'End Turn' },
 ];
 
 // ---- Sub-components ----
@@ -54,12 +57,25 @@ function Stat({ label, value, color }: { label: string; value: string | number; 
 
 // Minimal shape for display (engine state is opaque `unknown` in types)
 interface EngineStateShape {
-  clock?: { month: number; turnInMonth: number };
-  heroes?: Record<string, { warriors: number; spirit: number; corruption: number; advantages: number }>;
+  clock?: {
+    month: number;
+    turnInMonth: number;
+    activeHero?: string;
+    dungeon?: { dungeonId: string; currentRoom: string | null } | null;
+  };
+  heroes?: Record<string, { warriors: number; spirit: number; corruption: number; advantages: number; location?: string | null }>;
   skulls?: { supply: number };
   foes?: Array<{ foeId: string; instanceId: string; location: string | null }>;
-  adversary?: { foeId: string; spawned: boolean; defeated: boolean };
+  adversary?: { foeId: string; spawned: boolean; defeated: boolean; location?: string };
+  buildings?: Array<{ kingdom: string; type: string; location: string; skulls: number; destroyed: boolean }>;
+  activeQuests?: Array<{ questId: string; kind: string; expiresMonth: number }>;
+  quests?: Record<string, { complete: boolean }>;
   outcome?: { status: string; reason: string | null };
+  _lib?: {
+    quests?: Record<string, { id: string; name: string; isMainGoal?: boolean; requirements?: Array<{ label?: string }> }>;
+    dungeons?: Record<string, { rooms?: Array<{ id: string; exits?: Record<string, string> }> }>;
+  };
+  _setup?: { fullTurn?: boolean; monthlyQuestIds?: string[] };
 }
 
 function ActionInput() {
@@ -67,41 +83,169 @@ function ActionInput() {
   const phase = usePlayerStore((s) => s.phase);
   if (phase !== 'playing' || !awaiting) return null;
 
-  if (awaiting.id === 'action') {
-    const allowed = new Set(awaiting.options?.map((o: { id: string }) => o.id) ?? []);
+  if (awaiting.id === 'action') return <ActionMenu options={awaiting.options ?? []} />;
+  if (awaiting.id === 'skullCounter') return <SkullInput />;
+  if (awaiting.id === 'target') return <TargetInput />;
+  if (awaiting.id === 'advantageSpend') return <AdvantageInput />;
+  if (awaiting.id === 'moveTarget') return <MoveInput />;
+  if (awaiting.id === 'dungeonMove') return <DungeonMoveInput />;
+  if (awaiting.id === 'dungeonRoomAdvantage') return <DungeonImproveInput />;
+
+  return (
+    <div style={{ color: 'var(--c-text-muted)', fontSize: 12, marginBottom: 12 }}>
+      Awaiting: <strong>{awaiting.id}</strong>
+    </div>
+  );
+}
+
+function ActionMenu({ options }: { options: Array<{ id: string }> }) {
+  const engineState = usePlayerStore((s) => s.engineState) as EngineStateShape | null;
+  const [pickingQuest, setPickingQuest] = useState(false);
+  const allowed = new Set(options.map((o) => o.id));
+  const fullTurn = allowed.has('endTurn');
+
+  // Full-turn quests need a questId: offer the attemptable library quests
+  // (monthly quests only while issued; completed quests drop out).
+  if (pickingQuest && fullTurn) {
+    const lib = engineState?._lib?.quests ?? {};
+    const monthlyIds = new Set(engineState?._setup?.monthlyQuestIds ?? []);
+    const activeIds = new Set((engineState?.activeQuests ?? []).map((q) => q.questId));
+    const attemptable = Object.values(lib).filter(
+      (q) => !engineState?.quests?.[q.id]?.complete && (!monthlyIds.has(q.id) || activeIds.has(q.id)),
+    );
     return (
       <div style={{ marginBottom: 12 }}>
-        <div style={awaitLabelStyle}>Choose action:</div>
+        <div style={awaitLabelStyle}>Attempt which quest?</div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {ACTION_BUTTONS.filter((b) => !allowed.size || allowed.has(b.id)).map((b) => (
+          {attemptable.map((q) => (
             <button
-              key={b.id}
-              style={actionBtn}
-              onClick={() => handleInput({ requestId: 'action', value: b.id, kind: 'decision' })}
+              key={q.id}
+              style={q.isMainGoal ? { ...actionBtn, borderColor: '#7C3AED', color: '#7C3AED' } : actionBtn}
+              title={(q.requirements ?? []).map((r) => r.label).filter(Boolean).join(' · ')}
+              onClick={() => {
+                setPickingQuest(false);
+                handleInput({ requestId: 'action', value: { choice: 'quest', questId: q.id }, kind: 'decision' });
+              }}
             >
-              {b.label}
+              {q.name}
             </button>
           ))}
+          <button style={actionBtn} onClick={() => setPickingQuest(false)}>
+            Back
+          </button>
         </div>
       </div>
     );
   }
 
-  if (awaiting.id === 'skullCounter') {
-    return <SkullInput />;
-  }
-
-  if (awaiting.id === 'target') {
-    return <TargetInput />;
-  }
-
-  if (awaiting.id === 'advantageSpend') {
-    return <AdvantageInput />;
-  }
-
   return (
-    <div style={{ color: 'var(--c-text-muted)', fontSize: 12, marginBottom: 12 }}>
-      Awaiting: <strong>{awaiting.id}</strong>
+    <div style={{ marginBottom: 12 }}>
+      <div style={awaitLabelStyle}>{fullTurn ? 'Take your turn:' : 'Choose action:'}</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {ACTION_BUTTONS.filter((b) => !allowed.size || allowed.has(b.id)).map((b) => (
+          <button
+            key={b.id}
+            style={b.id === 'endTurn' ? { ...actionBtn, background: 'var(--c-primary)', color: '#fff', borderColor: 'var(--c-primary)' } : actionBtn}
+            onClick={() => {
+              if (b.id === 'quest' && fullTurn) setPickingQuest(true);
+              else handleInput({ requestId: 'action', value: b.id, kind: 'decision' });
+            }}
+          >
+            {b.label}
+          </button>
+        ))}
+        {fullTurn && allowed.has('reinforce') && (
+          <button
+            style={{ ...actionBtn, borderStyle: 'dashed' }}
+            title="Pay the building's spirit cost for its enhanced effect"
+            onClick={() => handleInput({ requestId: 'action', value: { choice: 'reinforce', enhanced: true }, kind: 'decision' })}
+          >
+            Reinforce ✦
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MoveInput() {
+  const engineState = usePlayerStore((s) => s.engineState) as EngineStateShape | null;
+  const [custom, setCustom] = useState('');
+  // Quick destinations: buildings, foe locations, the Tower (adjacency is Board-adapter territory)
+  const spots = new Set<string>();
+  for (const b of engineState?.buildings ?? []) if (!b.destroyed) spots.add(b.location);
+  for (const f of engineState?.foes ?? []) if (f.location) spots.add(f.location);
+  if (engineState?.adversary?.spawned && engineState.adversary.location) spots.add(engineState.adversary.location);
+  spots.add('the-tower');
+  const go = (to: string) => handleInput({ requestId: 'moveTarget', value: { to }, kind: 'decision' });
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={awaitLabelStyle}>Move to:</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+        {[...spots].map((loc) => (
+          <button key={loc} style={actionBtn} onClick={() => go(loc)}>
+            {loc}
+          </button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          value={custom}
+          placeholder="…or any board space"
+          onChange={(e) => setCustom(e.target.value)}
+          style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--c-border-strong)', borderRadius: 5, fontSize: 13,
+                   background: 'var(--c-surface-raised)', color: 'var(--c-text)' }}
+        />
+        <button style={actionBtn} disabled={!custom.trim()} onClick={() => go(custom.trim())}>
+          Go
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DungeonMoveInput() {
+  const engineState = usePlayerStore((s) => s.engineState) as EngineStateShape | null;
+  const dc = engineState?.clock?.dungeon;
+  const room = dc
+    ? engineState?._lib?.dungeons?.[dc.dungeonId]?.rooms?.find((r) => r.id === dc.currentRoom)
+    : undefined;
+  const doors = (['N', 'E', 'S', 'W'] as const).filter((d) => room?.exits?.[d] === 'door');
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={awaitLabelStyle}>Dungeon — move through a door or leave:</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {doors.map((d) => (
+          <button key={d} style={actionBtn}
+            onClick={() => handleInput({ requestId: 'dungeonMove', value: { direction: d }, kind: 'decision' })}>
+            {d === 'N' ? '↑ North' : d === 'E' ? '→ East' : d === 'S' ? '↓ South' : '← West'}
+          </button>
+        ))}
+        <button style={{ ...actionBtn, color: 'var(--c-danger)' }}
+          onClick={() => handleInput({ requestId: 'dungeonMove', value: { leave: true }, kind: 'decision' })}>
+          Leave dungeon
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DungeonImproveInput() {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={awaitLabelStyle}>Spend 1 Advantage to improve this room? (once per room)</div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button
+          style={{ ...actionBtn, background: 'var(--c-success)', color: '#fff', borderColor: 'var(--c-success)' }}
+          onClick={() => handleInput({ requestId: 'dungeonRoomAdvantage', value: { improve: true }, kind: 'decision' })}
+        >
+          Improve
+        </button>
+        <button style={actionBtn}
+          onClick={() => handleInput({ requestId: 'dungeonRoomAdvantage', value: { improve: false }, kind: 'decision' })}>
+          Skip
+        </button>
+      </div>
     </div>
   );
 }

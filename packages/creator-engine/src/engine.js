@@ -13,7 +13,7 @@
 
 const pcg32 = require("./pcg32");
 
-const ENGINE_VERSION = "0.2.0";
+const ENGINE_VERSION = "0.3.0";
 const SUPPORTED_SCHEMA_RANGE = ">=0.4.0 <0.5.0"; // semver-range, same-minor pre-1.0 (§8)
 
 // The four board kingdoms in canonical clockwise order (schema $defs/kingdom). Seating, home-kingdom
@@ -159,9 +159,12 @@ function applyEffect(eff, state, directives) {
     }
     case "adversary.spawn":
       state.adversary.spawned = true;
-      dir(directives, "board.mutate", { command: "spawnAdversary", args: { foeId: state.adversary.foeId } });
+      // the adversary spawns ON the board (rules.md §Completing the Main Goal) — at the authored
+      // location, defaulting to the Tower space; heroes must reach it for the final battle.
+      state.adversary.location = eff.location || "the-tower";
+      dir(directives, "board.mutate", { command: "spawnAdversary", args: { foeId: state.adversary.foeId, location: state.adversary.location } });
       dir(directives, "tower.program", { ops: [{ channel: "light.named", sequenceId: "adversaryReveal" }] });
-      ui({ adversarySpawned: true }); raiseEvent(state, directives, "adversarySpawned"); break;
+      ui({ adversarySpawned: true, adversaryLocation: state.adversary.location }); raiseEvent(state, directives, "adversarySpawned"); break;
     // ----- tokens & counters -----
     case "token.place":
       state.tokens.push({ tokenTypeId: eff.tokenTypeId, target: eff.target });
@@ -204,8 +207,10 @@ function applyEffect(eff, state, directives) {
     case "building.destroy": {
       state.skulls.supply += 1; // the 4th skull returns to supply
       dir(directives, "board.mutate", { command: "removeBuilding", args: { location: eff.location } });
+      raiseEvent(state, directives, "buildingDestroyed");
       const kingdom = eff.kingdom; const dormant = state.kingdoms.dormant.includes(kingdom);
-      if (!dormant) gainCorruption(state, directives, "building-destroyed"); break; // home owner only (none if dormant)
+      // the hero whose home kingdom lost the building gains the corruption (none if dormant)
+      if (!dormant) gainCorruption(state, directives, "building-destroyed", kingdom && state.kingdoms.ownership[kingdom]); break;
     }
     case "skull.modifySupply":
       state.skulls.supply += eff.delta; ui({ supply: state.skulls.supply }); break;
@@ -252,11 +257,12 @@ function applyEffect(eff, state, directives) {
   }
 }
 
-function gainCorruption(state, directives, source) {
-  const hero = state.heroes[state.clock.activeHero];
+function gainCorruption(state, directives, source, heroId) {
+  const who = heroId || state.clock.activeHero;
+  const hero = state.heroes[who];
   hero.corruption += 1;
   dir(directives, "ui.prompt", { kind: "reveal", text: "Corruption drawn (" + source + ")" });
-  dir(directives, "ui.update", { delta: { hero: state.clock.activeHero, corruption: hero.corruption } });
+  dir(directives, "ui.update", { delta: { hero: who, corruption: hero.corruption } });
   raiseEvent(state, directives, "corruptionGained");
   if (hero.corruption >= 3) loseGame(state, directives, "third-corruption"); // §3.1 / §4.3
 }
@@ -265,6 +271,26 @@ function completeQuest(state, directives, questId) {
   state.quests[questId] = { complete: true };
   dir(directives, "log.entry", { event: "questComplete", questId });
   raiseEvent(state, directives, "questComplete");
+  // full-turn scenarios apply the quest's authored success outcomes on completion, wherever the
+  // completion came from (the quest action, a dungeon's spawning quest, …). Legacy stays inert.
+  if (state._setup && state._setup.fullTurn) {
+    const qdef = (state._lib.quests || {})[questId];
+    for (const e of (((qdef || {}).outcomes || {}).success || [])) {
+      applyEffect(e, state, directives);
+      if (state.outcome.status !== "running") return;
+    }
+  }
+  // a companion quest grants its companion to the acting hero (rules.md §Monthly Quests)
+  for (const cid of Object.keys(state._lib.companions || {})) {
+    if ((state._lib.companions[cid] || {}).grantedByQuestId === questId) {
+      const hero = state.heroes[state.clock.activeHero];
+      if (hero && !hero.companions.includes(cid)) {
+        hero.companions.push(cid);
+        dir(directives, "ui.update", { delta: { hero: state.clock.activeHero, companions: hero.companions.slice() } });
+        dir(directives, "log.entry", { event: "companionGained", companion: cid });
+      }
+    }
+  }
   const q = (state._lib.quests || {})[questId];
   if (q && q.isMainGoal) {
     state.mainGoalComplete = true;
@@ -274,7 +300,15 @@ function completeQuest(state, directives, questId) {
   }
 }
 
-function raiseEvent(state, directives, event) { dir(directives, "log.entry", { event }); /* onState bus stub */ }
+function raiseEvent(state, directives, event) {
+  dir(directives, "log.entry", { event });
+  // onState bus: remember raised events until the next end-of-turn boundary consumes them
+  // (only when the scenario authors onState triggers — legacy state stays untouched).
+  if ((state._triggers || []).some(t => (t.trigger || {}).on === "onState")) {
+    if (!state.clock.pendingEvents) state.clock.pendingEvents = [];
+    if (!state.clock.pendingEvents.includes(event)) state.clock.pendingEvents.push(event);
+  }
+}
 
 function loseGame(state, directives, reason) {
   state.outcome = { status: "lost", reason };
@@ -375,6 +409,9 @@ function completeDungeon(state, directives) {
   if (d.spawningQuestId) completeQuest(state, directives, d.spawningQuestId); // fires questComplete (§4.4)
   const ret = dc.completed; state.clock.dungeon = null;
   if (state.outcome.status !== "running") return { terminal: true };
+  // full turn: dungeon exploration is the quest heroic action — completed → +2 spirit
+  if (state._setup && state._setup.fullTurn) awardHeroic(state, directives);
+  if (state.outcome.status !== "running") return { terminal: true };
   return { goto: ret };
 }
 
@@ -434,13 +471,34 @@ function interpretNode(node, state, directives) {
     }
     case "lifecycle.playerTurn":
       state.clock.turnInMonth += 1;
+      state.clock.globalTurn = (state.clock.globalTurn || 0) + 1;
       resetLatches(state);
       dir(directives, "log.entry", { event: "playerTurn", month: state.clock.month, turn: state.clock.turnInMonth });
       return { goto: next };
     case "lifecycle.actionStart":
       return { goto: next };
     case "lifecycle.actionMiddle": {
-      // INPUT BOUNDARY: the player chooses & performs their action this turn (§5.1 choice).
+      // INPUT BOUNDARY: the player chooses & performs their action(s) (§5.1 choice).
+      if (state._setup && state._setup.fullTurn) {
+        // FULL TURN (rules.md §Taking Your Turn): optional banner + move + ONE heroic action
+        // (quest / cleanse / battle / dungeon) + reinforce + trade, in any order, each at most
+        // once per turn; End Turn proceeds to the mandatory skull drop. Performed actions loop
+        // back here; the option list shrinks as the per-turn latches are spent.
+        const L = state.clock.latches;
+        const options = [];
+        if (!L.bannerUsed) options.push("banner");
+        if (!L.moveUsed && state._spine.moveEntry) options.push("move");
+        if (!L.heroicActionUsed) {
+          options.push("quest", "cleanse");
+          if (state._spine.battleEntry) options.push("battle");
+          if (state._spine.dungeonEntry) options.push("dungeon");
+        }
+        if (!L.reinforceUsed) options.push("reinforce");
+        if (!L.tradeUsed && state._spine.tradeEntry) options.push("trade");
+        options.push("endTurn");
+        dir(directives, "ui.prompt", { kind: "choice", requestId: "action", text: "Take your turn", options });
+        return { await: { request: { id: "action", kind: "choice", options: options.map(id => ({ id })) } } };
+      }
       dir(directives, "ui.prompt", { kind: "choice", requestId: "action", text: "Choose your action",
         options: ["quest", "cleanse", "battle", "pass"] });
       return { await: { request: { id: "action", kind: "choice",
@@ -454,14 +512,51 @@ function interpretNode(node, state, directives) {
       dir(directives, "tower.program", { ops: [{ channel: "skull.dropTrigger" }] }); // NEVER a count (skull invariant)
       dir(directives, "ui.update", { delta: { supply: state.skulls.supply } });
       return { await: { request: { id: "skullCounter", kind: "observed", observed: "skullCounter" } } };
-    case "lifecycle.newMonthCheck":
-      // New Quests for months 2+ (companion reward / adversary advances on failure) — compact.
-      if (state.clock.month >= 2 && !state.mainGoalComplete) {
+    case "lifecycle.newMonthCheck": {
+      // Monthly-quest expiry (rules.md §Monthly Quests): quests fail if not completed by month end;
+      // a failed adversary quest lets the adversary advance (its authored outcomes.failure).
+      if (state.activeQuests && state.activeQuests.length) {
+        const remaining = [];
+        for (const aq of state.activeQuests) {
+          if ((state.quests[aq.questId] || {}).complete) continue;
+          if (aq.expiresMonth <= state.clock.month) {
+            dir(directives, "log.entry", { event: "questFailed", questId: aq.questId, kind: aq.kind });
+            const q = (state._lib.quests || {})[aq.questId];
+            for (const e of (((q || {}).outcomes || {}).failure || [])) {
+              applyEffect(e, state, directives);
+              if (state.outcome.status !== "running") return { terminal: true };
+            }
+          } else remaining.push(aq);
+        }
+        state.activeQuests = remaining;
+      }
+      // compact adversary-quest progress, kept for scenarios WITHOUT an authored newQuests node
+      if (!state._spine.newQuests && state.clock.month >= 2 && !state.mainGoalComplete) {
         state.adversary.questProgress = (state.adversary.questProgress || 0) + 1;
         dir(directives, "log.entry", { event: "newQuests", adversaryQuestProgress: state.adversary.questProgress });
       }
-      // Engine sequencing (§4.5): after month 6, evaluate end-game; else start the next month.
-      return { goto: state.clock.month >= 6 ? state._spine.endEval : state._spine.startMonth };
+      // Engine sequencing (§4.5): after month 6, evaluate end-game; else issue the next month's
+      // quests (if authored) and start the next month.
+      if (state.clock.month >= 6) return { goto: state._spine.endEval };
+      return { goto: state._spine.newQuests || state._spine.startMonth };
+    }
+    case "lifecycle.newQuests": {
+      // Issue the upcoming month's companion + adversary quests (months 2+; rules.md §Monthly Quests).
+      const upcoming = state.clock.month + 1;
+      const monthly = (((node.props || {}).monthly) || {})[String(upcoming)];
+      if (monthly) {
+        if (!state.activeQuests) state.activeQuests = [];
+        for (const kind of ["companion", "adversary"]) {
+          const qid = monthly[kind];
+          if (qid && !(state.quests[qid] || {}).complete) {
+            state.activeQuests.push({ questId: qid, kind, expiresMonth: upcoming });
+            dir(directives, "log.entry", { event: "newQuest", kind, questId: qid, month: upcoming });
+            dir(directives, "ui.update", { delta: { activeQuests: state.activeQuests.slice() } });
+          }
+        }
+      }
+      return { goto: next };
+    }
     case "lifecycle.gameEnd":
       // Reached after month 6 (or via win route). If adversary defeated → win; else loss (out of time).
       if (state.adversary.defeated) { winGame(state, directives, "adversary-defeated"); return { terminal: true }; }
@@ -561,13 +656,144 @@ function interpretNode(node, state, directives) {
       if (!blocked) throw fault("cond.glyphGate blocked but no 'blocked' port at " + node.id);
       return { goto: blocked };
     }
+    // ----- end-of-turn events (rules.md §Events) — chain roots fired via the event queue -----
+    case "trigger.schedule":
+    case "trigger.onState":
+      return { goto: next };
+    case "event.foesStrike": {
+      // each foe on the board strikes the acting hero with its authored strike effects
+      // (skipped per foe type not on the board); movement beyond `scripted` needs Board adjacency.
+      const filter = (node.props || {}).foeIds;
+      for (const f of state.foes.slice()) {
+        if (filter && !filter.includes(f.foeId)) continue;
+        const def = (state._lib.foes || {})[f.foeId] || {};
+        dir(directives, "log.entry", { event: "foeStrike", foeId: f.foeId, location: f.location, status: f.status });
+        for (const e of ((def.strike || {}).effects || [])) {
+          applyEffect(e, state, directives);
+          if (state.outcome.status !== "running") return { terminal: true };
+        }
+      }
+      for (const mv of ((node.props || {}).moves || []))
+        applyEffect({ op: "foe.move", foeId: mv.foeId, to: mv.to }, state, directives);
+      return { goto: next };
+    }
+    case "event.foesGrow": {
+      const steps = (node.props || {}).steps || 1;
+      for (const f of state.foes)
+        f.status = FOE_LADDER[Math.min(FOE_LADDER.length - 1, FOE_LADDER.indexOf(f.status) + steps)];
+      dir(directives, "log.entry", { event: "foesGrow", foes: state.foes.map(f => ({ foeId: f.foeId, status: f.status })) });
+      return { goto: next };
+    }
+    case "event.foesSpawn": {
+      for (const sp of ((node.props || {}).spawns || []))
+        applyEffect({ op: "foe.spawn", foeId: sp.foeId, location: sp.location, status: sp.status }, state, directives);
+      return { goto: next };
+    }
+    case "event.towerStirs": {
+      dir(directives, "tower.program", { ops: [{ channel: "drum.rotate", level: (node.props || {}).level || "top" }] });
+      recomputeGlyphFacing(state);
+      if ((node.props || {}).removeSeal) applyEffect({ op: "seal.remove" }, state, directives);
+      dir(directives, "log.entry", { event: "towerStirs" });
+      return { goto: next };
+    }
+    case "event.towerActs": {
+      dir(directives, "log.entry", { event: "towerActs" });
+      for (const e of ((node.props || {}).effects || [])) {
+        applyEffect(e, state, directives);
+        if (state.outcome.status !== "running") return { terminal: true };
+      }
+      return { goto: next };
+    }
+    case "event.newWares":
+      applyEffect({ op: "market.refresh", cards: (node.props || {}).cards }, state, directives);
+      dir(directives, "log.entry", { event: "newWares" });
+      return { goto: next };
+    case "event.companion": {
+      const cid = (node.props || {}).companionId;
+      if (cid) {
+        const hero = state.heroes[state.clock.activeHero];
+        if (!hero.companions.includes(cid)) hero.companions.push(cid);
+        dir(directives, "ui.update", { delta: { hero: state.clock.activeHero, companions: hero.companions.slice() } });
+      }
+      dir(directives, "log.entry", { event: "companionEvent", companion: cid });
+      return { goto: next };
+    }
+    case "event.readAloud":
+      dir(directives, "media.play", { media: "narration", text: (node.props || {}).text });
+      return { goto: next };
+    case "event.router": {
+      const outs = (node.wires && node.wires.out) || [];
+      if (!outs.length) return {};
+      const rng = pcg32.deserialize(state.rng);
+      const pick = pcg32.nextRange(rng, 0, outs.length - 1);
+      state.rng = pcg32.serialize(rng);
+      return { goto: outs[pick] };
+    }
     default:
       throw fault("node kind not implemented in MVP slice: " + node.kind);
   }
 }
 
 function resetLatches(state) {
-  state.clock.latches = { bannerUsed: false, heroicActionUsed: false, reinforceUsed: false, tradeUsed: false, itemLock: false };
+  state.clock.latches = { bannerUsed: false, moveUsed: false, heroicActionUsed: false, reinforceUsed: false, tradeUsed: false, itemLock: false };
+}
+
+// ---- full-turn heroic-action bookkeeping (rules.md §Heroic Actions) ----
+// ONE heroic action per turn; completing one awards 2 spirit. The latch is taken when the heroic
+// action starts (battle/dungeon subflow entry, quest/cleanse resolution); the reward fires on
+// completion (a retreat abandons the battle heroic action and forfeits the reward).
+function markHeroic(state) {
+  if (state.clock.latches.heroicActionUsed) throw fault("heroic action already used this turn");
+  state.clock.latches.heroicActionUsed = true;
+}
+function awardHeroic(state, directives) {
+  applyEffect({ op: "resource.gain", resource: "spirit", amount: 2 }, state, directives);
+  dir(directives, "log.entry", { event: "heroicActionComplete", hero: state.clock.activeHero });
+}
+function buildingAt(state, location) {
+  return (state.buildings || []).find(b => b.location === location);
+}
+function capacityOf(state, b) {
+  const def = (state._lib.buildingTypes || {})[b.type];
+  return (def && def.skullCapacity) || 3; // 3 sit, the 4th destroys (schema-pinned)
+}
+// Resolve where an emergent skull lands: the observed placement if given, else a deterministic
+// spread over standing buildings of ACTIVE kingdoms (dormant kingdoms redirect — schema
+// dormantKingdoms.skullRedirect "nearestActive"): least-loaded first, registry order tie-break.
+function pickBuildingForSkull(state, placement) {
+  if (placement) {
+    const b = (state.buildings || []).find(x => !x.destroyed && x.kingdom === placement.kingdom
+      && (placement.type ? x.type === placement.type : true)
+      && (placement.location ? x.location === placement.location : true));
+    if (!b) throw fault("skull placement names no standing building: " + JSON.stringify(placement));
+    return b;
+  }
+  const dormant = state.kingdoms.dormant || [];
+  const candidates = (state.buildings || []).filter(b => !b.destroyed && !dormant.includes(b.kingdom));
+  if (!candidates.length) return null;
+  return candidates.reduce((best, b) => (b.skulls < best.skulls ? b : best), candidates[0]);
+}
+// End-of-turn event triggers (rules.md §Events): schedule triggers match the clock; onState
+// triggers match events raised since the last boundary. Order is graph order (deterministic).
+function collectDueEvents(state) {
+  const due = [];
+  const pend = state.clock.pendingEvents || [];
+  for (const t of (state._triggers || [])) {
+    const tr = t.trigger || {};
+    if (tr.on === "schedule") {
+      const m = state.clock.month, turn = state.clock.turnInMonth;
+      let fire = false;
+      if (tr.month != null && tr.turn != null) fire = m === tr.month && turn === tr.turn;
+      else if (tr.month != null) fire = m === tr.month && turn === 1;
+      else if (tr.turn != null) fire = turn === tr.turn;
+      else if (tr.everyNTurns != null) fire = ((state.clock.globalTurn || 0) % tr.everyNTurns) === 0;
+      if (fire && t.next) due.push(t.next);
+    } else if (tr.on === "onState") {
+      if (tr.event && pend.includes(tr.event) && t.next) due.push(t.next);
+    }
+  }
+  state.clock.pendingEvents = [];
+  return due;
 }
 
 // End Turn (§4.5 step 5 / catalog §132 "advances clockwise turn order"): hand the active seat to the
@@ -589,14 +815,26 @@ function resume(pending, state, input, directives) {
   const next = (node.wires && node.wires.out) ? node.wires.out[0] : undefined;
   switch (pending.request.id) {
     case "action": {
-      const choice = input.value; // quest | cleanse | reinforce | pass | battle | trade | move
-      if (choice === "battle" && state._spine.battleEntry) return { goto: state._spine.battleEntry };
-      if (choice === "trade" && state._spine.tradeEntry) return { goto: state._spine.tradeEntry };
-      if (choice === "move" && state._spine.moveEntry) return { goto: state._spine.moveEntry };
-      if (choice === "dungeon" && state._spine.dungeonEntry) return { goto: state._spine.dungeonEntry };
-      performAction(choice, state, directives);
+      // legacy: a bare string choice; full-turn protocol: { choice, ...args } (e.g. questId, enhanced)
+      const raw = input.value;
+      const choice = typeof raw === "string" ? raw : (raw || {}).choice;
+      const args = raw && typeof raw === "object" ? raw : {};
+      const full = state._setup && state._setup.fullTurn;
+      if (choice === "battle" && state._spine.battleEntry) { if (full) markHeroic(state); return { goto: state._spine.battleEntry }; }
+      if (choice === "trade" && state._spine.tradeEntry) {
+        if (full && state.clock.latches.tradeUsed) throw fault("trade already used this turn");
+        return { goto: state._spine.tradeEntry };
+      }
+      if (choice === "move" && state._spine.moveEntry) {
+        if (full && state.clock.latches.moveUsed) throw fault("move already used this turn");
+        return { goto: state._spine.moveEntry };
+      }
+      if (choice === "dungeon" && state._spine.dungeonEntry) { if (full) markHeroic(state); return { goto: state._spine.dungeonEntry }; }
+      if (full && choice === "endTurn") return { goto: next }; // proceed to the mandatory skull drop
+      performAction(choice, state, directives, args);
       if (state.outcome.status !== "running") return { terminal: true };
-      return { goto: next };
+      // full turn: performed actions return to Action: Middle for the next pick (rules.md §Middle of Turn)
+      return { goto: full ? state._spine.actionMiddle : next };
     }
     case "target": { // battle.selectFoe — choose the foe (or adversary) and draw cards = level
       startBattle(state, directives, input.value || {});
@@ -614,6 +852,7 @@ function resume(pending, state, input, directives) {
     case "moveTarget": { // action.move — split-move allowed; Board validates the path
       const moveTo = (input.value || {}).to;
       if (moveTo != null) state.heroes[state.clock.activeHero].location = moveTo;
+      state.clock.latches.moveUsed = true; // one Move step per turn (rules.md §Middle of Turn)
       dir(directives, "board.mutate", { command: "moveHero", args: { hero: state.clock.activeHero, to: moveTo } });
       return { goto: next };
     }
@@ -633,7 +872,13 @@ function resume(pending, state, input, directives) {
     case "dungeonMove": { // dungeon.room — move through a door (directional wire) or leave (catalog §5)
       const dc = state.clock.dungeon; if (!dc) throw fault("dungeonMove with no active dungeon");
       const v = input.value || {};
-      if (v.leave) { const left = dc.left; state.clock.dungeon = null; dir(directives, "log.entry", { event: "dungeonLeft", dungeon: dc.dungeonId }); return { goto: left }; }
+      if (v.leave) {
+        const left = dc.left; state.clock.dungeon = null;
+        dir(directives, "log.entry", { event: "dungeonLeft", dungeon: dc.dungeonId });
+        // full turn: leaving still completes the quest heroic action (rooms were explored) → +2 spirit
+        if (state._setup && state._setup.fullTurn) { awardHeroic(state, directives); if (state.outcome.status !== "running") return { terminal: true }; }
+        return { goto: left };
+      }
       const d4 = v.direction; // "N"|"E"|"S"|"W"
       const room = roomOf(state, dc, dc.currentRoom);
       if ((room.exits || {})[d4] !== "door") throw fault("dungeonMove: no door " + d4 + " from room " + dc.currentRoom);
@@ -642,34 +887,91 @@ function resume(pending, state, input, directives) {
       return { goto: tgt };
     }
     case "skullCounter": {
-      // observed emergence count enters the canonical stream (§5.4). Place emergent skulls.
-      const count = input.value | 0;
+      // observed emergence enters the canonical stream (§5.4): a bare count (legacy), or
+      // { count, placements: [{ kingdom, type }] } — the app names the buildings the skulls landed
+      // on (rules.md §Placing Skulls); the COUNT is always tower-determined, never engine-dictated.
+      const raw = input.value;
+      const isObj = raw !== null && typeof raw === "object";
+      const count = (isObj ? raw.count : raw) | 0;
+      const placements = isObj ? (raw.placements || []) : [];
       dir(directives, "log.entry", { event: "emergence", count });
+      const registry = (state.buildings || []).length > 0;
       for (let i = 0; i < count; i++) {
-        // each emergent skull lands in a kingdom; a 4th-in-building destroys it → home owner corruption.
-        // compact model: track skullsOnBoard; every 4th adds a corruption to the active hero.
         state.skulls.onBoard = (state.skulls.onBoard || 0) + 1;
-        dir(directives, "board.mutate", { command: "placeSkull", args: { source: "emergence" } });
-        if (state.skulls.onBoard % 4 === 0) {
-          dir(directives, "board.mutate", { command: "removeBuilding", args: {} });
-          gainCorruption(state, directives, "building-destroyed");
-          if (state.outcome.status !== "running") return { terminal: true };
+        if (registry) {
+          // per-building model: each skull lands on a standing building; a building's 4th skull
+          // destroys it — its 3 skulls leave the game, the 4th returns to supply, and the owning
+          // kingdom's hero gains a corruption (rules.md §Placing Skulls).
+          const b = pickBuildingForSkull(state, placements[i]);
+          if (b) {
+            b.skulls += 1;
+            dir(directives, "board.mutate", { command: "placeSkull", args: { source: "emergence", kingdom: b.kingdom, type: b.type, location: b.location } });
+            const cap = capacityOf(state, b);
+            if (b.skulls > cap) {
+              b.destroyed = true;
+              state.skulls.onBoard = Math.max(0, state.skulls.onBoard - b.skulls); // 3 out of the game + the 4th back to supply
+              b.skulls = 0;
+              applyEffect({ op: "building.destroy", kingdom: b.kingdom, location: b.location }, state, directives);
+              if (state.outcome.status !== "running") return { terminal: true };
+            }
+          } else {
+            dir(directives, "board.mutate", { command: "placeSkull", args: { source: "emergence" } }); // no standing building left
+          }
+        } else {
+          // compact legacy model: every 4th emergent skull anywhere destroys a building → active hero corruption.
+          dir(directives, "board.mutate", { command: "placeSkull", args: { source: "emergence" } });
+          if (state.skulls.onBoard % 4 === 0) {
+            dir(directives, "board.mutate", { command: "removeBuilding", args: {} });
+            gainCorruption(state, directives, "building-destroyed");
+            if (state.outcome.status !== "running") return { terminal: true };
+          }
         }
       }
-      // Engine sequencing (§4.5): End Turn advances clockwise turn order (catalog §132), then hands to
-      // New Month Check at month-end or starts the next turn this month.
-      rotateActiveHero(state);
+      // Engine sequencing (§4.5): resolve end-of-turn events (rules.md §Events), then End Turn
+      // advances clockwise turn order (catalog §132) and hands to New Month Check at month-end
+      // or starts the next turn this month.
       const endOfMonth = state.clock.turnInMonth >= state.clock.turnsThisMonth;
-      return { goto: endOfMonth ? state._spine.newMonthCheck : state._spine.playerTurn };
+      const target = endOfMonth ? state._spine.newMonthCheck : state._spine.playerTurn;
+      if ((state._triggers || []).length) {
+        const due = collectDueEvents(state);
+        if (due.length) {
+          state.clock.eventQueue = due.slice(1);
+          state.clock.afterEvents = { target, rotate: true };
+          return { goto: due[0] };
+        }
+      }
+      rotateActiveHero(state);
+      return { goto: target };
     }
     default: throw fault("no resume handler for " + pending.request.id);
   }
 }
 
-function performAction(choice, state, directives) {
+function performAction(choice, state, directives, args) {
+  const full = state._setup && state._setup.fullTurn;
+  const a = args || {};
   switch (choice) {
     case "quest": {
-      // advance the main goal; complete it when progress hits the threshold
+      if (full) {
+        // rules.md §Completing a Quest: be at the quest's location and meet its requirements;
+        // success applies the authored outcomes, completes the quest, and pays the heroic reward.
+        markHeroic(state);
+        const questId = a.questId;
+        if (!questId) throw fault("quest action requires a questId (full-turn protocol)");
+        const q = (state._lib.quests || {})[questId];
+        if (!q) throw fault("unknown quest: " + questId);
+        if ((state.quests[questId] || {}).complete) throw fault("quest already complete: " + questId);
+        if ((state._setup.monthlyQuestIds || []).includes(questId)
+            && !(state.activeQuests || []).some(x => x.questId === questId))
+          throw fault("monthly quest is not currently active: " + questId);
+        for (const r of (q.requirements || []))
+          if (!evalCondition(r.condition, state)) throw fault("quest requirement not met: " + (r.label || questId));
+        completeQuest(state, directives, questId); // applies the authored success outcomes (full-turn)
+        if (state.outcome.status !== "running") return;
+        awardHeroic(state, directives);
+        break;
+      }
+      // legacy: advance the main goal; complete it when progress hits the threshold
       state.counters.goalProgress = (state.counters.goalProgress || 0) + 1;
       dir(directives, "ui.update", { delta: { goalProgress: state.counters.goalProgress } });
       if (state.counters.goalProgress >= state._setup.goalThreshold && !state.mainGoalComplete) {
@@ -677,12 +979,62 @@ function performAction(choice, state, directives) {
       }
       break;
     }
-    case "cleanse": applyEffect({ op: "corruption.remove", count: 1 }, state, directives); break;
-    case "reinforce": // once per turn (§4.1 latch); gain warriors
+    case "cleanse": {
+      if (full) {
+        // rules.md §Heroic Actions A: remove ALL skulls from the building on your space,
+        // returning them to the supply (cannot cleanse a space without skulls).
+        markHeroic(state);
+        const hero = state.heroes[state.clock.activeHero];
+        const b = buildingAt(state, hero.location);
+        if (!b || b.destroyed) throw fault("cleanse: no standing building at " + (hero.location || "(nowhere)"));
+        if (b.skulls <= 0) throw fault("cleanse: no skulls on the building at " + hero.location);
+        const removed = b.skulls;
+        b.skulls = 0;
+        state.skulls.supply += removed;
+        state.skulls.onBoard = Math.max(0, state.skulls.onBoard - removed);
+        dir(directives, "board.mutate", { command: "removeSkull", args: { count: removed, location: b.location } });
+        dir(directives, "ui.update", { delta: { supply: state.skulls.supply } });
+        awardHeroic(state, directives);
+        break;
+      }
+      applyEffect({ op: "corruption.remove", count: 1 }, state, directives); break;
+    }
+    case "reinforce": { // once per turn (§4.1 latch)
       if (state.clock.latches.reinforceUsed) throw fault("reinforce already used this turn");
       state.clock.latches.reinforceUsed = true;
+      if (full) {
+        // rules.md §Reinforce / buildings.md: use the building on your space — its free effect,
+        // or the enhanced effect after paying the spirit cost ({ enhanced: true } in the decision).
+        const hero = state.heroes[state.clock.activeHero];
+        const b = buildingAt(state, hero.location);
+        if (!b) throw fault("reinforce: no building at " + (hero.location || "(nowhere)"));
+        if (b.destroyed) throw fault("reinforce: the building at " + hero.location + " is destroyed");
+        const def = (state._lib.buildingTypes || {})[b.type];
+        if (!def) throw fault("reinforce: no buildingType definition for " + b.type);
+        const effects = a.enhanced ? def.enhanced.effects : def.free;
+        if (a.enhanced)
+          applyEffect({ op: "resource.spend", resource: def.enhanced.cost.resource || "spirit", amount: def.enhanced.cost.amount }, state, directives);
+        for (const e of (effects || [])) {
+          applyEffect(e, state, directives);
+          if (state.outcome.status !== "running") return;
+        }
+        dir(directives, "log.entry", { event: "reinforce", building: b.type, location: b.location, enhanced: !!a.enhanced });
+        break;
+      }
       applyEffect({ op: "resource.gain", resource: "warriors", amount: 2 }, state, directives); break;
-    case "pass": break;
+    }
+    case "banner": {
+      // rules.md §Start of Turn: the optional per-turn banner action. The hero-specific ability
+      // body is injected content (D2-blocked) — the engine owns only the once-per-turn latch.
+      if (!full) throw fault("unknown action choice: banner");
+      if (state.clock.latches.bannerUsed) throw fault("banner already used this turn");
+      state.clock.latches.bannerUsed = true;
+      dir(directives, "log.entry", { event: "bannerAction", hero: state.clock.activeHero });
+      break;
+    }
+    case "pass":
+      if (full) throw fault("unknown action choice: pass (use endTurn in the full-turn protocol)");
+      break;
     default: throw fault("unknown action choice: " + choice);
   }
 }
@@ -692,8 +1044,23 @@ function performAction(choice, state, directives) {
 function startBattle(state, directives, sel) {
   const isAdversary = sel.foeId === state.adversary.foeId || sel.adversary === true;
   const foeId = isAdversary ? state.adversary.foeId : sel.foeId;
-  const def = (state._lib.battleDefs || {})[foeId] || { cards: [] };
-  const level = isAdversary ? 5 : (((state._lib.foes || {})[foeId] || {}).level || 2);
+  const def = (state._lib.battleDefs || {})[foeId];
+  // a battle with no authored cards would "clear" instantly (0 of 0) — fail loudly instead
+  if (!def || !(def.cards || []).length) throw fault("foe '" + foeId + "' has no authored battleDef cards");
+  if (state._setup && state._setup.fullTurn) {
+    // rules.md §Battle: you battle a foe ON YOUR SPACE; the adversary must be reached on the board.
+    const hero = state.heroes[state.clock.activeHero];
+    if (isAdversary) {
+      if (!state.adversary.spawned) throw fault("battle: the adversary has not spawned (complete the main goal first)");
+      if (state.adversary.location !== hero.location) throw fault("battle: the adversary is at " + state.adversary.location + ", not on your space");
+    } else if (!state.foes.some(f => f.foeId === foeId && f.location === hero.location)) {
+      throw fault("battle: no " + foeId + " on your space (" + (hero.location || "nowhere") + ")");
+    }
+  }
+  // level = cards drawn (rules): adversary 5; foes by selection tier (tier1→2, tier2→3, tier3→4);
+  // the _lib.foes level read remains as the fallback for direct __internals test states.
+  const level = isAdversary ? 5
+    : (((state._setup || {}).foeTiers || {})[foeId] || ((state._lib.foes || {})[foeId] || {}).level || 2);
   // draw `level` cards deterministically from the authored card pool (cycle if fewer)
   const pool = def.cards.slice();
   shuffleInPlace(pool, state);
@@ -734,6 +1101,8 @@ function resolveBattle(state, directives, decision) {
   } else if (state.outcome.status === "running") {
     applyEffect({ op: "foe.escalateStatus", foeId: b.foeId }, state, directives);
   }
+  // full turn: the battle heroic action is complete (all cards resolved) → +2 spirit (rules.md §100)
+  if (state._setup && state._setup.fullTurn && state.outcome.status === "running") awardHeroic(state, directives);
   state.clock.battle = null;
 }
 
@@ -741,6 +1110,11 @@ function resolveBattle(state, directives, decision) {
 function applyTrade(state, directives, t) {
   const from = state.heroes[t.from], to = state.heroes[t.to];
   if (!from || !to) throw fault("trade references unknown hero");
+  if (state._setup && state._setup.fullTurn) {
+    // rules.md §Making Trades: once per turn, with heroes on your space
+    if (state.clock.latches.tradeUsed) throw fault("trade already used this turn");
+    if (from.location !== to.location) throw fault("trade requires heroes on the same space");
+  }
   const move = (giver, taker, asset) => {
     switch (asset.asset) {
       case "warriors": case "spirit":
@@ -778,7 +1152,19 @@ function run(state, directives) {
     const r = interpretNode(node, state, directives);
     if (r.await) { state.clock.pending = { request: r.await.request }; state.outcome.status = "awaitingInput"; return "awaitingInput"; }
     if (r.terminal) return state.outcome.status;
-    if (r.end || r.goto === undefined) { state.outcome.status = "ended"; return "ended"; }
+    if (r.end || r.goto === undefined) {
+      // an end-of-turn event chain ran off its last node: pop the next due chain, then resume
+      // the turn spine (rotate + goto) stashed before the events fired.
+      const q = state.clock.eventQueue;
+      if (q && q.length) { state.clock.cursor = q.shift(); continue; }
+      const ae = state.clock.afterEvents;
+      if (ae) {
+        state.clock.afterEvents = null; state.clock.eventQueue = null;
+        if (ae.rotate) rotateActiveHero(state);
+        state.clock.cursor = ae.target; continue;
+      }
+      state.outcome.status = "ended"; return "ended";
+    }
     state.clock.cursor = r.goto;
   }
   throw fault("run loop exceeded guard (graph cycle without progress?)");
@@ -801,10 +1187,15 @@ function buildKingdoms(scenario, playerCount) {
       + active.length + " (dormant: [" + dormant.join(",") + "])");
   return { active, dormant };
 }
-function makeHero() {
+function makeHero(fullTurn) {
   // Hero rich-data (real 7+1 split, banner, move value, 3+3 virtues, Advantage pool) is injected
   // content (§10.3, D2-blocked); the engine starts every hero from the documented placeholder.
-  return { warriors: 7, spirit: 1, corruption: 0, advantages: 6, virtues: { active: [], inactive: [] },
+  // Full-turn scenarios seed the 3+3 virtue split (rules.md §Hero Setup) with placeholder ids so
+  // the citadel's enhanced Reinforce (virtue.activate) is exercisable before hero content ships.
+  const virtues = fullTurn
+    ? { active: ["virtue-1", "virtue-2", "virtue-3"], inactive: ["virtue-4", "virtue-5", "virtue-6"] }
+    : { active: [], inactive: [] };
+  return { warriors: 7, spirit: 1, corruption: 0, advantages: 6, virtues,
            items: { gear: [], treasure: [], potions: [], questItems: [] }, companions: [], counters: {}, location: null };
 }
 
@@ -818,17 +1209,34 @@ function init(scenario, opts) {
   const playerCount = (opts.playerCount | 0) || 1;
   if (playerCount < 1 || playerCount > 4) throw fault("playerCount must be 1–4 (got " + opts.playerCount + ")");
   const { active, dormant } = buildKingdoms(scenario, playerCount);
+  // Full-turn discriminator (fidelity gate): the actionMiddle node opts in with props.turn === "full".
+  // Legacy scenarios (no prop) keep the single-action-per-turn MVP loop byte-identical.
+  const amidNode = scenario.graph.nodes.find(n => n.kind === "lifecycle.actionMiddle");
+  const fullTurn = !!(amidNode && amidNode.props && amidNode.props.turn === "full");
   const heroIds = []; for (let i = 1; i <= playerCount; i++) heroIds.push("hero" + i);
-  const heroes = {}; for (const id of heroIds) heroes[id] = makeHero();
+  const heroes = {}; for (const id of heroIds) heroes[id] = makeHero(fullTurn);
   const ownership = {}; active.forEach((k, i) => { ownership[k] = heroIds[i]; });
+  // Buildings registry + hero start locations from the authored (opaque-to-L1) boardState:
+  // { home: { kingdom: location }, buildings: [{ kingdom, type, location }] }. Heroes start on
+  // their home kingdom's citadel space (rules.md §Hero Setup).
+  const boardState = (scenario.setup.board && scenario.setup.board.boardState) || null;
+  const buildings = boardState && Array.isArray(boardState.buildings)
+    ? boardState.buildings.map(b => ({ kingdom: b.kingdom, type: b.type, location: b.location, skulls: 0, destroyed: false }))
+    : null;
+  if (boardState && boardState.home) {
+    for (const k of Object.keys(ownership)) {
+      if (boardState.home[k] != null) heroes[ownership[k]].location = boardState.home[k];
+    }
+  }
   const firstHero = heroIds[0];
   const rng = pcg32.create(opts.seed);
   const state = {
     meta: { scenarioVersion: scenario.meta.scenarioVersion, schemaVersion: scenario.schemaVersion, engine: ENGINE_VERSION },
-    clock: { month: 0, turnInMonth: 0, turnsThisMonth: 0, cursor: scenario.graph.entry, pending: null,
+    clock: { month: 0, turnInMonth: 0, turnsThisMonth: 0, globalTurn: 0, cursor: scenario.graph.entry, pending: null,
              activeHero: firstHero, turnOrder: heroIds.slice(), firstPlayerOfMonth: firstHero, latches: {} },
     kingdoms: { ownership, dormant },
     heroes,
+    ...(buildings ? { buildings } : {}),
     foes: [],
     adversary: { foeId: scenario.setup.selections.adversaryId, spawned: false, defeated: false, advantages: [], advantagesBanked: 0, questProgress: 0, battleProgress: 0 },
     skulls: { supply: scenario.setup.difficulty.skullSupply, onBoard: 0 },
@@ -845,6 +1253,8 @@ function init(scenario, opts) {
       startMonth: byKind("lifecycle.startMonth"),
       playerTurn: byKind("lifecycle.playerTurn"),
       newMonthCheck: byKind("lifecycle.newMonthCheck"),
+      newQuests: byKind("lifecycle.newQuests"),
+      actionMiddle: amidNode && amidNode.id,
       endEval: byKind("winloss.winCondition"),
       gameEnd: byKind("lifecycle.gameEnd"),
       battleEntry: byKind("battle.selectFoe") || byKind("action.battle"),
@@ -856,8 +1266,27 @@ function init(scenario, opts) {
       monthEnd: scenario.setup.monthEnd,
       mainGoalId: scenario.setup.selections.mainGoalId,
       goalThreshold: (scenario.meta.tuning && scenario.meta.tuning.goalThreshold) || 3,
-      adversaryToughness: (scenario.meta.tuning && scenario.meta.tuning.adversaryToughness) || 2
-    }
+      adversaryToughness: (scenario.meta.tuning && scenario.meta.tuning.adversaryToughness) || 2,
+      fullTurn,
+      // foe level by selection tier (rules: tier1→2, tier2→3, tier3→4); adversary is always 5
+      foeTiers: (() => {
+        const f = scenario.setup.selections.foes || {};
+        const m = {}; if (f.tier1) m[f.tier1] = 2; if (f.tier2) m[f.tier2] = 3; if (f.tier3) m[f.tier3] = 4;
+        return m;
+      })(),
+      // quests issued by the authored newQuests node are attemptable only while active
+      monthlyQuestIds: (() => {
+        const nq = scenario.graph.nodes.find(n => n.kind === "lifecycle.newQuests");
+        const ids = [];
+        if (nq && nq.props && nq.props.monthly)
+          for (const m of Object.values(nq.props.monthly)) for (const v of Object.values(m)) ids.push(v);
+        return ids;
+      })()
+    },
+    // end-of-turn event triggers in graph order (deterministic firing order)
+    _triggers: scenario.graph.nodes
+      .filter(n => n.kind === "trigger.schedule" || n.kind === "trigger.onState")
+      .map(n => ({ id: n.id, trigger: (n.props || {}).trigger, next: ((n.wires || {}).out || [])[0] }))
   };
   resetLatches(state);
   const directives = [];

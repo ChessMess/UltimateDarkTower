@@ -1,7 +1,7 @@
 // Public API entry point. Re-exports the stable surface from engine.js.
 // Tests import from ../src/engine directly to access __internals.
 const engine = require('./engine');
-const { golden } = require('./golden-fixture');
+const { golden, goldenFull } = require('./golden-fixture');
 
 module.exports = {
   init: engine.init,
@@ -14,4 +14,5 @@ module.exports = {
   ENGINE_VERSION: engine.ENGINE_VERSION,
   SUPPORTED_SCHEMA_RANGE: engine.SUPPORTED_SCHEMA_RANGE,
   golden,
+  goldenFull,
 };

@@ -25,9 +25,10 @@ import { NewScenarioDialog } from '../editors/NewScenarioDialog';
 
 const nodeTypes: NodeTypes = { scenarioNode: ScenarioNode };
 
-// The engine's own golden fixture — guaranteed runnable by the simulator (same fixture
-// used by the 242-assertion lockstep test suite in packages/engine).
-const BASE_SCENARIO = (engineModule as { golden: ScenarioDoc }).golden;
+// The engine's own golden scenario — the base-game fidelity build (full turn structure,
+// buildings, events, monthly quests), guaranteed runnable by the simulator: the same fixture
+// the engine's lockstep/full-turn test suites drive end-to-end.
+const BASE_SCENARIO = (engineModule as { goldenFull: ScenarioDoc }).goldenFull;
 
 export function CreatorCanvas() {
   const { schemaDoc, rfNodes, rfEdges, selectedNodeId, validationResults, isDirty } =

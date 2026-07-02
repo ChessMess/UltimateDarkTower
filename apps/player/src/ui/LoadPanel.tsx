@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { golden } from '@udtc/engine';
+import { golden, goldenFull } from '@udtc/engine';
 import { loadGame, resumeSession, discardSession } from '../game';
 import { usePlayerStore } from '../store';
 
@@ -22,7 +22,13 @@ export function LoadPanel() {
   const fileRef = useRef<HTMLInputElement>(null);
   const busy = phase === 'validating';
 
+  // The shipped golden scenario is the base-game fidelity build (full turn structure, buildings,
+  // events, monthly quests); the compact legacy fixture stays available for regression play.
   function handleLoadGolden() {
+    loadGame(goldenFull);
+  }
+
+  function handleLoadGoldenCompact() {
     loadGame(golden);
   }
 
@@ -70,6 +76,9 @@ export function LoadPanel() {
       <div style={{ display: 'flex', gap: 8 }}>
         <button style={btnStyle} onClick={handleLoadGolden} disabled={busy}>
           Load Golden
+        </button>
+        <button style={btnStyle} onClick={handleLoadGoldenCompact} disabled={busy} title="The compact single-action regression fixture">
+          Golden (Compact)
         </button>
         <button style={btnStyle} onClick={() => fileRef.current?.click()} disabled={busy}>
           Import JSON
