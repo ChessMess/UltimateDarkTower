@@ -30,7 +30,12 @@ const nodeTypes: NodeTypes = { scenarioNode: ScenarioNode };
 // the engine's lockstep/full-turn test suites drive end-to-end.
 const BASE_SCENARIO = (engineModule as { goldenFull: ScenarioDoc }).goldenFull;
 
-export function CreatorCanvas() {
+type CreatorCanvasProps = {
+  focusMode: boolean;
+  onToggleFocusMode: () => void;
+};
+
+export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasProps) {
   const { schemaDoc, rfNodes, rfEdges, selectedNodeId, validationResults, isDirty } =
     useCreatorStore();
   const { loadScenario, syncFromRF, selectNode, addNode, applyLayout, exportScenario } =
@@ -176,6 +181,8 @@ export function CreatorCanvas() {
         onDragOver={onDragOver}
         deleteKeyCode="Delete"
         fitView
+        minZoom={0.05}
+        maxZoom={2}
         proOptions={{ hideAttribution: false }}
       >
         {/* Dot color is themed via --xy-background-pattern-dots-color-default in App.css */}
@@ -234,6 +241,35 @@ export function CreatorCanvas() {
             <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
             <button className="toolbar-btn" onClick={() => { applyLayout(); setTimeout(() => fitView({ padding: 0.2 }), 50); }} disabled={!schemaDoc}>
               Auto-layout
+            </button>
+            <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
+            <button
+              type="button"
+              className="palette-allbtn"
+              onClick={() => {
+                onToggleFocusMode();
+                setTimeout(() => fitView({ padding: 0.2 }), 60);
+              }}
+              title={focusMode ? 'Show panels' : 'Hide panels'}
+              aria-label={focusMode ? 'Show panels' : 'Hide panels'}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {focusMode ? (
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                ) : (
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                )}
+              </svg>
             </button>
             {schemaDoc && (
               <>

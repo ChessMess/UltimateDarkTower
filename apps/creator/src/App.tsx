@@ -11,6 +11,7 @@ type BottomTab = 'problems' | 'simulator';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<BottomTab>('problems');
+  const [focusMode, setFocusMode] = useState(false);
   const { schemaDoc, validationResults } = useCreatorStore();
 
   const problemCount = validationResults
@@ -21,7 +22,7 @@ export default function App() {
 
   return (
     <ReactFlowProvider>
-      <div className="creator-layout">
+      <div className={`creator-layout${focusMode ? ' creator-layout--focus' : ''}`}>
         {/* Top bar */}
         <div className="creator-topbar">
           <span className="title">UltimateDarkTower Creator</span>
@@ -46,7 +47,10 @@ export default function App() {
 
         {/* Center: Canvas */}
         <div className="creator-canvas">
-          <CreatorCanvas />
+          <CreatorCanvas
+            focusMode={focusMode}
+            onToggleFocusMode={() => setFocusMode((f) => !f)}
+          />
         </div>
 
         {/* Right: Inspector */}

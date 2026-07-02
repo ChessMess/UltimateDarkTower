@@ -43,6 +43,18 @@ body,
   overflow: hidden;
 }
 
+/* Focus mode — hide the palette/inspector/bottom panels so the canvas fills the window */
+.creator-layout--focus {
+  grid-template-rows: 40px 1fr 0;
+  grid-template-columns: 0 1fr 0;
+}
+
+.creator-layout--focus .creator-palette,
+.creator-layout--focus .creator-inspector,
+.creator-layout--focus .creator-bottom {
+  display: none;
+}
+
 /* Top bar spans all columns */
 .creator-topbar {
   grid-column: 1 / -1;
