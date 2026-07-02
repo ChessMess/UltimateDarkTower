@@ -73,14 +73,14 @@ export function LoadPanel() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button style={btnStyle} onClick={handleLoadGolden} disabled={busy}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <button style={scenarioBtnStyle} onClick={handleLoadGolden} disabled={busy}>
           Load Golden
         </button>
-        <button style={btnStyle} onClick={handleLoadGoldenCompact} disabled={busy} title="The compact single-action regression fixture">
+        <button style={scenarioBtnStyle} onClick={handleLoadGoldenCompact} disabled={busy} title="The compact single-action regression fixture">
           Golden (Compact)
         </button>
-        <button style={btnStyle} onClick={() => fileRef.current?.click()} disabled={busy}>
+        <button style={scenarioBtnStyle} onClick={() => fileRef.current?.click()} disabled={busy}>
           Import JSON
         </button>
         <input ref={fileRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFile} />
@@ -137,4 +137,12 @@ const btnStyle: React.CSSProperties = {
   color: 'var(--c-text-2)',
   fontSize: 13,
   cursor: 'pointer',
+};
+
+// Smaller variant for the scenario-loader row (Load Golden / Golden (Compact) / Import JSON),
+// which is too tight for the default button size in the sidebar's fixed width.
+const scenarioBtnStyle: React.CSSProperties = {
+  ...btnStyle,
+  padding: '4px 8px',
+  fontSize: 11,
 };
