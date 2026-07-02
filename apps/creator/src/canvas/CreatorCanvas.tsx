@@ -22,6 +22,7 @@ import { ScenarioNode, type ScenarioRFNode } from './NodeTypes';
 import { useCreatorStore } from '../store';
 import type { ScenarioDoc } from '../types';
 import { NewScenarioDialog } from '../editors/NewScenarioDialog';
+import { clearDraft } from '../utils/draft';
 
 const nodeTypes: NodeTypes = { scenarioNode: ScenarioNode };
 
@@ -135,6 +136,8 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
     a.download = `${schemaDoc?.meta.title ?? 'scenario'}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    useCreatorStore.setState({ isDirty: false });
+    clearDraft();
   }, [validationResults, exportScenario, schemaDoc]);
 
   const handleLoadGolden = useCallback(() => {

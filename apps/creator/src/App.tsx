@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import './App.css';
 import { CreatorCanvas } from './canvas';
-import { PalettePanel, InspectorPanel, ProblemsPanel } from './editors';
+import { PalettePanel, InspectorPanel, ProblemsPanel, RecoveryDialog } from './editors';
 import { SimulatorPanel } from './simulator';
 import { useCreatorStore } from './store';
+import { useDraftPersistence, loadDraft, clearDraft, type DraftEnvelope } from './utils';
 import { ThemeToggle } from '@udtc/theme';
 
 type BottomTab = 'problems' | 'simulator';
@@ -12,7 +13,24 @@ type BottomTab = 'problems' | 'simulator';
 export default function App() {
   const [activeTab, setActiveTab] = useState<BottomTab>('problems');
   const [focusMode, setFocusMode] = useState(false);
-  const { schemaDoc, validationResults } = useCreatorStore();
+  // schemaDoc is always null on first mount (the store's initial state), so a lazy
+  // initializer is sufficient to offer a recovered draft — no effect needed.
+  const [pendingDraft, setPendingDraft] = useState<DraftEnvelope | null>(() => loadDraft());
+  const { schemaDoc, validationResults, loadScenario } = useCreatorStore();
+
+  useDraftPersistence();
+
+  const handleRestoreDraft = () => {
+    if (!pendingDraft) return;
+    loadScenario(pendingDraft.doc, !pendingDraft.doc.meta.layout?.positions);
+    useCreatorStore.setState({ isDirty: true });
+    setPendingDraft(null);
+  };
+
+  const handleDiscardDraft = () => {
+    clearDraft();
+    setPendingDraft(null);
+  };
 
   const problemCount = validationResults
     ? validationResults.l1.errors.length +
@@ -94,6 +112,15 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {pendingDraft && (
+        <RecoveryDialog
+          title={pendingDraft.title}
+          savedAt={pendingDraft.savedAt}
+          onRestore={handleRestoreDraft}
+          onDiscard={handleDiscardDraft}
+        />
+      )}
     </ReactFlowProvider>
   );
 }
