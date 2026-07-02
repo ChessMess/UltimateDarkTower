@@ -21,8 +21,14 @@ function typeForKind(kind: SchemaNode['kind']): CreatorNodeType {
   return 'scenarioNode';
 }
 
-function sizeForNode(sn: SchemaNode): { w: number; h: number } {
-  if (sn.kind === 'util.comment') return { w: COMMENT_W, h: COMMENT_H };
+// Prefer the member's actual on-canvas box (e.g. a resized comment) over the kind default,
+// so a group's auto-fit bounds always include the full resized note.
+function sizeForNode(n: CreatorNode): { w: number; h: number } {
+  const style = n.style as { width?: number; height?: number } | undefined;
+  if (typeof style?.width === 'number' && typeof style?.height === 'number') {
+    return { w: style.width, h: style.height };
+  }
+  if (n.data.schemaNode.kind === 'util.comment') return { w: COMMENT_W, h: COMMENT_H };
   return { w: NODE_W, h: NODE_H };
 }
 
@@ -49,7 +55,7 @@ export function computeGroupRects(nodes: CreatorNode[]): Record<string, GroupRec
     let maxX = -Infinity;
     let maxY = -Infinity;
     for (const m of members) {
-      const { w, h } = sizeForNode(m.data.schemaNode);
+      const { w, h } = sizeForNode(m);
       minX = Math.min(minX, m.position.x);
       minY = Math.min(minY, m.position.y);
       maxX = Math.max(maxX, m.position.x + w);
@@ -67,6 +73,7 @@ export function computeGroupRects(nodes: CreatorNode[]): Record<string, GroupRec
 
 export function schemaToFlow(doc: ScenarioDoc): { nodes: CreatorNode[]; edges: Edge[] } {
   const positions = doc.meta.layout?.positions ?? {};
+  const sizes = doc.meta.layout?.sizes ?? {};
   const schemaNodes = doc.graph.nodes;
 
   let nodes: CreatorNode[] = schemaNodes.map((sn, i) => {
@@ -84,7 +91,18 @@ export function schemaToFlow(doc: ScenarioDoc): { nodes: CreatorNode[]; edges: E
         errorMessages: [],
       },
     };
-    return type === 'groupNode' ? { ...base, zIndex: -1 } : base;
+    if (type === 'groupNode') return { ...base, zIndex: -1 };
+    if (type === 'commentNode') {
+      const savedSize = sizes[sn.id];
+      return {
+        ...base,
+        style: {
+          width: savedSize?.width ?? COMMENT_W,
+          height: savedSize?.height ?? COMMENT_H,
+        },
+      };
+    }
+    return base;
   });
 
   // Fit group rects to their members' current positions
@@ -154,9 +172,30 @@ export function flowToSchema(
     positions[rfNode.id] = { x: rfNode.position.x, y: rfNode.position.y };
   }
 
+  // Persist author-resized comment boxes only (group rects are always re-derived; regular
+  // scenario nodes use the fixed default size)
+  const sizes: Record<string, { width: number; height: number }> = {};
+  for (const rfNode of rfNodes) {
+    if (rfNode.data.schemaNode.kind !== 'util.comment') continue;
+    const style = rfNode.style as { width?: number; height?: number } | undefined;
+    if (typeof style?.width === 'number' && typeof style?.height === 'number') {
+      sizes[rfNode.id] = { width: style.width, height: style.height };
+    }
+  }
+
+  const layout: { positions: typeof positions; sizes?: typeof sizes } = {
+    ...doc.meta.layout,
+    positions,
+  };
+  if (Object.keys(sizes).length > 0) {
+    layout.sizes = sizes;
+  } else {
+    delete layout.sizes;
+  }
+
   return {
     ...doc,
-    meta: { ...doc.meta, layout: { ...doc.meta.layout, positions } },
+    meta: { ...doc.meta, layout },
     graph: { ...doc.graph, nodes: updatedNodes },
   };
 }

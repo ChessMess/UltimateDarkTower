@@ -60,21 +60,16 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
     setNewDialogOpen(true);
   }, [isDirty]);
 
-  const onNodesChange: OnNodesChange<CreatorNode> = useCallback(
-    (changes) => {
-      const updated = applyNodeChanges(changes, rfNodes);
-      useCreatorStore.setState({ rfNodes: updated });
-    },
-    [rfNodes],
-  );
+  // Functional updater form (reads live store state, not the closure-captured rfNodes) —
+  // required because RF's own dimension-tracking can fire onNodesChange asynchronously,
+  // after other code (e.g. comment resize) has already written newer rfNodes to the store.
+  const onNodesChange: OnNodesChange<CreatorNode> = useCallback((changes) => {
+    useCreatorStore.setState((state) => ({ rfNodes: applyNodeChanges(changes, state.rfNodes) }));
+  }, []);
 
-  const onEdgesChange: OnEdgesChange<Edge> = useCallback(
-    (changes) => {
-      const updated = applyEdgeChanges(changes, rfEdges);
-      useCreatorStore.setState({ rfEdges: updated });
-    },
-    [rfEdges],
-  );
+  const onEdgesChange: OnEdgesChange<Edge> = useCallback((changes) => {
+    useCreatorStore.setState((state) => ({ rfEdges: applyEdgeChanges(changes, state.rfEdges) }));
+  }, []);
 
   const onConnect: OnConnect = useCallback(
     (conn) => {

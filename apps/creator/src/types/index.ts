@@ -46,8 +46,14 @@ export interface LayoutPosition {
   y: number;
 }
 
+export interface LayoutSize {
+  width: number;
+  height: number;
+}
+
 export interface LayoutSidecar {
   positions?: Record<string, LayoutPosition>;
+  sizes?: Record<string, LayoutSize>;
 }
 
 export interface ScenarioDoc {

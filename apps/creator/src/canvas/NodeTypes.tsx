@@ -1,7 +1,16 @@
-import { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { memo, useCallback } from 'react';
+import {
+  Handle,
+  NodeResizer,
+  Position,
+  type NodeProps,
+  type OnResize,
+  type OnResizeEnd,
+} from '@xyflow/react';
 import type { Node } from '@xyflow/react';
 import { categoryFor, outputHandlesFor, type CreatorNodeData, type GroupProps } from '../types';
+import { useCreatorStore } from '../store';
+import { computeGroupRects, type CreatorNode } from '../utils/serializer';
 
 export type ScenarioRFNode = Node<CreatorNodeData, 'scenarioNode'>;
 export type CommentRFNode = Node<CreatorNodeData, 'commentNode'>;
@@ -149,26 +158,79 @@ function ScenarioNodeComponent({ data, selected }: NodeProps<ScenarioRFNode>) {
 
 export const ScenarioNode = memo(ScenarioNodeComponent);
 
-function CommentNodeComponent({ data, selected }: NodeProps<CommentRFNode>) {
+// Applies a comment's new box size to the live canvas (and, on resize end, persists it into
+// meta.layout.sizes) — mirrors the group-drag pattern: any group containing this comment as a
+// member gets its auto-fit rect refit in the same pass.
+function applyCommentResize(id: string, width: number, height: number, persist: boolean) {
+  const state = useCreatorStore.getState();
+  const resized: CreatorNode[] = state.rfNodes.map((n) =>
+    n.id === id ? { ...n, style: { ...(n.style as Record<string, unknown> | undefined), width, height } } : n,
+  );
+  const rects = computeGroupRects(resized);
+  const nextNodes = resized.map((n) => {
+    if (n.data.schemaNode.kind !== 'util.group') return n;
+    const rect = rects[n.id];
+    if (!rect) return n;
+    return { ...n, position: { x: rect.x, y: rect.y }, style: { width: rect.width, height: rect.height } };
+  });
+  if (persist) {
+    state.syncFromRF(nextNodes, state.rfEdges);
+  } else {
+    useCreatorStore.setState({ rfNodes: nextNodes });
+  }
+}
+
+function CommentNodeComponent({ id, data, selected }: NodeProps<CommentRFNode>) {
   const { schemaNode } = data;
+
+  const onResize = useCallback<OnResize>(
+    (_evt, params) => applyCommentResize(id, params.width, params.height, false),
+    [id],
+  );
+  const onResizeEnd = useCallback<OnResizeEnd>(
+    (_evt, params) => applyCommentResize(id, params.width, params.height, true),
+    [id],
+  );
+
   return (
     <div
       style={{
+        width: '100%',
+        height: '100%',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
         background: '#FEF3C7',
         border: `2px solid ${selected ? '#D97706' : '#FBBF24'}`,
         borderRadius: 4,
-        minWidth: 180,
-        minHeight: 90,
         padding: '8px 10px',
         boxShadow: selected ? '0 0 0 2px #FDE68A' : '2px 2px 0 rgba(217, 119, 6, 0.15)',
         fontFamily: 'monospace',
         color: '#78350F',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>
+      <NodeResizer
+        minWidth={140}
+        minHeight={70}
+        isVisible={selected}
+        color="#D97706"
+        onResize={onResize}
+        onResizeEnd={onResizeEnd}
+      />
+      <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4, flexShrink: 0 }}>
         {schemaNode.label || 'Comment'}
       </div>
-      <div style={{ fontSize: 10, whiteSpace: 'pre-wrap', opacity: 0.85 }}>
+      <div
+        style={{
+          fontSize: 10,
+          whiteSpace: 'pre-wrap',
+          overflowWrap: 'anywhere',
+          opacity: 0.85,
+          flex: 1,
+          overflow: 'auto',
+        }}
+      >
         {schemaNode.description || ''}
       </div>
     </div>

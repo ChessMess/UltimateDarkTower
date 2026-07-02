@@ -129,7 +129,7 @@
         },
         "tags": { "type": "array", "items": { "type": "string" } },
         "layout": {
-          "$comment": "Creator UI §4.6 sidecar — canvas positions; non-semantic, engine-invisible. Preserved verbatim on round-trip.",
+          "$comment": "Creator UI §4.6 sidecar — canvas positions/sizes; non-semantic, engine-invisible. Preserved verbatim on round-trip.",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -142,6 +142,19 @@
                 "properties": {
                   "x": { "type": "number" },
                   "y": { "type": "number" }
+                }
+              }
+            },
+            "sizes": {
+              "$comment": "author-resized node boxes (currently: util.comment sticky notes)",
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": ["width", "height"],
+                "additionalProperties": false,
+                "properties": {
+                  "width": { "type": "number" },
+                  "height": { "type": "number" }
                 }
               }
             }

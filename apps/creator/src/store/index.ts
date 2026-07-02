@@ -89,11 +89,17 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   loadScenario(doc, autoLayout = false) {
     const { nodes: derivedNodes, edges } = deriveRF(doc);
     let nodes = derivedNodes;
-    if (autoLayout) nodes = applyDagreLayout(nodes, edges);
+    let finalDoc = doc;
+    if (autoLayout) {
+      nodes = applyDagreLayout(nodes, edges);
+      // Bake the computed positions back into the doc we store, so schemaDoc.meta.layout.positions
+      // never diverges from rfNodes — any later mutation re-derives rfNodes from schemaDoc.
+      finalDoc = flowToSchema(nodes, edges, doc);
+    }
     const results = revalidate(doc);
     const annotated = annotateErrors(nodes, results);
     set({
-      schemaDoc: doc,
+      schemaDoc: finalDoc,
       rfNodes: annotated,
       rfEdges: edges,
       validationResults: results,
@@ -310,8 +316,10 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   },
 
   applyLayout() {
-    const { rfNodes, rfEdges } = get();
+    const { rfNodes, rfEdges, schemaDoc } = get();
+    if (!schemaDoc) return;
     const laid = applyDagreLayout(rfNodes, rfEdges);
-    set({ rfNodes: laid, isDirty: true });
+    const updated = flowToSchema(laid, rfEdges, schemaDoc);
+    set({ schemaDoc: updated, rfNodes: laid, isDirty: true });
   },
 }));
