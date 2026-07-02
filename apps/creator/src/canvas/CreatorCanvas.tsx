@@ -109,6 +109,10 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      if (isDirty && !window.confirm('Discard unsaved changes and import this scenario?')) {
+        e.target.value = '';
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
@@ -122,7 +126,7 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
       reader.readAsText(file);
       e.target.value = '';
     },
-    [loadScenario, fitView],
+    [isDirty, loadScenario, fitView],
   );
 
   // Export
@@ -141,9 +145,10 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
   }, [validationResults, exportScenario, schemaDoc]);
 
   const handleLoadGolden = useCallback(() => {
+    if (isDirty && !window.confirm('Discard unsaved changes and load the golden fixture?')) return;
     loadScenario(BASE_SCENARIO, true);
     setTimeout(() => fitView({ padding: 0.2 }), 100);
-  }, [loadScenario, fitView]);
+  }, [isDirty, loadScenario, fitView]);
 
   const onDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
