@@ -22,6 +22,7 @@ type BoardCtrl = {
   removeFoe(instanceId: string): void;
   clearAdversary(): void;
   selectAdversary(foeId: string): void;
+  placeAdversary(location: string): void;
   placeHero(heroId: string, location: string): void;
   moveHero(heroId: string, location: string): void;
   destroyBuilding(location: string): void;
@@ -41,6 +42,11 @@ export function createBoardAdapter(): {
   let ctrl: BoardCtrl | null = null;
   let ready = false;
   const readyCbs: Array<() => void> = [];
+  // Mutations that arrive before the dynamic import resolves (e.g. init-time setupBoard/
+  // spawnFoe/placeHero directives, dispatched synchronously right after engine.init()) would
+  // otherwise be silently dropped by the `if (!ctrl) return` guard below. Queue them and
+  // replay in order once `ctrl` exists.
+  const pendingMutations: BoardMutateCommand[] = [];
 
   // Dynamic import defers board-package init to call time, keeping it lazy and recoverable.
   import('ultimatedarktowerboard')
@@ -49,6 +55,7 @@ export function createBoardAdapter(): {
         initial: BoardState;
         mode: string;
       }) => BoardCtrl)({ initial: createDefaultBoardState() as BoardState, mode: 'self' });
+      for (const cmd of pendingMutations.splice(0)) mutate(cmd);
       ready = true;
       for (const cb of readyCbs.splice(0)) cb();
     })
@@ -59,8 +66,12 @@ export function createBoardAdapter(): {
       );
     });
 
-  function mutate({ command, args }: BoardMutateCommand): void {
-    if (!ctrl) return;
+  function mutate(cmd: BoardMutateCommand): void {
+    if (!ctrl) {
+      pendingMutations.push(cmd);
+      return;
+    }
+    const { command, args } = cmd;
     switch (command) {
       case 'spawnFoe': {
         const a = args as { foeId: string; location: string };
@@ -82,8 +93,9 @@ export function createBoardAdapter(): {
         break;
       }
       case 'spawnAdversary': {
-        const a = args as { foeId: string };
+        const a = args as { foeId: string; location?: string };
         ctrl.selectAdversary(a.foeId);
+        if (a.location) ctrl.placeAdversary(a.location);
         break;
       }
       case 'placeHero': {

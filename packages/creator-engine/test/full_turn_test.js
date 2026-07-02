@@ -60,6 +60,8 @@ ok("the 16-building registry is live", r0.state.buildings.length === 16 && r0.st
 ok("full-turn heroes carry the 3+3 virtue split (placeholders)",
    r0.state.heroes.hero1.virtues.active.length === 3 && r0.state.heroes.hero1.virtues.inactive.length === 3);
 ok("month 1 is exactly one turn per player", r0.state.clock.turnsThisMonth === 1);
+ok("boardSetup emits a placeHero directive for hero1's home citadel",
+   r0.directives.some(d => d.type === "board.mutate" && d.command === "placeHero" && d.args.hero === "hero1" && d.args.to === "Radiant Mountains"));
 ok("the full-turn action menu offers banner/move/heroic/reinforce/endTurn",
    ["banner", "move", "quest", "cleanse", "battle", "dungeon", "reinforce", "endTurn"].every(o =>
      r0.awaiting.options.some(x => x.id === o)));

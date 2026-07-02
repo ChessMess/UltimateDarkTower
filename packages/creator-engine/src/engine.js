@@ -444,6 +444,12 @@ function interpretNode(node, state, directives) {
       return { goto: next };
     case "lifecycle.boardSetup": {
       dir(directives, "board.mutate", { command: "setupBoard", args: {} });
+      // Hero start locations (from boardState.home, set at init) — the board controller
+      // is never told about heroes otherwise, so it can't render or later move them.
+      for (const h of state.clock.turnOrder) {
+        const loc = state.heroes[h].location;
+        if (loc != null) dir(directives, "board.mutate", { command: "placeHero", args: { hero: h, to: loc } });
+      }
       // Author-defined initial foe placement — each entry runs the shared foe.spawn effect
       // so a setup spawn is byte-identical to an authored effect.apply foe.spawn.
       const spawns = (node.props && node.props.spawns) || [];
