@@ -35,7 +35,13 @@ function StatusBar() {
       <Stat label="Turn" value={clock?.turnInMonth ?? '—'} />
       {h && <Stat label="Warriors" value={h.warriors} />}
       {h && <Stat label="Spirit" value={h.spirit} />}
-      {h && <Stat label="Corruption" value={h.corruption} color={h.corruption >= 2 ? 'var(--c-danger)' : undefined} />}
+      {h && (
+        <Stat
+          label="Corruption"
+          value={h.corruption}
+          color={h.corruption >= 2 ? 'var(--c-danger)' : undefined}
+        />
+      )}
       {h && <Stat label="Advantages" value={h.advantages} />}
       <Stat label="Skull supply" value={skulls?.supply ?? '—'} />
     </div>
@@ -45,10 +51,20 @@ function StatusBar() {
 function Stat({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <span style={{ fontSize: 10, color: 'var(--c-text-faint)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <span
+        style={{
+          fontSize: 10,
+          color: 'var(--c-text-faint)',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        }}
+      >
         {label}
       </span>
-      <span style={{ fontSize: 18, fontWeight: 700, color: color ?? 'var(--c-text)', lineHeight: 1.2 }}>
+      <span
+        style={{ fontSize: 18, fontWeight: 700, color: color ?? 'var(--c-text)', lineHeight: 1.2 }}
+      >
         {value}
       </span>
     </div>
@@ -63,16 +79,34 @@ interface EngineStateShape {
     activeHero?: string;
     dungeon?: { dungeonId: string; currentRoom: string | null } | null;
   };
-  heroes?: Record<string, { warriors: number; spirit: number; corruption: number; advantages: number; location?: string | null }>;
+  heroes?: Record<
+    string,
+    {
+      warriors: number;
+      spirit: number;
+      corruption: number;
+      advantages: number;
+      location?: string | null;
+    }
+  >;
   skulls?: { supply: number };
   foes?: Array<{ foeId: string; instanceId: string; location: string | null }>;
   adversary?: { foeId: string; spawned: boolean; defeated: boolean; location?: string };
-  buildings?: Array<{ kingdom: string; type: string; location: string; skulls: number; destroyed: boolean }>;
+  buildings?: Array<{
+    kingdom: string;
+    type: string;
+    location: string;
+    skulls: number;
+    destroyed: boolean;
+  }>;
   activeQuests?: Array<{ questId: string; kind: string; expiresMonth: number }>;
   quests?: Record<string, { complete: boolean }>;
   outcome?: { status: string; reason: string | null };
   _lib?: {
-    quests?: Record<string, { id: string; name: string; isMainGoal?: boolean; requirements?: Array<{ label?: string }> }>;
+    quests?: Record<
+      string,
+      { id: string; name: string; isMainGoal?: boolean; requirements?: Array<{ label?: string }> }
+    >;
     dungeons?: Record<string, { rooms?: Array<{ id: string; exits?: Record<string, string> }> }>;
   };
   _setup?: { fullTurn?: boolean; monthlyQuestIds?: string[] };
@@ -111,7 +145,8 @@ function ActionMenu({ options }: { options: Array<{ id: string }> }) {
     const monthlyIds = new Set(engineState?._setup?.monthlyQuestIds ?? []);
     const activeIds = new Set((engineState?.activeQuests ?? []).map((q) => q.questId));
     const attemptable = Object.values(lib).filter(
-      (q) => !engineState?.quests?.[q.id]?.complete && (!monthlyIds.has(q.id) || activeIds.has(q.id)),
+      (q) =>
+        !engineState?.quests?.[q.id]?.complete && (!monthlyIds.has(q.id) || activeIds.has(q.id)),
     );
     return (
       <div style={{ marginBottom: 12 }}>
@@ -120,11 +155,22 @@ function ActionMenu({ options }: { options: Array<{ id: string }> }) {
           {attemptable.map((q) => (
             <button
               key={q.id}
-              style={q.isMainGoal ? { ...actionBtn, borderColor: '#7C3AED', color: '#7C3AED' } : actionBtn}
-              title={(q.requirements ?? []).map((r) => r.label).filter(Boolean).join(' · ')}
+              style={
+                q.isMainGoal
+                  ? { ...actionBtn, borderColor: '#7C3AED', color: '#7C3AED' }
+                  : actionBtn
+              }
+              title={(q.requirements ?? [])
+                .map((r) => r.label)
+                .filter(Boolean)
+                .join(' · ')}
               onClick={() => {
                 setPickingQuest(false);
-                handleInput({ requestId: 'action', value: { choice: 'quest', questId: q.id }, kind: 'decision' });
+                handleInput({
+                  requestId: 'action',
+                  value: { choice: 'quest', questId: q.id },
+                  kind: 'decision',
+                });
               }}
             >
               {q.name}
@@ -145,7 +191,16 @@ function ActionMenu({ options }: { options: Array<{ id: string }> }) {
         {ACTION_BUTTONS.filter((b) => !allowed.size || allowed.has(b.id)).map((b) => (
           <button
             key={b.id}
-            style={b.id === 'endTurn' ? { ...actionBtn, background: 'var(--c-primary)', color: '#fff', borderColor: 'var(--c-primary)' } : actionBtn}
+            style={
+              b.id === 'endTurn'
+                ? {
+                    ...actionBtn,
+                    background: 'var(--c-primary)',
+                    color: '#fff',
+                    borderColor: 'var(--c-primary)',
+                  }
+                : actionBtn
+            }
             onClick={() => {
               if (b.id === 'quest' && fullTurn) setPickingQuest(true);
               else handleInput({ requestId: 'action', value: b.id, kind: 'decision' });
@@ -158,7 +213,13 @@ function ActionMenu({ options }: { options: Array<{ id: string }> }) {
           <button
             style={{ ...actionBtn, borderStyle: 'dashed' }}
             title="Pay the building's spirit cost for its enhanced effect"
-            onClick={() => handleInput({ requestId: 'action', value: { choice: 'reinforce', enhanced: true }, kind: 'decision' })}
+            onClick={() =>
+              handleInput({
+                requestId: 'action',
+                value: { choice: 'reinforce', enhanced: true },
+                kind: 'decision',
+              })
+            }
           >
             Reinforce ✦
           </button>
@@ -175,9 +236,11 @@ function MoveInput() {
   const spots = new Set<string>();
   for (const b of engineState?.buildings ?? []) if (!b.destroyed) spots.add(b.location);
   for (const f of engineState?.foes ?? []) if (f.location) spots.add(f.location);
-  if (engineState?.adversary?.spawned && engineState.adversary.location) spots.add(engineState.adversary.location);
+  if (engineState?.adversary?.spawned && engineState.adversary.location)
+    spots.add(engineState.adversary.location);
   spots.add('the-tower');
-  const go = (to: string) => handleInput({ requestId: 'moveTarget', value: { to }, kind: 'decision' });
+  const go = (to: string) =>
+    handleInput({ requestId: 'moveTarget', value: { to }, kind: 'decision' });
   return (
     <div style={{ marginBottom: 12 }}>
       <div style={awaitLabelStyle}>Move to:</div>
@@ -193,8 +256,15 @@ function MoveInput() {
           value={custom}
           placeholder="…or any board space"
           onChange={(e) => setCustom(e.target.value)}
-          style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--c-border-strong)', borderRadius: 5, fontSize: 13,
-                   background: 'var(--c-surface-raised)', color: 'var(--c-text)' }}
+          style={{
+            flex: 1,
+            padding: '4px 8px',
+            border: '1px solid var(--c-border-strong)',
+            borderRadius: 5,
+            fontSize: 13,
+            background: 'var(--c-surface-raised)',
+            color: 'var(--c-text)',
+          }}
         />
         <button style={actionBtn} disabled={!custom.trim()} onClick={() => go(custom.trim())}>
           Go
@@ -216,13 +286,22 @@ function DungeonMoveInput() {
       <div style={awaitLabelStyle}>Dungeon — move through a door or leave:</div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {doors.map((d) => (
-          <button key={d} style={actionBtn}
-            onClick={() => handleInput({ requestId: 'dungeonMove', value: { direction: d }, kind: 'decision' })}>
+          <button
+            key={d}
+            style={actionBtn}
+            onClick={() =>
+              handleInput({ requestId: 'dungeonMove', value: { direction: d }, kind: 'decision' })
+            }
+          >
             {d === 'N' ? '↑ North' : d === 'E' ? '→ East' : d === 'S' ? '↓ South' : '← West'}
           </button>
         ))}
-        <button style={{ ...actionBtn, color: 'var(--c-danger)' }}
-          onClick={() => handleInput({ requestId: 'dungeonMove', value: { leave: true }, kind: 'decision' })}>
+        <button
+          style={{ ...actionBtn, color: 'var(--c-danger)' }}
+          onClick={() =>
+            handleInput({ requestId: 'dungeonMove', value: { leave: true }, kind: 'decision' })
+          }
+        >
           Leave dungeon
         </button>
       </div>
@@ -236,13 +315,32 @@ function DungeonImproveInput() {
       <div style={awaitLabelStyle}>Spend 1 Advantage to improve this room? (once per room)</div>
       <div style={{ display: 'flex', gap: 6 }}>
         <button
-          style={{ ...actionBtn, background: 'var(--c-success)', color: '#fff', borderColor: 'var(--c-success)' }}
-          onClick={() => handleInput({ requestId: 'dungeonRoomAdvantage', value: { improve: true }, kind: 'decision' })}
+          style={{
+            ...actionBtn,
+            background: 'var(--c-success)',
+            color: '#fff',
+            borderColor: 'var(--c-success)',
+          }}
+          onClick={() =>
+            handleInput({
+              requestId: 'dungeonRoomAdvantage',
+              value: { improve: true },
+              kind: 'decision',
+            })
+          }
         >
           Improve
         </button>
-        <button style={actionBtn}
-          onClick={() => handleInput({ requestId: 'dungeonRoomAdvantage', value: { improve: false }, kind: 'decision' })}>
+        <button
+          style={actionBtn}
+          onClick={() =>
+            handleInput({
+              requestId: 'dungeonRoomAdvantage',
+              value: { improve: false },
+              kind: 'decision',
+            })
+          }
+        >
           Skip
         </button>
       </div>
@@ -262,11 +360,23 @@ function SkullInput() {
           max={20}
           value={count}
           onChange={(e) => setCount(Number(e.target.value))}
-          style={{ width: 60, padding: '4px 8px', border: '1px solid var(--c-border-strong)', borderRadius: 5, fontSize: 13,
-                   background: 'var(--c-surface-raised)', color: 'var(--c-text)' }}
+          style={{
+            width: 60,
+            padding: '4px 8px',
+            border: '1px solid var(--c-border-strong)',
+            borderRadius: 5,
+            fontSize: 13,
+            background: 'var(--c-surface-raised)',
+            color: 'var(--c-text)',
+          }}
         />
         <button
-          style={{ ...actionBtn, background: 'var(--c-primary)', color: '#fff', borderColor: 'var(--c-primary)' }}
+          style={{
+            ...actionBtn,
+            background: 'var(--c-primary)',
+            color: '#fff',
+            borderColor: 'var(--c-primary)',
+          }}
           onClick={() => handleInput({ requestId: 'skullCounter', value: count, kind: 'observed' })}
         >
           Submit
@@ -278,31 +388,54 @@ function SkullInput() {
 
 function TargetInput() {
   const engineState = usePlayerStore((s) => s.engineState) as EngineStateShape | null;
-  const foes = engineState?.foes ?? [];
+  const activeHero = engineState?.clock?.activeHero;
+  const heroLocation = activeHero ? (engineState?.heroes?.[activeHero]?.location ?? null) : null;
+  const foes = (engineState?.foes ?? []).filter(
+    (f) => f.location !== null && f.location === heroLocation,
+  );
   const adversary = engineState?.adversary;
+  const canTargetAdversary =
+    adversary?.spawned && !adversary.defeated && adversary.location === heroLocation;
+  const hasTargets = canTargetAdversary || foes.length > 0;
+
   return (
     <div style={{ marginBottom: 12 }}>
       <div style={awaitLabelStyle}>Choose target:</div>
+      {!hasTargets && (
+        <div style={{ color: 'var(--c-text-muted)', fontSize: 12, marginBottom: 6 }}>
+          No foes on your current space.
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {adversary?.spawned && !adversary.defeated && (
+        {canTargetAdversary && (
           <button
             style={{ ...actionBtn, background: '#7C3AED', color: '#fff', borderColor: '#6D28D9' }}
-            onClick={() => handleInput({ requestId: 'target', value: { adversary: true }, kind: 'decision' })}
+            onClick={() =>
+              handleInput({ requestId: 'target', value: { adversary: true }, kind: 'decision' })
+            }
           >
             Adversary ({adversary.foeId})
           </button>
         )}
-        {foes
-          .filter((f) => f.location !== null)
-          .map((f) => (
-            <button
-              key={f.instanceId}
-              style={actionBtn}
-              onClick={() => handleInput({ requestId: 'target', value: { foeId: f.foeId }, kind: 'decision' })}
-            >
-              {f.foeId}
-            </button>
-          ))}
+        {foes.map((f) => (
+          <button
+            key={f.instanceId}
+            style={actionBtn}
+            onClick={() =>
+              handleInput({ requestId: 'target', value: { foeId: f.foeId }, kind: 'decision' })
+            }
+          >
+            {f.foeId}
+          </button>
+        ))}
+        <button
+          style={{ ...actionBtn, color: 'var(--c-danger)', borderStyle: 'dashed' }}
+          onClick={() =>
+            handleInput({ requestId: 'target', value: { cancel: true }, kind: 'decision' })
+          }
+        >
+          Cancel battle
+        </button>
       </div>
     </div>
   );
@@ -320,18 +453,34 @@ function AdvantageInput() {
           max={10}
           value={spend}
           onChange={(e) => setSpend(Number(e.target.value))}
-          style={{ width: 60, padding: '4px 8px', border: '1px solid var(--c-border-strong)', borderRadius: 5, fontSize: 13,
-                   background: 'var(--c-surface-raised)', color: 'var(--c-text)' }}
+          style={{
+            width: 60,
+            padding: '4px 8px',
+            border: '1px solid var(--c-border-strong)',
+            borderRadius: 5,
+            fontSize: 13,
+            background: 'var(--c-surface-raised)',
+            color: 'var(--c-text)',
+          }}
         />
         <button
-          style={{ ...actionBtn, background: 'var(--c-success)', color: '#fff', borderColor: 'var(--c-success)' }}
-          onClick={() => handleInput({ requestId: 'advantageSpend', value: { spend }, kind: 'decision' })}
+          style={{
+            ...actionBtn,
+            background: 'var(--c-success)',
+            color: '#fff',
+            borderColor: 'var(--c-success)',
+          }}
+          onClick={() =>
+            handleInput({ requestId: 'advantageSpend', value: { spend }, kind: 'decision' })
+          }
         >
           Spend
         </button>
         <button
           style={actionBtn}
-          onClick={() => handleInput({ requestId: 'advantageSpend', value: { retreat: true }, kind: 'decision' })}
+          onClick={() =>
+            handleInput({ requestId: 'advantageSpend', value: { retreat: true }, kind: 'decision' })
+          }
         >
           Retreat
         </button>
@@ -357,11 +506,20 @@ function OutcomePanel() {
       }}
     >
       <div style={{ fontSize: 36 }}>{won ? '🏆' : '💀'}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: won ? 'var(--c-success)' : 'var(--c-danger)', marginTop: 8 }}>
+      <div
+        style={{
+          fontSize: 22,
+          fontWeight: 700,
+          color: won ? 'var(--c-success)' : 'var(--c-danger)',
+          marginTop: 8,
+        }}
+      >
         {won ? 'Victory!' : 'Defeat'}
       </div>
       {outcome?.reason && (
-        <div style={{ fontSize: 13, color: 'var(--c-text-muted)', marginTop: 6 }}>{outcome.reason}</div>
+        <div style={{ fontSize: 13, color: 'var(--c-text-muted)', marginTop: 6 }}>
+          {outcome.reason}
+        </div>
       )}
     </div>
   );
@@ -405,12 +563,20 @@ function TowerView() {
     const el = containerRef.current;
     if (!el) return;
     mountDisplay(el, mode);
-    return () => { unmountDisplay(); };
+    return () => {
+      unmountDisplay();
+    };
   }, [mode]);
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: mode === 'emulator' ? 600 : 320, borderRadius: 8, overflow: 'hidden', background: '#0F172A' }}
+      style={{
+        width: '100%',
+        height: mode === 'emulator' ? 600 : 320,
+        borderRadius: 8,
+        overflow: 'hidden',
+        background: '#0F172A',
+      }}
     />
   );
 }
@@ -421,16 +587,39 @@ function CollapsibleLog() {
   const [open, setOpen] = useState(false);
   const logCount = usePlayerStore((s) => s.log.length);
   return (
-    <div style={{ background: 'var(--c-surface-raised)', border: '1px solid var(--c-border)', borderRadius: 8, padding: 14 }}>
+    <div
+      style={{
+        background: 'var(--c-surface-raised)',
+        border: '1px solid var(--c-border)',
+        borderRadius: 8,
+        padding: 14,
+      }}
+    >
       <button
         onClick={() => setOpen((v) => !v)}
         style={{
-          display: 'flex', alignItems: 'center', gap: 6, width: '100%',
-          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-          fontSize: 12, fontWeight: 600, color: 'var(--c-text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          width: '100%',
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          cursor: 'pointer',
+          fontSize: 12,
+          fontWeight: 600,
+          color: 'var(--c-text-muted)',
         }}
       >
-        <span style={{ display: 'inline-block', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>▸</span>
+        <span
+          style={{
+            display: 'inline-block',
+            transform: open ? 'rotate(90deg)' : 'none',
+            transition: 'transform 0.15s',
+          }}
+        >
+          ▸
+        </span>
         Event log
         <span style={{ fontWeight: 400, color: 'var(--c-text-faint)' }}>({logCount})</span>
       </button>
@@ -453,25 +642,38 @@ export function GamePanel() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
       {phase === 'idle' && (
-        <div style={{ color: 'var(--c-text-faint)', fontSize: 14, textAlign: 'center', paddingTop: 40 }}>
+        <div
+          style={{
+            color: 'var(--c-text-faint)',
+            fontSize: 14,
+            textAlign: 'center',
+            paddingTop: 40,
+          }}
+        >
           Load a scenario to begin.
         </div>
       )}
 
       {phase === 'validating' && (
-        <div style={{ color: 'var(--c-warning)', fontSize: 14, textAlign: 'center', paddingTop: 40 }}>
+        <div
+          style={{ color: 'var(--c-warning)', fontSize: 14, textAlign: 'center', paddingTop: 40 }}
+        >
           Validating…
         </div>
       )}
 
       {(phase === 'connecting' || phase === 'waiting') && (
-        <div style={{ color: 'var(--c-primary)', fontSize: 14, textAlign: 'center', paddingTop: 40 }}>
+        <div
+          style={{ color: 'var(--c-primary)', fontSize: 14, textAlign: 'center', paddingTop: 40 }}
+        >
           {phase === 'connecting' ? 'Connecting to relay…' : 'Waiting for target calibration…'}
         </div>
       )}
 
       {phase === 'error' && (
-        <div style={{ color: 'var(--c-danger)', fontSize: 13, textAlign: 'center', paddingTop: 40 }}>
+        <div
+          style={{ color: 'var(--c-danger)', fontSize: 13, textAlign: 'center', paddingTop: 40 }}
+        >
           Validation failed. Check the Scenario panel.
         </div>
       )}
@@ -479,14 +681,35 @@ export function GamePanel() {
       {(phase === 'playing' || phase === 'ended') && (
         <>
           {/* Status bar — at the top */}
-          <div style={{ background: 'var(--c-surface-raised)', border: '1px solid var(--c-border)', borderRadius: 8, padding: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-text-2)' }}>Game State</span>
+          <div
+            style={{
+              background: 'var(--c-surface-raised)',
+              border: '1px solid var(--c-border)',
+              borderRadius: 8,
+              padding: 14,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 10,
+              }}
+            >
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-text-2)' }}>
+                Game State
+              </span>
               <span
                 style={{
                   fontSize: 12,
                   fontWeight: 600,
-                  color: status === 'won' ? 'var(--c-success)' : status === 'lost' ? 'var(--c-danger)' : 'var(--c-text-muted)',
+                  color:
+                    status === 'won'
+                      ? 'var(--c-success)'
+                      : status === 'lost'
+                        ? 'var(--c-danger)'
+                        : 'var(--c-text-muted)',
                 }}
               >
                 {fmtStatus(status)}
@@ -501,7 +724,14 @@ export function GamePanel() {
 
           {/* Input area */}
           {phase === 'playing' && (
-            <div style={{ background: 'var(--c-surface-raised)', border: '1px solid var(--c-border)', borderRadius: 8, padding: 14 }}>
+            <div
+              style={{
+                background: 'var(--c-surface-raised)',
+                border: '1px solid var(--c-border)',
+                borderRadius: 8,
+                padding: 14,
+              }}
+            >
               <ActionInput />
             </div>
           )}
@@ -516,8 +746,19 @@ export function GamePanel() {
 
       {/* Log always visible once connected */}
       {(phase === 'connecting' || phase === 'waiting') && (
-        <div style={{ background: 'var(--c-surface-raised)', border: '1px solid var(--c-border)', borderRadius: 8, padding: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-muted)', marginBottom: 6 }}>Event log</div>
+        <div
+          style={{
+            background: 'var(--c-surface-raised)',
+            border: '1px solid var(--c-border)',
+            borderRadius: 8,
+            padding: 14,
+          }}
+        >
+          <div
+            style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-muted)', marginBottom: 6 }}
+          >
+            Event log
+          </div>
           <EventLog />
         </div>
       )}

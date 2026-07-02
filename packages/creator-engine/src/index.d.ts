@@ -202,15 +202,15 @@ export type TowerChannelName =
 export type TowerChannelOp =
   | { channel: 'skull.dropTrigger' }
   | { channel: 'light.named'; sequenceId: string }
-  | { channel: 'light.custom'; sequenceId?: string; [k: string]: unknown }
-  | { channel: 'light.effect'; [k: string]: unknown }
+  | { channel: 'light.custom'; sequenceId?: string;[k: string]: unknown }
+  | { channel: 'light.effect';[k: string]: unknown }
   | { channel: 'sound'; category: string }
-  | { channel: 'drum.rotate'; [k: string]: unknown }
+  | { channel: 'drum.rotate';[k: string]: unknown }
   | { channel: 'seal.break'; seal: string }
   | { channel: 'seal.replace'; seal: string }
-  | { channel: 'wait'; [k: string]: unknown }
-  | { channel: 'rotationBundle'; [k: string]: unknown }
-  | { channel: 'timeline'; [k: string]: unknown };
+  | { channel: 'wait';[k: string]: unknown }
+  | { channel: 'rotationBundle';[k: string]: unknown }
+  | { channel: 'timeline';[k: string]: unknown };
 
 export interface TowerProgramDirective {
   type: 'tower.program';
@@ -274,7 +274,7 @@ export interface TradeDecision {
 
 export type Input =
   | { requestId: 'action'; value: ActionChoice | ActionDecision; kind: 'decision' }
-  | { requestId: 'target'; value: { foeId?: string; adversary?: boolean }; kind: 'decision' }
+  | { requestId: 'target'; value: { foeId?: string; adversary?: boolean; cancel?: boolean }; kind: 'decision' }
   | { requestId: 'advantageSpend'; value: { spend?: number; retreat?: boolean; improve?: boolean }; kind: 'decision' }
   | { requestId: 'trade'; value: TradeDecision; kind: 'decision' }
   | { requestId: 'moveTarget'; value: { to: unknown }; kind: 'decision' }
