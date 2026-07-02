@@ -261,6 +261,71 @@ describe('validateGraph (L3)', () => {
     expect(result.ok).toBe(false);
     expect(result.errors.some((e) => e.includes('skullSupply'))).toBe(true);
   });
+
+  it('accepts unwired util.comment and util.group nodes (exempt from reachability)', () => {
+    const ok = structuredClone(golden);
+    (ok.graph.nodes as unknown[]).push(
+      { id: 'n-note', kind: 'util.comment', label: 'Setup phase', description: 'Spawns the L2 foe.' },
+      { id: 'n-group', kind: 'util.group', props: { color: '#3D5A80', nodeIds: [golden.graph.nodes[0].id] } },
+    );
+    const result = validateGraph(ok);
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('rejects a util.group whose props.nodeIds references a nonexistent node', () => {
+    const bad = structuredClone(golden);
+    (bad.graph.nodes as unknown[]).push({
+      id: 'n-group',
+      kind: 'util.group',
+      props: { nodeIds: ['n-missing'] },
+    });
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('n-group') && e.includes('n-missing'))).toBe(true);
+  });
+
+  it('rejects a util.group nesting another util.group', () => {
+    const bad = structuredClone(golden);
+    (bad.graph.nodes as unknown[]).push(
+      { id: 'n-group-inner', kind: 'util.group', props: { nodeIds: [] } },
+      { id: 'n-group-outer', kind: 'util.group', props: { nodeIds: ['n-group-inner'] } },
+    );
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(
+      result.errors.some((e) => e.includes('n-group-outer') && e.includes('n-group-inner')),
+    ).toBe(true);
+  });
+
+  it('rejects a util.group missing props.nodeIds', () => {
+    const bad = structuredClone(golden);
+    (bad.graph.nodes as unknown[]).push({ id: 'n-group', kind: 'util.group', props: {} });
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('n-group') && e.includes('nodeIds'))).toBe(true);
+  });
+
+  it('rejects a wired util.comment node', () => {
+    const bad = structuredClone(golden);
+    (bad.graph.nodes as unknown[]).push({
+      id: 'n-note',
+      kind: 'util.comment',
+      wires: { out: [golden.graph.nodes[0].id] },
+    });
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('n-note') && e.includes('annotation'))).toBe(true);
+  });
+
+  it('rejects a wire that targets an annotation node', () => {
+    const bad = structuredClone(golden);
+    (bad.graph.nodes as unknown[]).push({ id: 'n-note', kind: 'util.comment' });
+    bad.graph.nodes[0].wires = { out: ['n-note'] };
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('n-note') && e.includes('annotation'))).toBe(true);
+  });
 });
 
 // ---- resolver tests ----

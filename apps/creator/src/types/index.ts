@@ -22,13 +22,23 @@ export const NODE_KINDS = [
 
 export type NodeKind = (typeof NODE_KINDS)[number];
 
+// Documentation-only kinds: never executed by the engine, never wired, exempt from L3 reachability.
+export const ANNOTATION_KINDS = new Set<NodeKind>(['util.comment', 'util.group']);
+
 export interface SchemaNode {
   id: string;
   kind: NodeKind;
   label?: string;
+  description?: string;
   surface?: 'app' | 'tower' | 'media' | 'silent' | 'authorOnly';
   props?: Record<string, unknown>;
   wires?: Record<string, string[]>;
+}
+
+// props shape for kind === 'util.group'
+export interface GroupProps {
+  color?: string;
+  nodeIds: string[];
 }
 
 export interface LayoutPosition {

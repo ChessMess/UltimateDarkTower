@@ -6,6 +6,9 @@
 //     plus the engine-fired roots that are entered by the spine rather than by a wire:
 //     trigger.schedule / trigger.onState (end-of-turn event chains) and lifecycle.newQuests
 //     (routed from newMonthCheck at each month rollover).
+//   - annotation nodes (util.comment / util.group) are documentation-only: exempt from
+//     reachability, must not carry wires, must not be a wire target, and (for util.group)
+//     props.nodeIds must reference existing non-group nodes
 //   - skull supply > 0
 //   - no skull.dropTrigger op carries a count (skull invariant, belt-and-suspenders)
 
@@ -36,7 +39,10 @@ export function validateGraph(scenario: unknown): L3Result {
 
   // Build id → node map; collect the engine-fired roots (entered by the spine, not a wire)
   const ENGINE_ROOT_KINDS = new Set(['trigger.schedule', 'trigger.onState', 'lifecycle.newQuests']);
+  // Documentation-only nodes: never executed by the engine, never wired, exempt from reachability
+  const ANNOTATION_KINDS = new Set(['util.comment', 'util.group']);
   const nodeIds = new Set<string>();
+  const kindById = new Map<string, string>();
   const engineRoots: string[] = [];
   for (const n of rawNodes) {
     const node = obj(n);
@@ -44,6 +50,7 @@ export function validateGraph(scenario: unknown): L3Result {
     if (!id) continue;
     nodeIds.add(id);
     const kind = str(node?.['kind']);
+    if (kind) kindById.set(id, kind);
     if (kind && ENGINE_ROOT_KINDS.has(kind)) engineRoots.push(id);
   }
 
@@ -61,9 +68,14 @@ export function validateGraph(scenario: unknown): L3Result {
     if (!node) continue;
     const id = str(node['id']);
     if (!id) continue;
+    const kind = kindById.get(id);
+    const isAnnotation = kind !== undefined && ANNOTATION_KINDS.has(kind);
     const neighbors: string[] = [];
     const wires = obj(node['wires']);
-    if (wires) {
+    if (wires && Object.keys(wires).length > 0) {
+      if (isAnnotation) {
+        errors.push(`node "${id}" is an annotation node ("${kind}") and must not have wires`);
+      }
       for (const port of Object.keys(wires)) {
         const targets = arr(wires[port]) ?? [];
         for (const t of targets) {
@@ -74,6 +86,13 @@ export function validateGraph(scenario: unknown): L3Result {
             errors.push(
               `node "${id}" wire "${port}" references nonexistent node id "${targetId}"`,
             );
+          } else {
+            const targetKind = kindById.get(targetId);
+            if (targetKind !== undefined && ANNOTATION_KINDS.has(targetKind)) {
+              errors.push(
+                `node "${id}" wire "${port}" targets annotation node "${targetId}" ("${targetKind}")`,
+              );
+            }
           }
         }
       }
@@ -85,6 +104,24 @@ export function validateGraph(scenario: unknown): L3Result {
       errors.push(
         `node "${id}" skull.dropTrigger carries a "count" field — violates skull invariant`,
       );
+    }
+    // util.group: props.nodeIds must reference existing, non-group member nodes (no nesting)
+    if (kind === 'util.group') {
+      const nodeIdsProp = props ? props['nodeIds'] : undefined;
+      const memberIds = arr(nodeIdsProp);
+      if (!memberIds) {
+        errors.push(`node "${id}" is a util.group and its props.nodeIds must be an array`);
+      } else {
+        for (const m of memberIds) {
+          const memberId = str(m);
+          if (!memberId) continue;
+          if (!nodeIds.has(memberId)) {
+            errors.push(`node "${id}" props.nodeIds references nonexistent node id "${memberId}"`);
+          } else if (kindById.get(memberId) === 'util.group') {
+            errors.push(`node "${id}" props.nodeIds references another util.group "${memberId}" — nested groups are not supported`);
+          }
+        }
+      }
     }
     adjacency.set(id, neighbors);
   }
@@ -102,7 +139,8 @@ export function validateGraph(scenario: unknown): L3Result {
       }
     }
     for (const id of nodeIds) {
-      if (!visited.has(id)) {
+      const kind = kindById.get(id);
+      if (!visited.has(id) && !(kind !== undefined && ANNOTATION_KINDS.has(kind))) {
         errors.push(`node "${id}" is unreachable from graph.entry`);
       }
     }

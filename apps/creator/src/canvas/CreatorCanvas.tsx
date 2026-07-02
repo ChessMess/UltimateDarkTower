@@ -18,13 +18,18 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import engineModule from '@udtc/engine';
-import { ScenarioNode, type ScenarioRFNode } from './NodeTypes';
+import { ScenarioNode, CommentNode, GroupNode } from './NodeTypes';
 import { useCreatorStore } from '../store';
-import type { ScenarioDoc } from '../types';
+import type { ScenarioDoc, GroupProps } from '../types';
+import { computeGroupRects, type CreatorNode } from '../utils/serializer';
 import { NewScenarioDialog } from '../editors/NewScenarioDialog';
 import { clearDraft } from '../utils/draft';
 
-const nodeTypes: NodeTypes = { scenarioNode: ScenarioNode };
+const nodeTypes: NodeTypes = {
+  scenarioNode: ScenarioNode,
+  commentNode: CommentNode,
+  groupNode: GroupNode,
+};
 
 // The engine's own golden scenario — the base-game fidelity build (full turn structure,
 // buildings, events, monthly quests), guaranteed runnable by the simulator: the same fixture
@@ -44,13 +49,18 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
   const { fitView, screenToFlowPosition } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newDialogOpen, setNewDialogOpen] = useState(false);
+  const groupDragRef = useRef<{
+    groupId: string;
+    groupStart: { x: number; y: number };
+    memberStarts: Map<string, { x: number; y: number }>;
+  } | null>(null);
 
   const handleNew = useCallback(() => {
     if (isDirty && !window.confirm('Discard unsaved changes and start a new scenario?')) return;
     setNewDialogOpen(true);
   }, [isDirty]);
 
-  const onNodesChange: OnNodesChange<ScenarioRFNode> = useCallback(
+  const onNodesChange: OnNodesChange<CreatorNode> = useCallback(
     (changes) => {
       const updated = applyNodeChanges(changes, rfNodes);
       useCreatorStore.setState({ rfNodes: updated });
@@ -74,12 +84,61 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
     [rfEdges, rfNodes, syncFromRF],
   );
 
+  // Group drag: moving a groupNode carries its members along; moving any node that
+  // belongs to a group live-refits that group's auto-fit rect (see computeGroupRects).
+  const onNodeDragStart = useCallback((_evt: MouseEvent | TouchEvent, node: CreatorNode) => {
+    if (node.type !== 'groupNode') {
+      groupDragRef.current = null;
+      return;
+    }
+    const props = node.data.schemaNode.props as GroupProps | undefined;
+    const memberIds = new Set(props?.nodeIds ?? []);
+    const memberStarts = new Map<string, { x: number; y: number }>();
+    for (const n of useCreatorStore.getState().rfNodes) {
+      if (memberIds.has(n.id)) memberStarts.set(n.id, { x: n.position.x, y: n.position.y });
+    }
+    groupDragRef.current = { groupId: node.id, groupStart: { x: node.position.x, y: node.position.y }, memberStarts };
+  }, []);
+
+  const onNodeDrag = useCallback((_evt: MouseEvent | TouchEvent, node: CreatorNode) => {
+    const drag = groupDragRef.current;
+    if (drag && node.id === drag.groupId) {
+      const dx = node.position.x - drag.groupStart.x;
+      const dy = node.position.y - drag.groupStart.y;
+      useCreatorStore.setState((state) => ({
+        rfNodes: state.rfNodes.map((n) => {
+          const start = drag.memberStarts.get(n.id);
+          if (!start) return n;
+          return { ...n, position: { x: start.x + dx, y: start.y + dy } };
+        }),
+      }));
+      return;
+    }
+    // Dragging a plain node (or group member): keep any group's rect fit to its members
+    useCreatorStore.setState((state) => {
+      const rects = computeGroupRects(state.rfNodes);
+      let changed = false;
+      const next = state.rfNodes.map((n) => {
+        if (n.data.schemaNode.kind !== 'util.group') return n;
+        const rect = rects[n.id];
+        const style = n.style as { width?: number; height?: number } | undefined;
+        if (!rect || (n.position.x === rect.x && n.position.y === rect.y && style?.width === rect.width && style?.height === rect.height)) {
+          return n;
+        }
+        changed = true;
+        return { ...n, position: { x: rect.x, y: rect.y }, style: { width: rect.width, height: rect.height } };
+      });
+      return changed ? { rfNodes: next } : {};
+    });
+  }, []);
+
   const onNodeDragStop = useCallback(() => {
+    groupDragRef.current = null;
     syncFromRF(rfNodes, rfEdges);
   }, [rfNodes, rfEdges, syncFromRF]);
 
   const onNodeClick = useCallback(
-    (_evt: React.MouseEvent, node: ScenarioRFNode) => {
+    (_evt: React.MouseEvent, node: CreatorNode) => {
       selectNode(node.id);
     },
     [selectNode],
@@ -97,9 +156,21 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
     [rfEdges, rfNodes, syncFromRF],
   );
 
-  const onNodesDelete = useCallback((deleted: ScenarioRFNode[]) => {
+  const onNodesDelete = useCallback((deleted: CreatorNode[]) => {
     for (const n of deleted) useCreatorStore.getState().deleteNode(n.id);
   }, []);
+
+  const handleGroupSelection = useCallback(() => {
+    const ids = rfNodes
+      .filter((n) => n.selected && n.data.schemaNode.kind !== 'util.group')
+      .map((n) => n.id);
+    if (ids.length === 0) return;
+    useCreatorStore.getState().createGroup(ids);
+  }, [rfNodes]);
+
+  const canGroupSelection = rfNodes.some(
+    (n) => n.selected && n.data.schemaNode.kind !== 'util.group',
+  );
 
   // Import
   const handleImport = useCallback(
@@ -183,6 +254,8 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeDragStart={onNodeDragStart}
+        onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
@@ -269,6 +342,18 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
               disabled={!schemaDoc}
             >
               Auto-layout
+            </button>
+            <button
+              className="toolbar-btn"
+              onClick={handleGroupSelection}
+              disabled={!canGroupSelection}
+              title={
+                canGroupSelection
+                  ? 'Wrap the selected nodes in a visual group (shift-drag to select)'
+                  : 'Select one or more nodes (shift-drag) to group them'
+              }
+            >
+              Group Selection
             </button>
             <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
             <button

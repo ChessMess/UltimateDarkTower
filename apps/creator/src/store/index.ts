@@ -29,6 +29,9 @@ interface CreatorStore {
   deleteNode: (id: string) => void;
   updateNodeProps: (id: string, props: Record<string, unknown>) => void;
   updateNodeLabel: (id: string, label: string) => void;
+  updateNodeDescription: (id: string, description: string) => void;
+  updateScenarioDescription: (description: string) => void;
+  createGroup: (nodeIds: string[]) => void;
   setEntry: (id: string) => void;
 
   // Selection
@@ -131,7 +134,8 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     if (!schemaDoc) return;
     _nodeCounter += 1;
     const id = `n-${kind.replace('.', '-')}-${_nodeCounter}`;
-    const newNode: SchemaNode = { id, kind };
+    const newNode: SchemaNode =
+      kind === 'util.group' ? { id, kind, props: { nodeIds: [] } } : { id, kind };
     const updated: ScenarioDoc = {
       ...schemaDoc,
       graph: { ...schemaDoc.graph, nodes: [...schemaDoc.graph.nodes, newNode] },
@@ -148,15 +152,24 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const { schemaDoc } = get();
     if (!schemaDoc) return;
     const filteredNodes = schemaDoc.graph.nodes.filter((n) => n.id !== id);
-    // Also remove wires pointing to deleted node
+    // Also remove wires pointing to deleted node, and drop it from any group's membership
     const cleanNodes = filteredNodes.map((n) => {
-      if (!n.wires) return n;
+      let next = n;
+      if (n.kind === 'util.group') {
+        const props = n.props as { color?: string; nodeIds?: string[] } | undefined;
+        if (props?.nodeIds?.includes(id)) {
+          next = { ...next, props: { ...props, nodeIds: props.nodeIds.filter((m) => m !== id) } };
+        }
+      }
+      if (!next.wires) return next;
       const cleanWires: Record<string, string[]> = {};
-      for (const [handle, targets] of Object.entries(n.wires)) {
+      for (const [handle, targets] of Object.entries(next.wires)) {
         const filtered = targets.filter((t) => t !== id);
         if (filtered.length > 0) cleanWires[handle] = filtered;
       }
-      return Object.keys(cleanWires).length > 0 ? { ...n, wires: cleanWires } : (() => { const { wires: _w, ...rest } = n; void _w; return rest; })();
+      return Object.keys(cleanWires).length > 0
+        ? { ...next, wires: cleanWires }
+        : (() => { const { wires: _w, ...rest } = next; void _w; return rest; })();
     });
     const newEntry = schemaDoc.graph.entry === id && cleanNodes.length > 0
       ? cleanNodes[0].id
@@ -207,6 +220,67 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
           n.id === id ? { ...n, label } : n,
         ),
       },
+    };
+    const { nodes, edges } = deriveRF(updated);
+    const results = revalidate(updated);
+    const annotated = annotateErrors(nodes, results);
+    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+  },
+
+  updateNodeDescription(id, description) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const updated: ScenarioDoc = {
+      ...schemaDoc,
+      graph: {
+        ...schemaDoc.graph,
+        nodes: schemaDoc.graph.nodes.map((n) => {
+          if (n.id !== id) return n;
+          if (description.trim() === '') {
+            const { description: _d, ...rest } = n;
+            void _d;
+            return rest;
+          }
+          return { ...n, description };
+        }),
+      },
+    };
+    const { nodes, edges } = deriveRF(updated);
+    const results = revalidate(updated);
+    const annotated = annotateErrors(nodes, results);
+    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+  },
+
+  updateScenarioDescription(description) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    let meta = { ...schemaDoc.meta };
+    if (description.trim() === '') {
+      const { description: _d, ...rest } = meta;
+      void _d;
+      meta = rest;
+    } else {
+      meta = { ...meta, description };
+    }
+    const updated: ScenarioDoc = { ...schemaDoc, meta };
+    const results = revalidate(updated);
+    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+  },
+
+  createGroup(nodeIds) {
+    const { schemaDoc } = get();
+    if (!schemaDoc || nodeIds.length === 0) return;
+    _nodeCounter += 1;
+    const id = `n-util-group-${_nodeCounter}`;
+    const newNode: SchemaNode = {
+      id,
+      kind: 'util.group',
+      label: 'Group',
+      props: { nodeIds: [...nodeIds].sort() },
+    };
+    const updated: ScenarioDoc = {
+      ...schemaDoc,
+      graph: { ...schemaDoc.graph, nodes: [...schemaDoc.graph.nodes, newNode] },
     };
     const { nodes, edges } = deriveRF(updated);
     const results = revalidate(updated);

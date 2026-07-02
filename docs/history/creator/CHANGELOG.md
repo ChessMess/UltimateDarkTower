@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Creator: Node-RED-style flow documentation — optional per-node descriptions and an editable scenario-level description, sticky-note `util.comment` nodes, and `util.group` visual groups (colored container, auto-fit to members, drag-to-move members together) built via a "Group Selection" toolbar button. Schema gains `node.description` and closed `props` for both annotation kinds; L3 exempts them from reachability and validates group membership (no wires, no nested groups, members must exist)
 - Creator: autosaved local draft (localStorage) with debounced background saves, a restore/discard recovery prompt on load, and a native "leave site?" guard for unsaved changes — protects in-progress authoring from page refreshes, tab closes, and crashes even while the scenario fails validation
 - Creator: focus mode button to hide the palette/inspector/bottom panels so the canvas fills the window, plus a wider zoom-out range (down to 0.05x) for viewing large graphs
 - Initial monorepo scaffold: `packages/schema`, `packages/engine`, `packages/adapters`, `apps/creator`, `apps/player`

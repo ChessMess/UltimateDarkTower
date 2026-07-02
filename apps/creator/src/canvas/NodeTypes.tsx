@@ -1,9 +1,11 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { Node } from '@xyflow/react';
-import { categoryFor, outputHandlesFor, type CreatorNodeData } from '../types';
+import { categoryFor, outputHandlesFor, type CreatorNodeData, type GroupProps } from '../types';
 
 export type ScenarioRFNode = Node<CreatorNodeData, 'scenarioNode'>;
+export type CommentRFNode = Node<CreatorNodeData, 'commentNode'>;
+export type GroupRFNode = Node<CreatorNodeData, 'groupNode'>;
 
 function ScenarioNodeComponent({ data, selected }: NodeProps<ScenarioRFNode>) {
   const { schemaNode, isEntry, hasErrors } = data;
@@ -87,8 +89,13 @@ function ScenarioNodeComponent({ data, selected }: NodeProps<ScenarioRFNode>) {
 
       {/* Body */}
       <div style={{ padding: '5px 8px', color: cat.textColor }}>
-        <div style={{ fontWeight: 700, fontSize: 12 }}>
-          {schemaNode.label || schemaNode.kind.split('.')[1]}
+        <div style={{ fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span>{schemaNode.label || schemaNode.kind.split('.')[1]}</span>
+          {schemaNode.description && (
+            <span title={schemaNode.description} style={{ opacity: 0.55, fontSize: 10 }}>
+              ▤
+            </span>
+          )}
         </div>
         <div style={{ opacity: 0.6, fontSize: 10 }}>{schemaNode.id}</div>
         {schemaNode.props && (
@@ -141,3 +148,65 @@ function ScenarioNodeComponent({ data, selected }: NodeProps<ScenarioRFNode>) {
 }
 
 export const ScenarioNode = memo(ScenarioNodeComponent);
+
+function CommentNodeComponent({ data, selected }: NodeProps<CommentRFNode>) {
+  const { schemaNode } = data;
+  return (
+    <div
+      style={{
+        background: '#FEF3C7',
+        border: `2px solid ${selected ? '#D97706' : '#FBBF24'}`,
+        borderRadius: 4,
+        minWidth: 180,
+        minHeight: 90,
+        padding: '8px 10px',
+        boxShadow: selected ? '0 0 0 2px #FDE68A' : '2px 2px 0 rgba(217, 119, 6, 0.15)',
+        fontFamily: 'monospace',
+        color: '#78350F',
+      }}
+    >
+      <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>
+        {schemaNode.label || 'Comment'}
+      </div>
+      <div style={{ fontSize: 10, whiteSpace: 'pre-wrap', opacity: 0.85 }}>
+        {schemaNode.description || ''}
+      </div>
+    </div>
+  );
+}
+
+export const CommentNode = memo(CommentNodeComponent);
+
+function GroupNodeComponent({ data, selected }: NodeProps<GroupRFNode>) {
+  const { schemaNode } = data;
+  const props = schemaNode.props as GroupProps | undefined;
+  const color = props?.color || '#6B7280';
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        background: `${color}1A`,
+        border: `2px ${selected ? 'solid' : 'dashed'} ${color}`,
+        borderRadius: 8,
+        boxSizing: 'border-box',
+      }}
+    >
+      <div
+        style={{
+          background: color,
+          color: '#fff',
+          padding: '3px 8px',
+          borderRadius: '6px 6px 0 0',
+          fontFamily: 'monospace',
+          fontSize: 11,
+          fontWeight: 700,
+        }}
+      >
+        {schemaNode.label || 'Group'}
+      </div>
+    </div>
+  );
+}
+
+export const GroupNode = memo(GroupNodeComponent);

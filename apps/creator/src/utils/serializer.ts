@@ -1,21 +1,81 @@
 import type { Node, Edge } from '@xyflow/react';
-import type { ScenarioDoc, SchemaNode, CreatorNodeData } from '../types';
+import type { ScenarioDoc, SchemaNode, CreatorNodeData, GroupProps } from '../types';
 
-export type CreatorNode = Node<CreatorNodeData, 'scenarioNode'>;
+export type CreatorNodeType = 'scenarioNode' | 'commentNode' | 'groupNode';
+export type CreatorNode = Node<CreatorNodeData, CreatorNodeType>;
 
 const NODE_W = 200;
 const NODE_H = 60;
+const COMMENT_W = 200;
+const COMMENT_H = 100;
+const GROUP_EMPTY_W = 240;
+const GROUP_EMPTY_H = 120;
+const GROUP_PADDING = 24;
+const GROUP_HEADER_H = 36;
+
+export type GroupRect = { x: number; y: number; width: number; height: number };
+
+function typeForKind(kind: SchemaNode['kind']): CreatorNodeType {
+  if (kind === 'util.comment') return 'commentNode';
+  if (kind === 'util.group') return 'groupNode';
+  return 'scenarioNode';
+}
+
+function sizeForNode(sn: SchemaNode): { w: number; h: number } {
+  if (sn.kind === 'util.comment') return { w: COMMENT_W, h: COMMENT_H };
+  return { w: NODE_W, h: NODE_H };
+}
+
+// Group bounds are never stored — always the auto-fit bounding box of the group's current
+// members (+ padding), so export→import re-derives the identical rect (CR-7.13.1).
+export function computeGroupRects(nodes: CreatorNode[]): Record<string, GroupRect> {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const rects: Record<string, GroupRect> = {};
+  for (const n of nodes) {
+    if (n.data.schemaNode.kind !== 'util.group') continue;
+    const props = n.data.schemaNode.props as GroupProps | undefined;
+    const memberIds = props?.nodeIds ?? [];
+    const members = memberIds
+      .map((id) => byId.get(id))
+      .filter(
+        (m): m is CreatorNode => m !== undefined && m.data.schemaNode.kind !== 'util.group',
+      );
+    if (members.length === 0) {
+      rects[n.id] = { x: n.position.x, y: n.position.y, width: GROUP_EMPTY_W, height: GROUP_EMPTY_H };
+      continue;
+    }
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const m of members) {
+      const { w, h } = sizeForNode(m.data.schemaNode);
+      minX = Math.min(minX, m.position.x);
+      minY = Math.min(minY, m.position.y);
+      maxX = Math.max(maxX, m.position.x + w);
+      maxY = Math.max(maxY, m.position.y + h);
+    }
+    rects[n.id] = {
+      x: minX - GROUP_PADDING,
+      y: minY - GROUP_PADDING - GROUP_HEADER_H,
+      width: maxX - minX + GROUP_PADDING * 2,
+      height: maxY - minY + GROUP_PADDING * 2 + GROUP_HEADER_H,
+    };
+  }
+  return rects;
+}
 
 export function schemaToFlow(doc: ScenarioDoc): { nodes: CreatorNode[]; edges: Edge[] } {
   const positions = doc.meta.layout?.positions ?? {};
   const schemaNodes = doc.graph.nodes;
 
-  const nodes: CreatorNode[] = schemaNodes.map((sn, i) => {
+  let nodes: CreatorNode[] = schemaNodes.map((sn, i) => {
     const saved = positions[sn.id];
     const position = saved ?? { x: i * 260, y: 0 };
-    return {
+    const type = typeForKind(sn.kind);
+    const base: CreatorNode = {
       id: sn.id,
-      type: 'scenarioNode' as const,
+      type,
       position,
       data: {
         schemaNode: sn,
@@ -23,6 +83,19 @@ export function schemaToFlow(doc: ScenarioDoc): { nodes: CreatorNode[]; edges: E
         hasErrors: false,
         errorMessages: [],
       },
+    };
+    return type === 'groupNode' ? { ...base, zIndex: -1 } : base;
+  });
+
+  // Fit group rects to their members' current positions
+  const groupRects = computeGroupRects(nodes);
+  nodes = nodes.map((n) => {
+    const rect = groupRects[n.id];
+    if (!rect) return n;
+    return {
+      ...n,
+      position: { x: rect.x, y: rect.y },
+      style: { width: rect.width, height: rect.height },
     };
   });
 
@@ -83,9 +156,9 @@ export function flowToSchema(
 
   return {
     ...doc,
-    meta: { ...doc.meta, layout: { positions } },
+    meta: { ...doc.meta, layout: { ...doc.meta.layout, positions } },
     graph: { ...doc.graph, nodes: updatedNodes },
   };
 }
 
-export { NODE_W, NODE_H };
+export { NODE_W, NODE_H, COMMENT_W, COMMENT_H };
