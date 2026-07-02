@@ -94,12 +94,16 @@ export function schemaToFlow(doc: ScenarioDoc): { nodes: CreatorNode[]; edges: E
     if (type === 'groupNode') return { ...base, zIndex: -1 };
     if (type === 'commentNode') {
       const savedSize = sizes[sn.id];
+      const w = savedSize?.width ?? COMMENT_W;
+      const h = savedSize?.height ?? COMMENT_H;
       return {
         ...base,
-        style: {
-          width: savedSize?.width ?? COMMENT_W,
-          height: savedSize?.height ?? COMMENT_H,
-        },
+        style: { width: w, height: h },
+        // Pre-measurement size hint: without this, React Flow's marquee-selection hit test
+        // falls back to a 0x0 box for any node it hasn't measured yet (e.g. right after this
+        // node array is rebuilt from scratch), which makes the node match every selection rect.
+        initialWidth: w,
+        initialHeight: h,
       };
     }
     return base;
@@ -114,6 +118,8 @@ export function schemaToFlow(doc: ScenarioDoc): { nodes: CreatorNode[]; edges: E
       ...n,
       position: { x: rect.x, y: rect.y },
       style: { width: rect.width, height: rect.height },
+      initialWidth: rect.width,
+      initialHeight: rect.height,
     };
   });
 

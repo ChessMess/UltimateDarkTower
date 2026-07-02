@@ -164,14 +164,27 @@ export const ScenarioNode = memo(ScenarioNodeComponent);
 function applyCommentResize(id: string, width: number, height: number, persist: boolean) {
   const state = useCreatorStore.getState();
   const resized: CreatorNode[] = state.rfNodes.map((n) =>
-    n.id === id ? { ...n, style: { ...(n.style as Record<string, unknown> | undefined), width, height } } : n,
+    n.id === id
+      ? {
+          ...n,
+          style: { ...(n.style as Record<string, unknown> | undefined), width, height },
+          initialWidth: width,
+          initialHeight: height,
+        }
+      : n,
   );
   const rects = computeGroupRects(resized);
   const nextNodes = resized.map((n) => {
     if (n.data.schemaNode.kind !== 'util.group') return n;
     const rect = rects[n.id];
     if (!rect) return n;
-    return { ...n, position: { x: rect.x, y: rect.y }, style: { width: rect.width, height: rect.height } };
+    return {
+      ...n,
+      position: { x: rect.x, y: rect.y },
+      style: { width: rect.width, height: rect.height },
+      initialWidth: rect.width,
+      initialHeight: rect.height,
+    };
   });
   if (persist) {
     state.syncFromRF(nextNodes, state.rfEdges);

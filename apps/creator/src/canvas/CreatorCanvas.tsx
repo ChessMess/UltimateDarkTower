@@ -121,7 +121,13 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
           return n;
         }
         changed = true;
-        return { ...n, position: { x: rect.x, y: rect.y }, style: { width: rect.width, height: rect.height } };
+        return {
+          ...n,
+          position: { x: rect.x, y: rect.y },
+          style: { width: rect.width, height: rect.height },
+          initialWidth: rect.width,
+          initialHeight: rect.height,
+        };
       });
       return changed ? { rfNodes: next } : {};
     });
