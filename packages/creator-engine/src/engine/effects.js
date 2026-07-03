@@ -126,11 +126,18 @@ function applyEffect(eff, state, directives) {
       break;
     }
     case 'foe.remove':
-      state.foes = state.foes.filter((x) => x.foeId !== eff.foeId);
+      // an explicit instanceId (set when the battle target was disambiguated, deferred item 1)
+      // removes only that instance; otherwise falls back to removing every matching foeId, which
+      // is exactly today's behavior for scenarios/streams that never disambiguate.
+      state.foes = eff.instanceId
+        ? state.foes.filter((x) => x.instanceId !== eff.instanceId)
+        : state.foes.filter((x) => x.foeId !== eff.foeId);
       dir(directives, 'board.mutate', { command: 'removeFoe', args: { foeId: eff.foeId } });
       break;
     case 'foe.escalateStatus': {
-      const f = state.foes.find((x) => x.foeId === eff.foeId);
+      const f = eff.instanceId
+        ? state.foes.find((x) => x.instanceId === eff.instanceId)
+        : state.foes.find((x) => x.foeId === eff.foeId);
       if (f)
         f.status =
           FOE_LADDER[

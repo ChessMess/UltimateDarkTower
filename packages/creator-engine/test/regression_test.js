@@ -190,6 +190,41 @@ for (const [name, fx] of [
   ok('A4: building.destroy marks the registry building destroyed', b.destroyed === true);
 }
 
+// ---------- D1: battle target instanceId disambiguates two same-type foes ----------
+{
+  const s = makeTestState();
+  s.foes.push({ instanceId: 'foe-2', foeId: 'brigands', status: 'ready', location: 'elsewhere' });
+  startBattle(s, [], { foeId: 'brigands', instanceId: 'foe-1' });
+  resolveBattle(s, [], { spend: 2 }); // clears both brigands cards (level 2) → defeated
+  ok(
+    'D1: defeating one instance of a same-type foe leaves the other instance alive',
+    s.foes.length === 1 && s.foes[0].instanceId === 'foe-2',
+    'foes=' + JSON.stringify(s.foes),
+  );
+}
+{
+  const s = makeTestState();
+  s.foes.push({ instanceId: 'foe-2', foeId: 'brigands', status: 'ready', location: 'elsewhere' });
+  startBattle(s, [], { foeId: 'brigands' }); // no instanceId: legacy fallback behavior
+  resolveBattle(s, [], { spend: 2 });
+  ok(
+    'D1: a legacy target with no instanceId still removes every matching foeId (unchanged fallback)',
+    s.foes.length === 0,
+  );
+}
+{
+  const s = makeTestState();
+  s.foes.push({ instanceId: 'foe-2', foeId: 'brigands', status: 'ready', location: 'elsewhere' });
+  startBattle(s, [], { foeId: 'brigands', instanceId: 'foe-1' });
+  resolveBattle(s, [], { spend: 0 }); // no spend, both strikes land → not defeated → escalates
+  const f1 = s.foes.find((f) => f.instanceId === 'foe-1');
+  const f2 = s.foes.find((f) => f.instanceId === 'foe-2');
+  ok(
+    'D1: an undefeated battle escalates only the targeted instance, not the other same-type foe',
+    f1.status === 'savage' && f2.status === 'ready',
+  );
+}
+
 // ---------- D2: completeQuest faults on re-entry instead of recursing unboundedly ----------
 {
   const r = engine.init(goldenFull, opts);

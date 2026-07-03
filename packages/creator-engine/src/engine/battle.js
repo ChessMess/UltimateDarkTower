@@ -15,6 +15,15 @@ function startBattle(state, directives, sel) {
   // a battle with no authored cards would "clear" instantly (0 of 0) — fail loudly instead
   if (!def || !(def.cards || []).length)
     throw fault("foe '" + foeId + "' has no authored battleDef cards");
+  // Resolve which specific foe instance is targeted: honor an explicit sel.instanceId (so two
+  // same-type foes can be fought independently — deferred item 1), falling back to the first
+  // matching foeId for legacy/compact input streams that don't disambiguate. This preserves
+  // current behavior exactly when there's at most one foe per type (e.g. golden/goldenFull).
+  const targetFoe = isAdversary
+    ? null
+    : sel.instanceId
+      ? state.foes.find((f) => f.instanceId === sel.instanceId && f.foeId === foeId)
+      : state.foes.find((f) => f.foeId === foeId);
   if (state._setup && state._setup.fullTurn) {
     // rules.md §Battle: you battle a foe ON YOUR SPACE; the adversary must be reached on the board.
     const hero = state.heroes[state.clock.activeHero];
@@ -25,7 +34,7 @@ function startBattle(state, directives, sel) {
         throw fault(
           'battle: the adversary is at ' + state.adversary.location + ', not on your space',
         );
-    } else if (!state.foes.some((f) => f.foeId === foeId && f.location === hero.location)) {
+    } else if (!targetFoe || targetFoe.location !== hero.location) {
       throw fault('battle: no ' + foeId + ' on your space (' + (hero.location || 'nowhere') + ')');
     }
   }
@@ -41,7 +50,21 @@ function startBattle(state, directives, sel) {
   shuffleInPlace(pool, state);
   const cards = [];
   for (let i = 0; i < level && pool.length; i++) cards.push(pool[i % pool.length]);
-  state.clock.battle = { foeId, isAdversary, level, cards, resolved: 0 };
+  // Only carry instanceId forward when the caller explicitly disambiguated: `targetFoe` above also
+  // resolves a bare foeId to its first match (for the fullTurn location check), but silently
+  // switching foe.remove/foe.escalateStatus to single-instance semantics for callers who never
+  // asked for it would change today's remove-all-matching behavior wherever >1 foe of a type
+  // exists. Legacy/compact callers keep exactly that behavior; only an explicit sel.instanceId
+  // narrows the later verbs to one instance.
+  const resolvedInstanceId = sel.instanceId && targetFoe ? targetFoe.instanceId : undefined;
+  state.clock.battle = {
+    foeId,
+    instanceId: resolvedInstanceId,
+    isAdversary,
+    level,
+    cards,
+    resolved: 0,
+  };
   dir(directives, 'tower.program', { ops: [{ channel: 'sound', category: 'Battle' }] });
   dir(directives, 'ui.prompt', {
     kind: 'advantageSpend',
@@ -123,10 +146,14 @@ function resolveBattle(state, directives, decision) {
       raiseEvent(state, directives, 'foeDefeated');
       winGame(state, directives, 'adversary-defeated');
     } else {
-      applyEffect({ op: 'foe.remove', foeId: b.foeId }, state, directives);
+      applyEffect({ op: 'foe.remove', foeId: b.foeId, instanceId: b.instanceId }, state, directives);
     }
   } else if (state.outcome.status === 'running') {
-    applyEffect({ op: 'foe.escalateStatus', foeId: b.foeId }, state, directives);
+    applyEffect(
+      { op: 'foe.escalateStatus', foeId: b.foeId, instanceId: b.instanceId },
+      state,
+      directives,
+    );
   }
   // full turn: the battle heroic action is complete (all cards resolved) → +2 spirit (rules.md §100)
   if (state._setup && state._setup.fullTurn && state.outcome.status === 'running')
