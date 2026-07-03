@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import type { BoardState } from './boardState';
+import type { BoardState, FoeStatus } from './boardState';
+import { FOE_STATUSES } from '../data/udtReexports';
 
 // zod v4 (matches Display's runtime dependency; v3 -> v4 is breaking).
 const heroTokenSchema = z.object({
@@ -8,10 +9,12 @@ const heroTokenSchema = z.object({
   meta: z.record(z.string(), z.unknown()).optional(),
 });
 
+// Sourced from UDT's `FOE_STATUSES` (not hand-listed) so this stays in sync as the
+// ready→savage→lethal progression gains members (e.g. panicked/unsteady in UDT v5).
 const foeTokenSchema = z.object({
   foe: z.string(),
   location: z.string(),
-  status: z.enum(['ready', 'savage', 'lethal']),
+  status: z.enum(FOE_STATUSES as [FoeStatus, ...FoeStatus[]]),
   meta: z.record(z.string(), z.unknown()).optional(),
 });
 

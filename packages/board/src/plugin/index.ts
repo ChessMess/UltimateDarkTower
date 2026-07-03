@@ -354,6 +354,9 @@ export class Board3DPlugin implements ScenePlugin {
       disposeObject(this.board);
       this.board.removeFromParent();
       this.board = null;
+      // We hid Display's placeholder disc in onModelLoaded (boardImageUrl was set) — restore
+      // it so detaching this plugin from a still-live view doesn't leave the disc hidden.
+      this.view3D.setBoardDiscEnabled(true);
     }
     this.group?.removeFromParent();
     this.group = null;
@@ -663,7 +666,7 @@ export class Board3DPlugin implements ScenePlugin {
       const base = node.userData.baseScale as THREE.Vector3 | undefined;
       if (!selection || !base) continue;
       const k = this.selectedKey === selectionKey(selection) ? SELECTED_SCALE : 1;
-      node.scale.set(base.x * k, base.y * k, base.z);
+      node.scale.set(base.x * k, base.y * k, base.z * k);
     }
   }
 }

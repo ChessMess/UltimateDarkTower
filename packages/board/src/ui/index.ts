@@ -294,6 +294,7 @@ function buildPalette(
     FOE_STATUSES.map((s) => ({ value: s, label: s })),
     'udt-palette-foe-status'
   );
+  foeStatus.value = 'ready'; // matches spawnFoe's own default; FOE_STATUSES[0] is 'panicked'
   const foeRow = fieldRow('Type', foeType, 'Status', foeStatus);
 
   const adversaryId = makeSelect(

@@ -219,7 +219,11 @@ export class BoardStageView {
       panel: this.els.panel,
       towerHost: this.els.tower3dHost,
       toggleButton: this.els.popOut,
-      create3D: (container) => this.buildTower(container),
+      // Only rebuild the tower here if it's actually enabled — a user who turned the
+      // tower OFF must not have it silently resurrected by a pop-out/pop-in cycle.
+      create3D: (container) => {
+        if (this.towerEnabled) this.buildTower(container);
+      },
       dispose3D: () => this.disposeTowerHandle(),
       setLayoutSuspended: (v) => options.onPopOut?.(v),
       stageCss: BOARD_STAGE_CSS,
@@ -392,6 +396,9 @@ export class BoardStageView {
         this.view.selection.set(sel);
         this.options.onTokenSelect?.(sel);
       },
+      // The 3D camera (Display's own side buttons) is a focus source of truth too —
+      // reflect a side change into the shared focus so the 2D map + kingdom bar follow.
+      onFocusChange: (focus) => this.view.setFocus(focus),
     });
     this.tower?.setFocus(this.view.focus);
   }

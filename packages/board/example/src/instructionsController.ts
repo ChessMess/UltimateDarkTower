@@ -1,5 +1,5 @@
 // Collapse / reveal the help strip to give the view more vertical space. State
-// persisted; mirrored by the "Show help text" checkbox in Settings.
+// persisted across reloads, toggled by the "Hide Help" / "Show Help" button.
 import type { DomElements } from './dom';
 import { readLocal, writeLocal } from './utils';
 

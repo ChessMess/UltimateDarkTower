@@ -43,6 +43,9 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
   let pollTimer: number | null = null;
   let beforeUnload: (() => void) | null = null;
   let popupHide: (() => void) | null = null;
+  // Set by `dispose()` so a `pagehide`/`beforeunload`/poll callback that fires AFTER the stage
+  // itself has been torn down can't rebuild the 3D tower into now-detached DOM.
+  let disposed = false;
 
   const buildPopupDocument = (win: Window): HTMLElement => {
     const doc = win.document;
@@ -127,7 +130,7 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
 
   const restore = (): void => {
     const win = popup;
-    if (!win) return; // already restored (pagehide + poll can both fire — claim it once)
+    if (!win || disposed) return; // already restored (pagehide + poll can both fire — claim it once)
     popup = null;
 
     if (pollTimer !== null) {
@@ -175,9 +178,29 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
       if (popup && !popup.closed) popup.close();
     },
     dispose: () => {
+      // Flip the flag and unhook the popup's own listeners FIRST, so a `pagehide` fired by
+      // the `popup.close()` below (timing varies by browser) can't call back into `restore()`
+      // and rebuild the tower into DOM the stage is about to remove.
+      disposed = true;
+      if (popupHide) {
+        try {
+          popup?.removeEventListener('pagehide', popupHide);
+          popup?.removeEventListener('beforeunload', popupHide);
+        } catch {
+          // the popup window may already be torn down — ignore
+        }
+        popupHide = null;
+      }
+      if (pollTimer !== null) {
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      if (beforeUnload) {
+        window.removeEventListener('beforeunload', beforeUnload);
+        beforeUnload = null;
+      }
       if (popup && !popup.closed) popup.close();
-      if (pollTimer !== null) window.clearInterval(pollTimer);
-      if (beforeUnload) window.removeEventListener('beforeunload', beforeUnload);
+      popup = null;
     },
   };
 }

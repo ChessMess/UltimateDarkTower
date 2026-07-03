@@ -234,6 +234,40 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
     expect(locs.has('Broken Lands')).toBe(false); // not a building
   });
 
+  it('scales all three axes when a token is selected (not just x/y)', async () => {
+    view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
+    handle = attachBoard3D(view, { boardState: makeState() });
+    await flushModelLoad();
+
+    const target = registeredTarget();
+    const hero = tokensOf(target).find(
+      (t) => (t.userData.selection as TokenSelection).kind === 'hero'
+    ) as THREE.Sprite;
+    const base = hero.userData.baseScale as THREE.Vector3;
+
+    target.onPointerDown?.({ object: hero } as unknown as THREE.Intersection, {} as PointerEvent);
+
+    // A model3d token is a real 3D Group — leaving z unscaled (a past bug) flattens it when
+    // selected. Assert the z ratio matches x/y's, not just that x/y grew.
+    const ratioX = hero.scale.x / base.x;
+    const ratioZ = hero.scale.z / base.z;
+    expect(ratioX).toBeGreaterThan(1);
+    expect(ratioZ).toBeCloseTo(ratioX);
+  });
+
+  it('restores Display’s board disc on dispose after hiding it for boardImageUrl', async () => {
+    const discSpy = jest.spyOn(Tower3DView.prototype, 'setBoardDiscEnabled');
+    view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
+    handle = attachBoard3D(view, { boardState: makeState(), boardImageUrl: './board.png' });
+    await flushModelLoad();
+    expect(discSpy).toHaveBeenCalledWith(false);
+
+    handle.dispose();
+    handle = undefined; // already disposed
+    expect(discSpy).toHaveBeenCalledWith(true);
+    discSpy.mockRestore();
+  });
+
   it('tears down cleanly on dispose', async () => {
     view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
     handle = attachBoard3D(view, { boardState: makeState() });

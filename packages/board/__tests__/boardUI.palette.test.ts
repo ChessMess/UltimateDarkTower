@@ -34,6 +34,14 @@ describe('Palette', () => {
     expect(foes).toEqual([{ foe: 'Brigands', location: 'Dayside', status: 'savage' }]);
   });
 
+  it('defaults the foe-status select to ready (not FOE_STATUSES[0])', () => {
+    const { host } = setup();
+    const kind = $<HTMLSelectElement>(host, '.udt-palette-kind');
+    kind.value = 'foe';
+    kind.dispatchEvent(new Event('change'));
+    expect($<HTMLSelectElement>(host, '.udt-palette-foe-status').value).toBe('ready');
+  });
+
   it('a board-pick fills the location select; Confirm uses it', () => {
     const { controller, locationPick, host } = setup();
     const kind = $<HTMLSelectElement>(host, '.udt-palette-kind');

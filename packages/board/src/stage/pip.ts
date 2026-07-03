@@ -6,7 +6,7 @@
 import type { StageStorage } from './storage';
 
 /** Smallest the inset may be dragged/resized to (px). */
-export const MIN_INSET = 150;
+const MIN_INSET = 150;
 const PIP_KEY = 'pip.inset';
 
 /** Which edges a corner drags (-1 = left/top edge, +1 = right/bottom edge). */
