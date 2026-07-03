@@ -206,8 +206,10 @@ expectFault("a quest's location requirement gates the quest action", () =>
   const s = lastOf(run).state;
   const failed = run.flatMap(r => r.directives).some(d => d.type === "log.entry" && d.event === "questFailed" && d.questId === "adv-quest-m2");
   ok("the month-2 adversary quest fails at month end", failed);
-  ok("the failed adversary quest makes the world worse (skull placed from supply)",
-     run.flatMap(r => r.directives).some(d => d.type === "board.mutate" && d.command === "placeSkull" && (d.args || {}).count === 1));
+  // engine 0.4.0: skull.place now lands the skull on a standing building in the registry model
+  // (source "effect" with the building it hit), rather than emitting a chooser prompt.
+  ok("the failed adversary quest makes the world worse (skull placed from supply on a north building)",
+     run.flatMap(r => r.directives).some(d => d.type === "board.mutate" && d.command === "placeSkull" && (d.args || {}).source === "effect" && (d.args || {}).kingdom === "north"));
   ok("the failed monthly quest is retired", !(s.activeQuests || []).some(q => q.questId === "adv-quest-m2"));
 }
 
