@@ -87,13 +87,17 @@ export default defineConfig({
       // named exports (e.g. `makeCommandLogEntry`) resolve without any extra include.
       include: [/node_modules/],
     },
-    rollupOptions: {
-      // @stoprocent/noble is a Node-only BLE adapter — never loaded in the browser.
-      external: ['@stoprocent/noble'],
-    },
   },
   resolve: {
     alias: {
+      // @stoprocent/noble is a Node-only BLE adapter, required both directly by
+      // ultimatedarktower's CJS entry and transitively via
+      // ultimatedarktowerrelay-client -> ultimatedarktower (CJS). It's never
+      // installed and never loaded in the browser (the require is Node-guarded
+      // and wrapped in a try/catch). Aliasing it to a local empty stub gives the
+      // esbuild dev pre-bundler and the Rollup production build a real module to
+      // resolve, instead of externalizing a package that doesn't exist.
+      '@stoprocent/noble': fileURLToPath(new URL('./noble-stub.js', import.meta.url)),
       // The relay SDK (ultimatedarktowerrelay-{client,shared}) is a published npm dep,
       // so no source alias is needed here.
       // For local development against a sibling checkout via npm link, e.g.:
@@ -101,8 +105,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    // Exclude Node-only BLE adapter from pre-bundling.
-    exclude: ['@stoprocent/noble'],
     esbuildOptions: {
       // Shim Node's `module` built-in during pre-bundling so the ESM
       // bundle's `createRequire` call works harmlessly in the browser.
