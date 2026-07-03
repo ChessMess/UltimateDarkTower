@@ -9,9 +9,9 @@ export type HeroId = string;
 export type FoeId = string;
 
 /**
- * In-play foe power progression (ready → savage → lethal). Tracked in state but NOT rendered
- * (lethality is not shown). Re-exported from UDT (`ultimatedarktower`) so this stays the single
- * source of truth; importers keep getting it from `'../state/boardState'`.
+ * In-play foe power progression (panicked → unsteady → ready → savage → lethal). Tracked in
+ * state but NOT rendered (lethality is not shown). Re-exported from UDT (`ultimatedarktower`)
+ * so this stays the single source of truth; importers keep getting it from `'../state/boardState'`.
  */
 export type { FoeStatus };
 

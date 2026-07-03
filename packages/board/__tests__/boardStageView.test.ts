@@ -159,6 +159,19 @@ describe('BoardStageView — lazy 3D tower', () => {
     expect(stage.mode).toBe('2d'); // a 3D mode falls back to 2D when the tower is off
   });
 
+  it('a 3D camera side change (Display’s own side buttons) drives the shared focus back', async () => {
+    const { stage } = mount({ tower3D: false, modelUrl: 'mock://tower.glb' });
+    await stage.setTowerEnabled(true);
+
+    const options = createBoardTower3D.mock.calls[0][0] as { onFocusChange?: (f: { kingdom: string; angle: string }) => void };
+    expect(typeof options.onFocusChange).toBe('function');
+
+    options.onFocusChange!({ kingdom: 'south', angle: stage.focus.angle });
+    expect(stage.focus.kingdom).toBe('south'); // the 2D map + kingdom bar follow the 3D camera
+    const southBtn = focusButton(stage, 'S');
+    expect(southBtn.classList.contains('is-active')).toBe(true);
+  });
+
   it('keeps the 3D pane PiP move/resize handles across a tower build + dispose', async () => {
     const { container, stage } = mount({ tower3D: false, modelUrl: 'mock://tower.glb' });
     const pane3d = container.querySelector('.bsv-pane-3d') as HTMLElement;
@@ -185,5 +198,40 @@ describe('BoardStageView — lazy 3D tower', () => {
     expect(createBoardTower3D).not.toHaveBeenCalled();
     expect(stage.tower3D).toBeNull();
     warn.mockRestore();
+  });
+
+  it('popping out after turning the tower off does not resurrect it (regression)', async () => {
+    // A minimal fake Window sufficient for popOut's buildPopupDocument + listener wiring.
+    const doc = {
+      open: jest.fn(),
+      write: jest.fn(),
+      close: jest.fn(),
+      title: '',
+      head: document.createElement('head'),
+      body: document.createElement('body'),
+      documentElement: document.createElement('html'),
+      createElement: (tag: string) => document.createElement(tag),
+    } as unknown as Document;
+    const fakeWin = {
+      document: doc,
+      closed: false,
+      close: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(() => true),
+    } as unknown as Window;
+    const openSpy = jest.spyOn(window, 'open').mockReturnValue(fakeWin);
+
+    const { stage } = mount({ tower3D: false, modelUrl: 'mock://tower.glb' });
+    await stage.setTowerEnabled(true);
+    expect(createBoardTower3D).toHaveBeenCalledTimes(1);
+
+    await stage.setTowerEnabled(false);
+    createBoardTower3D.mockClear();
+
+    stage.popOut();
+    expect(createBoardTower3D).not.toHaveBeenCalled(); // tower is off — must stay off
+
+    openSpy.mockRestore();
   });
 });

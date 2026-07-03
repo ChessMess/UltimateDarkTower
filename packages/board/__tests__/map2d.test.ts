@@ -169,6 +169,28 @@ describe('BoardMap2D', () => {
     expect(onTokenSelect).toHaveBeenCalledTimes(1);
   });
 
+  it('a drag whose mouseup lands off-map does not permanently swallow the next click (regression)', async () => {
+    const onTokenSelect = jest.fn();
+    const { map, host } = makeMap(onTokenSelect, 'pan');
+    map.render(populated());
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    svg.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
+
+    // A drag past the threshold, but no trailing `click` is fired on the svg at all — this is
+    // what happens when the mouseup lands outside the map, so the browser never dispatches a
+    // click into the svg's listener (only that listener clears `suppressClick`).
+    svg.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: 0, clientY: 0, bubbles: true }));
+    document.dispatchEvent(new MouseEvent('mousemove', { clientX: 50, clientY: 50 }));
+    document.dispatchEvent(new MouseEvent('mouseup', {}));
+
+    // Let the fallback timer clear the flag (it runs after any same-gesture click would have).
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const foe = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-1"]') as SVGGElement;
+    foe.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(onTokenSelect).toHaveBeenCalledTimes(1); // a later, unrelated click still selects
+  });
+
   it('default drag-spins the board: rotate-layer transform changes and the trailing click is suppressed', () => {
     const onTokenSelect = jest.fn();
     const { map, host } = makeMap(onTokenSelect); // default dragMode: 'rotate'

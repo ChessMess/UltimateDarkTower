@@ -43,6 +43,8 @@ export interface BoardTower3DOptions {
   onTokenSelect?: (selection: TokenSelection) => void;
   /** Fired when a space is clicked while the placement is armed. */
   onLocationPick?: (location: LocationName) => void;
+  /** Fired when the camera side changes (the 3D camera is the focus source of truth). */
+  onFocusChange?: (focus: BoardFocus) => void;
 }
 
 /** Live handle over a built 3D board (the tower view + its attached board plugin). */
@@ -80,6 +82,7 @@ export function createBoardTower3D(options: BoardTower3DOptions): BoardTower3DHa
     locationPick: options.locationPick,
     onTokenSelect: options.onTokenSelect,
     onLocationPick: options.onLocationPick,
+    onFocusChange: options.onFocusChange,
   });
   return {
     tower,

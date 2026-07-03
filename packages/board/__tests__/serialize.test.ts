@@ -26,6 +26,19 @@ describe('serialize round-trip', () => {
     expect(loadState(saveState(s))).toEqual(s);
   });
 
+  it('round-trips foes with the panicked/unsteady statuses (UDT v5 additions)', () => {
+    const s: BoardState = {
+      heroes: {},
+      foes: {
+        f1: { foe: 'Brigands', location: 'Dayside', status: 'panicked' },
+        f2: { foe: 'Dragons', location: 'Dayside', status: 'unsteady' },
+      },
+      buildings: {},
+      spaceMarkers: {},
+    };
+    expect(loadState(saveState(s))).toEqual(s);
+  });
+
   it('stamps the version into the envelope (not inside the state)', () => {
     const envelope = JSON.parse(saveState(createDefaultBoardState()));
     expect(envelope.version).toBe(BOARD_STATE_SCHEMA_VERSION);

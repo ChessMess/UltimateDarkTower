@@ -612,7 +612,16 @@ export class BoardMap2D implements BoardRenderer {
   }
 
   private handleMouseUp(): void {
-    if (this.panMoved || this.rotateMoved) this.suppressClick = true; // swallow the trailing click
+    if (this.panMoved || this.rotateMoved) {
+      this.suppressClick = true; // swallow the trailing click
+      // Normally cleared by `handleClick` on the very next click. But if the mouseup lands
+      // outside the svg (drag ends off-map), no click ever reaches the svg's listener, so the
+      // flag would stick and swallow the NEXT, unrelated click — clear it on a macrotask as a
+      // fallback (runs after any same-gesture click, which fires synchronously first).
+      setTimeout(() => {
+        this.suppressClick = false;
+      }, 0);
+    }
     this.endDrag();
   }
 

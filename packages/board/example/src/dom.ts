@@ -11,7 +11,6 @@ export interface DomElements {
   banner: HTMLElement;
   grid: HTMLElement;
   sidebar: HTMLElement;
-  hero: HTMLElement;
 
   // The stage mounts into here.
   boardStage: HTMLElement;
@@ -48,7 +47,6 @@ export function queryDom(): DomElements {
     banner: byId('error-banner'),
     grid: document.querySelector('.app-grid') as HTMLElement,
     sidebar: byId('sidebar'),
-    hero: document.querySelector('.app-hero') as HTMLElement,
 
     boardStage: byId('board-stage'),
 
