@@ -30,6 +30,8 @@
     "format": "prettier --write \"packages/*/src/**/*.{ts,js}\"",
     "type-check": "tsc --build && tsc --noEmit -p packages/electron/tsconfig.json",
     "ci": "npm run lint && npm run type-check && npm run test && npm run build",
+    "publish:packages": "node scripts/publish-packages.mjs",
+    "publish:packages:dry": "node scripts/publish-packages.mjs --dry-run",
     "clean": "tsc --build --clean && rm -rf coverage"
   },
   "author": "ChessMess",

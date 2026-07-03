@@ -84,11 +84,30 @@ committed for reproducible CI installs.
 
 ---
 
-## Releasing (publish cutover)
+## Releasing
 
-`ultimatedarktowerrelay-{shared,core,client}` are published on npm at `0.1.0`. Downstream consumers should
-depend on a versioned range (e.g. `^0.1.0`) rather than `file:` specifiers. Bump `PROTOCOL_VERSION` (in
-`packages/shared`) alongside the package version on any breaking wire-protocol change.
+`ultimatedarktowerrelay-{shared,core,client}` are published on npm (`shared`/`client` at `0.1.0`, `core` at
+`0.2.0`); `cli` and `electron` are `private` and never publish. Downstream consumers depend on a versioned
+range (e.g. `^0.1.0`) rather than `file:` specifiers. Bump `PROTOCOL_VERSION` (in `packages/shared`)
+alongside the package version on any breaking wire-protocol change.
+
+To cut a release:
+
+1. Bump the `version` in each changed public package's `package.json` (and update any dependent range +
+   `package-lock.json`, e.g. `npm install --package-lock-only`), and add a `CHANGELOG.md` entry.
+2. Commit, tag (`vX.Y.Z`), and merge to `main`.
+3. `npm login`, then publish:
+
+```bash
+npm run publish:packages:dry   # preview: lists which packages would publish (publishes nothing)
+npm run publish:packages       # publish the packages whose version isn't on npm yet
+```
+
+`publish:packages` (`scripts/publish-packages.mjs`) publishes each non-private workspace package **only when
+its `package.json` version isn't already on the registry**, in dependency order (`shared` → `core` →
+`client`), so unchanged packages are skipped automatically. Each package's `prepack` (`clean && build`) runs
+at publish time, so the tarball is always freshly built. If your npm account uses 2FA, npm prompts for the
+OTP (or pass it through: `npm run publish:packages -- --otp=123456`).
 
 ---
 
