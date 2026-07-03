@@ -2,6 +2,9 @@
 // FNV-1a digest (§6, §9), state clone, engine faults, the closed directive push (§5.2), and the
 // canonical kingdom order (§3.1). Every other engine module builds on these; core imports nothing.
 
+const ENGINE_VERSION = '0.4.0';
+const SUPPORTED_SCHEMA_RANGE = '>=0.4.0 <0.5.0'; // semver-range, same-minor pre-1.0 (§8)
+
 // The four board kingdoms in canonical clockwise order (schema $defs/kingdom). Seating, home-kingdom
 // ownership, and the dormant-kingdom complement (§3.1) are all derived from this order so that two
 // runs of the same scenario at the same player count build an identical hero/kingdom layout.
@@ -64,6 +67,8 @@ function dir(directives, type, payload) {
 }
 
 module.exports = {
+  ENGINE_VERSION,
+  SUPPORTED_SCHEMA_RANGE,
   KINGDOMS,
   canonical,
   fnv1a32,
