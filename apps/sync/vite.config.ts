@@ -82,14 +82,10 @@ export default defineConfig({
     sourcemap: false,
     target: 'es2020',
     commonjsOptions: {
-      // The relay SDK (ultimatedarktowerrelay-{client,shared}) is a `file:` dep that
-      // resolves — via symlink — to the relay's CommonJS `dist/` OUTSIDE node_modules.
-      // Rollup's commonjs plugin only transforms node_modules by default, so without this
-      // it parses the CJS (`__exportStar`) as ESM and can't see named exports like
-      // `makeCommandLogEntry` ("not exported by …/dist/index.js"). Include the relay path so
-      // its CJS named exports resolve. (After the publish cutover the packages live under
-      // node_modules and this include is effectively a no-op.)
-      include: [/node_modules/, /UltimateDarkTowerRelay/],
+      // The relay SDK (ultimatedarktowerrelay-{client,shared}) ships CommonJS under
+      // node_modules; Rollup's commonjs plugin transforms node_modules by default, so its
+      // named exports (e.g. `makeCommandLogEntry`) resolve without any extra include.
+      include: [/node_modules/],
     },
     rollupOptions: {
       // @stoprocent/noble is a Node-only BLE adapter — never loaded in the browser.
@@ -98,10 +94,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // The relay SDK (ultimatedarktowerrelay-{client,shared}) is consumed as a
-      // file: dependency resolving to the relay's built dist/, so no source alias
-      // is needed here — the relay must be built first (see DEV_LINKS in the relay repo).
-      // For local development with npm link:
+      // The relay SDK (ultimatedarktowerrelay-{client,shared}) is a published npm dep,
+      // so no source alias is needed here.
+      // For local development against a sibling checkout via npm link, e.g.:
       // 'ultimatedarktowerdisplay': fileURLToPath(new URL('../../UltimateDarkTowerDisplay/src/index.ts', import.meta.url)),
     },
   },

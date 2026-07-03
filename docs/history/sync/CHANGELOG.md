@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+
+- **Bumped `ultimatedarktowerrelay-client` `^0.1.0` → `^0.2.0`** to pick up a `RelayClient` reconnect fix: a failed *initial* `connect()` no longer silently starts a background reconnect loop, and a retry attempt that times out no longer kills the whole backoff loop. No client code changes were required — the SDK's public API (`RelayClient`, `PhysicalTowerReplay`, `RelayClientEvent`, and the `ultimatedarktowerrelay-shared` exports) is unchanged; only `RelayClient`'s internal reconnect behavior differs. (`ultimatedarktowerrelay-shared` stays at `^0.1.0`; it had no source changes.)
+
 ## [0.3.0] - 2026-06-29
 
 ### Changed

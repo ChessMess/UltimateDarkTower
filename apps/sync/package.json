@@ -17,7 +17,7 @@
     "three": "^0.185.0",
     "ultimatedarktower": "^5.0.0",
     "ultimatedarktowerdisplay": "^0.10.0",
-    "ultimatedarktowerrelay-client": "^0.1.0",
+    "ultimatedarktowerrelay-client": "^0.2.0",
     "ultimatedarktowerrelay-shared": "^0.1.0"
   },
   "devDependencies": {
