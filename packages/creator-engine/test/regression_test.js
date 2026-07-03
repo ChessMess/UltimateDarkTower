@@ -4,7 +4,9 @@
 //   A3 a lost/won game is not overwritten by a later win/loss in the same resolution
 //   A4 authored building.destroy / skull.place keep the buildings registry in sync
 // ...and the post-0.4.0 deferred follow-ups (planning/engine-deferred-followups.md):
+//   D1 battle target instanceId disambiguates two same-type foes
 //   D2 completeQuest faults on re-entry instead of recursing unboundedly
+//   D3 digest hashes load-bearing clock state and ignores load-time refs (ENGINE_VERSION 0.5.0)
 // Uses plain Node (no framework), matching the other engine suites.
 
 const engine = require('../src/engine');
@@ -261,6 +263,35 @@ for (const [name, fx] of [
     s.quests['questC'] && s.quests['questC'].complete === true,
   );
 }
+
+// ---------- D3: digest hashes load-bearing clock state and ignores load-time refs ----------
+{
+  const r = engine.init(goldenFull, opts);
+  const before = engine.digest(r.state);
+  const s = clone(r.state);
+  s.outcome = { status: 'running', reason: null };
+  s.heroes.hero1.location = 'Delmsmire'; // full-turn battles require the hero on the foe's space
+  startBattle(s, [], { foeId: 'brigands' });
+  const midBattle = engine.digest(s);
+  ok(
+    'D3: digest distinguishes a mid-battle state from the same state before battle started',
+    before !== midBattle,
+  );
+  ok(
+    'D3: digest(state) === digest(clone(state)) still holds for a mid-battle state',
+    midBattle === engine.digest(clone(s)),
+  );
+}
+{
+  const r = engine.init(goldenFull, opts);
+  const s = clone(r.state);
+  s._lib = { mutatedForTest: true }; // a load-time ref: never changes at runtime post-init
+  ok(
+    'D3: digest ignores load-time refs — mutating _lib does not affect the divergence hash',
+    engine.digest(r.state) === engine.digest(s),
+  );
+}
+ok('D3: ENGINE_VERSION bumped for the digest-scope fix', engine.ENGINE_VERSION === '0.5.0');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);

@@ -2,7 +2,7 @@
 // FNV-1a digest (§6, §9), state clone, engine faults, the closed directive push (§5.2), and the
 // canonical kingdom order (§3.1). Every other engine module builds on these; core imports nothing.
 
-const ENGINE_VERSION = '0.4.0';
+const ENGINE_VERSION = '0.5.0';
 const SUPPORTED_SCHEMA_RANGE = '>=0.4.0 <0.5.0'; // semver-range, same-minor pre-1.0 (§8)
 
 // The four board kingdoms in canonical clockwise order (schema $defs/kingdom). Seating, home-kingdom
@@ -41,13 +41,27 @@ function deserialize(blob) {
   return JSON.parse(blob);
 }
 function digest(state) {
-  // hash everything except volatile cursor bookkeeping that isn't game state
-  const { clock, ...rest } = state;
+  // hash real game state: everything except (a) the five load-time refs, populated once at init
+  // from the authored scenario and never mutated at runtime, and (b) clock fields that are pure
+  // traversal/rotation bookkeeping, not state a divergence detector needs to catch.
+  // Deferred item 3 (planning/engine-deferred-followups.md): this was previously inverted — it
+  // hashed the load-time refs (_nodes/_lib/_setup/_spine/_triggers) while DROPPING load-bearing
+  // clock state (turnsThisMonth, latches, battle, dungeon, pendingEvents, eventQueue), so two
+  // states that had genuinely diverged mid-battle or mid-dungeon could hash identically. This
+  // deliberately changes digest VALUES (see CHANGELOG: ≤0.4.0 persisted digests/checkpoints won't
+  // match); no test hardcodes a digest value, and run-to-run lockstep determinism is unaffected.
+  const { clock, _nodes, _lib, _setup, _spine, _triggers, ...rest } = state;
   const c = {
     month: clock.month,
     turnInMonth: clock.turnInMonth,
     activeHero: clock.activeHero,
     cursor: clock.cursor,
+    turnsThisMonth: clock.turnsThisMonth,
+    latches: clock.latches,
+    battle: clock.battle,
+    dungeon: clock.dungeon,
+    pendingEvents: clock.pendingEvents,
+    eventQueue: clock.eventQueue,
   };
   return fnv1a32(canonical({ ...rest, clock: c }));
 }
