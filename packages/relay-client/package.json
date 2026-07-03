@@ -1,6 +1,6 @@
 {
   "name": "ultimatedarktowerrelay-client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "UltimateDarkTowerRelay consumer SDK — connect to a relay host over WebSocket, receive decoded tower state, and report participant player actions. Framework-agnostic; browser or Node.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
