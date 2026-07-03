@@ -130,9 +130,11 @@ function syncToolbar3DState(_els: DomElements): void {
 }
 
 // The default sound pack is wired in by Tower3DView's constructor — the
-// example only needs to flip `enabled` on user gesture.
-function syncAudioEnabledFromCheckbox(els: DomElements, enableNow = false): void {
-  if (enableNow && els.chkTowerAudio?.checked) {
+// example only needs to flip `enabled` on user gesture. Call this only from a
+// gesture-backed path (e.g. after a view-switch button click), never at init,
+// since enabling audio without a user gesture can't unmute the AudioContext.
+function syncAudioEnabledFromCheckbox(els: DomElements): void {
+  if (els.chkTowerAudio?.checked) {
     view.applyAudioConfig({ enabled: true });
   }
 }
@@ -149,7 +151,7 @@ function recreateView(renderers: RendererType | RendererType[], activeId: ViewBu
   view = new TowerRenderView(buildViewOptions(renderers, els));
   publishDisplay();
   setActiveViewButton(activeId, els);
-  syncAudioEnabledFromCheckbox(els, true);
+  syncAudioEnabledFromCheckbox(els);
   if (lastState) view.applyState(lastState);
   replayLedOverrides(view.display);
   refreshSeals(view.display, readout);
@@ -175,7 +177,8 @@ export function initRendererController(els: DomElements): void {
   readout.onLedClick = (layer, light, effect) => recordLedOverride(layer, light, effect, view.display);
   view = new TowerRenderView(buildViewOptions('3d-view', els));
   publishDisplay();
-  syncAudioEnabledFromCheckbox(els);
+  // Audio is armed on a user gesture (view-switch click / armTowerAudioFromUserGesture),
+  // not here — enabling at init can't unmute the AudioContext without a gesture.
 
   for (const [id, renderers] of Object.entries(viewButtons) as [ViewButtonId, RendererType | RendererType[]][]) {
     const btn = getViewButtonRef(id, els);

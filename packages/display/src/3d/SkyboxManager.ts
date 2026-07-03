@@ -3,8 +3,8 @@ import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 
 /**
  * Loads and manages the equirectangular skybox texture for the scene. Handles
- * both LDR (PNG/JPG) and HDR/EXR formats and guards against stale async loads
- * when the URL changes before a previous load completes.
+ * LDR (PNG/JPG) and Radiance HDR (.hdr) formats and guards against stale async
+ * loads when the URL changes before a previous load completes.
  */
 export class SkyboxManager {
   private currentUrl = '';
@@ -44,7 +44,7 @@ export class SkyboxManager {
       console.warn('[Tower3DView] Skybox load failed:', url);
     };
 
-    if (/\.(hdr|exr)$/i.test(url)) {
+    if (/\.hdr$/i.test(url)) {
       new HDRLoader().load(url, onLoad, undefined, onError);
     } else {
       new THREE.TextureLoader().load(url, onLoad, undefined, onError);

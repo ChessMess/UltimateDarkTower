@@ -37,8 +37,8 @@ import sealRevealJson from './data/sealReveal.json';
 /**
  * Safe-parse a JSON sequence. Returns `null` and logs (with the file label
  * and Zod error path) on schema failure, so a typo in one sequence file
- * doesn't crash the whole module — the dispatcher just falls back to TS for
- * that id.
+ * doesn't crash the whole module — the failed id is simply dropped from
+ * `JSON_SEQUENCE_DATA` and the renderer plays nothing for it.
  */
 export function parseSafe(label: string, raw: unknown): Sequence | null {
   const result = Sequence.safeParse(raw);
@@ -54,8 +54,8 @@ export function parseSafe(label: string, raw: unknown): Sequence | null {
 
 /**
  * Per-id parsed JSON data. Each entry is wrapped in `parseSafe` so a
- * malformed JSON only loses its own sequence — the dispatcher falls back to
- * the TS builder for missing ids.
+ * malformed JSON only loses its own sequence — a missing id makes
+ * `SequenceAnimator.apply(id)` return `false` and the renderer plays nothing.
  */
 export const JSON_SEQUENCE_DATA: ReadonlyMap<number, Sequence> = new Map(
   ([
@@ -86,9 +86,9 @@ export const JSON_SEQUENCE_DATA: ReadonlyMap<number, Sequence> = new Map(
 );
 
 /**
- * `true` iff the sequence id has a JSON entry the player can build. Used by
- * callers (the package's public API) that want to gate on whether a given
- * `led_sequence` will produce a renderable timeline.
+ * `true` iff the sequence id has a JSON entry the player can build. Internal
+ * predicate for gating on whether a given `led_sequence` will produce a
+ * renderable timeline. Not part of the package's public API.
  */
 export function hasSequenceAnimation(sequenceId: number): boolean {
   return JSON_SEQUENCE_DATA.has(sequenceId);

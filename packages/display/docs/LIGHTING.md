@@ -259,9 +259,9 @@ Two ways to set what is behind the model.
 | Field              | Type       | Default    | Description                                             |
 | ------------------ | ---------- | ---------- | ------------------------------------------------------- |
 | `scene.background` | `HexColor` | `0x000000` | Solid clear color when no skybox is loaded              |
-| `scene.skyboxUrl`  | `string`   | `''`       | Equirectangular image URL — `.hdr`/`.exr`/`.png`/`.jpg` |
+| `scene.skyboxUrl`  | `string`   | `''`       | Equirectangular image URL — `.hdr`/`.png`/`.jpg`        |
 
-`SkyboxManager.apply(url, bgColor)` ([SkyboxManager.ts:19-52](../src/3d/SkyboxManager.ts#L19-L52)) handles loading: `.hdr`/`.exr` go through `HDRLoader`, others through `THREE.TextureLoader`. Loaded textures get `mapping = THREE.EquirectangularReflectionMapping` and are assigned to `scene.background`.
+`SkyboxManager.apply(url, bgColor)` ([SkyboxManager.ts:19-52](../src/3d/SkyboxManager.ts#L19-L52)) handles loading: `.hdr` goes through `HDRLoader`, others through `THREE.TextureLoader`. Loaded textures get `mapping = THREE.EquirectangularReflectionMapping` and are assigned to `scene.background`.
 
 **Stale-load guard**: if `apply()` is called again with a different URL while a previous load is still in flight, the older result is disposed and discarded on completion ([SkyboxManager.ts:32-36](../src/3d/SkyboxManager.ts#L32-L36)).
 

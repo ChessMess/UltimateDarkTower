@@ -22,7 +22,7 @@ import { CustomTrack } from './custom';
 
 /**
  * Discriminated union of all track kinds. `custom` is last as the escape
- * hatch; the eight data-driven kinds cover every existing sequence.
+ * hatch; the nine data-driven kinds cover every existing sequence.
  */
 export const Track = z.discriminatedUnion('kind', [
   SolidTrack,

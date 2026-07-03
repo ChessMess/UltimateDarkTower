@@ -24,7 +24,12 @@ export interface LightingConfigCore {
   scene?: {
     /** Scene clear color behind the model. */
     background?: HexColor;
-    /** Equirectangular image or .hdr URL to use as a skybox. Clears when set to undefined. */
+    /**
+     * Equirectangular image or .hdr URL to use as a skybox. Set to `''` (empty
+     * string) to clear the skybox back to the solid `background` color; an
+     * omitted/`undefined` value leaves the current skybox unchanged (the sparse
+     * merge inherits the previous value).
+     */
     skyboxUrl?: string;
     hemisphere?: { color?: HexColor; ground?: HexColor; intensity?: number };
     key?: {
@@ -66,6 +71,8 @@ export interface LightingConfigCore {
        * Defaults to **0.5** (half-res, ~4× cheaper than full-res). Bloom is
        * intrinsically blurry, so lowering this is visually free; lower it
        * further (e.g. 0.25) on weak GPUs. Set to 1 for full-resolution bloom.
+       * Applied at initScene time (like `enabled`); runtime `applyLightingConfig`
+       * updates ignore it.
        */
       resolutionScale?: number;
     };
@@ -202,7 +209,7 @@ export interface LightingConfigCore {
     metalness?: number;
     /** Disc radius as a factor of modelRadius. */
     radiusFactor?: number;
-    /** Intensity of the upward directional light that fills the board underside. 0 disables it. Defaults to 1.5. */
+    /** Emissive intensity on the disc's side wall + underside (fills the board edge/underside). 0 disables it. Defaults to 0.15. */
     undersideLightIntensity?: number;
   };
 
@@ -235,8 +242,8 @@ export interface LightingConfigCore {
     /**
      * Physical thickness of the board as a fraction of `modelRadius`.
      * Drives the height of a `CylinderGeometry` so the board has a visible edge
-     * when viewed at oblique angles. Values in the range `0.01–0.04` look natural;
-     * `0` is clamped to a minimum to avoid degenerate geometry. Defaults to `0.018`.
+     * when viewed at oblique angles. Values in the range `0.02–0.08` look natural;
+     * `0` is clamped to a minimum to avoid degenerate geometry. Defaults to `0.06`.
      */
     thicknessFactor?: number;
     /**

@@ -148,7 +148,11 @@ export class BloomManager {
     };
   }
 
-  /** Push updated bloom strength/radius/threshold from a new lighting config. */
+  /**
+   * Push updated bloom strength/radius/threshold from a new lighting config.
+   * `bloom.enabled` and `bloom.resolutionScale` are fixed at construction and
+   * ignored here — changing them at runtime requires rebuilding the view.
+   */
   applyConfig(lighting: ResolvedLightingConfig): void {
     const { strength, radius, threshold } = lighting.scene.bloom;
     this.bloomPass.strength = strength;

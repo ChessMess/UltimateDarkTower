@@ -5,14 +5,11 @@ import * as gltfLoaderMock from '../__mocks__/gltfLoader.js';
 import * as gsapMock from '../__mocks__/gsap.js';
 
 const {
-  LED_LAYOUT, LEDGE_LED_LAYOUT, RING_AZIMUTH, CORNER_AZIMUTH,
+  LED_LAYOUT, LEDGE_LED_LAYOUT,
   computeRedLightPosition, RED_LIGHT_LAYOUT, getLedRef,
   getSealNode, getSealNodeCount,
   computeSealLedPose, getSealBacklight, getSealBacklightCount,
 } = __testables;
-
-const EPS = 1e-9;
-const close = (a: number, b: number, eps = EPS): boolean => Math.abs(a - b) < eps;
 
 const TEST_MODEL_URL = 'mock://tower.glb';
 
@@ -925,5 +922,29 @@ describe('resolveLighting', () => {
     const before = JSON.stringify(DEFAULT_LIGHTING);
     resolveLighting({ scene: { key: { intensity: 42 } } });
     expect(JSON.stringify(DEFAULT_LIGHTING)).toBe(before);
+  });
+
+  it('preserves customized base fields when a sparse config is layered on top', () => {
+    // Simulates Tower3DView.applyLightingConfig, which layers each sparse
+    // update on top of the previously-resolved config (not DEFAULT_LIGHTING).
+    const customized = resolveLighting({
+      leds: {
+        ledgeLeds: { color: 0x00ff00, proxy: { sizeFactor: 0.5 } },
+        baseLeds: { color: 0x0000ff },
+        sealBacklights: { radiusFactor: 0.42, backlightWhenBroken: false },
+      },
+      scene: { key: { shadow: { frustumRadiusFactor: 2.7 } } },
+    });
+
+    // A later, unrelated sparse update must NOT reset the customized fields.
+    const relayered = resolveLighting({ scene: { exposure: 0.5 } }, customized);
+
+    expect(relayered.scene.exposure).toBe(0.5);
+    expect(relayered.leds.ledgeLeds.color).toBe(0x00ff00);
+    expect(relayered.leds.ledgeLeds.proxy.sizeFactor).toBe(0.5);
+    expect(relayered.leds.baseLeds.color).toBe(0x0000ff);
+    expect(relayered.leds.sealBacklights.radiusFactor).toBe(0.42);
+    expect(relayered.leds.sealBacklights.backlightWhenBroken).toBe(false);
+    expect(relayered.scene.key.shadow.frustumRadiusFactor).toBe(2.7);
   });
 });

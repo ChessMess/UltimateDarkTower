@@ -271,12 +271,7 @@ export class SealManager {
    * Enabled by the `debug3D` flag so placement can be validated against the real GLB.
    */
   setDebug(enabled: boolean, parent: THREE.Object3D): void {
-    for (const helper of this.debugHelpers) {
-      helper.removeFromParent();
-      (helper.material as THREE.Material).dispose();
-      helper.geometry.dispose();
-    }
-    this.debugHelpers = [];
+    this.disposeDebugHelpers();
 
     if (!enabled) return;
 
@@ -306,12 +301,7 @@ export class SealManager {
     this.sealBacklights.clear();
     this.sealNodes.clear();
 
-    for (const helper of this.debugHelpers) {
-      helper.removeFromParent();
-      (helper.material as THREE.Material).dispose();
-      helper.geometry.dispose();
-    }
-    this.debugHelpers = [];
+    this.disposeDebugHelpers();
 
     this.gradientTexture?.dispose();
     this.gradientTexture = null;
@@ -320,6 +310,22 @@ export class SealManager {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Remove every debug helper mesh, disposing each geometry and every distinct
+   * material once (all helpers share a single material, so dedup avoids
+   * disposing it N times).
+   */
+  private disposeDebugHelpers(): void {
+    const materials = new Set<THREE.Material>();
+    for (const helper of this.debugHelpers) {
+      helper.removeFromParent();
+      helper.geometry.dispose();
+      materials.add(helper.material as THREE.Material);
+    }
+    for (const mat of materials) mat.dispose();
+    this.debugHelpers = [];
+  }
 
   private getOrCreateGradientTexture(): THREE.CanvasTexture {
     if (this.gradientTexture) return this.gradientTexture;

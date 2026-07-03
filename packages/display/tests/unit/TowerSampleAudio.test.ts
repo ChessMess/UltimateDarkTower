@@ -508,4 +508,25 @@ describe('TowerSampleAudio', () => {
     const shotGain = createdGains[createdGains.length - 1];
     expect(shotGain.gain.value).toBeCloseTo(0.0);
   });
+
+  it('restores the master gain for a one-shot fired after a state-driven stop', async () => {
+    const audio = new TowerSampleAudio();
+    audio.setLibrary(LIB);
+    audio.setEnabled(true);
+
+    // State-driven play then stop: stop() ramps the master gain to 0.
+    audio.sync(0x25, false, 0);
+    await flush();
+    const masterGain = createdGains[0];
+    audio.sync(0, false, 0); // stop → master gain ramped to 0
+    expect(masterGain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, expect.any(Number));
+
+    // A one-shot fired now must restore the master gain to unity so it is
+    // audible, rather than staying at the stopped-state's 0.
+    masterGain.gain.setValueAtTime.mockClear();
+    audio.playSampleOneShot(0x6E, false, 0);
+    await flush();
+
+    expect(masterGain.gain.setValueAtTime).toHaveBeenCalledWith(1.0, expect.any(Number));
+  });
 });

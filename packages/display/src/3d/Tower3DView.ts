@@ -730,8 +730,9 @@ export class Tower3DView implements ITowerDisplay {
 
   /**
    * Set the URL of the audio asset played while drums rotate.
-   * Pass null to fall back to the procedural placeholder tone. Decode runs in
-   * the background; rotations that fire mid-decode use the placeholder.
+   * Pass null to disable drum-rotation audio (silence — there is no procedural
+   * fallback tone). Decode runs in the background; rotations that fire
+   * mid-decode stay silent until the buffer is ready.
    */
   setDrumRotationSoundUrl(url: string | null): void {
     this.applyAudioConfig({ drumRotationUrl: url });
@@ -1271,7 +1272,7 @@ export class Tower3DView implements ITowerDisplay {
     return { center: new THREE.Vector3(0, this.modelBottomY, 0), radius: this.modelRadius, topY: this.modelBottomY };
   }
 
-  /** Load an equirectangular image or .hdr/.exr file as the scene skybox. Pass null to clear. */
+  /** Load an equirectangular image or .hdr file as the scene skybox. Pass null to clear. */
   setSkyboxUrl(url: string | null): void {
     this.lighting.scene.skyboxUrl = url ?? '';
     this.skyboxManager?.apply(url ?? '', this.lighting.scene.background);
