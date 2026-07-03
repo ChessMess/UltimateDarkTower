@@ -182,14 +182,14 @@ A deeply-nested partial. Every field is optional; missing leaves fall back to `D
 | `skull.density`            | `number`  | `undefined` | Next drop | Density override. Only meaningful for hull colliders, where the template carries an auto-computed density that normalizes hull mass to the equivalent sphere. |
 | `skull.autoDropOnSkullCountIncrease` | `boolean` | `false` | Live | When true, auto-calls `dropSkull()` each time `state.beam.count` increases between consecutive `applyState` calls. Mirrors the readout's "💀 Skull Drop!" highlight. Honors `skull.maxCount` like manual drops. |
 | `drum.innerRadiusFactor`   | `number`  | `0.30`  | World rebuild  | Used for drop-jitter heuristics and (future) parametric drum walls.    |
-| `drum.halfHeightFactor`    | `number`  | `0.15`  | World rebuild  | Drum interior half-height as a fraction of `modelRadius`.              |
+| `drum.halfHeightFactor`    | `number`  | `0.15`  | Unused         | Reserved for future parametric drum walls; currently feeds only the discarded drum-wall spec and has no runtime effect. |
 | `drum.friction`            | `number`  | `0.15`  | Live           | Friction on kinematic drum trimeshes (Min combine rule).               |
 | `seal.friction`            | `number`  | `0.05`  | Live           | Friction on kinematic seal trimeshes (Min combine rule).               |
 | `static.friction`          | `number`  | `0.1`   | Live           | Friction on every static GLB trimesh (Min combine rule).               |
 | `board.radiusFactor`       | `number`  | `3.0`   | Live           | Board cylinder radius as a fraction of `modelRadius`.                  |
 | `board.thicknessFactor`    | `number`  | `0.3`   | World rebuild  | Board cylinder thickness as a fraction of `modelRadius`.               |
 | `board.friction`           | `number`  | `0.5`   | Live           | Friction on the game-board floor + lip (Average combine rule).         |
-| `oob.depthFactor`          | `number`  | `5.0`   | World rebuild  | Out-of-bounds despawn distance below `modelBottomY`.                   |
+| `oob.depthFactor`          | `number`  | `5.0`   | Live           | Out-of-bounds despawn distance below `modelBottomY`, read every frame. |
 
 **Lifecycle semantics:**
 

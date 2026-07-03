@@ -37,9 +37,10 @@ export interface PhysicsConfig {
     /**
      * URL of a `.glb` model used as the skull's visual mesh. When set,
      * dropped skulls render as this model instead of the default sphere.
-     * `.stl` URLs are accepted with a `console.warn` recommending the
-     * `npm run preprocess-skulls` pipeline (which decimates the mesh and
-     * emits a hull-point sidecar).
+     * `.stl` URLs are accepted with a `console.warn` recommending re-export
+     * to a Draco-compressed `.glb` for a much smaller download. A convex-hull
+     * collider can be sourced from an optional `<basename>.hull.json` sidecar
+     * (see `loadSkullModel`), falling back to a stride-sampled point cloud.
      *
      * Loading is async; setting/changing this defers subsequent
      * `dropSkull()` calls until the new model resolves. A subsequent
@@ -110,9 +111,13 @@ export interface PhysicsConfig {
   };
   /** The three rotating drums (kinematic trimesh per level). */
   drum?: {
-    /** Drum interior radius as a fraction of `modelRadius`. World-rebuild only (attach time). */
+    /** Drum interior radius as a fraction of `modelRadius`. Used for drop-jitter heuristics at drop time. */
     innerRadiusFactor?: number;
-    /** Drum interior half-height as a fraction of `modelRadius`. World-rebuild only. */
+    /**
+     * Drum interior half-height as a fraction of `modelRadius`. Currently unused —
+     * reserved for future parametric drum walls; feeds only the discarded drum-wall
+     * spec and has no runtime effect.
+     */
     halfHeightFactor?: number;
     /** Friction on the kinematic drum trimesh (Min combine rule). Live. */
     friction?: number;
@@ -138,7 +143,7 @@ export interface PhysicsConfig {
   };
   /** Out-of-bounds safety sensor that despawns escaped skulls. */
   oob?: {
-    /** Distance below `modelBottomY` as a fraction of `modelRadius`. World-rebuild only. */
+    /** Distance below `modelBottomY` as a fraction of `modelRadius`. Read every frame — live. */
     depthFactor?: number;
   };
 }
@@ -158,9 +163,9 @@ export type ResolvedPhysicsConfig = Omit<DeepRequired<PhysicsConfig>, 'skull'> &
 };
 
 /**
- * Handle returned by `attachSkullPhysics`. Use `dropSkull` to spawn (and
- * respawn) the one-and-only skull; use `dispose` to tear down the physics
- * world and remove all subscriptions.
+ * Handle returned by `attachSkullPhysics`. Use `dropSkull` to spawn skulls (up
+ * to `skull.maxCount`), `clearSkulls` to remove them all, and `dispose` to tear
+ * down the physics world and remove all subscriptions.
  */
 export interface SkullPhysicsHandle {
   /**
@@ -181,12 +186,12 @@ export interface SkullPhysicsHandle {
   getPhysicsConfig(): ResolvedPhysicsConfig;
   /**
    * Apply a partial config on top of the current one. Live-tunable leaves
-   * (frictions, damping, debug overlays, board radius) take effect
+   * (frictions, damping, debug overlays, board radius, oob depth) take effect
    * immediately; skull-body leaves (radius, friction, restitution,
    * collider shape, model URL, mesh factory) take effect on the next
    * `dropSkull()`; geometry leaves (drum half-height/inner radius, board
-   * thickness, oob depth) are only honored at attach time and are
-   * silently ignored otherwise.
+   * thickness) are only honored at attach time and are silently ignored
+   * otherwise.
    *
    * `skull.modelUrl` changes are async — drops queued during a load are
    * replayed once the new model resolves. A second change cancels the

@@ -415,8 +415,9 @@ export class PhysicsManager {
     }
 
     // OOB safety net: a Y-coordinate check in `step()` despawns skulls that
-    // fall below the board (e.g. through a physics glitch). No collider
-    // needed for it; the manual `t.y < ...` test is enough.
+    // fall below the board (e.g. through a physics glitch). No collider is
+    // built for it — `step()` reads `config.oob.depthFactor` directly for the
+    // threshold, so the precomputed `specs.oobSensor` is currently unused.
     void specs.oobSensor;
 
     // Drum inner walls are no longer authored parametrically — the trimesh
@@ -707,7 +708,7 @@ export class PhysicsManager {
     this.world.step();
 
     // Reverse iteration so OOB-driven splices don't perturb the walk.
-    const oobY = this.bounds.modelBottomY - R * 4;
+    const oobY = this.bounds.modelBottomY - R * this.config.oob.depthFactor;
     for (let i = this.skulls.length - 1; i >= 0; i--) {
       const s = this.skulls[i];
       const t = s.body.translation();
@@ -765,11 +766,11 @@ export class PhysicsManager {
 
   /**
    * Apply a partial physics config on top of the current one. Live-tunable
-   * leaves (debug overlays, frictions, damping, board radius/friction)
-   * take effect immediately; skull-body leaves (radius, friction,
+   * leaves (debug overlays, frictions, damping, board radius/friction, oob
+   * depth) take effect immediately; skull-body leaves (radius, friction,
    * restitution) take effect on the next `dropSkull()`; geometry leaves
-   * (drum sizes, board thickness, oob depth) only matter at world-build
-   * time and are silently ignored after that.
+   * (drum sizes, board thickness) only matter at world-build time and are
+   * silently ignored after that.
    */
   applyPhysicsConfig(partial: PhysicsConfig): void {
     if (this.disposed) return;

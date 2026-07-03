@@ -6,6 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-07-03
+
+### Fixed
+
+- **Sparse `applyLightingConfig` no longer resets customized LED fields.** `resolveLighting`
+  layered several leaves (`scene.key.shadow.frustumRadiusFactor`, all `leds.sealBacklights`,
+  `leds.ledgeLeds`, and `leds.baseLeds` fields) against `DEFAULT_LIGHTING` instead of the passed
+  `base`, so any partial re-apply (e.g. changing only `exposure`) silently reverted previously
+  customized LED colors/sizes/flags to defaults. They now fall back to `base`.
+- **Transient tower-sample one-shots after a state-driven stop.** `playSampleOneShot` restores the
+  shared master gain to unity when no state source is holding it, so `playSample()` fired after a
+  `sample: 0` (stop) state is audible again instead of silenced by the leftover fade-to-zero. The
+  reset is skipped while a state source is live, so it never un-mutes an active loop.
+- **`oob.depthFactor` is now respected.** The skull-physics out-of-bounds despawn threshold read a
+  hardcoded `4 × modelRadius` and ignored the configured (default `5.0`) factor; it now reads the
+  live config every frame. `oob.depthFactor` is therefore live, not world-rebuild-only.
+
+### Changed
+
+- **Skybox `.exr` claim dropped.** `SkyboxManager` routed `.exr` URLs to `HDRLoader`, which only
+  decodes Radiance `.hdr` — `.exr` never worked. The regex and docs now advertise `.hdr` (plus
+  LDR `.png`/`.jpg`) only.
+
+### Removed
+
+- Dead code with no public exposure: the unused `slotPose` module (superseded by GLB seal
+  trimeshes), the unreachable `hasSequenceAnimation` re-export from `SequenceAnimator`, and the
+  unused `SequenceTimelineBuilder` type — all leftovers from the archived TS-builder sequence path.
+
+### Docs
+
+- Corrected stale comments and reference docs: removed lingering "falls back to the TS builder"
+  and "TS/JSON A/B harness" references, the "Step 3 / one-per-PR" and "Work Item 4" scaffolding
+  notes, an "eight kinds" → "nine" miscount, the drum-rotation "procedural sawtooth" claims (it is
+  silent — no fallback tone), default-value drift (`undersideLightIntensity` 1.5→0.15,
+  `boardDisc.thicknessFactor` 0.018→0.06), a nonexistent `npm run preprocess-skulls` reference,
+  the "one-and-only skull" wording (vs `maxCount` default 30), `skyboxUrl` clearing semantics, and
+  a note that `bloom.enabled`/`resolutionScale` are construction-time only.
+
 ## [0.10.0] - 2026-06-29
 
 ### Changed

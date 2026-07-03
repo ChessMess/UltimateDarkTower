@@ -346,9 +346,10 @@ export class TowerDisplay implements ITowerDisplay {
 
   /**
    * Set the URL of the audio asset played while drums rotate in the 3D view.
-   * Pass null to fall back to the procedural placeholder tone. Decode runs in
-   * the background; rotations that fire mid-decode use the placeholder.
-   * No-op when no 3D renderer is active.
+   * Pass null to disable drum-rotation audio (silence — there is no procedural
+   * fallback tone). Decode runs in the background; rotations that fire
+   * mid-decode stay silent until the buffer is ready. No-op when no 3D renderer
+   * is active.
    */
   setDrumRotationSoundUrl(url: string | null): void {
     this.view3d?.setDrumRotationSoundUrl(url);

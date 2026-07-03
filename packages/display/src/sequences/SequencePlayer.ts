@@ -16,9 +16,9 @@ import { pulseFlickerHandler } from './playerKinds/pulseFlicker';
 
 /**
  * Data-driven sequence player. Takes a parsed JSON sequence and produces a
- * GSAP timeline equivalent to what the corresponding TS builder would build.
- * Reuses the firmware primitives in `builders/ledSequenceOps.ts` and
- * `builders/ledMath.ts` so the math is bit-identical to the TS path.
+ * GSAP timeline reproducing the firmware's LED behavior. Reuses the firmware
+ * primitives in `builders/ledSequenceOps.ts` and `builders/ledMath.ts` so the
+ * math matches the reference behavior captured in the parity snapshots.
  */
 
 const TICK_S = 1 / FIRMWARE_TICK_HZ;
@@ -35,8 +35,7 @@ export type KindHandler<TKind extends Track['kind']> = (
 ) => void;
 
 /**
- * Registry of kind handlers. Step 3 populates this; entries are added one per
- * PR via `registerKindHandler` so each handler ships with its own unit tests.
+ * Registry of kind handlers, populated at module load via `registerKindHandler`.
  *
  * Stored as an opaque (track, tl, deps) => void to keep the dispatch typed at
  * the registration site without fighting TS's variance on discriminated
@@ -85,8 +84,8 @@ export function registerCustomHandler(
 /**
  * Build a GSAP timeline from a parsed sequence. Returns `null` if `sequence`
  * is null/undefined (e.g. the JSON parse failed earlier and `parseSafe`
- * returned null). The dispatcher in `SequenceAnimator` already handles
- * `null` by falling back to the TS builder.
+ * returned null). `SequenceAnimator.apply` treats a `null` timeline as an
+ * unknown sequence and returns `false` (the renderer plays nothing).
  */
 export function build(
   sequence: Sequence | null | undefined,

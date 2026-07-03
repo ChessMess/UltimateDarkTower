@@ -6,7 +6,7 @@ import { z } from 'zod';
  * consults via `registerCustomHandler`. If missing, the player logs a
  * warning and skips the track.
  *
- * No customs are registered initially — the eight data-driven kinds cover
+ * No customs are registered initially — the nine data-driven kinds cover
  * every current sequence. Kept for forward compatibility.
  */
 export const CustomTrack = z.object({

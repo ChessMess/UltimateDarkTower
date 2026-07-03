@@ -29,8 +29,8 @@ export interface ScenePluginModelInfo {
 
 /**
  * A hit-testable pointer target a plugin can register so clicks on its objects
- * are consumed before the camera controller orbits. Wired by the pointer/raycast
- * contract (Work Item 4).
+ * are consumed before the camera controller orbits. Hit-testing is wired through
+ * `Tower3DView.registerPointerTarget` / the capture-phase pointer listener.
  */
 export interface PointerTarget {
   /** Objects to raycast against (array, or a getter for dynamic sets). */

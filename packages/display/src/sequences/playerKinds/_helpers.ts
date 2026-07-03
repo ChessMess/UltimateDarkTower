@@ -3,8 +3,8 @@
  *
  * The canonical iteration order across all handlers is **layer-major,
  * light-minor**. This matters for RNG-consuming kinds (flickerStep,
- * pulseFlicker, twinkle's respawn) — both the TS builder and the JSON player
- * must consume RNG draws in the same order to match under the same seed.
+ * pulseFlicker, twinkle's respawn): the draw order is load-bearing for the
+ * deterministic parity snapshots, which replay each sequence under a seeded RNG.
  */
 import { z } from 'zod';
 import type { LedEffectAnimator } from '../../3d/LedEffectAnimator';

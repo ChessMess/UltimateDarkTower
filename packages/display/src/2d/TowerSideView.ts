@@ -134,6 +134,7 @@ export class TowerSideView implements ITowerDisplay {
     }
     this.sideButtons = null;
     this.latestState = null;
+    this.ledNodes = {};
     this.sealNodes = {};
     this.latestBrokenSeals = [];
     this.userToggledSeals.clear();

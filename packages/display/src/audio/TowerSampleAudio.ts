@@ -162,6 +162,15 @@ export class TowerSampleAudio {
         this.gain = ctx.createGain();
         this.gain.connect(ctx.destination);
       }
+      // A prior state-driven stop() ramps the shared master gain to 0 and leaves
+      // it there. When no state source is currently using it, restore it to unity
+      // so this one-shot isn't silenced. Skip the reset while a state source is
+      // live so we don't override its volume/mute schedule.
+      if (!this.source) {
+        const t = ctx.currentTime;
+        this.gain.gain.cancelScheduledValues(t);
+        this.gain.gain.setValueAtTime(DEFAULT_GAIN, t);
+      }
       const target = volume === 3 ? 0.0 : DEFAULT_GAIN;
       // Per-shot gain so simultaneous shots don't fight over the master gain's
       // schedule (sync()'s fades operate on this.gain directly).

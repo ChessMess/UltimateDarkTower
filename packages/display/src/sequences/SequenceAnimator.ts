@@ -1,10 +1,9 @@
 import gsap from 'gsap';
 import type { SequenceAnimatorDeps } from './builders/types';
-import { JSON_SEQUENCE_DATA, hasSequenceAnimation } from './jsonSequences';
+import { JSON_SEQUENCE_DATA } from './jsonSequences';
 import * as SequencePlayer from './SequencePlayer';
 
 export type { SequenceAnimatorDeps } from './builders/types';
-export { hasSequenceAnimation };
 
 type GSAPTimeline = ReturnType<typeof gsap.timeline>;
 

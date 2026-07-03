@@ -150,7 +150,7 @@ export function resolveLighting(
           normalBias: user?.scene?.key?.shadow?.normalBias ?? base.scene.key.shadow.normalBias,
           frustumRadiusFactor:
             user?.scene?.key?.shadow?.frustumRadiusFactor ??
-            DEFAULT_LIGHTING.scene.key.shadow.frustumRadiusFactor,
+            base.scene.key.shadow.frustumRadiusFactor,
           farFactor: user?.scene?.key?.shadow?.farFactor ?? base.scene.key.shadow.farFactor,
         },
       },
@@ -179,77 +179,77 @@ export function resolveLighting(
           user?.leds?.sealBacklights?.color ?? base.leds.sealBacklights.color,
         radiusFactor:
           user?.leds?.sealBacklights?.radiusFactor ??
-          DEFAULT_LIGHTING.leds.sealBacklights.radiusFactor,
+          base.leds.sealBacklights.radiusFactor,
         backlightWhenBroken:
           user?.leds?.sealBacklights?.backlightWhenBroken ??
-          DEFAULT_LIGHTING.leds.sealBacklights.backlightWhenBroken,
+          base.leds.sealBacklights.backlightWhenBroken,
         proxy: {
           enabled:
             user?.leds?.sealBacklights?.proxy?.enabled ??
-            DEFAULT_LIGHTING.leds.sealBacklights.proxy.enabled,
+            base.leds.sealBacklights.proxy.enabled,
           sizeFactor:
             user?.leds?.sealBacklights?.proxy?.sizeFactor ??
-            DEFAULT_LIGHTING.leds.sealBacklights.proxy.sizeFactor,
+            base.leds.sealBacklights.proxy.sizeFactor,
           geometry:
             user?.leds?.sealBacklights?.proxy?.geometry ??
-            DEFAULT_LIGHTING.leds.sealBacklights.proxy.geometry,
+            base.leds.sealBacklights.proxy.geometry,
         },
         halo: {
           enabled:
             user?.leds?.sealBacklights?.halo?.enabled ??
-            DEFAULT_LIGHTING.leds.sealBacklights.halo.enabled,
+            base.leds.sealBacklights.halo.enabled,
           sizeFactor:
             user?.leds?.sealBacklights?.halo?.sizeFactor ??
-            DEFAULT_LIGHTING.leds.sealBacklights.halo.sizeFactor,
+            base.leds.sealBacklights.halo.sizeFactor,
           opacity:
             user?.leds?.sealBacklights?.halo?.opacity ??
-            DEFAULT_LIGHTING.leds.sealBacklights.halo.opacity,
+            base.leds.sealBacklights.halo.opacity,
         },
       },
       ledgeLeds: {
-        enabled: user?.leds?.ledgeLeds?.enabled ?? DEFAULT_LIGHTING.leds.ledgeLeds.enabled,
-        color: user?.leds?.ledgeLeds?.color ?? DEFAULT_LIGHTING.leds.ledgeLeds.color,
+        enabled: user?.leds?.ledgeLeds?.enabled ?? base.leds.ledgeLeds.enabled,
+        color: user?.leds?.ledgeLeds?.color ?? base.leds.ledgeLeds.color,
         proxy: {
           enabled:
             user?.leds?.ledgeLeds?.proxy?.enabled ??
-            DEFAULT_LIGHTING.leds.ledgeLeds.proxy.enabled,
+            base.leds.ledgeLeds.proxy.enabled,
           sizeFactor:
             user?.leds?.ledgeLeds?.proxy?.sizeFactor ??
-            DEFAULT_LIGHTING.leds.ledgeLeds.proxy.sizeFactor,
+            base.leds.ledgeLeds.proxy.sizeFactor,
         },
         halo: {
           enabled:
             user?.leds?.ledgeLeds?.halo?.enabled ??
-            DEFAULT_LIGHTING.leds.ledgeLeds.halo.enabled,
+            base.leds.ledgeLeds.halo.enabled,
           sizeFactor:
             user?.leds?.ledgeLeds?.halo?.sizeFactor ??
-            DEFAULT_LIGHTING.leds.ledgeLeds.halo.sizeFactor,
+            base.leds.ledgeLeds.halo.sizeFactor,
           opacity:
             user?.leds?.ledgeLeds?.halo?.opacity ??
-            DEFAULT_LIGHTING.leds.ledgeLeds.halo.opacity,
+            base.leds.ledgeLeds.halo.opacity,
         },
       },
       baseLeds: {
-        enabled: user?.leds?.baseLeds?.enabled ?? DEFAULT_LIGHTING.leds.baseLeds.enabled,
-        color: user?.leds?.baseLeds?.color ?? DEFAULT_LIGHTING.leds.baseLeds.color,
+        enabled: user?.leds?.baseLeds?.enabled ?? base.leds.baseLeds.enabled,
+        color: user?.leds?.baseLeds?.color ?? base.leds.baseLeds.color,
         proxy: {
           enabled:
             user?.leds?.baseLeds?.proxy?.enabled ??
-            DEFAULT_LIGHTING.leds.baseLeds.proxy.enabled,
+            base.leds.baseLeds.proxy.enabled,
           sizeFactor:
             user?.leds?.baseLeds?.proxy?.sizeFactor ??
-            DEFAULT_LIGHTING.leds.baseLeds.proxy.sizeFactor,
+            base.leds.baseLeds.proxy.sizeFactor,
         },
         halo: {
           enabled:
             user?.leds?.baseLeds?.halo?.enabled ??
-            DEFAULT_LIGHTING.leds.baseLeds.halo.enabled,
+            base.leds.baseLeds.halo.enabled,
           sizeFactor:
             user?.leds?.baseLeds?.halo?.sizeFactor ??
-            DEFAULT_LIGHTING.leds.baseLeds.halo.sizeFactor,
+            base.leds.baseLeds.halo.sizeFactor,
           opacity:
             user?.leds?.baseLeds?.halo?.opacity ??
-            DEFAULT_LIGHTING.leds.baseLeds.halo.opacity,
+            base.leds.baseLeds.halo.opacity,
         },
       },
     },

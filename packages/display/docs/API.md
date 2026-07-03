@@ -244,7 +244,7 @@ Trigger the cinematic entrance sequence on the 3D view: the tower silhouette fad
 
 ##### `setDrumRotationSoundUrl(url: string | null): void`
 
-Set the URL of the audio asset played in the 3D view while drums rotate. Pass `null` to fall back to a procedural placeholder tone. Decode happens in the background; rotations that fire mid-decode use the placeholder. No-op when no 3D view is active.
+Set the URL of the audio asset played in the 3D view while drums rotate. Pass `null` to disable drum-rotation audio (silence — there is no procedural fallback tone). Decode happens in the background; rotations that fire mid-decode stay silent until the buffer is ready. No-op when no 3D view is active.
 
 ##### `setDrumRotationSoundEnabled(enabled: boolean): void`
 
@@ -575,7 +575,7 @@ view3d.applyCameraConfig({ zoomToCursor: false, elevationFactor: -0.3 });
 
 Drums turn at a **constant angular velocity** with linear easing — duration scales with the angle turned, set by `DRUM_SECONDS_PER_REVOLUTION` (seconds for a full 360°, default ~4s, matching the real tower) in [`src/3d/constants.ts`](../src/3d/constants.ts). A single 90° step takes a quarter of that.
 
-Rotation audio is opt-in via `setDrumRotationSoundEnabled(true)`. While enabled, a sound plays whenever any drum is rotating. Provide an asset URL with `setDrumRotationSoundUrl(url)`; without one, a procedural sawtooth placeholder tone is used so the wiring is testable.
+Rotation audio is opt-in via `setDrumRotationSoundEnabled(true)`. While enabled, a sound plays whenever any drum is rotating. It defaults to the bundled `drumRotation.ogg` recording (`DRUM_ROTATION_SOUND_URL`); override it with `setDrumRotationSoundUrl(url)`, or pass `null` to disable it (silence — there is no procedural fallback tone).
 
 ##### Calibration command
 
