@@ -21,11 +21,12 @@
     "build": "pnpm -r --workspace-concurrency=1 build",
     "test": "pnpm -r --workspace-concurrency=1 test",
     "validate:golden": "node packages/schema/test/conformance_test.js",
+    "validate:nodes": "node scripts/validate-node-catalog.mjs",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md}\" --ignore-path .gitignore",
-    "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "ci": "pnpm validate:nodes && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "deploy": "./deploy/deploy.sh"
   },
   "devDependencies": {

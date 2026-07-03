@@ -62,13 +62,13 @@ The Creator's built-in simulator and the Player's runtime both call the **identi
 
 ## Package roles
 
-| Package | Role | Status |
-|---|---|---|
-| `packages/schema` | Scenario schema + L1 validator | stub (Phase 1) |
-| `packages/engine` | Rules engine reducer | JS artifacts in place, 242 tests |
-| `packages/adapters` | Ecosystem adapters + L2/L3 | stub (Phase 3) |
-| `apps/creator` | Visual scenario editor | stub (Phase 4) |
-| `apps/player` | Live table runtime | stub (Phase 5) |
+| Package             | Role                           | Status                           |
+| ------------------- | ------------------------------ | -------------------------------- |
+| `packages/schema`   | Scenario schema + L1 validator | stub (Phase 1)                   |
+| `packages/engine`   | Rules engine reducer           | JS artifacts in place, 242 tests |
+| `packages/adapters` | Ecosystem adapters + L2/L3     | stub (Phase 3)                   |
+| `apps/creator`      | Visual scenario editor         | stub (Phase 4)                   |
+| `apps/player`       | Live table runtime             | stub (Phase 5)                   |
 
 ## Getting started
 
@@ -117,33 +117,34 @@ This builds both apps (`GH_PAGES=1 pnpm build`), assembles `site/`, and force-pu
 
 ## Ecosystem
 
-This repo composes the wider *Return to Dark Tower* toolchain rather than reimplementing it:
+This repo composes the wider _Return to Dark Tower_ toolchain rather than reimplementing it:
 
-| Repo | Role |
-|---|---|
-| [`UltimateDarkTower`](https://github.com/ChessMess/UltimateDarkTower) | BLE driver + 3D tower emulator for the physical tower |
-| [`UltimateDarkTowerDisplay`](https://github.com/ChessMess/UltimateDarkTowerDisplay) | Composable text / 2D / 3D tower-state renderers |
-| [`UltimateDarkTowerBoard`](https://github.com/ChessMess/UltimateDarkTowerBoard) | `BoardState` core + board renderers (2D map / 3D in-scene board) |
-| [`UltimateDarkTowerRelay`](https://github.com/ChessMess/UltimateDarkTowerRelay) | Relays the official companion app's tower traffic to digital consumers |
+| Repo                                                                                | Role                                                                   |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [`UltimateDarkTower`](https://github.com/ChessMess/UltimateDarkTower)               | BLE driver + 3D tower emulator for the physical tower                  |
+| [`UltimateDarkTowerDisplay`](https://github.com/ChessMess/UltimateDarkTowerDisplay) | Composable text / 2D / 3D tower-state renderers                        |
+| [`UltimateDarkTowerBoard`](https://github.com/ChessMess/UltimateDarkTowerBoard)     | `BoardState` core + board renderers (2D map / 3D in-scene board)       |
+| [`UltimateDarkTowerRelay`](https://github.com/ChessMess/UltimateDarkTowerRelay)     | Relays the official companion app's tower traffic to digital consumers |
 
 ## Planning docs
 
 The `planning/` directory contains the complete design corpus:
 
-| Doc | Purpose |
-|---|---|
-| `repo-build-guide-v0_1.md` | **Start here** — five invariants, target tree, build order, acceptance gates |
-| `scenario-schema-v0_4.md` | Canonical scenario schema spec (67 node kinds, 36 effect verbs) |
-| `rules-engine-contract-v0_3.md` | Engine API contract (init/step surface, directive vocab, lockstep) |
-| `creator-app-prd-v0_3.md` | Creator PRD (authoring model, validation, simulator) |
-| `player-app-prd-v0_3.md` | Player PRD (runtime loop, Relay client, persistence) |
-| `creator-ui-architecture-v0_3.md` | Frontend architecture (React Flow, Zustand, node registry) |
-| `creator-block-catalog-v0_3.md` | Node block palette (categories A–K) |
+| Doc                               | Purpose                                                                                  |
+| --------------------------------- | ---------------------------------------------------------------------------------------- |
+| `repo-build-guide-v0_1.md`        | **Start here** — five invariants, target tree, build order, acceptance gates             |
+| `docs/node-catalog.md`            | Comprehensive node reference (all current node kinds, status, I/O, props, runtime notes) |
+| `scenario-schema-v0_4.md`         | Canonical scenario schema spec (67 node kinds, 36 effect verbs)                          |
+| `rules-engine-contract-v0_3.md`   | Engine API contract (init/step surface, directive vocab, lockstep)                       |
+| `creator-app-prd-v0_3.md`         | Creator PRD (authoring model, validation, simulator)                                     |
+| `player-app-prd-v0_3.md`          | Player PRD (runtime loop, Relay client, persistence)                                     |
+| `creator-ui-architecture-v0_3.md` | Frontend architecture (React Flow, Zustand, node registry)                               |
+| `creator-block-catalog-v0_3.md`   | Node block palette (categories A–K)                                                      |
 
 ## Disclaimer
 
 Unofficial fan tool — not affiliated with, sponsored by, or endorsed by Restoration Games.
-*Return to Dark Tower* and all related marks are property of their respective owners.
+_Return to Dark Tower_ and all related marks are property of their respective owners.
 
 ## License
 

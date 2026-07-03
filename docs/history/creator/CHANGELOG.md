@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Docs: comprehensive node catalog at `docs/node-catalog.md` covering all current node kinds with quick index, per-category behavior tables, input/output contracts, closed-props matrix, and known runtime/schema mismatches
+- Tooling: `scripts/validate-node-catalog.mjs` to guard node-kind parity across Creator (`NODE_KINDS`) and Schema (`node.kind` enum), and to verify that every current node kind is represented in the node catalog
 - Creator: Node-RED-style flow documentation — optional per-node descriptions and an editable scenario-level description, sticky-note `util.comment` nodes, and `util.group` visual groups (colored container, auto-fit to members, drag-to-move members together) built via a "Group Selection" toolbar button. Schema gains `node.description` and closed `props` for both annotation kinds; L3 exempts them from reachability and validates group membership (no wires, no nested groups, members must exist)
 - Creator: autosaved local draft (localStorage) with debounced background saves, a restore/discard recovery prompt on load, and a native "leave site?" guard for unsaved changes — protects in-progress authoring from page refreshes, tab closes, and crashes even while the scenario fails validation
 - Creator: focus mode button to hide the palette/inspector/bottom panels so the canvas fills the window, plus a wider zoom-out range (down to 0.05x) for viewing large graphs
@@ -23,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- CI now runs `pnpm validate:nodes` before lint/typecheck/test/build to catch node-catalog drift early
+- README planning docs table now links to `docs/node-catalog.md` for contributor discoverability
 - Creator and Player now use user-facing "Sample Scenario" wording in the load controls and prompts instead of internal "golden" fixture terminology
 - Creator top canvas toolbar now sizes to its button content (with a viewport cap) instead of using a fixed width, reducing visual whitespace and keeping the control bar naturally compact
 - Engine internals split for maintainability: the 2,200-line `engine.js` is now a thin (~110-line) assembly point wiring eleven cohesive modules under `packages/engine/src/engine/` (`core`, `conditions`, `effects`, `glyph`, `turn`, `battle`, `dungeon`, `nodes`, `resume`, `run`, `setup`) that form an acyclic dependency graph. Purely mechanical: `engine.js` still resolves ahead of the `engine/` directory, so every test `require('../src/engine')` path and `src/index.js` are unchanged, and per-step digest/directive streams for both `golden` and `goldenFull` are byte-identical to before the split
