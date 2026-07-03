@@ -37,8 +37,8 @@ Pick `observer: true` for a screen-only consumer; omit it (the default) for a pa
 npm install ultimatedarktowerrelay-client
 ```
 
-> The SDK is **publish-ready but not yet on npm**. Until the cutover, depend on it via a `file:` path
-> against a sibling checkout of this repo (built with `npm run build`). See [CONTRIBUTING.md](../CONTRIBUTING.md).
+> The SDK is **published on npm** (`ultimatedarktowerrelay-client`). `ultimatedarktower` is installed
+> alongside it (decoded `TowerState` types + the `PhysicalTowerReplay` tower interface).
 
 The SDK is **isomorphic**: it uses the global `WebSocket` in the browser, or an injected implementation
 (e.g. the [`ws`](https://www.npmjs.com/package/ws) package) in Node.

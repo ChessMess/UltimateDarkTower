@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build": "tsc --build",
-    "prepack": "npm run build",
+    "prepack": "npm run clean && npm run build",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "keywords": [

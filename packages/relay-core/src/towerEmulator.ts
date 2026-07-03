@@ -3,8 +3,9 @@
  *
  * Advertises a Nordic UART GATT service with the same UUID and characteristic
  * as the real tower. When the official companion app connects and writes a
- * 20-byte command to the RX characteristic, TowerEmulator fires `onCommandReceived`
- * (and emits the 'command' event) so the relay server can broadcast it.
+ * 20-byte command to the command characteristic (UART_TX, named from the
+ * tower's perspective — the app transmits to it), TowerEmulator emits the
+ * 'command' event so the relay server can broadcast it.
  *
  * Uses @stoprocent/bleno for BLE peripheral mode on macOS/Linux.
  */
@@ -21,7 +22,7 @@ import {
   UART_TX_CHARACTERISTIC_UUID,
   TOWER_DEVICE_NAME,
 } from 'ultimatedarktower';
-import { buildSkullDropPacket, TOWER_STATE_NOTIFICATION_TYPE } from './commandParser';
+import { TOWER_STATE_NOTIFICATION_TYPE } from './commandParser';
 import {
   resolveDeviceInfo,
   shouldExposeDeviceInfoService,
@@ -52,9 +53,6 @@ const DIS_SOFTWARE_REVISION_UUID = '2a28';
 // Pattern observed: 07 00 00 0c 10
 const INITIAL_HEARTBEAT = Buffer.from([0x07, 0x00, 0x00, 0x0c, 0x10]);
 import type { TowerEmulatorState } from 'ultimatedarktowerrelay-shared';
-
-/** Callback invoked when a tower command is intercepted. */
-export type CommandReceivedCallback = (data: Buffer) => void;
 
 /** Construction options for {@link TowerEmulator}. */
 export interface TowerEmulatorOptions {
@@ -98,21 +96,13 @@ interface TowerEmulatorEventMap {
  * ```
  */
 export class TowerEmulator extends EventEmitter<TowerEmulatorEventMap> {
-  /**
-   * Legacy callback — fires on every intercepted command.
-   * Prefer listening to the 'command' event for new code.
-   */
-  onCommandReceived: CommandReceivedCallback | null = null;
-
   private _state: TowerEmulatorState = 'idle';
   private _bleAdapterState: BlenoState = 'unknown';
   private _advertising = false;
   private _txUpdateValue: ((data?: Buffer) => void) | null = null;
   private _connectedAddress = 'unknown';
-  /** Last 20-byte command received from the companion app — used as baseline for injected notifications. */
+  /** Last 20-byte command received from the companion app — the synthesizer's baseline for notifications. */
   private _lastCommand: Buffer | null = null;
-  /** Skull drop count sent to the companion app this session. Incremented on each injected skull drop. */
-  private _skullDropCount = 0;
   /** Guards against concurrent startAdvertising() calls during the async BLE wait. */
   private _isStarting = false;
   /** Resolved Device Information Service identity presented to the companion app. */
@@ -130,7 +120,6 @@ export class TowerEmulator extends EventEmitter<TowerEmulatorEventMap> {
     console.log('[TowerEmulator] companion disconnected:', address);
     this._txUpdateValue = null;
     this._connectedAddress = 'unknown';
-    this._skullDropCount = 0;
     this.setState('advertising');
     this.emit('companion-disconnected', address);
   };
@@ -202,7 +191,6 @@ export class TowerEmulator extends EventEmitter<TowerEmulatorEventMap> {
           }
           console.log('[TowerEmulator] command received:', data.toString('hex'));
           this._lastCommand = Buffer.from(data);
-          this.onCommandReceived?.(data);
           this.emit('command', data);
           // Echo a tower-state response so the companion app's state machine advances.
           // The real tower sends a state notification after every BLE write; without
@@ -359,7 +347,6 @@ export class TowerEmulator extends EventEmitter<TowerEmulatorEventMap> {
     // because its listener is removed before bleno.disconnect() fires.
     this._txUpdateValue = null;
     this._connectedAddress = 'unknown';
-    this._skullDropCount = 0;
     this._lastCommand = null;
 
     bleno.disconnect();   // no-op on macOS, but kept for Linux/other platforms
@@ -402,42 +389,6 @@ export class TowerEmulator extends EventEmitter<TowerEmulatorEventMap> {
    */
   getLastCommand(): number[] | null {
     return this._lastCommand ? Array.from(this._lastCommand) : null;
-  }
-
-  /**
-   * Inject a skull-drop event to the companion app by sending a crafted tower state
-   * notification with an incremented skull-drop count at byte {@link SKULL_DROP_COUNT_POS}.
-   *
-   * Uses the last command received from the companion app as the baseline packet so all
-   * other state bytes (drum positions, LEDs, audio, etc.) are preserved. If no command
-   * has been received yet, a zero-filled baseline is used.
-   *
-   * @returns `true` if the notification was sent, `false` if no companion app subscriber
-   *          is active or if `_txUpdateValue` is not set.
-   */
-  injectSkullDrop(): boolean {
-    if (!this._txUpdateValue) {
-      console.log('[TowerEmulator] injectSkullDrop: no companion subscriber — notification not sent');
-      return false;
-    }
-
-    // Increment skull count; wrap at 255 back to 1 (0 means "reset" to the UDT library).
-    this._skullDropCount = this._skullDropCount >= 255 ? 1 : this._skullDropCount + 1;
-
-    const lastCommandArray = this._lastCommand ? Array.from(this._lastCommand) : null;
-    const packet = buildSkullDropPacket(lastCommandArray, this._skullDropCount);
-
-    console.log(`[TowerEmulator] skull drop notification sent (count=${this._skullDropCount}):`, packet.toString('hex'));
-    this._txUpdateValue(packet);
-    return true;
-  }
-
-  /**
-   * Resets the session skull drop counter. Called when the companion app disconnects
-   * so the first drop after reconnect starts cleanly from 1.
-   */
-  resetSkullDropCount(): void {
-    this._skullDropCount = 0;
   }
 
   /** Returns true if currently advertising or connected to companion app. */

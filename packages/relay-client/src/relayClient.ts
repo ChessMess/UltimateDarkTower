@@ -153,30 +153,65 @@ export class RelayClient {
 
   /**
    * Open a WebSocket connection to the relay host and start handling messages.
-   * Resolves once the socket is open and the handshake is sent.
+   * Resolves once the socket is open and the handshake is sent. Rejects on a 15s
+   * connection timeout or a socket error before the connection opens; an initial
+   * connect that fails this way does **not** start a background reconnect loop
+   * (auto-reconnect only kicks in after a connection has been established).
    *
    * @param url - WebSocket URL of the relay host (e.g. `ws://192.168.1.5:8765`).
    */
   async connect(url: string): Promise<void> {
+    return this.connectInternal(url, false);
+  }
+
+  /**
+   * Shared connect implementation. `fromRetry` distinguishes a user-initiated
+   * connect (the awaited `connect()`) from a background reconnect attempt driven
+   * by {@link scheduleReconnect}, so a pre-open failure can decide correctly
+   * whether to give up (initial) or continue the backoff loop (retry).
+   */
+  private connectInternal(url: string, fromRetry: boolean): Promise<void> {
     this.clearReconnectTimer();
     this.lastUrl = url;
-    this.autoReconnect = true;
+    // A fresh user-initiated connect (re)enables auto-reconnect. A retry keeps
+    // whatever the loop already set, so a mid-loop connect can't reset it.
+    if (!fromRetry) this.autoReconnect = true;
 
     return new Promise<void>((resolve, reject) => {
       const ws = new this.wsCtor(url);
       let settled = false;
+      let opened = false;
 
-      const timeout = setTimeout(() => {
+      // Pre-open failure (timeout or socket error before 'open'). Owns the retry
+      // decision so we don't depend on the close event's status code, which
+      // varies by environment for a never-opened socket.
+      const failPreOpen = (error: Error): void => {
         if (settled) return;
         settled = true;
-        this.autoReconnect = false; // disable retry before closing
-        ws.close();
-        reject(new Error('Connection timed out — host did not respond within 15 seconds'));
+        clearTimeout(timeout);
+        try {
+          ws.close();
+        } catch {
+          // ignore — the socket may already be closing
+        }
+        if (fromRetry) {
+          // A retry attempt failed before opening — keep the backoff loop going.
+          this.scheduleReconnect();
+        } else {
+          // An initial (awaited) connect failed — do not start a background loop.
+          this.autoReconnect = false;
+        }
+        reject(error);
+      };
+
+      const timeout = setTimeout(() => {
+        failPreOpen(new Error('Connection timed out — host did not respond within 15 seconds'));
       }, CONNECTION_TIMEOUT_MS);
 
       ws.addEventListener('open', () => {
         if (settled) return;
         settled = true;
+        opened = true;
         clearTimeout(timeout);
 
         this.ws = ws;
@@ -210,6 +245,11 @@ export class RelayClient {
       });
 
       ws.addEventListener('close', (event: { code: number; reason: string }) => {
+        clearTimeout(timeout);
+        // A socket that never opened is handled by failPreOpen; ignore its close
+        // so the two paths don't both drive the outcome.
+        if (!opened) return;
+
         this.ws = null;
         this.onEvent({ type: 'relay:disconnected', code: event.code, reason: event.reason });
 
@@ -220,19 +260,15 @@ export class RelayClient {
           return;
         }
 
-        // Auto-reconnect on non-clean close.
+        // Auto-reconnect on non-clean close of an established connection.
         if (this.autoReconnect && event.code !== 1000) {
           this.scheduleReconnect();
         }
       });
 
       ws.addEventListener('error', (event: unknown) => {
-        clearTimeout(timeout);
         this.onEvent({ type: 'relay:error', error: event });
-        if (!settled && this.ws === null) {
-          settled = true;
-          reject(new Error('WebSocket connection failed'));
-        }
+        failPreOpen(new Error('WebSocket connection failed'));
       });
     });
   }
@@ -372,9 +408,9 @@ export class RelayClient {
     this.onEvent({ type: 'relay:reconnecting', attempt: this.reconnectAttempts, delayMs: delay });
     this.reconnectTimer = setTimeout(() => {
       if (this.lastUrl && this.autoReconnect) {
-        void this.connect(this.lastUrl).catch(() => {
-          // connect() rejects on error — the close handler reschedules if
-          // autoReconnect is still true.
+        void this.connectInternal(this.lastUrl, true).catch(() => {
+          // A retry rejection is expected on failure — connectInternal(fromRetry)
+          // has already scheduled the next attempt (or the loop hit its cap).
         });
       }
     }, delay);

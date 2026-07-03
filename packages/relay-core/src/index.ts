@@ -39,7 +39,6 @@ export type { HostLoggerOptions } from './logger';
 export type { EventLogOptions, ReplayOptions } from './eventLog';
 export type { Anomaly, SessionSummary, TimelineRow } from './logAnalysis';
 export type { RelayServerOptions } from './relayServer';
-export type { CommandReceivedCallback } from './towerEmulator';
 export type { ParsedCommand } from './commandParser';
 export type { MockTowerOptions } from './mockTower';
 export type { RealTowerOptions } from './realTower';

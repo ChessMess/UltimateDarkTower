@@ -194,7 +194,10 @@ function setClients(clients: ConnectedClient[]): void {
       `<span class="health-tower ${towerClass}" title="Tower ${client.towerConnected ? 'connected' : 'disconnected'}">${towerIcon}</span>` +
       `</span>`;
 
-    if (!client.towerConnected && client.state !== 'connected') {
+    // Flag a client whose tower has dropped (seen at least once, now down).
+    // The server keeps state === 'connected' while the tower is down, so gate on
+    // towerLastSeenAt like the alert banner below rather than on state.
+    if (!client.towerConnected && client.towerLastSeenAt !== null) {
       li.classList.add('client-alert');
     }
     clientListEl.appendChild(li);
@@ -315,11 +318,17 @@ function showSkullFeedback(ok: boolean, message: string): void {
   _feedbackTimer = setTimeout(clearSkullFeedback, 3000);
 }
 
+const _transientTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+
 function showTransientFeedback(el: HTMLElement, ok: boolean, message: string): void {
+  // Cancel any pending hide for this element so a rapid second message isn't
+  // hidden early by the previous message's timer.
+  const prev = _transientTimers.get(el);
+  if (prev) clearTimeout(prev);
   el.textContent = message;
   el.className = `action-feedback ${ok ? 'feedback-ok' : 'feedback-err'}`;
   el.hidden = false;
-  setTimeout(() => { el.hidden = true; }, 3000);
+  _transientTimers.set(el, setTimeout(() => { el.hidden = true; }, 3000));
 }
 
 function setLoggingState(enabled: boolean): void {

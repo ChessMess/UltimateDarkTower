@@ -10,7 +10,11 @@
 
 import { createServer } from 'net';
 import WebSocket from 'ws';
-import { MessageType, PROTOCOL_VERSION } from 'ultimatedarktowerrelay-shared';
+import {
+  MessageType,
+  PROTOCOL_VERSION,
+  CLOSE_CODE_PROTOCOL_VERSION_MISMATCH,
+} from 'ultimatedarktowerrelay-shared';
 import { RelayServer } from './relayServer';
 
 interface AnyMessage {
@@ -62,13 +66,39 @@ function open(ws: WebSocket): Promise<void> {
 }
 
 function sendHello(ws: WebSocket): void {
+  sendHelloAs(ws, 'test-consumer');
+}
+
+/** Send a CLIENT_HELLO with an explicit label (and optional protocol version). */
+function sendHelloAs(ws: WebSocket, label: string, version: string = PROTOCOL_VERSION): void {
   ws.send(
     JSON.stringify({
       type: MessageType.CLIENT_HELLO,
-      payload: { label: 'test-consumer', protocolVersion: PROTOCOL_VERSION, observer: true },
+      payload: { label, protocolVersion: version, observer: true },
       timestamp: new Date().toISOString(),
     })
   );
+}
+
+/** Open a client that collects every message it receives into an array. */
+function collectClient(port: number): { ws: WebSocket; messages: AnyMessage[] } {
+  const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+  const messages: AnyMessage[] = [];
+  ws.on('message', (raw: WebSocket.RawData) => messages.push(JSON.parse(raw.toString()) as AnyMessage));
+  return { ws, messages };
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Poll a predicate until true or time out. */
+async function waitFor(pred: () => boolean, timeoutMs = 2000): Promise<void> {
+  const start = Date.now();
+  while (!pred()) {
+    if (Date.now() - start > timeoutMs) throw new Error('waitFor timed out');
+    await delay(10);
+  }
 }
 
 const TWENTY_BYTE_CMD = Array.from({ length: 20 }, (_, i) => i);
@@ -138,5 +168,52 @@ describe('RelayServer ↔ mock WebSocket consumer', () => {
     const catchup = await late.next();
     expect(catchup.type).toBe(MessageType.SYNC_STATE);
     expect(catchup.payload['lastCommand']).toEqual(TWENTY_BYTE_CMD);
+  });
+
+  it('broadcasts client:connected with the label after CLIENT_HELLO, and not to the joiner', async () => {
+    // Alice connects and completes her handshake (no peers yet → no broadcast).
+    const alice = collectClient(port);
+    sockets.push(alice.ws);
+    await open(alice.ws);
+    sendHelloAs(alice.ws, 'Alice');
+    await delay(50); // let the hello be processed
+
+    // Bob connects and completes his handshake → Alice learns about Bob (with label).
+    const bob = collectClient(port);
+    sockets.push(bob.ws);
+    await open(bob.ws);
+    sendHelloAs(bob.ws, 'Bob');
+
+    await waitFor(() => alice.messages.some((m) => m.type === MessageType.CLIENT_CONNECTED));
+    const connected = alice.messages.find((m) => m.type === MessageType.CLIENT_CONNECTED)!;
+    expect(connected.payload['label']).toBe('Bob');
+
+    // The joining client is not told about its own arrival.
+    expect(bob.messages.some((m) => m.type === MessageType.CLIENT_CONNECTED)).toBe(false);
+    // Alice was first, so no one ever announced her to herself.
+    expect(
+      alice.messages.filter((m) => m.type === MessageType.CLIENT_CONNECTED).length,
+    ).toBe(1);
+  });
+
+  it('never announces connect/disconnect for a client that fails the version check', async () => {
+    const alice = collectClient(port);
+    sockets.push(alice.ws);
+    await open(alice.ws);
+    sendHelloAs(alice.ws, 'Alice');
+    await delay(50);
+
+    // Bob sends a bad protocol version → the host closes him with code 4000.
+    const bob = collectClient(port);
+    sockets.push(bob.ws);
+    await open(bob.ws);
+    const closed = new Promise<number>((resolve) => bob.ws.once('close', (code) => resolve(code)));
+    sendHelloAs(bob.ws, 'Bob', '0.0.0-bad');
+    expect(await closed).toBe(CLOSE_CODE_PROTOCOL_VERSION_MISMATCH);
+
+    await delay(100);
+    // Bob never completed the handshake, so Alice saw neither his join nor his leave.
+    expect(alice.messages.some((m) => m.type === MessageType.CLIENT_CONNECTED)).toBe(false);
+    expect(alice.messages.some((m) => m.type === MessageType.CLIENT_DISCONNECTED)).toBe(false);
   });
 });

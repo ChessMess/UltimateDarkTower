@@ -3,11 +3,13 @@
  *
  * Connection lifecycle:
  *   1. Client connects → assigned a UUID, receives sync:state catchup.
- *   2. Client sends CLIENT_HELLO → label stored in ConnectionManager.
- *   3. All other clients receive client:connected notification.
- *   4. The tower source fires a command → broadcast() relays to all clients.
- *   5. Periodic host:status broadcast every 5 seconds.
- *   6. Client disconnects → client:disconnected broadcast to remaining clients.
+ *   2. Client sends CLIENT_HELLO → label stored in ConnectionManager; once the
+ *      handshake is accepted, all *other* clients receive a client:connected
+ *      notification carrying the client's label.
+ *   3. The tower source fires a command → broadcast() relays to all clients.
+ *   4. Periodic host:status broadcast every 5 seconds.
+ *   5. Client disconnects → client:disconnected broadcast to remaining clients
+ *      (only for clients whose CLIENT_HELLO had completed).
  */
 
 import { EventEmitter } from 'events';
@@ -113,6 +115,12 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
 
       wss.once('listening', () => {
         this.wss = wss;
+        // Swap the startup reject listener for a persistent handler: a post-start
+        // 'error' with no listener would crash the process with an uncaught
+        // exception. (The first such error would otherwise hit the resolved
+        // reject as a no-op and consume the once listener.)
+        wss.removeListener('error', reject);
+        wss.on('error', (err) => console.error('[relay] WebSocket server error:', err));
         this.statusInterval = setInterval(() => this.broadcastStatus(), 5000);
         resolve();
       });
@@ -122,18 +130,12 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
       wss.on('connection', (socket: WebSocket) => {
         const clientId = randomUUID();
 
-        // 1. Send state catchup to the new client before broadcasting its arrival.
+        // Send state catchup to the new client. The client:connected broadcast
+        // is deferred until CLIENT_HELLO is accepted (so it can carry the label
+        // and is only sent for clients that pass the version check).
         socket.send(JSON.stringify(makeSyncStateMessage(this.lastCommand)));
 
-        // 2. Notify existing clients that a new peer joined.
-        const connectedMsg: ClientConnectedMessage = {
-          type: MessageType.CLIENT_CONNECTED,
-          payload: { clientId },
-          timestamp: new Date().toISOString(),
-        };
-        this.manager.broadcast(JSON.stringify(connectedMsg));
-
-        // 3. Register the client (with handshake timeout).
+        // Register the client (with handshake timeout).
         const { onHandshakeTimeout } = this.manager.add(clientId, socket);
         onHandshakeTimeout(() => {
           // Clean up and notify on handshake timeout.
@@ -142,12 +144,15 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
         });
         this.emit('client-change', this.manager.getAll());
 
-        // 4. Parse incoming messages.
+        // Parse incoming messages.
         socket.on('message', (raw: Buffer) => {
           try {
             const msg = JSON.parse(raw.toString()) as { type?: string; payload?: Record<string, unknown> };
             if (msg.type === MessageType.CLIENT_HELLO && msg.payload) {
+              // Always clear the handshake timer, even on a version mismatch.
               this.manager.markHandshakeComplete(clientId);
+              // Ignore a duplicate hello so we don't re-broadcast the join.
+              if (this.manager.isHelloComplete(clientId)) return;
               const clientVersion = (msg.payload as { protocolVersion?: string }).protocolVersion;
               if (clientVersion !== PROTOCOL_VERSION) {
                 console.warn(`[relay] Client ${clientId} protocol mismatch: ${clientVersion} vs ${PROTOCOL_VERSION}`);
@@ -163,6 +168,16 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
                 if ((msg.payload as { observer?: boolean }).observer) {
                   client.observer = true;
                 }
+                this.manager.markHelloComplete(clientId);
+                // Announce the join to existing peers now that the handshake is
+                // accepted — carries the label, and skips the joining client so
+                // it is not told about its own arrival.
+                const connectedMsg: ClientConnectedMessage = {
+                  type: MessageType.CLIENT_CONNECTED,
+                  payload: { clientId, label: client.label },
+                  timestamp: new Date().toISOString(),
+                };
+                this.manager.broadcast(JSON.stringify(connectedMsg), clientId);
                 // Re-broadcast updated client list.
                 this.emit('client-change', this.manager.getAll());
                 this.onClientConnected?.(clientId, client.label, client.observer);
@@ -201,20 +216,27 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
           }
         });
 
-        // 5. Clean up on disconnect.
+        // Clean up on disconnect.
         let cleaned = false;
         const handleClose = (): void => {
           if (cleaned) return;
           cleaned = true;
           const label = this.manager.get(clientId)?.label;
+          // Only announce a disconnect for a client whose join was announced
+          // (i.e. it completed CLIENT_HELLO). A handshake timeout or version
+          // mismatch never fired client:connected, so it must not fire
+          // client:disconnected / onClientDisconnected either.
+          const wasAnnounced = this.manager.isHelloComplete(clientId);
           this.manager.remove(clientId);
-          this.onClientDisconnected?.(clientId, label);
-          const disconnectedMsg: ClientDisconnectedMessage = {
-            type: MessageType.CLIENT_DISCONNECTED,
-            payload: { clientId },
-            timestamp: new Date().toISOString(),
-          };
-          this.manager.broadcast(JSON.stringify(disconnectedMsg));
+          if (wasAnnounced) {
+            this.onClientDisconnected?.(clientId, label);
+            const disconnectedMsg: ClientDisconnectedMessage = {
+              type: MessageType.CLIENT_DISCONNECTED,
+              payload: { clientId },
+              timestamp: new Date().toISOString(),
+            };
+            this.manager.broadcast(JSON.stringify(disconnectedMsg));
+          }
           this.emit('client-change', this.manager.getAll());
         };
 
@@ -263,8 +285,9 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
   }
 
   /**
-   * Re-broadcast the last tower command as a sync:state message so clients
-   * can catch up without replaying the original command semantics.
+   * Re-broadcast the last tower command as a host:resend message (distinct from
+   * a live tower:command) so clients can catch up on an operator-triggered
+   * resend without it being mistaken for a new app command.
    *
    * @returns `true` if a message was sent, `false` if there is no stored command.
    */

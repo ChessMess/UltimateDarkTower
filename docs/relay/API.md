@@ -63,7 +63,9 @@ new RelayClient(options?: RelayClientOptions)
 
 - `connect(url: string): Promise<void>` — open a connection to the relay host (e.g.
   `ws://192.168.1.5:8765`) and send the handshake. Resolves once the socket is open; rejects on a 15s
-  connection timeout or socket error. Enables auto-reconnect.
+  connection timeout or a socket error before the connection opens. Auto-reconnect engages only **after** a
+  connection has been established — a failed initial `connect()` rejects without starting a background
+  reconnect loop, so call `connect()` again yourself to retry.
 - `dropSkull(): boolean` — report a participant skull-drop; the relay synthesizes the matching tower→app
   notification. Returns `false` (no-op) if not connected; rejected by the relay for observers.
 - `sendReady(ready: boolean): void` — tell the host this client's physical tower is calibrated and ready

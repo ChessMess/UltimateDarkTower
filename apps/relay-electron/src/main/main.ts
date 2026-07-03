@@ -395,12 +395,14 @@ function wireSource(source: TowerSource, sink: NotificationSink | null): void {
   currentSynth?.on('event', (event) => eventLog.append(event));
 
   source.on('command', (data) => {
-    if (!parser.isValid(data)) {
+    const parsed = parser.parse(data);
+    if (!parsed.valid) {
       console.warn('[main] Dropping invalid command: wrong byte length', Array.from(data).length);
       return;
     }
     observer.onCommandReceived(data);
-    logger.logCommand('companion→host', data, null, 'companion');
+    // parsed.description carries decoded snd/ovr annotations (undefined when none).
+    logger.logCommand('companion→host', data, null, 'companion', parsed.description);
     const seq = relay.broadcast(data);
     logger.logCommand('host→clients', data, seq, 'host');
     commandCount += 1;

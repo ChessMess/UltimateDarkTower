@@ -59,6 +59,10 @@ class MockWebSocket {
   message(obj: unknown): void {
     this.emit('message', { data: JSON.stringify(obj) });
   }
+  /** Simulate a socket error before 'open' (the real transport follows this with a close). */
+  error(): void {
+    this.emit('error', new Error('mock connection error'));
+  }
   serverClose(code: number, reason = ''): void {
     this.readyState = 3;
     this.emit('close', { code, reason });
@@ -254,6 +258,53 @@ describe('RelayClient reconnect behavior', () => {
       jest.advanceTimersByTime(60_000);
       expect(events.some((e) => e.type === 'relay:reconnecting')).toBe(false);
       expect(MockWebSocket.instances.length).toBe(before);
+    } finally {
+      jest.clearAllTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('rejects and does NOT start a background reconnect when the initial connect errors before open', async () => {
+    jest.useFakeTimers();
+    try {
+      MockWebSocket.reset();
+      const events: RelayClientEvent[] = [];
+      const client = new RelayClient({ webSocketImpl: MockCtor, onEvent: (e) => events.push(e) });
+      const p = client.connect('ws://test');
+      const socket = MockWebSocket.instances[MockWebSocket.instances.length - 1];
+      // Socket fails before ever opening (no 'open' event).
+      socket.error();
+      await expect(p).rejects.toThrow(/connection failed/i);
+
+      // A failed *initial* connect must not spin up a background reconnect loop.
+      jest.advanceTimersByTime(60_000);
+      expect(events.some((e) => e.type === 'relay:reconnecting')).toBe(false);
+      expect(MockWebSocket.instances.length).toBe(1); // no retry socket created
+      client.disconnect();
+    } finally {
+      jest.clearAllTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('keeps the reconnect loop going when a retry attempt times out before opening', async () => {
+    jest.useFakeTimers();
+    try {
+      const { client, socket, events } = await connectedClient(); // established connection
+      // The established connection drops abnormally → schedules retry attempt 1.
+      socket.serverClose(1006, 'dropped');
+      expect(events.filter((e) => e.type === 'relay:reconnecting').length).toBe(1);
+
+      const before = MockWebSocket.instances.length;
+      jest.advanceTimersByTime(1000); // fire attempt 1's timer → opens a new socket
+      expect(MockWebSocket.instances.length).toBe(before + 1);
+
+      // Attempt 1 never opens; advance past the 15s connect timeout.
+      jest.advanceTimersByTime(15_000);
+      // The loop must schedule attempt 2 rather than dying on the hung attempt.
+      expect(events.filter((e) => e.type === 'relay:reconnecting').length).toBe(2);
+
+      client.disconnect();
     } finally {
       jest.clearAllTimers();
       jest.useRealTimers();

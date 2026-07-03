@@ -14,7 +14,7 @@
   "author": "ChessMess",
   "license": "MIT",
   "dependencies": {
-    "ultimatedarktowerrelay-core": "^0.1.0",
+    "ultimatedarktowerrelay-core": "^0.2.0",
     "ultimatedarktowerrelay-shared": "^0.1.0",
     "electron-squirrel-startup": "^1.0.1",
     "@stoprocent/bleno": "^0.12.4",

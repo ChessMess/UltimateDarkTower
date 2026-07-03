@@ -26,7 +26,7 @@
  * log reader must never initialize Bluetooth.
  */
 
-import { readdirSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   loadEventLog,
@@ -89,11 +89,15 @@ function parseArgs(): CliArgs {
   return result;
 }
 
-/** Pick the newest `events-*.jsonl` file in a directory (names are timestamp-prefixed). */
+/**
+ * Pick the newest `events-*.jsonl` file in a directory by modification time.
+ * (A lexicographic sort would mis-order rotation segments — `events-TS-2.jsonl`
+ * sorts before its base `events-TS.jsonl` because `-` < `.`.)
+ */
 function newestEventFile(dir: string): string {
   let files: string[];
   try {
-    files = readdirSync(dir).filter((f) => /^events-.*\.jsonl$/.test(f)).sort();
+    files = readdirSync(dir).filter((f) => /^events-.*\.jsonl$/.test(f));
   } catch {
     console.error(`Cannot read directory: ${dir}`);
     process.exit(1);
@@ -102,7 +106,16 @@ function newestEventFile(dir: string): string {
     console.error(`No events-*.jsonl files found in ${dir}`);
     process.exit(1);
   }
-  return join(dir, files[files.length - 1]);
+  let newest = files[0];
+  let newestMtime = -Infinity;
+  for (const f of files) {
+    const mtime = statSync(join(dir, f)).mtimeMs;
+    if (mtime > newestMtime) {
+      newestMtime = mtime;
+      newest = f;
+    }
+  }
+  return join(dir, newest);
 }
 
 /** One-line summary of an event: `#<seq> [<time>] <type> <key fields>`. */

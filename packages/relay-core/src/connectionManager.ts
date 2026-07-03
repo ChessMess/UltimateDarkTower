@@ -28,7 +28,7 @@ const PING_INTERVAL_MS = 20_000;
  * ```
  */
 export class ConnectionManager {
-  private clients: Map<ClientId, { meta: ConnectedClient; socket: WebSocket; alive: boolean }> = new Map();
+  private clients: Map<ClientId, { meta: ConnectedClient; socket: WebSocket; alive: boolean; helloComplete: boolean }> = new Map();
   private handshakeTimers: Map<ClientId, ReturnType<typeof setTimeout>> = new Map();
   private pingInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -57,7 +57,7 @@ export class ConnectionManager {
       towerLastSeenAt: null,
       observer: false,
     };
-    this.clients.set(id, { meta: client, socket, alive: true });
+    this.clients.set(id, { meta: client, socket, alive: true, helloComplete: false });
 
     // Set up pong listener for keepalive.
     socket.on('pong', () => {
@@ -70,12 +70,14 @@ export class ConnectionManager {
       this.startPingInterval();
     }
 
-    // Handshake timeout.
+    // Handshake timeout. markHandshakeComplete clears this timer, so if it
+    // fires the handshake genuinely did not complete — no further state check
+    // is needed (and a client that sent client:ready first must not escape it).
     let timeoutCb: (() => void) | null = null;
     const timer = setTimeout(() => {
       this.handshakeTimers.delete(id);
       const entry = this.clients.get(id);
-      if (entry && entry.meta.state === 'connected' && !entry.meta.label) {
+      if (entry) {
         console.warn(`[ConnectionManager] Client ${id} did not complete handshake within ${HANDSHAKE_TIMEOUT_MS}ms — removing`);
         socket.close(1008, 'Handshake timeout');
         timeoutCb?.();
@@ -98,6 +100,23 @@ export class ConnectionManager {
       clearTimeout(timer);
       this.handshakeTimers.delete(id);
     }
+  }
+
+  /**
+   * Mark a client's CLIENT_HELLO as fully accepted (received *and* passed the
+   * protocol-version check). Distinct from {@link markHandshakeComplete}: a
+   * client whose hello arrives but fails the version check clears the timer but
+   * is never `helloComplete`, so its `close` must not broadcast a disconnect for
+   * a peer that was never announced as connected.
+   */
+  markHelloComplete(id: ClientId): void {
+    const entry = this.clients.get(id);
+    if (entry) entry.helloComplete = true;
+  }
+
+  /** Whether the client completed the CLIENT_HELLO handshake (see {@link markHelloComplete}). */
+  isHelloComplete(id: ClientId): boolean {
+    return this.clients.get(id)?.helloComplete ?? false;
   }
 
   /**
@@ -168,11 +187,14 @@ export class ConnectionManager {
    * Skips clients whose socket is not in the OPEN state and removes
    * stale sockets that fail to send.
    *
-   * @param message - JSON string to send.
+   * @param message  - JSON string to send.
+   * @param exceptId - Optional client ID to skip (e.g. so a joining client is
+   *                   not told about its own arrival).
    */
-  broadcast(message: string): void {
+  broadcast(message: string, exceptId?: ClientId): void {
     const failed: ClientId[] = [];
     for (const [id, { socket }] of this.clients.entries()) {
+      if (id === exceptId) continue;
       if (socket.readyState !== WebSocket.OPEN) continue;
       try {
         socket.send(message);
@@ -183,24 +205,6 @@ export class ConnectionManager {
     }
     for (const id of failed) {
       this.remove(id);
-    }
-  }
-
-  /**
-   * Send a message to a single client by ID.
-   *
-   * @param id      - Target client ID.
-   * @param message - JSON string to send.
-   * @returns true if the client was found and the message was sent.
-   */
-  sendTo(id: ClientId, message: string): boolean {
-    const entry = this.clients.get(id);
-    if (!entry || entry.socket.readyState !== WebSocket.OPEN) return false;
-    try {
-      entry.socket.send(message);
-      return true;
-    } catch {
-      return false;
     }
   }
 

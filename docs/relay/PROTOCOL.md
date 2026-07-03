@@ -165,7 +165,10 @@ most recent full-state tower command so the remote tower can catch up without wa
 
 ### `client:connected`
 
-Broadcast to all clients when a new client joins the relay.
+Broadcast to the **other** connected clients once a new client's `client:hello` handshake is accepted
+(after the protocol-version check). The joining client does **not** receive its own `client:connected`.
+Because it is sent after the handshake, the `label` from `client:hello` is included when the client
+provided one.
 
 ```json
 {
@@ -311,7 +314,8 @@ dropped skull), so the relay can **synthesize the matching tower→app notificat
 | ---------------- | ------ | ----------------------------------------------------- |
 | `payload.action` | string | The reported action. Currently `"dropSkull"`.         |
 
-> In the SDK this is sent via `RelayClient.dropSkull()`, which is a no-op for observer clients.
+> In the SDK this is sent via `RelayClient.dropSkull()` (a no-op only when not connected). The SDK sends
+> it regardless of the observer flag; the **relay** is what rejects actions from observer clients.
 
 ---
 
@@ -446,11 +450,12 @@ Client                                     Host
   |------- WebSocket connect() ------------>|
   |                                          |
   |<------ sync:state ----------------------|  (host sends immediately on connect)
-  |<------ client:connected (broadcast) ----|  (host tells existing clients)
   |                                          |
   |------- client:hello ------------------>|  (client sends immediately after open)
   |                                          |  [host marks handshake complete;
   |                                          |   10s timeout if hello never arrives]
+  |                                          |  --> client:connected broadcast to the
+  |                                          |      OTHER clients (with label; not echoed here)
   |                                          |
   |  [user clicks "Connect to Tower"]        |
   |  [BLE connect + calibrate]               |
@@ -479,9 +484,10 @@ Observer                                   Host
   |------- WebSocket connect() ------------>|
   |                                          |
   |<------ sync:state ----------------------|  (observer decodes & visualizes)
-  |<------ client:connected (broadcast) ----|
   |                                          |
   |------- client:hello {observer:true} -->|  (host tracks as observer)
+  |                                          |  --> client:connected broadcast to the
+  |                                          |      OTHER clients (not echoed here)
   |                                          |
   |     [companion app issues a command]     |
   |<------ tower:command -------------------|  (observer decodes via rtdt_unpack_state)

@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] — 2026-07-03
+
+### Fixed
+
+- **`client:connected` now carries the label.** The broadcast was fired at raw socket-connect (before
+  `client:hello`), so `payload.label` was always empty and never re-sent. It is now broadcast once the
+  handshake is accepted — carrying the label — and is no longer echoed to the joining client.
+- **No phantom disconnects for un-handshaked clients.** A handshake timeout or protocol-version mismatch
+  no longer fires `client:disconnected` / `onClientDisconnected` (and no longer logs a `consumer-left`
+  event) for a client that never completed `client:hello`.
+- **Relay server no longer crashes on a post-startup socket error.** The one-shot startup error listener
+  is swapped for a persistent handler once the server is listening.
+- **Handshake timeout can no longer be bypassed.** A client that sent `client:ready` before `client:hello`
+  previously escaped the 10s handshake timeout.
+- **`RelayClient` reconnect handling.** A failed *initial* `connect()` no longer silently starts a
+  background reconnect loop, and a retry attempt that times out no longer kills the whole backoff loop.
+- **`ultimatedarktowerrelay-core` packaging.** `prepack` now cleans `dist/` before building, so stale
+  compiled files (e.g. the pre-rename `fakeTower.*`) are no longer published in the tarball.
+
+### Removed
+
+- **`ultimatedarktowerrelay-core` (0.2.0):** dropped dead public API — `TowerEmulator.injectSkullDrop()`,
+  `TowerEmulator.resetSkullDropCount()`, the `TowerEmulator.onCommandReceived` legacy callback (+ its
+  `CommandReceivedCallback` type), and `ConnectionManager.sendTo()`. Skull-drop synthesis is owned by
+  `NotificationSynthesizer.dropSkull()`.
+
 ## [0.1.0] — 2026-06-29
 
 Initial release. All three publishable packages (`shared`, `core`, `client`) are live on npm.
@@ -33,4 +59,4 @@ Initial release. All three publishable packages (`shared`, `core`, `client`) are
 - **Documentation.** Reader-facing docs set — getting started, architecture, the SDK API reference,
   protocol, tower-emulator behavior, per-platform setup, troubleshooting, and ecosystem.
 
-[Unreleased]: https://github.com/ChessMess/UltimateDarkTowerRelay
+[0.2.0]: https://github.com/ChessMess/UltimateDarkTowerRelay/compare/v0.1.0...v0.2.0
