@@ -12,6 +12,7 @@ const suites = [
   'fixture_test.js',
   'full_turn_test.js',
   'events_test.js',
+  'regression_test.js',
 ];
 
 let allPassed = true;

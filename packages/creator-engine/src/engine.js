@@ -13,7 +13,7 @@
 
 const pcg32 = require('./pcg32');
 
-const ENGINE_VERSION = '0.3.0';
+const ENGINE_VERSION = '0.4.0';
 const SUPPORTED_SCHEMA_RANGE = '>=0.4.0 <0.5.0'; // semver-range, same-minor pre-1.0 (§8)
 
 // The four board kingdoms in canonical clockwise order (schema $defs/kingdom). Seating, home-kingdom
@@ -24,11 +24,14 @@ const KINGDOMS = ['north', 'south', 'east', 'west'];
 // ---------- canonical serialization + digest (§6, §9) ----------
 function canonical(o) {
   if (o === null || typeof o !== 'object') return JSON.stringify(o);
-  if (Array.isArray(o)) return '[' + o.map(canonical).join(',') + ']';
+  if (Array.isArray(o)) return '[' + o.map((v) => (v === undefined ? 'null' : canonical(v))).join(',') + ']';
   return (
     '{' +
     Object.keys(o)
       .sort()
+      // match JSON.stringify object semantics: keys whose value is undefined are omitted, so a
+      // round-trip through serialize→deserialize (and digest vs. clone) stays valid + stable.
+      .filter((k) => o[k] !== undefined)
       .map((k) => JSON.stringify(k) + ':' + canonical(o[k]))
       .join(',') +
     '}'
@@ -300,7 +303,10 @@ function applyEffect(eff, state, directives) {
       const cfg = ((state._lib.tokenTypes || {})[eff.tokenTypeId] || {}).threshold;
       if (cfg && h.counters[key] >= cfg.at) {
         h.counters[key] = 0;
-        for (const e of cfg.onReach || []) applyEffect(e, state, directives);
+        for (const e of cfg.onReach || []) {
+          applyEffect(e, state, directives);
+          if (state.outcome.status !== 'running') break; // threshold effect ended the game
+        }
       }
       break;
     }
@@ -344,14 +350,45 @@ function applyEffect(eff, state, directives) {
     // ----- skulls & buildings (scenario-determined only; emergence is observed) -----
     case 'skull.place':
       state.skulls.supply -= eff.count;
-      dir(directives, 'ui.prompt', {
-        kind: 'choice',
-        text: 'Choose building for ' + eff.count + ' skull(s)',
-      });
-      dir(directives, 'board.mutate', {
-        command: 'placeSkull',
-        args: { count: eff.count, kingdom: eff.kingdom, chooser: eff.chooser || 'homeOwner' },
-      });
+      if (state.buildings) {
+        // registry model: each scenario-placed skull lands on a standing building of the named
+        // kingdom (least-loaded first, like emergence), increments onBoard, and destroys the
+        // building when its skulls exceed capacity — so authored skulls behave like emergent ones
+        // (visible to cleanse, can raze a building). Byte-frozen `golden` has no registry → else.
+        for (let i = 0; i < eff.count; i++) {
+          const b = pickBuildingForSkull(state, eff.kingdom ? { kingdom: eff.kingdom } : null);
+          if (!b) {
+            dir(directives, 'board.mutate', { command: 'placeSkull', args: { source: 'effect' } });
+            continue;
+          }
+          b.skulls += 1;
+          state.skulls.onBoard = (state.skulls.onBoard || 0) + 1;
+          dir(directives, 'board.mutate', {
+            command: 'placeSkull',
+            args: { source: 'effect', kingdom: b.kingdom, type: b.type, location: b.location },
+          });
+          if (b.skulls > capacityOf(state, b)) {
+            state.skulls.onBoard = Math.max(0, state.skulls.onBoard - b.skulls); // 3 leave, 4th → supply
+            b.skulls = 0;
+            b.destroyed = true;
+            applyEffect(
+              { op: 'building.destroy', kingdom: b.kingdom, location: b.location },
+              state,
+              directives,
+            );
+            if (state.outcome.status !== 'running') return;
+          }
+        }
+      } else {
+        dir(directives, 'ui.prompt', {
+          kind: 'choice',
+          text: 'Choose building for ' + eff.count + ' skull(s)',
+        });
+        dir(directives, 'board.mutate', {
+          command: 'placeSkull',
+          args: { count: eff.count, kingdom: eff.kingdom, chooser: eff.chooser || 'homeOwner' },
+        });
+      }
       if (state.skulls.supply <= 0) loseGame(state, directives, 'empty-supply');
       break;
     case 'skull.remove':
@@ -361,6 +398,20 @@ function applyEffect(eff, state, directives) {
       ui({ supply: state.skulls.supply });
       break;
     case 'building.destroy': {
+      // Registry sync: mark the standing building destroyed and clear its on-board skulls. The
+      // emergence + skull.place paths pre-mark the building (destroyed=true, skulls=0) before
+      // delegating here, so this stays a no-op for them; a directly-authored destroy on a standing
+      // building is the case that previously left the registry out of sync.
+      const bd =
+        (state.buildings || []).find((x) => x.location === eff.location) ||
+        (eff.kingdom
+          ? (state.buildings || []).find((x) => x.kingdom === eff.kingdom && !x.destroyed)
+          : undefined);
+      if (bd && !bd.destroyed) {
+        state.skulls.onBoard = Math.max(0, (state.skulls.onBoard || 0) - bd.skulls);
+        bd.skulls = 0;
+        bd.destroyed = true;
+      }
       state.skulls.supply += 1; // the 4th skull returns to supply
       dir(directives, 'board.mutate', {
         command: 'removeBuilding',
@@ -523,11 +574,15 @@ function raiseEvent(state, directives, event) {
   }
 }
 
+// Once the game is decided (won/lost/ended), the first outcome stands: a later win/loss check
+// within the same resolution must not overwrite it (§9 — terminal is terminal).
 function loseGame(state, directives, reason) {
+  if (state.outcome.status !== 'running') return;
   state.outcome = { status: 'lost', reason };
   dir(directives, 'log.entry', { event: 'gameLost', reason });
 }
 function winGame(state, directives, reason) {
+  if (state.outcome.status !== 'running') return;
   state.outcome = { status: 'won', reason };
   dir(directives, 'log.entry', { event: 'gameWon', reason });
 }
@@ -1590,6 +1645,15 @@ function resolveBattle(state, directives, decision) {
     return;
   }
   const spend = Math.min(decision.spend | 0, 10, hero.advantages | 0); // ≤10/action, no undo
+  // Full-turn scenarios deduct the spent Advantages from the hero's pool (rules.md §Battle: spent
+  // Advantages are gone). Legacy scenarios keep the frozen no-deduct behavior so `golden` and the
+  // __internals verb states stay byte-identical.
+  if (state._setup && state._setup.fullTurn && spend > 0) {
+    hero.advantages -= spend;
+    dir(directives, 'ui.update', {
+      delta: { hero: state.clock.activeHero, advantages: hero.advantages },
+    });
+  }
   let pool = spend + (b.isAdversary ? state.adversary.advantagesBanked || 0 : 0);
   let remainingStrikes = 0,
     cleared = 0;
@@ -1602,18 +1666,32 @@ function resolveBattle(state, directives, decision) {
     }
     if (s === 0) {
       cleared++;
-      for (const e of card.onResolve || []) applyEffect(e, state, directives);
+      for (const e of card.onResolve || []) {
+        applyEffect(e, state, directives);
+        if (state.outcome.status !== 'running') break; // a card's onResolve ended the game
+      }
     }
     remainingStrikes += s;
+    if (state.outcome.status !== 'running') break;
   }
   if (b.isAdversary)
     state.adversary.advantagesBanked = (state.adversary.advantagesBanked || 0) + spend; // persists
+  // if an onResolve effect already decided the game, do not run the strike/defeat tail on top of it
+  if (state.outcome.status !== 'running') {
+    state.clock.battle = null;
+    return;
+  }
   if (remainingStrikes > 0)
     applyEffect(
       { op: 'resource.lose', resource: 'warriors', amount: remainingStrikes },
       state,
       directives,
     );
+  if (state.outcome.status !== 'running') {
+    // warrior-loss shortfall drove a corruption loss — don't overwrite it with a defeat win
+    state.clock.battle = null;
+    return;
+  }
   const defeated = cleared === b.cards.length;
   dir(directives, 'ui.update', {
     delta: { battle: { foeId: b.foeId, cleared, remainingStrikes, defeated } },
