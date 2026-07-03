@@ -3,6 +3,10 @@
 //   A2 full-turn battle deducts spent Advantages from the hero pool
 //   A3 a lost/won game is not overwritten by a later win/loss in the same resolution
 //   A4 authored building.destroy / skull.place keep the buildings registry in sync
+// ...and the post-0.4.0 deferred follow-ups (planning/engine-deferred-followups.md):
+//   D1 battle target instanceId disambiguates two same-type foes
+//   D2 completeQuest faults on re-entry instead of recursing unboundedly
+//   D3 digest hashes load-bearing clock state and ignores load-time refs (ENGINE_VERSION 0.5.0)
 // Uses plain Node (no framework), matching the other engine suites.
 
 const engine = require('../src/engine');
@@ -187,6 +191,107 @@ for (const [name, fx] of [
   const b = s.buildings.find((x) => x.location === target.location);
   ok('A4: building.destroy marks the registry building destroyed', b.destroyed === true);
 }
+
+// ---------- D1: battle target instanceId disambiguates two same-type foes ----------
+{
+  const s = makeTestState();
+  s.foes.push({ instanceId: 'foe-2', foeId: 'brigands', status: 'ready', location: 'elsewhere' });
+  startBattle(s, [], { foeId: 'brigands', instanceId: 'foe-1' });
+  resolveBattle(s, [], { spend: 2 }); // clears both brigands cards (level 2) → defeated
+  ok(
+    'D1: defeating one instance of a same-type foe leaves the other instance alive',
+    s.foes.length === 1 && s.foes[0].instanceId === 'foe-2',
+    'foes=' + JSON.stringify(s.foes),
+  );
+}
+{
+  const s = makeTestState();
+  s.foes.push({ instanceId: 'foe-2', foeId: 'brigands', status: 'ready', location: 'elsewhere' });
+  startBattle(s, [], { foeId: 'brigands' }); // no instanceId: legacy fallback behavior
+  resolveBattle(s, [], { spend: 2 });
+  ok(
+    'D1: a legacy target with no instanceId still removes every matching foeId (unchanged fallback)',
+    s.foes.length === 0,
+  );
+}
+{
+  const s = makeTestState();
+  s.foes.push({ instanceId: 'foe-2', foeId: 'brigands', status: 'ready', location: 'elsewhere' });
+  startBattle(s, [], { foeId: 'brigands', instanceId: 'foe-1' });
+  resolveBattle(s, [], { spend: 0 }); // no spend, both strikes land → not defeated → escalates
+  const f1 = s.foes.find((f) => f.instanceId === 'foe-1');
+  const f2 = s.foes.find((f) => f.instanceId === 'foe-2');
+  ok(
+    'D1: an undefeated battle escalates only the targeted instance, not the other same-type foe',
+    f1.status === 'savage' && f2.status === 'ready',
+  );
+}
+
+// ---------- D2: completeQuest faults on re-entry instead of recursing unboundedly ----------
+{
+  const r = engine.init(goldenFull, opts);
+  const s = clone(r.state);
+  s.outcome = { status: 'running', reason: null };
+  // a self-completing quest: its own success outcome re-fires quest.complete on itself
+  s._lib.quests['selfQuest'] = {
+    outcomes: { success: [{ op: 'quest.complete', questId: 'selfQuest' }] },
+  };
+  expectFault('D2: a quest whose success outcome completes itself faults (no stack overflow)', () =>
+    applyOne(s, { op: 'quest.complete', questId: 'selfQuest' }),
+  );
+}
+{
+  const r = engine.init(goldenFull, opts);
+  const s = clone(r.state);
+  s.outcome = { status: 'running', reason: null };
+  // an indirect cycle: questA's success completes questB, whose success completes questA back
+  s._lib.quests['questA'] = { outcomes: { success: [{ op: 'quest.complete', questId: 'questB' }] } };
+  s._lib.quests['questB'] = { outcomes: { success: [{ op: 'quest.complete', questId: 'questA' }] } };
+  expectFault('D2: an indirect A→B→A quest-completion cycle also faults', () =>
+    applyOne(s, { op: 'quest.complete', questId: 'questA' }),
+  );
+}
+{
+  // sanity: two INDEPENDENT quests completing each other in sequence (not a cycle) still succeed
+  const r = engine.init(goldenFull, opts);
+  const s = clone(r.state);
+  s.outcome = { status: 'running', reason: null };
+  s._lib.quests['questC'] = { outcomes: { success: [] } };
+  applyOne(s, { op: 'quest.complete', questId: 'questC' });
+  ok(
+    'D2: a normal (non-cyclic) quest completion is unaffected by the guard',
+    s.quests['questC'] && s.quests['questC'].complete === true,
+  );
+}
+
+// ---------- D3: digest hashes load-bearing clock state and ignores load-time refs ----------
+{
+  const r = engine.init(goldenFull, opts);
+  const before = engine.digest(r.state);
+  const s = clone(r.state);
+  s.outcome = { status: 'running', reason: null };
+  s.heroes.hero1.location = 'Delmsmire'; // full-turn battles require the hero on the foe's space
+  startBattle(s, [], { foeId: 'brigands' });
+  const midBattle = engine.digest(s);
+  ok(
+    'D3: digest distinguishes a mid-battle state from the same state before battle started',
+    before !== midBattle,
+  );
+  ok(
+    'D3: digest(state) === digest(clone(state)) still holds for a mid-battle state',
+    midBattle === engine.digest(clone(s)),
+  );
+}
+{
+  const r = engine.init(goldenFull, opts);
+  const s = clone(r.state);
+  s._lib = { mutatedForTest: true }; // a load-time ref: never changes at runtime post-init
+  ok(
+    'D3: digest ignores load-time refs — mutating _lib does not affect the divergence hash',
+    engine.digest(r.state) === engine.digest(s),
+  );
+}
+ok('D3: ENGINE_VERSION bumped for the digest-scope fix', engine.ENGINE_VERSION === '0.5.0');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);

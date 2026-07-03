@@ -43,3 +43,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - A decided game outcome is no longer overwritten within the same resolution: `winGame`/`loseGame` are no-ops once the game is over, battle card `onResolve` and warrior-loss now short-circuit the defeat/win tail, and the `token.counterIncrement` threshold loop stops when an effect ends the game
   - `building.destroy` now marks the standing registry building destroyed and clears its on-board skulls (previously the registry desynced for a directly-authored destroy); `skull.place` now lands scenario-placed skulls on standing buildings in the registry model (incrementing `onBoard`, destroying a building past capacity) so they are visible to Cleanse and can raze a building — matching emergent-skull behavior. Compact `golden` has no buildings registry and is unaffected
   - Engine version bumped `0.3.0` → `0.4.0`
+- Engine (0.5.0) — deferred-followup fixes (`planning/engine-deferred-followups.md`, items 1-3):
+  - Battling one of two same-type foes no longer removes both: `startBattle` now resolves the
+    specific targeted foe instance when the caller supplies `instanceId`, and threads it through
+    `foe.remove`/`foe.escalateStatus` on battle resolution. Callers that don't disambiguate (legacy/
+    compact streams, `golden`/`goldenFull`, which have at most one foe per type) keep exactly
+    today's remove-all-matching-`foeId` behavior. The Player app's target-selection button now
+    sends `instanceId` (it already had the value, just wasn't sending it)
+  - `completeQuest` no longer recurses unboundedly when a quest's authored success outcome
+    completes itself (directly, or via an indirect A→B→A chain) — it now faults immediately on
+    re-entry instead of stack-overflowing
+  - `digest` now hashes load-bearing clock state (`turnsThisMonth`, `latches`, `battle`, `dungeon`,
+    `pendingEvents`, `eventQueue`) instead of load-time refs (`_nodes`/`_lib`/`_setup`/`_spine`/
+    `_triggers`), so two states that had genuinely diverged mid-battle or mid-dungeon no longer
+    hash identically. **This intentionally changes digest values** — persisted ≤0.4.0
+    checkpoints/digests won't match against 0.5.0. Run-to-run lockstep determinism, all win/loss
+    outcomes, and every directive stream are unaffected; no test hardcodes a digest value.
+    Engine version bumped `0.4.0` → `0.5.0`
+  - All three fixes verified byte-identical (status + directives, and pre-0.5.0 digests where
+    applicable) for `golden`/`goldenFull` via `run-all.js`, schema conformance, and a replay-
+    snapshot diff across representative streams
+
+### Known issues
+
+- One item found during the engine 0.4.0 code review remains deliberately deferred (changes the
+  package ship model): the full `.ts`/`dist` TypeScript port. Tracked in
+  `planning/engine-deferred-followups.md`.

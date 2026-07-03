@@ -422,7 +422,11 @@ function TargetInput() {
             key={f.instanceId}
             style={actionBtn}
             onClick={() =>
-              handleInput({ requestId: 'target', value: { foeId: f.foeId }, kind: 'decision' })
+              handleInput({
+                requestId: 'target',
+                value: { foeId: f.foeId, instanceId: f.instanceId },
+                kind: 'decision',
+              })
             }
           >
             {f.foeId}

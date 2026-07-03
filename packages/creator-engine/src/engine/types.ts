@@ -95,6 +95,7 @@ export interface BattleCard {
 
 export interface BattleCursor {
   foeId: string;
+  instanceId?: string;
   isAdversary: boolean;
   level: number;
   cards: BattleCard[];
@@ -417,7 +418,7 @@ export type Input =
   | { requestId: 'action'; value: ActionChoice | ActionDecision; kind: 'decision' }
   | {
       requestId: 'target';
-      value: { foeId?: string; adversary?: boolean; cancel?: boolean };
+      value: { foeId?: string; instanceId?: string; adversary?: boolean; cancel?: boolean };
       kind: 'decision';
     }
   | {
