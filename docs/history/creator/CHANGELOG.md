@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Creator and Player now use user-facing "Sample Scenario" wording in the load controls and prompts instead of internal "golden" fixture terminology
 - Creator top canvas toolbar now sizes to its button content (with a viewport cap) instead of using a fixed width, reducing visual whitespace and keeping the control bar naturally compact
+- Engine internals split for maintainability: the 2,200-line `engine.js` is now a thin (~110-line) assembly point wiring eleven cohesive modules under `packages/engine/src/engine/` (`core`, `conditions`, `effects`, `glyph`, `turn`, `battle`, `dungeon`, `nodes`, `resume`, `run`, `setup`) that form an acyclic dependency graph. Purely mechanical: `engine.js` still resolves ahead of the `engine/` directory, so every test `require('../src/engine')` path and `src/index.js` are unchanged, and per-step digest/directive streams for both `golden` and `goldenFull` are byte-identical to before the split
+- Engine public types now have a single checked source of truth in `packages/engine/src/engine/types.ts` (re-exported by `src/index.d.ts`), adding closed-vocabulary unions for effect ops and node kinds; this replaces the standalone hand-written declaration file so the type surface is type-checked rather than free to drift
 
 ### Fixed
 
