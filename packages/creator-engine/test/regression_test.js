@@ -3,6 +3,8 @@
 //   A2 full-turn battle deducts spent Advantages from the hero pool
 //   A3 a lost/won game is not overwritten by a later win/loss in the same resolution
 //   A4 authored building.destroy / skull.place keep the buildings registry in sync
+// ...and the post-0.4.0 deferred follow-ups (planning/engine-deferred-followups.md):
+//   D2 completeQuest faults on re-entry instead of recursing unboundedly
 // Uses plain Node (no framework), matching the other engine suites.
 
 const engine = require('../src/engine');
@@ -186,6 +188,43 @@ for (const [name, fx] of [
   applyOne(s, { op: 'building.destroy', kingdom: 'north', location: target.location });
   const b = s.buildings.find((x) => x.location === target.location);
   ok('A4: building.destroy marks the registry building destroyed', b.destroyed === true);
+}
+
+// ---------- D2: completeQuest faults on re-entry instead of recursing unboundedly ----------
+{
+  const r = engine.init(goldenFull, opts);
+  const s = clone(r.state);
+  s.outcome = { status: 'running', reason: null };
+  // a self-completing quest: its own success outcome re-fires quest.complete on itself
+  s._lib.quests['selfQuest'] = {
+    outcomes: { success: [{ op: 'quest.complete', questId: 'selfQuest' }] },
+  };
+  expectFault('D2: a quest whose success outcome completes itself faults (no stack overflow)', () =>
+    applyOne(s, { op: 'quest.complete', questId: 'selfQuest' }),
+  );
+}
+{
+  const r = engine.init(goldenFull, opts);
+  const s = clone(r.state);
+  s.outcome = { status: 'running', reason: null };
+  // an indirect cycle: questA's success completes questB, whose success completes questA back
+  s._lib.quests['questA'] = { outcomes: { success: [{ op: 'quest.complete', questId: 'questB' }] } };
+  s._lib.quests['questB'] = { outcomes: { success: [{ op: 'quest.complete', questId: 'questA' }] } };
+  expectFault('D2: an indirect A→B→A quest-completion cycle also faults', () =>
+    applyOne(s, { op: 'quest.complete', questId: 'questA' }),
+  );
+}
+{
+  // sanity: two INDEPENDENT quests completing each other in sequence (not a cycle) still succeed
+  const r = engine.init(goldenFull, opts);
+  const s = clone(r.state);
+  s.outcome = { status: 'running', reason: null };
+  s._lib.quests['questC'] = { outcomes: { success: [] } };
+  applyOne(s, { op: 'quest.complete', questId: 'questC' });
+  ok(
+    'D2: a normal (non-cyclic) quest completion is unaffected by the guard',
+    s.quests['questC'] && s.quests['questC'].complete === true,
+  );
 }
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

@@ -397,38 +397,52 @@ function gainCorruption(state, directives, source, heroId) {
   if (hero.corruption >= 3) loseGame(state, directives, 'third-corruption'); // §3.1 / §4.3
 }
 
+// Call-stack guard for completeQuest re-entrancy (direct self-reference or an indirect A→B→A
+// chain through authored success outcomes). Deliberately NOT stored on EngineState: completeQuest
+// is fully synchronous (no await between push and pop), so a module-level stack is sufficient and
+// — unlike a state field — never leaks into serialize/digest/clone (§9 byte-identical requirement).
+const completingQuests = [];
 function completeQuest(state, directives, questId) {
-  state.quests[questId] = { complete: true };
-  dir(directives, 'log.entry', { event: 'questComplete', questId });
-  raiseEvent(state, directives, 'questComplete');
-  // full-turn scenarios apply the quest's authored success outcomes on completion, wherever the
-  // completion came from (the quest action, a dungeon's spawning quest, …). Legacy stays inert.
-  if (state._setup && state._setup.fullTurn) {
-    const qdef = (state._lib.quests || {})[questId];
-    for (const e of ((qdef || {}).outcomes || {}).success || []) {
-      applyEffect(e, state, directives);
-      if (state.outcome.status !== 'running') return;
-    }
-  }
-  // a companion quest grants its companion to the acting hero (rules.md §Monthly Quests)
-  for (const cid of Object.keys(state._lib.companions || {})) {
-    if ((state._lib.companions[cid] || {}).grantedByQuestId === questId) {
-      const hero = state.heroes[state.clock.activeHero];
-      if (hero && !hero.companions.includes(cid)) {
-        hero.companions.push(cid);
-        dir(directives, 'ui.update', {
-          delta: { hero: state.clock.activeHero, companions: hero.companions.slice() },
-        });
-        dir(directives, 'log.entry', { event: 'companionGained', companion: cid });
+  // fail-at-load philosophy (see planning/engine-deferred-followups.md #2): an authoring bug that
+  // re-enters an already-completing quest must fault loudly, not overflow the stack.
+  if (completingQuests.includes(questId))
+    throw fault('quest.complete re-entered while already completing quest: ' + questId);
+  completingQuests.push(questId);
+  try {
+    state.quests[questId] = { complete: true };
+    dir(directives, 'log.entry', { event: 'questComplete', questId });
+    raiseEvent(state, directives, 'questComplete');
+    // full-turn scenarios apply the quest's authored success outcomes on completion, wherever the
+    // completion came from (the quest action, a dungeon's spawning quest, …). Legacy stays inert.
+    if (state._setup && state._setup.fullTurn) {
+      const qdef = (state._lib.quests || {})[questId];
+      for (const e of ((qdef || {}).outcomes || {}).success || []) {
+        applyEffect(e, state, directives);
+        if (state.outcome.status !== 'running') return;
       }
     }
-  }
-  const q = (state._lib.quests || {})[questId];
-  if (q && q.isMainGoal) {
-    state.mainGoalComplete = true;
-    raiseEvent(state, directives, 'mainGoalComplete');
-    // main-goal completion fires the adversary.spawn path (§4.3)
-    applyEffect({ op: 'adversary.spawn' }, state, directives);
+    // a companion quest grants its companion to the acting hero (rules.md §Monthly Quests)
+    for (const cid of Object.keys(state._lib.companions || {})) {
+      if ((state._lib.companions[cid] || {}).grantedByQuestId === questId) {
+        const hero = state.heroes[state.clock.activeHero];
+        if (hero && !hero.companions.includes(cid)) {
+          hero.companions.push(cid);
+          dir(directives, 'ui.update', {
+            delta: { hero: state.clock.activeHero, companions: hero.companions.slice() },
+          });
+          dir(directives, 'log.entry', { event: 'companionGained', companion: cid });
+        }
+      }
+    }
+    const q = (state._lib.quests || {})[questId];
+    if (q && q.isMainGoal) {
+      state.mainGoalComplete = true;
+      raiseEvent(state, directives, 'mainGoalComplete');
+      // main-goal completion fires the adversary.spawn path (§4.3)
+      applyEffect({ op: 'adversary.spawn' }, state, directives);
+    }
+  } finally {
+    completingQuests.pop();
   }
 }
 
