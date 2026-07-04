@@ -530,7 +530,7 @@ export function winGame(state: EngineState, directives: Directive[], reason: str
 }
 
 // ---------- buildings registry helpers (used by applyEffect + the observed-skull resume path) ----------
-export function buildingAt(state: EngineState, location: string): BuildingState | undefined {
+export function buildingAt(state: EngineState, location: string | null): BuildingState | undefined {
   return (state.buildings || []).find((b) => b.location === location);
 }
 export function capacityOf(state: EngineState, b: BuildingState): number {

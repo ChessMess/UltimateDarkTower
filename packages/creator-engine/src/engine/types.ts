@@ -207,6 +207,10 @@ export interface EngineState {
     goalThreshold: number;
     adversaryToughness: number;
     fullTurn?: boolean;
+    /** foe level by selection tier (setup.ts init) */
+    foeTiers?: Record<string, number>;
+    /** quests issued by the authored newQuests node, attemptable only while active (setup.ts init) */
+    monthlyQuestIds?: string[];
   };
   _triggers?: unknown[];
   _lastDraw?: unknown;
@@ -253,10 +257,15 @@ export interface TokenTypeDef {
 }
 export interface BuildingTypeDef {
   skullCapacity?: number;
+  /** Reinforce's free effect (buildings.md) */
+  free?: Effect[];
+  /** Reinforce's enhanced effect, paid via resource.spend of `cost` (buildings.md) */
+  enhanced?: { cost: { resource?: string; amount: number }; effects: Effect[] };
 }
 export interface QuestDef {
   outcomes?: { success?: Effect[]; failure?: Effect[] };
   isMainGoal?: boolean;
+  requirements?: Array<{ condition?: Condition; label?: string }>;
 }
 export interface CompanionDef {
   grantedByQuestId?: string;
