@@ -1,4 +1,4 @@
-// golden-fixture.js — the playable golden MVP scenario (rules-engine §9 / schema L4).
+// golden-fixture.ts — the playable golden MVP scenario (rules-engine §9 / schema L4).
 // A schema-valid superset of the conformance `base`: *Recover Azkol's Treasures* (Ashstrider;
 // Brigands/Frost Trolls/Dragons; ally Zaida; seed AA9A-AAGS-W634, Core/Heroic/1P). The graph is
 // a compact-but-real turn loop the engine walks to a clean WIN and a clean LOSS (§9).
@@ -6,17 +6,26 @@
 // Turn loop: gameStart → boardSetup → banner → [startMonth → playerTurn → actionStart →
 // actionMiddle(decision) → actionEnd(observed skullCounter) → winCheck → endOfMonth?]* →
 // newMonthCheck → month≥6? → lossChecks → gameEnd.
+//
+// Deliberately NOT typed as `Scenario` (types.ts) here: this authoring literal carries many
+// fields Scenario doesn't model (meta.title/designer/pins, setup.mode, library entry
+// display/flavor fields, …) since Scenario only covers what setup.ts's reducer reads. Annotating
+// the literal directly would trigger excess-property-check errors on every one of those; leaving
+// it inferred and relying on structural typing at call sites (engine.init(golden, opts)) avoids
+// that without widening Scenario into a second authoring-schema.
 
 // Building Reinforce effects per rules.md §Reinforce + buildings.md (base game): free effect or
 // a spirit-cost enhanced effect; every building holds 3 skulls and the 4th destroys it (schema
 // pins skullCapacity=3 / destroyOnSkull=4).
-const buildingType = (freeEffect, cost, enhancedEffect) => ({
+import type { Effect, ConditionSubject, Comparator } from './engine/types';
+
+const buildingType = (freeEffect: Effect, cost: number, enhancedEffect: Effect) => ({
   free: [freeEffect],
   enhanced: { cost: { resource: "spirit", amount: cost }, effects: [enhancedEffect] },
   skullCapacity: 3,
   destroyOnSkull: 4
 });
-const cond = (subject, comparator, value, key) => (key === undefined ? { subject, comparator, value } : { subject, comparator, value, key });
+const cond = (subject: ConditionSubject, comparator: Comparator, value: unknown, key?: string) => (key === undefined ? { subject, comparator, value } : { subject, comparator, value, key });
 
 const golden = {
   schemaVersion: "0.4.0",
@@ -265,7 +274,7 @@ const golden = {
 //    empty-supply loss (§4.5 step 1) fires in Action: End — independent of seed-drawn month lengths.
 //  - goldenAmpleSupply (99): supply outlasts all six months (max ~34 drops), so a no-win all-pass walk
 //    reaches the out-of-time loss at the month-6 Game End rather than emptying the supply first.
-function cloneWithSupply(supply) {
+function cloneWithSupply(supply: number) {
   const c = JSON.parse(JSON.stringify(golden));
   c.setup.difficulty.skullSupply = supply;
   return c;
@@ -288,9 +297,9 @@ const goldenAmpleSupply = cloneWithSupply(99);
 // n-aend directly (their wires are untouched), so the guard sits only on the plain action path.
 function cloneAuthoredLoss() {
   const c = JSON.parse(JSON.stringify(golden));
-  const amid = c.graph.nodes.find(n => n.id === "n-amid");
+  const amid = c.graph.nodes.find((n: any) => n.id === "n-amid");
   amid.wires.out = ["n-lossguard"]; // default action path now routes through the loss guard
-  const aendIdx = c.graph.nodes.findIndex(n => n.id === "n-aend");
+  const aendIdx = c.graph.nodes.findIndex((n: any) => n.id === "n-aend");
   c.graph.nodes.splice(aendIdx, 0, {
     id: "n-lossguard", kind: "winloss.lossCondition",
     props: { condition: cond("counter", "gte", 2, "goalProgress") },
@@ -314,9 +323,9 @@ const goldenAuthoredLoss = cloneAuthoredLoss();
 // guard); the loss fires on the NEXT plain action that walks n-amid → n-lossguard with the flag now true.
 function cloneAuthoredLossFlag() {
   const c = JSON.parse(JSON.stringify(golden));
-  const amid = c.graph.nodes.find(n => n.id === "n-amid");
+  const amid = c.graph.nodes.find((n: any) => n.id === "n-amid");
   amid.wires.out = ["n-lossguard"];
-  const aendIdx = c.graph.nodes.findIndex(n => n.id === "n-aend");
+  const aendIdx = c.graph.nodes.findIndex((n: any) => n.id === "n-aend");
   c.graph.nodes.splice(aendIdx, 0, {
     id: "n-lossguard", kind: "winloss.lossCondition",
     props: { condition: cond("flag", "eq", true, "vaultCleared") },
@@ -334,7 +343,7 @@ const goldenAuthoredLossFlag = cloneAuthoredLossFlag();
 // golden, so the clone stays L1-valid (spiritCost is an integer ≥ 0 in the schema's enterRequirement).
 function cloneWardedVault() {
   const c = JSON.parse(JSON.stringify(golden));
-  const hall = c.library.dungeons["azkol-vault-dungeon"].rooms.find(r => r.id === "vault-hall");
+  const hall = c.library.dungeons["azkol-vault-dungeon"].rooms.find((r: any) => r.id === "vault-hall");
   hall.enterRequirement.spiritCost = 3;
   return c;
 }
@@ -353,9 +362,9 @@ const goldenWardedVault = cloneWardedVault();
 // leaves warriors at 7 < 9, so the loss fires only once reinforce reaches the threshold.)
 function cloneAuthoredLossResource() {
   const c = JSON.parse(JSON.stringify(golden));
-  const amid = c.graph.nodes.find(n => n.id === "n-amid");
+  const amid = c.graph.nodes.find((n: any) => n.id === "n-amid");
   amid.wires.out = ["n-lossguard"];
-  const aendIdx = c.graph.nodes.findIndex(n => n.id === "n-aend");
+  const aendIdx = c.graph.nodes.findIndex((n: any) => n.id === "n-aend");
   c.graph.nodes.splice(aendIdx, 0, {
     id: "n-lossguard", kind: "winloss.lossCondition",
     props: { condition: cond("resource", "gte", 9, "warriors") },
@@ -383,9 +392,9 @@ const goldenAuthoredLossResource = cloneAuthoredLossResource();
 // (effect-op enum) are in the closed schema vocabularies, so the clone stays L1-valid under ajv strict.
 function cloneAuthoredLossSeal() {
   const c = JSON.parse(JSON.stringify(golden));
-  const amid = c.graph.nodes.find(n => n.id === "n-amid");
+  const amid = c.graph.nodes.find((n: any) => n.id === "n-amid");
   amid.wires.out = ["n-sealbreak"];
-  const aendIdx = c.graph.nodes.findIndex(n => n.id === "n-aend");
+  const aendIdx = c.graph.nodes.findIndex((n: any) => n.id === "n-aend");
   c.graph.nodes.splice(aendIdx, 0,
     { id: "n-sealbreak", kind: "effect.apply", props: { effects: [{ op: "seal.remove" }] }, wires: { out: ["n-lossguard"] } },
     { id: "n-lossguard", kind: "winloss.lossCondition", props: { condition: cond("sealsRemoved", "gte", 2) }, wires: { out: ["n-aend"] } }
@@ -407,9 +416,9 @@ const goldenAuthoredLossSeal = cloneAuthoredLossSeal();
 // + `foe.spawn` are both in the closed schema vocabularies, so the clone stays L1-valid under ajv strict.
 function cloneAuthoredLossFoe() {
   const c = JSON.parse(JSON.stringify(golden));
-  const amid = c.graph.nodes.find(n => n.id === "n-amid");
+  const amid = c.graph.nodes.find((n: any) => n.id === "n-amid");
   amid.wires.out = ["n-foespawn"];
-  const aendIdx = c.graph.nodes.findIndex(n => n.id === "n-aend");
+  const aendIdx = c.graph.nodes.findIndex((n: any) => n.id === "n-aend");
   c.graph.nodes.splice(aendIdx, 0,
     { id: "n-foespawn", kind: "effect.apply", props: { effects: [{ op: "foe.spawn", foeId: "brigands", location: "the-tower" }] }, wires: { out: ["n-lossguard"] } },
     { id: "n-lossguard", kind: "winloss.lossCondition", props: { condition: cond("foeOnSpace", "gte", 2, "the-tower") }, wires: { out: ["n-aend"] } }
@@ -457,14 +466,14 @@ function buildGoldenFull() {
     ]
   } };
   const nodes = c.graph.nodes;
-  const node = (id) => nodes.find(n => n.id === id);
+  const node = (id: string) => nodes.find((n: any) => n.id === id);
   // the full-turn discriminator + the action loop: performed actions return to Action: Middle
   node("n-amid").props = { turn: "full" };
   node("n-amid").wires = { out: ["n-aend"], battle: ["n-bsel"], dungeon: ["n-dsub"], trade: ["n-trade"], move: ["n-move"] };
   node("n-bend").wires = { out: ["n-amid"] };
   node("n-dsub").wires = { enter: ["n-room-a"], completed: ["n-amid"], left: ["n-amid"] };
   node("n-trade").wires = { out: ["n-amid"] };
-  const aendIdx = nodes.findIndex(n => n.id === "n-aend");
+  const aendIdx = nodes.findIndex((n: any) => n.id === "n-aend");
   nodes.splice(aendIdx, 0,
     // the Move step (rules.md §Movement) — target-set until Board adjacency ships
     { id: "n-move", kind: "action.move", wires: { out: ["n-amid"] } });
@@ -491,4 +500,4 @@ function buildGoldenFull() {
 }
 const goldenFull = buildGoldenFull();
 
-module.exports = { golden, goldenFull, goldenLowSupply, goldenAmpleSupply, goldenAuthoredLoss, goldenAuthoredLossFlag, goldenWardedVault, goldenAuthoredLossResource, goldenAuthoredLossSeal, goldenAuthoredLossFoe };
+export { golden, goldenFull, goldenLowSupply, goldenAmpleSupply, goldenAuthoredLoss, goldenAuthoredLossFlag, goldenWardedVault, goldenAuthoredLossResource, goldenAuthoredLossSeal, goldenAuthoredLossFoe };
