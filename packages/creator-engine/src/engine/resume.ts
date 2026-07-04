@@ -1,31 +1,51 @@
-// resume.js — resumption from an input boundary (§5.3/§5.4): dispatches the awaited request id to
+// resume.ts — resumption from an input boundary (§5.3/§5.4): dispatches the awaited request id to
 // its handler (action/target/advantageSpend/trade/moveTarget/dungeon*/skullCounter), including the
 // observed-skull bridge. Depends on core, effects, turn, battle, and dungeon.
 
-const { dir, fault } = require('./core');
-const { applyEffect, gainCorruption, capacityOf, pickBuildingForSkull } = require('./effects');
-const {
-  markHeroic,
-  awardHeroic,
-  performAction,
-  applyTrade,
-  collectDueEvents,
-  rotateActiveHero,
-} = require('./turn');
-const { startBattle, resolveBattle } = require('./battle');
-const { dungeonState, roomOf, finalizeRoom } = require('./dungeon');
+import { dir, fault } from './core';
+import { applyEffect, gainCorruption, capacityOf, pickBuildingForSkull } from './effects';
+import { markHeroic, awardHeroic, performAction, applyTrade, collectDueEvents, rotateActiveHero } from './turn';
+import { startBattle, resolveBattle } from './battle';
+import { dungeonState, roomOf, finalizeRoom } from './dungeon';
+import type {
+  EngineState,
+  Directive,
+  Input,
+  InputRequest,
+  NodeResult,
+  ActionChoice,
+  ActionDecision,
+  CardinalDirection,
+  Kingdom,
+  BuildingType,
+} from './types';
+
+type ActionInput = Extract<Input, { requestId: 'action' }>;
+type TargetInput = Extract<Input, { requestId: 'target' }>;
+type AdvantageSpendInput = Extract<Input, { requestId: 'advantageSpend' }>;
+type TradeInput = Extract<Input, { requestId: 'trade' }>;
+type MoveTargetInput = Extract<Input, { requestId: 'moveTarget' }>;
+type DungeonRoomAdvantageInput = Extract<Input, { requestId: 'dungeonRoomAdvantage' }>;
+type DungeonMoveInput = Extract<Input, { requestId: 'dungeonMove' }>;
+type SkullCounterInput = Extract<Input, { requestId: 'skullCounter' }>;
 
 // ---------- resume from an input boundary ----------
-function resume(pending, state, input, directives) {
-  if (pending.request.id !== (input && input.requestId))
-    throw fault('input requestId mismatch: expected ' + pending.request.id);
-  const node = state._nodes[state.clock.cursor];
+export function resume(
+  pending: { request: InputRequest },
+  state: EngineState,
+  input: Input | undefined,
+  directives: Directive[],
+): NodeResult {
+  const inputRequestId = (input as { requestId?: string } | undefined)?.requestId;
+  if (pending.request.id !== inputRequestId) throw fault('input requestId mismatch: expected ' + pending.request.id);
+  const node = state._nodes[state.clock.cursor as string];
   const next = node.wires && node.wires.out ? node.wires.out[0] : undefined;
-  switch (pending.request.id) {
+  const requestId: InputRequest['id'] = pending.request.id;
+  switch (requestId) {
     case 'action': {
       // legacy: a bare string choice; full-turn protocol: { choice, ...args } (e.g. questId, enhanced)
-      const raw = input.value;
-      const choice = typeof raw === 'string' ? raw : (raw || {}).choice;
+      const raw = (input as ActionInput).value;
+      const choice: ActionChoice = typeof raw === 'string' ? raw : (raw || ({} as ActionDecision)).choice;
       const args = raw && typeof raw === 'object' ? raw : {};
       const full = state._setup && state._setup.fullTurn;
       if (choice === 'battle' && state._spine.battleEntry) {
@@ -52,7 +72,7 @@ function resume(pending, state, input, directives) {
     }
     case 'target': {
       // battle.selectFoe — choose the foe (or adversary) and draw cards = level
-      const sel = input.value || {};
+      const sel = (input as TargetInput).value || {};
       // Defensive fallback: if target input arrives without a concrete foe/adversary choice,
       // treat it as a cancel rather than faulting on foe 'undefined'.
       if (sel.cancel || (!sel.foeId && !sel.adversary)) {
@@ -63,15 +83,12 @@ function resume(pending, state, input, directives) {
         // If we don't have an action-middle spine cursor, skip that whole chain on cancel instead of
         // bouncing into another battle input boundary.
         if (!state._spine.actionMiddle) {
-          const seen = new Set();
+          const seen = new Set<string>();
           while (cancelTarget && !seen.has(cancelTarget)) {
             seen.add(cancelTarget);
             const n = state._nodes[cancelTarget];
             if (!n) break;
-            if (
-              n.kind === 'action.battle' ||
-              (typeof n.kind === 'string' && n.kind.indexOf('battle.') === 0)
-            ) {
+            if (n.kind === 'action.battle' || (typeof n.kind === 'string' && n.kind.indexOf('battle.') === 0)) {
               cancelTarget = (n.wires && n.wires.out && n.wires.out[0]) || undefined;
               continue;
             }
@@ -85,18 +102,18 @@ function resume(pending, state, input, directives) {
     }
     case 'advantageSpend': {
       // battle.applyAdvantage — spend Advantages (≤10/action), or retreat
-      resolveBattle(state, directives, input.value || {});
+      resolveBattle(state, directives, (input as AdvantageSpendInput).value || {});
       if (state.outcome.status !== 'running') return { terminal: true };
       return { goto: next };
     }
     case 'trade': {
       // action.trade — atomic, unanimous-by-construction transfer over TradeAsset (§10.9)
-      applyTrade(state, directives, input.value || {});
+      applyTrade(state, directives, ((input as TradeInput).value || {}) as TradeInput['value']);
       return { goto: next };
     }
     case 'moveTarget': {
       // action.move — split-move allowed; Board validates the path
-      const moveTo = (input.value || {}).to;
+      const moveTo = ((input as MoveTargetInput).value || {}).to as string | null | undefined;
       if (moveTo != null) state.heroes[state.clock.activeHero].location = moveTo;
       state.clock.latches.moveUsed = true; // one Move step per turn (rules.md §Middle of Turn)
       dir(directives, 'board.mutate', {
@@ -113,13 +130,13 @@ function resume(pending, state, input, directives) {
       const room = roomOf(state, dc, dc.currentRoom);
       const hero = state.heroes[state.clock.activeHero];
       if (
-        (input.value || {}).improve &&
+        ((input as DungeonRoomAdvantageInput).value || {}).improve &&
         room.improveOnce &&
-        !ds.improvedRooms.includes(room.id) &&
+        !(ds.improvedRooms || []).includes(room.id) &&
         (hero.advantages || 0) >= 1
       ) {
         hero.advantages -= 1;
-        ds.improvedRooms.push(room.id);
+        (ds.improvedRooms as string[]).push(room.id);
         for (const e of room.improveOnce.effects) {
           applyEffect(e, state, directives);
           if (state.outcome.status !== 'running') return { terminal: true };
@@ -139,7 +156,7 @@ function resume(pending, state, input, directives) {
       // dungeon.room — move through a door (directional wire) or leave (catalog §5)
       const dc = state.clock.dungeon;
       if (!dc) throw fault('dungeonMove with no active dungeon');
-      const v = input.value || {};
+      const v = (input as DungeonMoveInput).value || {};
       if (v.leave) {
         const left = dc.left;
         state.clock.dungeon = null;
@@ -151,10 +168,9 @@ function resume(pending, state, input, directives) {
         }
         return { goto: left };
       }
-      const d4 = v.direction; // "N"|"E"|"S"|"W"
+      const d4 = v.direction as CardinalDirection; // "N"|"E"|"S"|"W"
       const room = roomOf(state, dc, dc.currentRoom);
-      if ((room.exits || {})[d4] !== 'door')
-        throw fault('dungeonMove: no door ' + d4 + ' from room ' + dc.currentRoom);
+      if ((room.exits || {})[d4] !== 'door') throw fault('dungeonMove: no door ' + d4 + ' from room ' + dc.currentRoom);
       const tgt = ((node.wires && node.wires[d4]) || [])[0]; // doors = wires on directional ports (catalog §5)
       if (!tgt) throw fault('dungeonMove: door ' + d4 + ' not wired from node ' + node.id);
       return { goto: tgt };
@@ -163,10 +179,10 @@ function resume(pending, state, input, directives) {
       // observed emergence enters the canonical stream (§5.4): a bare count (legacy), or
       // { count, placements: [{ kingdom, type }] } — the app names the buildings the skulls landed
       // on (rules.md §Placing Skulls); the COUNT is always tower-determined, never engine-dictated.
-      const raw = input.value;
+      const raw = (input as SkullCounterInput).value;
       const isObj = raw !== null && typeof raw === 'object';
-      const count = (isObj ? raw.count : raw) | 0;
-      const placements = isObj ? raw.placements || [] : [];
+      const count = ((isObj ? (raw as { count: number }).count : raw) as number) | 0;
+      const placements = isObj ? (raw as { placements?: unknown[] }).placements || [] : [];
       dir(directives, 'log.entry', { event: 'emergence', count });
       const registry = (state.buildings || []).length > 0;
       for (let i = 0; i < count; i++) {
@@ -175,7 +191,10 @@ function resume(pending, state, input, directives) {
           // per-building model: each skull lands on a standing building; a building's 4th skull
           // destroys it — its 3 skulls leave the game, the 4th returns to supply, and the owning
           // kingdom's hero gains a corruption (rules.md §Placing Skulls).
-          const b = pickBuildingForSkull(state, placements[i]);
+          const b = pickBuildingForSkull(
+            state,
+            placements[i] as { kingdom: Kingdom; type?: BuildingType; location?: string } | undefined,
+          );
           if (b) {
             b.skulls += 1;
             dir(directives, 'board.mutate', {
@@ -187,11 +206,7 @@ function resume(pending, state, input, directives) {
               b.destroyed = true;
               state.skulls.onBoard = Math.max(0, state.skulls.onBoard - b.skulls); // 3 out of the game + the 4th back to supply
               b.skulls = 0;
-              applyEffect(
-                { op: 'building.destroy', kingdom: b.kingdom, location: b.location },
-                state,
-                directives,
-              );
+              applyEffect({ op: 'building.destroy', kingdom: b.kingdom, location: b.location }, state, directives);
               if (state.outcome.status !== 'running') return { terminal: true };
             }
           } else {
@@ -219,16 +234,16 @@ function resume(pending, state, input, directives) {
         const due = collectDueEvents(state);
         if (due.length) {
           state.clock.eventQueue = due.slice(1);
-          state.clock.afterEvents = { target, rotate: true };
+          state.clock.afterEvents = { target: target as string, rotate: true };
           return { goto: due[0] };
         }
       }
       rotateActiveHero(state);
       return { goto: target };
     }
-    default:
-      throw fault('no resume handler for ' + pending.request.id);
+    default: {
+      const _exhaustive: never = requestId;
+      throw fault('no resume handler for ' + _exhaustive);
+    }
   }
 }
-
-module.exports = { resume };

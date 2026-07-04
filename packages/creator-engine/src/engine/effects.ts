@@ -542,7 +542,7 @@ export function capacityOf(state: EngineState, b: BuildingState): number {
 // dormantKingdoms.skullRedirect "nearestActive"): least-loaded first, registry order tie-break.
 export function pickBuildingForSkull(
   state: EngineState,
-  placement: { kingdom: BuildingState['kingdom']; type?: BuildingState['type']; location?: string } | null,
+  placement: { kingdom: BuildingState['kingdom']; type?: BuildingState['type']; location?: string } | null | undefined,
 ): BuildingState | null {
   if (placement) {
     const b = (state.buildings || []).find(
