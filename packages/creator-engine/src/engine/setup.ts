@@ -1,21 +1,20 @@
-// setup.js — scenario load + state construction (§2.3 init) and the test-only helpers. Builds the
+// setup.ts — scenario load + state construction (§2.3 init) and the test-only helpers. Builds the
 // active/dormant kingdom split, the hero set, the buildings registry, the node index, the turn spine,
 // and the trigger table, then runs to the first boundary. Depends on core, effects, turn, run, pcg32.
 
-const pcg32 = require('../pcg32');
-const { ENGINE_VERSION, KINGDOMS, fault } = require('./core');
-const { applyEffect } = require('./effects');
-const { resetLatches } = require('./turn');
-const { run } = require('./run');
+import pcg32 from '../pcg32';
+import { ENGINE_VERSION, KINGDOMS, fault } from './core';
+import { applyEffect } from './effects';
+import { resetLatches } from './turn';
+import { run } from './run';
+import type { EngineState, Scenario, InitOpts, StepResult, Kingdom, HeroState, Effect, Directive } from './types';
 
 // ---------- public API: init (§2.3) ----------
-function buildKingdoms(scenario, playerCount) {
+export function buildKingdoms(scenario: Scenario, playerCount: number): { active: Kingdom[]; dormant: Kingdom[] } {
   const pcs = (scenario.setup && scenario.setup.playerCountScaling) || {};
   const byPC = pcs.dormantKingdoms && pcs.dormantKingdoms.byPlayerCount;
-  const dormant =
-    byPC && Array.isArray(byPC[String(playerCount)])
-      ? byPC[String(playerCount)].slice()
-      : KINGDOMS.slice(playerCount);
+  const dormant: Kingdom[] =
+    byPC && Array.isArray(byPC[String(playerCount)]) ? byPC[String(playerCount)].slice() : KINGDOMS.slice(playerCount);
   const active = KINGDOMS.filter((k) => !dormant.includes(k));
   if (active.length !== playerCount)
     throw fault(
@@ -31,7 +30,7 @@ function buildKingdoms(scenario, playerCount) {
     );
   return { active, dormant };
 }
-function makeHero(fullTurn) {
+export function makeHero(fullTurn: boolean): HeroState {
   // Hero rich-data (real 7+1 split, banner, move value, 3+3 virtues, Advantage pool) is injected
   // content (§10.3, D2-blocked); the engine starts every hero from the documented placeholder.
   // Full-turn scenarios seed the 3+3 virtue split (rules.md §Hero Setup) with placeholder ids so
@@ -55,30 +54,29 @@ function makeHero(fullTurn) {
   };
 }
 
-function init(scenario, opts) {
+export function init(scenario: Scenario, opts: InitOpts): StepResult {
   if (!opts || !opts.seed) throw fault('init requires opts.seed (engine runtime seed, §6)');
-  const nodes = {};
+  const nodes: EngineState['_nodes'] = {};
   for (const n of scenario.graph.nodes) nodes[n.id] = n;
-  const byKind = (k) => {
+  const byKind = (k: string) => {
     const n = scenario.graph.nodes.find((x) => x.kind === k);
     return n && n.id;
   };
   // Honor opts.playerCount (§3.1): build the hero set, per-player home-kingdom ownership, the dormant
   // complement, and clockwise seating. Fail at load (§ "fail at load, never mid-game") on a bad count
   // or a dormant-set that doesn't leave exactly one active kingdom per player.
-  const playerCount = opts.playerCount | 0 || 1;
-  if (playerCount < 1 || playerCount > 4)
-    throw fault('playerCount must be 1–4 (got ' + opts.playerCount + ')');
+  const playerCount = (opts.playerCount as number) | 0 || 1;
+  if (playerCount < 1 || playerCount > 4) throw fault('playerCount must be 1–4 (got ' + opts.playerCount + ')');
   const { active, dormant } = buildKingdoms(scenario, playerCount);
   // Full-turn discriminator (fidelity gate): the actionMiddle node opts in with props.turn === "full".
   // Legacy scenarios (no prop) keep the single-action-per-turn MVP loop byte-identical.
   const amidNode = scenario.graph.nodes.find((n) => n.kind === 'lifecycle.actionMiddle');
   const fullTurn = !!(amidNode && amidNode.props && amidNode.props.turn === 'full');
-  const heroIds = [];
+  const heroIds: string[] = [];
   for (let i = 1; i <= playerCount; i++) heroIds.push('hero' + i);
-  const heroes = {};
+  const heroes: Record<string, HeroState> = {};
   for (const id of heroIds) heroes[id] = makeHero(fullTurn);
-  const ownership = {};
+  const ownership: Record<string, string> = {};
   active.forEach((k, i) => {
     ownership[k] = heroIds[i];
   });
@@ -147,7 +145,7 @@ function init(scenario, opts) {
     quests: {},
     mainGoalComplete: false,
     dungeons: {},
-    tower: { drums: [0, 0, 0], glyphFacing: {}, calibrated: true }, // engine-owned derived mirror (§3.4)
+    tower: { drums: [0, 0, 0] as [number, number, number], glyphFacing: {}, calibrated: true }, // engine-owned derived mirror (§3.4)
     rng: pcg32.serialize(rng),
     outcome: { status: 'running', reason: null },
     // load-time references kept out of the digest-relevant game state but needed at run:
@@ -175,7 +173,7 @@ function init(scenario, opts) {
       // foe level by selection tier (rules: tier1→2, tier2→3, tier3→4); adversary is always 5
       foeTiers: (() => {
         const f = scenario.setup.selections.foes || {};
-        const m = {};
+        const m: Record<string, number> = {};
         if (f.tier1) m[f.tier1] = 2;
         if (f.tier2) m[f.tier2] = 3;
         if (f.tier3) m[f.tier3] = 4;
@@ -184,10 +182,9 @@ function init(scenario, opts) {
       // quests issued by the authored newQuests node are attemptable only while active
       monthlyQuestIds: (() => {
         const nq = scenario.graph.nodes.find((n) => n.kind === 'lifecycle.newQuests');
-        const ids = [];
-        if (nq && nq.props && nq.props.monthly)
-          for (const m of Object.values(nq.props.monthly))
-            for (const v of Object.values(m)) ids.push(v);
+        const ids: string[] = [];
+        const monthly = (nq?.props || {}).monthly as Record<string, Record<string, string>> | undefined;
+        if (monthly) for (const m of Object.values(monthly)) for (const v of Object.values(m)) ids.push(v);
         return ids;
       })(),
     },
@@ -199,9 +196,9 @@ function init(scenario, opts) {
         trigger: (n.props || {}).trigger,
         next: ((n.wires || {}).out || [])[0],
       })),
-  };
+  } as unknown as EngineState;
   resetLatches(state);
-  const directives = [];
+  const directives: StepResult['directives'] = [];
   const status = run(state, directives);
   return {
     state,
@@ -213,7 +210,7 @@ function init(scenario, opts) {
 
 // Test-only surface (NOT part of the §2.3 public API): lets the verb suite apply a single
 // effect against a minimal EngineState and inspect the mutation + emitted directives.
-function makeTestState(overrides) {
+export function makeTestState(overrides?: Partial<EngineState>): EngineState {
   const heroId = 'hero1';
   const state = {
     clock: {
@@ -279,7 +276,7 @@ function makeTestState(overrides) {
         'river-of-fire': { removable: false },
         spore: {
           removable: true,
-          threshold: { at: 3, onReach: [{ op: 'corruption.gain', source: 'spore' }] },
+          threshold: { at: 3, onReach: [{ op: 'corruption.gain', source: 'spore' } as Effect] },
         },
       },
       quests: {},
@@ -308,13 +305,11 @@ function makeTestState(overrides) {
         },
       },
     },
-  };
+  } as unknown as EngineState;
   return Object.assign(state, overrides || {});
 }
-function applyOne(state, eff) {
-  const directives = [];
+export function applyOne(state: EngineState, eff: Effect): { state: EngineState; directives: Directive[] } {
+  const directives: Directive[] = [];
   applyEffect(eff, state, directives);
   return { state, directives };
 }
-
-module.exports = { buildKingdoms, makeHero, init, makeTestState, applyOne };

@@ -558,6 +558,43 @@ export interface MonthEndConfig {
   perMonth?: Record<string, { minTurn: number; maxTurn: number }>;
 }
 
+// ---- scenario (setup.ts init's input) ----
+// A minimal internal shape covering only what the reducer actually reads (setup.ts, golden-fixture.ts).
+// Deliberately not @udtc/schema's canonical Scenario type (invariant #2 allows the dependency, but
+// importing it risks a wall of unrelated type errors from strictness/shape gaps between the authoring
+// schema and what a compact fixture populates) — adopting the real schema type is a follow-up, not
+// part of this mechanical, behavior-preserving port.
+export interface Scenario {
+  schemaVersion: string;
+  meta: {
+    scenarioVersion: string;
+    tuning?: { goalThreshold?: number; adversaryToughness?: number };
+  };
+  graph: {
+    entry: string;
+    nodes: EngineNode[];
+  };
+  library: ScenarioLibrary;
+  setup: {
+    playerCountScaling?: {
+      dormantKingdoms?: { byPlayerCount?: Record<string, Kingdom[]> };
+    };
+    board?: {
+      boardState?: {
+        home?: Record<string, string>;
+        buildings?: Array<{ kingdom: Kingdom; type: BuildingType; location: string }>;
+      };
+    };
+    selections: {
+      adversaryId: string;
+      mainGoalId: string;
+      foes?: { tier1?: string; tier2?: string; tier3?: string };
+    };
+    difficulty: { skullSupply: number };
+    monthEnd: MonthEndConfig;
+  };
+}
+
 export interface InitOpts {
   seed: string;
   playerCount?: 1 | 2 | 3 | 4;
