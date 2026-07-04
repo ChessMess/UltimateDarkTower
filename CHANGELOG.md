@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [5.0.1] - 2026-07-03
+
 ### Fixed
 
 Fixes from a full-source code review, ordered by severity:
