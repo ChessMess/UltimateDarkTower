@@ -123,6 +123,7 @@ export interface EngineClock {
   month: number;
   turnInMonth: number;
   turnsThisMonth: number;
+  globalTurn: number;
   cursor: string | undefined;
   pending: { request: InputRequest } | null;
   activeHero: string;
@@ -131,6 +132,12 @@ export interface EngineClock {
   latches: ClockLatches;
   dungeon: DungeonCursor | null;
   battle: BattleCursor | null;
+  /** end-of-turn events raised via the onState bus, drained at the next boundary (effects.ts raiseEvent) */
+  pendingEvents?: string[];
+  /** remaining due event-chain roots to fire before resuming the stashed turn spine (run.ts) */
+  eventQueue?: string[] | null;
+  /** stashed turn-spine resumption point once an event chain drains (run.ts) */
+  afterEvents?: { target: string; rotate: boolean } | null;
 }
 
 export interface SkullsState {
