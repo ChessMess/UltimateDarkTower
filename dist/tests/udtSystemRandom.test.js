@@ -190,6 +190,19 @@ describe('SystemRandom', () => {
             }
             expect(allSame).toBe(false);
         });
+        test('nextRange with a range wider than Int32.MaxValue stays in bounds and is deterministic', () => {
+            const min = -2000000000;
+            const max = 2000000000; // range = 4,000,000,000 > Int32.MaxValue (2,147,483,647)
+            const rng1 = new udtSystemRandom_1.SystemRandom(42);
+            const rng2 = new udtSystemRandom_1.SystemRandom(42);
+            for (let i = 0; i < 50; i++) {
+                const a = rng1.nextRange(min, max);
+                const b = rng2.nextRange(min, max);
+                expect(a).toBe(b); // deterministic for a fixed seed
+                expect(a).toBeGreaterThanOrEqual(min);
+                expect(a).toBeLessThan(max);
+            }
+        });
     });
 });
 //# sourceMappingURL=udtSystemRandom.test.js.map

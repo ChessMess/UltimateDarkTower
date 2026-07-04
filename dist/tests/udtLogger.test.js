@@ -103,6 +103,22 @@ describe('Logger with BufferOutput', () => {
     });
 });
 describe('DOMOutput basic functionality', () => {
+    // This suite runs in the `node` test environment (no real jsdom `document`).
+    // Individual tests below install a mock `global.document` and try to restore
+    // it, but their restore logic only fires if `global.document` already existed
+    // *before* the test's own mock was installed — the very first test to mock it
+    // has nothing to restore to, so the mock silently leaks into every later test
+    // in this file. Force real isolation here regardless of each test's own
+    // (buggy) cleanup.
+    const originalDocument = global.document;
+    afterEach(() => {
+        if (originalDocument === undefined) {
+            delete global.document;
+        }
+        else {
+            global.document = originalDocument;
+        }
+    });
     test('should create DOMOutput instance without DOM', () => {
         // Test that DOMOutput can be instantiated (constructor won't fail if element doesn't exist)
         const domOutput = new udtLogger_1.DOMOutput('non-existent-container');
@@ -188,7 +204,9 @@ describe('DOMOutput basic functionality', () => {
         const domOutput = new udtLogger_1.DOMOutput('non-existent-container');
         // Test debug methods don't throw and return expected values
         expect(domOutput.getEntryCount()).toBe(0);
-        expect(domOutput.getEnabledLevels()).toEqual([]);
+        // No logLevel-* checkboxes exist on the page, so all levels default to enabled
+        // rather than silently filtering out all output.
+        expect(domOutput.getEnabledLevels().sort()).toEqual(['debug', 'error', 'info', 'warn']);
         expect(() => domOutput.debugEntries()).not.toThrow();
     });
     test('should detect enabled levels from checkboxes', () => {

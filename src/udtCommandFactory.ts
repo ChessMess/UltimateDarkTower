@@ -213,8 +213,10 @@ export class UdtCommandFactory {
 
         const command = this.createStatefulCommand(currentState, modifications);
 
-        // Create state with other modifications but without audio for local tracking
-        const stateWithoutAudio: TowerState = currentState ? { ...currentState } : this.createEmptyTowerState();
+        // Create state with other modifications but without audio for local tracking.
+        // Deep copy (not a shallow spread) because the Object.assign calls below mutate
+        // nested drum/layer/beam objects, which would otherwise be shared with currentState.
+        const stateWithoutAudio: TowerState = currentState ? this.deepCopyTowerState(currentState) : this.createEmptyTowerState();
 
         // Apply other modifications
         if (otherModifications.drum) {
@@ -334,7 +336,7 @@ export class UdtCommandFactory {
      * @param state - The tower state to copy
      * @returns A new TowerState with all nested objects copied
      */
-    private deepCopyTowerState(state: TowerState): TowerState {
+    deepCopyTowerState(state: TowerState): TowerState {
         return {
             drum: state.drum.map(d => ({ ...d })) as TowerState['drum'],
             layer: state.layer.map(l => ({

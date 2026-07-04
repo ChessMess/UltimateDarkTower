@@ -88,11 +88,11 @@ describe('udtHelpers', () => {
     describe('commandToPacketString', () => {
         test('should convert single byte to hex string', () => {
             const command = new Uint8Array([15]);
-            expect((0, udtHelpers_1.commandToPacketString)(command)).toBe('[f]');
+            expect((0, udtHelpers_1.commandToPacketString)(command)).toBe('[0f]');
         });
         test('should convert multiple bytes to hex string', () => {
             const command = new Uint8Array([15, 255, 0, 16]);
-            expect((0, udtHelpers_1.commandToPacketString)(command)).toBe('[f,ff,0,10]');
+            expect((0, udtHelpers_1.commandToPacketString)(command)).toBe('[0f,ff,00,10]');
         });
         test('should handle empty array', () => {
             const command = new Uint8Array([]);
@@ -100,7 +100,7 @@ describe('udtHelpers', () => {
         });
         test('should format hex values correctly', () => {
             const command = new Uint8Array([0, 1, 15, 16, 255]);
-            expect((0, udtHelpers_1.commandToPacketString)(command)).toBe('[0,1,f,10,ff]');
+            expect((0, udtHelpers_1.commandToPacketString)(command)).toBe('[00,01,0f,10,ff]');
         });
     });
     describe('getTowerPosition', () => {

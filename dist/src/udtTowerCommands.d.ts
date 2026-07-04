@@ -182,6 +182,16 @@ export declare class UdtTowerCommands {
      */
     sendTowerStateStateful(state: TowerState): Promise<void>;
     /**
+     * Updates the detailed-logging flag without discarding the command queue.
+     * @param value - Whether detailed logging is enabled
+     */
+    updateLogDetail(value: boolean): void;
+    /**
+     * Updates the max retry count without discarding the command queue.
+     * @param value - New max retry count
+     */
+    updateRetrySendCommandMax(value: number): void;
+    /**
      * Public access to sendTowerCommandDirect for testing purposes.
      * This bypasses the command queue and sends commands directly.
      * @param command - The command packet to send directly to the tower

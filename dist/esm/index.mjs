@@ -473,6 +473,7 @@ var init_WebBluetoothAdapter = __esm({
             this.boundOnCharacteristicValueChanged
           );
         } catch (error) {
+          await this.cleanup();
           if (error instanceof BluetoothDeviceNotFoundError || error instanceof BluetoothUserCancelledError || error instanceof BluetoothConnectionError) {
             throw error;
           }
@@ -677,6 +678,10 @@ var init_NodeBluetoothAdapter = __esm({
         }
       }
       async disconnect() {
+        if (noble && this.boundStateChangeHandler) {
+          noble.removeListener("stateChange", this.boundStateChangeHandler);
+          this.boundStateChangeHandler = void 0;
+        }
         if (!this.peripheral) return;
         try {
           if (this.rxCharacteristic) {
@@ -798,14 +803,6 @@ var init_NodeBluetoothAdapter = __esm({
         return info;
       }
       async cleanup() {
-        if (noble) {
-          if (this.boundStateChangeHandler) {
-            noble.removeListener(
-              "stateChange",
-              this.boundStateChangeHandler
-            );
-          }
-        }
         if (this.peripheral && this.boundDisconnectHandler) {
           this.peripheral.removeListener(
             "disconnect",
@@ -813,9 +810,6 @@ var init_NodeBluetoothAdapter = __esm({
           );
         }
         await this.disconnect();
-        this.characteristicCallback = void 0;
-        this.disconnectCallback = void 0;
-        this.availabilityCallback = void 0;
       }
       /**
        * Scans for a BLE device by name using Noble's event-driven discovery
@@ -1075,10 +1069,7 @@ function commandToPacketString(command) {
   if (command.length === 0) {
     return "[]";
   }
-  let cmdStr = "[";
-  command.forEach((n) => cmdStr += n.toString(16) + ",");
-  cmdStr = cmdStr.slice(0, -1) + "]";
-  return cmdStr;
+  return `[${Array.from(command).map((n) => n.toString(16).padStart(2, "0")).join(",")}]`;
 }
 function parseDifferentialReadings(response) {
   if (response.length < 5 || response[0] !== 6) {
@@ -1222,15 +1213,18 @@ var DOMOutput = class {
     this.updateBufferSizeDisplay();
   }
   getEnabledLevelsFromCheckboxes() {
-    const enabledLevels = /* @__PURE__ */ new Set();
+    const levelNames = ["debug", "info", "warn", "error"];
     if (typeof document === "undefined") {
-      return enabledLevels;
+      return new Set(levelNames);
     }
-    const checkboxes = ["debug", "info", "warn", "error"];
-    checkboxes.forEach((level) => {
-      const checkbox = document.getElementById(`logLevel-${level}`);
+    const checkboxes = levelNames.map((level) => document.getElementById(`logLevel-${level}`));
+    if (checkboxes.every((checkbox) => !checkbox)) {
+      return new Set(levelNames);
+    }
+    const enabledLevels = /* @__PURE__ */ new Set();
+    checkboxes.forEach((checkbox, index) => {
       if (checkbox && checkbox.checked) {
-        enabledLevels.add(level);
+        enabledLevels.add(levelNames[index]);
       }
     });
     return enabledLevels;
@@ -1508,7 +1502,7 @@ var TowerResponseProcessor = class {
         return [towerCommand.name, commandToPacketString(command)];
       case TC.BATTERY: {
         const millivolts = getMilliVoltsFromTowerResponse(command);
-        const retval = [towerCommand.name, `${milliVoltsToPercentage(millivolts)} (${(millivolts / 1e3).toFixed(2)}mv)`];
+        const retval = [towerCommand.name, `${milliVoltsToPercentage(millivolts)} (${(millivolts / 1e3).toFixed(2)}v)`];
         if (this.logDetail) {
           retval.push(commandToPacketString(command));
         }
@@ -1546,6 +1540,17 @@ var TowerResponseProcessor = class {
    */
   isTowerStateResponse(cmdKey) {
     return cmdKey === TC.STATE;
+  }
+  /**
+   * Checks if a command is a spontaneous mechanical-sensor notification that
+   * isn't tied to any specific in-flight command (jiggle detection,
+   * unexpected trigger, differential sensor readings). These can arrive at
+   * any time and should not be treated as the ack for a queued command.
+   * @param {string} cmdKey - Command key from tower message
+   * @returns {boolean} True if this is an unsolicited notification
+   */
+  isUnsolicitedResponse(cmdKey) {
+    return cmdKey === TC.JIGGLE || cmdKey === TC.UNEXPECTED || cmdKey === TC.DIFFERENTIAL;
   }
 };
 
@@ -1758,9 +1763,10 @@ var UdtBleConnection = class {
   }
   async disconnect() {
     this.stopConnectionMonitoring();
-    if (this.isConnected) {
-      this.recordIncident("user_initiated");
+    if (!this.isConnected) {
+      return;
     }
+    this.recordIncident("user_initiated");
     const adapter = this.bluetoothAdapter;
     if (adapter?.isConnected()) {
       await adapter.disconnect();
@@ -2161,7 +2167,7 @@ var UdtCommandFactory = class {
       audio: audioMods
     };
     const command = this.createStatefulCommand(currentState, modifications);
-    const stateWithoutAudio = currentState ? { ...currentState } : this.createEmptyTowerState();
+    const stateWithoutAudio = currentState ? this.deepCopyTowerState(currentState) : this.createEmptyTowerState();
     if (otherModifications.drum) {
       otherModifications.drum.forEach((drum, index) => {
         if (drum && stateWithoutAudio.drum[index]) {
@@ -2273,6 +2279,7 @@ var UdtCommandFactory = class {
 
 // src/udtTowerCommands.ts
 init_udtConstants();
+init_udtBluetoothAdapter();
 
 // src/udtCommandQueue.ts
 var CommandQueue = class {
@@ -2446,13 +2453,13 @@ var UdtTowerCommands = class {
    * @returns Promise that resolves when command is sent successfully
    */
   async sendTowerCommandDirect(command) {
+    const cmdStr = commandToPacketString(command);
+    this.deps.logDetail && this.deps.logger.debug(`${cmdStr}`, "[UDT][CMD]");
+    if (!this.deps.bleConnection.isConnected) {
+      this.deps.logger.warn("Tower is not connected", "[UDT][CMD]");
+      throw new Error("Cannot send command: tower is not connected");
+    }
     try {
-      const cmdStr = commandToPacketString(command);
-      this.deps.logDetail && this.deps.logger.debug(`${cmdStr}`, "[UDT][CMD]");
-      if (!this.deps.bleConnection.isConnected) {
-        this.deps.logger.warn("Tower is not connected", "[UDT][CMD]");
-        return;
-      }
       await this.deps.bleConnection.writeCommand(command);
       this.deps.retrySendCommandCount.value = 0;
       this.deps.bleConnection.lastSuccessfulCommand = Date.now();
@@ -2461,11 +2468,12 @@ var UdtTowerCommands = class {
       const errorMsg = error?.message ?? String(error);
       const wasCancelled = errorMsg.includes("User cancelled");
       const maxRetriesReached = this.deps.retrySendCommandCount.value >= this.deps.retrySendCommandMax;
-      const isDisconnected = errorMsg.includes("Cannot read properties of null") || errorMsg.includes("GATT Server is disconnected") || errorMsg.includes("Device is not connected") || errorMsg.includes("BluetoothConnectionError") || !this.deps.bleConnection.isConnected;
+      const sendError = error instanceof Error ? error : new Error(errorMsg);
+      const isDisconnected = error instanceof BluetoothConnectionError || errorMsg.includes("Cannot read properties of null") || errorMsg.includes("GATT Server is disconnected") || errorMsg.includes("Device is not connected") || !this.deps.bleConnection.isConnected;
       if (isDisconnected) {
         this.deps.logger.warn("Disconnect detected during command send", "[UDT][CMD]");
         await this.deps.bleConnection.disconnect();
-        return;
+        throw sendError;
       }
       if (!maxRetriesReached && this.deps.bleConnection.isConnected && !wasCancelled) {
         this.deps.logger.info(`retrying tower command attempt ${this.deps.retrySendCommandCount.value + 1}`, "[UDT][CMD]");
@@ -2473,9 +2481,9 @@ var UdtTowerCommands = class {
         const delay = 250 * this.deps.retrySendCommandCount.value;
         await new Promise((resolve) => setTimeout(resolve, delay));
         return await this.sendTowerCommandDirect(command);
-      } else {
-        this.deps.retrySendCommandCount.value = 0;
       }
+      this.deps.retrySendCommandCount.value = 0;
+      throw sendError;
     }
   }
   /**
@@ -2484,16 +2492,21 @@ var UdtTowerCommands = class {
    * @returns Promise that resolves when calibration command is sent
    */
   async calibrate() {
-    if (!this.deps.bleConnection.performingCalibration) {
-      this.deps.logger.info("Performing Tower Calibration", "[UDT][CMD]");
-      this.deps.recorder?.recordEvent("calibration_started");
-      await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]), "calibrate");
-      this.deps.bleConnection.performingCalibration = true;
-      this.deps.bleConnection.performingLongCommand = true;
+    if (this.deps.bleConnection.performingCalibration) {
+      this.deps.logger.warn("Tower calibration requested when tower is already performing calibration", "[UDT][CMD]");
       return;
     }
-    this.deps.logger.warn("Tower calibration requested when tower is already performing calibration", "[UDT][CMD]");
-    return;
+    this.deps.logger.info("Performing Tower Calibration", "[UDT][CMD]");
+    this.deps.recorder?.recordEvent("calibration_started");
+    this.deps.bleConnection.performingCalibration = true;
+    this.deps.bleConnection.performingLongCommand = true;
+    try {
+      await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]), "calibrate");
+    } catch (error) {
+      this.deps.bleConnection.performingCalibration = false;
+      this.deps.bleConnection.performingLongCommand = false;
+      throw error;
+    }
   }
   /**
    * Plays a sound from the tower's audio library using stateful commands that preserve existing tower state.
@@ -2502,7 +2515,7 @@ var UdtTowerCommands = class {
    * @returns Promise that resolves when sound command is sent
    */
   async playSound(soundIndex) {
-    const invalidIndex = soundIndex === null || soundIndex > Object.keys(TOWER_AUDIO_LIBRARY).length || soundIndex <= 0;
+    const invalidIndex = !Number.isFinite(soundIndex) || soundIndex > Object.keys(TOWER_AUDIO_LIBRARY).length || soundIndex <= 0;
     if (invalidIndex) {
       this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, "[UDT][CMD]");
       return;
@@ -2691,8 +2704,13 @@ var UdtTowerCommands = class {
   async rotate(top, middle, bottom, soundIndex) {
     this.deps.logDetail && this.deps.logger.debug(`Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`, "[UDT][CMD]");
     const rotateCommand = this.deps.commandFactory.createRotateCommand(top, middle, bottom);
-    if (soundIndex) {
-      rotateCommand[AUDIO_COMMAND_POS] = soundIndex;
+    if (soundIndex !== void 0) {
+      const validSoundIndex = Number.isFinite(soundIndex) && soundIndex > 0 && soundIndex <= Object.keys(TOWER_AUDIO_LIBRARY).length;
+      if (validSoundIndex) {
+        rotateCommand[AUDIO_COMMAND_POS] = soundIndex;
+      } else {
+        this.deps.logger.error(`attempt to play invalid sound index ${soundIndex} during rotate`, "[UDT][CMD]");
+      }
     }
     this.deps.logger.info("Sending rotate command" + (soundIndex ? " with sound" : ""), "[UDT]");
     this.deps.bleConnection.performingLongCommand = true;
@@ -2711,6 +2729,7 @@ var UdtTowerCommands = class {
       towerState.drum[0].position = topPosition;
       towerState.drum[1].position = middlePosition;
       towerState.drum[2].position = bottomPosition;
+      this.deps.setTowerState(towerState, "rotate");
     }
   }
   /**
@@ -2743,12 +2762,6 @@ var UdtTowerCommands = class {
         this.deps.bleConnection.performingLongCommand = false;
         this.deps.bleConnection.lastBatteryHeartbeat = Date.now();
       }, this.deps.bleConnection.longTowerCommandTimeout);
-      const towerState = this.deps.getCurrentTowerState();
-      if (towerState) {
-        towerState.drum[0].position = positionMap[top];
-        towerState.drum[1].position = positionMap[middle];
-        towerState.drum[2].position = positionMap[bottom];
-      }
     }
   }
   /**
@@ -2773,9 +2786,9 @@ var UdtTowerCommands = class {
    * @returns Promise that resolves when seal break sequence is complete
    */
   async breakSeal(seal, volume) {
-    const actualVolume = volume !== void 0 ? volume : this.deps.getCurrentTowerState().audio.volume;
-    if (actualVolume > 0) {
-      const currentState = this.deps.getCurrentTowerState();
+    const currentState = this.deps.getCurrentTowerState();
+    const actualVolume = volume !== void 0 ? volume : currentState.audio.volume;
+    if (actualVolume !== currentState.audio.volume) {
       const stateWithVolume = { ...currentState };
       stateWithVolume.audio = { sample: 0, loop: false, volume: actualVolume };
       await this.sendTowerStateStateful(stateWithVolume);
@@ -2906,7 +2919,7 @@ var UdtTowerCommands = class {
    * @returns Promise that resolves when command is sent
    */
   async playSoundStateful(soundIndex, loop = false, volume) {
-    const invalidIndex = soundIndex === null || soundIndex > Object.keys(TOWER_AUDIO_LIBRARY).length || soundIndex <= 0;
+    const invalidIndex = !Number.isFinite(soundIndex) || soundIndex > Object.keys(TOWER_AUDIO_LIBRARY).length || soundIndex <= 0;
     if (invalidIndex) {
       this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, "[UDT][CMD]");
       return;
@@ -2957,6 +2970,20 @@ var UdtTowerCommands = class {
   }
   //#endregion
   /**
+   * Updates the detailed-logging flag without discarding the command queue.
+   * @param value - Whether detailed logging is enabled
+   */
+  updateLogDetail(value) {
+    this.deps.logDetail = value;
+  }
+  /**
+   * Updates the max retry count without discarding the command queue.
+   * @param value - New max retry count
+   */
+  updateRetrySendCommandMax(value) {
+    this.deps.retrySendCommandMax = value;
+  }
+  /**
    * Public access to sendTowerCommandDirect for testing purposes.
    * This bypasses the command queue and sends commands directly.
    * @param command - The command packet to send directly to the tower
@@ -2991,7 +3018,7 @@ var RING_BUFFER_SIZE = 500;
 var RING_BUFFER_DRAIN = 50;
 var BATTERY_HISTORY_SIZE = 60;
 var PAYLOAD_MAX_BYTES = 32;
-var LIBRARY_VERSION = "3.0.0";
+var LIBRARY_VERSION = "5.0.0";
 function detectPlatform() {
   if (typeof window !== "undefined" && typeof window.navigator !== "undefined") {
     return "web";
@@ -3183,7 +3210,7 @@ var UltimateDarkTower = class {
     this.beforeUnloadHandler = null;
     // tower configuration
     this.retrySendCommandCountRef = { value: 0 };
-    this.retrySendCommandMax = DEFAULT_RETRY_SEND_COMMAND_MAX;
+    this._retrySendCommandMax = DEFAULT_RETRY_SEND_COMMAND_MAX;
     // tower state
     this.currentBatteryValue = 0;
     this.previousBatteryValue = 0;
@@ -3241,7 +3268,6 @@ var UltimateDarkTower = class {
    */
   initializeLogger() {
     this.logger = new Logger();
-    this.logger.addOutput(new ConsoleOutput());
   }
   /**
    * Initialize the diagnostics recorder. Always constructed; `enabled` defaults
@@ -3307,20 +3333,20 @@ var UltimateDarkTower = class {
    */
   setupTowerResponseCallback() {
     this.towerEventCallbacks.onTowerResponse = (response) => {
-      this.towerCommands.onTowerResponse();
-      if (response.length >= TOWER_STATE_RESPONSE_MIN_LENGTH) {
-        const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
-        if (this.responseProcessor.isTowerStateResponse(cmdKey)) {
-          const stateData = response.slice(TOWER_STATE_DATA_OFFSET, TOWER_STATE_RESPONSE_MIN_LENGTH);
-          this.updateTowerStateFromResponse(stateData);
-        }
+      const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
+      if (!this.responseProcessor.isUnsolicitedResponse(cmdKey)) {
+        this.towerCommands.onTowerResponse();
+      }
+      if (response.length >= TOWER_STATE_RESPONSE_MIN_LENGTH && this.responseProcessor.isTowerStateResponse(cmdKey)) {
+        const stateData = response.slice(TOWER_STATE_DATA_OFFSET, TOWER_STATE_RESPONSE_MIN_LENGTH);
+        this.updateTowerStateFromResponse(stateData);
       }
       this.onTowerResponse(response);
     };
   }
   /**
-  * Create tower event callbacks for BLE connection
-  */
+   * Create tower event callbacks for BLE connection
+   */
   createTowerEventCallbacks() {
     return {
       onTowerConnect: () => this.onTowerConnect(),
@@ -3355,8 +3381,12 @@ var UltimateDarkTower = class {
       responseProcessor: this.responseProcessor,
       logDetail: this.logDetail,
       retrySendCommandCount: this.retrySendCommandCountRef,
-      retrySendCommandMax: this.retrySendCommandMax,
-      getCurrentTowerState: () => this.currentTowerState,
+      retrySendCommandMax: this._retrySendCommandMax,
+      // Return a deep copy so command builders can mutate it in place before
+      // handing it to setTowerState() without aliasing the live state (the
+      // old/new state passed to onTowerStateUpdate would otherwise be the
+      // same object).
+      getCurrentTowerState: () => this.commandFactory.deepCopyTowerState(this.currentTowerState),
       setTowerState: (newState, source) => this.setTowerState(newState, source),
       recorder: this.diagnosticsRecorder
     };
@@ -3377,15 +3407,17 @@ var UltimateDarkTower = class {
     this._logDetail = value;
     this.responseProcessor.setDetailedLogging(value);
     if (this.towerCommands) {
-      this.updateTowerCommandDependencies();
+      this.towerCommands.updateLogDetail(value);
     }
   }
-  /**
-   * Update tower command dependencies when configuration changes
-   */
-  updateTowerCommandDependencies() {
-    const commandDependencies = this.createCommandDependencies();
-    this.towerCommands = new UdtTowerCommands(commandDependencies);
+  get retrySendCommandMax() {
+    return this._retrySendCommandMax;
+  }
+  set retrySendCommandMax(value) {
+    this._retrySendCommandMax = value;
+    if (this.towerCommands) {
+      this.towerCommands.updateRetrySendCommandMax(value);
+    }
   }
   // Getter methods for connection state
   get isConnected() {
@@ -3608,7 +3640,7 @@ var UltimateDarkTower = class {
    * @returns The current tower state object
    */
   getCurrentTowerState() {
-    return { ...this.currentTowerState };
+    return this.commandFactory.deepCopyTowerState(this.currentTowerState);
   }
   /**
    * Sends a complete tower state to the tower, preserving existing state.
@@ -3774,23 +3806,6 @@ var UltimateDarkTower = class {
     if (rotationSteps > 0) {
       this.updateGlyphPositionsAfterRotation(level, rotationSteps);
     }
-  }
-  /**
-   * Updates glyph positions for a specific level rotation.
-   * @param level - The drum level that was rotated
-   * @param newPosition - The new position the drum was rotated to
-   * @deprecated Use calculateAndUpdateGlyphPositions instead
-   */
-  updateGlyphPositionsForRotation(level, newPosition) {
-    const currentPosition = this.getCurrentDrumPosition(level);
-    const sides = ["north", "east", "south", "west"];
-    const currentIndex = sides.indexOf(currentPosition);
-    const newIndex = sides.indexOf(newPosition);
-    let rotationSteps = newIndex - currentIndex;
-    if (rotationSteps < 0) {
-      rotationSteps += TOWER_SIDES_COUNT;
-    }
-    this.updateGlyphPositionsAfterRotation(level, rotationSteps);
   }
   /**
    * Checks if a specific seal is broken.
@@ -6437,6 +6452,22 @@ var SystemRandom = class {
     return this.internalSample() * (1 / INT32_MAX);
   }
   /**
+   * Sample for ranges wider than Int32.MaxValue.
+   * Matches C#'s GetSampleForLargeRange(): draws two internal samples (the
+   * second decides sign) and normalizes to [0.0, 1.0).
+   */
+  getSampleForLargeRange() {
+    let result = this.internalSample();
+    const negative = this.internalSample() % 2 === 0;
+    if (negative) {
+      result = -result;
+    }
+    let d = result;
+    d += INT32_MAX - 1;
+    d /= 2 * INT32_MAX - 1;
+    return d;
+  }
+  /**
    * Returns a non-negative random integer less than Int32.MaxValue.
    * Matches C# `Random.Next()`.
    */
@@ -6465,7 +6496,7 @@ var SystemRandom = class {
     if (range <= INT32_MAX) {
       return toInt32(this.sample() * range) + minValue;
     }
-    return toInt32(this.internalSample() * (1 / INT32_MAX) * range) + minValue;
+    return Math.floor(this.getSampleForLargeRange() * range) + minValue;
   }
   /**
    * Returns a random double in range [0.0, 1.0).

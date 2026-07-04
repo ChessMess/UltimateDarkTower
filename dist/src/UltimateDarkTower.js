@@ -36,7 +36,7 @@ class UltimateDarkTower {
         this.beforeUnloadHandler = null;
         // tower configuration
         this.retrySendCommandCountRef = { value: 0 };
-        this.retrySendCommandMax = udtConstants_1.DEFAULT_RETRY_SEND_COMMAND_MAX;
+        this._retrySendCommandMax = udtConstants_1.DEFAULT_RETRY_SEND_COMMAND_MAX;
         // tower state
         this.currentBatteryValue = 0;
         this.previousBatteryValue = 0;
@@ -84,8 +84,8 @@ class UltimateDarkTower {
      * Initialize the logger with default console output
      */
     initializeLogger() {
+        // Logger's own constructor already adds a default ConsoleOutput.
         this.logger = new udtLogger_1.Logger();
-        this.logger.addOutput(new udtLogger_1.ConsoleOutput());
     }
     /**
      * Initialize the diagnostics recorder. Always constructed; `enabled` defaults
@@ -166,21 +166,24 @@ class UltimateDarkTower {
      */
     setupTowerResponseCallback() {
         this.towerEventCallbacks.onTowerResponse = (response) => {
-            // Handle command queue response processing (existing functionality)
-            this.towerCommands.onTowerResponse();
+            const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
+            // Spontaneous mechanical-sensor notifications (jiggle, unexpected trigger,
+            // differential readings) aren't acks for an in-flight command; resolving
+            // the queue on them would complete the wrong command.
+            if (!this.responseProcessor.isUnsolicitedResponse(cmdKey)) {
+                this.towerCommands.onTowerResponse();
+            }
             // Check if this is a tower state response and update our state tracking
-            if (response.length >= udtConstants_1.TOWER_STATE_RESPONSE_MIN_LENGTH) {
-                const { cmdKey } = this.responseProcessor.getTowerCommand(response[0]);
-                if (this.responseProcessor.isTowerStateResponse(cmdKey)) {
-                    // Extract the 19-byte state data (skip command byte)
-                    const stateData = response.slice(udtConstants_1.TOWER_STATE_DATA_OFFSET, udtConstants_1.TOWER_STATE_RESPONSE_MIN_LENGTH);
-                    this.updateTowerStateFromResponse(stateData);
-                }
+            if (response.length >= udtConstants_1.TOWER_STATE_RESPONSE_MIN_LENGTH && this.responseProcessor.isTowerStateResponse(cmdKey)) {
+                // Extract the 19-byte state data (skip command byte)
+                const stateData = response.slice(udtConstants_1.TOWER_STATE_DATA_OFFSET, udtConstants_1.TOWER_STATE_RESPONSE_MIN_LENGTH);
+                this.updateTowerStateFromResponse(stateData);
             }
             // Expose the raw, verbatim packet to consumers that need it (e.g. a relay).
             this.onTowerResponse(response);
         };
-    } /**
+    }
+    /**
      * Create tower event callbacks for BLE connection
      */
     createTowerEventCallbacks() {
@@ -217,8 +220,12 @@ class UltimateDarkTower {
             responseProcessor: this.responseProcessor,
             logDetail: this.logDetail,
             retrySendCommandCount: this.retrySendCommandCountRef,
-            retrySendCommandMax: this.retrySendCommandMax,
-            getCurrentTowerState: () => this.currentTowerState,
+            retrySendCommandMax: this._retrySendCommandMax,
+            // Return a deep copy so command builders can mutate it in place before
+            // handing it to setTowerState() without aliasing the live state (the
+            // old/new state passed to onTowerStateUpdate would otherwise be the
+            // same object).
+            getCurrentTowerState: () => this.commandFactory.deepCopyTowerState(this.currentTowerState),
             setTowerState: (newState, source) => this.setTowerState(newState, source),
             recorder: this.diagnosticsRecorder
         };
@@ -238,17 +245,20 @@ class UltimateDarkTower {
     set logDetail(value) {
         this._logDetail = value;
         this.responseProcessor.setDetailedLogging(value);
-        // Update dependencies if towerCommands is already initialized
+        // Update the existing towerCommands' dependencies in place (rather than
+        // reconstructing it) so any in-flight/queued commands aren't orphaned.
         if (this.towerCommands) {
-            this.updateTowerCommandDependencies();
+            this.towerCommands.updateLogDetail(value);
         }
     }
-    /**
-     * Update tower command dependencies when configuration changes
-     */
-    updateTowerCommandDependencies() {
-        const commandDependencies = this.createCommandDependencies();
-        this.towerCommands = new udtTowerCommands_1.UdtTowerCommands(commandDependencies);
+    get retrySendCommandMax() {
+        return this._retrySendCommandMax;
+    }
+    set retrySendCommandMax(value) {
+        this._retrySendCommandMax = value;
+        if (this.towerCommands) {
+            this.towerCommands.updateRetrySendCommandMax(value);
+        }
     }
     // Getter methods for connection state
     get isConnected() { return this.bleConnection.isConnected; }
@@ -434,7 +444,7 @@ class UltimateDarkTower {
      * @returns The current tower state object
      */
     getCurrentTowerState() {
-        return Object.assign({}, this.currentTowerState);
+        return this.commandFactory.deepCopyTowerState(this.currentTowerState);
     }
     /**
      * Sends a complete tower state to the tower, preserving existing state.
@@ -621,27 +631,6 @@ class UltimateDarkTower {
         if (rotationSteps > 0) {
             this.updateGlyphPositionsAfterRotation(level, rotationSteps);
         }
-    }
-    /**
-     * Updates glyph positions for a specific level rotation.
-     * @param level - The drum level that was rotated
-     * @param newPosition - The new position the drum was rotated to
-     * @deprecated Use calculateAndUpdateGlyphPositions instead
-     */
-    updateGlyphPositionsForRotation(level, newPosition) {
-        // Get the current drum position before rotation
-        const currentPosition = this.getCurrentDrumPosition(level);
-        // Calculate rotation steps
-        const sides = ['north', 'east', 'south', 'west'];
-        const currentIndex = sides.indexOf(currentPosition);
-        const newIndex = sides.indexOf(newPosition);
-        // Calculate rotation steps (positive for clockwise)
-        let rotationSteps = newIndex - currentIndex;
-        if (rotationSteps < 0) {
-            rotationSteps += udtConstants_1.TOWER_SIDES_COUNT; // Handle wrap-around
-        }
-        // Update glyph positions
-        this.updateGlyphPositionsAfterRotation(level, rotationSteps);
     }
     /**
      * Checks if a specific seal is broken.

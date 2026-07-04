@@ -69,6 +69,7 @@ class WebBluetoothAdapter {
             await this.rxCharacteristic.addEventListener('characteristicvaluechanged', this.boundOnCharacteristicValueChanged);
         }
         catch (error) {
+            await this.cleanup();
             // Re-throw our own error types
             if (error instanceof udtBluetoothAdapter_1.BluetoothDeviceNotFoundError ||
                 error instanceof udtBluetoothAdapter_1.BluetoothUserCancelledError ||

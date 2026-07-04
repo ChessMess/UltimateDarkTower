@@ -76,6 +76,42 @@ describe('UltimateDarkTower', () => {
             expect(received).toEqual([Array.from(packet)]);
             await darkTower.disconnect();
         });
+        test('onTowerStateUpdate receives distinct old/new state objects with a real diff after lights()', async () => {
+            await darkTower.connect();
+            const updates = [];
+            darkTower.onTowerStateUpdate = (newState, oldState) => updates.push({ newState, oldState });
+            const promise = darkTower.lights({ doorway: [{ level: 'top', position: 'north', style: 'on' }] });
+            darkTower['towerCommands'].onTowerResponse();
+            await promise;
+            expect(updates).toHaveLength(1);
+            const { newState, oldState } = updates[0];
+            // Old/new must not be the same object (aliasing bug), and must actually differ.
+            expect(newState).not.toBe(oldState);
+            expect(oldState.layer[0].light[0].effect).toBe(0);
+            expect(newState.layer[0].light[0].effect).toBe(udtConstants_1.LIGHT_EFFECTS.on);
+            await darkTower.disconnect();
+        });
+        test('a MECH_JIGGLE_TRIGGERED notification does not resolve an in-flight command but still reaches onTowerResponse', async () => {
+            await darkTower.connect();
+            const received = [];
+            darkTower.onTowerResponse = (bytes) => received.push(Array.from(bytes));
+            const promise = darkTower.playSound(1);
+            expect(mockAdapter.writeCalls).toBe(1);
+            // Simulate an unsolicited jiggle-detected notification (command value 3) arriving
+            // while playSound's command is still in flight.
+            const jigglePacket = new Uint8Array(20);
+            jigglePacket[0] = 3; // MECH_JIGGLE_TRIGGERED
+            mockAdapter.simulateResponse(jigglePacket);
+            // The raw passthrough still sees it...
+            expect(received).toEqual([Array.from(jigglePacket)]);
+            // ...but the in-flight playSound command must still be pending.
+            const status = darkTower['towerCommands'].getQueueStatus();
+            expect(status.currentCommand).not.toBeNull();
+            // The real ack resolves it normally.
+            darkTower['towerCommands'].onTowerResponse();
+            await promise;
+            await darkTower.disconnect();
+        });
     });
     describe('State Management', () => {
         test('should track drum positions in tower state', () => {
@@ -146,8 +182,11 @@ describe('UltimateDarkTower', () => {
             });
         });
         describe('Tower State Integration', () => {
+            // getCurrentTowerState() returns a deep copy (not a live reference), so these
+            // tests set positions directly on the internal state to exercise
+            // getCurrentDrumPosition()'s mapping from stored position to TowerSide.
             test('should return correct drum positions from tower state', () => {
-                const towerState = darkTower.getCurrentTowerState();
+                const towerState = darkTower['currentTowerState'];
                 // Test all position values: 0=north, 1=east, 2=south, 3=west
                 // Test bottom drum
                 towerState.drum[2].position = 0; // north
@@ -160,17 +199,17 @@ describe('UltimateDarkTower', () => {
                 expect(darkTower.getCurrentDrumPosition('bottom')).toBe('west');
             });
             test('should return correct positions for all drum levels', () => {
-                const towerState = darkTower.getCurrentTowerState();
+                const towerState = darkTower['currentTowerState'];
                 // Set different positions for each drum
                 towerState.drum[0].position = 1; // top = east
-                towerState.drum[1].position = 2; // middle = south  
+                towerState.drum[1].position = 2; // middle = south
                 towerState.drum[2].position = 3; // bottom = west
                 expect(darkTower.getCurrentDrumPosition('top')).toBe('east');
                 expect(darkTower.getCurrentDrumPosition('middle')).toBe('south');
                 expect(darkTower.getCurrentDrumPosition('bottom')).toBe('west');
             });
             test('should default to north for invalid position values', () => {
-                const towerState = darkTower.getCurrentTowerState();
+                const towerState = darkTower['currentTowerState'];
                 // Set invalid position values
                 towerState.drum[0].position = 999;
                 towerState.drum[1].position = -1;
@@ -512,6 +551,38 @@ describe('UltimateDarkTower', () => {
             expect(mockAdapter.writeCalls).toBe(1);
             expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('Command timeout after 30000ms'), '[UDT]');
             jest.useRealTimers();
+        });
+        test('a command sent while disconnected rejects promptly, not after 30s', async () => {
+            await darkTower.disconnect();
+            jest.useFakeTimers();
+            try {
+                const promise = darkTower.playSound(1);
+                // No jest.advanceTimersByTime() call: if the fix works, this rejects on
+                // its own without needing the command queue's 30s timeout to fire.
+                await expect(promise).rejects.toThrow(/not connected/i);
+                expect(mockAdapter.writeCalls).toBe(0);
+            }
+            finally {
+                jest.useRealTimers();
+            }
+        });
+        test('performingCalibration is set synchronously before the calibration ack arrives', async () => {
+            expect(darkTower.performingCalibration).toBe(false);
+            const promise = darkTower.calibrate();
+            // The flag must already be true even though the send hasn't resolved yet,
+            // so a calibration-complete response arriving immediately is recognized.
+            expect(darkTower.performingCalibration).toBe(true);
+            darkTower['towerCommands'].onTowerResponse();
+            await promise;
+        });
+        test('a command enqueued before logDetail is toggled still resolves via the same queue', async () => {
+            const promise = darkTower.playSound(1);
+            expect(mockAdapter.writeCalls).toBe(1);
+            // Toggling logDetail must not discard/replace the in-flight command's queue.
+            darkTower.logDetail = true;
+            darkTower['towerCommands'].onTowerResponse();
+            await promise;
+            expect(darkTower.logDetail).toBe(true);
         });
         test('should clear queue on disconnection', async () => {
             // Queue some commands but don't trigger responses

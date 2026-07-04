@@ -51,7 +51,7 @@ declare class UltimateDarkTower {
     private commandFactory;
     private towerCommands;
     private retrySendCommandCountRef;
-    retrySendCommandMax: number;
+    private _retrySendCommandMax;
     currentBatteryValue: number;
     previousBatteryValue: number;
     currentBatteryPercentage: number;
@@ -96,7 +96,8 @@ declare class UltimateDarkTower {
     /**
      * Set up the tower response callback after all components are initialized
      */
-    private setupTowerResponseCallback; /**
+    private setupTowerResponseCallback;
+    /**
      * Create tower event callbacks for BLE connection
      */
     private createTowerEventCallbacks;
@@ -111,10 +112,8 @@ declare class UltimateDarkTower {
     private _logDetail;
     get logDetail(): boolean;
     set logDetail(value: boolean);
-    /**
-     * Update tower command dependencies when configuration changes
-     */
-    private updateTowerCommandDependencies;
+    get retrySendCommandMax(): number;
+    set retrySendCommandMax(value: number);
     get isConnected(): boolean;
     get isCalibrated(): boolean;
     get performingCalibration(): boolean;
@@ -316,13 +315,6 @@ declare class UltimateDarkTower {
      * @param newPosition - The position after rotation
      */
     private calculateAndUpdateGlyphPositions;
-    /**
-     * Updates glyph positions for a specific level rotation.
-     * @param level - The drum level that was rotated
-     * @param newPosition - The new position the drum was rotated to
-     * @deprecated Use calculateAndUpdateGlyphPositions instead
-     */
-    private updateGlyphPositionsForRotation;
     /**
      * Checks if a specific seal is broken.
      * @param seal - The seal identifier to check

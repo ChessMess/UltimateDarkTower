@@ -119,6 +119,12 @@ class NodeBluetoothAdapter {
         }
     }
     async disconnect() {
+        // Remove the noble singleton's stateChange listener so repeated
+        // connect/disconnect cycles don't accumulate listeners across calls.
+        if (noble && this.boundStateChangeHandler) {
+            noble.removeListener('stateChange', this.boundStateChangeHandler);
+            this.boundStateChangeHandler = undefined;
+        }
         if (!this.peripheral)
             return;
         try {
@@ -261,20 +267,12 @@ class NodeBluetoothAdapter {
         return info;
     }
     async cleanup() {
-        // Remove Noble singleton event listeners
-        if (noble) {
-            if (this.boundStateChangeHandler) {
-                noble.removeListener('stateChange', this.boundStateChangeHandler);
-            }
-        }
         // Remove peripheral disconnect listener
         if (this.peripheral && this.boundDisconnectHandler) {
             this.peripheral.removeListener('disconnect', this.boundDisconnectHandler);
         }
+        // disconnect() also removes the noble singleton's stateChange listener
         await this.disconnect();
-        this.characteristicCallback = undefined;
-        this.disconnectCallback = undefined;
-        this.availabilityCallback = undefined;
     }
     /**
      * Scans for a BLE device by name using Noble's event-driven discovery

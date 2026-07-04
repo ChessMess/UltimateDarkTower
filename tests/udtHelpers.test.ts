@@ -111,12 +111,12 @@ describe('udtHelpers', () => {
   describe('commandToPacketString', () => {
     test('should convert single byte to hex string', () => {
       const command = new Uint8Array([15]);
-      expect(commandToPacketString(command)).toBe('[f]');
+      expect(commandToPacketString(command)).toBe('[0f]');
     });
 
     test('should convert multiple bytes to hex string', () => {
       const command = new Uint8Array([15, 255, 0, 16]);
-      expect(commandToPacketString(command)).toBe('[f,ff,0,10]');
+      expect(commandToPacketString(command)).toBe('[0f,ff,00,10]');
     });
 
     test('should handle empty array', () => {
@@ -126,7 +126,7 @@ describe('udtHelpers', () => {
 
     test('should format hex values correctly', () => {
       const command = new Uint8Array([0, 1, 15, 16, 255]);
-      expect(commandToPacketString(command)).toBe('[0,1,f,10,ff]');
+      expect(commandToPacketString(command)).toBe('[00,01,0f,10,ff]');
     });
   });
 
