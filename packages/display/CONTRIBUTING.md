@@ -107,9 +107,19 @@ This project follows [GitHub Flow](https://docs.github.com/en/get-started/using-
    git push origin vX.Y.Z
    ```
 
-7. **Create a GitHub Release** from the tag with the changelog content as release notes. This triggers automatic npm publish via GitHub Actions.
+7. **Create a GitHub Release** from the tag with the changelog content as release notes.
 
-8. **Delete the release branch**:
+8. **Publish to npm manually**:
+
+   ```bash
+   npm publish --otp=XXXXXX
+   ```
+
+   `prepublishOnly` runs the full `npm run ci` pipeline (typecheck, lint, test, build)
+   automatically before packing, so `npm publish` always ships a freshly-verified build.
+   The `--otp` flag is required if your npm account has 2FA-on-publish enabled.
+
+9. **Delete the release branch**:
    ```bash
    git push origin --delete release/vX.Y.Z
    ```

@@ -41,7 +41,8 @@
     "lint:fix": "eslint 'src/**/*.ts' 'tests/**/*.ts' 'example/**/*.ts' --fix",
     "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
     "clean": "rm -rf dist dist-example coverage",
-    "ci": "npm run typecheck && npm run lint && npm test && npm run build"
+    "ci": "npm run typecheck && npm run lint && npm test && npm run build",
+    "prepublishOnly": "npm run ci"
   },
   "peerDependencies": {
     "gsap": "^3.12.0",
