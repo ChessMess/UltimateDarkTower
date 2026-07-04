@@ -12,5 +12,6 @@
     },
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
   },
+  "references": [{ "path": "../../packages/engine" }],
   "include": ["src"]
 }

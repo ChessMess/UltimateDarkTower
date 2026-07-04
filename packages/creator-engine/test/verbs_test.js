@@ -2,7 +2,7 @@
 // each against a minimal EngineState, asserting the state mutation and emitted directive(s).
 // Uses engine.__internals (test-only surface).
 
-const { __internals } = require("../src/engine");
+const { __internals } = require("../dist/engine");
 const { makeTestState, applyOne } = __internals;
 
 let pass = 0, fail = 0;

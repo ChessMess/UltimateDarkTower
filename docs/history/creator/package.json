@@ -18,6 +18,7 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
+    "postinstall": "pnpm --filter @udtc/engine build",
     "build": "pnpm -r --workspace-concurrency=1 build",
     "test": "pnpm -r --workspace-concurrency=1 test",
     "validate:golden": "node packages/schema/test/conformance_test.js",
