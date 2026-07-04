@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-07-04
+
+### Changed
+
+- **Removed the `publish.yml` GitHub Actions workflow.** It failed on every prior release (v0.8.0,
+  v0.9.0, v0.10.1) due to an invalid `NODE_AUTH_TOKEN` secret; every published version was actually
+  shipped via a manual `npm publish`. Publishing is now documented as a manual step in
+  `CONTRIBUTING.md`, guarded by a new `prepublishOnly` script that runs the full `npm run ci`
+  pipeline (typecheck, lint, test, build) automatically before packing.
+
+### Fixed
+
+- **Test-suite noise (no consumer-facing change).** jsdom has no native 2D canvas renderer, so every
+  `HTMLCanvasElement.getContext('2d')` call logged a "not implemented" error even though the
+  affected code already handled a null context correctly. Stubbing `getContext` in the test setup
+  silences the noise and exercises the real (non-fallback) canvas-drawing code paths under test,
+  which surfaced and fixed two incomplete mocks (`THREE.Color.setScalar`, and a missing `center`
+  Vector2 on the mocked `TextureLoader`'s texture) that had been silently throwing and logging a
+  warning on every `Tower3DView` construction in the test suite.
+
 ## [0.10.1] - 2026-07-03
 
 ### Fixed
