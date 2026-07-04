@@ -214,7 +214,7 @@ export interface EngineState {
     /** quests issued by the authored newQuests node, attemptable only while active (setup.ts init) */
     monthlyQuestIds?: string[];
   };
-  _triggers?: unknown[];
+  _triggers?: TriggerRecord[];
   _lastDraw?: unknown;
 }
 
@@ -372,6 +372,13 @@ export interface TriggerDef {
   turn?: number;
   everyNTurns?: number;
   event?: string;
+}
+
+/** a trigger node flattened into EngineState._triggers at init (setup.ts); read by collectDueEvents */
+export interface TriggerRecord {
+  id: string;
+  trigger?: TriggerDef;
+  next?: string;
 }
 
 type NodeBase = { id: string; wires?: Record<string, string[]> };

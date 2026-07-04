@@ -511,7 +511,7 @@ export function raiseEvent(state: EngineState, directives: Directive[], event: s
   dir(directives, 'log.entry', { event });
   // onState bus: remember raised events until the next end-of-turn boundary consumes them
   // (only when the scenario authors onState triggers — legacy state stays untouched).
-  if ((state._triggers || []).some((t) => (t as { trigger?: { on?: string } }).trigger?.on === 'onState')) {
+  if ((state._triggers || []).some((t) => t.trigger?.on === 'onState')) {
     if (!state.clock.pendingEvents) state.clock.pendingEvents = [];
     if (!state.clock.pendingEvents.includes(event)) state.clock.pendingEvents.push(event);
   }
