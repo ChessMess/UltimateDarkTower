@@ -12,10 +12,9 @@ import type { EngineState, Effect, Directive, HeroState, BuildingState, FoeStatu
 // empty-supply checks fire inline exactly where the contract says (§4.3, §4.5).
 export const FOE_LADDER: FoeStatus[] = ['panicked', 'unsteady', 'ready', 'savage', 'lethal'];
 
-// a small helper to narrow the loose Effect payload to the specific fields a case needs, without
-// modeling a full per-op discriminated union (deferred — see planning/engine-deferred-followups.md
-// item 5). Justified because `op` (the real discriminant) is already narrowed by the switch.
-type Eff<T extends object> = Effect & T;
+// The switch on `eff.op` below narrows `eff` to the exact Effect union member for each case, so
+// per-case field access needs no cast (item 5 removed the old `Eff<{...}>` helper). Each case still
+// aliases `eff` to a short `e` at the top, purely to keep the case bodies byte-identical.
 type HeroRecord = Record<string, number>;
 
 // Deterministic Fisher–Yates using the engine PRNG; advances + reserializes RNG state (§6).
@@ -44,14 +43,14 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
   switch (eff.op) {
     // ----- resources & hero state -----
     case 'resource.gain': {
-      const e = eff as Eff<{ resource: string; amount: number }>;
+      const e = eff;
       heroRec[e.resource] = (heroRec[e.resource] || 0) + e.amount;
       ui({ hero: state.clock.activeHero, [e.resource]: heroRec[e.resource] });
       break;
     }
     case 'resource.lose': {
       // mandatory; shortfall → util.catch → one corruption
-      const e = eff as Eff<{ resource: string; amount: number }>;
+      const e = eff;
       const short = e.amount - (heroRec[e.resource] || 0);
       heroRec[e.resource] = Math.max(0, (heroRec[e.resource] || 0) - e.amount);
       ui({ hero: state.clock.activeHero, [e.resource]: heroRec[e.resource] });
@@ -60,7 +59,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
     }
     case 'resource.spend': {
       // optional; blocked if unaffordable
-      const e = eff as Eff<{ resource: string; amount: number }>;
+      const e = eff;
       if ((heroRec[e.resource] || 0) < e.amount)
         throw fault('cannot afford resource.spend ' + e.resource);
       heroRec[e.resource] -= e.amount;
@@ -68,18 +67,18 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'corruption.gain': {
-      const e = eff as Eff<{ source?: string }>;
+      const e = eff;
       gainCorruption(state, directives, e.source || 'effect');
       break;
     }
     case 'corruption.remove': {
-      const e = eff as Eff<{ all?: boolean; count?: number }>;
+      const e = eff;
       hero.corruption = e.all ? 0 : Math.max(0, hero.corruption - (e.count || 0));
       ui({ hero: state.clock.activeHero, corruption: hero.corruption });
       break;
     }
     case 'virtue.activate': {
-      const e = eff as Eff<{ virtue?: string }>;
+      const e = eff;
       if (hero.virtues.inactive.length === 0) throw fault('no inactive virtue to activate');
       const v = e.virtue && hero.virtues.inactive.includes(e.virtue) ? e.virtue : hero.virtues.inactive[0];
       hero.virtues.inactive = hero.virtues.inactive.filter((x) => x !== v);
@@ -89,13 +88,13 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'virtue.grant': {
-      const e = eff as Eff<{ virtue: string }>;
+      const e = eff;
       hero.virtues.active.push(e.virtue);
       ui({ hero: state.clock.activeHero, virtues: hero.virtues });
       break;
     }
     case 'item.gain': {
-      const e = eff as Eff<{ itemType: string; item?: string; from?: string }>;
+      const e = eff;
       const bucket = (
         {
           gear: 'gear',
@@ -122,7 +121,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
     }
     // ----- foes & adversary -----
     case 'foe.spawn': {
-      const e = eff as Eff<{ foeId: string; status?: FoeStatus; location?: string | null }>;
+      const e = eff;
       state.foes.push({
         instanceId: 'foe-' + (state.foes.length + 1),
         foeId: e.foeId,
@@ -137,7 +136,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'foe.move': {
-      const e = eff as Eff<{ foeId: string; to: string | null }>;
+      const e = eff;
       const f = state.foes.find((x) => x.foeId === e.foeId);
       if (f) f.location = e.to;
       dir(directives, 'board.mutate', {
@@ -147,7 +146,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'foe.remove': {
-      const e = eff as Eff<{ foeId?: string; instanceId?: string }>;
+      const e = eff;
       // an explicit instanceId (set when the battle target was disambiguated, deferred item 1)
       // removes only that instance; otherwise falls back to removing every matching foeId, which
       // is exactly today's behavior for scenarios/streams that never disambiguate.
@@ -158,7 +157,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'foe.escalateStatus': {
-      const e = eff as Eff<{ foeId?: string; instanceId?: string; steps?: number }>;
+      const e = eff;
       const f = e.instanceId
         ? state.foes.find((x) => x.instanceId === e.instanceId)
         : state.foes.find((x) => x.foeId === e.foeId);
@@ -168,7 +167,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'adversary.spawn': {
-      const e = eff as Eff<{ location?: string }>;
+      const e = eff;
       state.adversary.spawned = true;
       // the adversary spawns ON the board (rules.md §Completing the Main Goal) — at the authored
       // location, defaulting to the Tower space; heroes must reach it for the final battle.
@@ -186,7 +185,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
     }
     // ----- tokens & counters -----
     case 'token.place': {
-      const e = eff as Eff<{ tokenTypeId: string; target: unknown }>;
+      const e = eff;
       state.tokens.push({ tokenTypeId: e.tokenTypeId, target: e.target });
       dir(directives, 'board.mutate', {
         command: 'placeToken',
@@ -195,7 +194,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'token.counterIncrement': {
-      const e = eff as Eff<{ hero?: string; tokenTypeId: string; amount?: number }>;
+      const e = eff;
       const who = e.hero || state.clock.activeHero;
       const h = state.heroes[who];
       const key = e.tokenTypeId;
@@ -212,7 +211,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'token.remove': {
-      const e = eff as Eff<{ tokenTypeId: string; target: unknown }>;
+      const e = eff;
       const cfg = (state._lib.tokenTypes || {})[e.tokenTypeId] || {};
       if (cfg.removable === false) throw fault('token ' + e.tokenTypeId + ' is not removable');
       state.tokens = state.tokens.filter(
@@ -226,14 +225,14 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
     }
     // ----- hero / board placement -----
     case 'hero.placeOrMove': {
-      const e = eff as Eff<{ hero?: string; to?: string | null }>;
+      const e = eff;
       const heroId = e.hero || state.clock.activeHero;
       state.heroes[heroId].location = e.to ?? null;
       dir(directives, 'board.mutate', { command: 'placeHero', args: { hero: heroId, to: e.to } });
       break;
     }
     case 'board.placeMonument': {
-      const e = eff as Eff<{ location: unknown }>;
+      const e = eff;
       state.monuments.push(e.location);
       dir(directives, 'board.mutate', {
         command: 'placeMonument',
@@ -242,7 +241,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'board.placeMarker': {
-      const e = eff as Eff<{ location: unknown; markerType: string }>;
+      const e = eff;
       state.markers.push({ location: e.location, markerType: e.markerType });
       dir(directives, 'board.mutate', {
         command: 'placeMarker',
@@ -252,7 +251,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
     }
     // ----- skulls & buildings (scenario-determined only; emergence is observed) -----
     case 'skull.place': {
-      const e = eff as Eff<{ count: number; kingdom?: BuildingState['kingdom']; chooser?: string }>;
+      const e = eff;
       state.skulls.supply -= e.count;
       if (state.buildings) {
         // registry model: each scenario-placed skull lands on a standing building of the named
@@ -297,7 +296,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'skull.remove': {
-      const e = eff as Eff<{ count: number }>;
+      const e = eff;
       state.skulls.supply += e.count;
       state.skulls.onBoard = Math.max(0, state.skulls.onBoard - e.count);
       dir(directives, 'board.mutate', { command: 'removeSkull', args: { count: e.count } });
@@ -305,7 +304,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'building.destroy': {
-      const e = eff as Eff<{ location?: string; kingdom?: BuildingState['kingdom'] }>;
+      const e = eff;
       // Registry sync: mark the standing building destroyed and clear its on-board skulls. The
       // emergence + skull.place paths pre-mark the building (destroyed=true, skulls=0) before
       // delegating here, so this stays a no-op for them; a directly-authored destroy on a standing
@@ -332,14 +331,14 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'skull.modifySupply': {
-      const e = eff as Eff<{ delta: number }>;
+      const e = eff;
       state.skulls.supply += e.delta;
       ui({ supply: state.skulls.supply });
       break;
     }
     // ----- decks & market -----
     case 'deck.draw': {
-      const e = eff as Eff<{ deck: string }>;
+      const e = eff;
       const d = getDeck(state, e.deck);
       if (d.draw.length === 0)
         throw fault("deck '" + e.deck + "' empty (explicit deck.reshuffle required, §4.3)");
@@ -349,13 +348,13 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'deck.discard': {
-      const e = eff as Eff<{ deck: string; card?: unknown }>;
+      const e = eff;
       const d = getDeck(state, e.deck);
       d.discard.push(e.card || state._lastDraw);
       break;
     }
     case 'deck.reshuffle': {
-      const e = eff as Eff<{ deck: string }>;
+      const e = eff;
       const d = getDeck(state, e.deck);
       d.draw = d.draw.concat(d.discard);
       d.discard = [];
@@ -363,7 +362,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'market.refresh': {
-      const e = eff as Eff<{ cards?: unknown[] }>;
+      const e = eff;
       state.market = e.cards || ['t1', 't2', 't3', 't4'];
       ui({ market: state.market });
       break;
@@ -375,12 +374,12 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
     }
     // ----- quests & seals & variables -----
     case 'quest.complete': {
-      const e = eff as Eff<{ questId: string }>;
+      const e = eff;
       completeQuest(state, directives, e.questId);
       break;
     }
     case 'quest.spawnDungeon': {
-      const e = eff as Eff<{ dungeon: string; quest?: string }>;
+      const e = eff;
       state.dungeons[e.dungeon] = { clearedRooms: [] };
       dir(directives, 'board.mutate', {
         command: 'spawnDungeon',
@@ -389,7 +388,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'quest.placeMarker': {
-      const e = eff as Eff<{ location: unknown; quest?: string }>;
+      const e = eff;
       state.markers.push({ location: e.location, markerType: 'quest', quest: e.quest });
       dir(directives, 'board.mutate', {
         command: 'placeMarker',
@@ -398,7 +397,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'seal.remove': {
-      const e = eff as Eff<{ seal?: string }>;
+      const e = eff;
       const seal = e.seal || state.sealsRemoved + 1 + '-north'; // engine/scenario/player-chosen (not observed, §3.4)
       state.sealsRemoved += 1;
       if (!state.brokenSeals.includes(seal)) state.brokenSeals.push(seal);
@@ -415,7 +414,7 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'seal.replace': {
-      const e = eff as Eff<{ seal: string }>;
+      const e = eff;
       const seal = e.seal;
       state.brokenSeals = state.brokenSeals.filter((s) => s !== seal);
       state.sealsRemoved = Math.max(0, state.sealsRemoved - 1);
@@ -426,18 +425,20 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       break;
     }
     case 'flag.set': {
-      const e = eff as Eff<{ name: string; value: unknown }>;
+      const e = eff;
       state.flags[e.name] = e.value;
       break;
     }
     case 'counter.set': {
-      const e = eff as Eff<{ name: string; value: number }>;
+      const e = eff;
       state.counters[e.name] = e.value;
       break;
     }
     default: {
-      const _exhaustive: never = eff.op;
-      throw fault('unknown effect verb: ' + _exhaustive + ' (closed set is the 36 of §4.3)');
+      // exhaustive over the Effect union: `eff` is `never` here (all ops handled). Read the op via a
+      // cast for the runtime message (an un-typechecked caller can still reach this).
+      const _exhaustive: never = eff;
+      throw fault('unknown effect verb: ' + (_exhaustive as { op: string }).op + ' (closed set is the 36 of §4.3)');
     }
   }
 }
@@ -510,7 +511,7 @@ export function raiseEvent(state: EngineState, directives: Directive[], event: s
   dir(directives, 'log.entry', { event });
   // onState bus: remember raised events until the next end-of-turn boundary consumes them
   // (only when the scenario authors onState triggers — legacy state stays untouched).
-  if ((state._triggers || []).some((t) => (t as { trigger?: { on?: string } }).trigger?.on === 'onState')) {
+  if ((state._triggers || []).some((t) => t.trigger?.on === 'onState')) {
     if (!state.clock.pendingEvents) state.clock.pendingEvents = [];
     if (!state.clock.pendingEvents.includes(event)) state.clock.pendingEvents.push(event);
   }

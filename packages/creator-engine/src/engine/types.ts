@@ -2,11 +2,13 @@
 // guide §6). `src/index.d.ts` re-exports from this file, so the type model is validated by the
 // engine's `tsc --noEmit` gate rather than drifting in a hand-maintained declaration file.
 //
-// This file is TYPES ONLY — it has no runtime and the engine's JS never imports it, so it cannot
-// affect determinism. It closes the effect-op and node-kind vocabularies (invariant #4): the unions
-// below are the authoritative catalog the reducer implements. (Compile-time *exhaustiveness* of the
-// reducer switches against these unions lands with the deferred `.js`→`.ts` port; today the JS runs
-// unchecked and these unions serve consumers + document the closed sets.)
+// This file is TYPES ONLY — it has no runtime and its declarations are erased at emit, so it cannot
+// affect determinism. It closes the effect-op and node-kind vocabularies (invariant #4): the `Effect`
+// and `EngineNode` discriminated unions below are the authoritative catalog the reducer implements,
+// each member carrying its per-variant `props` field shape. The reducer switches on `eff.op` /
+// `node.kind` narrow to the exact member, so an unknown tag AND an unknown field shape are both
+// compile errors (deferred-followups.md item 5); an unknown op/kind additionally faults at runtime
+// for un-typechecked callers.
 
 // ---- core status & game-state ----
 
@@ -212,7 +214,7 @@ export interface EngineState {
     /** quests issued by the authored newQuests node, attemptable only while active (setup.ts init) */
     monthlyQuestIds?: string[];
   };
-  _triggers?: unknown[];
+  _triggers?: TriggerRecord[];
   _lastDraw?: unknown;
 }
 
@@ -304,104 +306,148 @@ export interface ScenarioLibrary {
 }
 
 // ---- effects (§4.3 closed verb vocabulary) ----
-// The authoritative catalog of effect ops the reducer's applyEffect implements. An unknown op faults
-// at runtime (invariant #4). `Effect` keeps the op closed while leaving verb-specific fields open,
-// since the payload shape varies per op (a full per-op discriminated union lands with the .ts port).
+// The authoritative catalog of effect ops the reducer's applyEffect implements, modeled as a full
+// per-op discriminated union: each member carries the exact field shape its case in applyEffect
+// (effects.ts) reads/authors, so both an unknown op AND an unknown field shape are compile errors
+// (invariant #4). An unknown op still faults at runtime for un-typechecked callers. Optional-vs-
+// required fields track the reducer's actual reads cross-checked against the authored literals in
+// golden-fixture.ts (deferred-followups.md item 5). `EffectOp` is derived from the union's tags so
+// the exported op-name catalog stays identical.
 
-export type EffectOp =
-  | 'resource.gain'
-  | 'resource.lose'
-  | 'resource.spend'
-  | 'corruption.gain'
-  | 'corruption.remove'
-  | 'virtue.activate'
-  | 'virtue.grant'
-  | 'item.gain'
-  | 'item.enforceLimits'
-  | 'foe.spawn'
-  | 'foe.move'
-  | 'foe.remove'
-  | 'foe.escalateStatus'
-  | 'adversary.spawn'
-  | 'token.place'
-  | 'token.counterIncrement'
-  | 'token.remove'
-  | 'hero.placeOrMove'
-  | 'board.placeMonument'
-  | 'board.placeMarker'
-  | 'skull.place'
-  | 'skull.remove'
-  | 'building.destroy'
-  | 'skull.modifySupply'
-  | 'deck.draw'
-  | 'deck.discard'
-  | 'deck.reshuffle'
-  | 'market.refresh'
-  | 'market.acquireReplace'
-  | 'quest.complete'
-  | 'quest.spawnDungeon'
-  | 'quest.placeMarker'
-  | 'seal.remove'
-  | 'seal.replace'
-  | 'flag.set'
-  | 'counter.set';
+export type Effect =
+  | { op: 'resource.gain'; resource: string; amount: number }
+  | { op: 'resource.lose'; resource: string; amount: number }
+  | { op: 'resource.spend'; resource: string; amount: number }
+  | { op: 'corruption.gain'; source?: string }
+  | { op: 'corruption.remove'; all?: boolean; count?: number }
+  | { op: 'virtue.activate'; virtue?: string }
+  | { op: 'virtue.grant'; virtue: string }
+  | { op: 'item.gain'; itemType: string; item?: string; from?: string }
+  | { op: 'item.enforceLimits' }
+  | { op: 'foe.spawn'; foeId: string; status?: FoeStatus; location?: string | null }
+  | { op: 'foe.move'; foeId: string; to: string | null }
+  | { op: 'foe.remove'; foeId?: string; instanceId?: string }
+  | { op: 'foe.escalateStatus'; foeId?: string; instanceId?: string; steps?: number }
+  | { op: 'adversary.spawn'; location?: string }
+  | { op: 'token.place'; tokenTypeId: string; target: unknown }
+  | { op: 'token.counterIncrement'; hero?: string; tokenTypeId: string; amount?: number }
+  | { op: 'token.remove'; tokenTypeId: string; target: unknown }
+  | { op: 'hero.placeOrMove'; hero?: string; to?: string | null }
+  | { op: 'board.placeMonument'; location: unknown }
+  | { op: 'board.placeMarker'; location: unknown; markerType: string }
+  | { op: 'skull.place'; count: number; kingdom?: Kingdom; chooser?: string }
+  | { op: 'skull.remove'; count: number }
+  | { op: 'building.destroy'; location?: string; kingdom?: Kingdom }
+  | { op: 'skull.modifySupply'; delta: number }
+  | { op: 'deck.draw'; deck: string }
+  | { op: 'deck.discard'; deck: string; card?: unknown }
+  | { op: 'deck.reshuffle'; deck: string }
+  | { op: 'market.refresh'; cards?: unknown[] }
+  | { op: 'market.acquireReplace' }
+  | { op: 'quest.complete'; questId: string }
+  | { op: 'quest.spawnDungeon'; dungeon: string; quest?: string }
+  | { op: 'quest.placeMarker'; location: unknown; quest?: string }
+  | { op: 'seal.remove'; seal?: string }
+  | { op: 'seal.replace'; seal: string }
+  | { op: 'flag.set'; name: string; value: unknown }
+  | { op: 'counter.set'; name: string; value: number };
 
-export type Effect = { op: EffectOp } & Record<string, unknown>;
+export type EffectOp = Effect['op'];
 
 // ---- nodes (§4.2 closed node-kind vocabulary) ----
-// The catalog of node kinds interpretNode implements. Unknown kinds fault (invariant #4). Node
-// `props`/`wires` shapes are kind-specific; kept open here pending the .ts port.
+// The catalog of node kinds interpretNode implements, modeled as a discriminated union on `kind`
+// with per-variant `props` field shapes (item 5). An unknown kind is a compile error where a node is
+// typed, and still faults at runtime (invariant #4). `props` is REQUIRED on a variant iff the reducer
+// asserts it unconditionally today (`node.props!.x`), matching authored reality; OPTIONAL where the
+// reducer reads defensively (`node.props?.x` / `(node.props || {})`). The 16 props-less kinds carry
+// `props?: never` (authoring props on them is rejected). `wires` stays generic on the base fields —
+// port names vary too unsystematically per kind (out / true|false / N|E|S|W / battle|dungeon|trade|
+// move) to close usefully. Optional-vs-required was cross-checked against golden-fixture.ts's authored
+// literals, not just the reducer's read sites (deferred-followups.md item 5).
 
-export type NodeKind =
-  | 'lifecycle.gameStart'
-  | 'lifecycle.boardSetup'
-  | 'lifecycle.startMonth'
-  | 'lifecycle.playerTurn'
-  | 'lifecycle.actionStart'
-  | 'lifecycle.actionMiddle'
-  | 'lifecycle.actionEnd'
-  | 'lifecycle.newMonthCheck'
-  | 'lifecycle.newQuests'
-  | 'lifecycle.gameEnd'
-  | 'effect.apply'
-  | 'tower.op'
-  | 'cond.branch'
-  | 'cond.check'
-  | 'cond.glyphGate'
-  | 'winloss.mainGoal'
-  | 'winloss.winCondition'
-  | 'winloss.lossCondition'
-  | 'action.banner'
-  | 'action.battle'
-  | 'action.trade'
-  | 'action.move'
-  | 'action.cleanse'
-  | 'action.quest'
-  | 'action.reinforce'
-  | 'battle.selectFoe'
-  | 'battle.applyAdvantage'
-  | 'battle.end'
-  | 'media.narration'
-  | 'dungeon.subflow'
-  | 'dungeon.room'
-  | 'trigger.schedule'
-  | 'trigger.onState'
-  | 'event.foesStrike'
-  | 'event.foesGrow'
-  | 'event.foesSpawn'
-  | 'event.towerStirs'
-  | 'event.towerActs'
-  | 'event.newWares'
-  | 'event.companion'
-  | 'event.readAloud'
-  | 'event.router';
-
-export interface EngineNode {
-  id: string;
-  kind: NodeKind;
-  props?: Record<string, unknown>;
-  wires?: Record<string, string[]>;
+/** end-of-turn trigger table entry (schema `$defs/trigger`; consumed by turn.ts collectDueEvents) */
+export interface TriggerDef {
+  on: 'schedule' | 'onState';
+  month?: number;
+  turn?: number;
+  everyNTurns?: number;
+  event?: string;
 }
+
+/** a trigger node flattened into EngineState._triggers at init (setup.ts); read by collectDueEvents */
+export interface TriggerRecord {
+  id: string;
+  trigger?: TriggerDef;
+  next?: string;
+}
+
+type NodeBase = { id: string; wires?: Record<string, string[]> };
+/** a node with no authored props (interpretNode reads none) */
+type PropslessNode<K extends string> = NodeBase & { kind: K; props?: never };
+
+export type EngineNode =
+  | PropslessNode<'lifecycle.gameStart'>
+  | (NodeBase & {
+      kind: 'lifecycle.boardSetup';
+      props?: { spawns?: Array<{ foeId: string; location?: string; status?: FoeStatus }> };
+    })
+  | PropslessNode<'lifecycle.startMonth'>
+  | PropslessNode<'lifecycle.playerTurn'>
+  | PropslessNode<'lifecycle.actionStart'>
+  // props.turn === "full" is the full-turn fidelity discriminator (setup.ts); only ever compared to "full"
+  | (NodeBase & { kind: 'lifecycle.actionMiddle'; props?: { turn?: 'full' } })
+  | PropslessNode<'lifecycle.actionEnd'>
+  | PropslessNode<'lifecycle.newMonthCheck'>
+  | (NodeBase & {
+      kind: 'lifecycle.newQuests';
+      props?: { monthly?: Record<string, Record<string, string>> };
+    })
+  | PropslessNode<'lifecycle.gameEnd'>
+  | (NodeBase & { kind: 'effect.apply'; props: { effects?: Effect[]; effect?: Effect } })
+  | (NodeBase & { kind: 'tower.op'; props: { towerOp: TowerChannelOp } })
+  | (NodeBase & { kind: 'cond.branch'; props: { condition?: Condition } })
+  | (NodeBase & { kind: 'cond.check'; props: { condition?: Condition } })
+  | (NodeBase & { kind: 'cond.glyphGate'; props: { action: string } })
+  | PropslessNode<'winloss.mainGoal'>
+  | (NodeBase & { kind: 'winloss.winCondition'; props: { condition?: Condition } })
+  | (NodeBase & { kind: 'winloss.lossCondition'; props: { condition?: Condition } })
+  | (NodeBase & { kind: 'action.banner'; props: { title: string } })
+  | PropslessNode<'action.battle'>
+  // authored template only (never read by the reducer — the runtime supplies the finalized decision)
+  | (NodeBase & { kind: 'action.trade'; props?: Partial<TradeDecision> })
+  | PropslessNode<'action.move'>
+  | PropslessNode<'action.cleanse'>
+  | (NodeBase & { kind: 'action.quest'; props?: { questId?: string } })
+  | PropslessNode<'action.reinforce'>
+  | PropslessNode<'battle.selectFoe'>
+  | PropslessNode<'battle.applyAdvantage'>
+  | PropslessNode<'battle.end'>
+  | (NodeBase & { kind: 'media.narration'; props: { text: string } })
+  | (NodeBase & { kind: 'dungeon.subflow'; props: { dungeonId: string } })
+  // roomId read defensively in dungeon.ts (faults if absent); golden always authors it
+  | (NodeBase & { kind: 'dungeon.room'; props?: { roomId: string } })
+  | (NodeBase & { kind: 'trigger.schedule'; props?: { trigger: TriggerDef } })
+  | (NodeBase & { kind: 'trigger.onState'; props?: { trigger: TriggerDef } })
+  | (NodeBase & {
+      kind: 'event.foesStrike';
+      props?: { foeIds?: string[]; moves?: Array<{ foeId: string; to: string | null }> };
+    })
+  | (NodeBase & { kind: 'event.foesGrow'; props?: { steps?: number } })
+  | (NodeBase & {
+      kind: 'event.foesSpawn';
+      props?: { spawns?: Array<{ foeId: string; location?: string; status?: FoeStatus }> };
+    })
+  | (NodeBase & { kind: 'event.towerStirs'; props?: { level?: string; removeSeal?: boolean } })
+  | (NodeBase & { kind: 'event.towerActs'; props?: { effects?: Effect[] } })
+  | (NodeBase & { kind: 'event.newWares'; props?: { cards?: unknown[] } })
+  | (NodeBase & { kind: 'event.companion'; props?: { companionId?: string } })
+  | (NodeBase & { kind: 'event.readAloud'; props?: { text?: string } })
+  | PropslessNode<'event.router'>;
+
+/** the closed node-kind catalog, derived from the union's tags (unchanged export surface) */
+export type NodeKind = EngineNode['kind'];
+/** narrow the EngineNode union to a single kind's shape (e.g. for a per-kind helper's parameter) */
+export type NodeOfKind<K extends NodeKind> = Extract<EngineNode, { kind: K }>;
 
 // ---- directives (§5.2 closed vocabulary) ----
 // Each directive type is the `type` discriminant; payloads match what the reducer pushes.

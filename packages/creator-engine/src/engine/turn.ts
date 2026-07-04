@@ -6,7 +6,7 @@
 import { dir, fault } from './core';
 import { evalCondition } from './conditions';
 import { applyEffect, completeQuest, buildingAt } from './effects';
-import type { EngineState, Directive, ActionChoice, TradeDecision, TradeAsset, HeroState } from './types';
+import type { EngineState, Directive, ActionChoice, TradeDecision, TradeAsset, HeroState, TriggerDef } from './types';
 
 export function resetLatches(state: EngineState): void {
   state.clock.latches = {
@@ -37,8 +37,8 @@ export function collectDueEvents(state: EngineState): string[] {
   const due: string[] = [];
   const pend = state.clock.pendingEvents || [];
   for (const t of state._triggers || []) {
-    const rec = t as { trigger?: Record<string, unknown>; next?: string };
-    const tr = rec.trigger || {};
+    const rec = t;
+    const tr: Partial<TriggerDef> = rec.trigger || {};
     if (tr.on === 'schedule') {
       const m = state.clock.month,
         turn = state.clock.turnInMonth;
@@ -46,10 +46,10 @@ export function collectDueEvents(state: EngineState): string[] {
       if (tr.month != null && tr.turn != null) fire = m === tr.month && turn === tr.turn;
       else if (tr.month != null) fire = m === tr.month && turn === 1;
       else if (tr.turn != null) fire = turn === tr.turn;
-      else if (tr.everyNTurns != null) fire = (state.clock.globalTurn || 0) % (tr.everyNTurns as number) === 0;
+      else if (tr.everyNTurns != null) fire = (state.clock.globalTurn || 0) % tr.everyNTurns === 0;
       if (fire && rec.next) due.push(rec.next);
     } else if (tr.on === 'onState') {
-      if (tr.event && pend.includes(tr.event as string) && rec.next) due.push(rec.next);
+      if (tr.event && pend.includes(tr.event) && rec.next) due.push(rec.next);
     }
   }
   state.clock.pendingEvents = [];
