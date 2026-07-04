@@ -202,7 +202,7 @@ export interface EngineState {
   _lib: ScenarioLibrary;
   _spine: Record<string, string | undefined>;
   _setup: {
-    monthEnd: unknown;
+    monthEnd: MonthEndConfig;
     mainGoalId: string;
     goalThreshold: number;
     adversaryToughness: number;
@@ -416,7 +416,9 @@ export interface UiPromptDirective {
   kind: string;
   requestId?: string;
   text?: string;
-  options?: Array<{ id: string }>;
+  /** the ui.prompt directive's action-choice list is bare strings; the awaited InputRequest's own
+   * `options` (action variant) is the separate {id}-wrapped shape nodes.ts builds via .map() */
+  options?: string[];
   cards?: number;
   room?: string;
   doors?: string[];
@@ -547,6 +549,13 @@ export interface NodeResult {
   await?: { request: InputRequest };
   terminal?: true;
   end?: boolean;
+}
+
+/** month-length resolution config (scenario setup.monthEnd, mirrored onto _setup.monthEnd) */
+export interface MonthEndConfig {
+  resolution?: string;
+  default: { minTurn: number; maxTurn: number };
+  perMonth?: Record<string, { minTurn: number; maxTurn: number }>;
 }
 
 export interface InitOpts {
