@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+
+Fixes from a full-source code review, ordered by severity:
+
+- **Node adapter: a failed `connect()` no longer permanently breaks retries.** `NodeBluetoothAdapter.cleanup()` was nulling the `onCharacteristicValueChanged`/`onDisconnect`/`onBluetoothAvailabilityChanged` callbacks on any connection failure, but `UdtBleConnection` only wires those callbacks once. A failed connect (e.g. a scan timeout) silently broke all future notifications on the next successful `connect()` — no battery heartbeat, no command responses, forcing a disconnect ~3s later. `cleanup()` no longer clears these caller-owned callback fields, matching `WebBluetoothAdapter`'s existing behavior.
+- **Tower state aliasing fixed: `onTowerStateUpdate` now receives distinct old/new objects.** `getCurrentTowerState()` (both the internal command-builder dependency and the public method) previously returned the live state object (or a shallow copy sharing nested `layer`/`drum` objects), so commands that mutated it in place before calling `setTowerState` produced `oldState === newState` — consumers couldn't diff, and `logDetail` always logged "No changes detected". Both now return a full deep copy (`UdtCommandFactory.deepCopyTowerState`, now public). `createTransientAudioCommandWithModifications` also switched from a shallow spread to a deep copy, since its `Object.assign` calls on nested drum/layer/beam objects were mutating the caller's original state.
+- **Drum-position tracking after rotation.** As a consequence of the above, `rotate()` and `rotateWithState()` — which mutated the (now-copied) state directly — needed explicit fixes: `rotate()` now calls `setTowerState` after updating drum positions so the change is actually recorded and notified; `rotateWithState()`'s `finally` block no longer force-writes all three drum positions unconditionally, since that masked partial failures (a drum that never rotated could be recorded as if it had) and was redundant on success (each `rotateDrumStateful()` call already records its own drum).
+- **Send failures are no longer swallowed.** `sendTowerCommandDirect` returned normally instead of throwing when not connected or after retries were exhausted, so the command queue only ever learned of the failure via its 30s timeout — any command issued while disconnected silently hung for 30 seconds before rejecting with a misleading "Command timeout". It now throws immediately in both cases.
+- **Calibration flags are now set before the command is sent**, not after `await`, so a fast calibration-complete response can't arrive before `performingCalibration` is set (which would suppress heartbeat disconnect detection and never fire `onCalibrationComplete`). The flags are cleared again if the send fails.
+- **`logDetail` no longer discards the command queue.** Setting `tower.logDetail` used to reconstruct the whole `UdtTowerCommands`/`CommandQueue`, orphaning any in-flight/queued commands (they could then only resolve via their own 30s timeout, since responses routed to the new queue). It now updates the existing instance in place. `retrySendCommandMax` is likewise now a live setter instead of a value copied once at construction (previously it only "refreshed" as an accidental side effect of toggling `logDetail`).
+- **`breakSeal` now syncs volume whenever it actually changes**, not just when the requested volume is truthy. Requesting volume `0` (Loud) while the tower's tracked volume was non-zero previously skipped the sync entirely, so the seal sound played at the wrong volume.
+- **Removed duplicate console logging** — `Logger`'s constructor already installs a default `ConsoleOutput`; `UltimateDarkTower` was adding a second one, duplicating every default log line.
+- **Unsolicited tower notifications no longer resolve the wrong queued command.** Spontaneous mechanical-sensor notifications (jiggle detection, unexpected trigger, differential readings) can arrive at any time and were being treated like a command ack, prematurely completing whatever command was in flight. These are now excluded from queue resolution while still reaching the public raw `onTowerResponse` passthrough.
+- **`DOMOutput` no longer goes silent on pages without `logLevel-*` checkboxes** — it now defaults to showing all levels when none of the expected checkbox elements exist, instead of filtering out all output.
+- Diagnostics `LIBRARY_VERSION` corrected from a stale `3.0.0` to `5.0.0`.
+- **NodeBluetoothAdapter** no longer leaks a noble `stateChange` listener across repeated connect/disconnect cycles (it's now removed in `disconnect()`, not just `cleanup()`).
+- **WebBluetoothAdapter** now cleans up partial connection state (GATT connection, listeners) when `connect()` fails partway through, matching the Node adapter's existing behavior.
+- **Sound index validation tightened.** `playSound`/`playSoundStateful` were checking `soundIndex === null`, which let `undefined`/`NaN` silently through as a "valid" index; they now use `Number.isFinite`. `rotate()`'s optional `soundIndex` is now bounds-checked against the audio library (previously written unvalidated).
+- `UdtBleConnection.disconnect()` no longer fires `onTowerDisconnect` (and clears the command queue) when called on a connection that was never established.
+- Battery log line now correctly labels its already-volts value as `v` instead of `mv`.
+- **`SystemRandom.nextRange`'s large-range branch (> `Int32.MaxValue`) now faithfully ports .NET's `GetSampleForLargeRange()`** instead of a rougher approximation, so seed-derived sequences match the reference implementation for wide ranges too.
+- Disconnect detection in `sendTowerCommandDirect` now checks `instanceof BluetoothConnectionError` first, falling back to message-substring checks only for untyped native errors; removed a dead substring check that could never match.
+- Removed the deprecated, uncalled `updateGlyphPositionsForRotation` method.
+- `commandToPacketString` now zero-pads each byte to 2 hex digits (e.g. `[0f,03]` instead of `[f,3]`), removing ambiguity in packet dumps/logs.
+
 ## [5.0.0] - 2026-06-20
 
 ### Changed

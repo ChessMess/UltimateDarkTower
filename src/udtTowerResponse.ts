@@ -73,7 +73,7 @@ export class TowerResponseProcessor {
                 return [towerCommand.name, commandToPacketString(command)];
             case TC.BATTERY: {
                 const millivolts = getMilliVoltsFromTowerResponse(command);
-                const retval = [towerCommand.name, `${milliVoltsToPercentage(millivolts)} (${(millivolts / 1000).toFixed(2)}mv)`];
+                const retval = [towerCommand.name, `${milliVoltsToPercentage(millivolts)} (${(millivolts / 1000).toFixed(2)}v)`];
                 if (this.logDetail) {
                     retval.push(commandToPacketString(command));
                 }
@@ -117,5 +117,17 @@ export class TowerResponseProcessor {
      */
     isTowerStateResponse(cmdKey: string | undefined): boolean {
         return cmdKey === TC.STATE;
+    }
+
+    /**
+     * Checks if a command is a spontaneous mechanical-sensor notification that
+     * isn't tied to any specific in-flight command (jiggle detection,
+     * unexpected trigger, differential sensor readings). These can arrive at
+     * any time and should not be treated as the ack for a queued command.
+     * @param {string} cmdKey - Command key from tower message
+     * @returns {boolean} True if this is an unsolicited notification
+     */
+    isUnsolicitedResponse(cmdKey: string | undefined): boolean {
+        return cmdKey === TC.JIGGLE || cmdKey === TC.UNEXPECTED || cmdKey === TC.DIFFERENTIAL;
     }
 }

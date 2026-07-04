@@ -103,7 +103,8 @@ const RING_BUFFER_SIZE = 500;
 const RING_BUFFER_DRAIN = 50;
 const BATTERY_HISTORY_SIZE = 60;
 const PAYLOAD_MAX_BYTES = 32;
-const LIBRARY_VERSION = '3.0.0';
+// Keep in sync with package.json's "version" at release time.
+const LIBRARY_VERSION = '5.0.0';
 
 function detectPlatform(): 'web' | 'node' | 'custom' {
     if (typeof window !== 'undefined' && typeof (window as unknown as { navigator?: { bluetooth?: unknown } }).navigator !== 'undefined') {

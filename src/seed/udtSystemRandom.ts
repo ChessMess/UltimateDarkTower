@@ -122,6 +122,23 @@ export class SystemRandom {
   }
 
   /**
+   * Sample for ranges wider than Int32.MaxValue.
+   * Matches C#'s GetSampleForLargeRange(): draws two internal samples (the
+   * second decides sign) and normalizes to [0.0, 1.0).
+   */
+  private getSampleForLargeRange(): number {
+    let result = this.internalSample();
+    const negative = (this.internalSample() % 2 === 0);
+    if (negative) {
+      result = -result;
+    }
+    let d = result;
+    d += INT32_MAX - 1;
+    d /= 2 * INT32_MAX - 1;
+    return d;
+  }
+
+  /**
    * Returns a non-negative random integer less than Int32.MaxValue.
    * Matches C# `Random.Next()`.
    */
@@ -152,8 +169,11 @@ export class SystemRandom {
     if (range <= INT32_MAX) {
       return toInt32(this.sample() * range) + minValue;
     }
-    // Large range — use double precision
-    return toInt32(this.internalSample() * (1.0 / INT32_MAX) * range) + minValue;
+    // Large range — matches C#'s GetSampleForLargeRange() path. minValue is added
+    // before truncating (C#: `(int)((long)(sample * range) + minValue)`) — adding
+    // it after an int32 truncation of the (possibly > Int32.MaxValue) product
+    // would wrap the intermediate value incorrectly.
+    return Math.floor(this.getSampleForLargeRange() * range) + minValue;
   }
 
   /**

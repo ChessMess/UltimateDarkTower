@@ -100,5 +100,5 @@ export declare class UdtCommandFactory {
      * @param state - The tower state to copy
      * @returns A new TowerState with all nested objects copied
      */
-    private deepCopyTowerState;
+    deepCopyTowerState(state: TowerState): TowerState;
 }

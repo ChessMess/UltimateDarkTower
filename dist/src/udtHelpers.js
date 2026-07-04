@@ -59,10 +59,7 @@ function commandToPacketString(command) {
     if (command.length === 0) {
         return "[]";
     }
-    let cmdStr = "[";
-    command.forEach(n => cmdStr += n.toString(16) + ",");
-    cmdStr = cmdStr.slice(0, -1) + "]";
-    return cmdStr;
+    return `[${Array.from(command).map(n => n.toString(16).padStart(2, '0')).join(',')}]`;
 }
 /**
  * Utility function to get the tower position and direction for a given layer and light index

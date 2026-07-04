@@ -101,6 +101,8 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
             );
 
         } catch (error: unknown) {
+            await this.cleanup();
+
             // Re-throw our own error types
             if (error instanceof BluetoothDeviceNotFoundError ||
                 error instanceof BluetoothUserCancelledError ||

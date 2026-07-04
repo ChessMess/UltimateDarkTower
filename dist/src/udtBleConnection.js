@@ -159,9 +159,10 @@ class UdtBleConnection {
     }
     async disconnect() {
         this.stopConnectionMonitoring();
-        if (this.isConnected) {
-            this.recordIncident('user_initiated');
+        if (!this.isConnected) {
+            return;
         }
+        this.recordIncident('user_initiated');
         const adapter = this.bluetoothAdapter;
         if (adapter === null || adapter === void 0 ? void 0 : adapter.isConnected()) {
             await adapter.disconnect();

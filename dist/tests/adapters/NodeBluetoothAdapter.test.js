@@ -169,6 +169,31 @@ describe('NodeBluetoothAdapter', () => {
             }
             expect(cleanupSpy).toHaveBeenCalled();
         });
+        test('callbacks registered before a failed connect still fire after a successful retry', async () => {
+            const dataCallback = jest.fn();
+            const disconnectCallback = jest.fn();
+            const availabilityCallback = jest.fn();
+            adapter.onCharacteristicValueChanged(dataCallback);
+            adapter.onDisconnect(disconnectCallback);
+            adapter.onBluetoothAvailabilityChanged(availabilityCallback);
+            // First connect attempt fails (e.g. scan timeout). The adapter's error-path
+            // cleanup() must not wipe the callbacks registered above.
+            jest.spyOn(adapter, 'scanForDevice').mockRejectedValueOnce(new udtBluetoothAdapter_1.BluetoothTimeoutError('Device scan timeout after 10000ms'));
+            await expect(adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']))
+                .rejects.toBeInstanceOf(udtBluetoothAdapter_1.BluetoothTimeoutError);
+            // Second connect attempt succeeds.
+            const { rxChar, all } = createStandardCharacteristics();
+            const peripheral = createMockPeripheral({ characteristics: all });
+            setupImmediateDiscovery(peripheral);
+            await adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']);
+            // The callbacks registered before the failed attempt must still be wired.
+            rxChar._emit('data', Buffer.from([0x01, 0x02]));
+            expect(dataCallback).toHaveBeenCalled();
+            peripheral._emit('disconnect');
+            expect(disconnectCallback).toHaveBeenCalled();
+            mockNoble._emit('stateChange', 'poweredOff');
+            expect(availabilityCallback).toHaveBeenCalledWith(false);
+        });
         test('should normalize service UUIDs for noble', async () => {
             const { all } = createStandardCharacteristics();
             const peripheral = createMockPeripheral({ characteristics: all });

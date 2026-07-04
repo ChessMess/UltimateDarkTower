@@ -122,16 +122,21 @@ class DOMOutput {
         this.updateBufferSizeDisplay();
     }
     getEnabledLevelsFromCheckboxes() {
-        const enabledLevels = new Set();
+        const levelNames = ['debug', 'info', 'warn', 'error'];
         if (typeof document === 'undefined') {
-            return enabledLevels;
+            return new Set(levelNames);
         }
         // Check for checkboxes with pattern logLevel-{level}
-        const checkboxes = ['debug', 'info', 'warn', 'error'];
-        checkboxes.forEach(level => {
-            const checkbox = document.getElementById(`logLevel-${level}`);
+        const checkboxes = levelNames.map(level => document.getElementById(`logLevel-${level}`));
+        // If none of the expected checkboxes exist on the page, default to
+        // showing everything rather than silently filtering out all output.
+        if (checkboxes.every(checkbox => !checkbox)) {
+            return new Set(levelNames);
+        }
+        const enabledLevels = new Set();
+        checkboxes.forEach((checkbox, index) => {
             if (checkbox && checkbox.checked) {
-                enabledLevels.add(level);
+                enabledLevels.add(levelNames[index]);
             }
         });
         return enabledLevels;

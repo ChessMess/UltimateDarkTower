@@ -59,4 +59,13 @@ export declare class TowerResponseProcessor {
      * @returns {boolean} True if this is a tower state response
      */
     isTowerStateResponse(cmdKey: string | undefined): boolean;
+    /**
+     * Checks if a command is a spontaneous mechanical-sensor notification that
+     * isn't tied to any specific in-flight command (jiggle detection,
+     * unexpected trigger, differential sensor readings). These can arrive at
+     * any time and should not be treated as the ack for a queued command.
+     * @param {string} cmdKey - Command key from tower message
+     * @returns {boolean} True if this is an unsolicited notification
+     */
+    isUnsolicitedResponse(cmdKey: string | undefined): boolean;
 }

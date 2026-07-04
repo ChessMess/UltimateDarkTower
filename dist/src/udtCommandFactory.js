@@ -150,8 +150,10 @@ class UdtCommandFactory {
         const audioMods = { sample, loop, volume: volume !== null && volume !== void 0 ? volume : 0 };
         const modifications = Object.assign(Object.assign({}, otherModifications), { audio: audioMods });
         const command = this.createStatefulCommand(currentState, modifications);
-        // Create state with other modifications but without audio for local tracking
-        const stateWithoutAudio = currentState ? Object.assign({}, currentState) : this.createEmptyTowerState();
+        // Create state with other modifications but without audio for local tracking.
+        // Deep copy (not a shallow spread) because the Object.assign calls below mutate
+        // nested drum/layer/beam objects, which would otherwise be shared with currentState.
+        const stateWithoutAudio = currentState ? this.deepCopyTowerState(currentState) : this.createEmptyTowerState();
         // Apply other modifications
         if (otherModifications.drum) {
             otherModifications.drum.forEach((drum, index) => {

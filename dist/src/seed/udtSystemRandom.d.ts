@@ -36,6 +36,12 @@ export declare class SystemRandom {
      */
     private sample;
     /**
+     * Sample for ranges wider than Int32.MaxValue.
+     * Matches C#'s GetSampleForLargeRange(): draws two internal samples (the
+     * second decides sign) and normalizes to [0.0, 1.0).
+     */
+    private getSampleForLargeRange;
+    /**
      * Returns a non-negative random integer less than Int32.MaxValue.
      * Matches C# `Random.Next()`.
      */

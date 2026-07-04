@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UdtTowerCommands = void 0;
 const udtConstants_1 = require("./udtConstants");
+const udtBluetoothAdapter_1 = require("./udtBluetoothAdapter");
 const udtCommandQueue_1 = require("./udtCommandQueue");
 const udtHelpers_1 = require("./udtHelpers");
 class UdtTowerCommands {
@@ -27,13 +28,13 @@ class UdtTowerCommands {
      */
     async sendTowerCommandDirect(command) {
         var _a;
+        const cmdStr = (0, udtHelpers_1.commandToPacketString)(command);
+        this.deps.logDetail && this.deps.logger.debug(`${cmdStr}`, '[UDT][CMD]');
+        if (!this.deps.bleConnection.isConnected) {
+            this.deps.logger.warn('Tower is not connected', '[UDT][CMD]');
+            throw new Error('Cannot send command: tower is not connected');
+        }
         try {
-            const cmdStr = (0, udtHelpers_1.commandToPacketString)(command);
-            this.deps.logDetail && this.deps.logger.debug(`${cmdStr}`, '[UDT][CMD]');
-            if (!this.deps.bleConnection.isConnected) {
-                this.deps.logger.warn('Tower is not connected', '[UDT][CMD]');
-                return;
-            }
             await this.deps.bleConnection.writeCommand(command);
             this.deps.retrySendCommandCount.value = 0;
             this.deps.bleConnection.lastSuccessfulCommand = Date.now();
@@ -43,16 +44,19 @@ class UdtTowerCommands {
             const errorMsg = (_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : String(error);
             const wasCancelled = errorMsg.includes('User cancelled');
             const maxRetriesReached = this.deps.retrySendCommandCount.value >= this.deps.retrySendCommandMax;
-            // Check for disconnect indicators
-            const isDisconnected = errorMsg.includes('Cannot read properties of null') ||
+            const sendError = error instanceof Error ? error : new Error(errorMsg);
+            // Check for disconnect indicators. Prefer the typed error where adapters
+            // provide one; fall back to message sniffing for untyped native errors
+            // (e.g. a V8 TypeError from touching a torn-down BLE object).
+            const isDisconnected = error instanceof udtBluetoothAdapter_1.BluetoothConnectionError ||
+                errorMsg.includes('Cannot read properties of null') ||
                 errorMsg.includes('GATT Server is disconnected') ||
                 errorMsg.includes('Device is not connected') ||
-                errorMsg.includes('BluetoothConnectionError') ||
                 !this.deps.bleConnection.isConnected;
             if (isDisconnected) {
                 this.deps.logger.warn('Disconnect detected during command send', '[UDT][CMD]');
                 await this.deps.bleConnection.disconnect();
-                return;
+                throw sendError;
             }
             if (!maxRetriesReached && this.deps.bleConnection.isConnected && !wasCancelled) {
                 this.deps.logger.info(`retrying tower command attempt ${this.deps.retrySendCommandCount.value + 1}`, '[UDT][CMD]');
@@ -61,9 +65,8 @@ class UdtTowerCommands {
                 await new Promise(resolve => setTimeout(resolve, delay));
                 return await this.sendTowerCommandDirect(command);
             }
-            else {
-                this.deps.retrySendCommandCount.value = 0;
-            }
+            this.deps.retrySendCommandCount.value = 0;
+            throw sendError;
         }
     }
     /**
@@ -73,17 +76,24 @@ class UdtTowerCommands {
      */
     async calibrate() {
         var _a;
-        if (!this.deps.bleConnection.performingCalibration) {
-            this.deps.logger.info('Performing Tower Calibration', '[UDT][CMD]');
-            (_a = this.deps.recorder) === null || _a === void 0 ? void 0 : _a.recordEvent('calibration_started');
-            await this.sendTowerCommand(new Uint8Array([udtConstants_1.TOWER_COMMANDS.calibration]), 'calibrate');
-            // flag to look for calibration complete tower response
-            this.deps.bleConnection.performingCalibration = true;
-            this.deps.bleConnection.performingLongCommand = true;
+        if (this.deps.bleConnection.performingCalibration) {
+            this.deps.logger.warn('Tower calibration requested when tower is already performing calibration', '[UDT][CMD]');
             return;
         }
-        this.deps.logger.warn('Tower calibration requested when tower is already performing calibration', '[UDT][CMD]');
-        return;
+        this.deps.logger.info('Performing Tower Calibration', '[UDT][CMD]');
+        (_a = this.deps.recorder) === null || _a === void 0 ? void 0 : _a.recordEvent('calibration_started');
+        // Set before sending so the calibration-complete response is recognized
+        // even if it arrives before this awaited send resolves.
+        this.deps.bleConnection.performingCalibration = true;
+        this.deps.bleConnection.performingLongCommand = true;
+        try {
+            await this.sendTowerCommand(new Uint8Array([udtConstants_1.TOWER_COMMANDS.calibration]), 'calibrate');
+        }
+        catch (error) {
+            this.deps.bleConnection.performingCalibration = false;
+            this.deps.bleConnection.performingLongCommand = false;
+            throw error;
+        }
     }
     /**
      * Plays a sound from the tower's audio library using stateful commands that preserve existing tower state.
@@ -92,7 +102,7 @@ class UdtTowerCommands {
      * @returns Promise that resolves when sound command is sent
      */
     async playSound(soundIndex) {
-        const invalidIndex = soundIndex === null || soundIndex > (Object.keys(udtConstants_1.TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0;
+        const invalidIndex = !Number.isFinite(soundIndex) || soundIndex > (Object.keys(udtConstants_1.TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0;
         if (invalidIndex) {
             this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, '[UDT][CMD]');
             return;
@@ -273,8 +283,14 @@ class UdtTowerCommands {
     async rotate(top, middle, bottom, soundIndex) {
         this.deps.logDetail && this.deps.logger.debug(`Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`, '[UDT][CMD]');
         const rotateCommand = this.deps.commandFactory.createRotateCommand(top, middle, bottom);
-        if (soundIndex) {
-            rotateCommand[udtConstants_1.AUDIO_COMMAND_POS] = soundIndex;
+        if (soundIndex !== undefined) {
+            const validSoundIndex = Number.isFinite(soundIndex) && soundIndex > 0 && soundIndex <= Object.keys(udtConstants_1.TOWER_AUDIO_LIBRARY).length;
+            if (validSoundIndex) {
+                rotateCommand[udtConstants_1.AUDIO_COMMAND_POS] = soundIndex;
+            }
+            else {
+                this.deps.logger.error(`attempt to play invalid sound index ${soundIndex} during rotate`, '[UDT][CMD]');
+            }
         }
         this.deps.logger.info('Sending rotate command' + (soundIndex ? ' with sound' : ''), '[UDT]');
         // Flag that we're performing a long command 
@@ -301,6 +317,7 @@ class UdtTowerCommands {
             towerState.drum[0].position = topPosition;
             towerState.drum[1].position = middlePosition;
             towerState.drum[2].position = bottomPosition;
+            this.deps.setTowerState(towerState, 'rotate');
         }
     }
     /**
@@ -339,13 +356,10 @@ class UdtTowerCommands {
                 this.deps.bleConnection.performingLongCommand = false;
                 this.deps.bleConnection.lastBatteryHeartbeat = Date.now(); // Reset heartbeat timer
             }, this.deps.bleConnection.longTowerCommandTimeout);
-            // Update drum positions in tower state - with stateful commands we know the exact positions
-            const towerState = this.deps.getCurrentTowerState();
-            if (towerState) {
-                towerState.drum[0].position = positionMap[top];
-                towerState.drum[1].position = positionMap[middle];
-                towerState.drum[2].position = positionMap[bottom];
-            }
+            // Note: drum positions are NOT force-written here. Each rotateDrumStateful()
+            // call above already records its own drum's position via setTowerState() on
+            // success, so re-writing all three unconditionally would mask a partial
+            // failure (a drum that never rotated would be recorded as if it had).
         }
     }
     /**
@@ -374,11 +388,12 @@ class UdtTowerCommands {
      * @returns Promise that resolves when seal break sequence is complete
      */
     async breakSeal(seal, volume) {
+        const currentState = this.deps.getCurrentTowerState();
         // Get the volume to use
-        const actualVolume = volume !== undefined ? volume : this.deps.getCurrentTowerState().audio.volume;
-        // Tower firmware ignores volume in sound commands — set it via state first
-        if (actualVolume > 0) {
-            const currentState = this.deps.getCurrentTowerState();
+        const actualVolume = volume !== undefined ? volume : currentState.audio.volume;
+        // Tower firmware ignores volume in sound commands — set it via state first,
+        // but only if it actually differs from the tower's currently tracked volume.
+        if (actualVolume !== currentState.audio.volume) {
             const stateWithVolume = Object.assign({}, currentState);
             stateWithVolume.audio = { sample: 0, loop: false, volume: actualVolume };
             await this.sendTowerStateStateful(stateWithVolume);
@@ -523,7 +538,7 @@ class UdtTowerCommands {
      * @returns Promise that resolves when command is sent
      */
     async playSoundStateful(soundIndex, loop = false, volume) {
-        const invalidIndex = soundIndex === null || soundIndex > (Object.keys(udtConstants_1.TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0;
+        const invalidIndex = !Number.isFinite(soundIndex) || soundIndex > (Object.keys(udtConstants_1.TOWER_AUDIO_LIBRARY).length) || soundIndex <= 0;
         if (invalidIndex) {
             this.deps.logger.error(`attempt to play invalid sound index ${soundIndex}`, '[UDT][CMD]');
             return;
@@ -586,6 +601,20 @@ class UdtTowerCommands {
         await this.sendTowerCommand(command, 'sendTowerStateStateful');
     }
     //#endregion
+    /**
+     * Updates the detailed-logging flag without discarding the command queue.
+     * @param value - Whether detailed logging is enabled
+     */
+    updateLogDetail(value) {
+        this.deps.logDetail = value;
+    }
+    /**
+     * Updates the max retry count without discarding the command queue.
+     * @param value - New max retry count
+     */
+    updateRetrySendCommandMax(value) {
+        this.deps.retrySendCommandMax = value;
+    }
     /**
      * Public access to sendTowerCommandDirect for testing purposes.
      * This bypasses the command queue and sends commands directly.

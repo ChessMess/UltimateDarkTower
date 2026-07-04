@@ -174,6 +174,13 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
     }
 
     async disconnect(): Promise<void> {
+        // Remove the noble singleton's stateChange listener so repeated
+        // connect/disconnect cycles don't accumulate listeners across calls.
+        if (noble && this.boundStateChangeHandler) {
+            noble.removeListener('stateChange', this.boundStateChangeHandler);
+            this.boundStateChangeHandler = undefined;
+        }
+
         if (!this.peripheral) return;
 
         try {
@@ -334,16 +341,6 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
     }
 
     async cleanup(): Promise<void> {
-        // Remove Noble singleton event listeners
-        if (noble) {
-            if (this.boundStateChangeHandler) {
-                noble.removeListener(
-                    'stateChange',
-                    this.boundStateChangeHandler
-                );
-            }
-        }
-
         // Remove peripheral disconnect listener
         if (this.peripheral && this.boundDisconnectHandler) {
             this.peripheral.removeListener(
@@ -352,11 +349,8 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
             );
         }
 
+        // disconnect() also removes the noble singleton's stateChange listener
         await this.disconnect();
-
-        this.characteristicCallback = undefined;
-        this.disconnectCallback = undefined;
-        this.availabilityCallback = undefined;
     }
 
     /**

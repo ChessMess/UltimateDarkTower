@@ -78,6 +78,16 @@ describe('breakSeal()', () => {
         expect(writes[1][LED_SEQUENCE_BYTE]).toBe(udtConstants_1.TOWER_LIGHT_SEQUENCES.sealReveal);
         expect(writes[1][AUDIO_BYTE] & 0x7f).toBe(udtConstants_1.TOWER_AUDIO_LIBRARY.TowerSeal.value);
     });
+    test('syncs volume when caller requests 0 (Loud) but tracked volume differs', async () => {
+        // Simulate the tower's tracked volume already being 2 (Quiet).
+        darkTower['currentTowerState'].audio.volume = 2;
+        await darkTower.breakSeal({ side: 'north', level: 'middle' }, 0);
+        // Volume differs (2 -> 0), so a sync write must happen before sealReveal,
+        // even though the requested volume (0) is falsy.
+        expect(writes).toHaveLength(2);
+        expect(writes[1][LED_SEQUENCE_BYTE]).toBe(udtConstants_1.TOWER_LIGHT_SEQUENCES.sealReveal);
+        expect(writes[1][AUDIO_BYTE] & 0x7f).toBe(udtConstants_1.TOWER_AUDIO_LIBRARY.TowerSeal.value);
+    });
     test('does not send individual LED effect commands (no manual ledge/doorway writes)', async () => {
         await darkTower.breakSeal({ side: 'north', level: 'middle' });
         // Before refactor: 3 commands (volume, sound, lights). Now: 1.
@@ -89,6 +99,35 @@ describe('breakSeal()', () => {
         await darkTower.breakSeal({ side: 'north', level: 'middle' });
         expect(darkTower.isSealBroken({ side: 'north', level: 'middle' })).toBe(true);
         expect(darkTower.isSealBroken({ side: 'south', level: 'middle' })).toBe(false);
+    });
+});
+describe('sound index validation', () => {
+    let darkTower;
+    let mockAdapter;
+    beforeEach(async () => {
+        mockAdapter = new MockBluetoothAdapter_1.MockBluetoothAdapter();
+        darkTower = new UltimateDarkTower_1.default({ adapter: mockAdapter });
+        darkTower.setLoggerOutputs([]);
+        await darkTower.connect();
+    });
+    afterEach(async () => {
+        await darkTower.disconnect();
+    });
+    test('playSound rejects NaN and undefined sound indexes without sending a command', async () => {
+        await darkTower.playSound(NaN);
+        await darkTower.playSound(undefined);
+        expect(mockAdapter.writeCalls).toBe(0);
+    });
+    test('playSoundStateful rejects NaN and undefined sound indexes without sending a command', async () => {
+        await darkTower.playSoundStateful(NaN, false);
+        await darkTower.playSoundStateful(undefined, false);
+        expect(mockAdapter.writeCalls).toBe(0);
+    });
+    test('rotate() skips an invalid soundIndex byte instead of writing it unchecked', async () => {
+        const writes = setupAutoRespond(mockAdapter);
+        await darkTower.Rotate('north', 'north', 'north', NaN);
+        expect(writes).toHaveLength(1);
+        expect(writes[0][AUDIO_BYTE]).toBe(0);
     });
 });
 //# sourceMappingURL=udtTowerCommands.test.js.map

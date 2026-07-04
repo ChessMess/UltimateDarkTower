@@ -165,18 +165,25 @@ export class DOMOutput implements LogOutput {
     }
 
     private getEnabledLevelsFromCheckboxes(): Set<LogLevel> {
-        const enabledLevels = new Set<LogLevel>();
+        const levelNames: LogLevel[] = ['debug', 'info', 'warn', 'error'];
 
         if (typeof document === 'undefined') {
-            return enabledLevels;
+            return new Set<LogLevel>(levelNames);
         }
 
         // Check for checkboxes with pattern logLevel-{level}
-        const checkboxes = ['debug', 'info', 'warn', 'error'];
-        checkboxes.forEach(level => {
-            const checkbox = document.getElementById(`logLevel-${level}`) as HTMLInputElement;
+        const checkboxes = levelNames.map(level => document.getElementById(`logLevel-${level}`) as HTMLInputElement | null);
+
+        // If none of the expected checkboxes exist on the page, default to
+        // showing everything rather than silently filtering out all output.
+        if (checkboxes.every(checkbox => !checkbox)) {
+            return new Set<LogLevel>(levelNames);
+        }
+
+        const enabledLevels = new Set<LogLevel>();
+        checkboxes.forEach((checkbox, index) => {
             if (checkbox && checkbox.checked) {
-                enabledLevels.add(level as LogLevel);
+                enabledLevels.add(levelNames[index]);
             }
         });
 
