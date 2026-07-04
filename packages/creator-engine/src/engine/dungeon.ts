@@ -6,7 +6,7 @@ import { dir, fault } from './core';
 import { evalCondition } from './conditions';
 import { applyEffect, completeQuest } from './effects';
 import { awardHeroic } from './turn';
-import type { EngineState, Directive, EngineNode, DungeonCursor, DungeonRunState, DungeonRoomDef, NodeResult } from './types';
+import type { EngineState, Directive, EngineNode, NodeOfKind, DungeonCursor, DungeonRunState, DungeonRoomDef, NodeResult } from './types';
 
 export function dungeonState(state: EngineState, id: string): DungeonRunState {
   if (!state.dungeons[id]) state.dungeons[id] = { clearedRooms: [], improvedRooms: [] };
@@ -23,10 +23,10 @@ export function roomOf(state: EngineState, dc: DungeonCursor, roomId: string | n
 
 // Resolve entry into the room a `dungeon.room` node names: gate → insideEvent → (improve boundary) →
 // finalize. Returns {goto}|{await}|{terminal}.
-export function resolveRoomEntry(node: EngineNode, state: EngineState, directives: Directive[]): NodeResult {
+export function resolveRoomEntry(node: NodeOfKind<'dungeon.room'>, state: EngineState, directives: Directive[]): NodeResult {
   const dc = state.clock.dungeon;
   if (!dc) throw fault('dungeon.room walked outside an active dungeon subflow: ' + node.id);
-  const roomId = (node.props || {}).roomId as string | undefined;
+  const roomId = node.props?.roomId;
   if (!roomId) throw fault('dungeon.room missing props.roomId: ' + node.id);
   const room = roomOf(state, dc, roomId);
   dc.currentRoom = roomId;

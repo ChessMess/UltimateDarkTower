@@ -349,59 +349,92 @@ export type EffectOp =
 export type Effect = { op: EffectOp } & Record<string, unknown>;
 
 // ---- nodes (§4.2 closed node-kind vocabulary) ----
-// The catalog of node kinds interpretNode implements. Unknown kinds fault (invariant #4). Node
-// `props`/`wires` shapes are kind-specific; kept open here pending the .ts port.
+// The catalog of node kinds interpretNode implements, modeled as a discriminated union on `kind`
+// with per-variant `props` field shapes (item 5). An unknown kind is a compile error where a node is
+// typed, and still faults at runtime (invariant #4). `props` is REQUIRED on a variant iff the reducer
+// asserts it unconditionally today (`node.props!.x`), matching authored reality; OPTIONAL where the
+// reducer reads defensively (`node.props?.x` / `(node.props || {})`). The 16 props-less kinds carry
+// `props?: never` (authoring props on them is rejected). `wires` stays generic on the base fields —
+// port names vary too unsystematically per kind (out / true|false / N|E|S|W / battle|dungeon|trade|
+// move) to close usefully. Optional-vs-required was cross-checked against golden-fixture.ts's authored
+// literals, not just the reducer's read sites (deferred-followups.md item 5).
 
-export type NodeKind =
-  | 'lifecycle.gameStart'
-  | 'lifecycle.boardSetup'
-  | 'lifecycle.startMonth'
-  | 'lifecycle.playerTurn'
-  | 'lifecycle.actionStart'
-  | 'lifecycle.actionMiddle'
-  | 'lifecycle.actionEnd'
-  | 'lifecycle.newMonthCheck'
-  | 'lifecycle.newQuests'
-  | 'lifecycle.gameEnd'
-  | 'effect.apply'
-  | 'tower.op'
-  | 'cond.branch'
-  | 'cond.check'
-  | 'cond.glyphGate'
-  | 'winloss.mainGoal'
-  | 'winloss.winCondition'
-  | 'winloss.lossCondition'
-  | 'action.banner'
-  | 'action.battle'
-  | 'action.trade'
-  | 'action.move'
-  | 'action.cleanse'
-  | 'action.quest'
-  | 'action.reinforce'
-  | 'battle.selectFoe'
-  | 'battle.applyAdvantage'
-  | 'battle.end'
-  | 'media.narration'
-  | 'dungeon.subflow'
-  | 'dungeon.room'
-  | 'trigger.schedule'
-  | 'trigger.onState'
-  | 'event.foesStrike'
-  | 'event.foesGrow'
-  | 'event.foesSpawn'
-  | 'event.towerStirs'
-  | 'event.towerActs'
-  | 'event.newWares'
-  | 'event.companion'
-  | 'event.readAloud'
-  | 'event.router';
-
-export interface EngineNode {
-  id: string;
-  kind: NodeKind;
-  props?: Record<string, unknown>;
-  wires?: Record<string, string[]>;
+/** end-of-turn trigger table entry (schema `$defs/trigger`; consumed by turn.ts collectDueEvents) */
+export interface TriggerDef {
+  on: 'schedule' | 'onState';
+  month?: number;
+  turn?: number;
+  everyNTurns?: number;
+  event?: string;
 }
+
+type NodeBase = { id: string; wires?: Record<string, string[]> };
+/** a node with no authored props (interpretNode reads none) */
+type PropslessNode<K extends string> = NodeBase & { kind: K; props?: never };
+
+export type EngineNode =
+  | PropslessNode<'lifecycle.gameStart'>
+  | (NodeBase & {
+      kind: 'lifecycle.boardSetup';
+      props?: { spawns?: Array<{ foeId: string; location?: string; status?: FoeStatus }> };
+    })
+  | PropslessNode<'lifecycle.startMonth'>
+  | PropslessNode<'lifecycle.playerTurn'>
+  | PropslessNode<'lifecycle.actionStart'>
+  // props.turn === "full" is the full-turn fidelity discriminator (setup.ts); only ever compared to "full"
+  | (NodeBase & { kind: 'lifecycle.actionMiddle'; props?: { turn?: 'full' } })
+  | PropslessNode<'lifecycle.actionEnd'>
+  | PropslessNode<'lifecycle.newMonthCheck'>
+  | (NodeBase & {
+      kind: 'lifecycle.newQuests';
+      props?: { monthly?: Record<string, Record<string, string>> };
+    })
+  | PropslessNode<'lifecycle.gameEnd'>
+  | (NodeBase & { kind: 'effect.apply'; props: { effects?: Effect[]; effect?: Effect } })
+  | (NodeBase & { kind: 'tower.op'; props: { towerOp: TowerChannelOp } })
+  | (NodeBase & { kind: 'cond.branch'; props: { condition?: Condition } })
+  | (NodeBase & { kind: 'cond.check'; props: { condition?: Condition } })
+  | (NodeBase & { kind: 'cond.glyphGate'; props: { action: string } })
+  | PropslessNode<'winloss.mainGoal'>
+  | (NodeBase & { kind: 'winloss.winCondition'; props: { condition?: Condition } })
+  | (NodeBase & { kind: 'winloss.lossCondition'; props: { condition?: Condition } })
+  | (NodeBase & { kind: 'action.banner'; props: { title: string } })
+  | PropslessNode<'action.battle'>
+  // authored template only (never read by the reducer — the runtime supplies the finalized decision)
+  | (NodeBase & { kind: 'action.trade'; props?: Partial<TradeDecision> })
+  | PropslessNode<'action.move'>
+  | PropslessNode<'action.cleanse'>
+  | (NodeBase & { kind: 'action.quest'; props?: { questId?: string } })
+  | PropslessNode<'action.reinforce'>
+  | PropslessNode<'battle.selectFoe'>
+  | PropslessNode<'battle.applyAdvantage'>
+  | PropslessNode<'battle.end'>
+  | (NodeBase & { kind: 'media.narration'; props: { text: string } })
+  | (NodeBase & { kind: 'dungeon.subflow'; props: { dungeonId: string } })
+  // roomId read defensively in dungeon.ts (faults if absent); golden always authors it
+  | (NodeBase & { kind: 'dungeon.room'; props?: { roomId: string } })
+  | (NodeBase & { kind: 'trigger.schedule'; props?: { trigger: TriggerDef } })
+  | (NodeBase & { kind: 'trigger.onState'; props?: { trigger: TriggerDef } })
+  | (NodeBase & {
+      kind: 'event.foesStrike';
+      props?: { foeIds?: string[]; moves?: Array<{ foeId: string; to: string | null }> };
+    })
+  | (NodeBase & { kind: 'event.foesGrow'; props?: { steps?: number } })
+  | (NodeBase & {
+      kind: 'event.foesSpawn';
+      props?: { spawns?: Array<{ foeId: string; location?: string; status?: FoeStatus }> };
+    })
+  | (NodeBase & { kind: 'event.towerStirs'; props?: { level?: string; removeSeal?: boolean } })
+  | (NodeBase & { kind: 'event.towerActs'; props?: { effects?: Effect[] } })
+  | (NodeBase & { kind: 'event.newWares'; props?: { cards?: unknown[] } })
+  | (NodeBase & { kind: 'event.companion'; props?: { companionId?: string } })
+  | (NodeBase & { kind: 'event.readAloud'; props?: { text?: string } })
+  | PropslessNode<'event.router'>;
+
+/** the closed node-kind catalog, derived from the union's tags (unchanged export surface) */
+export type NodeKind = EngineNode['kind'];
+/** narrow the EngineNode union to a single kind's shape (e.g. for a per-kind helper's parameter) */
+export type NodeOfKind<K extends NodeKind> = Extract<EngineNode, { kind: K }>;
 
 // ---- directives (§5.2 closed vocabulary) ----
 // Each directive type is the `type` discriminant; payloads match what the reducer pushes.

@@ -187,7 +187,7 @@ export function init(scenario: unknown, opts: InitOpts): StepResult {
       monthlyQuestIds: (() => {
         const nq = sc.graph.nodes.find((n) => n.kind === 'lifecycle.newQuests');
         const ids: string[] = [];
-        const monthly = (nq?.props || {}).monthly as Record<string, Record<string, string>> | undefined;
+        const monthly = (nq?.props || {}).monthly;
         if (monthly) for (const m of Object.values(monthly)) for (const v of Object.values(m)) ids.push(v);
         return ids;
       })(),
