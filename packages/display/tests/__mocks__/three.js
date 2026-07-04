@@ -79,6 +79,11 @@ class Vector2 {
     this.x = x;
     this.y = y;
   }
+  set(x, y) {
+    this.x = x;
+    this.y = y;
+    return this;
+  }
 }
 class Vector3 {
   constructor(x = 0, y = 0, z = 0) {
@@ -150,6 +155,12 @@ class Color {
     this.r = r;
     this.g = g;
     this.b = b;
+    return this;
+  }
+  setScalar(s) {
+    this.r = s;
+    this.g = s;
+    this.b = s;
     return this;
   }
   copy(other) {
@@ -436,16 +447,26 @@ class CylinderGeometry {
   dispose() {}
 }
 
+// Real THREE.TextureLoader resolves a Texture with a `center` Vector2 (used
+// by callers like GameBoardImageTexture.ts for `texture.center.set(...)`
+// before setting `rotation`), so the stub mirrors that shape.
+const makeStubTexture = () => ({
+  isTexture: true,
+  dispose() {},
+  image: null,
+  center: new Vector2(0.5, 0.5),
+});
+
 class TextureLoader {
   constructor() {}
   load(_url, onLoad, _onProgress, _onError) {
     // Tests don't need a real texture — return a stub and never fire callbacks.
-    const tex = { isTexture: true, dispose() {}, image: null };
+    const tex = makeStubTexture();
     if (typeof onLoad === 'function') setTimeout(() => onLoad(tex), 0);
     return tex;
   }
   loadAsync(_url) {
-    return Promise.resolve({ isTexture: true, dispose() {}, image: null });
+    return Promise.resolve(makeStubTexture());
   }
 }
 
