@@ -203,6 +203,35 @@ export interface EngineState {
   _lastDraw?: unknown;
 }
 
+// ---- conditions (§4.4 closed predicate vocabulary) ----
+// A loose (not strictly discriminated) shape mirroring the authored condition JSON: allOf/anyOf/not
+// combinators, or a leaf `{subject, comparator, value, key}`. Kept as one interface with optional
+// fields (like `Effect`/`EngineNode`) rather than a discriminated union, since evalCondition's own
+// combinator checks (`if (cond.allOf) ...`) aren't tagged by a common literal field.
+
+export type ConditionSubject =
+  | 'resource'
+  | 'flag'
+  | 'counter'
+  | 'sealsRemoved'
+  | 'foeOnSpace'
+  | 'heroAtLocation'
+  | 'supply'
+  | 'month'
+  | 'endOfMonth';
+
+export type Comparator = 'eq' | 'ne' | 'lt' | 'lte' | 'gt' | 'gte' | 'has' | 'in';
+
+export interface Condition {
+  allOf?: Condition[];
+  anyOf?: Condition[];
+  not?: Condition;
+  subject?: ConditionSubject;
+  comparator?: Comparator;
+  value?: unknown;
+  key?: string;
+}
+
 // ---- effects (§4.3 closed verb vocabulary) ----
 // The authoritative catalog of effect ops the reducer's applyEffect implements. An unknown op faults
 // at runtime (invariant #4). `Effect` keeps the op closed while leaving verb-specific fields open,

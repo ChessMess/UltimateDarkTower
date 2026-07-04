@@ -4,7 +4,7 @@
 
 export * from './engine/types';
 
-import type { EngineState, Input, InitOpts, StepResult } from './engine/types';
+import type { EngineState, Input, InitOpts, StepResult, Condition } from './engine/types';
 
 export declare const ENGINE_VERSION: string;
 export declare const SUPPORTED_SCHEMA_RANGE: string;
@@ -15,7 +15,7 @@ export declare function replay(scenario: unknown, opts: InitOpts, inputs: Input[
 export declare function serialize(state: EngineState): string;
 export declare function deserialize(blob: string): EngineState;
 export declare function digest(state: EngineState): string;
-export declare function evalCondition(condition: unknown, state: EngineState): boolean;
+export declare function evalCondition(condition: Condition | undefined, state: EngineState): boolean;
 
 /** The compact golden regression scenario used by the engine test suites (frozen semantics). */
 export declare const golden: unknown;
