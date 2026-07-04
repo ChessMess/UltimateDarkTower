@@ -84,6 +84,8 @@ export interface AdversaryState {
   advantagesBanked: number;
   questProgress: number;
   battleProgress: number;
+  /** set by the adversary.spawn effect; absent until the adversary actually spawns */
+  location?: string | null;
 }
 
 export interface BattleCard {
@@ -145,6 +147,12 @@ export interface SkullsState {
   onBoard: number;
 }
 
+/** the engine-local pcg32 PRNG's serialized state (BigInt fields stringified for JSON-safety, §6) */
+export interface RngState {
+  state: string;
+  inc: string;
+}
+
 export interface TowerMirror {
   drums: [number, number, number];
   glyphFacing: Record<string, string | null>;
@@ -153,7 +161,8 @@ export interface TowerMirror {
 
 export interface DungeonRunState {
   clearedRooms: string[];
-  improvedRooms: string[];
+  /** lazily added by dungeon.ts's dungeonState() on first access; absent right after quest.spawnDungeon */
+  improvedRooms?: string[];
 }
 
 export interface Outcome {
@@ -186,11 +195,11 @@ export interface EngineState {
   /** Currently issued monthly quests (full-turn scenarios with a lifecycle.newQuests node) */
   activeQuests?: Array<{ questId: string; kind: 'companion' | 'adversary'; expiresMonth: number }>;
   tower: TowerMirror;
-  rng: string;
+  rng: RngState;
   outcome: Outcome;
   // Load-time private fields (present at runtime; do not construct or mutate)
   _nodes: Record<string, EngineNode>;
-  _lib: unknown;
+  _lib: ScenarioLibrary;
   _spine: Record<string, string | undefined>;
   _setup: {
     monthEnd: unknown;
@@ -230,6 +239,59 @@ export interface Condition {
   comparator?: Comparator;
   value?: unknown;
   key?: string;
+}
+
+// ---- scenario library (setup.library) ----
+// The injected content the reducer reads by id — quests/tokens/buildings/foes/battle defs/dungeons.
+// Modeled once here (rather than `unknown` + per-callsite casts) since five modules (effects, turn,
+// battle, dungeon, nodes) all read it. Sub-shapes stay loose (optional fields, `unknown` for opaque
+// display/bitmap data) — this mirrors authored content, not a strict schema.
+
+export interface TokenTypeDef {
+  removable?: boolean;
+  threshold?: { at: number; onReach?: Effect[] };
+}
+export interface BuildingTypeDef {
+  skullCapacity?: number;
+}
+export interface QuestDef {
+  outcomes?: { success?: Effect[]; failure?: Effect[] };
+  isMainGoal?: boolean;
+}
+export interface CompanionDef {
+  grantedByQuestId?: string;
+}
+export interface FoeDef {
+  level?: number;
+  strike?: { effects?: Effect[] };
+}
+export interface BattleDef {
+  cards?: BattleCard[];
+}
+export interface DungeonRoomDef {
+  id: string;
+  bitmapSlice?: unknown;
+  displayText?: string;
+  isTarget?: boolean;
+  enterRequirement?: { condition?: Condition; spiritCost?: number; onFail?: Effect[] };
+  insideEvent?: Effect[];
+  improveOnce?: { effects: Effect[] };
+  exits?: Partial<Record<CardinalDirection, string>>;
+}
+export interface DungeonDef {
+  rooms?: DungeonRoomDef[];
+  spawningQuestId?: string;
+  idleLight?: string;
+  ambientSoundCategory?: string;
+}
+export interface ScenarioLibrary {
+  tokenTypes?: Record<string, TokenTypeDef>;
+  buildingTypes?: Record<string, BuildingTypeDef>;
+  quests?: Record<string, QuestDef>;
+  companions?: Record<string, CompanionDef>;
+  foes?: Record<string, FoeDef>;
+  battleDefs?: Record<string, BattleDef>;
+  dungeons?: Record<string, DungeonDef>;
 }
 
 // ---- effects (§4.3 closed verb vocabulary) ----
