@@ -1,21 +1,18 @@
-// run.js — the deterministic run loop: drive interpretNode from the cursor until an input boundary,
+// run.ts — the deterministic run loop: drive interpretNode from the cursor until an input boundary,
 // a terminal outcome, or an end-of-turn event chain drains back to the stashed turn spine. A guard
 // bounds runaway graphs. Depends on core (fault), nodes (interpretNode), and turn (rotateActiveHero).
 
-const { fault } = require('./core');
-const { interpretNode } = require('./nodes');
-const { rotateActiveHero } = require('./turn');
+import { fault } from './core';
+import { interpretNode } from './nodes';
+import { rotateActiveHero } from './turn';
+import type { EngineState, Directive, Status } from './types';
 
-function run(state, directives) {
+export function run(state: EngineState, directives: Directive[]): Status {
   // safety bound so a malformed graph can't spin forever
   for (let guard = 0; guard < 100000; guard++) {
-    if (
-      state.outcome.status === 'won' ||
-      state.outcome.status === 'lost' ||
-      state.outcome.status === 'ended'
-    )
+    if (state.outcome.status === 'won' || state.outcome.status === 'lost' || state.outcome.status === 'ended')
       return state.outcome.status;
-    const node = state._nodes[state.clock.cursor];
+    const node = state._nodes[state.clock.cursor as string];
     if (!node) {
       state.outcome.status = 'ended';
       return 'ended';
@@ -27,6 +24,9 @@ function run(state, directives) {
       return 'awaitingInput';
     }
     if (r.terminal) return state.outcome.status;
+    // NOTE: `r.end` is never actually set by any producer (interpretNode/dungeon.ts always return
+    // {goto}/{await}/{terminal}, or {} from event.router) — this check is effectively dead, kept
+    // exactly as the original reducer wrote it rather than simplified away.
     if (r.end || r.goto === undefined) {
       // an end-of-turn event chain ran off its last node: pop the next due chain, then resume
       // the turn spine (rotate + goto) stashed before the events fired.
@@ -50,5 +50,3 @@ function run(state, directives) {
   }
   throw fault('run loop exceeded guard (graph cycle without progress?)');
 }
-
-module.exports = { run };
