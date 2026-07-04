@@ -3,8 +3,8 @@
 // foes grow, tower stirs, new wares, …), then the turn spine resumes. Deterministic order,
 // skull-invariant safe, and inert for legacy scenarios with no trigger nodes.
 
-const engine = require("../src/engine");
-const { golden, goldenFull } = require("../src/golden-fixture");
+const engine = require("../dist/engine");
+const { golden, goldenFull } = require("../dist/golden-fixture");
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log("PASS  " + name); } else { fail++; console.log("XXXX  " + name + (extra ? "  — " + extra : "")); } }

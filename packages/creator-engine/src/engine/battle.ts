@@ -1,17 +1,21 @@
-// battle.js — the battle subflow (§4 row 157): draw cards = foe level from the authored battleDef,
+// battle.ts — the battle subflow (§4 row 157): draw cards = foe level from the authored battleDef,
 // spend Advantages, fire cleared cards' onResolve, tally strikes as warrior loss, then defeat/escalate
 // (the adversary banks Advantages and may retreat). Depends on core, effects, and turn (heroic reward).
 
-const { dir, fault } = require('./core');
-const { applyEffect, winGame, raiseEvent, shuffleInPlace } = require('./effects');
-const { awardHeroic } = require('./turn');
+import { dir, fault } from './core';
+import { applyEffect, winGame, raiseEvent, shuffleInPlace } from './effects';
+import { awardHeroic } from './turn';
+import type { EngineState, Directive, Input } from './types';
+
+type TargetSel = Extract<Input, { requestId: 'target' }>['value'];
+type AdvantageSpendDecision = Extract<Input, { requestId: 'advantageSpend' }>['value'];
 
 // ---------- battle subflow (§4 row 157; runs on AUTHORED battleDefs.cards, §389.3) ----------
 // startBattle: select foe → draw cards = foe level (2–4; adversary 5) from the authored battleDef.
-function startBattle(state, directives, sel) {
+export function startBattle(state: EngineState, directives: Directive[], sel: TargetSel): void {
   const isAdversary = sel.foeId === state.adversary.foeId || sel.adversary === true;
   const foeId = isAdversary ? state.adversary.foeId : sel.foeId;
-  const def = (state._lib.battleDefs || {})[foeId];
+  const def = foeId ? (state._lib.battleDefs || {})[foeId] : undefined;
   // a battle with no authored cards would "clear" instantly (0 of 0) — fail loudly instead
   if (!def || !(def.cards || []).length)
     throw fault("foe '" + foeId + "' has no authored battleDef cards");
@@ -31,9 +35,7 @@ function startBattle(state, directives, sel) {
       if (!state.adversary.spawned)
         throw fault('battle: the adversary has not spawned (complete the main goal first)');
       if (state.adversary.location !== hero.location)
-        throw fault(
-          'battle: the adversary is at ' + state.adversary.location + ', not on your space',
-        );
+        throw fault('battle: the adversary is at ' + state.adversary.location + ', not on your space');
     } else if (!targetFoe || targetFoe.location !== hero.location) {
       throw fault('battle: no ' + foeId + ' on your space (' + (hero.location || 'nowhere') + ')');
     }
@@ -42,11 +44,11 @@ function startBattle(state, directives, sel) {
   // the _lib.foes level read remains as the fallback for direct __internals test states.
   const level = isAdversary
     ? 5
-    : ((state._setup || {}).foeTiers || {})[foeId] ||
-      ((state._lib.foes || {})[foeId] || {}).level ||
+    : (foeId ? (state._setup?.foeTiers || {})[foeId] : undefined) ||
+      (foeId ? (state._lib.foes || {})[foeId]?.level : undefined) ||
       2;
   // draw `level` cards deterministically from the authored card pool (cycle if fewer)
-  const pool = def.cards.slice();
+  const pool = def.cards!.slice();
   shuffleInPlace(pool, state);
   const cards = [];
   for (let i = 0; i < level && pool.length; i++) cards.push(pool[i % pool.length]);
@@ -58,7 +60,7 @@ function startBattle(state, directives, sel) {
   // narrows the later verbs to one instance.
   const resolvedInstanceId = sel.instanceId && targetFoe ? targetFoe.instanceId : undefined;
   state.clock.battle = {
-    foeId,
+    foeId: foeId as string,
     instanceId: resolvedInstanceId,
     isAdversary,
     level,
@@ -76,7 +78,7 @@ function startBattle(state, directives, sel) {
 // resolveBattle: apply spent Advantages (capped 10/action and by the hero pool), fire each cleared
 // card's onResolve, tally remaining strikes as warrior loss, then defeat / escalate. The adversary
 // banks applied Advantages across battles (cumulative) and allows retreat after ≥1 card.
-function resolveBattle(state, directives, decision) {
+export function resolveBattle(state: EngineState, directives: Directive[], decision: AdvantageSpendDecision): void {
   const b = state.clock.battle;
   if (!b) throw fault('resolveBattle with no active battle');
   const hero = state.heroes[state.clock.activeHero];
@@ -86,7 +88,7 @@ function resolveBattle(state, directives, decision) {
     dir(directives, 'log.entry', { event: 'retreat', foeId: b.foeId });
     return;
   }
-  const spend = Math.min(decision.spend | 0, 10, hero.advantages | 0); // ≤10/action, no undo
+  const spend = Math.min((decision.spend || 0) | 0, 10, hero.advantages | 0); // ≤10/action, no undo
   // Full-turn scenarios deduct the spent Advantages from the hero's pool (rules.md §Battle: spent
   // Advantages are gone). Legacy scenarios keep the frozen no-deduct behavior so `golden` and the
   // __internals verb states stay byte-identical.
@@ -116,19 +118,14 @@ function resolveBattle(state, directives, decision) {
     remainingStrikes += s;
     if (state.outcome.status !== 'running') break;
   }
-  if (b.isAdversary)
-    state.adversary.advantagesBanked = (state.adversary.advantagesBanked || 0) + spend; // persists
+  if (b.isAdversary) state.adversary.advantagesBanked = (state.adversary.advantagesBanked || 0) + spend; // persists
   // if an onResolve effect already decided the game, do not run the strike/defeat tail on top of it
   if (state.outcome.status !== 'running') {
     state.clock.battle = null;
     return;
   }
   if (remainingStrikes > 0)
-    applyEffect(
-      { op: 'resource.lose', resource: 'warriors', amount: remainingStrikes },
-      state,
-      directives,
-    );
+    applyEffect({ op: 'resource.lose', resource: 'warriors', amount: remainingStrikes }, state, directives);
   if (state.outcome.status !== 'running') {
     // warrior-loss shortfall drove a corruption loss — don't overwrite it with a defeat win
     state.clock.battle = null;
@@ -149,16 +146,9 @@ function resolveBattle(state, directives, decision) {
       applyEffect({ op: 'foe.remove', foeId: b.foeId, instanceId: b.instanceId }, state, directives);
     }
   } else if (state.outcome.status === 'running') {
-    applyEffect(
-      { op: 'foe.escalateStatus', foeId: b.foeId, instanceId: b.instanceId },
-      state,
-      directives,
-    );
+    applyEffect({ op: 'foe.escalateStatus', foeId: b.foeId, instanceId: b.instanceId }, state, directives);
   }
   // full turn: the battle heroic action is complete (all cards resolved) → +2 spirit (rules.md §100)
-  if (state._setup && state._setup.fullTurn && state.outcome.status === 'running')
-    awardHeroic(state, directives);
+  if (state._setup && state._setup.fullTurn && state.outcome.status === 'running') awardHeroic(state, directives);
   state.clock.battle = null;
 }
-
-module.exports = { startBattle, resolveBattle };

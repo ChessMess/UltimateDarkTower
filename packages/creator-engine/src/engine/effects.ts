@@ -1,18 +1,25 @@
-// effects.js — the §4.3 effect-verb instruction set (applyEffect, discriminated on `op`) plus its
+// effects.ts — the §4.3 effect-verb instruction set (applyEffect, discriminated on `op`) plus its
 // direct helpers: corruption/quest/event bookkeeping, win/loss transitions, deck shuffle/draw, and
 // the buildings-registry helpers. Mutates EngineState and pushes directives; never reaches into the
 // flow layer (nodes/resume/turn/battle/dungeon). Depends only on core + the engine-local pcg32.
 
-const pcg32 = require('../pcg32');
-const { dir, fault } = require('./core');
+import pcg32 from '../pcg32';
+import { dir, fault } from './core';
+import type { EngineState, Effect, Directive, HeroState, BuildingState, FoeStatus } from './types';
 
 // ---------- effect verbs (§4.3, MVP subset) ----------
 // Each returns nothing; mutates state, pushes directives. Loss-on-3rd-corruption and
 // empty-supply checks fire inline exactly where the contract says (§4.3, §4.5).
-const FOE_LADDER = ['panicked', 'unsteady', 'ready', 'savage', 'lethal'];
+export const FOE_LADDER: FoeStatus[] = ['panicked', 'unsteady', 'ready', 'savage', 'lethal'];
+
+// a small helper to narrow the loose Effect payload to the specific fields a case needs, without
+// modeling a full per-op discriminated union (deferred — see planning/engine-deferred-followups.md
+// item 5). Justified because `op` (the real discriminant) is already narrowed by the switch.
+type Eff<T extends object> = Effect & T;
+type HeroRecord = Record<string, number>;
 
 // Deterministic Fisher–Yates using the engine PRNG; advances + reserializes RNG state (§6).
-function shuffleInPlace(arr, state) {
+export function shuffleInPlace(arr: unknown[], state: EngineState): void {
   const rng = pcg32.deserialize(state.rng);
   for (let i = arr.length - 1; i > 0; i--) {
     const j = pcg32.nextRange(rng, 0, i);
@@ -22,7 +29,7 @@ function shuffleInPlace(arr, state) {
   }
   state.rng = pcg32.serialize(rng);
 }
-function getDeck(state, name) {
+export function getDeck(state: EngineState, name: string): { draw: unknown[]; discard: unknown[] } {
   if (!state.decks[name]) state.decks[name] = { draw: [], discard: [] };
   return state.decks[name];
 }
@@ -30,65 +37,76 @@ function getDeck(state, name) {
 // The full §4.3 instruction set, discriminated on `op`. "Mutation" = EngineState change;
 // directives are handed to the host. Board-touching verbs update nothing physical here
 // (headless) — they emit board.mutate for Board's reducer when it lands (§5.2, §10.5).
-function applyEffect(eff, state, directives) {
+export function applyEffect(eff: Effect, state: EngineState, directives: Directive[]): void {
   const hero = state.heroes[state.clock.activeHero];
-  const ui = (delta) => dir(directives, 'ui.update', { delta });
+  const heroRec = hero as unknown as HeroRecord;
+  const ui = (delta: Record<string, unknown>) => dir(directives, 'ui.update', { delta });
   switch (eff.op) {
     // ----- resources & hero state -----
-    case 'resource.gain':
-      hero[eff.resource] = (hero[eff.resource] || 0) + eff.amount;
-      ui({ hero: state.clock.activeHero, [eff.resource]: hero[eff.resource] });
+    case 'resource.gain': {
+      const e = eff as Eff<{ resource: string; amount: number }>;
+      heroRec[e.resource] = (heroRec[e.resource] || 0) + e.amount;
+      ui({ hero: state.clock.activeHero, [e.resource]: heroRec[e.resource] });
       break;
+    }
     case 'resource.lose': {
       // mandatory; shortfall → util.catch → one corruption
-      const short = eff.amount - (hero[eff.resource] || 0);
-      hero[eff.resource] = Math.max(0, (hero[eff.resource] || 0) - eff.amount);
-      ui({ hero: state.clock.activeHero, [eff.resource]: hero[eff.resource] });
+      const e = eff as Eff<{ resource: string; amount: number }>;
+      const short = e.amount - (heroRec[e.resource] || 0);
+      heroRec[e.resource] = Math.max(0, (heroRec[e.resource] || 0) - e.amount);
+      ui({ hero: state.clock.activeHero, [e.resource]: heroRec[e.resource] });
       if (short > 0) gainCorruption(state, directives, 'shortfall');
       break;
     }
     case 'resource.spend': {
       // optional; blocked if unaffordable
-      if ((hero[eff.resource] || 0) < eff.amount)
-        throw fault('cannot afford resource.spend ' + eff.resource);
-      hero[eff.resource] -= eff.amount;
-      ui({ hero: state.clock.activeHero, [eff.resource]: hero[eff.resource] });
+      const e = eff as Eff<{ resource: string; amount: number }>;
+      if ((heroRec[e.resource] || 0) < e.amount)
+        throw fault('cannot afford resource.spend ' + e.resource);
+      heroRec[e.resource] -= e.amount;
+      ui({ hero: state.clock.activeHero, [e.resource]: heroRec[e.resource] });
       break;
     }
-    case 'corruption.gain':
-      gainCorruption(state, directives, eff.source || 'effect');
+    case 'corruption.gain': {
+      const e = eff as Eff<{ source?: string }>;
+      gainCorruption(state, directives, e.source || 'effect');
       break;
-    case 'corruption.remove':
-      hero.corruption = eff.all ? 0 : Math.max(0, hero.corruption - (eff.count || 0));
+    }
+    case 'corruption.remove': {
+      const e = eff as Eff<{ all?: boolean; count?: number }>;
+      hero.corruption = e.all ? 0 : Math.max(0, hero.corruption - (e.count || 0));
       ui({ hero: state.clock.activeHero, corruption: hero.corruption });
       break;
+    }
     case 'virtue.activate': {
+      const e = eff as Eff<{ virtue?: string }>;
       if (hero.virtues.inactive.length === 0) throw fault('no inactive virtue to activate');
-      const v =
-        eff.virtue && hero.virtues.inactive.includes(eff.virtue)
-          ? eff.virtue
-          : hero.virtues.inactive[0];
+      const v = e.virtue && hero.virtues.inactive.includes(e.virtue) ? e.virtue : hero.virtues.inactive[0];
       hero.virtues.inactive = hero.virtues.inactive.filter((x) => x !== v);
       hero.virtues.active.push(v);
-      if (!eff.virtue)
-        dir(directives, 'ui.prompt', { kind: 'choice', text: 'Activate which virtue?' });
+      if (!e.virtue) dir(directives, 'ui.prompt', { kind: 'choice', text: 'Activate which virtue?' });
       ui({ hero: state.clock.activeHero, virtues: hero.virtues });
       break;
     }
-    case 'virtue.grant':
-      hero.virtues.active.push(eff.virtue);
+    case 'virtue.grant': {
+      const e = eff as Eff<{ virtue: string }>;
+      hero.virtues.active.push(e.virtue);
       ui({ hero: state.clock.activeHero, virtues: hero.virtues });
       break;
+    }
     case 'item.gain': {
-      const bucket = {
-        gear: 'gear',
-        treasure: 'treasure',
-        potion: 'potions',
-        questItem: 'questItems',
-      }[eff.itemType];
-      if (!bucket) throw fault('unknown itemType ' + eff.itemType);
-      hero.items[bucket].push(eff.item || eff.itemType + ':' + (hero.items[bucket].length + 1));
-      if (eff.from) dir(directives, 'ui.update', { delta: { drew: eff.from } });
+      const e = eff as Eff<{ itemType: string; item?: string; from?: string }>;
+      const bucket = (
+        {
+          gear: 'gear',
+          treasure: 'treasure',
+          potion: 'potions',
+          questItem: 'questItems',
+        } as Record<string, keyof HeroState['items']>
+      )[e.itemType];
+      if (!bucket) throw fault('unknown itemType ' + e.itemType);
+      hero.items[bucket].push(e.item || e.itemType + ':' + (hero.items[bucket].length + 1));
+      if (e.from) dir(directives, 'ui.update', { delta: { drew: e.from } });
       ui({ hero: state.clock.activeHero, items: hero.items });
       break;
     }
@@ -103,54 +121,58 @@ function applyEffect(eff, state, directives) {
       break;
     }
     // ----- foes & adversary -----
-    case 'foe.spawn':
+    case 'foe.spawn': {
+      const e = eff as Eff<{ foeId: string; status?: FoeStatus; location?: string | null }>;
       state.foes.push({
         instanceId: 'foe-' + (state.foes.length + 1),
-        foeId: eff.foeId,
-        status: eff.status || 'ready',
-        location: eff.location || null,
+        foeId: e.foeId,
+        status: e.status || 'ready',
+        location: e.location || null,
       });
       dir(directives, 'board.mutate', {
         command: 'spawnFoe',
-        args: { foeId: eff.foeId, location: eff.location },
+        args: { foeId: e.foeId, location: e.location },
       });
-      ui({ foe: eff.foeId });
+      ui({ foe: e.foeId });
       break;
+    }
     case 'foe.move': {
-      const f = state.foes.find((x) => x.foeId === eff.foeId);
-      if (f) f.location = eff.to;
+      const e = eff as Eff<{ foeId: string; to: string | null }>;
+      const f = state.foes.find((x) => x.foeId === e.foeId);
+      if (f) f.location = e.to;
       dir(directives, 'board.mutate', {
         command: 'moveFoe',
-        args: { foeId: eff.foeId, to: eff.to },
+        args: { foeId: e.foeId, to: e.to },
       });
       break;
     }
-    case 'foe.remove':
+    case 'foe.remove': {
+      const e = eff as Eff<{ foeId?: string; instanceId?: string }>;
       // an explicit instanceId (set when the battle target was disambiguated, deferred item 1)
       // removes only that instance; otherwise falls back to removing every matching foeId, which
       // is exactly today's behavior for scenarios/streams that never disambiguate.
-      state.foes = eff.instanceId
-        ? state.foes.filter((x) => x.instanceId !== eff.instanceId)
-        : state.foes.filter((x) => x.foeId !== eff.foeId);
-      dir(directives, 'board.mutate', { command: 'removeFoe', args: { foeId: eff.foeId } });
-      break;
-    case 'foe.escalateStatus': {
-      const f = eff.instanceId
-        ? state.foes.find((x) => x.instanceId === eff.instanceId)
-        : state.foes.find((x) => x.foeId === eff.foeId);
-      if (f)
-        f.status =
-          FOE_LADDER[
-            Math.min(FOE_LADDER.length - 1, FOE_LADDER.indexOf(f.status) + (eff.steps || 1))
-          ];
-      ui({ foe: eff.foeId });
+      state.foes = e.instanceId
+        ? state.foes.filter((x) => x.instanceId !== e.instanceId)
+        : state.foes.filter((x) => x.foeId !== e.foeId);
+      dir(directives, 'board.mutate', { command: 'removeFoe', args: { foeId: e.foeId } });
       break;
     }
-    case 'adversary.spawn':
+    case 'foe.escalateStatus': {
+      const e = eff as Eff<{ foeId?: string; instanceId?: string; steps?: number }>;
+      const f = e.instanceId
+        ? state.foes.find((x) => x.instanceId === e.instanceId)
+        : state.foes.find((x) => x.foeId === e.foeId);
+      if (f)
+        f.status = FOE_LADDER[Math.min(FOE_LADDER.length - 1, FOE_LADDER.indexOf(f.status) + (e.steps || 1))];
+      ui({ foe: e.foeId });
+      break;
+    }
+    case 'adversary.spawn': {
+      const e = eff as Eff<{ location?: string }>;
       state.adversary.spawned = true;
       // the adversary spawns ON the board (rules.md §Completing the Main Goal) — at the authored
       // location, defaulting to the Tower space; heroes must reach it for the final battle.
-      state.adversary.location = eff.location || 'the-tower';
+      state.adversary.location = e.location || 'the-tower';
       dir(directives, 'board.mutate', {
         command: 'spawnAdversary',
         args: { foeId: state.adversary.foeId, location: state.adversary.location },
@@ -161,77 +183,84 @@ function applyEffect(eff, state, directives) {
       ui({ adversarySpawned: true, adversaryLocation: state.adversary.location });
       raiseEvent(state, directives, 'adversarySpawned');
       break;
+    }
     // ----- tokens & counters -----
-    case 'token.place':
-      state.tokens.push({ tokenTypeId: eff.tokenTypeId, target: eff.target });
+    case 'token.place': {
+      const e = eff as Eff<{ tokenTypeId: string; target: unknown }>;
+      state.tokens.push({ tokenTypeId: e.tokenTypeId, target: e.target });
       dir(directives, 'board.mutate', {
         command: 'placeToken',
-        args: { tokenTypeId: eff.tokenTypeId, target: eff.target },
+        args: { tokenTypeId: e.tokenTypeId, target: e.target },
       });
       break;
+    }
     case 'token.counterIncrement': {
-      const who = eff.hero || state.clock.activeHero;
+      const e = eff as Eff<{ hero?: string; tokenTypeId: string; amount?: number }>;
+      const who = e.hero || state.clock.activeHero;
       const h = state.heroes[who];
-      const key = eff.tokenTypeId;
-      h.counters[key] = (h.counters[key] || 0) + (eff.amount || 1);
+      const key = e.tokenTypeId;
+      h.counters[key] = (h.counters[key] || 0) + (e.amount || 1);
       ui({ hero: who, counter: key, value: h.counters[key] });
-      const cfg = ((state._lib.tokenTypes || {})[eff.tokenTypeId] || {}).threshold;
+      const cfg = (state._lib.tokenTypes || {})[e.tokenTypeId]?.threshold;
       if (cfg && h.counters[key] >= cfg.at) {
         h.counters[key] = 0;
-        for (const e of cfg.onReach || []) {
-          applyEffect(e, state, directives);
+        for (const nested of cfg.onReach || []) {
+          applyEffect(nested, state, directives);
           if (state.outcome.status !== 'running') break; // threshold effect ended the game
         }
       }
       break;
     }
     case 'token.remove': {
-      const cfg = (state._lib.tokenTypes || {})[eff.tokenTypeId] || {};
-      if (cfg.removable === false) throw fault('token ' + eff.tokenTypeId + ' is not removable');
+      const e = eff as Eff<{ tokenTypeId: string; target: unknown }>;
+      const cfg = (state._lib.tokenTypes || {})[e.tokenTypeId] || {};
+      if (cfg.removable === false) throw fault('token ' + e.tokenTypeId + ' is not removable');
       state.tokens = state.tokens.filter(
-        (t) =>
-          !(
-            t.tokenTypeId === eff.tokenTypeId &&
-            JSON.stringify(t.target) === JSON.stringify(eff.target)
-          ),
+        (t) => !(t.tokenTypeId === e.tokenTypeId && JSON.stringify(t.target) === JSON.stringify(e.target)),
       );
       dir(directives, 'board.mutate', {
         command: 'removeToken',
-        args: { tokenTypeId: eff.tokenTypeId, target: eff.target },
+        args: { tokenTypeId: e.tokenTypeId, target: e.target },
       });
       break;
     }
     // ----- hero / board placement -----
     case 'hero.placeOrMove': {
-      const heroId = eff.hero || state.clock.activeHero;
-      state.heroes[heroId].location = eff.to ?? null;
-      dir(directives, 'board.mutate', { command: 'placeHero', args: { hero: heroId, to: eff.to } });
+      const e = eff as Eff<{ hero?: string; to?: string | null }>;
+      const heroId = e.hero || state.clock.activeHero;
+      state.heroes[heroId].location = e.to ?? null;
+      dir(directives, 'board.mutate', { command: 'placeHero', args: { hero: heroId, to: e.to } });
       break;
     }
-    case 'board.placeMonument':
-      state.monuments.push(eff.location);
+    case 'board.placeMonument': {
+      const e = eff as Eff<{ location: unknown }>;
+      state.monuments.push(e.location);
       dir(directives, 'board.mutate', {
         command: 'placeMonument',
-        args: { location: eff.location },
+        args: { location: e.location },
       });
       break;
-    case 'board.placeMarker':
-      state.markers.push({ location: eff.location, markerType: eff.markerType });
+    }
+    case 'board.placeMarker': {
+      const e = eff as Eff<{ location: unknown; markerType: string }>;
+      state.markers.push({ location: e.location, markerType: e.markerType });
       dir(directives, 'board.mutate', {
         command: 'placeMarker',
-        args: { location: eff.location, markerType: eff.markerType },
+        args: { location: e.location, markerType: e.markerType },
       });
       break;
+    }
     // ----- skulls & buildings (scenario-determined only; emergence is observed) -----
-    case 'skull.place':
-      state.skulls.supply -= eff.count;
+    case 'skull.place': {
+      const e = eff as Eff<{ count: number; kingdom?: BuildingState['kingdom']; chooser?: string }>;
+      state.skulls.supply -= e.count;
       if (state.buildings) {
         // registry model: each scenario-placed skull lands on a standing building of the named
         // kingdom (least-loaded first, like emergence), increments onBoard, and destroys the
         // building when its skulls exceed capacity — so authored skulls behave like emergent ones
         // (visible to cleanse, can raze a building). Byte-frozen `golden` has no registry → else.
-        for (let i = 0; i < eff.count; i++) {
-          const b = pickBuildingForSkull(state, eff.kingdom ? { kingdom: eff.kingdom } : null);
+        for (let i = 0; i < e.count; i++) {
+          const b = pickBuildingForSkull(state, e.kingdom ? { kingdom: e.kingdom } : null);
           if (!b) {
             dir(directives, 'board.mutate', { command: 'placeSkull', args: { source: 'effect' } });
             continue;
@@ -257,31 +286,33 @@ function applyEffect(eff, state, directives) {
       } else {
         dir(directives, 'ui.prompt', {
           kind: 'choice',
-          text: 'Choose building for ' + eff.count + ' skull(s)',
+          text: 'Choose building for ' + e.count + ' skull(s)',
         });
         dir(directives, 'board.mutate', {
           command: 'placeSkull',
-          args: { count: eff.count, kingdom: eff.kingdom, chooser: eff.chooser || 'homeOwner' },
+          args: { count: e.count, kingdom: e.kingdom, chooser: e.chooser || 'homeOwner' },
         });
       }
       if (state.skulls.supply <= 0) loseGame(state, directives, 'empty-supply');
       break;
-    case 'skull.remove':
-      state.skulls.supply += eff.count;
-      state.skulls.onBoard = Math.max(0, state.skulls.onBoard - eff.count);
-      dir(directives, 'board.mutate', { command: 'removeSkull', args: { count: eff.count } });
+    }
+    case 'skull.remove': {
+      const e = eff as Eff<{ count: number }>;
+      state.skulls.supply += e.count;
+      state.skulls.onBoard = Math.max(0, state.skulls.onBoard - e.count);
+      dir(directives, 'board.mutate', { command: 'removeSkull', args: { count: e.count } });
       ui({ supply: state.skulls.supply });
       break;
+    }
     case 'building.destroy': {
+      const e = eff as Eff<{ location?: string; kingdom?: BuildingState['kingdom'] }>;
       // Registry sync: mark the standing building destroyed and clear its on-board skulls. The
       // emergence + skull.place paths pre-mark the building (destroyed=true, skulls=0) before
       // delegating here, so this stays a no-op for them; a directly-authored destroy on a standing
       // building is the case that previously left the registry out of sync.
       const bd =
-        (state.buildings || []).find((x) => x.location === eff.location) ||
-        (eff.kingdom
-          ? (state.buildings || []).find((x) => x.kingdom === eff.kingdom && !x.destroyed)
-          : undefined);
+        (state.buildings || []).find((x) => x.location === e.location) ||
+        (e.kingdom ? (state.buildings || []).find((x) => x.kingdom === e.kingdom && !x.destroyed) : undefined);
       if (bd && !bd.destroyed) {
         state.skulls.onBoard = Math.max(0, (state.skulls.onBoard || 0) - bd.skulls);
         bd.skulls = 0;
@@ -290,75 +321,85 @@ function applyEffect(eff, state, directives) {
       state.skulls.supply += 1; // the 4th skull returns to supply
       dir(directives, 'board.mutate', {
         command: 'removeBuilding',
-        args: { location: eff.location },
+        args: { location: e.location },
       });
       raiseEvent(state, directives, 'buildingDestroyed');
-      const kingdom = eff.kingdom;
-      const dormant = state.kingdoms.dormant.includes(kingdom);
+      const kingdom = e.kingdom;
+      const dormant = kingdom ? state.kingdoms.dormant.includes(kingdom) : false;
       // the hero whose home kingdom lost the building gains the corruption (none if dormant)
       if (!dormant)
-        gainCorruption(
-          state,
-          directives,
-          'building-destroyed',
-          kingdom && state.kingdoms.ownership[kingdom],
-        );
+        gainCorruption(state, directives, 'building-destroyed', kingdom ? state.kingdoms.ownership[kingdom] : undefined);
       break;
     }
-    case 'skull.modifySupply':
-      state.skulls.supply += eff.delta;
+    case 'skull.modifySupply': {
+      const e = eff as Eff<{ delta: number }>;
+      state.skulls.supply += e.delta;
       ui({ supply: state.skulls.supply });
       break;
+    }
     // ----- decks & market -----
     case 'deck.draw': {
-      const d = getDeck(state, eff.deck);
+      const e = eff as Eff<{ deck: string }>;
+      const d = getDeck(state, e.deck);
       if (d.draw.length === 0)
-        throw fault("deck '" + eff.deck + "' empty (explicit deck.reshuffle required, §4.3)");
+        throw fault("deck '" + e.deck + "' empty (explicit deck.reshuffle required, §4.3)");
       const card = d.draw.shift();
       state._lastDraw = card;
-      ui({ deck: eff.deck, drew: card });
+      ui({ deck: e.deck, drew: card });
       break;
     }
     case 'deck.discard': {
-      const d = getDeck(state, eff.deck);
-      d.discard.push(eff.card || state._lastDraw);
+      const e = eff as Eff<{ deck: string; card?: unknown }>;
+      const d = getDeck(state, e.deck);
+      d.discard.push(e.card || state._lastDraw);
       break;
     }
     case 'deck.reshuffle': {
-      const d = getDeck(state, eff.deck);
+      const e = eff as Eff<{ deck: string }>;
+      const d = getDeck(state, e.deck);
       d.draw = d.draw.concat(d.discard);
       d.discard = [];
       shuffleInPlace(d.draw, state);
       break;
     }
-    case 'market.refresh':
-      state.market = eff.cards || ['t1', 't2', 't3', 't4'];
+    case 'market.refresh': {
+      const e = eff as Eff<{ cards?: unknown[] }>;
+      state.market = e.cards || ['t1', 't2', 't3', 't4'];
       ui({ market: state.market });
       break;
-    case 'market.acquireReplace':
+    }
+    case 'market.acquireReplace': {
       dir(directives, 'ui.prompt', { kind: 'choice', text: 'Acquire / replace a market card' });
       ui({ market: state.market });
       break;
+    }
     // ----- quests & seals & variables -----
-    case 'quest.complete':
-      completeQuest(state, directives, eff.questId);
+    case 'quest.complete': {
+      const e = eff as Eff<{ questId: string }>;
+      completeQuest(state, directives, e.questId);
       break;
-    case 'quest.spawnDungeon':
-      state.dungeons[eff.dungeon] = { clearedRooms: [] };
+    }
+    case 'quest.spawnDungeon': {
+      const e = eff as Eff<{ dungeon: string; quest?: string }>;
+      state.dungeons[e.dungeon] = { clearedRooms: [] };
       dir(directives, 'board.mutate', {
         command: 'spawnDungeon',
-        args: { quest: eff.quest, dungeon: eff.dungeon },
+        args: { quest: e.quest, dungeon: e.dungeon },
       });
       break;
-    case 'quest.placeMarker':
-      state.markers.push({ location: eff.location, markerType: 'quest', quest: eff.quest });
+    }
+    case 'quest.placeMarker': {
+      const e = eff as Eff<{ location: unknown; quest?: string }>;
+      state.markers.push({ location: e.location, markerType: 'quest', quest: e.quest });
       dir(directives, 'board.mutate', {
         command: 'placeMarker',
-        args: { location: eff.location, markerType: 'quest' },
+        args: { location: e.location, markerType: 'quest' },
       });
       break;
+    }
     case 'seal.remove': {
-      const seal = eff.seal || state.sealsRemoved + 1 + '-north'; // engine/scenario/player-chosen (not observed, §3.4)
+      const e = eff as Eff<{ seal?: string }>;
+      const seal = e.seal || state.sealsRemoved + 1 + '-north'; // engine/scenario/player-chosen (not observed, §3.4)
       state.sealsRemoved += 1;
       if (!state.brokenSeals.includes(seal)) state.brokenSeals.push(seal);
       raiseEvent(state, directives, 'sealRemoved');
@@ -374,7 +415,8 @@ function applyEffect(eff, state, directives) {
       break;
     }
     case 'seal.replace': {
-      const seal = eff.seal;
+      const e = eff as Eff<{ seal: string }>;
+      const seal = e.seal;
       state.brokenSeals = state.brokenSeals.filter((s) => s !== seal);
       state.sealsRemoved = Math.max(0, state.sealsRemoved - 1);
       dir(directives, 'tower.program', {
@@ -383,18 +425,29 @@ function applyEffect(eff, state, directives) {
       });
       break;
     }
-    case 'flag.set':
-      state.flags[eff.name] = eff.value;
+    case 'flag.set': {
+      const e = eff as Eff<{ name: string; value: unknown }>;
+      state.flags[e.name] = e.value;
       break;
-    case 'counter.set':
-      state.counters[eff.name] = eff.value;
+    }
+    case 'counter.set': {
+      const e = eff as Eff<{ name: string; value: number }>;
+      state.counters[e.name] = e.value;
       break;
-    default:
-      throw fault('unknown effect verb: ' + eff.op + ' (closed set is the 36 of §4.3)');
+    }
+    default: {
+      const _exhaustive: never = eff.op;
+      throw fault('unknown effect verb: ' + _exhaustive + ' (closed set is the 36 of §4.3)');
+    }
   }
 }
 
-function gainCorruption(state, directives, source, heroId) {
+export function gainCorruption(
+  state: EngineState,
+  directives: Directive[],
+  source: string,
+  heroId?: string,
+): void {
   const who = heroId || state.clock.activeHero;
   const hero = state.heroes[who];
   hero.corruption += 1;
@@ -408,8 +461,8 @@ function gainCorruption(state, directives, source, heroId) {
 // chain through authored success outcomes). Deliberately NOT stored on EngineState: completeQuest
 // is fully synchronous (no await between push and pop), so a module-level stack is sufficient and
 // — unlike a state field — never leaks into serialize/digest/clone (§9 byte-identical requirement).
-const completingQuests = [];
-function completeQuest(state, directives, questId) {
+const completingQuests: string[] = [];
+export function completeQuest(state: EngineState, directives: Directive[], questId: string): void {
   // fail-at-load philosophy (see planning/engine-deferred-followups.md #2): an authoring bug that
   // re-enters an already-completing quest must fault loudly, not overflow the stack.
   if (completingQuests.includes(questId))
@@ -423,14 +476,14 @@ function completeQuest(state, directives, questId) {
     // completion came from (the quest action, a dungeon's spawning quest, …). Legacy stays inert.
     if (state._setup && state._setup.fullTurn) {
       const qdef = (state._lib.quests || {})[questId];
-      for (const e of ((qdef || {}).outcomes || {}).success || []) {
+      for (const e of (qdef?.outcomes || {}).success || []) {
         applyEffect(e, state, directives);
         if (state.outcome.status !== 'running') return;
       }
     }
     // a companion quest grants its companion to the acting hero (rules.md §Monthly Quests)
     for (const cid of Object.keys(state._lib.companions || {})) {
-      if ((state._lib.companions[cid] || {}).grantedByQuestId === questId) {
+      if ((state._lib.companions?.[cid] || {}).grantedByQuestId === questId) {
         const hero = state.heroes[state.clock.activeHero];
         if (hero && !hero.companions.includes(cid)) {
           hero.companions.push(cid);
@@ -453,11 +506,11 @@ function completeQuest(state, directives, questId) {
   }
 }
 
-function raiseEvent(state, directives, event) {
+export function raiseEvent(state: EngineState, directives: Directive[], event: string): void {
   dir(directives, 'log.entry', { event });
   // onState bus: remember raised events until the next end-of-turn boundary consumes them
   // (only when the scenario authors onState triggers — legacy state stays untouched).
-  if ((state._triggers || []).some((t) => (t.trigger || {}).on === 'onState')) {
+  if ((state._triggers || []).some((t) => (t as { trigger?: { on?: string } }).trigger?.on === 'onState')) {
     if (!state.clock.pendingEvents) state.clock.pendingEvents = [];
     if (!state.clock.pendingEvents.includes(event)) state.clock.pendingEvents.push(event);
   }
@@ -465,29 +518,32 @@ function raiseEvent(state, directives, event) {
 
 // Once the game is decided (won/lost/ended), the first outcome stands: a later win/loss check
 // within the same resolution must not overwrite it (§9 — terminal is terminal).
-function loseGame(state, directives, reason) {
+export function loseGame(state: EngineState, directives: Directive[], reason: string): void {
   if (state.outcome.status !== 'running') return;
   state.outcome = { status: 'lost', reason };
   dir(directives, 'log.entry', { event: 'gameLost', reason });
 }
-function winGame(state, directives, reason) {
+export function winGame(state: EngineState, directives: Directive[], reason: string): void {
   if (state.outcome.status !== 'running') return;
   state.outcome = { status: 'won', reason };
   dir(directives, 'log.entry', { event: 'gameWon', reason });
 }
 
 // ---------- buildings registry helpers (used by applyEffect + the observed-skull resume path) ----------
-function buildingAt(state, location) {
+export function buildingAt(state: EngineState, location: string | null): BuildingState | undefined {
   return (state.buildings || []).find((b) => b.location === location);
 }
-function capacityOf(state, b) {
+export function capacityOf(state: EngineState, b: BuildingState): number {
   const def = (state._lib.buildingTypes || {})[b.type];
-  return (def && def.skullCapacity) || 3; // 3 sit, the 4th destroys (schema-pinned)
+  return def?.skullCapacity || 3; // 3 sit, the 4th destroys (schema-pinned)
 }
 // Resolve where an emergent skull lands: the observed placement if given, else a deterministic
 // spread over standing buildings of ACTIVE kingdoms (dormant kingdoms redirect — schema
 // dormantKingdoms.skullRedirect "nearestActive"): least-loaded first, registry order tie-break.
-function pickBuildingForSkull(state, placement) {
+export function pickBuildingForSkull(
+  state: EngineState,
+  placement: { kingdom: BuildingState['kingdom']; type?: BuildingState['type']; location?: string } | null | undefined,
+): BuildingState | null {
   if (placement) {
     const b = (state.buildings || []).find(
       (x) =>
@@ -500,24 +556,7 @@ function pickBuildingForSkull(state, placement) {
     return b;
   }
   const dormant = state.kingdoms.dormant || [];
-  const candidates = (state.buildings || []).filter(
-    (b) => !b.destroyed && !dormant.includes(b.kingdom),
-  );
+  const candidates = (state.buildings || []).filter((b) => !b.destroyed && !dormant.includes(b.kingdom));
   if (!candidates.length) return null;
   return candidates.reduce((best, b) => (b.skulls < best.skulls ? b : best), candidates[0]);
 }
-
-module.exports = {
-  FOE_LADDER,
-  shuffleInPlace,
-  getDeck,
-  applyEffect,
-  gainCorruption,
-  completeQuest,
-  raiseEvent,
-  loseGame,
-  winGame,
-  buildingAt,
-  capacityOf,
-  pickBuildingForSkull,
-};

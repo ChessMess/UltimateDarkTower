@@ -1,10 +1,10 @@
 // battle_test.js — the battle subflow (§4 row 157, runs on authored battleDefs.cards) and the
 // mutual-consent trade (§10.9, closed TradeAsset union). Uses engine.__internals.
 
-const { __internals } = require('../src/engine');
+const { __internals } = require('../dist/engine');
 const { makeTestState, startBattle, resolveBattle, applyTrade } = __internals;
-const engine = require('../src/engine');
-const { goldenFull } = require('../src/golden-fixture');
+const engine = require('../dist/engine');
+const { goldenFull } = require('../dist/golden-fixture');
 
 let pass = 0,
   fail = 0;

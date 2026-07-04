@@ -3,8 +3,8 @@
 // each once per turn; building-based Reinforce/Cleanse; located quests and monthly quests; the
 // located final confrontation. Proves legacy `golden` still runs the single-action loop unchanged.
 
-const engine = require("../src/engine");
-const { golden, goldenFull } = require("../src/golden-fixture");
+const engine = require("../dist/engine");
+const { golden, goldenFull } = require("../dist/golden-fixture");
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log("PASS  " + name); } else { fail++; console.log("XXXX  " + name + (extra ? "  — " + extra : "")); } }

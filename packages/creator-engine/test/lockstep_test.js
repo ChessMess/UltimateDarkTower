@@ -7,8 +7,8 @@
 const Ajv = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
 const fs = require("fs");
-const engine = require("../src/engine");
-const { golden } = require("../src/golden-fixture");
+const engine = require("../dist/engine");
+const { golden } = require("../dist/golden-fixture");
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log("PASS  " + name); } else { fail++; console.log("XXXX  " + name + (extra ? "  — " + extra : "")); } }

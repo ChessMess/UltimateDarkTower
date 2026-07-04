@@ -1,13 +1,14 @@
-// turn.js — turn-structure bookkeeping: the per-turn latches, the full-turn heroic-action latch +
+// turn.ts — turn-structure bookkeeping: the per-turn latches, the full-turn heroic-action latch +
 // reward (rules.md §Heroic Actions), end-of-turn event collection, clockwise seat rotation, the
 // action performer (§5.1 choice), and the atomic TradeAsset transfer (§10.9). Depends on core,
 // conditions, and effects; never reaches into nodes/resume/battle/dungeon.
 
-const { dir, fault } = require('./core');
-const { evalCondition } = require('./conditions');
-const { applyEffect, completeQuest, buildingAt } = require('./effects');
+import { dir, fault } from './core';
+import { evalCondition } from './conditions';
+import { applyEffect, completeQuest, buildingAt } from './effects';
+import type { EngineState, Directive, ActionChoice, TradeDecision, TradeAsset, HeroState } from './types';
 
-function resetLatches(state) {
+export function resetLatches(state: EngineState): void {
   state.clock.latches = {
     bannerUsed: false,
     moveUsed: false,
@@ -22,21 +23,22 @@ function resetLatches(state) {
 // ONE heroic action per turn; completing one awards 2 spirit. The latch is taken when the heroic
 // action starts (battle/dungeon subflow entry, quest/cleanse resolution); the reward fires on
 // completion (a retreat abandons the battle heroic action and forfeits the reward).
-function markHeroic(state) {
+export function markHeroic(state: EngineState): void {
   if (state.clock.latches.heroicActionUsed) throw fault('heroic action already used this turn');
   state.clock.latches.heroicActionUsed = true;
 }
-function awardHeroic(state, directives) {
+export function awardHeroic(state: EngineState, directives: Directive[]): void {
   applyEffect({ op: 'resource.gain', resource: 'spirit', amount: 2 }, state, directives);
   dir(directives, 'log.entry', { event: 'heroicActionComplete', hero: state.clock.activeHero });
 }
 // End-of-turn event triggers (rules.md §Events): schedule triggers match the clock; onState
 // triggers match events raised since the last boundary. Order is graph order (deterministic).
-function collectDueEvents(state) {
-  const due = [];
+export function collectDueEvents(state: EngineState): string[] {
+  const due: string[] = [];
   const pend = state.clock.pendingEvents || [];
   for (const t of state._triggers || []) {
-    const tr = t.trigger || {};
+    const rec = t as { trigger?: Record<string, unknown>; next?: string };
+    const tr = rec.trigger || {};
     if (tr.on === 'schedule') {
       const m = state.clock.month,
         turn = state.clock.turnInMonth;
@@ -44,10 +46,10 @@ function collectDueEvents(state) {
       if (tr.month != null && tr.turn != null) fire = m === tr.month && turn === tr.turn;
       else if (tr.month != null) fire = m === tr.month && turn === 1;
       else if (tr.turn != null) fire = turn === tr.turn;
-      else if (tr.everyNTurns != null) fire = (state.clock.globalTurn || 0) % tr.everyNTurns === 0;
-      if (fire && t.next) due.push(t.next);
+      else if (tr.everyNTurns != null) fire = (state.clock.globalTurn || 0) % (tr.everyNTurns as number) === 0;
+      if (fire && rec.next) due.push(rec.next);
     } else if (tr.on === 'onState') {
-      if (tr.event && pend.includes(tr.event) && t.next) due.push(t.next);
+      if (tr.event && pend.includes(tr.event as string) && rec.next) due.push(rec.next);
     }
   }
   state.clock.pendingEvents = [];
@@ -59,7 +61,7 @@ function collectDueEvents(state) {
 // rotation also satisfies catalog §107 (months 2+ begin with the player left of last month's final
 // player): after the final turn of a month the seat has already advanced one step, so recording it as
 // firstPlayerOfMonth at the next Start Month yields exactly "left of last month's final player".
-function rotateActiveHero(state) {
+export function rotateActiveHero(state: EngineState): void {
   const order = state.clock.turnOrder || [];
   if (order.length <= 1) return;
   const idx = order.indexOf(state.clock.activeHero);
@@ -67,7 +69,15 @@ function rotateActiveHero(state) {
 }
 
 // ---------- action performer (§5.1 choice) ----------
-function performAction(choice, state, directives, args) {
+// NOTE: not an exhaustive switch over ActionChoice — battle/trade/move/dungeon/endTurn are
+// intercepted earlier in resume.ts's action dispatch and only reach here (and its fault default)
+// if the scenario doesn't wire that entry, so a `never` check on the default would be incorrect.
+export function performAction(
+  choice: ActionChoice,
+  state: EngineState,
+  directives: Directive[],
+  args?: { questId?: string; enhanced?: boolean },
+): void {
   const full = state._setup && state._setup.fullTurn;
   const a = args || {};
   switch (choice) {
@@ -80,16 +90,14 @@ function performAction(choice, state, directives, args) {
         if (!questId) throw fault('quest action requires a questId (full-turn protocol)');
         const q = (state._lib.quests || {})[questId];
         if (!q) throw fault('unknown quest: ' + questId);
-        if ((state.quests[questId] || {}).complete)
-          throw fault('quest already complete: ' + questId);
+        if ((state.quests[questId] || {}).complete) throw fault('quest already complete: ' + questId);
         if (
           (state._setup.monthlyQuestIds || []).includes(questId) &&
           !(state.activeQuests || []).some((x) => x.questId === questId)
         )
           throw fault('monthly quest is not currently active: ' + questId);
         for (const r of q.requirements || [])
-          if (!evalCondition(r.condition, state))
-            throw fault('quest requirement not met: ' + (r.label || questId));
+          if (!evalCondition(r.condition, state)) throw fault('quest requirement not met: ' + (r.label || questId));
         completeQuest(state, directives, questId); // applies the authored success outcomes (full-turn)
         if (state.outcome.status !== 'running') return;
         awardHeroic(state, directives);
@@ -110,8 +118,7 @@ function performAction(choice, state, directives, args) {
         markHeroic(state);
         const hero = state.heroes[state.clock.activeHero];
         const b = buildingAt(state, hero.location);
-        if (!b || b.destroyed)
-          throw fault('cleanse: no standing building at ' + (hero.location || '(nowhere)'));
+        if (!b || b.destroyed) throw fault('cleanse: no standing building at ' + (hero.location || '(nowhere)'));
         if (b.skulls <= 0) throw fault('cleanse: no skulls on the building at ' + hero.location);
         const removed = b.skulls;
         b.skulls = 0;
@@ -138,12 +145,11 @@ function performAction(choice, state, directives, args) {
         const hero = state.heroes[state.clock.activeHero];
         const b = buildingAt(state, hero.location);
         if (!b) throw fault('reinforce: no building at ' + (hero.location || '(nowhere)'));
-        if (b.destroyed)
-          throw fault('reinforce: the building at ' + hero.location + ' is destroyed');
+        if (b.destroyed) throw fault('reinforce: the building at ' + hero.location + ' is destroyed');
         const def = (state._lib.buildingTypes || {})[b.type];
         if (!def) throw fault('reinforce: no buildingType definition for ' + b.type);
-        const effects = a.enhanced ? def.enhanced.effects : def.free;
-        if (a.enhanced)
+        const effects = a.enhanced ? def.enhanced?.effects : def.free;
+        if (a.enhanced && def.enhanced)
           applyEffect(
             {
               op: 'resource.spend',
@@ -186,7 +192,7 @@ function performAction(choice, state, directives, args) {
 }
 
 // applyTrade: atomic, unanimous-by-construction transfer over the closed TradeAsset union (§10.9).
-function applyTrade(state, directives, t) {
+export function applyTrade(state: EngineState, directives: Directive[], t: TradeDecision): void {
   const from = state.heroes[t.from],
     to = state.heroes[t.to];
   if (!from || !to) throw fault('trade references unknown hero');
@@ -195,17 +201,19 @@ function applyTrade(state, directives, t) {
     if (state.clock.latches.tradeUsed) throw fault('trade already used this turn');
     if (from.location !== to.location) throw fault('trade requires heroes on the same space');
   }
-  const move = (giver, taker, asset) => {
+  const move = (giver: HeroState, taker: HeroState, asset: TradeAsset) => {
     switch (asset.asset) {
       case 'warriors':
-      case 'spirit':
-        if ((giver[asset.asset] || 0) < asset.amount)
-          throw fault('trade: insufficient ' + asset.asset);
-        giver[asset.asset] -= asset.amount;
-        taker[asset.asset] += asset.amount;
+      case 'spirit': {
+        const g = giver as unknown as Record<string, number>;
+        const k = taker as unknown as Record<string, number>;
+        if ((g[asset.asset] || 0) < asset.amount) throw fault('trade: insufficient ' + asset.asset);
+        g[asset.asset] -= asset.amount;
+        k[asset.asset] += asset.amount;
         break;
+      }
       case 'item': {
-        const buckets = ['gear', 'treasure', 'potions', 'questItems'];
+        const buckets: Array<keyof HeroState['items']> = ['gear', 'treasure', 'potions', 'questItems'];
         let found = false;
         for (const bk of buckets) {
           const i = giver.items[bk].indexOf(asset.itemRef);
@@ -226,8 +234,10 @@ function applyTrade(state, directives, t) {
         taker.companions.push(asset.companionId);
         break;
       }
-      default:
-        throw fault('trade: untradeable asset (virtues/corruptions are structurally untradeable)');
+      default: {
+        const _exhaustive: never = asset;
+        throw fault('trade: untradeable asset (virtues/corruptions are structurally untradeable): ' + _exhaustive);
+      }
     }
   };
   // atomic: validate+apply on a working copy is overkill here since faults abort the cloned step state
@@ -236,13 +246,3 @@ function applyTrade(state, directives, t) {
   state.clock.latches.tradeUsed = true;
   dir(directives, 'ui.update', { delta: { trade: { from: t.from, to: t.to } } });
 }
-
-module.exports = {
-  resetLatches,
-  markHeroic,
-  awardHeroic,
-  collectDueEvents,
-  rotateActiveHero,
-  performAction,
-  applyTrade,
-};

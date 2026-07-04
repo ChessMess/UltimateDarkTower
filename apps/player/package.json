@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "pnpm --filter @udtc/engine build",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc -b",
     "lint": "eslint .",
+    "pretest": "pnpm --filter @udtc/engine build",
     "test": "vitest run",
     "test:watch": "vitest",
     "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"

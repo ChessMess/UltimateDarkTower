@@ -84,6 +84,8 @@ export interface AdversaryState {
   advantagesBanked: number;
   questProgress: number;
   battleProgress: number;
+  /** set by the adversary.spawn effect; absent until the adversary actually spawns */
+  location?: string | null;
 }
 
 export interface BattleCard {
@@ -123,6 +125,7 @@ export interface EngineClock {
   month: number;
   turnInMonth: number;
   turnsThisMonth: number;
+  globalTurn: number;
   cursor: string | undefined;
   pending: { request: InputRequest } | null;
   activeHero: string;
@@ -131,11 +134,23 @@ export interface EngineClock {
   latches: ClockLatches;
   dungeon: DungeonCursor | null;
   battle: BattleCursor | null;
+  /** end-of-turn events raised via the onState bus, drained at the next boundary (effects.ts raiseEvent) */
+  pendingEvents?: string[];
+  /** remaining due event-chain roots to fire before resuming the stashed turn spine (run.ts) */
+  eventQueue?: string[] | null;
+  /** stashed turn-spine resumption point once an event chain drains (run.ts) */
+  afterEvents?: { target: string; rotate: boolean } | null;
 }
 
 export interface SkullsState {
   supply: number;
   onBoard: number;
+}
+
+/** the engine-local pcg32 PRNG's serialized state (BigInt fields stringified for JSON-safety, §6) */
+export interface RngState {
+  state: string;
+  inc: string;
 }
 
 export interface TowerMirror {
@@ -146,7 +161,8 @@ export interface TowerMirror {
 
 export interface DungeonRunState {
   clearedRooms: string[];
-  improvedRooms: string[];
+  /** lazily added by dungeon.ts's dungeonState() on first access; absent right after quest.spawnDungeon */
+  improvedRooms?: string[];
 }
 
 export interface Outcome {
@@ -179,21 +195,112 @@ export interface EngineState {
   /** Currently issued monthly quests (full-turn scenarios with a lifecycle.newQuests node) */
   activeQuests?: Array<{ questId: string; kind: 'companion' | 'adversary'; expiresMonth: number }>;
   tower: TowerMirror;
-  rng: string;
+  rng: RngState;
   outcome: Outcome;
   // Load-time private fields (present at runtime; do not construct or mutate)
   _nodes: Record<string, EngineNode>;
-  _lib: unknown;
+  _lib: ScenarioLibrary;
   _spine: Record<string, string | undefined>;
   _setup: {
-    monthEnd: unknown;
+    monthEnd: MonthEndConfig;
     mainGoalId: string;
     goalThreshold: number;
     adversaryToughness: number;
     fullTurn?: boolean;
+    /** foe level by selection tier (setup.ts init) */
+    foeTiers?: Record<string, number>;
+    /** quests issued by the authored newQuests node, attemptable only while active (setup.ts init) */
+    monthlyQuestIds?: string[];
   };
   _triggers?: unknown[];
   _lastDraw?: unknown;
+}
+
+// ---- conditions (§4.4 closed predicate vocabulary) ----
+// A loose (not strictly discriminated) shape mirroring the authored condition JSON: allOf/anyOf/not
+// combinators, or a leaf `{subject, comparator, value, key}`. Kept as one interface with optional
+// fields (like `Effect`/`EngineNode`) rather than a discriminated union, since evalCondition's own
+// combinator checks (`if (cond.allOf) ...`) aren't tagged by a common literal field.
+
+export type ConditionSubject =
+  | 'resource'
+  | 'flag'
+  | 'counter'
+  | 'sealsRemoved'
+  | 'foeOnSpace'
+  | 'heroAtLocation'
+  | 'supply'
+  | 'month'
+  | 'endOfMonth';
+
+export type Comparator = 'eq' | 'ne' | 'lt' | 'lte' | 'gt' | 'gte' | 'has' | 'in';
+
+export interface Condition {
+  allOf?: Condition[];
+  anyOf?: Condition[];
+  not?: Condition;
+  subject?: ConditionSubject;
+  comparator?: Comparator;
+  value?: unknown;
+  key?: string;
+}
+
+// ---- scenario library (setup.library) ----
+// The injected content the reducer reads by id — quests/tokens/buildings/foes/battle defs/dungeons.
+// Modeled once here (rather than `unknown` + per-callsite casts) since five modules (effects, turn,
+// battle, dungeon, nodes) all read it. Sub-shapes stay loose (optional fields, `unknown` for opaque
+// display/bitmap data) — this mirrors authored content, not a strict schema.
+
+export interface TokenTypeDef {
+  removable?: boolean;
+  threshold?: { at: number; onReach?: Effect[] };
+}
+export interface BuildingTypeDef {
+  skullCapacity?: number;
+  /** Reinforce's free effect (buildings.md) */
+  free?: Effect[];
+  /** Reinforce's enhanced effect, paid via resource.spend of `cost` (buildings.md) */
+  enhanced?: { cost: { resource?: string; amount: number }; effects: Effect[] };
+}
+export interface QuestDef {
+  outcomes?: { success?: Effect[]; failure?: Effect[] };
+  isMainGoal?: boolean;
+  requirements?: Array<{ condition?: Condition; label?: string }>;
+}
+export interface CompanionDef {
+  grantedByQuestId?: string;
+}
+export interface FoeDef {
+  level?: number;
+  strike?: { effects?: Effect[] };
+}
+export interface BattleDef {
+  cards?: BattleCard[];
+}
+export interface DungeonRoomDef {
+  id: string;
+  bitmapSlice?: unknown;
+  displayText?: string;
+  isTarget?: boolean;
+  enterRequirement?: { condition?: Condition; spiritCost?: number; onFail?: Effect[] };
+  insideEvent?: Effect[];
+  improveOnce?: { effects: Effect[] };
+  exits?: Partial<Record<CardinalDirection, string>>;
+}
+export interface DungeonDef {
+  rooms?: DungeonRoomDef[];
+  spawningQuestId?: string;
+  idleLight?: string;
+  ambientSoundCategory?: string;
+}
+export interface ScenarioLibrary {
+  tokenTypes?: Record<string, TokenTypeDef>;
+  buildingTypes?: Record<string, BuildingTypeDef>;
+  quests?: Record<string, QuestDef>;
+  companions?: Record<string, CompanionDef>;
+  foes?: Record<string, FoeDef>;
+  battleDefs?: Record<string, BattleDef>;
+  dungeons?: Record<string, DungeonDef>;
 }
 
 // ---- effects (§4.3 closed verb vocabulary) ----
@@ -309,7 +416,9 @@ export interface UiPromptDirective {
   kind: string;
   requestId?: string;
   text?: string;
-  options?: Array<{ id: string }>;
+  /** the ui.prompt directive's action-choice list is bare strings; the awaited InputRequest's own
+   * `options` (action variant) is the separate {id}-wrapped shape nodes.ts builds via .map() */
+  options?: string[];
   cards?: number;
   room?: string;
   doors?: string[];
@@ -383,21 +492,11 @@ export type InputRequest =
   | { id: 'advantageSpend'; kind: 'advantageSpend' }
   | { id: 'trade'; kind: 'choice' }
   | { id: 'moveTarget'; kind: 'target' }
-  | {
-      id: 'dungeonMove';
-      kind: 'choice';
-      requestId: string;
-      text: string;
-      room: string;
-      doors: string[];
-    }
-  | {
-      id: 'dungeonRoomAdvantage';
-      kind: 'advantageSpend';
-      requestId: string;
-      text: string;
-      room: string;
-    }
+  // dungeonMove/dungeonRoomAdvantage keep the awaited request minimal ({id, kind}) — the
+  // room/doors/text detail goes out separately via the ui.prompt directive, not the request itself
+  // (dungeon.ts's awaitDungeonMove/resolveRoomEntry).
+  | { id: 'dungeonMove'; kind: 'choice' }
+  | { id: 'dungeonRoomAdvantage'; kind: 'advantageSpend' }
   | { id: 'skullCounter'; kind: 'observed'; observed: 'skullCounter' };
 
 // ---- inputs (what the caller supplies in response to an InputRequest) ----
@@ -438,6 +537,63 @@ export type Input =
   | { kind: 'control' };
 
 // ---- public API (§2.3) ----
+
+// ---- node/dungeon control-flow result (§4.2/§4 row 157) ----
+// The ad-hoc {goto}|{await}|{terminal}|{end} shape interpretNode/dungeon.ts's room-flow functions
+// return, consumed by run.ts/resume.ts. One loose interface (not a discriminated union) since
+// callers check each field's presence independently rather than switching on a tag. `end` is
+// currently never actually set by any producer — run.ts's `r.end` check is effectively dead but
+// kept exactly as the original reducer wrote it (see run.ts port notes).
+export interface NodeResult {
+  goto?: string;
+  await?: { request: InputRequest };
+  terminal?: true;
+  end?: boolean;
+}
+
+/** month-length resolution config (scenario setup.monthEnd, mirrored onto _setup.monthEnd) */
+export interface MonthEndConfig {
+  resolution?: string;
+  default: { minTurn: number; maxTurn: number };
+  perMonth?: Record<string, { minTurn: number; maxTurn: number }>;
+}
+
+// ---- scenario (setup.ts init's input) ----
+// A minimal internal shape covering only what the reducer actually reads (setup.ts, golden-fixture.ts).
+// Deliberately not @udtc/schema's canonical Scenario type (invariant #2 allows the dependency, but
+// importing it risks a wall of unrelated type errors from strictness/shape gaps between the authoring
+// schema and what a compact fixture populates) — adopting the real schema type is a follow-up, not
+// part of this mechanical, behavior-preserving port.
+export interface Scenario {
+  schemaVersion: string;
+  meta: {
+    scenarioVersion: string;
+    tuning?: { goalThreshold?: number; adversaryToughness?: number };
+  };
+  graph: {
+    entry: string;
+    nodes: EngineNode[];
+  };
+  library: ScenarioLibrary;
+  setup: {
+    playerCountScaling?: {
+      dormantKingdoms?: { byPlayerCount?: Record<string, Kingdom[]> };
+    };
+    board?: {
+      boardState?: {
+        home?: Record<string, string>;
+        buildings?: Array<{ kingdom: Kingdom; type: BuildingType; location: string }>;
+      };
+    };
+    selections: {
+      adversaryId: string;
+      mainGoalId: string;
+      foes?: { tier1?: string; tier2?: string; tier3?: string };
+    };
+    difficulty: { skullSupply: number };
+    monthEnd: MonthEndConfig;
+  };
+}
 
 export interface InitOpts {
   seed: string;

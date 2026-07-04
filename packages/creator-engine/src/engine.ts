@@ -1,4 +1,4 @@
-// engine.js — the shared rules-engine reducer (MVP vertical slice).
+// engine.ts — the shared rules-engine reducer (MVP vertical slice).
 // Implements the contract's API surface (§2.3): init / step / replay / serialize / digest,
 // a near-pure (EngineState, Input) → StepResult reducer (§5.1), the closed directive (§5.2)
 // and input (§5.3) vocabularies, the observed-input bridge (§5.4: skullCounter), determinism
@@ -11,33 +11,27 @@
 // uses; unimplemented kinds/verbs raise a clear fault rather than silently passing. Full
 // month-by-month rules fidelity and the remaining verbs are a later pass (§4.3 is the full set).
 
-// engine.js is the assembly point: it wires the modules under ./engine/ together, keeps the reducer
+// engine.ts is the assembly point: it wires the modules under ./engine/ together, keeps the reducer
 // entry points (step/replay) that thread run + resume, and re-exports the §2.3 public API. Test
-// suites and src/index.js require THIS file ('../src/engine' / './engine'); the file resolves ahead
+// suites and src/index.ts require THIS file ('../dist/engine' / './engine'); the file resolves ahead
 // of the ./engine/ directory, so the module tree is an implementation detail.
-const {
-  ENGINE_VERSION,
-  SUPPORTED_SCHEMA_RANGE,
-  serialize,
-  deserialize,
-  digest,
-  clone,
-} = require('./engine/core');
-const { evalCondition } = require('./engine/conditions');
-const { applyEffect } = require('./engine/effects');
-const { deriveGlyphFacing, homeKingdomOf, recomputeGlyphFacing } = require('./engine/glyph');
-const { applyTrade } = require('./engine/turn');
-const { startBattle, resolveBattle } = require('./engine/battle');
-const { resolveRoomEntry, finalizeRoom, completeDungeon } = require('./engine/dungeon');
-const { interpretNode } = require('./engine/nodes');
-const { resume } = require('./engine/resume');
-const { run } = require('./engine/run');
-const { init, makeTestState, applyOne } = require('./engine/setup');
+import { ENGINE_VERSION, SUPPORTED_SCHEMA_RANGE, serialize, deserialize, digest, clone } from './engine/core';
+import { evalCondition } from './engine/conditions';
+import { applyEffect } from './engine/effects';
+import { deriveGlyphFacing, homeKingdomOf, recomputeGlyphFacing } from './engine/glyph';
+import { applyTrade } from './engine/turn';
+import { startBattle, resolveBattle } from './engine/battle';
+import { resolveRoomEntry, finalizeRoom, completeDungeon } from './engine/dungeon';
+import { interpretNode } from './engine/nodes';
+import { resume } from './engine/resume';
+import { run } from './engine/run';
+import { init, makeTestState, applyOne } from './engine/setup';
+import type { EngineState, Input, StepResult, InitOpts } from './engine/types';
 
-function step(prevState, input) {
+export function step(prevState: EngineState, input: Input): StepResult {
   const state = clone(prevState);
   // _nodes/_lib/_setup survive clone (plain JSON) — fine, they're immutable references.
-  const directives = [];
+  const directives: StepResult['directives'] = [];
   if (state.clock.pending) {
     const pending = state.clock.pending;
     state.clock.pending = null;
@@ -57,19 +51,21 @@ function step(prevState, input) {
     return { state: prevState, directives: [], status: prevState.outcome.status };
   }
   const status =
-    state.outcome.status === 'running' || state.outcome.status === 'awaitingInput'
-      ? run(state, directives)
-      : state.outcome.status;
+    state.outcome.status === 'running' || state.outcome.status === 'awaitingInput' ? run(state, directives) : state.outcome.status;
+  // cast (not a plain annotation) — TS's flow analysis otherwise carries the `null` narrowing from
+  // the `state.clock.pending = null` assignment above through this independent later read, even
+  // though run(state, directives) can itself set it back to non-null internally (run.ts).
+  const pendingNow = state.clock.pending as EngineState['clock']['pending'];
   return {
     state,
     directives,
     status,
-    awaiting: state.clock.pending ? state.clock.pending.request : undefined,
+    awaiting: pendingNow ? pendingNow.request : undefined,
   };
 }
 
-function replay(scenario, opts, inputs) {
-  const results = [];
+export function replay(scenario: unknown, opts: InitOpts, inputs: Input[]): StepResult[] {
+  const results: StepResult[] = [];
   let r = init(scenario, opts);
   results.push(r);
   for (const inp of inputs) {
@@ -80,29 +76,28 @@ function replay(scenario, opts, inputs) {
   return results;
 }
 
-module.exports = {
+export {
   ENGINE_VERSION,
   SUPPORTED_SCHEMA_RANGE,
   init,
-  step,
-  replay,
   serialize,
   deserialize,
   digest,
   evalCondition,
-  __internals: {
-    applyEffect,
-    makeTestState,
-    applyOne,
-    startBattle,
-    resolveBattle,
-    applyTrade,
-    interpretNode,
-    resolveRoomEntry,
-    finalizeRoom,
-    completeDungeon,
-    deriveGlyphFacing,
-    homeKingdomOf,
-    recomputeGlyphFacing,
-  },
+};
+
+export const __internals = {
+  applyEffect,
+  makeTestState,
+  applyOne,
+  startBattle,
+  resolveBattle,
+  applyTrade,
+  interpretNode,
+  resolveRoomEntry,
+  finalizeRoom,
+  completeDungeon,
+  deriveGlyphFacing,
+  homeKingdomOf,
+  recomputeGlyphFacing,
 };

@@ -9,8 +9,9 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "pretest": "pnpm --filter @udtc/engine build",
     "build": "echo 'adapters: no emit (type-check only for now)'",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b",
     "lint": "eslint src"
   },
   "dependencies": {

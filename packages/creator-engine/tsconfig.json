@@ -3,9 +3,12 @@
   "compilerOptions": {
     "allowJs": true,
     "checkJs": false,
-    "noEmit": true,
     "module": "CommonJS",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "composite": true,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src"
   },
   "include": ["src"]
 }

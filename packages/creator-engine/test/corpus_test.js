@@ -44,8 +44,8 @@
 const Ajv = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
 const fs = require("fs");
-const engine = require("../src/engine");
-const { golden, goldenLowSupply, goldenAmpleSupply, goldenAuthoredLoss, goldenAuthoredLossFlag, goldenWardedVault, goldenAuthoredLossResource, goldenAuthoredLossSeal, goldenAuthoredLossFoe } = require("../src/golden-fixture");
+const engine = require("../dist/engine");
+const { golden, goldenLowSupply, goldenAmpleSupply, goldenAuthoredLoss, goldenAuthoredLossFlag, goldenWardedVault, goldenAuthoredLossResource, goldenAuthoredLossSeal, goldenAuthoredLossFoe } = require("../dist/golden-fixture");
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log("PASS  " + name); } else { fail++; console.log("XXXX  " + name + (extra ? "  — " + extra : "")); } }
@@ -520,7 +520,7 @@ ok("authored loss (foeOnSpace): the stream replays byte-identically (lockstep de
 // =====================================================================================
 // Build a minimal run state and directly poke hero1.location to verify evalCondition.
 // This mirrors the foeOnSpace unit tests directly above.
-const { __internals: _heroAtLocInternals } = require("../src/engine");
+const { __internals: _heroAtLocInternals } = require("../dist/engine");
 const _halBase = _heroAtLocInternals.makeTestState();
 // Simulate hero.placeOrMove: set location directly on the hero
 _halBase.heroes.hero1.location = "the-village";

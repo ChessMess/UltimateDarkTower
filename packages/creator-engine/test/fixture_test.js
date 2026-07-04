@@ -8,8 +8,8 @@ const Ajv = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
 const fs = require("fs");
 const path = require("path");
-const engine = require("../src/engine");
-const fixtures = require("../src/golden-fixture");
+const engine = require("../dist/engine");
+const fixtures = require("../dist/golden-fixture");
 const { golden, goldenFull } = fixtures;
 
 let pass = 0, fail = 0;

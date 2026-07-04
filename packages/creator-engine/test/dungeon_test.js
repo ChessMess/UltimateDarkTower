@@ -3,9 +3,9 @@
 // edge cases (gate block, enter-requirement block, cross-hero cleared-persistence) use the test-only
 // __internals surface, mirroring battle_test.js.
 
-const engine = require("../src/engine");
-const { golden } = require("../src/golden-fixture");
-const { __internals } = require("../src/engine");
+const engine = require("../dist/engine");
+const { golden } = require("../dist/golden-fixture");
+const { __internals } = require("../dist/engine");
 const { makeTestState, interpretNode, resolveRoomEntry } = __internals;
 
 let pass = 0, fail = 0;

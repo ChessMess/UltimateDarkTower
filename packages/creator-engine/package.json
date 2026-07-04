@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",
-  "main": "src/index.js",
-  "types": "src/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "node test/run-all.js",
-    "build": "echo 'engine: no emit (CommonJS JS + hand-written .d.ts)'",
-    "typecheck": "tsc --noEmit"
+    "pretest": "tsc -b",
+    "build": "tsc -b",
+    "typecheck": "tsc -b"
   },
   "devDependencies": {
     "ajv": "^8.17.0",

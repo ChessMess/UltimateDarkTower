@@ -9,9 +9,9 @@
 //   D3 digest hashes load-bearing clock state and ignores load-time refs (ENGINE_VERSION 0.5.0)
 // Uses plain Node (no framework), matching the other engine suites.
 
-const engine = require('../src/engine');
-const { golden, goldenFull } = require('../src/golden-fixture');
-const { __internals } = require('../src/engine');
+const engine = require('../dist/engine');
+const { golden, goldenFull } = require('../dist/golden-fixture');
+const { __internals } = require('../dist/engine');
 const { makeTestState, startBattle, resolveBattle, applyOne } = __internals;
 
 let pass = 0,
