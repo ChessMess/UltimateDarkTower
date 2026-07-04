@@ -54,12 +54,16 @@ export function makeHero(fullTurn: boolean): HeroState {
   };
 }
 
-export function init(scenario: Scenario, opts: InitOpts): StepResult {
+// scenario stays `unknown` at this public boundary (matching the pre-port contract) — the engine
+// trusts nothing about scenario shape until L1-L4 validation has run externally; Scenario itself
+// is an internal modeling convenience for this function's body, not a public authoring contract.
+export function init(scenario: unknown, opts: InitOpts): StepResult {
   if (!opts || !opts.seed) throw fault('init requires opts.seed (engine runtime seed, §6)');
+  const sc = scenario as Scenario;
   const nodes: EngineState['_nodes'] = {};
-  for (const n of scenario.graph.nodes) nodes[n.id] = n;
+  for (const n of sc.graph.nodes) nodes[n.id] = n;
   const byKind = (k: string) => {
-    const n = scenario.graph.nodes.find((x) => x.kind === k);
+    const n = sc.graph.nodes.find((x) => x.kind === k);
     return n && n.id;
   };
   // Honor opts.playerCount (§3.1): build the hero set, per-player home-kingdom ownership, the dormant
@@ -67,10 +71,10 @@ export function init(scenario: Scenario, opts: InitOpts): StepResult {
   // or a dormant-set that doesn't leave exactly one active kingdom per player.
   const playerCount = (opts.playerCount as number) | 0 || 1;
   if (playerCount < 1 || playerCount > 4) throw fault('playerCount must be 1–4 (got ' + opts.playerCount + ')');
-  const { active, dormant } = buildKingdoms(scenario, playerCount);
+  const { active, dormant } = buildKingdoms(sc, playerCount);
   // Full-turn discriminator (fidelity gate): the actionMiddle node opts in with props.turn === "full".
   // Legacy scenarios (no prop) keep the single-action-per-turn MVP loop byte-identical.
-  const amidNode = scenario.graph.nodes.find((n) => n.kind === 'lifecycle.actionMiddle');
+  const amidNode = sc.graph.nodes.find((n) => n.kind === 'lifecycle.actionMiddle');
   const fullTurn = !!(amidNode && amidNode.props && amidNode.props.turn === 'full');
   const heroIds: string[] = [];
   for (let i = 1; i <= playerCount; i++) heroIds.push('hero' + i);
@@ -83,7 +87,7 @@ export function init(scenario: Scenario, opts: InitOpts): StepResult {
   // Buildings registry + hero start locations from the authored (opaque-to-L1) boardState:
   // { home: { kingdom: location }, buildings: [{ kingdom, type, location }] }. Heroes start on
   // their home kingdom's citadel space (rules.md §Hero Setup).
-  const boardState = (scenario.setup.board && scenario.setup.board.boardState) || null;
+  const boardState = (sc.setup.board && sc.setup.board.boardState) || null;
   const buildings =
     boardState && Array.isArray(boardState.buildings)
       ? boardState.buildings.map((b) => ({
@@ -103,8 +107,8 @@ export function init(scenario: Scenario, opts: InitOpts): StepResult {
   const rng = pcg32.create(opts.seed);
   const state = {
     meta: {
-      scenarioVersion: scenario.meta.scenarioVersion,
-      schemaVersion: scenario.schemaVersion,
+      scenarioVersion: sc.meta.scenarioVersion,
+      schemaVersion: sc.schemaVersion,
       engine: ENGINE_VERSION,
     },
     clock: {
@@ -112,7 +116,7 @@ export function init(scenario: Scenario, opts: InitOpts): StepResult {
       turnInMonth: 0,
       turnsThisMonth: 0,
       globalTurn: 0,
-      cursor: scenario.graph.entry,
+      cursor: sc.graph.entry,
       pending: null,
       activeHero: firstHero,
       turnOrder: heroIds.slice(),
@@ -124,7 +128,7 @@ export function init(scenario: Scenario, opts: InitOpts): StepResult {
     ...(buildings ? { buildings } : {}),
     foes: [],
     adversary: {
-      foeId: scenario.setup.selections.adversaryId,
+      foeId: sc.setup.selections.adversaryId,
       spawned: false,
       defeated: false,
       advantages: [],
@@ -132,7 +136,7 @@ export function init(scenario: Scenario, opts: InitOpts): StepResult {
       questProgress: 0,
       battleProgress: 0,
     },
-    skulls: { supply: scenario.setup.difficulty.skullSupply, onBoard: 0 },
+    skulls: { supply: sc.setup.difficulty.skullSupply, onBoard: 0 },
     decks: {},
     market: [],
     monuments: [],
@@ -150,7 +154,7 @@ export function init(scenario: Scenario, opts: InitOpts): StepResult {
     outcome: { status: 'running', reason: null },
     // load-time references kept out of the digest-relevant game state but needed at run:
     _nodes: nodes,
-    _lib: scenario.library,
+    _lib: sc.library,
     _spine: {
       startMonth: byKind('lifecycle.startMonth'),
       playerTurn: byKind('lifecycle.playerTurn'),
@@ -165,14 +169,14 @@ export function init(scenario: Scenario, opts: InitOpts): StepResult {
       dungeonEntry: byKind('dungeon.subflow'),
     },
     _setup: {
-      monthEnd: scenario.setup.monthEnd,
-      mainGoalId: scenario.setup.selections.mainGoalId,
-      goalThreshold: (scenario.meta.tuning && scenario.meta.tuning.goalThreshold) || 3,
-      adversaryToughness: (scenario.meta.tuning && scenario.meta.tuning.adversaryToughness) || 2,
+      monthEnd: sc.setup.monthEnd,
+      mainGoalId: sc.setup.selections.mainGoalId,
+      goalThreshold: (sc.meta.tuning && sc.meta.tuning.goalThreshold) || 3,
+      adversaryToughness: (sc.meta.tuning && sc.meta.tuning.adversaryToughness) || 2,
       fullTurn,
       // foe level by selection tier (rules: tier1→2, tier2→3, tier3→4); adversary is always 5
       foeTiers: (() => {
-        const f = scenario.setup.selections.foes || {};
+        const f = sc.setup.selections.foes || {};
         const m: Record<string, number> = {};
         if (f.tier1) m[f.tier1] = 2;
         if (f.tier2) m[f.tier2] = 3;
@@ -181,7 +185,7 @@ export function init(scenario: Scenario, opts: InitOpts): StepResult {
       })(),
       // quests issued by the authored newQuests node are attemptable only while active
       monthlyQuestIds: (() => {
-        const nq = scenario.graph.nodes.find((n) => n.kind === 'lifecycle.newQuests');
+        const nq = sc.graph.nodes.find((n) => n.kind === 'lifecycle.newQuests');
         const ids: string[] = [];
         const monthly = (nq?.props || {}).monthly as Record<string, Record<string, string>> | undefined;
         if (monthly) for (const m of Object.values(monthly)) for (const v of Object.values(m)) ids.push(v);
@@ -189,7 +193,7 @@ export function init(scenario: Scenario, opts: InitOpts): StepResult {
       })(),
     },
     // end-of-turn event triggers in graph order (deterministic firing order)
-    _triggers: scenario.graph.nodes
+    _triggers: sc.graph.nodes
       .filter((n) => n.kind === 'trigger.schedule' || n.kind === 'trigger.onState')
       .map((n) => ({
         id: n.id,

@@ -19,6 +19,11 @@
 // pins skullCapacity=3 / destroyOnSkull=4).
 import type { Effect, ConditionSubject, Comparator } from './engine/types';
 
+// the clone functions below mutate JSON.parse(JSON.stringify(golden)) (typed `any` by JSON.parse),
+// so callback params need an explicit type to avoid an implicit-any error; this is the only shape
+// those callbacks actually read.
+type NodeRef = { id: string };
+
 const buildingType = (freeEffect: Effect, cost: number, enhancedEffect: Effect) => ({
   free: [freeEffect],
   enhanced: { cost: { resource: "spirit", amount: cost }, effects: [enhancedEffect] },
@@ -297,9 +302,9 @@ const goldenAmpleSupply = cloneWithSupply(99);
 // n-aend directly (their wires are untouched), so the guard sits only on the plain action path.
 function cloneAuthoredLoss() {
   const c = JSON.parse(JSON.stringify(golden));
-  const amid = c.graph.nodes.find((n: any) => n.id === "n-amid");
+  const amid = c.graph.nodes.find((n: NodeRef) => n.id === "n-amid");
   amid.wires.out = ["n-lossguard"]; // default action path now routes through the loss guard
-  const aendIdx = c.graph.nodes.findIndex((n: any) => n.id === "n-aend");
+  const aendIdx = c.graph.nodes.findIndex((n: NodeRef) => n.id === "n-aend");
   c.graph.nodes.splice(aendIdx, 0, {
     id: "n-lossguard", kind: "winloss.lossCondition",
     props: { condition: cond("counter", "gte", 2, "goalProgress") },
@@ -323,9 +328,9 @@ const goldenAuthoredLoss = cloneAuthoredLoss();
 // guard); the loss fires on the NEXT plain action that walks n-amid → n-lossguard with the flag now true.
 function cloneAuthoredLossFlag() {
   const c = JSON.parse(JSON.stringify(golden));
-  const amid = c.graph.nodes.find((n: any) => n.id === "n-amid");
+  const amid = c.graph.nodes.find((n: NodeRef) => n.id === "n-amid");
   amid.wires.out = ["n-lossguard"];
-  const aendIdx = c.graph.nodes.findIndex((n: any) => n.id === "n-aend");
+  const aendIdx = c.graph.nodes.findIndex((n: NodeRef) => n.id === "n-aend");
   c.graph.nodes.splice(aendIdx, 0, {
     id: "n-lossguard", kind: "winloss.lossCondition",
     props: { condition: cond("flag", "eq", true, "vaultCleared") },
@@ -343,7 +348,7 @@ const goldenAuthoredLossFlag = cloneAuthoredLossFlag();
 // golden, so the clone stays L1-valid (spiritCost is an integer ≥ 0 in the schema's enterRequirement).
 function cloneWardedVault() {
   const c = JSON.parse(JSON.stringify(golden));
-  const hall = c.library.dungeons["azkol-vault-dungeon"].rooms.find((r: any) => r.id === "vault-hall");
+  const hall = c.library.dungeons["azkol-vault-dungeon"].rooms.find((r: NodeRef) => r.id === "vault-hall");
   hall.enterRequirement.spiritCost = 3;
   return c;
 }
@@ -362,9 +367,9 @@ const goldenWardedVault = cloneWardedVault();
 // leaves warriors at 7 < 9, so the loss fires only once reinforce reaches the threshold.)
 function cloneAuthoredLossResource() {
   const c = JSON.parse(JSON.stringify(golden));
-  const amid = c.graph.nodes.find((n: any) => n.id === "n-amid");
+  const amid = c.graph.nodes.find((n: NodeRef) => n.id === "n-amid");
   amid.wires.out = ["n-lossguard"];
-  const aendIdx = c.graph.nodes.findIndex((n: any) => n.id === "n-aend");
+  const aendIdx = c.graph.nodes.findIndex((n: NodeRef) => n.id === "n-aend");
   c.graph.nodes.splice(aendIdx, 0, {
     id: "n-lossguard", kind: "winloss.lossCondition",
     props: { condition: cond("resource", "gte", 9, "warriors") },
@@ -392,9 +397,9 @@ const goldenAuthoredLossResource = cloneAuthoredLossResource();
 // (effect-op enum) are in the closed schema vocabularies, so the clone stays L1-valid under ajv strict.
 function cloneAuthoredLossSeal() {
   const c = JSON.parse(JSON.stringify(golden));
-  const amid = c.graph.nodes.find((n: any) => n.id === "n-amid");
+  const amid = c.graph.nodes.find((n: NodeRef) => n.id === "n-amid");
   amid.wires.out = ["n-sealbreak"];
-  const aendIdx = c.graph.nodes.findIndex((n: any) => n.id === "n-aend");
+  const aendIdx = c.graph.nodes.findIndex((n: NodeRef) => n.id === "n-aend");
   c.graph.nodes.splice(aendIdx, 0,
     { id: "n-sealbreak", kind: "effect.apply", props: { effects: [{ op: "seal.remove" }] }, wires: { out: ["n-lossguard"] } },
     { id: "n-lossguard", kind: "winloss.lossCondition", props: { condition: cond("sealsRemoved", "gte", 2) }, wires: { out: ["n-aend"] } }
@@ -416,9 +421,9 @@ const goldenAuthoredLossSeal = cloneAuthoredLossSeal();
 // + `foe.spawn` are both in the closed schema vocabularies, so the clone stays L1-valid under ajv strict.
 function cloneAuthoredLossFoe() {
   const c = JSON.parse(JSON.stringify(golden));
-  const amid = c.graph.nodes.find((n: any) => n.id === "n-amid");
+  const amid = c.graph.nodes.find((n: NodeRef) => n.id === "n-amid");
   amid.wires.out = ["n-foespawn"];
-  const aendIdx = c.graph.nodes.findIndex((n: any) => n.id === "n-aend");
+  const aendIdx = c.graph.nodes.findIndex((n: NodeRef) => n.id === "n-aend");
   c.graph.nodes.splice(aendIdx, 0,
     { id: "n-foespawn", kind: "effect.apply", props: { effects: [{ op: "foe.spawn", foeId: "brigands", location: "the-tower" }] }, wires: { out: ["n-lossguard"] } },
     { id: "n-lossguard", kind: "winloss.lossCondition", props: { condition: cond("foeOnSpace", "gte", 2, "the-tower") }, wires: { out: ["n-aend"] } }
@@ -466,14 +471,14 @@ function buildGoldenFull() {
     ]
   } };
   const nodes = c.graph.nodes;
-  const node = (id: string) => nodes.find((n: any) => n.id === id);
+  const node = (id: string) => nodes.find((n: NodeRef) => n.id === id);
   // the full-turn discriminator + the action loop: performed actions return to Action: Middle
   node("n-amid").props = { turn: "full" };
   node("n-amid").wires = { out: ["n-aend"], battle: ["n-bsel"], dungeon: ["n-dsub"], trade: ["n-trade"], move: ["n-move"] };
   node("n-bend").wires = { out: ["n-amid"] };
   node("n-dsub").wires = { enter: ["n-room-a"], completed: ["n-amid"], left: ["n-amid"] };
   node("n-trade").wires = { out: ["n-amid"] };
-  const aendIdx = nodes.findIndex((n: any) => n.id === "n-aend");
+  const aendIdx = nodes.findIndex((n: NodeRef) => n.id === "n-aend");
   nodes.splice(aendIdx, 0,
     // the Move step (rules.md §Movement) — target-set until Board adjacency ships
     { id: "n-move", kind: "action.move", wires: { out: ["n-amid"] } });

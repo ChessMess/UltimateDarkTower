@@ -26,7 +26,7 @@ import { interpretNode } from './engine/nodes';
 import { resume } from './engine/resume';
 import { run } from './engine/run';
 import { init, makeTestState, applyOne } from './engine/setup';
-import type { EngineState, Input, StepResult, Scenario, InitOpts } from './engine/types';
+import type { EngineState, Input, StepResult, InitOpts } from './engine/types';
 
 export function step(prevState: EngineState, input: Input): StepResult {
   const state = clone(prevState);
@@ -64,7 +64,7 @@ export function step(prevState: EngineState, input: Input): StepResult {
   };
 }
 
-export function replay(scenario: Scenario, opts: InitOpts, inputs: Input[]): StepResult[] {
+export function replay(scenario: unknown, opts: InitOpts, inputs: Input[]): StepResult[] {
   const results: StepResult[] = [];
   let r = init(scenario, opts);
   results.push(r);
