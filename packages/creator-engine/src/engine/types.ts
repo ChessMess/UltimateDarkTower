@@ -490,21 +490,11 @@ export type InputRequest =
   | { id: 'advantageSpend'; kind: 'advantageSpend' }
   | { id: 'trade'; kind: 'choice' }
   | { id: 'moveTarget'; kind: 'target' }
-  | {
-      id: 'dungeonMove';
-      kind: 'choice';
-      requestId: string;
-      text: string;
-      room: string;
-      doors: string[];
-    }
-  | {
-      id: 'dungeonRoomAdvantage';
-      kind: 'advantageSpend';
-      requestId: string;
-      text: string;
-      room: string;
-    }
+  // dungeonMove/dungeonRoomAdvantage keep the awaited request minimal ({id, kind}) — the
+  // room/doors/text detail goes out separately via the ui.prompt directive, not the request itself
+  // (dungeon.ts's awaitDungeonMove/resolveRoomEntry).
+  | { id: 'dungeonMove'; kind: 'choice' }
+  | { id: 'dungeonRoomAdvantage'; kind: 'advantageSpend' }
   | { id: 'skullCounter'; kind: 'observed'; observed: 'skullCounter' };
 
 // ---- inputs (what the caller supplies in response to an InputRequest) ----
@@ -545,6 +535,19 @@ export type Input =
   | { kind: 'control' };
 
 // ---- public API (§2.3) ----
+
+// ---- node/dungeon control-flow result (§4.2/§4 row 157) ----
+// The ad-hoc {goto}|{await}|{terminal}|{end} shape interpretNode/dungeon.ts's room-flow functions
+// return, consumed by run.ts/resume.ts. One loose interface (not a discriminated union) since
+// callers check each field's presence independently rather than switching on a tag. `end` is
+// currently never actually set by any producer — run.ts's `r.end` check is effectively dead but
+// kept exactly as the original reducer wrote it (see run.ts port notes).
+export interface NodeResult {
+  goto?: string;
+  await?: { request: InputRequest };
+  terminal?: true;
+  end?: boolean;
+}
 
 export interface InitOpts {
   seed: string;

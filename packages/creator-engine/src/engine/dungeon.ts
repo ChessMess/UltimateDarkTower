@@ -1,33 +1,32 @@
-// dungeon.js — the graph-faithful dungeon subflow (§4 row 157; catalog §5): room entry/gate/inside-
+// dungeon.ts — the graph-faithful dungeon subflow (§4 row 157; catalog §5): room entry/gate/inside-
 // event/improve/finalize, door movement, and completion (which completes the spawning quest). Cleared
 // state persists across heroes on state.dungeons[id]. Depends on core, conditions, effects, and turn.
 
-const { dir, fault } = require('./core');
-const { evalCondition } = require('./conditions');
-const { applyEffect, completeQuest } = require('./effects');
-const { awardHeroic } = require('./turn');
+import { dir, fault } from './core';
+import { evalCondition } from './conditions';
+import { applyEffect, completeQuest } from './effects';
+import { awardHeroic } from './turn';
+import type { EngineState, Directive, EngineNode, DungeonCursor, DungeonRunState, DungeonRoomDef, NodeResult } from './types';
 
-function dungeonState(state, id) {
+export function dungeonState(state: EngineState, id: string): DungeonRunState {
   if (!state.dungeons[id]) state.dungeons[id] = { clearedRooms: [], improvedRooms: [] };
   if (!state.dungeons[id].improvedRooms) state.dungeons[id].improvedRooms = [];
   return state.dungeons[id];
 }
-function roomOf(state, dc, roomId) {
-  const d = state._lib.dungeons[dc.dungeonId];
-  const room = (d.rooms || []).find((r) => r.id === roomId);
+export function roomOf(state: EngineState, dc: DungeonCursor, roomId: string | null): DungeonRoomDef {
+  const d = state._lib.dungeons?.[dc.dungeonId];
+  const room = (d?.rooms || []).find((r) => r.id === roomId);
   if (!room)
-    throw fault(
-      "dungeon.room references unknown room '" + roomId + "' in dungeon '" + dc.dungeonId + "'",
-    );
+    throw fault("dungeon.room references unknown room '" + roomId + "' in dungeon '" + dc.dungeonId + "'");
   return room;
 }
 
 // Resolve entry into the room a `dungeon.room` node names: gate → insideEvent → (improve boundary) →
 // finalize. Returns {goto}|{await}|{terminal}.
-function resolveRoomEntry(node, state, directives) {
+export function resolveRoomEntry(node: EngineNode, state: EngineState, directives: Directive[]): NodeResult {
   const dc = state.clock.dungeon;
   if (!dc) throw fault('dungeon.room walked outside an active dungeon subflow: ' + node.id);
-  const roomId = (node.props || {}).roomId;
+  const roomId = (node.props || {}).roomId as string | undefined;
   if (!roomId) throw fault('dungeon.room missing props.roomId: ' + node.id);
   const room = roomOf(state, dc, roomId);
   dc.currentRoom = roomId;
@@ -36,8 +35,7 @@ function resolveRoomEntry(node, state, directives) {
     command: 'revealRoom',
     args: { dungeon: dc.dungeonId, room: roomId, slice: room.bitmapSlice },
   });
-  if (room.displayText)
-    dir(directives, 'ui.update', { delta: { dungeonRoomText: room.displayText } });
+  if (room.displayText) dir(directives, 'ui.update', { delta: { dungeonRoomText: room.displayText } });
 
   const ds = dungeonState(state, dc.dungeonId);
   if (ds.clearedRooms.includes(roomId)) {
@@ -81,7 +79,7 @@ function resolveRoomEntry(node, state, directives) {
   // improve-once boundary: 1 Advantage may improve this room's result, once per room (catalog §5)
   const canImprove =
     room.improveOnce &&
-    !ds.improvedRooms.includes(roomId) &&
+    !(ds.improvedRooms || []).includes(roomId) &&
     (state.heroes[state.clock.activeHero].advantages || 0) >= 1;
   if (canImprove) {
     dir(directives, 'ui.prompt', {
@@ -95,8 +93,8 @@ function resolveRoomEntry(node, state, directives) {
   return finalizeRoom(node, state, directives);
 }
 
-function finalizeRoom(node, state, directives) {
-  const dc = state.clock.dungeon;
+export function finalizeRoom(node: EngineNode, state: EngineState, directives: Directive[]): NodeResult {
+  const dc = state.clock.dungeon as DungeonCursor;
   const ds = dungeonState(state, dc.dungeonId);
   const room = roomOf(state, dc, dc.currentRoom);
   if (!ds.clearedRooms.includes(room.id)) {
@@ -111,30 +109,30 @@ function finalizeRoom(node, state, directives) {
   return awaitDungeonMove(node, state, directives);
 }
 
-function awaitDungeonMove(node, state, directives) {
-  const dc = state.clock.dungeon;
+export function awaitDungeonMove(_node: EngineNode, state: EngineState, directives: Directive[]): NodeResult {
+  const dc = state.clock.dungeon as DungeonCursor;
   const room = roomOf(state, dc, dc.currentRoom);
-  const doors = ['N', 'E', 'S', 'W'].filter((d) => (room.exits || {})[d] === 'door');
+  const doors = (['N', 'E', 'S', 'W'] as const).filter((d) => (room.exits || {})[d] === 'door');
   dir(directives, 'ui.prompt', {
     kind: 'choice',
     requestId: 'dungeonMove',
     text: 'Move through a door or leave the dungeon',
-    room: dc.currentRoom,
-    doors,
+    room: dc.currentRoom as string,
+    doors: doors as unknown as string[],
   });
   return { await: { request: { id: 'dungeonMove', kind: 'choice' } } };
 }
 
 // Clearing the target room completes the dungeon AND its spawning quest, removing the board token.
-function completeDungeon(state, directives) {
-  const dc = state.clock.dungeon;
-  const d = state._lib.dungeons[dc.dungeonId];
+export function completeDungeon(state: EngineState, directives: Directive[]): NodeResult {
+  const dc = state.clock.dungeon as DungeonCursor;
+  const d = state._lib.dungeons?.[dc.dungeonId];
   dir(directives, 'board.mutate', {
     command: 'removeDungeonToken',
     args: { dungeon: dc.dungeonId },
   });
   dir(directives, 'log.entry', { event: 'dungeonComplete', dungeon: dc.dungeonId });
-  if (d.spawningQuestId) completeQuest(state, directives, d.spawningQuestId); // fires questComplete (§4.4)
+  if (d?.spawningQuestId) completeQuest(state, directives, d.spawningQuestId); // fires questComplete (§4.4)
   const ret = dc.completed;
   state.clock.dungeon = null;
   if (state.outcome.status !== 'running') return { terminal: true };
@@ -143,12 +141,3 @@ function completeDungeon(state, directives) {
   if (state.outcome.status !== 'running') return { terminal: true };
   return { goto: ret };
 }
-
-module.exports = {
-  dungeonState,
-  roomOf,
-  resolveRoomEntry,
-  finalizeRoom,
-  awaitDungeonMove,
-  completeDungeon,
-};
