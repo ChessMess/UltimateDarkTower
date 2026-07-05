@@ -3,8 +3,8 @@
   "compilerOptions": {
     "allowJs": true,
     "checkJs": false,
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "moduleResolution": "node16",
     "composite": true,
     "declaration": true,
     "outDir": "dist",

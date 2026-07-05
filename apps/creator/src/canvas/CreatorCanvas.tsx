@@ -17,7 +17,7 @@ import {
   type Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import engineModule from '@udtc/engine';
+import { goldenFull } from '@udtc/engine';
 import { ScenarioNode, CommentNode, GroupNode } from './NodeTypes';
 import { useCreatorStore } from '../store';
 import type { ScenarioDoc, GroupProps } from '../types';
@@ -34,7 +34,7 @@ const nodeTypes: NodeTypes = {
 // The engine's own golden scenario — the base-game fidelity build (full turn structure,
 // buildings, events, monthly quests), guaranteed runnable by the simulator: the same fixture
 // the engine's lockstep/full-turn test suites drive end-to-end.
-const BASE_SCENARIO = (engineModule as { goldenFull: ScenarioDoc }).goldenFull;
+const BASE_SCENARIO = goldenFull as ScenarioDoc;
 
 type CreatorCanvasProps = {
   focusMode: boolean;
@@ -92,7 +92,11 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
     for (const n of useCreatorStore.getState().rfNodes) {
       if (memberIds.has(n.id)) memberStarts.set(n.id, { x: n.position.x, y: n.position.y });
     }
-    groupDragRef.current = { groupId: node.id, groupStart: { x: node.position.x, y: node.position.y }, memberStarts };
+    groupDragRef.current = {
+      groupId: node.id,
+      groupStart: { x: node.position.x, y: node.position.y },
+      memberStarts,
+    };
   }, []);
 
   const onNodeDrag = useCallback((_evt: MouseEvent | TouchEvent, node: CreatorNode) => {
@@ -117,7 +121,13 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
         if (n.data.schemaNode.kind !== 'util.group') return n;
         const rect = rects[n.id];
         const style = n.style as { width?: number; height?: number } | undefined;
-        if (!rect || (n.position.x === rect.x && n.position.y === rect.y && style?.width === rect.width && style?.height === rect.height)) {
+        if (
+          !rect ||
+          (n.position.x === rect.x &&
+            n.position.y === rect.y &&
+            style?.width === rect.width &&
+            style?.height === rect.height)
+        ) {
           return n;
         }
         changed = true;
