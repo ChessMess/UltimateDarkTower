@@ -131,7 +131,9 @@ export function RelayPanel() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span
           style={{
-            width: 8, height: 8, borderRadius: '50%',
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
             background: connColor(relayConnState),
             flexShrink: 0,
           }}
@@ -140,7 +142,9 @@ export function RelayPanel() {
           {fmtConnState(relayConnState)}
         </span>
         {relayUrl !== STUB_URL && (
-          <span style={{ fontSize: 11, color: 'var(--c-text-faint)', marginLeft: 4 }}>{relayUrl}</span>
+          <span style={{ fontSize: 11, color: 'var(--c-text-faint)', marginLeft: 4 }}>
+            {relayUrl}
+          </span>
         )}
         {relayUrl === STUB_URL && (
           <span style={{ fontSize: 11, color: 'var(--c-text-faint)' }}>(simulated)</span>
@@ -150,7 +154,9 @@ export function RelayPanel() {
       {/* Connection mode — only editable before connecting */}
       {(phase === 'idle' || phase === 'error' || phase === 'ready') && (
         <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 12, color: 'var(--c-text-muted)', marginBottom: 6 }}>Connection</div>
+          <div style={{ fontSize: 12, color: 'var(--c-text-muted)', marginBottom: 6 }}>
+            Connection
+          </div>
           {RELAY_SERVER_ENABLED ? (
             <>
               <div style={{ display: 'flex', gap: 6 }}>
@@ -168,9 +174,13 @@ export function RelayPanel() {
                   value={serverUrl}
                   onChange={(e) => changeServerUrl(e.target.value)}
                   style={{
-                    width: '100%', boxSizing: 'border-box', marginTop: 6,
-                    padding: '4px 8px', border: '1px solid var(--c-border-strong)',
-                    borderRadius: 5, fontSize: 12,
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    marginTop: 6,
+                    padding: '4px 8px',
+                    border: '1px solid var(--c-border-strong)',
+                    borderRadius: 5,
+                    fontSize: 12,
                     background: 'var(--c-surface-raised)',
                     color: 'var(--c-text)',
                   }}
@@ -227,7 +237,13 @@ export function RelayPanel() {
       {/* Gate test helper — simulate disconnect while playing */}
       {isPlaying && relayConnState === 'connected' && (
         <button
-          style={{ ...btnStyle, marginTop: 8, fontSize: 11, color: 'var(--c-danger)', borderColor: '#FECACA' }}
+          style={{
+            ...btnStyle,
+            marginTop: 8,
+            fontSize: 11,
+            color: 'var(--c-danger)',
+            borderColor: '#FECACA',
+          }}
           onClick={simulateRelayDisconnect}
         >
           Simulate Disconnect
@@ -284,7 +300,9 @@ function TargetSwitch({ value, onChange }: { value: Target; onChange: (t: Target
           }}
         />
       </span>
-      <span style={{ color: isTower ? 'var(--c-primary)' : 'var(--c-text-faint)' }}>Real Tower</span>
+      <span style={{ color: isTower ? 'var(--c-primary)' : 'var(--c-text-faint)' }}>
+        Real Tower
+      </span>
     </button>
   );
 }

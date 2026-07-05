@@ -66,9 +66,7 @@ export function ScenarioMetaPanel() {
     <section style={panelStyle}>
       <h3 style={headStyle}>Scenario Info</h3>
 
-      {!meta && (
-        <div style={emptyStyle}>Load a scenario to view metadata.</div>
-      )}
+      {!meta && <div style={emptyStyle}>Load a scenario to view metadata.</div>}
 
       {meta && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -79,8 +77,12 @@ export function ScenarioMetaPanel() {
 
           {(meta.createdAt || meta.updatedAt) && (
             <Section title="Dates">
-              {meta.createdAt && <Field label="Created" value={formatDate(meta.createdAt) ?? meta.createdAt} />}
-              {meta.updatedAt && <Field label="Updated" value={formatDate(meta.updatedAt) ?? meta.updatedAt} />}
+              {meta.createdAt && (
+                <Field label="Created" value={formatDate(meta.createdAt) ?? meta.createdAt} />
+              )}
+              {meta.updatedAt && (
+                <Field label="Updated" value={formatDate(meta.updatedAt) ?? meta.updatedAt} />
+              )}
             </Section>
           )}
 
@@ -88,12 +90,19 @@ export function ScenarioMetaPanel() {
             <Section title="Designer">
               {meta.designer.name && <Field label="Name" value={meta.designer.name} />}
               {meta.designer.handle && <Field label="Handle" value={meta.designer.handle} />}
-              {meta.designer.contact?.email && <Field label="Email" value={meta.designer.contact.email} />}
+              {meta.designer.contact?.email && (
+                <Field label="Email" value={meta.designer.contact.email} />
+              )}
               {meta.designer.contact?.url && (
                 <Field
                   label="Website"
                   value={
-                    <a href={meta.designer.contact.url} target="_blank" rel="noreferrer" style={linkStyle}>
+                    <a
+                      href={meta.designer.contact.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={linkStyle}
+                    >
                       {meta.designer.contact.url}
                     </a>
                   }
@@ -105,7 +114,9 @@ export function ScenarioMetaPanel() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {meta.designer.links.map((link, index) => (
                       <div key={`${link.url ?? 'link'}-${index}`} style={listRowStyle}>
-                        <span style={keyStyle}>{link.label ?? link.rel ?? `Link ${index + 1}`}</span>
+                        <span style={keyStyle}>
+                          {link.label ?? link.rel ?? `Link ${index + 1}`}
+                        </span>
                         {link.url ? (
                           <a href={link.url} target="_blank" rel="noreferrer" style={linkStyle}>
                             {link.url}
@@ -163,7 +174,9 @@ export function ScenarioMetaPanel() {
             <Section title="Tags">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {meta.tags.map((tag) => (
-                  <span key={tag} style={tagStyle}>{tag}</span>
+                  <span key={tag} style={tagStyle}>
+                    {tag}
+                  </span>
                 ))}
               </div>
             </Section>
