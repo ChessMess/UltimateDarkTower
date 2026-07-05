@@ -68,6 +68,9 @@ export interface HeroState {
   companions: string[];
   counters: Record<string, number>;
   location: string | null;
+  /** UDT hero identity this seat picked via lifecycle.selectHero; null until assigned (or if the
+   * scenario never authors that node — legacy scenarios stay byte-identical). */
+  heroRef: string | null;
 }
 
 export interface FoeInstance {
@@ -136,6 +139,9 @@ export interface EngineClock {
   latches: ClockLatches;
   dungeon: DungeonCursor | null;
   battle: BattleCursor | null;
+  /** lifecycle.selectHero in-progress cursor: which seat is being asked and what's left in the
+   * authored pool. Null once all seats are assigned (or the node was never entered). */
+  heroSelect: { pool: string[]; seatOrder: string[]; seatIndex: number } | null;
   /** end-of-turn events raised via the onState bus, drained at the next boundary (effects.ts raiseEvent) */
   pendingEvents?: string[];
   /** remaining due event-chain roots to fire before resuming the stashed turn spine (run.ts) */
@@ -303,6 +309,10 @@ export interface ScenarioLibrary {
   foes?: Record<string, FoeDef>;
   battleDefs?: Record<string, BattleDef>;
   dungeons?: Record<string, DungeonDef>;
+  /** declared hero roster manifest (schema library.heroes) — static; the engine only reads it to
+   * validate lifecycle.selectHero's authored pool, never mutates it (the runtime pick lands on
+   * HeroState.heroRef instead). */
+  heroes?: Record<string, { heroId: string; source?: string }>;
 }
 
 // ---- effects (§4.3 closed verb vocabulary) ----
@@ -391,6 +401,10 @@ export type EngineNode =
       kind: 'lifecycle.boardSetup';
       props?: { spawns?: Array<{ foeId: string; location?: string; status?: FoeStatus }> };
     })
+  // real runtime await boundary: each active seat (turnOrder) picks one distinct heroId from
+  // props.heroIds (authored candidate pool, schema-enforced ≥1/unique) in seat order; the pick
+  // lands on HeroState.heroRef via resume.ts's 'heroSelect' case.
+  | (NodeBase & { kind: 'lifecycle.selectHero'; props: { heroIds: string[] } })
   | PropslessNode<'lifecycle.startMonth'>
   | PropslessNode<'lifecycle.playerTurn'>
   | PropslessNode<'lifecycle.actionStart'>
@@ -543,7 +557,10 @@ export type InputRequest =
   // (dungeon.ts's awaitDungeonMove/resolveRoomEntry).
   | { id: 'dungeonMove'; kind: 'choice' }
   | { id: 'dungeonRoomAdvantage'; kind: 'advantageSpend' }
-  | { id: 'skullCounter'; kind: 'observed'; observed: 'skullCounter' };
+  | { id: 'skullCounter'; kind: 'observed'; observed: 'skullCounter' }
+  // lifecycle.selectHero: one seat picks one hero per await; options is the REMAINING candidate
+  // pool for the CURRENT seat (shrinks each pick, same shape convention as 'action').
+  | { id: 'heroSelect'; kind: 'choice'; options: Array<{ id: string }> };
 
 // ---- inputs (what the caller supplies in response to an InputRequest) ----
 
@@ -580,6 +597,7 @@ export type Input =
       kind: 'decision';
     }
   | { requestId: 'skullCounter'; value: number | SkullObservation; kind: 'observed' }
+  | { requestId: 'heroSelect'; value: { heroId: string }; kind: 'decision' }
   | { kind: 'control' };
 
 // ---- public API (§2.3) ----

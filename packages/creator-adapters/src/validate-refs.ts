@@ -114,6 +114,25 @@ export function validateRefs(scenario: unknown): L2Result {
         continue;
       }
 
+      // lifecycle.selectHero: every authored candidate heroId must resolve against the UDT roster
+      // AND have a matching library.heroes entry (Creator keeps these in sync; L2 is the load-time
+      // backstop for hand-edited/imported scenarios).
+      if (kind === 'lifecycle.selectHero') {
+        const heroIds = props ? arr(props['heroIds']) : undefined;
+        const libHeroes = obj(obj(s['library'])?.['heroes']) ?? {};
+        for (const hid of heroIds ?? []) {
+          const heroId = str(hid);
+          if (heroId === undefined) continue;
+          if (!(heroId in udt.heroById)) {
+            errors.push(`node "${id}" lifecycle.selectHero heroId "${heroId}" is not in the UDT hero roster`);
+          }
+          if (!(heroId in libHeroes)) {
+            errors.push(`node "${id}" lifecycle.selectHero heroId "${heroId}" has no matching library.heroes entry`);
+          }
+        }
+        continue;
+      }
+
       // effect.apply carrying foe.spawn effect(s): resolve foeId + location
       if (kind === 'effect.apply' && props) {
         const effs: unknown[] = [];

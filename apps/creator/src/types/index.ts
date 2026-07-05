@@ -1,7 +1,7 @@
 export const NODE_KINDS = [
   'lifecycle.gameStart', 'lifecycle.importSeed', 'lifecycle.selectGameDifficulty',
   'lifecycle.selectAdversary', 'lifecycle.selectFoes', 'lifecycle.selectMainGoal',
-  'lifecycle.selectAlly', 'lifecycle.boardSetup', 'lifecycle.startMonth', 'lifecycle.playerTurn',
+  'lifecycle.selectAlly', 'lifecycle.selectHero', 'lifecycle.boardSetup', 'lifecycle.startMonth', 'lifecycle.playerTurn',
   'lifecycle.actionStart', 'lifecycle.actionMiddle', 'lifecycle.actionEnd',
   'lifecycle.newMonthCheck', 'lifecycle.newQuests', 'lifecycle.gameEnd',
   'action.banner', 'action.move', 'action.cleanse', 'action.battle', 'action.quest',

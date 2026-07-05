@@ -62,6 +62,7 @@ Current engine input boundaries:
 - `action.move` and `battle.selectFoe`/`action.battle` -> request `target`
 - `battle.applyAdvantage` -> request `advantageSpend`
 - `action.trade` -> request `trade`
+- `lifecycle.selectHero` -> request `heroSelect` (`choice`), one round-trip per active seat
 
 ### Directive surface (what nodes emit)
 
@@ -85,6 +86,7 @@ Implemented nodes emit directives from this closed set:
 | lifecycle.selectFoes           | lifecycle | Creator-only | No                     | out                                                                         | Open                               |
 | lifecycle.selectMainGoal       | lifecycle | Creator-only | No                     | out                                                                         | Open                               |
 | lifecycle.selectAlly           | lifecycle | Creator-only | No                     | out                                                                         | Open                               |
+| lifecycle.selectHero           | lifecycle | Implemented  | Yes (`heroSelect`)     | out                                                                         | Closed (heroIds)                   |
 | lifecycle.boardSetup           | lifecycle | Implemented  | No                     | out                                                                         | Closed (spawns)                    |
 | lifecycle.startMonth           | lifecycle | Implemented  | No                     | out                                                                         | Open                               |
 | lifecycle.playerTurn           | lifecycle | Implemented  | No                     | out                                                                         | Open                               |
@@ -157,6 +159,7 @@ Implemented nodes emit directives from this closed set:
 | `lifecycle.selectFoes`           | Authoring step for foe roster selection.           | None                          | `out`                            | Open                             | Creator-only node.                                                                                                                               |
 | `lifecycle.selectMainGoal`       | Authoring step for selecting main goal.            | None                          | `out`                            | Open                             | Creator-only node.                                                                                                                               |
 | `lifecycle.selectAlly`           | Authoring step for selecting ally.                 | None                          | `out`                            | Open                             | Creator-only node.                                                                                                                               |
+| `lifecycle.selectHero`           | Seat-by-seat hero character selection from an authored pool. | Await `heroSelect`            | `out`                            | Closed: `heroIds[]` required     | Each active seat (turnOrder) picks one distinct hero from the shrinking candidate pool; sets `HeroState.heroRef`; loops until every seat is assigned, then continues. |
 | `lifecycle.boardSetup`           | Initialize board and place initial heroes/foes.    | None                          | `out`                            | Closed: optional `spawns[]`      | Emits `board.mutate` (`setupBoard`, hero placement), runs `foe.spawn` effects from `props.spawns`, emits `ui.update`.                            |
 | `lifecycle.startMonth`           | Start monthly cycle and resolve turn count.        | None                          | `out`                            | Open                             | Increments month, computes turns via PRNG and `setup.monthEnd`, resets latches, logs `startMonth`.                                               |
 | `lifecycle.playerTurn`           | Start a player turn for active hero.               | None                          | `out`                            | Open                             | Increments turn counters, resets latches, logs `playerTurn`.                                                                                     |
@@ -292,6 +295,7 @@ These node kinds currently have explicit closed props schemas (`if/then`) in `sc
 | `media.narration`                              | `text`                | none                    |
 | `media.showImage`                              | `imageRef`            | none                    |
 | `lifecycle.boardSetup`                         | none                  | `spawns`                |
+| `lifecycle.selectHero`                         | `heroIds`             | none                    |
 | `util.comment`                                 | none                  | (no props fields)       |
 | `util.group`                                   | `nodeIds`             | `color`                 |
 
@@ -354,4 +358,4 @@ When adding or changing node kinds:
 
 ## Version Note
 
-Catalog reflects the current repository state on 2026-07-03.
+Catalog reflects the current repository state on 2026-07-04.

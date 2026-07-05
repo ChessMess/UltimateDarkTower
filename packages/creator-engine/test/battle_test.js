@@ -6,6 +6,16 @@ const { makeTestState, startBattle, resolveBattle, applyTrade } = __internals;
 const engine = require('../dist/engine');
 const { goldenFull } = require('../dist/golden-fixture');
 
+// goldenFull opens with a lifecycle.selectHero boundary — init and step past it (one pick per seat,
+// first offered candidate) so callers land at the first turn-loop boundary.
+function initGF(o) {
+  let r = engine.init(goldenFull, o);
+  while (r.status === 'awaitingInput' && r.awaiting.id === 'heroSelect') {
+    r = engine.step(r.state, { requestId: 'heroSelect', value: { heroId: r.awaiting.options[0].id }, kind: 'decision' });
+  }
+  return r;
+}
+
 let pass = 0,
   fail = 0;
 function check(name, fn) {
@@ -134,7 +144,7 @@ check('card onResolve effects fire when a card is cleared', () => {
 
 // ---------- full-turn cancel at target selection ----------
 check('target cancel returns to action menu and refunds heroic latch', () => {
-  let r = engine.init(goldenFull, { seed: 'battle-cancel-seed', playerCount: 1 });
+  let r = initGF({ seed: 'battle-cancel-seed', playerCount: 1 });
   r = engine.step(r.state, { requestId: 'action', value: { choice: 'battle' }, kind: 'decision' });
   if (!(r.awaiting && r.awaiting.id === 'target' && r.state.clock.latches.heroicActionUsed))
     return false;
@@ -147,7 +157,7 @@ check('target cancel returns to action menu and refunds heroic latch', () => {
   );
 });
 check('after target cancel, another heroic action can be chosen in the same turn', () => {
-  let r = engine.init(goldenFull, { seed: 'battle-cancel-seed-2', playerCount: 1 });
+  let r = initGF({ seed: 'battle-cancel-seed-2', playerCount: 1 });
   r = engine.step(r.state, { requestId: 'action', value: { choice: 'battle' }, kind: 'decision' });
   r = engine.step(r.state, { requestId: 'target', value: { cancel: true }, kind: 'decision' });
   if (!(
@@ -160,7 +170,7 @@ check('after target cancel, another heroic action can be chosen in the same turn
   return r.status === 'awaitingInput' && r.awaiting && r.awaiting.id === 'dungeonRoomAdvantage';
 });
 check('target cancel exits battle flow even when actionMiddle spine pointer is missing', () => {
-  let r = engine.init(goldenFull, { seed: 'battle-cancel-seed-3', playerCount: 1 });
+  let r = initGF({ seed: 'battle-cancel-seed-3', playerCount: 1 });
   r = engine.step(r.state, { requestId: 'action', value: { choice: 'battle' }, kind: 'decision' });
   if (!(r.awaiting && r.awaiting.id === 'target')) return false;
   r.state._spine.actionMiddle = undefined;
@@ -168,7 +178,7 @@ check('target cancel exits battle flow even when actionMiddle spine pointer is m
   return r.status === 'awaitingInput' && r.awaiting && r.awaiting.id === 'action';
 });
 check('empty target decision is treated as cancel (no undefined-foe fault)', () => {
-  let r = engine.init(goldenFull, { seed: 'battle-cancel-seed-4', playerCount: 1 });
+  let r = initGF({ seed: 'battle-cancel-seed-4', playerCount: 1 });
   r = engine.step(r.state, { requestId: 'action', value: { choice: 'battle' }, kind: 'decision' });
   if (!(r.awaiting && r.awaiting.id === 'target')) return false;
   r = engine.step(r.state, { requestId: 'target', value: {}, kind: 'decision' });

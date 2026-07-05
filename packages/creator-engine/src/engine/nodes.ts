@@ -36,6 +36,49 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
       dir(directives, 'ui.update', { delta: { phase: 'setup' } });
       return { goto: next };
     }
+    case 'lifecycle.selectHero': {
+      // INPUT BOUNDARY (real runtime await, character-select for a co-op party): each active seat
+      // (turnOrder) picks one distinct hero from the authored candidate pool (props.heroIds), in
+      // seat order. Re-entrant: resume.ts's 'heroSelect' handler goto's back to this same node id
+      // (verified-safe via run.ts's plain cursor reassignment) until every seat has HeroState.heroRef
+      // set, then this case clears the cursor and proceeds via `out`.
+      if (!state.clock.heroSelect) {
+        const seatOrder = state.clock.turnOrder.slice();
+        const alreadyTaken = new Set(
+          seatOrder.map((h) => state.heroes[h].heroRef).filter((r): r is string => r != null),
+        );
+        const pool = node.props.heroIds.filter((id) => !alreadyTaken.has(id));
+        state.clock.heroSelect = { pool, seatOrder, seatIndex: 0 };
+      }
+      const hs = state.clock.heroSelect;
+      while (hs.seatIndex < hs.seatOrder.length && state.heroes[hs.seatOrder[hs.seatIndex]].heroRef != null) {
+        hs.seatIndex += 1;
+      }
+      if (hs.seatIndex >= hs.seatOrder.length) {
+        state.clock.heroSelect = null;
+        return { goto: next };
+      }
+      if (hs.pool.length === 0) {
+        throw fault(
+          'lifecycle.selectHero: candidate pool exhausted before all seats assigned (' +
+            hs.seatOrder.length +
+            ' seats, ' +
+            node.props.heroIds.length +
+            ' authored heroIds)',
+        );
+      }
+      dir(directives, 'ui.prompt', {
+        kind: 'choice',
+        requestId: 'heroSelect',
+        text: 'Choose your hero',
+        options: hs.pool.slice(),
+      });
+      return {
+        await: {
+          request: { id: 'heroSelect', kind: 'choice', options: hs.pool.map((id) => ({ id })) },
+        },
+      };
+    }
     case 'lifecycle.startMonth': {
       state.clock.month += 1;
       state.clock.turnInMonth = 0;

@@ -50,6 +50,7 @@ const obs = (v) => ({ requestId: 'skullCounter', value: v, kind: 'observed' });
 const tgt = (foeId) => ({ requestId: 'target', value: { foeId }, kind: 'decision' });
 const adv = (spend) => ({ requestId: 'advantageSpend', value: { spend }, kind: 'decision' });
 const mov = (to) => ({ requestId: 'moveTarget', value: { to }, kind: 'decision' });
+const hsel = (heroId) => ({ requestId: 'heroSelect', value: { heroId }, kind: 'decision' });
 const opts = { seed: 'mvp-runtime-seed', playerCount: 1 };
 const clone = (x) => JSON.parse(JSON.stringify(x));
 
@@ -63,6 +64,8 @@ function drive(scenario, o, script) {
     let input;
     if (req.id === 'skullCounter' && !(i < script.length && script[i].requestId === 'skullCounter'))
       input = obs(0);
+    else if (req.id === 'heroSelect' && !(i < script.length && script[i].requestId === 'heroSelect'))
+      input = hsel(req.options[0].id);
     else {
       if (i >= script.length) break;
       input = script[i++];
@@ -74,6 +77,16 @@ function drive(scenario, o, script) {
   return results;
 }
 const lastOf = (run) => run[run.length - 1];
+
+// goldenFull opens with a lifecycle.selectHero boundary — init and step past it (one pick per seat),
+// returning the first post-selection StepResult for tests that assert on immediate post-setup state.
+function initPastSelect(scenario, o) {
+  let r = engine.init(scenario, o);
+  while (r.status === 'awaitingInput' && r.awaiting.id === 'heroSelect') {
+    r = engine.step(r.state, hsel(r.awaiting.options[0].id));
+  }
+  return r;
+}
 
 // ---------- A1: serialize/deserialize round-trip (undefined keys) ----------
 for (const [name, fx] of [
@@ -170,7 +183,7 @@ for (const [name, fx] of [
 
 // ---------- A4: authored building.destroy / skull.place keep the registry in sync ----------
 {
-  const r = engine.init(goldenFull, opts);
+  const r = initPastSelect(goldenFull, opts);
   const s = clone(r.state);
   s.outcome = { status: 'running', reason: null };
   const target = s.buildings.find((b) => b.kingdom === 'north' && !b.destroyed);
@@ -183,7 +196,7 @@ for (const [name, fx] of [
   ok('A4: skull.place draws from supply', s.skulls.supply === before - 1);
 }
 {
-  const r = engine.init(goldenFull, opts);
+  const r = initPastSelect(goldenFull, opts);
   const s = clone(r.state);
   s.outcome = { status: 'running', reason: null };
   const target = s.buildings.find((b) => b.kingdom === 'north' && !b.destroyed);
@@ -229,7 +242,7 @@ for (const [name, fx] of [
 
 // ---------- D2: completeQuest faults on re-entry instead of recursing unboundedly ----------
 {
-  const r = engine.init(goldenFull, opts);
+  const r = initPastSelect(goldenFull, opts);
   const s = clone(r.state);
   s.outcome = { status: 'running', reason: null };
   // a self-completing quest: its own success outcome re-fires quest.complete on itself
@@ -241,7 +254,7 @@ for (const [name, fx] of [
   );
 }
 {
-  const r = engine.init(goldenFull, opts);
+  const r = initPastSelect(goldenFull, opts);
   const s = clone(r.state);
   s.outcome = { status: 'running', reason: null };
   // an indirect cycle: questA's success completes questB, whose success completes questA back
@@ -253,7 +266,7 @@ for (const [name, fx] of [
 }
 {
   // sanity: two INDEPENDENT quests completing each other in sequence (not a cycle) still succeed
-  const r = engine.init(goldenFull, opts);
+  const r = initPastSelect(goldenFull, opts);
   const s = clone(r.state);
   s.outcome = { status: 'running', reason: null };
   s._lib.quests['questC'] = { outcomes: { success: [] } };
@@ -266,7 +279,7 @@ for (const [name, fx] of [
 
 // ---------- D3: digest hashes load-bearing clock state and ignores load-time refs ----------
 {
-  const r = engine.init(goldenFull, opts);
+  const r = initPastSelect(goldenFull, opts);
   const before = engine.digest(r.state);
   const s = clone(r.state);
   s.outcome = { status: 'running', reason: null };
@@ -283,7 +296,7 @@ for (const [name, fx] of [
   );
 }
 {
-  const r = engine.init(goldenFull, opts);
+  const r = initPastSelect(goldenFull, opts);
   const s = clone(r.state);
   s._lib = { mutatedForTest: true }; // a load-time ref: never changes at runtime post-init
   ok(

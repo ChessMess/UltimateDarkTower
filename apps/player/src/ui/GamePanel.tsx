@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { getUDTReferenceLayer } from '@udtc/adapters';
 import { handleInput, mountDisplay, unmountDisplay, type DisplayMode } from '../game';
 import { usePlayerStore } from '../store';
 import { fmtStatus } from '../utils';
@@ -118,6 +119,7 @@ function ActionInput() {
   if (phase !== 'playing' || !awaiting) return null;
 
   if (awaiting.id === 'action') return <ActionMenu options={awaiting.options ?? []} />;
+  if (awaiting.id === 'heroSelect') return <HeroSelectInput options={awaiting.options ?? []} />;
   if (awaiting.id === 'skullCounter') return <SkullInput />;
   if (awaiting.id === 'target') return <TargetInput />;
   if (awaiting.id === 'advantageSpend') return <AdvantageInput />;
@@ -128,6 +130,32 @@ function ActionInput() {
   return (
     <div style={{ color: 'var(--c-text-muted)', fontSize: 12, marginBottom: 12 }}>
       Awaiting: <strong>{awaiting.id}</strong>
+    </div>
+  );
+}
+
+function HeroSelectInput({ options }: { options: Array<{ id: string }> }) {
+  const heroById = getUDTReferenceLayer().heroById;
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={awaitLabelStyle}>Choose your hero:</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {options.map((o) => {
+          const h = heroById[o.id];
+          return (
+            <button
+              key={o.id}
+              style={actionBtn}
+              title={h ? `${h.name} (${h.source})` : o.id}
+              onClick={() =>
+                handleInput({ requestId: 'heroSelect', value: { heroId: o.id }, kind: 'decision' })
+              }
+            >
+              {h?.name ?? o.id}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

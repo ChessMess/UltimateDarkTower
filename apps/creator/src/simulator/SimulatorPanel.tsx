@@ -45,6 +45,11 @@ function defaultInputFor(awaiting: InputRequest, state: EngineState): Input {
     }
     case 'skullCounter':
       return { requestId: 'skullCounter', value: 0, kind: 'observed' };
+    case 'heroSelect': {
+      // pick the first offered candidate — the pool is guaranteed non-empty at this boundary
+      const heroId = awaiting.options?.[0]?.id ?? '';
+      return { requestId: 'heroSelect', value: { heroId }, kind: 'decision' };
+    }
     case 'target': {
       const adv = state.adversary;
       if (adv?.spawned && !adv.defeated) {

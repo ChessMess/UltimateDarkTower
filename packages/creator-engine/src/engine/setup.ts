@@ -51,6 +51,7 @@ export function makeHero(fullTurn: boolean): HeroState {
     companions: [],
     counters: {},
     location: null,
+    heroRef: null,
   };
 }
 

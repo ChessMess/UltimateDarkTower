@@ -21,6 +21,7 @@ function fixedMonths(base) {
   delete c.setup.monthEnd.perMonth["6"];
   return c;
 }
+const hsel = (heroId) => ({ requestId: "heroSelect", value: { heroId }, kind: "decision" });
 function drive(scenario, o, script) {
   let r = engine.init(scenario, o);
   const results = [r];
@@ -29,6 +30,7 @@ function drive(scenario, o, script) {
     const req = r.awaiting;
     let input;
     if (req.id === "skullCounter" && !(i < script.length && script[i].requestId === "skullCounter")) input = obs(0);
+    else if (req.id === "heroSelect" && !(i < script.length && script[i].requestId === "heroSelect")) input = hsel(req.options[0].id);
     else { if (i >= script.length) break; input = script[i++]; }
     r = engine.step(r.state, input);
     results.push(r);

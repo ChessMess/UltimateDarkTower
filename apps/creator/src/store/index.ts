@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Edge } from '@xyflow/react';
+import { getUDTReferenceLayer } from '@udtc/adapters';
 import type { ScenarioDoc, SchemaNode, ValidationResults, NodeKind } from '../types';
 import { schemaToFlow, flowToSchema, type CreatorNode } from '../utils/serializer';
 import { runValidation } from '../utils/validation';
@@ -28,6 +29,7 @@ interface CreatorStore {
   addNode: (kind: NodeKind, position: { x: number; y: number }) => void;
   deleteNode: (id: string) => void;
   updateNodeProps: (id: string, props: Record<string, unknown>) => void;
+  syncLibraryHeroes: (heroIds: string[]) => void;
   updateNodeLabel: (id: string, label: string) => void;
   updateNodeDescription: (id: string, description: string) => void;
   updateScenarioDescription: (description: string) => void;
@@ -208,6 +210,31 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
           n.id === id ? { ...n, props: { ...n.props, ...props } } : n,
         ),
       },
+    };
+    const { nodes, edges } = deriveRF(updated);
+    const results = revalidate(updated);
+    const annotated = annotateErrors(nodes, results);
+    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+  },
+
+  // lifecycle.selectHero: ensure a library.heroes entry exists for every heroId in a node's
+  // candidate pool. Additive-only — never prunes an entry when a heroId is removed from one
+  // node's pool, since other authoring could still reference it.
+  syncLibraryHeroes(heroIds) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const existing = (schemaDoc.library?.heroes as Record<string, unknown>) ?? {};
+    const nextHeroes = { ...existing };
+    const udtHeroById = getUDTReferenceLayer().heroById;
+    for (const id of heroIds) {
+      if (!nextHeroes[id]) {
+        const h = udtHeroById[id];
+        nextHeroes[id] = { heroId: id, source: h?.source ?? 'base' };
+      }
+    }
+    const updated: ScenarioDoc = {
+      ...schemaDoc,
+      library: { ...schemaDoc.library, heroes: nextHeroes },
     };
     const { nodes, edges } = deriveRF(updated);
     const results = revalidate(updated);
