@@ -653,7 +653,7 @@
         "kind": { "enum": [
           "lifecycle.gameStart", "lifecycle.importSeed", "lifecycle.selectGameDifficulty",
           "lifecycle.selectAdversary", "lifecycle.selectFoes", "lifecycle.selectMainGoal",
-          "lifecycle.selectAlly", "lifecycle.boardSetup", "lifecycle.startMonth", "lifecycle.playerTurn",
+          "lifecycle.selectAlly", "lifecycle.selectHero", "lifecycle.boardSetup", "lifecycle.startMonth", "lifecycle.playerTurn",
           "lifecycle.actionStart", "lifecycle.actionMiddle", "lifecycle.actionEnd",
           "lifecycle.newMonthCheck", "lifecycle.newQuests", "lifecycle.gameEnd",
           "action.banner", "action.move", "action.cleanse", "action.battle", "action.quest",
@@ -763,6 +763,13 @@
                 "location": { "type": "string" },
                 "status": { "$ref": "#/$defs/foeStatus" }
               } } } } } } } },
+        { "$comment": "v0.4 — lifecycle.selectHero: authored candidate hero pool; real runtime await boundary — each active seat picks one distinct hero from props.heroIds (engine's heroSelect input). L2 resolves each heroId against the UDT roster and requires a matching library.heroes entry.",
+          "if": { "properties": { "kind": { "const": "lifecycle.selectHero" } }, "required": ["kind"] },
+          "then": { "properties": { "props": {
+            "type": "object", "additionalProperties": false, "required": ["heroIds"],
+            "properties": {
+              "heroIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/heroId" } }
+            } } } } },
         { "$comment": "v0.4 — util.comment: sticky-note annotation; label is the headline, node.description is the body. No runtime props.",
           "if": { "properties": { "kind": { "const": "util.comment" } }, "required": ["kind"] },
           "then": { "properties": { "props": {

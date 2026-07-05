@@ -207,6 +207,50 @@ describe('validateRefs (L2)', () => {
     expect(result.ok).toBe(false);
     expect(result.errors.some((e) => e.includes('foe.spawn') && e.includes('Narnia'))).toBe(true);
   });
+
+  it('accepts a selectHero node whose pool resolves in both the roster and library.heroes', () => {
+    const good = structuredClone(golden) as Record<string, unknown>;
+    (good.library as Record<string, unknown>).heroes = {
+      'brutal-warlord': { heroId: 'brutal-warlord', source: 'base' },
+      'orphaned-scion': { heroId: 'orphaned-scion', source: 'base' },
+    };
+    ((good.graph as Record<string, unknown>).nodes as unknown[]).push({
+      id: 'n-hero',
+      kind: 'lifecycle.selectHero',
+      props: { heroIds: ['brutal-warlord', 'orphaned-scion'] },
+    });
+    const result = validateRefs(good);
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('rejects a selectHero heroId that is not in the UDT roster', () => {
+    const bad = structuredClone(golden) as Record<string, unknown>;
+    (bad.library as Record<string, unknown>).heroes = {
+      'not-a-hero': { heroId: 'not-a-hero', source: 'base' },
+    };
+    ((bad.graph as Record<string, unknown>).nodes as unknown[]).push({
+      id: 'n-hero',
+      kind: 'lifecycle.selectHero',
+      props: { heroIds: ['not-a-hero'] },
+    });
+    const result = validateRefs(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('n-hero') && e.includes('not-a-hero') && e.includes('roster'))).toBe(true);
+  });
+
+  it('rejects a valid UDT hero missing from library.heroes', () => {
+    const bad = structuredClone(golden) as Record<string, unknown>;
+    // library.heroes intentionally absent
+    ((bad.graph as Record<string, unknown>).nodes as unknown[]).push({
+      id: 'n-hero',
+      kind: 'lifecycle.selectHero',
+      props: { heroIds: ['brutal-warlord'] },
+    });
+    const result = validateRefs(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('n-hero') && e.includes('brutal-warlord') && e.includes('library.heroes'))).toBe(true);
+  });
 });
 
 // ---- L3 tests ----

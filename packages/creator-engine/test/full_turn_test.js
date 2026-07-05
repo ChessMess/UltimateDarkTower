@@ -20,8 +20,13 @@ const dmove = (direction) => ({ requestId: "dungeonMove", value: { direction }, 
 const dimp = (improve) => ({ requestId: "dungeonRoomAdvantage", value: { improve }, kind: "decision" });
 const opts = { seed: "mvp-runtime-seed", playerCount: 1 };
 
-// drive(): steps through a script of decision inputs, auto-answering skullCounter with obs(0)
-// unless the script's next entry is an observed input. Robust to seed-drawn month lengths.
+// goldenFull opens with a lifecycle.selectHero boundary (one pick per seat). This helper picks the
+// first offered candidate, matching the skullCounter auto-answer style below.
+const hsel = (heroId) => ({ requestId: "heroSelect", value: { heroId }, kind: "decision" });
+
+// drive(): steps through a script of decision inputs, auto-answering skullCounter with obs(0) and
+// heroSelect with the first offered candidate, unless the script's next entry targets that request.
+// Robust to seed-drawn month lengths.
 function drive(scenario, o, script) {
   let r = engine.init(scenario, o);
   const results = [r];
@@ -31,6 +36,8 @@ function drive(scenario, o, script) {
     let input;
     if (req.id === "skullCounter" && !(i < script.length && script[i].requestId === "skullCounter")) {
       input = obs(0);
+    } else if (req.id === "heroSelect" && !(i < script.length && script[i].requestId === "heroSelect")) {
+      input = hsel(req.options[0].id);
     } else {
       if (i >= script.length) break;
       input = script[i++];
@@ -43,6 +50,16 @@ function drive(scenario, o, script) {
 }
 const lastOf = (run) => run[run.length - 1];
 
+// init a scenario and step past any leading heroSelect boundaries (one pick per seat), returning the
+// first post-selection StepResult — used where a test asserts on immediate post-setup init state.
+function initPastSelect(scenario, o) {
+  let r = engine.init(scenario, o);
+  while (r.status === "awaitingInput" && r.awaiting.id === "heroSelect") {
+    r = engine.step(r.state, hsel(r.awaiting.options[0].id));
+  }
+  return r;
+}
+
 // a goldenFull clone with FIXED month lengths (months 2+ = exactly 3 turns) so monthly-quest
 // boundaries are stream-predictable; month 1 stays the authored single turn.
 function fixedMonths() {
@@ -54,7 +71,7 @@ function fixedMonths() {
 const gf = fixedMonths();
 
 // ---------- init fidelity ----------
-const r0 = engine.init(goldenFull, opts);
+const r0 = initPastSelect(goldenFull, opts);
 ok("hero starts at the home citadel (rules.md §Hero Setup)", r0.state.heroes.hero1.location === "Radiant Mountains");
 ok("the 16-building registry is live", r0.state.buildings.length === 16 && r0.state.buildings.every(b => b.skulls === 0 && !b.destroyed));
 ok("full-turn heroes carry the 3+3 virtue split (placeholders)",

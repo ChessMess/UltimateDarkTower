@@ -28,6 +28,7 @@ type MoveTargetInput = Extract<Input, { requestId: 'moveTarget' }>;
 type DungeonRoomAdvantageInput = Extract<Input, { requestId: 'dungeonRoomAdvantage' }>;
 type DungeonMoveInput = Extract<Input, { requestId: 'dungeonMove' }>;
 type SkullCounterInput = Extract<Input, { requestId: 'skullCounter' }>;
+type HeroSelectInput = Extract<Input, { requestId: 'heroSelect' }>;
 
 // ---------- resume from an input boundary ----------
 export function resume(
@@ -121,6 +122,24 @@ export function resume(
         args: { hero: state.clock.activeHero, to: moveTo },
       });
       return { goto: next };
+    }
+    case 'heroSelect': {
+      // lifecycle.selectHero — assign the picked hero to the current seat, then loop back into
+      // the SAME node (not `next`) so nodes.ts asks the next unassigned seat, or detects
+      // completion and clears state.clock.heroSelect / returns {goto: next} itself.
+      const hs = state.clock.heroSelect;
+      if (!hs) throw fault('heroSelect resumed with no active selection cursor');
+      const heroId = ((input as HeroSelectInput).value || {}).heroId;
+      if (!heroId || !hs.pool.includes(heroId)) {
+        throw fault('heroSelect: "' + heroId + '" is not in the remaining pool');
+      }
+      const seat = hs.seatOrder[hs.seatIndex];
+      state.heroes[seat].heroRef = heroId;
+      hs.pool = hs.pool.filter((id) => id !== heroId);
+      hs.seatIndex += 1;
+      dir(directives, 'log.entry', { event: 'heroSelected', hero: seat, heroId });
+      dir(directives, 'ui.update', { delta: { hero: seat, heroRef: heroId } });
+      return { goto: node.id };
     }
     case 'dungeonRoomAdvantage': {
       // dungeon.room — spend 1 Advantage to improve this room (once)

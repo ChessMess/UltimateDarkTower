@@ -447,6 +447,14 @@ const goldenAuthoredLossFoe = cloneAuthoredLossFoe();
 function buildGoldenFull() {
   const c = JSON.parse(JSON.stringify(golden));
   c.meta.description = "Base-game fidelity golden scenario — full turn structure, buildings, events, monthly quests (rules.md).";
+  // the four base-game heroes, declared as the scenario's roster manifest (library.heroes) so the
+  // lifecycle.selectHero candidate pool below resolves clean at L2.
+  c.library.heroes = {
+    "brutal-warlord": { heroId: "brutal-warlord", source: "base" },
+    "orphaned-scion": { heroId: "orphaned-scion", source: "base" },
+    "relic-hunter":   { heroId: "relic-hunter",   source: "base" },
+    "spymaster":      { heroId: "spymaster",      source: "base" }
+  };
   // month 1 is exactly one turn per player (rules.md:62)
   c.setup.monthEnd.perMonth["1"] = { minTurn: 1, maxTurn: 1 };
   // the real board: one building of each type per kingdom (buildings.md), heroes start at the citadel
@@ -473,6 +481,16 @@ function buildGoldenFull() {
   } };
   const nodes: EngineNode[] = c.graph.nodes;
   const node = (id: string) => nodes.find((n) => n.id === id)!;
+  // co-op character select (rules.md §Hero Setup): before the board is laid out, each seat picks a
+  // hero from the authored pool. A real runtime await boundary (lifecycle.selectHero) inserted
+  // between gameStart and boardSetup; only goldenFull carries it (legacy golden stays untouched).
+  node("n-start").wires = { out: ["n-selecthero"] };
+  const setupIdx = nodes.findIndex((n) => n.id === "n-setup");
+  nodes.splice(setupIdx, 0, {
+    id: "n-selecthero", kind: "lifecycle.selectHero",
+    props: { heroIds: ["brutal-warlord", "orphaned-scion", "relic-hunter", "spymaster"] },
+    wires: { out: ["n-setup"] }
+  });
   // the full-turn discriminator + the action loop: performed actions return to Action: Middle
   const amidNode = node("n-amid");
   if (amidNode.kind === "lifecycle.actionMiddle") {
