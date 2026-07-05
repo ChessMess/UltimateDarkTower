@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { golden, goldenFull } from '@udtc/engine';
-import { loadGame, resumeSession, discardSession } from '../game';
+import { loadGame, startGame, resumeSession, discardSession } from '../game';
 import { usePlayerStore } from '../store';
 
 // Human-friendly "saved N ago" for the resume banner.
@@ -104,6 +104,29 @@ export function LoadPanel() {
           onChange={handleFile}
         />
       </div>
+
+      {phase === 'ready' && (
+        <div style={readyCardStyle}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-success)' }}>
+            Scenario loaded and ready
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--c-text-muted)', margin: '4px 0 8px' }}>
+            Press Start to begin playing.
+          </div>
+          <button
+            style={{
+              ...btnStyle,
+              background: 'var(--c-primary)',
+              color: '#fff',
+              borderColor: 'var(--c-primary)',
+            }}
+            onClick={startGame}
+          >
+            Start
+          </button>
+        </div>
+      )}
+
       {validationResults && !validationResults.allOk && (
         <div style={{ marginTop: 8 }}>
           {(['l1', 'l2', 'l3', 'l4'] as const).map((layer) => {
@@ -146,6 +169,14 @@ const resumeCardStyle: React.CSSProperties = {
   borderRadius: 6,
   padding: 10,
   marginBottom: 10,
+};
+
+const readyCardStyle: React.CSSProperties = {
+  background: 'var(--c-surface)',
+  border: '1px solid var(--c-success)',
+  borderRadius: 6,
+  padding: 10,
+  marginTop: 10,
 };
 
 const btnStyle: React.CSSProperties = {

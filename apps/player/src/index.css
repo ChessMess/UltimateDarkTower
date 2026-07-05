@@ -87,7 +87,9 @@ body,
   padding: 16px;
   overflow-y: auto;
   border-right: 1px solid var(--c-border);
-  background: var(--c-surface);
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--c-primary) 16%, transparent), transparent 45%),
+    linear-gradient(180deg, color-mix(in srgb, var(--c-primary) 6%, var(--c-surface)) 0%, var(--c-surface) 100%);
 }
 
 .player-main {

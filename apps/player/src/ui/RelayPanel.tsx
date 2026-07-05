@@ -72,6 +72,7 @@ function saveTargetPref(target: Target): void {
 
 export function RelayPanel() {
   const phase = usePlayerStore((s) => s.phase);
+  const hasScenario = usePlayerStore((s) => !!s.scenario);
   const relayConnState = usePlayerStore((s) => s.relayConnState);
   const relayStatus = usePlayerStore((s) => s.relayStatus);
   const relayUrl = usePlayerStore((s) => s.relayUrl);
@@ -103,7 +104,7 @@ export function RelayPanel() {
     saveRelayPref(true, url);
   };
 
-  const showTargetPicker = phase === 'connecting' && relayConnState === 'connected' && !relayStatus?.relaying;
+  const showTargetPicker = hasScenario && relayConnState === 'connected' && !relayStatus?.relaying;
   const isPlaying = phase === 'playing' || phase === 'waiting' || phase === 'ended';
   // Show the target switch until a game is live (lets the preference be set before loading).
   const showTargetSwitch = phase !== 'playing' && phase !== 'ended';
@@ -147,7 +148,7 @@ export function RelayPanel() {
       </div>
 
       {/* Connection mode — only editable before connecting */}
-      {(phase === 'idle' || phase === 'error') && (
+      {(phase === 'idle' || phase === 'error' || phase === 'ready') && (
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 12, color: 'var(--c-text-muted)', marginBottom: 6 }}>Connection</div>
           {RELAY_SERVER_ENABLED ? (

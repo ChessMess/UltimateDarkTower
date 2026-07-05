@@ -1,4 +1,4 @@
-import { LoadPanel, RelayPanel, GamePanel } from './ui';
+import { LoadPanel, ScenarioMetaPanel, RelayPanel, GamePanel } from './ui';
 import { ThemeToggle } from '@udtc/theme';
 import { usePlayerStore } from './store';
 
@@ -32,6 +32,7 @@ export default function App() {
         <aside className="player-sidebar">
           <LoadPanel />
           <RelayPanel />
+          <ScenarioMetaPanel />
         </aside>
         <main className="player-main">
           <GamePanel />

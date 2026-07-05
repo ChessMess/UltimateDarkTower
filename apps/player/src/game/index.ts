@@ -29,6 +29,8 @@ let _stage: import('ultimatedarktowerboard/stage').BoardStageView | null = null;
 // a superseded async mount bail instead of appending an orphaned view.
 let _mountGen = 0;
 let _cmdSeq = 0;
+let _startRequested = false;
+let _relayReadyLogged = false;
 
 // Boot-detected saved session awaiting a user Resume decision (see checkForResumableSession).
 let _stashedSession: SavedSession | null = null;
@@ -63,10 +65,16 @@ function relay(): RelayClient {
       onStatus: (status) => {
         usePlayerStore.getState().setRelayStatus(status);
         const store = usePlayerStore.getState();
-        // Transition to playing once the target is calibrated
-        if (store.phase === 'waiting' && status.calibrated && status.relaying) {
-          store.setPhase('playing');
-          store.addLog(`Relay ready — target: ${status.targetKind}`);
+        // Keep the load phase explicit: calibration readiness is tracked even before Start,
+        // then an explicit Start transitions the game into active play.
+        if (status.calibrated && status.relaying) {
+          if (_startRequested && store.phase !== 'playing' && store.phase !== 'ended') {
+            store.setPhase('playing');
+            store.addLog(`Game started — target: ${status.targetKind}`);
+          } else if (!_startRequested && store.phase === 'ready' && !_relayReadyLogged) {
+            store.addLog(`Relay ready — target: ${status.targetKind}`);
+            _relayReadyLogged = true;
+          }
         }
       },
       onObserved: (_observed, value) => {
@@ -252,6 +260,8 @@ export function loadGame(doc: unknown): void {
   // Loading a new scenario supersedes any saved session; drop the stashed resume payload
   // and clear storage (a fresh checkpoint is persisted below once the engine initialises).
   _stashedSession = null;
+  _startRequested = false;
+  _relayReadyLogged = false;
   store.setResumable(null);
   void clearSession();
   store.setPhase('validating');
@@ -277,16 +287,41 @@ export function loadGame(doc: unknown): void {
   store.addLog(`Engine ready — status: ${initResult.status}`);
   if (initResult.awaiting) store.addLog(`Awaiting: ${initResult.awaiting.id}`);
 
-  store.setPhase('connecting');
+  store.setPhase('ready');
+  store.addLog('Scenario loaded and ready. Press Start to begin play.');
   store.addLog(`Connecting to relay (${store.relayUrl})…`);
   relay().connect(store.relayUrl);
+}
+
+export function startGame(): void {
+  const store = usePlayerStore.getState();
+  if (!store.scenario || !store.engineState) return;
+
+  _startRequested = true;
+  const relayStatus = store.relayStatus;
+
+  if (relayStatus?.calibrated && relayStatus.relaying) {
+    store.setPhase('playing');
+    store.addLog('Game started.');
+    return;
+  }
+
+  if (store.relayConnState !== 'connected') {
+    store.setPhase('connecting');
+    store.addLog('Start requested — waiting for relay connection…');
+    return;
+  }
+
+  store.setPhase('waiting');
+  store.addLog('Start requested — waiting for target calibration…');
 }
 
 // ---- Relay target selection ----
 
 export function selectTarget(target: 'tower' | 'emulator'): void {
-  usePlayerStore.getState().setPhase('waiting');
-  usePlayerStore.getState().addLog(`Requesting target: ${target}`);
+  const store = usePlayerStore.getState();
+  if (_startRequested && store.phase !== 'playing') store.setPhase('waiting');
+  store.addLog(`Requesting target: ${target}`);
   relay().requestTarget(target);
 }
 
@@ -398,12 +433,16 @@ export async function resumeSession(): Promise<void> {
 
   // Terminal games restore straight to the ended screen — no transport needed.
   if (saved.status === 'won' || saved.status === 'lost' || saved.status === 'ended') {
+    _startRequested = false;
+    _relayReadyLogged = false;
     store.setPhase('ended');
     return;
   }
 
   // Live game: reconnect. The existing handshake + RelayPanel target-picker path resumes
   // to 'playing' exactly as on a fresh load.
+  _startRequested = true;
+  _relayReadyLogged = false;
   store.setPhase('connecting');
   store.addLog(`Connecting to relay (${store.relayUrl})…`);
   relay().connect(store.relayUrl);
@@ -413,6 +452,8 @@ export async function resumeSession(): Promise<void> {
 export function discardSession(): void {
   void clearSession();
   _stashedSession = null;
+  _startRequested = false;
+  _relayReadyLogged = false;
   usePlayerStore.getState().reset();
 }
 

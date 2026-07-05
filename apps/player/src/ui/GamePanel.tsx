@@ -694,6 +694,14 @@ export function GamePanel() {
         </div>
       )}
 
+      {phase === 'ready' && (
+        <div
+          style={{ color: 'var(--c-success)', fontSize: 14, textAlign: 'center', paddingTop: 40 }}
+        >
+          Scenario loaded and ready. Press Start in the Scenario panel.
+        </div>
+      )}
+
       {(phase === 'connecting' || phase === 'waiting') && (
         <div
           style={{ color: 'var(--c-primary)', fontSize: 14, textAlign: 'center', paddingTop: 40 }}
