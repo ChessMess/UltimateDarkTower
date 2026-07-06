@@ -45,16 +45,26 @@ function extractQuotedArrayByMarker(source, marker) {
   return [...region.matchAll(/'([^']+)'/g)].map((m) => m[1]);
 }
 
-function extractQuotedUnionByMarker(source, marker) {
+// Engine node kinds are the discriminant tags of the `EngineNode` discriminated union in
+// packages/engine/src/engine/types.ts — NOT the derived `export type NodeKind = EngineNode['kind']`
+// alias (which carries no string literals). We slice the union's source region and read the `kind`
+// tag off both member shapes: inline object members (`kind: '...'`) and the `PropslessNode<'...'>`
+// helper for props-less kinds.
+function extractEngineNodeKinds(source) {
+  const marker = 'export type EngineNode =';
   const markerIndex = source.indexOf(marker);
   if (markerIndex < 0) return [];
 
-  const tail = source.slice(markerIndex);
-  const end = tail.indexOf(';');
-  if (end < 0) return [];
+  // The union runs from the marker until the next top-level `export` declaration
+  // (`export type NodeKind = ...`). A naive first-`;` scan would stop inside a member's object type.
+  const tail = source.slice(markerIndex + marker.length);
+  const endIndex = tail.indexOf('\nexport ');
+  const region = endIndex < 0 ? tail : tail.slice(0, endIndex);
 
-  const unionRegion = tail.slice(0, end);
-  return [...unionRegion.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  return [
+    ...[...region.matchAll(/kind:\s*'([^']+)'/g)].map((m) => m[1]),
+    ...[...region.matchAll(/PropslessNode<'([^']+)'>/g)].map((m) => m[1]),
+  ];
 }
 
 function formatList(items) {
@@ -71,6 +81,40 @@ const creatorTypesPath = 'apps/creator/src/types/index.ts';
 const schemaPath = 'packages/schema/src/scenario.schema.json';
 const engineTypesPath = 'packages/engine/src/engine/types.ts';
 const catalogPath = 'docs/node-catalog.md';
+
+// Creator/Schema node kinds that INTENTIONALLY have no engine reducer implementation, so the engine
+// ⇄ creator parity check must not flag them. These are setup-time pickers the Player resolves before
+// the reducer runs, UI-only affordances, and author annotations — exactly the kinds `docs/node-
+// catalog.md` badges `Creator-only` / `Annotation` (that catalog is the human-facing rationale).
+// When a kind here gains an engine implementation, remove it from this set (the hygiene checks below
+// fail if an allowlisted kind ever appears in the engine union, so the set can't silently go stale).
+const ENGINE_ABSENT_KINDS = new Set([
+  'lifecycle.importSeed',
+  'lifecycle.selectGameDifficulty',
+  'lifecycle.selectAdversary',
+  'lifecycle.selectFoes',
+  'lifecycle.selectMainGoal',
+  'lifecycle.selectAlly',
+  'action.skullDrop',
+  'action.endTurn',
+  'battle.cardSelect',
+  'battle.retreat',
+  'battle.removeFoeNoBattle',
+  'battle.foeStatus',
+  'dungeon.relicTower',
+  'cond.random',
+  'cond.setFlag',
+  'media.playVideo',
+  'media.playSound',
+  'media.showImage',
+  'media.cutscene',
+  'winloss.competitiveEnd',
+  'util.linkOut',
+  'util.linkIn',
+  'util.group',
+  'util.comment',
+  'util.catch',
+]);
 
 const creatorSource = read(creatorTypesPath);
 const schemaSource = read(schemaPath);
@@ -118,24 +162,42 @@ if (missingInCatalog.length) {
   );
 }
 
-const engineTypeKinds = unique(
-  extractQuotedUnionByMarker(engineTypesSource, 'export type NodeKind ='),
-);
-const creatorNotInEngineTypes = diff(creatorKinds, engineTypeKinds);
-const engineTypesNotInCreator = diff(engineTypeKinds, creatorKinds);
+const engineKinds = unique(extractEngineNodeKinds(engineTypesSource));
+if (engineKinds.length === 0) fail(`Could not parse EngineNode kinds from ${engineTypesPath}`);
 
-if (creatorNotInEngineTypes.length || engineTypesNotInCreator.length) {
-  console.warn(
+const allowlist = [...ENGINE_ABSENT_KINDS];
+// Real drift: the engine implements a kind Creator/Schema don't know about.
+const engineNotInCreator = diff(engineKinds, creatorKinds);
+// Real drift: a Creator kind is missing from the engine AND isn't a known engine-absent kind
+// (a new reducer-backed kind added to Creator but not the engine, or a kind dropped from the engine).
+const creatorNotInEngine = diff(creatorKinds, engineKinds).filter(
+  (kind) => !ENGINE_ABSENT_KINDS.has(kind),
+);
+// Allowlist hygiene, so the set can't silently mask future drift:
+const staleAllowlist = diff(allowlist, creatorKinds); // allowlisted kind no longer exists in Creator
+const allowlistNowInEngine = allowlist.filter((kind) => engineKinds.includes(kind)); // now implemented
+
+if (
+  engineNotInCreator.length ||
+  creatorNotInEngine.length ||
+  staleAllowlist.length ||
+  allowlistNowInEngine.length
+) {
+  fail(
     [
-      'Warning: Engine NodeKind type union is out of sync with creator/schema.',
-      'This does not fail the check yet (known gap), but should be tracked.',
+      'Engine node-kind parity check failed.',
       '',
-      `Creator kinds not in engine types (${creatorNotInEngineTypes.length}):`,
-      formatList(creatorNotInEngineTypes),
+      `Engine kinds not in creator/schema (${engineNotInCreator.length}):`,
+      formatList(engineNotInCreator),
       '',
-      `Engine type kinds not in creator (${engineTypesNotInCreator.length}):`,
-      formatList(engineTypesNotInCreator),
+      `Creator kinds missing from engine and not allowlisted (${creatorNotInEngine.length}):`,
+      formatList(creatorNotInEngine),
       '',
+      `Stale allowlist entries — no longer a creator kind (${staleAllowlist.length}):`,
+      formatList(staleAllowlist),
+      '',
+      `Allowlisted kinds now implemented in engine — remove from allowlist (${allowlistNowInEngine.length}):`,
+      formatList(allowlistNowInEngine),
     ].join('\n'),
   );
 }
@@ -146,5 +208,6 @@ console.log(
     `- creator kinds: ${creatorKinds.length}`,
     `- schema kinds: ${schemaKinds.length}`,
     `- catalog coverage: ${creatorKinds.length}/${creatorKinds.length}`,
+    `- engine kinds: ${engineKinds.length} (+ ${allowlist.length} allowlisted engine-absent)`,
   ].join('\n'),
 );

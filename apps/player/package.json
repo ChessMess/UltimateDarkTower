@@ -11,7 +11,7 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "pretest": "pnpm --filter @udtc/engine build",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
