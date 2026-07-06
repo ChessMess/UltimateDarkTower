@@ -8,8 +8,13 @@ import type { ScenarioDoc, SchemaNode, GroupProps } from '../types';
 const udtRef = getUDTReferenceLayer();
 const ADVERSARY_OPTIONS = udtRef.adversaryRoster.map((a) => ({ id: a.id, name: a.name }));
 const ALLY_OPTIONS = udtRef.allies.map((name) => ({ id: name.toLowerCase(), name }));
-const foeOptions = (ids: readonly string[]) =>
-  ids.map((id) => ({ id: udtRef.foeById[id]?.id ?? id, name: udtRef.foeById[id]?.name ?? id }));
+// The seed tier lists (udtRef.tierNFoes) are display names, whereas foeById is keyed by id, so
+// resolve names → canonical foe via a name→foe map. Option ids must be foe ids ("brigands"), not
+// names, to match what scenarios store in setup.selections.foes.
+const foeByName: Record<string, { id: string; name: string }> = {};
+for (const f of Object.values(udtRef.foeById)) foeByName[f.name] = f;
+const foeOptions = (names: readonly string[]) =>
+  names.map((n) => ({ id: foeByName[n]?.id ?? n, name: foeByName[n]?.name ?? n }));
 const TIER1_OPTIONS = foeOptions(udtRef.tier1Foes);
 const TIER2_OPTIONS = foeOptions(udtRef.tier2Foes);
 const TIER3_OPTIONS = foeOptions(udtRef.tier3Foes);
