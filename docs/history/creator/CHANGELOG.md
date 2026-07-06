@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-06
+
 ### Added
 
 - Rule-variant support: `setup.selections.adversaryId`, `setup.selections.foes` (and its `tier1`/`tier2`/`tier3`), and `setup.selections.mainGoalId` are now **optional** (schema relaxed to schemaVersion 0.4.1, a backward-compatible change within the `>=0.4.0 <0.5.0` engine range). This unblocks authoring scenarios with non-standard rules (e.g. play as an adversary, no tiered-foe roster, or a custom win instead of a main-goal quest). The Creator's New Scenario dialog moves these into a single optional **"Common Options"** section (only Title is now required to create); the Inspector gains a **"Setup"** section (shown when no node is selected) to set or clear them after creation, backed by new `updateSetupSelections`/`updateMainGoal` store actions. The engine falls back to an empty-string sentinel for an omitted adversary/main-goal that never matches a real foe/quest id, so the adversary-battle and legacy goal-completion paths stay inert — behavior for scenarios that provide full selections (including the frozen `golden`/`goldenFull` fixtures) is byte-identical. The L2 (reference) and L3 (graph) validators already tolerated absent selections, so no change was needed there. Note: this relaxes only `setup.selections`; the month/turn framework (`monthEnd`, `playerCountScaling`, `difficulty.profile`) remains required pending a future engine turn-pacing change
