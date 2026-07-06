@@ -4,6 +4,16 @@ import { useCreatorStore } from '../store';
 import { categoryFor } from '../types';
 import type { ScenarioDoc, SchemaNode, GroupProps } from '../types';
 
+// Standard-game selection option lists — resolved once at load, like NewScenarioDialog.
+const udtRef = getUDTReferenceLayer();
+const ADVERSARY_OPTIONS = udtRef.adversaryRoster.map((a) => ({ id: a.id, name: a.name }));
+const ALLY_OPTIONS = udtRef.allies.map((name) => ({ id: name.toLowerCase(), name }));
+const foeOptions = (ids: readonly string[]) =>
+  ids.map((id) => ({ id: udtRef.foeById[id]?.id ?? id, name: udtRef.foeById[id]?.name ?? id }));
+const TIER1_OPTIONS = foeOptions(udtRef.tier1Foes);
+const TIER2_OPTIONS = foeOptions(udtRef.tier2Foes);
+const TIER3_OPTIONS = foeOptions(udtRef.tier3Foes);
+
 export function InspectorPanel() {
   const { schemaDoc, rfNodes, selectedNodeId, validationResults } = useCreatorStore();
   const {
@@ -11,6 +21,8 @@ export function InspectorPanel() {
     updateNodeProps,
     updateNodeDescription,
     updateScenarioDescription,
+    updateSetupSelections,
+    updateMainGoal,
     setEntry,
     deleteNode,
     syncLibraryHeroes,
@@ -170,6 +182,17 @@ export function InspectorPanel() {
             placeholder="What is this scenario about? Shown to future authors, not players."
           />
         </div>
+
+        {/* Setup — standard-game selections (all optional since schema 0.4.1). Leave blank for a
+            rule-variant scenario that doesn't use these mechanics. */}
+        <ScenarioSetupEditor
+          schemaDoc={schemaDoc}
+          sectionStyle={style.section}
+          labelStyle={style.label}
+          inputStyle={style.input}
+          updateSetupSelections={updateSetupSelections}
+          updateMainGoal={updateMainGoal}
+        />
 
         {/* L1 errors */}
         {validationResults && validationResults.l1.errors.length > 0 && (
@@ -535,6 +558,94 @@ function GroupEditor({
           ))}
         </select>
       )}
+    </div>
+  );
+}
+
+// Scenario-wide standard-game selections editor (shown when no node is selected). All fields are
+// optional (schema 0.4.1) — a rule-variant scenario may leave them blank. The dropdowns commit
+// immediately; the Main Goal commits on blur (a local draft avoids creating a quest keyed on the
+// first character typed and prevents orphan-quest accretion on repeated clear/retype).
+function ScenarioSetupEditor({
+  schemaDoc,
+  sectionStyle,
+  labelStyle,
+  inputStyle,
+  updateSetupSelections,
+  updateMainGoal,
+}: {
+  schemaDoc: ScenarioDoc;
+  sectionStyle: React.CSSProperties;
+  labelStyle: React.CSSProperties;
+  inputStyle: React.CSSProperties;
+  updateSetupSelections: (patch: {
+    adversaryId?: string | null;
+    allyId?: string | null;
+    tier1FoeId?: string | null;
+    tier2FoeId?: string | null;
+    tier3FoeId?: string | null;
+  }) => void;
+  updateMainGoal: (title: string) => void;
+}) {
+  const asObj = (v: unknown): Record<string, unknown> | undefined =>
+    v && typeof v === 'object' ? (v as Record<string, unknown>) : undefined;
+  const asStr = (v: unknown): string => (typeof v === 'string' ? v : '');
+
+  const selections = asObj(schemaDoc.setup['selections']) ?? {};
+  const curAdversary = asStr(selections['adversaryId']);
+  const curAlly = asStr(selections['allyId']);
+  const curFoes = asObj(selections['foes']) ?? {};
+  const curTier1 = asStr(curFoes['tier1']);
+  const curTier2 = asStr(curFoes['tier2']);
+  const curTier3 = asStr(curFoes['tier3']);
+  const curGoalId = asStr(selections['mainGoalId']);
+  const quests = asObj(asObj(schemaDoc.library)?.['quests']) ?? {};
+  const curGoalName = curGoalId ? asStr(asObj(quests[curGoalId])?.['name']) : '';
+
+  const marginedInput = { ...inputStyle, marginBottom: 8 };
+  const dropdown = (
+    label: string,
+    value: string,
+    onChange: (v: string) => void,
+    options: Array<{ id: string; name: string }>,
+  ) => (
+    <>
+      <div style={labelStyle}>{label}</div>
+      <select style={marginedInput} value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">— None —</option>
+        {options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.name}
+          </option>
+        ))}
+      </select>
+    </>
+  );
+
+  return (
+    <div style={sectionStyle}>
+      <div style={labelStyle}>Setup</div>
+      <div style={{ fontSize: 10, color: 'var(--c-text-faint)', marginBottom: 8 }}>
+        Optional standard-game selections. Leave blank for custom rules.
+      </div>
+      {dropdown('Adversary', curAdversary, (v) => updateSetupSelections({ adversaryId: v }), ADVERSARY_OPTIONS)}
+      {dropdown('Ally', curAlly, (v) => updateSetupSelections({ allyId: v }), ALLY_OPTIONS)}
+      {dropdown('Tier 1 Foe', curTier1, (v) => updateSetupSelections({ tier1FoeId: v }), TIER1_OPTIONS)}
+      {dropdown('Tier 2 Foe', curTier2, (v) => updateSetupSelections({ tier2FoeId: v }), TIER2_OPTIONS)}
+      {dropdown('Tier 3 Foe', curTier3, (v) => updateSetupSelections({ tier3FoeId: v }), TIER3_OPTIONS)}
+      <div style={labelStyle}>Main Goal</div>
+      {/* Uncontrolled + keyed on the committed name: typing stays local to the DOM (smooth, no
+          per-keystroke quest churn) and commits once on blur. The key remounts the field with a
+          fresh default only when the committed value changes externally (scenario load, clear). */}
+      <input
+        key={curGoalName}
+        style={inputStyle}
+        defaultValue={curGoalName}
+        onBlur={(e) => {
+          if (e.target.value.trim() !== curGoalName.trim()) updateMainGoal(e.target.value);
+        }}
+        placeholder="Defeat the Adversary"
+      />
     </div>
   );
 }

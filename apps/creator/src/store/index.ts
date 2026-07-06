@@ -3,6 +3,7 @@ import type { Edge } from '@xyflow/react';
 import { getUDTReferenceLayer } from '@udtc/adapters';
 import type { ScenarioDoc, SchemaNode, ValidationResults, NodeKind } from '../types';
 import { schemaToFlow, flowToSchema, type CreatorNode } from '../utils/serializer';
+import { slugify } from '../utils/scaffold';
 import { runValidation } from '../utils/validation';
 import { canonicalJson } from '../utils/canonical';
 import { applyDagreLayout } from '../utils/layout';
@@ -33,6 +34,16 @@ interface CreatorStore {
   updateNodeLabel: (id: string, label: string) => void;
   updateNodeDescription: (id: string, description: string) => void;
   updateScenarioDescription: (description: string) => void;
+  // setup.selections editing (optional standard-game selections, schema 0.4.1). A falsy/null value
+  // clears the field; a truthy value sets it. Keys absent from the patch are left untouched.
+  updateSetupSelections: (patch: {
+    adversaryId?: string | null;
+    allyId?: string | null;
+    tier1FoeId?: string | null;
+    tier2FoeId?: string | null;
+    tier3FoeId?: string | null;
+  }) => void;
+  updateMainGoal: (title: string) => void;
   createGroup: (nodeIds: string[]) => void;
   setEntry: (id: string) => void;
 
@@ -296,6 +307,68 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       meta = { ...meta, description };
     }
     const updated: ScenarioDoc = { ...schemaDoc, meta };
+    const results = revalidate(updated);
+    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+  },
+
+  // setup.selections are scenario-wide levers (not node-scoped), so — like updateScenarioDescription —
+  // this only re-validates; no RF re-derivation is needed.
+  updateSetupSelections(patch) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const setup = { ...(schemaDoc.setup as Record<string, unknown>) };
+    const selections = { ...((setup.selections as Record<string, unknown>) ?? {}) };
+    const foes = { ...((selections.foes as Record<string, unknown>) ?? {}) };
+
+    const setOrDelete = (obj: Record<string, unknown>, key: string, val: string | null | undefined) => {
+      if (val) obj[key] = val;
+      else delete obj[key];
+    };
+
+    if ('adversaryId' in patch) setOrDelete(selections, 'adversaryId', patch.adversaryId);
+    if ('allyId' in patch) setOrDelete(selections, 'allyId', patch.allyId);
+    if ('tier1FoeId' in patch) setOrDelete(foes, 'tier1', patch.tier1FoeId);
+    if ('tier2FoeId' in patch) setOrDelete(foes, 'tier2', patch.tier2FoeId);
+    if ('tier3FoeId' in patch) setOrDelete(foes, 'tier3', patch.tier3FoeId);
+
+    if (Object.keys(foes).length > 0) selections.foes = foes;
+    else delete selections.foes;
+    setup.selections = selections;
+
+    const updated: ScenarioDoc = { ...schemaDoc, setup };
+    const results = revalidate(updated);
+    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+  },
+
+  // Sets/clears the main goal. Blank title clears setup.selections.mainGoalId but leaves any existing
+  // library.quests entry in place (it may be wired elsewhere via quest.complete). A new title with no
+  // existing main goal creates a minimal quest and points mainGoalId at it; an existing main-goal quest
+  // is renamed in place.
+  updateMainGoal(title) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const trimmed = title.trim();
+    const setup = { ...(schemaDoc.setup as Record<string, unknown>) };
+    const selections = { ...((setup.selections as Record<string, unknown>) ?? {}) };
+    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
+    const quests = { ...((library.quests as Record<string, unknown>) ?? {}) };
+
+    if (!trimmed) {
+      delete selections.mainGoalId;
+    } else {
+      const existingId = typeof selections.mainGoalId === 'string' ? selections.mainGoalId : undefined;
+      if (existingId && quests[existingId]) {
+        quests[existingId] = { ...(quests[existingId] as Record<string, unknown>), name: trimmed };
+      } else {
+        const id = slugify(trimmed) || 'main-goal';
+        quests[id] = { id, name: trimmed, isMainGoal: true, outcomes: { success: [], failure: [] } };
+        selections.mainGoalId = id;
+      }
+    }
+
+    setup.selections = selections;
+    library.quests = quests;
+    const updated: ScenarioDoc = { ...schemaDoc, setup, library };
     const results = revalidate(updated);
     set({ schemaDoc: updated, validationResults: results, isDirty: true });
   },

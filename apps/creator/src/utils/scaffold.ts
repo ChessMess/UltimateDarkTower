@@ -4,7 +4,7 @@
 
 import type { ScenarioDoc } from '../types';
 
-const SCHEMA_VERSION = '0.4.0';
+const SCHEMA_VERSION = '0.4.1';
 const UDT_PIN = '5.0.0';
 
 export interface ScaffoldInput {
@@ -16,15 +16,17 @@ export interface ScaffoldInput {
   skullSupply: number;
   monthEndMin: number;
   monthEndMax: number;
-  adversaryId: string;
-  tier1FoeId: string;
-  tier2FoeId: string;
-  tier3FoeId: string;
+  // Optional since schema 0.4.1 — a rule-variant scenario may omit the standard adversary/
+  // foe-tier/main-goal mechanics. Omitted selections are left out of the doc entirely.
+  adversaryId?: string;
+  tier1FoeId?: string;
+  tier2FoeId?: string;
+  tier3FoeId?: string;
   allyId?: string;
-  mainGoalTitle: string;
+  mainGoalTitle?: string;
 }
 
-function slugify(s: string): string {
+export function slugify(s: string): string {
   return s
     .toLowerCase()
     .trim()
@@ -34,16 +36,32 @@ function slugify(s: string): string {
 
 const baseEffect = { op: 'resource.gain', resource: 'warriors', amount: 1 };
 
+// A minimal but schema-valid building type. buildingTypeDef requires free + enhanced + skullCapacity;
+// enhanced requires cost + effects. Authors edit these later; the defaults just keep the doc L1-valid.
+const baseBuildingType = {
+  free: [baseEffect],
+  enhanced: { cost: { resource: 'spirit', amount: 1 }, effects: [baseEffect] },
+  skullCapacity: 3,
+};
+
 export function scaffoldScenario(input: ScaffoldInput): ScenarioDoc {
-  const mainGoalId = slugify(input.mainGoalTitle) || 'main-goal';
+  const trimmedGoal = input.mainGoalTitle?.trim();
+  const mainGoalId = trimmedGoal ? slugify(trimmedGoal) || 'main-goal' : undefined;
   const goalDoneFlag = 'goalDone';
+
+  const foes: Record<string, string> = {};
+  if (input.tier1FoeId) foes.tier1 = input.tier1FoeId;
+  if (input.tier2FoeId) foes.tier2 = input.tier2FoeId;
+  if (input.tier3FoeId) foes.tier3 = input.tier3FoeId;
 
   return {
     schemaVersion: SCHEMA_VERSION,
     meta: {
       title: input.title,
       scenarioVersion: input.scenarioVersion ?? '0.1.0',
-      designer: { name: input.designer },
+      // designer.name requires minLength 1 (schema). Fall back to a placeholder when left blank so a
+      // title-only scenario stays L1-valid; the author can set a real name in the dialog.
+      designer: { name: input.designer.trim() || 'Unknown' },
       pins: { udt: UDT_PIN },
     },
     setup: {
@@ -55,35 +73,33 @@ export function scaffoldScenario(input: ScaffoldInput): ScenarioDoc {
         default: { minTurn: input.monthEndMin, maxTurn: input.monthEndMax },
       },
       selections: {
-        adversaryId: input.adversaryId,
-        foes: {
-          tier1: input.tier1FoeId,
-          tier2: input.tier2FoeId,
-          tier3: input.tier3FoeId,
-        },
-        mainGoalId,
+        ...(input.adversaryId ? { adversaryId: input.adversaryId } : {}),
+        ...(Object.keys(foes).length > 0 ? { foes } : {}),
+        ...(mainGoalId ? { mainGoalId } : {}),
         ...(input.allyId ? { allyId: input.allyId } : {}),
       },
       board: { boardStateRef: 'board-main' },
     },
     library: {
       buildingTypes: {
-        citadel: { free: [baseEffect], skullCapacity: 3 },
-        sanctuary: { free: [baseEffect], skullCapacity: 3 },
-        village: { free: [baseEffect], skullCapacity: 3 },
-        bazaar: { free: [baseEffect], skullCapacity: 3 },
+        citadel: baseBuildingType,
+        sanctuary: baseBuildingType,
+        village: baseBuildingType,
+        bazaar: baseBuildingType,
       },
-      quests: {
-        [mainGoalId]: {
-          id: mainGoalId,
-          name: input.mainGoalTitle,
-          isMainGoal: true,
-          outcomes: {
-            success: [{ op: 'flag.set', name: goalDoneFlag, value: true }],
-            failure: [{ op: 'corruption.gain' }],
-          },
-        },
-      },
+      quests: mainGoalId
+        ? {
+            [mainGoalId]: {
+              id: mainGoalId,
+              name: trimmedGoal,
+              isMainGoal: true,
+              outcomes: {
+                success: [{ op: 'flag.set', name: goalDoneFlag, value: true }],
+                failure: [{ op: 'corruption.gain' }],
+              },
+            },
+          }
+        : {},
     },
     graph: {
       entry: 'n-start',

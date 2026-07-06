@@ -650,8 +650,12 @@ export interface Scenario {
       };
     };
     selections: {
-      adversaryId: string;
-      mainGoalId: string;
+      // Optional since schema 0.4.1: rule-variant scenarios may omit the standard adversary/
+      // foe-tier/main-goal mechanics. setup.ts falls back to an empty-string sentinel that never
+      // matches a real foe/quest id, so the adversary battle and legacy goal-completion paths
+      // stay inert (no-op, no throw) for a scenario that omits them.
+      adversaryId?: string;
+      mainGoalId?: string;
       foes?: { tier1?: string; tier2?: string; tier3?: string };
     };
     difficulty: { skullSupply: number };

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://chessmess.dev/rtdt/schemas/scenario.schema.json",
   "title": "Return to Dark Tower — Custom Scenario",
-  "$comment": "schemaVersion 0.4.0 — first JSON change since 0.3.0: closes the F library sub-deferrals (dormantKingdoms, room.improveOnce/enterRequirement, quest.requirements, foe.strike/movement, battleDefs.cards), adds the closed tradeAsset union (decision #7), and adds MVP-scoped per-kind node props. Battle/foe figures are author-editable DEFAULTS, not constraints (official-app-analysis v0.3 §6). Later 0.4.x addition: optional node.description (author documentation) and closed props for the util.comment / util.group annotation kinds (flow documentation/grouping).",
+  "$comment": "schemaVersion 0.4.0 — first JSON change since 0.3.0: closes the F library sub-deferrals (dormantKingdoms, room.improveOnce/enterRequirement, quest.requirements, foe.strike/movement, battleDefs.cards), adds the closed tradeAsset union (decision #7), and adds MVP-scoped per-kind node props. Battle/foe figures are author-editable DEFAULTS, not constraints (official-app-analysis v0.3 §6). Later 0.4.x addition: optional node.description (author documentation) and closed props for the util.comment / util.group annotation kinds (flow documentation/grouping). 0.4.1: setup.selections.adversaryId / foes (and its tier1/tier2/tier3) / mainGoalId are now OPTIONAL — a backward-compatible relaxation so rule-variant scenarios that don't use the standard adversary fight, tiered foe roster, or a main-goal quest still validate at L1.",
   "type": "object",
   "required": ["schemaVersion", "meta", "setup", "library", "graph"],
   "additionalProperties": false,
@@ -249,20 +249,19 @@
         "expansions": { "type": "array", "items": { "enum": ["Alliances", "Monuments"] } },
         "selections": {
           "type": "object",
-          "required": ["adversaryId", "foes", "mainGoalId"],
           "additionalProperties": false,
+          "$comment": "0.4.1: adversaryId/foes/mainGoalId are OPTIONAL so rule-variant scenarios (that don't use the standard adversary fight, tiered foe roster, or a main-goal quest) validate. selections itself stays a required object; an empty {} is valid.",
           "properties": {
             "adversaryId": { "$ref": "#/$defs/advId" },
             "foes": {
               "type": "object",
-              "required": ["tier1", "tier2", "tier3"],
               "additionalProperties": false,
               "properties": {
                 "tier1": { "$ref": "#/$defs/foeId" },
                 "tier2": { "$ref": "#/$defs/foeId" },
                 "tier3": { "$ref": "#/$defs/foeId" }
               },
-              "$comment": "L3: tier1=L2, tier2=L3, tier3=L4 per FOES@pins.udt"
+              "$comment": "0.4.1: each tier is independently optional. L3: tier1=L2, tier2=L3, tier3=L4 per FOES@pins.udt"
             },
             "mainGoalId": { "$ref": "#/$defs/id", "$comment": "L2: key in library.quests with isMainGoal" },
             "allyId": { "$ref": "#/$defs/id", "$comment": "L2: key in library.companions" }

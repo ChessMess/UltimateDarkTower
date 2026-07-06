@@ -129,7 +129,8 @@ export function init(scenario: unknown, opts: InitOpts): StepResult {
     ...(buildings ? { buildings } : {}),
     foes: [],
     adversary: {
-      foeId: sc.setup.selections.adversaryId,
+      foeId: sc.setup.selections.adversaryId ?? '', // optional since 0.4.1; '' never matches a real foe id
+
       spawned: false,
       defeated: false,
       advantages: [],
@@ -171,7 +172,7 @@ export function init(scenario: unknown, opts: InitOpts): StepResult {
     },
     _setup: {
       monthEnd: sc.setup.monthEnd,
-      mainGoalId: sc.setup.selections.mainGoalId,
+      mainGoalId: sc.setup.selections.mainGoalId ?? '', // optional since 0.4.1; '' never matches a real quest id
       goalThreshold: (sc.meta.tuning && sc.meta.tuning.goalThreshold) || 3,
       adversaryToughness: (sc.meta.tuning && sc.meta.tuning.adversaryToughness) || 2,
       fullTurn,

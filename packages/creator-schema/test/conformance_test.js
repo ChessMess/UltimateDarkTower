@@ -52,9 +52,12 @@ check("missing meta.pins rejected", t, false);
 t = clone(base); t.meta.provenance.importedSeed.seed = "not-a-seed";
 check("malformed seed rejected", t, false);
 
-// Negative: foes selection missing tier3
-t = clone(base); delete t.setup.selections.foes.tier3;
-check("incomplete foe selection rejected", t, false);
+// Positive: no adversary/foes/mainGoal selections (rule-variant scenario)
+t = clone(base);
+delete t.setup.selections.adversaryId;
+delete t.setup.selections.foes;
+delete t.setup.selections.mainGoalId;
+check("scenario with no adversary/foes/mainGoal selections accepted", t, true);
 
 // Negative: light.named without sequenceId
 t = clone(base); t.graph.nodes[3].props.towerOp = { channel: "light.named" };

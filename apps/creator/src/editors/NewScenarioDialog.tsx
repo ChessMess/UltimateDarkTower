@@ -47,14 +47,16 @@ export function NewScenarioDialog({ onClose, onConfirm }: Props) {
   const [skullSupply, setSkullSupply] = useState(24);
   const [monthEndMin, setMonthEndMin] = useState(3);
   const [monthEndMax, setMonthEndMax] = useState(6);
-  const [adversaryId, setAdversaryId] = useState(ADVERSARY_OPTIONS[0]?.id ?? '');
-  const [tier1FoeId, setTier1FoeId] = useState(TIER1_OPTIONS[0]?.id ?? '');
-  const [tier2FoeId, setTier2FoeId] = useState(TIER2_OPTIONS[0]?.id ?? '');
-  const [tier3FoeId, setTier3FoeId] = useState(TIER3_OPTIONS[0]?.id ?? '');
+  // Common Options are optional (schema 0.4.1): a rule-variant scenario may omit the standard
+  // adversary/foe-tier/main-goal mechanics, so these default to empty rather than the first roster entry.
+  const [adversaryId, setAdversaryId] = useState('');
+  const [tier1FoeId, setTier1FoeId] = useState('');
+  const [tier2FoeId, setTier2FoeId] = useState('');
+  const [tier3FoeId, setTier3FoeId] = useState('');
   const [allyId, setAllyId] = useState('');
   const [mainGoalTitle, setMainGoalTitle] = useState('');
 
-  const canCreate = title.trim().length > 0 && mainGoalTitle.trim().length > 0 && adversaryId && tier1FoeId && tier2FoeId && tier3FoeId;
+  const canCreate = title.trim().length > 0;
 
   function handleCreate() {
     if (!canCreate) return;
@@ -66,12 +68,12 @@ export function NewScenarioDialog({ onClose, onConfirm }: Props) {
       skullSupply,
       monthEndMin,
       monthEndMax,
-      adversaryId,
-      tier1FoeId,
-      tier2FoeId,
-      tier3FoeId,
+      adversaryId: adversaryId || undefined,
+      tier1FoeId: tier1FoeId || undefined,
+      tier2FoeId: tier2FoeId || undefined,
+      tier3FoeId: tier3FoeId || undefined,
       allyId: allyId || undefined,
-      mainGoalTitle: mainGoalTitle.trim(),
+      mainGoalTitle: mainGoalTitle.trim() || undefined,
     };
     onConfirm(scaffoldScenario(input));
   }
@@ -151,50 +153,53 @@ export function NewScenarioDialog({ onClose, onConfirm }: Props) {
           </div>
         </section>
 
-        {/* Roster */}
+        {/* Common Options — standard-game selections. All optional: leave blank for a rule-variant
+            scenario that doesn't use the standard adversary/foe-tier/main-goal mechanics. */}
         <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>Roster</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>Common Options</div>
+          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: -4 }}>
+            Optional — used by standard scenarios. Leave blank for a custom-rules scenario.
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div style={fieldStyle}>
-              <label style={labelStyle}>Adversary *</label>
+              <label style={labelStyle}>Adversary</label>
               <select style={selectStyle} value={adversaryId} onChange={(e) => setAdversaryId(e.target.value)}>
+                <option value="">— None —</option>
                 {ADVERSARY_OPTIONS.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
               </select>
             </div>
             <div style={fieldStyle}>
-              <label style={labelStyle}>Ally (optional)</label>
+              <label style={labelStyle}>Ally</label>
               <select style={selectStyle} value={allyId} onChange={(e) => setAllyId(e.target.value)}>
                 <option value="">— None —</option>
                 {ALLY_OPTIONS.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
               </select>
             </div>
             <div style={fieldStyle}>
-              <label style={labelStyle}>Tier 1 Foe *</label>
+              <label style={labelStyle}>Tier 1 Foe</label>
               <select style={selectStyle} value={tier1FoeId} onChange={(e) => setTier1FoeId(e.target.value)}>
+                <option value="">— None —</option>
                 {TIER1_OPTIONS.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
             <div style={fieldStyle}>
-              <label style={labelStyle}>Tier 2 Foe *</label>
+              <label style={labelStyle}>Tier 2 Foe</label>
               <select style={selectStyle} value={tier2FoeId} onChange={(e) => setTier2FoeId(e.target.value)}>
+                <option value="">— None —</option>
                 {TIER2_OPTIONS.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
             <div style={fieldStyle}>
-              <label style={labelStyle}>Tier 3 Foe *</label>
+              <label style={labelStyle}>Tier 3 Foe</label>
               <select style={selectStyle} value={tier3FoeId} onChange={(e) => setTier3FoeId(e.target.value)}>
+                <option value="">— None —</option>
                 {TIER3_OPTIONS.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
-          </div>
-        </section>
-
-        {/* Main Goal */}
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>Main Goal</div>
-          <div style={fieldStyle}>
-            <label style={labelStyle}>Goal Title *</label>
-            <input style={inputStyle} value={mainGoalTitle} onChange={(e) => setMainGoalTitle(e.target.value)} placeholder="Defeat the Adversary" />
+            <div style={fieldStyle}>
+              <label style={labelStyle}>Goal Title</label>
+              <input style={inputStyle} value={mainGoalTitle} onChange={(e) => setMainGoalTitle(e.target.value)} placeholder="Defeat the Adversary" />
+            </div>
           </div>
         </section>
 
