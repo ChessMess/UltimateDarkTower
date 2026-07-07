@@ -80,7 +80,7 @@ describe('BoardMap2D', () => {
     expect(dragons.querySelector('image')?.getAttribute('href')).toBe('/t/foes/Foe-Token-L4-Dragon.png');
   });
 
-  it('renders hero art from tokenArt (heroes have no default art)', () => {
+  it('renders hero art from a tokenArt override (id with no roster-default art)', () => {
     const host = document.createElement('div');
     const map = new BoardMap2D(host, {
       tokenArt: { hero: { 'hero-1': { image2d: '/heroes/hero-1.png' } } },
