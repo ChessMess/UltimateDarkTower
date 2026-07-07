@@ -27,15 +27,18 @@ live here are now inside the component.
 Assets live in `example/public/` and are loaded at runtime (never bundled):
 
 - `board.png` — the base layer (`boardImageUrl: './board.png'`).
-- `tokens/{foes,adversaries,monuments,markers}/*.png` — token art (`assetBaseUrl: './tokens/'`), named
-  by the `kebab(UDT id)` convention. This tree is the staging ground for a future standalone board-assets
-  package. Heroes have no convention art, so by default they render as the programmatic labeled fallback disc.
+- `tokens/{foes,adversaries,heros,monuments,markers}/*.png` — token art (`assetBaseUrl: './tokens/'`). This
+  tree is the staging ground for a future standalone board-assets package.
 
-**Per-token overrides** (different 2D vs 3D art, or a 3D model) live in
-[`example/src/tokenArt/`](../example/src/tokenArt) as per-kind JSON (`foe_tokens.json`, `hero_tokens.json`,
-…), merged into a `TokenArtConfig` by [`index.ts`](../example/src/tokenArt/index.ts) and passed to both
-renderers. The demo points `Dragons` at its flat foe PNG in 2D but the GLB model in 3D. Edit these by hand,
-or use the **Token Art Forge** (below) — heroes can be given art this way too.
+**Two layers of art.** The board **library** ships built-in defaults, so most tokens need no config: foes
+and adversaries resolve to their flat 2D board-token icon in the 2D map and their portrait in 3D, and the
+standard hero roster (base + all expansions) resolves to its `heros/` portrait — see `OFFICIAL_2D_ICON` /
+`OFFICIAL_HERO_ART` in [`src/renderers/assetPaths.ts`](../src/renderers/assetPaths.ts). On top of that, the
+demo can set **per-token overrides** (a different 2D vs 3D image, or a 3D model) in
+[`example/src/tokenArt/`](../example/src/tokenArt) as per-kind JSON, merged into a `TokenArtConfig` by
+[`index.ts`](../example/src/tokenArt/index.ts) and passed to both renderers. Those files ship **empty** now
+(the library covers foes/adversaries/heroes); `skull_tokens.json` keeps the one genuine override — a 3D GLB
+model. Edit overrides by hand or with the **Token Art Forge** (below).
 
 Try the controls: **N / E / S / W** zoom the 2D map to a kingdom, narrow the readout, and move the 3D
 camera to that side; **All** (set apart in its own group at the end of the bar) restores the full board.
@@ -82,3 +85,14 @@ lists `example/public` art, and **Save** writes the kind's `<kind>_tokens.json` 
 HMR-reloads with the new art). On the static GitHub-Pages build there is no such endpoint, so the tool
 shows a **Preview** badge and falls back to **Copy JSON** / **Download**. Source:
 [`example/src/tokenArtEditor/`](../example/src/tokenArtEditor).
+
+Each token's preview is the board library's own default (via `resolveTokenImageFor`), so the Forge always
+mirrors what the board renders; editing a token writes a **demo override** on top, and an unedited token
+saves nothing (the file keeps only genuine overrides).
+
+**Promoting art to a library default.** The Forge edits the demo only — it does not touch the library's
+built-in defaults. To make art that everyone (Player included) gets, run `npm run promote-token-art`: it
+compares the demo overrides against the current library defaults and prints the exact `OFFICIAL_2D_ICON` /
+`OFFICIAL_HERO_ART` entries to paste into [`src/renderers/assetPaths.ts`](../src/renderers/assetPaths.ts),
+plus the asset files to copy into each consumer's `public/tokens`. Workflow: add art in the Forge → verify in
+the demo → `npm run promote-token-art` → paste the entries + copy the assets → rebuild.

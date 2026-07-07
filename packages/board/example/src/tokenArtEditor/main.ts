@@ -3,11 +3,12 @@
 // BOTH the 2D map and the 3D billboard) and an optional 3D model, and save. Under `vite dev` it
 // saves straight to the JSON files via the dev plugin (example/tokenArtDevPlugin.ts); on the
 // static build it falls back to copy / download. Rosters come from the board's re-exported UDT
-// data; EVERY token is listed and seeded with its default `${assetBaseUrl}${group}/${kebab(id)}.png`
-// image so the defaults are visible and editable (heroes have no convention art → blank).
+// data; EVERY token is listed and its default preview is the board library's own resolution
+// (foes/adversaries → flat 2D icon, roster heroes → portrait, else the group convention), so the
+// Forge always mirrors what the board renders. Editing a token writes a demo override on top.
 import './editor.css';
-import { HEROES, FOES, ADVERSARY_ROSTER, MONUMENTS, kebab } from '../../../src/index';
-import type { TokenArt, TokenModelRef } from '../../../src/index';
+import { HEROES, FOES, ADVERSARY_ROSTER, MONUMENTS, kebab, resolveTokenImageFor } from '../../../src/index';
+import type { TokenArt, TokenModelRef, TokenArtRef } from '../../../src/index';
 import { tokenArt as bundledConfig } from '../tokenArt';
 import { highlight } from './helpers';
 import { imageSlot } from './imageSlot';
@@ -43,21 +44,19 @@ const KINDS: { kind: Kind; label: string; roster: RosterEntry[] }[] = [
 const rosterFor = (kind: Kind): RosterEntry[] => KINDS.find((k) => k.kind === kind)!.roster;
 
 // The demo mounts the board with `assetBaseUrl: './tokens/'` (see example/src/main.ts), so a token
-// with NO override still renders on the board via the default `${base}<group>/<kebab(id)>.png`
-// convention. We preview that here so the Forge mirrors the board instead of looking empty.
+// with NO override still renders on the board via the library's built-in default. We preview that
+// here so the Forge mirrors the board instead of looking empty.
 const ASSET_BASE = './tokens/';
-const ART_GROUP: Partial<Record<Kind, string>> = {
-  foe: 'foes',
-  adversary: 'adversaries',
-  monument: 'monuments',
-  marker: 'markers',
-};
 
-/** The convention image the board falls back to when a token has no override (none for heroes). */
+/**
+ * The default image the board actually falls back to for a token with no override — delegated to
+ * ultimatedarktowerboard's own resolver (2D view) so the Forge preview always matches the board and
+ * can never drift from it. Covers the flat 2D foe/adversary icons and the hero-roster portraits;
+ * `null` (e.g. an art-less roster hero, or a non-roster id) → no default image.
+ */
 function conventionImageUrl(kind: Kind, id: string): string | undefined {
-  if (kind === 'skull') return `${ASSET_BASE}markers/skull.png`;
-  const group = ART_GROUP[kind];
-  return group && id ? `${ASSET_BASE}${group}/${kebab(id)}.png` : undefined;
+  if (!id) return undefined;
+  return resolveTokenImageFor({ kind, id } as TokenArtRef, '2d', { assetBaseUrl: ASSET_BASE }) ?? undefined;
 }
 
 const state = {
@@ -126,29 +125,35 @@ function emptyConfig(): Config {
 }
 
 /**
- * Build the six-kind config with EVERY roster token present, in roster order: an authored value
- * wins; a token without one is seeded with its convention image so the default is visible and
- * editable (heroes, which have no convention art, get an empty entry). Authored ids outside the
- * known roster are preserved defensively.
+ * Build the six-kind config with EVERY roster token present, in roster order. An authored override
+ * wins; a token without one gets an EMPTY entry ({}) — its default art shows via the slot's dimmed
+ * "default" preview (the board library resolves it), and it is not persisted as an override. This
+ * keeps saved `<kind>_tokens.json` files to genuine overrides only. Authored ids outside the known
+ * roster are preserved defensively.
  */
 function buildConfig(raw: Partial<Config> | undefined): Config {
   const out = emptyConfig();
   for (const { kind, roster } of KINDS) {
     const map = (raw?.[kind] ?? {}) as KindMap;
     for (const { id } of roster) {
-      const cleaned = cleanArt(map[id] ?? map[kebab(id)]);
-      if (cleaned) {
-        out[kind][id] = cleaned;
-      } else {
-        const img = conventionImageUrl(kind, id);
-        out[kind][id] = img ? { image2d: img } : {};
-      }
+      out[kind][id] = cleanArt(map[id] ?? map[kebab(id)]) ?? {};
     }
     for (const [id, art] of Object.entries(map)) {
       if (out[kind][id] || roster.some((r) => r.id === id || kebab(r.id) === id)) continue;
       const cleaned = cleanArt(art);
       if (cleaned) out[kind][id] = cleaned;
     }
+  }
+  return out;
+}
+
+/** The kind's genuine overrides only — empty ({}) roster placeholders stripped. Used for the file
+ *  JSON panel and for saving, so seeded defaults never get written back as overrides. */
+function overridesFor(kind: Kind): KindMap {
+  const out: KindMap = {};
+  for (const [id, art] of Object.entries(state.config[kind])) {
+    const cleaned = cleanArt(art);
+    if (cleaned) out[id] = cleaned;
   }
   return out;
 }
@@ -357,12 +362,12 @@ function renderSlots(): void {
 
 // ── code panels + status ──────────────────────────────────────────────
 function tokenJson(): string {
-  const e = state.config[state.kind][state.id];
-  return e ? JSON.stringify({ [state.id]: e }, null, 2) : '// no art defined — uses the default convention';
+  const e = cleanArt(state.config[state.kind][state.id]);
+  return e ? JSON.stringify({ [state.id]: e }, null, 2) : '// no override — uses the board library default';
 }
 
 function fileJson(): string {
-  return JSON.stringify(state.config[state.kind], null, 2);
+  return JSON.stringify(overridesFor(state.kind), null, 2);
 }
 
 function refreshCode(): void {
@@ -395,7 +400,7 @@ async function save(): Promise<void> {
     const res = await fetch('/__tokenart/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind: state.kind, tokens: state.config[state.kind] }),
+      body: JSON.stringify({ kind: state.kind, tokens: overridesFor(state.kind) }),
     });
     const data = (await res.json()) as { ok?: boolean; file?: string; error?: string };
     if (!res.ok || !data.ok) throw new Error(data.error ?? `HTTP ${res.status}`);

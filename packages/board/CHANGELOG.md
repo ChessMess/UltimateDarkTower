@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **`npm run promote-token-art` — bridge Token Art Forge demo overrides to the library defaults.** The Forge
+  edits the demo's per-token overrides (`example/src/tokenArt/*.json`), not the library's built-in
+  `OFFICIAL_2D_ICON` / `OFFICIAL_HERO_ART` tables. This read-only script compares the demo overrides against
+  the current library defaults (via the compiled resolver) and prints the exact table entries to paste into
+  `src/renderers/assetPaths.ts` plus the asset files to copy into each consumer's `public/tokens`, so art
+  added visually in the Forge can be promoted to a default every consumer ships. See `docs/EXAMPLE.md`.
 - **`BoardStageView` — a batteries-included render stage (new `ultimatedarktowerboard/stage` entry).** One
   `new BoardStageView({ container })` gives a consumer everything the demo shows: the 2D map + readout, the
   **2D / 3D / 2D+3D / PiP** display switcher with a big↔mini **swap**, a movable/resizable **PiP inset**,
