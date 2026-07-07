@@ -44,6 +44,7 @@
     "lint": "eslint 'src/**/*.ts' 'example/**/*.ts' '__tests__/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' '__tests__/**/*.ts'",
     "clean": "rimraf dist",
+    "promote-token-art": "node scripts/promote-token-art.mjs",
     "ci": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "peerDependencies": {
