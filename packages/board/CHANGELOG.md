@@ -54,6 +54,13 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **2D map defaults foe/adversary art to the official flat token icon.** `BoardMap2D` (and the
+  `BoardStageView` 2D pane) now resolve a known foe/adversary id to its official small RTDT board-token
+  icon (e.g. `foes/Foe-Token-L2-Brigands.png`) in the 2D view, instead of the 3D-style portrait the plain
+  `${group}/${kebab(id)}.png` convention resolves to. The 3D tower's sprite billboard and every other token
+  kind are unchanged, and any entry can still be overridden per token via `tokenArt.image2d`. Consumers
+  whose 2D assets were laid out as `foes/<kebab-id>.png` should rename them to the official icon filenames
+  or supply `tokenArt.image2d` (a missing icon file still degrades gracefully to the programmatic disc).
 - **Inspector remove action is now labelled “Remove” for every token type.** The adversary case
   previously read “Clear”; it now matches heroes, foes, and markers for consistency. The underlying
   command is unchanged (`controller.clearAdversary()`), and the button keeps its `.udt-inspector-remove`
