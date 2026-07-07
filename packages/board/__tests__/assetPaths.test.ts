@@ -1,4 +1,4 @@
-import { lookupTokenArt, resolveTokenImageFor } from '../src/index';
+import { lookupTokenArt, resolveTokenImageFor, HERO_BY_ID } from '../src/index';
 import type { TokenArtConfig, TokenArtRef } from '../src/index';
 
 const BRIGANDS: TokenArtRef = { kind: 'foe', id: 'Brigands' };
@@ -62,7 +62,29 @@ describe('resolveTokenImageFor', () => {
     expect(resolveTokenImageFor(ASHSTRIDER, '3d', { assetBaseUrl: '/t/' })).toBe('/t/adversaries/ashstrider.png');
     // No base URL → null (programmatic fallback).
     expect(resolveTokenImageFor(BRIGANDS, '2d', {})).toBeNull();
-    // Heroes have no convention art.
-    expect(resolveTokenImageFor({ kind: 'hero', id: 'brutal-warlord' }, '2d', { assetBaseUrl: '/t/' })).toBeNull();
+  });
+
+  it('resolves roster hero portraits (same art both views); art-less heroes fall back', () => {
+    const WARLORD: TokenArtRef = { kind: 'hero', id: 'brutal-warlord' };
+    // A hero with a shipped portrait resolves the same file in 2D and 3D.
+    expect(resolveTokenImageFor(WARLORD, '2d', { assetBaseUrl: '/t/' })).toBe('/t/heros/brutal-warlord-hero.png');
+    expect(resolveTokenImageFor(WARLORD, '3d', { assetBaseUrl: '/t/' })).toBe('/t/heros/brutal-warlord-hero.png');
+    expect(resolveTokenImageFor({ kind: 'hero', id: 'orphaned-scion' }, '2d', { assetBaseUrl: '/t/' })).toBe(
+      '/t/heros/orphaned-scion.png',
+    );
+    // A roster hero with no shipped portrait yet → null (programmatic disc), no broken request.
+    expect(resolveTokenImageFor({ kind: 'hero', id: 'relic-hunter' }, '2d', { assetBaseUrl: '/t/' })).toBeNull();
+    // An instance/unknown id that isn't a roster hero → null too.
+    expect(resolveTokenImageFor({ kind: 'hero', id: 'hero-1' }, '2d', { assetBaseUrl: '/t/' })).toBeNull();
+  });
+
+  it('handles the full hero roster (all expansions) without error', () => {
+    // Every hero in UDT's roster — base + alliances + covenant + expeditions — must resolve to
+    // either a `heros/*.png` portrait or null (disc fallback), never a malformed path or throw.
+    // This is the compose-never-redefine guard: a hero added upstream is exercised here.
+    for (const id of Object.keys(HERO_BY_ID)) {
+      const url = resolveTokenImageFor({ kind: 'hero', id }, '2d', { assetBaseUrl: '/t/' });
+      if (url !== null) expect(url).toMatch(/^\/t\/heros\/.+\.png$/);
+    }
   });
 });

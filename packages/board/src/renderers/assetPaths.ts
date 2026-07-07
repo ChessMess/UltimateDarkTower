@@ -100,12 +100,43 @@ const OFFICIAL_2D_ICON: Partial<Record<'foe' | 'adversary', Record<string, strin
 };
 
 /**
+ * Portrait art filenames (under the `heros/` group folder) for the full RTDT hero roster —
+ * every standard hero across the base game and all expansions, keyed by kebab hero id. Kept in
+ * sync with UDT's `data.heroes.HEROES`; `null` marks a roster hero whose portrait asset hasn't
+ * shipped yet (→ programmatic disc fallback, no failed request). Heroes have no derivable
+ * filename convention (some assets carry a `-hero` suffix, some don't) and no separate 2D/3D
+ * art — the one portrait drives both views. A consumer can still override any entry via
+ * `tokenArt`, and add a portrait later by dropping the file in and filling its entry here.
+ */
+const OFFICIAL_HERO_ART: Record<string, string | null> = {
+  // base
+  'brutal-warlord': 'brutal-warlord-hero.png',
+  'orphaned-scion': 'orphaned-scion.png',
+  'relic-hunter': null,
+  spymaster: null,
+  // alliances
+  archwright: null,
+  'haunted-recluse': null,
+  // covenant
+  'devious-swindler': null,
+  'relentless-warden': null,
+  'reverent-astromancer': null,
+  'undaunted-aegis': null,
+  // expeditions
+  'jocular-druid': null,
+  'grizzled-mariner': null,
+  'clever-tinkerer': null,
+  'enlightened-ascetic': null,
+};
+
+/**
  * Default `${assetBaseUrl}${group}/${kebab(id)}.png` convention shared by the 2D map and the
  * 3D plugin. In the 2D view, foe/adversary ids with a known {@link OFFICIAL_2D_ICON} entry
  * resolve to the small flat board-token icon instead of the 3D-style portrait; 3D and every
- * other kind use the plain convention unchanged. Returns `null` for "no art" → a programmatic
- * fallback: heroes always (no hero art exists), and everything when `assetBaseUrl` is empty.
- * `assetBaseUrl` may be passed with or without a trailing slash.
+ * other kind use the plain convention unchanged. Heroes resolve their roster portrait via
+ * {@link OFFICIAL_HERO_ART} (same image both views). Returns `null` for "no art" → a
+ * programmatic fallback: heroes with no shipped portrait, and everything when `assetBaseUrl`
+ * is empty. `assetBaseUrl` may be passed with or without a trailing slash.
  */
 export function defaultTokenImagePath(
   ref: TokenArtRef,
@@ -130,8 +161,10 @@ export function defaultTokenImagePath(
       return `${base}markers/${id}.png`;
     case 'skull':
       return `${base}markers/skull.png`;
-    case 'hero':
-      return null; // no hero art exists — always the fallback
+    case 'hero': {
+      const portrait = OFFICIAL_HERO_ART[id];
+      return portrait ? `${base}heros/${portrait}` : null; // unmapped/art-less → disc fallback
+    }
   }
 }
 

@@ -308,7 +308,9 @@ bundled** — it loads at runtime from `assetBaseUrl` by the `${group}/${kebab(i
 back to a programmatic labeled disc when missing. For **foe/adversary** tokens with a known id, the 2D
 map defaults to the official flat RTDT board-token icon (e.g. `foes/Foe-Token-L2-Brigands.png`) instead of
 the 3D-style portrait the plain convention resolves to; unknown ids and the 3D view keep the plain
-convention. Override any of this per token with [`tokenArt`](#per-token-art-tokenart).
+convention. **Hero** tokens in the standard roster (base + all expansions) default to their portrait under
+`heros/` when one has shipped, else the disc. Override any of this per token with
+[`tokenArt`](#per-token-art-tokenart).
 
 **Mouse interaction** is on by default. Scroll the wheel to zoom toward the cursor, and double-click
 (or call [`resetView()`](#methods)) to return to the focus view — dropping zoom **and** spin. What a
@@ -389,7 +391,7 @@ type TokenModelRef = string | { url: string; scale?: number; rotation?: { x?; y?
 ```ts
 const tokenArt: TokenArtConfig = {
   foe:  { Dragons: { image2d: './tokens/foes/dragons.png', model3d: { url: './dragon.glb', scale: 0.8 } } },
-  hero: { 'brutal-warlord': { image2d: './heroes/warlord.png' } }, // heroes have no convention art
+  hero: { 'brutal-warlord': { image2d: './heroes/warlord.png' } }, // override the built-in roster portrait
 };
 new BoardMap2D(el, { tokenArt, assetBaseUrl: './tokens/' }); // 2D reads image2d
 attachBoard3D(view, { tokenArt, assetBaseUrl: './tokens/' }); // 3D reads model3d, else image3d ?? image2d
@@ -401,9 +403,11 @@ attachBoard3D(view, { tokenArt, assetBaseUrl: './tokens/' }); // 3D reads model3
   (`"Brigands"` and `"brigands"` both match).
 - **Precedence (image, per view)** — 2D: `image2d` → `resolveTokenImage(ref, '2d')` → convention → `null`.
   3D billboard: `image3d ?? image2d` → `resolveTokenImage(ref, '3d')` → convention → `null` (so a single
-  `image2d` drives both views). The convention fallback is `${assetBaseUrl}${group}/${kebab(id)}.png`,
-  except that in the **2D** view a known **foe/adversary** id resolves to its official flat board-token
-  icon under `foes/` (e.g. `foes/Foe-Token-L2-Brigands.png`) rather than the 3D-style portrait.
+  `image2d` drives both views). The convention fallback is `${assetBaseUrl}${group}/${kebab(id)}.png`, with
+  two built-in refinements: in the **2D** view a known **foe/adversary** id resolves to its official flat
+  board-token icon under `foes/` (e.g. `foes/Foe-Token-L2-Brigands.png`) rather than the 3D-style portrait;
+  and a **hero** id in the standard roster (base + all expansions) resolves to its portrait under `heros/`
+  in both views (heroes without a shipped portrait yet, or non-roster instance ids, fall back to `null`).
 - **Precedence (3D model)** — `tokenFactory` → `tokenArt.model3d` → `resolveTokenModel(ref)`; if a model
   results it renders in place of the sprite, otherwise the sprite uses the image precedence above.
 

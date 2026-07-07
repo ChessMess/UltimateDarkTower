@@ -1,6 +1,6 @@
 {
   "name": "ultimatedarktowerboard",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Composable state + text/2D/3D renderers for the Return to Dark Tower game board. The 3D board is a ScenePlugin for ultimatedarktowerdisplay.",
   "type": "module",
   "sideEffects": false,

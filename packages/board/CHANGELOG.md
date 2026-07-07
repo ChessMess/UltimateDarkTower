@@ -61,6 +61,16 @@ All notable changes to this project are documented here. The format is based on
   kind are unchanged, and any entry can still be overridden per token via `tokenArt.image2d`. Consumers
   whose 2D assets were laid out as `foes/<kebab-id>.png` should rename them to the official icon filenames
   or supply `tokenArt.image2d` (a missing icon file still degrades gracefully to the programmatic disc).
+- **Heroes now have a built-in default portrait for the full roster (base + all expansions).** The renderers
+  previously returned no default art for any hero (always the programmatic disc); the resolver now knows the
+  complete standard hero roster (kept in sync with UDT's `data.heroes.HEROES` — 14 heroes across base,
+  Alliances, Covenant and Expeditions) and resolves each to its portrait under `heros/` in both the 2D map
+  and the 3D billboard. A roster hero whose portrait hasn't shipped yet, and non-roster instance ids, still
+  fall back to the disc (no broken request). Consumers no longer need a per-app `tokenArt` just to show hero
+  art; drop the portrait file in `heros/` and it appears. Any entry is still overridable via `tokenArt`.
+  The demo's `example/src/tokenArt/{foe,adversary,hero}_tokens.json` overrides — now redundant with these
+  built-in defaults — were removed; `example/src/tokenArt` keeps only genuine overrides (skull's 3D model,
+  plus monuments/markers for the Art Forge tool).
 - **Inspector remove action is now labelled “Remove” for every token type.** The adversary case
   previously read “Clear”; it now matches heroes, foes, and markers for consistency. The underlying
   command is unchanged (`controller.clearAdversary()`), and the button keeps its `.udt-inspector-remove`

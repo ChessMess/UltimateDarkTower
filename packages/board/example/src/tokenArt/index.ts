@@ -1,20 +1,16 @@
-// Per-token art, authored as JSON split by token KIND so it's easy to edit and grep — and editable
-// in the browser via the Token Art Forge tool (open `/tokens.html`, or the "Art Forge" link in the
-// demo). Each `<kind>_tokens.json` maps an art id → { image2d?, model3d? }: the kebab id from UDT's
-// roster (foe/adversary/hero/monument), the marker name, or "skull" for skulls. Keys are
-// kebab-insensitive. Every token is listed with its default `${assetBaseUrl}${group}/${kebab(id)}.png`
-// image so the defaults are visible and editable; a token with no image2d still falls back to that
-// convention on the board.
-//
-// All six kinds are imported so the Art Forge always has a file to write; the same object is passed
-// to BOTH renderers — the 2D map reads `image2d`, the 3D plugin renders `model3d` (else the image as
-// a billboard). Heroes have no convention art, so this is how you give a hero a portrait.
+// Per-token art OVERRIDES for the demo. Since ultimatedarktowerboard resolves foes, adversaries
+// and heroes to their official art out of the box — foes/adversaries to the flat 2D board-token
+// icon in the 2D map and the portrait in 3D, heroes to their roster portrait (see
+// `defaultTokenImagePath` / `OFFICIAL_2D_ICON` / `OFFICIAL_HERO_ART`) — the demo no longer hand-
+// authors those; it just relies on the library default. What remains here are the genuine
+// overrides the convention can't express: `skull` swaps in a real 3D GLB model, and monuments/
+// markers are listed to keep them visible/editable in the Token Art Forge tool (open
+// `/tokens.html`). The same object is passed to BOTH renderers — the 2D map reads `image2d`, the
+// 3D plugin renders `model3d` (else `image3d ?? image2d` as a billboard). Add a `<kind>_tokens.json`
+// back (and import it here) to override a token whose default art you want to replace.
 import type { TokenArtConfig } from '../../../src/index';
-import hero from './hero_tokens.json';
-import foe from './foe_tokens.json';
-import adversary from './adversary_tokens.json';
 import monument from './monument_tokens.json';
 import marker from './marker_tokens.json';
 import skull from './skull_tokens.json';
 
-export const tokenArt: TokenArtConfig = { hero, foe, adversary, monument, marker, skull };
+export const tokenArt: TokenArtConfig = { monument, marker, skull };
