@@ -9,6 +9,7 @@ import { validateRefs, validateGraph, createBoardAdapter, createDisplayAdapter, 
 import type { BoardState } from '@udtc/adapters';
 import { init, step, deserialize, ENGINE_VERSION } from '@udtc/engine';
 import type { Input, Directive, StepResult, EngineState } from '@udtc/engine';
+import type { TokenArtConfig } from 'ultimatedarktowerboard';
 import { RelayClient } from '../relay';
 import { usePlayerStore } from '../store';
 import type { ValidationResults, SavedSession, SavedSessionMeta } from '../types';
@@ -48,6 +49,16 @@ export type DisplayMode = 'lite' | 'emulator';
 const TOWER_MODEL_URL = `${import.meta.env.BASE_URL}assets/tower.glb`;
 const BOARD_IMAGE_URL = `${import.meta.env.BASE_URL}assets/board.png`;
 const BOARD_ASSET_BASE = `${import.meta.env.BASE_URL}assets/tokens/`;
+
+// Heroes have no default convention art (the board library returns null for hero kind), so the
+// two heroes that ship portrait art must be wired explicitly. Foes/adversaries are handled by
+// the library's built-in 2D board-icon default and are deliberately not listed here.
+const BOARD_TOKEN_ART: TokenArtConfig = {
+  hero: {
+    'brutal-warlord': { image2d: `${BOARD_ASSET_BASE}heros/brutal-warlord-hero.png` },
+    'orphaned-scion': { image2d: `${BOARD_ASSET_BASE}heros/orphaned-scion.png` },
+  },
+};
 
 function board(): ReturnType<typeof createBoardAdapter> {
   if (!_board) _board = createBoardAdapter();
@@ -148,6 +159,7 @@ async function mountStage(el: HTMLElement, gen: number): Promise<void> {
     modelUrl: TOWER_MODEL_URL,
     boardImageUrl: BOARD_IMAGE_URL,
     assetBaseUrl: BOARD_ASSET_BASE,
+    tokenArt: BOARD_TOKEN_ART,
     // Build the tower explicitly below so its readiness is deterministic (avoid the ctor's
     // fire-and-forget auto-build racing our own).
     tower3D: false,
