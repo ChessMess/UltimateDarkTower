@@ -6,6 +6,7 @@ const path = require('path');
 const suites = [
   'verbs_test.js',
   'battle_test.js',
+  'battle_cards_test.js',
   'dungeon_test.js',
   'lockstep_test.js',
   'corpus_test.js',
@@ -13,6 +14,7 @@ const suites = [
   'full_turn_test.js',
   'events_test.js',
   'select_hero_test.js',
+  'decks_test.js',
   'regression_test.js',
 ];
 

@@ -47,6 +47,9 @@ importers:
       '@udtc/adapters':
         specifier: workspace:*
         version: link:../../packages/adapters
+      '@udtc/card-render':
+        specifier: workspace:*
+        version: link:../../packages/card-render
       '@udtc/engine':
         specifier: workspace:*
         version: link:../../packages/engine
@@ -117,6 +120,9 @@ importers:
       '@udtc/adapters':
         specifier: workspace:*
         version: link:../../packages/adapters
+      '@udtc/card-render':
+        specifier: workspace:*
+        version: link:../../packages/card-render
       '@udtc/engine':
         specifier: workspace:*
         version: link:../../packages/engine
@@ -197,6 +203,16 @@ importers:
       vitest:
         specifier: ^4.1.0
         version: 4.1.9(@types/node@22.20.0)(jsdom@25.0.1)(vite@8.1.0(@types/node@22.20.0))
+
+  packages/card-render:
+    dependencies:
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.2.17
 
   packages/engine:
     devDependencies:

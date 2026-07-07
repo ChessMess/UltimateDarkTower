@@ -348,6 +348,7 @@ function persistSession(): void {
       serializedState: cp?.serializedState ?? JSON.stringify(store.engineState),
       status: store.status,
       awaiting: store.awaiting,
+      battlePrompt: store.battlePrompt,
       boardState: board().isReady() ? board().getState() : null,
       lastCommand: cp?.lastCommand ?? [],
       seq: cp?.seq ?? 0,
@@ -422,6 +423,7 @@ export async function resumeSession(): Promise<void> {
       timestamp: saved.savedAt,
     },
     log: saved.log,
+    battlePrompt: saved.battlePrompt ?? null,
   });
   _stashedSession = null;
   store.addLog(`Resumed session — checkpoint #${saved.seq}`);
@@ -531,6 +533,8 @@ function dispatchDirective(d: Directive): void {
       store.addLog(`ui.update: ${JSON.stringify(d.delta).slice(0, 80)}`);
       break;
     case 'ui.prompt':
+      // capture the interactive card-battle presentation so BattleCardPanel can render it
+      if (d.kind === 'battleCard' && d.battle) store.setBattlePrompt(d.battle);
       store.addLog(`ui.prompt kind=${d.kind}`);
       break;
     case 'board.mutate':

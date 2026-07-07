@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getUDTReferenceLayer } from '@udtc/adapters';
 import { handleInput, mountDisplay, unmountDisplay, type DisplayMode } from '../game';
+import { BattleCardPanel } from './BattleCardPanel';
 import { usePlayerStore } from '../store';
 import { fmtStatus } from '../utils';
 import type { ActionChoice } from '../types';
@@ -123,6 +124,8 @@ function ActionInput() {
   if (awaiting.id === 'skullCounter') return <SkullInput />;
   if (awaiting.id === 'target') return <TargetInput />;
   if (awaiting.id === 'advantageSpend') return <AdvantageInput />;
+  if (awaiting.id === 'battleCard' || awaiting.id === 'battleHeroTarget')
+    return <BattleCardPanel />;
   if (awaiting.id === 'moveTarget') return <MoveInput />;
   if (awaiting.id === 'dungeonMove') return <DungeonMoveInput />;
   if (awaiting.id === 'dungeonRoomAdvantage') return <DungeonImproveInput />;

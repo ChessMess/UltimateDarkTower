@@ -27,6 +27,7 @@
   --c-primary-fg: #ffffff;
   --c-success: #059669;
   --c-danger: #dc2626;
+  --c-danger-fg: #ffffff;
   --c-warning: #f59e0b;
 }
 
@@ -53,6 +54,7 @@
   --c-primary-fg: #ffffff;
   --c-success: #10b981;
   --c-danger: #f87171;
+  --c-danger-fg: #450a0a;
   --c-warning: #fbbf24;
 }
 
@@ -80,6 +82,7 @@
     --c-primary-fg: #ffffff;
     --c-success: #10b981;
     --c-danger: #f87171;
+    --c-danger-fg: #450a0a;
     --c-warning: #fbbf24;
   }
 }

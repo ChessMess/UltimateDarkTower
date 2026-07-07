@@ -61,9 +61,10 @@ const dirs = (run) => run.flatMap(r => r.directives);
 {
   // a defeated foe no longer strikes
   const tgt = (foeId) => ({ requestId: "target", value: { foeId }, kind: "decision" });
-  const adv = (spend) => ({ requestId: "advantageSpend", value: { spend }, kind: "decision" });
+  const bc = (v) => ({ requestId: "battleCard", value: v, kind: "decision" });
+  const fight = (level) => { const s = []; for (let k = 0; k < level; k++) s.push(bc({ reveal: true }), bc({ resolve: true })); return s; };
   const run = drive(gf, opts, [
-    act("move"), mov("Delmsmire"), act("battle"), tgt("brigands"), adv(2), act("endTurn"), // M1: kill brigands
+    act("move"), mov("Delmsmire"), act("battle"), tgt("brigands"), ...fight(2), act("endTurn"), // M1: kill brigands
     act("endTurn"), act("endTurn")]); // M2 T2 strike
   const strikes = dirs(run).filter(d => d.type === "log.entry" && d.event === "foeStrike");
   ok("a defeated foe is skipped by foes-strike", strikes.length === 2 && !strikes.some(d => d.foeId === "brigands"));

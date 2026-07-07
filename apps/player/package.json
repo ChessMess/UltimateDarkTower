@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@udtc/adapters": "workspace:*",
+    "@udtc/card-render": "workspace:*",
     "@udtc/engine": "workspace:*",
     "@udtc/schema": "workspace:*",
     "@udtc/theme": "workspace:*",

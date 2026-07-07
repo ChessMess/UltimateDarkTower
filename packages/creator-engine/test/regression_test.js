@@ -49,6 +49,7 @@ const act = (choice, args) => ({
 const obs = (v) => ({ requestId: 'skullCounter', value: v, kind: 'observed' });
 const tgt = (foeId) => ({ requestId: 'target', value: { foeId }, kind: 'decision' });
 const adv = (spend) => ({ requestId: 'advantageSpend', value: { spend }, kind: 'decision' });
+const bc = (v) => ({ requestId: 'battleCard', value: v, kind: 'decision' });
 const mov = (to) => ({ requestId: 'moveTarget', value: { to }, kind: 'decision' });
 const hsel = (heroId) => ({ requestId: 'heroSelect', value: { heroId }, kind: 'decision' });
 const opts = { seed: 'mvp-runtime-seed', playerCount: 1 };
@@ -121,10 +122,15 @@ for (const [name, fx] of [
 
 // ---------- A2: full-turn battle deducts spent Advantages ----------
 {
-  // move onto the brigands' space (Delmsmire), battle, spend 2 Advantages
-  const run = drive(goldenFull, opts, [act('move'), mov('Delmsmire'), act('battle'), tgt('brigands'), adv(2)]);
+  // move onto the brigands' space (Delmsmire), battle, spend 2 Advantages (two improves on the
+  // first card = the card-ladder equivalent of the legacy adv(2))
+  const run = drive(goldenFull, opts, [
+    act('move'), mov('Delmsmire'), act('battle'), tgt('brigands'),
+    bc({ reveal: true }), bc({ improve: true }), bc({ improve: true }), bc({ resolve: true }),
+    bc({ reveal: true }), bc({ resolve: true }),
+  ]);
   const s = lastOf(run).state;
-  ok('A2: full-turn battle deducts 2 Advantages (6 → 4)', s.heroes.hero1.advantages === 4, 'adv=' + s.heroes.hero1.advantages);
+  ok('A2: full-turn card battle deducts 2 Advantages (6 → 4)', s.heroes.hero1.advantages === 4, 'adv=' + s.heroes.hero1.advantages);
 }
 {
   // legacy (non-full-turn) golden must NOT deduct — its digests/streams are frozen
@@ -304,7 +310,10 @@ for (const [name, fx] of [
     engine.digest(r.state) === engine.digest(s),
   );
 }
-ok('D3: ENGINE_VERSION bumped for the digest-scope fix', engine.ENGINE_VERSION === '0.5.0');
+ok(
+  'D3: ENGINE_VERSION bumped for generic decks + reveal/resolve (0.7.0)',
+  engine.ENGINE_VERSION === '0.7.0',
+);
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);

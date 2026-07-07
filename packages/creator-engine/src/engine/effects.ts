@@ -5,7 +5,47 @@
 
 import pcg32 from '../pcg32';
 import { dir, fault } from './core';
-import type { EngineState, Effect, Directive, HeroState, BuildingState, FoeStatus } from './types';
+import type {
+  EngineState,
+  Effect,
+  Directive,
+  HeroState,
+  BuildingState,
+  FoeStatus,
+  DrawnCardPayload,
+} from './types';
+
+/** per-invocation context threaded through applyEffect (and recursively via hero.scope). Only the
+ * new interactive battle-card resolve path supplies it; every legacy call site omits it, so their
+ * behavior is byte-identical. */
+export interface EffectCtx {
+  /** heroIds already shortfall-corrupted by the CURRENT battle card. A card causes at most one
+   * corruption per hero (official FAQ), regardless of how many unpayable losses it lists. */
+  corruptionLatch?: string[];
+}
+
+// heroes in seat/turn order (deterministic for digest); falls back to insertion order.
+function heroTurnOrder(state: EngineState): string[] {
+  const order = state.clock.turnOrder;
+  if (order && order.length) return order.filter((h) => state.heroes[h]);
+  return Object.keys(state.heroes);
+}
+
+// heroes sharing the active hero's kingdom (via the buildings location→kingdom map). If the active
+// hero's location isn't a known building space, degrade to heroes on the exact same location.
+function heroesInKingdomOf(state: EngineState, activeId: string): string[] {
+  const order = heroTurnOrder(state);
+  const activeLoc = state.heroes[activeId]?.location ?? null;
+  const loc2k: Record<string, string> = {};
+  for (const b of state.buildings || []) if (b.location) loc2k[b.location] = b.kingdom;
+  const activeKingdom = activeLoc != null ? loc2k[activeLoc] : undefined;
+  if (activeKingdom)
+    return order.filter((h) => {
+      const l = state.heroes[h].location;
+      return l != null && loc2k[l] === activeKingdom;
+    });
+  return order.filter((h) => state.heroes[h].location === activeLoc);
+}
 
 // ---------- effect verbs (§4.3, MVP subset) ----------
 // Each returns nothing; mutates state, pushes directives. Loss-on-3rd-corruption and
@@ -36,7 +76,12 @@ export function getDeck(state: EngineState, name: string): { draw: unknown[]; di
 // The full §4.3 instruction set, discriminated on `op`. "Mutation" = EngineState change;
 // directives are handed to the host. Board-touching verbs update nothing physical here
 // (headless) — they emit board.mutate for Board's reducer when it lands (§5.2, §10.5).
-export function applyEffect(eff: Effect, state: EngineState, directives: Directive[]): void {
+export function applyEffect(
+  eff: Effect,
+  state: EngineState,
+  directives: Directive[],
+  ctx?: EffectCtx,
+): void {
   const hero = state.heroes[state.clock.activeHero];
   const heroRec = hero as unknown as HeroRecord;
   const ui = (delta: Record<string, unknown>) => dir(directives, 'ui.update', { delta });
@@ -54,7 +99,19 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       const short = e.amount - (heroRec[e.resource] || 0);
       heroRec[e.resource] = Math.max(0, (heroRec[e.resource] || 0) - e.amount);
       ui({ hero: state.clock.activeHero, [e.resource]: heroRec[e.resource] });
-      if (short > 0) gainCorruption(state, directives, 'shortfall');
+      if (short > 0) {
+        // Battle-card resolve threads a per-card latch so a card with multiple unpayable losses
+        // corrupts each hero at most once (official FAQ). No latch (every legacy call site) ⇒
+        // the original one-corruption-per-shortfall behavior, byte-identical.
+        const who = state.clock.activeHero;
+        const latch = ctx?.corruptionLatch;
+        if (!latch) {
+          gainCorruption(state, directives, 'shortfall');
+        } else if (!latch.includes(who)) {
+          latch.push(who);
+          gainCorruption(state, directives, 'shortfall');
+        }
+      }
       break;
     }
     case 'resource.spend': {
@@ -345,6 +402,37 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
       const card = d.draw.shift();
       state._lastDraw = card;
       ui({ deck: e.deck, drew: card });
+      // 0.4.3 — reveal/resolve are additive and gated on flags legacy scenarios never set, so a plain
+      // deck.draw stays byte-identical (no new directives, no recursion). `card` is the drawn cardId;
+      // its definition lives in library.cards. reveal → emit a fire-and-forget cardDraw ui.prompt
+      // carrying resourceKeys (NEVER data URLs — headless rule); resolve → apply the card's own
+      // effects. only-when-present spreads keep the payload free of noise keys.
+      if (e.reveal || e.resolve) {
+        const cardId = typeof card === 'string' ? card : undefined;
+        const def = cardId ? state._lib.cards?.[cardId] : undefined;
+        if (e.reveal && def) {
+          const deckDef = state._lib.decks?.[e.deck];
+          const payload: DrawnCardPayload = {
+            deckId: e.deck,
+            cardId: def.id,
+            name: def.name,
+            type: def.type,
+            ...(def.description ? { description: def.description } : {}),
+            ...(def.flavor ? { flavor: def.flavor } : {}),
+            ...(def.artRef ? { artRef: def.artRef } : {}),
+            ...(deckDef?.appearance ? { appearance: deckDef.appearance } : {}),
+          };
+          dir(directives, 'ui.prompt', { kind: 'cardDraw', card: payload });
+        }
+        if (e.resolve && def?.effects) {
+          // Apply the drawn card's own effects (same recursion + terminal early-out as hero.scope). A
+          // nested deck.draw that empties the pile terminates via the empty-deck fault above.
+          for (const inner of def.effects) {
+            applyEffect(inner, state, directives, ctx);
+            if (state.outcome.status !== 'running') break;
+          }
+        }
+      }
       break;
     }
     case 'deck.discard': {
@@ -432,6 +520,59 @@ export function applyEffect(eff: Effect, state: EngineState, directives: Directi
     case 'counter.set': {
       const e = eff;
       state.counters[e.name] = e.value;
+      break;
+    }
+    case 'hero.scope': {
+      // Apply the inner effects once per hero in scope, via a temporary activeHero swap so every
+      // inner verb (and its ui.update deltas) targets the right hero with zero signature churn.
+      // Deterministic scopes resolve here; the two choice scopes are handled by the battle-card
+      // loop before delegation and only reach this case (faulting) if used outside battle context.
+      const e = eff;
+      const activeId = state.clock.activeHero;
+      const order = heroTurnOrder(state);
+      const others = order.filter((h) => h !== activeId);
+      let targets: string[];
+      switch (e.scope) {
+        case 'self':
+          targets = [activeId];
+          break;
+        case 'all':
+          targets = order.slice();
+          break;
+        case 'allOthers':
+          targets = others;
+          break;
+        case 'kingdom':
+          targets = heroesInKingdomOf(state, activeId);
+          break;
+        case 'other':
+          if (others.length === 0) targets = [];
+          else if (others.length === 1) targets = [others[0]];
+          else throw fault('hero.scope "other" needs a hero choice (battle-card context only)');
+          break;
+        case 'selfAndOther':
+          if (others.length === 0) targets = [activeId];
+          else if (others.length === 1) targets = [activeId, others[0]];
+          else throw fault('hero.scope "selfAndOther" needs a hero choice (battle-card context only)');
+          break;
+        default: {
+          const _s: never = e.scope;
+          throw fault('unknown hero.scope: ' + (_s as string));
+        }
+      }
+      const saved = state.clock.activeHero;
+      try {
+        for (const h of targets) {
+          state.clock.activeHero = h;
+          for (const inner of e.effects) {
+            applyEffect(inner, state, directives, ctx);
+            if (state.outcome.status !== 'running') break;
+          }
+          if (state.outcome.status !== 'running') break;
+        }
+      } finally {
+        state.clock.activeHero = saved;
+      }
       break;
     }
     default: {

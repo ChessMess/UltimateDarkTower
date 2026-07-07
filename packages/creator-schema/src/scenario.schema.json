@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://chessmess.dev/rtdt/schemas/scenario.schema.json",
   "title": "Return to Dark Tower — Custom Scenario",
-  "$comment": "schemaVersion 0.4.0 — first JSON change since 0.3.0: closes the F library sub-deferrals (dormantKingdoms, room.improveOnce/enterRequirement, quest.requirements, foe.strike/movement, battleDefs.cards), adds the closed tradeAsset union (decision #7), and adds MVP-scoped per-kind node props. Battle/foe figures are author-editable DEFAULTS, not constraints (official-app-analysis v0.3 §6). Later 0.4.x addition: optional node.description (author documentation) and closed props for the util.comment / util.group annotation kinds (flow documentation/grouping). 0.4.1: setup.selections.adversaryId / foes (and its tier1/tier2/tier3) / mainGoalId are now OPTIONAL — a backward-compatible relaxation so rule-variant scenarios that don't use the standard adversary fight, tiered foe roster, or a main-goal quest still validate at L1.",
+  "$comment": "schemaVersion 0.4.0 — first JSON change since 0.3.0: closes the F library sub-deferrals (dormantKingdoms, room.improveOnce/enterRequirement, quest.requirements, foe.strike/movement, battleDefs.cards), adds the closed tradeAsset union (decision #7), and adds MVP-scoped per-kind node props. Battle/foe figures are author-editable DEFAULTS, not constraints (official-app-analysis v0.3 §6). Later 0.4.x addition: optional node.description (author documentation) and closed props for the util.comment / util.group annotation kinds (flow documentation/grouping). 0.4.1: setup.selections.adversaryId / foes (and its tier1/tier2/tier3) / mainGoalId are now OPTIONAL — a backward-compatible relaxation so rule-variant scenarios that don't use the standard adversary fight, tiered foe roster, or a main-goal quest still validate at L1. 0.4.2: library.battleDefs values become a oneOf of the legacy strikes shape and the new official-app card-ladder shape ($defs/battleLadderCard), and a hero.scope effect op is added for multi-hero battle-card targets — additive; every 0.4.0/0.4.1 document validates unchanged. 0.4.3: adds $defs/cardAppearance (presentational card back/template/accent — engine passes through opaque), optional artRef/flavor on generic cards and optional artRef on battle-ladder cards, optional appearance on generic decks and ladder battleDefs, and closed props branches for deck.draw (with reveal/resolve flags)/deck.reshuffle/deck.discard — additive; every 0.4.0–0.4.2 document validates unchanged.",
   "type": "object",
   "required": ["schemaVersion", "meta", "setup", "library", "graph"],
   "additionalProperties": false,
@@ -33,6 +33,26 @@
     "resource":     { "enum": ["warriors", "spirit"] },
     "contentSource":{ "enum": ["base", "alliances", "covenant", "expeditions"] },
     "resourceKey":  { "type": "string", "$comment": "L2: key in library.resources.*" },
+
+    "battleLadderCard": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "advantage", "steps"],
+      "properties": {
+        "name":      { "type": "string", "minLength": 1 },
+        "advantage": { "$ref": "#/$defs/advantage" },
+        "critical":  { "type": "boolean", "default": false },
+        "copies":    { "type": "integer", "minimum": 1, "default": 1 },
+        "note":      { "type": "string" },
+        "artRef":    { "$ref": "#/$defs/resourceKey" },
+        "steps": { "type": "array", "minItems": 1, "items": {
+          "type": "object", "additionalProperties": false, "required": ["text"],
+          "properties": {
+            "text":    { "type": "string" },
+            "effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } }
+          } } }
+      },
+      "$comment": "0.4.2 official-app card-deck shape — an ordered improvement ladder (steps worst→best). Revealed cards start at step 0; each improve spends exactly 1 Advantage and moves up 1 step (≤10/battle). `critical` is PRESENTATIONAL ONLY (red styling/ribbon in the player); an unimprovable card is authored as a 1-step ladder. `copies` = deck composition multiplier. `advantage` stays the 7-value enum (flavor/metadata for now — hero advantages remain the untyped numeric pool)."
+    },
 
     "tradeAsset": {
       "type": "object",
@@ -301,7 +321,8 @@
             "skull.place", "skull.remove", "building.destroy", "skull.modifySupply",
             "deck.draw", "deck.discard", "deck.reshuffle", "market.refresh", "market.acquireReplace",
             "quest.complete", "quest.spawnDungeon", "quest.placeMarker",
-            "seal.remove", "seal.replace", "flag.set", "counter.set"
+            "seal.remove", "seal.replace", "flag.set", "counter.set",
+            "hero.scope"
           ]
         }
       },
@@ -349,7 +370,28 @@
               { "required": ["count"], "properties": { "count": { "type": "integer", "minimum": 1 } } }
             ],
             "unevaluatedProperties": false,
-            "$comment": "Sanctuary enhanced uses {all:true}; count form removes N (surfaced in MVP fixture verification)" } }
+            "$comment": "Sanctuary enhanced uses {all:true}; count form removes N (surfaced in MVP fixture verification)" } },
+        { "if": { "properties": { "op": { "const": "hero.scope" } } },
+          "then": { "required": ["scope", "effects"], "properties": {
+            "op": true,
+            "scope": { "enum": ["self", "other", "selfAndOther", "allOthers", "all", "kingdom"] },
+            "effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } } },
+            "unevaluatedProperties": false,
+            "$comment": "0.4.2 — hero-targeting wrapper: applies inner effects once per hero in scope. Deterministic scopes (self/allOthers/all/kingdom) resolve without input; choice scopes (other/selfAndOther) prompt the active player and are only supported inside the interactive battle-card flow." } },
+        { "if": { "properties": { "op": { "const": "deck.draw" } } },
+          "then": { "required": ["deck"], "properties": {
+            "op": true, "deck": { "type": "string" },
+            "reveal": { "type": "boolean" }, "resolve": { "type": "boolean" } },
+            "unevaluatedProperties": false,
+            "$comment": "0.4.3 — draw the top card of a seeded generic deck (library.decks). reveal → the engine emits a cardDraw ui.prompt carrying resourceKeys (never data URLs); resolve → applies the drawn card's own effects. Both flags absent = the legacy silent draw (byte-identical)." } },
+        { "if": { "properties": { "op": { "const": "deck.reshuffle" } } },
+          "then": { "required": ["deck"], "properties": {
+            "op": true, "deck": { "type": "string" } }, "unevaluatedProperties": false,
+            "$comment": "0.4.3 — merge discard into draw and shuffle (advances the PRNG). Required before the first draw of a seeded deck: decks are seeded in AUTHORED order and never shuffled at init." } },
+        { "if": { "properties": { "op": { "const": "deck.discard" } } },
+          "then": { "required": ["deck"], "properties": {
+            "op": true, "deck": { "type": "string" }, "card": {} }, "unevaluatedProperties": false,
+            "$comment": "0.4.3 — discard a card (defaults to the last drawn)." } }
       ]
     },
 
@@ -470,6 +512,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/id" }, "name": { "type": "string" },
         "type": { "type": "string" }, "description": { "type": "string" },
+        "artRef": { "$ref": "#/$defs/resourceKey" }, "flavor": { "type": "string" },
         "effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } }
       }
     },
@@ -483,8 +526,19 @@
         "cards": { "type": "array", "items": {
           "type": "object", "required": ["cardId", "copies"], "additionalProperties": false,
           "properties": { "cardId": { "$ref": "#/$defs/id" }, "copies": { "type": "integer", "minimum": 1 } } } },
-        "marketSize": { "type": "integer", "minimum": 0 }
+        "marketSize": { "type": "integer", "minimum": 0 },
+        "appearance": { "$ref": "#/$defs/cardAppearance" }
       }
+    },
+
+    "cardAppearance": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "backRef":  { "$ref": "#/$defs/resourceKey" },
+        "template": { "enum": ["classic", "fullArt", "textOnly"] },
+        "accent":   { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      },
+      "$comment": "0.4.3 — PRESENTATIONAL ONLY. A deck's shared card presentation: back image (backRef), front template (closed 3-value enum: classic default, fullArt, textOnly), and accent color. The engine passes this through opaquely and never resolves refs; apps resolve backRef/artRef against library.resources.images (dangling refs render a placeholder — L2 resourceKey validation is deferred)."
     },
 
     "room": {
@@ -627,18 +681,27 @@
                 "failure": { "type": "array", "items": { "$ref": "#/$defs/effect" } } } } } } },
         "dungeons": { "type": "object", "additionalProperties": { "$ref": "#/$defs/dungeon" } },
         "lightSequences": { "type": "object", "additionalProperties": { "$ref": "#/$defs/lightSequenceAsset" } },
-        "battleDefs": { "type": "object", "additionalProperties": {
-          "type": "object", "additionalProperties": false,
-          "properties": { "cards": { "type": "array", "items": {
-            "type": "object", "additionalProperties": false, "required": ["advantage"],
-            "properties": {
-              "advantage": { "$ref": "#/$defs/advantage" },
-              "strikes": { "type": "integer", "minimum": 0 },
-              "critical": { "type": "boolean", "default": false },
-              "onResolve": { "type": "array", "items": { "$ref": "#/$defs/effect" } },
-              "note": { "type": "string" }
-            },
-            "$comment": "v0.4 — battle-card outcome keyed to an advantage. Author-editable DEFAULTS; deck size/keyword structure NOT enum-locked (analysis v0.3 §3/§6: observed, unverified). Cards drawn per battle = foe level (rules) is owned by the engine, not encoded here." } } } } },
+        "battleDefs": { "type": "object", "additionalProperties": { "oneOf": [
+          {
+            "type": "object", "additionalProperties": false,
+            "properties": { "cards": { "type": "array", "items": {
+              "type": "object", "additionalProperties": false, "required": ["advantage"],
+              "properties": {
+                "advantage": { "$ref": "#/$defs/advantage" },
+                "strikes": { "type": "integer", "minimum": 0 },
+                "critical": { "type": "boolean", "default": false },
+                "onResolve": { "type": "array", "items": { "$ref": "#/$defs/effect" } },
+                "note": { "type": "string" }
+              },
+              "$comment": "v0.4 LEGACY strikes shape — battle-card outcome keyed to an advantage. Runs the frozen resolveBattle path (byte-identical). Author-editable DEFAULTS; deck size/keyword structure NOT enum-locked (analysis v0.3 §3/§6: observed, unverified). Cards drawn per battle = foe level (rules) is owned by the engine, not encoded here." } } }
+          },
+          {
+            "type": "object", "additionalProperties": false, "required": ["cards"],
+            "properties": { "cards": { "type": "array", "minItems": 1,
+              "items": { "$ref": "#/$defs/battleLadderCard" } },
+              "appearance": { "$ref": "#/$defs/cardAppearance" } },
+            "$comment": "0.4.2 official-app card-ladder shape — a deck of improvement-ladder cards. A battleDef is EITHER all-legacy or all-ladder (the oneOf enforces homogeneity: a mixed deck fails both branches); the ladder shape triggers the engine's interactive battle flow. 0.4.3: optional presentational appearance (back/template/accent); appearance on a legacy strikes deck fails BOTH branches." }
+        ] } },
         "tokenTypes": { "type": "object", "additionalProperties": { "$ref": "#/$defs/tokenType" } }
       }
     },

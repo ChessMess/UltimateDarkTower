@@ -91,6 +91,10 @@ export interface AdversaryState {
   battleProgress: number;
   /** set by the adversary.spawn effect; absent until the adversary actually spawns */
   location?: string | null;
+  /** persistent card-ladder deck, lazily instantiated at the FIRST adversary card-battle; per-card
+   *  `.step` improvement state persists for the rest of the game (incl. through retreat). Absent in
+   *  legacy scenarios and until the adversary is first battled with a ladder deck. */
+  cardDeck?: LadderDeckCard[];
 }
 
 export interface BattleCard {
@@ -100,6 +104,40 @@ export interface BattleCard {
   onResolve?: Effect[];
 }
 
+/** authored improvement-ladder battle card (schema 0.4.2 $defs/battleLadderCard). */
+export interface BattleCardStep {
+  text: string;
+  effects?: Effect[];
+}
+/** presentational card appearance (schema 0.4.3 $defs/cardAppearance) — a deck's shared card back,
+ * front template, and accent color. The engine passes this through OPAQUELY (never resolves refs);
+ * apps resolve backRef/artRef against library.resources.images. `template` is the closed 3-value
+ * enum (kept as a local literal union to preserve the headless rule — no @udtc/card-render import). */
+export interface CardAppearance {
+  backRef?: string;
+  template?: 'classic' | 'fullArt' | 'textOnly';
+  accent?: string;
+}
+export interface LadderBattleCard {
+  name: string;
+  advantage: string;
+  /** presentation flavor only (red styling/ribbon); an unimprovable card is a 1-step ladder */
+  critical?: boolean;
+  copies?: number;
+  note?: string;
+  /** presentational front-art resourceKey (schema 0.4.3); apps resolve against library.resources.images */
+  artRef?: string;
+  steps: BattleCardStep[];
+}
+
+/** runtime instance of one ladder card in a shuffled deck; `.step` is the current ladder position
+ * (0 = worst). On the adversary's persistent deck, `.step` improvements survive across battles. */
+export interface LadderDeckCard {
+  defIndex: number;
+  copy: number;
+  step: number;
+}
+
 export interface BattleCursor {
   foeId: string;
   instanceId?: string;
@@ -107,6 +145,25 @@ export interface BattleCursor {
   level: number;
   cards: BattleCard[];
   resolved: number;
+  // ---- new-format (card-ladder) battle only; all optional & absent in legacy battles, so
+  //      canonical() drops them and legacy digests stay byte-identical ----
+  /** battleDefs key the ladder deck was built from */
+  defId?: string;
+  /** regular foes: this battle's shuffled full deck (fresh each battle). Adversary battles leave
+   *  this undefined — the persistent deck lives on state.adversary.cardDeck. */
+  deck?: LadderDeckCard[];
+  /** deck indexes pre-drawn at battle start (length = level), in PRNG reveal order */
+  hand?: number[];
+  /** hand[0..revealedCount-1] are face-up (invariant: revealedCount - resolved ∈ {0,1}) */
+  revealedCount?: number;
+  /** 0..10 this battle (heroic-action cap; spends cannot be undone) */
+  advantagesSpent?: number;
+  /** position within the active card's step effects (a hero-choice pauses mid-resolve) */
+  resolveIndex?: number;
+  /** set while awaiting a battleHeroTarget pick for a choice-scope hero.scope effect */
+  pendingHeroChoice?: { effectIndex: number; scope: HeroScope };
+  /** heroIds already shortfall-corrupted by the CURRENT card (FAQ: ≤1 corruption per card per hero) */
+  cardCorrupted?: string[];
 }
 
 export interface DungeonCursor {
@@ -281,9 +338,14 @@ export interface CompanionDef {
 export interface FoeDef {
   level?: number;
   strike?: { effects?: Effect[] };
+  /** optional override of the battleDefs key to draw cards from; defaults to the foeId (schema
+   * library.foes[*].battleDefId). */
+  battleDefId?: string;
 }
 export interface BattleDef {
-  cards?: BattleCard[];
+  cards?: Array<BattleCard | LadderBattleCard>;
+  /** presentational deck appearance (schema 0.4.3 ladder branch); passthrough only */
+  appearance?: CardAppearance;
 }
 export interface DungeonRoomDef {
   id: string;
@@ -301,6 +363,26 @@ export interface DungeonDef {
   idleLight?: string;
   ambientSoundCategory?: string;
 }
+/** a card in library.cards (schema 0.4.3 $defs/card) — a generic deck card the engine can draw,
+ * reveal (emit a cardDraw prompt), and resolve (apply its own effects). */
+export interface GenericCardDef {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+  flavor?: string;
+  /** presentational front-art resourceKey; apps resolve against library.resources.images */
+  artRef?: string;
+  effects?: Effect[];
+}
+/** a deck in library.decks (schema 0.4.3 $defs/deck). Seeded into state.decks at init in AUTHORED
+ * order (copies expanded), never shuffled at init (correction C1). */
+export interface GenericDeckDef {
+  category: string;
+  cards: Array<{ cardId: string; copies: number }>;
+  marketSize?: number;
+  appearance?: CardAppearance;
+}
 export interface ScenarioLibrary {
   tokenTypes?: Record<string, TokenTypeDef>;
   buildingTypes?: Record<string, BuildingTypeDef>;
@@ -309,6 +391,9 @@ export interface ScenarioLibrary {
   foes?: Record<string, FoeDef>;
   battleDefs?: Record<string, BattleDef>;
   dungeons?: Record<string, DungeonDef>;
+  /** generic card catalog + deck composition (schema 0.4.3 library.cards / library.decks) */
+  cards?: Record<string, GenericCardDef>;
+  decks?: Record<string, GenericDeckDef>;
   /** declared hero roster manifest (schema library.heroes) — static; the engine only reads it to
    * validate lifecycle.selectHero's authored pool, never mutates it (the runtime pick lands on
    * HeroState.heroRef instead). */
@@ -349,7 +434,7 @@ export type Effect =
   | { op: 'skull.remove'; count: number }
   | { op: 'building.destroy'; location?: string; kingdom?: Kingdom }
   | { op: 'skull.modifySupply'; delta: number }
-  | { op: 'deck.draw'; deck: string }
+  | { op: 'deck.draw'; deck: string; reveal?: boolean; resolve?: boolean }
   | { op: 'deck.discard'; deck: string; card?: unknown }
   | { op: 'deck.reshuffle'; deck: string }
   | { op: 'market.refresh'; cards?: unknown[] }
@@ -360,7 +445,12 @@ export type Effect =
   | { op: 'seal.remove'; seal?: string }
   | { op: 'seal.replace'; seal: string }
   | { op: 'flag.set'; name: string; value: unknown }
-  | { op: 'counter.set'; name: string; value: number };
+  | { op: 'counter.set'; name: string; value: number }
+  | { op: 'hero.scope'; scope: HeroScope; effects: Effect[] };
+
+/** hero.scope targets (schema 0.4.2). Deterministic scopes resolve without input; the two choice
+ * scopes prompt the active player and are only supported inside the interactive battle-card flow. */
+export type HeroScope = 'self' | 'other' | 'selfAndOther' | 'allOthers' | 'all' | 'kingdom';
 
 export type EffectOp = Effect['op'];
 
@@ -471,6 +561,56 @@ export interface UiUpdateDirective {
   delta: Record<string, unknown>;
 }
 
+/** one card in a battle-card prompt — everything the player UI needs to render, so the UI never
+ * reads engine internals. Face-down cards omit `text`/`nextText`. */
+export interface BattlePromptCard {
+  name: string;
+  advantage: string;
+  critical: boolean;
+  revealed: boolean;
+  resolved: boolean;
+  step: number;
+  stepCount: number;
+  text?: string;
+  nextText?: string;
+  /** presentational front-art resourceKey (schema 0.4.3); present only when the card authored one */
+  artRef?: string;
+}
+/** payload for the interactive card-battle prompt (schema 0.4.2). */
+export interface BattlePromptPayload {
+  foeId: string;
+  isAdversary: boolean;
+  deckSize: number;
+  handSize: number;
+  cards: BattlePromptCard[];
+  revealedCount: number;
+  resolvedCount: number;
+  advantagesSpent: number;
+  advantagesMax: number;
+  canReveal: boolean;
+  canImprove: boolean;
+  canResolve: boolean;
+  canRetreat: boolean;
+  /** present only while awaiting a battleHeroTarget pick for a choice-scope hero.scope effect */
+  heroChoice?: { text: string; candidates: Array<{ heroId: string }> };
+  /** presentational deck appearance passthrough (schema 0.4.3); present only for decks that authored one */
+  appearance?: CardAppearance;
+}
+
+/** payload for the fire-and-forget cardDraw ui.prompt (schema 0.4.3 deck.draw reveal:true). Carries
+ * resourceKeys (artRef) and passthrough appearance — NEVER resolved data URLs; apps resolve against
+ * library.resources.images. Fully client-side in the player (no engine input; dismissal is local). */
+export interface DrawnCardPayload {
+  deckId: string;
+  cardId: string;
+  name: string;
+  type: string;
+  description?: string;
+  flavor?: string;
+  artRef?: string;
+  appearance?: CardAppearance;
+}
+
 export interface UiPromptDirective {
   type: 'ui.prompt';
   kind: string;
@@ -482,6 +622,10 @@ export interface UiPromptDirective {
   cards?: number;
   room?: string;
   doors?: string[];
+  /** interactive card-battle presentation (ui.prompt kind === 'battleCard') */
+  battle?: BattlePromptPayload;
+  /** drawn generic card presentation (ui.prompt kind === 'cardDraw', schema 0.4.3 deck.draw reveal) */
+  card?: DrawnCardPayload;
 }
 
 export type TowerChannelName =
@@ -557,6 +701,10 @@ export type InputRequest =
   // (dungeon.ts's awaitDungeonMove/resolveRoomEntry).
   | { id: 'dungeonMove'; kind: 'choice' }
   | { id: 'dungeonRoomAdvantage'; kind: 'advantageSpend' }
+  // interactive card-battle loop (schema 0.4.2). Minimal {id, kind}; the rich BattlePromptPayload
+  // goes out separately via the ui.prompt directive (battle.ts's emitBattlePrompt).
+  | { id: 'battleCard'; kind: 'battleCard' }
+  | { id: 'battleHeroTarget'; kind: 'heroSelect' }
   | { id: 'skullCounter'; kind: 'observed'; observed: 'skullCounter' }
   // lifecycle.selectHero: one seat picks one hero per await; options is the REMAINING candidate
   // pool for the CURRENT seat (shrinks each pick, same shape convention as 'action').
@@ -596,6 +744,12 @@ export type Input =
       value: { leave?: boolean; direction?: CardinalDirection };
       kind: 'decision';
     }
+  | {
+      requestId: 'battleCard';
+      value: { reveal?: boolean; improve?: boolean; resolve?: boolean; retreat?: boolean };
+      kind: 'decision';
+    }
+  | { requestId: 'battleHeroTarget'; value: { heroId: string }; kind: 'decision' }
   | { requestId: 'skullCounter'; value: number | SkullObservation; kind: 'observed' }
   | { requestId: 'heroSelect'; value: { heroId: string }; kind: 'decision' }
   | { kind: 'control' };

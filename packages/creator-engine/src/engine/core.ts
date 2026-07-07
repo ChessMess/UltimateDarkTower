@@ -4,7 +4,7 @@
 
 import type { EngineState, Directive, Kingdom } from './types';
 
-export const ENGINE_VERSION = '0.5.0';
+export const ENGINE_VERSION = '0.7.0';
 export const SUPPORTED_SCHEMA_RANGE = '>=0.4.0 <0.5.0'; // semver-range, same-minor pre-1.0 (§8)
 
 // The four board kingdoms in canonical clockwise order (schema $defs/kingdom). Seating, home-kingdom

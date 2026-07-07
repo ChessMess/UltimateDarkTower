@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "0.4.2",
+  "meta": {
+    "title": "VALID: battleDefs ladder deck (multi-step, critical full ladder, copies, text-only step)",
+    "scenarioVersion": "0.1.0",
+    "designer": { "name": "Test" },
+    "pins": { "udt": "5.0.0" }
+  },
+  "setup": {
+    "mode": "coop",
+    "difficulty": { "profile": "heroic", "skullSupply": 24 },
+    "playerCountScaling": { "turnsPerMonth": { "1": 6, "2": 7, "3": 8, "4": 9 } },
+    "monthEnd": { "resolution": "randomInRange", "default": { "minTurn": 3, "maxTurn": 6 } },
+    "selections": {
+      "adversaryId": "ashstrider",
+      "foes": { "tier1": "brigands", "tier2": "frost-trolls", "tier3": "dragons" },
+      "mainGoalId": "recover-azkols-treasures"
+    },
+    "board": { "boardStateRef": "board-main" }
+  },
+  "library": {
+    "buildingTypes": {
+      "citadel":   { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"resource.gain","resource":"warriors","amount":2}]}, "skullCapacity": 3 },
+      "sanctuary": { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"corruption.remove","all":true}]}, "skullCapacity": 3 },
+      "village":   { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"resource.gain","resource":"spirit","amount":1}]}, "skullCapacity": 3 },
+      "bazaar":    { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"market.refresh"}]}, "skullCapacity": 3 }
+    },
+    "battleDefs": {
+      "brigands": {
+        "cards": [
+          {
+            "name": "Ambush",
+            "advantage": "Humanoid",
+            "copies": 2,
+            "steps": [
+              { "text": "Caught off guard — lose 3 warriors", "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 3 }] },
+              { "text": "Trade blows — lose 1 warrior", "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 1 }] },
+              { "text": "Drive them off — no losses" }
+            ]
+          },
+          {
+            "name": "Cutthroat Strike",
+            "advantage": "Melee",
+            "critical": true,
+            "note": "critical hit — the ladder never turns positive",
+            "steps": [
+              { "text": "Blindsided — lose 5 warriors", "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 5 }] },
+              { "text": "Grazed — lose 2 warriors", "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 2 }] }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "graph": {
+    "entry": "n-start",
+    "nodes": [
+      { "id": "n-start", "kind": "lifecycle.gameStart" }
+    ]
+  }
+}

@@ -15,6 +15,9 @@ const act = (choice, args) => ({ requestId: "action", value: args ? { choice, ..
 const obs = (v) => ({ requestId: "skullCounter", value: v, kind: "observed" });
 const tgt = (foeId) => ({ requestId: "target", value: { foeId }, kind: "decision" });
 const adv = (spend) => ({ requestId: "advantageSpend", value: { spend }, kind: "decision" });
+// new-format card battle: reveal one card at a time, resolve at its current step.
+const bc = (v) => ({ requestId: "battleCard", value: v, kind: "decision" });
+const fight = (level) => { const s = []; for (let k = 0; k < level; k++) s.push(bc({ reveal: true }), bc({ resolve: true })); return s; };
 const mov = (to) => ({ requestId: "moveTarget", value: { to }, kind: "decision" });
 const dmove = (direction) => ({ requestId: "dungeonMove", value: { direction }, kind: "decision" });
 const dimp = (improve) => ({ requestId: "dungeonRoomAdvantage", value: { improve }, kind: "decision" });
@@ -87,10 +90,10 @@ ok("the full-turn action menu offers banner/move/heroic/reinforce/endTurn",
 {
   const run = drive(gf, opts, [act("move"), mov("Dragontooth Lake"), act("battle"), tgt("dragons")]);
   const b = lastOf(run).state.clock.battle;
-  ok("dragons (tier3) draw 4 battle cards", b && b.level === 4 && b.cards.length === 4, JSON.stringify(b && b.cards));
+  ok("dragons (tier3) draw 4 battle cards", b && b.level === 4 && b.hand.length === 4, JSON.stringify(b && b.hand));
   const run2 = drive(gf, opts, [act("move"), mov("The Tundra"), act("battle"), tgt("frost-trolls")]);
   const b2 = lastOf(run2).state.clock.battle;
-  ok("frost-trolls (tier2) draw 3 battle cards", b2 && b2.level === 3 && b2.cards.length === 3);
+  ok("frost-trolls (tier2) draw 3 battle cards", b2 && b2.level === 3 && b2.hand.length === 3);
 }
 
 // ---------- one full turn: banner + move + heroic (battle) + reinforce, any order ----------
@@ -98,9 +101,8 @@ ok("the full-turn action menu offers banner/move/heroic/reinforce/endTurn",
   const run = drive(gf, opts, [
     act("banner"),
     act("move"), mov("Delmsmire"),
-    act("battle"), tgt("brigands"), adv(2),
-    act("reinforce"), // no building at Delmsmire → covered below as fault; here use citadel first
-  ].slice(0, 6)); // banner, move, battle only
+    act("battle"), tgt("brigands"), ...fight(2), // reveal + resolve each of the 2 drawn cards
+  ]); // banner, move, battle only
   const s = lastOf(run).state;
   ok("banner + move + battle in a single turn", s.clock.latches.bannerUsed && s.clock.latches.moveUsed && s.clock.latches.heroicActionUsed);
   ok("battle heroic completion awards 2 spirit", s.heroes.hero1.spirit === 3, "spirit=" + s.heroes.hero1.spirit);
@@ -113,7 +115,7 @@ ok("the full-turn action menu offers banner/move/heroic/reinforce/endTurn",
 expectFault("second banner in a turn faults", () => drive(gf, opts, [act("banner"), act("banner")]));
 expectFault("second move in a turn faults", () => drive(gf, opts, [act("move"), mov("Delmsmire"), act("move"), mov("The Tundra")]));
 expectFault("second heroic action in a turn faults", () =>
-  drive(gf, opts, [act("move"), mov("Delmsmire"), act("battle"), tgt("brigands"), adv(2), act("cleanse")]));
+  drive(gf, opts, [act("move"), mov("Delmsmire"), act("battle"), tgt("brigands"), ...fight(2), act("cleanse")]));
 expectFault("pass is not a full-turn action (use endTurn)", () => drive(gf, opts, [act("pass")]));
 
 // ---------- battle location gating (rules.md §Battle: a foe ON YOUR SPACE) ----------
@@ -240,8 +242,8 @@ const winScript = [
   act("move"), mov("Azkol's Bane"), act("quest", { questId: "azkol-shrine" }), act("endTurn"),
   // M2 T3 — the main goal at the Tower → Ashstrider spawns there
   act("move"), mov("the-tower"), act("quest", { questId: "recover-azkols-treasures" }), act("endTurn"),
-  // M3 T1 — the final battle on the Tower space
-  act("battle"), tgt("ashstrider"), adv(5)
+  // M3 T1 — the final battle on the Tower space (reveal + resolve all 5 adversary cards)
+  act("battle"), tgt("ashstrider"), ...fight(5)
 ];
 {
   const run = drive(gf, opts, winScript);

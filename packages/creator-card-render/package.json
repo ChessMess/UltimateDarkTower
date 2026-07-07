@@ -1,0 +1,21 @@
+{
+  "name": "@udtc/card-render",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./card.css": "./src/card.css"
+  },
+  "scripts": {
+    "build": "echo 'card-render: no emit (source-only)'",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0"
+  }
+}

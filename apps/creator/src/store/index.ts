@@ -2,11 +2,16 @@ import { create } from 'zustand';
 import type { Edge } from '@xyflow/react';
 import { getUDTReferenceLayer } from '@udtc/adapters';
 import type { ScenarioDoc, SchemaNode, ValidationResults, NodeKind } from '../types';
+import type { DeckSelection } from '../decks/shared';
 import { schemaToFlow, flowToSchema, type CreatorNode } from '../utils/serializer';
 import { slugify } from '../utils/scaffold';
 import { runValidation } from '../utils/validation';
 import { canonicalJson } from '../utils/canonical';
 import { applyDagreLayout } from '../utils/layout';
+
+// The center workspace view. Extensible union — a future 'dungeons' builder slots in here (the
+// deck-builder-first-class switcher is designed to accommodate it).
+export type CenterView = 'canvas' | 'decks';
 
 interface CreatorStore {
   schemaDoc: ScenarioDoc | null;
@@ -15,11 +20,34 @@ interface CreatorStore {
   selectedNodeId: string | null;
   validationResults: ValidationResults | null;
   isDirty: boolean;
+  // which view fills the center grid cell (canvas vs the first-class deck builder)
+  centerView: CenterView;
+  // read-only mirror of DeckBuilderView's local deck/card selection, so the right-sidebar
+  // DeckJsonPanel can display it. DeckBuilderView remains the sole owner/writer.
+  deckSelection: DeckSelection | null;
+  deckCardKey: string | null;
+  // set true when an autosave hits the localStorage quota (surfaced as a topbar warning chip, C3)
+  draftSaveFailed: boolean;
 
   // Scenario lifecycle
   loadScenario: (doc: ScenarioDoc, autoLayout?: boolean) => void;
   exportScenario: () => string;
   clearScenario: () => void;
+
+  // Center-view switcher + autosave-failure flag
+  setCenterView: (view: CenterView) => void;
+  setDraftSaveFailed: (failed: boolean) => void;
+
+  // Mirrors DeckBuilderView's local selection state (see deckSelection/deckCardKey above)
+  setDeckSelection: (sel: DeckSelection | null) => void;
+  setDeckCardKey: (key: string | null) => void;
+
+  // library.cards / library.decks / library.resources.images editing (schema 0.4.3, deck builder).
+  // All clone-library → set-or-delete → revalidate → set, mirroring updateBattleDefs; empty
+  // containers are deleted so exports stay clean.
+  updateLibraryCards: (cards: Record<string, unknown>) => void;
+  updateLibraryDecks: (decks: Record<string, unknown>) => void;
+  updateResourceImage: (id: string, dataUrlOrNull: string | null) => void;
 
   // RF state sync (called by canvas on drag-end, connect, delete)
   syncFromRF: (nodes: CreatorNode[], edges: Edge[]) => void;
@@ -44,6 +72,11 @@ interface CreatorStore {
     tier3FoeId?: string | null;
   }) => void;
   updateMainGoal: (title: string) => void;
+  // library.battleDefs editing (card-ladder decks, schema 0.4.2). Replaces the whole map (or clears
+  // it when empty); the deck editor owns validation via revalidate.
+  updateBattleDefs: (defs: Record<string, unknown>) => void;
+  // sets/clears library.foes[foeId].battleDefId (defaults to the foeId when cleared).
+  updateFoeBattleDefId: (foeId: string, defId: string | null) => void;
   createGroup: (nodeIds: string[]) => void;
   setEntry: (id: string) => void;
 
@@ -98,6 +131,26 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   selectedNodeId: null,
   validationResults: null,
   isDirty: false,
+  centerView: 'canvas',
+  deckSelection: null,
+  deckCardKey: null,
+  draftSaveFailed: false,
+
+  setCenterView(view) {
+    set({ centerView: view });
+  },
+
+  setDraftSaveFailed(failed) {
+    set({ draftSaveFailed: failed });
+  },
+
+  setDeckSelection(sel) {
+    set({ deckSelection: sel });
+  },
+
+  setDeckCardKey(key) {
+    set({ deckCardKey: key });
+  },
 
   loadScenario(doc, autoLayout = false) {
     const { nodes: derivedNodes, edges } = deriveRF(doc);
@@ -128,7 +181,16 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   },
 
   clearScenario() {
-    set({ schemaDoc: null, rfNodes: [], rfEdges: [], selectedNodeId: null, validationResults: null, isDirty: false });
+    set({
+      schemaDoc: null,
+      rfNodes: [],
+      rfEdges: [],
+      selectedNodeId: null,
+      deckSelection: null,
+      deckCardKey: null,
+      validationResults: null,
+      isDirty: false,
+    });
   },
 
   syncFromRF(nodes, edges) {
@@ -369,6 +431,77 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     setup.selections = selections;
     library.quests = quests;
     const updated: ScenarioDoc = { ...schemaDoc, setup, library };
+    const results = revalidate(updated);
+    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+  },
+
+  // library.battleDefs is scenario-wide (not node-scoped) — like updateSetupSelections, this only
+  // re-validates; no React Flow re-derivation is needed.
+  updateBattleDefs(defs) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
+    if (Object.keys(defs).length > 0) library.battleDefs = defs;
+    else delete library.battleDefs;
+    const updated: ScenarioDoc = { ...schemaDoc, library };
+    const results = revalidate(updated);
+    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+  },
+
+  updateFoeBattleDefId(foeId, defId) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
+    const foes = { ...((library.foes as Record<string, unknown>) ?? {}) };
+    const foe = { ...((foes[foeId] as Record<string, unknown>) ?? {}) };
+    if (defId) foe.battleDefId = defId;
+    else delete foe.battleDefId;
+    foes[foeId] = foe;
+    library.foes = foes;
+    const updated: ScenarioDoc = { ...schemaDoc, library };
+    const results = revalidate(updated);
+    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+  },
+
+  // library.cards is scenario-wide (schema 0.4.3) — replaces the whole map or clears it when empty.
+  updateLibraryCards(cards) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
+    if (Object.keys(cards).length > 0) library.cards = cards;
+    else delete library.cards;
+    const updated: ScenarioDoc = { ...schemaDoc, library };
+    const results = revalidate(updated);
+    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+  },
+
+  // library.decks is scenario-wide (schema 0.4.3) — replaces the whole map or clears it when empty.
+  updateLibraryDecks(decks) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
+    if (Object.keys(decks).length > 0) library.decks = decks;
+    else delete library.decks;
+    const updated: ScenarioDoc = { ...schemaDoc, library };
+    const results = revalidate(updated);
+    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+  },
+
+  // Set or clear one library.resources.images[id] (a resolved data URL). Empty images/resources
+  // containers are deleted so exports never carry empty scaffolding.
+  updateResourceImage(id, dataUrlOrNull) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
+    const resources = { ...((library.resources as Record<string, unknown>) ?? {}) };
+    const images = { ...((resources.images as Record<string, unknown>) ?? {}) };
+    if (dataUrlOrNull) images[id] = dataUrlOrNull;
+    else delete images[id];
+    if (Object.keys(images).length > 0) resources.images = images;
+    else delete resources.images;
+    if (Object.keys(resources).length > 0) library.resources = resources;
+    else delete library.resources;
+    const updated: ScenarioDoc = { ...schemaDoc, library };
     const results = revalidate(updated);
     set({ schemaDoc: updated, validationResults: results, isDirty: true });
   },

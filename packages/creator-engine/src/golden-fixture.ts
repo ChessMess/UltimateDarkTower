@@ -523,6 +523,193 @@ function buildGoldenFull() {
     { id: "n-trig-grow",   kind: "trigger.schedule", props: { trigger: { on: "schedule", turn: 3 } }, wires: { out: ["n-ev-grow"] } },
     { id: "n-ev-grow",     kind: "event.foesGrow", wires: {} }
   );
+  // Card-ladder battle decks (schema 0.4.2) — replaces the legacy strikes decks for the fidelity
+  // sample. Original card names/text/numbers in the official app's STRUCTURE: ~5 distinct cards ×
+  // copies:2 (a 10-card deck of face-down backs), each an ordered 5-step improvement ladder
+  // (worst→best, top step lossless/positive), with one presentational `critical` card per deck.
+  // Ashstrider carries a hero.scope:"all" card (solo-equivalent — no prompt at 1 player).
+  const ll = (n: number, r = "warriors") => [{ op: "resource.lose", resource: r, amount: n }];
+  const gg = (n: number, r = "warriors") => [{ op: "resource.gain", resource: r, amount: n }];
+  c.library.battleDefs = {
+    brigands: { cards: [
+      { name: "Highway Raid", advantage: "Melee", copies: 2, steps: [
+        { text: "Ridden down — lose 4 warriors", effects: ll(4) },
+        { text: "Lose 3 warriors", effects: ll(3) },
+        { text: "Lose 1 warrior", effects: ll(1) },
+        { text: "You hold the road — no losses" },
+        { text: "You rout them — gain 2 warriors", effects: gg(2) } ] },
+      { name: "Shakedown", advantage: "Humanoid", copies: 2, steps: [
+        { text: "Robbed blind — lose 2 spirit", effects: ll(2, "spirit") },
+        { text: "Lose 1 spirit", effects: ll(1, "spirit") },
+        { text: "No losses" },
+        { text: "No losses" },
+        { text: "You keep your nerve — gain 1 spirit", effects: gg(1, "spirit") } ] },
+      { name: "Ambush", advantage: "Stealth", copies: 2, steps: [
+        { text: "Cut off — lose 3 warriors", effects: ll(3) },
+        { text: "Lose 2 warriors", effects: ll(2) },
+        { text: "Lose 1 warrior", effects: ll(1) },
+        { text: "You slip the trap — no losses" },
+        { text: "Turn the tables — gain 1 warrior", effects: gg(1) } ] },
+      { name: "Skirmish", advantage: "Melee", copies: 2, steps: [
+        { text: "Overrun — lose 2 warriors", effects: ll(2) },
+        { text: "Lose 1 warrior", effects: ll(1) },
+        { text: "No losses" },
+        { text: "No losses" },
+        { text: "Push them back — gain 2 warriors", effects: gg(2) } ] },
+      { name: "Cutthroat", advantage: "Melee", critical: true, note: "critical hit", copies: 2, steps: [
+        { text: "Blindsided — lose 6 warriors", effects: ll(6) },
+        { text: "Lose 5 warriors", effects: ll(5) },
+        { text: "Lose 4 warriors", effects: ll(4) },
+        { text: "Lose 3 warriors", effects: ll(3) },
+        { text: "Lose 2 warriors", effects: ll(2) } ] }
+    ] },
+    "frost-trolls": { cards: [
+      { name: "Frozen Maul", advantage: "Beast", copies: 2, steps: [
+        { text: "Crushed — lose 5 warriors", effects: ll(5) },
+        { text: "Lose 4 warriors", effects: ll(4) },
+        { text: "Lose 2 warriors", effects: ll(2) },
+        { text: "No losses" },
+        { text: "Gain 2 warriors", effects: gg(2) } ] },
+      { name: "Rimewind", advantage: "Magic", copies: 2, steps: [
+        { text: "Chilled to the bone — lose 3 spirit", effects: ll(3, "spirit") },
+        { text: "Lose 2 spirit", effects: ll(2, "spirit") },
+        { text: "Lose 1 spirit", effects: ll(1, "spirit") },
+        { text: "No losses" },
+        { text: "Gain 1 spirit", effects: gg(1, "spirit") } ] },
+      { name: "Avalanche", advantage: "Melee", copies: 2, steps: [
+        { text: "Buried — lose 4 warriors", effects: ll(4) },
+        { text: "Lose 3 warriors", effects: ll(3) },
+        { text: "Lose 1 warrior", effects: ll(1) },
+        { text: "No losses" },
+        { text: "Gain 1 warrior", effects: gg(1) } ] },
+      { name: "Thick Hide", advantage: "Beast", copies: 2, steps: [
+        { text: "Lose 2 warriors", effects: ll(2) },
+        { text: "Lose 1 warrior", effects: ll(1) },
+        { text: "No losses" },
+        { text: "No losses" },
+        { text: "Gain 3 warriors", effects: gg(3) } ] },
+      { name: "Glacial Slam", advantage: "Beast", critical: true, note: "critical hit", copies: 2, steps: [
+        { text: "Shattered — lose 7 warriors and 1 spirit", effects: [...ll(7), ...ll(1, "spirit")] },
+        { text: "Lose 6 warriors", effects: ll(6) },
+        { text: "Lose 5 warriors", effects: ll(5) },
+        { text: "Lose 4 warriors", effects: ll(4) },
+        { text: "Lose 3 warriors", effects: ll(3) } ] }
+    ] },
+    dragons: { cards: [
+      { name: "Tail Sweep", advantage: "Beast", copies: 2, steps: [
+        { text: "Knocked flat — lose 6 warriors", effects: ll(6) },
+        { text: "Lose 4 warriors", effects: ll(4) },
+        { text: "Lose 2 warriors", effects: ll(2) },
+        { text: "No losses" },
+        { text: "Gain 2 warriors", effects: gg(2) } ] },
+      { name: "Wing Buffet", advantage: "Melee", copies: 2, steps: [
+        { text: "Hurled back — lose 5 warriors", effects: ll(5) },
+        { text: "Lose 3 warriors", effects: ll(3) },
+        { text: "Lose 1 warrior", effects: ll(1) },
+        { text: "No losses" },
+        { text: "Gain 1 warrior", effects: gg(1) } ] },
+      { name: "Terrifying Roar", advantage: "Magic", copies: 2, steps: [
+        { text: "Your nerve breaks — lose 2 spirit", effects: ll(2, "spirit") },
+        { text: "Lose 1 spirit", effects: ll(1, "spirit") },
+        { text: "No losses" },
+        { text: "No losses" },
+        { text: "Gain 1 spirit", effects: gg(1, "spirit") } ] },
+      { name: "Scorched Earth", advantage: "Beast", copies: 2, steps: [
+        { text: "Lose 3 warriors", effects: ll(3) },
+        { text: "Lose 2 warriors", effects: ll(2) },
+        { text: "Lose 1 warrior", effects: ll(1) },
+        { text: "No losses" },
+        { text: "Gain 2 warriors", effects: gg(2) } ] },
+      { name: "Dragonfire", advantage: "Magic", critical: true, note: "dragonfire", copies: 2, steps: [
+        { text: "Engulfed in flame — lose 8 warriors", effects: ll(8) },
+        { text: "Lose 6 warriors", effects: ll(6) },
+        { text: "Lose 5 warriors", effects: ll(5) },
+        { text: "Lose 4 warriors", effects: ll(4) },
+        { text: "Lose 3 warriors", effects: ll(3) } ] }
+    ] },
+    ashstrider: { cards: [
+      { name: "Ashen Bolt", advantage: "Magic", copies: 2, steps: [
+        { text: "Seared — lose 3 spirit", effects: ll(3, "spirit") },
+        { text: "Lose 2 spirit", effects: ll(2, "spirit") },
+        { text: "Lose 1 spirit", effects: ll(1, "spirit") },
+        { text: "No losses" },
+        { text: "Gain 1 spirit", effects: gg(1, "spirit") } ] },
+      { name: "Cinder Claws", advantage: "Beast", copies: 2, steps: [
+        { text: "Raked — lose 4 warriors", effects: ll(4) },
+        { text: "Lose 3 warriors", effects: ll(3) },
+        { text: "Lose 1 warrior", effects: ll(1) },
+        { text: "No losses" },
+        { text: "Gain 1 warrior", effects: gg(1) } ] },
+      { name: "Choking Shroud", advantage: "Undead", copies: 2, steps: [
+        { text: "Smothered — lose 2 spirit", effects: ll(2, "spirit") },
+        { text: "Lose 1 spirit", effects: ll(1, "spirit") },
+        { text: "No losses" },
+        { text: "No losses" },
+        { text: "Gain 1 spirit", effects: gg(1, "spirit") } ] },
+      { name: "Plague Wind", advantage: "Undead", copies: 2, steps: [
+        { text: "The plague spreads — each hero in this kingdom loses 1 warrior",
+          effects: [{ op: "hero.scope", scope: "all", effects: ll(1) }] },
+        { text: "The wind dies down — no losses" },
+        { text: "No losses" },
+        { text: "No losses" },
+        { text: "No losses" } ] },
+      { name: "Strider's Lash", advantage: "Melee", critical: true, note: "critical hit", copies: 2, steps: [
+        { text: "Flayed — lose 3 spirit", effects: ll(3, "spirit") },
+        { text: "Lose 2 spirit", effects: ll(2, "spirit") },
+        { text: "Lose 2 spirit", effects: ll(2, "spirit") },
+        { text: "Lose 1 spirit", effects: ll(1, "spirit") },
+        { text: "Lose 1 spirit", effects: ll(1, "spirit") } ] }
+    ] }
+  };
+  // ---- 0.4.3 first-class decks: card art, a generic treasure deck, and a vault treasury room ----
+  c.schemaVersion = "0.4.3";
+  // Tiny hand-authored inline SVGs (~0.3–0.5 KB each; no repo image binaries). encodeURIComponent
+  // keeps the markup readable AND browser-safe (this fixture is bundled into Creator/Player — no
+  // Buffer), and produces an ajv-valid data URI.
+  const svgUrl = (svg: string) => "data:image/svg+xml," + encodeURIComponent(svg);
+  c.library.resources = { images: {
+    "deck-back": svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1050" viewBox="0 0 750 1050"><rect width="750" height="1050" fill="#241826"/><rect x="40" y="40" width="670" height="970" rx="28" fill="none" stroke="#c0392b" stroke-width="10"/><circle cx="375" cy="525" r="150" fill="none" stroke="#c0392b" stroke-width="8"/><text x="375" y="560" font-size="130" text-anchor="middle" fill="#e8d9c0" font-family="serif">A</text></svg>`),
+    "art-brigand-raid": svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" fill="#2b1d15"/><polygon points="0,600 250,180 350,180 600,600" fill="#6b4a2b"/><circle cx="300" cy="150" r="70" fill="#e8b04b"/></svg>`),
+    "art-brigand-cutthroat": svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" fill="#1a0e0e"/><polygon points="300,60 340,420 300,470 260,420" fill="#d64545"/><rect x="270" y="440" width="60" height="90" fill="#7a4a2b"/></svg>`),
+    "art-treasure-crown": svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" fill="#141026"/><polygon points="150,420 150,240 240,320 300,200 360,320 450,240 450,420" fill="#ffd166"/><rect x="150" y="420" width="300" height="50" fill="#e0a53a"/></svg>`),
+    "art-treasure-scepter": svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" fill="#101826"/><rect x="285" y="200" width="30" height="300" fill="#c9a24b"/><circle cx="300" cy="180" r="60" fill="#8ec5ff"/></svg>`)
+  } };
+  // Brigands battle deck: presentational back/template/accent + front art on two of its cards.
+  c.library.battleDefs.brigands.appearance = { backRef: "deck-back", template: "classic", accent: "#c0392b" };
+  c.library.battleDefs.brigands.cards[0].artRef = "art-brigand-raid";      // Highway Raid
+  c.library.battleDefs.brigands.cards[4].artRef = "art-brigand-cutthroat"; // Cutthroat (critical)
+  // A generic treasure deck (schema 0.4.3 library.cards / library.decks). Card art on two of three.
+  c.library.cards = {
+    "azkol-crown":   { id: "azkol-crown",   name: "Crown of Azkol",   type: "treasure", description: "Gain 2 spirit.",             flavor: "Cold gold, colder history.", artRef: "art-treasure-crown",   effects: [{ op: "resource.gain", resource: "spirit",   amount: 2 }] },
+    "azkol-scepter": { id: "azkol-scepter", name: "Scepter of Azkol", type: "treasure", description: "Gain 2 warriors.",            flavor: "It still commands.",         artRef: "art-treasure-scepter", effects: [{ op: "resource.gain", resource: "warriors", amount: 2 }] },
+    "azkol-chalice": { id: "azkol-chalice", name: "Chalice of Azkol", type: "treasure", description: "Gain 1 warrior and 1 spirit.", flavor: "Drink deep.",                                                effects: [{ op: "resource.gain", resource: "warriors", amount: 1 }, { op: "resource.gain", resource: "spirit", amount: 1 }] }
+  };
+  c.library.decks = {
+    "azkol-treasures": { category: "treasure", cards: [
+      { cardId: "azkol-crown",   copies: 1 },
+      { cardId: "azkol-scepter", copies: 1 },
+      { cardId: "azkol-chalice", copies: 1 }
+    ], appearance: { backRef: "deck-back", template: "classic", accent: "#c77dff" } }
+  };
+  // Extend the cloned vault dungeon with a second row + a treasury room OFF the tested E-E path: the
+  // warded hall gains a south door into vault-treasury (1,1), whose inside-event reshuffles, draws a
+  // treasure (revealed + resolved), then discards it. Only goldenFull carries this (golden untouched;
+  // the corpus WARDED-VAULT scenario clones golden, not goldenFull, so it is unaffected).
+  const vault = c.library.dungeons["azkol-vault-dungeon"];
+  vault.grid.rows = 2;
+  vault.rooms.find((r: { id: string }) => r.id === "vault-hall").exits.S = "door";
+  vault.rooms.push({
+    id: "vault-treasury", cell: { col: 1, row: 1 },
+    exits: { N: "door", E: "wall", S: "wall", W: "wall" },
+    displayText: "A treasury of Azkol's plundered hoard.",
+    insideEvent: [
+      { op: "deck.reshuffle", deck: "azkol-treasures" },
+      { op: "deck.draw", deck: "azkol-treasures", reveal: true, resolve: true },
+      { op: "deck.discard", deck: "azkol-treasures" }
+    ]
+  });
+  node("n-room-b").wires = { W: ["n-room-a"], E: ["n-room-c"], S: ["n-room-t"] };
+  nodes.push({ id: "n-room-t", kind: "dungeon.room", props: { roomId: "vault-treasury" }, wires: { N: ["n-room-b"] } });
   return c;
 }
 const goldenFull = buildGoldenFull();

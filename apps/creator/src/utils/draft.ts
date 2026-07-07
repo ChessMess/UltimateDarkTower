@@ -18,7 +18,9 @@ function isScenarioDocShape(value: unknown): value is ScenarioDoc {
   return typeof graph.entry === 'string' && Array.isArray(graph.nodes);
 }
 
-export function saveDraft(doc: ScenarioDoc): void {
+// Returns true on a successful write, false when storage is unavailable/full (C3: the caller
+// surfaces the failure as a topbar warning chip instead of silently swallowing it).
+export function saveDraft(doc: ScenarioDoc): boolean {
   try {
     const envelope: DraftEnvelope = {
       schema: DRAFT_SCHEMA,
@@ -27,8 +29,10 @@ export function saveDraft(doc: ScenarioDoc): void {
       doc,
     };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(envelope));
+    return true;
   } catch {
     // Storage unavailable or full — autosave is best-effort, never fatal.
+    return false;
   }
 }
 

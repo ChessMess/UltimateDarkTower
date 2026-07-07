@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { getUDTReferenceLayer } from '@udtc/adapters';
 import { useCreatorStore } from '../store';
 import { categoryFor } from '../types';
@@ -31,10 +31,15 @@ export function InspectorPanel() {
     setEntry,
     deleteNode,
     syncLibraryHeroes,
+    setCenterView,
   } = useCreatorStore();
 
   const selectedNode = rfNodes.find((n) => n.id === selectedNodeId);
   const sn = selectedNode?.data?.schemaNode;
+
+  const lib = (schemaDoc?.library as Record<string, unknown> | undefined) ?? {};
+  const battleDeckCount = Object.keys((lib.battleDefs as Record<string, unknown>) ?? {}).length;
+  const cardDeckCount = Object.keys((lib.decks as Record<string, unknown>) ?? {}).length;
 
   const handleLabelChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,18 +172,26 @@ export function InspectorPanel() {
           Select a node to inspect
         </div>
 
-        {/* Scenario meta */}
-        <div style={style.section}>
-          <div style={style.label}>Scenario</div>
+        {/* Scenario meta — collapsed shows version + node count; expanded shows all meta + description */}
+        <CollapsibleSection
+          title="Scenario"
+          defaultOpen
+          collapsedSummary={
+            <>
+              <div style={{ ...style.value, fontWeight: 700 }}>{schemaDoc.meta.title}</div>
+              <div>v{schemaDoc.meta.scenarioVersion} · {schemaDoc.graph.nodes.length} nodes</div>
+            </>
+          }
+          sectionStyle={style.section}
+          labelStyle={style.label}
+        >
           <div style={{ ...style.value, fontWeight: 700 }}>{schemaDoc.meta.title}</div>
           <div style={{ color: 'var(--c-text-muted)', marginTop: 2 }}>v{schemaDoc.meta.scenarioVersion}</div>
           <div style={{ color: 'var(--c-text-muted)' }}>by {schemaDoc.meta.designer?.name}</div>
           <div style={{ marginTop: 6, color: 'var(--c-text-muted)' }}>Entry: <code>{schemaDoc.graph.entry}</code></div>
           <div style={{ color: 'var(--c-text-muted)' }}>{schemaDoc.graph.nodes.length} nodes</div>
-        </div>
 
-        <div style={style.section}>
-          <div style={style.label}>Description</div>
+          <div style={{ ...style.label, marginTop: 10 }}>Description</div>
           <textarea
             style={style.textarea}
             value={schemaDoc.meta.description ?? ''}
@@ -186,18 +199,43 @@ export function InspectorPanel() {
             rows={5}
             placeholder="What is this scenario about? Shown to future authors, not players."
           />
-        </div>
+        </CollapsibleSection>
 
         {/* Setup — standard-game selections (all optional since schema 0.4.1). Leave blank for a
             rule-variant scenario that doesn't use these mechanics. */}
-        <ScenarioSetupEditor
-          schemaDoc={schemaDoc}
-          sectionStyle={style.section}
-          labelStyle={style.label}
-          inputStyle={style.input}
-          updateSetupSelections={updateSetupSelections}
-          updateMainGoal={updateMainGoal}
-        />
+        <CollapsibleSection title="Setup" sectionStyle={style.section} labelStyle={style.label}>
+          <ScenarioSetupEditor
+            schemaDoc={schemaDoc}
+            labelStyle={style.label}
+            inputStyle={style.input}
+            updateSetupSelections={updateSetupSelections}
+            updateMainGoal={updateMainGoal}
+          />
+        </CollapsibleSection>
+
+        {/* Decks — the first-class deck builder lives in the center 'Decks' view (deck-builder-first-class) */}
+        <CollapsibleSection title="Decks" sectionStyle={style.section} labelStyle={style.label}>
+          <div style={{ fontSize: 12, color: 'var(--c-text-muted)', marginBottom: 8 }}>
+            {battleDeckCount} battle deck{battleDeckCount === 1 ? '' : 's'} · {cardDeckCount} card
+            deck{cardDeckCount === 1 ? '' : 's'}
+          </div>
+          <button
+            onClick={() => setCenterView('decks')}
+            style={{
+              width: '100%',
+              padding: '7px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              color: 'var(--c-primary-fg)',
+              background: 'var(--c-primary)',
+              border: 'none',
+              borderRadius: 6,
+            }}
+          >
+            Open Deck Builder →
+          </button>
+        </CollapsibleSection>
 
         {/* L1 errors */}
         {validationResults && validationResults.l1.errors.length > 0 && (
@@ -567,20 +605,70 @@ function GroupEditor({
   );
 }
 
+// A titled section with a chevron toggle. Collapsed, it optionally shows a one-line summary; the
+// caller decides the default open state. Used in the no-node Inspector view to keep the scenario-
+// wide editors (meta, setup, battle decks) compact without hiding what each contains.
+function CollapsibleSection({
+  title,
+  defaultOpen = false,
+  collapsedSummary,
+  sectionStyle,
+  labelStyle,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  collapsedSummary?: React.ReactNode;
+  sectionStyle: React.CSSProperties;
+  labelStyle: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={sectionStyle}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          width: '100%',
+          padding: 0,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <span style={{ width: 10, fontSize: 10, color: 'var(--c-text-muted)' }}>{open ? '▾' : '▸'}</span>
+        <span style={{ ...labelStyle, marginBottom: 0 }}>{title}</span>
+      </button>
+      {open ? (
+        <div style={{ marginTop: 8 }}>{children}</div>
+      ) : collapsedSummary ? (
+        <div style={{ marginTop: 6, fontSize: 11, color: 'var(--c-text-muted)', paddingLeft: 16 }}>
+          {collapsedSummary}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 // Scenario-wide standard-game selections editor (shown when no node is selected). All fields are
 // optional (schema 0.4.1) — a rule-variant scenario may leave them blank. The dropdowns commit
 // immediately; the Main Goal commits on blur (a local draft avoids creating a quest keyed on the
 // first character typed and prevents orphan-quest accretion on repeated clear/retype).
+// Renders content only — the enclosing CollapsibleSection supplies the section chrome and title.
 function ScenarioSetupEditor({
   schemaDoc,
-  sectionStyle,
   labelStyle,
   inputStyle,
   updateSetupSelections,
   updateMainGoal,
 }: {
   schemaDoc: ScenarioDoc;
-  sectionStyle: React.CSSProperties;
   labelStyle: React.CSSProperties;
   inputStyle: React.CSSProperties;
   updateSetupSelections: (patch: {
@@ -628,8 +716,7 @@ function ScenarioSetupEditor({
   );
 
   return (
-    <div style={sectionStyle}>
-      <div style={labelStyle}>Setup</div>
+    <>
       <div style={{ fontSize: 10, color: 'var(--c-text-faint)', marginBottom: 8 }}>
         Optional standard-game selections. Leave blank for custom rules.
       </div>
@@ -651,7 +738,7 @@ function ScenarioSetupEditor({
         }}
         placeholder="Defeat the Adversary"
       />
-    </div>
+    </>
   );
 }
 

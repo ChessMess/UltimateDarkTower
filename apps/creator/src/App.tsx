@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import './App.css';
 import { CreatorCanvas } from './canvas';
+import { DeckBuilderView, DeckJsonPanel } from './decks';
 import { PalettePanel, InspectorPanel, ProblemsPanel, RecoveryDialog } from './editors';
 import { SimulatorPanel } from './simulator';
 import { useCreatorStore } from './store';
@@ -10,13 +11,25 @@ import { ThemeToggle } from '@udtc/theme';
 
 type BottomTab = 'problems' | 'simulator';
 
+const BOTTOM_COLLAPSED_KEY = 'udtc-bottom-collapsed';
+
+function loadBottomCollapsed(): boolean {
+  try {
+    return localStorage.getItem(BOTTOM_COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<BottomTab>('problems');
   const [focusMode, setFocusMode] = useState(false);
+  const [bottomCollapsed, setBottomCollapsed] = useState<boolean>(loadBottomCollapsed);
   // schemaDoc is always null on first mount (the store's initial state), so a lazy
   // initializer is sufficient to offer a recovered draft — no effect needed.
   const [pendingDraft, setPendingDraft] = useState<DraftEnvelope | null>(() => loadDraft());
-  const { schemaDoc, validationResults, loadScenario } = useCreatorStore();
+  const { schemaDoc, validationResults, loadScenario, centerView, setCenterView, draftSaveFailed } =
+    useCreatorStore();
 
   useDraftPersistence();
 
@@ -32,6 +45,18 @@ export default function App() {
     setPendingDraft(null);
   };
 
+  const toggleBottomCollapsed = () => {
+    setBottomCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem(BOTTOM_COLLAPSED_KEY, next ? '1' : '0');
+      } catch {
+        // ignore — private browsing / storage disabled
+      }
+      return next;
+    });
+  };
+
   const problemCount = validationResults
     ? validationResults.l1.errors.length +
       validationResults.l2.errors.length +
@@ -40,7 +65,11 @@ export default function App() {
 
   return (
     <ReactFlowProvider>
-      <div className={`creator-layout${focusMode ? ' creator-layout--focus' : ''}`}>
+      <div
+        className={`creator-layout${focusMode ? ' creator-layout--focus' : ''}${
+          centerView === 'decks' ? ' creator-layout--decks' : ''
+        }${bottomCollapsed ? ' creator-layout--bottom-collapsed' : ''}`}
+      >
         {/* Top bar */}
         <div className="creator-topbar">
           <span className="title">UltimateDarkTower Creator</span>
@@ -52,6 +81,22 @@ export default function App() {
             </>
           )}
           <span style={{ flex: 1 }} />
+          {draftSaveFailed && (
+            <span
+              title="Autosave failed — this browser's local storage is full. Export your scenario to avoid losing work."
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#fff',
+                background: 'var(--c-warning)',
+                borderRadius: 6,
+                padding: '3px 9px',
+                letterSpacing: 0.02,
+              }}
+            >
+              ⚠ Autosave off
+            </span>
+          )}
           <a className="switch-link" href="../player/">
             Player →
           </a>
@@ -63,22 +108,53 @@ export default function App() {
           <PalettePanel />
         </div>
 
-        {/* Center: Canvas */}
+        {/* Center: Canvas | Decks switcher */}
         <div className="creator-canvas">
-          <CreatorCanvas
-            focusMode={focusMode}
-            onToggleFocusMode={() => setFocusMode((f) => !f)}
-          />
+          <div className="creator-center-tabs">
+            <button
+              className={`creator-bottom-tab ${centerView === 'canvas' ? 'active' : ''}`}
+              onClick={() => setCenterView('canvas')}
+            >
+              Canvas
+            </button>
+            <button
+              className={`creator-bottom-tab ${centerView === 'decks' ? 'active' : ''}`}
+              onClick={() => setCenterView('decks')}
+            >
+              Decks
+            </button>
+          </div>
+          <div className="creator-center-content">
+            {centerView === 'canvas' ? (
+              <CreatorCanvas
+                focusMode={focusMode}
+                onToggleFocusMode={() => setFocusMode((f) => !f)}
+              />
+            ) : (
+              <DeckBuilderView />
+            )}
+          </div>
         </div>
 
-        {/* Right: Inspector */}
+        {/* Right: Inspector (canvas mode) | Deck JSON (deck mode) */}
         <div className="creator-inspector">
-          <InspectorPanel />
+          {centerView === 'decks' ? <DeckJsonPanel /> : <InspectorPanel />}
         </div>
 
         {/* Bottom: Problems / Simulator */}
         <div className="creator-bottom">
           <div className="creator-bottom-tabs">
+            <button
+              type="button"
+              className="palette-allbtn"
+              onClick={toggleBottomCollapsed}
+              aria-expanded={!bottomCollapsed}
+              aria-label={bottomCollapsed ? 'Expand panel' : 'Collapse panel'}
+              title={bottomCollapsed ? 'Expand panel' : 'Collapse panel'}
+              style={{ marginLeft: 6, marginRight: 6, fontSize: 12, lineHeight: 1 }}
+            >
+              {bottomCollapsed ? '▸' : '▾'}
+            </button>
             <button
               className={`creator-bottom-tab ${activeTab === 'problems' ? 'active' : ''}`}
               onClick={() => setActiveTab('problems')}

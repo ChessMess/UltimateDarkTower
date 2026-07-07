@@ -34,6 +34,16 @@ ok("goldenFull authors the 16-building boardState with home citadels",
    goldenFull.setup.board.boardState.buildings.length === 16 && goldenFull.setup.board.boardState.home.north === "Radiant Mountains");
 ok("goldenFull's month 1 is exactly one turn", JSON.stringify(goldenFull.setup.monthEnd.perMonth["1"]) === JSON.stringify({ minTurn: 1, maxTurn: 1 }));
 
+// ---------- 0.4.3: generic treasure deck seeded at init (authored order, copies expanded) ----------
+const gfInit = engine.init(goldenFull, opts);
+ok("goldenFull seeds the azkol-treasures draw pile at init (authored order, copies expanded)",
+   JSON.stringify(gfInit.state.decks["azkol-treasures"] && gfInit.state.decks["azkol-treasures"].draw) ===
+   JSON.stringify(["azkol-crown", "azkol-scepter", "azkol-chalice"]));
+ok("goldenFull ships a generic treasure deck with card art + appearance (0.4.3)",
+   goldenFull.library.decks["azkol-treasures"].appearance.backRef === "deck-back" &&
+   goldenFull.library.cards["azkol-crown"].artRef === "art-treasure-crown" &&
+   goldenFull.library.battleDefs.brigands.appearance.template === "classic");
+
 // ---------- structural fidelity: battle cards = foe level (rules.md §Battle) ----------
 const defs = golden.library.battleDefs;
 ok("brigands (tier1, level 2) have 2 battle cards", defs.brigands.cards.length === 2);

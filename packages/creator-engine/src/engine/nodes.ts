@@ -9,6 +9,7 @@ import { FOE_LADDER, applyEffect, completeQuest, loseGame, winGame } from './eff
 import { homeKingdomOf, deriveGlyphFacing, recomputeGlyphFacing } from './glyph';
 import { resetLatches } from './turn';
 import { dungeonState, resolveRoomEntry } from './dungeon';
+import { emitBattlePrompt } from './battle';
 import type { EngineState, Directive, EngineNode, NodeResult } from './types';
 
 // ---------- node interpretation (§4.2) ----------
@@ -285,7 +286,11 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
         text: 'Select a foe to battle',
       });
       return { await: { request: { id: 'target', kind: 'target' } } };
-    case 'battle.applyAdvantage': // INPUT BOUNDARY: spend Advantages (≤10) or retreat
+    case 'battle.applyAdvantage': // INPUT BOUNDARY: card-ladder loop (new) or legacy spend/retreat
+      if (state.clock.battle && state.clock.battle.hand) {
+        emitBattlePrompt(state, directives);
+        return { await: { request: { id: 'battleCard', kind: 'battleCard' } } };
+      }
       return { await: { request: { id: 'advantageSpend', kind: 'advantageSpend' } } };
     case 'battle.end':
       return { goto: next };

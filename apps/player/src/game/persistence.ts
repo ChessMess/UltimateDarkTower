@@ -9,7 +9,7 @@
 // Every call is guarded: if IndexedDB is unavailable (private mode, quota, etc.)
 // persistence silently degrades to a no-op — it must never throw and break play.
 
-import type { Status, InputRequest } from '../types';
+import type { Status, InputRequest, BattlePromptPayload } from '../types';
 
 const DB_NAME = 'udt-player';
 const STORE = 'session';
@@ -23,6 +23,7 @@ export interface SavedSession {
   serializedState: string; // JSON.stringify(engineState)
   status: Status;
   awaiting: InputRequest | null;
+  battlePrompt: BattlePromptPayload | null; // card-battle presentation (only during a card battle)
   boardState: unknown | null; // board().getState() when ready
   lastCommand: number[]; // checkpoint.lastCommand (tower resync)
   seq: number; // checkpoint.seq

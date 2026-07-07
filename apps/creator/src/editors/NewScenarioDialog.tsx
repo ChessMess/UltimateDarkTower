@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { getUDTReferenceLayer } from '@udtc/adapters';
 import { scaffoldScenario, type ScaffoldInput } from '../utils/scaffold';
 import type { ScenarioDoc } from '../types';
+import { overlay, panel, dialogTitle, buttonRow, secondaryBtn, primaryDialogBtn } from '../components/modal';
 
 const udt = getUDTReferenceLayer();
 
@@ -32,16 +33,18 @@ const fieldStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 600,
-  color: '#374151',
+  color: 'var(--c-text-2)',
 };
 
 const inputStyle: React.CSSProperties = {
   padding: '5px 9px',
-  border: '1px solid #D1D5DB',
+  border: '1px solid var(--c-border-strong)',
   borderRadius: 5,
   fontSize: 13,
   width: '100%',
   boxSizing: 'border-box',
+  background: 'var(--c-surface-raised)',
+  color: 'var(--c-text)',
 };
 
 const selectStyle: React.CSSProperties = { ...inputStyle };
@@ -86,33 +89,13 @@ export function NewScenarioDialog({ onClose, onConfirm }: Props) {
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
-        background: 'rgba(0,0,0,0.45)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div
-        style={{
-          background: '#fff',
-          borderRadius: 10,
-          boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
-          width: 540,
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          padding: '24px 28px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 18,
-        }}
-      >
-        <div style={{ fontSize: 17, fontWeight: 700, color: '#111827' }}>New Scenario</div>
+    <div style={overlay} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ ...panel, width: 540, maxHeight: '90vh', overflowY: 'auto', gap: 18 }}>
+        <div style={dialogTitle}>New Scenario</div>
 
         {/* Identity */}
         <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>Identity</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Identity</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div style={fieldStyle}>
               <label style={labelStyle}>Title *</label>
@@ -143,7 +126,7 @@ export function NewScenarioDialog({ onClose, onConfirm }: Props) {
 
         {/* Supply & Time */}
         <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>Supply & Time</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Supply & Time</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             <div style={fieldStyle}>
               <label style={labelStyle}>Skull Supply</label>
@@ -163,8 +146,8 @@ export function NewScenarioDialog({ onClose, onConfirm }: Props) {
         {/* Common Options — standard-game selections. All optional: leave blank for a rule-variant
             scenario that doesn't use the standard adversary/foe-tier/main-goal mechanics. */}
         <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>Common Options</div>
-          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: -4 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Common Options</div>
+          <div style={{ fontSize: 11, color: 'var(--c-text-faint)', marginTop: -4 }}>
             Optional — used by standard scenarios. Leave blank for a custom-rules scenario.
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -211,25 +194,22 @@ export function NewScenarioDialog({ onClose, onConfirm }: Props) {
         </section>
 
         {/* Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
-          <button
-            onClick={onClose}
-            style={{ padding: '7px 18px', border: '1px solid #D1D5DB', borderRadius: 6, background: '#F9FAFB', cursor: 'pointer', fontSize: 13 }}
-          >
+        <div style={buttonRow}>
+          <button onClick={onClose} style={secondaryBtn}>
             Cancel
           </button>
           <button
             onClick={handleCreate}
             disabled={!canCreate}
             style={{
-              padding: '7px 18px',
-              border: '1px solid #2563EB',
-              borderRadius: 6,
-              background: canCreate ? '#2563EB' : '#9CA3AF',
-              color: '#fff',
-              cursor: canCreate ? 'pointer' : 'not-allowed',
-              fontSize: 13,
-              fontWeight: 600,
+              ...primaryDialogBtn,
+              ...(canCreate
+                ? null
+                : {
+                    background: 'var(--c-text-faint)',
+                    border: '1px solid var(--c-text-faint)',
+                    cursor: 'not-allowed',
+                  }),
             }}
           >
             Create

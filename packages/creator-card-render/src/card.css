@@ -1,0 +1,27 @@
+/* @udtc/card-render — keyframes + hover only. Colors come from inline styles + @udtc/theme tokens
+ * (var(--c-*)) so cards track the viewer's light/dark theme. Import once per app. */
+
+.udtc-card {
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.udtc-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes udtc-card-critical-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.62;
+  }
+}
+
+.udtc-card-critical-ribbon {
+  animation: udtc-card-critical-pulse 1.6s ease-in-out infinite;
+}

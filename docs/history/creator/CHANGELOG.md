@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Card-ladder interactive battles (schema 0.4.2 → 0.4.3): `library.battleDefs` now accepts either the legacy `strikes` shape or the new official-app `battleLadderCard` ladder shape (`$defs/battleLadderCard`: `name`, `advantage`, `critical?`, `copies?`, `steps: [{ text, effects? }]`), enforced homogeneous per-deck via a `oneOf` (a mixed deck fails both branches). A ladder deck drives a real interactive battle flow in the engine (`battleCard`/`battleHeroTarget` input requests, `emitBattlePrompt`/`battleCardInput`/`battleHeroChoiceInput` in `packages/engine/src/engine/battle.ts`); legacy strikes decks keep the frozen `resolveBattle` path byte-identical. New `hero.scope` effect op wraps inner effects to target multiple heroes (`self|other|selfAndOther|allOthers|all|kingdom`); deterministic scopes resolve without input, choice scopes prompt inside the battle-card flow. New `deck.draw` (with optional `reveal`/`resolve` flags)/`deck.reshuffle`/`deck.discard` effect ops for seeded `library.decks` generic card decks. `golden` stays on legacy decks; `goldenFull` ships ladder decks — both remain byte-identical to their prior digest/directive streams. New engine suites `battle_cards_test.js`/`decks_test.js` and schema fixtures (`valid-17`…`valid-21`, `invalid-19`…`invalid-25`) cover the new shapes
+- Schema 0.4.3: presentational card appearance (`$defs/cardAppearance` — back image, `classic`/`fullArt`/`textOnly` template, accent color) on generic decks and ladder battleDefs, plus optional `artRef`/`flavor` on generic cards and `artRef` on ladder cards. The engine passes appearance through opaquely and never resolves refs; apps resolve `backRef`/`artRef` against `library.resources.images`
+- New `@udtc/card-render` package: shared `CardFace`/`CardBack` presentational components (+ `card.css`) used by both Creator's deck/card editor and Player's battle UI, so card rendering stays visually identical between authoring and play
+- Creator: a first-class **Decks** workspace (new Canvas/Decks switcher in the center panel, backed by `centerView` in the store) — a deck list rail, card grid, card editor (with battle-ladder step editing), an image picker/asset manager (with a ~5 MB localStorage budget warning), and a read-only Deck JSON panel in the right sidebar. Backed by new store actions `updateLibraryCards`/`updateLibraryDecks`/`updateResourceImage`/`updateBattleDefs`/`updateFoeBattleDefId`. The node inspector's shared effect-list editor was extracted to `editors/effects/` (`EffectListEditor`, `EffectRow`, `opForms`) so both node effects and card-ladder step effects use the same editing UI
+- Creator: bottom panel (Problems/Simulator) can now be collapsed to just its tab strip via a toggle button on the left of the tab strip, restoring to full height on a second click. The collapsed/expanded state persists across reloads (`localStorage`, `udtc-bottom-collapsed`), and the panel content is hidden via CSS only (never unmounted), so an in-progress Simulator run survives the toggle
+- Player: new `BattleCardPanel` renders the interactive card-ladder battle flow (card reveal/improve/resolve, hero-target choice) using `@udtc/card-render`
+- Tooling: `scripts/import-official-decks.mjs`, a private importer that mines a local app export into deck JSON (output goes to the new gitignored `/local/`, never committed)
+
+### Changed
+
+- Creator: autosave failures (localStorage quota exceeded) now surface as a persistent "⚠ Autosave off" warning chip in the topbar (`draftSaveFailed` in the store) instead of failing silently; `saveDraft` returns a success boolean so `useDraftPersistence` can flip the flag without autosave-looping
+- Creator: the Inspector's "Scenario" section and other dialogs (`RecoveryDialog`, `NewScenarioDialog`) now use a shared collapsible-section pattern and a shared `components/modal.ts` style module (`ConfirmDialog` also added) instead of duplicated inline dialog styling
+- Creator: the bottom panel now spans only the canvas column width instead of extending under the Inspector sidebar; the Inspector now spans the full right-column height (rows 2–3, mirroring the Palette on the left) so its background fills that space seamlessly
+- Theme: added `--c-danger-fg` contrast token (light/dark/auto) for text/icons drawn on danger-colored backgrounds
+
 ## [0.2.0] - 2026-07-06
 
 ### Added

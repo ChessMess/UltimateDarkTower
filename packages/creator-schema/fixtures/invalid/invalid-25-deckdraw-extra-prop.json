@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "0.4.3",
+  "meta": {
+    "title": "INVALID: bogus prop on deck.draw (proves the closed 0.4.3 deck.draw branch)",
+    "scenarioVersion": "0.1.0",
+    "designer": { "name": "Test" },
+    "pins": { "udt": "5.0.0" }
+  },
+  "setup": {
+    "mode": "coop",
+    "difficulty": { "profile": "heroic", "skullSupply": 24 },
+    "playerCountScaling": { "turnsPerMonth": { "1": 6, "2": 7, "3": 8, "4": 9 } },
+    "monthEnd": { "resolution": "randomInRange", "default": { "minTurn": 3, "maxTurn": 6 } },
+    "selections": {
+      "adversaryId": "ashstrider",
+      "foes": { "tier1": "brigands", "tier2": "frost-trolls", "tier3": "dragons" },
+      "mainGoalId": "recover-azkols-treasures"
+    },
+    "board": { "boardStateRef": "board-main" }
+  },
+  "library": {
+    "cards": {
+      "azkol-crown": {
+        "id": "azkol-crown", "name": "Crown of Azkol", "type": "treasure",
+        "effects": [{ "op": "resource.gain", "resource": "spirit", "amount": 2 }]
+      }
+    },
+    "decks": {
+      "azkol-treasures": {
+        "category": "treasure",
+        "cards": [{ "cardId": "azkol-crown", "copies": 2 }]
+      }
+    }
+  },
+  "graph": {
+    "entry": "n-start",
+    "nodes": [
+      { "id": "n-start", "kind": "lifecycle.gameStart", "wires": { "next": ["n-draw"] } },
+      {
+        "id": "n-draw",
+        "kind": "effect.apply",
+        "props": {
+          "effect": { "op": "deck.draw", "deck": "azkol-treasures", "count": 3 }
+        }
+      }
+    ]
+  }
+}

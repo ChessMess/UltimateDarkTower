@@ -5,7 +5,7 @@
 import { dir, fault } from './core';
 import { applyEffect, gainCorruption, capacityOf, pickBuildingForSkull } from './effects';
 import { markHeroic, awardHeroic, performAction, applyTrade, collectDueEvents, rotateActiveHero } from './turn';
-import { startBattle, resolveBattle } from './battle';
+import { startBattle, resolveBattle, battleCardInput, battleHeroChoiceInput } from './battle';
 import { dungeonState, roomOf, finalizeRoom } from './dungeon';
 import type {
   EngineState,
@@ -29,6 +29,17 @@ type DungeonRoomAdvantageInput = Extract<Input, { requestId: 'dungeonRoomAdvanta
 type DungeonMoveInput = Extract<Input, { requestId: 'dungeonMove' }>;
 type SkullCounterInput = Extract<Input, { requestId: 'skullCounter' }>;
 type HeroSelectInput = Extract<Input, { requestId: 'heroSelect' }>;
+type BattleCardInputT = Extract<Input, { requestId: 'battleCard' }>;
+type BattleHeroTargetInput = Extract<Input, { requestId: 'battleHeroTarget' }>;
+
+// The interactive card-battle loop awaits battleHeroTarget while a choice-scope hero.scope is
+// pending (possibly for several chained choices), otherwise the next battleCard action.
+function battleAwait(state: EngineState): NodeResult {
+  const b = state.clock.battle;
+  if (b && b.pendingHeroChoice)
+    return { await: { request: { id: 'battleHeroTarget', kind: 'heroSelect' } } };
+  return { await: { request: { id: 'battleCard', kind: 'battleCard' } } };
+}
 
 // ---------- resume from an input boundary ----------
 export function resume(
@@ -259,6 +270,25 @@ export function resume(
       }
       rotateActiveHero(state);
       return { goto: target };
+    }
+    case 'battleCard': {
+      // interactive card-ladder loop: reveal / improve / resolve / retreat. The step re-emits the
+      // prompt itself; we just re-await (battleCard, or battleHeroTarget while a choice is pending).
+      const outcome = battleCardInput(state, directives, (input as BattleCardInputT).value || {});
+      if (outcome === 'terminal') return { terminal: true };
+      if (outcome === 'done') return { goto: next };
+      return battleAwait(state);
+    }
+    case 'battleHeroTarget': {
+      // the player picked a hero for a paused choice-scope hero.scope effect; continue resolving
+      const outcome = battleHeroChoiceInput(
+        state,
+        directives,
+        (input as BattleHeroTargetInput).value || {},
+      );
+      if (outcome === 'terminal') return { terminal: true };
+      if (outcome === 'done') return { goto: next };
+      return battleAwait(state);
     }
     default: {
       const _exhaustive: never = requestId;

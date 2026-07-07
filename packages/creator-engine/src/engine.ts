@@ -20,7 +20,7 @@ import { evalCondition } from './engine/conditions';
 import { applyEffect } from './engine/effects';
 import { deriveGlyphFacing, homeKingdomOf, recomputeGlyphFacing } from './engine/glyph';
 import { applyTrade } from './engine/turn';
-import { startBattle, resolveBattle } from './engine/battle';
+import { startBattle, resolveBattle, startCardBattle, battleCardInput, battleHeroChoiceInput } from './engine/battle';
 import { resolveRoomEntry, finalizeRoom, completeDungeon } from './engine/dungeon';
 import { interpretNode } from './engine/nodes';
 import { resume } from './engine/resume';
@@ -92,6 +92,9 @@ export const __internals = {
   applyOne,
   startBattle,
   resolveBattle,
+  startCardBattle,
+  battleCardInput,
+  battleHeroChoiceInput,
   applyTrade,
   interpretNode,
   resolveRoomEntry,

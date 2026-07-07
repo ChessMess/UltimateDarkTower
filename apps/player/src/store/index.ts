@@ -10,6 +10,7 @@ import type {
   Checkpoint,
   ValidationResults,
   SavedSessionMeta,
+  BattlePromptPayload,
 } from '../types';
 
 /** State restored from a saved session (page-refresh recovery). */
@@ -20,6 +21,7 @@ export interface SessionHydration {
   awaiting: InputRequest | null;
   checkpoint: Checkpoint;
   log: string[];
+  battlePrompt: BattlePromptPayload | null;
 }
 
 export interface PlayerStore {
@@ -34,6 +36,9 @@ export interface PlayerStore {
   status: Status;
   awaiting: InputRequest | null;
   directives: Directive[];
+
+  // Interactive card-battle presentation (set from the engine's ui.prompt kind==='battleCard')
+  battlePrompt: BattlePromptPayload | null;
 
   // Checkpoint (last-good engine state + last tower:command sent)
   checkpoint: Checkpoint | null;
@@ -59,6 +64,7 @@ export interface PlayerStore {
     awaiting: InputRequest | undefined,
     directives: Directive[],
   ) => void;
+  setBattlePrompt: (prompt: BattlePromptPayload | null) => void;
   saveCheckpoint: (serializedState: string, lastCommand: number[]) => void;
   setResumable: (meta: SavedSessionMeta | null) => void;
   hydrateFromSession: (h: SessionHydration) => void;
@@ -78,6 +84,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   status: 'running',
   awaiting: null,
   directives: [],
+  battlePrompt: null,
   checkpoint: null,
   relayConnState: 'disconnected',
   relayStatus: null,
@@ -93,7 +100,17 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
     set({ scenario, validationResults, validationError: null }),
 
   setEngineResult: (engineState, status, awaiting, directives) =>
-    set({ engineState, status, awaiting: awaiting ?? null, directives }),
+    set((s) => ({
+      engineState,
+      status,
+      awaiting: awaiting ?? null,
+      directives,
+      // the battle prompt only lives while the engine awaits a card-battle input; clear it otherwise
+      battlePrompt:
+        awaiting?.id === 'battleCard' || awaiting?.id === 'battleHeroTarget' ? s.battlePrompt : null,
+    })),
+
+  setBattlePrompt: (battlePrompt) => set({ battlePrompt }),
 
   saveCheckpoint: (serializedState, lastCommand) =>
     set((s) => ({
@@ -107,7 +124,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
 
   setResumable: (resumable) => set({ resumable }),
 
-  hydrateFromSession: ({ scenario, engineState, status, awaiting, checkpoint, log }) =>
+  hydrateFromSession: ({ scenario, engineState, status, awaiting, checkpoint, log, battlePrompt }) =>
     set({
       scenario,
       engineState,
@@ -115,6 +132,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
       awaiting,
       checkpoint,
       log,
+      battlePrompt,
       validationError: null,
       resumable: null,
     }),
@@ -138,6 +156,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
       status: 'running',
       awaiting: null,
       directives: [],
+      battlePrompt: null,
       checkpoint: null,
       relayConnState: 'disconnected',
       relayStatus: null,

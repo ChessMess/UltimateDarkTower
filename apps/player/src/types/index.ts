@@ -9,6 +9,8 @@ export type {
   Directive,
   StepResult,
   ActionChoice,
+  BattlePromptPayload,
+  BattlePromptCard,
 } from '@udtc/engine';
 
 export type GamePhase =

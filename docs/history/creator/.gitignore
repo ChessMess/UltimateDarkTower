@@ -58,6 +58,9 @@ site/
 # Vite
 *.local
 
+# Private, un-committed local data (e.g. imported official-deck JSON — proprietary content)
+/local/
+
 # yarn v2
 .yarn/cache
 .yarn/unplugged

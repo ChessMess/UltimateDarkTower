@@ -7,7 +7,17 @@ import { ENGINE_VERSION, KINGDOMS, fault } from './core';
 import { applyEffect } from './effects';
 import { resetLatches } from './turn';
 import { run } from './run';
-import type { EngineState, Scenario, InitOpts, StepResult, Kingdom, HeroState, Effect, Directive } from './types';
+import type {
+  EngineState,
+  Scenario,
+  InitOpts,
+  StepResult,
+  Kingdom,
+  HeroState,
+  Effect,
+  Directive,
+  ScenarioLibrary,
+} from './types';
 
 // ---------- public API: init (§2.3) ----------
 export function buildKingdoms(scenario: Scenario, playerCount: number): { active: Kingdom[]; dormant: Kingdom[] } {
@@ -53,6 +63,27 @@ export function makeHero(fullTurn: boolean): HeroState {
     location: null,
     heroRef: null,
   };
+}
+
+// Seed state.decks draw piles from library.decks in AUTHORED order, copies expanded (schema 0.4.3).
+// C1: NEVER shuffle at init — shuffleInPlace advances the engine PRNG, which would silently shift
+// every later random draw in any scenario declaring library.decks. Authors run an explicit
+// deck.reshuffle before the first draw (matches the empty-deck fault contract, effects.ts). Absent
+// library.decks → {} (byte-identical to a decks-free scenario; the RNG is untouched here). Draw-pile
+// entries are cardIds (deck.draw resolves them against library.cards for reveal/resolve).
+export function seedDecks(library: ScenarioLibrary | undefined): EngineState['decks'] {
+  const decks: EngineState['decks'] = {};
+  const src = library && library.decks;
+  if (!src) return decks;
+  for (const deckId of Object.keys(src)) {
+    const def = src[deckId];
+    const draw: string[] = [];
+    for (const entry of def.cards || []) {
+      for (let i = 0; i < (entry.copies || 0); i++) draw.push(entry.cardId);
+    }
+    decks[deckId] = { draw, discard: [] };
+  }
+  return decks;
 }
 
 // scenario stays `unknown` at this public boundary (matching the pre-port contract) — the engine
@@ -139,7 +170,7 @@ export function init(scenario: unknown, opts: InitOpts): StepResult {
       battleProgress: 0,
     },
     skulls: { supply: sc.setup.difficulty.skullSupply, onBoard: 0 },
-    decks: {},
+    decks: seedDecks(sc.library),
     market: [],
     monuments: [],
     markers: [],

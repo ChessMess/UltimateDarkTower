@@ -75,6 +75,20 @@ function defaultInputFor(awaiting: InputRequest, state: EngineState): Input {
       return { requestId: 'dungeonRoomAdvantage', value: { improve: false }, kind: 'decision' };
     case 'dungeonMove':
       return { requestId: 'dungeonMove', value: { leave: true }, kind: 'decision' };
+    case 'battleCard': {
+      // Never improves or retreats: reveal the next card when nothing is face-up, otherwise resolve
+      // it. Each input strictly advances revealed/resolved, so the battle ends after 2×level steps.
+      const b = state.clock.battle;
+      const pending = b && (b.revealedCount ?? 0) > (b.resolved ?? 0);
+      return { requestId: 'battleCard', value: pending ? { resolve: true } : { reveal: true }, kind: 'decision' };
+    }
+    case 'battleHeroTarget': {
+      // pick the first other hero in turn order (a choice-scope hero.scope only prompts with ≥2 others)
+      const active = state.clock.activeHero;
+      const order = state.clock.turnOrder?.length ? state.clock.turnOrder : Object.keys(state.heroes);
+      const heroId = order.find((h) => h !== active) ?? active;
+      return { requestId: 'battleHeroTarget', value: { heroId }, kind: 'decision' };
+    }
   }
 }
 
