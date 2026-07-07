@@ -64,15 +64,61 @@ export function normalizeAssetBaseUrl(base: string | undefined): string {
 }
 
 /**
- * Default `${assetBaseUrl}${group}/${kebab(id)}.png` convention shared by the 2D
- * map and the 3D plugin. Returns `null` for "no art" → a programmatic fallback:
- * heroes always (no hero art exists), and everything when `assetBaseUrl` is empty.
+ * Official RTDT 2D board-token icon filenames (under the `foes/` group folder — adversary
+ * icons live there too, matching the shipped asset packs), keyed by kebab foe/adversary id.
+ * These are the small flat card-style icons meant for the 2D map; the plain `${kebab(id)}.png`
+ * convention below resolves to the larger 3D-style portrait instead, which is what the 3D
+ * tower's sprite billboard wants. Filenames don't derive from the id by any transform (tier
+ * prefixes, abbreviated adversary names), so this is hand-maintained, not computed. A consumer
+ * can still override any entry via `tokenArt`.
+ */
+const OFFICIAL_2D_ICON: Partial<Record<'foe' | 'adversary', Record<string, string>>> = {
+  foe: {
+    brigands: 'Foe-Token-L2-Brigands.png',
+    oreks: 'Foe-Token-L2-Oreks.png',
+    'shadow-wolves': 'Foe-Token-L2-Shadow-Wolves.png',
+    'spine-fiends': 'Foe-Token-L2-Spine-Fiends.png',
+    'frost-trolls': 'Foe-Token-L3-Frost-Troll.png',
+    'clan-of-neuri': 'Foe-Token-L3-Clan-of-Neuri.png',
+    lemures: 'Foe-Token-L3-Lemure.png',
+    'widowmade-spiders': 'Foe-Token-L3-Widowmade-Spider.png',
+    dragons: 'Foe-Token-L4-Dragon.png',
+    mormos: 'Foe-Token-L4-Mormo.png',
+    striga: 'Foe-Token-L4-Striga.png',
+    titans: 'Foe-Token-L4-Titan.png',
+  },
+  adversary: {
+    ashstrider: 'Adversary-Token-Ashstrider.png',
+    'bane-of-omens': 'Adversary-Token-Bane.png',
+    'empress-of-shades': 'Adversary-Token-Empress.png',
+    'gaze-eternal': 'Adversary-Token-Gaze.png',
+    gravemaw: 'Adversary-Token-Gravemaw.png',
+    'isa-the-exile': 'Adversary-Token-Isa.png',
+    'lingering-rot': 'Adversary-Token-Lingering-Rot.png',
+    'utuk-ku': 'Adversary-Token-Utuk-Ku.png',
+  },
+};
+
+/**
+ * Default `${assetBaseUrl}${group}/${kebab(id)}.png` convention shared by the 2D map and the
+ * 3D plugin. In the 2D view, foe/adversary ids with a known {@link OFFICIAL_2D_ICON} entry
+ * resolve to the small flat board-token icon instead of the 3D-style portrait; 3D and every
+ * other kind use the plain convention unchanged. Returns `null` for "no art" → a programmatic
+ * fallback: heroes always (no hero art exists), and everything when `assetBaseUrl` is empty.
  * `assetBaseUrl` may be passed with or without a trailing slash.
  */
-export function defaultTokenImagePath(ref: TokenArtRef, assetBaseUrl: string | undefined): string | null {
+export function defaultTokenImagePath(
+  ref: TokenArtRef,
+  assetBaseUrl: string | undefined,
+  view: BoardView
+): string | null {
   const base = normalizeAssetBaseUrl(assetBaseUrl);
   if (!base) return null;
   const id = kebab(ref.id);
+  if (view === '2d' && (ref.kind === 'foe' || ref.kind === 'adversary')) {
+    const icon = OFFICIAL_2D_ICON[ref.kind]?.[id];
+    if (icon) return `${base}foes/${icon}`;
+  }
   switch (ref.kind) {
     case 'foe':
       return `${base}foes/${id}.png`;
@@ -170,5 +216,5 @@ export function resolveTokenImageFor(
   const fromConfig = view === '2d' ? override?.image2d : override?.image3d ?? override?.image2d;
   if (fromConfig != null) return fromConfig;
   if (opts.resolveTokenImage) return opts.resolveTokenImage(ref, view);
-  return defaultTokenImagePath(ref, opts.assetBaseUrl);
+  return defaultTokenImagePath(ref, opts.assetBaseUrl, view);
 }

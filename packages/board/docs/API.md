@@ -305,7 +305,10 @@ console.log(readout.getText());
 2D overhead map: inline SVG over the board image, tokens placed via UDT's normalized `BOARD_ANCHORS`, with
 click-to-select. Display-/three-free and jsdom-testable. Implements `BoardRenderer`. Token art is **never
 bundled** — it loads at runtime from `assetBaseUrl` by the `${group}/${kebab(id)}.png` convention, falling
-back to a programmatic labeled disc when missing.
+back to a programmatic labeled disc when missing. For **foe/adversary** tokens with a known id, the 2D
+map defaults to the official flat RTDT board-token icon (e.g. `foes/Foe-Token-L2-Brigands.png`) instead of
+the 3D-style portrait the plain convention resolves to; unknown ids and the 3D view keep the plain
+convention. Override any of this per token with [`tokenArt`](#per-token-art-tokenart).
 
 **Mouse interaction** is on by default. Scroll the wheel to zoom toward the cursor, and double-click
 (or call [`resetView()`](#methods)) to return to the focus view — dropping zoom **and** spin. What a
@@ -398,7 +401,9 @@ attachBoard3D(view, { tokenArt, assetBaseUrl: './tokens/' }); // 3D reads model3
   (`"Brigands"` and `"brigands"` both match).
 - **Precedence (image, per view)** — 2D: `image2d` → `resolveTokenImage(ref, '2d')` → convention → `null`.
   3D billboard: `image3d ?? image2d` → `resolveTokenImage(ref, '3d')` → convention → `null` (so a single
-  `image2d` drives both views; the `${assetBaseUrl}${group}/${kebab(id)}.png` convention is the fallback).
+  `image2d` drives both views). The convention fallback is `${assetBaseUrl}${group}/${kebab(id)}.png`,
+  except that in the **2D** view a known **foe/adversary** id resolves to its official flat board-token
+  icon under `foes/` (e.g. `foes/Foe-Token-L2-Brigands.png`) rather than the 3D-style portrait.
 - **Precedence (3D model)** — `tokenFactory` → `tokenArt.model3d` → `resolveTokenModel(ref)`; if a model
   results it renders in place of the sprite, otherwise the sprite uses the image precedence above.
 

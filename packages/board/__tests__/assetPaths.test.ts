@@ -51,7 +51,15 @@ describe('resolveTokenImageFor', () => {
   });
 
   it('falls back to the default convention when nothing else applies', () => {
-    expect(resolveTokenImageFor(BRIGANDS, '2d', { assetBaseUrl: '/t/' })).toBe('/t/foes/brigands.png');
+    // 2D prefers the official flat board-token icon for known foes; 3D keeps the portrait convention.
+    expect(resolveTokenImageFor(BRIGANDS, '2d', { assetBaseUrl: '/t/' })).toBe('/t/foes/Foe-Token-L2-Brigands.png');
+    expect(resolveTokenImageFor(BRIGANDS, '3d', { assetBaseUrl: '/t/' })).toBe('/t/foes/brigands.png');
+    // A foe with no official-icon entry still uses the plain convention, even in 2D.
+    expect(resolveTokenImageFor({ kind: 'foe', id: 'some-new-foe' }, '2d', { assetBaseUrl: '/t/' })).toBe('/t/foes/some-new-foe.png');
+    // Adversaries get the same 2D-icon treatment (icons live under foes/); 3D uses adversaries/.
+    const ASHSTRIDER: TokenArtRef = { kind: 'adversary', id: 'ashstrider' };
+    expect(resolveTokenImageFor(ASHSTRIDER, '2d', { assetBaseUrl: '/t/' })).toBe('/t/foes/Adversary-Token-Ashstrider.png');
+    expect(resolveTokenImageFor(ASHSTRIDER, '3d', { assetBaseUrl: '/t/' })).toBe('/t/adversaries/ashstrider.png');
     // No base URL → null (programmatic fallback).
     expect(resolveTokenImageFor(BRIGANDS, '2d', {})).toBeNull();
     // Heroes have no convention art.

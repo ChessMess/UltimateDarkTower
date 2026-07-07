@@ -53,7 +53,7 @@ describe('BoardMap2D', () => {
     const by = BOARD_IMAGE_INFO.height / 2;
     const deg = Math.round((Math.atan2(cy - by, cx - bx) * (180 / Math.PI) - 90) * 100) / 100;
     expect(foe.getAttribute('transform')).toBe(`translate(${cx} ${cy}) rotate(${deg})`);
-    expect(foe.querySelector('image')?.getAttribute('href')).toBe('/t/foes/brigands.png');
+    expect(foe.querySelector('image')?.getAttribute('href')).toBe('/t/foes/Foe-Token-L2-Brigands.png');
   });
 
   it('renders heroes with the programmatic fallback (no hero art)', () => {
@@ -75,9 +75,9 @@ describe('BoardMap2D', () => {
     map.render(populated());
     const foe = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-1"]') as SVGGElement;
     expect(foe.querySelector('image')?.getAttribute('href')).toBe('/custom/brigands-2d.png');
-    // A foe without an entry still uses the default convention.
+    // A foe without an entry still uses the default convention (2D → official flat icon).
     const dragons = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-2"]') as SVGGElement;
-    expect(dragons.querySelector('image')?.getAttribute('href')).toBe('/t/foes/dragons.png');
+    expect(dragons.querySelector('image')?.getAttribute('href')).toBe('/t/foes/Foe-Token-L4-Dragon.png');
   });
 
   it('renders hero art from tokenArt (heroes have no default art)', () => {
