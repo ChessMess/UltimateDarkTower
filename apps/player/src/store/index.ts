@@ -22,6 +22,7 @@ export interface SessionHydration {
   checkpoint: Checkpoint;
   log: string[];
   battlePrompt: BattlePromptPayload | null;
+  revealedRooms?: Record<string, string[]>;
 }
 
 export interface PlayerStore {
@@ -39,6 +40,11 @@ export interface PlayerStore {
 
   // Interactive card-battle presentation (set from the engine's ui.prompt kind==='battleCard')
   battlePrompt: BattlePromptPayload | null;
+
+  // App-side dungeon reveal overlay: dungeonId → revealed roomIds. Never engine state (which owns
+  // cleared/improved rooms); this is the visual fog only, appended on each board.mutate revealRoom
+  // directive and persisted so a resumed session restores the map's revealed cells.
+  revealedRooms: Record<string, string[]>;
 
   // Checkpoint (last-good engine state + last tower:command sent)
   checkpoint: Checkpoint | null;
@@ -65,6 +71,7 @@ export interface PlayerStore {
     directives: Directive[],
   ) => void;
   setBattlePrompt: (prompt: BattlePromptPayload | null) => void;
+  revealRoom: (dungeonId: string, roomId: string) => void;
   saveCheckpoint: (serializedState: string, lastCommand: number[]) => void;
   setResumable: (meta: SavedSessionMeta | null) => void;
   hydrateFromSession: (h: SessionHydration) => void;
@@ -85,6 +92,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   awaiting: null,
   directives: [],
   battlePrompt: null,
+  revealedRooms: {},
   checkpoint: null,
   relayConnState: 'disconnected',
   relayStatus: null,
@@ -112,6 +120,13 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
 
   setBattlePrompt: (battlePrompt) => set({ battlePrompt }),
 
+  revealRoom: (dungeonId, roomId) =>
+    set((s) => {
+      const cur = s.revealedRooms[dungeonId] ?? [];
+      if (cur.includes(roomId)) return s;
+      return { revealedRooms: { ...s.revealedRooms, [dungeonId]: [...cur, roomId] } };
+    }),
+
   saveCheckpoint: (serializedState, lastCommand) =>
     set((s) => ({
       checkpoint: {
@@ -124,7 +139,16 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
 
   setResumable: (resumable) => set({ resumable }),
 
-  hydrateFromSession: ({ scenario, engineState, status, awaiting, checkpoint, log, battlePrompt }) =>
+  hydrateFromSession: ({
+    scenario,
+    engineState,
+    status,
+    awaiting,
+    checkpoint,
+    log,
+    battlePrompt,
+    revealedRooms,
+  }) =>
     set({
       scenario,
       engineState,
@@ -133,6 +157,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
       checkpoint,
       log,
       battlePrompt,
+      revealedRooms: revealedRooms ?? {},
       validationError: null,
       resumable: null,
     }),
@@ -157,6 +182,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
       awaiting: null,
       directives: [],
       battlePrompt: null,
+      revealedRooms: {},
       checkpoint: null,
       relayConnState: 'disconnected',
       relayStatus: null,

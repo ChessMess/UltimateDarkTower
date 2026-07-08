@@ -30,6 +30,7 @@ export interface SavedSession {
   log: string[]; // event log (already capped at 200)
   scenarioName: string; // resume-prompt label
   savedAt: number; // Date.now()
+  revealedRooms?: Record<string, string[]>; // app-side dungeon fog overlay (optional; v1-compatible)
 }
 
 /** Small subset surfaced to the resume prompt. */

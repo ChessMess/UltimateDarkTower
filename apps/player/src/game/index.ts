@@ -334,6 +334,25 @@ function scenarioTitle(scenario: unknown): string {
   return typeof t === 'string' && t.length > 0 ? t : 'Untitled scenario';
 }
 
+// Fallback dungeon fog for a pre-fog snapshot: cleared rooms (which persist in engine state) plus the
+// currently-occupied room. Close enough to restore the reveal overlay on resume.
+function deriveRevealedRooms(state: EngineState): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  const dungeons =
+    (state as { dungeons?: Record<string, { clearedRooms?: string[] }> }).dungeons ?? {};
+  for (const [id, ds] of Object.entries(dungeons)) {
+    out[id] = [...(ds.clearedRooms ?? [])];
+  }
+  const dc = (state as { clock?: { dungeon?: { dungeonId?: string; currentRoom?: string | null } | null } })
+    .clock?.dungeon;
+  if (dc?.dungeonId && dc.currentRoom) {
+    const list = out[dc.dungeonId] ?? [];
+    if (!list.includes(dc.currentRoom)) list.push(dc.currentRoom);
+    out[dc.dungeonId] = list;
+  }
+  return out;
+}
+
 // Snapshot the recoverable slice of the store (+ derived board state) to IndexedDB.
 // Debounced so bursts of tower-snapshot checkpoints collapse into a single write.
 function persistSession(): void {
@@ -357,6 +376,7 @@ function persistSession(): void {
       log: store.log,
       scenarioName: scenarioTitle(store.scenario),
       savedAt: Date.now(),
+      revealedRooms: store.revealedRooms,
     };
     void saveSession(session);
   }, SAVE_DEBOUNCE_MS);
@@ -426,6 +446,9 @@ export async function resumeSession(): Promise<void> {
     },
     log: saved.log,
     battlePrompt: saved.battlePrompt ?? null,
+    // Older snapshots (pre-dungeon-fog) lack revealedRooms — reconstruct from engine state, which
+    // already carries cleared rooms + the active room, so the fog restores close to where it was.
+    revealedRooms: saved.revealedRooms ?? deriveRevealedRooms(engineState),
   });
   _stashedSession = null;
   store.addLog(`Resumed session — checkpoint #${saved.seq}`);
@@ -542,6 +565,14 @@ function dispatchDirective(d: Directive): void {
     case 'board.mutate':
       board().mutate(d);
       syncBoardStage();
+      // Track dungeon room reveals app-side (the fog overlay). The engine owns cleared/improved
+      // rooms in its state; this is the visual reveal set only (see player store revealedRooms).
+      if (d.command === 'revealRoom') {
+        const args = (d.args ?? {}) as { dungeon?: string; room?: string };
+        if (typeof args.dungeon === 'string' && typeof args.room === 'string') {
+          store.revealRoom(args.dungeon, args.room);
+        }
+      }
       store.addLog(`board.mutate: ${d.command}`);
       break;
     case 'log.entry':

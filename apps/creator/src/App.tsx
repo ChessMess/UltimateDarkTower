@@ -3,6 +3,7 @@ import { ReactFlowProvider } from '@xyflow/react';
 import './App.css';
 import { CreatorCanvas } from './canvas';
 import { DeckBuilderView, DeckJsonPanel } from './decks';
+import { DungeonBuilderView, DungeonJsonPanel } from './dungeons';
 import { PalettePanel, InspectorPanel, ProblemsPanel, RecoveryDialog } from './editors';
 import { SimulatorPanel } from './simulator';
 import { useCreatorStore } from './store';
@@ -68,7 +69,9 @@ export default function App() {
       <div
         className={`creator-layout${focusMode ? ' creator-layout--focus' : ''}${
           centerView === 'decks' ? ' creator-layout--decks' : ''
-        }${bottomCollapsed ? ' creator-layout--bottom-collapsed' : ''}`}
+        }${centerView === 'dungeons' ? ' creator-layout--dungeons' : ''}${
+          bottomCollapsed ? ' creator-layout--bottom-collapsed' : ''
+        }`}
       >
         {/* Top bar */}
         <div className="creator-topbar">
@@ -123,6 +126,12 @@ export default function App() {
             >
               Decks
             </button>
+            <button
+              className={`creator-bottom-tab ${centerView === 'dungeons' ? 'active' : ''}`}
+              onClick={() => setCenterView('dungeons')}
+            >
+              Dungeons
+            </button>
           </div>
           <div className="creator-center-content">
             {centerView === 'canvas' ? (
@@ -130,15 +139,23 @@ export default function App() {
                 focusMode={focusMode}
                 onToggleFocusMode={() => setFocusMode((f) => !f)}
               />
-            ) : (
+            ) : centerView === 'decks' ? (
               <DeckBuilderView />
+            ) : (
+              <DungeonBuilderView />
             )}
           </div>
         </div>
 
-        {/* Right: Inspector (canvas mode) | Deck JSON (deck mode) */}
+        {/* Right: Inspector (canvas) | Deck JSON (decks) | Dungeon JSON (dungeons) */}
         <div className="creator-inspector">
-          {centerView === 'decks' ? <DeckJsonPanel /> : <InspectorPanel />}
+          {centerView === 'decks' ? (
+            <DeckJsonPanel />
+          ) : centerView === 'dungeons' ? (
+            <DungeonJsonPanel />
+          ) : (
+            <InspectorPanel />
+          )}
         </div>
 
         {/* Bottom: Problems / Simulator */}

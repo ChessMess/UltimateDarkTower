@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getUDTReferenceLayer } from '@udtc/adapters';
 import { handleInput, mountDisplay, unmountDisplay, type DisplayMode } from '../game';
 import { BattleCardPanel } from './BattleCardPanel';
+import { DungeonPanel } from './DungeonPanel';
 import { usePlayerStore } from '../store';
 import { fmtStatus } from '../utils';
 import type { ActionChoice } from '../types';
@@ -117,7 +118,12 @@ interface EngineStateShape {
 function ActionInput() {
   const awaiting = usePlayerStore((s) => s.awaiting);
   const phase = usePlayerStore((s) => s.phase);
+  const inDungeon = usePlayerStore((s) => !!(s.engineState as EngineStateShape | null)?.clock?.dungeon);
   if (phase !== 'playing' || !awaiting) return null;
+
+  // Inside a dungeon, the masked-map DungeonPanel owns both the move and improve prompts.
+  if (inDungeon && (awaiting.id === 'dungeonMove' || awaiting.id === 'dungeonRoomAdvantage'))
+    return <DungeonPanel />;
 
   if (awaiting.id === 'action') return <ActionMenu options={awaiting.options ?? []} />;
   if (awaiting.id === 'heroSelect') return <HeroSelectInput options={awaiting.options ?? []} />;
@@ -127,8 +133,6 @@ function ActionInput() {
   if (awaiting.id === 'battleCard' || awaiting.id === 'battleHeroTarget')
     return <BattleCardPanel />;
   if (awaiting.id === 'moveTarget') return <MoveInput />;
-  if (awaiting.id === 'dungeonMove') return <DungeonMoveInput />;
-  if (awaiting.id === 'dungeonRoomAdvantage') return <DungeonImproveInput />;
 
   return (
     <div style={{ color: 'var(--c-text-muted)', fontSize: 12, marginBottom: 12 }}>
@@ -299,80 +303,6 @@ function MoveInput() {
         />
         <button style={actionBtn} disabled={!custom.trim()} onClick={() => go(custom.trim())}>
           Go
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function DungeonMoveInput() {
-  const engineState = usePlayerStore((s) => s.engineState) as EngineStateShape | null;
-  const dc = engineState?.clock?.dungeon;
-  const room = dc
-    ? engineState?._lib?.dungeons?.[dc.dungeonId]?.rooms?.find((r) => r.id === dc.currentRoom)
-    : undefined;
-  const doors = (['N', 'E', 'S', 'W'] as const).filter((d) => room?.exits?.[d] === 'door');
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={awaitLabelStyle}>Dungeon — move through a door or leave:</div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {doors.map((d) => (
-          <button
-            key={d}
-            style={actionBtn}
-            onClick={() =>
-              handleInput({ requestId: 'dungeonMove', value: { direction: d }, kind: 'decision' })
-            }
-          >
-            {d === 'N' ? '↑ North' : d === 'E' ? '→ East' : d === 'S' ? '↓ South' : '← West'}
-          </button>
-        ))}
-        <button
-          style={{ ...actionBtn, color: 'var(--c-danger)' }}
-          onClick={() =>
-            handleInput({ requestId: 'dungeonMove', value: { leave: true }, kind: 'decision' })
-          }
-        >
-          Leave dungeon
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function DungeonImproveInput() {
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={awaitLabelStyle}>Spend 1 Advantage to improve this room? (once per room)</div>
-      <div style={{ display: 'flex', gap: 6 }}>
-        <button
-          style={{
-            ...actionBtn,
-            background: 'var(--c-success)',
-            color: '#fff',
-            borderColor: 'var(--c-success)',
-          }}
-          onClick={() =>
-            handleInput({
-              requestId: 'dungeonRoomAdvantage',
-              value: { improve: true },
-              kind: 'decision',
-            })
-          }
-        >
-          Improve
-        </button>
-        <button
-          style={actionBtn}
-          onClick={() =>
-            handleInput({
-              requestId: 'dungeonRoomAdvantage',
-              value: { improve: false },
-              kind: 'decision',
-            })
-          }
-        >
-          Skip
         </button>
       </div>
     </div>

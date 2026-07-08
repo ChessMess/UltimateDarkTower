@@ -188,15 +188,15 @@ const golden = {
         masterBitmap: "azkol-vault-master",
         spawningQuestId: "azkol-vault",
         rooms: [
-          { id: "vault-entry", cell: { col: 0, row: 0 }, exits: { N: "wall", E: "door", S: "wall", W: "wall" },
+          { id: "vault-entry", name: "Antechamber", cell: { col: 0, row: 0 }, exits: { N: "wall", E: "door", S: "wall", W: "wall" },
             isEntrance: true, displayText: "A cold antechamber.",
             insideEvent: [{ op: "resource.gain", resource: "spirit", amount: 1 }],
             improveOnce: { effects: [{ op: "resource.gain", resource: "warriors", amount: 2 }] } },
-          { id: "vault-hall", cell: { col: 1, row: 0 }, exits: { N: "wall", E: "door", S: "wall", W: "door" },
+          { id: "vault-hall", name: "Warded Hall", cell: { col: 1, row: 0 }, exits: { N: "wall", E: "door", S: "wall", W: "door" },
             displayText: "A warded hall hums with spirit-magic.",
             enterRequirement: { spiritCost: 1, onFail: [{ op: "corruption.gain" }] },
             insideEvent: [{ op: "resource.gain", resource: "warriors", amount: 1 }] },
-          { id: "vault-target", cell: { col: 2, row: 0 }, exits: { N: "wall", E: "wall", S: "wall", W: "door" },
+          { id: "vault-target", name: "Reliquary", cell: { col: 2, row: 0 }, exits: { N: "wall", E: "wall", S: "wall", W: "door" },
             isTarget: true, displayText: "Azkol's reliquary.",
             insideEvent: [{ op: "flag.set", name: "vaultCleared", value: true }] }
         ]
@@ -699,7 +699,7 @@ function buildGoldenFull() {
   vault.grid.rows = 2;
   vault.rooms.find((r: { id: string }) => r.id === "vault-hall").exits.S = "door";
   vault.rooms.push({
-    id: "vault-treasury", cell: { col: 1, row: 1 },
+    id: "vault-treasury", name: "Treasury", cell: { col: 1, row: 1 },
     exits: { N: "door", E: "wall", S: "wall", W: "wall" },
     displayText: "A treasury of Azkol's plundered hoard.",
     insideEvent: [

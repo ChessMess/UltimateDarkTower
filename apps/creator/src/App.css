@@ -137,11 +137,13 @@ body,
 }
 
 /* Decks mode hides the (canvas-specific) palette; inspector + bottom panels stay */
-.creator-layout--decks {
+.creator-layout--decks,
+.creator-layout--dungeons {
   grid-template-columns: 0 1fr 260px;
 }
 
-.creator-layout--decks .creator-palette {
+.creator-layout--decks .creator-palette,
+.creator-layout--dungeons .creator-palette {
   display: none;
 }
 

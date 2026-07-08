@@ -349,6 +349,10 @@ export interface BattleDef {
 }
 export interface DungeonRoomDef {
   id: string;
+  /** schema 0.4.4 — presentational room-card title (apps fall back to id); engine passthrough */
+  name?: string;
+  /** schema 0.4.4 — presentational room-card art resourceKey; engine passthrough */
+  artRef?: string;
   bitmapSlice?: unknown;
   displayText?: string;
   isTarget?: boolean;
@@ -362,6 +366,9 @@ export interface DungeonDef {
   spawningQuestId?: string;
   idleLight?: string;
   ambientSoundCategory?: string;
+  /** schema 0.4.5 — presentational masterBitmap placement rect in grid-cell units (absent = fills
+   * the grid); apps align the map under the room lattice. Engine passthrough. */
+  bitmapRect?: { x: number; y: number; w: number; h: number };
 }
 /** a card in library.cards (schema 0.4.3 $defs/card) — a generic deck card the engine can draw,
  * reveal (emit a cardDraw prompt), and resolve (apply its own effects). */

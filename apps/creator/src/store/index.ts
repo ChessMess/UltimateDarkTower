@@ -8,10 +8,11 @@ import { slugify } from '../utils/scaffold';
 import { runValidation } from '../utils/validation';
 import { canonicalJson } from '../utils/canonical';
 import { applyDagreLayout } from '../utils/layout';
+import { syncDungeonNodes } from '../dungeons/dungeonNodes';
+import type { Dungeon } from '../dungeons/shared';
 
-// The center workspace view. Extensible union — a future 'dungeons' builder slots in here (the
-// deck-builder-first-class switcher is designed to accommodate it).
-export type CenterView = 'canvas' | 'decks';
+// The center workspace view. The deck-builder-first-class switcher accommodates the dungeon builder.
+export type CenterView = 'canvas' | 'decks' | 'dungeons';
 
 interface CreatorStore {
   schemaDoc: ScenarioDoc | null;
@@ -26,6 +27,8 @@ interface CreatorStore {
   // DeckJsonPanel can display it. DeckBuilderView remains the sole owner/writer.
   deckSelection: DeckSelection | null;
   deckCardKey: string | null;
+  // read-only mirror of DungeonBuilderView's selected dungeonId (for the DungeonJsonPanel sidebar).
+  dungeonSelection: string | null;
   // set true when an autosave hits the localStorage quota (surfaced as a topbar warning chip, C3)
   draftSaveFailed: boolean;
 
@@ -41,6 +44,7 @@ interface CreatorStore {
   // Mirrors DeckBuilderView's local selection state (see deckSelection/deckCardKey above)
   setDeckSelection: (sel: DeckSelection | null) => void;
   setDeckCardKey: (key: string | null) => void;
+  setDungeonSelection: (id: string | null) => void;
 
   // library.cards / library.decks / library.resources.images editing (schema 0.4.3, deck builder).
   // All clone-library → set-or-delete → revalidate → set, mirroring updateBattleDefs; empty
@@ -48,6 +52,13 @@ interface CreatorStore {
   updateLibraryCards: (cards: Record<string, unknown>) => void;
   updateLibraryDecks: (decks: Record<string, unknown>) => void;
   updateResourceImage: (id: string, dataUrlOrNull: string | null) => void;
+  // library.dungeons editing (schema 0.4.4, dungeon builder). Replaces the whole map (or clears it
+  // when empty) AND re-syncs the subflow-gated dungeon.room graph nodes (see syncDungeonNodes).
+  commitDungeons: (dungeons: Record<string, Dungeon>) => void;
+  // "Add & wire dungeon subflow" helper: drop a dungeon.subflow node for a dungeon and wire it into
+  // the turn loop (actionMiddle.dungeon → subflow, subflow.completed/left → actionEnd), which then
+  // triggers room-node materialization. Switches to the canvas so the generated graph is visible.
+  addDungeonSubflow: (dungeonId: string) => void;
 
   // RF state sync (called by canvas on drag-end, connect, delete)
   syncFromRF: (nodes: CreatorNode[], edges: Edge[]) => void;
@@ -134,6 +145,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   centerView: 'canvas',
   deckSelection: null,
   deckCardKey: null,
+  dungeonSelection: null,
   draftSaveFailed: false,
 
   setCenterView(view) {
@@ -150,6 +162,10 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
 
   setDeckCardKey(key) {
     set({ deckCardKey: key });
+  },
+
+  setDungeonSelection(id) {
+    set({ dungeonSelection: id });
   },
 
   loadScenario(doc, autoLayout = false) {
@@ -188,6 +204,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       selectedNodeId: null,
       deckSelection: null,
       deckCardKey: null,
+      dungeonSelection: null,
       validationResults: null,
       isDirty: false,
     });
@@ -504,6 +521,89 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const updated: ScenarioDoc = { ...schemaDoc, library };
     const results = revalidate(updated);
     set({ schemaDoc: updated, validationResults: results, isDirty: true });
+  },
+
+  // library.dungeons is scenario-wide (schema 0.4.4). Unlike the deck mutators, this also re-syncs
+  // the dungeon.room graph nodes — but subflow-gated (syncDungeonNodes): only a dungeon a
+  // dungeon.subflow references materializes room nodes, so defining a dungeon never orphans nodes.
+  commitDungeons(dungeons) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
+    if (Object.keys(dungeons).length > 0) library.dungeons = dungeons;
+    else delete library.dungeons;
+
+    // Rebuild the graph's dungeon nodes + merge their layout positions.
+    const withLibrary: ScenarioDoc = { ...schemaDoc, library };
+    const { nodes, positions } = syncDungeonNodes(withLibrary, dungeons);
+    const layout = {
+      ...schemaDoc.meta.layout,
+      positions: { ...(schemaDoc.meta.layout?.positions ?? {}), ...positions },
+    };
+    const updated: ScenarioDoc = {
+      ...withLibrary,
+      meta: { ...schemaDoc.meta, layout },
+      graph: { ...schemaDoc.graph, nodes },
+    };
+    const { nodes: rfNodes, edges } = deriveRF(updated);
+    const results = revalidate(updated);
+    const annotated = annotateErrors(rfNodes, results);
+    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+  },
+
+  addDungeonSubflow(dungeonId) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    let nodes: SchemaNode[] = [...schemaDoc.graph.nodes];
+    const already = nodes.find(
+      (n) => n.kind === 'dungeon.subflow' && (n.props as { dungeonId?: string } | undefined)?.dungeonId === dungeonId,
+    );
+    if (!already) {
+      let subflowId = `n-dsub-${dungeonId}`;
+      let i = 2;
+      while (nodes.some((n) => n.id === subflowId)) subflowId = `n-dsub-${dungeonId}-${i++}`;
+      const middles = nodes.filter((n) => n.kind === 'lifecycle.actionMiddle');
+      const returnTarget = nodes.find((n) => n.kind === 'lifecycle.actionEnd')?.id;
+      const subflow: SchemaNode = { id: subflowId, kind: 'dungeon.subflow', props: { dungeonId } };
+      if (returnTarget) subflow.wires = { completed: [returnTarget], left: [returnTarget] };
+      // Wire the turn loop's dungeon port only when there's exactly one actionMiddle AND its dungeon
+      // port is empty — never clobber an existing dungeon wire (a turn's dungeon action routes to one
+      // subflow; a second dungeon must be routed by the author, so we leave it for manual wiring).
+      if (middles.length === 1) {
+        const mid = middles[0];
+        const dungeonPort = mid.wires?.dungeon ?? [];
+        if (dungeonPort.length === 0) {
+          nodes = nodes.map((n) =>
+            n.id === mid.id ? { ...n, wires: { ...n.wires, dungeon: [subflowId] } } : n,
+          );
+        }
+      }
+      nodes.push(subflow);
+    }
+    const withNode: ScenarioDoc = { ...schemaDoc, graph: { ...schemaDoc.graph, nodes } };
+    const dungeons = ((withNode.library as Record<string, unknown> | undefined)?.dungeons ??
+      {}) as Record<string, Dungeon>;
+    const { nodes: synced, positions } = syncDungeonNodes(withNode, dungeons);
+    const layout = {
+      ...schemaDoc.meta.layout,
+      positions: { ...(schemaDoc.meta.layout?.positions ?? {}), ...positions },
+    };
+    const updated: ScenarioDoc = {
+      ...withNode,
+      meta: { ...schemaDoc.meta, layout },
+      graph: { ...withNode.graph, nodes: synced },
+    };
+    const { nodes: rfNodes, edges } = deriveRF(updated);
+    const results = revalidate(updated);
+    const annotated = annotateErrors(rfNodes, results);
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+      centerView: 'canvas',
+    });
   },
 
   createGroup(nodeIds) {

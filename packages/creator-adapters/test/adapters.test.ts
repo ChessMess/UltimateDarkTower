@@ -372,6 +372,176 @@ describe('validateGraph (L3)', () => {
   });
 });
 
+// ---- dungeon validation (L2 refs + L3 structural/graph) ----
+
+// A minimal L2+L3-valid dungeon-bearing scenario: a 2x1 dungeon (entrance → target) wired into the
+// golden graph via a dungeon.subflow + two dungeon.room nodes. Tests clone and mutate this.
+function makeDungeonScenario() {
+  const doc = structuredClone(golden) as Record<string, unknown>;
+  const library = doc.library as Record<string, unknown>;
+  library.quests = { 'find-relic': { id: 'find-relic', name: 'Find the Relic' } };
+  library.dungeons = {
+    'crypt': {
+      id: 'crypt',
+      name: 'The Crypt',
+      trait: 'Undead',
+      grid: { cols: 2, rows: 1 },
+      masterBitmap: 'crypt-map',
+      spawningQuestId: 'find-relic',
+      rooms: [
+        { id: 'room-a', cell: { col: 0, row: 0 }, exits: { E: 'door' }, isEntrance: true },
+        { id: 'room-b', cell: { col: 1, row: 0 }, exits: { W: 'door' }, isTarget: true },
+      ],
+    },
+  };
+  const nodes = (doc.graph as { nodes: Array<Record<string, unknown>> }).nodes;
+  // n-tower is terminal in golden; route it into the dungeon so the subflow + rooms are reachable.
+  nodes[3].wires = { out: ['n-dsub'] };
+  nodes.push(
+    { id: 'n-dsub', kind: 'dungeon.subflow', props: { dungeonId: 'crypt' }, wires: { enter: ['n-room-a'] } },
+    { id: 'n-room-a', kind: 'dungeon.room', props: { roomId: 'room-a' }, wires: { E: ['n-room-b'] } },
+    { id: 'n-room-b', kind: 'dungeon.room', props: { roomId: 'room-b' }, wires: { W: ['n-room-a'] } },
+  );
+  return doc;
+}
+
+describe('dungeon L2 references', () => {
+  it('accepts a well-formed dungeon scenario', () => {
+    const result = validateRefs(makeDungeonScenario());
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('rejects a dungeon.subflow whose dungeonId is not in library.dungeons', () => {
+    const bad = makeDungeonScenario();
+    const nodes = (bad.graph as { nodes: Array<Record<string, unknown>> }).nodes;
+    (nodes.find((n) => n.id === 'n-dsub')!.props as Record<string, unknown>).dungeonId = 'nope';
+    const result = validateRefs(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('n-dsub') && e.includes('nope'))).toBe(true);
+  });
+
+  it('rejects a dungeon spawningQuestId with no matching library.quests entry', () => {
+    const bad = makeDungeonScenario();
+    ((bad.library as Record<string, unknown>).dungeons as Record<string, Record<string, unknown>>).crypt.spawningQuestId = 'ghost-quest';
+    const result = validateRefs(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('crypt') && e.includes('ghost-quest'))).toBe(true);
+  });
+});
+
+describe('dungeon L3 structural + graph checks', () => {
+  const dungeonOf = (doc: Record<string, unknown>) =>
+    ((doc.library as Record<string, unknown>).dungeons as Record<string, Record<string, unknown>>).crypt;
+  const roomsOf = (doc: Record<string, unknown>) =>
+    dungeonOf(doc).rooms as Array<Record<string, unknown>>;
+
+  it('accepts a well-formed dungeon scenario', () => {
+    const result = validateGraph(makeDungeonScenario());
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('rejects zero or multiple entrance rooms', () => {
+    const bad = makeDungeonScenario();
+    roomsOf(bad)[1].isEntrance = true; // now two entrances
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('isEntrance'))).toBe(true);
+  });
+
+  it('rejects zero or multiple target rooms', () => {
+    const bad = makeDungeonScenario();
+    delete roomsOf(bad)[1].isTarget; // now no target
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('isTarget'))).toBe(true);
+  });
+
+  it('rejects a room cell outside the grid', () => {
+    const bad = makeDungeonScenario();
+    (roomsOf(bad)[1].cell as Record<string, number>).col = 5;
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('outside') && e.includes('grid'))).toBe(true);
+  });
+
+  it('rejects two rooms sharing a cell', () => {
+    const bad = makeDungeonScenario();
+    (roomsOf(bad)[1].cell as Record<string, number>).col = 0;
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('shares cell'))).toBe(true);
+  });
+
+  it('rejects a non-reciprocated door', () => {
+    const bad = makeDungeonScenario();
+    roomsOf(bad)[1].exits = {}; // room-b no longer has the reciprocal W door
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('reciprocated') || e.includes('facing no room'))).toBe(true);
+  });
+
+  it('rejects a target unreachable from the entrance', () => {
+    const bad = makeDungeonScenario();
+    // Sever both doors so the target is isolated (also removes the door mismatch noise).
+    roomsOf(bad)[0].exits = {};
+    roomsOf(bad)[1].exits = {};
+    const nodes = (bad.graph as { nodes: Array<Record<string, unknown>> }).nodes;
+    nodes.find((n) => n.id === 'n-room-a')!.wires = {};
+    nodes.find((n) => n.id === 'n-room-b')!.wires = {};
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('not reachable'))).toBe(true);
+  });
+
+  it('rejects a referenced dungeon whose room has no dungeon.room node', () => {
+    const bad = makeDungeonScenario();
+    const nodes = (bad.graph as { nodes: Array<Record<string, unknown>> }).nodes;
+    (bad.graph as { nodes: Array<Record<string, unknown>> }).nodes = nodes.filter(
+      (n) => n.id !== 'n-room-b',
+    );
+    // repoint room-a's E wire so we isolate the "missing node" error (not a dangling-wire error)
+    nodes.find((n) => n.id === 'n-room-a')!.wires = {};
+    roomsOf(bad)[0].exits = {};
+    roomsOf(bad)[1].exits = {};
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('no dungeon.room node') && e.includes('room-b'))).toBe(true);
+  });
+
+  it('rejects a subflow enter wire that does not target the entrance room node', () => {
+    const bad = makeDungeonScenario();
+    const nodes = (bad.graph as { nodes: Array<Record<string, unknown>> }).nodes;
+    nodes.find((n) => n.id === 'n-dsub')!.wires = { enter: ['n-room-b'] };
+    const result = validateGraph(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('enter wire') && e.includes('n-room-a'))).toBe(true);
+  });
+
+  it('does NOT require room nodes for a library-only dungeon (no referencing subflow)', () => {
+    // A dungeon defined in library.dungeons with no dungeon.subflow node stays nodeless and valid —
+    // this is the subflow-gated rule that keeps the Creator Problems panel clean before wiring.
+    const ok = structuredClone(golden) as Record<string, unknown>;
+    (ok.library as Record<string, unknown>).dungeons = {
+      'crypt': {
+        id: 'crypt',
+        name: 'The Crypt',
+        trait: 'Undead',
+        grid: { cols: 2, rows: 1 },
+        masterBitmap: 'crypt-map',
+        rooms: [
+          { id: 'room-a', cell: { col: 0, row: 0 }, exits: { E: 'door' }, isEntrance: true },
+          { id: 'room-b', cell: { col: 1, row: 0 }, exits: { W: 'door' }, isTarget: true },
+        ],
+      },
+    };
+    const result = validateGraph(ok);
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+});
+
 // ---- resolver tests ----
 
 describe('createResolver', () => {

@@ -37,8 +37,8 @@
 
 Two applications sharing a common rules engine and schema:
 
-- **Creator** (`apps/creator`) — node-based visual scenario editor (React Flow canvas, embedded simulator)
-- **Player** (`apps/player`) — live table runtime that drives the tower emulator (or, later, a physical tower via the Relay)
+- **Creator** (`apps/creator`) — node-based visual scenario editor (React Flow canvas, embedded simulator), plus first-class **Deck** and **Dungeon** builders (draw a dungeon map on a grid, place rooms and doors, auto-detect rooms from a map image)
+- **Player** (`apps/player`) — live table runtime that drives the tower emulator (or, later, a physical tower via the Relay), with masked-map dungeon exploration (rooms unmask as you move, and cleared rooms persist across visits)
 
 Three shared packages:
 

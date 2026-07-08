@@ -69,6 +69,22 @@ export function validateRefs(scenario: unknown): L2Result {
   const graph = obj(s['graph']);
   const nodes = graph ? arr(graph['nodes']) : undefined;
 
+  // library.dungeons intra-file refs: each dungeon's optional spawningQuestId must resolve to a
+  // library.quests entry (the quest that spawns this dungeon). dungeon.subflow.props.dungeonId is
+  // checked in the node loop below.
+  const library = obj(s['library']);
+  const dungeons = library ? obj(library['dungeons']) : undefined;
+  const quests = library ? obj(library['quests']) : undefined;
+  if (dungeons) {
+    for (const [dId, dRaw] of Object.entries(dungeons)) {
+      const d = obj(dRaw);
+      const questId = d ? str(d['spawningQuestId']) : undefined;
+      if (questId !== undefined && !(quests && questId in quests)) {
+        errors.push(`dungeon "${dId}" spawningQuestId "${questId}" is not a key in library.quests`);
+      }
+    }
+  }
+
   // Resolve a foe-placement pair {foeId, location} against the UDT roster + board locations.
   const checkSpawn = (foeId: string | undefined, location: string | undefined, ctx: string): void => {
     if (foeId !== undefined) {
@@ -129,6 +145,15 @@ export function validateRefs(scenario: unknown): L2Result {
           if (!(heroId in libHeroes)) {
             errors.push(`node "${id}" lifecycle.selectHero heroId "${heroId}" has no matching library.heroes entry`);
           }
+        }
+        continue;
+      }
+
+      // dungeon.subflow: props.dungeonId must resolve to a library.dungeons entry
+      if (kind === 'dungeon.subflow') {
+        const dungeonId = props ? str(props['dungeonId']) : undefined;
+        if (dungeonId !== undefined && !(dungeons && dungeonId in dungeons)) {
+          errors.push(`node "${id}" dungeon.subflow dungeonId "${dungeonId}" is not a key in library.dungeons`);
         }
         continue;
       }

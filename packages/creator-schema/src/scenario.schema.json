@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://chessmess.dev/rtdt/schemas/scenario.schema.json",
   "title": "Return to Dark Tower — Custom Scenario",
-  "$comment": "schemaVersion 0.4.0 — first JSON change since 0.3.0: closes the F library sub-deferrals (dormantKingdoms, room.improveOnce/enterRequirement, quest.requirements, foe.strike/movement, battleDefs.cards), adds the closed tradeAsset union (decision #7), and adds MVP-scoped per-kind node props. Battle/foe figures are author-editable DEFAULTS, not constraints (official-app-analysis v0.3 §6). Later 0.4.x addition: optional node.description (author documentation) and closed props for the util.comment / util.group annotation kinds (flow documentation/grouping). 0.4.1: setup.selections.adversaryId / foes (and its tier1/tier2/tier3) / mainGoalId are now OPTIONAL — a backward-compatible relaxation so rule-variant scenarios that don't use the standard adversary fight, tiered foe roster, or a main-goal quest still validate at L1. 0.4.2: library.battleDefs values become a oneOf of the legacy strikes shape and the new official-app card-ladder shape ($defs/battleLadderCard), and a hero.scope effect op is added for multi-hero battle-card targets — additive; every 0.4.0/0.4.1 document validates unchanged. 0.4.3: adds $defs/cardAppearance (presentational card back/template/accent — engine passes through opaque), optional artRef/flavor on generic cards and optional artRef on battle-ladder cards, optional appearance on generic decks and ladder battleDefs, and closed props branches for deck.draw (with reveal/resolve flags)/deck.reshuffle/deck.discard — additive; every 0.4.0–0.4.2 document validates unchanged.",
+  "$comment": "schemaVersion 0.4.0 — first JSON change since 0.3.0: closes the F library sub-deferrals (dormantKingdoms, room.improveOnce/enterRequirement, quest.requirements, foe.strike/movement, battleDefs.cards), adds the closed tradeAsset union (decision #7), and adds MVP-scoped per-kind node props. Battle/foe figures are author-editable DEFAULTS, not constraints (official-app-analysis v0.3 §6). Later 0.4.x addition: optional node.description (author documentation) and closed props for the util.comment / util.group annotation kinds (flow documentation/grouping). 0.4.1: setup.selections.adversaryId / foes (and its tier1/tier2/tier3) / mainGoalId are now OPTIONAL — a backward-compatible relaxation so rule-variant scenarios that don't use the standard adversary fight, tiered foe roster, or a main-goal quest still validate at L1. 0.4.2: library.battleDefs values become a oneOf of the legacy strikes shape and the new official-app card-ladder shape ($defs/battleLadderCard), and a hero.scope effect op is added for multi-hero battle-card targets — additive; every 0.4.0/0.4.1 document validates unchanged. 0.4.3: adds $defs/cardAppearance (presentational card back/template/accent — engine passes through opaque), optional artRef/flavor on generic cards and optional artRef on battle-ladder cards, optional appearance on generic decks and ladder battleDefs, and closed props branches for deck.draw (with reveal/resolve flags)/deck.reshuffle/deck.discard — additive; every 0.4.0–0.4.2 document validates unchanged. 0.4.4: adds optional presentational $defs/room.name (room-card title) and $defs/room.artRef (room-card art resourceKey) for the first-class Dungeon Builder — the engine passes both through opaque (neither enters engine state nor a directive), so every 0.4.0–0.4.3 document validates unchanged and golden/goldenFull digest+directive streams are unaffected. 0.4.5: adds optional presentational $defs/dungeon.bitmapRect (masterBitmap placement rect {x,y,w,h} in grid-cell units; when absent the map fills the grid) so the Dungeon Builder's grab-handle alignment of a map image under the room lattice persists and both apps render the map identically — engine passthrough (never enters state nor a directive), so every 0.4.0–0.4.4 document validates unchanged and golden/goldenFull streams are unaffected.",
   "type": "object",
   "required": ["schemaVersion", "meta", "setup", "library", "graph"],
   "additionalProperties": false,
@@ -547,6 +547,7 @@
       "additionalProperties": false,
       "properties": {
         "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "$comment": "0.4.4 — PRESENTATIONAL. Room-card title shown on entry; apps fall back to id when absent. Engine passes through opaque (never enters state or a directive)." },
         "cell": { "type": "object", "required": ["col", "row"], "additionalProperties": false,
           "properties": { "col": { "type": "integer", "minimum": 0 }, "row": { "type": "integer", "minimum": 0 } } },
         "exits": { "type": "object", "additionalProperties": false,
@@ -554,6 +555,7 @@
             "S": { "enum": ["wall", "door"] }, "W": { "enum": ["wall", "door"] } } },
         "insideEvent": { "type": "array", "items": { "$ref": "#/$defs/effect" } },
         "displayText": { "type": "string" },
+        "artRef": { "$ref": "#/$defs/resourceKey", "$comment": "0.4.4 — PRESENTATIONAL. Optional room-card art; apps resolve against library.resources.images (dangling ref renders a placeholder). Engine passes through opaque." },
         "bitmapSlice": { "$ref": "#/$defs/resourceKey" },
         "isEntrance": { "type": "boolean" },
         "isTarget": { "type": "boolean" },
@@ -584,6 +586,14 @@
         "grid": { "type": "object", "required": ["cols", "rows"], "additionalProperties": false,
           "properties": { "cols": { "type": "integer", "minimum": 1 }, "rows": { "type": "integer", "minimum": 1 } } },
         "masterBitmap": { "$ref": "#/$defs/resourceKey" },
+        "bitmapRect": {
+          "type": "object", "additionalProperties": false, "required": ["x", "y", "w", "h"],
+          "properties": {
+            "x": { "type": "number" }, "y": { "type": "number" },
+            "w": { "type": "number", "exclusiveMinimum": 0 }, "h": { "type": "number", "exclusiveMinimum": 0 }
+          },
+          "$comment": "v0.4.5 — presentational: masterBitmap placement rect in grid-cell units (absent = fills the grid, i.e. {x:0,y:0,w:cols,h:rows}). Apps render the map at left=x*cell, top=y*cell, width=w*cell, height=h*cell so the drawn map aligns to the room lattice. Engine passthrough."
+        },
         "rooms": { "type": "array", "items": { "$ref": "#/$defs/room" }, "minItems": 1 },
         "idleLight": { "type": "string", "default": "dungeonIdle" },
         "ambientSoundCategory": { "const": "Dungeon" },
