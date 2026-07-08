@@ -206,4 +206,4 @@ export function flowToSchema(
   };
 }
 
-export { NODE_W, NODE_H, COMMENT_W, COMMENT_H };
+export { NODE_W, NODE_H, COMMENT_W, COMMENT_H, GROUP_PADDING, GROUP_HEADER_H };

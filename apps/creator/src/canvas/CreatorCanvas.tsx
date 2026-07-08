@@ -15,6 +15,7 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
   type Edge,
+  type Viewport,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { goldenFull } from '@udtc/engine';
@@ -24,6 +25,8 @@ import type { ScenarioDoc, GroupProps } from '../types';
 import { computeGroupRects, type CreatorNode } from '../utils/serializer';
 import { NewScenarioDialog } from '../editors/NewScenarioDialog';
 import { clearDraft } from '../utils/draft';
+import { syncDungeonNodes } from '../dungeons/dungeonNodes';
+import type { Dungeon } from '../dungeons/shared';
 
 const nodeTypes: NodeTypes = {
   scenarioNode: ScenarioNode,
@@ -31,10 +34,34 @@ const nodeTypes: NodeTypes = {
   groupNode: GroupNode,
 };
 
+// goldenFull's dungeon.room nodes are hand-authored directly in the engine fixture, so they
+// never pass through the Creator's Dungeons-tab editing flow that would normally generate their
+// util.group wrapper (syncDungeonNodes). Run it once here, on load, so the sample scenario's
+// dungeon rooms render grouped on the canvas like any dungeon authored through the UI.
+function buildBaseScenario(): ScenarioDoc {
+  const doc = goldenFull as ScenarioDoc;
+  const dungeons = (doc.library as Record<string, unknown> | undefined)?.dungeons as
+    | Record<string, Dungeon>
+    | undefined;
+  if (!dungeons || Object.keys(dungeons).length === 0) return doc;
+  const { nodes, positions } = syncDungeonNodes(doc, dungeons);
+  return {
+    ...doc,
+    meta: {
+      ...doc.meta,
+      layout: {
+        ...doc.meta.layout,
+        positions: { ...(doc.meta.layout?.positions ?? {}), ...positions },
+      },
+    },
+    graph: { ...doc.graph, nodes },
+  };
+}
+
 // The engine's own golden scenario — the base-game fidelity build (full turn structure,
 // buildings, events, monthly quests), guaranteed runnable by the simulator: the same fixture
 // the engine's lockstep/full-turn test suites drive end-to-end.
-const BASE_SCENARIO = goldenFull as ScenarioDoc;
+const BASE_SCENARIO = buildBaseScenario();
 
 type CreatorCanvasProps = {
   focusMode: boolean;
@@ -42,10 +69,24 @@ type CreatorCanvasProps = {
 };
 
 export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasProps) {
-  const { schemaDoc, rfNodes, rfEdges, selectedNodeId, validationResults, isDirty } =
-    useCreatorStore();
-  const { loadScenario, syncFromRF, selectNode, addNode, applyLayout, exportScenario } =
-    useCreatorStore();
+  const {
+    schemaDoc,
+    rfNodes,
+    rfEdges,
+    selectedNodeId,
+    validationResults,
+    isDirty,
+    canvasViewport,
+  } = useCreatorStore();
+  const {
+    loadScenario,
+    syncFromRF,
+    selectNode,
+    addNode,
+    applyLayout,
+    exportScenario,
+    setCanvasViewport,
+  } = useCreatorStore();
   const { fitView, screenToFlowPosition } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newDialogOpen, setNewDialogOpen] = useState(false);
@@ -70,6 +111,14 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
   const onEdgesChange: OnEdgesChange<Edge> = useCallback((changes) => {
     useCreatorStore.setState((state) => ({ rfEdges: applyEdgeChanges(changes, state.rfEdges) }));
   }, []);
+
+  // Persist the viewport so switching to Decks/Dungeons and back doesn't reset pan/zoom.
+  const onMoveEnd = useCallback(
+    (_event: MouseEvent | TouchEvent | null, viewport: Viewport) => {
+      setCanvasViewport(viewport);
+    },
+    [setCanvasViewport],
+  );
 
   const onConnect: OnConnect = useCallback(
     (conn) => {
@@ -274,8 +323,10 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
         onNodesDelete={onNodesDelete}
         onDrop={onDrop}
         onDragOver={onDragOver}
+        onMoveEnd={onMoveEnd}
         deleteKeyCode="Delete"
-        fitView
+        fitView={!canvasViewport}
+        defaultViewport={canvasViewport ?? undefined}
         minZoom={0.05}
         maxZoom={2}
         proOptions={{ hideAttribution: false }}

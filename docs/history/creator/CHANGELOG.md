@@ -26,6 +26,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Creator: the bottom panel now spans only the canvas column width instead of extending under the Inspector sidebar; the Inspector now spans the full right-column height (rows 2–3, mirroring the Palette on the left) so its background fills that space seamlessly
 - Theme: added `--c-danger-fg` contrast token (light/dark/auto) for text/icons drawn on danger-colored backgrounds
 
+### Fixed
+
+- Creator: the main canvas's pan/zoom position is now preserved when switching to the Decks or Dungeons tab and back, instead of resetting to a fresh fit-to-content on every return. `CreatorCanvas` persists the last viewport (via React Flow's `onMoveEnd`) in the store (`canvasViewport`) and initializes React Flow's `defaultViewport` from it on remount, only falling back to `fitView` when no viewport has been recorded yet — first load, Import JSON, New Scenario, Load Sample Scenario, Auto-layout, and the focus-mode toggle all still explicitly re-fit as before. The "Add & wire dungeon subflow" action still force-fits when it switches to Canvas, so the newly-wired node stays visible
+- Creator: Auto-layout (dagre) now reserves extra spacing around grouped nodes so a `util.group`'s auto-fit box no longer overlaps whatever dagre packed into an adjacent rank
+- Creator: the sample scenario's (`goldenFull`) dungeon rooms now render inside their auto-generated group wrapper on load, matching a dungeon authored through the Dungeons tab UI — previously they appeared ungrouped because the hand-authored fixture never passed through `syncDungeonNodes`
+
 ## [0.2.0] - 2026-07-06
 
 ### Added

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Edge } from '@xyflow/react';
+import type { Edge, Viewport } from '@xyflow/react';
 import { getUDTReferenceLayer } from '@udtc/adapters';
 import type { ScenarioDoc, SchemaNode, ValidationResults, NodeKind } from '../types';
 import type { DeckSelection } from '../decks/shared';
@@ -31,6 +31,9 @@ interface CreatorStore {
   dungeonSelection: string | null;
   // set true when an autosave hits the localStorage quota (surfaced as a topbar warning chip, C3)
   draftSaveFailed: boolean;
+  // last-known canvas pan/zoom, so switching to Decks/Dungeons and back doesn't reset the viewport.
+  // null means "no saved viewport yet" — CreatorCanvas falls back to fitView on mount.
+  canvasViewport: Viewport | null;
 
   // Scenario lifecycle
   loadScenario: (doc: ScenarioDoc, autoLayout?: boolean) => void;
@@ -45,6 +48,7 @@ interface CreatorStore {
   setDeckSelection: (sel: DeckSelection | null) => void;
   setDeckCardKey: (key: string | null) => void;
   setDungeonSelection: (id: string | null) => void;
+  setCanvasViewport: (viewport: Viewport | null) => void;
 
   // library.cards / library.decks / library.resources.images editing (schema 0.4.3, deck builder).
   // All clone-library → set-or-delete → revalidate → set, mirroring updateBattleDefs; empty
@@ -147,6 +151,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   deckCardKey: null,
   dungeonSelection: null,
   draftSaveFailed: false,
+  canvasViewport: null,
 
   setCenterView(view) {
     set({ centerView: view });
@@ -166,6 +171,10 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
 
   setDungeonSelection(id) {
     set({ dungeonSelection: id });
+  },
+
+  setCanvasViewport(viewport) {
+    set({ canvasViewport: viewport });
   },
 
   loadScenario(doc, autoLayout = false) {
@@ -603,6 +612,9 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       validationResults: results,
       isDirty: true,
       centerView: 'canvas',
+      // Force a fit-to-content on the canvas we're about to reveal, so the newly-wired
+      // subflow node is visible instead of restoring wherever the user last panned to.
+      canvasViewport: null,
     });
   },
 
