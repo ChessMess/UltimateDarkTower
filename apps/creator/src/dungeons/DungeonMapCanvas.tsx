@@ -10,7 +10,7 @@
 //               (grid-cell units, schema 0.4.5). "Reset" restores the grid-filling default.
 //   • Preview — masks the map and reveals rooms as you click them, simulating play-time fog.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import {
   DIRS,
@@ -24,7 +24,10 @@ import {
   type DungeonRoom,
 } from './shared';
 
-const CELL = 84;
+const DEFAULT_CELL = 84; // fallback before the container has been measured
+const MIN_CELL = 48; // floor so the grid stays legible on tiny/large dungeons
+const MAX_CELL = 160; // ceiling so a 2-room dungeon doesn't blow up on a big screen
+const MARGIN = 40; // breathing room between the grid and the surrounding panel, in px
 const MIN_CELLS = 0.4; // smallest the map rect may shrink to, in grid cells
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
@@ -92,6 +95,28 @@ export function DungeonMapCanvas({
   const entranceId = useMemo(() => dungeon.rooms.find((r) => r.isEntrance)?.id, [dungeon.rooms]);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const rect = bitmapRectOf(dungeon);
+
+  // Grow the grid to fill the available panel space (measured via ResizeObserver) instead of a
+  // fixed pixel-per-cell size, clamped so tiny dungeons don't balloon and huge ones stay legible.
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      setContainerSize({ w: width, h: height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const CELL = useMemo(() => {
+    if (containerSize.w <= 0 || containerSize.h <= 0) return DEFAULT_CELL;
+    const fit = Math.min(containerSize.w / cols, containerSize.h / rows);
+    return Math.max(MIN_CELL, Math.min(MAX_CELL, Math.floor(fit)));
+  }, [containerSize, cols, rows]);
 
   const startPreview = () => {
     setRevealed(new Set(entranceId ? [entranceId] : []));
@@ -175,7 +200,7 @@ export function DungeonMapCanvas({
   const imgH = rect.h * CELL;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, flex: 1, minHeight: 0 }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         {imageUrl && (
           <button
@@ -208,7 +233,18 @@ export function DungeonMapCanvas({
         )}
       </div>
 
-      <div style={{ overflow: 'auto', padding: align ? CELL / 2 : 8 }}>
+      <div
+        ref={containerRef}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: 'auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: MARGIN,
+        }}
+      >
         <div
           style={{
             position: 'relative',
@@ -293,7 +329,7 @@ export function DungeonMapCanvas({
                         {room.isEntrance ? '⭐' : ''}
                         {room.isTarget ? '🎯' : ''}
                       </div>
-                      <div style={roomLabel}>{room.name || room.id}</div>
+                      <div style={{ ...roomLabel, maxWidth: CELL - 8 }}>{room.name || room.id}</div>
                     </div>
                   )}
                 </div>
@@ -382,7 +418,6 @@ export function DungeonMapCanvas({
 const roomLabel: CSSProperties = {
   fontSize: 9,
   color: '#e9e5ff',
-  maxWidth: CELL - 8,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',

@@ -248,11 +248,12 @@ export function DungeonBuilderView() {
 const centerCol: CSSProperties = {
   flex: 1,
   minWidth: 0,
+  minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
   padding: 12,
   gap: 10,
-  overflow: 'auto',
+  overflow: 'hidden',
 };
 const editorCol: CSSProperties = {
   width: 320,
