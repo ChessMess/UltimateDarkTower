@@ -3,12 +3,19 @@ import type { Edge, Viewport } from '@xyflow/react';
 import { getUDTReferenceLayer } from '@udtc/adapters';
 import type { ScenarioDoc, SchemaNode, ValidationResults, NodeKind } from '../types';
 import type { DeckSelection } from '../decks/shared';
-import { schemaToFlow, flowToSchema, type CreatorNode } from '../utils/serializer';
+import {
+  schemaToFlow,
+  flowToSchema,
+  computeGraphBounds,
+  NODE_W,
+  NODE_H,
+  type CreatorNode,
+} from '../utils/serializer';
 import { slugify } from '../utils/scaffold';
 import { runValidation } from '../utils/validation';
 import { canonicalJson } from '../utils/canonical';
 import { applyDagreLayout } from '../utils/layout';
-import { syncDungeonNodes } from '../dungeons/dungeonNodes';
+import { syncDungeonNodes, BASE_X, BASE_Y } from '../dungeons/dungeonNodes';
 import type { Dungeon } from '../dungeons/shared';
 
 // The center workspace view. The deck-builder-first-class switcher accommodates the dungeon builder.
@@ -567,6 +574,8 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const already = nodes.find(
       (n) => n.kind === 'dungeon.subflow' && (n.props as { dungeonId?: string } | undefined)?.dungeonId === dungeonId,
     );
+    let newSubflowId: string | undefined;
+    let newSubflowPosition: { x: number; y: number } | undefined;
     if (!already) {
       let subflowId = `n-dsub-${dungeonId}`;
       let i = 2;
@@ -587,6 +596,22 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
           );
         }
       }
+      // Give the new node a real position instead of leaving it unpositioned (schemaToFlow would
+      // otherwise stack it at {x: i*260, y: 0} using its raw array index — far to the right of an
+      // already-sizable graph). Anchor near the single actionMiddle it's wiring into when that's
+      // unambiguous; otherwise there's no correct node to anchor to, so land it just past the
+      // current graph's bounding-box edge instead.
+      const midPosition =
+        middles.length === 1 ? schemaDoc.meta.layout?.positions?.[middles[0].id] : undefined;
+      if (midPosition) {
+        newSubflowPosition = { x: midPosition.x + NODE_W + 40, y: midPosition.y + NODE_H + 40 };
+      } else {
+        const bounds = computeGraphBounds(schemaDoc.meta.layout?.positions ?? {});
+        newSubflowPosition = bounds
+          ? { x: bounds.maxX + NODE_W + 40, y: bounds.minY }
+          : { x: BASE_X, y: BASE_Y };
+      }
+      newSubflowId = subflowId;
       nodes.push(subflow);
     }
     const withNode: ScenarioDoc = { ...schemaDoc, graph: { ...schemaDoc.graph, nodes } };
@@ -595,7 +620,11 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const { nodes: synced, positions } = syncDungeonNodes(withNode, dungeons);
     const layout = {
       ...schemaDoc.meta.layout,
-      positions: { ...(schemaDoc.meta.layout?.positions ?? {}), ...positions },
+      positions: {
+        ...(schemaDoc.meta.layout?.positions ?? {}),
+        ...(newSubflowId && newSubflowPosition ? { [newSubflowId]: newSubflowPosition } : {}),
+        ...positions,
+      },
     };
     const updated: ScenarioDoc = {
       ...withNode,

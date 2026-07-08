@@ -71,6 +71,29 @@ export function computeGroupRects(nodes: CreatorNode[]): Record<string, GroupRec
   return rects;
 }
 
+export type GraphBounds = { minX: number; minY: number; maxX: number; maxY: number };
+
+// Bounding box over the graph's currently authored positions — same min/max-accumulation style as
+// computeGroupRects above, but over the raw position map (no node sizes) since callers use this to
+// place a node that doesn't exist yet. Returns null when there are no positions at all (a
+// from-scratch scenario) so callers can fall back to a fixed starting point.
+export function computeGraphBounds(
+  positions: Record<string, { x: number; y: number }>,
+): GraphBounds | null {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of Object.values(positions)) {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  }
+  if (minX === Infinity) return null;
+  return { minX, minY, maxX, maxY };
+}
+
 export function schemaToFlow(doc: ScenarioDoc): { nodes: CreatorNode[]; edges: Edge[] } {
   const positions = doc.meta.layout?.positions ?? {};
   const sizes = doc.meta.layout?.sizes ?? {};
