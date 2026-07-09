@@ -453,7 +453,8 @@
             background: white;
             border-radius: 8px;
             padding: 2rem;
-            max-width: 600px;
+            width: 90vw;
+            max-width: 1000px;
             max-height: 80vh;
             overflow-y: auto;
             position: relative;
@@ -613,16 +614,7 @@
     <header>
         <div class="header-top">
             <div class="header-title">🗼 Tower Controller Manual Test Plan</div>
-            <div class="header-progress">
-                <span id="progress">0 / 0</span> steps recorded · Testing:
-                <select id="defaultTrackSelect" class="track-select"
-                    style="display: inline-block; margin-left: 0.25rem;">
-                    <option value="">Track: —</option>
-                    <option value="emulator">🟦 Emulator</option>
-                    <option value="real">🔴 Real Tower</option>
-                    <option value="both">🟪 Both</option>
-                </select>
-            </div>
+            <div class="header-progress"><span id="progress">0 / 0</span> steps recorded</div>
             <div class="header-buttons">
                 <button onclick="jumpToNextIncomplete()">⏭️ Resume Testing</button>
                 <button class="success" onclick="generateReport()">📊 Generate Report</button>
@@ -1463,12 +1455,10 @@
     <script>
         const STORAGE_KEY_PREFIX = 'test-step-';
         const TRACK_KEY_PREFIX = 'track-';
-        const DEFAULT_TRACK_KEY = 'default-track';
         let isFilteringFailed = false;
 
         // Initialize storage and update progress on page load
         window.addEventListener('load', function () {
-            restoreDefaultTrack();
             restoreAllState();
             updateProgress();
         });
@@ -1498,18 +1488,13 @@
             const storageKey = STORAGE_KEY_PREFIX + stepId;
             localStorage.setItem(storageKey, result);
 
-            // Apply default track if this step's track is unset
+            // Get this step's track
             const trackKey = TRACK_KEY_PREFIX + stepId;
-            if (!localStorage.getItem(trackKey)) {
-                const defaultTrack = localStorage.getItem(DEFAULT_TRACK_KEY) || '';
-                if (defaultTrack) {
-                    localStorage.setItem(trackKey, defaultTrack);
-                    // Update the track select dropdown
-                    const trackSelect = button.parentElement.parentElement.querySelector('.track-select');
-                    if (trackSelect) {
-                        trackSelect.value = defaultTrack;
-                    }
-                }
+            const thisStepTrack = localStorage.getItem(trackKey);
+
+            // If this step has a track, propagate it to all untested steps
+            if (thisStepTrack) {
+                propagateTrackToUntestedSteps(thisStepTrack);
             }
 
             updateProgress();
@@ -1565,6 +1550,8 @@
                     trackSelect.addEventListener('change', function () {
                         if (this.value) {
                             localStorage.setItem(trackKey, this.value);
+                            // Propagate this track to all untested steps
+                            propagateTrackToUntestedSteps(this.value);
                         } else {
                             localStorage.removeItem(trackKey);
                         }
@@ -1642,9 +1629,7 @@
 
                 // Reset all track selectors
                 document.querySelectorAll('.track-select').forEach(select => {
-                    if (!select.id || select.id !== 'defaultTrackSelect') {
-                        select.value = '';
-                    }
+                    select.value = '';
                 });
 
                 updateProgress();
@@ -1789,21 +1774,30 @@
             }
         });
 
-        // Restore and initialize default track selector
-        function restoreDefaultTrack() {
-            const defaultTrackSelect = document.getElementById('defaultTrackSelect');
-            if (defaultTrackSelect) {
-                const savedDefaultTrack = localStorage.getItem(DEFAULT_TRACK_KEY) || '';
-                defaultTrackSelect.value = savedDefaultTrack;
+        // Propagate a track to all untested steps
+        function propagateTrackToUntestedSteps(trackValue) {
+            const steps = document.querySelectorAll('.test-step');
+            steps.forEach(step => {
+                // Check if this step has been tested (Pass or Fail)
+                const passBtn = step.querySelector('.result-button.pass');
+                const failBtn = step.querySelector('.result-button.fail');
+                const isUntested = !passBtn && !failBtn;
 
-                defaultTrackSelect.addEventListener('change', function () {
-                    if (this.value) {
-                        localStorage.setItem(DEFAULT_TRACK_KEY, this.value);
-                    } else {
-                        localStorage.removeItem(DEFAULT_TRACK_KEY);
+                if (isUntested) {
+                    // Get step ID
+                    const stepNumber = step.querySelector('.step-number').textContent.trim();
+                    const stepId = stepNumber.replace(/\s+/g, '-').toLowerCase();
+                    const trackKey = TRACK_KEY_PREFIX + stepId;
+
+                    // Set the track (overwrite any previous propagated value)
+                    localStorage.setItem(trackKey, trackValue);
+                    // Update the UI
+                    const trackSelect = step.querySelector('.track-select');
+                    if (trackSelect) {
+                        trackSelect.value = trackValue;
                     }
-                });
-            }
+                }
+            });
         }
     </script>
 </body>
