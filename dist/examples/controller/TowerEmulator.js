@@ -1306,6 +1306,7 @@ var TowerSideView = class {
     }
     this.sideButtons = null;
     this.latestState = null;
+    this.ledNodes = {};
     this.sealNodes = {};
     this.latestBrokenSeals = [];
     this.userToggledSeals.clear();
@@ -33657,6 +33658,11 @@ var TowerSampleAudio = class {
         this.gain = ctx.createGain();
         this.gain.connect(ctx.destination);
       }
+      if (!this.source) {
+        const t = ctx.currentTime;
+        this.gain.gain.cancelScheduledValues(t);
+        this.gain.gain.setValueAtTime(DEFAULT_GAIN, t);
+      }
       const target = volume === 3 ? 0 : DEFAULT_GAIN;
       const shotGain = ctx.createGain();
       shotGain.gain.value = target;
@@ -34253,7 +34259,7 @@ function resolveLighting(user, base = DEFAULT_LIGHTING) {
           mapSize: user?.scene?.key?.shadow?.mapSize ?? base.scene.key.shadow.mapSize,
           bias: user?.scene?.key?.shadow?.bias ?? base.scene.key.shadow.bias,
           normalBias: user?.scene?.key?.shadow?.normalBias ?? base.scene.key.shadow.normalBias,
-          frustumRadiusFactor: user?.scene?.key?.shadow?.frustumRadiusFactor ?? DEFAULT_LIGHTING.scene.key.shadow.frustumRadiusFactor,
+          frustumRadiusFactor: user?.scene?.key?.shadow?.frustumRadiusFactor ?? base.scene.key.shadow.frustumRadiusFactor,
           farFactor: user?.scene?.key?.shadow?.farFactor ?? base.scene.key.shadow.farFactor
         }
       },
@@ -34277,43 +34283,43 @@ function resolveLighting(user, base = DEFAULT_LIGHTING) {
       sealBacklights: {
         enabled: user?.leds?.sealBacklights?.enabled ?? base.leds.sealBacklights.enabled,
         color: user?.leds?.sealBacklights?.color ?? base.leds.sealBacklights.color,
-        radiusFactor: user?.leds?.sealBacklights?.radiusFactor ?? DEFAULT_LIGHTING.leds.sealBacklights.radiusFactor,
-        backlightWhenBroken: user?.leds?.sealBacklights?.backlightWhenBroken ?? DEFAULT_LIGHTING.leds.sealBacklights.backlightWhenBroken,
+        radiusFactor: user?.leds?.sealBacklights?.radiusFactor ?? base.leds.sealBacklights.radiusFactor,
+        backlightWhenBroken: user?.leds?.sealBacklights?.backlightWhenBroken ?? base.leds.sealBacklights.backlightWhenBroken,
         proxy: {
-          enabled: user?.leds?.sealBacklights?.proxy?.enabled ?? DEFAULT_LIGHTING.leds.sealBacklights.proxy.enabled,
-          sizeFactor: user?.leds?.sealBacklights?.proxy?.sizeFactor ?? DEFAULT_LIGHTING.leds.sealBacklights.proxy.sizeFactor,
-          geometry: user?.leds?.sealBacklights?.proxy?.geometry ?? DEFAULT_LIGHTING.leds.sealBacklights.proxy.geometry
+          enabled: user?.leds?.sealBacklights?.proxy?.enabled ?? base.leds.sealBacklights.proxy.enabled,
+          sizeFactor: user?.leds?.sealBacklights?.proxy?.sizeFactor ?? base.leds.sealBacklights.proxy.sizeFactor,
+          geometry: user?.leds?.sealBacklights?.proxy?.geometry ?? base.leds.sealBacklights.proxy.geometry
         },
         halo: {
-          enabled: user?.leds?.sealBacklights?.halo?.enabled ?? DEFAULT_LIGHTING.leds.sealBacklights.halo.enabled,
-          sizeFactor: user?.leds?.sealBacklights?.halo?.sizeFactor ?? DEFAULT_LIGHTING.leds.sealBacklights.halo.sizeFactor,
-          opacity: user?.leds?.sealBacklights?.halo?.opacity ?? DEFAULT_LIGHTING.leds.sealBacklights.halo.opacity
+          enabled: user?.leds?.sealBacklights?.halo?.enabled ?? base.leds.sealBacklights.halo.enabled,
+          sizeFactor: user?.leds?.sealBacklights?.halo?.sizeFactor ?? base.leds.sealBacklights.halo.sizeFactor,
+          opacity: user?.leds?.sealBacklights?.halo?.opacity ?? base.leds.sealBacklights.halo.opacity
         }
       },
       ledgeLeds: {
-        enabled: user?.leds?.ledgeLeds?.enabled ?? DEFAULT_LIGHTING.leds.ledgeLeds.enabled,
-        color: user?.leds?.ledgeLeds?.color ?? DEFAULT_LIGHTING.leds.ledgeLeds.color,
+        enabled: user?.leds?.ledgeLeds?.enabled ?? base.leds.ledgeLeds.enabled,
+        color: user?.leds?.ledgeLeds?.color ?? base.leds.ledgeLeds.color,
         proxy: {
-          enabled: user?.leds?.ledgeLeds?.proxy?.enabled ?? DEFAULT_LIGHTING.leds.ledgeLeds.proxy.enabled,
-          sizeFactor: user?.leds?.ledgeLeds?.proxy?.sizeFactor ?? DEFAULT_LIGHTING.leds.ledgeLeds.proxy.sizeFactor
+          enabled: user?.leds?.ledgeLeds?.proxy?.enabled ?? base.leds.ledgeLeds.proxy.enabled,
+          sizeFactor: user?.leds?.ledgeLeds?.proxy?.sizeFactor ?? base.leds.ledgeLeds.proxy.sizeFactor
         },
         halo: {
-          enabled: user?.leds?.ledgeLeds?.halo?.enabled ?? DEFAULT_LIGHTING.leds.ledgeLeds.halo.enabled,
-          sizeFactor: user?.leds?.ledgeLeds?.halo?.sizeFactor ?? DEFAULT_LIGHTING.leds.ledgeLeds.halo.sizeFactor,
-          opacity: user?.leds?.ledgeLeds?.halo?.opacity ?? DEFAULT_LIGHTING.leds.ledgeLeds.halo.opacity
+          enabled: user?.leds?.ledgeLeds?.halo?.enabled ?? base.leds.ledgeLeds.halo.enabled,
+          sizeFactor: user?.leds?.ledgeLeds?.halo?.sizeFactor ?? base.leds.ledgeLeds.halo.sizeFactor,
+          opacity: user?.leds?.ledgeLeds?.halo?.opacity ?? base.leds.ledgeLeds.halo.opacity
         }
       },
       baseLeds: {
-        enabled: user?.leds?.baseLeds?.enabled ?? DEFAULT_LIGHTING.leds.baseLeds.enabled,
-        color: user?.leds?.baseLeds?.color ?? DEFAULT_LIGHTING.leds.baseLeds.color,
+        enabled: user?.leds?.baseLeds?.enabled ?? base.leds.baseLeds.enabled,
+        color: user?.leds?.baseLeds?.color ?? base.leds.baseLeds.color,
         proxy: {
-          enabled: user?.leds?.baseLeds?.proxy?.enabled ?? DEFAULT_LIGHTING.leds.baseLeds.proxy.enabled,
-          sizeFactor: user?.leds?.baseLeds?.proxy?.sizeFactor ?? DEFAULT_LIGHTING.leds.baseLeds.proxy.sizeFactor
+          enabled: user?.leds?.baseLeds?.proxy?.enabled ?? base.leds.baseLeds.proxy.enabled,
+          sizeFactor: user?.leds?.baseLeds?.proxy?.sizeFactor ?? base.leds.baseLeds.proxy.sizeFactor
         },
         halo: {
-          enabled: user?.leds?.baseLeds?.halo?.enabled ?? DEFAULT_LIGHTING.leds.baseLeds.halo.enabled,
-          sizeFactor: user?.leds?.baseLeds?.halo?.sizeFactor ?? DEFAULT_LIGHTING.leds.baseLeds.halo.sizeFactor,
-          opacity: user?.leds?.baseLeds?.halo?.opacity ?? DEFAULT_LIGHTING.leds.baseLeds.halo.opacity
+          enabled: user?.leds?.baseLeds?.halo?.enabled ?? base.leds.baseLeds.halo.enabled,
+          sizeFactor: user?.leds?.baseLeds?.halo?.sizeFactor ?? base.leds.baseLeds.halo.sizeFactor,
+          opacity: user?.leds?.baseLeds?.halo?.opacity ?? base.leds.baseLeds.halo.opacity
         }
       }
     },
@@ -56735,7 +56741,11 @@ var BloomManager = class {
       bloomTotalMs: t4 - t0
     };
   }
-  /** Push updated bloom strength/radius/threshold from a new lighting config. */
+  /**
+   * Push updated bloom strength/radius/threshold from a new lighting config.
+   * `bloom.enabled` and `bloom.resolutionScale` are fixed at construction and
+   * ignored here — changing them at runtime requires rebuilding the view.
+   */
   applyConfig(lighting) {
     const { strength, radius, threshold } = lighting.scene.bloom;
     this.bloomPass.strength = strength;
@@ -57566,7 +57576,7 @@ var SkyboxManager = class {
     const onError = () => {
       console.warn("[Tower3DView] Skybox load failed:", url2);
     };
-    if (/\.(hdr|exr)$/i.test(url2)) {
+    if (/\.hdr$/i.test(url2)) {
       new HDRLoader().load(url2, onLoad, void 0, onError);
     } else {
       new TextureLoader().load(url2, onLoad, void 0, onError);
@@ -57788,12 +57798,7 @@ var SealManager = class {
    * Enabled by the `debug3D` flag so placement can be validated against the real GLB.
    */
   setDebug(enabled, parent) {
-    for (const helper of this.debugHelpers) {
-      helper.removeFromParent();
-      helper.material.dispose();
-      helper.geometry.dispose();
-    }
-    this.debugHelpers = [];
+    this.disposeDebugHelpers();
     if (!enabled) return;
     const debugMat = new MeshBasicMaterial({ color: 16776960 });
     for (const ref of this.sealBacklights.values()) {
@@ -57820,17 +57825,27 @@ var SealManager = class {
     }
     this.sealBacklights.clear();
     this.sealNodes.clear();
-    for (const helper of this.debugHelpers) {
-      helper.removeFromParent();
-      helper.material.dispose();
-      helper.geometry.dispose();
-    }
-    this.debugHelpers = [];
+    this.disposeDebugHelpers();
     this.gradientTexture?.dispose();
     this.gradientTexture = null;
     this.sealListeners.clear();
   }
   // ─────────────────────────────────────────────────────────────────────────
+  /**
+   * Remove every debug helper mesh, disposing each geometry and every distinct
+   * material once (all helpers share a single material, so dedup avoids
+   * disposing it N times).
+   */
+  disposeDebugHelpers() {
+    const materials = /* @__PURE__ */ new Set();
+    for (const helper of this.debugHelpers) {
+      helper.removeFromParent();
+      helper.geometry.dispose();
+      materials.add(helper.material);
+    }
+    for (const mat of materials) mat.dispose();
+    this.debugHelpers = [];
+  }
   getOrCreateGradientTexture() {
     if (this.gradientTexture) return this.gradientTexture;
     const size = 64;
@@ -61555,8 +61570,9 @@ var Tower3DView = class {
   }
   /**
    * Set the URL of the audio asset played while drums rotate.
-   * Pass null to fall back to the procedural placeholder tone. Decode runs in
-   * the background; rotations that fire mid-decode use the placeholder.
+   * Pass null to disable drum-rotation audio (silence — there is no procedural
+   * fallback tone). Decode runs in the background; rotations that fire
+   * mid-decode stay silent until the buffer is ready.
    */
   setDrumRotationSoundUrl(url2) {
     this.applyAudioConfig({ drumRotationUrl: url2 });
@@ -62005,7 +62021,7 @@ var Tower3DView = class {
     }
     return { center: new Vector3(0, this.modelBottomY, 0), radius: this.modelRadius, topY: this.modelBottomY };
   }
-  /** Load an equirectangular image or .hdr/.exr file as the scene skybox. Pass null to clear. */
+  /** Load an equirectangular image or .hdr file as the scene skybox. Pass null to clear. */
   setSkyboxUrl(url2) {
     this.lighting.scene.skyboxUrl = url2 ?? "";
     this.skyboxManager?.apply(url2 ?? "", this.lighting.scene.background);
@@ -62767,9 +62783,10 @@ var TowerDisplay = class {
   }
   /**
    * Set the URL of the audio asset played while drums rotate in the 3D view.
-   * Pass null to fall back to the procedural placeholder tone. Decode runs in
-   * the background; rotations that fire mid-decode use the placeholder.
-   * No-op when no 3D renderer is active.
+   * Pass null to disable drum-rotation audio (silence — there is no procedural
+   * fallback tone). Decode runs in the background; rotations that fire
+   * mid-decode stay silent until the buffer is ready. No-op when no 3D renderer
+   * is active.
    */
   setDrumRotationSoundUrl(url2) {
     this.view3d?.setDrumRotationSoundUrl(url2);
