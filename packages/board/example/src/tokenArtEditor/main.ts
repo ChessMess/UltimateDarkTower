@@ -8,7 +8,7 @@
 // Forge always mirrors what the board renders. Editing a token writes a demo override on top.
 import './editor.css';
 import { HEROES, FOES, ADVERSARY_ROSTER, MONUMENTS, kebab, resolveTokenImageFor } from '../../../src/index';
-import type { TokenArt, TokenModelRef, TokenArtRef } from '../../../src/index';
+import type { TokenArt, TokenModelRef, TokenArtRef, BoardView } from '../../../src/index';
 import { tokenArt as bundledConfig } from '../tokenArt';
 import { highlight } from './helpers';
 import { imageSlot } from './imageSlot';
@@ -50,13 +50,15 @@ const ASSET_BASE = './tokens/';
 
 /**
  * The default image the board actually falls back to for a token with no override — delegated to
- * ultimatedarktowerboard's own resolver (2D view) so the Forge preview always matches the board and
- * can never drift from it. Covers the flat 2D foe/adversary icons and the hero-roster portraits;
- * `null` (e.g. an art-less roster hero, or a non-roster id) → no default image.
+ * ultimatedarktowerboard's own resolver so the Forge preview always matches the board and can never
+ * drift from it. `view` matters: for foes/adversaries the 2D view resolves to the small flat board
+ * icon while the 3D view resolves to the larger 3D-style portrait (see `defaultTokenImagePath`), so
+ * the 2D slot and 3D slot must each ask for their own view rather than share one fallback. `null`
+ * (e.g. an art-less roster hero, or a non-roster id) → no default image.
  */
-function conventionImageUrl(kind: Kind, id: string): string | undefined {
+function conventionImageUrl(kind: Kind, id: string, view: BoardView): string | undefined {
   if (!id) return undefined;
-  return resolveTokenImageFor({ kind, id } as TokenArtRef, '2d', { assetBaseUrl: ASSET_BASE }) ?? undefined;
+  return resolveTokenImageFor({ kind, id } as TokenArtRef, view, { assetBaseUrl: ASSET_BASE }) ?? undefined;
 }
 
 const state = {
@@ -349,12 +351,14 @@ function update(mutate: (draft: TokenArt) => void): void {
 
 function renderSlots(): void {
   const e = entry();
-  const fallback = conventionImageUrl(state.kind, state.id);
-  // The image the 3D view shows when there's no model: the token's own image, else the convention.
-  const billboard = e.image2d ?? fallback;
+  const fallback2d = conventionImageUrl(state.kind, state.id, '2d');
+  // The image the 3D view shows when there's no model: the token's own image, else the 3D-view
+  // convention (which differs from the 2D one for foes/adversaries — see conventionImageUrl).
+  const fallback3d = conventionImageUrl(state.kind, state.id, '3d');
+  const billboard = e.image2d ?? fallback3d;
   // The persistent per-token JSON panel rides in the third cell (where the 3D-model card used to be).
   slotGrid.replaceChildren(
-    imageSlot('2D View', 'tag-2d', 'IMG', e.image2d, fallback, (v) => update((d) => (d.image2d = v))),
+    imageSlot('2D View', 'tag-2d', 'IMG', e.image2d, fallback2d, (v) => update((d) => (d.image2d = v))),
     modelSlot(e.model3d, e.image3d, billboard, update),
     tokenCard,
   );
