@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Controller Manual Test Plan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #1a1a1a;
+                color: #e0e0e0;
+            }
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .header-progress {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button.danger {
+            background: #e74c3c;
+        }
+
+        button.danger:hover {
+            background: #c0392b;
+        }
+
+        button.success {
+            background: #27ae60;
+        }
+
+        button.success:hover {
+            background: #229954;
+        }
+
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        nav {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 0.5rem;
+            font-size: 0.85rem;
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+
+        nav a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .intro {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .intro {
+                background: #2a2a2a;
+            }
+        }
+
+        .intro h2 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .intro h2 {
+                color: #3498db;
+            }
+        }
+
+        .intro p {
+            margin-bottom: 0.5rem;
+        }
+
+        .before-start {
+            background: #ecf0f1;
+            padding: 1.5rem;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+            margin-bottom: 2rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .before-start {
+                background: #1a1a1a;
+                border-left-color: #3498db;
+            }
+        }
+
+        .before-start h3 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .before-start h3 {
+                color: #3498db;
+            }
+        }
+
+        .track-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .track-group {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .track {
+            background: white;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .track {
+                background: #2a2a2a;
+            }
+        }
+
+        .track-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .track-title {
+                color: #3498db;
+            }
+        }
+
+        .track p {
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        section {
+            background: white;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            section {
+                background: #2a2a2a;
+            }
+        }
+
+        section h3 {
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            section h3 {
+                color: #3498db;
+            }
+        }
+
+        .what-it-checks {
+            background: #ecf0f1;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+            border-left: 3px solid #27ae60;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .what-it-checks {
+                background: #1a1a1a;
+            }
+        }
+
+        .test-step {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .test-step:last-child {
+            border-bottom: none;
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-number {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .step-number {
+                color: #3498db;
+            }
+        }
+
+        .step-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .result-button {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            border: 2px solid #bdc3c7;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .result-button {
+                background: #2a2a2a;
+                color: #e0e0e0;
+            }
+        }
+
+        .result-button:hover {
+            border-color: #3498db;
+        }
+
+        .result-button.pass {
+            background: #d4edda;
+            border-color: #27ae60;
+            color: #155724;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .result-button.pass {
+                background: #1a3a1a;
+                color: #7cfc00;
+            }
+        }
+
+        .result-button.fail {
+            background: #f8d7da;
+            border-color: #e74c3c;
+            color: #721c24;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .result-button.fail {
+                background: #3a1a1a;
+                color: #ff6b6b;
+            }
+        }
+
+        .result-button.not-run {
+            background: white;
+            border-color: #bdc3c7;
+            color: #7f8c8d;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .result-button.not-run {
+                background: #2a2a2a;
+                color: #aaa;
+            }
+        }
+
+        .step-instructions {
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        .track-instructions {
+            background: #f9f9f9;
+            padding: 0.5rem 0.75rem;
+            border-left: 3px solid #3498db;
+            margin-bottom: 0.5rem;
+            border-radius: 2px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .track-instructions {
+                background: #1a1a1a;
+            }
+        }
+
+        .track-instructions strong {
+            color: #2c3e50;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .track-instructions strong {
+                color: #3498db;
+            }
+        }
+
+        .expected-result {
+            background: #e8f4f8;
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            border-left: 3px solid #3498db;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .expected-result {
+                background: #1a2a3a;
+            }
+        }
+
+        .notes-input {
+            width: 100%;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 40px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .notes-input {
+                background: #1a1a1a;
+                color: #e0e0e0;
+                border-color: #444;
+            }
+        }
+
+        .report-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .report-modal.show {
+            display: flex;
+        }
+
+        .report-content {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .report-content {
+                background: #2a2a2a;
+            }
+        }
+
+        .report-content h2 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .report-content h2 {
+                color: #3498db;
+            }
+        }
+
+        .report-textarea {
+            width: 100%;
+            height: 400px;
+            padding: 1rem;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .report-textarea {
+                background: #1a1a1a;
+                color: #e0e0e0;
+                border-color: #444;
+            }
+        }
+
+        .report-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .close-report {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #bdc3c7;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-report:hover {
+            background: #95a5a6;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .summary-table th,
+        .summary-table td {
+            border: 1px solid #bdc3c7;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        .summary-table th {
+            background: #ecf0f1;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .summary-table th {
+                background: #1a1a1a;
+                color: #3498db;
+            }
+            .summary-table td {
+                border-color: #444;
+            }
+        }
+
+        .hidden-step {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <div class="header-title">🗼 Tower Controller Manual Test Plan</div>
+            <div class="header-progress"><span id="progress">0 / 0</span> steps recorded</div>
+            <div class="header-buttons">
+                <button class="success" onclick="generateReport()">📊 Generate Report</button>
+                <button onclick="toggleFilterFailed()">🔴 Filter to Failed</button>
+                <button class="danger" onclick="clearAllResults()">🗑️ Clear All</button>
+            </div>
+        </div>
+        <nav>
+            <a href="#intro">Intro</a>
+            <a href="#before-start">Before You Start</a>
+            <a href="#connection">Connection</a>
+            <a href="#disconnect">Disconnect</a>
+            <a href="#calibration">Calibration</a>
+            <a href="#lights">Lights</a>
+            <a href="#sound">Sound & Volume</a>
+            <a href="#rotation">Drum Rotation</a>
+            <a href="#randomize">Randomize Drums</a>
+            <a href="#glyphs">Glyphs</a>
+            <a href="#seals">Seals</a>
+            <a href="#battery">Battery & Skulls</a>
+            <a href="#troubleshooting">Troubleshooting</a>
+        </nav>
+    </header>
+
+    <main>
+        <section id="intro" class="intro">
+            <h2>What is the Tower Controller?</h2>
+            <p>The <strong>Tower Controller</strong> is a reference control panel for the <strong>UltimateDarkTower</strong> library — a software driver for a motorized plastic tower called <strong>"Dark Tower"</strong> that ships with the board game <em>Return to Dark Tower</em> by Restoration Games.</p>
+            <p>The tower is a real device that connects to your computer or phone via <strong>Bluetooth</strong>. It has 24 colored LED lights (at different levels and positions), a speaker, and three rotating drums. The library lets you control all of these features from software.</p>
+            <p>This test plan walks you through every major feature of the Controller app — connecting, turning lights on and off, playing sounds, rotating the drums, managing game state (glyphs and seals), and monitoring the tower's health (battery, calibration status, dropped skulls). You don't need to know anything about the board game to run these tests.</p>
+        </section>
+
+        <section id="before-start" class="before-start">
+            <h3>Before You Start</h3>
+
+            <h4 style="margin-top: 1rem; margin-bottom: 0.5rem;">Browser & Platform Support</h4>
+            <p style="font-size: 0.9rem; margin-bottom: 1rem;">This app uses <strong>Web Bluetooth</strong> to connect to the tower. <strong>Supported browsers:</strong> Chrome or Edge on desktop, or Chrome on Android. <strong>Not supported:</strong> Safari (Mac/iOS), Firefox, any browser on iOS (except third-party "Bluefy" app). This is a browser limitation, not the app's fault.</p>
+
+            <h4 style="margin-bottom: 0.5rem;">How to Launch the Controller</h4>
+            <p style="font-size: 0.9rem; margin-bottom: 1rem;">From the command line in the <code>UltimateDarkTower</code> repo root:</p>
+            <div style="background: #ecf0f1; padding: 0.75rem; border-radius: 4px; font-family: monospace; font-size: 0.85rem; margin-bottom: 1rem;">
+npm install<br>
+npm run dev:controller
+            </div>
+            <p style="font-size: 0.9rem; margin-bottom: 1rem;">This builds the app and opens <code>http://localhost:8080</code> in your browser automatically. If not, open that URL manually in Chrome or Edge.</p>
+
+            <h4 style="margin-bottom: 0.5rem;">Choose Your Testing Track</h4>
+            <div class="track-group">
+                <div class="track">
+                    <div class="track-title">🔴 Real Tower Track</div>
+                    <p><strong>You need:</strong> A physical Return to Dark Tower device, powered on, and within Bluetooth range.</p>
+                    <p><strong>Setup:</strong> Open the Controller app, leave the "Tower Type" dropdown set to <code>BLE Tower</code> (the default), then click <strong>Connect</strong>. You'll see your tower listed in the browser's Bluetooth device picker. Select it and pair. The connection banner will turn green: "Tower Connected".</p>
+                    <p><strong>Note:</strong> Some steps below are hardware-only (e.g., physically triggered skull drops). Those steps are marked [Hardware Only].</p>
+                </div>
+                <div class="track">
+                    <div class="track-title">🟦 Tower Emulator Track</div>
+                    <p><strong>You need:</strong> Nothing but a modern browser. No physical device required.</p>
+                    <p><strong>Setup:</strong> Open the Controller app. Click the <strong>Tower Type</strong> dropdown and select <code>Tower Emulator</code>. A 3D-rendered tower will pop up in a new window. Click <strong>Connect</strong> in the main window. You'll connect instantly (no pairing needed).</p>
+                    <p><strong>Tip:</strong> This fully simulates the real tower's behavior. All controls work identically.</p>
+                </div>
+            </div>
+
+            <p style="font-size: 0.9rem; margin-top: 1rem; font-weight: bold;">👉 <strong>Pro Tip:</strong> You can run both tracks at once — test once with the Emulator (quick feedback loop), then again with real hardware if you have it.</p>
+        </section>
+
+        <section id="connection">
+            <h3>1. Connecting to the Tower</h3>
+            <div class="what-it-checks">What this checks: The app can detect and pair with a tower (real or emulated), establish a Bluetooth connection, and show connection status.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">1.1 Select tower type</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Real Tower:</strong> Leave the "Tower Type" dropdown set to "BLE Tower" (the default). No action needed.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Click the "Tower Type" dropdown at the top of the Controller page and select "Tower Emulator". A new window should pop up with a 3D tower model inside.</div>
+                    <div class="expected-result"><strong>Expected:</strong> Emulator track — a popup appears titled "Tower Emulator" with a 3D tower visible. Real track — no visible change to the main app.</div>
+                </div>
+                <textarea class="notes-input" data-step="1.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">1.2 Click Connect</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Real Tower:</strong> Click the green <strong>Connect</strong> button. A browser dialog will appear listing nearby Bluetooth devices. Find your tower (device name is "ReturnToDarkTower") and click it to pair.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Click the green <strong>Connect</strong> button. Connection should happen instantly (no device picker).</div>
+                    <div class="expected-result"><strong>Expected:</strong> The connection state banner at the top (near "Connect" button) turns green and displays "Tower Connected". The Disconnect button becomes enabled. Depending on device, you may see the 3D emulator tower light up or respond to show it's connected.</div>
+                </div>
+                <textarea class="notes-input" data-step="1.2" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">1.3 Verify connection state</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Look at the right side of the page. You should see status cards for Battery (with a percentage), Calibration (with three status icons for Top/Middle/Bottom drums), and Skulls (a counter). The Calibration icons may show red X (not yet calibrated) or green check marks (calibrated).
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> Battery percentage appears (e.g., "85%"). Calibration icons are visible (likely showing red X for all three drums if this is the first connection). The Skulls counter shows "0" or some number. If any of these are missing or show "—" / "?", the connection is not working properly.</div>
+                </div>
+                <textarea class="notes-input" data-step="1.3" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="disconnect">
+            <h3>2. Disconnecting</h3>
+            <div class="what-it-checks">What this checks: The app can cleanly disconnect from the tower and show disconnected state.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">2.1 Click Disconnect</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Find the red <strong>Disconnect</strong> button (next to the Connect button) and click it.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The connection state banner turns red and displays "Tower Disconnected". The Connect button becomes enabled. The Disconnect button becomes disabled. Battery/Calibration/Skulls cards may show "—" or "?" to indicate unknown state.</div>
+                </div>
+                <textarea class="notes-input" data-step="2.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">2.2 Reconnect</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Click Connect again. (Follow the same pairing flow as step 1.2 if using a real tower; Emulator reconnects instantly.)
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> Connection state banner turns green "Tower Connected" again. Status cards repopulate with battery/calibration/skulls.</div>
+                </div>
+                <textarea class="notes-input" data-step="2.2" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="calibration">
+            <h3>3. Calibration</h3>
+            <div class="what-it-checks">What this checks: The app can initiate a calibration routine, which teaches the tower the reference position of its three drums (required before rotation commands work reliably).</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">3.1 View calibration status</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Look at the <strong>Calibration</strong> status card on the right side. It shows three small icons — one each for Top, Middle, and Bottom drums.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> If not yet calibrated, all three show a red X (❌). If already calibrated, they show green check marks (✓). Hover over any icon to see a tooltip confirming "Top Drum", "Middle Drum", or "Bottom Drum".</div>
+                </div>
+                <textarea class="notes-input" data-step="3.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">3.2 Start calibration</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Real Tower:</strong> Click the blue <strong>Calibrate</strong> button (in the Diagnostics tab). The tower will begin spinning its drums to find their zero positions. This takes about 10-15 seconds. Do not interrupt the tower during this time.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Click the blue <strong>Calibrate</strong> button. In the emulator popup, the 3D tower will visually spin. Calibration completes almost instantly in the emulator.</div>
+                    <div class="expected-result"><strong>Expected:</strong> A message appears near the Calibrate button saying "Calibrating...". The Calibrate button becomes disabled (grayed out). The 3D emulator (if using Emulator track) shows the drums spinning.</div>
+                </div>
+                <textarea class="notes-input" data-step="3.2" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">3.3 Verify calibration complete</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Wait for the calibration to complete. The "Calibrating..." message should disappear, and the Calibrate button should become enabled again.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> All three calibration icons turn green (✓). The message "Calibrating..." disappears. The Calibrate button is enabled again and clickable.</div>
+                </div>
+                <textarea class="notes-input" data-step="3.3" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="lights">
+            <h3>4. Lights</h3>
+            <div class="what-it-checks">What this checks: The app can control the tower's 24 LEDs individually and in groups, apply different lighting effects (on, breathe, flicker), and turn all lights on or off.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">4.1 Turn on a single light</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Scroll down to the "Lights" section on the page. You'll see a grid of checkboxes labeled "Doorway" (12 lights: 4 sides × 3 levels), "Ledge" (4 corner lights), and "Base" (8 lights). Click on one of the checkboxes to select a light.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The checkbox is now checked. In the 3D emulator (if using Emulator track), that light LED should turn on. On a real tower, the physical LED lights up. The light state is saved in the app's status display (the "Status Packet" grid at the bottom).</div>
+                </div>
+                <textarea class="notes-input" data-step="4.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">4.2 Turn off the light</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Click the same checkbox again to uncheck it.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The checkbox unchecks. The LED turns off (in the emulator, the light dims or turns dark; on real hardware, the physical light turns off).</div>
+                </div>
+                <textarea class="notes-input" data-step="4.2" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">4.3 Turn on all lights</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Above the light grids, find the blue <strong>All On</strong> button and click it.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> All 24 light checkboxes become checked. On the real tower or in the emulator, all LEDs turn on (solid color, not blinking/breathing).</div>
+                </div>
+                <textarea class="notes-input" data-step="4.3" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">4.4 Apply a light effect</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Before step 4.5, ensure all lights are on from step 4.3. Then, above the light grids, find the <strong>Light Style</strong> dropdown and select "Breathe" (a pulsing/breathing effect). Click the blue <strong>Apply to All Lights</strong> button.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> All lights begin pulsing/breathing (brightening and dimming in a cycle). In the emulator, you should visually see the lights pulse. On real hardware, the physical LEDs pulse.</div>
+                </div>
+                <textarea class="notes-input" data-step="4.4" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">4.5 Turn off all lights</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Find the blue <strong>All Off</strong> button and click it.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> All 24 light checkboxes become unchecked. All LEDs turn off (emulator or real tower).</div>
+                </div>
+                <textarea class="notes-input" data-step="4.5" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="sound">
+            <h3>5. Sound & Volume</h3>
+            <div class="what-it-checks">What this checks: The app can select and play sound effects from the tower's built-in sound library, and adjust the tower's speaker volume.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">5.1 Select a sound</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        In the <strong>Diagnostics</strong> tab, find the <strong>Sound</strong> dropdown. Click it to see the list of available sound effects (e.g., "Glyph Reveal", "Tower Laugh", "Seal Break", etc.).
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The dropdown opens and displays a list of sound names. Select any sound (e.g., "Glyph Reveal").</div>
+                </div>
+                <textarea class="notes-input" data-step="5.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">5.2 Play the sound</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Real Tower:</strong> Click the blue <strong>Play</strong> button next to the Sound dropdown. The tower's speaker will play the selected sound effect.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Click the blue <strong>Play</strong> button. A sound effect will play from your computer's speakers (the emulator relays the audio).</div>
+                    <div class="expected-result"><strong>Expected:</strong> A sound plays from the tower (or your computer if using Emulator). The sound should be distinct and audible. The app may log "Sound played: [sound name]" in the Log panel on the right.</div>
+                </div>
+                <textarea class="notes-input" data-step="5.2" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">5.3 Adjust volume</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        In the Diagnostics tab, find the volume control: two buttons labeled "&lt;" (volume down) and "&gt;" (volume up). Next to them is a text label showing the current volume level (e.g., "Loud", "Medium", "Quiet"). Click the volume down button (&lt;) a few times to lower the volume.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The volume label changes (e.g., from "Loud" to "Medium" to "Quiet"). An emoji icon next to it also changes (speaker with lines → speaker with one line → speaker with X, etc.) to visually show the volume level. The next sound you play should be quieter.</div>
+                </div>
+                <textarea class="notes-input" data-step="5.3" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="rotation">
+            <h3>6. Drum Rotation</h3>
+            <div class="what-it-checks">What this checks: The app can rotate the tower's three drums to specific compass positions (North, South, East, West). The tower has three independent drums (Top, Middle, Bottom) that must all be calibrated before rotation works reliably.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">6.1 Select drum positions</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        In the <strong>Diagnostics</strong> tab, scroll down to the "Drums / Rotation" section. You'll see three dropdowns labeled "Top", "Middle", and "Bottom". Each dropdown has four options: North (N), South (S), East (E), West (W). Set each dropdown to a different compass direction (e.g., Top = North, Middle = East, Bottom = South).
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> Each dropdown displays your chosen direction. No changes to the tower yet — you're just selecting the target positions.</div>
+                </div>
+                <textarea class="notes-input" data-step="6.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">6.2 Rotate the drums</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Real Tower:</strong> Click the blue <strong>Rotate</strong> button below the three drum dropdowns. The tower's drums will spin to their target positions. This takes a few seconds. The tower may make clicking/whirring sounds as the motors move.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Click the blue <strong>Rotate</strong> button. The 3D tower in the emulator popup will visually spin its drums to face the chosen directions.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The drums rotate and settle into place facing the chosen compass directions. (Real tower: you may hear mechanical sounds; Emulator: you see the 3D drums spin). The Status Packet display at the bottom updates to show the new drum positions.</div>
+                </div>
+                <textarea class="notes-input" data-step="6.2" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="randomize">
+            <h3>7. Randomizing Drums</h3>
+            <div class="what-it-checks">What this checks: The app can rotate one or more drums to random compass directions in a single command.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">7.1 Choose drums to randomize</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Click the <strong>Library</strong> tab to see a different set of controls. Scroll down to the "Randomize Drums" section. Find the <strong>Level(s)</strong> dropdown and select an option (e.g., "All" to randomize all three drums, or "Top" to randomize only the top drum).
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The dropdown displays your selected option. No changes to the tower yet.</div>
+                </div>
+                <textarea class="notes-input" data-step="7.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">7.2 Randomize</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Click the blue <strong>Randomize</strong> button below the Level(s) dropdown.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The selected drum(s) spin to random compass directions. The Status Packet at the bottom updates to show the new random positions. (If you chose "All", all three drums should move; if you chose "Top", only the top drum moves while middle and bottom stay in place.)</div>
+                </div>
+                <textarea class="notes-input" data-step="7.2" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="glyphs">
+            <h3>8. Glyphs</h3>
+            <div class="what-it-checks">What this checks: The app can track and manipulate glyphs — symbols drawn on the tower's drums that face different compass directions based on drum rotation. Glyphs represent in-game concepts (Cleanse, Quest, Battle, Banner, Reinforce).</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">8.1 View glyph positions</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        In the <strong>Library</strong> tab, scroll down to the "Glyphs" section. You'll see a 3×4 grid labeled with drum levels (Top / Mid / Bot rows) and compass directions (N / E / S / W columns). Below the grid is a dropdown to select a glyph (Cleanse, Quest, Battle, Banner, or Reinforce) and another dropdown to select a compass direction.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The grid displays. If any glyphs are currently active in their positions, those grid cells glow (amber/yellow highlight). Otherwise, all cells are dark/empty.</div>
+                </div>
+                <textarea class="notes-input" data-step="8.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">8.2 Move a glyph to a position</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        In the Glyphs section, select a glyph from the first dropdown (e.g., "Cleanse") and a compass direction from the second dropdown (e.g., "North"). Then click the blue <strong>Move Glyph</strong> button.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The tower's drums rotate so that the chosen glyph faces the chosen compass direction. The glyph-position grid updates to show the glyph now occupies that spot (one cell glows amber). The status display updates to show the new drum positions that put this glyph in place.</div>
+                </div>
+                <textarea class="notes-input" data-step="8.2" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="seals">
+            <h3>9. Seals</h3>
+            <div class="what-it-checks">What this checks: The app can track and manage seals — physical mechanisms in the tower at each of the 12 light positions (3 levels × 4 sides). Breaking a seal triggers a visual effect (lights flash) and updates game state. Seals can also be cleared/reset.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">9.1 View seal status grid</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Scroll down to the "Seals" section in the Library tab. You'll see a 3×4 grid of square buttons (representing the 12 seal positions: 3 levels × 4 compass directions). A dropdown above the grid lets you select a seal location (e.g., "North Top", "South Mid", etc.).
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The grid displays 12 empty (gray or white) squares. None are currently broken.</div>
+                </div>
+                <textarea class="notes-input" data-step="9.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">9.2 Break a seal via dropdown</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Real Tower:</strong> Select a seal location from the dropdown (e.g., "North Top"). Click the blue <strong>Break Seal</strong> button. The tower will trigger a seal-break effect: lights at that position may flash, and a sound may play.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Select a seal location from the dropdown. Click the blue <strong>Break Seal</strong> button. The emulator popup will show a visual seal-break effect (the seal at that position drops or disappears, and lights flash).</div>
+                    <div class="expected-result"><strong>Expected:</strong> The corresponding grid square turns red/dark red (indicating the seal is now broken). The button may be disabled for a brief moment to prevent rapid repeated breaks. The Log panel records "Seal broken: [location]".</div>
+                </div>
+                <textarea class="notes-input" data-step="9.2" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">9.3 Break a seal via grid click</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Click directly on one of the gray (unbroken) seal squares in the grid (a square that is not red).
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> That square turns red (broken). A seal-break effect triggers on the tower/emulator. The dropdown updates to show the location you just clicked.</div>
+                </div>
+                <textarea class="notes-input" data-step="9.3" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">9.4 Clear all seals</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Click the blue <strong>Clear Effect</strong> button (below the seal grid).
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> All grid squares turn back to gray (not broken). All lights on the tower turn off. The seal state is reset. The dropdown resets to "select a location". The Log records "Seals cleared".</div>
+                </div>
+                <textarea class="notes-input" data-step="9.4" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="battery">
+            <h3>10. Battery & Skulls</h3>
+            <div class="what-it-checks">What this checks: The app displays the tower's current battery percentage and tracks the count of skulls (tokens) that have been dropped from the tower during gameplay.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">10.1 View battery status</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Look at the right side of the page. Find the <strong>Battery</strong> card (shows a battery icon). It displays a percentage (e.g., "85%") and a trend arrow (⬆️ increasing, ⬇️ decreasing, or ➡️ stable) showing whether battery level is rising, falling, or holding steady.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> A battery percentage is visible. For Emulator, this is simulated and stable. For real tower, this reflects the actual tower's battery voltage.</div>
+                </div>
+                <textarea class="notes-input" data-step="10.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">10.2 View skull counter</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Find the <strong>Skulls</strong> card on the right side (shows a skull icon 💀). It displays a number (e.g., "0") representing how many skull tokens have been dropped from the tower. Next to the number is a small icon button to reset the counter.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The skull counter is visible and displays a number (usually 0 if no skulls have dropped yet).</div>
+                </div>
+                <textarea class="notes-input" data-step="10.2" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">10.3 Reset skull counter [Hardware Only]</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        <strong>[Note: This step requires a real tower with skulls already dropped. Emulator does not simulate physical skull drops.]</strong> Click the small icon button next to the skull counter to reset it to 0.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The skull counter resets to 0. The Log records "Skull count reset".</div>
+                </div>
+                <textarea class="notes-input" data-step="10.3" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="troubleshooting">
+            <h3>11. Troubleshooting Modal</h3>
+            <div class="what-it-checks">What this checks: The app can display a help/troubleshooting guide for common issues (tower jams, disconnects, firmware updates, battery specs).</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">11.1 Open Troubleshooting modal</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Scroll to the bottom of the page. Find the <strong>Troubleshooting</strong> button (usually in a footer or below the main content).
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The button is visible and clickable.</div>
+                </div>
+                <textarea class="notes-input" data-step="11.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">11.2 Modal displays content</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Click the Troubleshooting button. A modal popup should appear with troubleshooting content.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> A modal dialog opens overlaying the page. It displays troubleshooting sections (e.g., "Tower Jam Recovery", "Tower Disconnects During Play", "Firmware Update Failures", "Battery Specifications") with readable text/instructions.</div>
+                </div>
+                <textarea class="notes-input" data-step="11.2" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">11.3 Close modal</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Close the modal by clicking the X button in the top-right corner, clicking outside the modal, or pressing Escape on your keyboard.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The modal closes and you're back at the Controller page.</div>
+                </div>
+                <textarea class="notes-input" data-step="11.3" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Tower Controller Test Plan — for testing the UltimateDarkTower library's reference UI.</p>
+        <p>Questions? See the <a href="https://github.com/ChessMess/UltimateDarkTower" style="color: #3498db;">UltimateDarkTower repository</a> or the <a href="https://github.com/ChessMess/UltimateDarkTower/docs/TROUBLESHOOTING.md" style="color: #3498db;">Troubleshooting guide</a>.</p>
+    </footer>
+
+    <div id="reportModal" class="report-modal">
+        <div class="report-content">
+            <button class="close-report" onclick="closeReport()">×</button>
+            <h2>Test Report</h2>
+            <textarea id="reportText" class="report-textarea" readonly></textarea>
+            <div class="report-buttons">
+                <button onclick="copyReport()">📋 Copy to Clipboard</button>
+                <button onclick="closeReport()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY_PREFIX = 'test-step-';
+        let isFilteringFailed = false;
+
+        // Initialize storage and update progress on page load
+        window.addEventListener('load', function() {
+            restoreAllState();
+            updateProgress();
+        });
+
+        // Set step result (pass/fail) and save to localStorage
+        function setStepResult(button, result) {
+            const stepNumber = button.parentElement.parentElement.querySelector('.step-number').textContent.trim();
+            const stepId = stepNumber.replace(/\s+/g, '-').toLowerCase();
+
+            // Update button states
+            const buttons = button.parentElement.querySelectorAll('.result-button');
+            buttons.forEach(btn => btn.classList.remove('pass', 'fail', 'not-run'));
+
+            if (result === 'pass') {
+                button.classList.add('pass');
+            } else if (result === 'fail') {
+                button.classList.add('fail');
+            }
+
+            buttons.forEach(btn => {
+                if (!btn.classList.contains('pass') && !btn.classList.contains('fail')) {
+                    btn.classList.add('not-run');
+                }
+            });
+
+            // Save to localStorage
+            const storageKey = STORAGE_KEY_PREFIX + stepId;
+            localStorage.setItem(storageKey, result);
+
+            updateProgress();
+        }
+
+        // Get notes for a step
+        function getNotes(stepId) {
+            const textarea = document.querySelector(`textarea[data-step="${stepId}"]`);
+            return textarea ? textarea.value : '';
+        }
+
+        // Restore all step states from localStorage
+        function restoreAllState() {
+            const steps = document.querySelectorAll('.test-step');
+            steps.forEach(step => {
+                const stepNumber = step.querySelector('.step-number').textContent.trim();
+                const stepId = stepNumber.replace(/\s+/g, '-').toLowerCase();
+                const storageKey = STORAGE_KEY_PREFIX + stepId;
+                const result = localStorage.getItem(storageKey);
+
+                if (result) {
+                    const buttons = step.querySelectorAll('.result-button');
+                    buttons.forEach(btn => {
+                        btn.classList.remove('pass', 'fail', 'not-run');
+                        btn.classList.add('not-run');
+                    });
+
+                    if (result === 'pass') {
+                        buttons[0].classList.remove('not-run');
+                        buttons[0].classList.add('pass');
+                    } else if (result === 'fail') {
+                        buttons[1].classList.remove('not-run');
+                        buttons[1].classList.add('fail');
+                    }
+                }
+
+                // Restore notes
+                const notesTextarea = step.querySelector('textarea[data-step]');
+                if (notesTextarea) {
+                    const notesKey = 'notes-' + stepId;
+                    const notes = localStorage.getItem(notesKey);
+                    if (notes) {
+                        notesTextarea.value = notes;
+                    }
+                    notesTextarea.addEventListener('change', function() {
+                        localStorage.setItem(notesKey, this.value);
+                    });
+                }
+            });
+        }
+
+        // Update progress indicator
+        function updateProgress() {
+            let recorded = 0;
+            let total = 0;
+
+            document.querySelectorAll('.result-button').forEach(btn => {
+                total++;
+                if (btn.classList.contains('pass') || btn.classList.contains('fail')) {
+                    recorded++;
+                }
+            });
+
+            document.getElementById('progress').textContent = `${recorded} / ${total}`;
+        }
+
+        // Clear all results and notes
+        function clearAllResults() {
+            if (confirm('Are you sure you want to clear all test results? This cannot be undone.')) {
+                // Clear localStorage
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith(STORAGE_KEY_PREFIX) || key.startsWith('notes-')) {
+                        localStorage.removeItem(key);
+                        i--;
+                    }
+                }
+
+                // Reset all buttons and textareas
+                document.querySelectorAll('.result-button').forEach(btn => {
+                    btn.classList.remove('pass', 'fail');
+                    btn.classList.add('not-run');
+                });
+
+                document.querySelectorAll('textarea[data-step]').forEach(textarea => {
+                    textarea.value = '';
+                });
+
+                updateProgress();
+
+                // Hide failed filter if active
+                if (isFilteringFailed) {
+                    toggleFilterFailed();
+                }
+            }
+        }
+
+        // Toggle filter to show only failed tests
+        function toggleFilterFailed() {
+            isFilteringFailed = !isFilteringFailed;
+
+            const steps = document.querySelectorAll('.test-step');
+            steps.forEach(step => {
+                const hasFailed = step.querySelector('.result-button.fail') !== null;
+                if (isFilteringFailed) {
+                    step.parentElement.classList.toggle('hidden-step', !hasFailed);
+                } else {
+                    step.parentElement.classList.remove('hidden-step');
+                }
+            });
+        }
+
+        // Generate and display test report
+        function generateReport() {
+            let report = 'TEST REPORT - Tower Controller\n';
+            report += '==============================\n';
+            report += `Generated: ${new Date().toLocaleString()}\n\n`;
+
+            let passCount = 0;
+            let failCount = 0;
+            let notRunCount = 0;
+
+            const sections = document.querySelectorAll('section');
+            sections.forEach(section => {
+                const sectionTitle = section.querySelector('h3');
+                if (!sectionTitle) return;
+
+                report += `\n${sectionTitle.textContent}\n`;
+                report += '-'.repeat(40) + '\n';
+
+                const steps = section.querySelectorAll('.test-step');
+                steps.forEach(step => {
+                    const stepNumber = step.querySelector('.step-number').textContent.trim();
+                    const passBtn = step.querySelectorAll('.result-button')[0];
+                    const failBtn = step.querySelectorAll('.result-button')[1];
+                    const notesTextarea = step.querySelector('textarea[data-step]');
+                    const notes = notesTextarea ? notesTextarea.value : '';
+
+                    let status = 'NOT RUN';
+                    if (passBtn.classList.contains('pass')) {
+                        status = 'PASS';
+                        passCount++;
+                    } else if (failBtn.classList.contains('fail')) {
+                        status = 'FAIL';
+                        failCount++;
+                    } else {
+                        notRunCount++;
+                    }
+
+                    report += `  ${stepNumber}: ${status}`;
+                    if (notes) {
+                        report += ` — ${notes}`;
+                    }
+                    report += '\n';
+                });
+            });
+
+            report += '\n\nSUMMARY\n';
+            report += '=======\n';
+            report += `Passed:  ${passCount}\n`;
+            report += `Failed:  ${failCount}\n`;
+            report += `Not Run: ${notRunCount}\n`;
+            report += `Total:   ${passCount + failCount + notRunCount}\n`;
+
+            document.getElementById('reportText').value = report;
+            document.getElementById('reportModal').classList.add('show');
+        }
+
+        // Copy report to clipboard
+        function copyReport() {
+            const reportText = document.getElementById('reportText');
+            reportText.select();
+            document.execCommand('copy');
+            alert('Report copied to clipboard!');
+        }
+
+        // Close report modal
+        function closeReport() {
+            document.getElementById('reportModal').classList.remove('show');
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('reportModal').classList.contains('show')) {
+                closeReport();
+            }
+        });
+
+        // Close modal on background click
+        document.getElementById('reportModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeReport();
+            }
+        });
+    </script>
+</body>
+</html>
