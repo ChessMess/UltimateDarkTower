@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -70,7 +71,7 @@
             padding: 0.75rem 1.25rem;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 1.1rem;
+            font-size: 1rem;
             transition: background 0.2s;
         }
 
@@ -109,7 +110,7 @@
             color: white;
             text-decoration: none;
             margin: 0 0.75rem;
-            font-size: 1rem;
+            font-size: .75rem;
             display: inline-block;
             padding: 0.4rem 0.75rem;
             border-radius: 3px;
@@ -552,6 +553,7 @@
                 background: #1a1a1a;
                 color: #3498db;
             }
+
             .summary-table td {
                 border-color: #444;
             }
@@ -585,13 +587,42 @@
             transition: width 0.3s ease;
             border-radius: 6px;
         }
+
+        .track-select {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.95rem;
+            border: 1px solid #bdc3c7;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: inherit;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .track-select {
+                background: #2a2a2a;
+                color: #e0e0e0;
+                border-color: #444;
+            }
+        }
     </style>
 </head>
+
 <body>
     <header>
         <div class="header-top">
             <div class="header-title">🗼 Tower Controller Manual Test Plan</div>
-            <div class="header-progress"><span id="progress">0 / 0</span> steps recorded</div>
+            <div class="header-progress">
+                <span id="progress">0 / 0</span> steps recorded · Testing:
+                <select id="defaultTrackSelect" class="track-select"
+                    style="display: inline-block; margin-left: 0.25rem;">
+                    <option value="">Track: —</option>
+                    <option value="emulator">🟦 Emulator</option>
+                    <option value="real">🔴 Real Tower</option>
+                    <option value="both">🟪 Both</option>
+                </select>
+            </div>
             <div class="header-buttons">
                 <button onclick="jumpToNextIncomplete()">⏭️ Resume Testing</button>
                 <button class="success" onclick="generateReport()">📊 Generate Report</button>
@@ -622,43 +653,72 @@
     <main>
         <section id="intro" class="intro">
             <h2>What is the Tower Controller?</h2>
-            <p>The <strong>Tower Controller</strong> is a reference control panel for the <strong>UltimateDarkTower</strong> library — a software driver for a motorized plastic tower called <strong>"Dark Tower"</strong> that ships with the board game <em>Return to Dark Tower</em> by Restoration Games.</p>
-            <p>The tower is a real device that connects to your computer or phone via <strong>Bluetooth</strong>. It has 24 colored LED lights (at different levels and positions), a speaker, and three rotating drums. The library lets you control all of these features from software.</p>
-            <p>This test plan walks you through every major feature of the Controller app — connecting, turning lights on and off, playing sounds, rotating the drums, managing game state (glyphs and seals), and monitoring the tower's health (battery, calibration status, dropped skulls). You don't need to know anything about the board game to run these tests.</p>
+            <p>The <strong>Tower Controller</strong> is a reference control panel for the
+                <strong>UltimateDarkTower</strong> library — a software driver for a motorized plastic tower called
+                <strong>"Dark Tower"</strong> that ships with the board game <em>Return to Dark Tower</em> by
+                Restoration Games.
+            </p>
+            <p>The tower is a real device that connects to your computer or phone via <strong>Bluetooth</strong>. It has
+                24 colored LED lights (at different levels and positions), a speaker, and three rotating drums. The
+                library lets you control all of these features from software.</p>
+            <p>This test plan walks you through every major feature of the Controller app — connecting, turning lights
+                on and off, playing sounds, rotating the drums, managing game state (glyphs and seals), and monitoring
+                the tower's health (battery, calibration status, dropped skulls). You don't need to know anything about
+                the board game to run these tests.</p>
         </section>
 
         <section id="before-start" class="before-start">
             <h3>Before You Start</h3>
 
             <h4 style="margin-top: 1rem; margin-bottom: 0.5rem;">Browser & Platform Support</h4>
-            <p style="font-size: 1.1rem; margin-bottom: 1rem;">This app uses <strong>Web Bluetooth</strong> to connect to the tower. <strong>Supported browsers:</strong> Chrome or Edge on desktop, or Chrome on Android. <strong>Not supported:</strong> Safari (Mac/iOS), Firefox, any browser on iOS (except third-party "Bluefy" app). This is a browser limitation, not the app's fault.</p>
+            <p style="font-size: 1.1rem; margin-bottom: 1rem;">This app uses <strong>Web Bluetooth</strong> to connect
+                to the tower. <strong>Supported browsers:</strong> Chrome or Edge on desktop, or Chrome on Android.
+                <strong>Not supported:</strong> Safari (Mac/iOS), Firefox, any browser on iOS (except third-party
+                "Bluefy" app). This is a browser limitation, not the app's fault.
+            </p>
 
             <h4 style="margin-bottom: 0.5rem;">How to Launch the Controller</h4>
             <p style="font-size: 1.1rem; margin-bottom: 1rem;">Open the live demo in Chrome or Edge:</p>
-            <p style="font-size: 1.1rem; margin-bottom: 1rem;"><a href="https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html" style="color: #3498db;">chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html</a></p>
+            <p style="font-size: 1.1rem; margin-bottom: 1rem;"><a
+                    href="https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html"
+                    style="color: #3498db;">chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html</a>
+            </p>
 
             <h4 style="margin-bottom: 0.5rem;">Choose Your Testing Track</h4>
             <div class="track-group">
                 <div class="track">
                     <div class="track-title">🔴 Real Tower Track</div>
-                    <p><strong>You need:</strong> A physical Return to Dark Tower device, powered on, and within Bluetooth range.</p>
-                    <p><strong>Setup:</strong> Open the Controller app, leave the "Tower Type" dropdown set to <code>BLE Tower</code> (the default), then click <strong>Connect</strong>. You'll see your tower listed in the browser's Bluetooth device picker. Select it and pair. The connection banner will turn green: "Tower Connected".</p>
-                    <p><strong>Note:</strong> Some steps below are hardware-only (e.g., physically triggered skull drops). Those steps are marked [Hardware Only].</p>
+                    <p><strong>You need:</strong> A physical Return to Dark Tower device, powered on, and within
+                        Bluetooth range.</p>
+                    <p><strong>Setup:</strong> Open the Controller app, leave the "Tower Type" dropdown set to
+                        <code>BLE Tower</code> (the default), then click <strong>Connect</strong>. You'll see your tower
+                        listed in the browser's Bluetooth device picker. Select it and pair. The connection banner will
+                        turn green: "Tower Connected".
+                    </p>
+                    <p><strong>Note:</strong> Some steps below are hardware-only (e.g., physically triggered skull
+                        drops). Those steps are marked [Hardware Only].</p>
                 </div>
                 <div class="track">
                     <div class="track-title">🟦 Tower Emulator Track</div>
                     <p><strong>You need:</strong> Nothing but a modern browser. No physical device required.</p>
-                    <p><strong>Setup:</strong> Open the Controller app. Click the <strong>Tower Type</strong> dropdown and select <code>Tower Emulator</code>. A 3D-rendered tower will pop up in a new window. Click <strong>Connect</strong> in the main window. You'll connect instantly (no pairing needed).</p>
-                    <p><strong>Tip:</strong> This fully simulates the real tower's behavior. All controls work identically.</p>
+                    <p><strong>Setup:</strong> Open the Controller app. Click the <strong>Tower Type</strong> dropdown
+                        and select <code>Tower Emulator</code>. A 3D-rendered tower will pop up in a new window. Click
+                        <strong>Connect</strong> in the main window. You'll connect instantly (no pairing needed).
+                    </p>
+                    <p><strong>Tip:</strong> This fully simulates the real tower's behavior. All controls work
+                        identically.</p>
                 </div>
             </div>
 
-            <p style="font-size: 1.1rem; margin-top: 1rem; font-weight: bold;">👉 <strong>Pro Tip:</strong> You can run both tracks at once — test once with the Emulator (quick feedback loop), then again with real hardware if you have it.</p>
+            <p style="font-size: 1.1rem; margin-top: 1rem; font-weight: bold;">👉 <strong>Pro Tip:</strong> You can run
+                both tracks at once — test once with the Emulator (quick feedback loop), then again with real hardware
+                if you have it.</p>
         </section>
 
         <section id="connection">
             <h3>1. Connecting to the Tower</h3>
-            <div class="what-it-checks">What this checks: The app can detect and pair with a tower (real or emulated), establish a Bluetooth connection, and show connection status.</div>
+            <div class="what-it-checks">What this checks: The app can detect and pair with a tower (real or emulated),
+                establish a Bluetooth connection, and show connection status.</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -669,9 +729,13 @@
                     </div>
                 </div>
                 <div class="step-instructions">
-                    <div class="track-instructions"><strong>Real Tower:</strong> Leave the "Tower Type" dropdown set to "BLE Tower" (the default). No action needed.</div>
-                    <div class="track-instructions"><strong>Emulator:</strong> Click the "Tower Type" dropdown at the top of the Controller page and select "Tower Emulator". A new window should pop up with a 3D tower model inside.</div>
-                    <div class="expected-result"><strong>Expected:</strong> Emulator track — a popup appears titled "Tower Emulator" with a 3D tower visible. Real track — no visible change to the main app.</div>
+                    <div class="track-instructions"><strong>Real Tower:</strong> Leave the "Tower Type" dropdown set to
+                        "BLE Tower" (the default). No action needed.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Click the "Tower Type" dropdown at the
+                        top of the Controller page and select "Tower Emulator". A new window should pop up with a 3D
+                        tower model inside.</div>
+                    <div class="expected-result"><strong>Expected:</strong> Emulator track — a popup appears titled
+                        "Tower Emulator" with a 3D tower visible. Real track — no visible change to the main app.</div>
                 </div>
                 <textarea class="notes-input" data-step="1.1" placeholder="Add notes..."></textarea>
             </div>
@@ -685,9 +749,16 @@
                     </div>
                 </div>
                 <div class="step-instructions">
-                    <div class="track-instructions"><strong>Real Tower:</strong> Click the green <strong>Connect</strong> button. A browser dialog will appear listing nearby Bluetooth devices. Find your tower (device name is "ReturnToDarkTower") and click it to pair.</div>
-                    <div class="track-instructions"><strong>Emulator:</strong> Click the green <strong>Connect</strong> button. Connection should happen instantly (no device picker).</div>
-                    <div class="expected-result"><strong>Expected:</strong> The connection state banner at the top (near "Connect" button) turns green and displays "Tower Connected". The Disconnect button becomes enabled. Depending on device, you may see the 3D emulator tower light up or respond to show it's connected.</div>
+                    <div class="track-instructions"><strong>Real Tower:</strong> Click the green
+                        <strong>Connect</strong> button. A browser dialog will appear listing nearby Bluetooth devices.
+                        Find your tower (device name is "ReturnToDarkTower") and click it to pair.
+                    </div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Click the green <strong>Connect</strong>
+                        button. Connection should happen instantly (no device picker).</div>
+                    <div class="expected-result"><strong>Expected:</strong> The connection state banner at the top (near
+                        "Connect" button) turns green and displays "Tower Connected". The Disconnect button becomes
+                        enabled. Depending on device, you may see the 3D emulator tower light up or respond to show it's
+                        connected.</div>
                 </div>
                 <textarea class="notes-input" data-step="1.2" placeholder="Add notes..."></textarea>
             </div>
@@ -702,9 +773,14 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Look at the right side of the page. You should see status cards for Battery (with a percentage), Calibration (with three status icons for Top/Middle/Bottom drums), and Skulls (a counter). The Calibration icons may show red X (not yet calibrated) or green check marks (calibrated).
+                        Look at the right side of the page. You should see status cards for Battery (with a percentage),
+                        Calibration (with three status icons for Top/Middle/Bottom drums), and Skulls (a counter). The
+                        Calibration icons may show red X (not yet calibrated) or green check marks (calibrated).
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> Battery percentage appears (e.g., "85%"). Calibration icons are visible (likely showing red X for all three drums if this is the first connection). The Skulls counter shows "0" or some number. If any of these are missing or show "—" / "?", the connection is not working properly.</div>
+                    <div class="expected-result"><strong>Expected:</strong> Battery percentage appears (e.g., "85%").
+                        Calibration icons are visible (likely showing red X for all three drums if this is the first
+                        connection). The Skulls counter shows "0" or some number. If any of these are missing or show
+                        "—" / "?", the connection is not working properly.</div>
                 </div>
                 <textarea class="notes-input" data-step="1.3" placeholder="Add notes..."></textarea>
             </div>
@@ -712,7 +788,8 @@
 
         <section id="disconnect">
             <h3>2. Disconnecting</h3>
-            <div class="what-it-checks">What this checks: The app can cleanly disconnect from the tower and show disconnected state.</div>
+            <div class="what-it-checks">What this checks: The app can cleanly disconnect from the tower and show
+                disconnected state.</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -726,7 +803,9 @@
                     <div class="step-instructions">
                         Find the red <strong>Disconnect</strong> button (next to the Connect button) and click it.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The connection state banner turns red and displays "Tower Disconnected". The Connect button becomes enabled. The Disconnect button becomes disabled. Battery/Calibration/Skulls cards may show "—" or "?" to indicate unknown state.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The connection state banner turns red and
+                        displays "Tower Disconnected". The Connect button becomes enabled. The Disconnect button becomes
+                        disabled. Battery/Calibration/Skulls cards may show "—" or "?" to indicate unknown state.</div>
                 </div>
                 <textarea class="notes-input" data-step="2.1" placeholder="Add notes..."></textarea>
             </div>
@@ -741,9 +820,11 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Click Connect again. (Follow the same pairing flow as step 1.2 if using a real tower; Emulator reconnects instantly.)
+                        Click Connect again. (Follow the same pairing flow as step 1.2 if using a real tower; Emulator
+                        reconnects instantly.)
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> Connection state banner turns green "Tower Connected" again. Status cards repopulate with battery/calibration/skulls.</div>
+                    <div class="expected-result"><strong>Expected:</strong> Connection state banner turns green "Tower
+                        Connected" again. Status cards repopulate with battery/calibration/skulls.</div>
                 </div>
                 <textarea class="notes-input" data-step="2.2" placeholder="Add notes..."></textarea>
             </div>
@@ -751,7 +832,8 @@
 
         <section id="calibration">
             <h3>3. Calibration</h3>
-            <div class="what-it-checks">What this checks: The app can initiate a calibration routine, which teaches the tower the reference position of its three drums (required before rotation commands work reliably).</div>
+            <div class="what-it-checks">What this checks: The app can initiate a calibration routine, which teaches the
+                tower the reference position of its three drums (required before rotation commands work reliably).</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -763,9 +845,12 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Look at the <strong>Calibration</strong> status card on the right side. It shows three small icons — one each for Top, Middle, and Bottom drums.
+                        Look at the <strong>Calibration</strong> status card on the right side. It shows three small
+                        icons — one each for Top, Middle, and Bottom drums.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> If not yet calibrated, all three show a red X (❌). If already calibrated, they show green check marks (✓). Hover over any icon to see a tooltip confirming "Top Drum", "Middle Drum", or "Bottom Drum".</div>
+                    <div class="expected-result"><strong>Expected:</strong> If not yet calibrated, all three show a red
+                        X (❌). If already calibrated, they show green check marks (✓). Hover over any icon to see a
+                        tooltip confirming "Top Drum", "Middle Drum", or "Bottom Drum".</div>
                 </div>
                 <textarea class="notes-input" data-step="3.1" placeholder="Add notes..."></textarea>
             </div>
@@ -779,9 +864,17 @@
                     </div>
                 </div>
                 <div class="step-instructions">
-                    <div class="track-instructions"><strong>Real Tower:</strong> Click the blue <strong>Calibrate</strong> button (in the Diagnostics tab). The tower will begin spinning its drums to find their zero positions. This takes about 10-15 seconds. Do not interrupt the tower during this time.</div>
-                    <div class="track-instructions"><strong>Emulator:</strong> Click the blue <strong>Calibrate</strong> button. In the emulator popup, the 3D tower will visually spin. Calibration completes almost instantly in the emulator.</div>
-                    <div class="expected-result"><strong>Expected:</strong> A message appears near the Calibrate button saying "Calibrating...". The Calibrate button becomes disabled (grayed out). The 3D emulator (if using Emulator track) shows the drums spinning.</div>
+                    <div class="track-instructions"><strong>Real Tower:</strong> Click the blue
+                        <strong>Calibrate</strong> button (in the Diagnostics tab). The tower will begin spinning its
+                        drums to find their zero positions. This takes about 10-15 seconds. Do not interrupt the tower
+                        during this time.
+                    </div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Click the blue <strong>Calibrate</strong>
+                        button. In the emulator popup, the 3D tower will visually spin. Calibration completes almost
+                        instantly in the emulator.</div>
+                    <div class="expected-result"><strong>Expected:</strong> A message appears near the Calibrate button
+                        saying "Calibrating...". The Calibrate button becomes disabled (grayed out). The 3D emulator (if
+                        using Emulator track) shows the drums spinning.</div>
                 </div>
                 <textarea class="notes-input" data-step="3.2" placeholder="Add notes..."></textarea>
             </div>
@@ -796,9 +889,12 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Wait for the calibration to complete. The "Calibrating..." message should disappear, and the Calibrate button should become enabled again.
+                        Wait for the calibration to complete. The "Calibrating..." message should disappear, and the
+                        Calibrate button should become enabled again.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> All three calibration icons turn green (✓). The message "Calibrating..." disappears. The Calibrate button is enabled again and clickable.</div>
+                    <div class="expected-result"><strong>Expected:</strong> All three calibration icons turn green (✓).
+                        The message "Calibrating..." disappears. The Calibrate button is enabled again and clickable.
+                    </div>
                 </div>
                 <textarea class="notes-input" data-step="3.3" placeholder="Add notes..."></textarea>
             </div>
@@ -806,7 +902,8 @@
 
         <section id="lights">
             <h3>4. Lights</h3>
-            <div class="what-it-checks">What this checks: The app can control the tower's 24 LEDs individually and in groups, apply different lighting effects (on, breathe, flicker), and turn all lights on or off.</div>
+            <div class="what-it-checks">What this checks: The app can control the tower's 24 LEDs individually and in
+                groups, apply different lighting effects (on, breathe, flicker), and turn all lights on or off.</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -818,9 +915,14 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Scroll down to the "Lights" section on the page. You'll see a grid of checkboxes labeled "Doorway" (12 lights: 4 sides × 3 levels), "Ledge" (4 corner lights), and "Base" (8 lights). Click on one of the checkboxes to select a light.
+                        Scroll down to the "Lights" section on the page. You'll see a grid of checkboxes labeled
+                        "Doorway" (12 lights: 4 sides × 3 levels), "Ledge" (4 corner lights), and "Base" (8 lights).
+                        Click on one of the checkboxes to select a light.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The checkbox is now checked. In the 3D emulator (if using Emulator track), that light LED should turn on. On a real tower, the physical LED lights up. The light state is saved in the app's status display (the "Status Packet" grid at the bottom).</div>
+                    <div class="expected-result"><strong>Expected:</strong> The checkbox is now checked. In the 3D
+                        emulator (if using Emulator track), that light LED should turn on. On a real tower, the physical
+                        LED lights up. The light state is saved in the app's status display (the "Status Packet" grid at
+                        the bottom).</div>
                 </div>
                 <textarea class="notes-input" data-step="4.1" placeholder="Add notes..."></textarea>
             </div>
@@ -837,7 +939,9 @@
                     <div class="step-instructions">
                         Click the same checkbox again to uncheck it.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The checkbox unchecks. The LED turns off (in the emulator, the light dims or turns dark; on real hardware, the physical light turns off).</div>
+                    <div class="expected-result"><strong>Expected:</strong> The checkbox unchecks. The LED turns off (in
+                        the emulator, the light dims or turns dark; on real hardware, the physical light turns off).
+                    </div>
                 </div>
                 <textarea class="notes-input" data-step="4.2" placeholder="Add notes..."></textarea>
             </div>
@@ -854,7 +958,8 @@
                     <div class="step-instructions">
                         Above the light grids, find the blue <strong>All On</strong> button and click it.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> All 24 light checkboxes become checked. On the real tower or in the emulator, all LEDs turn on (solid color, not blinking/breathing).</div>
+                    <div class="expected-result"><strong>Expected:</strong> All 24 light checkboxes become checked. On
+                        the real tower or in the emulator, all LEDs turn on (solid color, not blinking/breathing).</div>
                 </div>
                 <textarea class="notes-input" data-step="4.3" placeholder="Add notes..."></textarea>
             </div>
@@ -869,9 +974,13 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Before step 4.5, ensure all lights are on from step 4.3. Then, above the light grids, find the <strong>Light Style</strong> dropdown and select "Breathe" (a pulsing/breathing effect). Click the blue <strong>Apply to All Lights</strong> button.
+                        Before step 4.5, ensure all lights are on from step 4.3. Then, above the light grids, find the
+                        <strong>Light Style</strong> dropdown and select "Breathe" (a pulsing/breathing effect). Click
+                        the blue <strong>Apply to All Lights</strong> button.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> All lights begin pulsing/breathing (brightening and dimming in a cycle). In the emulator, you should visually see the lights pulse. On real hardware, the physical LEDs pulse.</div>
+                    <div class="expected-result"><strong>Expected:</strong> All lights begin pulsing/breathing
+                        (brightening and dimming in a cycle). In the emulator, you should visually see the lights pulse.
+                        On real hardware, the physical LEDs pulse.</div>
                 </div>
                 <textarea class="notes-input" data-step="4.4" placeholder="Add notes..."></textarea>
             </div>
@@ -888,7 +997,8 @@
                     <div class="step-instructions">
                         Find the blue <strong>All Off</strong> button and click it.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> All 24 light checkboxes become unchecked. All LEDs turn off (emulator or real tower).</div>
+                    <div class="expected-result"><strong>Expected:</strong> All 24 light checkboxes become unchecked.
+                        All LEDs turn off (emulator or real tower).</div>
                 </div>
                 <textarea class="notes-input" data-step="4.5" placeholder="Add notes..."></textarea>
             </div>
@@ -896,7 +1006,8 @@
 
         <section id="sound">
             <h3>5. Sound & Volume</h3>
-            <div class="what-it-checks">What this checks: The app can select and play sound effects from the tower's built-in sound library, and adjust the tower's speaker volume.</div>
+            <div class="what-it-checks">What this checks: The app can select and play sound effects from the tower's
+                built-in sound library, and adjust the tower's speaker volume.</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -908,9 +1019,12 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        In the <strong>Diagnostics</strong> tab, find the <strong>Sound</strong> dropdown. Click it to see the list of available sound effects (e.g., "Glyph Reveal", "Tower Laugh", "Seal Break", etc.).
+                        In the <strong>Diagnostics</strong> tab, find the <strong>Sound</strong> dropdown. Click it to
+                        see the list of available sound effects (e.g., "Glyph Reveal", "Tower Laugh", "Seal Break",
+                        etc.).
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The dropdown opens and displays a list of sound names. Select any sound (e.g., "Glyph Reveal").</div>
+                    <div class="expected-result"><strong>Expected:</strong> The dropdown opens and displays a list of
+                        sound names. Select any sound (e.g., "Glyph Reveal").</div>
                 </div>
                 <textarea class="notes-input" data-step="5.1" placeholder="Add notes..."></textarea>
             </div>
@@ -924,9 +1038,15 @@
                     </div>
                 </div>
                 <div class="step-instructions">
-                    <div class="track-instructions"><strong>Real Tower:</strong> Click the blue <strong>Play</strong> button next to the Sound dropdown. The tower's speaker will play the selected sound effect.</div>
-                    <div class="track-instructions"><strong>Emulator:</strong> Click the blue <strong>Play</strong> button. A sound effect will play from your computer's speakers (the emulator relays the audio).</div>
-                    <div class="expected-result"><strong>Expected:</strong> A sound plays from the tower (or your computer if using Emulator). The sound should be distinct and audible. The app may log "Sound played: [sound name]" in the Log panel on the right.</div>
+                    <div class="track-instructions"><strong>Real Tower:</strong> Click the blue <strong>Play</strong>
+                        button next to the Sound dropdown. The tower's speaker will play the selected sound effect.
+                    </div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Click the blue <strong>Play</strong>
+                        button. A sound effect will play from your computer's speakers (the emulator relays the audio).
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> A sound plays from the tower (or your
+                        computer if using Emulator). The sound should be distinct and audible. The app may log "Sound
+                        played: [sound name]" in the Log panel on the right.</div>
                 </div>
                 <textarea class="notes-input" data-step="5.2" placeholder="Add notes..."></textarea>
             </div>
@@ -941,9 +1061,14 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        In the Diagnostics tab, find the volume control: two buttons labeled "&lt;" (volume down) and "&gt;" (volume up). Next to them is a text label showing the current volume level (e.g., "Loud", "Medium", "Quiet"). Click the volume down button (&lt;) a few times to lower the volume.
+                        In the Diagnostics tab, find the volume control: two buttons labeled "&lt;" (volume down) and
+                        "&gt;" (volume up). Next to them is a text label showing the current volume level (e.g., "Loud",
+                        "Medium", "Quiet"). Click the volume down button (&lt;) a few times to lower the volume.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The volume label changes (e.g., from "Loud" to "Medium" to "Quiet"). An emoji icon next to it also changes (speaker with lines → speaker with one line → speaker with X, etc.) to visually show the volume level. The next sound you play should be quieter.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The volume label changes (e.g., from "Loud"
+                        to "Medium" to "Quiet"). An emoji icon next to it also changes (speaker with lines → speaker
+                        with one line → speaker with X, etc.) to visually show the volume level. The next sound you play
+                        should be quieter.</div>
                 </div>
                 <textarea class="notes-input" data-step="5.3" placeholder="Add notes..."></textarea>
             </div>
@@ -951,7 +1076,9 @@
 
         <section id="rotation">
             <h3>6. Drum Rotation</h3>
-            <div class="what-it-checks">What this checks: The app can rotate the tower's three drums to specific compass positions (North, South, East, West). The tower has three independent drums (Top, Middle, Bottom) that must all be calibrated before rotation works reliably.</div>
+            <div class="what-it-checks">What this checks: The app can rotate the tower's three drums to specific compass
+                positions (North, South, East, West). The tower has three independent drums (Top, Middle, Bottom) that
+                must all be calibrated before rotation works reliably.</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -963,9 +1090,13 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        In the <strong>Diagnostics</strong> tab, scroll down to the "Drums / Rotation" section. You'll see three dropdowns labeled "Top", "Middle", and "Bottom". Each dropdown has four options: North (N), South (S), East (E), West (W). Set each dropdown to a different compass direction (e.g., Top = North, Middle = East, Bottom = South).
+                        In the <strong>Diagnostics</strong> tab, scroll down to the "Drums / Rotation" section. You'll
+                        see three dropdowns labeled "Top", "Middle", and "Bottom". Each dropdown has four options: North
+                        (N), South (S), East (E), West (W). Set each dropdown to a different compass direction (e.g.,
+                        Top = North, Middle = East, Bottom = South).
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> Each dropdown displays your chosen direction. No changes to the tower yet — you're just selecting the target positions.</div>
+                    <div class="expected-result"><strong>Expected:</strong> Each dropdown displays your chosen
+                        direction. No changes to the tower yet — you're just selecting the target positions.</div>
                 </div>
                 <textarea class="notes-input" data-step="6.1" placeholder="Add notes..."></textarea>
             </div>
@@ -979,9 +1110,16 @@
                     </div>
                 </div>
                 <div class="step-instructions">
-                    <div class="track-instructions"><strong>Real Tower:</strong> Click the blue <strong>Rotate</strong> button below the three drum dropdowns. The tower's drums will spin to their target positions. This takes a few seconds. The tower may make clicking/whirring sounds as the motors move.</div>
-                    <div class="track-instructions"><strong>Emulator:</strong> Click the blue <strong>Rotate</strong> button. The 3D tower in the emulator popup will visually spin its drums to face the chosen directions.</div>
-                    <div class="expected-result"><strong>Expected:</strong> The drums rotate and settle into place facing the chosen compass directions. (Real tower: you may hear mechanical sounds; Emulator: you see the 3D drums spin). The Status Packet display at the bottom updates to show the new drum positions.</div>
+                    <div class="track-instructions"><strong>Real Tower:</strong> Click the blue <strong>Rotate</strong>
+                        button below the three drum dropdowns. The tower's drums will spin to their target positions.
+                        This takes a few seconds. The tower may make clicking/whirring sounds as the motors move.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Click the blue <strong>Rotate</strong>
+                        button. The 3D tower in the emulator popup will visually spin its drums to face the chosen
+                        directions.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The drums rotate and settle into place
+                        facing the chosen compass directions. (Real tower: you may hear mechanical sounds; Emulator: you
+                        see the 3D drums spin). The Status Packet display at the bottom updates to show the new drum
+                        positions.</div>
                 </div>
                 <textarea class="notes-input" data-step="6.2" placeholder="Add notes..."></textarea>
             </div>
@@ -989,7 +1127,8 @@
 
         <section id="randomize">
             <h3>7. Randomizing Drums</h3>
-            <div class="what-it-checks">What this checks: The app can rotate one or more drums to random compass directions in a single command.</div>
+            <div class="what-it-checks">What this checks: The app can rotate one or more drums to random compass
+                directions in a single command.</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -1001,9 +1140,12 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Click the <strong>Library</strong> tab to see a different set of controls. Scroll down to the "Randomize Drums" section. Find the <strong>Level(s)</strong> dropdown and select an option (e.g., "All" to randomize all three drums, or "Top" to randomize only the top drum).
+                        Click the <strong>Library</strong> tab to see a different set of controls. Scroll down to the
+                        "Randomize Drums" section. Find the <strong>Level(s)</strong> dropdown and select an option
+                        (e.g., "All" to randomize all three drums, or "Top" to randomize only the top drum).
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The dropdown displays your selected option. No changes to the tower yet.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The dropdown displays your selected option.
+                        No changes to the tower yet.</div>
                 </div>
                 <textarea class="notes-input" data-step="7.1" placeholder="Add notes..."></textarea>
             </div>
@@ -1020,7 +1162,10 @@
                     <div class="step-instructions">
                         Click the blue <strong>Randomize</strong> button below the Level(s) dropdown.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The selected drum(s) spin to random compass directions. The Status Packet at the bottom updates to show the new random positions. (If you chose "All", all three drums should move; if you chose "Top", only the top drum moves while middle and bottom stay in place.)</div>
+                    <div class="expected-result"><strong>Expected:</strong> The selected drum(s) spin to random compass
+                        directions. The Status Packet at the bottom updates to show the new random positions. (If you
+                        chose "All", all three drums should move; if you chose "Top", only the top drum moves while
+                        middle and bottom stay in place.)</div>
                 </div>
                 <textarea class="notes-input" data-step="7.2" placeholder="Add notes..."></textarea>
             </div>
@@ -1028,7 +1173,9 @@
 
         <section id="glyphs">
             <h3>8. Glyphs</h3>
-            <div class="what-it-checks">What this checks: The app can track and manipulate glyphs — symbols drawn on the tower's drums that face different compass directions based on drum rotation. Glyphs represent in-game concepts (Cleanse, Quest, Battle, Banner, Reinforce).</div>
+            <div class="what-it-checks">What this checks: The app can track and manipulate glyphs — symbols drawn on the
+                tower's drums that face different compass directions based on drum rotation. Glyphs represent in-game
+                concepts (Cleanse, Quest, Battle, Banner, Reinforce).</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -1040,9 +1187,14 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        In the <strong>Library</strong> tab, scroll down to the "Glyphs" section. You'll see a 3×4 grid labeled with drum levels (Top / Mid / Bot rows) and compass directions (N / E / S / W columns). Below the grid is a dropdown to select a glyph (Cleanse, Quest, Battle, Banner, or Reinforce) and another dropdown to select a compass direction.
+                        In the <strong>Library</strong> tab, scroll down to the "Glyphs" section. You'll see a 3×4 grid
+                        labeled with drum levels (Top / Mid / Bot rows) and compass directions (N / E / S / W columns).
+                        Below the grid is a dropdown to select a glyph (Cleanse, Quest, Battle, Banner, or Reinforce)
+                        and another dropdown to select a compass direction.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The grid displays. If any glyphs are currently active in their positions, those grid cells glow (amber/yellow highlight). Otherwise, all cells are dark/empty.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The grid displays. If any glyphs are
+                        currently active in their positions, those grid cells glow (amber/yellow highlight). Otherwise,
+                        all cells are dark/empty.</div>
                 </div>
                 <textarea class="notes-input" data-step="8.1" placeholder="Add notes..."></textarea>
             </div>
@@ -1057,9 +1209,14 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        In the Glyphs section, select a glyph from the first dropdown (e.g., "Cleanse") and a compass direction from the second dropdown (e.g., "North"). Then click the blue <strong>Move Glyph</strong> button.
+                        In the Glyphs section, select a glyph from the first dropdown (e.g., "Cleanse") and a compass
+                        direction from the second dropdown (e.g., "North"). Then click the blue <strong>Move
+                            Glyph</strong> button.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The tower's drums rotate so that the chosen glyph faces the chosen compass direction. The glyph-position grid updates to show the glyph now occupies that spot (one cell glows amber). The status display updates to show the new drum positions that put this glyph in place.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The tower's drums rotate so that the chosen
+                        glyph faces the chosen compass direction. The glyph-position grid updates to show the glyph now
+                        occupies that spot (one cell glows amber). The status display updates to show the new drum
+                        positions that put this glyph in place.</div>
                 </div>
                 <textarea class="notes-input" data-step="8.2" placeholder="Add notes..."></textarea>
             </div>
@@ -1067,7 +1224,9 @@
 
         <section id="seals">
             <h3>9. Seals</h3>
-            <div class="what-it-checks">What this checks: The app can track and manage seals — physical mechanisms in the tower at each of the 12 light positions (3 levels × 4 sides). Breaking a seal triggers a visual effect (lights flash) and updates game state. Seals can also be cleared/reset.</div>
+            <div class="what-it-checks">What this checks: The app can track and manage seals — physical mechanisms in
+                the tower at each of the 12 light positions (3 levels × 4 sides). Breaking a seal triggers a visual
+                effect (lights flash) and updates game state. Seals can also be cleared/reset.</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -1079,9 +1238,12 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Scroll down to the "Seals" section in the Library tab. You'll see a 3×4 grid of square buttons (representing the 12 seal positions: 3 levels × 4 compass directions). A dropdown above the grid lets you select a seal location (e.g., "North Top", "South Mid", etc.).
+                        Scroll down to the "Seals" section in the Library tab. You'll see a 3×4 grid of square buttons
+                        (representing the 12 seal positions: 3 levels × 4 compass directions). A dropdown above the grid
+                        lets you select a seal location (e.g., "North Top", "South Mid", etc.).
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The grid displays 12 empty (gray or white) squares. None are currently broken.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The grid displays 12 empty (gray or white)
+                        squares. None are currently broken.</div>
                 </div>
                 <textarea class="notes-input" data-step="9.1" placeholder="Add notes..."></textarea>
             </div>
@@ -1095,9 +1257,15 @@
                     </div>
                 </div>
                 <div class="step-instructions">
-                    <div class="track-instructions"><strong>Real Tower:</strong> Select a seal location from the dropdown (e.g., "North Top"). Click the blue <strong>Break Seal</strong> button. The tower will trigger a seal-break effect: lights at that position may flash, and a sound may play.</div>
-                    <div class="track-instructions"><strong>Emulator:</strong> Select a seal location from the dropdown. Click the blue <strong>Break Seal</strong> button. The emulator popup will show a visual seal-break effect (the seal at that position drops or disappears, and lights flash).</div>
-                    <div class="expected-result"><strong>Expected:</strong> The corresponding grid square turns red/dark red (indicating the seal is now broken). The button may be disabled for a brief moment to prevent rapid repeated breaks. The Log panel records "Seal broken: [location]".</div>
+                    <div class="track-instructions"><strong>Real Tower:</strong> Select a seal location from the
+                        dropdown (e.g., "North Top"). Click the blue <strong>Break Seal</strong> button. The tower will
+                        trigger a seal-break effect: lights at that position may flash, and a sound may play.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Select a seal location from the dropdown.
+                        Click the blue <strong>Break Seal</strong> button. The emulator popup will show a visual
+                        seal-break effect (the seal at that position drops or disappears, and lights flash).</div>
+                    <div class="expected-result"><strong>Expected:</strong> The corresponding grid square turns red/dark
+                        red (indicating the seal is now broken). The button may be disabled for a brief moment to
+                        prevent rapid repeated breaks. The Log panel records "Seal broken: [location]".</div>
                 </div>
                 <textarea class="notes-input" data-step="9.2" placeholder="Add notes..."></textarea>
             </div>
@@ -1112,9 +1280,12 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Click directly on one of the gray (unbroken) seal squares in the grid (a square that is not red).
+                        Click directly on one of the gray (unbroken) seal squares in the grid (a square that is not
+                        red).
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> That square turns red (broken). A seal-break effect triggers on the tower/emulator. The dropdown updates to show the location you just clicked.</div>
+                    <div class="expected-result"><strong>Expected:</strong> That square turns red (broken). A seal-break
+                        effect triggers on the tower/emulator. The dropdown updates to show the location you just
+                        clicked.</div>
                 </div>
                 <textarea class="notes-input" data-step="9.3" placeholder="Add notes..."></textarea>
             </div>
@@ -1131,7 +1302,9 @@
                     <div class="step-instructions">
                         Click the blue <strong>Clear Effect</strong> button (below the seal grid).
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> All grid squares turn back to gray (not broken). All lights on the tower turn off. The seal state is reset. The dropdown resets to "select a location". The Log records "Seals cleared".</div>
+                    <div class="expected-result"><strong>Expected:</strong> All grid squares turn back to gray (not
+                        broken). All lights on the tower turn off. The seal state is reset. The dropdown resets to
+                        "select a location". The Log records "Seals cleared".</div>
                 </div>
                 <textarea class="notes-input" data-step="9.4" placeholder="Add notes..."></textarea>
             </div>
@@ -1139,7 +1312,8 @@
 
         <section id="battery">
             <h3>10. Battery & Skulls</h3>
-            <div class="what-it-checks">What this checks: The app displays the tower's current battery percentage and tracks the count of skulls (tokens) that have been dropped from the tower during gameplay.</div>
+            <div class="what-it-checks">What this checks: The app displays the tower's current battery percentage and
+                tracks the count of skulls (tokens) that have been dropped from the tower during gameplay.</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -1151,9 +1325,13 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Look at the right side of the page. Find the <strong>Battery</strong> card (shows a battery icon). It displays a percentage (e.g., "85%") and a trend arrow (⬆️ increasing, ⬇️ decreasing, or ➡️ stable) showing whether battery level is rising, falling, or holding steady.
+                        Look at the right side of the page. Find the <strong>Battery</strong> card (shows a battery
+                        icon). It displays a percentage (e.g., "85%") and a trend arrow (⬆️ increasing, ⬇️ decreasing,
+                        or ➡️ stable) showing whether battery level is rising, falling, or holding steady.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> A battery percentage is visible. For Emulator, this is simulated and stable. For real tower, this reflects the actual tower's battery voltage.</div>
+                    <div class="expected-result"><strong>Expected:</strong> A battery percentage is visible. For
+                        Emulator, this is simulated and stable. For real tower, this reflects the actual tower's battery
+                        voltage.</div>
                 </div>
                 <textarea class="notes-input" data-step="10.1" placeholder="Add notes..."></textarea>
             </div>
@@ -1168,9 +1346,12 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Find the <strong>Skulls</strong> card on the right side (shows a skull icon 💀). It displays a number (e.g., "0") representing how many skull tokens have been dropped from the tower. Next to the number is a small icon button to reset the counter.
+                        Find the <strong>Skulls</strong> card on the right side (shows a skull icon 💀). It displays a
+                        number (e.g., "0") representing how many skull tokens have been dropped from the tower. Next to
+                        the number is a small icon button to reset the counter.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The skull counter is visible and displays a number (usually 0 if no skulls have dropped yet).</div>
+                    <div class="expected-result"><strong>Expected:</strong> The skull counter is visible and displays a
+                        number (usually 0 if no skulls have dropped yet).</div>
                 </div>
                 <textarea class="notes-input" data-step="10.2" placeholder="Add notes..."></textarea>
             </div>
@@ -1185,9 +1366,12 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        <strong>[Note: This step requires a real tower with skulls already dropped. Emulator does not simulate physical skull drops.]</strong> Click the small icon button next to the skull counter to reset it to 0.
+                        <strong>[Note: This step requires a real tower with skulls already dropped. Emulator does not
+                            simulate physical skull drops.]</strong> Click the small icon button next to the skull
+                        counter to reset it to 0.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The skull counter resets to 0. The Log records "Skull count reset".</div>
+                    <div class="expected-result"><strong>Expected:</strong> The skull counter resets to 0. The Log
+                        records "Skull count reset".</div>
                 </div>
                 <textarea class="notes-input" data-step="10.3" placeholder="Add notes..."></textarea>
             </div>
@@ -1195,7 +1379,8 @@
 
         <section id="troubleshooting">
             <h3>11. Troubleshooting Modal</h3>
-            <div class="what-it-checks">What this checks: The app can display a help/troubleshooting guide for common issues (tower jams, disconnects, firmware updates, battery specs).</div>
+            <div class="what-it-checks">What this checks: The app can display a help/troubleshooting guide for common
+                issues (tower jams, disconnects, firmware updates, battery specs).</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -1207,7 +1392,8 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Scroll to the bottom of the page. Find the <strong>Troubleshooting</strong> button (usually in a footer or below the main content).
+                        Scroll to the bottom of the page. Find the <strong>Troubleshooting</strong> button (usually in a
+                        footer or below the main content).
                     </div>
                     <div class="expected-result"><strong>Expected:</strong> The button is visible and clickable.</div>
                 </div>
@@ -1226,7 +1412,9 @@
                     <div class="step-instructions">
                         Click the Troubleshooting button. A modal popup should appear with troubleshooting content.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> A modal dialog opens overlaying the page. It displays troubleshooting sections (e.g., "Tower Jam Recovery", "Tower Disconnects During Play", "Firmware Update Failures", "Battery Specifications") with readable text/instructions.</div>
+                    <div class="expected-result"><strong>Expected:</strong> A modal dialog opens overlaying the page. It
+                        displays troubleshooting sections (e.g., "Tower Jam Recovery", "Tower Disconnects During Play",
+                        "Firmware Update Failures", "Battery Specifications") with readable text/instructions.</div>
                 </div>
                 <textarea class="notes-input" data-step="11.2" placeholder="Add notes..."></textarea>
             </div>
@@ -1241,9 +1429,11 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Close the modal by clicking the X button in the top-right corner, clicking outside the modal, or pressing Escape on your keyboard.
+                        Close the modal by clicking the X button in the top-right corner, clicking outside the modal, or
+                        pressing Escape on your keyboard.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The modal closes and you're back at the Controller page.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The modal closes and you're back at the
+                        Controller page.</div>
                 </div>
                 <textarea class="notes-input" data-step="11.3" placeholder="Add notes..."></textarea>
             </div>
@@ -1252,7 +1442,10 @@
 
     <footer>
         <p>Tower Controller Test Plan — for testing the UltimateDarkTower library's reference UI.</p>
-        <p>Questions? See the <a href="https://github.com/ChessMess/UltimateDarkTower" style="color: #3498db;">UltimateDarkTower repository</a> or the <a href="https://github.com/ChessMess/UltimateDarkTower/docs/TROUBLESHOOTING.md" style="color: #3498db;">Troubleshooting guide</a>.</p>
+        <p>Questions? See the <a href="https://github.com/ChessMess/UltimateDarkTower"
+                style="color: #3498db;">UltimateDarkTower repository</a> or the <a
+                href="https://github.com/ChessMess/UltimateDarkTower/docs/TROUBLESHOOTING.md"
+                style="color: #3498db;">Troubleshooting guide</a>.</p>
     </footer>
 
     <div id="reportModal" class="report-modal">
@@ -1269,10 +1462,13 @@
 
     <script>
         const STORAGE_KEY_PREFIX = 'test-step-';
+        const TRACK_KEY_PREFIX = 'track-';
+        const DEFAULT_TRACK_KEY = 'default-track';
         let isFilteringFailed = false;
 
         // Initialize storage and update progress on page load
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
+            restoreDefaultTrack();
             restoreAllState();
             updateProgress();
         });
@@ -1301,6 +1497,20 @@
             // Save to localStorage
             const storageKey = STORAGE_KEY_PREFIX + stepId;
             localStorage.setItem(storageKey, result);
+
+            // Apply default track if this step's track is unset
+            const trackKey = TRACK_KEY_PREFIX + stepId;
+            if (!localStorage.getItem(trackKey)) {
+                const defaultTrack = localStorage.getItem(DEFAULT_TRACK_KEY) || '';
+                if (defaultTrack) {
+                    localStorage.setItem(trackKey, defaultTrack);
+                    // Update the track select dropdown
+                    const trackSelect = button.parentElement.parentElement.querySelector('.track-select');
+                    if (trackSelect) {
+                        trackSelect.value = defaultTrack;
+                    }
+                }
+            }
 
             updateProgress();
         }
@@ -1336,6 +1546,33 @@
                     }
                 }
 
+                // Inject and restore track selector
+                const stepActions = step.querySelector('.step-actions');
+                if (stepActions && !stepActions.querySelector('.track-select')) {
+                    const trackSelect = document.createElement('select');
+                    trackSelect.className = 'track-select';
+                    trackSelect.innerHTML = `
+                        <option value="">Track: —</option>
+                        <option value="emulator">🟦 Emulator</option>
+                        <option value="real">🔴 Real Tower</option>
+                        <option value="both">🟪 Both</option>
+                    `;
+
+                    const trackKey = TRACK_KEY_PREFIX + stepId;
+                    const savedTrack = localStorage.getItem(trackKey) || '';
+                    trackSelect.value = savedTrack;
+
+                    trackSelect.addEventListener('change', function () {
+                        if (this.value) {
+                            localStorage.setItem(trackKey, this.value);
+                        } else {
+                            localStorage.removeItem(trackKey);
+                        }
+                    });
+
+                    stepActions.appendChild(trackSelect);
+                }
+
                 // Restore notes
                 const notesTextarea = step.querySelector('textarea[data-step]');
                 if (notesTextarea) {
@@ -1344,7 +1581,7 @@
                     if (notes) {
                         notesTextarea.value = notes;
                     }
-                    notesTextarea.addEventListener('change', function() {
+                    notesTextarea.addEventListener('change', function () {
                         localStorage.setItem(notesKey, this.value);
                     });
                 }
@@ -1387,7 +1624,7 @@
                 // Clear localStorage
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
-                    if (key.startsWith(STORAGE_KEY_PREFIX) || key.startsWith('notes-')) {
+                    if (key.startsWith(STORAGE_KEY_PREFIX) || key.startsWith('notes-') || key.startsWith(TRACK_KEY_PREFIX)) {
                         localStorage.removeItem(key);
                         i--;
                     }
@@ -1401,6 +1638,13 @@
 
                 document.querySelectorAll('textarea[data-step]').forEach(textarea => {
                     textarea.value = '';
+                });
+
+                // Reset all track selectors
+                document.querySelectorAll('.track-select').forEach(select => {
+                    if (!select.id || select.id !== 'defaultTrackSelect') {
+                        select.value = '';
+                    }
                 });
 
                 updateProgress();
@@ -1460,6 +1704,12 @@
             let failCount = 0;
             let notRunCount = 0;
 
+            const trackMap = {
+                'emulator': '🟦 Emulator',
+                'real': '🔴 Real Tower',
+                'both': '🟪 Both'
+            };
+
             const sections = document.querySelectorAll('section');
             sections.forEach(section => {
                 const sectionTitle = section.querySelector('h3');
@@ -1487,7 +1737,13 @@
                         notRunCount++;
                     }
 
-                    report += `  ${stepNumber}: ${status}`;
+                    // Get track tag if present
+                    const stepId = stepNumber.replace(/\s+/g, '-').toLowerCase();
+                    const trackKey = TRACK_KEY_PREFIX + stepId;
+                    const track = localStorage.getItem(trackKey);
+                    const trackTag = track ? ` [${trackMap[track]}]` : '';
+
+                    report += `  ${stepNumber}: ${status}${trackTag}`;
                     if (notes) {
                         report += ` — ${notes}`;
                     }
@@ -1520,18 +1776,36 @@
         }
 
         // Close modal on escape key
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && document.getElementById('reportModal').classList.contains('show')) {
                 closeReport();
             }
         });
 
         // Close modal on background click
-        document.getElementById('reportModal').addEventListener('click', function(e) {
+        document.getElementById('reportModal').addEventListener('click', function (e) {
             if (e.target === this) {
                 closeReport();
             }
         });
+
+        // Restore and initialize default track selector
+        function restoreDefaultTrack() {
+            const defaultTrackSelect = document.getElementById('defaultTrackSelect');
+            if (defaultTrackSelect) {
+                const savedDefaultTrack = localStorage.getItem(DEFAULT_TRACK_KEY) || '';
+                defaultTrackSelect.value = savedDefaultTrack;
+
+                defaultTrackSelect.addEventListener('change', function () {
+                    if (this.value) {
+                        localStorage.setItem(DEFAULT_TRACK_KEY, this.value);
+                    } else {
+                        localStorage.removeItem(DEFAULT_TRACK_KEY);
+                    }
+                });
+            }
+        }
     </script>
 </body>
+
 </html>
