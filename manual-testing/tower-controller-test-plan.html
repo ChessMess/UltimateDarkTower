@@ -560,6 +560,31 @@
         .hidden-step {
             display: none;
         }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .progress-bar-container {
+                background: #1a1a1a;
+                border-color: #444;
+            }
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #27ae60);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 6px;
+        }
     </style>
 </head>
 <body>
@@ -568,10 +593,14 @@
             <div class="header-title">🗼 Tower Controller Manual Test Plan</div>
             <div class="header-progress"><span id="progress">0 / 0</span> steps recorded</div>
             <div class="header-buttons">
+                <button onclick="jumpToNextIncomplete()">⏭️ Resume Testing</button>
                 <button class="success" onclick="generateReport()">📊 Generate Report</button>
                 <button onclick="toggleFilterFailed()">🔴 Filter to Failed</button>
                 <button class="danger" onclick="clearAllResults()">🗑️ Clear All</button>
             </div>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBar"></div>
         </div>
         <nav>
             <a href="#intro">Intro</a>
@@ -1339,6 +1368,21 @@ npm run dev:controller
             });
 
             document.getElementById('progress').textContent = `${recorded} / ${total}`;
+
+            // Update progress bar based on completed test steps
+            const totalSteps = document.querySelectorAll('.test-step').length;
+            let completedSteps = 0;
+
+            document.querySelectorAll('.test-step').forEach(step => {
+                const passBtn = step.querySelector('.result-button.pass');
+                const failBtn = step.querySelector('.result-button.fail');
+                if (passBtn || failBtn) {
+                    completedSteps++;
+                }
+            });
+
+            const percentage = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
+            document.getElementById('progressBar').style.width = percentage + '%';
         }
 
         // Clear all results and notes
@@ -1385,6 +1429,29 @@ npm run dev:controller
                     step.parentElement.classList.remove('hidden-step');
                 }
             });
+        }
+
+        // Jump to first incomplete test step
+        function jumpToNextIncomplete() {
+            const steps = document.querySelectorAll('.test-step');
+            for (let step of steps) {
+                const passBtn = step.querySelector('.result-button.pass');
+                const failBtn = step.querySelector('.result-button.fail');
+
+                // If neither Pass nor Fail is marked, this step is incomplete
+                if (!passBtn && !failBtn) {
+                    const stepNumber = step.querySelector('.step-number').textContent.trim();
+                    step.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Highlight the step briefly by adding a pulse effect
+                    step.style.backgroundColor = '#fff3cd';
+                    setTimeout(() => {
+                        step.style.backgroundColor = '';
+                    }, 2000);
+                    return;
+                }
+            }
+            // All steps are complete
+            alert('🎉 All test steps completed! Generate a report to see your results.');
         }
 
         // Generate and display test report
