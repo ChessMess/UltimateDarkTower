@@ -33523,6 +33523,10 @@ var DrumRotationAudio = class {
 // ../UltimateDarkTowerDisplay/src/audio/TowerSampleAudio.ts
 var DEFAULT_GAIN = 1;
 var STOP_FADE_SEC = 0.08;
+var VOLUME_GAINS = [1, 0.6, 0.3, 0];
+function gainForVolume(volume) {
+  return VOLUME_GAINS[volume] ?? DEFAULT_GAIN;
+}
 var TowerSampleAudio = class {
   constructor() {
     this.ctx = null;
@@ -33663,7 +33667,7 @@ var TowerSampleAudio = class {
         this.gain.gain.cancelScheduledValues(t);
         this.gain.gain.setValueAtTime(DEFAULT_GAIN, t);
       }
-      const target = volume === 3 ? 0 : DEFAULT_GAIN;
+      const target = gainForVolume(volume);
       const shotGain = ctx.createGain();
       shotGain.gain.value = target;
       shotGain.connect(this.gain);
@@ -33742,7 +33746,7 @@ var TowerSampleAudio = class {
       this.gain.connect(ctx.destination);
     }
     const now = ctx.currentTime;
-    const target = volume === 3 ? 0 : DEFAULT_GAIN;
+    const target = gainForVolume(volume);
     this.gain.gain.cancelScheduledValues(now);
     this.gain.gain.setValueAtTime(target, now);
     const src = ctx.createBufferSource();
@@ -33764,7 +33768,7 @@ var TowerSampleAudio = class {
   applyGain(volume) {
     if (!this.ctx || !this.gain) return;
     const now = this.ctx.currentTime;
-    const target = volume === 3 ? 0 : DEFAULT_GAIN;
+    const target = gainForVolume(volume);
     this.gain.gain.cancelScheduledValues(now);
     this.gain.gain.setValueAtTime(target, now);
   }
@@ -61269,6 +61273,7 @@ var Tower3DView = class {
   applyState(state, force = false) {
     this.latestState = state;
     if (this.wrapper) this.wrapper.style.display = "";
+    this.startRenderLoop();
     const sequenceActive = this.sequenceAnimator?.apply(state.led_sequence, () => {
     });
     if (!sequenceActive) {
@@ -61567,6 +61572,7 @@ var Tower3DView = class {
     this.drumManager.stopAll();
     this.towerSampleAudio.stop();
     if (this.wrapper) this.wrapper.style.display = "none";
+    this.stopRenderLoop();
   }
   /**
    * Set the URL of the audio asset played while drums rotate.
@@ -62380,6 +62386,7 @@ var Tower3DView = class {
     return new CanvasTexture(canvas);
   }
   startRenderLoop() {
+    if (this.rafId !== null) return;
     this.physicsTimer.reset();
     const tick = () => {
       this.rafId = requestAnimationFrame(tick);
@@ -62406,6 +62413,19 @@ var Tower3DView = class {
       }
     };
     tick();
+  }
+  /**
+   * Pause the render loop. An idle/hidden canvas otherwise keeps a ~60fps
+   * requestAnimationFrame loop running; because the emulator popup is same-origin
+   * with the controller (`window.open`), that busy loop makes the controller page
+   * sluggish while disconnected. Safe to call repeatedly; `startRenderLoop()`
+   * (invoked from `applyState`) resumes it.
+   */
+  stopRenderLoop() {
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
   handleResize() {
     if (!this.renderer || !this.camera) return;

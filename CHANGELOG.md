@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+
+- **Controller example: the "calibrating…" message no longer sticks forever.** It was cleared only by
+  `onCalibrationComplete`, which fires only if the completed-state packet arrives while the library's
+  `performingCalibration` flag is armed — a timing window could miss it, leaving the message shown
+  while the calibration icons still turned green. The controller now also clears the message whenever
+  it observes a fully-calibrated tower state, making it robust to that race.
+- **Controller example: re-selecting the current tab no longer turns the lights off.** `switchTab`
+  now no-ops when the target tab is already active, instead of running its light-clearing / tab-setup
+  logic again.
+
+### Changed
+
+- **Controller example UI polish** (from manual-test feedback): primary action buttons (Connect, Play,
+  Rotate, Calibrate, Randomize, Move Glyph, Break Seal, Clear Effect, All On/Off) now use a blue
+  primary style; the previously-unlabeled dropdowns (tower type, sound, light effect/override,
+  randomize levels, seal location) get accessible labels; the drum position selects are labeled
+  Top / Middle / Bottom; and the footer "Troubleshooting" control is styled as a link rather than
+  plain text.
+- **Manual test plan / runner** (`manual-testing/tower-controller-test-plan.html`): added an **N/A /
+  Blocked** result option and a **track filter** (hide steps that don't apply to Emulator vs Real
+  Tower); the generated report now uses ASCII track tags and a plain separator so it survives
+  copy/paste (previous emoji tags corrupted to `??`). Corrected the self-contradicting "reconnect to
+  get an uncalibrated tower" instructions in the before-calibration steps (a same-mode reconnect
+  intentionally *keeps* calibration; reload / Tower-Type switch resets it), added a "calibration reset
+  model" callout, added seal-removal / reconnect preconditions, reclassified the off-emulator 16.1
+  step as `[Real Tower]`, and stopped propagating a hardware-locked step's track onto other steps.
+
 ## [5.0.1] - 2026-07-03
 
 ### Fixed

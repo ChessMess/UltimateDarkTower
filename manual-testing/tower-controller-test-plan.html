@@ -367,6 +367,19 @@
             }
         }
 
+        .result-button.na {
+            background: #fef3cd;
+            border-color: #d39e00;
+            color: #856404;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .result-button.na {
+                background: #3a3320;
+                color: #ffd666;
+            }
+        }
+
         .step-instructions {
             margin: 0.5rem 0;
             font-size: 1.15rem;
@@ -564,6 +577,10 @@
             display: none;
         }
 
+        .hidden-track {
+            display: none;
+        }
+
         .progress-bar-container {
             width: 100%;
             height: 12px;
@@ -619,6 +636,11 @@
                 <button onclick="jumpToNextIncomplete()">⏭️ Resume Testing</button>
                 <button class="success" onclick="generateReport()">📊 Generate Report</button>
                 <button onclick="toggleFilterFailed()">🔴 Filter to Failed</button>
+                <select id="trackFilter" onchange="applyTrackFilter()" title="Hide steps that don't apply to your setup">
+                    <option value="">🔎 Show all steps</option>
+                    <option value="emulator">🟦 Emulator-testable only</option>
+                    <option value="real">🔴 Real-Tower only</option>
+                </select>
                 <button class="danger" onclick="clearAllResults()">🗑️ Clear All</button>
             </div>
         </div>
@@ -918,6 +940,13 @@
             <h3>3. Calibration</h3>
             <div class="what-it-checks">What this checks: The app can initiate a calibration routine, which teaches the
                 tower the reference position of its three drums (required before rotation commands work reliably).</div>
+            <div class="track-instructions"><strong>📌 Calibration reset model (read before sections 3, 6, 8, 9):</strong>
+                Once the tower is calibrated it <strong>stays</strong> calibrated across a same-mode
+                Disconnect→Connect — the app deliberately reuses the tower object and keeps its state (this is what
+                section 9.6 verifies). To get back to an <em>uncalibrated</em> tower for the "before calibration" tests
+                (6.2, 8.3), you must <strong>reload the page</strong>, <strong>switch the Tower Type to the other option
+                and back</strong>, or (Emulator) click <strong>Reset Emulator</strong>. A real tower likewise only
+                forgets its calibration on a power-cycle, not on a BLE reconnect.</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -948,6 +977,10 @@
                     </div>
                 </div>
                 <div class="step-instructions">
+                    <div class="expected-result"><strong>Precondition:</strong> Make sure you are <strong>connected</strong>
+                        first (if you disconnected in section 2, click Connect again). If any physical seals are on the
+                        tower, <strong>remove them</strong> so you can actually see the drums spin during the sweep
+                        (with the seals on, the movement is hard to see — especially in the emulator).</div>
                     <div class="track-instructions"><strong>Real Tower:</strong> Click the blue
                         <strong>Calibrate</strong> button (in the Diagnostics tab). The tower will begin spinning its
                         drums to find their zero positions. This takes about 10-15 seconds. Do not interrupt the tower
@@ -1224,6 +1257,8 @@
                     </div>
                 </div>
                 <div class="step-instructions">
+                    <div class="expected-result"><strong>Precondition:</strong> Remove any physical seals from the tower
+                        first, so you can clearly see the drums rotate.</div>
                     <div class="step-instructions">
                         In the <strong>Diagnostics</strong> tab, scroll to the "Drums / Rotation" section. Set the three
                         dropdowns ("Top", "Middle", "Bottom") each to a different compass direction — North, South,
@@ -1251,8 +1286,11 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Connect fresh (or reconnect) so the drums are <em>not</em> calibrated (Calibration icons show
-                        red X). Without calibrating first, set the drum dropdowns and click <strong>Rotate</strong>.
+                        Get the tower into an <em>uncalibrated</em> state (Calibration icons show red X). <strong>Reload
+                        the page, or switch the Tower Type to the other option and back</strong> — a same-mode
+                        Disconnect→Connect intentionally <em>keeps</em> calibration (see 9.6), so it will not reset the
+                        drums. On the Emulator you can also use <strong>Reset Emulator</strong>. Then, without
+                        calibrating first, set the drum dropdowns and click <strong>Rotate</strong>.
                     </div>
                     <div class="expected-result"><strong>Expected:</strong> The Rotate command is <strong>not</strong>
                         blocked — the tower still accepts and performs the rotation with no warning or error (unlike Move
@@ -1277,6 +1315,8 @@
                     </div>
                 </div>
                 <div class="step-instructions">
+                    <div class="expected-result"><strong>Precondition:</strong> Remove any physical seals from the tower
+                        first, so you can clearly see the drums rotate.</div>
                     <div class="step-instructions">
                         Click the <strong>Library</strong> tab, scroll to the "Randomize Drums" section, and set the
                         <strong>Level(s)</strong> dropdown (options: all, top, middle, bottom, top &amp; middle, top
@@ -1306,6 +1346,9 @@
                     </div>
                 </div>
                 <div class="step-instructions">
+                    <div class="expected-result"><strong>Precondition:</strong> Remove any physical seals, and
+                        <strong>calibrate first</strong>. Glyph positions are unknown (null) until calibration, so before
+                        calibrating the grid is legitimately all dark — no cells glow. Calibrate, then view the grid.</div>
                     <div class="step-instructions">
                         In the <strong>Library</strong> tab, scroll down to the "Glyphs" section. You'll see a 3×4 grid
                         labeled with drum levels (Top / Mid / Bot rows) and compass directions (N / E / S / W columns).
@@ -1313,9 +1356,9 @@
                         Banner, or Reinforce) and another labeled "Side:" to select a compass direction (North / East /
                         South / West).
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The grid displays. If any glyphs are
-                        currently active in their positions, those grid cells glow (amber/yellow highlight). Otherwise,
-                        all cells are dark/empty.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The grid displays. After calibration, cells
+                        that hold a glyph glow (amber/yellow highlight); cells without a glyph stay dark. (Before
+                        calibration, all cells are dark — that is expected, not a failure.)</div>
                 </div>
                 <textarea class="notes-input" data-step="8.1" placeholder="Add notes..."></textarea>
             </div>
@@ -1353,7 +1396,9 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Connect fresh so the drums are <em>not</em> calibrated (Calibration icons show red X). Without
+                        Get the tower into an <em>uncalibrated</em> state (Calibration icons show red X) — <strong>reload
+                        the page, switch the Tower Type and back, or use Reset Emulator</strong>. A same-mode
+                        Disconnect→Connect keeps calibration (see 9.6), so it will not reset the drums. Then, without
                         calibrating, pick a glyph and side and click <strong>Move Glyph</strong>.
                     </div>
                     <div class="expected-result"><strong>Expected:</strong> The glyph does <strong>not</strong> move.
@@ -1388,8 +1433,11 @@
                         (representing the 12 seal positions: 3 levels × 4 compass directions). A dropdown above the grid
                         lets you select a seal location (e.g., "North Top", "South Mid", etc.).
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The grid displays 12 empty (gray or white)
-                        squares. None are currently broken.</div>
+                    <div class="expected-result"><strong>Expected:</strong> On a fresh session the grid displays 12 empty
+                        (gray or white) squares, none broken. <strong>Note:</strong> this grid reflects
+                        <em>software-tracked</em> broken seals from the current session — if you broke seals in an earlier
+                        test (9.2–9.5) and didn't Clear them, some cells will already show broken. Clear them first if you
+                        want a clean starting grid.</div>
                 </div>
                 <textarea class="notes-input" data-step="9.1" placeholder="Add notes..."></textarea>
             </div>
@@ -1412,6 +1460,10 @@
                     <div class="expected-result"><strong>Expected:</strong> The corresponding grid square turns red/dark
                         red (indicating the seal is now broken) and a seal-break effect fires on the tower/emulator. The
                         Break Seal button is then disabled (greyed, ~50% opacity) for a 10-second cooldown (see 9.5).</div>
+                    <div class="expected-result"><strong>Audio note:</strong> Breaking a seal plays the "Tower Seal"
+                        sound. On the <strong>Emulator</strong>, sound only plays if you clicked <strong>Enable Audio</strong>
+                        in the emulator popup first (browsers block audio until you do). If you see the visuals but hear
+                        nothing, that's the audio gate — enable it and retry, then judge the sound.</div>
                 </div>
                 <textarea class="notes-input" data-step="9.2" placeholder="Add notes..."></textarea>
             </div>
@@ -1835,7 +1887,7 @@
 
             <div class="test-step">
                 <div class="step-header">
-                    <span class="step-number">16.1 Tab shows a notice when not on the emulator</span>
+                    <span class="step-number">16.1 Tab shows a notice when not on the emulator [Real Tower]</span>
                     <div class="step-actions">
                         <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
                         <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
@@ -1903,23 +1955,43 @@
             updateProgress();
         });
 
-        // Set step result (pass/fail) and save to localStorage
+        // Determine whether a step is inherently locked to a hardware track, based
+        // on the [Real Tower] / [Hardware Only] / [Emulator] / [Emulator Only] tags
+        // in its own title or its section heading. Returns 'real', 'emulator', or
+        // null (applies to both). Real/hardware tags win over emulator tags, so a
+        // step like "16.1 ... [Real Tower]" inside the "[Emulator Only]" section
+        // correctly resolves to 'real'.
+        function getFixedTrack(step) {
+            const stepEl = step.querySelector('.step-number');
+            const stepText = stepEl ? stepEl.textContent : '';
+            const section = step.closest('section');
+            const headingEl = section ? section.querySelector('h3') : null;
+            const sectionText = headingEl ? headingEl.textContent : '';
+            const combined = (stepText + ' ' + sectionText).toLowerCase();
+            if (combined.includes('[real tower]') || combined.includes('[hardware only]')) return 'real';
+            if (combined.includes('[emulator only]') || combined.includes('[emulator]')) return 'emulator';
+            return null;
+        }
+
+        // Set step result (pass/fail/na) and save to localStorage
         function setStepResult(button, result) {
             const stepNumber = button.parentElement.parentElement.querySelector('.step-number').textContent.trim();
             const stepId = stepNumber.replace(/\s+/g, '-').toLowerCase();
 
             // Update button states
             const buttons = button.parentElement.querySelectorAll('.result-button');
-            buttons.forEach(btn => btn.classList.remove('pass', 'fail', 'not-run'));
+            buttons.forEach(btn => btn.classList.remove('pass', 'fail', 'na', 'not-run'));
 
             if (result === 'pass') {
                 button.classList.add('pass');
             } else if (result === 'fail') {
                 button.classList.add('fail');
+            } else if (result === 'na') {
+                button.classList.add('na');
             }
 
             buttons.forEach(btn => {
-                if (!btn.classList.contains('pass') && !btn.classList.contains('fail')) {
+                if (!btn.classList.contains('pass') && !btn.classList.contains('fail') && !btn.classList.contains('na')) {
                     btn.classList.add('not-run');
                 }
             });
@@ -1932,8 +2004,11 @@
             const trackKey = TRACK_KEY_PREFIX + stepId;
             const thisStepTrack = localStorage.getItem(trackKey);
 
-            // If this step has a track, propagate it to all untested steps
-            if (thisStepTrack) {
+            // Spread the track to untested steps only when it's a user-chosen track
+            // on a non-fixed step. A hardware-locked step carries its own inherent
+            // track and must not push that onto every other step.
+            const stepEl = button.closest('.test-step');
+            if (thisStepTrack && stepEl && !getFixedTrack(stepEl)) {
                 propagateTrackToUntestedSteps(thisStepTrack);
             }
 
@@ -1955,10 +2030,21 @@
                 const storageKey = STORAGE_KEY_PREFIX + stepId;
                 const result = localStorage.getItem(storageKey);
 
+                // Inject the N/A result button (Pass/Fail are static markup) before
+                // restoring state, so it exists to receive its class.
+                const stepActions = step.querySelector('.step-actions');
+                if (stepActions && !stepActions.querySelector('.na-option')) {
+                    const naBtn = document.createElement('button');
+                    naBtn.className = 'result-button not-run na-option';
+                    naBtn.textContent = '⊘ N/A';
+                    naBtn.setAttribute('onclick', "setStepResult(this, 'na')");
+                    stepActions.appendChild(naBtn);
+                }
+
                 if (result) {
                     const buttons = step.querySelectorAll('.result-button');
                     buttons.forEach(btn => {
-                        btn.classList.remove('pass', 'fail', 'not-run');
+                        btn.classList.remove('pass', 'fail', 'na', 'not-run');
                         btn.classList.add('not-run');
                     });
 
@@ -1968,11 +2054,23 @@
                     } else if (result === 'fail') {
                         buttons[1].classList.remove('not-run');
                         buttons[1].classList.add('fail');
+                    } else if (result === 'na') {
+                        const naBtn = step.querySelector('.na-option');
+                        if (naBtn) {
+                            naBtn.classList.remove('not-run');
+                            naBtn.classList.add('na');
+                        }
                     }
                 }
 
+                // A step locked to a hardware track always carries that track, so the
+                // report tags it correctly and global propagation can't mislabel it.
+                const fixedTrack = getFixedTrack(step);
+                if (fixedTrack) {
+                    localStorage.setItem(TRACK_KEY_PREFIX + stepId, fixedTrack);
+                }
+
                 // Inject and restore track selector
-                const stepActions = step.querySelector('.step-actions');
                 if (stepActions && !stepActions.querySelector('.track-select')) {
                     const trackSelect = document.createElement('select');
                     trackSelect.className = 'track-select';
@@ -1990,8 +2088,10 @@
                     trackSelect.addEventListener('change', function () {
                         if (this.value) {
                             localStorage.setItem(trackKey, this.value);
-                            // Propagate this track to all untested steps
-                            propagateTrackToUntestedSteps(this.value);
+                            // Only a non-fixed (user-chosen) step spreads its track.
+                            if (!getFixedTrack(step)) {
+                                propagateTrackToUntestedSteps(this.value);
+                            }
                         } else {
                             localStorage.removeItem(trackKey);
                         }
@@ -2017,14 +2117,15 @@
 
         // Update progress indicator
         function updateProgress() {
-            // A step counts as recorded once it has a Pass or Fail marked.
+            // A step counts as recorded once it has a Pass, Fail, or N/A marked.
             const totalSteps = document.querySelectorAll('.test-step').length;
             let completedSteps = 0;
 
             document.querySelectorAll('.test-step').forEach(step => {
                 const passBtn = step.querySelector('.result-button.pass');
                 const failBtn = step.querySelector('.result-button.fail');
-                if (passBtn || failBtn) {
+                const naBtn = step.querySelector('.result-button.na');
+                if (passBtn || failBtn || naBtn) {
                     completedSteps++;
                 }
             });
@@ -2049,7 +2150,7 @@
 
                 // Reset all buttons and textareas
                 document.querySelectorAll('.result-button').forEach(btn => {
-                    btn.classList.remove('pass', 'fail');
+                    btn.classList.remove('pass', 'fail', 'na');
                     btn.classList.add('not-run');
                 });
 
@@ -2062,6 +2163,18 @@
                     select.value = '';
                 });
 
+                // Re-apply the inherent hardware-track tags cleared above.
+                document.querySelectorAll('.test-step').forEach(step => {
+                    const stepNumber = step.querySelector('.step-number').textContent.trim();
+                    const stepId = stepNumber.replace(/\s+/g, '-').toLowerCase();
+                    const fixedTrack = getFixedTrack(step);
+                    if (fixedTrack) {
+                        localStorage.setItem(TRACK_KEY_PREFIX + stepId, fixedTrack);
+                        const sel = step.querySelector('.track-select');
+                        if (sel) sel.value = fixedTrack;
+                    }
+                });
+
                 updateProgress();
 
                 // Hide failed filter if active
@@ -2071,7 +2184,8 @@
             }
         }
 
-        // Toggle filter to show only failed tests
+        // Toggle filter to show only failed tests. Operate on the step itself, not
+        // its parent <section>, so multi-step sections aren't hidden wholesale.
         function toggleFilterFailed() {
             isFilteringFailed = !isFilteringFailed;
 
@@ -2079,10 +2193,24 @@
             steps.forEach(step => {
                 const hasFailed = step.querySelector('.result-button.fail') !== null;
                 if (isFilteringFailed) {
-                    step.parentElement.classList.toggle('hidden-step', !hasFailed);
+                    step.classList.toggle('hidden-step', !hasFailed);
                 } else {
-                    step.parentElement.classList.remove('hidden-step');
+                    step.classList.remove('hidden-step');
                 }
+            });
+        }
+
+        // Hide steps that don't apply to the chosen setup (Emulator vs Real Tower),
+        // based on each step's inherent hardware-track tag. Composes with the
+        // "Filter to Failed" toggle (they use separate CSS classes).
+        function applyTrackFilter() {
+            const val = document.getElementById('trackFilter').value;
+            document.querySelectorAll('.test-step').forEach(step => {
+                const fixed = getFixedTrack(step);
+                let hide = false;
+                if (val === 'emulator' && fixed === 'real') hide = true;
+                if (val === 'real' && fixed === 'emulator') hide = true;
+                step.classList.toggle('hidden-track', hide);
             });
         }
 
@@ -2092,9 +2220,10 @@
             for (let step of steps) {
                 const passBtn = step.querySelector('.result-button.pass');
                 const failBtn = step.querySelector('.result-button.fail');
+                const naBtn = step.querySelector('.result-button.na');
 
-                // If neither Pass nor Fail is marked, this step is incomplete
-                if (!passBtn && !failBtn) {
+                // If no result (Pass/Fail/N/A) is marked, this step is incomplete
+                if (!passBtn && !failBtn && !naBtn) {
                     const stepNumber = step.querySelector('.step-number').textContent.trim();
                     step.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     // Highlight the step briefly by adding a pulse effect
@@ -2105,8 +2234,8 @@
                     return;
                 }
             }
-            // All steps are complete
-            alert('🎉 All test steps completed! Generate a report to see your results.');
+            // All steps are recorded
+            alert('🎉 All test steps recorded! Generate a report to see your results.');
         }
 
         // Generate and display test report
@@ -2117,12 +2246,15 @@
 
             let passCount = 0;
             let failCount = 0;
+            let naCount = 0;
             let notRunCount = 0;
 
+            // ASCII tags (no emoji) so the report survives copy/paste into a
+            // non-UTF-8 editor — the previous emoji tags corrupted to "??" on save.
             const trackMap = {
-                'emulator': '🟦 Emulator',
-                'real': '🔴 Real Tower',
-                'both': '🟪 Both'
+                'emulator': 'Emulator',
+                'real': 'Real Tower',
+                'both': 'Both'
             };
 
             const sections = document.querySelectorAll('section');
@@ -2138,31 +2270,34 @@
 
                 steps.forEach(step => {
                     const stepNumber = step.querySelector('.step-number').textContent.trim();
-                    const passBtn = step.querySelectorAll('.result-button')[0];
-                    const failBtn = step.querySelectorAll('.result-button')[1];
                     const notesTextarea = step.querySelector('textarea[data-step]');
                     const notes = notesTextarea ? notesTextarea.value : '';
 
                     let status = 'NOT RUN';
-                    if (passBtn.classList.contains('pass')) {
+                    if (step.querySelector('.result-button.pass')) {
                         status = 'PASS';
                         passCount++;
-                    } else if (failBtn.classList.contains('fail')) {
+                    } else if (step.querySelector('.result-button.fail')) {
                         status = 'FAIL';
                         failCount++;
+                    } else if (step.querySelector('.result-button.na')) {
+                        status = 'N/A';
+                        naCount++;
                     } else {
                         notRunCount++;
                     }
 
-                    // Get track tag if present
+                    // Get track tag if present. Skip it when the step title already
+                    // carries a bracketed tag (e.g. "[Real Tower]") so it isn't duplicated.
                     const stepId = stepNumber.replace(/\s+/g, '-').toLowerCase();
                     const trackKey = TRACK_KEY_PREFIX + stepId;
                     const track = localStorage.getItem(trackKey);
-                    const trackTag = track ? ` [${trackMap[track]}]` : '';
+                    const titleHasBracket = /\[[^\]]+\]/.test(stepNumber);
+                    const trackTag = (track && trackMap[track] && !titleHasBracket) ? ` [${trackMap[track]}]` : '';
 
                     report += `  ${stepNumber}: ${status}${trackTag}`;
                     if (notes) {
-                        report += ` — ${notes}`;
+                        report += ` - ${notes}`;
                     }
                     report += '\n';
                 });
@@ -2172,8 +2307,9 @@
             report += '=======\n';
             report += `Passed:  ${passCount}\n`;
             report += `Failed:  ${failCount}\n`;
+            report += `N/A:     ${naCount}\n`;
             report += `Not Run: ${notRunCount}\n`;
-            report += `Total:   ${passCount + failCount + notRunCount}\n`;
+            report += `Total:   ${passCount + failCount + naCount + notRunCount}\n`;
 
             document.getElementById('reportText').value = report;
             document.getElementById('reportModal').classList.add('show');
@@ -2206,28 +2342,31 @@
             }
         });
 
-        // Propagate a track to all untested steps
+        // Propagate a track to all untested steps, but never override a step that
+        // is inherently locked to a hardware track (that mislabeling is what put
+        // "[Emulator]" on Real-Tower-only steps in past reports).
         function propagateTrackToUntestedSteps(trackValue) {
             const steps = document.querySelectorAll('.test-step');
             steps.forEach(step => {
-                // Check if this step has been tested (Pass or Fail)
-                const passBtn = step.querySelector('.result-button.pass');
-                const failBtn = step.querySelector('.result-button.fail');
-                const isUntested = !passBtn && !failBtn;
+                // Check if this step has been recorded (Pass, Fail, or N/A)
+                const isUntested = !step.querySelector('.result-button.pass') &&
+                    !step.querySelector('.result-button.fail') &&
+                    !step.querySelector('.result-button.na');
+                if (!isUntested) return;
 
-                if (isUntested) {
-                    // Get step ID
-                    const stepNumber = step.querySelector('.step-number').textContent.trim();
-                    const stepId = stepNumber.replace(/\s+/g, '-').toLowerCase();
-                    const trackKey = TRACK_KEY_PREFIX + stepId;
+                // Skip steps that carry an inherent hardware-track tag.
+                if (getFixedTrack(step)) return;
 
-                    // Set the track (overwrite any previous propagated value)
-                    localStorage.setItem(trackKey, trackValue);
-                    // Update the UI
-                    const trackSelect = step.querySelector('.track-select');
-                    if (trackSelect) {
-                        trackSelect.value = trackValue;
-                    }
+                const stepNumber = step.querySelector('.step-number').textContent.trim();
+                const stepId = stepNumber.replace(/\s+/g, '-').toLowerCase();
+                const trackKey = TRACK_KEY_PREFIX + stepId;
+
+                // Set the track (overwrite any previous propagated value)
+                localStorage.setItem(trackKey, trackValue);
+                // Update the UI
+                const trackSelect = step.querySelector('.track-select');
+                if (trackSelect) {
+                    trackSelect.value = trackValue;
                 }
             });
         }

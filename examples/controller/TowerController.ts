@@ -547,6 +547,21 @@ const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: 
     updateCalibrationStatus();
   }
 
+  // Self-heal the "calibrating…" message. It is normally cleared by
+  // onCalibrationComplete, but that only fires if the completed-state packet
+  // arrives while `performingCalibration` is armed — a timing window can miss it
+  // and leave the message stuck forever while the icons still go green. Clearing
+  // it whenever we observe a fully-calibrated state makes it robust to that race.
+  const fullyCalibrated =
+    newState.drum[0].calibrated && newState.drum[1].calibrated && newState.drum[2].calibrated;
+  if (fullyCalibrated) {
+    const calMsg = document.getElementById("calibrating-message");
+    if (calMsg && !calMsg.classList.contains("hidden")) {
+      calMsg.classList.add("hidden");
+      setCalibrateButtonDisabled(false);
+    }
+  }
+
   // Check if drum positions changed and update the dropdowns accordingly
   const drumPositionsChanged =
     newState.drum[0].position !== oldState.drum[0].position ||
@@ -1264,6 +1279,13 @@ const sealSquareClick = (element: HTMLElement) => {
 
 // Tab switching functionality
 const switchTab = (tabName: string) => {
+  // Re-selecting the tab you're already on is a no-op — don't clear the lights or
+  // re-run tab setup just because the active tab button was clicked again.
+  const targetButton = document.getElementById(`${tabName}-tab`);
+  if (targetButton && targetButton.classList.contains('tower-tab-active')) {
+    return;
+  }
+
   // Turn off all lights when switching tabs (but not the seals tab — preserve tower state)
   if (tabName !== 'seals') {
     allLightsOff();

@@ -4662,6 +4662,14 @@
       logger.info("Calibration status changed, updating display", "[TC]");
       updateCalibrationStatus();
     }
+    const fullyCalibrated = newState.drum[0].calibrated && newState.drum[1].calibrated && newState.drum[2].calibrated;
+    if (fullyCalibrated) {
+      const calMsg = document.getElementById("calibrating-message");
+      if (calMsg && !calMsg.classList.contains("hidden")) {
+        calMsg.classList.add("hidden");
+        setCalibrateButtonDisabled(false);
+      }
+    }
     const drumPositionsChanged = newState.drum[0].position !== oldState.drum[0].position || newState.drum[1].position !== oldState.drum[1].position || newState.drum[2].position !== oldState.drum[2].position;
     if (drumPositionsChanged) {
       logger.info("Drum positions changed, updating dropdowns", "[TC]");
@@ -5216,6 +5224,10 @@
     }
   };
   var switchTab = (tabName) => {
+    const targetButton = document.getElementById(`${tabName}-tab`);
+    if (targetButton && targetButton.classList.contains("tower-tab-active")) {
+      return;
+    }
     if (tabName !== "seals") {
       allLightsOff();
     }
