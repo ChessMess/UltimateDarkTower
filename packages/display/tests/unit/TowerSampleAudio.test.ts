@@ -178,21 +178,27 @@ describe('TowerSampleAudio', () => {
     expect(lastCall[0]).toBeCloseTo(0.0);
   });
 
-  it('volume 3 mutes, all other values play at full gain', async () => {
+  it('each firmware volume level maps to a distinct playback gain', async () => {
     const audio = new TowerSampleAudio();
     audio.setLibrary(LIB);
     audio.setEnabled(true);
-    audio.sync(0x25, false, 1);
+    audio.sync(0x25, false, 0); // Loud
     await flush();
     const gain = createdGains[0];
-    // Initial play sets gain 1.0 via setValueAtTime for any non-mute value
-    const setCalls = gain.gain.setValueAtTime.mock.calls;
-    expect(setCalls[setCalls.length - 1][0]).toBeCloseTo(1.0);
+    const lastGain = () => gain.gain.setValueAtTime.mock.calls.at(-1)![0];
+    expect(lastGain()).toBeCloseTo(1.0); // Loud
+
+    audio.sync(0x25, false, 1); // Medium — audibly lower than Loud, not muted
+    await flush();
+    expect(lastGain()).toBeCloseTo(0.6);
+
+    audio.sync(0x25, false, 2); // Quiet
+    await flush();
+    expect(lastGain()).toBeCloseTo(0.3);
 
     audio.sync(0x25, false, 3); // Mute
     await flush();
-    const last = gain.gain.setValueAtTime.mock.calls.at(-1)!;
-    expect(last[0]).toBeCloseTo(0.0);
+    expect(lastGain()).toBeCloseTo(0.0);
   });
 
   it('sample 0 stops playback (silence convention)', async () => {

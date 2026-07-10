@@ -359,6 +359,8 @@ export class Tower3DView implements ITowerDisplay {
   applyState(state: TowerState, force = false): void {
     this.latestState = state;
     if (this.wrapper) this.wrapper.style.display = '';
+    // Resume the render loop if a prior showIdle() paused it (no-op if running).
+    this.startRenderLoop();
 
     // When a sequence completes naturally, leave the LEDs at whatever value
     // the timeline last wrote. On the real tower, the firmware ends the
@@ -726,6 +728,9 @@ export class Tower3DView implements ITowerDisplay {
     this.drumManager.stopAll();
     this.towerSampleAudio.stop();
     if (this.wrapper) this.wrapper.style.display = 'none';
+    // Stop rendering while hidden so the off-screen loop doesn't keep the
+    // (same-origin) opener page's main thread busy. Resumed by applyState().
+    this.stopRenderLoop();
   }
 
   /**
@@ -1704,6 +1709,7 @@ export class Tower3DView implements ITowerDisplay {
   }
 
   private startRenderLoop(): void {
+    if (this.rafId !== null) return; // already running — don't stack loops
     this.physicsTimer.reset();
     const tick = () => {
       this.rafId = requestAnimationFrame(tick);
@@ -1730,6 +1736,20 @@ export class Tower3DView implements ITowerDisplay {
       }
     };
     tick();
+  }
+
+  /**
+   * Pause the render loop. An idle/hidden canvas otherwise keeps a ~60fps
+   * requestAnimationFrame loop running; because the emulator popup is same-origin
+   * with the controller (`window.open`), that busy loop makes the controller page
+   * sluggish while disconnected. Safe to call repeatedly; `startRenderLoop()`
+   * (invoked from `applyState`) resumes it.
+   */
+  private stopRenderLoop(): void {
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
 
   private handleResize(): void {

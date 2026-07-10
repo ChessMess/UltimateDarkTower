@@ -126,6 +126,22 @@ display.playSample(sampleId, { loop: false, volume: 0 });
 
 `playSample` is available on `TowerRenderView`, `TowerDisplay`, and `Tower3DView`. It bypasses `sync()` / `stop()` entirely — each call allocates its own `AudioBufferSourceNode` independent of the sync-managed source, so subsequent state-driven `sync(0)` calls only affect sync-initiated plays.
 
+### Volume levels
+
+The `volume` field matches the firmware's 0–3 range and maps to a distinct linear gain (via
+`gainForVolume()`), applied consistently across the state-driven `sync`, the one-shot, and the
+`applyGain` paths:
+
+| `volume` | Meaning | Gain |
+|----------|---------|------|
+| `0` | Loud | `1.0` |
+| `1` | Medium | `0.6` |
+| `2` | Quiet | `0.3` |
+| `3` | Mute | `0.0` |
+
+(Earlier versions treated only `3` as mute and played `0`/`1`/`2` all at full gain — so Loud, Medium,
+and Quiet sounded identical.)
+
 ### Trade-offs
 
 - **Polyphony**: two `playSample` calls in quick succession play in parallel. Use the state-driven path if you want monophonic behavior.

@@ -4,8 +4,9 @@
  * - The library is a sparse map from sample id (TOWER_AUDIO_LIBRARY values,
  *   0x01–0x71) to URL. Unmapped ids warn-once and stop playback.
  * - `sample === 0` means silence; current playback fades out.
- * - volume === 3 is treated as mute (gain 0); all other values play at full
- *   volume (gain 1).
+ * - The firmware volume field (0=Loud, 1=Medium, 2=Quiet, 3=Mute) maps to
+ *   distinct playback gains via `gainForVolume()` so the levels are actually
+ *   audible, not just mute-vs-full.
  * - Decoded buffers are cached per sample id. A monotonic decode token is
  *   used to bail out of stale loads when a newer sync supersedes them.
  *
@@ -14,6 +15,15 @@
  */
 const DEFAULT_GAIN = 1.0;
 const STOP_FADE_SEC = 0.08;
+
+// Firmware volume (0=Loud, 1=Medium, 2=Quiet, 3=Mute) → linear gain. Indexed by
+// the 0..3 volume value; anything out of range falls back to full volume.
+const VOLUME_GAINS = [1.0, 0.6, 0.3, 0.0] as const;
+
+/** Map a firmware volume value (0..3) to a linear playback gain. */
+function gainForVolume(volume: number): number {
+  return VOLUME_GAINS[volume] ?? DEFAULT_GAIN;
+}
 
 export class TowerSampleAudio {
   private ctx: AudioContext | null = null;
@@ -171,7 +181,7 @@ export class TowerSampleAudio {
         this.gain.gain.cancelScheduledValues(t);
         this.gain.gain.setValueAtTime(DEFAULT_GAIN, t);
       }
-      const target = volume === 3 ? 0.0 : DEFAULT_GAIN;
+      const target = gainForVolume(volume);
       // Per-shot gain so simultaneous shots don't fight over the master gain's
       // schedule (sync()'s fades operate on this.gain directly).
       const shotGain = ctx.createGain();
@@ -264,7 +274,7 @@ export class TowerSampleAudio {
       this.gain.connect(ctx.destination);
     }
     const now = ctx.currentTime;
-    const target = volume === 3 ? 0.0 : DEFAULT_GAIN;
+    const target = gainForVolume(volume);
     this.gain.gain.cancelScheduledValues(now);
     this.gain.gain.setValueAtTime(target, now);
 
@@ -290,7 +300,7 @@ export class TowerSampleAudio {
   private applyGain(volume: number): void {
     if (!this.ctx || !this.gain) return;
     const now = this.ctx.currentTime;
-    const target = volume === 3 ? 0.0 : DEFAULT_GAIN;
+    const target = gainForVolume(volume);
     this.gain.gain.cancelScheduledValues(now);
     this.gain.gain.setValueAtTime(target, now);
   }

@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+
+- **Sample-audio volume levels are now distinct, not just mute-vs-full.** `TowerSampleAudio` mapped
+  every firmware volume except Mute (3) to full gain (1.0), so Loud/Medium/Quiet all played at the
+  same loudness. Volume now maps through a shared `gainForVolume()` helper (`0`→1.0 Loud, `1`→0.6
+  Medium, `2`→0.3 Quiet, `3`→0.0 Mute) applied consistently across the state-driven `sync`, the
+  one-shot, and the `applyGain` paths. See [docs/AUDIO.md](docs/AUDIO.md).
+- **The 3D render loop now pauses while idle/hidden.** `Tower3DView.showIdle()` hid the canvas but
+  left the ~60fps `requestAnimationFrame` loop running; `startRenderLoop()` is now guarded against
+  double-start, `showIdle()` cancels the loop, and `applyState()` resumes it. When the view runs in a
+  same-origin popup (the controller example's Tower Emulator), the previously-always-on loop kept the
+  opener page's main thread busy and made it sluggish while disconnected. See
+  [docs/TROUBLESHOOTING.md § Idle state quirks](docs/TROUBLESHOOTING.md).
+
 ## [0.10.2] - 2026-07-04
 
 ### Changed

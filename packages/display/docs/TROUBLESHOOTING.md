@@ -134,7 +134,11 @@ The `package.json` `exports` field that defines the subpath is invisible to lega
 - Replay the entrance cinematic. Call `playEntrance()` explicitly if you want it.
 - Clear user-toggled seals. Those persist until `dispose()` or until clicked again.
 
-Calling `applyState` after `showIdle` immediately reanimates everything.
+`showIdle()` also **pauses the render loop** (hides the canvas and cancels the `requestAnimationFrame`
+loop) so an idle view doesn't keep a background tab/popup's main thread busy at ~60fps — this matters
+when the view runs in a same-origin popup (e.g. the Controller example's Tower Emulator), where an
+always-on loop makes the opener page sluggish. Calling `applyState` after `showIdle` re-shows the
+canvas, resumes the loop, and immediately reanimates everything.
 
 ## Skull-drop detection edge cases
 
