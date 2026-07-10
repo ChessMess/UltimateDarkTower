@@ -2017,19 +2017,7 @@
 
         // Update progress indicator
         function updateProgress() {
-            let recorded = 0;
-            let total = 0;
-
-            document.querySelectorAll('.result-button').forEach(btn => {
-                total++;
-                if (btn.classList.contains('pass') || btn.classList.contains('fail')) {
-                    recorded++;
-                }
-            });
-
-            document.getElementById('progress').textContent = `${recorded} / ${total}`;
-
-            // Update progress bar based on completed test steps
+            // A step counts as recorded once it has a Pass or Fail marked.
             const totalSteps = document.querySelectorAll('.test-step').length;
             let completedSteps = 0;
 
@@ -2040,6 +2028,8 @@
                     completedSteps++;
                 }
             });
+
+            document.getElementById('progress').textContent = `${completedSteps} / ${totalSteps}`;
 
             const percentage = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
             document.getElementById('progressBar').style.width = percentage + '%';
@@ -2140,10 +2130,12 @@
                 const sectionTitle = section.querySelector('h3');
                 if (!sectionTitle) return;
 
+                const steps = section.querySelectorAll('.test-step');
+                if (steps.length === 0) return;
+
                 report += `\n${sectionTitle.textContent}\n`;
                 report += '-'.repeat(40) + '\n';
 
-                const steps = section.querySelectorAll('.test-step');
                 steps.forEach(step => {
                     const stepNumber = step.querySelector('.step-number').textContent.trim();
                     const passBtn = step.querySelectorAll('.result-button')[0];
