@@ -639,6 +639,11 @@
             <a href="#seals">Seals</a>
             <a href="#battery">Battery & Skulls</a>
             <a href="#troubleshooting">Troubleshooting</a>
+            <a href="#tower-state">Tower State</a>
+            <a href="#log-panel">Log Panel</a>
+            <a href="#charts">Charts</a>
+            <a href="#ble-debug">BLE Debug</a>
+            <a href="#seals-3d">3D Seals</a>
         </nav>
     </header>
 
@@ -776,6 +781,48 @@
                 </div>
                 <textarea class="notes-input" data-step="1.3" placeholder="Add notes..."></textarea>
             </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">1.4 Cancel the Bluetooth device picker [Real Tower]</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Real Tower:</strong> Click <strong>Connect</strong> to open
+                        the browser's Bluetooth device picker, then click <strong>Cancel</strong> (dismiss it without
+                        choosing a device).</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Not applicable — the emulator connects
+                        without a picker. Mark this step as the Real Tower track (or skip).</div>
+                    <div class="expected-result"><strong>Expected:</strong> The app does <em>not</em> crash or hang. The
+                        connection banner stays on its previous text (it does <strong>not</strong> turn green or red).
+                        The only feedback is a red "Connection failed…" line in the Log panel on the right. (Note: a
+                        cancelled picker giving no banner feedback is a known rough edge worth flagging.)</div>
+                </div>
+                <textarea class="notes-input" data-step="1.4" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">1.5 Emulator popup lifecycle [Emulator]</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Emulator:</strong> While connected via the Tower Emulator,
+                        <strong>close the 3D emulator popup window</strong>. Then reopen it by selecting "Tower Emulator"
+                        again from the Tower Type dropdown.</div>
+                    <div class="expected-result"><strong>Expected:</strong> Closing the emulator popup automatically
+                        disconnects the session — the banner turns red "Tower Disconnected" within about half a second.
+                        (Also, if you are on a build without emulator support, selecting "Tower Emulator" shows an alert
+                        popup and reverts the dropdown back to "BLE Tower".)</div>
+                </div>
+                <textarea class="notes-input" data-step="1.5" placeholder="Add notes..."></textarea>
+            </div>
         </section>
 
         <section id="disconnect">
@@ -819,6 +866,51 @@
                         Connected" again. Status cards repopulate with battery/calibration/skulls.</div>
                 </div>
                 <textarea class="notes-input" data-step="2.2" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">2.3 Unexpected disconnect (no auto-reconnect)</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Real Tower:</strong> While connected, power off the tower
+                        (or walk it out of Bluetooth range). Wait ~5 seconds.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> While connected, close the emulator popup
+                        window to simulate a dropped connection.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The banner turns red "Tower Disconnected".
+                        The three Calibration icons revert to gray/unknown. The Tower State byte packet blanks to zeros.
+                        The Battery card keeps showing its last value (it is not cleared). The app does
+                        <strong>NOT</strong> attempt to reconnect on its own — you must click Connect again. Confirm no
+                        auto-reconnect happens.</div>
+                </div>
+                <textarea class="notes-input" data-step="2.3" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">2.4 Controls while disconnected</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        While disconnected, try a few controls: click <strong>Play</strong> (Sound), toggle a
+                        <strong>light</strong> checkbox, click <strong>Rotate</strong>, click <strong>Calibrate</strong>,
+                        and the skull <strong>reset</strong> button.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> Nothing is sent to a tower. Feedback is
+                        currently <em>inconsistent</em> by control: some do nothing silently (Calibrate, skull reset),
+                        some write a warning to the Log, and some log "Cannot send command: tower is not connected".
+                        Note which controls give no feedback at all — inconsistent disconnected-state handling is worth
+                        flagging.</div>
+                </div>
+                <textarea class="notes-input" data-step="2.4" placeholder="Add notes..."></textarea>
             </div>
         </section>
 
@@ -913,8 +1005,8 @@
                     </div>
                     <div class="expected-result"><strong>Expected:</strong> The checkbox is now checked. In the 3D
                         emulator (if using Emulator track), that light LED should turn on. On a real tower, the physical
-                        LED lights up. The light state is saved in the app's status display (the "Status Packet" grid at
-                        the bottom).</div>
+                        LED lights up. The light state is reflected in the
+                        <strong>Tower State</strong> byte packet in the Diagnostics tab.</div>
                 </div>
                 <textarea class="notes-input" data-step="4.1" placeholder="Add notes..."></textarea>
             </div>
@@ -967,8 +1059,9 @@
                 <div class="step-instructions">
                     <div class="step-instructions">
                         Before step 4.5, ensure all lights are on from step 4.3. Then, above the light grids, find the
-                        <strong>Light Style</strong> dropdown and select "Breathe" (a pulsing/breathing effect). Click
-                        the blue <strong>Apply to All Lights</strong> button.
+                        <strong>Light Style</strong> dropdown and select "breathe" (the options are code-style names:
+                        off, on, breathe, breatheFast, breathe50percent, flicker). Click the blue <strong>Apply to all
+                        lights</strong> button.
                     </div>
                     <div class="expected-result"><strong>Expected:</strong> All lights begin pulsing/breathing
                         (brightening and dimming in a cycle). In the emulator, you should visually see the lights pulse.
@@ -994,6 +1087,49 @@
                 </div>
                 <textarea class="notes-input" data-step="4.5" placeholder="Add notes..."></textarea>
             </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">4.6 Play a light override sequence</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Below the light grids, find the <strong>Light Overrides</strong> control (a "select override"
+                        dropdown next to a <strong>Light Overrides</strong> button). Pick a sequence from the dropdown
+                        (e.g., "victory", "defeat", "dungeonIdle", "twinkle", "angryStrobe01") and click the
+                        <strong>Light Overrides</strong> button.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The tower/emulator runs the chosen built-in
+                        light animation (these are firmware sequences, different from the on/breathe/flicker styles).
+                        Each override should look distinct from the others. This is a separate feature from the "Apply to
+                        all lights" style controls above.</div>
+                </div>
+                <textarea class="notes-input" data-step="4.6" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">4.7 Lights turn off when switching tabs</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Turn some lights on (e.g., "All On"). Then click a different tab in the left column (e.g.,
+                        <strong>Library</strong>), then any tab other than <strong>Seals</strong>.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> Switching tabs turns all lights off (the app
+                        calls "all lights off" on tab switch for every tab except the Seals tab). Confirm the lights go
+                        dark when you change tabs. This is intended behavior — verify it is consistent.</div>
+                </div>
+                <textarea class="notes-input" data-step="4.7" placeholder="Add notes..."></textarea>
+            </div>
         </section>
 
         <section id="sound">
@@ -1003,7 +1139,7 @@
 
             <div class="test-step">
                 <div class="step-header">
-                    <span class="step-number">5.1 Select a sound</span>
+                    <span class="step-number">5.1 Select and play a sound</span>
                     <div class="step-actions">
                         <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
                         <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
@@ -1011,41 +1147,25 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        In the <strong>Diagnostics</strong> tab, find the <strong>Sound</strong> dropdown. Click it to
-                        see the list of available sound effects (e.g., "Glyph Reveal", "Tower Laugh", "Seal Break",
-                        etc.).
+                        In the <strong>Diagnostics</strong> tab, find the <strong>Sound</strong> dropdown (it starts on
+                        "select sound"). Open it — it lists ~114 named sounds grouped by category (e.g., "Ashstrider",
+                        "Bane of Omens", "Gaze Eternal"). Pick any real sound, then click the blue <strong>Play</strong>
+                        button next to the dropdown.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The dropdown opens and displays a list of
-                        sound names. Select any sound (e.g., "Glyph Reveal").</div>
+                    <div class="track-instructions"><strong>Real Tower:</strong> The tower's speaker plays the selected
+                        sound.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> The sound plays from your computer's
+                        speakers (the emulator relays the audio).</div>
+                    <div class="expected-result"><strong>Expected:</strong> A distinct, audible sound plays. The Log
+                        panel records an info line like "Playing sound N at volume V". If you click Play while the
+                        dropdown is still on "select sound", nothing plays and the Log shows "No sound selected".</div>
                 </div>
                 <textarea class="notes-input" data-step="5.1" placeholder="Add notes..."></textarea>
             </div>
 
             <div class="test-step">
                 <div class="step-header">
-                    <span class="step-number">5.2 Play the sound</span>
-                    <div class="step-actions">
-                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
-                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
-                    </div>
-                </div>
-                <div class="step-instructions">
-                    <div class="track-instructions"><strong>Real Tower:</strong> Click the blue <strong>Play</strong>
-                        button next to the Sound dropdown. The tower's speaker will play the selected sound effect.
-                    </div>
-                    <div class="track-instructions"><strong>Emulator:</strong> Click the blue <strong>Play</strong>
-                        button. A sound effect will play from your computer's speakers (the emulator relays the audio).
-                    </div>
-                    <div class="expected-result"><strong>Expected:</strong> A sound plays from the tower (or your
-                        computer if using Emulator). The sound should be distinct and audible. The app may log "Sound
-                        played: [sound name]" in the Log panel on the right.</div>
-                </div>
-                <textarea class="notes-input" data-step="5.2" placeholder="Add notes..."></textarea>
-            </div>
-
-            <div class="test-step">
-                <div class="step-header">
-                    <span class="step-number">5.3 Adjust volume</span>
+                    <span class="step-number">5.2 Adjust volume (and check the arrow direction)</span>
                     <div class="step-actions">
                         <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
                         <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
@@ -1053,14 +1173,37 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        In the Diagnostics tab, find the volume control: two buttons labeled "&lt;" (volume down) and
-                        "&gt;" (volume up). Next to them is a text label showing the current volume level (e.g., "Loud",
-                        "Medium", "Quiet"). Click the volume down button (&lt;) a few times to lower the volume.
+                        In the Diagnostics tab, find the volume control: two buttons "&lt;" and "&gt;" with a text level
+                        and a speaker icon between them. There are <strong>four</strong> levels:
+                        <strong>Loud → Medium → Quiet → Mute</strong>. Click each button a few times and watch the label
+                        and icon, then play a sound at each level.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The volume label changes (e.g., from "Loud"
-                        to "Medium" to "Quiet"). An emoji icon next to it also changes (speaker with lines → speaker
-                        with one line → speaker with X, etc.) to visually show the volume level. The next sound you play
-                        should be quieter.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The label steps through Loud / Medium /
+                        Quiet / Mute and the speaker icon changes to match; playback gets quieter (silent at Mute). Note
+                        the direction carefully: in the current build "&lt;" moves <em>toward Loud</em> (louder) and
+                        "&gt;" moves <em>toward Mute</em> (quieter). If that feels backwards from the "&lt; = down / &gt;
+                        = up" convention, flag it — the mapping is inverted. Buttons should stop (no-op) at Loud and at
+                        Mute.</div>
+                </div>
+                <textarea class="notes-input" data-step="5.2" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">5.3 No stop / no loop control</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Play a long sound, then look for any way to stop it early or make it loop.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> There is <strong>no</strong> "Stop" button
+                        and <strong>no</strong> loop toggle in the Controller — a sound plays to its end and cannot be
+                        interrupted from the UI (playback is always fire-once, non-looping). Confirm this is the case;
+                        note it as a coverage/UX gap rather than a defect.</div>
                 </div>
                 <textarea class="notes-input" data-step="5.3" placeholder="Add notes..."></textarea>
             </div>
@@ -1074,7 +1217,7 @@
 
             <div class="test-step">
                 <div class="step-header">
-                    <span class="step-number">6.1 Select drum positions</span>
+                    <span class="step-number">6.1 Select positions and rotate the drums</span>
                     <div class="step-actions">
                         <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
                         <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
@@ -1082,36 +1225,39 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        In the <strong>Diagnostics</strong> tab, scroll down to the "Drums / Rotation" section. You'll
-                        see three dropdowns labeled "Top", "Middle", and "Bottom". Each dropdown has four options: North
-                        (N), South (S), East (E), West (W). Set each dropdown to a different compass direction (e.g.,
-                        Top = North, Middle = East, Bottom = South).
+                        In the <strong>Diagnostics</strong> tab, scroll to the "Drums / Rotation" section. Set the three
+                        dropdowns ("Top", "Middle", "Bottom") each to a different compass direction — North, South,
+                        East, West (e.g., Top = North, Middle = East, Bottom = South) — then click the blue
+                        <strong>Rotate</strong> button below them.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> Each dropdown displays your chosen
-                        direction. No changes to the tower yet — you're just selecting the target positions.</div>
+                    <div class="track-instructions"><strong>Real Tower:</strong> The drums spin to their targets over a
+                        few seconds; you may hear clicking/whirring from the motors.</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> The 3D tower visibly spins its drums to
+                        the chosen directions.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The drums settle facing the chosen
+                        directions. The <strong>Tower State</strong> byte packet in the Diagnostics tab updates to show
+                        the new drum positions.</div>
                 </div>
                 <textarea class="notes-input" data-step="6.1" placeholder="Add notes..."></textarea>
             </div>
 
             <div class="test-step">
                 <div class="step-header">
-                    <span class="step-number">6.2 Rotate the drums</span>
+                    <span class="step-number">6.2 Rotation before calibration is allowed</span>
                     <div class="step-actions">
                         <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
                         <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
                     </div>
                 </div>
                 <div class="step-instructions">
-                    <div class="track-instructions"><strong>Real Tower:</strong> Click the blue <strong>Rotate</strong>
-                        button below the three drum dropdowns. The tower's drums will spin to their target positions.
-                        This takes a few seconds. The tower may make clicking/whirring sounds as the motors move.</div>
-                    <div class="track-instructions"><strong>Emulator:</strong> Click the blue <strong>Rotate</strong>
-                        button. The 3D tower in the emulator popup will visually spin its drums to face the chosen
-                        directions.</div>
-                    <div class="expected-result"><strong>Expected:</strong> The drums rotate and settle into place
-                        facing the chosen compass directions. (Real tower: you may hear mechanical sounds; Emulator: you
-                        see the 3D drums spin). The Status Packet display at the bottom updates to show the new drum
-                        positions.</div>
+                    <div class="step-instructions">
+                        Connect fresh (or reconnect) so the drums are <em>not</em> calibrated (Calibration icons show
+                        red X). Without calibrating first, set the drum dropdowns and click <strong>Rotate</strong>.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The Rotate command is <strong>not</strong>
+                        blocked — the tower still accepts and performs the rotation with no warning or error (unlike Move
+                        Glyph, which does require calibration — see the Glyphs section). Confirm rotation is not gated on
+                        calibration.</div>
                 </div>
                 <textarea class="notes-input" data-step="6.2" placeholder="Add notes..."></textarea>
             </div>
@@ -1124,7 +1270,7 @@
 
             <div class="test-step">
                 <div class="step-header">
-                    <span class="step-number">7.1 Choose drums to randomize</span>
+                    <span class="step-number">7.1 Choose level(s) and randomize</span>
                     <div class="step-actions">
                         <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
                         <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
@@ -1132,34 +1278,16 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Click the <strong>Library</strong> tab to see a different set of controls. Scroll down to the
-                        "Randomize Drums" section. Find the <strong>Level(s)</strong> dropdown and select an option
-                        (e.g., "All" to randomize all three drums, or "Top" to randomize only the top drum).
-                    </div>
-                    <div class="expected-result"><strong>Expected:</strong> The dropdown displays your selected option.
-                        No changes to the tower yet.</div>
-                </div>
-                <textarea class="notes-input" data-step="7.1" placeholder="Add notes..."></textarea>
-            </div>
-
-            <div class="test-step">
-                <div class="step-header">
-                    <span class="step-number">7.2 Randomize</span>
-                    <div class="step-actions">
-                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
-                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
-                    </div>
-                </div>
-                <div class="step-instructions">
-                    <div class="step-instructions">
-                        Click the blue <strong>Randomize</strong> button below the Level(s) dropdown.
+                        Click the <strong>Library</strong> tab, scroll to the "Randomize Drums" section, and set the
+                        <strong>Level(s)</strong> dropdown (options: all, top, middle, bottom, top &amp; middle, top
+                        &amp; bottom, middle &amp; bottom). Then click the blue <strong>Randomize</strong> button.
                     </div>
                     <div class="expected-result"><strong>Expected:</strong> The selected drum(s) spin to random compass
-                        directions. The Status Packet at the bottom updates to show the new random positions. (If you
-                        chose "All", all three drums should move; if you chose "Top", only the top drum moves while
-                        middle and bottom stay in place.)</div>
+                        directions and the <strong>Tower State</strong> byte packet updates to the new positions. If you
+                        chose "all", all three drums move; if you chose a single level (e.g., "top"), only that drum
+                        moves while the others stay put.</div>
                 </div>
-                <textarea class="notes-input" data-step="7.2" placeholder="Add notes..."></textarea>
+                <textarea class="notes-input" data-step="7.1" placeholder="Add notes..."></textarea>
             </div>
         </section>
 
@@ -1181,8 +1309,9 @@
                     <div class="step-instructions">
                         In the <strong>Library</strong> tab, scroll down to the "Glyphs" section. You'll see a 3×4 grid
                         labeled with drum levels (Top / Mid / Bot rows) and compass directions (N / E / S / W columns).
-                        Below the grid is a dropdown to select a glyph (Cleanse, Quest, Battle, Banner, or Reinforce)
-                        and another dropdown to select a compass direction.
+                        Below the grid is a dropdown labeled "Glyph:" to select a glyph (Cleanse, Quest, Battle,
+                        Banner, or Reinforce) and another labeled "Side:" to select a compass direction (North / East /
+                        South / West).
                     </div>
                     <div class="expected-result"><strong>Expected:</strong> The grid displays. If any glyphs are
                         currently active in their positions, those grid cells glow (amber/yellow highlight). Otherwise,
@@ -1201,9 +1330,10 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        In the Glyphs section, select a glyph from the first dropdown (e.g., "Cleanse") and a compass
-                        direction from the second dropdown (e.g., "North"). Then click the blue <strong>Move
-                            Glyph</strong> button.
+                        In the Glyphs section, select a glyph from the "Glyph:" dropdown (e.g., "Cleanse") and a side
+                        from the "Side:" dropdown (e.g., "North"). Then click the blue <strong>Move Glyph</strong>
+                        button. (This step assumes the drums are already calibrated — see 8.3 for the uncalibrated
+                        case.)
                     </div>
                     <div class="expected-result"><strong>Expected:</strong> The tower's drums rotate so that the chosen
                         glyph faces the chosen compass direction. The glyph-position grid updates to show the glyph now
@@ -1212,13 +1342,37 @@
                 </div>
                 <textarea class="notes-input" data-step="8.2" placeholder="Add notes..."></textarea>
             </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">8.3 Move Glyph before calibration is blocked</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Connect fresh so the drums are <em>not</em> calibrated (Calibration icons show red X). Without
+                        calibrating, pick a glyph and side and click <strong>Move Glyph</strong>.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The glyph does <strong>not</strong> move.
+                        The Log panel shows an error like "Unable to find current position for {glyph} glyph, please
+                        perform a calibration first." (Unlike drum Rotate, Move Glyph <em>does</em> require calibration
+                        because glyph positions are unknown until the drums are calibrated.)</div>
+                </div>
+                <textarea class="notes-input" data-step="8.3" placeholder="Add notes..."></textarea>
+            </div>
         </section>
 
         <section id="seals">
             <h3>9. Seals</h3>
-            <div class="what-it-checks">What this checks: The app can track and manage seals — physical mechanisms in
-                the tower at each of the 12 light positions (3 levels × 4 sides). Breaking a seal triggers a visual
-                effect (lights flash) and updates game state. Seals can also be cleared/reset.</div>
+            <div class="what-it-checks">What this checks: The app can track and manage seals at each of the 12 light
+                positions (3 levels × 4 sides). Breaking a seal triggers a visual effect (lights flash) and updates
+                app-tracked state; seals can also be cleared/reset. Note: seal state is <strong>software-only</strong> —
+                tracked by the app, not the tower firmware — so it is lost on page reload. These controls are the
+                Library tab's "Break Seal" fieldset. (A separate, emulator-only "Seals" tab manages 3D seal visibility —
+                see section 16.)</div>
 
             <div class="test-step">
                 <div class="step-header">
@@ -1256,8 +1410,8 @@
                         Click the blue <strong>Break Seal</strong> button. The emulator popup will show a visual
                         seal-break effect (the seal at that position drops or disappears, and lights flash).</div>
                     <div class="expected-result"><strong>Expected:</strong> The corresponding grid square turns red/dark
-                        red (indicating the seal is now broken). The button may be disabled for a brief moment to
-                        prevent rapid repeated breaks. The Log panel records "Seal broken: [location]".</div>
+                        red (indicating the seal is now broken) and a seal-break effect fires on the tower/emulator. The
+                        Break Seal button is then disabled (greyed, ~50% opacity) for a 10-second cooldown (see 9.5).</div>
                 </div>
                 <textarea class="notes-input" data-step="9.2" placeholder="Add notes..."></textarea>
             </div>
@@ -1294,11 +1448,55 @@
                     <div class="step-instructions">
                         Click the blue <strong>Clear Effect</strong> button (below the seal grid).
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> All grid squares turn back to gray (not
-                        broken). All lights on the tower turn off. The seal state is reset. The dropdown resets to
-                        "select a location". The Log records "Seals cleared".</div>
+                    <div class="expected-result"><strong>Expected:</strong> "Clear Effect" does two things: it turns off
+                        all lights <em>and</em> resets <strong>every</strong> broken seal. So all grid squares turn back
+                        to gray (not just the LEDs off), and the dropdown resets to "Select a Location". Verify that a
+                        previously-broken seal is restored, not merely un-lit.</div>
                 </div>
                 <textarea class="notes-input" data-step="9.4" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">9.5 Break Seal cooldown</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Break a seal, then immediately try to break another one (via the button or by clicking a gray
+                        grid square) before ~10 seconds pass.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The second break is blocked during the
+                        10-second cooldown — the Break Seal button stays disabled/greyed, and clicking a grid square logs
+                        "Break seal is on cooldown. Please wait before breaking another seal." After the cooldown the
+                        button re-enables and breaking works again.</div>
+                </div>
+                <textarea class="notes-input" data-step="9.5" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">9.6 Seal state persistence</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Break one or two seals. Then (a) reload the browser page and reconnect; and separately (b)
+                        without reloading, switch the Tower Type between BLE Tower and Tower Emulator and reconnect; and
+                        (c) in the same mode, click Disconnect then Connect again.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> Because seal state is software-only and
+                        in-memory: after a page reload (a) or a tower-type switch (b) the broken seals are
+                        <strong>lost</strong> (grid all gray). After a same-mode disconnect→reconnect (c) the broken
+                        seals are <strong>retained</strong> (the Tower object isn't recreated). Confirm each case.</div>
+                </div>
+                <textarea class="notes-input" data-step="9.6" placeholder="Add notes..."></textarea>
             </div>
         </section>
 
@@ -1362,8 +1560,9 @@
                             simulate physical skull drops.]</strong> Click the small icon button next to the skull
                         counter to reset it to 0.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The skull counter resets to 0. The Log
-                        records "Skull count reset".</div>
+                    <div class="expected-result"><strong>Expected:</strong> The skull counter resets to 0. (No specific
+                        log line is emitted.) Note: the reset button only works while connected — clicking it after
+                        disconnecting does nothing.</div>
                 </div>
                 <textarea class="notes-input" data-step="10.3" placeholder="Add notes..."></textarea>
             </div>
@@ -1376,7 +1575,7 @@
 
             <div class="test-step">
                 <div class="step-header">
-                    <span class="step-number">11.1 Open Troubleshooting modal</span>
+                    <span class="step-number">11.1 Open the Troubleshooting modal</span>
                     <div class="step-actions">
                         <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
                         <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
@@ -1384,36 +1583,19 @@
                 </div>
                 <div class="step-instructions">
                     <div class="step-instructions">
-                        Scroll to the bottom of the page. Find the <strong>Troubleshooting</strong> button (usually in a
-                        footer or below the main content).
+                        Scroll to the footer, find the <strong>Troubleshooting</strong> button, and click it.
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The button is visible and clickable.</div>
+                    <div class="expected-result"><strong>Expected:</strong> A modal dialog opens overlaying the page,
+                        showing troubleshooting sections (e.g., "App Reports Tower Jam", "Tower Disconnects During Play",
+                        "Firmware Update Fails (Error 133 / Error 257)", "Battery Specifications") with readable
+                        instructions.</div>
                 </div>
                 <textarea class="notes-input" data-step="11.1" placeholder="Add notes..."></textarea>
             </div>
 
             <div class="test-step">
                 <div class="step-header">
-                    <span class="step-number">11.2 Modal displays content</span>
-                    <div class="step-actions">
-                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
-                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
-                    </div>
-                </div>
-                <div class="step-instructions">
-                    <div class="step-instructions">
-                        Click the Troubleshooting button. A modal popup should appear with troubleshooting content.
-                    </div>
-                    <div class="expected-result"><strong>Expected:</strong> A modal dialog opens overlaying the page. It
-                        displays troubleshooting sections (e.g., "Tower Jam Recovery", "Tower Disconnects During Play",
-                        "Firmware Update Failures", "Battery Specifications") with readable text/instructions.</div>
-                </div>
-                <textarea class="notes-input" data-step="11.2" placeholder="Add notes..."></textarea>
-            </div>
-
-            <div class="test-step">
-                <div class="step-header">
-                    <span class="step-number">11.3 Close modal</span>
+                    <span class="step-number">11.2 Close the modal</span>
                     <div class="step-actions">
                         <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
                         <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
@@ -1427,7 +1609,265 @@
                     <div class="expected-result"><strong>Expected:</strong> The modal closes and you're back at the
                         Controller page.</div>
                 </div>
-                <textarea class="notes-input" data-step="11.3" placeholder="Add notes..."></textarea>
+                <textarea class="notes-input" data-step="11.2" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="tower-state">
+            <h3>12. Tower State Packet</h3>
+            <div class="what-it-checks">What this checks: The Diagnostics tab shows the raw 20-byte status packet the
+                tower reports, with per-byte tooltips, and keeps it in sync with commands and connection state.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">12.1 View the Tower State packet</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        While connected, scroll to the <strong>Tower State</strong> fieldset in the Diagnostics tab. It
+                        shows 20 numbered bytes (Byte 0 … Byte 19). Hover over a byte to read its tooltip.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> All 20 bytes are shown with values. Tooltips
+                        label them meaningfully (e.g., Byte 0 = Battery Level, Byte 19 = Checksum). Nothing shows "—" or
+                        blank while connected.</div>
+                </div>
+                <textarea class="notes-input" data-step="12.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">12.2 Packet updates on commands and blanks on disconnect</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Rotate the drums (section 6) and watch the drum-position bytes. Then click Disconnect and look
+                        at the packet again.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> The drum-position bytes change after a
+                        rotation. After disconnecting, the whole packet blanks to zeros.</div>
+                </div>
+                <textarea class="notes-input" data-step="12.2" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="log-panel">
+            <h3>13. Log Panel</h3>
+            <div class="what-it-checks">What this checks: The always-visible Log panel (right column) can filter by
+                level and by battery noise, filter by text, show a buffer counter, and copy/download/clear its
+                contents.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">13.1 Filter the log</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        In the <strong>Log</strong> panel, uncheck one of the level checkboxes (Info / Warn / Error /
+                        Debug). Set the battery filter radios (All / Changes / None). Type a word into the "Filter log
+                        messages..." box.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> Unchecking a level hides those lines; the
+                        battery radios control how much battery-heartbeat noise is shown (None = hidden); the text box
+                        live-filters to matching lines only. Clearing the filters restores the full view.</div>
+                </div>
+                <textarea class="notes-input" data-step="13.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">13.2 Copy, download, and clear the log</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Note the buffer counter (e.g., "12/1000"). Click <strong>Copy</strong>, then
+                        <strong>Download</strong>, then <strong>Clear Log</strong>.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> Copy puts the displayed log on the
+                        clipboard; Download saves a "TowerLog.txt" file; Clear Log empties the panel and the buffer
+                        counter drops toward 0/1000. The counter tracks entries as new log lines arrive.</div>
+                </div>
+                <textarea class="notes-input" data-step="13.2" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="charts">
+            <h3>14. Charts — IR Detector Readings <span style="font-size: 1rem; color: #e67e22;">[Real Tower]</span></h3>
+            <div class="what-it-checks">What this checks: The Charts tab plots the tower's differential IR detector
+                readings over time, with a selectable window, start/stop collection, clear, and export. This data comes
+                from real firmware, so the chart is essentially hardware-only.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">14.1 Collect and display IR readings [Real Tower]</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Real Tower:</strong> Open the <strong>Charts</strong> tab.
+                        Pick a time window (30 Seconds / 1 Minute / 5 Minutes), toggle the display checkboxes (IR Beam,
+                        Drum 1/2/3), and click <strong>Start</strong>. Interact with the tower (e.g., drop a token
+                        through the beam).</div>
+                    <div class="track-instructions"><strong>Emulator:</strong> Open the Charts tab and click Start — the
+                        chart is expected to stay empty because the emulator doesn't stream IR readings. Verify it
+                        simply stays empty (no error).</div>
+                    <div class="expected-result"><strong>Expected:</strong> On real hardware the chart plots live values
+                        and the stats (Data Points, Latest/Min/Max) update; the status line reflects "collecting". The
+                        display checkboxes show/hide their series.</div>
+                </div>
+                <textarea class="notes-input" data-step="14.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">14.2 Stop, clear, and export</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Click <strong>Stop</strong> (the Start button toggles), then <strong>Clear</strong>, then
+                        <strong>Export</strong>.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> Stop halts collection; Clear empties the
+                        chart and resets the stats; Export downloads the collected data. (Collection also stops
+                        automatically on disconnect.)</div>
+                </div>
+                <textarea class="notes-input" data-step="14.2" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="ble-debug">
+            <h3>15. BLE Debug — Flight Recorder</h3>
+            <div class="what-it-checks">What this checks: The BLE Debug tab exposes the opt-in diagnostics "flight
+                recorder": enable/capture toggles, live connection status and event stream, metrics, and a persistent
+                incident log with export/clear.</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">15.1 Enable diagnostics (off by default)</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        Open the <strong>BLE Debug</strong> tab. Confirm "Enable BLE diagnostics (flight recorder)"
+                        starts <strong>unchecked</strong>. Check it, and optionally check "Capture command/response
+                        payload bytes".
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> Diagnostics are OFF until you enable them —
+                        this is a key precondition: if you don't enable it before a disconnect, nothing is recorded. Once
+                        enabled, the setting persists across a page reload (stored in localStorage).</div>
+                </div>
+                <textarea class="notes-input" data-step="15.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">15.2 Live status and event stream</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        With diagnostics enabled and the tower connected, watch the Live Status grid and Live Event
+                        Stream. Send some commands (rotate, play sound), then click <strong>Refresh</strong>.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> Live Status shows Session ID, Connected =
+                        yes, ring-buffer fill, battery-sample count, last-heartbeat age, and GATT state. The event stream
+                        lists recent events (color-coded), including your commands. Refresh updates the view.</div>
+                </div>
+                <textarea class="notes-input" data-step="15.2" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">15.3 Capture and manage a disconnect incident</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="step-instructions">
+                        With diagnostics enabled, cause a disconnect (power off the tower, or close the emulator popup).
+                        Return to BLE Debug, click <strong>Refresh</strong> on the Incident Log. Try
+                        <strong>Export JSON</strong> on an incident and <strong>Export All JSON</strong>. Reload the page
+                        and check the incident is still listed. Then use <strong>Clear All</strong>.
+                    </div>
+                    <div class="expected-result"><strong>Expected:</strong> A new incident appears with a cause and
+                        metrics. Export downloads JSON. Incidents <strong>persist across reload</strong> (stored in
+                        IndexedDB). Clear All prompts for confirmation and empties the log. (If you had NOT enabled
+                        diagnostics before the disconnect, no incident is recorded — verify that too.)</div>
+                </div>
+                <textarea class="notes-input" data-step="15.3" placeholder="Add notes..."></textarea>
+            </div>
+        </section>
+
+        <section id="seals-3d">
+            <h3>16. 3D Seals Tab <span style="font-size: 1rem; color: #3498db;">[Emulator Only]</span></h3>
+            <div class="what-it-checks">What this checks: The emulator-only "Seals" tab manages which of the 12 physical
+                seal covers are shown on the 3D model. This is a different feature from the Library "Break Seal" section
+                (section 9).</div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">16.1 Tab shows a notice when not on the emulator</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Real Tower / disconnected:</strong> Open the
+                        <strong>Seals</strong> tab (the 5th left-column tab) while connected to a BLE tower or while
+                        disconnected.</div>
+                    <div class="expected-result"><strong>Expected:</strong> The tab shows a notice like "Connect with
+                        Tower Emulator to manage 3D seal visibility." The seal-toggle controls are not usable.</div>
+                </div>
+                <textarea class="notes-input" data-step="16.1" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="test-step">
+                <div class="step-header">
+                    <span class="step-number">16.2 Toggle 3D seal visibility [Emulator]</span>
+                    <div class="step-actions">
+                        <button class="result-button not-run" onclick="setStepResult(this, 'pass')">✓ Pass</button>
+                        <button class="result-button not-run" onclick="setStepResult(this, 'fail')">✗ Fail</button>
+                    </div>
+                </div>
+                <div class="step-instructions">
+                    <div class="track-instructions"><strong>Emulator:</strong> Connect via Tower Emulator, open the
+                        <strong>Seals</strong> tab. Click individual seal buttons (12 positions across Top / Mid / Btm),
+                        then use <strong>Remove All</strong> and <strong>Replace All</strong>.</div>
+                    <div class="expected-result"><strong>Expected:</strong> Toggling a seal button shows/hides that seal
+                        on the 3D model. "Remove All" hides every seal; "Replace All" restores them. Confirm the 3D model
+                        reflects each change.</div>
+                </div>
+                <textarea class="notes-input" data-step="16.2" placeholder="Add notes..."></textarea>
             </div>
         </section>
     </main>
