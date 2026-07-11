@@ -1,0 +1,23 @@
+{
+  "name": "defeat",
+  "description": "Bottom-up rise-and-hold: each of 6 layers rises 0->1 over 100 ticks, layer 5 first. Sequence completes at tick 651 with cut-to-black. Mirrors firmware case 0x0b.",
+  "totalTicks": 651,
+  "loop": false,
+  "endBehavior": "cutToBlack",
+  "tracks": [
+    { "_comment": "Layer 5 (base2) onsets first.",
+      "kind": "linearRamp", "atTick": 0,   "durationTicks": 100,
+      "layers": [5], "lights": "all", "from": 0, "to": 1, "interpolation": "gsapTween" },
+    { "kind": "linearRamp", "atTick": 100, "durationTicks": 100,
+      "layers": [4], "lights": "all", "from": 0, "to": 1, "interpolation": "gsapTween" },
+    { "kind": "linearRamp", "atTick": 200, "durationTicks": 100,
+      "layers": [3], "lights": "all", "from": 0, "to": 1, "interpolation": "gsapTween" },
+    { "kind": "linearRamp", "atTick": 300, "durationTicks": 100,
+      "layers": [2], "lights": "all", "from": 0, "to": 1, "interpolation": "gsapTween" },
+    { "kind": "linearRamp", "atTick": 400, "durationTicks": 100,
+      "layers": [1], "lights": "all", "from": 0, "to": 1, "interpolation": "gsapTween" },
+    { "_comment": "Layer 0 (top ring) onsets last at tick 500, completes at tick 600. Hold tick 600..650, cut at tick 651.",
+      "kind": "linearRamp", "atTick": 500, "durationTicks": 100,
+      "layers": [0], "lights": "all", "from": 0, "to": 1, "interpolation": "gsapTween" }
+  ]
+}

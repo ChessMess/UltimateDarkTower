@@ -1,0 +1,26 @@
+{
+  "name": "sealReveal",
+  "description": "Phases 1-2 (ticks 0-59): per-LED firmware-flicker (delay-mod pulse + 0.911 decay) on layers 0-2, with reseeds at ticks 0 (mag 10) and 30 (mag 8) -- mag computed from Math.max(1, (5 - e/30) * 2). Phase 3 (ticks 60-90): all 12 LEDs solid at PWM 200. Mirrors firmware case 0x0e.",
+  "totalTicks": 91,
+  "loop": false,
+  "endBehavior": "hold",
+  "tracks": [
+    { "_comment": "Phases 1+2 — per-LED pulse-and-decay on the 12 ring LEDs (layers 0-2). Reseed events skip per-LED writes that tick; all other ticks pulse-or-decay each slot.",
+      "kind": "pulseFlicker",
+      "layers": [0, 1, 2],
+      "atTick": 0, "endTick": 60,
+      "pulseLevelPwm": 200,
+      "decayPerTick": 0.911,
+      "reseed": [
+        { "atTick": 0, "magnitude": 10 },
+        { "atTick": 30, "magnitude": 8 }
+      ]
+    },
+    { "_comment": "Phase 3 — all 12 ring LEDs held solid at PWM 200 from tick 60 through 90.",
+      "kind": "solid",
+      "atTick": 60,
+      "layers": [0, 1, 2], "lights": "all",
+      "levelPwm": 200
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "twinkle",
+  "description": "Stochastic spawn-and-fade. ~50% chance per tick to pick a random LED; if its current PWM < 20, write a random 0..1 level. Then global slow decay (×768/769 ≈ 0.9987). Mirrors firmware case 0x01.",
+  "totalTicks": 1,
+  "loop": true,
+  "endBehavior": "hold",
+  "tracks": [
+    { "_comment": "Respawn check + write. Registered first; consumes 1 RNG draw (spawn check), then on 50% pass: 2 more draws (layer, light), then if dark enough 1 more draw (level).",
+      "kind": "flickerStep",
+      "atTick": 0, "endTick": 1,
+      "layers": [0, 1, 2, 3, 4, 5], "lights": "all",
+      "alpha": 0,
+      "respawn": {
+        "probability": 0.5,
+        "thresholdPwm": 20,
+        "levelMin": 0,
+        "levelMax": 1
+      }
+    },
+    { "_comment": "Global decay. No RNG.",
+      "kind": "scaleAll",
+      "atTick": 0, "endTick": 1,
+      "multiplierNum": 768, "multiplierDen": 769
+    }
+  ]
+}

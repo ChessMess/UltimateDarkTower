@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lighting bake-off — UltimateDarkTowerDisplay</title>
+  <meta name="description" content="Results of the 8-alternative lighting bake-off replacing the 36-PointLight perf bottleneck in UltimateDarkTowerDisplay. Five alternatives tie at the Retina v-sync ceiling — the decision is visual and structural, not raw perf." />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0d'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23e63946'/%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%23ffb84d' stroke-width='1.5'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Sticky section nav -->
+<nav class="nav" aria-label="Sections">
+  <div class="nav-inner">
+    <span class="nav-brand">Lighting Bake-Off<span class="dot">●</span>UltimateDarkTowerDisplay</span>
+    <div class="nav-links">
+      <a href="#matrix">Matrix</a>
+      <a href="#charts">Charts</a>
+      <a href="#cards">Alternatives</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#decide">Decide</a>
+      <a href="#method">Method</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="shell hero-inner">
+    <div>
+      <p class="eyebrow"><span class="mark"></span>Results · captured 2026-05-23 → 2026-05-24 · 8 alternatives vs baseline</p>
+      <h1 class="hero-title">
+        Five alternatives tied at the Retina <span class="pause">v-sync ceiling</span>.<br/>
+        The decision is now visual and structural — not raw perf.
+      </h1>
+      <p class="hero-verdict">
+        Path A (preserve paradigm) and Path B (replace paradigm) both shipped a v-sync-class winner.
+        <strong>4.5 light-probe, 4.1 hdr-proxies, 4.4 two-directional, 4.19 interior-sprites,</strong> and
+        <strong>4.11 min-cost-combo</strong> all drive Retina Sequence-5 frame time to 8.3–8.4 ms (versus
+        baseline’s 141.6 ms) — within capture noise of each other. Picking the winner is now about
+        spill character, per-seal locality, and implementation footprint.
+      </p>
+      <p class="winners-row">
+        <span class="label">v-sync class</span>
+        <span class="winner-pill">§4.5 light-probe</span>
+        <span class="winner-pill">§4.1 hdr-proxies</span>
+        <span class="winner-pill">§4.4 two-directional</span>
+        <span class="winner-pill">§4.19 interior-sprites</span>
+        <span class="winner-pill">§4.11 min-cost-combo</span>
+      </p>
+    </div>
+
+    <div class="stats" aria-label="Quick stats">
+      <div class="stat" data-path="B">
+        <span class="stat-label">Most extreme perf win</span>
+        <span class="stat-pick">§4.11</span>
+        <span class="stat-detail">
+          Retina Empty <strong>120 fps</strong> (vs 105) and Seq-5 <strong>8.3 ms</strong> (vs 141.6 ms,
+          −94%). drawCalls −57%; programs 30 → 6.
+        </span>
+      </div>
+      <div class="stat" data-path="B">
+        <span class="stat-label">Biggest visual change</span>
+        <span class="stat-pick">§4.11</span>
+        <span class="stat-detail">
+          Bloom pipeline dropped + global directional wash + flat-bright bulbs. The most extreme aesthetic
+          departure in the bake-off; useful only if the look is explicitly approved.
+        </span>
+      </div>
+      <div class="stat" data-path="A">
+        <span class="stat-label">Most conservative</span>
+        <span class="stat-pick">§4.2</span>
+        <span class="stat-detail">
+          Single-file <code>onBeforeCompile</code> range-cull. Identical visuals. Retina Seq-5 fps 6.9 → 12.9
+          (+87%). Zero new tests required.
+        </span>
+      </div>
+      <div class="stat" data-path="A">
+        <span class="stat-label">Smallest footprint</span>
+        <span class="stat-pick">§4.16</span>
+        <span class="stat-detail">
+          +39 / −20 LOC across 3 files. Material-swap building-block; pixel-level visual parity. Validates
+          the emissive pattern for combination with §4.1 or §4.18.
+        </span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- SECTION 2 — MATRIX -->
+<section class="section" id="matrix">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">§ 02</span>
+      <h2>Master matrix</h2>
+      <p class="section-lede">
+        All 9 entries side-by-side. Click any column header to sort by value. Use the rightmost
+        <em>detail</em> link to jump to a full per-alternative card below.
+      </p>
+    </div>
+    <div id="matrix-mount"></div>
+  </div>
+</section>
+
+<!-- SECTION 3 — CHARTS -->
+<section class="section" id="charts">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">§ 03</span>
+      <h2>Charts</h2>
+      <p class="section-lede">
+        Four bar charts, each surfacing a fact the matrix conveys less directly. Bars colored by Path
+        (amber = Path A, crimson = Path B, gray = baseline). Gold reference lines mark v-sync budgets.
+        Every chart includes a data-table fallback for accessibility and printing.
+      </p>
+    </div>
+    <div class="charts-grid" id="charts-mount"></div>
+  </div>
+</section>
+
+<!-- SECTION 4 — PER-ALT CARDS -->
+<section class="section" id="cards">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">§ 04</span>
+      <h2>Per-alternative cards</h2>
+      <p class="section-lede">
+        Every alternative + the baseline, collapsed by default. Each card holds the full result MD:
+        implementation summary, decision-on-scope, tuning knobs, Display + Retina perf tables, signals,
+        programs stability, screenshots, unit-test results, interpretation, and notable observations
+        (further-collapsed). Click any header to expand.
+      </p>
+    </div>
+    <div class="cards-stack" id="cards-mount"></div>
+  </div>
+</section>
+
+<!-- SECTION 5 — VISUAL GALLERY -->
+<section class="section" id="gallery">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">§ 05</span>
+      <h2>Visual gallery</h2>
+      <p class="section-lede">
+        Cross-cutting visual comparison: baseline plus the four visual-difference-risk alternatives
+        (§4.1, §4.4, §4.11, §4.19), all at All-LEDs / Retina full-window. Use this view to compare
+        spill character across alternatives at a glance. The single-pair view inside each card has the
+        baseline-vs-after slider; this gallery is the side-by-side cross-comparison.
+      </p>
+    </div>
+    <div class="gallery" id="gallery-mount"></div>
+  </div>
+</section>
+
+<!-- SECTION 6 — DECISION FRAMEWORK -->
+<section class="section" id="decide">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">§ 06</span>
+      <h2>Decision framework</h2>
+      <p class="section-lede">
+        If you have a goal in mind, here is the alternative the source MDs point to.
+        Every <em>because</em> line is quoted or paraphrased from a result MD’s
+        Comparison-to-prior-leaders / Interpretation section, plus
+        <a href="../lighting-alternatives.md">lighting-alternatives.md §6</a>. No recommendations are invented.
+      </p>
+    </div>
+    <div class="decision-grid" id="decision-mount"></div>
+  </div>
+</section>
+
+<!-- SECTION 7 — METHODOLOGY FOOTER -->
+<footer class="section footer" id="method">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">§ 07</span>
+      <h2>Methodology</h2>
+      <p class="section-lede">
+        Capture context, baseline reference, and the source documents that govern this bake-off.
+      </p>
+    </div>
+    <details open>
+      <summary>Show methodology</summary>
+      <div id="method-mount"></div>
+    </details>
+    <div class="colophon">
+      <span><span class="mark"></span> Built from the 8 result MDs on the <code>lighting-docs/&lt;slug&gt;</code> branches. Numbers traced via inline source comments in <code>bakeoff.js</code>.</span>
+      <span>Static page · no build step · works offline</span>
+    </div>
+  </div>
+</footer>
+
+<script type="module" src="ui.js"></script>
+</body>
+</html>

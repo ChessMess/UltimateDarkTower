@@ -1,0 +1,19 @@
+{
+  "name": "gloat01",
+  "description": "5 'chortle' ticks set every LED to PWM 160; every tick decays by 700/769. Sequence schedules ticks 0..400 inclusive (= 401 calls). Mirrors firmware case 0x08.",
+  "totalTicks": 401,
+  "loop": false,
+  "endBehavior": "hold",
+  "tracks": [
+    { "_comment": "Registered first so chortle's setAll runs before decay each tick (matches gloat01.ts:44-46).",
+      "kind": "discreteSet",
+      "atTicks": [15, 35, 60, 80, 100],
+      "mode": "setAll",
+      "levelPwm": 160
+    },
+    { "kind": "scaleAll",
+      "atTick": 0, "endTick": 401,
+      "multiplierNum": 700, "multiplierDen": 769
+    }
+  ]
+}

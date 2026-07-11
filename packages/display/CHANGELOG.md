@@ -1,0 +1,361 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+### Fixed
+
+- **Sample-audio volume levels are now distinct, not just mute-vs-full.** `TowerSampleAudio` mapped
+  every firmware volume except Mute (3) to full gain (1.0), so Loud/Medium/Quiet all played at the
+  same loudness. Volume now maps through a shared `gainForVolume()` helper (`0`→1.0 Loud, `1`→0.6
+  Medium, `2`→0.3 Quiet, `3`→0.0 Mute) applied consistently across the state-driven `sync`, the
+  one-shot, and the `applyGain` paths. See [docs/AUDIO.md](docs/AUDIO.md).
+- **The 3D render loop now pauses while idle/hidden.** `Tower3DView.showIdle()` hid the canvas but
+  left the ~60fps `requestAnimationFrame` loop running; `startRenderLoop()` is now guarded against
+  double-start, `showIdle()` cancels the loop, and `applyState()` resumes it. When the view runs in a
+  same-origin popup (the controller example's Tower Emulator), the previously-always-on loop kept the
+  opener page's main thread busy and made it sluggish while disconnected. See
+  [docs/TROUBLESHOOTING.md § Idle state quirks](docs/TROUBLESHOOTING.md).
+
+## [0.10.2] - 2026-07-04
+
+### Changed
+
+- **Removed the `publish.yml` GitHub Actions workflow.** It failed on every prior release (v0.8.0,
+  v0.9.0, v0.10.1) due to an invalid `NODE_AUTH_TOKEN` secret; every published version was actually
+  shipped via a manual `npm publish`. Publishing is now documented as a manual step in
+  `CONTRIBUTING.md`, guarded by a new `prepublishOnly` script that runs the full `npm run ci`
+  pipeline (typecheck, lint, test, build) automatically before packing.
+
+### Fixed
+
+- **Test-suite noise (no consumer-facing change).** jsdom has no native 2D canvas renderer, so every
+  `HTMLCanvasElement.getContext('2d')` call logged a "not implemented" error even though the
+  affected code already handled a null context correctly. Stubbing `getContext` in the test setup
+  silences the noise and exercises the real (non-fallback) canvas-drawing code paths under test,
+  which surfaced and fixed two incomplete mocks (`THREE.Color.setScalar`, and a missing `center`
+  Vector2 on the mocked `TextureLoader`'s texture) that had been silently throwing and logging a
+  warning on every `Tower3DView` construction in the test suite.
+
+## [0.10.1] - 2026-07-03
+
+### Fixed
+
+- **Sparse `applyLightingConfig` no longer resets customized LED fields.** `resolveLighting`
+  layered several leaves (`scene.key.shadow.frustumRadiusFactor`, all `leds.sealBacklights`,
+  `leds.ledgeLeds`, and `leds.baseLeds` fields) against `DEFAULT_LIGHTING` instead of the passed
+  `base`, so any partial re-apply (e.g. changing only `exposure`) silently reverted previously
+  customized LED colors/sizes/flags to defaults. They now fall back to `base`.
+- **Transient tower-sample one-shots after a state-driven stop.** `playSampleOneShot` restores the
+  shared master gain to unity when no state source is holding it, so `playSample()` fired after a
+  `sample: 0` (stop) state is audible again instead of silenced by the leftover fade-to-zero. The
+  reset is skipped while a state source is live, so it never un-mutes an active loop.
+- **`oob.depthFactor` is now respected.** The skull-physics out-of-bounds despawn threshold read a
+  hardcoded `4 × modelRadius` and ignored the configured (default `5.0`) factor; it now reads the
+  live config every frame. `oob.depthFactor` is therefore live, not world-rebuild-only.
+
+### Changed
+
+- **Skybox `.exr` claim dropped.** `SkyboxManager` routed `.exr` URLs to `HDRLoader`, which only
+  decodes Radiance `.hdr` — `.exr` never worked. The regex and docs now advertise `.hdr` (plus
+  LDR `.png`/`.jpg`) only.
+
+### Removed
+
+- Dead code with no public exposure: the unused `slotPose` module (superseded by GLB seal
+  trimeshes), the unreachable `hasSequenceAnimation` re-export from `SequenceAnimator`, and the
+  unused `SequenceTimelineBuilder` type — all leftovers from the archived TS-builder sequence path.
+
+### Docs
+
+- Corrected stale comments and reference docs: removed lingering "falls back to the TS builder"
+  and "TS/JSON A/B harness" references, the "Step 3 / one-per-PR" and "Work Item 4" scaffolding
+  notes, an "eight kinds" → "nine" miscount, the drum-rotation "procedural sawtooth" claims (it is
+  silent — no fallback tone), default-value drift (`undersideLightIntensity` 1.5→0.15,
+  `boardDisc.thicknessFactor` 0.018→0.06), a nonexistent `npm run preprocess-skulls` reference,
+  the "one-and-only skull" wording (vs `maxCount` default 30), `skyboxUrl` clearing semantics, and
+  a note that `bloom.enabled`/`resolutionScale` are construction-time only.
+
+## [0.10.0] - 2026-06-29
+
+### Changed
+
+- **`ultimatedarktower` peer broadened to `^4.0.0 || ^5.0.0`.** The renderer now supports UDT 5 alongside
+  UDT 4 — the tower-state shape it consumes is unchanged across the major bump. This lets consumers on UDT 5
+  (e.g. via the relay client SDK, which depends on `ultimatedarktower@^5.0.0`) install Display without a
+  peer-dependency conflict.
+- **Upgraded to three r185.** Bumped the `three` / `@types/three` dev dependencies to `^0.185.0` and raised
+  the `three` peer range to **`>=0.185.0`** (the new built-and-tested floor; kept `optional`). The upgrade
+  required no source changes — the renderer uses no API affected by the r184 → r185 migration (no
+  `BufferGeometryUtils.toTrianglesDrawMode`, `GTAONode` AO params, deprecated `Matrix3`/`Matrix4` methods,
+  `DRACOLoader.setDecoderConfig`, or `LWOLoader`). Verified with typecheck, the full test suite, a
+  production build, and a live render pass (models, HDR skybox, lighting, selective bloom, skull physics) —
+  no regression and no shader recompile on sequence transitions.
+- **Replaced deprecated `THREE.Clock` with `THREE.Timer`.** `Tower3DView`'s physics-frame `dt` source now
+  uses `THREE.Timer` (`update()` / `getDelta()` / `reset()`), silencing the `THREE.Clock: This module has
+  been deprecated` console warning. The dt cadence is preserved — the timer is advanced only while
+  physics-frame listeners are attached, matching the previous `Clock.getDelta()` behavior.
+
+## [0.9.0] - 2026-06-19
+
+### Fixed
+
+- **`three` peer range corrected.** The published peer was `^0.170.0`, but the bundle statically imports
+  `HDRLoader` (`three/examples/jsm/loaders/HDRLoader.js`, added in three r171) and the library is built and
+  tested against three 0.184. The peer is now **`>=0.184.0`** (kept `optional` — three remains optional for
+  text/2D-only consumers). Caret on a `0.x` version locks the minor (`^0.170.0` = `>=0.170.0 <0.171.0`), so
+  the old range could never resolve a three with `HDRLoader`. This fixes consumers' `vite build` failing with
+  *"Rollup failed to resolve … HDRLoader.js"* or *"`Color`/`Vector3` is not exported by
+  `__vite-optional-peer-dep:three`"*.
+
+### Documentation
+
+- **Camera-config timing documented.** `docs/API.md` (`applyCameraConfig`) and `docs/SCENE_PLUGINS.md` now
+  spell out that the camera is fitted **once on model load**: set the initial framing via the constructor
+  `camera` option or a pre-load `applyCameraConfig` (pre-load factors are stored and applied by the on-load
+  fit), not from a post-load hook like a scene plugin's `onModelLoaded` (which flashes the default framing
+  first). The new `distanceFactor` field is documented in the `CameraConfig` reference.
+- **API reference: complete coverage + shared family standard.** `docs/API.md` now documents the
+  previously-undocumented public surface — the audio exports (`DEFAULT_TOWER_SOUND_PACK`,
+  `buildOfficialSoundPack`, `DrumRotationAudio`, `TowerSampleAudio`, the sound-URL constants, …), the
+  `./physics` subpath (`attachSkullPhysics`, `DEFAULT_PHYSICS`, `resolvePhysics`, `PhysicsConfig`,
+  `ResolvedPhysicsConfig`, `SkullPhysicsHandle`, …), and `PerfReport`/`PerfStat` — with a complete
+  copy-paste Exports block for both entry points (verified: every public export has an entry). Added
+  `docs/API_STYLE.md`, the API-documentation standard shared across the UDT-family repos, and a changelog
+  pointer to the API page.
+
+### Added
+
+- **`setGameBoardKingdom(side)` — cardinal board orientation.** New live method on `TowerDisplay` / `Tower3DView` that orients the game board so its north section faces a given `TowerSide` (`'north'` | `'east'` | `'south'` | `'west'`) — a friendlier alternative to setting `lighting.boardDisc.northKingdom` (`0…3`) by number. Rotates the on-disc art and keeps `anchorToWorld` token placement in sync. See [docs/API.md](docs/API.md) and [docs/LIGHTING.md §14](docs/LIGHTING.md#14-ground-disc--game-board).
+- **`applyCameraConfig(config, { preserveView })` — keep the live viewpoint when tuning.** `applyCameraConfig` gains an optional second argument; with `{ preserveView: true }` it applies only the changed framing factor(s) to the current live view — preserving the orbit angle, pan, and any dimension not being changed — instead of snapping back to the fitted north preset (the default, unchanged for the snapshot/paste workflow). Used by the example's live tuning sliders so dragging one no longer resets your angle. New type export: `ApplyCameraConfigOptions`. See [docs/API.md](docs/API.md#applycameraconfigoptions).
+- **"Center" button in the 3D view controls.** The `Tower3DView` control row gains a **Center** button (left of **Reset**) that recenters the tower in the frame while preserving the current orbit angle and zoom — unlike **Reset**, which returns to the fitted north default.
+- **`CameraConfig.distanceFactor` — a zoom knob independent of tilt.** New optional `distanceFactor` (default `1`) multiplies the auto-fitted camera distance: `>1` pulls the camera back (zooms out), `<1` pushes it in, without touching `elevationFactor` / `targetHeightFactor`. Settable via the constructor `camera` option or `applyCameraConfig`, and reflected in `getCameraConfig()`. See [docs/API.md](docs/API.md#cameraconfig).
+- **`getLiveCameraFactors()` on `Tower3DView` and `TowerDisplay`.** Returns the _live_ camera framing as `{ elevationFactor, targetHeightFactor, distanceFactor }` (azimuth dropped). Read it back after a hand orbit/zoom to tune a framing by eye, then paste the numbers into a `CameraConfig` — it round-trips exactly with `applyCameraConfig` / `fitToModel`.
+- **`loadSkullModel` / `clearSkullModelCache` exported from the `./physics` subpath.** The skull-model loader (load-once / cache-per-URL GLB → normalized unit-sphere template; GLTF + DRACO with the gstatic decoder default) is now public so other packages can render the same models without re-bundling the loaders. Adds the `LoadSkullModelOptions` type export.
+- **`anchorToWorld` — place on-disc content at normalized board-image anchors.** New exported `anchorToWorld(anchor, discMetricsOrView, northKingdom?)` maps a normalized `[0,1]` board-image anchor to its `THREE.Vector3` world position on the ground disc's top surface, so a scene plugin can render a token/marker exactly where the printed board art shows it. The mapping is derived from the existing board-texture rotation (`getBoardTextureRotation`) and the disc's cylinder-cap layout, so art and placed tokens stay aligned for any disc size/position and for every `boardDisc.northKingdom`. A live-view overload reads the disc geometry and current north kingdom for you. New type exports: `BoardAnchor`, `DiscMetrics`. The board rendering and all existing APIs are unchanged. See [docs/API.md](docs/API.md) and [docs/SCENE_PLUGINS.md](docs/SCENE_PLUGINS.md).
+- **Scene-plugin seam — a generalized, documented way to inject and own 3D content in the `Tower3DView` scene.** New `attachScenePlugin(view, plugin)` (and the public `Tower3DView.registerScenePlugin(plugin)` it wraps) let an external package add Object3Ds with a clean lifecycle and a live context: `scene`, `camera`, `renderer`, live model bounds, a per-frame callback (`dt` in seconds, sharing the render loop's single clock read), `drumNode`, side state + change subscription, and `onStateApplied` / `onSealsApplied` / `onModelLoaded` subscriptions. The view fans those events out to every attached plugin (`onStateApplied` fires after the view's own update) and detaches them all on `dispose()`. New exports: `attachScenePlugin` and types `ScenePlugin`, `ScenePluginContext`, `ScenePluginHandle`, `ScenePluginModelInfo`, `PointerTarget`. Generalizes the one-off `getPhysicsHooks()` seam — see [docs/SCENE_PLUGINS.md](docs/SCENE_PLUGINS.md) and [docs/ARCHITECTURE.md §scene plugins](docs/ARCHITECTURE.md#scene-plugins-the-generalized-seam).
+- **Board-surface hand-off.** `Tower3DView.setBoardDiscEnabled(false)` now documents the **placeholder-board stand-down** contract: it suppresses only the built-in board image on the disc top so an external plugin can own the surface — the disc mesh (toggle with `setGroundDiscVisible`) and the physics floor are unaffected. New `Tower3DView.getDiscMetrics()` returns `{ center, radius, topY }` (derived from model bounds + lighting config, valid before the disc mesh is built) so a plugin can align content on the disc top.
+- **Pointer/raycast contract.** Scene plugins can register `PointerTarget`s (via `ctx.registerPointerTarget` or `Tower3DView.registerPointerTarget`) to hit-test their own objects and consume a pointer gesture before the camera orbits. Implemented as a capture-phase interception layer on the canvas's parent (in front of OrbitControls); a consumed `pointerdown` stops the gesture and routes `onPointerMove` / `onPointerUp` to the owner. Targets are tested in priority order, first consumer wins. Since side-select is azimuth-derived, a consumed drag never produces a spurious side change; with no targets registered, behavior is identical to before.
+- **UI docking on `TowerRenderView`.** New `getOverlayContainer()` (a `pointer-events:none` HUD layer over the canvas; empty areas still orbit/zoom, mounted children opt back in) and `getPanelSlot('left'|'right'|'top'|'bottom')` (fixed editor panels that reflow the canvas without overlapping it), plus an `overlay?: boolean` option to create the overlay eagerly. New CSS lives in the exported `TOWER_DISPLAY_CSS`, so it works under `injectStyles: false`. New type export: `TowerRenderViewPanelPosition`.
+
+### Changed
+
+- **Default game-board orientation now aligns the board's north with the tower's north.** The `board.png` rotation calibration (`BASE_NORTH_OFFSET` in `GameBoardImageTexture.ts`) was shifted by one cardinal step (−90°) so that at `northKingdom = 0` (the default) the board's north section faces the tower's north (+Z) face instead of east. Consumers relying on the previous default will see the board rotated 90° — restore the old orientation with `setGameBoardKingdom('east')` (or `boardDisc: { northKingdom: 1 }`).
+
+- **Skull physics is now implemented on the scene-plugin seam (internal refactor).** `attachSkullPhysics` registers an internal `ScenePlugin` instead of consuming `getPhysicsHooks()` directly — dogfooding the new seam as a proof of sufficiency. The `/physics` subpath's public API and behavior are unchanged; `getPhysicsHooks()` keeps its exact shape (now sharing internal subscription helpers with the plugin registry).
+
+- **Drum rotations now turn at a constant angular velocity** instead of a fixed-duration tween. Rotation duration scales with the angle turned (`drumRotationDurationS`) at a tunable `DRUM_SECONDS_PER_REVOLUTION` rate (~4s for a full 360°, matching the real tower), and the tween easing is now linear (`'none'`) so speed is steady start-to-finish rather than easing in and out. A single-side nudge stays brief; a calibration sweep (a full turn or more) takes proportionally longer. Rotations whose angle is below a small epsilon now snap without a tween or audio, fixing a phantom drum-rotation buzz that fired when an already-home state was re-applied (e.g. at the end of calibration).
+
+### Fixed
+
+- **Example app no longer crashes on iOS.** `example/sealController.ts` builds a module-scoped `UltimateDarkTower` purely to hold software-only broken-seal state and never opens a BLE connection, but on iOS (Safari/Chrome — all WebKit, no Web Bluetooth) the constructor's eager platform auto-detection threw *"Unable to detect Bluetooth platform"* and took down the whole example on load. It now constructs with `{ platform: BluetoothPlatform.NONE }` (a no-op adapter) to state the software-only intent explicitly. Added an iOS section to [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md). Requires the `ultimatedarktower` release that adds `BluetoothPlatform.NONE` / deferred construction.
+
+### Added
+
+- **Bundled drum-rotation sound, replacing the placeholder buzz.** Individual drum rotations in the 3D view now play a bundled recording — `drumRotation.ogg`, exported as `DRUM_ROTATION_SOUND_URL` — wired in as the default `drumRotationUrl` and loaded lazily on first audio-enable. It is a finite complete-rotation clip played once (no loop) from the start and cut to the exact rotation length when the drum settles, so it never plays longer than the drum turns, for single- or multi-position moves alike. The old `DrumRotationAudio` 70 Hz sawtooth placeholder is no longer used by the display: a missing/failed load — or an explicit `drumRotationUrl: null` — now degrades to silence rather than buzzing. Override with your own URL via `applyAudioConfig({ drumRotationUrl })` / `setDrumRotationSoundUrl()`. Contributors adding a new bundled `.ogg` must register its module in `OGG_URL_HOSTS` (`vite.config.ts`) so the lib build emits a file instead of base64-inlining it. See [docs/AUDIO.md §Drum rotation sound](docs/AUDIO.md#drum-rotation-sound).
+
+- **Calibration command support in the display.** Applying a tower state carrying `command: TOWER_COMMANDS.calibration` (via the new `AppliedTowerState` type — a `TowerState` that may also carry a `command`) runs a calibration sequence: each drum homes to position 0 one level at a time (top → middle → bottom), then the Game Start sound plays, and the new `onCalibrationComplete` callback fires with the final calibrated state (the display's `CALIBRATION_FINISHED` / `0x08` reply, which a BLE/emulator host can forward). A bundled recording of the real calibration sweep (`drumCalibration.ogg`, exported as `CALIBRATION_SOUND_URL`) plays once across the sweep through a dedicated audio handle — separate from the normal drum-rotation audio, so it is heard only during calibration and never on ordinary rotations, and it stays silent (rather than buzzing) if the asset fails to load. Two constants tune the recording-to-visual sync: `DRUM_SECONDS_PER_REVOLUTION` (spin speed) and `DRUM_CALIBRATION_BEEP_PAUSE_S` (the pause held after each drum for the tower's post-rotation beep). Adds a **Calibrate** button in the example app.
+
+- **`playSequence(id, opts?)` transient LED-sequence API on `TowerRenderView`, `TowerDisplay`, and `Tower3DView`.** Fires an LED light sequence (e.g. `TOWER_LIGHT_SEQUENCES.victory`) as a one-shot, transient event — independent of the `applyState` → `SequenceAnimator.apply(0)` → `stop()` pipeline that would otherwise kill the sequence mid-playback when a state-mirror reset arrives. Internally backed by a new `SequenceAnimator.applyTransient(seqId, onComplete?)` that sets a `currentIsTransient` flag; subsequent `apply(0)` calls become no-ops while the flag is set, and the flag clears automatically when the timeline completes (or on explicit `stop()` / distinct-id reapply). Designed as the parallel of `playSample` for consumers driving from fire-and-forget command channels: the `ultimatedarktower` framework strips `led_sequence` from state on every response, so `getCurrentTowerState().led_sequence` is always 0. Without this API, consumers driving the display via state would see `apply(0)` immediately after their light-override command and the sequence would be killed before any frames played. See `Tower3DView.playSequence` for the JSDoc on usage and trade-offs.
+
+- **`playSample(id, opts?)` one-shot audio API on `TowerRenderView`, `TowerDisplay`, and `Tower3DView`.** Fires a transient sample play independent of the `applyState` → `sync()` → `stop()` pipeline. Each call allocates its own `AudioBufferSourceNode`, so subsequent state-driven `sync(0)` calls only affect sync-initiated plays — never the one-shot. Designed for consumers driving audio from fire-and-forget command events (e.g. the `ultimatedarktower` framework's `playSoundStateful`, which deliberately does not persist `audio` in tower state). Trade-offs: polyphony is possible (overlapping samples); looped one-shots have no automatic stop — retain the returned `{ stop }` handle. Master mute/volume still apply via the existing master gain. See [docs/AUDIO.md §One-shot transient playback](docs/AUDIO.md#one-shot-transient-playback-playsample) and [docs/API.md §One-shot transient playback](docs/API.md#one-shot-transient-playback-playsample).
+
+- **`collectPerfReport(durationMs)` debug API on `TowerRenderView`, `TowerDisplay`, and `Tower3DView`.** Records frame intervals, `BloomManager` sub-step CPU timings, `renderer.info` totals (with `autoReset` disabled so values cover the whole frame), shader program count, and scene visibility state over the requested window; returns a structured `PerfReport`. Diagnostic-only. See [`docs/framerate-issue.md` §15](docs/framerate-issue.md) for the recipe and interpretation guide.
+
+- **`TowerRenderView`: all-in-one render facade.** New class that wraps `TowerDisplay` with optional polished chrome (title, subtitle, status badges, action row). Defaults to the `'3d-view'` renderer, accepts every `TowerDisplay` option, and is the recommended entry point for new consumers. Advanced 3D config not forwarded on the facade is reached via `view.display.x(...)`. The example app's `#rendered-panel` migrates to it; the pop-out flow is unchanged. See [`docs/API.md`](docs/API.md#towerrenderview) and [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md#mounting-and-lifecycle).
+
+- **Multi-skull physics.** `dropSkull()` now accumulates up to `skull.maxCount` (default `30`) simultaneous skulls on the board instead of replacing the previous one. New `clearSkulls()` method on `SkullPhysicsHandle` removes every active skull and cancels any drops queued before init resolved. The example app's Physics panel gains a Clear Skulls button and a Max skulls slider.
+- **Optional skull models + state-driven auto-drop.** `PhysicsConfig.skull` gains five new fields:
+  - `modelUrl` — URL of a `.glb` to use as the skull's visual mesh. The library loads the GLB once and caches it module-globally; `.stl` is also supported with a console warn.
+  - `colliderShape` — `'sphere'` (default) preserves all current tuning regardless of visual; `'hull'` derives a convex hull from `modelUrl`'s point cloud.
+  - `meshFactory` — per-spawn `Object3D` callback for full visual control. Forces sphere collider.
+  - `density` — optional override for hull-collider mass.
+  - `autoDropOnSkullCountIncrease` — when true, drops one skull automatically each time `state.beam.count` increases between consecutive `applyState` calls (mirrors the readout's "💀 Skull Drop!" highlight).
+
+  `TowerPhysicsHooks` gains a new `onStateApplied(cb)` subscription — symmetric to the existing `onSealsApplied`. Add-ons (not just skull physics) can use it to react to game-state deltas. The library's `/physics` subpath gains `GLTFLoader` + `DRACOLoader` (defaulting to the same gstatic decoder URL as the tower model) plus a dynamic-imported `STLLoader` fallback path; the main `dist/index.esm.js` bundle is unchanged. The example app's Physics panel gains a Skull Appearance row (Model + Collider dropdowns) and a Triggers row (Auto-drop checkbox); the existing JSON-paste flow roundtrips the new leaves (except `meshFactory`, which is intentionally function-only). The dropdown discovers skull GLBs via `import.meta.glob('../src/3d/assets/skull_*.glb')` — drop a Draco-compressed `.glb` (Blender → File → Export → glTF 2.0 with Geometry Compression) into `src/3d/assets/` and it shows up after a dev-server restart. See [PHYSICS §Authoring skull models](docs/PHYSICS.md#authoring-skull-models) for the recommended export pipeline.
+
+### Changed
+
+- **On-tower LEDs are now HDR-bright emissive proxies instead of `PointLight`s — large frame-time win.** The 36 LED-related `PointLight`s (24 ring/ledge/base + 12 seal accents) that lit the tower have been removed. Each LED is now an HDR-bright emissive proxy mesh + halo whose color is scaled by `HDR_PROXY_SCALE = 3.0` (`applyHdrColor`), and `scene.bloom.threshold` is raised from `0.0` to `1.0` so only those HDR-bright pixels bloom. With the per-fragment PointLight loop gone, active LED scenes hold the v-sync ceiling on a large Retina canvas (the bake-off measured ~94% sequence frame-time reduction vs the PointLight design; see [docs/lighting-experiments/RESULTS.md](docs/lighting-experiments/RESULTS.md)). **Visual trade-off:** the drum-interior atmospheric spill the seal accent lights produced is gone — surfaces between the seals read dark while the bulbs/cutouts still glow via bloom. **Removed config (no longer read):** the whole `leds.red` block (`color`, `maxHalo`, `haloDistanceFraction`) and `leds.sealBacklights.{intensity, distanceFactor, decay, accentLight}`; recolor LEDs via `leds.sealBacklights.color` / `leds.ledgeLeds.color` / `leds.baseLeds.color`. The internal bulk-lights visibility gate (`setBulkLightsVisible` / `updateLightsGate`) is also removed; shader-program pre-warming now runs via `prewarmBloomPrograms()`. See [docs/LIGHTING.md](docs/LIGHTING.md).
+
+- **Bloom now renders at half canvas resolution by default for ~2× framerate on heavy scenes.** The `BloomManager` renders the bloom pass (scene render + UnrealBloomPass mip blurs) into an offscreen target at `lighting.scene.bloom.resolutionScale` of the canvas backing size (default `0.5`). The final composite still runs at full resolution. Because bloom is intrinsically a wide Gaussian blur, the lower-resolution input is visually indistinguishable from a full-resolution one after the GPU's bilinear upsample, but bloom GPU cost drops by roughly `1 / scale²`. On a large Retina canvas with `angryStrobe01` playing, measured fps roughly doubled (Playwright A/B: 44.8 → 87.2 at half-res; 120.8 at quarter-res). Override via `{ lighting: { scene: { bloom: { resolutionScale: 0.25 } } } }` for weaker GPUs, or `1.0` to restore the previous full-resolution behaviour. See [docs/framerate-issue.md](docs/framerate-issue.md) for the full investigation.
+
+- **`TowerSampleAudio.setEnabled(true)` now eagerly creates and resumes the AudioContext.** Previously the context was created lazily on the first `sync()` or `play()` call. Eager creation captures the consumer's user-gesture activation at the moment they enable audio, ensuring subsequent `playSample` calls from non-gesture contexts (e.g. `postMessage` or WebSocket handlers) work without an autoplay-policy block. Low-risk behavior change for existing consumers: state-driven `sync()`-only flows see an extra (cheap) `new AudioContext()` slightly earlier; no observable audio difference. Existing example app behavior (Trigger Sequence / state presets) is unaffected.
+
+- **Default sound pack assets are now bundler-agnostic.** `audioLibrary.ts` references each `.ogg` via its own literal `new URL('./assets/<filename>.ogg', import.meta.url)` expression, the canonical static pattern that Vite, webpack 5+, Rollup, and Parcel all detect at build time. Previously the directory-URL-plus-concatenation shape only worked under Vite, leaving non-Vite consumers with broken sample URLs and silent playback. Webpack/Rollup/Parcel consumers no longer need to self-host audio or call `buildOfficialSoundPack` with a custom URL. esbuild consumers should consume the published dist (which has URLs resolved by Vite to stable relative paths under `dist/audio/assets/`) rather than aliasing to the package source — esbuild does not detect this pattern natively. See [Bundler compatibility](docs/AUDIO.md#bundler-compatibility) for per-bundler setup details. Internally, the Vite lib build's old `copyAudioAssets()` plugin was replaced with `emitOggsAsFiles()`, which intercepts the per-file `new URL` expressions during transform, emits each `.ogg` as a separate Rollup asset (avoiding lib-mode base64 inlining), and substitutes a stable URL reference. Filenames remain unhashed under `dist/audio/assets/` for predictable self-hosting paths.
+
+### Fixed
+
+- **First drum rotation after a cold page load no longer drops silent.** On a fresh load the first rotation is the same user gesture that enables audio and kicks off the async decode of the drum-rotation clip, so `play()` ran before the buffer was ready and — with no fallback tone — stayed silent. `DrumRotationAudio` now starts playback as soon as the buffer finishes decoding if a rotation is still in progress, so that first rotation catches up instead of dropping. Rotations after the buffer is cached were already unaffected.
+
+- **Idle-time sustained per-fragment cost from 36 always-active `PointLight`s eliminated by pre-warming both gate states and bulk-toggling visibility.** The previous fix (below) kept all 36 LED-related `PointLight`s `visible: true` for the scene's lifetime to avoid shader-recompile stalls on sequence transitions. That introduced a tradeoff: at idle, every fragment evaluated 36 lighting contributions per frame even when no LEDs were lit — measured ~66 ms / frame of sustained GPU cost at 7.84 M backing pixels (canvas typical of a full-window Retina layout). `Tower3DView` now uses a bulk-lights gate: at scene init, both program variants (0 lights visible / 36 lights visible) are pre-compiled via `WebGLRenderer.compileAsync` + a follow-up bloom-render pass (which also caches `BloomManager.darkMaterial`'s programs and the proxy/halo mesh variants). At runtime a per-frame check opens the gate when any LED has driver.v > 0.001 and closes it when all are dark. Both transitions hit the program cache → no recompile. Result: idle holds 120 fps with 0 active `PointLight`s (pre-fix idle perf restored); sequences render with 36 active `PointLight`s (no transition stall, same as before this fix). See [`docs/framerate-issue.md`](docs/framerate-issue.md) for the full investigation.
+
+- **Sequence-start ~880 ms main-thread stall eliminated by removing per-frame `light.visible` toggling.** When an LED sequence began (e.g. `angryStrobe01`), all 24 red LED `PointLight`s plus the 12 seal accent `PointLight`s previously flipped `visible: false → true` based on each LED's intensity crossing a 0.001 threshold. This changed Three.js's lights-count hash, which is part of every material's shader program cache key, so up to 20 materials had to be recompiled synchronously on the main thread on every sequence start AND every sequence end. Measured: `programs` count grew 15 → 35 → 86 → 107 across successive sequence transitions, and `frameMs.max` spiked to 883 ms (vs 9 ms median). After the fix, programs stay at 17 across all transitions and `frameMs.max` holds at 9.6 ms. All 36 LED-related lights are now created `visible: true` at scene construction and only their `intensity` is animated; intensity 0 contributes nothing visually but the lights-count hash stays constant. See [`docs/framerate-issue.md`](docs/framerate-issue.md) for the full diagnosis.
+
+## [0.5.0]
+
+### Added
+
+- **Audio promoted to core API.** The package now bundles the 132 official Restoration Games audio samples (~20 MB) so playback works with no consumer setup beyond enabling from a user gesture.
+  - New `AudioConfig` type and `applyAudioConfig` / `getAudioConfig` methods on `TowerDisplay`, mirroring the `applyLightingConfig` / `applyCameraConfig` pattern (sparse merge, `Required<AudioConfig>` on read, settable via `TowerDisplayOptions.audio`).
+  - New `SoundPack` interface for swappable audio: `{ name, samples, sequenceMap? }`. Default exported as `DEFAULT_TOWER_SOUND_PACK`; build a custom-hosted variant with `buildOfficialSoundPack(baseUrl)`.
+  - Opt-in sequence→sample auto-binding via `AudioConfig.bindSequenceToSample`. Default map exported as `DEFAULT_SEQUENCE_AUDIO_MAP`; build custom maps via `buildSequenceAudioMap({ victory: 'TowerGloat1', ... })`.
+  - Playback classes `DrumRotationAudio` and `TowerSampleAudio` are now part of the public API for power users.
+  - `enabled` is a single master toggle covering both tower-sample and drum-rotation playback.
+  - New documentation: [docs/AUDIO.md](docs/AUDIO.md). Updates throughout [API](docs/API.md), [EXAMPLE](docs/EXAMPLE.md), [ARCHITECTURE](docs/ARCHITECTURE.md), [RENDERERS](docs/RENDERERS.md), [TROUBLESHOOTING](docs/TROUBLESHOOTING.md), [GETTING_STARTED](docs/GETTING_STARTED.md).
+
+### Changed
+
+- Audio file location moved from `example/public/audio/` to `src/audio/assets/` (still gitignored; regenerated by `scripts/extract-audio.mjs`).
+- `setTowerAudioLibrary` widens to accept either a `Record<number, string>` (legacy) or a `SoundPack`; calling with no argument installs `DEFAULT_TOWER_SOUND_PACK`.
+- The example app's toolbar now shows a single **Audio** checkbox (replacing the separate Drum Sound / Tower Audio toggles, which controlled the same underlying state). The config-editor dropdown gains a **3D Audio Config** option for live `AudioConfig` editing.
+- Vite library build emits `.ogg` assets to `dist/audio/assets/` via a new `copyAudioAssets()` plugin.
+
+### Deprecated
+
+- `setTowerAudioLibrary`, `setTowerAudioEnabled`, `setDrumRotationSoundUrl`, and `setDrumRotationSoundEnabled` continue to work as thin shims over `applyAudioConfig`. Prefer `applyAudioConfig` for new code.
+
+### Publish gate
+
+The bundled audio is © Restoration Games, LLC. Before the first `npm publish` shipping these assets, confirm the existing "used with permission" grant extends to npm redistribution.
+
+## [0.4.0]
+
+### Added
+
+- **Physics subpath** (`ultimatedarktowerdisplay/physics`) — physics-driven skulls inside the 3D view, available as an opt-in subpath import. Mirrors the Three.js `three/examples/jsm` pattern: same package, separate entry, separate output bundle. Consumers who don't import the subpath never load Rapier or pay any bundle cost for it. See [docs/PHYSICS.md](docs/PHYSICS.md) for the API and tuning guide.
+  - Public API: `attachSkullPhysics(view, config?)`, `getPhysicsConfig()`, `applyPhysicsConfig(partial)`, `dropSkull()`, `dispose()`.
+  - Single nested `PhysicsConfig` (mirrors the lighting-config pattern) with `DEFAULT_PHYSICS` and `resolvePhysics()` helpers.
+  - `@dimforge/rapier3d-compat` is declared as an **optional peer dependency**. Install it only if you want physics:
+    ```bash
+    npm install ultimatedarktowerdisplay @dimforge/rapier3d-compat
+    ```
+  - TypeScript consumers need `moduleResolution: "bundler"` (or `"node16"` / `"nodenext"`) to resolve the subpath.
+
+### Changed
+
+- Build emits two ESM + two CJS bundles (`dist/index.{esm,cjs}.js` and `dist/physics.{esm,cjs}.js`) plus matching `.d.ts` files. Vite multi-entry lib mode.
+
+## [0.3.0]
+
+### Added
+
+- **Physics integration hooks** — new public API surface on `Tower3DView` so external add-ons (e.g. a forthcoming `@ultimatedarktowerdisplay/physics` companion package) can integrate without reaching into view internals. Additions:
+  - `Tower3DView.getPhysicsHooks(): TowerPhysicsHooks` — returns `{ scene, drumNode(level), onFrame(cb), onSealsApplied(cb), modelRadius, modelBottomY, modelTopY }`.
+  - `ModelLoadResult.modelTopY` — world-space Y of the model's top edge (mirrors existing `modelBottomY`).
+  - `DrumManager.getDrumNode(level)` — public accessor for a drum's Object3D.
+  - `SealManager.onSealsApplied(cb)` — listener API fired after every `applySeals` call.
+  - `TowerPhysicsHooks` type, exported from the package root.
+  - Render loop now ticks registered `onFrame` callbacks (with a `THREE.Clock`-derived `dt`) before scene lighting and render, so physics-driven mesh transforms are reflected the same frame.
+- Documentation: see the companion package's docs/PHYSICS.md (added separately) for the mental model and tuning guide.
+- **Board thickness** — the game-board disc is now a `THREE.CylinderGeometry` instead of a flat `CircleGeometry`, giving it a visible edge and underside when the camera is at an oblique or below-board angle. Three new `boardDisc` config fields:
+  - `boardDisc.thicknessFactor: number` — cylinder height as a fraction of `modelRadius` (default `0.06`). Exposed as a **Thickness** slider in the example app (range 0–0.12).
+  - `boardDisc.edgeColor: HexColor` — colour of the side-wall face (default `0x5c3318`, warm medium wood). Example app exposes **Wood** (`0x5c3318`) and **Neoprene** (`0x0e0e0e`) preset buttons.
+  - `boardDisc.bottomCap: boolean` — whether the underside face is rendered (default `true`). Example app exposes a **Board Bottom Face** checkbox.
+- Upward `DirectionalLight` (`0xffe8c8`, intensity 1.5) added by `GroundDiscManager` to evenly illuminate the board's bottom face and edge ring when the camera dips below the board. The light is owned and disposed alongside the disc mesh.
+
+### Changed
+
+- `GroundDiscManager` now uses a 3-element material array `[sideMat, topMat, bottomMat]` on the disc mesh (matching `CylinderGeometry` material groups 0/1/2). All board-texture and lighting updates target `mats[1]` (top cap) so the edge and bottom cap colours are independent.
+
+- Game-board image texture for the ground disc. The 3D view now loads `src/3d/assets/board.png` (real Return to Dark Tower board art) via `THREE.TextureLoader`, configured with sRGB color space, max anisotropy, and a calibrated rotation. New module: [`src/3d/GameBoardImageTexture.ts`](src/3d/GameBoardImageTexture.ts). Loading is async with a procedural-texture stand-in until the image resolves; the manager swaps `material.map` live when it lands. On failure (missing asset or fetch error) it logs a warning and falls back to procedural permanently for the session.
+- `lighting.boardDisc.source: 'image' | 'procedural'` — picks which texture renders on the disc. Defaults to `'image'`; the existing procedural board ([`GameBoardTexture.ts`](src/3d/GameBoardTexture.ts)) is kept as the fallback.
+- `lighting.boardDisc.northKingdom: 0 | 1 | 2 | 3` — rotates the image texture in 90° steps so any kingdom can face +Z. Live-updates without reloading the texture. No effect on `'procedural'` source.
+- `lighting.boardDisc.brightness: number` — per-board diffuse multiplier (range 0–2, default 1). Stacks with `scene.exposure` and key/hemi intensity, so the board can be dimmed/brightened independently of the rest of the scene.
+- Example app: new "Board" section under "3D Options" with **Board Size** and **Brightness** sliders. Board Size live-resizes the disc geometry via `groundDisc.radiusFactor`; Brightness drives `boardDisc.brightness`.
+
+### Changed
+
+- `GroundDiscManager` constructor now accepts an optional `maxAnisotropy` argument (forwarded by `Tower3DView` from `renderer.capabilities.getMaxAnisotropy()`). Required so the image texture is sharp at glancing camera angles.
+
+### Fixed
+
+- Expanding the "3D Options" panel in the example app no longer shrinks the rendered output. Previously, a `ResizeObserver` on the `<details>` element triggered a recomputation of the rendered panel's pixel height every time the panel opened/closed; the rendered area now keeps its initial height (still recomputes on window resize and toolbar layout changes).
+- `boardDisc.enabled` JSDoc/runtime mismatch resolved. The JSDoc on [`types.ts`](src/3d/types.ts) used to say "Defaults to false" while the runtime default is `true`. JSDoc now matches runtime. The corresponding "Known gaps" entry has been removed from [`docs/LIGHTING.md`](docs/LIGHTING.md).
+- Re-triggering the same audio sample (e.g. clicking the example app's "Trigger Sequence" button twice on the same sequence) now replays audio. Added an optional `force` parameter to `TowerDisplay.applyState`, `Tower3DView.applyState`, and `TowerSampleAudio.sync` — default `false` preserves dedup for BLE state-mirror callers; pass `true` for user-initiated retriggers. The `ITowerDisplay.applyState` interface now accepts an optional `force?: boolean` (non-breaking for library consumers; `TowerStateReadout` and `TowerSideView` accept and ignore it).
+
+### Documentation
+
+- Documentation sweep: `docs/API.md` is now the canonical API reference — added missing `TowerDisplay` method docs (`setLedOverride`, `setBoardDiscEnabled`, `setSkyboxUrl`, `getCameraConfig`, `applyCameraConfig`, `setZoomToCursor`, `loadState` getter), a new `TowerStateController` section, and the `clickToToggleLeds`/`onLedClick` properties on `TowerStateReadout`. README now points at `docs/API.md` for the full reference. Removed stale `showLedProxies` references from `README.md`, `docs/API.md`, and the contradictory "Added" entry in this changelog. Fixed outdated "V1" JSDoc on `Tower3DView` that claimed `applyState`/`applySeals` didn't drive visuals. Added missing JSDoc to `SideButtons`, `EFFECT_LABELS`, and three `TowerStateController` getters/methods.
+
+### Removed
+
+- Deprecated `computeSealBacklightPose` utility (an alias for `computeSealLedPose`) and its `__testables` re-export removed; the only callers were tests of the alias itself, which now exercise `computeSealLedPose` directly. Also removed unused `__setSealsAsMeshes` / `__setDrumNames` mock hooks from the GLTFLoader test mock.
+
+### Added
+
+- Ledge LEDs (layer 3) and base LEDs (layers 4–5) now render as ball-type visuals — a `MeshBasicMaterial` sphere proxy plus an additive halo `Sprite` — matching the seal backlight style. Previously ledge/base layers had only a `PointLight` with no visible mesh.
+- `ledgeLeds` and `baseLeds` config sections in `LightingConfigCore` (and `DEFAULT_LIGHTING`), each with `enabled`, `color`, `proxy.enabled`, `proxy.sizeFactor`, `halo.enabled`, `halo.sizeFactor`, and `halo.opacity`. Live sliders exposed in the example app under "3D Options → Ledge LEDs / Base LEDs".
+- `LEDGE_LED_LAYOUT`, `BASE1_LED_LAYOUT`, and `BASE2_LED_LAYOUT` layout constants in `constants.ts` — each has `y` (vertical height), `radius` (distance from tower axis), and `azimuthOffset` (angular shift in radians, positive = counter-clockwise from above). `BASE_LED_LAYOUT` has been removed; the two independent per-layer objects give separate control over layer-4 and layer-5 lights.
+- Seal backlights (`SealManager`) redesigned: each of the 12 seal positions now gets a `MeshBasicMaterial` sphere proxy, an additive halo `Sprite`, and an optional atmospheric accent `PointLight`. Configurable via `lighting.leds.sealLeds` (`proxy`, `halo`, `accentLight`).
+- `CameraController` accepts a `CameraConfig` object: `elevationFactor`, `targetHeightFactor`, `zoomToCursor`, and `preserveViewOnSideSelect`. Side-to-side camera snaps animate with a short zoom-dip tween (`SIDE_SNAP_DURATION_S = 0.4 s`). `onSideChange` callback fires on both user-driven orbits and programmatic `selectSide` calls.
+
+### Changed
+
+- LED position constants consolidated: `xOffset` (raw world-space X translation) replaced with `azimuthOffset` (rotation around the tower axis) on all layout objects. The old approach shifted lights asymmetrically — south/west lights moved further from the tower while north/east were brought closer. `azimuthOffset` rotates all 4 lights by the same angle so every light stays equidistant from the surface.
+- `BASE_LED_LAYOUT` split into `BASE1_LED_LAYOUT` (layer 4) and `BASE2_LED_LAYOUT` (layer 5). Previously the shared `base1Y`/`base2Y` fields meant changing radius or azimuthOffset required touching one object but only half the lights would move in Y independently. Each layer now has a fully independent layout object.
+
+### Removed
+
+- **Breaking:** Deprecated flat `LightingConfig` aliases (`hemisphere`, `key`, `fill`, `exposure`) removed. Use the nested equivalents: `scene.hemisphere.intensity`, `scene.key.intensity`, `scene.fill.intensity`, `scene.exposure`.
+- **Breaking:** Amber LED proxy sphere system removed (`showLedProxies` option on `TowerDisplayOptions` and `Tower3DViewOptions`, `leds.amber` in `LightingConfig`, `computeLedPosition` utility, `drumRadius`/`cornerRadius`/`ledSize` from `LED_LAYOUT`). The `LedRef` interface no longer carries `mesh`, `material`, or `light` fields.
+
+### Changed
+
+- Seal click-to-toggle state is now owned by `TowerDisplay` when composing renderers, so a seal click in the 2D side view also hides the corresponding mesh in the 3D view (and vice-versa for any external `applySeals` call). Previously the 2D view owned its own toggle set in isolation and the 3D view didn't react. Standalone `TowerSideView` usage (without `TowerDisplay`) is unchanged — the class keeps its internal toggle for backwards compatibility. `onSealClick` callback still fires exactly once per click, and `clickToToggleSeals: false` still fully disables toggling across both views.
+- Removed the `[TowerSideView] Seal clicked: …` console.log lines from the 2D seal click handler. Consumers that need click events should use the `onSealClick` callback (unchanged).
+- Example app (`example/example.ts`, `example/example-init.ts`) converted from JavaScript to TypeScript. The `typecheck` and `lint` npm scripts now cover `example/` via a new `tsconfig.example.json`.
+- Consolidated every lighting-tunable value consumed by `Tower3DView` under a single nested `LightingConfig` (scene rig, LED emissive/halo, effect timings, entrance cinematic beats, idle breathing pulse, and the noir ground disc). The exported `DEFAULT_LIGHTING` captures today's values exactly and `resolveLighting()` deep-merges user overrides. The flat `{ hemisphere, key, fill, exposure }` fields are kept as deprecated aliases for pre-0.3 callers; when both a flat field and its nested equivalent are supplied, the nested value wins.
+
+### Added
+
+- `onLoadError` callback on `Tower3DView` (class property) and `TowerDisplayOptions` — fires with the raw error details when the GLB model fails to load. Previously failures were only reported via `console.error` with no signal to the consumer.
+- `loadState` read-only getter on `Tower3DView` and `TowerDisplay` — returns `'pending' | 'ready' | 'error'` reflecting the current GLB load state. `TowerDisplay.loadState` returns `undefined` when no 3D renderer is active.
+
+- Post-process bloom (`UnrealBloomPass`) on the 3D view. Bright LED proxy/halo pixels bleed outward in screen space as they appear through glyph cutouts, creating a glowing-presence effect instead of a bare LED pinhole. Controlled via `lighting.scene.bloom` (`enabled`, `strength`, `radius`, `threshold`). Live sliders in the example app under "3D Options → Bloom". Seal backlight halo defaults tuned (sizeFactor 0.10→0.14, opacity 0.6→0.75) and accent PointLight enabled by default (intensity 2) for a subtle drum-interior light spill.
+
+- `Tower3DView` now rotates the three named drum meshes (`drum_top` / `drum_middle` / `drum_bottom`) to match `state.drum[i].position` whenever a new `TowerState` is applied. Rotations take the shortest arc, animate via a short tween, and fall back to a snap on the first state after model load. New opt-in rotation audio: `setDrumRotationSoundUrl(url)` and `setDrumRotationSoundEnabled(enabled)` on `TowerDisplay` and `Tower3DView`. With no URL set, a procedural sawtooth placeholder tone plays — drop in a recorded asset later via `setDrumRotationSoundUrl`. Disabled by default; enabling from a click satisfies browser autoplay-policy gestures.
+- Seal grid in `TowerStateReadout` — a 3×4 grid of clickable buttons (4 sides × 3 levels) showing which seals are present (filled) or broken (hollow). Opt-in interactivity via the new `clickToToggleSeals` (default `false`) + `onSealClick` public fields; mirrors the existing `TowerSideView` API shape. Accessible as `<button>` with `aria-pressed`.
+- `TowerDisplay.selectSide(side)` method + `onSideChange` option — programmatically select the facing side on every side-aware renderer; callback fires when the user or external code changes sides on any renderer. Public `selectSide` + `onSideChange` on both `TowerSideView` and `Tower3DView`. Cross-renderer fan-out means clicking a side button in 2D now rotates the 3D camera to match (and vice-versa) in combined views.
+- Example app persists broken-seal state and selected side across view switches by treating a module-scoped `UltimateDarkTower` instance as the source of truth. New `example/sealController.ts` demonstrates the pattern for consumers. New "Reset Seals" preset button in the example.
+- `Tower3DView.applySeals(brokenSeals)` is now a real implementation — hides/shows the corresponding seal meshes on the 3D model by name. The unified `TowerDisplay.applySeals` call already fanned out to the 3D renderer, but this was previously a no-op; it now drives both the 2D and 3D views identically. Naming contract for custom models via `modelUrl`: seal meshes must be named `seal_<side>_<level>` (e.g. `seal_north_top`, `seal_west_bottom`). Missing names are logged as a single `console.warn` at model-load time. The default bundled GLB ships with all 12 named seal nodes. Seal registry is lazily populated during GLB load; pre-load `applySeals` calls are stored and applied once the model resolves. See [docs/API.md](docs/API.md) for consumer-facing docs.
+- `Tower3DView` now visualizes per-LED effects on the 3D model. 24 emissive LED proxies (amber, `#f0c040`) are placed at the tower's ring, ledge, and base positions, each with a short-range PointLight halo that spills onto nearby geometry. All six `LIGHT_EFFECTS` are supported: `off`, `on`, `breathe`, `breatheFast`, `breathe50percent`, `flicker`. Animation timings match the 2D side view (2.0s / 0.8s / 0.3s).
+- Added red light layer to the 3D view (`#ff2020`) matching the physical tower's LED color. Red lights are positioned independently from the amber proxies: inset inside the drum for ring layers (0–2) so light shines through doors/seals, and near the outer corner surface for ledge/base layers (3–5) so light shines onto the faces. Red lights animate in lockstep with the amber driver — no additional GSAP tweens per LED.
+- `debug3D` option on `TowerDisplayOptions` — forwarded to `Tower3DView` for diagnostic logging, render heartbeats, origin axes helper, and per-LED position axes helpers for layout tuning.
+
+## [0.2.0] - 2026-04-15
+
+### Fixed
+
+- `TowerSideView` now calls `injectStyles()` so side-view-only mode gets CSS
+- JSDoc for `TowerDisplayOptions.renderers` now correctly documents the default as `['readout', 'side-view']`
+
+### Added
+
+- Tests for seal overlay injection, double-dispose safety, and multi-button side selection
+- `applySeals(brokenSeals: SealIdentifier[])` method on `TowerDisplay`, `TowerSideView`, and `ITowerDisplay` — hides seal SVG overlays for broken seals on the currently displayed side; re-evaluates when switching sides
+- `SealIdentifier` re-exported from the package public API
+- `clickToToggleSeals` option on `TowerDisplayOptions` (default `true`) — clicking a seal in the side view toggles its visibility independently of game state; user-toggled state and game-broken state are merged so either alone can hide a seal; toggle state is per-side and is cleared on `dispose()`
+- `clickToToggleSeals` public property on `TowerSideView` for consumers using the class directly
+- Console logging on seal click: logs the side, level, and new visibility state (or notes when toggle is disabled)
+
+## [0.1.0] - 2026-03-22
+
+### Added
+
+- Initial release
+- `TowerDisplay` wrapper class with options-based constructor
+- `TowerStateReadout` core DOM renderer
+- LED grid rendering with per-light effect labels (on, off, breathe, flicker, etc.)
+- Drum position and calibration display with glyph lookup
+- Audio sample name resolution via `TOWER_AUDIO_LIBRARY`
+- Skull drop detection (beam count delta between consecutive states)
+- LED sequence override labels via `TOWER_LIGHT_SEQUENCES`
+- Volume description rendering
+- Automatic CSS injection via `injectStyles()`
+- Interactive example demo page
+- TypeScript type exports (`TowerDisplayOptions`, `ITowerDisplay`)
+- Dual ESM/CJS build via Vite library mode

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UltimateDarkTowerDisplay — Example</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&family=JetBrains+Mono:wght@400&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="example.css" />
+</head>
+
+<body class="app-shell">
+  <div id="error-banner" hidden></div>
+
+  <div class="app-grid">
+
+    <!-- ============ LEFT SIDEBAR ============ -->
+    <aside class="app-sidebar" id="sidebar">
+      <header class="brand">
+        <h1>Ultimate Dark Tower Display</h1>
+        <p class="brand-tagline">
+          A rendering library for <em>Ultimate Dark Tower</em>.
+        </p>
+      </header>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Presets</h2>
+        <div class="preset-card-grid">
+          <button id="btn-readme" class="preset-card">README Example</button>
+          <button id="btn-random" class="preset-card">Randomize</button>
+          <button id="btn-allon" class="preset-card">All LEDs On</button>
+          <!-- `#btn-empty` is used by `.claude/skills/darktower-3d-perf` as the EMPTY baseline trigger. If you rename or remove it, update SKILL.md. -->
+          <button id="btn-empty" class="preset-card">Empty State</button>
+        </div>
+      </section>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Light Sequence</h2>
+        <div class="sidebar-row">
+          <select id="sel-sequence" class="sidebar-select"></select>
+        </div>
+        <div class="sidebar-row">
+          <button id="btn-trigger-sequence" class="primary-action">Trigger Sequence</button>
+        </div>
+        <div class="sidebar-row">
+          <label class="toggle-pill">
+            <input type="checkbox" id="chk-tower-audio" checked /> Audio
+          </label>
+        </div>
+      </section>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Drum Rotate</h2>
+        <div id="drum-rotate-grid" class="drum-rotate-grid">
+          <span class="drum-rotate-row-label">Top</span>
+          <button data-drum-level="top" data-drum-side="0">N</button>
+          <button data-drum-level="top" data-drum-side="1">E</button>
+          <button data-drum-level="top" data-drum-side="2">S</button>
+          <button data-drum-level="top" data-drum-side="3">W</button>
+          <span class="drum-rotate-row-label">Mid</span>
+          <button data-drum-level="middle" data-drum-side="0">N</button>
+          <button data-drum-level="middle" data-drum-side="1">E</button>
+          <button data-drum-level="middle" data-drum-side="2">S</button>
+          <button data-drum-level="middle" data-drum-side="3">W</button>
+          <span class="drum-rotate-row-label">Btm</span>
+          <button data-drum-level="bottom" data-drum-side="0">N</button>
+          <button data-drum-level="bottom" data-drum-side="1">E</button>
+          <button data-drum-level="bottom" data-drum-side="2">S</button>
+          <button data-drum-level="bottom" data-drum-side="3">W</button>
+        </div>
+      </section>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Seals</h2>
+        <div id="seal-toggle-grid" class="seal-toggle-grid">
+          <span class="seal-toggle-row-label">Top</span>
+          <button data-seal-level="top" data-seal-side="north">N</button>
+          <button data-seal-level="top" data-seal-side="east">E</button>
+          <button data-seal-level="top" data-seal-side="south">S</button>
+          <button data-seal-level="top" data-seal-side="west">W</button>
+          <span class="seal-toggle-row-label">Mid</span>
+          <button data-seal-level="middle" data-seal-side="north">N</button>
+          <button data-seal-level="middle" data-seal-side="east">E</button>
+          <button data-seal-level="middle" data-seal-side="south">S</button>
+          <button data-seal-level="middle" data-seal-side="west">W</button>
+          <span class="seal-toggle-row-label">Btm</span>
+          <button data-seal-level="bottom" data-seal-side="north">N</button>
+          <button data-seal-level="bottom" data-seal-side="east">E</button>
+          <button data-seal-level="bottom" data-seal-side="south">S</button>
+          <button data-seal-level="bottom" data-seal-side="west">W</button>
+          <div class="seal-action-row">
+            <button id="btn-remove-all-seals" class="seal-reset">Remove All</button>
+            <button id="btn-reset-seals" class="seal-reset">Replace All</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Actions</h2>
+        <div class="sidebar-row">
+          <button id="btn-entrance" class="secondary-action">Play Entrance</button>
+        </div>
+        <div class="sidebar-row">
+          <button id="btn-calibrate" class="secondary-action">Calibrate</button>
+          <span id="calibrating-message" class="badge" hidden>calibrating…</span>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- ============ CENTER HERO ============ -->
+    <main class="app-hero">
+      <div class="hero-header">
+        <div class="view-pills" role="tablist" aria-label="Renderer view">
+          <button id="btn-view-2d" class="view-pill">2D</button>
+          <button id="btn-view-3d" class="view-pill active">3D</button>
+          <button id="btn-view-2d3d" class="view-pill">2D + 3D</button>
+        </div>
+        <div class="hero-header-right">
+          <button id="btn-pop-out" class="ghost-action"
+            title="Open the rendered output in a separate resizable window">Pop Out ⤴</button>
+        </div>
+      </div>
+
+      <div class="panel panel-rendered" id="rendered-panel">
+        <div id="tower"></div>
+      </div>
+    </main>
+
+    <!-- ============ RIGHT CONFIG COLUMN ============ -->
+    <aside id="config-column" class="app-config">
+      <section class="config-section">
+        <div id="readout-panel" class="panel" data-collapse-key="state">
+          <div class="panel-row-header">
+            <h2>Tower State Panel</h2>
+          </div>
+          <div id="readout-container" class="readout-block"></div>
+        </div>
+
+        <div class="panel" data-3d-only="true" data-collapse-key="lighting">
+          <div class="panel-row-header">
+            <h2>3D Lighting</h2>
+          </div>
+          <div id="three-d-options" class="opts-block">
+            <h3 class="opts-subhead">View</h3>
+            <div class="opts-row">
+              <label class="toolbar-label"><input type="checkbox" id="chk-debug3d" /> Debug</label>
+              <label class="toolbar-label"><input type="checkbox" id="chk-ground-disc" checked /> Ground Disc</label>
+              <label class="toolbar-label"><input type="checkbox" id="chk-board-disc" checked /> Board Disc</label>
+            </div>
+            <div class="opts-row opts-row-block">
+              <label class="opts-input-label">Skybox URL
+                <input type="text" id="inp-skybox-url" placeholder="equirectangular .jpg / .png / .hdr" />
+              </label>
+            </div>
+
+            <h3 class="opts-subhead">Scene Lighting</h3>
+            <div class="sliders-grid">
+              <label class="slider-label">
+                Hemi
+                <input type="range" id="rng-hemi" min="0" max="1" step="0.01" value="0.04" />
+                <span id="lbl-hemi">0.04</span>
+              </label>
+              <label class="slider-label">
+                Key
+                <input type="range" id="rng-key" min="0" max="5" step="0.01" value="1.6" />
+                <span id="lbl-key">1.60</span>
+              </label>
+              <label class="slider-label">
+                Fill
+                <input type="range" id="rng-fill" min="0" max="20" step="0.1" value="5" />
+                <span id="lbl-fill">5.0</span>
+              </label>
+              <label class="slider-label">
+                Exposure
+                <input type="range" id="rng-exposure" min="0" max="2" step="0.01" value="0.7" />
+                <span id="lbl-exposure">0.70</span>
+              </label>
+              <label class="slider-label">
+                Key X
+                <input type="range" id="rng-key-x" min="-10" max="10" step="0.1" value="3" />
+                <span id="lbl-key-x">3.0</span>
+              </label>
+              <label class="slider-label">
+                Key Y
+                <input type="range" id="rng-key-y" min="-10" max="10" step="0.1" value="4.5" />
+                <span id="lbl-key-y">4.5</span>
+              </label>
+              <label class="slider-label">
+                Key Z
+                <input type="range" id="rng-key-z" min="-10" max="10" step="0.1" value="-1" />
+                <span id="lbl-key-z">-1.0</span>
+              </label>
+            </div>
+
+            <h3 class="opts-subhead">Bloom</h3>
+            <div class="sliders-grid">
+              <label class="slider-label">
+                Strength
+                <input type="range" id="rng-bloom-strength" min="0" max="3" step="0.05" value="1.5" />
+                <span id="lbl-bloom-strength">1.50</span>
+              </label>
+              <label class="slider-label">
+                Radius
+                <input type="range" id="rng-bloom-radius" min="0" max="1" step="0.05" value="0.5" />
+                <span id="lbl-bloom-radius">0.50</span>
+              </label>
+              <label class="slider-label">
+                Threshold
+                <input type="range" id="rng-bloom-threshold" min="0" max="3" step="0.01" value="1" />
+                <span id="lbl-bloom-threshold">1.00</span>
+              </label>
+            </div>
+
+            <h3 class="opts-subhead">Board</h3>
+            <div class="sliders-grid">
+              <label class="slider-label">
+                Underside Light
+                <input type="range" id="rng-underside-light" min="0" max="1" step="0.01" value="0.15" />
+                <span id="lbl-underside-light">0.15</span>
+              </label>
+              <label class="slider-label">
+                Board Size
+                <input type="range" id="rng-board-size" min="1.5" max="6" step="0.1" value="3" />
+                <span id="lbl-board-size">3.0</span>
+              </label>
+              <label class="slider-label">
+                Brightness
+                <input type="range" id="rng-board-brightness" min="0" max="8" step="0.05" value="1" />
+                <span id="lbl-board-brightness">1.00</span>
+              </label>
+              <label class="slider-label">
+                Thickness
+                <input type="range" id="rng-board-thickness" min="0" max="0.12" step="0.002" value="0.06" />
+                <span id="lbl-board-thickness">0.060</span>
+              </label>
+            </div>
+            <div class="opts-row">
+              <label class="toolbar-label"><input type="checkbox" id="chk-board-bottom-cap" checked /> Board Bottom
+                Face</label>
+            </div>
+            <div class="opts-row">
+              <span class="opts-inline-label">Edge:</span>
+              <button id="btn-board-edge-wood">Wood</button>
+              <button id="btn-board-edge-neoprene">Neoprene</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" data-3d-only="true" data-collapse-key="camera">
+          <div class="panel-row-header">
+            <h2>3D Camera</h2>
+          </div>
+          <div id="camera-options" class="opts-block">
+            <p class="opts-note">
+              The board-facing camera is defined by three factors, each a multiple of the model's
+              radius: <strong>Elevation</strong> sets eye height, <strong>Target Height</strong> sets
+              the look-at point (raise the board in frame by lowering it), and
+              <strong>Distance</strong> zooms in / out of the auto-fitted framing.
+            </p>
+            <p class="opts-note">
+              <strong>Zoom to Cursor</strong> points scroll-wheel zoom at the cursor instead of the
+              orbit centre; <strong>Preserve View On Direction Select</strong> keeps your current
+              tilt / zoom when picking a side instead of snapping back to the fitted framing.
+            </p>
+            <p class="opts-note">
+              Drag the sliders to tune live, or orbit &amp; zoom the 3D view by hand and click
+              <strong>Snapshot view &amp; copy</strong> to capture the current framing and copy the
+              full camera config (factors plus the toggles) to your clipboard. Paste it into a
+              <code>CameraConfig</code> (e.g. for UDT Board). The snapshot re-faces north &mdash; the
+              preset always loads facing the north side.
+            </p>
+            <div class="sliders-grid">
+              <label class="slider-label">
+                Elevation
+                <input type="range" id="rng-elevation-factor" min="-1.5" max="5" step="0.01" value="-0.5" />
+                <span id="lbl-elevation-factor">-0.50</span>
+              </label>
+              <label class="slider-label">
+                Target Height
+                <input type="range" id="rng-target-height-factor" min="-3" max="3" step="0.01" value="-0.15" />
+                <span id="lbl-target-height-factor">-0.15</span>
+              </label>
+              <label class="slider-label">
+                Distance
+                <input type="range" id="rng-distance-factor" min="0.3" max="3" step="0.01" value="1" />
+                <span id="lbl-distance-factor">1.00</span>
+              </label>
+            </div>
+            <div class="opts-row">
+              <label class="toolbar-label"><input type="checkbox" id="chk-zoom-to-cursor" checked /> Zoom to
+                Cursor</label>
+              <label class="toolbar-label"><input type="checkbox" id="chk-preserve-view-on-side-select" checked /> Preserve
+                View On Direction Select</label>
+            </div>
+            <div class="opts-row">
+              <button id="btn-camera-snapshot"
+                title="Capture the current 3D view as elevation / target-height / distance factors, apply them, and copy the JSON to the clipboard">Snapshot
+                view &amp; copy</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <section class="config-section">
+        <div class="panel" data-3d-only="true" data-collapse-key="physics">
+          <div class="panel-row-header">
+            <h2>Physics</h2>
+          </div>
+          <div id="physics-options" class="opts-block">
+            <div class="opts-row opts-row-actions">
+              <button id="btn-drop-skull" class="primary-action">Drop Skull</button>
+              <button id="btn-clear-skulls" class="secondary-action">Clear Skulls</button>
+            </div>
+
+            <h3 class="opts-subhead">Debug</h3>
+            <div class="opts-row">
+              <label class="toolbar-label"><input type="checkbox" id="chk-physics-debug" /> Show Colliders</label>
+              <label class="toolbar-label"><input type="checkbox" id="chk-seal-debug" /> Show Seal Colliders</label>
+            </div>
+
+            <h3 class="opts-subhead">Skull Appearance</h3>
+            <div class="opts-row">
+              <label class="toolbar-label"
+                title="Visual mesh for dropped skulls. Sphere is the default; the other options require .local/skulls/*.glb to exist (run npm run preprocess-skulls).">
+                Model
+                <select id="sel-skull-model">
+                  <option value="">Sphere</option>
+                  <!-- Additional <option> elements are appended at boot by
+                       physicsController.ts via import.meta.glob — one per
+                       skull_*.glb file present in src/3d/assets/. -->
+                </select>
+              </label>
+              <label class="toolbar-label"
+                title="Physics collider shape. Mesh derives a convex hull from the loaded model and may need friction/restitution re-tuning. Sphere preserves all current tuning. Disabled when Model is Sphere.">
+                Collider
+                <select id="sel-skull-collider">
+                  <option value="sphere">Sphere</option>
+                  <option value="hull">Mesh</option>
+                </select>
+              </label>
+            </div>
+
+            <h3 class="opts-subhead">Triggers</h3>
+            <div class="opts-row">
+              <label class="toolbar-label"
+                title="When enabled, drops one skull automatically each time the tower's state.beam.count increases between applyState calls. Mirrors the readout's 💀 Skull Drop! highlight. Default off; the explicit Drop Skull button still works in addition.">
+                <input type="checkbox" id="chk-auto-drop-on-state" />
+                Auto-drop on state skull count
+              </label>
+            </div>
+
+            <h3 class="opts-subhead">Skull &amp; Surfaces</h3>
+            <div class="physics-slider-list">
+              <label class="physics-slider"
+                title="Skull sphere radius as a fraction of the tower's bounding radius. Bigger skulls are less likely to wedge in tiny corners between trimesh triangles. Applies on the next Drop Skull (existing skull keeps its size).">
+                <span class="physics-slider-name">Skull size</span>
+                <input type="range" id="rng-skull-radius" min="0.010" max="0.08" step="0.0025" value="0.025" />
+                <span id="lbl-skull-radius" class="physics-slider-value">0.025</span>
+              </label>
+              <label class="physics-slider"
+                title="Maximum number of skulls allowed on the board simultaneously. Clicking Drop Skull while at the cap is a no-op. Click Clear Skulls to remove all. Lowering this does not remove existing skulls.">
+                <span class="physics-slider-name">Max skulls</span>
+                <input type="range" id="rng-skull-max" min="1" max="100" step="1" value="30" />
+                <span id="lbl-skull-max" class="physics-slider-value">30</span>
+              </label>
+              <label class="physics-slider"
+                title="Friction set on the skull body. Matters mainly against the game-board floor (drum / seal / static surfaces use the Min combine rule, so the surface's friction dominates instead). Applies on the next Drop Skull.">
+                <span class="physics-slider-name">Skull μ</span>
+                <input type="range" id="rng-skull-friction" min="0" max="1" step="0.05" value="0.8" />
+                <span id="lbl-skull-friction" class="physics-slider-value">0.80</span>
+              </label>
+              <label class="physics-slider"
+                title="Friction on the rotating drum trimeshes (Min combine rule, so this is the effective skull-vs-drum friction). Lower → skull slides off slanted drum-interior features. Above ~0.13 lets a rotating drum drag a resting skull along. Updates live.">
+                <span class="physics-slider-name">Drum μ</span>
+                <input type="range" id="rng-drum-friction" min="0" max="1" step="0.005" value="0.15" />
+                <span id="lbl-drum-friction" class="physics-slider-value">0.15</span>
+              </label>
+              <label class="physics-slider"
+                title="Friction on each closed seal-panel trimesh (Min combine rule). Lower → skull slides off slanted seal surfaces / exits. Above ~0.13 lets a closed seal carry a resting skull around during drum rotation. Updates live.">
+                <span class="physics-slider-name">Seal μ</span>
+                <input type="range" id="rng-seal-friction" min="0" max="1" step="0.005" value="0.05" />
+                <span id="lbl-seal-friction" class="physics-slider-value">0.05</span>
+              </label>
+              <label class="physics-slider"
+                title="Friction on every static GLB surface — cone funnel at the bottom, tower base, top cap, outer shell between drums (Min combine rule). Lower → skulls roll off slanted parts like the funnel cleanly. Updates live.">
+                <span class="physics-slider-name">Static μ</span>
+                <input type="range" id="rng-static-friction" min="0" max="1" step="0.005" value="0.1" />
+                <span id="lbl-static-friction" class="physics-slider-value">0.10</span>
+              </label>
+              <label class="physics-slider"
+                title="Friction on the game-board floor where exiting skulls land (Average combine rule with the skull's friction). Higher → skulls stop where they land. Lower → skulls roll further across the board. Updates live.">
+                <span class="physics-slider-name">Board μ</span>
+                <input type="range" id="rng-board-friction" min="0" max="1" step="0.005" value="0.5" />
+                <span id="lbl-board-friction" class="physics-slider-value">0.50</span>
+              </label>
+              <label class="physics-slider"
+                title="Skull bounciness on impact. 0 = sticks where it lands, 1 = perfect bounce. Higher values keep skulls moving after they land, which helps them escape geometric pinch points. Applies on the next Drop Skull.">
+                <span class="physics-slider-name">Restitution</span>
+                <input type="range" id="rng-restitution" min="0" max="1" step="0.05" value="0.2" />
+                <span id="lbl-restitution" class="physics-slider-value">0.20</span>
+              </label>
+              <label class="physics-slider"
+                title="Per-second decay on the skull's spin. Rapier has no built-in rolling resistance, so a rolling sphere on a flat surface would spin forever (friction has no slip to act on). Higher → ball stops rolling faster. 0 = ball rolls forever. Updates live.">
+                <span class="physics-slider-name">Ang. damping</span>
+                <input type="range" id="rng-skull-ang-damp" min="0" max="5" step="0.05" value="1.0" />
+                <span id="lbl-skull-ang-damp" class="physics-slider-value">1.00</span>
+              </label>
+              <label class="physics-slider"
+                title="Per-second decay on the skull's translational velocity. Use sparingly — too high makes falls feel like slow motion. Mostly useful to take the edge off if Restitution is high. Updates live.">
+                <span class="physics-slider-name">Lin. damping</span>
+                <input type="range" id="rng-skull-lin-damp" min="0" max="5" step="0.05" value="0" />
+                <span id="lbl-skull-lin-damp" class="physics-slider-value">0.00</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel panel-editors" data-collapse-key="json">
+          <div class="panel-row-header">
+            <h2>JSON</h2>
+            <div class="panel-header-actions">
+              <button id="btn-copy-config">Copy JSON</button>
+              <button id="btn-apply-config" disabled>Apply</button>
+            </div>
+          </div>
+          <select id="sel-config-type" aria-label="Config type">
+            <option value="state">Tower State</option>
+            <option value="lighting" id="opt-lighting" disabled>3D Lighting Config</option>
+            <option value="camera" id="opt-camera" disabled>3D Camera Config</option>
+            <option value="audio" id="opt-audio" disabled>3D Audio Config</option>
+            <option value="physics" id="opt-physics" disabled>Physics Config</option>
+          </select>
+          <textarea id="config-preview" class="config-preview" spellcheck="false" wrap="off"></textarea>
+        </div>
+      </section>
+    </aside>
+
+  </div><!-- /.app-grid -->
+
+  <script type="module" src="example-init.ts"></script>
+
+  <script type="module" src="example.ts"></script>
+</body>
+
+</html>

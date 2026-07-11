@@ -1,0 +1,18 @@
+{
+  "name": "rotationAllDrums",
+  "description": "Per tick: layer 3 holds at PWM 180; layers 0-2 each chase a lit position with 16-tick phase offset between them. 48-tick period (~0.96s) per ring. Mirrors firmware case 0x0f.",
+  "totalTicks": 1,
+  "loop": true,
+  "endBehavior": "hold",
+  "tracks": [
+    { "kind": "rotationChase",
+      "atTick": 0, "endTick": 1,
+      "chaseLayers": [0, 1, 2],
+      "steadyLayer": 3, "steadyLevelPwm": 180,
+      "phaseOffsetTicks": 16,
+      "lightStepTicks": 12,
+      "decayMultiplierNum": 700, "decayMultiplierDen": 768,
+      "periodTicks": 48
+    }
+  ]
+}
