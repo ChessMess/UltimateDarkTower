@@ -12,7 +12,7 @@
     "pretest": "pnpm --filter @udtc/engine build",
     "build": "echo 'adapters: no emit (type-check only for now)'",
     "typecheck": "tsc -b",
-    "lint": "eslint src"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@udtc/engine": "workspace:*",

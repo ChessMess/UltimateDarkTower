@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src",
+    "lint": "eslint .",
     "format": "prettier --write ."
   },
   "author": "ChessMess",

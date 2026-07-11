@@ -37,7 +37,7 @@
     "test:coverage": "jest --config jest.config.cjs --coverage",
     "test:sequence-snapshots": "jest --config jest.config.snapshots.cjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.example.json",
-    "lint": "eslint 'src/**/*.ts' 'tests/**/*.ts' 'example/**/*.ts'",
+    "lint": "eslint .",
     "lint:fix": "eslint 'src/**/*.ts' 'tests/**/*.ts' 'example/**/*.ts' --fix",
     "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
     "clean": "rm -rf dist dist-example coverage",

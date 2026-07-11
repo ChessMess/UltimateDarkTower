@@ -25,7 +25,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js",
+    "lint": "eslint .",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js --fix",
     "lint:flat:preview": "ESLINT_USE_FLAT_CONFIG=true eslint .",
     "lint:flat:preview:fix": "ESLINT_USE_FLAT_CONFIG=true eslint . --fix",

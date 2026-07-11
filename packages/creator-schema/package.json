@@ -9,7 +9,7 @@
     "test": "node test/conformance_test.js",
     "build": "echo 'schema: no emit (types via src)'",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint ."
   },
   "devDependencies": {
     "ajv": "^8.17.0",

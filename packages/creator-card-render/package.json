@@ -10,7 +10,7 @@
   "scripts": {
     "build": "echo 'card-render: no emit (source-only)'",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint ."
   },
   "peerDependencies": {
     "react": "^19.0.0"

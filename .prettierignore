@@ -1,0 +1,16 @@
+**/node_modules/
+
+# Build output
+**/dist/
+**/dist-example/
+**/example/dist/
+**/coverage/
+
+# Preserved pre-merge history — never reformat the graveyard
+docs/history/
+
+# Generated / vendored
+pnpm-lock.yaml
+**/*.min.js
+**/*.glb
+**/*.ogg

@@ -25,8 +25,8 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "validate:nodes": "node scripts/creator/validate-node-catalog.mjs",
-    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,md}\" --ignore-path .gitignore",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,md}\" --ignore-path .gitignore",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,md}\"",
     "ci": "pnpm validate:nodes && pnpm typecheck && pnpm build && pnpm test"
   },
   "devDependencies": {
