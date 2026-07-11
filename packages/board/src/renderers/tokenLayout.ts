@@ -67,3 +67,12 @@ export function markerEntries(state: BoardState): Map<LocationName, LocatedEntry
   }
   return groupByLocation(entries);
 }
+
+/** Quest markers grouped by location (one entry per quest; art id = the quest name). */
+export function questEntries(state: BoardState): Map<LocationName, LocatedEntry[]> {
+  const entries: LocatedEntry[] = [];
+  for (const [loc, quests] of Object.entries(state.questMarkers)) {
+    for (const q of quests) entries.push({ id: q, location: loc, art: q });
+  }
+  return groupByLocation(entries);
+}

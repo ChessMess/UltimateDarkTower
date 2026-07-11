@@ -5,6 +5,7 @@ import type {
   FoeStatus,
   HeroId,
   LocationName,
+  QuestMarker,
   SpaceMarker,
 } from './boardState';
 import { createDefaultBoardState } from './boardState';
@@ -169,6 +170,9 @@ export class BoardStateController {
   setSpaceMarker(location: LocationName, marker: SpaceMarker, on: boolean): void {
     this.dispatch({ type: 'setSpaceMarker', location, marker, on });
   }
+  setQuestMarker(location: LocationName, marker: QuestMarker, on: boolean): void {
+    this.dispatch({ type: 'setQuestMarker', location, marker, on });
+  }
   setSelections(selections: BoardState['selections']): void {
     this.dispatch({ type: 'setSelections', selections });
   }
@@ -239,6 +243,15 @@ function deriveSpecificEvents(
           type: 'spaceMarkerChanged',
           location: command.location,
           markers: next.spaceMarkers[command.location] ?? [],
+        },
+      ];
+
+    case 'setQuestMarker':
+      return [
+        {
+          type: 'questMarkerChanged',
+          location: command.location,
+          markers: next.questMarkers[command.location] ?? [],
         },
       ];
 

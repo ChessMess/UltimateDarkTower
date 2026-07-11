@@ -20,6 +20,7 @@ describe('serialize round-trip', () => {
       adversary: { id: 'utuk-ku', location: 'Dayside' },
       buildings: { Dayside: { skulls: 3, destroyed: true, monument: 'argent-oak' } },
       spaceMarkers: { 'Broken Lands': ['wasteland', 'power-skull'] },
+      questMarkers: { 'Radiant Mountains': ['main-goal', 'guild-quest'] },
       selections: { difficulty: 'Heroic', allies: ['a1'], expansions: ['covenant'] },
       meta: { seed: 'ABC123' },
     };
@@ -35,8 +36,18 @@ describe('serialize round-trip', () => {
       },
       buildings: {},
       spaceMarkers: {},
+      questMarkers: {},
     };
     expect(loadState(saveState(s))).toEqual(s);
+  });
+
+  it('defaults questMarkers to {} for a legacy v1 save that omits the field', () => {
+    // questMarkers was added after v1 shipped; older envelopes lack it and must still load.
+    const legacy = JSON.stringify({
+      version: BOARD_STATE_SCHEMA_VERSION,
+      state: { heroes: {}, foes: {}, buildings: {}, spaceMarkers: {} },
+    });
+    expect(loadState(legacy).questMarkers).toEqual({});
   });
 
   it('stamps the version into the envelope (not inside the state)', () => {

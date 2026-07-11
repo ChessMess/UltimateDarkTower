@@ -38,6 +38,7 @@ import {
   heroEntries,
   foeEntries,
   markerEntries,
+  questEntries,
 } from '../renderers/tokenLayout';
 import type { LocatedEntry } from '../renderers/tokenLayout';
 // Type-only — the store INSTANCE is supplied by the caller; no runtime UI dependency.
@@ -436,6 +437,14 @@ export class Board3DPlugin implements ScenePlugin {
       'marker',
       (e) => ({ kind: 'marker', id: e.id, location: e.location }),
       (e) => ({ kind: 'marker', id: e.art ?? e.id })
+    );
+
+    // Quest markers (own kind, but sharing the `marker` anchor slot — no dedicated board anchor).
+    this.placeFanned(
+      questEntries(state),
+      'marker',
+      (e) => ({ kind: 'quest', id: e.id, location: e.location }),
+      (e) => ({ kind: 'quest', id: e.art ?? e.id })
     );
 
     this.applyHighlight();

@@ -91,6 +91,21 @@ describe('BoardMap2D', () => {
     expect(hero.querySelector('circle')).toBeNull();
   });
 
+  it('renders a quest marker as its own kind with the official art; unknown quests fall back to a disc', () => {
+    const { map, host } = makeMap();
+    const s = populated();
+    s.questMarkers = { 'Radiant Mountains': ['main-goal'], 'Broken Lands': ['some-custom-quest'] };
+    map.render(s);
+    // A shipped quest marker renders its `quests/<id>.png` art (assetBaseUrl '/t/').
+    const mainGoal = host.querySelector('.udt-token[data-kind="quest"][data-id="main-goal"]') as SVGGElement;
+    expect(mainGoal).not.toBeNull();
+    expect(mainGoal.querySelector('image')?.getAttribute('href')).toBe('/t/quests/main-goal.png');
+    // A quest id with no official art → programmatic gold disc, never a broken request.
+    const custom = host.querySelector('.udt-token[data-kind="quest"][data-id="some-custom-quest"]') as SVGGElement;
+    expect(custom.querySelector('image')).toBeNull();
+    expect(custom.querySelector('circle')).not.toBeNull();
+  });
+
   it('fires onTokenSelect and draws a selection ring on click', () => {
     const onTokenSelect = jest.fn();
     const { map, host } = makeMap(onTokenSelect);

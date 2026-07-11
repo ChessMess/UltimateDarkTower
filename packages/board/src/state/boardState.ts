@@ -21,6 +21,19 @@ export type { FoeStatus };
  */
 export type SpaceMarker = 'wasteland' | 'power-skull' | string;
 
+/**
+ * A quest marker placed on a space — the game's four quest pieces (Main Goal, and the
+ * Adversary / Guild / Companion quest markers). Its own category (distinct art, own board
+ * host) but stored like {@link SpaceMarker}: a per-space overlay. Open string set; the
+ * literal members are the canonical roster and double as documentation.
+ */
+export type QuestMarker =
+  | 'main-goal'
+  | 'adversary-quest'
+  | 'guild-quest'
+  | 'companion-quest'
+  | string;
+
 /** A hero pawn placed on the board. */
 export interface HeroToken {
   location: LocationName;
@@ -63,6 +76,8 @@ export interface BoardState {
   buildings: Record<LocationName, BuildingState>;
   /** Per-space overlays, keyed by location name. A key is present only while it has markers. */
   spaceMarkers: Record<LocationName, SpaceMarker[]>;
+  /** Quest markers placed per space, keyed by location name. A key is present only while it has quests. */
+  questMarkers: Record<LocationName, QuestMarker[]>;
   /** Game-setup selections (free-form; the board does not interpret them). */
   selections?: {
     difficulty?: string;
@@ -76,7 +91,7 @@ export interface BoardState {
 }
 
 /**
- * An empty board: no heroes/foes/adversary/markers, with all 16 building spaces
+ * An empty board: no heroes/foes/adversary/markers/quests, with all 16 building spaces
  * present at `{ skulls: 0, destroyed: false }`. Optional keys are omitted so the
  * state round-trips through JSON without `undefined`-vs-absent mismatches.
  */
@@ -87,5 +102,5 @@ export function createDefaultBoardState(): BoardState {
       buildings[location.name] = { skulls: 0, destroyed: false };
     }
   }
-  return { heroes: {}, foes: {}, buildings, spaceMarkers: {} };
+  return { heroes: {}, foes: {}, buildings, spaceMarkers: {}, questMarkers: {} };
 }

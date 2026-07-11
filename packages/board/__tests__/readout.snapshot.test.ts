@@ -16,6 +16,7 @@ describe('BoardReadout', () => {
         "Egan's End": { skulls: 0, destroyed: false, monument: 'argent-oak' },
       },
       spaceMarkers: { 'Broken Lands': ['wasteland'] },
+      questMarkers: {},
     };
     expect(BoardReadout.toText(s)).toMatchSnapshot();
   });
@@ -31,12 +32,13 @@ describe('BoardReadout', () => {
       adversary: { id: 'utuk-ku', location: 'Big Sister' },
       buildings: { Duwani: { skulls: 1, destroyed: false } }, // east
       spaceMarkers: { 'Broken Lands': ['wasteland'], 'Big Sister': ['power-skull'] },
+      questMarkers: {},
     };
     expect(BoardReadout.toText(s, { kingdom: 'north', angle: 'overhead' })).toMatchSnapshot();
   });
 
   it('is deterministic regardless of hero insertion order', () => {
-    const base = (): BoardState => ({ heroes: {}, foes: {}, buildings: {}, spaceMarkers: {} });
+    const base = (): BoardState => ({ heroes: {}, foes: {}, buildings: {}, spaceMarkers: {}, questMarkers: {} });
     const a = base();
     a.heroes = { b: { location: 'Dayside' }, a: { location: 'Broken Lands' } };
     const b = base();

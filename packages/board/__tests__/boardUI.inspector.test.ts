@@ -71,4 +71,13 @@ describe('Inspector', () => {
     $<HTMLButtonElement>(host, '.udt-inspector-remove').click();
     expect(controller.getState().spaceMarkers['Broken Lands']).toBeUndefined();
   });
+
+  it('removes a quest marker', () => {
+    const { controller, selection, host } = setup();
+    controller.setQuestMarker('Radiant Mountains', 'main-goal', true);
+    selection.set({ kind: 'quest', id: 'main-goal', location: 'Radiant Mountains' });
+    expect(host.querySelector('.udt-inspector-heading')?.textContent).toMatch(/Quest: main-goal/);
+    $<HTMLButtonElement>(host, '.udt-inspector-remove').click();
+    expect(controller.getState().questMarkers['Radiant Mountains']).toBeUndefined();
+  });
 });

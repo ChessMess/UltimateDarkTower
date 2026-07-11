@@ -5,6 +5,7 @@ import type {
   FoeStatus,
   HeroId,
   LocationName,
+  QuestMarker,
   SpaceMarker,
 } from './boardState';
 
@@ -31,6 +32,7 @@ export type BoardCommand =
   | { type: 'restoreBuilding'; location: LocationName }
   | { type: 'setMonument'; location: LocationName; monumentId: string | null }
   | { type: 'setSpaceMarker'; location: LocationName; marker: SpaceMarker; on: boolean }
+  | { type: 'setQuestMarker'; location: LocationName; marker: QuestMarker; on: boolean }
   | { type: 'setSelections'; selections: BoardState['selections'] } // shallow-merge
   | { type: 'replaceState'; state: BoardState }
   | { type: 'reset' };

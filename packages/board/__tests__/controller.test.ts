@@ -17,7 +17,7 @@ describe('BoardStateController — self mode (default)', () => {
     expect(events[1]).toEqual({ type: 'tokenAdded', kind: 'hero', id: 'h1', location: GENERIC });
   });
 
-  it('derives buildingChanged / spaceMarkerChanged / selectionChanged with the right payload', () => {
+  it('derives buildingChanged / spaceMarkerChanged / questMarkerChanged / selectionChanged with the right payload', () => {
     const c = new BoardStateController();
 
     let building: BoardEvent | undefined;
@@ -33,6 +33,11 @@ describe('BoardStateController — self mode (default)', () => {
     c.on('spaceMarkerChanged', (e) => (marker = e));
     c.setSpaceMarker(GENERIC, 'wasteland', true);
     expect(marker).toEqual({ type: 'spaceMarkerChanged', location: GENERIC, markers: ['wasteland'] });
+
+    let quest: BoardEvent | undefined;
+    c.on('questMarkerChanged', (e) => (quest = e));
+    c.setQuestMarker(GENERIC, 'main-goal', true);
+    expect(quest).toEqual({ type: 'questMarkerChanged', location: GENERIC, markers: ['main-goal'] });
 
     let selection: BoardEvent | undefined;
     c.on('selectionChanged', (e) => (selection = e));

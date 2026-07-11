@@ -16,6 +16,7 @@ import {
   heroEntries,
   foeEntries,
   markerEntries,
+  questEntries,
 } from './tokenLayout';
 import type { LocatedEntry } from './tokenLayout';
 // Type-only — no runtime dependency on the UI layer (the store instance is supplied by the caller).
@@ -384,6 +385,15 @@ export class BoardMap2D implements BoardRenderer {
           root, focus, markerEntries(state), 'marker',
           (entry) => ({ kind: 'marker', id: entry.id, location: entry.location }),
           (entry) => ({ kind: 'marker', id: entry.art ?? entry.id })
+        ),
+      },
+      {
+        // Quests are their own kind but share the `marker` anchor slot (no dedicated board anchor).
+        z: KIND_Z_2D.quest,
+        render: () => this.renderFannedByLocation(
+          root, focus, questEntries(state), 'marker',
+          (entry) => ({ kind: 'quest', id: entry.id, location: entry.location }),
+          (entry) => ({ kind: 'quest', id: entry.art ?? entry.id })
         ),
       },
       {

@@ -16,7 +16,7 @@ function pick<T>(list: readonly T[]): T {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-/** The canonical demo setup — real foes / adversary / monument / skull / marker + a hero portrait. */
+/** The canonical demo setup — real foes / adversary / monument / skull / marker / quest + a hero portrait. */
 export function seedBoard(c: BoardStateController): void {
   c.placeHero('brutal-warlord', 'Broken Lands', 'north');
   c.spawnFoe('foe-1', 'Brigands', 'Dayside');
@@ -27,6 +27,7 @@ export function seedBoard(c: BoardStateController): void {
   c.addSkull('Dayside', 2);
   c.setMonument("Egan's End", 'argent-oak');
   c.setSpaceMarker('Broken Lands', 'wasteland', true);
+  c.setQuestMarker('Radiant Mountains', 'main-goal', true);
 }
 
 /** Clears, then scatters a handful of random foes / skulls / an adversary. */

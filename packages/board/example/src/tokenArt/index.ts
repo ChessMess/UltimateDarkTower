@@ -18,6 +18,7 @@ import foe from './foe_tokens.json';
 import adversary from './adversary_tokens.json';
 import monument from './monument_tokens.json';
 import marker from './marker_tokens.json';
+import quest from './quest_tokens.json';
 import skull from './skull_tokens.json';
 
 export const tokenArt: TokenArtConfig = {
@@ -26,5 +27,6 @@ export const tokenArt: TokenArtConfig = {
   adversary: adversary as TokenArtConfig['adversary'],
   monument: monument as TokenArtConfig['monument'],
   marker: marker as TokenArtConfig['marker'],
+  quest: quest as TokenArtConfig['quest'],
   skull: skull as TokenArtConfig['skull'],
 };

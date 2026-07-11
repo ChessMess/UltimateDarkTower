@@ -30,6 +30,8 @@ const boardStateSchema = z.object({
   adversary: z.object({ id: z.string(), location: z.string().optional() }).optional(),
   buildings: z.record(z.string(), buildingStateSchema),
   spaceMarkers: z.record(z.string(), z.array(z.string())),
+  // Additive since v1: older saves omit it, so default to `{}` rather than requiring it (no version bump).
+  questMarkers: z.record(z.string(), z.array(z.string())).default({}),
   selections: z
     .object({
       difficulty: z.string().optional(),

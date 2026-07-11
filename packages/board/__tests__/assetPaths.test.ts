@@ -78,6 +78,18 @@ describe('resolveTokenImageFor', () => {
     expect(resolveTokenImageFor({ kind: 'hero', id: 'hero-1' }, '2d', { assetBaseUrl: '/t/' })).toBeNull();
   });
 
+  it('resolves the official quest-marker art (one image drives both views); unknown quests fall back', () => {
+    const MAIN_GOAL: TokenArtRef = { kind: 'quest', id: 'main-goal' };
+    // The four game markers ship art under quests/ — same file in 2D and 3D.
+    expect(resolveTokenImageFor(MAIN_GOAL, '2d', { assetBaseUrl: '/t/' })).toBe('/t/quests/main-goal.png');
+    expect(resolveTokenImageFor(MAIN_GOAL, '3d', { assetBaseUrl: '/t/' })).toBe('/t/quests/main-goal.png');
+    // A quest id with no official art entry → null (gold disc fallback), never a broken request.
+    expect(resolveTokenImageFor({ kind: 'quest', id: 'some-custom-quest' }, '2d', { assetBaseUrl: '/t/' })).toBeNull();
+    // A per-token override still wins (e.g. re-arted via the Art Forge).
+    const tokenArt: TokenArtConfig = { quest: { 'main-goal': { image2d: '/custom/mg.png' } } };
+    expect(resolveTokenImageFor(MAIN_GOAL, '2d', { tokenArt, assetBaseUrl: '/t/' })).toBe('/custom/mg.png');
+  });
+
   it('handles the full hero roster (all expansions) without error', () => {
     // Every hero in UDT's roster — base + alliances + covenant + expeditions — must resolve to
     // either a `heros/*.png` portrait or null (disc fallback), never a malformed path or throw.

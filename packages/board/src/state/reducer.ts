@@ -1,4 +1,4 @@
-import type { BoardState, BuildingState, LocationName, SpaceMarker } from './boardState';
+import type { BoardState, BuildingState, LocationName, QuestMarker, SpaceMarker } from './boardState';
 import { createDefaultBoardState } from './boardState';
 import { BOARD_LOCATION_BY_NAME } from '../data/udtReexports';
 import type { BoardCommand } from './commands';
@@ -202,6 +202,24 @@ export function applyBoardCommand(state: BoardState, command: BoardCommand): Boa
         spaceMarkers[command.location] = next;
       }
       return { ...state, spaceMarkers };
+    }
+
+    case 'setQuestMarker': {
+      warnUnknownLocation(command.location);
+      const current = state.questMarkers[command.location] ?? [];
+      const next: QuestMarker[] = command.on
+        ? current.includes(command.marker)
+          ? current
+          : [...current, command.marker]
+        : current.filter((m) => m !== command.marker);
+
+      const questMarkers = { ...state.questMarkers };
+      if (next.length === 0) {
+        delete questMarkers[command.location];
+      } else {
+        questMarkers[command.location] = next;
+      }
+      return { ...state, questMarkers };
     }
 
     case 'setSelections':

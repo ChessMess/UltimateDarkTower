@@ -174,6 +174,28 @@ describe('reducer — space markers', () => {
   });
 });
 
+describe('reducer — quest markers', () => {
+  it('adds (deduped), removes, and drops the key when empty', () => {
+    let s = applyBoardCommand(createDefaultBoardState(), {
+      type: 'setQuestMarker',
+      location: GENERIC,
+      marker: 'main-goal',
+      on: true,
+    });
+    expect(s.questMarkers[GENERIC]).toEqual(['main-goal']);
+
+    s = applyBoardCommand(s, { type: 'setQuestMarker', location: GENERIC, marker: 'main-goal', on: true });
+    expect(s.questMarkers[GENERIC]).toEqual(['main-goal']); // deduped
+
+    s = applyBoardCommand(s, { type: 'setQuestMarker', location: GENERIC, marker: 'guild-quest', on: true });
+    expect(s.questMarkers[GENERIC]).toEqual(['main-goal', 'guild-quest']);
+
+    s = applyBoardCommand(s, { type: 'setQuestMarker', location: GENERIC, marker: 'main-goal', on: false });
+    s = applyBoardCommand(s, { type: 'setQuestMarker', location: GENERIC, marker: 'guild-quest', on: false });
+    expect(GENERIC in s.questMarkers).toBe(false); // key removed
+  });
+});
+
 describe('reducer — selections / replace / reset', () => {
   it('setSelections shallow-merges', () => {
     let s = applyBoardCommand(createDefaultBoardState(), {
@@ -190,6 +212,7 @@ describe('reducer — selections / replace / reset', () => {
       foes: {},
       buildings: {},
       spaceMarkers: {},
+      questMarkers: {},
     };
     expect(applyBoardCommand(createDefaultBoardState(), { type: 'replaceState', state: replacement })).toBe(
       replacement

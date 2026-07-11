@@ -1,4 +1,4 @@
-import type { BoardState, BuildingState, LocationName, SpaceMarker } from './boardState';
+import type { BoardState, BuildingState, LocationName, QuestMarker, SpaceMarker } from './boardState';
 import type { BoardCommand } from './commands';
 
 /** The instance-token kinds carried on the board (heroes, foes, and the singleton adversary). */
@@ -22,6 +22,7 @@ export type BoardEvent =
     }
   | { type: 'buildingChanged'; location: LocationName; building: BuildingState }
   | { type: 'spaceMarkerChanged'; location: LocationName; markers: SpaceMarker[] }
+  | { type: 'questMarkerChanged'; location: LocationName; markers: QuestMarker[] }
   | { type: 'selectionChanged'; selections: BoardState['selections'] };
 
 export type BoardEventType = BoardEvent['type'];

@@ -12,7 +12,7 @@ import { promises as fs } from 'fs';
 import { resolve, relative, sep } from 'path';
 
 /** The token kinds with a `<kind>_tokens.json` file — the only paths this plugin will write. */
-const KINDS = ['hero', 'foe', 'adversary', 'monument', 'marker', 'skull'] as const;
+const KINDS = ['hero', 'foe', 'adversary', 'monument', 'marker', 'quest', 'skull'] as const;
 const IMAGE_EXT = new Set(['.png', '.webp', '.jpg', '.jpeg', '.gif', '.svg', '.avif']);
 const MODEL_EXT = new Set(['.glb', '.gltf']);
 

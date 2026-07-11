@@ -14,7 +14,7 @@ import { highlight } from './helpers';
 import { imageSlot } from './imageSlot';
 import { modelSlot } from './modelSlot';
 
-type Kind = 'hero' | 'foe' | 'adversary' | 'monument' | 'marker' | 'skull';
+type Kind = 'hero' | 'foe' | 'adversary' | 'monument' | 'marker' | 'quest' | 'skull';
 interface RosterEntry {
   id: string;
   name: string;
@@ -37,6 +37,16 @@ const KINDS: { kind: Kind; label: string; roster: RosterEntry[] }[] = [
     roster: [
       { id: 'wasteland', name: 'Wasteland' },
       { id: 'power-skull', name: 'Power Skull' },
+    ],
+  },
+  {
+    kind: 'quest',
+    label: 'Quest marker',
+    roster: [
+      { id: 'main-goal', name: 'Main Goal' },
+      { id: 'adversary-quest', name: 'Adversary Quest' },
+      { id: 'guild-quest', name: 'Guild Quest' },
+      { id: 'companion-quest', name: 'Companion Quest' },
     ],
   },
   { kind: 'skull', label: 'Skull', roster: [{ id: 'skull', name: 'Skull' }] },
@@ -123,7 +133,7 @@ async function boot(): Promise<void> {
 }
 
 function emptyConfig(): Config {
-  return { hero: {}, foe: {}, adversary: {}, monument: {}, marker: {}, skull: {} };
+  return { hero: {}, foe: {}, adversary: {}, monument: {}, marker: {}, quest: {}, skull: {} };
 }
 
 /**

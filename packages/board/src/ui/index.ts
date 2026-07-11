@@ -51,7 +51,17 @@ export interface BoardUIRosters {
   markers: string[];
   heroes: ReadonlyArray<RosterEntry>;
   monuments: ReadonlyArray<RosterEntry>;
+  /** Quest markers (id → display name); the four game pieces. Local to the board (no UDT roster). */
+  quests: ReadonlyArray<RosterEntry>;
 }
+
+/** The four quest markers — id matches the `quests/` art convention + `OFFICIAL_QUEST_ART`. */
+const DEFAULT_QUESTS: ReadonlyArray<RosterEntry> = [
+  { id: 'main-goal', name: 'Main Goal' },
+  { id: 'adversary-quest', name: 'Adversary Quest' },
+  { id: 'guild-quest', name: 'Guild Quest' },
+  { id: 'companion-quest', name: 'Companion Quest' },
+];
 
 export interface BoardUIOptions {
   controller: BoardStateController;
@@ -143,6 +153,7 @@ function resolveRosters(r?: Partial<BoardUIRosters>): BoardUIRosters {
     markers: r?.markers ?? ['wasteland', 'power-skull'],
     heroes: r?.heroes ?? HEROES,
     monuments: r?.monuments ?? MONUMENTS,
+    quests: r?.quests ?? DEFAULT_QUESTS,
   };
 }
 
@@ -261,7 +272,7 @@ function makeDraggable(panel: HTMLElement, handle: HTMLElement): void {
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
-type AddKind = 'hero' | 'foe' | 'adversary' | 'marker' | 'skull' | 'monument';
+type AddKind = 'hero' | 'foe' | 'adversary' | 'marker' | 'quest' | 'skull' | 'monument';
 
 function buildPalette(
   body: HTMLElement,
@@ -276,6 +287,7 @@ function buildPalette(
       { value: 'foe', label: 'Foe' },
       { value: 'adversary', label: 'Adversary' },
       { value: 'marker', label: 'Space marker' },
+      { value: 'quest', label: 'Quest marker' },
       { value: 'skull', label: 'Skull' },
       { value: 'monument', label: 'Monument' },
     ],
@@ -313,6 +325,12 @@ function buildPalette(
   markerCustom.className = 'udt-palette-marker-custom';
   const markerRow = fieldRow('Marker', markerSelect, '', markerCustom);
 
+  const questSelect = makeSelect(
+    rosters.quests.map((q) => ({ value: q.id, label: q.name })),
+    'udt-palette-quest'
+  );
+  const questRow = fieldRow('Quest', questSelect);
+
   // Monuments sit on a building (setMonument), so the kind targets building spaces only.
   const monumentSelect = makeSelect(
     rosters.monuments.map((m) => ({ value: m.id, label: m.name })),
@@ -326,7 +344,7 @@ function buildPalette(
 
   const detail = document.createElement('div');
   detail.className = 'udt-palette-detail';
-  detail.append(heroRow, foeRow, adversaryRow, markerRow, monumentRow);
+  detail.append(heroRow, foeRow, adversaryRow, markerRow, questRow, monumentRow);
 
   const addBtn = makeButton('Add', 'udt-palette-add');
 
@@ -347,6 +365,7 @@ function buildPalette(
     foeRow.style.display = kind === 'foe' ? '' : 'none';
     adversaryRow.style.display = kind === 'adversary' ? '' : 'none';
     markerRow.style.display = kind === 'marker' ? '' : 'none';
+    questRow.style.display = kind === 'quest' ? '' : 'none';
     monumentRow.style.display = kind === 'monument' ? '' : 'none';
   };
   kindSelect.addEventListener('change', showDetail);
@@ -366,6 +385,7 @@ function buildPalette(
       foe: foeType.value,
       adversary: adversaryId.value,
       marker: markerValue(markerSelect, markerCustom),
+      quest: optionText(questSelect),
       monument: monumentCustom.value.trim() || optionText(monumentSelect),
     });
     // Rebuild the location select for the right target set.
@@ -401,6 +421,9 @@ function buildPalette(
         if (marker) controller.setSpaceMarker(loc, marker, true);
         break;
       }
+      case 'quest':
+        if (questSelect.value) controller.setQuestMarker(loc, questSelect.value, true);
+        break;
       case 'skull':
         controller.addSkull(loc, 1);
         break;
@@ -504,6 +527,9 @@ function buildInspector(
         break;
       case 'marker':
         renderMarker(body, controller, state, sel);
+        break;
+      case 'quest':
+        renderQuest(body, controller, state, sel);
         break;
     }
   };
@@ -632,6 +658,20 @@ function renderMarker(
   );
 }
 
+function renderQuest(
+  body: HTMLElement,
+  controller: BoardStateController,
+  state: BoardState,
+  sel: TokenSelection
+): void {
+  const present = state.questMarkers[sel.location]?.includes(sel.id);
+  if (!present) return void body.appendChild(emptyNote('Quest no longer on the board.'));
+  body.appendChild(heading(`Quest: ${sel.id} @ ${sel.location}`));
+  body.appendChild(
+    removeButton('Remove', () => controller.setQuestMarker(sel.location, sel.id, false))
+  );
+}
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 
 function buildSummary(body: HTMLElement, controller: BoardStateController): void {
@@ -643,7 +683,7 @@ function buildSummary(body: HTMLElement, controller: BoardStateController): void
     const state = controller.getState();
     table.replaceChildren();
     const header = document.createElement('tr');
-    for (const h of ['', 'Heroes', 'Foes', 'Skulls', 'Razed', 'Markers', 'Adv'])
+    for (const h of ['', 'Heroes', 'Foes', 'Skulls', 'Razed', 'Markers', 'Quests', 'Adv'])
       header.appendChild(cell('th', h));
     table.appendChild(header);
     for (const k of KINGDOMS) {
@@ -656,6 +696,7 @@ function buildSummary(body: HTMLElement, controller: BoardStateController): void
       row.appendChild(metricCell('skulls', m.skulls));
       row.appendChild(metricCell('razed', m.razed));
       row.appendChild(metricCell('markers', m.markers));
+      row.appendChild(metricCell('quests', m.quests));
       row.appendChild(metricCell('adversary', m.adversary ? '✓' : ''));
       table.appendChild(row);
     }
@@ -674,6 +715,7 @@ interface KingdomMetrics {
   skulls: number;
   razed: number;
   markers: number;
+  quests: number;
   adversary: boolean;
 }
 
@@ -692,8 +734,12 @@ function kingdomMetrics(state: BoardState, kingdom: BoardKingdom): KingdomMetric
   for (const [loc, list] of Object.entries(state.spaceMarkers)) {
     if (inK(loc)) markers += list.length;
   }
+  let quests = 0;
+  for (const [loc, list] of Object.entries(state.questMarkers)) {
+    if (inK(loc)) quests += list.length;
+  }
   const adversary = state.adversary?.location ? inK(state.adversary.location) : false;
-  return { heroes, foes, skulls, razed, markers, adversary };
+  return { heroes, foes, skulls, razed, markers, quests, adversary };
 }
 
 // ── DOM helpers ────────────────────────────────────────────────────────────────
@@ -864,7 +910,7 @@ function markerValue(select: HTMLSelectElement, custom: HTMLInputElement): strin
 
 function placementLabel(
   kind: AddKind,
-  values: { hero: string; foe: string; adversary: string; marker: string; monument: string }
+  values: { hero: string; foe: string; adversary: string; marker: string; quest: string; monument: string }
 ): string {
   switch (kind) {
     case 'hero':
@@ -875,6 +921,8 @@ function placementLabel(
       return `${values.adversary} (adversary)`;
     case 'marker':
       return `${values.marker} (marker)`;
+    case 'quest':
+      return `${values.quest} (quest)`;
     case 'skull':
       return 'skull';
     case 'monument':
@@ -884,7 +932,7 @@ function placementLabel(
 
 function toSelectionKind(kind: AddKind): TokenSelection['kind'] {
   if (kind === 'skull' || kind === 'monument') return 'building';
-  return kind; // 'hero' | 'foe' | 'adversary' | 'marker'
+  return kind; // 'hero' | 'foe' | 'adversary' | 'marker' | 'quest'
 }
 
 /** The display text of a `<select>`'s current option (falls back to its value). */

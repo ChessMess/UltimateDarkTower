@@ -131,6 +131,27 @@ describe('Palette', () => {
     expect(controller.getState().buildings["Egan's End"].monument).toBe('argent-oak');
   });
 
+  it('adds a quest marker onto a space (any location; setQuestMarker by id) on Confirm', () => {
+    const { controller, host } = setup();
+    const kind = $<HTMLSelectElement>(host, '.udt-palette-kind');
+    kind.value = 'quest';
+    kind.dispatchEvent(new Event('change'));
+    // Default roster is the four game pieces (option value = id, text = name).
+    const quest = $<HTMLSelectElement>(host, '.udt-palette-quest');
+    expect(Array.from(quest.options).map((o) => o.text)).toContain('Main Goal');
+    expect(Array.from(quest.options).map((o) => o.value)).toContain('main-goal');
+    quest.value = 'main-goal';
+
+    $<HTMLButtonElement>(host, '.udt-palette-add').click();
+    expect(controller.getState().questMarkers).toEqual({}); // no mutation before Confirm
+    // Quests target any space (not buildings-only) — a non-building space is available.
+    const loc = $<HTMLSelectElement>(host, '.udt-palette-location');
+    expect(Array.from(loc.querySelectorAll('option')).map((o) => o.value)).toContain('Broken Lands');
+    loc.value = 'Broken Lands';
+    $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
+    expect(controller.getState().questMarkers['Broken Lands']).toEqual(['main-goal']);
+  });
+
   it('Setup section dispatches setSelections', () => {
     const { controller, host } = setup();
     $<HTMLSelectElement>(host, '.udt-setup-difficulty').value = 'Heroic';

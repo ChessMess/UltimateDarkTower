@@ -6,20 +6,21 @@
 // Display-free (the CI grep enforces it).
 import type { LocationName } from '../state/boardState';
 
-/** What a click/tap reports. `id` is the hero/foe instance id, adversary id, or the location (building/marker host). */
+/** What a click/tap reports. `id` is the hero/foe instance id, adversary id, or the location (building/marker/quest host). */
 export interface TokenSelection {
-  kind: 'hero' | 'foe' | 'adversary' | 'building' | 'marker';
+  kind: 'hero' | 'foe' | 'adversary' | 'building' | 'marker' | 'quest';
   id: string;
   location: LocationName;
 }
 
-/** What the art resolver is asked to resolve. `id` is the *art* id (foe type, adversary id, monument id, marker name). */
+/** What the art resolver is asked to resolve. `id` is the *art* id (foe type, adversary id, monument id, marker/quest name). */
 export type TokenArtRef =
   | { kind: 'hero'; id: string }
   | { kind: 'foe'; id: string }
   | { kind: 'adversary'; id: string }
   | { kind: 'monument'; id: string }
   | { kind: 'marker'; id: string }
+  | { kind: 'quest'; id: string }
   | { kind: 'skull'; id: 'skull' };
 
 /** Fill tints for the programmatic fallback (2D disc / 3D sprite), keyed by token kind. */
@@ -29,6 +30,7 @@ export const KIND_TINT: Record<TokenSelection['kind'], string> = {
   adversary: '#7c3aed',
   building: '#a16207',
   marker: '#14b8a6',
+  quest: '#d4a017',
 };
 
 /** 2D SVG render order — higher value = appended later = paints on top (SVG painters algorithm). */
@@ -37,6 +39,7 @@ export const KIND_Z_2D: Record<TokenSelection['kind'], number> = {
   foe:       2,
   adversary: 3,
   marker:    4,
+  quest:     4,
   hero:      5,
 };
 
@@ -46,6 +49,7 @@ export const KIND_Z_3D: Record<TokenSelection['kind'], number> = {
   foe:       10,
   adversary: 10,
   marker:    10,
+  quest:     10,
   hero:      11,
 };
 
@@ -130,6 +134,21 @@ const OFFICIAL_HERO_ART: Record<string, string | null> = {
 };
 
 /**
+ * Art filenames (under the `quests/` group folder) for the four quest markers, keyed by kebab
+ * quest id — the game's official marker sculpts (cut from the component photo, background removed),
+ * one image driving both the 2D map and the 3D billboard. `null` would mark a quest whose art
+ * hasn't shipped (→ programmatic gold disc fallback, no failed request). A consumer hosts these
+ * PNGs under `${assetBaseUrl}quests/` (the demo ships them in example/public/tokens/quests/) or
+ * overrides per-token via `tokenArt`. Mirrors {@link OFFICIAL_HERO_ART}.
+ */
+const OFFICIAL_QUEST_ART: Record<string, string | null> = {
+  'main-goal': 'main-goal.png',
+  'adversary-quest': 'adversary-quest.png',
+  'guild-quest': 'guild-quest.png',
+  'companion-quest': 'companion-quest.png',
+};
+
+/**
  * Default `${assetBaseUrl}${group}/${kebab(id)}.png` convention shared by the 2D map and the
  * 3D plugin. In the 2D view, foe/adversary ids with a known {@link OFFICIAL_2D_ICON} entry
  * resolve to the small flat board-token icon instead of the 3D-style portrait; 3D and every
@@ -159,6 +178,10 @@ export function defaultTokenImagePath(
       return `${base}monuments/${id}.png`;
     case 'marker':
       return `${base}markers/${id}.png`;
+    case 'quest': {
+      const art = OFFICIAL_QUEST_ART[id];
+      return art ? `${base}quests/${art}` : null; // unmapped/art-less → gold disc fallback
+    }
     case 'skull':
       return `${base}markers/skull.png`;
     case 'hero': {
