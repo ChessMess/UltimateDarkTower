@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Dark Tower — Seed Decoder</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Seed Decoder</h1>
+      <p>Return to Dark Tower</p>
+    </header>
+
+    <!-- New Baseline Panel -->
+    <div class="card">
+      <h2>New Baseline</h2>
+      <p class="hint">Enter a seed and record the full game configuration from the companion app.</p>
+      <div class="field">
+        <label for="seed-input">Game Seed</label>
+        <input
+          type="text"
+          id="seed-input"
+          placeholder="TL7A-AAUA-N43A"
+          autocomplete="off"
+          spellcheck="false"
+          maxlength="14"
+        />
+        <span id="seed-status" class="seed-status"></span>
+      </div>
+      <div id="baseline-config-form"></div>
+      <button id="new-baseline-btn">Create Baseline Session</button>
+    </div>
+
+    <!-- Sessions -->
+    <div class="card">
+      <h2>Sessions</h2>
+      <div id="session-list"></div>
+    </div>
+
+    <!-- Bit Map Display (baseline) -->
+    <div class="card">
+      <h2>Bit Map</h2>
+      <div id="bitmap-display"></div>
+    </div>
+
+    <!-- Baseline Config Display (for active session) -->
+    <div class="card" id="baseline-config-display" hidden>
+      <h2>Baseline Configuration</h2>
+      <div id="baseline-config-readout"></div>
+    </div>
+
+    <!-- Game Events (post-game-start observations) -->
+    <div class="card" id="events-panel" hidden>
+      <h2>Game Events</h2>
+      <p class="hint">Record what happens after the game starts — foe spawns, dungeons, quests, battles. This data helps map the derived-state bits (chars 6–11).</p>
+
+      <div class="field-row">
+        <div class="field" style="flex:0 0 80px">
+          <label for="event-month">Month</label>
+          <input type="number" id="event-month" min="1" max="99" value="1" class="input-sm" />
+        </div>
+        <div class="field" style="flex:0 0 80px">
+          <label for="event-turn">Turn</label>
+          <input type="number" id="event-turn" min="0" max="99" placeholder="—" class="input-sm" />
+        </div>
+        <div class="field" style="flex:1">
+          <label for="event-type">Event Type</label>
+          <select id="event-type"></select>
+        </div>
+      </div>
+
+      <div id="event-context-fields"></div>
+
+      <div class="field">
+        <label for="event-notes">Notes</label>
+        <input type="text" id="event-notes" placeholder="Optional details…" autocomplete="off" class="input-sm" />
+      </div>
+
+      <button id="add-event-btn">Add Event</button>
+
+      <div id="event-log" style="margin-top:1rem"></div>
+    </div>
+
+    <!-- Add Variant Panel -->
+    <div class="card" id="variant-panel" hidden>
+      <h2>Add Variant</h2>
+      <p class="hint">Change ONE setting in the companion app, enter the new seed, and select what changed.</p>
+      <div class="field">
+        <label for="variant-input">Variant Seed</label>
+        <input
+          type="text"
+          id="variant-input"
+          placeholder="XXXX-XXXX-XXXX"
+          autocomplete="off"
+          spellcheck="false"
+          maxlength="14"
+        />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="field-select">Changed Field</label>
+          <select id="field-select"></select>
+        </div>
+        <div class="field">
+          <label for="value-select">Changed To</label>
+          <select id="value-select"></select>
+        </div>
+      </div>
+      <div id="variant-change-summary" class="change-summary"></div>
+      <div class="btn-row">
+        <button id="add-variant-btn">Add Variant</button>
+        <button id="suggest-mapping-btn" class="btn-ghost">Auto-Suggest Mapping</button>
+      </div>
+    </div>
+
+    <!-- Variant History -->
+    <div class="card" id="variant-panel-history">
+      <h2>Variants</h2>
+      <div id="variant-history"></div>
+    </div>
+
+    <!-- Comparison View -->
+    <section id="comparison-section" class="card" hidden>
+      <h2>Comparison</h2>
+      <div id="comparison-info"></div>
+      <div id="comparison-bitmap"></div>
+    </section>
+
+    <!-- Field Mapping Editor -->
+    <div class="card">
+      <h2>Field Mappings</h2>
+      <div id="field-mappings"></div>
+    </div>
+
+    <!-- Export -->
+    <div class="card">
+      <h2>Export</h2>
+      <div class="btn-row">
+        <button id="copy-llm-btn" class="btn-ghost">Copy as LLM Prompt</button>
+        <button id="export-json-btn" class="btn-ghost">Export JSON</button>
+        <button id="import-json-btn" class="btn-ghost">Import JSON</button>
+      </div>
+    </div>
+
+    <footer>
+      <p>
+        Powered by
+        <a href="https://github.com/chessmess/UltimateDarkTower" target="_blank">UltimateDarkTower</a>
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

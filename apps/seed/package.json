@@ -1,0 +1,33 @@
+{
+  "name": "ultimatedarktowerseed",
+  "version": "0.1.0",
+  "description": "Interactive seed decoder and reverse-engineering tool for Return to Dark Tower game seeds.",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src",
+    "format": "prettier --write ."
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "dependencies": {
+    "ultimatedarktower": "^5.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^8.57.1",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
+    "eslint": "^8.57.1",
+    "globals": "^15.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
