@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Build · Typecheck · Test (Node 20)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The relay BLE natives (@stoprocent/{bleno,noble,bluetooth-hci-socket})
+      # build via node-gyp during `pnpm install`; on Linux they need these headers.
+      - name: Install BLE build deps
+        run: sudo apt-get update && sudo apt-get install -y libbluetooth-dev libudev-dev
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - name: Run full CI pipeline (validate:nodes → typecheck → build → test)
+        run: pnpm run ci
+
+  relay-native:
+    name: Relay native (${{ matrix.os }} · Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install BLE build deps (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libbluetooth-dev libudev-dev
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Build the relay libraries + CLI and their workspace deps (core). This
+      # exercises the native install path on both OSes; the relay packages
+      # currently have no unit tests, so a clean build is the smoke test.
+      - name: Build relay packages
+        run: pnpm --filter "./packages/relay-*..." --filter "./apps/relay-cli..." build
+
+      # electron-forge packages the BLE tower emulator. relay-electron requires
+      # Node >= 22.12, so only smoke it on the Node 22 leg.
+      - name: electron-forge package smoke (relay-electron)
+        if: matrix.node == '22'
+        run: pnpm --filter ultimatedarktowerrelay-electron exec electron-forge package

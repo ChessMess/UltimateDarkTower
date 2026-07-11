@@ -1,0 +1,96 @@
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  # Allow a manual pre-cutover run from any branch (near-zero-downtime cutover).
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One concurrent deploy; don't cancel an in-flight publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Pages base path == the repo name. Every demo is served under this prefix.
+  BASE_PATH: /UltimateDarkTower
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm install builds the relay BLE natives via node-gyp on Linux.
+      - name: Install BLE build deps
+        run: sudo apt-get update && sudo apt-get install -y libbluetooth-dev libudev-dev
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Build the libraries (core + its bundled examples, display, board, creator,
+      # relay). The apps are (re)built below with the correct Pages base path.
+      - name: Build packages
+        run: pnpm --filter "./packages/*" build
+
+      - name: Assemble _site
+        run: |
+          set -euo pipefail
+          B="$BASE_PATH"
+          SITE="$PWD/_site"
+          rm -rf "$SITE"; mkdir -p "$SITE"
+
+          vbuild() { # <pkg> <subpath> [extra vite args...]
+            local pkg="$1" sub="$2"; shift 2
+            pnpm --filter "$pkg" exec vite build \
+              --base="$B/$sub/" --outDir "$SITE/$sub" --emptyOutDir "$@"
+          }
+
+          # Apps (default vite config)
+          vbuild "@udtc/creator"            creator
+          vbuild "@udtc/player"             player
+          vbuild "ultimatedarktowerdigital" digital
+          vbuild "ultimatedarktowerseed"    seed
+          vbuild "@dark-tower-sync/client"  sync
+
+          # Library demo sites (dedicated example vite configs)
+          vbuild "ultimatedarktowerdisplay" display --config vite.config.example.ts
+          vbuild "ultimatedarktowerboard"   board   --config vite.example.config.ts
+
+          # Core controller/game examples (esbuild-built, relative asset paths)
+          mkdir -p "$SITE/controller" "$SITE/game"
+          cp -r packages/core/dist/examples/controller/. "$SITE/controller/"
+          cp -r packages/core/dist/examples/game/.       "$SITE/game/" || true
+
+          # Landing page, Jekyll bypass, and the legacy deep-URL redirect stub.
+          cp docs/pages/index.html "$SITE/index.html"
+          touch "$SITE/.nojekyll"
+          mkdir -p "$SITE/dist/examples/controller"
+          cp docs/pages/legacy-controller-redirect.html \
+             "$SITE/dist/examples/controller/TowerController.html"
+
+          echo "Assembled site:"; ls -la "$SITE"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

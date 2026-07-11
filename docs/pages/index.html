@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ultimate Dark Tower — Demos</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0d0b12;
+        --panel: #171320;
+        --panel-2: #1f1930;
+        --accent: #c9a227;
+        --accent-2: #7b5cff;
+        --text: #ece8f5;
+        --muted: #9a92ad;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: radial-gradient(1200px 600px at 50% -10%, #241a3a 0%, var(--bg) 60%);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      header {
+        text-align: center;
+        padding: 4rem 1.5rem 2rem;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 5vw, 3.25rem);
+        letter-spacing: 0.02em;
+      }
+      h1 .accent { color: var(--accent); }
+      .tagline { color: var(--muted); margin-top: 0.75rem; font-size: 1.05rem; }
+      main {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 1rem 1.5rem 5rem;
+      }
+      .grid {
+        display: grid;
+        gap: 1.1rem;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      }
+      a.card {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        background: linear-gradient(160deg, var(--panel-2), var(--panel));
+        border: 1px solid #2c2440;
+        border-radius: 14px;
+        padding: 1.4rem 1.5rem;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+      }
+      a.card:hover { transform: translateY(-3px); border-color: var(--accent-2); }
+      a.card h2 { margin: 0 0 0.4rem; font-size: 1.2rem; }
+      a.card p { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.45; }
+      .badge {
+        display: inline-block;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--accent);
+        margin-bottom: 0.6rem;
+      }
+      footer {
+        text-align: center;
+        color: var(--muted);
+        padding: 2rem 1.5rem 4rem;
+        font-size: 0.9rem;
+      }
+      footer a { color: var(--accent-2); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Ultimate <span class="accent">Dark Tower</span></h1>
+      <p class="tagline">Interactive demos for the UDT ecosystem — one monorepo, one site.</p>
+    </header>
+    <main>
+      <div class="grid">
+        <a class="card" href="./controller/TowerController.html">
+          <div class="badge">Core</div>
+          <h2>Tower Controller</h2>
+          <p>Connect to a physical tower over Web Bluetooth and drive lights, sound, and drums.</p>
+        </a>
+        <a class="card" href="./display/">
+          <div class="badge">Display</div>
+          <h2>3D Tower Display</h2>
+          <p>Real-time 3D rendering of the tower — drum rotation, lighting, and physics.</p>
+        </a>
+        <a class="card" href="./board/">
+          <div class="badge">Board</div>
+          <h2>Game Board</h2>
+          <p>2D board renderer with token layout, stage view, and the Board3D plugin.</p>
+        </a>
+        <a class="card" href="./creator/">
+          <div class="badge">Creator</div>
+          <h2>Scenario Creator</h2>
+          <p>Design decks, dungeons, and battles with the first-class builder + deck tools.</p>
+        </a>
+        <a class="card" href="./player/">
+          <div class="badge">Creator</div>
+          <h2>Scenario Player</h2>
+          <p>Play through authored scenarios with the masked-map play engine.</p>
+        </a>
+        <a class="card" href="./digital/">
+          <div class="badge">App</div>
+          <h2>Digital Play</h2>
+          <p>Solo digital play mode combining the core, display, and board packages.</p>
+        </a>
+        <a class="card" href="./seed/">
+          <div class="badge">App</div>
+          <h2>Seed Decoder</h2>
+          <p>Decode and inspect UDT seed strings and tower state payloads.</p>
+        </a>
+        <a class="card" href="./sync/">
+          <div class="badge">App</div>
+          <h2>Dark Tower Sync</h2>
+          <p>Browser client for the relay — mirror tower state across devices.</p>
+        </a>
+      </div>
+    </main>
+    <footer>
+      Source on <a href="https://github.com/ChessMess/UltimateDarkTower">GitHub</a> ·
+      built from the <code>UltimateDarkTower</code> monorepo.
+    </footer>
+  </body>
+</html>

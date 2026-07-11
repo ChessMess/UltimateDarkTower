@@ -14,7 +14,9 @@ function stripUdtCreateRequirePrelude(): Plugin {
     name: 'strip-udt-createrequire-prelude',
     enforce: 'pre',
     transform(code, id) {
-      if (!id.endsWith('/UltimateDarkTower/dist/esm/index.mjs')) return null;
+      // Matches the aliased core ESM entry; in the monorepo it resolves to
+      // packages/core/dist/esm/index.mjs (was ../UltimateDarkTower/... pre-merge).
+      if (!id.endsWith('/core/dist/esm/index.mjs')) return null;
       return code.replace(
         /^import\s*\{\s*createRequire\s*\}\s*from\s*['"]module['"]\s*;\s*const\s+require\s*=\s*createRequire\(import\.meta\.url\)\s*;\s*/,
         '',

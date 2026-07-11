@@ -52,7 +52,9 @@ export default defineConfig({
       // so Rollup's commonjs plugin skips it by default and can't see its CJS named
       // exports (re-exported via Object.defineProperty). Opt it in explicitly so the
       // production example build resolves BOARD_LOCATIONS/BOARD_ANCHORS/etc.
-      include: [/ultimatedarktower/i, /node_modules/],
+      // In the monorepo the alias resolves to packages/core/dist (a realpath outside
+      // node_modules that no longer contains "ultimatedarktower"), so match it too.
+      include: [/ultimatedarktower/i, /node_modules/, /packages\/core/],
     },
   },
 });
