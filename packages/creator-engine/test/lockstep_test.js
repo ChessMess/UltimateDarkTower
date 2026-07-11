@@ -20,7 +20,7 @@ const obs = (v) => ({ requestId: "skullCounter", value: v, kind: "observed" });
 // ---------- L1: golden fixture is schema-valid ----------
 const ajv = new Ajv({ strict: true, allErrors: true });
 addFormats(ajv);
-const validate = ajv.compile(JSON.parse(fs.readFileSync(require("path").join(__dirname, "../../schema/src/scenario.schema.json"), "utf8")));
+const validate = ajv.compile(JSON.parse(fs.readFileSync(require("path").join(__dirname, "../../creator-schema/src/scenario.schema.json"), "utf8")));
 ok("golden fixture is schema-valid (L1)", validate(golden), JSON.stringify(validate.errors));
 
 const opts = { seed: "mvp-runtime-seed", playerCount: 1 };

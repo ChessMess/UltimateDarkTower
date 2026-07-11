@@ -1,112 +1,112 @@
 {
-    "name": "ultimatedarktower",
-    "version": "5.0.1",
-    "description": "This library provides functions to communicate with the bluetooth le enabled Tower that comes with Restoration Games Return To Dark Tower board game.",
-    "main": "dist/src/index.js",
-    "types": "dist/src/index.d.ts",
-    "module": "dist/esm/index.mjs",
-    "exports": {
-        ".": {
-            "types": "./dist/src/index.d.ts",
-            "import": "./dist/esm/index.mjs",
-            "require": "./dist/src/index.js"
-        }
-    },
-    "sideEffects": false,
-    "files": [
-        "dist/src/**/*",
-        "dist/esm/**/*",
-        "README.md",
-        "LICENSE",
-        "CHANGELOG.md"
-    ],
-    "scripts": {
-        "test": "jest",
-        "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage",
-        "test:ci": "jest --ci --coverage --watchAll=false",
-        "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js",
-        "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js --fix",
-        "lint:flat:preview": "ESLINT_USE_FLAT_CONFIG=true eslint .",
-        "lint:flat:preview:fix": "ESLINT_USE_FLAT_CONFIG=true eslint . --fix",
-        "format": "prettier --write \"src/**/*.{ts,js}\"",
-        "format:check": "prettier --check \"src/**/*.{ts,js}\"",
-        "type-check": "tsc --noEmit",
-        "clean": "rm -rf dist coverage",
-        "watch": "tsc -watch",
-        "watch:examples": "node build-examples.js --watch",
-        "build": "npm run clean && npm run type-check && tsc && esbuild src/index.ts --bundle --format=esm --outfile=dist/esm/index.mjs --packages=external --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" && npm run build:examples",
-        "build:examples": "node build-examples.js",
-        "dev": "npm run watch",
-        "dev:examples": "npm run watch:examples",
-        "dev:controller": "node dev-controller.js",
-        "ci": "npm run lint && npm run type-check && npm run test:ci && npm run build",
-        "prepack": "npm run ci",
-        "prepublishOnly": "npm run prepack",
-        "publish:check": "npm run ci",
-        "size": "npm run build && du -sh dist/",
-        "test:integration": "npx ts-node tests/integration/calibration.integration.ts",
-        "test:integration:lights": "npx ts-node tests/integration/lights.integration.ts",
-        "example:node": "npx ts-node examples/node/NodeExample.ts"
-    },
-    "keywords": [
-        "ReturnToDarkTower",
-        "BLE",
-        "BoardGame",
-        "Tower",
-        "RestorationGames",
-        "UltimateDarkTower",
-        "bluetooth",
-        "ble",
-        "restoration-games"
-    ],
-    "author": "Chris Koerner-Zeller",
-    "license": "MIT",
-    "funding": {
-        "type": "github",
-        "url": "https://github.com/sponsors/chessmess"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/chessmess/UltimateDarkTower.git"
-    },
-    "bugs": {
-        "url": "https://github.com/chessmess/UltimateDarkTower/issues"
-    },
-    "homepage": "https://github.com/chessmess/UltimateDarkTower#readme",
-    "engines": {
-        "node": ">=18.0.0",
-        "npm": ">=7.0.0"
-    },
-    "browserslist": [
-        "defaults",
-        "not IE 11"
-    ],
-    "publishConfig": {
-        "access": "public"
-    },
-    "peerDependencies": {
-        "@stoprocent/noble": "^2.0.0"
-    },
-    "peerDependenciesMeta": {
-        "@stoprocent/noble": {
-            "optional": true
-        }
-    },
-    "devDependencies": {
-        "@stoprocent/noble": "^2.3.17",
-        "@types/jest": "^30.0.0",
-        "@types/node": "^24.12.0",
-        "@types/web-bluetooth": "^0.0.21",
-        "@typescript-eslint/eslint-plugin": "^8.57.1",
-        "@typescript-eslint/parser": "^8.57.1",
-        "esbuild": "^0.28.1",
-        "eslint": "^8.57.1",
-        "jest": "^30.0.0",
-        "jest-util": "^30.0.0",
-        "prettier": "^3.8.1",
-        "ts-jest": "^29.4.6",
-        "ts-node": "^10.9.2",
-        "typescript": "^5.9.3"
+  "name": "ultimatedarktower",
+  "version": "5.0.1",
+  "description": "This library provides functions to communicate with the bluetooth le enabled Tower that comes with Restoration Games Return To Dark Tower board game.",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "module": "dist/esm/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/esm/index.mjs",
+      "require": "./dist/src/index.js"
     }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist/src/**/*",
+    "dist/esm/**/*",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js",
+    "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.js --fix",
+    "lint:flat:preview": "ESLINT_USE_FLAT_CONFIG=true eslint .",
+    "lint:flat:preview:fix": "ESLINT_USE_FLAT_CONFIG=true eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,js}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js}\"",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist coverage",
+    "watch": "tsc -watch",
+    "watch:examples": "node build-examples.js --watch",
+    "build": "npm run clean && npm run type-check && tsc && esbuild src/index.ts --bundle --format=esm --outfile=dist/esm/index.mjs --packages=external --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" && npm run build:examples",
+    "build:examples": "node build-examples.js",
+    "dev": "npm run watch",
+    "dev:examples": "npm run watch:examples",
+    "dev:controller": "node dev-controller.js",
+    "ci": "npm run lint && npm run type-check && npm run test:ci && npm run build",
+    "prepack": "npm run ci",
+    "prepublishOnly": "npm run prepack",
+    "publish:check": "npm run ci",
+    "size": "npm run build && du -sh dist/",
+    "test:integration": "npx ts-node tests/integration/calibration.integration.ts",
+    "test:integration:lights": "npx ts-node tests/integration/lights.integration.ts",
+    "example:node": "npx ts-node examples/node/NodeExample.ts"
+  },
+  "keywords": [
+    "ReturnToDarkTower",
+    "BLE",
+    "BoardGame",
+    "Tower",
+    "RestorationGames",
+    "UltimateDarkTower",
+    "bluetooth",
+    "ble",
+    "restoration-games"
+  ],
+  "author": "Chris Koerner-Zeller",
+  "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/chessmess"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chessmess/UltimateDarkTower.git"
+  },
+  "bugs": {
+    "url": "https://github.com/chessmess/UltimateDarkTower/issues"
+  },
+  "homepage": "https://github.com/chessmess/UltimateDarkTower#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=7.0.0"
+  },
+  "browserslist": [
+    "defaults",
+    "not IE 11"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@stoprocent/noble": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@stoprocent/noble": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@stoprocent/noble": "^2.3.17",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.12.0",
+    "@types/web-bluetooth": "^0.0.21",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
+    "esbuild": "^0.28.1",
+    "eslint": "^8.57.1",
+    "jest": "^30.0.0",
+    "jest-util": "^30.0.0",
+    "prettier": "^3.8.1",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "catalog:"
+  }
 }

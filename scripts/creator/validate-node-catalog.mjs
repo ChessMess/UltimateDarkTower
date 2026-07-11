@@ -46,7 +46,7 @@ function extractQuotedArrayByMarker(source, marker) {
 }
 
 // Engine node kinds are the discriminant tags of the `EngineNode` discriminated union in
-// packages/engine/src/engine/types.ts — NOT the derived `export type NodeKind = EngineNode['kind']`
+// packages/creator-engine/src/engine/types.ts — NOT the derived `export type NodeKind = EngineNode['kind']`
 // alias (which carries no string literals). We slice the union's source region and read the `kind`
 // tag off both member shapes: inline object members (`kind: '...'`) and the `PropslessNode<'...'>`
 // helper for props-less kinds.
@@ -78,9 +78,9 @@ function fail(message) {
 }
 
 const creatorTypesPath = 'apps/creator/src/types/index.ts';
-const schemaPath = 'packages/schema/src/scenario.schema.json';
-const engineTypesPath = 'packages/engine/src/engine/types.ts';
-const catalogPath = 'docs/node-catalog.md';
+const schemaPath = 'packages/creator-schema/src/scenario.schema.json';
+const engineTypesPath = 'packages/creator-engine/src/engine/types.ts';
+const catalogPath = 'docs/creator/node-catalog.md';
 
 // Creator/Schema node kinds that INTENTIONALLY have no engine reducer implementation, so the engine
 // ⇄ creator parity check must not flag them. These are setup-time pickers the Player resolves before

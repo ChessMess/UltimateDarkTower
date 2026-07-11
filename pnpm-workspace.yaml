@@ -1,0 +1,35 @@
+nodeLinker: hoisted
+
+packages:
+  - 'packages/*'
+  - 'apps/*'
+
+# Single source of truth for the TypeScript version across the whole workspace.
+# Packages reference it via "typescript": "catalog:".
+# Pinned to 5.9.x (not 6.0): TS 6.0 dropped the automatic inclusion of all
+# node_modules/@types, which breaks ambient types (jest globals, web-bluetooth,
+# three, node) across every package. 5.9.3 is what the packages were authored on.
+catalog:
+  typescript: ^5.9.3
+
+# electron-forge's @electron/rebuild depends on a git-hosted @electron/node-gyp
+# fork; pnpm 11 blocks git-hosted subdeps by default. Allow them so the electron
+# app (apps/relay-electron) toolchain installs.
+blockExoticSubdeps: false
+
+# Native/build deps explicitly allowed to run install scripts (pnpm 11 blocks
+# them by default). esbuild bundles the core ESM output; the BLE/serial/usb
+# natives power apps/relay-{cli,electron}; fs-xattr/macos-alias are electron-forge
+# macOS packaging helpers; unrs-resolver is the eslint import resolver's native
+# binding. Audit with `pnpm approve-builds`.
+allowBuilds:
+  esbuild: true
+  electron: true
+  '@stoprocent/noble': true
+  '@stoprocent/bleno': true
+  '@stoprocent/bluetooth-hci-socket': true
+  '@serialport/bindings-cpp': true
+  usb: true
+  fs-xattr: true
+  macos-alias: true
+  unrs-resolver: true

@@ -15,7 +15,7 @@
   "author": "ChessMess",
   "license": "MIT",
   "dependencies": {
-    "ultimatedarktower": "^5.0.0"
+    "ultimatedarktower": "workspace:^"
   },
   "devDependencies": {
     "@eslint/js": "^8.57.1",
@@ -24,7 +24,7 @@
     "eslint": "^8.57.1",
     "globals": "^15.0.0",
     "prettier": "^3.8.1",
-    "typescript": "^5.9.3",
+    "typescript": "catalog:",
     "vite": "^5.4.0"
   },
   "engines": {

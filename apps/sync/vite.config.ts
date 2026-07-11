@@ -1,14 +1,15 @@
 import { defineConfig, type Plugin } from 'vite';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 import type { Plugin as EsbuildPlugin } from 'esbuild';
 
 // Absolute path to the CJS entry of ultimatedarktower.  The ESM bundle
 // (dist/esm/index.mjs) includes a `createRequire` shim that fails in
 // browsers.  The CJS individual files use require() which Rollup's
-// commonjs plugin can convert to ESM automatically.
-const udtCjsEntry = fileURLToPath(
-  new URL('../../node_modules/ultimatedarktower/dist/src/index.js', import.meta.url)
-);
+// commonjs plugin can convert to ESM automatically.  Resolve via the package's
+// `main` field (dist/src/index.js) so it follows the pnpm workspace symlink to
+// packages/core regardless of node_modules layout.
+const udtCjsEntry = createRequire(import.meta.url).resolve('ultimatedarktower');
 
 /**
  * esbuild plugin that shims Node's `module` built-in during dep pre-bundling.
@@ -82,10 +83,13 @@ export default defineConfig({
     sourcemap: false,
     target: 'es2020',
     commonjsOptions: {
-      // The relay SDK (ultimatedarktowerrelay-{client,shared}) ships CommonJS under
-      // node_modules; Rollup's commonjs plugin transforms node_modules by default, so its
-      // named exports (e.g. `makeCommandLogEntry`) resolve without any extra include.
-      include: [/node_modules/],
+      // The relay SDK (ultimatedarktowerrelay-{client,shared}) ships CommonJS.
+      // Rollup's commonjs plugin transforms node_modules by default, but in this
+      // monorepo the relay packages resolve via pnpm workspace symlinks to
+      // packages/relay-*/dist (a realpath outside node_modules), so include those
+      // paths too — otherwise the CJS `export *` named exports (e.g.
+      // `makeCommandLogEntry`) aren't detected during the production build.
+      include: [/node_modules/, /packages\/core/, /packages\/relay-/],
     },
   },
   resolve: {

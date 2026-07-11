@@ -1,0 +1,43 @@
+{
+  "name": "ultimate-dark-tower",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Ultimate Dark Tower monorepo — core library, display/board renderers, creator, relay, and companion apps.",
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ChessMess/UltimateDarkTower/issues"
+  },
+  "homepage": "https://github.com/ChessMess/UltimateDarkTower#readme",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "postinstall": "pnpm --filter @udtc/engine build",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "validate:nodes": "node scripts/creator/validate-node-catalog.mjs",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,md}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,md}\" --ignore-path .gitignore",
+    "ci": "pnpm validate:nodes && pnpm typecheck && pnpm build && pnpm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.39.0",
+    "eslint-plugin-react-hooks": "^7.1.0",
+    "eslint-plugin-react-refresh": "^0.5.0",
+    "globals": "^17.0.0",
+    "prettier": "^3.8.0",
+    "typescript": "catalog:",
+    "typescript-eslint": "^8.61.0"
+  }
+}

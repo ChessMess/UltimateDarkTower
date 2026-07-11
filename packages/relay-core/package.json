@@ -46,9 +46,9 @@
     "access": "public"
   },
   "dependencies": {
-    "ultimatedarktowerrelay-shared": "^0.1.0",
+    "ultimatedarktowerrelay-shared": "workspace:^",
     "@stoprocent/bleno": "^0.12.4",
-    "ultimatedarktower": "^5.0.0",
+    "ultimatedarktower": "workspace:^",
     "ws": "^8.18.0"
   },
   "optionalDependencies": {

@@ -4,6 +4,6 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "noEmit": true
   },
-  "references": [{ "path": "../engine" }],
+  "references": [{ "path": "../creator-engine" }],
   "include": ["src", "test"]
 }

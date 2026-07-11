@@ -25,7 +25,7 @@ const lastOf = (run) => run[run.length - 1];
 // ---------- L1: enriched golden library is schema-valid ----------
 const ajv = new Ajv({ strict: true, allErrors: true });
 addFormats(ajv);
-const validate = ajv.compile(JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema/src/scenario.schema.json"), "utf8")));
+const validate = ajv.compile(JSON.parse(fs.readFileSync(path.join(__dirname, "../../creator-schema/src/scenario.schema.json"), "utf8")));
 ok("L1: golden with the enriched library is schema-valid", validate(golden), JSON.stringify(validate.errors));
 ok("L1: goldenFull (full-turn fidelity scenario) is schema-valid", validate(goldenFull), JSON.stringify(validate.errors));
 ok("goldenFull opts into the full-turn protocol via actionMiddle props",

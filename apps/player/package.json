@@ -26,9 +26,9 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "three": "^0.185.0",
-    "ultimatedarktower": "5.0.0",
-    "ultimatedarktowerdisplay": "file:../../../UltimateDarkTowerDisplay",
-    "ultimatedarktowerboard": "file:../../../UltimateDarkTowerBoard",
+    "ultimatedarktower": "workspace:^",
+    "ultimatedarktowerdisplay": "workspace:^",
+    "ultimatedarktowerboard": "workspace:^",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

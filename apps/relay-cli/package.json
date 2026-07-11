@@ -14,10 +14,10 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "ultimatedarktowerrelay-core": "^0.2.0",
-    "ultimatedarktowerrelay-client": "^0.1.0",
-    "ultimatedarktowerrelay-shared": "^0.1.0",
-    "ultimatedarktower": "^5.0.0",
+    "ultimatedarktowerrelay-core": "workspace:^",
+    "ultimatedarktowerrelay-client": "workspace:^",
+    "ultimatedarktowerrelay-shared": "workspace:^",
+    "ultimatedarktower": "workspace:^",
     "ws": "^8.18.0"
   },
   "devDependencies": {

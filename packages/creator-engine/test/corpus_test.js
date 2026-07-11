@@ -538,7 +538,7 @@ ok("heroAtLocation (unit): null location does not match any key",
 // =====================================================================================
 const ajv = new Ajv({ strict: true, allErrors: true });
 addFormats(ajv);
-const validate = ajv.compile(JSON.parse(fs.readFileSync(require("path").join(__dirname, "../../schema/src/scenario.schema.json"), "utf8")));
+const validate = ajv.compile(JSON.parse(fs.readFileSync(require("path").join(__dirname, "../../creator-schema/src/scenario.schema.json"), "utf8")));
 ok("L1: goldenLowSupply is schema-valid", validate(goldenLowSupply), JSON.stringify(validate.errors));
 ok("L1: goldenAmpleSupply is schema-valid", validate(goldenAmpleSupply), JSON.stringify(validate.errors));
 ok("L1: goldenAuthoredLoss (winloss.lossCondition clone) is schema-valid", validate(goldenAuthoredLoss), JSON.stringify(validate.errors));
