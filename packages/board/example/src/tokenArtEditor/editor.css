@@ -30,14 +30,26 @@
   box-sizing: border-box;
 }
 
+/* Smooth cross-document fade when navigating between the demo / Art Forge / Token Designer
+   (Chromium); elsewhere it degrades gracefully to a normal navigation. */
+@view-transition {
+  navigation: auto;
+}
+
 html,
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  color-scheme: dark; /* dark UA canvas → no white flash between page loads */
   font-family: var(--font-body);
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
+}
+
+html {
+  /* reserve the scrollbar gutter so switching a scrollable ↔ short page doesn't shift horizontally */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -78,7 +90,7 @@ body::after {
 }
 
 #forge {
-  max-width: 1160px;
+  max-width: 1300px;
   margin: 0 auto;
   padding: clamp(1.25rem, 3vw, 3rem) clamp(1rem, 3vw, 2.5rem) 7rem;
 }
@@ -86,14 +98,19 @@ body::after {
 /* ── header ─────────────────────────────────────────────────────────── */
 .forge-header {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 1.5rem 2rem;
   flex-wrap: wrap;
   padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--border);
   position: relative;
   animation: rise 0.6s both;
+}
+
+/* the left title block grows so the sub row and tabs have room; actions sit top-right */
+.forge-header > div:first-child {
+  flex: 1 1 auto;
 }
 
 .forge-header::after {
@@ -139,6 +156,15 @@ body::after {
   max-width: 46ch;
 }
 
+/* As a direct header child, the sub breaks to its own row and spans the full container width. */
+.forge-header > .forge-sub {
+  order: 3;
+  flex-basis: 100%;
+  width: 100%;
+  max-width: none;
+  margin-top: 1rem;
+}
+
 .forge-header-right {
   display: flex;
   flex-direction: column;
@@ -164,6 +190,40 @@ body::after {
   background: rgba(230, 145, 58, 0.1);
   border-color: var(--ember);
   transform: translateY(-1px);
+}
+
+/* ── page switcher tabs (Art Forge ↔ Token Designer), shared by both tool pages ── */
+.forge-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.forge-tab {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition:
+    color 0.18s,
+    border-color 0.18s,
+    background 0.18s;
+}
+
+.forge-tab:hover {
+  color: var(--ember);
+  border-color: var(--ember);
+}
+
+.forge-tab.is-active {
+  color: #1a0f06;
+  background: linear-gradient(180deg, var(--ember-bright), var(--ember-deep));
+  border-color: var(--ember-deep);
+  font-weight: 600;
 }
 
 .mode-badge {
@@ -731,7 +791,7 @@ option {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(6px);
   }
 }
 

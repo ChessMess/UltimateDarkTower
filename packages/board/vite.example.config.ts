@@ -37,11 +37,14 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, 'example/dist'),
     emptyOutDir: true,
-    // Multi-page: the demo (index.html) + the Token Art Forge tool (tokens.html).
+    // Multi-page: the demo (index.html) + the Token Art Forge (tokens.html) + the Token Designer +
+    // the Location Marker & Adjacency tool.
     rollupOptions: {
       input: {
         main: resolve(exampleDir, 'index.html'),
         tokens: resolve(exampleDir, 'tokens.html'),
+        designer: resolve(exampleDir, 'token-designer.html'),
+        locationMarker: resolve(exampleDir, 'location-marker.html'),
       },
     },
     commonjsOptions: {

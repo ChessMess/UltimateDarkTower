@@ -60,9 +60,19 @@
   box-sizing: border-box;
 }
 
+/* Smooth cross-document fade when navigating to/from the Art Forge & Token Designer (Chromium). */
+@view-transition {
+  navigation: auto;
+}
+
 html,
 body {
   height: 100%;
+  color-scheme: dark; /* dark UA canvas → no white flash between page loads */
+}
+
+html {
+  scrollbar-gutter: stable; /* keep the scrollbar gutter reserved so pages don't shift horizontally */
 }
 
 body {

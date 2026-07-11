@@ -209,14 +209,19 @@ function buildUI(): void {
     <header class="forge-header">
       <div>
         <span class="forge-kicker">UltimateDarkTowerBoard</span>
-        <h1 class="forge-title">Token Art Forge</h1>
-        <p class="forge-sub">Set each token's image (used in the 2D map and as the 3D billboard) and an
-          optional 3D model. Blank uses the default <code>tokens/&lt;group&gt;/&lt;id&gt;.png</code> convention.</p>
+        <h1 class="forge-title">Art Forge</h1>
+        <nav class="forge-tabs">
+          <span class="forge-tab is-active">Art Forge</span>
+          <a class="forge-tab" href="./token-designer.html">Token Designer</a>
+          <a class="forge-tab" href="./location-marker.html">Location Marker</a>
+        </nav>
       </div>
       <div class="forge-header-right">
         <a class="back-link" href="./index.html">← Back to the demo</a>
         <span class="mode-badge ${state.mode === 'live' ? 'is-live' : 'is-static'}" id="modeBadge"></span>
       </div>
+      <p class="forge-sub">Set each token's image (used in the 2D map and as the 3D billboard) and an
+        optional 3D model. Blank uses the default <code>tokens/&lt;group&gt;/&lt;id&gt;.png</code> convention.</p>
     </header>
 
     <section class="forge-controls">

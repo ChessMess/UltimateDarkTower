@@ -8,6 +8,14 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **Location Marker & Adjacency tool wired into the example app.** The dependency-free board-authoring page
+  that was previously only runnable standalone from `UltimateDarkTower/tools/location-marker/` is now a
+  fourth example page at [`/location-marker.html`](./example/location-marker.html), linked from the demo
+  sidebar and cross-linked from the Art Forge / Token Designer headers (matching their existing
+  `forge-tabs` pattern). It auto-loads the example's own `board.png`. It still only exports
+  `udtBoardAnchors.ts` / `udtBoardAdjacency.ts` / a combined `.json` for manual copy into the
+  `UltimateDarkTower` repo — it has no runtime relationship to this package. See
+  [docs/EXAMPLE.md](./docs/EXAMPLE.md#location-marker).
 - **`npm run promote-token-art` — bridge Token Art Forge demo overrides to the library defaults.** The Forge
   edits the demo's per-token overrides (`example/src/tokenArt/*.json`), not the library's built-in
   `OFFICIAL_2D_ICON` / `OFFICIAL_HERO_ART` tables. This read-only script compares the demo overrides against
