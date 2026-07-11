@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "0.4.3",
+  "meta": {
+    "title": "VALID: generic library.cards + library.decks with appearance, drawn via effect.apply (reshuffle + draw reveal/resolve)",
+    "scenarioVersion": "0.1.0",
+    "designer": { "name": "Test" },
+    "pins": { "udt": "5.0.0" }
+  },
+  "setup": {
+    "mode": "coop",
+    "difficulty": { "profile": "heroic", "skullSupply": 24 },
+    "playerCountScaling": { "turnsPerMonth": { "1": 6, "2": 7, "3": 8, "4": 9 } },
+    "monthEnd": { "resolution": "randomInRange", "default": { "minTurn": 3, "maxTurn": 6 } },
+    "selections": {
+      "adversaryId": "ashstrider",
+      "foes": { "tier1": "brigands", "tier2": "frost-trolls", "tier3": "dragons" },
+      "mainGoalId": "recover-azkols-treasures"
+    },
+    "board": { "boardStateRef": "board-main" }
+  },
+  "library": {
+    "resources": {
+      "images": {
+        "deck-back": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI3NTAiIGhlaWdodD0iMTA1MCIgdmlld0JveD0iMCAwIDc1MCAxMDUwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyMjE4MmUiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwZDBhMTQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNzUwIiBoZWlnaHQ9IjEwNTAiIGZpbGw9InVybCgjZykiLz48cmVjdCB4PSI0MCIgeT0iNDAiIHdpZHRoPSI2NzAiIGhlaWdodD0iOTcwIiBmaWxsPSJub25lIiBzdHJva2U9IiM3YTVjZmYiIHN0cm9rZS13aWR0aD0iOCIgcng9IjI0Ii8+PGNpcmNsZSBjeD0iMzc1IiBjeT0iNTI1IiByPSIxNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzdhNWNmZiIgc3Ryb2tlLXdpZHRoPSI2Ii8+PHRleHQgeD0iMzc1IiB5PSI1NTUiIGZvbnQtc2l6ZT0iMTIwIiBmaWxsPSIjZTBkNGZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2VyaWYiPkE8L3RleHQ+PC9zdmc+",
+        "art-relic": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDAiIGhlaWdodD0iNjAwIiB2aWV3Qm94PSIwIDAgNjAwIDYwMCI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9IiMxYTE0MjgiLz48Y2lyY2xlIGN4PSIzMDAiIGN5PSIzMDAiIHI9IjIwMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYzc3ZGZmIiBzdHJva2Utd2lkdGg9IjMwIi8+PGNpcmNsZSBjeD0iMzAwIiBjeT0iMzAwIiByPSI5MCIgZmlsbD0iI2M3N2RmZiIvPjwvc3ZnPg=="
+      }
+    },
+    "cards": {
+      "azkol-crown": {
+        "id": "azkol-crown", "name": "Crown of Azkol", "type": "treasure",
+        "description": "Gain 2 spirit.", "flavor": "Cold gold, colder history.",
+        "artRef": "art-relic",
+        "effects": [{ "op": "resource.gain", "resource": "spirit", "amount": 2 }]
+      },
+      "azkol-chalice": {
+        "id": "azkol-chalice", "name": "Chalice of Azkol", "type": "treasure",
+        "description": "Gain 1 warrior.", "flavor": "Still stained.",
+        "effects": [{ "op": "resource.gain", "resource": "warriors", "amount": 1 }]
+      }
+    },
+    "decks": {
+      "azkol-treasures": {
+        "category": "treasure",
+        "cards": [
+          { "cardId": "azkol-crown", "copies": 2 },
+          { "cardId": "azkol-chalice", "copies": 3 }
+        ],
+        "marketSize": 0,
+        "appearance": { "backRef": "deck-back", "template": "fullArt", "accent": "#c77dff" }
+      }
+    }
+  },
+  "graph": {
+    "entry": "n-start",
+    "nodes": [
+      { "id": "n-start", "kind": "lifecycle.gameStart", "wires": { "next": ["n-draw"] } },
+      {
+        "id": "n-draw",
+        "kind": "effect.apply",
+        "props": {
+          "effects": [
+            { "op": "deck.reshuffle", "deck": "azkol-treasures" },
+            { "op": "deck.draw", "deck": "azkol-treasures", "reveal": true, "resolve": true }
+          ]
+        }
+      }
+    ]
+  }
+}

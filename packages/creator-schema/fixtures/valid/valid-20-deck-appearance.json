@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "0.4.3",
+  "meta": {
+    "title": "VALID: ladder battleDef with appearance + card artRefs + real SVG data URLs",
+    "scenarioVersion": "0.1.0",
+    "designer": { "name": "Test" },
+    "pins": { "udt": "5.0.0" }
+  },
+  "setup": {
+    "mode": "coop",
+    "difficulty": { "profile": "heroic", "skullSupply": 24 },
+    "playerCountScaling": { "turnsPerMonth": { "1": 6, "2": 7, "3": 8, "4": 9 } },
+    "monthEnd": { "resolution": "randomInRange", "default": { "minTurn": 3, "maxTurn": 6 } },
+    "selections": {
+      "adversaryId": "ashstrider",
+      "foes": { "tier1": "brigands", "tier2": "frost-trolls", "tier3": "dragons" },
+      "mainGoalId": "recover-azkols-treasures"
+    },
+    "board": { "boardStateRef": "board-main" }
+  },
+  "library": {
+    "resources": {
+      "images": {
+        "deck-back": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI3NTAiIGhlaWdodD0iMTA1MCIgdmlld0JveD0iMCAwIDc1MCAxMDUwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyMjE4MmUiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwZDBhMTQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNzUwIiBoZWlnaHQ9IjEwNTAiIGZpbGw9InVybCgjZykiLz48cmVjdCB4PSI0MCIgeT0iNDAiIHdpZHRoPSI2NzAiIGhlaWdodD0iOTcwIiBmaWxsPSJub25lIiBzdHJva2U9IiM3YTVjZmYiIHN0cm9rZS13aWR0aD0iOCIgcng9IjI0Ii8+PGNpcmNsZSBjeD0iMzc1IiBjeT0iNTI1IiByPSIxNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzdhNWNmZiIgc3Ryb2tlLXdpZHRoPSI2Ii8+PHRleHQgeD0iMzc1IiB5PSI1NTUiIGZvbnQtc2l6ZT0iMTIwIiBmaWxsPSIjZTBkNGZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2VyaWYiPkE8L3RleHQ+PC9zdmc+",
+        "art-ambush": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDAiIGhlaWdodD0iNjAwIiB2aWV3Qm94PSIwIDAgNjAwIDYwMCI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9IiMyYTFhMWEiLz48cG9seWdvbiBwb2ludHM9IjMwMCw4MCA1MjAsNTIwIDgwLDUyMCIgZmlsbD0iI2U5NDU2MCIvPjxjaXJjbGUgY3g9IjMwMCIgY3k9IjM2MCIgcj0iNzAiIGZpbGw9IiNmZmQxNjYiLz48L3N2Zz4=",
+        "art-cutthroat": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDAiIGhlaWdodD0iNjAwIiB2aWV3Qm94PSIwIDAgNjAwIDYwMCI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9IiMxNDIwMmEiLz48cmVjdCB4PSIxNTAiIHk9IjE1MCIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiMwNmQ2YTAiIHRyYW5zZm9ybT0icm90YXRlKDQ1IDMwMCAzMDApIi8+PC9zdmc+"
+      }
+    },
+    "battleDefs": {
+      "brigands": {
+        "appearance": { "backRef": "deck-back", "template": "classic", "accent": "#e94560" },
+        "cards": [
+          {
+            "name": "Ambush",
+            "advantage": "Humanoid",
+            "copies": 2,
+            "artRef": "art-ambush",
+            "steps": [
+              { "text": "Caught off guard — lose 3 warriors", "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 3 }] },
+              { "text": "Trade blows — lose 1 warrior", "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 1 }] },
+              { "text": "Drive them off — no losses" }
+            ]
+          },
+          {
+            "name": "Cutthroat Strike",
+            "advantage": "Melee",
+            "critical": true,
+            "artRef": "art-cutthroat",
+            "steps": [
+              { "text": "Blindsided — lose 5 warriors", "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 5 }] },
+              { "text": "Grazed — lose 2 warriors", "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 2 }] }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "graph": {
+    "entry": "n-start",
+    "nodes": [
+      { "id": "n-start", "kind": "lifecycle.gameStart" }
+    ]
+  }
+}

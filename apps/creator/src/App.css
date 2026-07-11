@@ -1,0 +1,396 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/*
+ * Canvas grid-dot color (React Flow <Background variant="dots">).
+ * Official React Flow theming hook: override --xy-background-pattern-dots-color-default
+ * within the .react-flow scope (see reactflow.dev theming docs). Light mode needs a
+ * darker dot to be visible on the light canvas; dark mode keeps the near-white dots.
+ */
+.react-flow {
+  --xy-background-pattern-dots-color-default: #c2ccd9;
+}
+
+:root[data-theme='dark'] .react-flow {
+  --xy-background-pattern-dots-color-default: #e2e8f0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .react-flow {
+    --xy-background-pattern-dots-color-default: #e2e8f0;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--c-surface);
+  color: var(--c-text);
+}
+
+.creator-layout {
+  display: grid;
+  grid-template-rows: 40px 1fr 180px;
+  grid-template-columns: 200px 1fr 260px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Focus mode — hide the palette/inspector/bottom panels so the canvas fills the window */
+.creator-layout--focus {
+  grid-template-rows: 40px 1fr 0;
+  grid-template-columns: 0 1fr 0;
+}
+
+.creator-layout--focus .creator-palette,
+.creator-layout--focus .creator-inspector,
+.creator-layout--focus .creator-bottom {
+  display: none;
+}
+
+/* Top bar spans all columns */
+.creator-topbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--c-topbar-bg);
+  color: var(--c-topbar-fg);
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--c-border);
+  z-index: 10;
+}
+
+.creator-topbar .title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-topbar-fg);
+  letter-spacing: -0.01em;
+}
+
+.creator-topbar .subtitle {
+  font-size: 11px;
+  color: var(--c-topbar-muted);
+}
+
+.creator-topbar .switch-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-topbar-fg);
+  text-decoration: none;
+  padding: 4px 10px;
+  border: 1px solid var(--c-topbar-muted);
+  border-radius: 6px;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.creator-topbar .switch-link:hover {
+  border-color: var(--c-warning);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+/* Palette — left sidebar */
+.creator-palette {
+  grid-column: 1;
+  grid-row: 2;
+  overflow-y: auto;
+  background: var(--c-surface);
+  border-right: 1px solid var(--c-border);
+}
+
+/* Canvas — center (holds the Canvas | Decks switcher + the active center view) */
+.creator-canvas {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background: var(--c-canvas-bg);
+}
+
+/* Center-view switcher tab strip (reuses .creator-bottom-tab styling) */
+.creator-center-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface);
+}
+
+.creator-center-content {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Decks mode hides the (canvas-specific) palette; inspector + bottom panels stay */
+.creator-layout--decks,
+.creator-layout--dungeons {
+  grid-template-columns: 0 1fr 260px;
+}
+
+.creator-layout--decks .creator-palette,
+.creator-layout--dungeons .creator-palette {
+  display: none;
+}
+
+/* Focus mode is canvas-only — hide the center switcher too */
+.creator-layout--focus .creator-center-tabs {
+  display: none;
+}
+
+/* Inspector — right sidebar. Spans row 2 + row 3 (like the palette) since the bottom
+   panel is canvas-width only, not full width. */
+.creator-inspector {
+  grid-column: 3;
+  grid-row: 2 / 4;
+  overflow-y: auto;
+  background: var(--c-surface);
+  border-left: 1px solid var(--c-border);
+}
+
+/* Bottom panel — canvas-width only, not full width (doesn't extend under the inspector) */
+.creator-bottom {
+  grid-column: 2;
+  grid-row: 3;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--c-border);
+  background: var(--c-surface-raised);
+  overflow: hidden;
+}
+
+/* Bottom tabs */
+.creator-bottom-tabs {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface);
+}
+
+.creator-bottom-tab {
+  padding: 6px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--c-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+  transition: color 0.1s;
+}
+
+.creator-bottom-tab:hover {
+  color: var(--c-text);
+}
+
+.creator-bottom-tab.active {
+  color: var(--c-primary);
+  border-bottom-color: var(--c-primary);
+}
+
+.creator-bottom-content {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+/* Bottom panel collapsed — grid row shrinks to fit just the tab strip. Content is
+   hidden via display:none only (never unmounted), so the active tab's component
+   keeps any live state across the toggle. */
+.creator-layout--bottom-collapsed {
+  grid-template-rows: 40px 1fr auto;
+}
+
+.creator-layout--bottom-collapsed .creator-bottom-content {
+  display: none;
+}
+
+/* Focus mode always wins over a collapsed-but-hidden bottom panel */
+.creator-layout--focus.creator-layout--bottom-collapsed {
+  grid-template-rows: 40px 1fr 0;
+}
+
+/* Palette spans full left column (row 2 + row 3) */
+.creator-palette {
+  grid-row: 2 / 4;
+}
+
+/*
+ * Palette category + item colors.
+ * Each group sets `--cat-accent` inline (the category's vivid accent). Colors are
+ * derived by mixing that accent against theme tokens (--c-surface / --c-text), so
+ * they stay legible in BOTH light and dark — the tokens flip with the theme, the
+ * mix follows. No per-theme color tables, no JS theme detection.
+ */
+.palette-category {
+  margin-bottom: 2px;
+}
+
+.palette-category-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border-left: 3px solid var(--cat-accent);
+  background: color-mix(in srgb, var(--cat-accent) 14%, var(--c-surface));
+  color: color-mix(in srgb, var(--cat-accent) 45%, var(--c-text));
+  cursor: pointer;
+  user-select: none;
+}
+
+.palette-category-header:hover {
+  background: color-mix(in srgb, var(--cat-accent) 22%, var(--c-surface));
+}
+
+.palette-category-header:focus-visible {
+  outline: 2px solid var(--cat-accent);
+  outline-offset: -2px;
+}
+
+.palette-chevron {
+  display: inline-block;
+  width: 9px;
+  font-size: 9px;
+  line-height: 1;
+  transition: transform 0.12s ease;
+}
+
+.palette-chevron--open {
+  transform: rotate(90deg);
+}
+
+/* Expand/Collapse-all icon buttons in the palette title bar */
+.palette-allbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--c-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  transition:
+    color 0.1s ease,
+    background 0.1s ease,
+    border-color 0.1s ease;
+}
+
+.palette-allbtn:hover {
+  color: var(--c-text);
+  background: var(--c-surface-raised);
+  border-color: var(--c-border-strong);
+}
+
+.palette-allbtn:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 1px;
+}
+
+.palette-item {
+  padding: 4px 12px 4px 18px;
+  font-size: 11px;
+  user-select: none;
+  border-bottom: 1px solid var(--c-border);
+  border-left: 3px solid transparent;
+  color: color-mix(in srgb, var(--cat-accent) 34%, var(--c-text));
+  cursor: grab;
+  transition:
+    background 0.12s ease,
+    border-left-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.palette-item:not(.palette-item--disabled):hover {
+  background: color-mix(in srgb, var(--cat-accent) 16%, var(--c-surface));
+  border-left-color: var(--cat-accent);
+  color: color-mix(in srgb, var(--cat-accent) 55%, var(--c-text));
+}
+
+.palette-item--disabled {
+  color: var(--c-text-faint);
+  cursor: default;
+}
+
+/* Toolbar buttons */
+.toolbar-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--c-border-strong);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  background: var(--c-surface-raised);
+  color: var(--c-text-2);
+  font-weight: 500;
+  transition: background 0.1s;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  background: var(--c-surface);
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/*
+ * React Flow canvas controls — make them theme-aware.
+ * The library's bundled style.css is light-only, so in dark mode the zoom/fit/lock
+ * buttons render white-on-white. Re-skin them with theme tokens. Covers both the
+ * explicit `data-theme="dark"` selector and the OS-preference fallback used by
+ * packages/theme/src/theme.css.
+ */
+:root[data-theme='dark'] .react-flow__controls {
+  box-shadow: 0 0 0 1px var(--c-border);
+}
+
+:root[data-theme='dark'] .react-flow__controls-button {
+  background: var(--c-surface-raised);
+  border-bottom: 1px solid var(--c-border);
+  fill: var(--c-text);
+  color: var(--c-text);
+}
+
+:root[data-theme='dark'] .react-flow__controls-button:hover {
+  background: var(--c-surface);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .react-flow__controls {
+    box-shadow: 0 0 0 1px var(--c-border);
+  }
+
+  :root:not([data-theme='light']) .react-flow__controls-button {
+    background: var(--c-surface-raised);
+    border-bottom: 1px solid var(--c-border);
+    fill: var(--c-text);
+    color: var(--c-text);
+  }
+
+  :root:not([data-theme='light']) .react-flow__controls-button:hover {
+    background: var(--c-surface);
+  }
+}

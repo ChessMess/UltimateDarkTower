@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ultimate Dark Tower — Creator &amp; Player</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b1120'/%3E%3Ccircle cx='16' cy='11' r='9' fill='%23f59e0b' opacity='0.35'/%3E%3Ccircle cx='16' cy='11' r='4' fill='%23fde68a'/%3E%3Cpath d='M12 27 L13 15 Q13 12 16 11 Q19 12 19 15 L20 27 Z' fill='%231c2740' stroke='%2338476a'/%3E%3C/svg%3E"
+    />
+    <meta
+      name="description"
+      content="Author and play custom scenarios for Return to Dark Tower. An in-browser scenario Creator and live-table Player. Fan project, in active development."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;800&family=Spectral:ital,wght@0,300;0,400;0,500;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink-0: #070b16;
+        --ink-1: #0b1120;
+        --ink-2: #111a2e;
+        --panel: rgba(20, 30, 51, 0.72);
+        --line: #26324c;
+        --line-strong: #38476a;
+        --text: #eef2fb;
+        --text-muted: #9fb0cc;
+        --text-faint: #64748b;
+        --ember: #f59e0b;
+        --ember-bright: #fbbf24;
+        --ember-deep: #b45309;
+        --blood: #dc2626;
+        --serif: "Spectral", ui-serif, Georgia, "Times New Roman", serif;
+        --display: "Cinzel", var(--serif);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        color: var(--text);
+        font-family: var(--serif);
+        font-size: 17px;
+        line-height: 1.65;
+        background:
+          radial-gradient(120% 90% at 50% -10%, rgba(245, 158, 11, 0.16), transparent 55%),
+          radial-gradient(90% 70% at 50% 0%, rgba(180, 83, 9, 0.14), transparent 60%),
+          linear-gradient(180deg, var(--ink-1) 0%, var(--ink-0) 60%, #05070f 100%);
+        background-color: #05070f;
+        background-attachment: fixed;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* film grain / dust overlay */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0.05;
+        mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      /* vignette */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 1;
+        background: radial-gradient(120% 120% at 50% 35%, transparent 55%, rgba(0, 0, 0, 0.6) 100%);
+      }
+
+      .wrap {
+        position: relative;
+        z-index: 2;
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* ---------- HERO ---------- */
+      .hero {
+        position: relative;
+        text-align: center;
+        padding: 96px 24px 40px;
+        overflow: hidden;
+      }
+
+      /* the tower + beacon behind the title */
+      .beacon {
+        position: absolute;
+        left: 50%;
+        top: 40px;
+        transform: translateX(-50%);
+        width: 340px;
+        max-width: 78vw;
+        z-index: -1;
+        pointer-events: none;
+      }
+      .beacon .halo {
+        transform-origin: 50% 24%;
+        animation: pulse 5.5s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.55;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.08);
+        }
+      }
+
+      .eyebrow {
+        font-family: var(--display);
+        font-weight: 600;
+        letter-spacing: 0.42em;
+        text-transform: uppercase;
+        font-size: 12px;
+        color: var(--ember);
+        margin: 0 0 22px;
+        text-indent: 0.42em;
+      }
+
+      h1.title {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: clamp(40px, 8.2vw, 88px);
+        line-height: 0.98;
+        letter-spacing: 0.02em;
+        margin: 0;
+        color: var(--text);
+        text-shadow:
+          0 1px 0 #000,
+          0 0 44px rgba(245, 158, 11, 0.28);
+      }
+      h1.title .amber {
+        display: block;
+        margin-top: 4px;
+        background: linear-gradient(180deg, #fef3c7 0%, var(--ember-bright) 45%, var(--ember) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 2px 18px rgba(245, 158, 11, 0.35));
+      }
+
+      .lede {
+        max-width: 620px;
+        margin: 26px auto 0;
+        font-size: clamp(17px, 2.4vw, 21px);
+        color: var(--text-muted);
+        font-weight: 400;
+      }
+      .lede em {
+        color: var(--text);
+        font-style: italic;
+      }
+
+      /* ---------- CTAs ---------- */
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        justify-content: center;
+        margin: 42px 0 8px;
+      }
+      .cta {
+        --accent: var(--ember);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        gap: 2px;
+        min-width: 244px;
+        padding: 18px 26px;
+        text-decoration: none;
+        color: var(--text);
+        background: linear-gradient(180deg, rgba(30, 41, 66, 0.9), rgba(14, 21, 38, 0.9));
+        border: 1px solid var(--line-strong);
+        border-radius: 14px;
+        box-shadow:
+          0 18px 40px -22px rgba(0, 0, 0, 0.9),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        transition:
+          transform 0.18s ease,
+          border-color 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+      .cta .k {
+        font-family: var(--display);
+        font-weight: 600;
+        font-size: 20px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .cta .k::after {
+        content: " →";
+        color: var(--accent);
+      }
+      .cta .sub {
+        font-size: 13.5px;
+        color: var(--text-faint);
+      }
+      .cta:hover {
+        transform: translateY(-4px);
+        border-color: var(--accent);
+        box-shadow:
+          0 26px 50px -24px rgba(0, 0, 0, 0.95),
+          0 0 0 1px rgba(245, 158, 11, 0.25),
+          0 0 34px -6px rgba(245, 158, 11, 0.4);
+      }
+      .cta.player {
+        --accent: var(--blood);
+      }
+      .cta.player:hover {
+        box-shadow:
+          0 26px 50px -24px rgba(0, 0, 0, 0.95),
+          0 0 0 1px rgba(220, 38, 38, 0.3),
+          0 0 34px -6px rgba(220, 38, 38, 0.42);
+      }
+
+      /* ---------- WIP banner ---------- */
+      .wip {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        max-width: 760px;
+        margin: 40px auto 0;
+        padding: 16px 20px;
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        border-left: 3px solid var(--ember);
+        border-radius: 10px;
+        background: linear-gradient(180deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.03));
+        text-align: left;
+      }
+      .wip .rune {
+        font-family: var(--display);
+        font-weight: 800;
+        color: var(--ember-bright);
+        font-size: 22px;
+        line-height: 1.2;
+      }
+      .wip p {
+        margin: 0;
+        font-size: 15px;
+        color: var(--text-muted);
+      }
+      .wip strong {
+        color: var(--ember-bright);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      /* ---------- section scaffolding ---------- */
+      section.block {
+        padding: 64px 0 8px;
+      }
+      .kicker {
+        font-family: var(--display);
+        letter-spacing: 0.34em;
+        text-transform: uppercase;
+        font-size: 11px;
+        color: var(--ember);
+        text-align: center;
+        margin: 0 0 8px;
+      }
+      h2.section-title {
+        font-family: var(--display);
+        font-weight: 600;
+        font-size: clamp(24px, 4vw, 32px);
+        text-align: center;
+        margin: 0 0 36px;
+        letter-spacing: 0.02em;
+      }
+
+      /* ---------- app cards ---------- */
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 22px;
+      }
+      .card {
+        position: relative;
+        padding: 28px 28px 30px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--card-accent), transparent 70%);
+      }
+      .card.creator {
+        --card-accent: var(--ember);
+      }
+      .card.player {
+        --card-accent: var(--blood);
+      }
+      .card .tag {
+        font-family: var(--display);
+        font-size: 12px;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--card-accent);
+      }
+      .card h3 {
+        font-family: var(--display);
+        font-weight: 600;
+        font-size: 23px;
+        margin: 8px 0 12px;
+        letter-spacing: 0.01em;
+      }
+      .card p {
+        margin: 0 0 18px;
+        color: var(--text-muted);
+        font-size: 16px;
+      }
+      .card a.enter {
+        font-family: var(--display);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-decoration: none;
+        color: var(--text);
+        border-bottom: 1px solid var(--card-accent);
+        padding-bottom: 2px;
+        transition: color 0.15s ease;
+      }
+      .card a.enter:hover {
+        color: var(--card-accent);
+      }
+
+      /* ---------- about ---------- */
+      .about {
+        max-width: 720px;
+        margin: 0 auto;
+        text-align: center;
+        color: var(--text-muted);
+      }
+      .about p {
+        font-size: 17px;
+      }
+      .about .facts {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 26px;
+      }
+      .about .facts span {
+        font-family: var(--display);
+        font-size: 11.5px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text);
+        padding: 7px 14px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      /* ---------- footer ---------- */
+      footer {
+        position: relative;
+        z-index: 2;
+        margin-top: 72px;
+        padding: 34px 24px 48px;
+        border-top: 1px solid var(--line);
+        text-align: center;
+        color: var(--text-faint);
+        font-size: 13.5px;
+      }
+      footer a {
+        color: var(--text-muted);
+        text-decoration: none;
+        border-bottom: 1px solid var(--line-strong);
+      }
+      footer a:hover {
+        color: var(--ember-bright);
+        border-color: var(--ember);
+      }
+      footer .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      footer .disclaimer {
+        max-width: 620px;
+        margin: 0 auto;
+        line-height: 1.6;
+      }
+      .dot {
+        color: var(--line-strong);
+      }
+
+      @media (max-width: 720px) {
+        .cards {
+          grid-template-columns: 1fr;
+        }
+        .hero {
+          padding-top: 72px;
+        }
+        .cta {
+          min-width: min(100%, 320px);
+          width: 100%;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        .beacon .halo {
+          animation: none;
+          opacity: 0.85;
+        }
+        .cta {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <!-- Tower silhouette with pulsing beacon -->
+      <svg class="beacon" viewBox="0 0 340 420" fill="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="halo" cx="50%" cy="24%" r="42%">
+            <stop offset="0%" stop-color="#fde68a" stop-opacity="0.95" />
+            <stop offset="30%" stop-color="#f59e0b" stop-opacity="0.55" />
+            <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+          </radialGradient>
+          <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1c2740" />
+            <stop offset="100%" stop-color="#0a1020" />
+          </linearGradient>
+        </defs>
+        <circle class="halo" cx="170" cy="100" r="150" fill="url(#halo)" />
+        <!-- tower body -->
+        <path
+          d="M132 400 L138 190 Q138 150 170 138 Q202 150 202 190 L208 400 Z"
+          fill="url(#stone)"
+          stroke="#33425f"
+          stroke-width="1.5"
+        />
+        <!-- crenellations -->
+        <path
+          d="M136 150 h9 v-12 h9 v12 h9 v-12 h9 v12 h9 v-12 h9 v12 h9"
+          stroke="#3a4a6b"
+          stroke-width="2"
+          fill="none"
+        />
+        <!-- beacon light -->
+        <circle cx="170" cy="100" r="15" fill="#fde68a" />
+        <circle cx="170" cy="100" r="24" fill="none" stroke="#f59e0b" stroke-opacity="0.5" stroke-width="2" />
+        <!-- windows glowing -->
+        <rect x="164" y="210" width="12" height="20" rx="6" fill="#f59e0b" fill-opacity="0.6" />
+        <rect x="164" y="270" width="12" height="20" rx="6" fill="#f59e0b" fill-opacity="0.35" />
+      </svg>
+
+      <div class="wrap">
+        <p class="eyebrow">Return to Dark Tower</p>
+        <h1 class="title">
+          Ultimate Dark Tower
+          <span class="amber">Creator &amp; Player</span>
+        </h1>
+        <p class="lede">
+          Author and play custom scenarios for <em>Return to Dark Tower</em> — a scenario forge and a
+          live-table runtime, both running entirely in your browser.
+        </p>
+
+        <div class="cta-row">
+          <a class="cta creator" href="./creator/">
+            <span class="k">Enter Creator</span>
+            <span class="sub">Design &amp; validate scenarios</span>
+          </a>
+          <a class="cta player" href="./player/">
+            <span class="k">Enter Player</span>
+            <span class="sub">Run a scenario at the table</span>
+          </a>
+        </div>
+
+        <div class="wip" role="note">
+          <span class="rune" aria-hidden="true">☩</span>
+          <p>
+            <strong>Actively under development.</strong> This is an early, evolving hobby project.
+            Features may change, break, or be removed at any time, and scenarios or saved games may
+            not survive future updates. Expect rough edges — and bring a sense of adventure.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="block" id="apps">
+        <p class="kicker">Two ways in</p>
+        <h2 class="section-title">Forge it, then play it</h2>
+        <div class="cards">
+          <article class="card creator">
+            <span class="tag">Creator</span>
+            <h3>The Scenario Forge</h3>
+            <p>
+              A visual editor for building custom scenarios on a node graph — wire up locations,
+              foes, effects and triggers, validate your work across every rules layer, and simulate
+              it against the real engine before it ever hits the table.
+            </p>
+            <a class="enter" href="./creator/">Open the Creator →</a>
+          </article>
+          <article class="card player">
+            <span class="tag">Player</span>
+            <h3>The Live Table</h3>
+            <p>
+              Load a scenario and drive it turn by turn. The Player runs the tower emulator, tracks
+              state, and steps the game through to its conclusion — a solo runtime that needs no
+              account and no server to begin.
+            </p>
+            <a class="enter" href="./player/">Open the Player →</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="block" id="about">
+        <p class="kicker">What is this?</p>
+        <h2 class="section-title">A workshop for custom quests</h2>
+        <div class="about">
+          <p>
+            Ultimate Dark Tower is a toolkit for authoring and playing your own
+            <em>Return to Dark Tower</em> content. Under the hood it's a shared rules schema, a
+            deterministic headless engine, ecosystem adapters, and the two apps above — so a scenario
+            you design in the Creator plays back identically in the Player. Everything runs locally in
+            the browser: no login, no backend, nothing to install.
+          </p>
+          <div class="facts">
+            <span>Runs in the browser</span>
+            <span>Solo &amp; local</span>
+            <span>No account needed</span>
+            <span>Deterministic engine</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="row">
+        <a href="https://github.com/ChessMess/UltimateDarkTowerCreator" rel="noopener">GitHub repository</a>
+        <span class="dot">·</span>
+        <span>v0.1.0 — pre-release</span>
+        <span class="dot">·</span>
+        <a href="./creator/">Creator</a>
+        <span class="dot">·</span>
+        <a href="./player/">Player</a>
+      </div>
+      <p class="disclaimer">
+        Unofficial fan tool — not affiliated with, sponsored by, or endorsed by Restoration Games.
+        <em>Return to Dark Tower</em> and all related marks are property of their respective owners.
+      </p>
+    </footer>
+  </body>
+</html>

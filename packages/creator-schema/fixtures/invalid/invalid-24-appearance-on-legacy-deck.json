@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "0.4.3",
+  "meta": {
+    "title": "INVALID: appearance on a legacy strikes-shape battleDef fails BOTH oneOf branches",
+    "scenarioVersion": "0.1.0",
+    "designer": { "name": "Test" },
+    "pins": { "udt": "5.0.0" }
+  },
+  "setup": {
+    "mode": "coop",
+    "difficulty": { "profile": "heroic", "skullSupply": 24 },
+    "playerCountScaling": { "turnsPerMonth": { "1": 6, "2": 7, "3": 8, "4": 9 } },
+    "monthEnd": { "resolution": "randomInRange", "default": { "minTurn": 3, "maxTurn": 6 } },
+    "selections": {
+      "adversaryId": "ashstrider",
+      "foes": { "tier1": "brigands", "tier2": "frost-trolls", "tier3": "dragons" },
+      "mainGoalId": "recover-azkols-treasures"
+    },
+    "board": { "boardStateRef": "board-main" }
+  },
+  "library": {
+    "battleDefs": {
+      "brigands": {
+        "appearance": { "backRef": "deck-back", "template": "classic" },
+        "cards": [
+          { "advantage": "Humanoid", "strikes": 2, "onResolve": [{ "op": "resource.lose", "resource": "warriors", "amount": 1 }] },
+          { "advantage": "Melee", "strikes": 3 }
+        ]
+      }
+    }
+  },
+  "graph": {
+    "entry": "n-start",
+    "nodes": [
+      { "id": "n-start", "kind": "lifecycle.gameStart" }
+    ]
+  }
+}
