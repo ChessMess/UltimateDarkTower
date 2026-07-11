@@ -1,0 +1,16 @@
+node_modules
+dist
+dist-ssr
+coverage
+*.local
+.DS_Store
+.vite
+node_modules/.tmp
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Local Claude Code settings (not shared)
+.claude/settings.local.json

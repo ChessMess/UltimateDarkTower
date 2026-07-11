@@ -1,0 +1,636 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+.app-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.app-header h1 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.tagline {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* Turn / month tracker (PRD-04 FR-04.9) */
+.turn-tracker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.turn-readout {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+.turn-readout button {
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05rem 0.5rem;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+.turn-readout button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.turn-readout select {
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.turn-turn {
+  color: var(--muted);
+}
+.turn-reminders {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.reminder {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+}
+.reminder-danger {
+  background: color-mix(in srgb, crimson 22%, transparent);
+}
+.reminder-info {
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+}
+.reminder button {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  font-size: 0.7rem;
+}
+
+.session-bar {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.session-bar button {
+  font-size: 0.78rem;
+  padding: 0.2rem 0.55rem;
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.session-bar button:hover {
+  border-color: var(--muted);
+}
+.session-status {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-left: 0.4rem;
+  min-width: 9rem;
+}
+
+.panes {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  min-height: 0;
+}
+
+.pane {
+  min-height: 0;
+  overflow: auto;
+}
+.pane-left {
+  border-right: 1px solid var(--border);
+}
+.pane-right {
+  border-left: 1px solid var(--border);
+}
+.pane-stage {
+  overflow: hidden;
+}
+
+/* The 3D/2D stage needs a definite box to size its canvas into. */
+.stage {
+  width: 100%;
+  height: 100%;
+}
+
+.panel {
+  padding: 0.75rem 1rem;
+}
+.panel h2 {
+  font-size: 0.95rem;
+  margin: 0 0 0.5rem;
+}
+.panel h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 1rem 0 0.4rem;
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+button {
+  cursor: pointer;
+}
+.panel > button {
+  width: 100%;
+  margin-top: 0.4rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.rows li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.tower-drop {
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.4rem 0;
+  font-weight: 600;
+}
+
+.seal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.25rem;
+}
+.seal-btn {
+  padding: 0.3rem 0;
+  font-size: 0.7rem;
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.seal-btn.is-broken {
+  border-color: crimson;
+  background: color-mix(in srgb, crimson 26%, transparent);
+  font-weight: 700;
+}
+.tower-note {
+  margin-top: 0.75rem;
+  font-size: 0.72rem;
+  font-style: italic;
+}
+
+/* Board palette + inspector (PRD-02) */
+.board-place-actions,
+.board-detail-actions,
+.board-move {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+.board-place-actions button,
+.board-detail-actions button {
+  flex: 1;
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.78rem;
+}
+.board-place-actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.board-arm-cancel {
+  border-color: goldenrod !important;
+  background: color-mix(in srgb, goldenrod 20%, transparent) !important;
+}
+.board-counts {
+  margin-top: 0.6rem;
+}
+.board-move {
+  align-items: stretch;
+}
+.board-move select {
+  flex: 1;
+  min-width: 0;
+}
+.board-move button {
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+}
+.board-move button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.board-detail-title {
+  margin: 0.2rem 0 0.4rem;
+  font-size: 0.9rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: inherit;
+}
+.board-remove {
+  width: 100%;
+  margin-top: 0.5rem;
+  background: color-mix(in srgb, crimson 18%, transparent);
+  color: inherit;
+  border: 1px solid crimson;
+  border-radius: 4px;
+  padding: 0.3rem;
+  font-size: 0.78rem;
+}
+.board-destroyed {
+  color: crimson;
+  font-weight: 700;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* Player boards (PRD-03) */
+.pb-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.6rem;
+}
+.pb-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.pb-tab.is-active {
+  border-color: var(--muted);
+  font-weight: 600;
+}
+.pb-tab-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: crimson;
+  color: #fff;
+}
+
+.pb-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.pb-card-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: inherit;
+}
+
+.pb-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 0.6rem;
+  margin: 0.5rem 0;
+}
+.pb-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.pb-stat-label {
+  font-size: 0.78rem;
+}
+.pb-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.pb-stepper button {
+  width: 1.4rem;
+  height: 1.4rem;
+  line-height: 1;
+  font-size: 0.95rem;
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.pb-stepper button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.pb-stat-value {
+  min-width: 2.2rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.pb-stat-warn .pb-stat-value {
+  color: goldenrod;
+}
+.pb-stat-danger .pb-stat-value {
+  color: crimson;
+}
+
+.pb-banner {
+  margin: 0.3rem 0 0.5rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.74rem;
+}
+.pb-banner-danger {
+  background: color-mix(in srgb, crimson 22%, transparent);
+}
+.pb-banner-warn {
+  background: color-mix(in srgb, goldenrod 22%, transparent);
+}
+
+.pb-section {
+  margin-top: 0.6rem;
+}
+.pb-section h4,
+.pb-list-head h4 {
+  margin: 0 0 0.3rem;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.pb-virtues {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.3rem;
+}
+.pb-virtue {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  padding: 0.25rem 0.4rem;
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.74rem;
+}
+.pb-virtue small {
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+.pb-virtue.is-active {
+  border-color: mediumseagreen;
+  background: color-mix(in srgb, mediumseagreen 18%, transparent);
+}
+.pb-virtue.is-active small {
+  color: mediumseagreen;
+}
+.pb-virtue-kingdom {
+  grid-column: 1 / -1;
+}
+
+.pb-list {
+  margin-top: 0.6rem;
+}
+.pb-list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.pb-chips {
+  list-style: none;
+  margin: 0 0 0.3rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.pb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.2rem 0.1rem 0.45rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.74rem;
+}
+.pb-chip button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.7rem;
+  padding: 0;
+}
+.pb-list-full {
+  margin: 0;
+}
+.pb-add {
+  display: flex;
+  gap: 0.3rem;
+}
+.pb-add input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.76rem;
+}
+.pb-add button {
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.74rem;
+}
+.pb-add button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pb-ipnote {
+  margin: 0.8rem 0 0;
+  font-size: 0.7rem;
+}
+
+/* New-game wizard (PRD-04 FR-04.1) */
+.wizard-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 1rem;
+  z-index: 50;
+  overflow: auto;
+}
+.wizard {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: min(560px, 100%);
+  padding: 1rem 1.25rem 0.75rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+.wizard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.wizard-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.wizard-x {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+}
+.wizard-body {
+  max-height: 64vh;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+.wizard-body h3 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 1rem 0 0.4rem;
+}
+.wizard-body input,
+.wizard-body select {
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.25rem 0.4rem;
+}
+.wizard-seed {
+  display: flex;
+  gap: 0.5rem;
+}
+.wizard-seed input {
+  flex: 1;
+  text-transform: uppercase;
+}
+.wizard-seedmsg {
+  margin: 0.3rem 0 0;
+}
+.wizard-grid2,
+.wizard-grid3 {
+  display: grid;
+  gap: 0.5rem;
+}
+.wizard-grid2 {
+  grid-template-columns: 1fr 1fr;
+}
+.wizard-grid3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.wizard-hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.wizard-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.6rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+.wizard-spacer {
+  flex: 1;
+}
+.wizard-error {
+  color: crimson;
+  font-size: 0.78rem;
+}
+.wizard-actions button {
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.3rem 0.8rem;
+}
+.wizard-start {
+  font-weight: 600;
+}
+.wizard-start:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
