@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FR-5.2 PhysicalTowerReplay — E2E</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 760px; }
+      h1 { font-size: 1.25rem; }
+      .row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; }
+      input { flex: 1; padding: .4rem; font: inherit; }
+      button { padding: .5rem .9rem; font: inherit; cursor: pointer; }
+      button:disabled { opacity: .5; cursor: default; }
+      pre {
+        background: #111; color: #d6f5d6; padding: 1rem; border-radius: 6px;
+        height: 360px; overflow: auto; white-space: pre-wrap; font-size: .85rem;
+      }
+      .note { color: #666; font-size: .85rem; }
+    </style>
+  </head>
+  <body>
+    <h1>FR-5.2 · PhysicalTowerReplay — physical-tower mirror</h1>
+    <p class="note">
+      Connect to the host relay, then connect a real tower over Web Bluetooth (Chrome/Edge).
+      The host broadcasts a rotation command every 2.5s; each relayed command is written to your
+      tower, so its drums rotate. Watch the log for <code>🗼 Replayed command on tower</code>.
+    </p>
+    <div class="row">
+      <input id="url" value="ws://localhost:8765" spellcheck="false" />
+      <button id="host">Connect to Host</button>
+    </div>
+    <div class="row">
+      <button id="tower" disabled>Connect to Tower (Bluetooth)</button>
+      <span class="note">Power the tower off/on to test reconnect self-heal (replayLast).</span>
+    </div>
+    <pre id="log"></pre>
+    <script src="./app.js"></script>
+  </body>
+</html>

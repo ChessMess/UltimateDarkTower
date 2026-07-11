@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background gradient: deep dark blue to near-black -->
+    <radialGradient id="bg" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0a0a14"/>
+    </radialGradient>
+    <!-- Tower gradient -->
+    <linearGradient id="tower" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e0e0e0"/>
+      <stop offset="50%" stop-color="#a0a0b0"/>
+      <stop offset="100%" stop-color="#606070"/>
+    </linearGradient>
+    <!-- Glow for the sync waves -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Subtle glow behind tower top -->
+    <radialGradient id="topglow" cx="50%" cy="30%" r="25%">
+      <stop offset="0%" stop-color="#4a9eff" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#4a9eff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Round background -->
+  <circle cx="512" cy="512" r="480" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="480" fill="none" stroke="#2a2a4a" stroke-width="4"/>
+
+  <!-- Glow behind tower top -->
+  <circle cx="512" cy="320" r="250" fill="url(#topglow)"/>
+
+  <!-- Tower body - stylized dark tower silhouette -->
+  <g transform="translate(512, 512)">
+    <!-- Tower base platform -->
+    <rect x="-120" y="180" width="240" height="40" rx="6" fill="url(#tower)" opacity="0.9"/>
+
+    <!-- Main tower shaft -->
+    <path d="
+      M -70,180
+      L -80,40
+      L -65,-120
+      L -50,-200
+      L -30,-280
+      L 0,-320
+      L 30,-280
+      L 50,-200
+      L 65,-120
+      L 80,40
+      L 70,180
+      Z
+    " fill="url(#tower)" opacity="0.95"/>
+
+    <!-- Tower middle band -->
+    <rect x="-75" y="20" width="150" height="16" rx="3" fill="#505068" opacity="0.7"/>
+    <rect x="-60" y="-80" width="120" height="12" rx="3" fill="#505068" opacity="0.7"/>
+
+    <!-- Tower window slits -->
+    <rect x="-8" y="-40" width="16" height="40" rx="4" fill="#4a9eff" opacity="0.8"/>
+    <rect x="-6" y="70" width="12" height="28" rx="3" fill="#4a9eff" opacity="0.5"/>
+    <rect x="-6" y="120" width="12" height="28" rx="3" fill="#4a9eff" opacity="0.4"/>
+
+    <!-- Tower top spire -->
+    <path d="M -8,-320 L 0,-370 L 8,-320 Z" fill="#c0c0d0"/>
+
+    <!-- Small orb at very top -->
+    <circle cx="0" cy="-375" r="10" fill="#4a9eff" opacity="0.9"/>
+    <circle cx="0" cy="-375" r="6" fill="#80c0ff"/>
+  </g>
+
+  <!-- Bluetooth/Sync wave arcs - left side -->
+  <g filter="url(#glow)" opacity="0.85">
+    <!-- Inner arc left -->
+    <path d="M 380,260 A 120,120 0 0,0 380,440"
+          fill="none" stroke="#4a9eff" stroke-width="8" stroke-linecap="round"/>
+    <!-- Middle arc left -->
+    <path d="M 340,210 A 180,180 0 0,0 340,490"
+          fill="none" stroke="#4a9eff" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
+    <!-- Outer arc left -->
+    <path d="M 300,160 A 240,240 0 0,0 300,540"
+          fill="none" stroke="#4a9eff" stroke-width="6" stroke-linecap="round" opacity="0.45"/>
+  </g>
+
+  <!-- Bluetooth/Sync wave arcs - right side -->
+  <g filter="url(#glow)" opacity="0.85">
+    <!-- Inner arc right -->
+    <path d="M 644,260 A 120,120 0 0,1 644,440"
+          fill="none" stroke="#4a9eff" stroke-width="8" stroke-linecap="round"/>
+    <!-- Middle arc right -->
+    <path d="M 684,210 A 180,180 0 0,1 684,490"
+          fill="none" stroke="#4a9eff" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
+    <!-- Outer arc right -->
+    <path d="M 724,160 A 240,240 0 0,1 724,540"
+          fill="none" stroke="#4a9eff" stroke-width="6" stroke-linecap="round" opacity="0.45"/>
+  </g>
+</svg>
