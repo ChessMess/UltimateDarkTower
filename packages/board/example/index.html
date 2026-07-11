@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>UltimateDarkTowerBoard — Example</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&family=JetBrains+Mono:wght@400&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="./example.css" />
+</head>
+
+<body class="app-shell">
+  <div id="error-banner" hidden></div>
+
+  <div class="app-grid">
+
+    <!-- ============ LEFT SIDEBAR ============ -->
+    <aside class="app-sidebar" id="sidebar">
+      <header class="brand">
+        <h1>Ultimate Dark Tower Board</h1>
+        <p class="brand-tagline">
+          Composable state + 2D / 3D renderers for the <em>Return to Dark Tower</em> game board.
+          Configure a board, then copy the JSON for your own app.
+        </p>
+      </header>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Settings</h2>
+        <div class="sidebar-row">
+          <button id="btn-reset-board" class="secondary-action"
+            title="Reset the board and restore the default layout (panel/PiP positions, sizes, view) — like a first visit">Reset
+            Board</button>
+          <button id="btn-instructions-toggle" class="secondary-action" aria-expanded="true">Hide Help</button>
+        </div>
+        <div class="sidebar-row">
+          <label class="toggle-pill"><input type="checkbox" id="chk-panel-palette" checked /> Palette</label>
+          <label class="toggle-pill"><input type="checkbox" id="chk-panel-inspector" checked /> Inspector</label>
+        </div>
+      </section>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Presets</h2>
+        <div class="preset-card-grid">
+          <button id="btn-preset-seed" class="preset-card">Seed Demo</button>
+          <button id="btn-preset-random" class="preset-card">Randomize</button>
+          <button id="btn-preset-clear" class="preset-card">Clear</button>
+        </div>
+      </section>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Quick Edit</h2>
+        <div class="sidebar-row">
+          <select id="sel-quick-foe" class="sidebar-select" aria-label="Foe type"></select>
+        </div>
+        <div class="sidebar-row">
+          <button id="btn-quick-add-foe" class="secondary-action">Add Foe</button>
+        </div>
+        <div class="sidebar-row">
+          <button id="btn-quick-add-skull" class="secondary-action">+ Skull</button>
+          <button id="btn-quick-remove-skull" class="secondary-action">− Skull</button>
+        </div>
+      </section>
+
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Project</h2>
+        <div class="link-list">
+          <a href="https://github.com/ChessMess/UltimateDarkTowerBoard" target="_blank" rel="noopener">GitHub Repo ↗</a>
+          <a href="https://github.com/ChessMess/UltimateDarkTowerBoard/tree/main/docs" target="_blank"
+            rel="noopener">Documentation ↗</a>
+          <a href="./tokens.html">Art Forge ↗</a>
+          <a href="./token-designer.html">Token Designer ↗</a>
+          <a href="./location-marker.html">Location Marker ↗</a>
+        </div>
+      </section>
+    </aside>
+
+    <!-- ============ CENTER HERO ============ -->
+    <main class="app-hero">
+      <section id="instructions" class="instructions">
+        <div class="instructions-body">
+          <p>
+            Click a token in either view to select it. Use the <strong>Palette</strong> to add one (Add → pick a
+            space → Confirm) and the <strong>Inspector</strong> to edit the selection; drag panels by their title
+            bar. The <strong>N/E/S/W</strong> bar zooms to a kingdom (<strong>All</strong> restores the whole
+            board). On the 2D map: scroll to zoom, drag to spin the board (flip to <strong>Pan</strong> with the
+            Spin/Pan toggle), double-click to reset. Switch <strong>2D / 3D / 2D+3D / PiP</strong> from the stage
+            toolbar, or <strong>Pop Out</strong> into a window. The right column has the live board
+            <strong>JSON</strong> — edit it and hit Apply, or Copy it for your own app.
+          </p>
+        </div>
+      </section>
+
+      <!-- The all-in-one render stage (2D map + 3D tower + controls) mounts here,
+           via BoardStageView (ultimatedarktowerboard/stage). -->
+      <div id="board-stage"></div>
+    </main>
+
+    <!-- ============ RIGHT CONFIG COLUMN ============ -->
+    <aside id="config-column" class="app-config">
+      <section class="config-section">
+        <div class="panel" data-collapse-key="status">
+          <div class="panel-row-header">
+            <h2>Board Status</h2>
+          </div>
+          <pre id="readout" class="config-preview readout-text" aria-live="polite"></pre>
+        </div>
+
+        <div class="panel panel-editors" data-collapse-key="json">
+          <div class="panel-row-header">
+            <h2>JSON</h2>
+            <div class="panel-header-actions">
+              <button id="btn-copy-config">Copy JSON</button>
+              <button id="btn-apply-config" disabled>Apply</button>
+            </div>
+          </div>
+          <textarea id="config-preview" class="config-preview" spellcheck="false" wrap="off"
+            aria-label="Board state JSON"></textarea>
+        </div>
+
+
+      </section>
+    </aside>
+
+  </div><!-- /.app-grid -->
+
+  <script type="module" src="./src/main.ts"></script>
+</body>
+
+</html>

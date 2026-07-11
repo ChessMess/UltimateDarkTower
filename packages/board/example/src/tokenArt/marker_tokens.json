@@ -1,0 +1,8 @@
+{
+  "wasteland": {
+    "image2d": "./tokens/markers/wasteland.png"
+  },
+  "power-skull": {
+    "image2d": "./tokens/markers/power-skull.png"
+  }
+}

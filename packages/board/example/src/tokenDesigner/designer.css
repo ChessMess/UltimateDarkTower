@@ -1,0 +1,263 @@
+/* Token Designer — layout on top of the Token Art Forge theme (editor.css owns the palette,
+   fonts, buttons, .save-bar and .field primitives; this file adds the stage + inspector). */
+
+#designer {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 3rem) clamp(1rem, 3vw, 2.5rem) 7rem;
+}
+
+/* ── work area: stage + inspector ───────────────────────────────────────── */
+.td-work {
+  display: grid;
+  /* 3 columns: config (Canvas + Token) | stage | Text fields — matches DOM order. */
+  grid-template-columns: 320px minmax(0, 1fr) 320px;
+  gap: 1.4rem;
+  margin-top: 1.75rem;
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .td-work {
+    grid-template-columns: 1fr;
+  }
+  /* stacked: show the canvas first, both control columns below it */
+  .td-stage-wrap {
+    order: -1;
+  }
+}
+
+.td-stage-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.td-stage-host {
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  box-shadow: var(--shadow);
+}
+
+.td-stage {
+  width: min(760px, 100%);
+}
+
+.td-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  /* transparency checkerboard, matching editor.css .slot-preview */
+  background-color: #100c09;
+  background-image:
+    linear-gradient(45deg, #221a13 25%, transparent 25%),
+    linear-gradient(-45deg, #221a13 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #221a13 75%),
+    linear-gradient(-45deg, transparent 75%, #221a13 75%);
+  background-size: 22px 22px;
+  background-position:
+    0 0,
+    0 11px,
+    11px -11px,
+    -11px 0;
+  touch-action: none;
+}
+
+/* ── background ─────────────────────────────────────────────────────────── */
+.td-bg {
+  cursor: grab;
+}
+
+.td-bg:active {
+  cursor: grabbing;
+}
+
+/* ── fields + handles ───────────────────────────────────────────────────── */
+.td-field {
+  cursor: move;
+}
+
+.td-field text {
+  user-select: none;
+  -webkit-user-select: none;
+  paint-order: stroke;
+}
+
+.td-bbox {
+  fill: none;
+  stroke: var(--ember);
+  stroke-width: 0.8;
+  stroke-dasharray: 3 2;
+  pointer-events: none;
+}
+
+.td-stem {
+  stroke: var(--ember);
+  stroke-width: 0.8;
+  pointer-events: none;
+}
+
+.td-handle {
+  fill: var(--ember-bright);
+  stroke: #1a0f06;
+  stroke-width: 0.8;
+}
+
+.td-handle.td-rotate {
+  cursor: grab;
+}
+
+.td-handle.td-resize {
+  cursor: nwse-resize;
+}
+
+.td-hint,
+.td-inline-hint {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.td-inline-hint {
+  font-size: 0.74rem;
+  color: var(--faint);
+}
+
+.td-size-readout {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.td-size-readout strong {
+  color: var(--ember-bright);
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.02em;
+}
+
+/* ── inspector ──────────────────────────────────────────────────────────── */
+.td-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.td-section {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.td-section-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+}
+
+.td-btn-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.td-btn-row .btn {
+  flex: 1;
+}
+
+.td-full {
+  width: 100%;
+}
+
+/* Delete field — a ghost button (not a link) with a trash icon and a danger tint. */
+.td-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  color: #e0796f;
+  border-color: rgba(224, 121, 111, 0.4);
+}
+
+.td-delete:hover {
+  color: #f2978d;
+  border-color: #e0796f;
+  background: rgba(224, 121, 111, 0.1);
+}
+
+.td-delete .td-icon {
+  flex: none;
+}
+
+input[type='color'] {
+  padding: 0.25rem;
+  height: 2.4rem;
+  cursor: pointer;
+}
+
+.td-field-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.td-chip {
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition:
+    color 0.18s,
+    border-color 0.18s;
+}
+
+.td-chip:hover {
+  color: var(--ember);
+  border-color: var(--ember);
+}
+
+.td-chip.is-selected {
+  color: #1a0f06;
+  background: linear-gradient(180deg, var(--ember-bright), var(--ember-deep));
+  border-color: var(--ember-deep);
+  font-weight: 600;
+}
+
+/* ── dirty badge in the save bar ────────────────────────────────────────── */
+.td-dirty {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.td-dirty.is-clean {
+  color: var(--good);
+}
+
+.td-dirty.is-dirty {
+  color: var(--ember-bright);
+}

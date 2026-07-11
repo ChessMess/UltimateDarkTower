@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Board 3D — orientation check</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0b0a09;
+        color: #e8e2d6;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      #scene {
+        position: fixed;
+        inset: 0;
+      }
+      #legend {
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 8px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .sw {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-right: 4px;
+        border-radius: 2px;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="scene"></div>
+    <div id="legend">
+      <strong>anchorToWorld gate</strong> — building anchors, nk=0<br />
+      <span class="sw" style="background: #3b82f6"></span>north
+      <span class="sw" style="background: #22c55e"></span>east
+      <span class="sw" style="background: #ef4444"></span>south
+      <span class="sw" style="background: #eab308"></span>west
+    </div>
+    <script type="module" src="./src/orientation-check.ts"></script>
+  </body>
+</html>

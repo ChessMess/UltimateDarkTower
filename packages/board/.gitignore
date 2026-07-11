@@ -1,0 +1,8 @@
+node_modules
+dist
+example/dist
+coverage
+*.tsbuildinfo
+.DS_Store
+docs/planning
+.playwright-mcp

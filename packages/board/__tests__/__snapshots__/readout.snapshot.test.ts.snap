@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BoardReadout matches a populated readout 1`] = `
+"Board — focus: all/isometric
+Heroes (2):
+  - h1 @ Broken Lands (north)
+  - h2 @ Dayside
+Foes (1):
+  - f1 Brigands @ Dayside
+Adversary: utuk-ku @ Dayside
+Buildings (2 active):
+  - Dayside: 3 skulls, destroyed
+  - Egan's End: 0 skulls, monument: argent-oak
+Space markers (1):
+  - Broken Lands: wasteland"
+`;
+
+exports[`BoardReadout matches the default-state readout 1`] = `
+"Board — focus: all/isometric
+Heroes (0):
+Foes (0):
+Adversary: none
+Buildings (0 active):
+Space markers (0):"
+`;
+
+exports[`BoardReadout narrows to a single kingdom when focus.kingdom is set 1`] = `
+"Board — focus: north/overhead
+Heroes (1):
+  - hn @ Broken Lands
+Foes (1):
+  - fn Brigands @ Broken Lands
+Adversary: none
+Buildings (0 active):
+Space markers (1):
+  - Broken Lands: wasteland"
+`;

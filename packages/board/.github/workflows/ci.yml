@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 20]
+    steps:
+      - name: Checkout UltimateDarkTowerBoard
+        uses: actions/checkout@v6
+        with:
+          path: UltimateDarkTowerBoard
+
+      # Dev uses file: links to the siblings, so check them out as siblings and
+      # build them first (no prepare script -> dist isn't produced on install).
+      # No ref pin: build each sibling from its default branch (main) to mirror the
+      # local file: links. The earlier CI break was a UDT build-examples.js bug
+      # (fixed upstream), not version skew — a SHA pin only adds a stale-pin foot-gun
+      # and a manual bump on every new UDT symbol. Push UDT before Board so new
+      # symbols are on UDT main when Board CI runs.
+      - name: Checkout UltimateDarkTower (sibling)
+        uses: actions/checkout@v6
+        with:
+          repository: ChessMess/UltimateDarkTower
+          path: UltimateDarkTower
+
+      - name: Checkout UltimateDarkTowerDisplay (sibling)
+        uses: actions/checkout@v6
+        with:
+          repository: ChessMess/UltimateDarkTowerDisplay
+          path: UltimateDarkTowerDisplay
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: UltimateDarkTowerBoard/package-lock.json
+
+      - name: Build sibling — ultimatedarktower
+        run: npm ci && npm run build
+        working-directory: UltimateDarkTower
+
+      - name: Build sibling — ultimatedarktowerdisplay
+        run: npm ci && npm run build
+        working-directory: UltimateDarkTowerDisplay
+
+      - name: Install + CI
+        run: npm ci && npm run ci
+        working-directory: UltimateDarkTowerBoard
+
+      - name: Guard — the `.` entry must stay three-free
+        working-directory: UltimateDarkTowerBoard
+        run: |
+          offenders=$(grep -rEl "from ['\"](three|ultimatedarktowerdisplay)" src --include='*.ts' | grep -v '^src/plugin/' || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::Non-plugin source imports three/Display:"; echo "$offenders"; exit 1
+          fi
