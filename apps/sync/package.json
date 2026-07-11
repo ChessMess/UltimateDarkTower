@@ -1,0 +1,29 @@
+{
+  "name": "@dark-tower-sync/client",
+  "version": "0.3.0",
+  "description": "DarkTowerSync browser client — receives relayed tower commands over WebSocket and replays them on the player's physical tower via Web Bluetooth.",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "clean": "rm -rf dist"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.19.3",
+    "gsap": "^3.12.0",
+    "three": "^0.185.0",
+    "ultimatedarktower": "^5.0.0",
+    "ultimatedarktowerdisplay": "^0.10.0",
+    "ultimatedarktowerrelay-client": "^0.2.0",
+    "ultimatedarktowerrelay-shared": "^0.1.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>DarkTowerSync — Remote Player</title>
+    <link rel="stylesheet" href="/src/client.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Dark Tower Sync</h1>
+      <p>Remote Player Client</p>
+    </header>
+
+    <div class="card" id="connection-card">
+      <h2>Connect to Host</h2>
+      <div class="field">
+        <label for="host-url">Host WebSocket URL</label>
+        <input
+          type="text"
+          id="host-url"
+          placeholder="ws://192.168.1.x:8765"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+      <div class="field">
+        <label for="player-name">Your Name (optional)</label>
+        <input type="text" id="player-name" placeholder="Player 2" autocomplete="off" />
+      </div>
+      <div class="connect-row">
+        <button id="connect-btn">Connect to Host</button>
+        <button id="disconnect-relay-btn" class="btn-disconnect" hidden>Disconnect</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Status</h2>
+      <div class="status-row">
+        <div class="dot" id="relay-dot"></div>
+        <span id="relay-status">Not connected to relay</span>
+      </div>
+      <div class="status-row">
+        <div class="dot" id="tower-dot"></div>
+        <span id="tower-status">Tower not connected</span>
+      </div>
+      <button id="toggle-state-btn" class="btn-ghost" style="margin-top: 0.5rem;" hidden>
+        Show Tower State
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>Tower</h2>
+      <div class="connect-row">
+        <button id="tower-btn" disabled>Connect to Tower (Bluetooth)</button>
+        <button id="disconnect-tower-btn" class="btn-disconnect" hidden>Disconnect</button>
+      </div>
+    </div>
+
+    <section id="state-section" class="card" hidden>
+      <h2>Tower State</h2>
+      <div id="tower-display"></div>
+    </section>
+
+    <section id="visualizer-section" class="card" hidden>
+      <h2>Tower State</h2>
+      <div id="tower-visualizer"></div>
+    </section>
+
+    <div class="card">
+      <h2>Logs</h2>
+      <div id="logs-actions" style="display: flex; gap: 0.6rem; margin-bottom: 0;">
+        <button id="send-logs-btn" class="btn-ghost" style="flex: 1;">Send Logs to Host</button>
+        <button id="download-logs-btn" class="btn-ghost" style="flex: 1;">Download Logs</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Event Log</h2>
+      <div id="log"></div>
+    </div>
+
+    <footer>
+      <p>
+        Powered by
+        <a href="https://github.com/chessmess/UltimateDarkTower" target="_blank"
+          >UltimateDarkTower</a
+        >
+        &mdash;
+        <a href="https://github.com/ChessMess/DarkTowerSync" target="_blank">DarkTowerSync</a>
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
