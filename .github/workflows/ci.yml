@@ -62,8 +62,12 @@ jobs:
       # Build the relay libraries + CLI and their workspace deps (core). This
       # exercises the native install path on both OSes; the relay packages
       # currently have no unit tests, so a clean build is the smoke test.
+      # Include core (`ultimatedarktower`) explicitly: the relay packages depend
+      # on it, but a `./packages/relay-*...` path-glob filter does not expand the
+      # `...` dependency selector to pull core in, so without this core's dist is
+      # missing and relay-client fails with "Cannot find module 'ultimatedarktower'".
       - name: Build relay packages
-        run: pnpm --filter "./packages/relay-*..." --filter "./apps/relay-cli..." build
+        run: pnpm --filter "ultimatedarktower" --filter "./packages/relay-*..." --filter "./apps/relay-cli..." build
 
       # electron-forge packages the BLE tower emulator. relay-electron requires
       # Node >= 22.12, so only smoke it on the Node 22 leg.
