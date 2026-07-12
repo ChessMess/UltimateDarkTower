@@ -2,6 +2,7 @@
   "name": "ultimate-dark-tower",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "description": "Ultimate Dark Tower monorepo — core library, display/board renderers, creator, relay, and companion apps.",
   "author": "ChessMess",
   "license": "MIT",
