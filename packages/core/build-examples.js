@@ -2,7 +2,9 @@ const esbuild = require('esbuild');
 const path = require('path');
 const fs = require('fs');
 
-const displayRepoDir = path.join(__dirname, '..', 'UltimateDarkTowerDisplay');
+// In the monorepo the display package is a sibling under packages/. (Pre-merge
+// this pointed at a sibling ../UltimateDarkTowerDisplay repo checkout.)
+const displayRepoDir = path.join(__dirname, '..', 'display');
 const displayEntryPoint = path.join(displayRepoDir, 'src', 'index.ts');
 const displayModelPath = path.join(displayRepoDir, 'src', '3d', 'assets', 'tower.glb');
 
@@ -190,14 +192,7 @@ async function buildExamples() {
     // references resolve at runtime against the bundle's URL. esbuild
     // doesn't emit assets from `new URL(...)` expressions (unlike Vite),
     // so we mirror the directory layout the bundle expects.
-    const emulatorAudioSrcDir = path.join(
-      __dirname,
-      '..',
-      'UltimateDarkTowerDisplay',
-      'src',
-      'audio',
-      'assets',
-    );
+    const emulatorAudioSrcDir = path.join(displayRepoDir, 'src', 'audio', 'assets');
     const emulatorAudioDestDir = path.join(controllerDistDir, 'assets');
     if (fs.existsSync(emulatorAudioSrcDir)) {
       ensureDir(emulatorAudioDestDir);

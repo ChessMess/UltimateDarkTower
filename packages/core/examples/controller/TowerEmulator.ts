@@ -1,5 +1,5 @@
-import { TowerRenderView } from '../../../UltimateDarkTowerDisplay/src/index';
-import towerModelUrl from '../../../UltimateDarkTowerDisplay/src/3d/assets/tower.glb';
+import { TowerRenderView } from '../../../display/src/index';
+import towerModelUrl from '../../../display/src/3d/assets/tower.glb';
 // Use the cycle-free barrel (not src/index) — the emulator bundle must not pull
 // in UltimateDarkTower.ts, which re-creates the circular dependency that breaks
 // the Display package's module-level constant init. See build-examples.js.
