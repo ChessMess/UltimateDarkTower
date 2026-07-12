@@ -35,17 +35,7 @@ jobs:
           # pnpm 11.9.0 requires Node >= 22.13 (node:sqlite built-in).
           node-version: 22
           cache: pnpm
-          # NB: deliberately NO `registry-url`. With OIDC Trusted Publishing there
-          # is no NODE_AUTH_TOKEN, so registry-url writes an .npmrc with a
-          # placeholder token + always-auth=true. That poisons `npm info` reads
-          # (used by `changeset publish` to detect already-published versions),
-          # making Changesets think every package is unpublished and re-attempt
-          # them. Publishing via OIDC uses the default registry (npmjs.org) fine.
-
-      # npm's OIDC Trusted Publishing needs npm >= 11.5.1, but Node 22 ships
-      # npm 10.x — without this the OIDC handshake fails even when the trusted
-      # publisher is configured on npmjs.com.
-      - run: npm install -g npm@latest
+          registry-url: https://registry.npmjs.org
 
       - run: pnpm install --frozen-lockfile
 
