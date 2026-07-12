@@ -216,7 +216,7 @@ export class SealManager {
       try {
         cb(brokenSeals);
       } catch (err) {
-        // eslint-disable-next-line no-console
+         
         console.error('[SealManager] seal listener threw', err);
       }
     }
@@ -262,7 +262,7 @@ export class SealManager {
       }
     }
     if (missing.length === 0) return;
-    // eslint-disable-next-line no-console
+     
     console.warn(
       `[Tower3DView] ${missing.length} seal node(s) missing from the loaded model; ` +
         `applySeals will be a no-op for them. Missing: ${missing.join(', ')}. ` +

@@ -138,7 +138,7 @@ export class TowerSampleAudio {
     if (!url) {
       if (!this.warned.has(sample)) {
         this.warned.add(sample);
-        // eslint-disable-next-line no-console
+         
         console.warn(`[TowerSampleAudio] no asset mapped for sample 0x${sample.toString(16)}`);
       }
       return noop;
@@ -169,7 +169,7 @@ export class TowerSampleAudio {
           buffer = await ctx.decodeAudioData(arr);
           this.buffers.set(sample, buffer);
         } catch (err) {
-          // eslint-disable-next-line no-console
+           
           console.error('[TowerSampleAudio] one-shot failed to load', url, err);
           return;
         }
@@ -252,7 +252,7 @@ export class TowerSampleAudio {
     if (!url) {
       if (!this.warned.has(sample)) {
         this.warned.add(sample);
-        // eslint-disable-next-line no-console
+         
         console.warn(`[TowerSampleAudio] no asset mapped for sample 0x${sample.toString(16)}`);
       }
       this.stop();
@@ -269,7 +269,7 @@ export class TowerSampleAudio {
         const arr = await res.arrayBuffer();
         buffer = await ctx.decodeAudioData(arr);
       } catch (err) {
-        // eslint-disable-next-line no-console
+         
         console.error('[TowerSampleAudio] failed to load', url, err);
         return;
       }

@@ -56,7 +56,7 @@ const plugin: ScenePlugin = {
       placed.push(sprite);
       n++;
     }
-    // eslint-disable-next-line no-console
+     
     console.log(`[orientation-check] placed ${n} building markers at nk=0`);
 
     // Force a top-down camera each frame (override OrbitControls) so the whole

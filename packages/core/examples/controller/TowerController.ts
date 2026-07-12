@@ -179,7 +179,7 @@ interface ChartDisplayConfig {
 
 let differentialChart: any = null;
 let differentialReadings: DifferentialReading[] = [];
-let chartDisplayConfig: ChartDisplayConfig = {
+const chartDisplayConfig: ChartDisplayConfig = {
   showIrBeam: true, // Default to showing IR beam
   showDrum1: false,
   showDrum2: false,
@@ -1105,7 +1105,7 @@ const getDoorwayLights = (): Array<DoorwayLight> => {
   const checked = document.querySelectorAll(qs) as NodeListOf<HTMLInputElement>;
   const ls = document.getElementById('lightStyles') as HTMLSelectElement;
   const selectedLightStyle = ls?.options[ls.selectedIndex]?.textContent || 'off';
-  let doorwayCmds: Array<DoorwayLight> = [];
+  const doorwayCmds: Array<DoorwayLight> = [];
   Array.from(checked).forEach((cb) => {
     let { lightSide, lightStyle, lightLevel } = getDataAttributes(cb);
     if (lightStyle !== selectedLightStyle) {
@@ -1126,7 +1126,7 @@ const getDoorwayLights = (): Array<DoorwayLight> => {
 const getLedgeLights = (): Array<LedgeLight> => {
   const qs = 'input[type="checkbox"][data-light-type="ledge"]:checked';
   const checked = document.querySelectorAll(qs) as NodeListOf<HTMLInputElement>;
-  let ledgeCmds: Array<LedgeLight> = [];
+  const ledgeCmds: Array<LedgeLight> = [];
   Array.from(checked).forEach((cb) => {
     const { lightSide, lightStyle } = getDataAttributes(cb);
     if (lightSide && lightStyle) {
@@ -1139,7 +1139,7 @@ const getLedgeLights = (): Array<LedgeLight> => {
 const getBaseLights = (): Array<BaseLight> => {
   const qs = 'input[type="checkbox"][data-light-type="base"]:checked';
   const checked = document.querySelectorAll(qs) as NodeListOf<HTMLInputElement>;
-  let baseCmds: Array<BaseLight> = [];
+  const baseCmds: Array<BaseLight> = [];
   Array.from(checked).forEach((cb) => {
     const { lightSide, lightStyle, lightBaseLocation } = getDataAttributes(cb);
     if (lightSide && lightStyle && lightBaseLocation) {
@@ -1446,7 +1446,7 @@ const moveGlyph = async () => {
     }
 
     // Calculate clockwise rotation steps needed
-    let rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
+    const rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
 
     if (rotationSteps === 0) {
       logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, '[Glyphs]');
@@ -1471,7 +1471,7 @@ const moveGlyph = async () => {
       );
 
       // Calculate how many steps the glyph needs to move
-      let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
+      const glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
 
       // Calculate the new drum position
       const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
@@ -2221,7 +2221,7 @@ const enhancedMoveGlyph = async () => {
     }
 
     // Calculate clockwise rotation steps needed
-    let rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
+    const rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
 
     if (rotationSteps === 0) {
       logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, '[TC]');
@@ -2240,7 +2240,7 @@ const enhancedMoveGlyph = async () => {
       const targetGlyphIndex = sides.indexOf(targetSide);
 
       // Calculate how many steps the glyph needs to move
-      let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
+      const glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
 
       // Calculate the new drum position
       const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;

@@ -206,7 +206,7 @@ window.addEventListener('message', (event: MessageEvent) => {
     // display runs its visual sweep + audio (matching the Display example). The
     // sequence settles to the calibrated state and fires onCalibrationComplete.
     popupCalibrating = true;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     display?.applyState({
       ...(lastState ?? createDefaultTowerState()),
       command: TOWER_COMMANDS.calibration,

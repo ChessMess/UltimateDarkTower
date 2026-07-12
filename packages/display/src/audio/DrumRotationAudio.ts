@@ -114,7 +114,7 @@ export class DrumRotationAudio {
         this.play();
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('[DrumRotationAudio] failed to load', url, err);
     }
   }

@@ -73,7 +73,7 @@ function fireViewChange(): void {
     try {
       cb();
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('[rendererController] onViewChange listener threw', err);
     }
   }

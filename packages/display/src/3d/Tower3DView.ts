@@ -72,7 +72,7 @@ type Logger = { log(label: string, data?: Record<string, unknown>): void };
 const NULL_LOGGER: Logger = { log: () => {} };
 const CONSOLE_LOGGER: Logger = {
   log(label, data) {
-    // eslint-disable-next-line no-console
+     
     console.log(`[Tower3DView] ${label}`, data);
   },
 };
@@ -482,7 +482,7 @@ export class Tower3DView implements ITowerDisplay {
           modelTopY: this.modelTopY,
         });
       } catch (err) {
-        // eslint-disable-next-line no-console
+         
         console.error('[Tower3DView] onModelLoaded listener threw', err);
       }
     }
@@ -529,14 +529,14 @@ export class Tower3DView implements ITowerDisplay {
           try {
             unsub();
           } catch (err) {
-            // eslint-disable-next-line no-console
+             
             console.error('[Tower3DView] scene plugin unsubscribe threw', err);
           }
         }
         try {
           plugin.dispose();
         } catch (err) {
-          // eslint-disable-next-line no-console
+           
           console.error('[Tower3DView] scene plugin dispose threw', err);
         }
       },
@@ -546,7 +546,7 @@ export class Tower3DView implements ITowerDisplay {
     try {
       plugin.attach(ctx);
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('[Tower3DView] scene plugin attach threw', err);
     }
 
@@ -705,7 +705,7 @@ export class Tower3DView implements ITowerDisplay {
       try {
         cb(side);
       } catch (err) {
-        // eslint-disable-next-line no-console
+         
         console.error('[Tower3DView] side-change listener threw', err);
       }
     }
@@ -721,7 +721,7 @@ export class Tower3DView implements ITowerDisplay {
       try {
         cb(dt);
       } catch (err) {
-        // eslint-disable-next-line no-console
+         
         console.error('[Tower3DView] physics frame listener threw', err);
       }
     }
@@ -1574,13 +1574,13 @@ export class Tower3DView implements ITowerDisplay {
           try {
             cb({ root, modelRadius, modelBottomY, modelTopY });
           } catch (err) {
-            // eslint-disable-next-line no-console
+             
             console.error('[Tower3DView] onModelLoaded listener threw', err);
           }
         }
       },
       (details) => {
-        // eslint-disable-next-line no-console
+         
         console.error('[Tower3DView] Failed to load GLB model:', details);
         this._loadState = 'error';
         this.onLoadError?.(details);

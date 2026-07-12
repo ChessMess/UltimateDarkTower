@@ -44,7 +44,7 @@ const stage = new BoardStageView({
     },
   },
   onTokenSelect: (sel: TokenSelection) => {
-    // eslint-disable-next-line no-console
+     
     console.log('token selected', sel);
   },
   onFocusChange: () => refresh(),

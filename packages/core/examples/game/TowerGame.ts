@@ -167,8 +167,8 @@ const updateScore = () => {
 const getDoorwayLightsCommand = (): Array<DoorwayLight> => {
   // light up the doorways
   // matches set lights to full on, unmatched set to flicker
-  let doorways: Array<DoorwayLight> = [];
-  let level: Array<TowerLevels> = ['top', 'middle', 'bottom'];
+  const doorways: Array<DoorwayLight> = [];
+  const level: Array<TowerLevels> = ['top', 'middle', 'bottom'];
   for (let index = 0; index < GameState.PlayerPicks.length; index++) {
     if (GameState.PlayerPicks[index] === GameState.TowerPicks[index]) {
       doorways.push({ position: 'north', level: level[index], style: 'on' });
@@ -198,9 +198,9 @@ const getScoringSound = (): number => {
 };
 
 const fireConfettiCannon = () => {
-  var scalar = 3;
+  const scalar = 3;
   // @ts-ignore
-  var skull = confetti.shapeFromText({ text: '💀', scalar });
+  const skull = confetti.shapeFromText({ text: '💀', scalar });
   // @ts-ignore
   confetti({
     particleCount: 100,
@@ -348,7 +348,7 @@ const populateSelections = () => {
 
     if (glyphs) {
       glyphs.forEach((aGlyph) => {
-        var el = document.createElement('option');
+        const el = document.createElement('option');
         el.textContent = aGlyph;
         el.value = aGlyph;
         selectElement.appendChild(el);
