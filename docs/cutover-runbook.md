@@ -113,28 +113,50 @@ gh run watch --repo ChessMess/UltimateDarkTower
 
 ## 3. Publishing (separate, deliberate — do only when ready)
 
-`release.yml` (Changesets + npm provenance via OIDC) is committed but **inert
-until npm Trusted Publishing is configured**. Publishing is independent of the
-merge/Pages steps above.
+`release.yml` runs Changesets on every push to main: opens a "Version Packages"
+PR when changesets exist; otherwise publishes any unpublished versions.
 
-1. On **npmjs.com**, for each already-published name — `ultimatedarktower`,
-   `ultimatedarktowerdisplay`, `ultimatedarktowerboard`,
-   `ultimatedarktowerrelay-shared`, `ultimatedarktowerrelay-core`,
-   `ultimatedarktowerrelay-client` — set the **Trusted Publisher** to repo
-   `ChessMess/UltimateDarkTower`, workflow `release.yml`.
-2. Create the release intent locally and let the workflow publish:
-   ```bash
-   pnpm changeset            # pick packages + bump levels; writes .changeset/*.md
-   git add .changeset && git commit -m "chore: changeset for <release>" && git push
-   ```
-   Changesets opens/updates a "Version Packages" PR; merging it triggers
-   `release.yml` to publish with `--provenance`.
-3. **First publish of `ultimatedarktowerboard`** may fail Trusted Publishing
-   (which usually needs the package to pre-exist) — fall back to a one-time
-   token publish for that package, then Trusted Publishing works thereafter.
+**Status (2026-07-12):** all 6 libraries are published and the Release workflow
+is a **green no-op**. `ultimatedarktowerboard@0.3.0` was published via **OIDC
+Trusted Publishing** (configured on npmjs.com for board). To release a NEW
+version:
+
+```bash
+pnpm changeset            # pick packages + bump levels; writes .changeset/*.md
+git add .changeset && git commit -m "chore: changeset for <release>" && git push
+```
+
+Changesets opens a "Version Packages" PR; merging it bumps versions and triggers
+`release.yml` to publish with provenance.
+
+### ⚠️ Known wrinkle: OIDC Trusted Publishing vs Changesets detection
+
+npm's OIDC publishing needs **npm ≥ 11.5.1**, but under GitHub's OIDC environment
+**npm 11's `npm info` reads come back empty** — so `changeset publish`'s
+"already published?" check thinks *every* package is unpublished and re-attempts
+the already-published ones (they fail on `prepack` lint / E404), turning the run
+red even though the intended package publishes. (npm 11 works fine locally
+without OIDC; detection works in CI on npm 10.)
+
+So `release.yml` currently pins the **Node-22/npm-10** default (no `npm install
+-g npm@latest`), which keeps detection correct and the steady state green — but
+npm 10 **cannot** perform an OIDC publish. Before the next real release, pick one:
+
+- **Recommended — `NPM_TOKEN` secret:** add an npm *granular automation token* as
+  repo secret `NPM_TOKEN` and set it on the changesets step
+  (`env: NPM_TOKEN: ${{ secrets.NPM_TOKEN }}`). Token auth makes both the `npm
+  info` reads and the publish work on any npm version — no OIDC detection issue.
+  Provenance still works alongside it (`id-token: write` is set).
+- **Or** temporarily re-add `npm install -g npm@latest`: the newly-bumped package
+  will publish via OIDC (as board did), but the run goes red because it also
+  re-attempts the already-published packages. Functional but noisy.
+- **Or** wait for the upstream changesets/npm OIDC-detection fix, then re-enable
+  npm@latest.
 
 Provenance validates `repository.url` against the publishing repo — already set,
-with `repository.directory` per package.
+with `repository.directory` per package. The 6 published names:
+`ultimatedarktower`, `ultimatedarktowerdisplay`, `ultimatedarktowerboard`,
+`ultimatedarktowerrelay-{shared,core,client}` (apps `seed`/`sync` are `private`).
 
 ---
 
