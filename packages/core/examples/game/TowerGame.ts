@@ -48,7 +48,7 @@ const startGame = () => {
   if (!DarkTower.isConnected) {
     (async () => {
       await DarkTower.connect();
-      !GameState.HasCalibrated && DarkTower.calibrate();
+      if (!GameState.HasCalibrated) DarkTower.calibrate();
       GameState.HasCalibrated = true;
     })();
   }
@@ -199,15 +199,15 @@ const getScoringSound = (): number => {
 
 const fireConfettiCannon = () => {
   const scalar = 3;
-  // @ts-ignore
+  // @ts-expect-error - canvas-confetti is loaded as an untyped global
   const skull = confetti.shapeFromText({ text: '💀', scalar });
-  // @ts-ignore
+  // @ts-expect-error - canvas-confetti is loaded as an untyped global
   confetti({
     particleCount: 100,
     spread: 70,
     origin: { y: 0.6 },
   });
-  // @ts-ignore
+  // @ts-expect-error - canvas-confetti is loaded as an untyped global
   confetti({
     startVelocity: 100,
     decay: 0.82,
@@ -329,7 +329,6 @@ const populateSelections = () => {
   const dropDowns = document.querySelectorAll('select[id="glyphs"]');
   dropDowns.forEach((item) => {
     const selectElement = item as HTMLSelectElement;
-    const el = Object.keys(selectElement)[0];
     while (selectElement.options.length > 1) {
       selectElement.options.remove(1);
     }
@@ -411,5 +410,7 @@ const glyphClick = (glyph: Glyphs) => {
 (window as any).glyphClick = glyphClick;
 (window as any).challengeTower = challengeTower;
 (window as any).setDifficultyNormal = setDifficultyNormal;
+(window as any).setDifficultyGritty = setDifficultyGritty;
+(window as any).setDifficultyMax = setDifficultyMax;
 (window as any).populateSelections = populateSelections;
 (window as any).resetScore = resetScore;

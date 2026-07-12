@@ -24,6 +24,9 @@ import { type DeviceInformation } from '../udtBleConnection';
 let noble: Noble | undefined;
 try {
   if (typeof process !== 'undefined' && process.versions?.node) {
+    // Guarded synchronous require of the optional native peer dep; import()
+    // would force this module async and break the browser-safe fallback above.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     noble = require('@stoprocent/noble') as unknown as Noble;
   }
 } catch {

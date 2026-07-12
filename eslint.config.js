@@ -71,4 +71,15 @@ export default tseslint.config(
       globals: { ...globals.jest, ...globals.node },
     },
   },
+
+  // Bundled demo/example apps (e.g. packages/core/examples/**): reference code,
+  // not shipped library source. Explicit `any` is common in DOM/demo glue and
+  // not worth typing away; every other rule still applies. Must stay last so
+  // this relaxation wins over the base recommended config (last-match-wins).
+  {
+    files: ['**/examples/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 );

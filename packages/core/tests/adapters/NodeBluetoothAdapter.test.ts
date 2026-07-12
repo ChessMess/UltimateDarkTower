@@ -9,20 +9,23 @@
 import { BluetoothConnectionError, BluetoothTimeoutError } from '../../src/udtBluetoothAdapter';
 import { UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID } from '../../src/udtConstants';
 
+// Noble/characteristic event handlers are invoked as `handler(...args)`.
+type Listener = (...args: unknown[]) => void;
+
 // --- Build the mock noble singleton BEFORE jest.mock ---
 
 function createMockNoble() {
-  const listeners: Record<string, Function[]> = {};
+  const listeners: Record<string, Listener[]> = {};
   return {
     state: 'poweredOn',
     waitForPoweredOnAsync: jest.fn().mockResolvedValue(undefined),
     startScanning: jest.fn(),
     stopScanning: jest.fn(),
-    on: jest.fn((event: string, handler: Function) => {
+    on: jest.fn((event: string, handler: Listener) => {
       if (!listeners[event]) listeners[event] = [];
       listeners[event].push(handler);
     }),
-    removeListener: jest.fn((event: string, handler: Function) => {
+    removeListener: jest.fn((event: string, handler: Listener) => {
       if (listeners[event]) {
         listeners[event] = listeners[event].filter((h) => h !== handler);
       }
@@ -49,18 +52,18 @@ function normalizeUuid(uuid: string): string {
 }
 
 function createMockCharacteristic(uuid: string, options: { readable?: Buffer } = {}) {
-  const listeners: Record<string, Function[]> = {};
+  const listeners: Record<string, Listener[]> = {};
   return {
     uuid: normalizeUuid(uuid),
     subscribeAsync: jest.fn().mockResolvedValue(undefined),
     unsubscribeAsync: jest.fn().mockResolvedValue(undefined),
     readAsync: jest.fn().mockResolvedValue(options.readable ?? Buffer.from('')),
     writeAsync: jest.fn().mockResolvedValue(undefined),
-    on: jest.fn((event: string, handler: Function) => {
+    on: jest.fn((event: string, handler: Listener) => {
       if (!listeners[event]) listeners[event] = [];
       listeners[event].push(handler);
     }),
-    removeListener: jest.fn((event: string, handler: Function) => {
+    removeListener: jest.fn((event: string, handler: Listener) => {
       if (listeners[event]) {
         listeners[event] = listeners[event].filter((h) => h !== handler);
       }
@@ -79,7 +82,7 @@ function createMockPeripheral(
     state?: string;
   } = {},
 ) {
-  const listeners: Record<string, Function[]> = {};
+  const listeners: Record<string, Listener[]> = {};
   return {
     advertisement: { localName: options.name ?? 'ReturnToDarkTower' },
     state: options.state ?? 'connected',
@@ -88,11 +91,11 @@ function createMockPeripheral(
     discoverAllServicesAndCharacteristicsAsync: jest.fn().mockResolvedValue({
       characteristics: options.characteristics ?? [],
     }),
-    once: jest.fn((event: string, handler: Function) => {
+    once: jest.fn((event: string, handler: Listener) => {
       if (!listeners[event]) listeners[event] = [];
       listeners[event].push(handler);
     }),
-    removeListener: jest.fn((event: string, handler: Function) => {
+    removeListener: jest.fn((event: string, handler: Listener) => {
       if (listeners[event]) {
         listeners[event] = listeners[event].filter((h) => h !== handler);
       }

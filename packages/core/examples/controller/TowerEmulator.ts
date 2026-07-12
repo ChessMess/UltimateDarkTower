@@ -117,7 +117,6 @@ let display: TowerRenderView | null = null;
 
 // Most recent state the controller mirrored to us; used as the baseline the
 // calibration command rides in on.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let lastState: any = null;
 // True while the display is running its own calibration sweep. The controller
 // mirrors the calibrated state back once the adapter replies; we skip applying
@@ -194,7 +193,6 @@ window.addEventListener('message', (event: MessageEvent) => {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       display.applyState(state as any);
       setStatus('Rendering live tower state.');
     } catch (error) {
@@ -236,7 +234,6 @@ window.addEventListener('message', (event: MessageEvent) => {
     display?.playSequence(sequenceId);
   } else if (type === 'applySeals') {
     const { seals } = event.data as { seals: unknown[] };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     display?.applySeals(seals as any);
   }
 });

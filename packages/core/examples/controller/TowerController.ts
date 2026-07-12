@@ -7,7 +7,6 @@ import UltimateDarkTower, {
   type LedgeLight,
   type BaseLight,
   type BaseLightLevel,
-  type Lights,
   type SealIdentifier,
   type Glyphs,
   TOWER_AUDIO_LIBRARY,
@@ -29,7 +28,6 @@ import {
   type TowerState,
   createDefaultTowerState,
   parseDifferentialReadings,
-  type ParsedDifferentialReadings,
   IndexedDBSink,
   InMemorySink,
   type IncidentReport,
@@ -1105,7 +1103,9 @@ const getDoorwayLights = (): Array<DoorwayLight> => {
   const selectedLightStyle = ls?.options[ls.selectedIndex]?.textContent || 'off';
   const doorwayCmds: Array<DoorwayLight> = [];
   Array.from(checked).forEach((cb) => {
-    let { lightSide, lightStyle, lightLevel } = getDataAttributes(cb);
+    const attrs = getDataAttributes(cb);
+    const { lightSide, lightLevel } = attrs;
+    let lightStyle = attrs.lightStyle;
     if (lightStyle !== selectedLightStyle) {
       lightStyle = selectedLightStyle;
       cb.setAttribute('data-light-style', lightStyle);
@@ -1750,7 +1750,7 @@ const initializeUI = () => {
   // Populate sound dropdown
   const soundSelect = document.getElementById('sounds') as HTMLSelectElement;
   if (soundSelect) {
-    Object.entries(TOWER_AUDIO_LIBRARY).forEach(([key, value]) => {
+    Object.entries(TOWER_AUDIO_LIBRARY).forEach(([, value]) => {
       const option = document.createElement('option');
       option.value = value.value.toString();
       option.textContent = value.name;
@@ -1761,7 +1761,7 @@ const initializeUI = () => {
   // Populate light styles dropdown (Apply to all lights - should have basic 6 options)
   const lightStyleSelect = document.getElementById('lightStyles') as HTMLSelectElement;
   if (lightStyleSelect) {
-    Object.entries(LIGHT_EFFECTS).forEach(([key, value]) => {
+    Object.entries(LIGHT_EFFECTS).forEach(([key]) => {
       const option = document.createElement('option');
       option.value = key;
       option.textContent = key; // Use the key (name) for display instead of numeric value
@@ -2087,7 +2087,6 @@ const getCurrentDoorwayLights = (): Array<DoorwayLight> => {
 const toggleGlyphLight = async (element: HTMLElement) => {
   const level = element.getAttribute('data-level');
   const side = element.getAttribute('data-side');
-  const position = `${level}-${side}`;
 
   // Find which glyph is at this position (if any)
   const glyphAtPosition = findGlyphAtPosition(level!, side!);
@@ -2180,8 +2179,8 @@ const getGlyphLevel = (glyph: string) => {
   return GLYPHS[glyph as keyof typeof GLYPHS]?.level || 'middle';
 };
 
-// Enhanced moveGlyph function with full functionality
-const enhancedMoveGlyph = async () => {
+// Enhanced moveGlyph function with full functionality (reference/demo, currently unwired)
+const _enhancedMoveGlyph = async () => {
   const glyphSelect = document.getElementById('glyph-select') as HTMLSelectElement;
   const sideSelect = document.getElementById('side-select') as HTMLSelectElement;
 
@@ -2378,7 +2377,7 @@ const initializeVolumeDisplay = () => {
     const currentState = Tower.getCurrentTowerState();
     localVolume = currentState.audio.volume;
     updateVolumeDisplay(localVolume);
-  } catch (error) {
+  } catch {
     localVolume = 0;
   }
 };

@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 
+- **Game example: the "Gritty" and "Impossible" difficulty buttons now work** —
+  their `onClick` handlers were never exposed on `window`, so selecting them threw.
+- **Linting restored for the core package.** A stale nested ESLint 8 devDependency
+  was crashing `eslint .`; removed the redundant per-package `eslint`/`@typescript-eslint`
+  devDeps (now inherited from the workspace root) and cleared the findings it surfaced.
+  No runtime behavior change.
 - **Controller example: the "calibrating…" message no longer sticks forever.** It was cleared only by
   `onCalibrationComplete`, which fires only if the completed-state packet arrives while the library's
   `performingCalibration` flag is armed — a timing window could miss it, leaving the message shown
