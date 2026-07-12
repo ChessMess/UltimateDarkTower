@@ -2,6 +2,7 @@
   "name": "ultimatedarktowerseed",
   "version": "0.1.0",
   "description": "Interactive seed decoder and reverse-engineering tool for Return to Dark Tower game seeds.",
+  "private": true,
   "type": "module",
   "scripts": {
     "build": "vite build",

@@ -2,6 +2,7 @@
   "name": "@dark-tower-sync/client",
   "version": "0.3.0",
   "description": "DarkTowerSync browser client — receives relayed tower commands over WebSocket and replays them on the player's physical tower via Web Bluetooth.",
+  "private": true,
   "type": "module",
   "scripts": {
     "build": "vite build",
