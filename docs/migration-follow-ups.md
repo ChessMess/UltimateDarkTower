@@ -86,26 +86,31 @@ yet. Chip down incrementally, then consider adding `lint` to the root `ci` chain
 
 ---
 
-## 5. Core `game` demo inline `onClick` handlers are undefined at runtime — OPEN
+## 5. Core `game` demo handlers were undefined at runtime — DONE ✅
 
-**Severity:** low (demo not linked from the landing page) · **Package:**
-`packages/core` (`examples/game`)
+**Package:** `packages/core` (`examples/game`) · Fixed in `fix(core): expose
+TowerGame handlers on window; point example favicons at rtdtlogo`.
 
-The game example's HTML uses inline `onclick="..."` attributes that call
-functions living in the example's IIFE/module scope, so they resolve against
-`window` and throw "not defined". Pre-existing; the game demo is built and
-deployed at `/game/` but is not linked from the landing page. Fix by exposing
-the handlers on `window` or switching to `addEventListener` wiring.
+`TowerGame.js` is bundled as an IIFE, so the example's top-level functions
+weren't global — the six functions the HTML calls (`startGame`, `glyphClick`,
+`challengeTower` via inline `onclick=`, plus `setDifficultyNormal`,
+`populateSelections`, `resetScore` from the trailing on-load `<script>`) all
+threw "not defined". Exposed all six via `(window as any).fn = fn` at the end of
+`TowerGame.ts`, mirroring the controller example's pattern. Browser-verified:
+zero console errors on load, all six live on `window`, `startGame()` runs clean.
 
 ---
 
-## 6. Missing `favicon.png` in core examples — OPEN
+## 6. Missing `favicon.png` in core examples — DONE ✅
 
-**Severity:** trivial (cosmetic 404) · **Package:** `packages/core` (examples)
+**Package:** `packages/core` (examples) · Fixed alongside item 5.
 
-The example HTML references a `favicon.png` that isn't shipped, producing a 404
-in the controller/game/emulator pages. Add a favicon asset or drop the
-reference.
+`TowerController.html` and `TowerGame.html` referenced a same-dir `favicon.png`
+that isn't shipped (404). Repointed both to the existing 512×512
+`../assets/rtdtlogo.png`, which matches the `../assets/` convention already used
+for the shared background/fonts/style and ships in `dist/examples/assets/`
+(and at the deployed site root). Browser-verified 200. (`TowerEmulator.html` has
+no favicon reference — nothing to fix there.)
 
 ---
 

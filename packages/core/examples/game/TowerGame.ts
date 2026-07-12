@@ -401,3 +401,15 @@ const glyphClick = (glyph: Glyphs) => {
       break;
   }
 };
+
+// TowerGame.js is bundled as an IIFE, so these top-level declarations are not
+// global. Expose every function TowerGame.html references — the inline
+// `onclick=` handlers plus the trailing `<script>` that calls
+// setDifficultyNormal/populateSelections/resetScore on load — so they resolve
+// at runtime (mirrors the controller example's window-exposure pattern).
+(window as any).startGame = startGame;
+(window as any).glyphClick = glyphClick;
+(window as any).challengeTower = challengeTower;
+(window as any).setDifficultyNormal = setDifficultyNormal;
+(window as any).populateSelections = populateSelections;
+(window as any).resetScore = resetScore;
