@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 
+- **Game example: the "Gritty" and "Impossible" difficulty radio buttons now work.**
+  Their inline `onClick` handlers (`setDifficultyGritty` / `setDifficultyMax`) were
+  never exposed on `window` — unlike `setDifficultyNormal` — so selecting them threw
+  a `ReferenceError` and left the difficulty unchanged. Both are now wired up. (Found
+  via the newly-restored lint flagging the functions as unused.)
+- **Linting restored for the core package.** `eslint .` had been crashing
+  (`Error while loading rule '@typescript-eslint/no-unused-expressions'`) because
+  a stale nested ESLint 8 devDependency shadowed the workspace's shared ESLint 9
+  flat config. Removed the redundant per-package `eslint`/`@typescript-eslint`
+  devDependencies (now inherited from the workspace root) and cleared the lint
+  findings this surfaced — dynamic `require()` and `@ts-ignore` annotations in
+  `src/`, short-circuit debug logging rewritten as `if` statements, and `Function`
+  types in the adapter tests replaced with explicit signatures. No runtime
+  behavior change.
 - **Controller example: the "calibrating…" message no longer sticks forever.** It was cleared only by
   `onCalibrationComplete`, which fires only if the completed-state packet arrives while the library's
   `performingCalibration` flag is armed — a timing window could miss it, leaving the message shown

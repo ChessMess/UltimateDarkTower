@@ -71,7 +71,7 @@ export class UdtTowerCommands {
    */
   private async sendTowerCommandDirect(command: Uint8Array): Promise<void> {
     const cmdStr = commandToPacketString(command);
-    this.deps.logDetail && this.deps.logger.debug(`${cmdStr}`, '[UDT][CMD]');
+    if (this.deps.logDetail) this.deps.logger.debug(`${cmdStr}`, '[UDT][CMD]');
     if (!this.deps.bleConnection.isConnected) {
       this.deps.logger.warn('Tower is not connected', '[UDT][CMD]');
       throw new Error('Cannot send command: tower is not connected');
@@ -188,7 +188,7 @@ export class UdtTowerCommands {
    * @returns Promise that resolves when light command is sent
    */
   async lights(lights: Lights): Promise<void> {
-    this.deps.logDetail &&
+    if (this.deps.logDetail)
       this.deps.logger.debug(`Light Parameter ${JSON.stringify(lights)}`, '[UDT][CMD]');
     this.deps.logger.info('Sending light commands', '[UDT][CMD]');
 
@@ -422,7 +422,7 @@ export class UdtTowerCommands {
     bottom: TowerSide,
     soundIndex?: number,
   ): Promise<void> {
-    this.deps.logDetail &&
+    if (this.deps.logDetail)
       this.deps.logger.debug(
         `Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`,
         '[UDT][CMD]',
@@ -496,7 +496,7 @@ export class UdtTowerCommands {
     bottom: TowerSide,
     soundIndex?: number,
   ): Promise<void> {
-    this.deps.logDetail &&
+    if (this.deps.logDetail)
       this.deps.logger.debug(
         `Rotate Parameter TMB[${JSON.stringify(top)}|${middle}|${bottom}] S[${soundIndex}]`,
         '[UDT][CMD]',

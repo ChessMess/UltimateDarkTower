@@ -19,14 +19,19 @@ export class BluetoothAdapterFactory {
 
     switch (detectedPlatform) {
       case BluetoothPlatform.WEB: {
+        // Synchronous require keeps create() sync and lazy-loads only the
+        // adapter for the active platform (avoids pulling node BLE into browser bundles).
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { WebBluetoothAdapter } = require('./adapters/WebBluetoothAdapter');
         return new WebBluetoothAdapter();
       }
       case BluetoothPlatform.NODE: {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { NodeBluetoothAdapter } = require('./adapters/NodeBluetoothAdapter');
         return new NodeBluetoothAdapter();
       }
       case BluetoothPlatform.NONE: {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { NoopBluetoothAdapter } = require('./adapters/NoopBluetoothAdapter');
         return new NoopBluetoothAdapter();
       }

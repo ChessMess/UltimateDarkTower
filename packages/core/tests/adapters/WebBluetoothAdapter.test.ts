@@ -18,17 +18,20 @@ import {
   DIS_SERVICE_UUID,
 } from '../../src/udtConstants';
 
+// GATT/bluetooth event handlers are invoked as `handler(event)`.
+type Listener = (...args: unknown[]) => void;
+
 // --- Mock Factories ---
 
 function createMockCharacteristic(
   uuid: string,
   options: { readValue?: DataView; binary?: boolean } = {},
 ) {
-  const listeners: Record<string, Function[]> = {};
+  const listeners: Record<string, Listener[]> = {};
   return {
     uuid,
     startNotifications: jest.fn().mockResolvedValue(undefined),
-    addEventListener: jest.fn((event: string, handler: Function) => {
+    addEventListener: jest.fn((event: string, handler: Listener) => {
       if (!listeners[event]) listeners[event] = [];
       listeners[event].push(handler);
     }),
@@ -60,7 +63,7 @@ function createMockDevice(
     services?: Record<string, ReturnType<typeof createMockService>>;
   } = {},
 ) {
-  const deviceListeners: Record<string, Function[]> = {};
+  const deviceListeners: Record<string, Listener[]> = {};
   const server = {
     connected: options.gattConnected ?? true,
     connect: jest.fn().mockResolvedValue(undefined),
@@ -76,7 +79,7 @@ function createMockDevice(
 
   const device = {
     gatt: server,
-    addEventListener: jest.fn((event: string, handler: Function) => {
+    addEventListener: jest.fn((event: string, handler: Listener) => {
       if (!deviceListeners[event]) deviceListeners[event] = [];
       deviceListeners[event].push(handler);
     }),
@@ -91,10 +94,10 @@ function createMockDevice(
 }
 
 function setupMockNavigatorBluetooth(device: ReturnType<typeof createMockDevice> | null) {
-  const btListeners: Record<string, Function[]> = {};
+  const btListeners: Record<string, Listener[]> = {};
   const bluetooth = {
     requestDevice: jest.fn().mockResolvedValue(device),
-    addEventListener: jest.fn((event: string, handler: Function) => {
+    addEventListener: jest.fn((event: string, handler: Listener) => {
       if (!btListeners[event]) btListeners[event] = [];
       btListeners[event].push(handler);
     }),

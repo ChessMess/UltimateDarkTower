@@ -42,7 +42,6 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
 
   async connect(deviceName: string, serviceUuids: string[]): Promise<void> {
     try {
-      // @ts-ignore - Web Bluetooth types may not be available in all environments
       this.device = await navigator.bluetooth.requestDevice({
         filters: [{ namePrefix: deviceName }],
         optionalServices: serviceUuids,
@@ -66,9 +65,7 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
           this.availabilityCallback((event as Event & { value: boolean }).value);
         }
       };
-      // @ts-ignore
       if (navigator.bluetooth) {
-        // @ts-ignore
         navigator.bluetooth.addEventListener(
           'availabilitychanged',
           this.boundOnAvailabilityChanged,
@@ -226,9 +223,7 @@ export class WebBluetoothAdapter implements IBluetoothAdapter {
 
   async cleanup(): Promise<void> {
     // Remove Bluetooth availability listener
-    // @ts-ignore
     if (navigator.bluetooth && this.boundOnAvailabilityChanged) {
-      // @ts-ignore
       navigator.bluetooth.removeEventListener(
         'availabilitychanged',
         this.boundOnAvailabilityChanged,
