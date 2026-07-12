@@ -32,7 +32,8 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # pnpm 11.9.0 requires Node >= 22.13 (node:sqlite built-in).
+          node-version: 22
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
