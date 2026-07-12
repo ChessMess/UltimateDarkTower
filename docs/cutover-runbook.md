@@ -138,20 +138,32 @@ the already-published ones (they fail on `prepack` lint / E404), turning the run
 red even though the intended package publishes. (npm 11 works fine locally
 without OIDC; detection works in CI on npm 10.)
 
-So `release.yml` currently pins the **Node-22/npm-10** default (no `npm install
--g npm@latest`), which keeps detection correct and the steady state green — but
-npm 10 **cannot** perform an OIDC publish. Before the next real release, pick one:
+**Resolution (wired 2026-07-12):** `release.yml` uses **token auth** —
+`NPM_TOKEN` / `NODE_AUTH_TOKEN` on the changesets step — instead of OIDC. Token
+auth makes both `npm info` reads and `npm publish` work on any npm version (no
+OIDC detection issue), and provenance still emits (`id-token: write` is granted).
+It stays a green no-op until the secret exists. **To activate for future
+releases, add the secret (one-time):**
 
-- **Recommended — `NPM_TOKEN` secret:** add an npm *granular automation token* as
-  repo secret `NPM_TOKEN` and set it on the changesets step
-  (`env: NPM_TOKEN: ${{ secrets.NPM_TOKEN }}`). Token auth makes both the `npm
-  info` reads and the publish work on any npm version — no OIDC detection issue.
-  Provenance still works alongside it (`id-token: write` is set).
-- **Or** temporarily re-add `npm install -g npm@latest`: the newly-bumped package
-  will publish via OIDC (as board did), but the run goes red because it also
-  re-attempts the already-published packages. Functional but noisy.
-- **Or** wait for the upstream changesets/npm OIDC-detection fix, then re-enable
-  npm@latest.
+1. On **npmjs.com** → *Access Tokens* → **Generate New Token → Granular Access
+   Token**. Give it **Read and write** permission for the 6 published packages
+   (`ultimatedarktower`, `ultimatedarktowerdisplay`, `ultimatedarktowerboard`,
+   `ultimatedarktowerrelay-{shared,core,client}`). (A classic **Automation**
+   token also works and bypasses 2FA.)
+2. Add it as a repo secret named exactly `NPM_TOKEN`:
+   ```bash
+   gh secret set NPM_TOKEN --repo ChessMess/UltimateDarkTower   # paste the token when prompted
+   ```
+   (or GitHub UI → Settings → Secrets and variables → Actions → New secret).
+
+After that, a normal `pnpm changeset` → merge "Version Packages" PR publishes the
+bumped packages via token auth. (OIDC Trusted Publishing you set up for board
+stays configured but unused — harmless.)
+
+> Note: some packages run their full CI in a `prepack`/`prepublishOnly` hook
+> (e.g. core's `prepack` = `npm run ci`, which includes `eslint`). If ESLint debt
+> (follow-ups #3/#4) isn't cleared, publishing a **new version of core** could
+> fail at that hook — worth resolving before core's next release.
 
 Provenance validates `repository.url` against the publishing repo — already set,
 with `repository.directory` per package. The 6 published names:
