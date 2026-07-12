@@ -8,11 +8,12 @@ Recorded here so they can be reviewed and scheduled independently of the cutover
 Status legend: **OPEN** (needs work/decision) · **DONE** (fixed on the migration
 branch) · **WONTFIX** (documented, intentionally left).
 
-> **Deferred (2026-07-12):** the remaining code-cleanup items — **#1 board.png
-> inlining**, **#3 nested-ESLint crash**, **#4 ESLint violation debt** — are
-> intentionally postponed to **after the cutover**. They are non-blocking and do
-> not affect correctness of the shipped apps; scheduling them post-cutover keeps
-> the migration branch stable for merge.
+> **Deferred (2026-07-12):** the remaining code-cleanup item — **#1 board.png
+> inlining** — is intentionally postponed to **after the cutover**. It is
+> non-blocking and does not affect correctness of the shipped apps; scheduling it
+> post-cutover keeps the migration branch stable for merge. (**#3 nested-ESLint
+> crash** and **#4 ESLint violation debt**, previously deferred alongside it, were
+> both resolved by PR #16 — see below.)
 
 ---
 
@@ -59,36 +60,47 @@ all 115 `.ogg` as files (was 92); zero audio base64 remains in the bundle.
 
 ---
 
-## 3. Per-package `pnpm run ci` lint crashes on a nested ESLint — OPEN (deferred, post-cutover)
+## 3. Per-package `pnpm run ci` lint crashes on a nested ESLint — DONE ✅
 
 **Severity:** low (root gating CI unaffected) · **Package:** `packages/display`
-(likely others with a nested `node_modules/eslint`)
+(and others with a nested `node_modules/eslint`) · Fixed in PR #16 (`c19ae6d`,
+`fix(lint): unbreak monorepo ESLint and clear surfaced findings`).
 
-Running `pnpm run ci` **inside** `packages/display` crashes at the `lint` step:
+Running `pnpm run ci` **inside** `packages/display` used to crash at the `lint`
+step:
 
 ```
 TypeError: Error while loading rule '@typescript-eslint/no-unused-expressions':
 Cannot read properties of undefined (reading 'allowShortCircuit')
 ```
 
-A package-local `eslint@8.57.1` gets loaded against the root's flat config +
-`@typescript-eslint` v8, which is incompatible. The **root** `pnpm run ci`
-(`validate:nodes → build → typecheck → test`, no lint) is green and unaffected,
-so this does not gate the migration — but per-package `ci` is misleading.
+`core`, `board`, `display`, and `apps/seed` each still declared their own
+`eslint@8` + `@typescript-eslint` v8 devDeps, which pnpm nested and which shadowed
+the workspace's shared ESLint 9 flat config; the v8 plugin's rules then crashed
+against the v9 API.
 
-**Proposed fix:** dedupe ESLint to a single root version (remove the nested
-`eslint` from the offending packages' deps, or align versions), then re-enable
-per-package lint. Ties into item 4.
+**Fix (the proposed dedupe):** removed the stale `eslint`/`@typescript-eslint`
+devDeps from those four packages so every package inherits the single hoisted root
+ESLint 9 (as the `creator-*` packages already did). Verified: no nested
+`node_modules/eslint` remains; `eslint .` exits 0 in `packages/display` and
+`packages/core`; `pnpm -r lint` is green across the workspace (one non-blocking
+`react-refresh` warning in `apps/creator` remains, unrelated to this item).
 
 ---
 
-## 4. Unified-ESLint violation debt — OPEN (deferred, post-cutover)
+## 4. Unified-ESLint violation debt — DONE ✅
 
-**Severity:** low (lint is not in the gating CI path)
+**Severity:** low (lint is not in the gating CI path) · Fixed in PR #16
+(`c19ae6d`), alongside item 3.
 
-~149 violations under the unified root ESLint config (majority
-`@typescript-eslint/no-explicit-any`). Lint intentionally does **not** gate CI
-yet. Chip down incrementally, then consider adding `lint` to the root `ci` chain.
+The ~149 violations surfaced once the crash in item 3 was cleared (150 in `core`
+alone) were fixed properly rather than suppressed: annotated the intentional lazy
+`require()` calls, dropped now-redundant `@ts-ignore`/`eslint-disable` directives,
+rewrote short-circuit debug logging as `if`, typed test mock callbacks, and
+cleaned up the examples. `@typescript-eslint/no-explicit-any` was relaxed for
+`**/examples/**` only (demo/reference code, not shipped source). `pnpm -r lint`
+now exits 0. Lint still does **not** gate the root `ci` chain — adding it remains
+an optional future step.
 
 ---
 
