@@ -5,7 +5,7 @@ game seeds. It decodes the base-34, two-section seed format, compares variant se
 baseline, and renders a per-character bit map to help analyze which characters encode which
 setup fields.
 
-**🔗 Live demo: <https://chessmess.github.io/UltimateDarkTowerSeed/>**
+**🔗 Live demo: <https://chessmess.github.io/UltimateDarkTower/seed/>**
 
 This is a single-page app (SPA) built with [Vite](https://vitejs.dev/). It runs entirely in the
 browser — no server, no network. Its only runtime dependency is
@@ -22,7 +22,7 @@ npm install
 npm run dev     # starts the dev server on http://localhost:3002
 ```
 
-No install is needed just to try it — open the [live demo](https://chessmess.github.io/UltimateDarkTowerSeed/).
+No install is needed just to try it — open the [live demo](https://chessmess.github.io/UltimateDarkTower/seed/).
 Run it locally only if you want to develop or modify the tool.
 
 ## Using the decoder

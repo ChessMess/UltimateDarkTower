@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/ultimatedarktowerdisplay"><img alt="npm version" src="https://img.shields.io/npm/v/ultimatedarktowerdisplay.svg"></a>
   <a href="https://www.npmjs.com/package/ultimatedarktowerdisplay"><img alt="npm downloads" src="https://img.shields.io/npm/dm/ultimatedarktowerdisplay"></a>
-  <a href="https://github.com/ChessMess/UltimateDarkTowerDisplay/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ChessMess/UltimateDarkTowerDisplay/ci.yml?branch=main&label=CI"></a>
+  <a href="https://github.com/ChessMess/UltimateDarkTower/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ChessMess/UltimateDarkTower/ci.yml?branch=main&label=CI"></a>
   <a href="LICENSE"><img alt="license" src="https://img.shields.io/npm/l/ultimatedarktowerdisplay.svg"></a>
   <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-Ready-blue"></a>
 </p>
@@ -20,7 +20,7 @@
 ---
 
 <p align="center"><strong>
-  <a href="https://chessmess.github.io/UltimateDarkTowerDisplay/">▶ Live Demo — Tower Display</a>
+  <a href="https://chessmess.github.io/UltimateDarkTower/display/">▶ Live Demo — Tower Display</a>
 </strong></p>
 
 ## What this is, what it isn't

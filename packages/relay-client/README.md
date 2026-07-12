@@ -1,14 +1,14 @@
 <h1 align="center">ultimatedarktowerrelay-client</h1>
 
 <p align="center">
-  Framework-agnostic consumer SDK for <a href="https://github.com/ChessMess/UltimateDarkTowerRelay"><strong>UltimateDarkTowerRelay</strong></a>.<br/>
+  Framework-agnostic consumer SDK for <a href="https://github.com/ChessMess/UltimateDarkTower"><strong>UltimateDarkTowerRelay</strong></a>.<br/>
   Connect to a relay host over WebSocket, receive decoded <em>Return to Dark Tower</em> tower state, and report player actions.
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/ultimatedarktowerrelay-client"><img alt="npm version" src="https://img.shields.io/npm/v/ultimatedarktowerrelay-client.svg"></a>
   <a href="https://www.npmjs.com/package/ultimatedarktowerrelay-client"><img alt="npm downloads" src="https://img.shields.io/npm/dm/ultimatedarktowerrelay-client.svg"></a>
-  <a href="https://github.com/ChessMess/UltimateDarkTowerRelay/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/npm/l/ultimatedarktowerrelay-client.svg"></a>
+  <a href="https://github.com/ChessMess/UltimateDarkTower/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/npm/l/ultimatedarktowerrelay-client.svg"></a>
   <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-Ready-blue"></a>
 </p>
 
@@ -96,10 +96,10 @@ client.dropSkull();
 
 ## Documentation
 
-- [SDK API reference](https://github.com/ChessMess/UltimateDarkTowerRelay/blob/main/docs/API.md)
-- [WebSocket protocol](https://github.com/ChessMess/UltimateDarkTowerRelay/blob/main/docs/PROTOCOL.md)
-- [Getting started](https://github.com/ChessMess/UltimateDarkTowerRelay/blob/main/docs/GETTING_STARTED.md) · [Architecture](https://github.com/ChessMess/UltimateDarkTowerRelay/blob/main/docs/ARCHITECTURE.md)
-- Project overview: [UltimateDarkTowerRelay](https://github.com/ChessMess/UltimateDarkTowerRelay#readme)
+- [SDK API reference](https://github.com/ChessMess/UltimateDarkTower/blob/main/docs/relay/API.md)
+- [WebSocket protocol](https://github.com/ChessMess/UltimateDarkTower/blob/main/docs/relay/PROTOCOL.md)
+- [Getting started](https://github.com/ChessMess/UltimateDarkTower/blob/main/docs/relay/GETTING_STARTED.md) · [Architecture](https://github.com/ChessMess/UltimateDarkTower/blob/main/docs/relay/ARCHITECTURE.md)
+- Project overview: [UltimateDarkTowerRelay](https://github.com/ChessMess/UltimateDarkTower#readme)
 
 ## License
 

@@ -11,4 +11,4 @@ npm run dev:example
 
 For a guided tour of every panel and the patterns the controllers demonstrate, see [docs/EXAMPLE.md](../docs/EXAMPLE.md).
 
-The deployed build lives at <https://chessmess.github.io/UltimateDarkTowerDisplay/>.
+The deployed build lives at <https://chessmess.github.io/UltimateDarkTower/display/>.

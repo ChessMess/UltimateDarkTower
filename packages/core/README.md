@@ -121,8 +121,8 @@ A guided map of the docs lives at [docs/README.md](docs/README.md). The headline
 
 This library is part of a wider Return to Dark Tower family. See [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) for the full list. Highlights:
 
-- **[UltimateDarkTowerDisplay](https://github.com/ChessMess/UltimateDarkTowerDisplay)** — composable renderers (text, 2D, 3D) for tower state.
-- **[UltimateDarkTowerSync](https://github.com/ChessMess/UltimateDarkTowerSync)** — state synchronization across devices.
+- **[UltimateDarkTowerDisplay](https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/display)** — composable renderers (text, 2D, 3D) for tower state.
+- **[UltimateDarkTowerSync](https://github.com/ChessMess/UltimateDarkTower/tree/main/apps/sync)** — state synchronization across devices.
 - **[mcp-server-return-to-dark-tower](https://github.com/ChessMess/mcp-server-return-to-dark-tower)** — MCP server exposing tower control to AI agents.
 
 ## Known issues

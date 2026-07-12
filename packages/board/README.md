@@ -4,7 +4,7 @@
   <img src="docs/readme-header-shot.png" alt="ultimate dark tower board" width="966" />
 </p>
 
-[![CI](https://img.shields.io/github/actions/workflow/status/ChessMess/UltimateDarkTowerBoard/ci.yml?branch=main&label=CI)](https://github.com/ChessMess/UltimateDarkTowerBoard/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/ChessMess/UltimateDarkTower/ci.yml?branch=main&label=CI)](https://github.com/ChessMess/UltimateDarkTower/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
@@ -12,13 +12,13 @@ Composable **state + renderers** for the _Return to Dark Tower_ game board. It o
 `BoardState` (heroes, foes, adversary, skulls-on-buildings, monuments, space markers),
 renders it three ways — text readout, 2D overhead map, 3D in-scene board — and ships an
 optional dockable editing UI. The 3D board is a `ScenePlugin` for
-[`ultimatedarktowerdisplay`](https://github.com/ChessMess/UltimateDarkTowerDisplay)'s
+[`ultimatedarktowerdisplay`](https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/display)'s
 `Tower3DView`. It enforces **no game rules**: it stores, renders, and emits events; hosts own rules.
 
 ---
 
 <p align="center"><strong>
-  <a href="https://chessmess.github.io/UltimateDarkTowerBoard/">▶ Live Web Demo — Board Example </a>
+  <a href="https://chessmess.github.io/UltimateDarkTower/board/">▶ Live Web Demo — Board Example </a>
 </strong></p>
 
 ---
@@ -115,7 +115,7 @@ Part of the _Return to Dark Tower_ family — the **board-domain** sibling to th
 
 - [ultimatedarktower](https://github.com/ChessMess/UltimateDarkTower) — BLE driver + the static board
   data this package re-exports (locations, rosters, `BOARD_ANCHORS`, `BOARD_ADJACENCY` + graph helpers).
-- [ultimatedarktowerdisplay](https://github.com/ChessMess/UltimateDarkTowerDisplay) — the tower's
+- [ultimatedarktowerdisplay](https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/display) — the tower's
   text/2D/3D renderers; hosts this package's 3D board as a `ScenePlugin`.
 
 ## See also

@@ -46,7 +46,7 @@ file to open.
 
 ## External
 
-- **GitHub:** [ChessMess/UltimateDarkTowerRelay](https://github.com/ChessMess/UltimateDarkTowerRelay)
+- **GitHub:** [ChessMess/UltimateDarkTowerRelay](https://github.com/ChessMess/UltimateDarkTower)
 - **Changelog:** [../CHANGELOG.md](../CHANGELOG.md)
 - **Contributing:** [../CONTRIBUTING.md](../CONTRIBUTING.md)
 - **Core library:** [`ultimatedarktower`](https://github.com/ChessMess/UltimateDarkTower)
