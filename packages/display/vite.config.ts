@@ -79,8 +79,16 @@ function emitOggsAsFiles(): Plugin {
   // expression so the .href is part of what gets substituted — Rollup's
   // ROLLUP_FILE_URL_ placeholder already expands to a `.href` string, so
   // capturing .href in the match avoids a redundant double-wrap.
+  //
+  // Whitespace tolerance matters: Prettier line-wraps the longer entries in
+  // audioLibrary.ts, either dropping `.href` onto the next line or exploding
+  // the call across lines with a trailing comma after `import.meta.url`. Both
+  // shapes must still match, or those files silently fall through to Vite's
+  // lib-mode processor and get base64-inlined into the bundle instead of
+  // emitted as separate assets. So allow an optional trailing comma before `)`
+  // and arbitrary whitespace between `)` and `.href`.
   const URL_RE =
-    /new URL\(\s*['"]\.\/assets\/([A-Za-z0-9_.-]+\.ogg)['"]\s*,\s*import\.meta\.url\s*\)\.href/g;
+    /new URL\(\s*['"]\.\/assets\/([A-Za-z0-9_.-]+\.ogg)['"]\s*,\s*import\.meta\.url\s*,?\s*\)\s*\.href/g;
   return {
     name: 'emit-oggs-as-files',
     apply: 'build',
