@@ -21,15 +21,13 @@ title.style.color = '#fca5a5';
 
 const body = document.createElement('pre');
 body.textContent = [
-  'This example was built without UltimateDarkTowerDisplay.',
+  'This example was built without the ultimatedarktowerdisplay package.',
   '',
-  'Required dependency: UltimateDarkTowerDisplay',
-  'Expected location: ../UltimateDarkTowerDisplay',
+  'Required workspace package: ultimatedarktowerdisplay (packages/display)',
   '',
   'To enable the emulator:',
-  '1. Clone or place UltimateDarkTowerDisplay beside UltimateDarkTower',
-  '2. Run npm install in UltimateDarkTowerDisplay if needed',
-  '3. Rebuild this repo with npm run build',
+  '1. Run `pnpm install` at the monorepo root',
+  '2. Rebuild with `pnpm --filter ultimatedarktower build`',
 ].join('\n');
 body.style.whiteSpace = 'pre-wrap';
 body.style.lineHeight = '1.6';

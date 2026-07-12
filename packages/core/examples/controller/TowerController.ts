@@ -78,13 +78,11 @@ function showTowerEmulatorMissingPopup(): void {
   const message = [
     'Tower Emulator is not available in this build.',
     '',
-    'Required dependency: UltimateDarkTowerDisplay',
-    'Expected location: ../UltimateDarkTowerDisplay (next to this repo)',
+    'Required workspace package: ultimatedarktowerdisplay (packages/display)',
     '',
     'What to do:',
-    '1. Clone or place UltimateDarkTowerDisplay beside UltimateDarkTower',
-    '2. Run npm install in UltimateDarkTowerDisplay if needed',
-    '3. Rebuild this repo with npm run build',
+    '1. Run `pnpm install` at the monorepo root',
+    '2. Rebuild with `pnpm --filter ultimatedarktower build`',
   ].join('\n');
 
   logger.error(message, '[TC]');

@@ -4,10 +4,10 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 import { createRequire } from 'node:module';
 
-// UTDD is deployed to GitHub Pages under /UltimateDarkTowerDigital/.
-// Use a relative base in production so assets resolve regardless of the repo path.
+// Deployed to the unified Pages site at /UltimateDarkTower/digital/. The base is
+// injected by deploy-pages.yml (--base); '/' keeps local dev/build path-agnostic.
 export default defineConfig({
-  base: process.env.GITHUB_PAGES === 'true' ? '/UltimateDarkTowerDigital/' : '/',
+  base: '/',
   plugins: [react()],
   server: {
     port: process.env.PORT ? Number(process.env.PORT) : 5173,

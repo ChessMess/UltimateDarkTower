@@ -148,7 +148,7 @@ async function buildExamples() {
   try {
     const displayAvailable = hasLocalDisplayCheckout();
     if (!displayAvailable) {
-      console.log('   - UltimateDarkTowerDisplay not found at ../UltimateDarkTowerDisplay');
+      console.log('   - display package not found at packages/display (run `pnpm install`)');
       console.log('   - Tower Emulator will show setup instructions instead of the 3D display');
     }
 
