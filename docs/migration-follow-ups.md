@@ -8,9 +8,15 @@ Recorded here so they can be reviewed and scheduled independently of the cutover
 Status legend: **OPEN** (needs work/decision) · **DONE** (fixed on the migration
 branch) · **WONTFIX** (documented, intentionally left).
 
+> **Deferred (2026-07-12):** the remaining code-cleanup items — **#1 board.png
+> inlining**, **#3 nested-ESLint crash**, **#4 ESLint violation debt** — are
+> intentionally postponed to **after the cutover**. They are non-blocking and do
+> not affect correctness of the shipped apps; scheduling them post-cutover keeps
+> the migration branch stable for merge.
+
 ---
 
-## 1. `board.png` is base64-inlined into the display library bundle — OPEN ⚠️
+## 1. `board.png` is base64-inlined into the display library bundle — OPEN (deferred, post-cutover) ⚠️
 
 **Severity:** high (published-package size) · **Package:** `packages/display`
 
@@ -53,7 +59,7 @@ all 115 `.ogg` as files (was 92); zero audio base64 remains in the bundle.
 
 ---
 
-## 3. Per-package `pnpm run ci` lint crashes on a nested ESLint — OPEN
+## 3. Per-package `pnpm run ci` lint crashes on a nested ESLint — OPEN (deferred, post-cutover)
 
 **Severity:** low (root gating CI unaffected) · **Package:** `packages/display`
 (likely others with a nested `node_modules/eslint`)
@@ -76,7 +82,7 @@ per-package lint. Ties into item 4.
 
 ---
 
-## 4. Unified-ESLint violation debt — OPEN
+## 4. Unified-ESLint violation debt — OPEN (deferred, post-cutover)
 
 **Severity:** low (lint is not in the gating CI path)
 
