@@ -67,10 +67,13 @@ jobs:
           vbuild "ultimatedarktowerdisplay" display --config vite.config.example.ts
           vbuild "ultimatedarktowerboard"   board   --config vite.example.config.ts
 
-          # Core controller/game examples (esbuild-built, relative asset paths)
-          mkdir -p "$SITE/controller" "$SITE/game"
+          # Core controller/game examples. Their HTML/CSS reference shared assets
+          # (background, fonts, style.css, glyphs) via ../assets/, so the examples/assets
+          # dir must sit at the site root as a sibling of controller/ and game/.
+          mkdir -p "$SITE/controller" "$SITE/game" "$SITE/assets"
           cp -r packages/core/dist/examples/controller/. "$SITE/controller/"
           cp -r packages/core/dist/examples/game/.       "$SITE/game/" || true
+          cp -r packages/core/dist/examples/assets/.     "$SITE/assets/"
 
           # Landing page, Jekyll bypass, and the legacy deep-URL redirect stub.
           cp docs/pages/index.html "$SITE/index.html"

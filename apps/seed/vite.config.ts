@@ -52,6 +52,13 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     target: 'es2020',
+    commonjsOptions: {
+      // ultimatedarktower's CJS entry resolves via the pnpm workspace symlink to
+      // packages/core/dist (a realpath outside node_modules), which Rollup's
+      // commonjs plugin skips by default — leaving raw require() calls that throw
+      // "require is not defined" in the browser. Opt the workspace core dir in.
+      include: [/node_modules/, /packages\/core/],
+    },
     rollupOptions: {
       external: ['@stoprocent/noble'],
     },
