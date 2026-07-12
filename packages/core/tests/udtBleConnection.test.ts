@@ -38,8 +38,8 @@ function createBatteryResponse(millivolts: number): Uint8Array {
   const data = new Uint8Array(20);
   data[0] = 7; // BATTERY_READING command value
   // getMilliVoltsFromTowerResponse reads: mv[0]=command[4] (low), mv[1]=command[3] (high)
-  data[4] = millivolts & 0xFF;         // low byte
-  data[3] = (millivolts >> 8) & 0xFF;  // high byte
+  data[4] = millivolts & 0xff; // low byte
+  data[3] = (millivolts >> 8) & 0xff; // high byte
   return data;
 }
 
@@ -110,9 +110,7 @@ describe('UdtBleConnection', () => {
 
     test('writeCommand throws a clear error when never connected', async () => {
       const deferred = new UdtBleConnection(logger, callbacks);
-      await expect(deferred.writeCommand(new Uint8Array([0x00]))).rejects.toThrow(
-        /not connected/i,
-      );
+      await expect(deferred.writeCommand(new Uint8Array([0x00]))).rejects.toThrow(/not connected/i);
     });
   });
 
@@ -238,7 +236,9 @@ describe('UdtBleConnection', () => {
       connection.batteryHeartbeatVerifyConnection = false;
       await connection.connect();
 
-      jest.advanceTimersByTime(connection.batteryHeartbeatTimeout + connection.connectionMonitorFrequency + 100);
+      jest.advanceTimersByTime(
+        connection.batteryHeartbeatTimeout + connection.connectionMonitorFrequency + 100,
+      );
 
       expect(connection.isConnected).toBe(false);
       expect(callbacks.onTowerDisconnect).toHaveBeenCalled();
@@ -251,7 +251,9 @@ describe('UdtBleConnection', () => {
 
       const heartbeatBefore = connection.lastBatteryHeartbeat;
 
-      jest.advanceTimersByTime(connection.batteryHeartbeatTimeout + connection.connectionMonitorFrequency + 100);
+      jest.advanceTimersByTime(
+        connection.batteryHeartbeatTimeout + connection.connectionMonitorFrequency + 100,
+      );
 
       expect(connection.isConnected).toBe(true);
       expect(connection.lastBatteryHeartbeat).toBeGreaterThan(heartbeatBefore);
@@ -263,7 +265,9 @@ describe('UdtBleConnection', () => {
       await connection.connect();
       connection.performingLongCommand = true;
 
-      jest.advanceTimersByTime(connection.batteryHeartbeatTimeout + connection.connectionMonitorFrequency + 100);
+      jest.advanceTimersByTime(
+        connection.batteryHeartbeatTimeout + connection.connectionMonitorFrequency + 100,
+      );
 
       expect(connection.isConnected).toBe(true);
     });
@@ -273,7 +277,9 @@ describe('UdtBleConnection', () => {
       connection.enableBatteryHeartbeatMonitoring = false;
       await connection.connect();
 
-      jest.advanceTimersByTime(connection.connectionTimeoutThreshold + connection.connectionMonitorFrequency + 100);
+      jest.advanceTimersByTime(
+        connection.connectionTimeoutThreshold + connection.connectionMonitorFrequency + 100,
+      );
 
       expect(connection.isConnected).toBe(false);
       expect(callbacks.onTowerDisconnect).toHaveBeenCalled();
@@ -339,7 +345,7 @@ describe('UdtBleConnection', () => {
     test('should prevent reconnection after disposal', async () => {
       await connection.cleanup();
       await expect(connection.connect()).rejects.toThrow(
-        'UdtBleConnection instance has been disposed and cannot reconnect'
+        'UdtBleConnection instance has been disposed and cannot reconnect',
       );
     });
   });

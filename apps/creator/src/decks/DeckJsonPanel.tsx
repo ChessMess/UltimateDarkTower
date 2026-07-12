@@ -61,7 +61,9 @@ export function DeckJsonPanel() {
     return (
       <div style={panelStyle}>
         <div style={headerStyle}>Deck JSON</div>
-        <div style={{ padding: 12, color: 'var(--c-text-faint)', fontStyle: 'italic', fontSize: 11 }}>
+        <div
+          style={{ padding: 12, color: 'var(--c-text-faint)', fontStyle: 'italic', fontSize: 11 }}
+        >
           No scenario loaded
         </div>
       </div>

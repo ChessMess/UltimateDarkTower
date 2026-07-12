@@ -44,7 +44,10 @@ export interface BluetoothAdapterConfig {
  * Base class for all Bluetooth-related errors
  */
 export class BluetoothError extends Error {
-  constructor(message: string, public readonly originalError?: unknown) {
+  constructor(
+    message: string,
+    public readonly originalError?: unknown,
+  ) {
     super(message);
     this.name = 'BluetoothError';
   }

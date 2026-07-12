@@ -108,7 +108,6 @@ describe('BluetoothAdapterFactory', () => {
         Object.defineProperty(global, 'process', { value: savedProcess, configurable: true });
       }
     });
-
   });
 
   describe('create', () => {

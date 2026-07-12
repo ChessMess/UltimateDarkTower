@@ -25,7 +25,9 @@ export const FIRMWARE_TICK_HZ = 50;
 
 const tickToMs = (ticks: number): number => Math.round((ticks * 1000) / FIRMWARE_TICK_HZ);
 
-export const SEQUENCE_METADATA: Readonly<Record<keyof typeof TOWER_LIGHT_SEQUENCES, SequenceMetadata>> = {
+export const SEQUENCE_METADATA: Readonly<
+  Record<keyof typeof TOWER_LIGHT_SEQUENCES, SequenceMetadata>
+> = {
   twinkle: {
     name: 'twinkle',
     id: TOWER_LIGHT_SEQUENCES.twinkle,

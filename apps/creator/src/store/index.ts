@@ -119,10 +119,7 @@ function revalidate(doc: ScenarioDoc): ValidationResults {
   return runValidation(doc);
 }
 
-function annotateErrors(
-  nodes: CreatorNode[],
-  results: ValidationResults,
-): CreatorNode[] {
+function annotateErrors(nodes: CreatorNode[], results: ValidationResults): CreatorNode[] {
   const errorsByNode: Record<string, string[]> = {};
   for (const err of [...results.l2.errors, ...results.l3.errors]) {
     // Errors that reference a node id (heuristic: look for quoted ids like "n-xxx")
@@ -232,7 +229,13 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const updated = flowToSchema(nodes, edges, schemaDoc);
     const results = revalidate(updated);
     const annotated = annotateErrors(nodes, results);
-    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+    });
   },
 
   setRfNodes(nodes) {
@@ -259,7 +262,13 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const nodes = derivedNodes.map((n) => (n.id === id ? { ...n, position } : n));
     const results = revalidate(updated);
     const annotated = annotateErrors(nodes, results);
-    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+    });
   },
 
   deleteNode(id) {
@@ -283,11 +292,16 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       }
       return Object.keys(cleanWires).length > 0
         ? { ...next, wires: cleanWires }
-        : (() => { const { wires: _w, ...rest } = next; void _w; return rest; })();
+        : (() => {
+            const { wires: _w, ...rest } = next;
+            void _w;
+            return rest;
+          })();
     });
-    const newEntry = schemaDoc.graph.entry === id && cleanNodes.length > 0
-      ? cleanNodes[0].id
-      : schemaDoc.graph.entry;
+    const newEntry =
+      schemaDoc.graph.entry === id && cleanNodes.length > 0
+        ? cleanNodes[0].id
+        : schemaDoc.graph.entry;
     const updated: ScenarioDoc = {
       ...schemaDoc,
       graph: { entry: newEntry, nodes: cleanNodes },
@@ -320,7 +334,13 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const { nodes, edges } = deriveRF(updated);
     const results = revalidate(updated);
     const annotated = annotateErrors(nodes, results);
-    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+    });
   },
 
   // lifecycle.selectHero: ensure a library.heroes entry exists for every heroId in a node's
@@ -345,7 +365,13 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const { nodes, edges } = deriveRF(updated);
     const results = revalidate(updated);
     const annotated = annotateErrors(nodes, results);
-    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+    });
   },
 
   updateNodeLabel(id, label) {
@@ -355,15 +381,19 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       ...schemaDoc,
       graph: {
         ...schemaDoc.graph,
-        nodes: schemaDoc.graph.nodes.map((n) =>
-          n.id === id ? { ...n, label } : n,
-        ),
+        nodes: schemaDoc.graph.nodes.map((n) => (n.id === id ? { ...n, label } : n)),
       },
     };
     const { nodes, edges } = deriveRF(updated);
     const results = revalidate(updated);
     const annotated = annotateErrors(nodes, results);
-    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+    });
   },
 
   updateNodeDescription(id, description) {
@@ -387,7 +417,13 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const { nodes, edges } = deriveRF(updated);
     const results = revalidate(updated);
     const annotated = annotateErrors(nodes, results);
-    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+    });
   },
 
   updateScenarioDescription(description) {
@@ -415,7 +451,11 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const selections = { ...((setup.selections as Record<string, unknown>) ?? {}) };
     const foes = { ...((selections.foes as Record<string, unknown>) ?? {}) };
 
-    const setOrDelete = (obj: Record<string, unknown>, key: string, val: string | null | undefined) => {
+    const setOrDelete = (
+      obj: Record<string, unknown>,
+      key: string,
+      val: string | null | undefined,
+    ) => {
       if (val) obj[key] = val;
       else delete obj[key];
     };
@@ -451,12 +491,18 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     if (!trimmed) {
       delete selections.mainGoalId;
     } else {
-      const existingId = typeof selections.mainGoalId === 'string' ? selections.mainGoalId : undefined;
+      const existingId =
+        typeof selections.mainGoalId === 'string' ? selections.mainGoalId : undefined;
       if (existingId && quests[existingId]) {
         quests[existingId] = { ...(quests[existingId] as Record<string, unknown>), name: trimmed };
       } else {
         const id = slugify(trimmed) || 'main-goal';
-        quests[id] = { id, name: trimmed, isMainGoal: true, outcomes: { success: [], failure: [] } };
+        quests[id] = {
+          id,
+          name: trimmed,
+          isMainGoal: true,
+          outcomes: { success: [], failure: [] },
+        };
         selections.mainGoalId = id;
       }
     }
@@ -564,7 +610,13 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const { nodes: rfNodes, edges } = deriveRF(updated);
     const results = revalidate(updated);
     const annotated = annotateErrors(rfNodes, results);
-    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+    });
   },
 
   addDungeonSubflow(dungeonId) {
@@ -572,7 +624,9 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     if (!schemaDoc) return;
     let nodes: SchemaNode[] = [...schemaDoc.graph.nodes];
     const already = nodes.find(
-      (n) => n.kind === 'dungeon.subflow' && (n.props as { dungeonId?: string } | undefined)?.dungeonId === dungeonId,
+      (n) =>
+        n.kind === 'dungeon.subflow' &&
+        (n.props as { dungeonId?: string } | undefined)?.dungeonId === dungeonId,
     );
     let newSubflowId: string | undefined;
     let newSubflowPosition: { x: number; y: number } | undefined;
@@ -665,7 +719,13 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const { nodes, edges } = deriveRF(updated);
     const results = revalidate(updated);
     const annotated = annotateErrors(nodes, results);
-    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+    });
   },
 
   setEntry(id) {
@@ -682,7 +742,13 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       nodes.map((n) => ({ ...n, data: { ...n.data, isEntry: n.id === id } })),
       results,
     );
-    set({ schemaDoc: updated, rfNodes: annotated, rfEdges: edges, validationResults: results, isDirty: true });
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+    });
   },
 
   selectNode(id) {

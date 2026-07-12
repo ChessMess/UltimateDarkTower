@@ -2,7 +2,15 @@
 // to the draft within ~800ms and there is no undo, so anything destructive must pass through here.
 // Cancel is the focused default (Enter cancels); Escape and overlay click also cancel.
 
-import { overlay, panel, dialogTitle, dialogBody, buttonRow, secondaryBtn, dangerDialogBtn } from './modal';
+import {
+  overlay,
+  panel,
+  dialogTitle,
+  dialogBody,
+  buttonRow,
+  secondaryBtn,
+  dangerDialogBtn,
+} from './modal';
 
 export interface ConfirmDialogProps {
   title: string;

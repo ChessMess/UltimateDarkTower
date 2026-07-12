@@ -23,7 +23,9 @@ const host = process.env['RELAY_HOST'] ?? '127.0.0.1';
 const url = `ws://${host}:${port}`;
 const isParticipant = process.env['MOCK_ROLE'] === 'participant';
 
-console.log(`[mock-consumer] connecting to ${url} … (role: ${isParticipant ? 'participant' : 'observer'})`);
+console.log(
+  `[mock-consumer] connecting to ${url} … (role: ${isParticipant ? 'participant' : 'observer'})`,
+);
 
 const client = new RelayClient({
   label: 'mock-consumer',

@@ -36,7 +36,10 @@ type PScenario = {
   };
 };
 type EngineShape = {
-  clock?: { dungeon?: { dungeonId: string; currentRoom: string | null } | null; activeHero?: string };
+  clock?: {
+    dungeon?: { dungeonId: string; currentRoom: string | null } | null;
+    activeHero?: string;
+  };
   heroes?: Record<string, { advantages?: number }>;
 };
 
@@ -67,7 +70,8 @@ export function DungeonPanel() {
   const revealed = new Set(revealedRooms[dc.dungeonId] ?? []);
   if (dc.currentRoom) revealed.add(dc.currentRoom); // the current room is always visible
   const currentRoom = rooms.find((r) => r.id === dc.currentRoom);
-  const roomAt = (c: number, r: number) => rooms.find((rm) => rm.cell?.col === c && rm.cell?.row === r);
+  const roomAt = (c: number, r: number) =>
+    rooms.find((rm) => rm.cell?.col === c && rm.cell?.row === r);
 
   const advantages = engineState?.heroes?.[engineState.clock?.activeHero ?? '']?.advantages ?? 0;
 
@@ -154,7 +158,13 @@ export function DungeonPanel() {
             <img
               src={scenario.library.resources.images[currentRoom.artRef]}
               alt=""
-              style={{ width: '100%', maxHeight: 120, objectFit: 'cover', borderRadius: 6, marginBottom: 8 }}
+              style={{
+                width: '100%',
+                maxHeight: 120,
+                objectFit: 'cover',
+                borderRadius: 6,
+                marginBottom: 8,
+              }}
             />
           )}
           <div style={{ fontWeight: 700, fontSize: 13 }}>
@@ -172,7 +182,10 @@ export function DungeonPanel() {
 
       {/* prompts */}
       {awaiting?.id === 'dungeonRoomAdvantage' && (
-        <ImprovePrompt advantages={advantages} improveCount={currentRoom?.improveOnce?.effects?.length ?? 0} />
+        <ImprovePrompt
+          advantages={advantages}
+          improveCount={currentRoom?.improveOnce?.effects?.length ?? 0}
+        />
       )}
       {awaiting?.id === 'dungeonMove' && <MovePrompt room={currentRoom} />}
     </div>
@@ -184,19 +197,38 @@ function ImprovePrompt({ advantages, improveCount }: { advantages: number; impro
     <div style={{ marginBottom: 4 }}>
       <div style={label}>
         Spend 1 Advantage to improve this room? (once per room) — you have {advantages}
-        {improveCount > 0 ? ` · improves ${improveCount} effect${improveCount === 1 ? '' : 's'}` : ''}
+        {improveCount > 0
+          ? ` · improves ${improveCount} effect${improveCount === 1 ? '' : 's'}`
+          : ''}
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
         <button
-          style={{ ...btn, background: 'var(--c-success)', color: '#fff', borderColor: 'var(--c-success)' }}
+          style={{
+            ...btn,
+            background: 'var(--c-success)',
+            color: '#fff',
+            borderColor: 'var(--c-success)',
+          }}
           disabled={advantages < 1}
-          onClick={() => handleInput({ requestId: 'dungeonRoomAdvantage', value: { improve: true }, kind: 'decision' })}
+          onClick={() =>
+            handleInput({
+              requestId: 'dungeonRoomAdvantage',
+              value: { improve: true },
+              kind: 'decision',
+            })
+          }
         >
           Improve
         </button>
         <button
           style={btn}
-          onClick={() => handleInput({ requestId: 'dungeonRoomAdvantage', value: { improve: false }, kind: 'decision' })}
+          onClick={() =>
+            handleInput({
+              requestId: 'dungeonRoomAdvantage',
+              value: { improve: false },
+              kind: 'decision',
+            })
+          }
         >
           Skip
         </button>
@@ -215,14 +247,18 @@ function MovePrompt({ room }: { room?: PRoom }) {
           <button
             key={d}
             style={btn}
-            onClick={() => handleInput({ requestId: 'dungeonMove', value: { direction: d }, kind: 'decision' })}
+            onClick={() =>
+              handleInput({ requestId: 'dungeonMove', value: { direction: d }, kind: 'decision' })
+            }
           >
             {DIR_LABEL[d]}
           </button>
         ))}
         <button
           style={{ ...btn, color: 'var(--c-danger)' }}
-          onClick={() => handleInput({ requestId: 'dungeonMove', value: { leave: true }, kind: 'decision' })}
+          onClick={() =>
+            handleInput({ requestId: 'dungeonMove', value: { leave: true }, kind: 'decision' })
+          }
         >
           Leave dungeon
         </button>

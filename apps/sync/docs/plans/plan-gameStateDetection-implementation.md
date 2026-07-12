@@ -8,14 +8,14 @@ The host intercepts raw 20-byte tower command packets from the companion app and
 
 The original plan document (`docs/plan-gameStateSequenceDetection.prompt.md`) proposed 7 steps including a separate mapping file, a new `sequenceDetector.ts` module, confidence scoring, and a new reporting script. After deep-diving into the codebase, several of those steps are unnecessary:
 
-| Original Proposal | Verdict | Reason |
-|---|---|---|
-| Extract enums, create canonical mapping file | **Skip** | `TOWER_LIGHT_SEQUENCES` (19 entries) and `TOWER_AUDIO_LIBRARY` (115 entries) from the `ultimatedarktower` npm package ARE the canonical source. Already used in `analyzeLogs.ts`. |
-| Separate `sequenceMappings` module | **Skip** | The UDT constants already have name, value, and category. No separate data structure needed. |
-| New `sequenceDetector.ts` with event emitter | **Simplify** | Detection is a pure function on a single packet — no state machine needed. Enhance `CommandParser.parse()` instead. |
-| Confidence scoring | **Skip** | All IDs are deterministic. 0x13 is always monthStarted. 0x26 is always BattleVictory. Simple `source: 'led' | 'audio'` field suffices. |
-| New `reportSequences.ts` script | **Enhance existing** | `analyzeLogs.ts` already builds the same reverse lookup maps and does LED/audio analysis. Add a `--game-events` flag. |
-| Update observerDisplay.ts | **Defer** | ObserverDisplay is a passive state tracker; game events flow through ParsedCommand → logger → analyzeLogs. No need to modify it for the core feature. |
+| Original Proposal                            | Verdict              | Reason                                                                                                                                                                            |
+| -------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Extract enums, create canonical mapping file | **Skip**             | `TOWER_LIGHT_SEQUENCES` (19 entries) and `TOWER_AUDIO_LIBRARY` (115 entries) from the `ultimatedarktower` npm package ARE the canonical source. Already used in `analyzeLogs.ts`. |
+| Separate `sequenceMappings` module           | **Skip**             | The UDT constants already have name, value, and category. No separate data structure needed.                                                                                      |
+| New `sequenceDetector.ts` with event emitter | **Simplify**         | Detection is a pure function on a single packet — no state machine needed. Enhance `CommandParser.parse()` instead.                                                               |
+| Confidence scoring                           | **Skip**             | All IDs are deterministic. 0x13 is always monthStarted. 0x26 is always BattleVictory. Simple `source: 'led'                                                                       | 'audio'` field suffices. |
+| New `reportSequences.ts` script              | **Enhance existing** | `analyzeLogs.ts` already builds the same reverse lookup maps and does LED/audio analysis. Add a `--game-events` flag.                                                             |
+| Update observerDisplay.ts                    | **Defer**            | ObserverDisplay is a passive state tracker; game events flow through ParsedCommand → logger → analyzeLogs. No need to modify it for the core feature.                             |
 
 ## Recommended Approach
 
@@ -32,8 +32,8 @@ Enrich the existing `CommandParser` to detect all game events from LED and audio
 - Add `LogGameEvent` interface (dependency-free, plain TS):
   ```typescript
   export interface LogGameEvent {
-    id: string;       // e.g. 'monthStarted', 'BattleVictory'
-    name: string;     // e.g. 'Month Started', 'Battle Victory'
+    id: string; // e.g. 'monthStarted', 'BattleVictory'
+    name: string; // e.g. 'Month Started', 'Battle Victory'
     source: 'led' | 'audio';
     category?: string; // e.g. 'Battle', 'State', 'Seals'
   }
@@ -81,6 +81,7 @@ Enrich the existing `CommandParser` to detect all game events from LED and audio
 **File:** `packages/host/src/index.ts` (lines 60-69)
 
 Current code:
+
 ```typescript
 tower.onCommandReceived = (data) => {
   if (!parser.isValid(data)) { ... }
@@ -91,6 +92,7 @@ tower.onCommandReceived = (data) => {
 ```
 
 Change to:
+
 ```typescript
 tower.onCommandReceived = (data) => {
   const parsed = parser.parse(data);
@@ -118,6 +120,7 @@ Already uses `parser.parse(data)` — just add the `gameEvents` passthrough to `
 **File:** `tests/unit/host/commandParser.test.ts`
 
 Add test cases:
+
 - Packet with `byte[19]=0x13` → `gameEvents` contains `{id:'monthStarted', source:'led'}`
 - Packet with `byte[19]=0x0b` → `gameEvents` contains `{id:'defeat', source:'led'}`
 - Packet with `byte[19]=0x0c` → `gameEvents` contains `{id:'victory', source:'led'}`
@@ -144,15 +147,15 @@ Add test cases:
 
 ## Files to Modify (ordered)
 
-| # | File | Change |
-|---|---|---|
-| 1 | `packages/shared/src/logging.ts` | Add `LogGameEvent`, update `LogEntry`, `makeCommandLogEntry`, `formatLogEntry` |
-| 2 | `packages/host/src/commandParser.ts` | Import UDT constants, build reverse maps, add `GameEvent`/`gameEvents` to parse output |
-| 3 | `packages/host/src/logger.ts` | Pass-through `gameEvents` in `logCommand()` |
-| 4 | `packages/host/src/index.ts` | Use `parser.parse()` result, pass `gameEvents` to logger |
-| 5 | `packages/electron/src/main/main.ts` | Pass `gameEvents` to logger (already uses `parser.parse()`) |
-| 6 | `tests/unit/host/commandParser.test.ts` | Add game event detection tests |
-| 7 | `packages/host/scripts/analyzeLogs.ts` | Add `--game-events` flag and summary report |
+| #   | File                                    | Change                                                                                 |
+| --- | --------------------------------------- | -------------------------------------------------------------------------------------- |
+| 1   | `packages/shared/src/logging.ts`        | Add `LogGameEvent`, update `LogEntry`, `makeCommandLogEntry`, `formatLogEntry`         |
+| 2   | `packages/host/src/commandParser.ts`    | Import UDT constants, build reverse maps, add `GameEvent`/`gameEvents` to parse output |
+| 3   | `packages/host/src/logger.ts`           | Pass-through `gameEvents` in `logCommand()`                                            |
+| 4   | `packages/host/src/index.ts`            | Use `parser.parse()` result, pass `gameEvents` to logger                               |
+| 5   | `packages/electron/src/main/main.ts`    | Pass `gameEvents` to logger (already uses `parser.parse()`)                            |
+| 6   | `tests/unit/host/commandParser.test.ts` | Add game event detection tests                                                         |
+| 7   | `packages/host/scripts/analyzeLogs.ts`  | Add `--game-events` flag and summary report                                            |
 
 ## Key Design Decisions
 
@@ -170,45 +173,45 @@ Add test cases:
 
 Source: `ultimatedarktower/src/udtConstants.ts` `TOWER_LIGHT_SEQUENCES`
 
-| Value | ID | Game Meaning |
-|---|---|---|
-| 0x01 | twinkle | Generic twinkle effect |
-| 0x02 | flareThenFade | Flare then fade effect |
-| 0x03 | flareThenFadeBase | Flare then fade (base LEDs) |
-| 0x04 | flareThenFlicker | Flare then flicker effect |
-| 0x05 | angryStrobe01 | Tower attacking (phase 1) |
-| 0x06 | angryStrobe02 | Tower attacking (phase 2) |
-| 0x07 | angryStrobe03 | Tower attacking (phase 3) |
-| 0x08 | gloat01 | Tower gloating (phase 1) |
-| 0x09 | gloat02 | Tower gloating (phase 2) |
-| 0x0a | gloat03 | Tower gloating (phase 3) |
-| 0x0b | defeat | Players defeated the tower |
-| 0x0c | victory | Tower defeated the players |
-| 0x0d | dungeonIdle | Dungeon mode idle |
-| 0x0e | sealReveal | Seal broken/revealed |
-| 0x0f | rotationAllDrums | All drums rotating |
-| 0x10 | rotationDrumTop | Top drum rotating |
-| 0x11 | rotationDrumMiddle | Middle drum rotating |
-| 0x12 | rotationDrumBottom | Bottom drum rotating |
-| 0x13 | monthStarted | New month begins |
+| Value | ID                 | Game Meaning                |
+| ----- | ------------------ | --------------------------- |
+| 0x01  | twinkle            | Generic twinkle effect      |
+| 0x02  | flareThenFade      | Flare then fade effect      |
+| 0x03  | flareThenFadeBase  | Flare then fade (base LEDs) |
+| 0x04  | flareThenFlicker   | Flare then flicker effect   |
+| 0x05  | angryStrobe01      | Tower attacking (phase 1)   |
+| 0x06  | angryStrobe02      | Tower attacking (phase 2)   |
+| 0x07  | angryStrobe03      | Tower attacking (phase 3)   |
+| 0x08  | gloat01            | Tower gloating (phase 1)    |
+| 0x09  | gloat02            | Tower gloating (phase 2)    |
+| 0x0a  | gloat03            | Tower gloating (phase 3)    |
+| 0x0b  | defeat             | Players defeated the tower  |
+| 0x0c  | victory            | Tower defeated the players  |
+| 0x0d  | dungeonIdle        | Dungeon mode idle           |
+| 0x0e  | sealReveal         | Seal broken/revealed        |
+| 0x0f  | rotationAllDrums   | All drums rotating          |
+| 0x10  | rotationDrumTop    | Top drum rotating           |
+| 0x11  | rotationDrumMiddle | Middle drum rotating        |
+| 0x12  | rotationDrumBottom | Bottom drum rotating        |
+| 0x13  | monthStarted       | New month begins            |
 
 ## Reference: Key Audio IDs for Game Events
 
 Source: `ultimatedarktower/src/udtConstants.ts` `TOWER_AUDIO_LIBRARY` (115 total, key ones below)
 
-| Value | ID | Name | Category |
-|---|---|---|---|
-| 0x25 | BattleStart | Battle Start | Battle |
-| 0x26 | BattleVictory | Battle Victory | Battle |
-| 0x3A | DungeonComplete | Dungeon Complete | Dungeon |
-| 0x58 | QuestComplete | Quest Complete | Quest |
-| 0x5F | GameStart | Game Start | State |
-| 0x60 | TowerGloat1 | Tower Gloat 1 | State |
-| 0x6A | MonthEnded | Month Ended | State |
-| 0x6B | MonthStarted | Month Started | State |
-| 0x6C | QuestFailed | Quest Failed | Quest |
-| 0x70 | TowerSeal | Tower Seal | Seals |
-| 0x71 | TowerSkullDropped | Tower Skull Dropped | State |
+| Value | ID                | Name                | Category |
+| ----- | ----------------- | ------------------- | -------- |
+| 0x25  | BattleStart       | Battle Start        | Battle   |
+| 0x26  | BattleVictory     | Battle Victory      | Battle   |
+| 0x3A  | DungeonComplete   | Dungeon Complete    | Dungeon  |
+| 0x58  | QuestComplete     | Quest Complete      | Quest    |
+| 0x5F  | GameStart         | Game Start          | State    |
+| 0x60  | TowerGloat1       | Tower Gloat 1       | State    |
+| 0x6A  | MonthEnded        | Month Ended         | State    |
+| 0x6B  | MonthStarted      | Month Started       | State    |
+| 0x6C  | QuestFailed       | Quest Failed        | Quest    |
+| 0x70  | TowerSeal         | Tower Seal          | Seals    |
+| 0x71  | TowerSkullDropped | Tower Skull Dropped | State    |
 
 ## Verification
 

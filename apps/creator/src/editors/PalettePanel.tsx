@@ -83,7 +83,17 @@ export function PalettePanel() {
             title="Expand all categories"
             aria-label="Expand all categories"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="m7 6 5 5 5-5" />
               <path d="m7 13 5 5 5-5" />
             </svg>
@@ -95,7 +105,17 @@ export function PalettePanel() {
             title="Collapse all categories"
             aria-label="Collapse all categories"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="m17 11-5-5-5 5" />
               <path d="m17 18-5-5-5 5" />
             </svg>
@@ -104,7 +124,9 @@ export function PalettePanel() {
       </div>
 
       {!schemaDoc && (
-        <div style={{ padding: 12, color: 'var(--c-text-faint)', fontSize: 11, fontStyle: 'italic' }}>
+        <div
+          style={{ padding: 12, color: 'var(--c-text-faint)', fontSize: 11, fontStyle: 'italic' }}
+        >
           Load a scenario to add nodes
         </div>
       )}
@@ -131,7 +153,9 @@ export function PalettePanel() {
                 }
               }}
             >
-              <span className={`palette-chevron${isCollapsed ? '' : ' palette-chevron--open'}`}>▸</span>
+              <span className={`palette-chevron${isCollapsed ? '' : ' palette-chevron--open'}`}>
+                ▸
+              </span>
               {cat.label}
             </div>
             {!isCollapsed &&
@@ -145,7 +169,9 @@ export function PalettePanel() {
                     draggable={!!schemaDoc}
                     onDragStart={(e) => handleDragStart(e, kind)}
                     onDoubleClick={() => handleDoubleClick(kind)}
-                    title={schemaDoc ? `Drag or double-click to add ${kind}` : 'Load a scenario first'}
+                    title={
+                      schemaDoc ? `Drag or double-click to add ${kind}` : 'Load a scenario first'
+                    }
                   >
                     {label}
                   </div>
@@ -155,7 +181,15 @@ export function PalettePanel() {
         );
       })}
 
-      <div style={{ padding: '8px 12px', color: 'var(--c-text-faint)', fontSize: 10, marginTop: 'auto', borderTop: '1px solid var(--c-border)' }}>
+      <div
+        style={{
+          padding: '8px 12px',
+          color: 'var(--c-text-faint)',
+          fontSize: 10,
+          marginTop: 'auto',
+          borderTop: '1px solid var(--c-border)',
+        }}
+      >
         Drag to canvas or double-click to add
       </div>
     </div>

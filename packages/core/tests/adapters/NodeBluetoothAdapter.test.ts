@@ -6,14 +6,8 @@
  * intercepts that require so the adapter gets our mock instead of the real package.
  */
 
-import {
-  BluetoothConnectionError,
-  BluetoothTimeoutError,
-} from '../../src/udtBluetoothAdapter';
-import {
-  UART_TX_CHARACTERISTIC_UUID,
-  UART_RX_CHARACTERISTIC_UUID,
-} from '../../src/udtConstants';
+import { BluetoothConnectionError, BluetoothTimeoutError } from '../../src/udtBluetoothAdapter';
+import { UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID } from '../../src/udtConstants';
 
 // --- Build the mock noble singleton BEFORE jest.mock ---
 
@@ -30,12 +24,12 @@ function createMockNoble() {
     }),
     removeListener: jest.fn((event: string, handler: Function) => {
       if (listeners[event]) {
-        listeners[event] = listeners[event].filter(h => h !== handler);
+        listeners[event] = listeners[event].filter((h) => h !== handler);
       }
     }),
     _listeners: listeners,
     _emit: (event: string, ...args: unknown[]) => {
-      (listeners[event] || []).forEach(fn => fn(...args));
+      (listeners[event] || []).forEach((fn) => fn(...args));
     },
   };
 }
@@ -68,21 +62,23 @@ function createMockCharacteristic(uuid: string, options: { readable?: Buffer } =
     }),
     removeListener: jest.fn((event: string, handler: Function) => {
       if (listeners[event]) {
-        listeners[event] = listeners[event].filter(h => h !== handler);
+        listeners[event] = listeners[event].filter((h) => h !== handler);
       }
     }),
     _listeners: listeners,
     _emit: (event: string, ...args: unknown[]) => {
-      (listeners[event] || []).forEach(fn => fn(...args));
+      (listeners[event] || []).forEach((fn) => fn(...args));
     },
   };
 }
 
-function createMockPeripheral(options: {
-  name?: string;
-  characteristics?: ReturnType<typeof createMockCharacteristic>[];
-  state?: string;
-} = {}) {
+function createMockPeripheral(
+  options: {
+    name?: string;
+    characteristics?: ReturnType<typeof createMockCharacteristic>[];
+    state?: string;
+  } = {},
+) {
   const listeners: Record<string, Function[]> = {};
   return {
     advertisement: { localName: options.name ?? 'ReturnToDarkTower' },
@@ -98,12 +94,12 @@ function createMockPeripheral(options: {
     }),
     removeListener: jest.fn((event: string, handler: Function) => {
       if (listeners[event]) {
-        listeners[event] = listeners[event].filter(h => h !== handler);
+        listeners[event] = listeners[event].filter((h) => h !== handler);
       }
     }),
     _listeners: listeners,
     _emit: (event: string, ...args: unknown[]) => {
-      (listeners[event] || []).forEach(fn => fn(...args));
+      (listeners[event] || []).forEach((fn) => fn(...args));
     },
   };
 }
@@ -170,23 +166,25 @@ describe('NodeBluetoothAdapter', () => {
     });
 
     test('should throw BluetoothTimeoutError when scan times out', async () => {
-      jest.spyOn(
-        adapter as unknown as { scanForDevice: (...args: unknown[]) => Promise<unknown> },
-        'scanForDevice'
-      ).mockRejectedValue(
-        new BluetoothTimeoutError('Device scan timeout after 10000ms')
-      );
+      jest
+        .spyOn(
+          adapter as unknown as { scanForDevice: (...args: unknown[]) => Promise<unknown> },
+          'scanForDevice',
+        )
+        .mockRejectedValue(new BluetoothTimeoutError('Device scan timeout after 10000ms'));
 
-      await expect(adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']))
-        .rejects.toBeInstanceOf(BluetoothTimeoutError);
+      await expect(
+        adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']),
+      ).rejects.toBeInstanceOf(BluetoothTimeoutError);
     });
 
     test('should throw BluetoothConnectionError when TX/RX not found', async () => {
       const peripheral = createMockPeripheral({ characteristics: [] });
       setupImmediateDiscovery(peripheral);
 
-      await expect(adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']))
-        .rejects.toBeInstanceOf(BluetoothConnectionError);
+      await expect(
+        adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']),
+      ).rejects.toBeInstanceOf(BluetoothConnectionError);
     });
 
     test('should call cleanup on connection failure', async () => {
@@ -214,13 +212,16 @@ describe('NodeBluetoothAdapter', () => {
 
       // First connect attempt fails (e.g. scan timeout). The adapter's error-path
       // cleanup() must not wipe the callbacks registered above.
-      jest.spyOn(
-        adapter as unknown as { scanForDevice: (...args: unknown[]) => Promise<unknown> },
-        'scanForDevice'
-      ).mockRejectedValueOnce(new BluetoothTimeoutError('Device scan timeout after 10000ms'));
+      jest
+        .spyOn(
+          adapter as unknown as { scanForDevice: (...args: unknown[]) => Promise<unknown> },
+          'scanForDevice',
+        )
+        .mockRejectedValueOnce(new BluetoothTimeoutError('Device scan timeout after 10000ms'));
 
-      await expect(adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']))
-        .rejects.toBeInstanceOf(BluetoothTimeoutError);
+      await expect(
+        adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']),
+      ).rejects.toBeInstanceOf(BluetoothTimeoutError);
 
       // Second connect attempt succeeds.
       const { rxChar, all } = createStandardCharacteristics();
@@ -255,7 +256,9 @@ describe('NodeBluetoothAdapter', () => {
       const wrongDevice = createMockPeripheral({ name: 'SomeOtherDevice', characteristics: [] });
       const rightDevice = createMockPeripheral({ name: 'ReturnToDarkTower' });
       const { all } = createStandardCharacteristics();
-      rightDevice.discoverAllServicesAndCharacteristicsAsync.mockResolvedValue({ characteristics: all });
+      rightDevice.discoverAllServicesAndCharacteristicsAsync.mockResolvedValue({
+        characteristics: all,
+      });
 
       mockNoble.startScanning.mockImplementation(() => {
         setTimeout(() => {
@@ -332,17 +335,15 @@ describe('NodeBluetoothAdapter', () => {
 
       await adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']);
 
-      const dataHandler = rxChar.on.mock.calls.find(
-        call => call[0] === 'data'
-      )?.[1];
+      const dataHandler = rxChar.on.mock.calls.find((call) => call[0] === 'data')?.[1];
       expect(dataHandler).toBeDefined();
 
-      const testBuffer = Buffer.from([0xAA, 0xBB, 0xCC]);
+      const testBuffer = Buffer.from([0xaa, 0xbb, 0xcc]);
       dataHandler!(testBuffer);
 
       expect(callback).toHaveBeenCalledTimes(1);
       expect(callback).toHaveBeenCalledWith(expect.any(Uint8Array));
-      expect(Array.from(callback.mock.calls[0][0])).toEqual([0xAA, 0xBB, 0xCC]);
+      expect(Array.from(callback.mock.calls[0][0])).toEqual([0xaa, 0xbb, 0xcc]);
     });
   });
 
@@ -358,7 +359,7 @@ describe('NodeBluetoothAdapter', () => {
       await adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']);
 
       const disconnectHandler = peripheral.once.mock.calls.find(
-        call => call[0] === 'disconnect'
+        (call) => call[0] === 'disconnect',
       )?.[1];
       expect(disconnectHandler).toBeDefined();
       disconnectHandler!();
@@ -379,9 +380,7 @@ describe('NodeBluetoothAdapter', () => {
 
       await adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']);
 
-      const stateHandler = mockNoble.on.mock.calls.find(
-        call => call[0] === 'stateChange'
-      )?.[1];
+      const stateHandler = mockNoble.on.mock.calls.find((call) => call[0] === 'stateChange')?.[1];
       expect(stateHandler).toBeDefined();
 
       stateHandler!('poweredOff');
@@ -394,10 +393,9 @@ describe('NodeBluetoothAdapter', () => {
 
   describe('readDeviceInformation', () => {
     test('should read text DIS characteristics', async () => {
-      const mfrChar = createMockCharacteristic(
-        '00002a29-0000-1000-8000-00805f9b34fb',
-        { readable: Buffer.from('Restoration Games') }
-      );
+      const mfrChar = createMockCharacteristic('00002a29-0000-1000-8000-00805f9b34fb', {
+        readable: Buffer.from('Restoration Games'),
+      });
 
       const { txChar, rxChar } = createStandardCharacteristics();
       const allChars = [txChar, rxChar, mfrChar];
@@ -413,10 +411,9 @@ describe('NodeBluetoothAdapter', () => {
     });
 
     test('should read binary DIS characteristics as hex', async () => {
-      const sysIdChar = createMockCharacteristic(
-        '00002a23-0000-1000-8000-00805f9b34fb',
-        { readable: Buffer.from([0xDE, 0xAD, 0xBE, 0xEF]) }
-      );
+      const sysIdChar = createMockCharacteristic('00002a23-0000-1000-8000-00805f9b34fb', {
+        readable: Buffer.from([0xde, 0xad, 0xbe, 0xef]),
+      });
 
       const { txChar, rxChar } = createStandardCharacteristics();
       const allChars = [txChar, rxChar, sysIdChar];

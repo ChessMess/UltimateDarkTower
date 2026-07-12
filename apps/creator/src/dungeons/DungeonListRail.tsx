@@ -65,7 +65,9 @@ export function DungeonListRail({
       </div>
 
       {ids.length === 0 && (
-        <div style={{ fontSize: 11, color: 'var(--c-text-faint)', padding: '2px 4px' }}>None yet.</div>
+        <div style={{ fontSize: 11, color: 'var(--c-text-faint)', padding: '2px 4px' }}>
+          None yet.
+        </div>
       )}
       {ids.map((id) => (
         <div
@@ -73,7 +75,14 @@ export function DungeonListRail({
           style={{ ...item, ...(id === selectedId ? itemSelected : null) }}
           onClick={() => onSelect(id)}
         >
-          <span style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span
+            style={{
+              fontSize: 12,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {id}
           </span>
           <span style={{ flex: 1 }} />
@@ -95,7 +104,11 @@ export function DungeonListRail({
           onChange={(e) => setNewId(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && add()}
           placeholder="new-dungeon-id"
-          style={{ ...inputStyle, flex: 1, borderColor: newId && !valid ? 'var(--c-danger)' : 'var(--c-border-strong)' }}
+          style={{
+            ...inputStyle,
+            flex: 1,
+            borderColor: newId && !valid ? 'var(--c-danger)' : 'var(--c-border-strong)',
+          }}
         />
         <button style={smallBtn} disabled={!valid} onClick={add}>
           +

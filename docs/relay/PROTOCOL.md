@@ -1,11 +1,11 @@
 # UltimateDarkTowerRelay WebSocket Protocol
 
-*Docs: [Index](README.md) > Protocol-level developer > Protocol*
+_Docs: [Index](README.md) > Protocol-level developer > Protocol_
 
 This document describes the WebSocket message protocol between the **relay host** (`packages/core`'s
 `RelayServer`, run by `packages/cli` or `packages/electron`) and connected **consumer clients** (the
-`packages/client` SDK — `RelayClient`). Consumers may be *participants* (a remote player driving a physical
-tower, e.g. [UltimateDarkTowerSync](../../UltimateDarkTowerSync)) or screen-only *observers* / digital
+`packages/client` SDK — `RelayClient`). Consumers may be _participants_ (a remote player driving a physical
+tower, e.g. [UltimateDarkTowerSync](../../UltimateDarkTowerSync)) or screen-only _observers_ / digital
 consumers (e.g. a visualizer). The protocol is intentionally a low-churn **superset** of the protocol Sync
 originally defined.
 
@@ -67,22 +67,22 @@ The canonical definitions live in `packages/shared/src/protocol.ts` (`MessageTyp
 
 ## Message Types
 
-| Type                  | Direction      | Description                                              |
-| --------------------- | -------------- | ------------------------------------------------------- |
-| `tower:command`       | Host → clients | Relay a raw 20-byte tower command                       |
+| Type                  | Direction      | Description                                                          |
+| --------------------- | -------------- | -------------------------------------------------------------------- |
+| `tower:command`       | Host → clients | Relay a raw 20-byte tower command                                    |
 | `host:resend`         | Host → clients | Operator re-sent the last tower state (distinct from a live command) |
-| `sync:state`          | Host → client  | Full-state catchup for a newly connected client         |
-| `client:connected`    | Host → clients | A new client has joined the relay                       |
-| `client:disconnected` | Host → clients | A client has left the relay                             |
-| `host:status`         | Host → clients | Periodic host status update                             |
-| `host:log-config`     | Host → clients | Enable or disable automatic client log submission       |
-| `client:hello`        | Client → host  | Handshake sent immediately after WebSocket open         |
-| `client:ready`        | Client → host  | Tower calibrated & ready to receive commands            |
-| `client:action`       | Client → host  | Participant reports a player action (e.g. dropped a skull) |
-| `client:log`          | Client → host  | Batch of structured log entries for centralized storage |
-| `relay:paused`        | Host → clients | Game paused — companion app disconnected from TowerEmulator  |
-| `relay:resumed`       | Host → clients | Game resumed — companion app reconnected to TowerEmulator    |
-| `relay:tower:alert`   | Host → clients | A remote player's tower BLE connection changed           |
+| `sync:state`          | Host → client  | Full-state catchup for a newly connected client                      |
+| `client:connected`    | Host → clients | A new client has joined the relay                                    |
+| `client:disconnected` | Host → clients | A client has left the relay                                          |
+| `host:status`         | Host → clients | Periodic host status update                                          |
+| `host:log-config`     | Host → clients | Enable or disable automatic client log submission                    |
+| `client:hello`        | Client → host  | Handshake sent immediately after WebSocket open                      |
+| `client:ready`        | Client → host  | Tower calibrated & ready to receive commands                         |
+| `client:action`       | Client → host  | Participant reports a player action (e.g. dropped a skull)           |
+| `client:log`          | Client → host  | Batch of structured log entries for centralized storage              |
+| `relay:paused`        | Host → clients | Game paused — companion app disconnected from TowerEmulator          |
+| `relay:resumed`       | Host → clients | Game resumed — companion app reconnected to TowerEmulator            |
+| `relay:tower:alert`   | Host → clients | A remote player's tower BLE connection changed                       |
 
 ---
 
@@ -106,7 +106,7 @@ it for display.
 }
 ```
 
-| Field          | Type       | Description                                                          |
+| Field          | Type       | Description                                                         |
 | -------------- | ---------- | ------------------------------------------------------------------- |
 | `payload.data` | `number[]` | Raw 20-byte tower command as a JSON array                           |
 | `payload.seq`  | `number?`  | Monotonic sequence number assigned by the relay for log correlation |
@@ -136,8 +136,8 @@ treats it like a command and replays it on the local tower.
 }
 ```
 
-| Field          | Type       | Description                              |
-| -------------- | ---------- | ---------------------------------------- |
+| Field          | Type       | Description                               |
+| -------------- | ---------- | ----------------------------------------- |
 | `payload.data` | `number[]` | The last full-state 20-byte command bytes |
 
 ---
@@ -157,9 +157,9 @@ most recent full-state tower command so the remote tower can catch up without wa
 }
 ```
 
-| Field                 | Type              | Description                                          |
-| --------------------- | ----------------- | ---------------------------------------------------- |
-| `payload.lastCommand` | `number[] \| null`| Last command bytes, or `null` if no command yet sent |
+| Field                 | Type               | Description                                          |
+| --------------------- | ------------------ | ---------------------------------------------------- |
+| `payload.lastCommand` | `number[] \| null` | Last command bytes, or `null` if no command yet sent |
 
 ---
 
@@ -181,9 +181,9 @@ provided one.
 }
 ```
 
-| Field              | Type    | Description                                |
-| ------------------ | ------- | ------------------------------------------ |
-| `payload.clientId` | string  | Unique ID assigned to the client           |
+| Field              | Type    | Description                                  |
+| ------------------ | ------- | -------------------------------------------- |
+| `payload.clientId` | string  | Unique ID assigned to the client             |
 | `payload.label`    | string? | Display name from the `client:hello`, if any |
 
 ---
@@ -203,7 +203,7 @@ Broadcast to all remaining clients when a client disconnects.
 ```
 
 | Field              | Type   | Description                |
-| ------------------ | ------ | ------------------------- |
+| ------------------ | ------ | -------------------------- |
 | `payload.clientId` | string | ID of the client that left |
 
 ---
@@ -229,15 +229,15 @@ health in the UI. The payload is the `HostStatus` type (`packages/shared/src/typ
 }
 ```
 
-| Field                    | Type             | Description                                                       |
-| ------------------------ | ---------------- | ----------------------------------------------------------------- |
-| `payload.relaying`       | boolean          | Whether the relay is actively forwarding commands                 |
+| Field                        | Type             | Description                                                       |
+| ---------------------------- | ---------------- | ----------------------------------------------------------------- |
+| `payload.relaying`           | boolean          | Whether the relay is actively forwarding commands                 |
 | `payload.towerEmulatorState` | string           | BLE peripheral state: `idle \| advertising \| connected \| error` |
-| `payload.appConnected`   | boolean          | Whether the companion app is connected to the tower emulator          |
-| `payload.clientCount`    | number           | Number of currently connected clients                             |
-| `payload.towersConnected`| number           | How many clients have their physical tower BLE connection active  |
-| `payload.observerCount`  | number           | How many connected clients are observers (no physical tower)      |
-| `payload.lastCommandAt`  | `string \| null` | ISO timestamp of the last relayed command                         |
+| `payload.appConnected`       | boolean          | Whether the companion app is connected to the tower emulator      |
+| `payload.clientCount`        | number           | Number of currently connected clients                             |
+| `payload.towersConnected`    | number           | How many clients have their physical tower BLE connection active  |
+| `payload.observerCount`      | number           | How many connected clients are observers (no physical tower)      |
+| `payload.lastCommandAt`      | `string \| null` | ISO timestamp of the last relayed command                         |
 
 ---
 
@@ -257,10 +257,10 @@ Sent by the client **immediately** after the WebSocket `open` event fires.
 }
 ```
 
-| Field                     | Type     | Description                                                                  |
-| ------------------------- | -------- | ---------------------------------------------------------------------------- |
-| `payload.label`           | string?  | Optional display name chosen by the player                                   |
-| `payload.protocolVersion` | string   | Protocol version the client speaks (semver string)                           |
+| Field                     | Type     | Description                                                                                                                     |
+| ------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `payload.label`           | string?  | Optional display name chosen by the player                                                                                      |
+| `payload.protocolVersion` | string   | Protocol version the client speaks (semver string)                                                                              |
 | `payload.observer`        | boolean? | If `true`, client is an observer with no physical tower (visualizer only). Omitted or `false` for normal tower-bearing clients. |
 
 > If the client's `protocolVersion` does not match the host's, the host closes the socket with close code
@@ -284,9 +284,9 @@ Can also be sent with `ready: false` when the tower disconnects.
 }
 ```
 
-| Field           | Type    | Description                                              |
-| --------------- | ------- | -------------------------------------------------------- |
-| `payload.ready` | boolean | `true` when calibrated and ready; `false` on disconnect  |
+| Field           | Type    | Description                                             |
+| --------------- | ------- | ------------------------------------------------------- |
+| `payload.ready` | boolean | `true` when calibrated and ready; `false` on disconnect |
 
 > The host updates the client's state to `'ready'` or `'connected'` accordingly. This allows the host
 > dashboard and other clients to see which players have their towers online and calibrated.
@@ -310,9 +310,9 @@ dropped skull), so the relay can **synthesize the matching tower→app notificat
 }
 ```
 
-| Field            | Type   | Description                                            |
-| ---------------- | ------ | ----------------------------------------------------- |
-| `payload.action` | string | The reported action. Currently `"dropSkull"`.         |
+| Field            | Type   | Description                                   |
+| ---------------- | ------ | --------------------------------------------- |
+| `payload.action` | string | The reported action. Currently `"dropSkull"`. |
 
 > In the SDK this is sent via `RelayClient.dropSkull()` (a no-op only when not connected). The SDK sends
 > it regardless of the observer flag; the **relay** is what rejects actions from observer clients.
@@ -336,7 +336,15 @@ are batched — typically sent automatically (e.g. every 30 seconds), or immedia
         "hex": "0001020304050607080910111213141516171819",
         "src": "Player 2",
         "level": "cmd",
-        "decoded": { "cmdType": 0, "drumStates": [1, 2], "ledStates": [3,4,5,6,7,8,9,10,11,12,13,14], "audio": 21, "beamBreak": [22, 23], "volumeDrumBeam": 24, "ledOverride": 14 }
+        "decoded": {
+          "cmdType": 0,
+          "drumStates": [1, 2],
+          "ledStates": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+          "audio": 21,
+          "beamBreak": [22, 23],
+          "volumeDrumBeam": 24,
+          "ledOverride": 14
+        }
       }
     ]
   },
@@ -344,9 +352,9 @@ are batched — typically sent automatically (e.g. every 30 seconds), or immedia
 }
 ```
 
-| Field              | Type         | Description                              |
-| ------------------ | ------------ | ---------------------------------------- |
-| `payload.entries`  | `LogEntry[]` | Array of structured log entries to store |
+| Field             | Type         | Description                              |
+| ----------------- | ------------ | ---------------------------------------- |
+| `payload.entries` | `LogEntry[]` | Array of structured log entries to store |
 
 > The host writes these entries to the combined `session-*-all.jsonl` log file. The SDK exposes
 > `RelayClient.sendRaw(json)` as the transport seam consumers use to send pre-serialized `client:log` batches
@@ -369,9 +377,9 @@ automatic log submission timer.
 }
 ```
 
-| Field             | Type    | Description                                              |
-| ----------------- | ------- | -------------------------------------------------------- |
-| `payload.enabled` | boolean | `true` to enable auto-send; `false` to pause auto-send  |
+| Field             | Type    | Description                                            |
+| ----------------- | ------- | ------------------------------------------------------ |
+| `payload.enabled` | boolean | `true` to enable auto-send; `false` to pause auto-send |
 
 > When `enabled` is `false`, clients stop their auto-send timer but continue buffering entries locally. Manual
 > send/download remains available regardless of this setting.
@@ -393,9 +401,9 @@ overlay until `relay:resumed` is received.
 }
 ```
 
-| Field            | Type   | Description                                              |
-| ---------------- | ------ | -------------------------------------------------------- |
-| `payload.reason` | string | Human-readable reason for the pause                      |
+| Field            | Type   | Description                         |
+| ---------------- | ------ | ----------------------------------- |
+| `payload.reason` | string | Human-readable reason for the pause |
 
 ---
 
@@ -432,11 +440,11 @@ see who has a live tower.
 }
 ```
 
-| Field                    | Type    | Description                                              |
-| ------------------------ | ------- | -------------------------------------------------------- |
-| `payload.clientId`       | string  | ID of the affected client                                |
-| `payload.label`          | string? | Display name of the affected client, if known            |
-| `payload.towerConnected` | boolean | `true` if the tower just reconnected; `false` if lost    |
+| Field                    | Type    | Description                                           |
+| ------------------------ | ------- | ----------------------------------------------------- |
+| `payload.clientId`       | string  | ID of the affected client                             |
+| `payload.label`          | string? | Display name of the affected client, if known         |
+| `payload.towerConnected` | boolean | `true` if the tower just reconnected; `false` if lost |
 
 ---
 

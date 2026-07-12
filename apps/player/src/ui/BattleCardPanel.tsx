@@ -56,9 +56,18 @@ export function BattleCardPanel() {
             {battle.heroChoice!.candidates.map((h) => (
               <button
                 key={h.heroId}
-                style={{ ...btn, background: 'var(--c-primary)', color: '#fff', borderColor: 'var(--c-primary)' }}
+                style={{
+                  ...btn,
+                  background: 'var(--c-primary)',
+                  color: '#fff',
+                  borderColor: 'var(--c-primary)',
+                }}
                 onClick={() =>
-                  handleInput({ requestId: 'battleHeroTarget', value: { heroId: h.heroId }, kind: 'decision' })
+                  handleInput({
+                    requestId: 'battleHeroTarget',
+                    value: { heroId: h.heroId },
+                    kind: 'decision',
+                  })
                 }
               >
                 {h.heroId}
@@ -71,21 +80,33 @@ export function BattleCardPanel() {
           <button
             style={{ ...btn, opacity: battle.canReveal ? 1 : 0.4 }}
             disabled={!battle.canReveal}
-            onClick={() => handleInput({ requestId: 'battleCard', value: { reveal: true }, kind: 'decision' })}
+            onClick={() =>
+              handleInput({ requestId: 'battleCard', value: { reveal: true }, kind: 'decision' })
+            }
           >
             Reveal next card
           </button>
           <button
-            style={{ ...btn, background: 'var(--c-success)', color: '#fff', borderColor: 'var(--c-success)', opacity: battle.canResolve ? 1 : 0.4 }}
+            style={{
+              ...btn,
+              background: 'var(--c-success)',
+              color: '#fff',
+              borderColor: 'var(--c-success)',
+              opacity: battle.canResolve ? 1 : 0.4,
+            }}
             disabled={!battle.canResolve}
-            onClick={() => handleInput({ requestId: 'battleCard', value: { resolve: true }, kind: 'decision' })}
+            onClick={() =>
+              handleInput({ requestId: 'battleCard', value: { resolve: true }, kind: 'decision' })
+            }
           >
             Resolve card
           </button>
           {battle.canRetreat && (
             <button
               style={btn}
-              onClick={() => handleInput({ requestId: 'battleCard', value: { retreat: true }, kind: 'decision' })}
+              onClick={() =>
+                handleInput({ requestId: 'battleCard', value: { retreat: true }, kind: 'decision' })
+              }
             >
               Retreat
             </button>
@@ -112,7 +133,10 @@ function BattleCardView({
       <button
         style={{ ...cardBase, ...cardBack, cursor: canReveal ? 'pointer' : 'default' }}
         disabled={!canReveal}
-        onClick={() => canReveal && handleInput({ requestId: 'battleCard', value: { reveal: true }, kind: 'decision' })}
+        onClick={() =>
+          canReveal &&
+          handleInput({ requestId: 'battleCard', value: { reveal: true }, kind: 'decision' })
+        }
         aria-label="face-down battle card"
       />
     );
@@ -127,7 +151,9 @@ function BattleCardView({
     <div style={face}>
       {card.critical && <div style={critRibbon}>CRITICAL HIT!</div>}
       <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 2 }}>{card.name}</div>
-      <div style={{ fontSize: 10, color: 'var(--c-text-muted)', marginBottom: 6 }}>{card.advantage}</div>
+      <div style={{ fontSize: 10, color: 'var(--c-text-muted)', marginBottom: 6 }}>
+        {card.advantage}
+      </div>
       <div style={{ fontSize: 11, flex: 1 }}>{card.text}</div>
       {/* step pips */}
       <div style={{ display: 'flex', gap: 3, margin: '6px 0' }}>
@@ -148,7 +174,10 @@ function BattleCardView({
           style={{ ...improveBtn, opacity: canImprove ? 1 : 0.35 }}
           disabled={!canImprove}
           title={card.nextText ? `Improve → ${card.nextText}` : 'Cannot improve'}
-          onClick={() => canImprove && handleInput({ requestId: 'battleCard', value: { improve: true }, kind: 'decision' })}
+          onClick={() =>
+            canImprove &&
+            handleInput({ requestId: 'battleCard', value: { improve: true }, kind: 'decision' })
+          }
         >
           ▲ Improve
         </button>
@@ -158,9 +187,22 @@ function BattleCardView({
 }
 
 // ---- styles ----
-const awaitLabel: React.CSSProperties = { fontSize: 12, color: 'var(--c-text-muted)', fontWeight: 600 };
-const headerRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 };
-const counterStyle: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: 'var(--c-text-2)' };
+const awaitLabel: React.CSSProperties = {
+  fontSize: 12,
+  color: 'var(--c-text-muted)',
+  fontWeight: 600,
+};
+const headerRow: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'baseline',
+  marginBottom: 4,
+};
+const counterStyle: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: 'var(--c-text-2)',
+};
 const btn: React.CSSProperties = {
   padding: '6px 14px',
   border: '1px solid var(--c-border-strong)',
@@ -182,10 +224,18 @@ const cardBase: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 const cardBack: React.CSSProperties = {
-  background: 'repeating-linear-gradient(45deg, var(--c-surface-raised), var(--c-surface-raised) 6px, var(--c-surface) 6px, var(--c-surface) 12px)',
+  background:
+    'repeating-linear-gradient(45deg, var(--c-surface-raised), var(--c-surface-raised) 6px, var(--c-surface) 6px, var(--c-surface) 12px)',
 };
-const cardFace: React.CSSProperties = { background: 'var(--c-surface-raised)', color: 'var(--c-text)' };
-const cardCritical: React.CSSProperties = { background: 'var(--c-surface-raised)', color: 'var(--c-text)', border: '2px solid var(--c-danger)' };
+const cardFace: React.CSSProperties = {
+  background: 'var(--c-surface-raised)',
+  color: 'var(--c-text)',
+};
+const cardCritical: React.CSSProperties = {
+  background: 'var(--c-surface-raised)',
+  color: 'var(--c-text)',
+  border: '2px solid var(--c-danger)',
+};
 const critRibbon: React.CSSProperties = {
   fontSize: 9,
   fontWeight: 800,

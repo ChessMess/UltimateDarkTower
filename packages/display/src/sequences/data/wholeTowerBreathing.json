@@ -5,9 +5,11 @@
   "loop": true,
   "endBehavior": "hold",
   "tracks": [
-    { "_comment": "One breathe call per outer loop iteration. Closure-captured elapsed counter survives loop iterations.",
+    {
+      "_comment": "One breathe call per outer loop iteration. Closure-captured elapsed counter survives loop iterations.",
       "kind": "breathe",
-      "atTick": 0, "endTick": 1,
+      "atTick": 0,
+      "endTick": 1,
       "periodTicks": 256,
       "peakPwm": 255,
       "divisor": 6

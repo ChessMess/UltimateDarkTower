@@ -43,8 +43,5 @@ export function buildHullColliderDesc(
   for (let i = 0; i < n; i++) scaled[i] = hullPoints[i] * radius;
   const desc = RAPIER.ColliderDesc.convexHull(scaled);
   if (!desc) return null;
-  return desc
-    .setFriction(friction)
-    .setRestitution(restitution)
-    .setDensity(density);
+  return desc.setFriction(friction).setRestitution(restitution).setDensity(density);
 }

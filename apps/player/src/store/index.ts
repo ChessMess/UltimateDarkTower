@@ -115,7 +115,9 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
       directives,
       // the battle prompt only lives while the engine awaits a card-battle input; clear it otherwise
       battlePrompt:
-        awaiting?.id === 'battleCard' || awaiting?.id === 'battleHeroTarget' ? s.battlePrompt : null,
+        awaiting?.id === 'battleCard' || awaiting?.id === 'battleHeroTarget'
+          ? s.battlePrompt
+          : null,
     })),
 
   setBattlePrompt: (battlePrompt) => set({ battlePrompt }),
@@ -169,7 +171,9 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   setRelayUrl: (relayUrl) => set({ relayUrl }),
 
   addLog: (msg) =>
-    set((s) => ({ log: [`${new Date().toISOString().slice(11, 19)} ${msg}`, ...s.log].slice(0, 200) })),
+    set((s) => ({
+      log: [`${new Date().toISOString().slice(11, 19)} ${msg}`, ...s.log].slice(0, 200),
+    })),
 
   reset: () =>
     set({

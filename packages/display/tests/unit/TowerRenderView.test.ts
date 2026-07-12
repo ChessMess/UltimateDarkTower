@@ -77,7 +77,9 @@ describe('TowerRenderView', () => {
     document.body.removeChild(container);
   });
 
-  function makeView(overrides: Partial<ConstructorParameters<typeof TowerRenderView>[0]> = {}): TowerRenderView {
+  function makeView(
+    overrides: Partial<ConstructorParameters<typeof TowerRenderView>[0]> = {},
+  ): TowerRenderView {
     return new TowerRenderView({ container, ...overrides });
   }
 
@@ -303,7 +305,9 @@ describe('TowerRenderView', () => {
 describe('TOWER_DISPLAY_CSS docking rules', () => {
   it('includes the overlay + panel-slot rules so injectStyles:false consumers get them', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { TOWER_DISPLAY_CSS } = jest.requireActual('../../src/styles') as { TOWER_DISPLAY_CSS: string };
+    const { TOWER_DISPLAY_CSS } = jest.requireActual('../../src/styles') as {
+      TOWER_DISPLAY_CSS: string;
+    };
     expect(TOWER_DISPLAY_CSS).toContain('.trv-overlay');
     expect(TOWER_DISPLAY_CSS).toContain('pointer-events: none');
     expect(TOWER_DISPLAY_CSS).toContain('.trv-dock');

@@ -86,7 +86,11 @@ export function validateRefs(scenario: unknown): L2Result {
   }
 
   // Resolve a foe-placement pair {foeId, location} against the UDT roster + board locations.
-  const checkSpawn = (foeId: string | undefined, location: string | undefined, ctx: string): void => {
+  const checkSpawn = (
+    foeId: string | undefined,
+    location: string | undefined,
+    ctx: string,
+  ): void => {
     if (foeId !== undefined) {
       const f = udt.foeById[foeId];
       if (!f || f.kind !== 'foe') {
@@ -94,7 +98,9 @@ export function validateRefs(scenario: unknown): L2Result {
       }
     }
     if (location !== undefined && !(location in udt.boardLocationByName)) {
-      errors.push(`${ctx} location "${location}" is not a known board location (UDT BOARD_LOCATIONS)`);
+      errors.push(
+        `${ctx} location "${location}" is not a known board location (UDT BOARD_LOCATIONS)`,
+      );
     }
   };
 
@@ -125,7 +131,8 @@ export function validateRefs(scenario: unknown): L2Result {
         const spawns = props ? arr(props['spawns']) : undefined;
         for (const sp of spawns ?? []) {
           const s2 = obj(sp);
-          if (s2) checkSpawn(str(s2['foeId']), str(s2['location']), `node "${id}" boardSetup spawn`);
+          if (s2)
+            checkSpawn(str(s2['foeId']), str(s2['location']), `node "${id}" boardSetup spawn`);
         }
         continue;
       }
@@ -140,10 +147,14 @@ export function validateRefs(scenario: unknown): L2Result {
           const heroId = str(hid);
           if (heroId === undefined) continue;
           if (!(heroId in udt.heroById)) {
-            errors.push(`node "${id}" lifecycle.selectHero heroId "${heroId}" is not in the UDT hero roster`);
+            errors.push(
+              `node "${id}" lifecycle.selectHero heroId "${heroId}" is not in the UDT hero roster`,
+            );
           }
           if (!(heroId in libHeroes)) {
-            errors.push(`node "${id}" lifecycle.selectHero heroId "${heroId}" has no matching library.heroes entry`);
+            errors.push(
+              `node "${id}" lifecycle.selectHero heroId "${heroId}" has no matching library.heroes entry`,
+            );
           }
         }
         continue;
@@ -153,7 +164,9 @@ export function validateRefs(scenario: unknown): L2Result {
       if (kind === 'dungeon.subflow') {
         const dungeonId = props ? str(props['dungeonId']) : undefined;
         if (dungeonId !== undefined && !(dungeons && dungeonId in dungeons)) {
-          errors.push(`node "${id}" dungeon.subflow dungeonId "${dungeonId}" is not a key in library.dungeons`);
+          errors.push(
+            `node "${id}" dungeon.subflow dungeonId "${dungeonId}" is not a key in library.dungeons`,
+          );
         }
         continue;
       }

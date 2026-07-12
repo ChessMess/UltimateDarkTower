@@ -40,7 +40,7 @@ Each candidate produces **two PRs**: a code PR (held in draft until decision tim
    `git checkout main && git pull && git checkout -b lighting/<section>-<slug>`
 2. **Sanity baseline capture** on the branch before any changes — confirms the machine/canvas state matches `00-baseline.md`. Don't commit these numbers; they're for sanity only.
 3. **Implement** the alternative. Only files in the entry's "Primary files" list should change. **Rule: no other config changes.** No tweaks to `bloom.resolutionScale`, camera, DPR, audio config, etc. — anything else invalidates the perf comparison.
-4. **Update unit tests** if the alternative changes light counts/types — see [tests/unit/Tower3DView.test.ts](../tests/unit/Tower3DView.test.ts) and [tests/__mocks__/three.js](../tests/__mocks__/three.js). `npm test` must pass on the branch before the report is final.
+4. **Update unit tests** if the alternative changes light counts/types — see [tests/unit/Tower3DView.test.ts](../tests/unit/Tower3DView.test.ts) and [tests/**mocks**/three.js](../tests/__mocks__/three.js). `npm test` must pass on the branch before the report is final.
 5. **Capture post-change report** at both canvas sizes via the [darktower-3d-perf](../.claude/skills/darktower-3d-perf/SKILL.md) skill (full Empty / 1-LED / All-LEDs triplet + sequence-5). **Ambiguity rule:** if any scenario's fps is within ~5% of baseline, recapture 2 more times and use the median; record the per-run numbers in "Notable observations."
 6. **Visual screenshot pair** (baseline + after, mid-sequence-5) if the alternative is flagged as visual-difference risk: 4.1, 4.4, 4.11, 4.19, anything that drops bloom. Save under `docs/lighting-experiments/screenshots/<section>-<slug>-{baseline,after}.png`.
 7. **Open the code PR** as **draft** off `main`. Title: `lighting: <section> <name> (experiment)`. Body links to the result MD that will land on main. Don't merge until the decision phase.
@@ -49,7 +49,7 @@ Each candidate produces **two PRs**: a code PR (held in draft until decision tim
    - Adds the screenshot pair (if applicable)
    - Updates the row in [`docs/lighting-experiments/RESULTS.md`](lighting-experiments/RESULTS.md)
    - Updates the [branch ledger](#5-branch-ledger) below
-   Merges immediately. Once merged, anyone on `main` reads the result without checking out the experiment branch.
+     Merges immediately. Once merged, anyone on `main` reads the result without checking out the experiment branch.
 
 If an experiment turns out infeasible, mark `Status: abandoned` in the result MD with a one-paragraph post-mortem and land it via the same docs-only PR pattern. **Don't delete the branch** — it preserves the negative result.
 
@@ -81,21 +81,21 @@ Baseline is captured **directly from `main` at a known SHA** — no `lighting/00
 
 Updated by each branch's docs-only PR. (Largely redundant with [`RESULTS.md`](lighting-experiments/RESULTS.md) — see note below the table.)
 
-| Section | Branch | Status | Result file | Winner? |
-|---|---|---|---|---|
-| 00 baseline | (no branch — captured on `main@3ab257f`, 2026-05-23) | captured | [`00-baseline.md`](lighting-experiments/00-baseline.md) | n/a |
-| 4.18 | `lighting/4.18-twelve-lights` | pending | `4.18-twelve-lights.md` | |
-| 4.16 | `lighting/4.16-emissive-standard` | pending | `4.16-emissive-standard.md` | |
-| 4.2  | `lighting/4.2-range-cull` | pending | `4.2-range-cull.md` | |
-| 4.5  | `lighting/4.5-light-probe` | pending | `4.5-light-probe.md` | |
-| 4.1  | `lighting/4.1-hdr-proxies` | pending | `4.1-hdr-proxies.md` | |
-| 4.4  | `lighting/4.4-two-directional` | pending | `4.4-two-directional.md` | |
-| 4.19 | `lighting/4.19-interior-sprites` | pending | `4.19-interior-sprites.md` | |
-| 4.11 | `lighting/4.11-min-cost-combo` | pending | `4.11-min-cost-combo.md` | |
+| Section     | Branch                                               | Status   | Result file                                             | Winner? |
+| ----------- | ---------------------------------------------------- | -------- | ------------------------------------------------------- | ------- |
+| 00 baseline | (no branch — captured on `main@3ab257f`, 2026-05-23) | captured | [`00-baseline.md`](lighting-experiments/00-baseline.md) | n/a     |
+| 4.18        | `lighting/4.18-twelve-lights`                        | pending  | `4.18-twelve-lights.md`                                 |         |
+| 4.16        | `lighting/4.16-emissive-standard`                    | pending  | `4.16-emissive-standard.md`                             |         |
+| 4.2         | `lighting/4.2-range-cull`                            | pending  | `4.2-range-cull.md`                                     |         |
+| 4.5         | `lighting/4.5-light-probe`                           | pending  | `4.5-light-probe.md`                                    |         |
+| 4.1         | `lighting/4.1-hdr-proxies`                           | pending  | `4.1-hdr-proxies.md`                                    |         |
+| 4.4         | `lighting/4.4-two-directional`                       | pending  | `4.4-two-directional.md`                                |         |
+| 4.19        | `lighting/4.19-interior-sprites`                     | pending  | `4.19-interior-sprites.md`                              |         |
+| 4.11        | `lighting/4.11-min-cost-combo`                       | pending  | `4.11-min-cost-combo.md`                                |         |
 
 Statuses: `pending` → `implemented` → `report-complete` → `merged` | `abandoned`.
 
-> The ledger emphasises *branch state*; [`RESULTS.md`](lighting-experiments/RESULTS.md) emphasises *measured outcome*. If both feel duplicative once in use, fold the ledger into `RESULTS.md` and remove this section.
+> The ledger emphasises _branch state_; [`RESULTS.md`](lighting-experiments/RESULTS.md) emphasises _measured outcome_. If both feel duplicative once in use, fold the ledger into `RESULTS.md` and remove this section.
 
 ## 6. Result MD template
 
@@ -111,29 +111,37 @@ Every per-alternative result MD on `main` follows this shape:
 **Baseline reference:** docs/lighting-experiments/00-baseline.md @ main@<short-sha>
 
 ## Implementation summary
+
 Bullet list of what changed (files, lines). Link to the diff vs main.
 
 ## Baseline (excerpted from 00-baseline.md)
+
 Inline copy of the relevant baseline rows so this file is self-contained.
 
 ## Results — Display canvas (~1.7 M backing px)
+
 <perf-skill report tables for Empty / 1-LED / All-LEDs / Sequence-5>
 
 ## Results — Retina full-window (~7.84 M backing px)
+
 <same set of reports at the larger canvas>
 
 ## Visual capture (visual-difference-risk alternatives only)
+
 ![baseline](screenshots/<section>-<slug>-baseline.png)
 ![after](screenshots/<section>-<slug>-after.png)
 
 ## Unit tests
+
 - `npm test` result on this branch: pass | fail
 - Tests touched: <list of files>
 
 ## Interpretation
+
 One paragraph: did it beat the success criterion? Any regression on idle/empty? `programs` stable?
 
 ## Notable observations / risks
+
 Free-form. Visual deltas, recompile pops, ambiguity-rule recaptures, anything to flag at decision time.
 ```
 
@@ -146,10 +154,10 @@ The running summary table on `main`. Initialised by the baseline PR; each branch
 
 **Baseline:** [00-baseline.md](00-baseline.md) — captured main@<sha>
 
-| § | Alternative | Status | scenario fps Δ (Display) | scenario fps Δ (Retina) | idle/empty regress? | programs stable? | Visual delta | Result file |
-|---:|---|---|---:|---:|---|---|---|---|
-| 4.18 | twelve-lights | report-complete | +X% | +Y% | no | yes | none | [4.18-twelve-lights.md](4.18-twelve-lights.md) |
-| … | | | | | | | | |
+|    § | Alternative   | Status          | scenario fps Δ (Display) | scenario fps Δ (Retina) | idle/empty regress? | programs stable? | Visual delta | Result file                                    |
+| ---: | ------------- | --------------- | -----------------------: | ----------------------: | ------------------- | ---------------- | ------------ | ---------------------------------------------- |
+| 4.18 | twelve-lights | report-complete |                      +X% |                     +Y% | no                  | yes              | none         | [4.18-twelve-lights.md](4.18-twelve-lights.md) |
+|    … |               |                 |                          |                         |                     |                  |              |                                                |
 
 **Current leader (provisional):** <link to result file> — see Decision section in this plan.
 ```
@@ -160,7 +168,7 @@ Path A → Path B order, matching [lighting-alternatives.md §6](lighting-altern
 
 **Two alternatives need special framing** — call this out in their result MDs:
 
-- **4.16 standalone is a building-block validation, not a perf candidate.** `MeshStandardMaterial` is marginally *more* expensive per fragment than `MeshBasicMaterial` — its success criterion is **visual parity + no `programs` growth + tests pass**, NOT "frameMs improves." It exists in the bake-off to confirm it's safe to combine with 4.1 / 4.18 later.
+- **4.16 standalone is a building-block validation, not a perf candidate.** `MeshStandardMaterial` is marginally _more_ expensive per fragment than `MeshBasicMaterial` — its success criterion is **visual parity + no `programs` growth + tests pass**, NOT "frameMs improves." It exists in the bake-off to confirm it's safe to combine with 4.1 / 4.18 later.
 - **4.11 is defined as `4.1 + 4.4 + 4.8` combined.** Its result is only meaningful when read alongside the 4.1 and 4.4 results — if 4.1 alone hits target, 4.11's added information is purely "what does dropping bloom buy us on top?" Note this in its result MD's Interpretation section.
 
 Each entry below follows the same shape: **Source**, **Branch**, **Result file**, **Implementation sketch**, **Test plan**, **Success criterion**, **Risks to watch**.
@@ -249,26 +257,26 @@ Each entry below follows the same shape: **Source**, **Branch**, **Result file**
 
 The [`darktower-3d-perf` skill's](../.claude/skills/darktower-3d-perf/SKILL.md) "Expected signals per alternative class" table already covers 4.1, 4.2, 4.4, 4.5, 4.11, 4.16, 4.18 (verified against lines 164–172). **Only 4.19 needs a new row**, to be added on the `lighting/4.19-interior-sprites` branch as part of its docs-only PR:
 
-| Alternatives | Expected `visiblePointLights` after change | Expected `programs` change | Expected `bloomTotalMs` change | Other signals to verify |
-|---|---|---|---|---|
-| 4.19 (interior atmospheric sprites) | 0 (if all PointLights removed) or 12 (if seal accents retained) | **None** — sprites are outside the lights hash | Unchanged | `visibleSprites` up by ~12–36; depth-sort hygiene check (no z-fighting with drum interior) |
+| Alternatives                        | Expected `visiblePointLights` after change                      | Expected `programs` change                     | Expected `bloomTotalMs` change | Other signals to verify                                                                    |
+| ----------------------------------- | --------------------------------------------------------------- | ---------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------ |
+| 4.19 (interior atmospheric sprites) | 0 (if all PointLights removed) or 12 (if seal accents retained) | **None** — sprites are outside the lights hash | Unchanged                      | `visibleSprites` up by ~12–36; depth-sort hygiene check (no z-fighting with drum interior) |
 
-Per the skill's closing instruction: *"If you change anything in this doc that affects how alternatives should be measured … update SKILL.md too."*
+Per the skill's closing instruction: _"If you change anything in this doc that affects how alternatives should be measured … update SKILL.md too."_
 
 ## 10. Time budget
 
 Multi-week initiative. Effort estimates from [§4 of lighting-alternatives.md](lighting-alternatives.md#4-the-menu-of-alternatives-detail):
 
-| § | Alternative | Effort |
-|---:|---|---|
-| 4.16 | emissive-standard | ~1 day |
-| 4.2  | range-cull | ~1 day |
-| 4.11 | min-cost-combo | ~2 days |
-| 4.4  | two-directional | ~2 days |
-| 4.19 | interior-sprites | ~1–2 days |
-| 4.18 | twelve-lights | ~3 days |
-| 4.1  | hdr-proxies | ~3 days |
-| 4.5  | light-probe | ~1 week |
+|    § | Alternative       | Effort    |
+| ---: | ----------------- | --------- |
+| 4.16 | emissive-standard | ~1 day    |
+|  4.2 | range-cull        | ~1 day    |
+| 4.11 | min-cost-combo    | ~2 days   |
+|  4.4 | two-directional   | ~2 days   |
+| 4.19 | interior-sprites  | ~1–2 days |
+| 4.18 | twelve-lights     | ~3 days   |
+|  4.1 | hdr-proxies       | ~3 days   |
+|  4.5 | light-probe       | ~1 week   |
 
 Serial: ~3–4 weeks. Parallel across contributors: less, since each branch is independent. Nothing in the workflow forces serial execution.
 
@@ -293,4 +301,4 @@ Serial: ~3–4 weeks. Parallel across contributors: less, since each branch is i
 - [../src/3d/LedEffectAnimator.ts](../src/3d/LedEffectAnimator.ts) — driver write path.
 - [../src/3d/BloomManager.ts](../src/3d/BloomManager.ts) — two-composer pipeline, bloom threshold.
 - [../example/presets.ts](../example/presets.ts) — `createEmptyState`, `createAllOnState` for the triplet.
-- [../tests/unit/Tower3DView.test.ts](../tests/unit/Tower3DView.test.ts), [../tests/__mocks__/three.js](../tests/__mocks__/three.js) — tests requiring updates when light counts/types change.
+- [../tests/unit/Tower3DView.test.ts](../tests/unit/Tower3DView.test.ts), [../tests/**mocks**/three.js](../tests/__mocks__/three.js) — tests requiring updates when light counts/types change.

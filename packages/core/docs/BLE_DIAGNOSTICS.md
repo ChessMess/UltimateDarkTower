@@ -28,10 +28,10 @@ import UltimateDarkTower, { InMemorySink, IndexedDBSink } from 'ultimatedarktowe
 const tower = new UltimateDarkTower({
   diagnostics: {
     enabled: true,
-    capturePayloads: false,            // optional, default false
+    capturePayloads: false, // optional, default false
     sinks: [
-      new InMemorySink(),              // queryable via tower.getDiagnosticsRecorder()
-      new IndexedDBSink(),             // browser-only, durable across page refresh
+      new InMemorySink(), // queryable via tower.getDiagnosticsRecorder()
+      new IndexedDBSink(), // browser-only, durable across page refresh
     ],
   },
 });
@@ -48,37 +48,37 @@ tower.getDiagnosticsRecorder().capturePayloads = true;
 
 On every disconnect, the recorder produces an `IncidentReport`:
 
-| Field | What it tells you |
-|---|---|
-| `cause` | Which detection path fired (one of seven, see below) |
-| `sessionId`, `sessionDurationMs` | Per-connect lifecycle correlation |
-| `connectionStatus` | GATT state, last heartbeat age, last response age, all monitor thresholds |
-| `commandQueue` | Queue depth + the command that was in-flight at the drop |
-| `inFlightCommandAgeMs` | How long the in-flight command had been waiting |
-| `towerState` | Full unpacked tower state (drums, lights, audio, beam) |
-| `brokenSeals` | Software-tracked broken seals at incident time |
-| `recentEvents` | Last ~500 structured events from the ring buffer |
-| `batteryHistory` | Last 60 battery readings (~12 seconds at 5 Hz) |
-| `deviceInformation` | Firmware revision, hardware revision, serial, etc. |
-| `library`, `userAgent` | Library version + platform fingerprint |
+| Field                            | What it tells you                                                         |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| `cause`                          | Which detection path fired (one of seven, see below)                      |
+| `sessionId`, `sessionDurationMs` | Per-connect lifecycle correlation                                         |
+| `connectionStatus`               | GATT state, last heartbeat age, last response age, all monitor thresholds |
+| `commandQueue`                   | Queue depth + the command that was in-flight at the drop                  |
+| `inFlightCommandAgeMs`           | How long the in-flight command had been waiting                           |
+| `towerState`                     | Full unpacked tower state (drums, lights, audio, beam)                    |
+| `brokenSeals`                    | Software-tracked broken seals at incident time                            |
+| `recentEvents`                   | Last ~500 structured events from the ring buffer                          |
+| `batteryHistory`                 | Last 60 battery readings (~12 seconds at 5 Hz)                            |
+| `deviceInformation`              | Firmware revision, hardware revision, serial, etc.                        |
+| `library`, `userAgent`           | Library version + platform fingerprint                                    |
 
 `recentEvents` is the most diagnostic field. Each event has a `kind`, an
 optional `data` payload, and a millisecond `t` timestamp:
 
-| `kind` | When it fires |
-|---|---|
-| `connect` | New BLE session started |
-| `disconnect` | Synthesized at incident time, with `cause` |
-| `cmd_enqueued` | Command added to the queue |
-| `cmd_sent` | Command written to the GATT characteristic |
-| `cmd_response` | Non-battery response received |
-| `cmd_timeout` | Command's 30s response timer expired |
-| `cmd_failed` | Command write threw |
-| `tower_state_response` | Tower state response received |
-| `skull_drop` | Skull drop count changed |
-| `heartbeat_late` | Battery heartbeat went past threshold but GATT was still up (a near-miss — multiple of these before a drop is a strong signal) |
-| `calibration_started` / `calibration_complete` | Calibration lifecycle |
-| `log` | Mirrored warn/error log lines from the library |
+| `kind`                                         | When it fires                                                                                                                  |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `connect`                                      | New BLE session started                                                                                                        |
+| `disconnect`                                   | Synthesized at incident time, with `cause`                                                                                     |
+| `cmd_enqueued`                                 | Command added to the queue                                                                                                     |
+| `cmd_sent`                                     | Command written to the GATT characteristic                                                                                     |
+| `cmd_response`                                 | Non-battery response received                                                                                                  |
+| `cmd_timeout`                                  | Command's 30s response timer expired                                                                                           |
+| `cmd_failed`                                   | Command write threw                                                                                                            |
+| `tower_state_response`                         | Tower state response received                                                                                                  |
+| `skull_drop`                                   | Skull drop count changed                                                                                                       |
+| `heartbeat_late`                               | Battery heartbeat went past threshold but GATT was still up (a near-miss — multiple of these before a drop is a strong signal) |
+| `calibration_started` / `calibration_complete` | Calibration lifecycle                                                                                                          |
+| `log`                                          | Mirrored warn/error log lines from the library                                                                                 |
 
 Routine battery heartbeats are **not** recorded as events (they arrive every
 ~200ms and would burn the ring buffer in seconds). They go to the separate
@@ -104,13 +104,13 @@ responding mid-operation.
 
 Common patterns:
 
-| Symptom in `recentEvents` | Likely cause |
-|---|---|
-| Multiple `heartbeat_late` followed by `disconnect` with `cause: heartbeat_timeout` | Tower CPU stalled or radio link congested |
-| `cmd_sent` ... `cmd_timeout` and queue depth growing | Tower is alive (heartbeats fine) but ignoring commands |
-| `disconnect` with `cause: adapter_event` and `cmd_sent` immediately before | Command write triggered a transport error; check command bytes |
-| `disconnect` with `cause: bt_unavailable` | Not a library bug — OS-level BT toggle |
-| `disconnect` with `cause: page_unload` and `inFlightCommandAgeMs` non-null | User refreshed during a hang; tower may not be at fault |
+| Symptom in `recentEvents`                                                          | Likely cause                                                   |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Multiple `heartbeat_late` followed by `disconnect` with `cause: heartbeat_timeout` | Tower CPU stalled or radio link congested                      |
+| `cmd_sent` ... `cmd_timeout` and queue depth growing                               | Tower is alive (heartbeats fine) but ignoring commands         |
+| `disconnect` with `cause: adapter_event` and `cmd_sent` immediately before         | Command write triggered a transport error; check command bytes |
+| `disconnect` with `cause: bt_unavailable`                                          | Not a library bug — OS-level BT toggle                         |
+| `disconnect` with `cause: page_unload` and `inFlightCommandAgeMs` non-null         | User refreshed during a hang; tower may not be at fault        |
 
 ## Sinks
 
@@ -167,9 +167,9 @@ const tower = new UltimateDarkTower({ diagnostics: { enabled: true } });
 
 // Live recorder access
 const recorder = tower.getDiagnosticsRecorder();
-recorder.getRingBuffer();       // current events
-recorder.getBatteryHistory();   // last ~12s of battery samples
-recorder.getSessionId();        // current session id
+recorder.getRingBuffer(); // current events
+recorder.getBatteryHistory(); // last ~12s of battery samples
+recorder.getSessionId(); // current session id
 
 // Last incident
 const incident = tower.getLastIncident();
@@ -183,7 +183,7 @@ const json = tower.exportDiagnosticsJSON();
 
 // Custom sink
 recorder.addSink({
-  onIncident: report => console.log('disconnect:', report.cause, report),
+  onIncident: (report) => console.log('disconnect:', report.cause, report),
 });
 ```
 

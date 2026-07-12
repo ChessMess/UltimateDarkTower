@@ -9,18 +9,15 @@ The recorder is **off by default** and is effectively zero-overhead when off.
 ## Enabling at construction
 
 ```typescript
-import UltimateDarkTower, {
-  InMemorySink,
-  IndexedDBSink,
-} from 'ultimatedarktower';
+import UltimateDarkTower, { InMemorySink, IndexedDBSink } from 'ultimatedarktower';
 
 const tower = new UltimateDarkTower({
   diagnostics: {
     enabled: true,
-    capturePayloads: false,   // optional, default false
+    capturePayloads: false, // optional, default false
     sinks: [
-      new InMemorySink(),     // queryable via tower.getDiagnosticsRecorder()
-      new IndexedDBSink(),    // browser-only, durable across page refresh
+      new InMemorySink(), // queryable via tower.getDiagnosticsRecorder()
+      new IndexedDBSink(), // browser-only, durable across page refresh
     ],
   },
 });
@@ -71,17 +68,17 @@ Serializes the ring buffer plus the last incident as JSON — what you ship to a
 
 Full schema in [BLE_DIAGNOSTICS.md](../BLE_DIAGNOSTICS.md#what-gets-captured). Highlights:
 
-| Field | What it tells you |
-|---|---|
-| `cause` | Which detection path fired |
-| `sessionId`, `sessionDurationMs` | Lifecycle correlation |
-| `connectionStatus` | GATT state, heartbeat / response ages, thresholds |
-| `commandQueue` | Queue depth + in-flight command at the drop |
-| `towerState` | Full unpacked state at the moment of the drop |
-| `brokenSeals` | Software-tracked seals at incident time |
-| `recentEvents` | Last ~500 structured BLE events (most diagnostic field) |
-| `batteryHistory` | Last 60 battery samples (~12 s at 5 Hz) |
-| `deviceInformation` | DIS fields |
+| Field                            | What it tells you                                       |
+| -------------------------------- | ------------------------------------------------------- |
+| `cause`                          | Which detection path fired                              |
+| `sessionId`, `sessionDurationMs` | Lifecycle correlation                                   |
+| `connectionStatus`               | GATT state, heartbeat / response ages, thresholds       |
+| `commandQueue`                   | Queue depth + in-flight command at the drop             |
+| `towerState`                     | Full unpacked state at the moment of the drop           |
+| `brokenSeals`                    | Software-tracked seals at incident time                 |
+| `recentEvents`                   | Last ~500 structured BLE events (most diagnostic field) |
+| `batteryHistory`                 | Last 60 battery samples (~12 s at 5 Hz)                 |
+| `deviceInformation`              | DIS fields                                              |
 
 ### Disconnect causes
 
@@ -102,9 +99,9 @@ interface DiagnosticsSink {
 
 ### Built-in sinks
 
-| Sink | Where it stores | Use case |
-|---|---|---|
-| `InMemorySink` | In-process array | Quick inspection during a session, test assertions |
+| Sink            | Where it stores   | Use case                                              |
+| --------------- | ----------------- | ----------------------------------------------------- |
+| `InMemorySink`  | In-process array  | Quick inspection during a session, test assertions    |
 | `IndexedDBSink` | Browser IndexedDB | Persistent incident log across page refresh / restart |
 
 ### Custom sinks
@@ -135,15 +132,20 @@ const tower = new UltimateDarkTower({
 Beyond `DiagnosticsConfig`, `DiagnosticsSink`, `DiagEvent`, and `IncidentReport` (above), these are exported
 for typing custom sinks and incident handlers:
 
-| Type | Purpose |
-|---|---|
-| `DisconnectCause` | Union of the disconnect-cause tags (`adapter_event` \| `gatt_health_check` \| … — see [Disconnect causes](#disconnect-causes)). |
-| `DiagEventKind` | The `kind` discriminator on a `DiagEvent`. |
-| `BatterySample` | One timestamped reading in `IncidentReport.batteryHistory`. |
-| `CommandQueueSnapshot` | The `IncidentReport.commandQueue` shape (queue depth + in-flight command). |
+| Type                   | Purpose                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `DisconnectCause`      | Union of the disconnect-cause tags (`adapter_event` \| `gatt_health_check` \| … — see [Disconnect causes](#disconnect-causes)). |
+| `DiagEventKind`        | The `kind` discriminator on a `DiagEvent`.                                                                                      |
+| `BatterySample`        | One timestamped reading in `IncidentReport.batteryHistory`.                                                                     |
+| `CommandQueueSnapshot` | The `IncidentReport.commandQueue` shape (queue depth + in-flight command).                                                      |
 
 ```typescript
-import type { DisconnectCause, DiagEventKind, BatterySample, CommandQueueSnapshot } from 'ultimatedarktower';
+import type {
+  DisconnectCause,
+  DiagEventKind,
+  BatterySample,
+  CommandQueueSnapshot,
+} from 'ultimatedarktower';
 ```
 
 ---

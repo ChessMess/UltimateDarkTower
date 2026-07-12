@@ -4,7 +4,14 @@
 import type { BoardRenderView, BoardUIHandle, PanelId } from '../../src/index';
 import type { DomElements } from './dom';
 import type { JsonController } from './jsonController';
-import { ALL_FOES, nextFoeId, randomBuilding, randomizeBoard, randomLocation, seedBoard } from './presets';
+import {
+  ALL_FOES,
+  nextFoeId,
+  randomBuilding,
+  randomizeBoard,
+  randomLocation,
+  seedBoard,
+} from './presets';
 import { clearStoredState, readLocal, writeLocal } from './utils';
 
 const PANELS_KEY = 'udtb.panels.visible';
@@ -31,7 +38,7 @@ export function initSidebarController(
   els: DomElements,
   view: BoardRenderView,
   ui: BoardUIHandle,
-  json: JsonController
+  json: JsonController,
 ): void {
   const c = view.controller;
 
@@ -47,7 +54,7 @@ export function initSidebarController(
     resetBoard(() => {
       c.reset();
       seedBoard(c);
-    })
+    }),
   );
   els.btnRandom.addEventListener('click', () => resetBoard(() => randomizeBoard(c)));
   els.btnClear.addEventListener('click', () => resetBoard(() => c.reset()));

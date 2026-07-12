@@ -46,7 +46,9 @@ export class SealManager {
    */
   onSealsApplied(cb: (broken: SealIdentifier[]) => void): () => void {
     this.sealListeners.add(cb);
-    return () => { this.sealListeners.delete(cb); };
+    return () => {
+      this.sealListeners.delete(cb);
+    };
   }
 
   /** @internal — exposed for tests; equals `sealListeners.size`. */
@@ -195,7 +197,7 @@ export class SealManager {
       this.notifySealListeners(brokenSeals);
       return;
     }
-    const broken = new Set(brokenSeals.map(s => sealKey(s.side, s.level)));
+    const broken = new Set(brokenSeals.map((s) => sealKey(s.side, s.level)));
     for (const [key, node] of this.sealNodes) {
       const isBroken = broken.has(key);
       node.visible = !isBroken;
@@ -236,7 +238,9 @@ export class SealManager {
       ref.proxyMesh.position.set(x, y, z);
       applyHdrColor((ref.proxyMesh.material as THREE.MeshBasicMaterial).color, cfg.color);
       const proxyRadius = modelRadius * cfg.proxy.sizeFactor;
-      ref.proxyMesh.scale.setScalar(proxyRadius / (ref.proxyMesh.geometry as THREE.SphereGeometry).parameters.radius);
+      ref.proxyMesh.scale.setScalar(
+        proxyRadius / (ref.proxyMesh.geometry as THREE.SphereGeometry).parameters.radius,
+      );
 
       ref.haloSprite.position.set(x, y, z);
       applyHdrColor((ref.haloSprite.material as THREE.SpriteMaterial).color, cfg.color);
@@ -261,8 +265,8 @@ export class SealManager {
     // eslint-disable-next-line no-console
     console.warn(
       `[Tower3DView] ${missing.length} seal node(s) missing from the loaded model; ` +
-      `applySeals will be a no-op for them. Missing: ${missing.join(', ')}. ` +
-      `Found: ${Array.from(this.sealNodes.keys()).sort().join(', ') || '(none)'}.`,
+        `applySeals will be a no-op for them. Missing: ${missing.join(', ')}. ` +
+        `Found: ${Array.from(this.sealNodes.keys()).sort().join(', ') || '(none)'}.`,
     );
   }
 
@@ -279,7 +283,8 @@ export class SealManager {
     for (const ref of this.sealBacklights.values()) {
       const geo = new THREE.SphereGeometry(
         (ref.proxyMesh.geometry as THREE.SphereGeometry).parameters.radius * 0.8,
-        6, 4,
+        6,
+        4,
       );
       const mesh = new THREE.Mesh(geo, debugMat);
       mesh.position.copy(ref.proxyMesh.position);
@@ -357,7 +362,7 @@ export class SealManager {
 
   private lightIndexFromKey(key: string): number {
     const side = key.split(':')[0];
-    const idx = SIDES.indexOf(side as typeof SIDES[number]);
+    const idx = SIDES.indexOf(side as (typeof SIDES)[number]);
     return idx >= 0 ? idx : 0;
   }
 }

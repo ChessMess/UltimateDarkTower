@@ -150,14 +150,20 @@ export class TowerEmulatorAdapter implements IBluetoothAdapter {
       // completes — so the completion state must arrive after the ack.
       this.calibrationPending = true;
       if (this.calibrationFallbackTimer) clearTimeout(this.calibrationFallbackTimer);
-      this.calibrationFallbackTimer = setTimeout(() => this.completeCalibration(), CALIBRATION_FALLBACK_MS);
+      this.calibrationFallbackTimer = setTimeout(
+        () => this.completeCalibration(),
+        CALIBRATION_FALLBACK_MS,
+      );
       // (1) ack — echo current state so the command resolves.
-      setTimeout(() => this.rxCallback?.(new Uint8Array(this.lastStatePacket)), COMMAND_RESPONSE_DELAY_MS);
+      setTimeout(
+        () => this.rxCallback?.(new Uint8Array(this.lastStatePacket)),
+        COMMAND_RESPONSE_DELAY_MS,
+      );
     } else {
       // Other basic commands (unjam, reset counter, etc.) — echo last known state
       setTimeout(
         () => this.rxCallback?.(new Uint8Array(this.lastStatePacket)),
-        COMMAND_RESPONSE_DELAY_MS
+        COMMAND_RESPONSE_DELAY_MS,
       );
     }
   }

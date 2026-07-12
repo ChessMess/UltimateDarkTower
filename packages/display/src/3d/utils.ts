@@ -41,18 +41,20 @@ export function polarToXZ(azimuth: number, r: number): { x: number; z: number } 
 export function computeRedLightPosition(
   layer: number,
   light: number,
-  radius: number
+  radius: number,
 ): { x: number; y: number; z: number } {
   const isRing = layer < 3;
   const isLedge = layer === 3;
   const isBase1 = layer === 4;
-  const r = radius * (isRing
-    ? RED_LIGHT_LAYOUT.ringInsetRadius
-    : isLedge
-      ? LEDGE_LED_LAYOUT.radius
-      : isBase1
-        ? BASE1_LED_LAYOUT.radius
-        : BASE2_LED_LAYOUT.radius);
+  const r =
+    radius *
+    (isRing
+      ? RED_LIGHT_LAYOUT.ringInsetRadius
+      : isLedge
+        ? LEDGE_LED_LAYOUT.radius
+        : isBase1
+          ? BASE1_LED_LAYOUT.radius
+          : BASE2_LED_LAYOUT.radius);
   const baseAzimuth = isRing ? RING_AZIMUTH[light] : CORNER_AZIMUTH[light];
   const azimuthOffset = isLedge
     ? LEDGE_LED_LAYOUT.azimuthOffset

@@ -1,4 +1,4 @@
-# PRD-05 — Official App Bridge *(future — stub)*
+# PRD-05 — Official App Bridge _(future — stub)_
 
 > **Status: future / not MVP.** This stub captures intent and constraints so MVP code leaves the door
 > open. Flesh out into a full PRD before implementation. Read [_overview.md](_overview.md) first.
@@ -32,8 +32,8 @@ running a fake BLE peripheral. UDT Sync already implements one: `packages/host/s
    `TowerState` and relay it (WebSocket) to the UTDD UI.
 3. **FR-05.3** The host MUST **synthesize tower→app notifications** a real tower would send — skull
    drops (advancing `beam.count`), calibration-complete, and the battery heartbeat (~200 ms; the app
-   times out ~3 s) — encoding state with `rtdt_pack_state`. *(This is the main net-new work beyond
-   UDT Sync, which today relies on real towers for return traffic.)*
+   times out ~3 s) — encoding state with `rtdt_pack_state`. _(This is the main net-new work beyond
+   UDT Sync, which today relies on real towers for return traffic.)_
 4. **FR-05.4** UTDD MUST provide a `BridgeSource` implementing `TowerStateSource`/`BoardStateSource`
    that consumes the relay stream and forwards player inputs to the host, swappable for `ManualSource`
    with no UI changes.

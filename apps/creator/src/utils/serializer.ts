@@ -43,11 +43,14 @@ export function computeGroupRects(nodes: CreatorNode[]): Record<string, GroupRec
     const memberIds = props?.nodeIds ?? [];
     const members = memberIds
       .map((id) => byId.get(id))
-      .filter(
-        (m): m is CreatorNode => m !== undefined && m.data.schemaNode.kind !== 'util.group',
-      );
+      .filter((m): m is CreatorNode => m !== undefined && m.data.schemaNode.kind !== 'util.group');
     if (members.length === 0) {
-      rects[n.id] = { x: n.position.x, y: n.position.y, width: GROUP_EMPTY_W, height: GROUP_EMPTY_H };
+      rects[n.id] = {
+        x: n.position.x,
+        y: n.position.y,
+        width: GROUP_EMPTY_W,
+        height: GROUP_EMPTY_H,
+      };
       continue;
     }
     let minX = Infinity;

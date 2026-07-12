@@ -1,13 +1,13 @@
 # UltimateDarkTowerDigital (UTDD)
 
-Play a **solo base game** of *Return to Dark Tower* (1 player, up to 4 heroes, no expansions) in the
+Play a **solo base game** of _Return to Dark Tower_ (1 player, up to 4 heroes, no expansions) in the
 browser — a software **tower emulator**, a **digital game board**, and **digital player boards** —
 composed from the UDT library family.
 
 > UTDD is a **display, not a rules engine.** In the full game the official companion app is the brain;
 > UTDD's long-term role is to be the tower + board it drives. The MVP runs browser-only with the player
 > driving everything manually, behind a state-source seam that lets the official app take over later.
-> See **[docs/prd/_overview.md](docs/prd/_overview.md)**.
+> See **[docs/prd/\_overview.md](docs/prd/_overview.md)**.
 
 ## Architecture at a glance
 

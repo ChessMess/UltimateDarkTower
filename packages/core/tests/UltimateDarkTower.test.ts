@@ -79,7 +79,9 @@ describe('UltimateDarkTower', () => {
       await darkTower.connect();
 
       // 20-byte tower-state response (byte 0 = 0x00 → non-battery, routed to onTowerResponse).
-      const packet = new Uint8Array([0x00, 0x11, 0x00, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0]);
+      const packet = new Uint8Array([
+        0x00, 0x11, 0x00, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0,
+      ]);
       mockAdapter.simulateResponse(packet);
 
       expect(received).toEqual([Array.from(packet)]);
@@ -88,10 +90,15 @@ describe('UltimateDarkTower', () => {
 
     test('onTowerStateUpdate receives distinct old/new state objects with a real diff after lights()', async () => {
       await darkTower.connect();
-      const updates: Array<{ newState: ReturnType<typeof darkTower.getCurrentTowerState>; oldState: ReturnType<typeof darkTower.getCurrentTowerState> }> = [];
+      const updates: Array<{
+        newState: ReturnType<typeof darkTower.getCurrentTowerState>;
+        oldState: ReturnType<typeof darkTower.getCurrentTowerState>;
+      }> = [];
       darkTower.onTowerStateUpdate = (newState, oldState) => updates.push({ newState, oldState });
 
-      const promise = darkTower.lights({ doorway: [{ level: 'top', position: 'north', style: 'on' }] });
+      const promise = darkTower.lights({
+        doorway: [{ level: 'top', position: 'north', style: 'on' }],
+      });
       darkTower['towerCommands'].onTowerResponse();
       await promise;
 
@@ -177,10 +184,11 @@ describe('UltimateDarkTower', () => {
       test('should return correct side from tower state for all drum levels', () => {
         // Mock the towerCommands.getCurrentDrumPosition method directly since that's what's called
         const towerCommands = darkTower['towerCommands'];
-        mockGetCurrentDrumPosition = jest.spyOn(towerCommands, 'getCurrentDrumPosition')
-          .mockReturnValueOnce('north')   // top
-          .mockReturnValueOnce('east')    // middle  
-          .mockReturnValueOnce('south');  // bottom
+        mockGetCurrentDrumPosition = jest
+          .spyOn(towerCommands, 'getCurrentDrumPosition')
+          .mockReturnValueOnce('north') // top
+          .mockReturnValueOnce('east') // middle
+          .mockReturnValueOnce('south'); // bottom
 
         expect(darkTower['getCurrentDrumPosition']('top')).toBe('north');
         expect(darkTower['getCurrentDrumPosition']('middle')).toBe('east');
@@ -196,7 +204,8 @@ describe('UltimateDarkTower', () => {
           if (mockGetCurrentDrumPosition) {
             mockGetCurrentDrumPosition.mockRestore();
           }
-          mockGetCurrentDrumPosition = jest.spyOn(towerCommands, 'getCurrentDrumPosition')
+          mockGetCurrentDrumPosition = jest
+            .spyOn(towerCommands, 'getCurrentDrumPosition')
             .mockReturnValue(positions[i]);
 
           expect(darkTower['getCurrentDrumPosition']('top')).toBe(positions[i]);
@@ -207,7 +216,8 @@ describe('UltimateDarkTower', () => {
 
       test('should default to north for invalid position values', () => {
         const towerCommands = darkTower['towerCommands'];
-        mockGetCurrentDrumPosition = jest.spyOn(towerCommands, 'getCurrentDrumPosition')
+        mockGetCurrentDrumPosition = jest
+          .spyOn(towerCommands, 'getCurrentDrumPosition')
           .mockReturnValue('north');
 
         expect(darkTower['getCurrentDrumPosition']('top')).toBe('north');
@@ -395,10 +405,10 @@ describe('UltimateDarkTower', () => {
       const brokenSealsList = [
         { side: 'north' as const, level: 'top' as const },
         { side: 'south' as const, level: 'middle' as const },
-        { side: 'east' as const, level: 'bottom' as const }
+        { side: 'east' as const, level: 'bottom' as const },
       ];
 
-      brokenSealsList.forEach(seal => {
+      brokenSealsList.forEach((seal) => {
         brokenSeals.add(`${seal.level}-${seal.side}`);
       });
 
@@ -452,7 +462,7 @@ describe('UltimateDarkTower', () => {
         // Test with multiple seals (now calling individually)
         const seals = [
           { side: 'east' as const, level: 'top' as const },
-          { side: 'west' as const, level: 'bottom' as const }
+          { side: 'west' as const, level: 'bottom' as const },
         ];
 
         // Break each seal individually since arrays are no longer supported
@@ -460,12 +470,11 @@ describe('UltimateDarkTower', () => {
           await darkTower.breakSeal(sealToBreak);
         }
 
-        seals.forEach(s => {
+        seals.forEach((s) => {
           expect(darkTower.isSealBroken(s)).toBe(true);
         });
 
         expect(darkTower.getBrokenSeals()).toHaveLength(3); // original + 2 new
-
       } finally {
         // Restore original method
         towerCommands.breakSeal = originalBreakSeal;
@@ -596,7 +605,10 @@ describe('UltimateDarkTower', () => {
 
     test('should exclude config seals from getRandomUnbrokenSeal', () => {
       // Break all but one via config
-      const allSeals: Array<{ side: 'north' | 'south' | 'east' | 'west'; level: 'top' | 'middle' | 'bottom' }> = [];
+      const allSeals: Array<{
+        side: 'north' | 'south' | 'east' | 'west';
+        level: 'top' | 'middle' | 'bottom';
+      }> = [];
       for (const side of ['north', 'south', 'east', 'west'] as const) {
         for (const level of ['top', 'middle', 'bottom'] as const) {
           if (!(side === 'west' && level === 'bottom')) {
@@ -645,11 +657,7 @@ describe('UltimateDarkTower', () => {
 
     test('should queue commands sequentially', async () => {
       // Send multiple commands rapidly
-      const promises = [
-        darkTower.playSound(1),
-        darkTower.playSound(2),
-        darkTower.playSound(3)
-      ];
+      const promises = [darkTower.playSound(1), darkTower.playSound(2), darkTower.playSound(3)];
 
       // Commands should be queued but only first one executed immediately
       expect(mockAdapter.writeCalls).toBe(1);
@@ -682,7 +690,7 @@ describe('UltimateDarkTower', () => {
       expect(mockAdapter.writeCalls).toBe(1);
       expect(loggerSpy).toHaveBeenCalledWith(
         expect.stringContaining('Command timeout after 30000ms'),
-        '[UDT]'
+        '[UDT]',
       );
 
       jest.useRealTimers();
@@ -730,11 +738,7 @@ describe('UltimateDarkTower', () => {
 
     test('should clear queue on disconnection', async () => {
       // Queue some commands but don't trigger responses
-      const promises = [
-        darkTower.playSound(1),
-        darkTower.playSound(2),
-        darkTower.playSound(3)
-      ];
+      const promises = [darkTower.playSound(1), darkTower.playSound(2), darkTower.playSound(3)];
 
       // Trigger disconnection - this should clear the queue
       const towerCommands = darkTower['towerCommands'];
@@ -945,7 +949,6 @@ describe('UltimateDarkTower', () => {
           // Bottom level glyphs: banner (north->east), reinforce (south->west)
           expect(darkTower.getGlyphPosition('banner')).toBe('east');
           expect(darkTower.getGlyphPosition('reinforce')).toBe('west');
-
         } finally {
           // Restore original methods
           towerCommands.rotate = originalRotate;
@@ -964,7 +967,7 @@ describe('UltimateDarkTower', () => {
           .mockReturnValueOnce('north') // before top
           .mockReturnValueOnce('north') // before middle
           .mockReturnValueOnce('north') // before bottom
-          .mockReturnValueOnce('east')  // after top (1 step clockwise)
+          .mockReturnValueOnce('east') // after top (1 step clockwise)
           .mockReturnValueOnce('south') // after middle (2 steps clockwise)
           .mockReturnValueOnce('north'); // after bottom (unchanged)
 
@@ -983,7 +986,6 @@ describe('UltimateDarkTower', () => {
           // Bottom level unchanged
           expect(darkTower.getGlyphPosition('banner')).toBe('north');
           expect(darkTower.getGlyphPosition('reinforce')).toBe('south');
-
         } finally {
           towerCommands.randomRotateLevels = originalRandomRotate;
           getCurrentDrumPositionSpy.mockRestore();
@@ -1035,10 +1037,10 @@ describe('UltimateDarkTower', () => {
         const updateMethod = darkTower['calculateAndUpdateGlyphPositions'].bind(darkTower);
 
         // Perform multiple rotations around the circle
-        updateMethod('top', 'north', 'east');  // north to east (1 step clockwise)
-        updateMethod('top', 'east', 'south');  // east to south (1 step clockwise) 
-        updateMethod('top', 'south', 'west');  // south to west (1 step clockwise)
-        updateMethod('top', 'west', 'north');  // west to north (1 step clockwise, back to start)
+        updateMethod('top', 'north', 'east'); // north to east (1 step clockwise)
+        updateMethod('top', 'east', 'south'); // east to south (1 step clockwise)
+        updateMethod('top', 'south', 'west'); // south to west (1 step clockwise)
+        updateMethod('top', 'west', 'north'); // west to north (1 step clockwise, back to start)
 
         // Should be back to original position
         expect(darkTower.getGlyphPosition('cleanse')).toBe('north');
@@ -1063,9 +1065,9 @@ describe('UltimateDarkTower', () => {
         // Test moving drum from initial position (north) to each direction
         // Since cleanse starts at north and quest starts at south on the top drum
         const testCases = [
-          { from: 'north', to: 'east', expectedCleanse: 'east', expectedQuest: 'west' },   // 1 step clockwise
-          { from: 'north', to: 'south', expectedCleanse: 'south', expectedQuest: 'north' }, // 2 steps clockwise  
-          { from: 'north', to: 'west', expectedCleanse: 'west', expectedQuest: 'east' },   // 3 steps clockwise
+          { from: 'north', to: 'east', expectedCleanse: 'east', expectedQuest: 'west' }, // 1 step clockwise
+          { from: 'north', to: 'south', expectedCleanse: 'south', expectedQuest: 'north' }, // 2 steps clockwise
+          { from: 'north', to: 'west', expectedCleanse: 'west', expectedQuest: 'east' }, // 3 steps clockwise
           { from: 'north', to: 'north', expectedCleanse: 'north', expectedQuest: 'south' }, // No rotation
         ] as const;
 
@@ -1099,7 +1101,7 @@ describe('UltimateDarkTower', () => {
 
         // Both glyphs on top drum should move together
         expect(darkTower.getGlyphPosition('cleanse')).toBe('east'); // was north
-        expect(darkTower.getGlyphPosition('quest')).toBe('west');   // was south
+        expect(darkTower.getGlyphPosition('quest')).toBe('west'); // was south
 
         // Other drums unaffected
         expect(darkTower.getGlyphPosition('battle')).toBe('north');
@@ -1114,7 +1116,7 @@ describe('UltimateDarkTower', () => {
         updateMethod('bottom', 'north', 'south');
 
         // Both glyphs on bottom drum should move together
-        expect(darkTower.getGlyphPosition('banner')).toBe('south');    // was north
+        expect(darkTower.getGlyphPosition('banner')).toBe('south'); // was north
         expect(darkTower.getGlyphPosition('reinforce')).toBe('north'); // was south
 
         // Other drums unaffected
@@ -1147,7 +1149,7 @@ describe('UltimateDarkTower', () => {
 
         // Glyphs should swap positions
         expect(darkTower.getGlyphPosition('cleanse')).toBe('south'); // was north
-        expect(darkTower.getGlyphPosition('quest')).toBe('north');   // was south
+        expect(darkTower.getGlyphPosition('quest')).toBe('north'); // was south
       });
 
       test('should correctly handle 270-degree rotations', () => {
@@ -1157,7 +1159,7 @@ describe('UltimateDarkTower', () => {
         updateMethod('bottom', 'north', 'west');
 
         // 270-degree clockwise rotation
-        expect(darkTower.getGlyphPosition('banner')).toBe('west');    // north + 3 steps = west
+        expect(darkTower.getGlyphPosition('banner')).toBe('west'); // north + 3 steps = west
         expect(darkTower.getGlyphPosition('reinforce')).toBe('east'); // south + 3 steps = east
       });
     });
@@ -1181,7 +1183,7 @@ describe('UltimateDarkTower', () => {
       expect(state.layer).toHaveLength(6);
       state.layer.forEach((layer: { light: Array<{ effect: number; loop: boolean }> }) => {
         expect(layer.light).toHaveLength(4);
-        layer.light.forEach(light => {
+        layer.light.forEach((light) => {
           expect(light.effect).toBe(LIGHT_EFFECTS.on);
           expect(light.loop).toBe(true);
         });
@@ -1192,7 +1194,7 @@ describe('UltimateDarkTower', () => {
       await darkTower.allLightsOn(LIGHT_EFFECTS.breathe);
       const state = sendStateSpy.mock.calls[0][0];
       state.layer.forEach((layer: { light: Array<{ effect: number; loop: boolean }> }) => {
-        layer.light.forEach(light => {
+        layer.light.forEach((light) => {
           expect(light.effect).toBe(LIGHT_EFFECTS.breathe);
           expect(light.loop).toBe(true);
         });
@@ -1203,7 +1205,7 @@ describe('UltimateDarkTower', () => {
       await darkTower.allLightsOn(LIGHT_EFFECTS.off);
       const state = sendStateSpy.mock.calls[0][0];
       state.layer.forEach((layer: { light: Array<{ effect: number; loop: boolean }> }) => {
-        layer.light.forEach(light => {
+        layer.light.forEach((light) => {
           expect(light.effect).toBe(LIGHT_EFFECTS.off);
           expect(light.loop).toBe(false);
         });
@@ -1215,7 +1217,7 @@ describe('UltimateDarkTower', () => {
       expect(sendStateSpy).toHaveBeenCalledTimes(1);
       const state = sendStateSpy.mock.calls[0][0];
       state.layer.forEach((layer: { light: Array<{ effect: number; loop: boolean }> }) => {
-        layer.light.forEach(light => {
+        layer.light.forEach((light) => {
           expect(light.effect).toBe(LIGHT_EFFECTS.off);
           expect(light.loop).toBe(false);
         });
@@ -1249,8 +1251,7 @@ describe('UltimateDarkTower', () => {
     // Helper: extract audio.volume nibble from a packed 20-byte command packet.
     // Packet layout: byte 0 = command type, bytes 1-19 = 19-byte state data.
     // audio.volume occupies bits 4-7 of stateData[17], i.e. packet byte 18.
-    const getVolumeFromPacket = (packet: Uint8Array): number =>
-      (packet[18] >> 4) & 0x0f;
+    const getVolumeFromPacket = (packet: Uint8Array): number => (packet[18] >> 4) & 0x0f;
 
     beforeEach(async () => {
       await darkTower.connect();

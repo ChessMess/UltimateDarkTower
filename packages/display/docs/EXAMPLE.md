@@ -1,6 +1,6 @@
 # Example walkthrough
 
-*Docs: [Index](README.md) > Hobbyist + integrator > Example*
+_Docs: [Index](README.md) > Hobbyist + integrator > Example_
 
 **Before reading:** [GETTING_STARTED](GETTING_STARTED.md) covers install and a minimal `TowerDisplay`.
 

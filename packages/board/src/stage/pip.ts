@@ -69,7 +69,7 @@ function makeEl(tag: string, className: string): HTMLElement {
 export function enablePipInteractions(
   panes: HTMLElement[],
   bounds: HTMLElement,
-  storage: StageStorage
+  storage: StageStorage,
 ): void {
   for (const pane of panes) {
     const handle = makeEl('div', 'bsv-pip-handle');
@@ -94,14 +94,20 @@ export function enablePipInteractions(
  * current `.is-mini` pane. No-op when nothing is saved or no pane is the inset, so the
  * CSS default corner + size stand until the user drags or resizes it.
  */
-export function applyPipInset(panes: HTMLElement[], bounds: HTMLElement, storage: StageStorage): void {
+export function applyPipInset(
+  panes: HTMLElement[],
+  bounds: HTMLElement,
+  storage: StageStorage,
+): void {
   const pane = panes.find((p) => p.classList.contains('is-mini'));
   if (!pane) return;
   const saved = readInset(storage);
   if (!saved) return;
 
-  if (isNum(saved.width)) pane.style.width = `${clamp(saved.width, MIN_INSET, bounds.clientWidth)}px`;
-  if (isNum(saved.height)) pane.style.height = `${clamp(saved.height, MIN_INSET, bounds.clientHeight)}px`;
+  if (isNum(saved.width))
+    pane.style.width = `${clamp(saved.width, MIN_INSET, bounds.clientWidth)}px`;
+  if (isNum(saved.height))
+    pane.style.height = `${clamp(saved.height, MIN_INSET, bounds.clientHeight)}px`;
   if (isNum(saved.left) && isNum(saved.top)) {
     const maxLeft = Math.max(0, bounds.clientWidth - pane.offsetWidth);
     const maxTop = Math.max(0, bounds.clientHeight - pane.offsetHeight);
@@ -117,7 +123,7 @@ function makeMovable(
   pane: HTMLElement,
   handle: HTMLElement,
   bounds: HTMLElement,
-  storage: StageStorage
+  storage: StageStorage,
 ): void {
   handle.addEventListener('mousedown', (down: MouseEvent) => {
     if (!pane.classList.contains('is-mini')) return; // only while the inset
@@ -146,7 +152,7 @@ function makeResizable(
   grip: HTMLElement,
   corner: Corner,
   bounds: HTMLElement,
-  storage: StageStorage
+  storage: StageStorage,
 ): void {
   grip.addEventListener('mousedown', (down: MouseEvent) => {
     if (!pane.classList.contains('is-mini')) return;

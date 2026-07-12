@@ -91,7 +91,11 @@ const config: ForgeConfig = {
   },
   makers: [
     { name: '@electron-forge/maker-zip', platforms: ['darwin', 'linux'], config: {} },
-    { name: '@electron-forge/maker-dmg', platforms: ['darwin'], config: { icon: './resources/icon.icns' } },
+    {
+      name: '@electron-forge/maker-dmg',
+      platforms: ['darwin'],
+      config: { icon: './resources/icon.icns' },
+    },
     { name: '@electron-forge/maker-deb', platforms: ['linux'], config: {} },
   ],
   plugins: [
@@ -101,9 +105,7 @@ const config: ForgeConfig = {
         { entry: 'src/main/main.ts', config: 'vite.main.config.ts', target: 'main' },
         { entry: 'src/main/preload.ts', config: 'vite.preload.config.ts', target: 'preload' },
       ],
-      renderer: [
-        { name: 'main_window', config: 'vite.renderer.config.ts' },
-      ],
+      renderer: [{ name: 'main_window', config: 'vite.renderer.config.ts' }],
     }),
   ],
 };

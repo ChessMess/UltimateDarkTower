@@ -11,9 +11,32 @@ class OrbitControls {
           y: 0,
           z: 0,
           set() {},
-          clone() { return { x: 0, y: 0, z: 0, set() {}, clone() { return this; }, sub() { return this; }, normalize() { return this; }, toArray() { return [0, 0, 0]; } }; },
-          sub() { return this; },
-          normalize() { return this; },
+          clone() {
+            return {
+              x: 0,
+              y: 0,
+              z: 0,
+              set() {},
+              clone() {
+                return this;
+              },
+              sub() {
+                return this;
+              },
+              normalize() {
+                return this;
+              },
+              toArray() {
+                return [0, 0, 0];
+              },
+            };
+          },
+          sub() {
+            return this;
+          },
+          normalize() {
+            return this;
+          },
           toArray() {
             return [0, 0, 0];
           },

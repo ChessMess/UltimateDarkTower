@@ -32,21 +32,21 @@ npm run ci
 
 ### Useful commands
 
-| Command                  | Description                                |
-| ------------------------ | ------------------------------------------ |
-| `npm test`               | Run test suite                             |
-| `npm run test:watch`     | Run tests in watch mode                    |
-| `npm run test:coverage`  | Run tests with coverage report             |
-| `npm run lint`           | Check code with ESLint                     |
-| `npm run lint:fix`       | Auto-fix lint issues                       |
-| `npm run format`         | Format code with Prettier                  |
-| `npm run typecheck`      | TypeScript type checking                   |
-| `npm run build`          | Full library build (Vite + type generation)|
-| `npm run build:example`  | Build the example page for deployment      |
-| `npm run dev`            | Vite dev server                            |
-| `npm run dev:example`    | Dev server with example page               |
-| `npm run clean`          | Remove dist/ directories                   |
-| `npm run ci`             | Full CI pipeline (typecheck + lint + test + build) |
+| Command                 | Description                                        |
+| ----------------------- | -------------------------------------------------- |
+| `npm test`              | Run test suite                                     |
+| `npm run test:watch`    | Run tests in watch mode                            |
+| `npm run test:coverage` | Run tests with coverage report                     |
+| `npm run lint`          | Check code with ESLint                             |
+| `npm run lint:fix`      | Auto-fix lint issues                               |
+| `npm run format`        | Format code with Prettier                          |
+| `npm run typecheck`     | TypeScript type checking                           |
+| `npm run build`         | Full library build (Vite + type generation)        |
+| `npm run build:example` | Build the example page for deployment              |
+| `npm run dev`           | Vite dev server                                    |
+| `npm run dev:example`   | Dev server with example page                       |
+| `npm run clean`         | Remove dist/ directories                           |
+| `npm run ci`            | Full CI pipeline (typecheck + lint + test + build) |
 
 ---
 

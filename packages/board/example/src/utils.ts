@@ -8,7 +8,7 @@ export function showBannerError(banner: HTMLElement | null, prefix: string, err:
 export function bindCopyButton(
   btn: HTMLButtonElement,
   getContent: () => string,
-  banner: HTMLElement | null
+  banner: HTMLElement | null,
 ): void {
   const label = btn.textContent ?? 'Copy';
   let resetTimer: ReturnType<typeof setTimeout> | null = null;

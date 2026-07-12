@@ -103,10 +103,7 @@ export type CalibrationCompleteEvent = BaseRelayEvent<
 >;
 
 /** A periodic-fallback heartbeat notification was synthesized. */
-export type HeartbeatEvent = BaseRelayEvent<
-  typeof RelayEventType.HEARTBEAT,
-  { packet: number[] }
->;
+export type HeartbeatEvent = BaseRelayEvent<typeof RelayEventType.HEARTBEAT, { packet: number[] }>;
 
 /** A consumer joined the relay. */
 export type ConsumerJoinedEvent = BaseRelayEvent<
@@ -155,8 +152,15 @@ export function makeSkullDroppedEvent(skullCount: number, packet: number[]): Sku
 }
 
 /** Build a {@link CalibrationCompleteEvent}. */
-export function makeCalibrationCompleteEvent(replyType: number, packet: number[]): CalibrationCompleteEvent {
-  return { type: RelayEventType.CALIBRATION_COMPLETE, payload: { replyType, packet }, timestamp: now() };
+export function makeCalibrationCompleteEvent(
+  replyType: number,
+  packet: number[],
+): CalibrationCompleteEvent {
+  return {
+    type: RelayEventType.CALIBRATION_COMPLETE,
+    payload: { replyType, packet },
+    timestamp: now(),
+  };
 }
 
 /** Build a {@link HeartbeatEvent}. */
@@ -175,8 +179,16 @@ export function makeAppDisconnectedEvent(address?: string): AppDisconnectedEvent
 }
 
 /** Build a {@link ConsumerJoinedEvent}. */
-export function makeConsumerJoinedEvent(clientId: string, label?: string, observer?: boolean): ConsumerJoinedEvent {
-  return { type: RelayEventType.CONSUMER_JOINED, payload: { clientId, label, observer }, timestamp: now() };
+export function makeConsumerJoinedEvent(
+  clientId: string,
+  label?: string,
+  observer?: boolean,
+): ConsumerJoinedEvent {
+  return {
+    type: RelayEventType.CONSUMER_JOINED,
+    payload: { clientId, label, observer },
+    timestamp: now(),
+  };
 }
 
 /** Build a {@link ConsumerLeftEvent}. */

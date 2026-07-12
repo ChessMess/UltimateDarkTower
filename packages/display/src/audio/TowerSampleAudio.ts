@@ -126,7 +126,11 @@ export class TowerSampleAudio {
     loop: boolean = false,
     volume: number = 0,
   ): { stop: () => void } {
-    const noop = { stop: () => { /* no-op */ } };
+    const noop = {
+      stop: () => {
+        /* no-op */
+      },
+    };
     if (!this.enabled) return noop;
     if (sample === 0) return noop;
 
@@ -147,7 +151,11 @@ export class TowerSampleAudio {
       stop: () => {
         stopped = true;
         if (src) {
-          try { src.stop(); } catch { /* already stopped */ }
+          try {
+            src.stop();
+          } catch {
+            /* already stopped */
+          }
         }
       },
     };
@@ -196,7 +204,11 @@ export class TowerSampleAudio {
       // Detach: don't store on this.source. Clean up the per-shot gain when
       // playback ends so we don't leak audio graph nodes.
       src.onended = () => {
-        try { shotGain.disconnect(); } catch { /* */ }
+        try {
+          shotGain.disconnect();
+        } catch {
+          /* */
+        }
       };
     })();
 

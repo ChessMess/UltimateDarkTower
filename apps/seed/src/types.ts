@@ -70,9 +70,18 @@ export type Kingdom = (typeof KINGDOMS)[number];
 
 /** All foes across all levels, for spawn/defeat tracking. */
 export const ALL_FOES = [
-  'Brigands', 'Oreks', 'Shadow Wolves', 'Spine Fiend',
-  'Frost Troll', 'Lemure', 'Clan of Neuri', 'Widowmade Spider',
-  'Dragon', 'Mormo', 'Striga', 'Titan',
+  'Brigands',
+  'Oreks',
+  'Shadow Wolves',
+  'Spine Fiend',
+  'Frost Troll',
+  'Lemure',
+  'Clan of Neuri',
+  'Widowmade Spider',
+  'Dragon',
+  'Mormo',
+  'Striga',
+  'Titan',
 ] as const;
 
 export const COMPANIONS = ['Berat', 'Grigor', 'Yana'] as const;
@@ -116,25 +125,22 @@ export const CHANGEABLE_FIELDS = [
 export type ChangeableField = (typeof CHANGEABLE_FIELDS)[number];
 
 export const FIELD_OPTIONS: Record<ChangeableField, string[]> = {
-  'Source': ['Core', 'Competitive'],
-  'Difficulty': ['Heroic', 'Gritty'],
-  'Expansions': ['None', 'Monuments', 'Alliances', 'Alliances + Monuments'],
+  Source: ['Core', 'Competitive'],
+  Difficulty: ['Heroic', 'Gritty'],
+  Expansions: ['None', 'Monuments', 'Alliances', 'Alliances + Monuments'],
   'Player Count': ['1', '2', '3', '4'],
-  'Adversary': [
-    'Ashstrider', 'Bane of Omens', 'Empress of Shades', 'Gaze Eternal',
-    'Gravemaw', 'Isa the Exile', 'Lingering Rot', "Utuk'Ku",
+  Adversary: [
+    'Ashstrider',
+    'Bane of Omens',
+    'Empress of Shades',
+    'Gaze Eternal',
+    'Gravemaw',
+    'Isa the Exile',
+    'Lingering Rot',
+    "Utuk'Ku",
   ],
-  'Ally': [
-    'Gleb', 'Grigor', 'Hakan', 'Letha', 'Miras',
-    'Nimet', 'Tomas', 'Vasa', 'Yana', 'Zaida',
-  ],
-  'Foe Level 2': [
-    'Brigands', 'Oreks', 'Shadow Wolves', 'Spine Fiends',
-  ],
-  'Foe Level 3': [
-    'Frost Trolls', 'Clan of Neuri', 'Lemures', 'Widowmade Spiders',
-  ],
-  'Foe Level 4': [
-    'Dragons', 'Mormos', 'Striga', 'Titans',
-  ],
+  Ally: ['Gleb', 'Grigor', 'Hakan', 'Letha', 'Miras', 'Nimet', 'Tomas', 'Vasa', 'Yana', 'Zaida'],
+  'Foe Level 2': ['Brigands', 'Oreks', 'Shadow Wolves', 'Spine Fiends'],
+  'Foe Level 3': ['Frost Trolls', 'Clan of Neuri', 'Lemures', 'Widowmade Spiders'],
+  'Foe Level 4': ['Dragons', 'Mormos', 'Striga', 'Titans'],
 };

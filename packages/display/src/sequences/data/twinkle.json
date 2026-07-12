@@ -5,10 +5,13 @@
   "loop": true,
   "endBehavior": "hold",
   "tracks": [
-    { "_comment": "Respawn check + write. Registered first; consumes 1 RNG draw (spawn check), then on 50% pass: 2 more draws (layer, light), then if dark enough 1 more draw (level).",
+    {
+      "_comment": "Respawn check + write. Registered first; consumes 1 RNG draw (spawn check), then on 50% pass: 2 more draws (layer, light), then if dark enough 1 more draw (level).",
       "kind": "flickerStep",
-      "atTick": 0, "endTick": 1,
-      "layers": [0, 1, 2, 3, 4, 5], "lights": "all",
+      "atTick": 0,
+      "endTick": 1,
+      "layers": [0, 1, 2, 3, 4, 5],
+      "lights": "all",
       "alpha": 0,
       "respawn": {
         "probability": 0.5,
@@ -17,10 +20,13 @@
         "levelMax": 1
       }
     },
-    { "_comment": "Global decay. No RNG.",
+    {
+      "_comment": "Global decay. No RNG.",
       "kind": "scaleAll",
-      "atTick": 0, "endTick": 1,
-      "multiplierNum": 768, "multiplierDen": 769
+      "atTick": 0,
+      "endTick": 1,
+      "multiplierNum": 768,
+      "multiplierDen": 769
     }
   ]
 }

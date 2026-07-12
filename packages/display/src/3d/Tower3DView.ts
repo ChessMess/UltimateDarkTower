@@ -22,12 +22,26 @@ import { DEFAULT_TOWER_SOUND_PACK } from '../audio/audioLibrary';
 import { DEFAULT_SEQUENCE_AUDIO_MAP } from '../audio/sequenceAudio';
 import type { SoundPack } from '../audio/soundPack';
 
-import type { LightingConfig, ResolvedLightingConfig, CameraConfig, ApplyCameraConfigOptions, AudioConfig } from './types';
+import type {
+  LightingConfig,
+  ResolvedLightingConfig,
+  CameraConfig,
+  ApplyCameraConfigOptions,
+  AudioConfig,
+} from './types';
 import {
-  TOWER_LAYER_COUNT, LIGHTS_PER_LAYER,
-  RING_AZIMUTH, CORNER_AZIMUTH,
-  LED_LAYOUT, RED_LIGHT_LAYOUT, LEDGE_LED_LAYOUT, BASE1_LED_LAYOUT, BASE2_LED_LAYOUT,
-  BLOOM_LAYER, DRUM_CALIBRATION_BEEP_PAUSE_S, SIDES,
+  TOWER_LAYER_COUNT,
+  LIGHTS_PER_LAYER,
+  RING_AZIMUTH,
+  CORNER_AZIMUTH,
+  LED_LAYOUT,
+  RED_LIGHT_LAYOUT,
+  LEDGE_LED_LAYOUT,
+  BASE1_LED_LAYOUT,
+  BASE2_LED_LAYOUT,
+  BLOOM_LAYER,
+  DRUM_CALIBRATION_BEEP_PAUSE_S,
+  SIDES,
 } from './constants';
 import { computeRedLightPosition, computeSealLedPose, disposeObject, applyHdrColor } from './utils';
 import { DEFAULT_LIGHTING, resolveLighting } from './LightingResolver';
@@ -55,7 +69,7 @@ const DEFAULT_DRACO_DECODER_PATH = 'https://www.gstatic.com/draco/versioned/deco
 
 type Logger = { log(label: string, data?: Record<string, unknown>): void };
 
-const NULL_LOGGER: Logger = { log: () => { } };
+const NULL_LOGGER: Logger = { log: () => {} };
 const CONSOLE_LOGGER: Logger = {
   log(label, data) {
     // eslint-disable-next-line no-console
@@ -101,9 +115,12 @@ export const __testables = {
     internals(view).ledRefs.get(`${layer}:${light}`),
   getSealNode: (view: Tower3DView, side: string, level: string): THREE.Object3D | undefined =>
     internals(view).sealManager.sealNodes.get(`${side}:${level}`),
-  getSealNodeCount: (view: Tower3DView): number =>
-    internals(view).sealManager.sealNodes.size,
-  getSealBacklight: (view: Tower3DView, side: string, level: string): SealBacklightRef | undefined =>
+  getSealNodeCount: (view: Tower3DView): number => internals(view).sealManager.sealNodes.size,
+  getSealBacklight: (
+    view: Tower3DView,
+    side: string,
+    level: string,
+  ): SealBacklightRef | undefined =>
     internals(view).sealManager.sealBacklights.get(`${side}:${level}`),
   getSealBacklightCount: (view: Tower3DView): number =>
     internals(view).sealManager.sealBacklights.size,
@@ -240,7 +257,10 @@ export class Tower3DView implements ITowerDisplay {
   //     the rotation (single- or multi-position moves alike).
   //   - No fallback tone: a missing/failed load degrades to silence rather than
   //     buzzing. Loaded lazily on first enable (see `drumSoundLoaded` below).
-  private drumAudio: DrumRotationAudio = new DrumRotationAudio({ fallbackTone: false, loop: false });
+  private drumAudio: DrumRotationAudio = new DrumRotationAudio({
+    fallbackTone: false,
+    loop: false,
+  });
   private drumSoundLoaded = false;
   // Dedicated player for the calibration command's bundled sweep recording, kept
   // separate from `drumAudio` so the recording never plays during normal rotations.
@@ -248,7 +268,10 @@ export class Tower3DView implements ITowerDisplay {
   // degrades to silence (+ the visual sweep and Game Start) rather than a buzz.
   // No loop: it's a finite recording of the whole sweep, so it plays once instead
   // of restarting (replaying its opening rotation sound) if the visible sweep runs long.
-  private calibrationAudio: DrumRotationAudio = new DrumRotationAudio({ fallbackTone: false, loop: false });
+  private calibrationAudio: DrumRotationAudio = new DrumRotationAudio({
+    fallbackTone: false,
+    loop: false,
+  });
   private calibrationSoundLoaded = false;
   private towerSampleAudio: TowerSampleAudio = new TowerSampleAudio();
   // Resolved audio state. `sequenceMapOverride` holds the user-supplied
@@ -261,12 +284,12 @@ export class Tower3DView implements ITowerDisplay {
     sequenceMapOverride: Record<number, number> | undefined;
     drumRotationUrl: string | null;
   } = {
-      pack: DEFAULT_TOWER_SOUND_PACK,
-      enabled: false,
-      bindSequenceToSample: false,
-      sequenceMapOverride: undefined,
-      drumRotationUrl: DRUM_ROTATION_SOUND_URL,
-    };
+    pack: DEFAULT_TOWER_SOUND_PACK,
+    enabled: false,
+    bindSequenceToSample: false,
+    sequenceMapOverride: undefined,
+    drumRotationUrl: DRUM_ROTATION_SOUND_URL,
+  };
   private drumManager: DrumManager;
 
   private wrapper: HTMLDivElement | null = null;
@@ -383,11 +406,7 @@ export class Tower3DView implements ITowerDisplay {
     // carries a known sequence but no explicit sample, substitute the mapped
     // sample. The default (decoupled) behaviour leaves state.audio.sample as-is.
     let effectiveSample = state.audio.sample;
-    if (
-      effectiveSample === 0 &&
-      this.audioState.bindSequenceToSample &&
-      state.led_sequence
-    ) {
+    if (effectiveSample === 0 && this.audioState.bindSequenceToSample && state.led_sequence) {
       const mapped = this.activeSequenceMap()[state.led_sequence];
       if (mapped !== undefined) effectiveSample = mapped;
     }
@@ -438,7 +457,9 @@ export class Tower3DView implements ITowerDisplay {
 
   private subscribeFrame(cb: (dt: number) => void): () => void {
     this.physicsFrameListeners.add(cb);
-    return () => { this.physicsFrameListeners.delete(cb); };
+    return () => {
+      this.physicsFrameListeners.delete(cb);
+    };
   }
 
   private subscribeStateApplied(cb: (state: TowerState) => void): () => void {
@@ -465,7 +486,9 @@ export class Tower3DView implements ITowerDisplay {
         console.error('[Tower3DView] onModelLoaded listener threw', err);
       }
     }
-    return () => { this.physicsModelLoadListeners.delete(cb); };
+    return () => {
+      this.physicsModelLoadListeners.delete(cb);
+    };
   }
 
   /** @internal — exposed for tests; equals `physicsFrameListeners.size`. */
@@ -530,9 +553,12 @@ export class Tower3DView implements ITowerDisplay {
     // Wire optional lifecycle methods AFTER attach so an immediate model-load
     // fire (when the GLB is already loaded) reaches a fully-built plugin.
     if (plugin.update) unsubs.push(this.subscribeFrame(plugin.update.bind(plugin)));
-    if (plugin.onStateApplied) unsubs.push(this.subscribeStateApplied(plugin.onStateApplied.bind(plugin)));
-    if (plugin.onSealsApplied) unsubs.push(this.sealManager.onSealsApplied(plugin.onSealsApplied.bind(plugin)));
-    if (plugin.onModelLoaded) unsubs.push(this.subscribeModelLoaded(plugin.onModelLoaded.bind(plugin)));
+    if (plugin.onStateApplied)
+      unsubs.push(this.subscribeStateApplied(plugin.onStateApplied.bind(plugin)));
+    if (plugin.onSealsApplied)
+      unsubs.push(this.sealManager.onSealsApplied(plugin.onSealsApplied.bind(plugin)));
+    if (plugin.onModelLoaded)
+      unsubs.push(this.subscribeModelLoaded(plugin.onModelLoaded.bind(plugin)));
 
     return { plugin, detach: entry.detach };
   }
@@ -800,15 +826,8 @@ export class Tower3DView implements ITowerDisplay {
    *
    * Requires `applyAudioConfig({ enabled: true })` from a user gesture.
    */
-  playSample(
-    sample: number,
-    opts: { loop?: boolean; volume?: number } = {},
-  ): { stop: () => void } {
-    return this.towerSampleAudio.playSampleOneShot(
-      sample,
-      opts.loop ?? false,
-      opts.volume ?? 0,
-    );
+  playSample(sample: number, opts: { loop?: boolean; volume?: number } = {}): { stop: () => void } {
+    return this.towerSampleAudio.playSampleOneShot(sample, opts.loop ?? false, opts.volume ?? 0);
   }
 
   /**
@@ -875,7 +894,8 @@ export class Tower3DView implements ITowerDisplay {
         // are still — keeps the visible sweep in sync with the audio.
         if (DRUM_CALIBRATION_BEEP_PAUSE_S > 0) {
           await new Promise<void>((resolve) =>
-            setTimeout(resolve, DRUM_CALIBRATION_BEEP_PAUSE_S * 1000));
+            setTimeout(resolve, DRUM_CALIBRATION_BEEP_PAUSE_S * 1000),
+          );
         }
       }
     } finally {
@@ -995,13 +1015,15 @@ export class Tower3DView implements ITowerDisplay {
    * is undefined — do not rely on these values.
    */
   getCameraConfig(): Required<CameraConfig> {
-    return this.cameraController?.getCameraConfig() ?? {
-      elevationFactor: this.cameraConfig.elevationFactor ?? -0.5,
-      targetHeightFactor: this.cameraConfig.targetHeightFactor ?? -0.15,
-      distanceFactor: this.cameraConfig.distanceFactor ?? 1,
-      zoomToCursor: this.cameraConfig.zoomToCursor ?? true,
-      preserveViewOnSideSelect: false,
-    };
+    return (
+      this.cameraController?.getCameraConfig() ?? {
+        elevationFactor: this.cameraConfig.elevationFactor ?? -0.5,
+        targetHeightFactor: this.cameraConfig.targetHeightFactor ?? -0.15,
+        distanceFactor: this.cameraConfig.distanceFactor ?? 1,
+        zoomToCursor: this.cameraConfig.zoomToCursor ?? true,
+        preserveViewOnSideSelect: false,
+      }
+    );
   }
 
   /**
@@ -1019,7 +1041,10 @@ export class Tower3DView implements ITowerDisplay {
    * tuning by eye, then copying the numbers into a `CameraConfig`. Falls back to
    * the stored config when no camera controller is active (e.g. post-dispose).
    */
-  getLiveCameraFactors(): Pick<Required<CameraConfig>, 'elevationFactor' | 'targetHeightFactor' | 'distanceFactor'> {
+  getLiveCameraFactors(): Pick<
+    Required<CameraConfig>,
+    'elevationFactor' | 'targetHeightFactor' | 'distanceFactor'
+  > {
     return this.cameraController?.getLiveCameraFactors() ?? this.getCameraConfig();
   }
 
@@ -1150,9 +1175,10 @@ export class Tower3DView implements ITowerDisplay {
     const canvas = renderer?.domElement;
     const measuredMs = frameMs.reduce((s, x) => s + x, 0);
     const trimmedFrameMs = trim(frameMs);
-    const fps = trimmedFrameMs.length > 0
-      ? (trimmedFrameMs.length * 1000) / trimmedFrameMs.reduce((s, x) => s + x, 0)
-      : 0;
+    const fps =
+      trimmedFrameMs.length > 0
+        ? (trimmedFrameMs.length * 1000) / trimmedFrameMs.reduce((s, x) => s + x, 0)
+        : 0;
 
     return {
       fps: +fps.toFixed(1),
@@ -1162,26 +1188,32 @@ export class Tower3DView implements ITowerDisplay {
       frameMs: stat(trimmedFrameMs),
       ...(bloomTotalMs.length > 1
         ? {
-          bloomTotalMs: stat(trim(bloomTotalMs)),
-          darkenMs: stat(trim(darkenMs)),
-          bloomComposerMs: stat(trim(bloomComposerMs)),
-          restoreMs: stat(trim(restoreMs)),
-          finalComposerMs: stat(trim(finalComposerMs)),
-        }
+            bloomTotalMs: stat(trim(bloomTotalMs)),
+            darkenMs: stat(trim(darkenMs)),
+            bloomComposerMs: stat(trim(bloomComposerMs)),
+            restoreMs: stat(trim(restoreMs)),
+            finalComposerMs: stat(trim(finalComposerMs)),
+          }
         : {}),
       drawCalls: countStat(trim(drawCalls)),
       triangles: countStat(trim(triangles)),
       programs: renderer?.info.programs?.length ?? 0,
-      scene: { visibleBloomMeshes, visibleNonBloomMeshes, visiblePointLights, visibleSprites, totalMeshes },
+      scene: {
+        visibleBloomMeshes,
+        visibleNonBloomMeshes,
+        visiblePointLights,
+        visibleSprites,
+        totalMeshes,
+      },
       drivers: { ledsActive },
       canvas: canvas
         ? {
-          cssW: canvas.clientWidth,
-          cssH: canvas.clientHeight,
-          bufW: canvas.width,
-          bufH: canvas.height,
-          pixelRatio: renderer.getPixelRatio?.() ?? 1,
-        }
+            cssW: canvas.clientWidth,
+            cssH: canvas.clientHeight,
+            bufW: canvas.width,
+            bufH: canvas.height,
+            pixelRatio: renderer.getPixelRatio?.() ?? 1,
+          }
         : { cssW: 0, cssH: 0, bufW: 0, bufH: 0, pixelRatio: 0 },
     };
   }
@@ -1274,7 +1306,11 @@ export class Tower3DView implements ITowerDisplay {
       return this.groundDiscManager.getMetrics(this.modelRadius, this.modelBottomY, this.lighting);
     }
     // Post-dispose fallback.
-    return { center: new THREE.Vector3(0, this.modelBottomY, 0), radius: this.modelRadius, topY: this.modelBottomY };
+    return {
+      center: new THREE.Vector3(0, this.modelBottomY, 0),
+      radius: this.modelRadius,
+      topY: this.modelBottomY,
+    };
   }
 
   /** Load an equirectangular image or .hdr file as the scene skybox. Pass null to clear. */
@@ -1460,7 +1496,12 @@ export class Tower3DView implements ITowerDisplay {
     this.resizeObserver = new ResizeObserver(() => this.handleResize());
     this.resizeObserver.observe(this.canvasContainer);
 
-    this.cameraController = new CameraController(this.camera, this.controls, this.sideButtons!, this.cameraConfig);
+    this.cameraController = new CameraController(
+      this.camera,
+      this.controls,
+      this.sideButtons!,
+      this.cameraConfig,
+    );
     this.cameraController.onSideChange = (side) => this.emitSideChange(side);
     this.cameraController.bindZoomTowardCursor(this.renderer.domElement);
     this.bindPointerTargets();
@@ -1498,14 +1539,16 @@ export class Tower3DView implements ITowerDisplay {
         this.model = root;
 
         this.sceneLighting?.applyLights(this.lighting, modelRadius);
-        if (this.showGroundDisc) this.groundDiscManager?.build(modelRadius, modelBottomY, this.lighting);
+        if (this.showGroundDisc)
+          this.groundDiscManager?.build(modelRadius, modelBottomY, this.lighting);
         this.buildLeds();
         this.sealManager.buildSealBacklights(root, modelRadius, this.lighting);
         this.sealManager.setDebug(this.debug3D, root);
         this.sealManager.warnOnMissing();
         this.drumManager.warnOnMissing();
         if (this.latestBrokenSeals.length > 0) this.applySeals(this.latestBrokenSeals);
-        if (this.latestState) this.drumManager.applyDrums(this.latestState.drum, { animate: false });
+        if (this.latestState)
+          this.drumManager.applyDrums(this.latestState.drum, { animate: false });
         this.cameraController?.fitToModel(modelRadius, (l, d) => this.logger.log(l, d));
         if (this.pendingSide !== null) {
           const pending = this.pendingSide;
@@ -1776,5 +1819,4 @@ export class Tower3DView implements ITowerDisplay {
       height: Math.max(1, Math.floor(rect.height)),
     };
   }
-
 }

@@ -16,37 +16,44 @@ Run the following commands and capture their output. Do not stop on failure — 
 Read all source files in `src/` and `tests/` and evaluate each of the following areas:
 
 ### Correctness
+
 - Logic errors, off-by-one mistakes, unhandled edge cases
 - Null/undefined access risks not caught by strict mode
 - Incorrect or missing type narrowing
 
 ### API Design
+
 - Are public exports in `index.ts` intentional and minimal?
 - Do interfaces in `types.ts` expose only what consumers need?
 - Are method signatures consistent (parameter order, naming, return types)?
 
 ### Code Clarity
+
 - Unclear variable or function names
 - Functions that do too many things (should be split)
 - Dead code, unused imports, or commented-out blocks
 
 ### DOM & Rendering
+
 - Missing cleanup of created elements or event listeners
 - Potential memory leaks from retained references
 - Inefficient DOM manipulation (repeated reflows, unnecessary re-renders)
 
 ### Test Quality
+
 - Are critical code paths covered?
 - Do tests assert behavior or just "not throwing"?
 - Are there missing edge-case tests (empty state, null inputs, boundary values)?
 - Do mocks accurately represent the real dependencies?
 
 ### Security & Safety
+
 - XSS risks from unescaped user/game-state content inserted into DOM
 - Prototype pollution or injection vectors
 - Unsafe use of `innerHTML` vs `textContent`
 
 ### Package & Build
+
 - Are `peerDependencies`, `exports`, and `files` fields correct?
 - Does the build produce valid ESM and CJS output?
 - Are dev-only dependencies leaking into the published package?

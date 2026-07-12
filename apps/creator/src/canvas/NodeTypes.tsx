@@ -90,15 +90,15 @@ function ScenarioNodeComponent({ data, selected }: NodeProps<ScenarioRFNode>) {
             ENTRY
           </span>
         )}
-        {hasErrors && (
-          <span style={{ color: '#FCA5A5', fontWeight: 900 }}>✕</span>
-        )}
+        {hasErrors && <span style={{ color: '#FCA5A5', fontWeight: 900 }}>✕</span>}
         <span style={{ opacity: 0.85 }}>{cat.label}</span>
       </div>
 
       {/* Body */}
       <div style={{ padding: '5px 8px', color: cat.textColor }}>
-        <div style={{ fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div
+          style={{ fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
+        >
           <span>{schemaNode.label || schemaNode.kind.split('.')[1]}</span>
           {schemaNode.description && (
             <span title={schemaNode.description} style={{ opacity: 0.55, fontSize: 10 }}>

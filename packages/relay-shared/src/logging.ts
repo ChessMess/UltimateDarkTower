@@ -15,11 +15,7 @@
 // ---------------------------------------------------------------------------
 
 /** Direction a command or event flows through the system. */
-export type LogDirection =
-  | 'companion→host'
-  | 'host→clients'
-  | 'client←host'
-  | 'client→tower';
+export type LogDirection = 'companion→host' | 'host→clients' | 'client←host' | 'client→tower';
 
 /** Severity / category tag for filtering log entries. */
 export type LogLevel = 'cmd' | 'event' | 'warn' | 'error';
@@ -161,11 +157,7 @@ export function makeCommandLogEntry(
 /**
  * Build a {@link LogEntry} for a non-command event.
  */
-export function makeEventLogEntry(
-  level: LogLevel,
-  src: string,
-  note: string,
-): LogEntry {
+export function makeEventLogEntry(level: LogLevel, src: string, note: string): LogEntry {
   return {
     ts: new Date().toISOString(),
     seq: null,

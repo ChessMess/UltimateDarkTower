@@ -24,7 +24,11 @@ export interface Monument {
 export const MONUMENTS: readonly Monument[] = [
   { id: 'arch-of-the-golden-sun', name: 'Arch of the Golden Sun', source: 'covenant' },
   { id: 'argent-oak', name: 'Argent Oak', source: 'covenant' },
-  { id: 'cenotaph-of-the-first-prophet', name: 'Cenotaph of the First Prophet', source: 'covenant' },
+  {
+    id: 'cenotaph-of-the-first-prophet',
+    name: 'Cenotaph of the First Prophet',
+    source: 'covenant',
+  },
   { id: 'colossus-of-bjorn', name: 'Colossus of Bjorn', source: 'covenant' },
   { id: 'endless-necropolis', name: 'Endless Necropolis', source: 'covenant' },
   { id: 'moonstone-temple', name: 'Moonstone Temple', source: 'covenant' },
@@ -37,5 +41,5 @@ export const MONUMENT_BY_ID: Readonly<Record<MonumentId, Monument>> = Object.fre
   MONUMENTS.reduce<Record<MonumentId, Monument>>((acc, monument) => {
     acc[monument.id] = monument;
     return acc;
-  }, {})
+  }, {}),
 );

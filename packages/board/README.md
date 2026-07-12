@@ -34,8 +34,8 @@ optional dockable editing UI. The 3D board is a `ScenePlugin` for
 | Import                          | What you get                                                                                                                                          | Heavy deps                                  |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | `ultimatedarktowerboard`        | headless `BoardState` + controller/reducer/commands/events/save-load, the text **readout** and **2D map** renderers, and re-exports of UDT board data | **none** (no `three`, no Display)           |
-| `ultimatedarktowerboard/stage`  | `BoardStageView` — the **all-in-one render stage** (2D + 3D, mode switch / PiP / pop-out / Spin-Pan / focus bar / editing UI, tower on-off)            | **none statically** — 3D is **lazy-loaded** |
-| `ultimatedarktowerboard/plugin` | `Board3DPlugin` — the 3D board `ScenePlugin`                                                                                                           | `three` + `ultimatedarktowerdisplay`        |
+| `ultimatedarktowerboard/stage`  | `BoardStageView` — the **all-in-one render stage** (2D + 3D, mode switch / PiP / pop-out / Spin-Pan / focus bar / editing UI, tower on-off)           | **none statically** — 3D is **lazy-loaded** |
+| `ultimatedarktowerboard/plugin` | `Board3DPlugin` — the 3D board `ScenePlugin`                                                                                                          | `three` + `ultimatedarktowerdisplay`        |
 
 ```ts
 // Headless / readout / 2D / editing UI — three-free:

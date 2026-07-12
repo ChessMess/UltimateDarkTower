@@ -11,7 +11,12 @@ export { createDisplayAdapter } from './display';
 export type { DisplayAdapter, ScheduledSnapshot } from './display';
 
 export { createRelayClient, RelayClient } from './relay-client';
-export type { RelayConnState, RelayTargetState, RelayStatus, RelayClientCallbacks } from './relay-client';
+export type {
+  RelayConnState,
+  RelayTargetState,
+  RelayStatus,
+  RelayClientCallbacks,
+} from './relay-client';
 
 export { validateRefs } from './validate-refs';
 export type { L2Result } from './validate-refs';

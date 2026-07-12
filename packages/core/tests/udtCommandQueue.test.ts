@@ -21,7 +21,7 @@ describe('CommandQueue', () => {
     const p2 = queue.enqueue(new Uint8Array([2]), 'cmd2');
 
     // Let cmd1 be sent
-    await new Promise(r => setImmediate(r));
+    await new Promise((r) => setImmediate(r));
     expect(sendFn).toHaveBeenCalledTimes(1);
     expect(sendFn.mock.calls[0][0]).toEqual(new Uint8Array([1]));
 
@@ -30,7 +30,7 @@ describe('CommandQueue', () => {
 
     // Signal cmd1 response → cmd2 should start
     queue.onResponse();
-    await new Promise(r => setImmediate(r));
+    await new Promise((r) => setImmediate(r));
     expect(sendFn).toHaveBeenCalledTimes(2);
     expect(sendFn.mock.calls[1][0]).toEqual(new Uint8Array([2]));
 
@@ -40,10 +40,12 @@ describe('CommandQueue', () => {
 
   test('response gating: command does not resolve until onResponse() is called', async () => {
     let resolved = false;
-    const p = queue.enqueue(new Uint8Array([1]), 'cmd').then(() => { resolved = true; });
+    const p = queue.enqueue(new Uint8Array([1]), 'cmd').then(() => {
+      resolved = true;
+    });
 
     // Let the send complete
-    await new Promise(r => setImmediate(r));
+    await new Promise((r) => setImmediate(r));
     // sendFn resolved, but queue is still waiting for tower response
     expect(resolved).toBe(false);
 
@@ -84,7 +86,7 @@ describe('CommandQueue', () => {
     const p2 = queue.enqueue(new Uint8Array([2]), 'cmd2');
     const p3 = queue.enqueue(new Uint8Array([3]), 'cmd3');
 
-    await new Promise(r => setImmediate(r)); // cmd1 starts processing
+    await new Promise((r) => setImmediate(r)); // cmd1 starts processing
 
     queue.clear();
 
@@ -94,9 +96,7 @@ describe('CommandQueue', () => {
   });
 
   test('error propagation: send failure rejects command and queue continues', async () => {
-    sendFn
-      .mockRejectedValueOnce(new Error('BLE write failed'))
-      .mockResolvedValueOnce(undefined);
+    sendFn.mockRejectedValueOnce(new Error('BLE write failed')).mockResolvedValueOnce(undefined);
 
     const p1 = queue.enqueue(new Uint8Array([1]), 'cmd1');
     const p2 = queue.enqueue(new Uint8Array([2]), 'cmd2');
@@ -104,7 +104,7 @@ describe('CommandQueue', () => {
     await expect(p1).rejects.toThrow('BLE write failed');
 
     // cmd2 should now be running
-    await new Promise(r => setImmediate(r));
+    await new Promise((r) => setImmediate(r));
     expect(sendFn).toHaveBeenCalledTimes(2);
     queue.onResponse();
     await p2; // resolves without error

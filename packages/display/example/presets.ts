@@ -9,7 +9,7 @@ import { DEFAULT_SEQUENCE_AUDIO_MAP } from '../src/index';
 import type { AppliedTowerState } from '../src/index';
 
 const lightEffects = Object.values(LIGHT_EFFECTS).filter(
-  (value): value is number => typeof value === 'number'
+  (value): value is number => typeof value === 'number',
 );
 const audioSamples = Object.values(TOWER_AUDIO_LIBRARY).map((entry) => entry.value);
 

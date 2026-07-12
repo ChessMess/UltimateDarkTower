@@ -68,7 +68,12 @@ export class ClientLogger {
   /**
    * Log a tower command event into the ring buffer.
    */
-  logCommand(dir: LogDirection, data: number[] | Uint8Array, seq: number | null, note?: string): void {
+  logCommand(
+    dir: LogDirection,
+    data: number[] | Uint8Array,
+    seq: number | null,
+    note?: string,
+  ): void {
     const entry = makeCommandLogEntry(dir, data, seq, this.src, note);
     this.push(entry);
   }
@@ -152,10 +157,7 @@ export class ClientLogger {
       return this.buffer.slice();
     }
     // Ring buffer is full — read from writeIndex (oldest) wrapping around.
-    return [
-      ...this.buffer.slice(this.writeIndex),
-      ...this.buffer.slice(0, this.writeIndex),
-    ];
+    return [...this.buffer.slice(this.writeIndex), ...this.buffer.slice(0, this.writeIndex)];
   }
 
   /**

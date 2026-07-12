@@ -65,7 +65,10 @@ function drive(scenario, o, script) {
     let input;
     if (req.id === 'skullCounter' && !(i < script.length && script[i].requestId === 'skullCounter'))
       input = obs(0);
-    else if (req.id === 'heroSelect' && !(i < script.length && script[i].requestId === 'heroSelect'))
+    else if (
+      req.id === 'heroSelect' &&
+      !(i < script.length && script[i].requestId === 'heroSelect')
+    )
       input = hsel(req.options[0].id);
     else {
       if (i >= script.length) break;
@@ -125,12 +128,23 @@ for (const [name, fx] of [
   // move onto the brigands' space (Delmsmire), battle, spend 2 Advantages (two improves on the
   // first card = the card-ladder equivalent of the legacy adv(2))
   const run = drive(goldenFull, opts, [
-    act('move'), mov('Delmsmire'), act('battle'), tgt('brigands'),
-    bc({ reveal: true }), bc({ improve: true }), bc({ improve: true }), bc({ resolve: true }),
-    bc({ reveal: true }), bc({ resolve: true }),
+    act('move'),
+    mov('Delmsmire'),
+    act('battle'),
+    tgt('brigands'),
+    bc({ reveal: true }),
+    bc({ improve: true }),
+    bc({ improve: true }),
+    bc({ resolve: true }),
+    bc({ reveal: true }),
+    bc({ resolve: true }),
   ]);
   const s = lastOf(run).state;
-  ok('A2: full-turn card battle deducts 2 Advantages (6 → 4)', s.heroes.hero1.advantages === 4, 'adv=' + s.heroes.hero1.advantages);
+  ok(
+    'A2: full-turn card battle deducts 2 Advantages (6 → 4)',
+    s.heroes.hero1.advantages === 4,
+    'adv=' + s.heroes.hero1.advantages,
+  );
 }
 {
   // legacy (non-full-turn) golden must NOT deduct — its digests/streams are frozen
@@ -138,7 +152,10 @@ for (const [name, fx] of [
   const before = s.heroes.hero1.advantages;
   startBattle(s, [], { foeId: 'brigands' });
   resolveBattle(s, [], { spend: 2 });
-  ok('A2: legacy battle does not deduct Advantages (frozen behavior)', s.heroes.hero1.advantages === before);
+  ok(
+    'A2: legacy battle does not deduct Advantages (frozen behavior)',
+    s.heroes.hero1.advantages === before,
+  );
 }
 {
   // full-turn deduction is capped by the 10/action rule and the pool
@@ -148,7 +165,11 @@ for (const [name, fx] of [
   s.heroes.hero1.advantages = 50;
   startBattle(s, [], { foeId: 'brigands' });
   resolveBattle(s, [], { spend: 99 });
-  ok('A2: full-turn deduction clamps to 10/action', s.heroes.hero1.advantages === 40, 'adv=' + s.heroes.hero1.advantages);
+  ok(
+    'A2: full-turn deduction clamps to 10/action',
+    s.heroes.hero1.advantages === 40,
+    'adv=' + s.heroes.hero1.advantages,
+  );
 }
 
 // ---------- A3: a decided outcome is not overwritten in the same resolution ----------
@@ -171,7 +192,11 @@ for (const [name, fx] of [
   s.heroes.hero1.advantages = 5;
   startBattle(s, [], { foeId: 'trap', adversary: true }); // adversary path → winGame on defeat
   resolveBattle(s, [], { spend: 5 }); // clears all 5, last onResolve → 3rd corruption → loss
-  ok('A3: onResolve loss is not overwritten by the defeat win', s.outcome.status === 'lost', 'status=' + s.outcome.status);
+  ok(
+    'A3: onResolve loss is not overwritten by the defeat win',
+    s.outcome.status === 'lost',
+    'status=' + s.outcome.status,
+  );
   ok('A3: the overwritten adversary is not falsely marked defeated', s.adversary.defeated !== true);
 }
 {
@@ -197,7 +222,11 @@ for (const [name, fx] of [
   const before = s.skulls.supply;
   applyOne(s, { op: 'skull.place', count: 1, kingdom: 'north' });
   const placed = s.buildings.find((b) => b.location === target.location);
-  ok('A4: skull.place lands a skull on a standing building', placed.skulls === 1, 'skulls=' + placed.skulls);
+  ok(
+    'A4: skull.place lands a skull on a standing building',
+    placed.skulls === 1,
+    'skulls=' + placed.skulls,
+  );
   ok('A4: skull.place increments onBoard', s.skulls.onBoard >= 1);
   ok('A4: skull.place draws from supply', s.skulls.supply === before - 1);
 }
@@ -264,8 +293,12 @@ for (const [name, fx] of [
   const s = clone(r.state);
   s.outcome = { status: 'running', reason: null };
   // an indirect cycle: questA's success completes questB, whose success completes questA back
-  s._lib.quests['questA'] = { outcomes: { success: [{ op: 'quest.complete', questId: 'questB' }] } };
-  s._lib.quests['questB'] = { outcomes: { success: [{ op: 'quest.complete', questId: 'questA' }] } };
+  s._lib.quests['questA'] = {
+    outcomes: { success: [{ op: 'quest.complete', questId: 'questB' }] },
+  };
+  s._lib.quests['questB'] = {
+    outcomes: { success: [{ op: 'quest.complete', questId: 'questA' }] },
+  };
   expectFault('D2: an indirect A→B→A quest-completion cycle also faults', () =>
     applyOne(s, { op: 'quest.complete', questId: 'questA' }),
   );

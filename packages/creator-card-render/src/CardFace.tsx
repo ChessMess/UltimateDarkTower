@@ -297,9 +297,7 @@ export function CardFace({ data, width, children }: CardFaceProps) {
   return (
     <div className={`udtc-card${data.critical ? ' udtc-card-critical' : ''}`} style={outer}>
       <div style={inner}>{face}</div>
-      {children != null ? (
-        <div style={{ position: 'absolute', inset: 0 }}>{children}</div>
-      ) : null}
+      {children != null ? <div style={{ position: 'absolute', inset: 0 }}>{children}</div> : null}
     </div>
   );
 }

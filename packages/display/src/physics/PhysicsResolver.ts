@@ -28,7 +28,7 @@ export const DEFAULT_PHYSICS: ResolvedPhysicsConfig = {
     autoDropOnSkullCountIncrease: false,
   },
   drum: {
-    innerRadiusFactor: 0.30,
+    innerRadiusFactor: 0.3,
     halfHeightFactor: 0.15,
     // arctan(0.15) ≈ 8.5° release angle; still above the rotation-drag
     // threshold so a skull on a flat drum floor rides along.

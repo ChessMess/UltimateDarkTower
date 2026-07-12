@@ -81,9 +81,7 @@ export function buildStaticColliderSpecs(opts: BuildStaticColliderOptions): Stat
   const drumInnerRadius = modelRadius * config.drum.innerRadiusFactor;
   const drumHalfHeight = modelRadius * config.drum.halfHeightFactor;
 
-  const drumWalls: DrumWallSpec[] = (
-    ['top', 'middle', 'bottom'] as const
-  ).map(level => ({
+  const drumWalls: DrumWallSpec[] = (['top', 'middle', 'bottom'] as const).map((level) => ({
     kind: 'drum-wall',
     level,
     y: modelRadius * DRUM_ROW_Y_FACTORS[level],

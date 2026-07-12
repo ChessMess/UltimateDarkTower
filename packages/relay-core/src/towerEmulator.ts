@@ -68,7 +68,7 @@ export interface TowerEmulatorOptions {
 
 interface TowerEmulatorEventMap {
   'state-change': [state: TowerEmulatorState];
-  'command': [data: Buffer];
+  command: [data: Buffer];
   'companion-connected': [address: string];
   'companion-disconnected': [address: string];
   /** Raw CoreBluetooth adapter state — fires immediately on init and on each change. */
@@ -182,12 +182,16 @@ export class TowerEmulator extends EventEmitter<TowerEmulatorEventMap> {
           // state, the companion BLE link survived a stop/start cycle (macOS
           // CoreBluetooth has no peripheral-initiated disconnect API).
           if (this._state === 'advertising') {
-            console.log('[TowerEmulator] ghost connection detected via write — promoting to connected');
+            console.log(
+              '[TowerEmulator] ghost connection detected via write — promoting to connected',
+            );
             this.emit('ghost-connection', this._state);
             this.setState('connected');
             this.emit('companion-connected', this._connectedAddress);
           } else if (this._state === 'idle') {
-            console.warn('[TowerEmulator] command received in idle state — BLE link still alive (macOS limitation)');
+            console.warn(
+              '[TowerEmulator] command received in idle state — BLE link still alive (macOS limitation)',
+            );
           }
           console.log('[TowerEmulator] command received:', data.toString('hex'));
           this._lastCommand = Buffer.from(data);
@@ -234,7 +238,11 @@ export class TowerEmulator extends EventEmitter<TowerEmulatorEventMap> {
       const notifyChar = new Characteristic({
         uuid: UART_RX_CHARACTERISTIC_UUID,
         properties: ['notify'],
-        onSubscribe: (_handle: unknown, _maxValueSize: number, updateValueCallback: (data?: Buffer) => void) => {
+        onSubscribe: (
+          _handle: unknown,
+          _maxValueSize: number,
+          updateValueCallback: (data?: Buffer) => void,
+        ) => {
           console.log('[TowerEmulator] companion subscribed to state notifications');
           this._txUpdateValue = updateValueCallback;
           // Some reconnect paths do not emit a new `accept` event, but do resubscribe.
@@ -246,7 +254,9 @@ export class TowerEmulator extends EventEmitter<TowerEmulatorEventMap> {
           }
           // The real tower sends an initial heartbeat immediately on subscription.
           // Send it on the next tick to let bleno finish the subscription handshake.
-          setImmediate(() => { updateValueCallback(INITIAL_HEARTBEAT); });
+          setImmediate(() => {
+            updateValueCallback(INITIAL_HEARTBEAT);
+          });
         },
         onUnsubscribe: () => {
           console.log('[TowerEmulator] companion unsubscribed from state notifications');
@@ -302,13 +312,15 @@ export class TowerEmulator extends EventEmitter<TowerEmulatorEventMap> {
       const services = [uartService];
       if (shouldExposeDeviceInfoService(process.platform)) {
         services.push(disService);
-        console.log(`[TowerEmulator] exposing Device Information Service (firmware: ${this._deviceInfo.firmwareRevision})`);
+        console.log(
+          `[TowerEmulator] exposing Device Information Service (firmware: ${this._deviceInfo.firmwareRevision})`,
+        );
       } else if (!_disWarningLogged) {
         console.warn(
           '[TowerEmulator] macOS detected — skipping Device Information Service (0x180A). ' +
-          'CoreBluetooth blocks standard Bluetooth SIG UUIDs in peripheral mode, so the ' +
-          'companion app will stall on "checking firmware". Run on Linux (e.g. Raspberry Pi) ' +
-          'or Windows for a standalone tower emulator. See docs/MACOS_BLE_PERIPHERAL_LIMITATION.md.',
+            'CoreBluetooth blocks standard Bluetooth SIG UUIDs in peripheral mode, so the ' +
+            'companion app will stall on "checking firmware". Run on Linux (e.g. Raspberry Pi) ' +
+            'or Windows for a standalone tower emulator. See docs/MACOS_BLE_PERIPHERAL_LIMITATION.md.',
         );
         _disWarningLogged = true;
       }
@@ -349,7 +361,7 @@ export class TowerEmulator extends EventEmitter<TowerEmulatorEventMap> {
     this._connectedAddress = 'unknown';
     this._lastCommand = null;
 
-    bleno.disconnect();   // no-op on macOS, but kept for Linux/other platforms
+    bleno.disconnect(); // no-op on macOS, but kept for Linux/other platforms
     await bleno.stopAdvertisingAsync();
 
     // If we were connected, bleno.disconnect() is a no-op on macOS so

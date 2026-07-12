@@ -156,7 +156,8 @@ export class TowerStateReadout implements ITowerDisplay {
           const key = `${layer}:${light}`;
           const current =
             this.userOverriddenLeds.get(key) ??
-            (this.latestState?.layer[layer]?.light[light]?.effect ?? 0);
+            this.latestState?.layer[layer]?.light[light]?.effect ??
+            0;
           const idx = EFFECT_CYCLE.indexOf(current);
           const next = EFFECT_CYCLE[(idx === -1 ? 0 : idx + 1) % EFFECT_CYCLE.length];
           this.userOverriddenLeds.set(key, next);
@@ -187,41 +188,52 @@ export class TowerStateReadout implements ITowerDisplay {
 
   private render(skullDrop: boolean): void {
     const state = this.latestState;
-    if (!state) { this.renderIdle(); return; }
+    if (!state) {
+      this.renderIdle();
+      return;
+    }
 
-    const ledRows = state.layer.map((layer, li) => {
-      const layerName = LAYER_TO_POSITION[li as keyof typeof LAYER_TO_POSITION] ?? `L${li}`;
-      const lights = layer.light.map((light, ji) => {
-        const key = `${li}:${ji}`;
-        const hasOverride = this.userOverriddenLeds.has(key);
-        const effectValue = hasOverride ? this.userOverriddenLeds.get(key)! : light.effect;
-        const eff = EFFECT_LABELS[effectValue] ?? 'off';
-        const tooltip = EFFECT_TOOLTIP_LABELS[effectValue] ?? eff;
-        const dir = LIGHT_INDEX_TO_DIRECTION[ji as keyof typeof LIGHT_INDEX_TO_DIRECTION] ?? ji;
-        const overrideMark = hasOverride ? ' [override]' : '';
-        const loopMark = light.loop ? ' (loop)' : '';
-        const disabled = this._clickToToggleLeds ? '' : 'disabled';
-        return `<button type="button" class="tdr-led" data-tdr-led data-layer="${li}" data-light="${ji}" data-effect="${esc(eff)}" data-overridden="${hasOverride}" title="${esc(`${layerName} ${dir}: ${tooltip}${overrideMark}${loopMark}`)}" ${disabled}></button>`;
-      }).join('');
-      return `<div class="tdr-layer"><span class="tdr-layer-label">${esc(layerName)}</span>${lights}</div>`;
-    }).join('');
+    const ledRows = state.layer
+      .map((layer, li) => {
+        const layerName = LAYER_TO_POSITION[li as keyof typeof LAYER_TO_POSITION] ?? `L${li}`;
+        const lights = layer.light
+          .map((light, ji) => {
+            const key = `${li}:${ji}`;
+            const hasOverride = this.userOverriddenLeds.has(key);
+            const effectValue = hasOverride ? this.userOverriddenLeds.get(key)! : light.effect;
+            const eff = EFFECT_LABELS[effectValue] ?? 'off';
+            const tooltip = EFFECT_TOOLTIP_LABELS[effectValue] ?? eff;
+            const dir = LIGHT_INDEX_TO_DIRECTION[ji as keyof typeof LIGHT_INDEX_TO_DIRECTION] ?? ji;
+            const overrideMark = hasOverride ? ' [override]' : '';
+            const loopMark = light.loop ? ' (loop)' : '';
+            const disabled = this._clickToToggleLeds ? '' : 'disabled';
+            return `<button type="button" class="tdr-led" data-tdr-led data-layer="${li}" data-light="${ji}" data-effect="${esc(eff)}" data-overridden="${hasOverride}" title="${esc(`${layerName} ${dir}: ${tooltip}${overrideMark}${loopMark}`)}" ${disabled}></button>`;
+          })
+          .join('');
+        return `<div class="tdr-layer"><span class="tdr-layer-label">${esc(layerName)}</span>${lights}</div>`;
+      })
+      .join('');
 
     // --- Drums ---
-    const drumRows = state.drum.map((drum, di) => {
-      const dir = COMPASS[drum.position] ?? '?';
-      const cal = drum.calibrated ? '✓' : '—';
-      const activeGlyph = this.findGlyph(di, drum.position, drum.calibrated);
-      return `<div class="tdr-drum">
+    const drumRows = state.drum
+      .map((drum, di) => {
+        const dir = COMPASS[drum.position] ?? '?';
+        const cal = drum.calibrated ? '✓' : '—';
+        const activeGlyph = this.findGlyph(di, drum.position, drum.calibrated);
+        return `<div class="tdr-drum">
         <span class="tdr-drum-name">${esc(DRUM_NAMES[di])}</span>
         <span class="tdr-drum-pos">${esc(dir)}</span>
         <span class="tdr-drum-cal" title="Calibrated: ${drum.calibrated}">${cal}</span>
         ${activeGlyph ? `<span class="tdr-glyph">${esc(activeGlyph)}</span>` : ''}
       </div>`;
-    }).join('');
+      })
+      .join('');
 
     // --- Audio ---
     const audioName = this.lookupAudio(state.audio.sample, state.audio.loop);
-    const volLabel = VOLUME_DESCRIPTIONS[state.audio.volume as keyof typeof VOLUME_DESCRIPTIONS] ?? `Vol ${state.audio.volume}`;
+    const volLabel =
+      VOLUME_DESCRIPTIONS[state.audio.volume as keyof typeof VOLUME_DESCRIPTIONS] ??
+      `Vol ${state.audio.volume}`;
     const audioHtml = `<div class="tdr-audio">
       <span class="tdr-audio-name">${esc(audioName)}</span>
       ${state.audio.loop ? '<span class="tdr-audio-loop">loop</span>' : ''}
@@ -234,10 +246,13 @@ export class TowerStateReadout implements ITowerDisplay {
       : `<div class="tdr-beam-count">Skulls: ${state.beam.count}${state.beam.fault ? ' ⚠ fault' : ''}</div>`;
 
     // --- LED sequence override ---
-    const seqLabel = SEQUENCE_LABELS[state.led_sequence] ?? `0x${state.led_sequence.toString(16).padStart(2, '0')}`;
-    const seqHtml = state.led_sequence !== 0
-      ? `<div class="tdr-led-seq">LED Sequence: ${esc(seqLabel)}</div>`
-      : '';
+    const seqLabel =
+      SEQUENCE_LABELS[state.led_sequence] ??
+      `0x${state.led_sequence.toString(16).padStart(2, '0')}`;
+    const seqHtml =
+      state.led_sequence !== 0
+        ? `<div class="tdr-led-seq">LED Sequence: ${esc(seqLabel)}</div>`
+        : '';
 
     const ledsHint = this._clickToToggleLeds
       ? '<span class="tdr-leds-hint">click to change</span>'

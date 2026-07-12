@@ -92,9 +92,9 @@ This project follows [GitHub Flow](https://docs.github.com/en/get-started/using-
 
 1. **Create a release branch** from `main`:
 
-    ```bash
-    git checkout -b release/vX.Y.Z
-    ```
+   ```bash
+   git checkout -b release/vX.Y.Z
+   ```
 
 2. **Update version** in `package.json`
 
@@ -102,33 +102,33 @@ This project follows [GitHub Flow](https://docs.github.com/en/get-started/using-
 
 4. **Run the full CI pipeline**:
 
-    ```bash
-    npm run ci
-    ```
+   ```bash
+   npm run ci
+   ```
 
 5. **Verify package contents**:
 
-    ```bash
-    npm pack --dry-run
-    ```
+   ```bash
+   npm pack --dry-run
+   ```
 
 6. **Open a Pull Request** from the release branch into `main`
 
 7. **After merge, tag the release**:
 
-    ```bash
-    git checkout main && git pull
-    git tag vX.Y.Z
-    git push origin vX.Y.Z
-    ```
+   ```bash
+   git checkout main && git pull
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
+   ```
 
 8. **Publish to npm**:
 
-    ```bash
-    npm publish
-    ```
+   ```bash
+   npm publish
+   ```
 
-    The `prepack` script automatically runs the full CI pipeline before publishing.
+   The `prepack` script automatically runs the full CI pipeline before publishing.
 
 9. **Create a GitHub Release** from the tag with the changelog content as release notes
 

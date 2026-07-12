@@ -39,7 +39,7 @@ function _fileLog(level: string, ...args: unknown[]): void {
       typeof a === 'string'
         ? a
         : a instanceof Error
-          ? a.stack ?? a.message
+          ? (a.stack ?? a.message)
           : JSON.stringify(a, null, 2),
     )
     .join(' ');
@@ -50,9 +50,18 @@ const _origLog = console.log.bind(console);
 const _origWarn = console.warn.bind(console);
 const _origError = console.error.bind(console);
 
-console.log = (...args: unknown[]) => { _fileLog('LOG', ...args); _origLog(...args); };
-console.warn = (...args: unknown[]) => { _fileLog('WARN', ...args); _origWarn(...args); };
-console.error = (...args: unknown[]) => { _fileLog('ERROR', ...args); _origError(...args); };
+console.log = (...args: unknown[]) => {
+  _fileLog('LOG', ...args);
+  _origLog(...args);
+};
+console.warn = (...args: unknown[]) => {
+  _fileLog('WARN', ...args);
+  _origWarn(...args);
+};
+console.error = (...args: unknown[]) => {
+  _fileLog('ERROR', ...args);
+  _origError(...args);
+};
 
 console.log('=== DarkTowerRelay startup ===');
 console.log(`platform: ${process.platform}, arch: ${process.arch}`);
@@ -215,9 +224,12 @@ function readDeviceInfoFromEnv(): Partial<DeviceInformation> {
   const info: Partial<DeviceInformation> = {};
   if (env['TOWER_DIS_MANUFACTURER']) info.manufacturerName = env['TOWER_DIS_MANUFACTURER'];
   if (env['TOWER_DIS_MODEL']) info.modelNumber = env['TOWER_DIS_MODEL'];
-  if (env['TOWER_DIS_HARDWARE_REVISION']) info.hardwareRevision = env['TOWER_DIS_HARDWARE_REVISION'];
-  if (env['TOWER_DIS_FIRMWARE_REVISION']) info.firmwareRevision = env['TOWER_DIS_FIRMWARE_REVISION'];
-  if (env['TOWER_DIS_SOFTWARE_REVISION']) info.softwareRevision = env['TOWER_DIS_SOFTWARE_REVISION'];
+  if (env['TOWER_DIS_HARDWARE_REVISION'])
+    info.hardwareRevision = env['TOWER_DIS_HARDWARE_REVISION'];
+  if (env['TOWER_DIS_FIRMWARE_REVISION'])
+    info.firmwareRevision = env['TOWER_DIS_FIRMWARE_REVISION'];
+  if (env['TOWER_DIS_SOFTWARE_REVISION'])
+    info.softwareRevision = env['TOWER_DIS_SOFTWARE_REVISION'];
   return info;
 }
 
@@ -287,7 +299,10 @@ function saveWindowStateNow(): void {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   try {
     const b = mainWindow.getBounds();
-    fs.writeFileSync(windowStateFile(), JSON.stringify({ x: b.x, y: b.y, width: b.width, height: b.height }));
+    fs.writeFileSync(
+      windowStateFile(),
+      JSON.stringify({ x: b.x, y: b.y, width: b.width, height: b.height }),
+    );
   } catch {
     /* best-effort */
   }
@@ -348,9 +363,7 @@ function createWindow(): void {
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
-    );
+    mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
   // Persist size/position the operator sets (debounced); flush on close.
@@ -449,7 +462,11 @@ function wireSource(source: TowerSource, sink: NotificationSink | null): void {
       mainWindow?.webContents.send(IPC.BLE_ADAPTER_STATE, { state });
     });
     source.on('ghost-connection', (fromState) => {
-      logger.logEvent('event', 'host', `Ghost BLE connection detected (was ${fromState}) — recovering`);
+      logger.logEvent(
+        'event',
+        'host',
+        `Ghost BLE connection detected (was ${fromState}) — recovering`,
+      );
     });
   }
 }
@@ -458,14 +475,26 @@ function wireSource(source: TowerSource, sink: NotificationSink | null): void {
 async function teardownSource(): Promise<void> {
   const old = currentSource;
   if (!old) return;
-  try { await old.stopAdvertising(); } catch { /* best-effort */ }
-  try { currentSynth?.destroy(); } catch { /* best-effort */ }
+  try {
+    await old.stopAdvertising();
+  } catch {
+    /* best-effort */
+  }
+  try {
+    currentSynth?.destroy();
+  } catch {
+    /* best-effort */
+  }
   // TowerSource doesn't declare EventEmitter members, but every concrete source
   // extends EventEmitter — drop the listeners we attached in wireSource().
   (old as unknown as { removeAllListeners(): void }).removeAllListeners();
   // Only TowerEmulator owns bleno listeners that must be torn down before re-creation.
   if (old instanceof TowerEmulator) {
-    try { old.destroy(); } catch { /* best-effort */ }
+    try {
+      old.destroy();
+    } catch {
+      /* best-effort */
+    }
   }
   currentSynth = null;
   currentSource = null;
@@ -550,8 +579,12 @@ async function initApp(): Promise<void> {
 
   // Best-effort cleanup of old log files at startup.
   pruneOldLogs(logDir, 30)
-    .then((n) => { if (n > 0) console.log(`[main] Pruned ${n} old log file(s)`); })
-    .catch(() => { /* best-effort */ });
+    .then((n) => {
+      if (n > 0) console.log(`[main] Pruned ${n} old log file(s)`);
+    })
+    .catch(() => {
+      /* best-effort */
+    });
 
   parser = new CommandParser();
   observer = new ObserverDisplay();
@@ -559,11 +592,19 @@ async function initApp(): Promise<void> {
   relay = new RelayServer({
     port: Number(process.env['RELAY_PORT'] ?? 8765),
     onClientLog: (clientId, entries) => {
-      logger.logEvent('event', 'host', `Received ${entries.length} log entries from ${clientId.slice(0, 8)}`);
+      logger.logEvent(
+        'event',
+        'host',
+        `Received ${entries.length} log entries from ${clientId.slice(0, 8)}`,
+      );
       logger.writeClientEntries(clientId, entries);
     },
     onClientConnected: (clientId, label, observer) => {
-      logger.logEvent('event', 'host', `Client connected: ${label ?? clientId.slice(0, 8)}${observer ? ' (observer)' : ''}`);
+      logger.logEvent(
+        'event',
+        'host',
+        `Client connected: ${label ?? clientId.slice(0, 8)}${observer ? ' (observer)' : ''}`,
+      );
       eventLog.append(makeConsumerJoinedEvent(clientId, label, observer));
     },
     onClientDisconnected: (clientId, label) => {
@@ -571,16 +612,29 @@ async function initApp(): Promise<void> {
       eventLog.append(makeConsumerLeftEvent(clientId, label));
     },
     onClientReady: (clientId, ready, label) =>
-      logger.logEvent('event', 'host', `Client ${label ?? clientId.slice(0, 8)} tower: ${ready ? 'connected' : 'disconnected'}`),
+      logger.logEvent(
+        'event',
+        'host',
+        `Client ${label ?? clientId.slice(0, 8)} tower: ${ready ? 'connected' : 'disconnected'}`,
+      ),
     onClientAction: (clientId, action, label) => {
       logger.logEvent('event', 'host', `Action '${action}' from ${label ?? clientId.slice(0, 8)}`);
       if (action !== 'dropSkull') return;
       if (!currentSynth) {
-        logger.logEvent('warn', 'host', `dropSkull ignored — source '${currentMode}' generates its own notifications`);
+        logger.logEvent(
+          'warn',
+          'host',
+          `dropSkull ignored — source '${currentMode}' generates its own notifications`,
+        );
         return;
       }
       const sent = currentSynth.dropSkull();
-      if (!sent) logger.logEvent('warn', 'host', 'dropSkull: no companion app subscriber — notification not sent');
+      if (!sent)
+        logger.logEvent(
+          'warn',
+          'host',
+          'dropSkull: no companion app subscriber — notification not sent',
+        );
     },
   });
 
@@ -602,36 +656,46 @@ async function initApp(): Promise<void> {
     }
     const sent = currentSynth.dropSkull();
     if (sent) return { ok: true };
-    const reason = towerState !== 'connected'
-      ? `Tower is ${towerState} — companion app not connected`
-      : 'No active BLE subscriber';
+    const reason =
+      towerState !== 'connected'
+        ? `Tower is ${towerState} — companion app not connected`
+        : 'No active BLE subscriber';
     return { ok: false, reason };
   });
 
-  ipcMain.handle(IPC.TOWER_START_ADVERTISING, async (): Promise<{ ok: boolean; reason?: string }> => {
-    try {
-      await currentSource?.startAdvertising();
-      return { ok: true };
-    } catch (err) {
-      return { ok: false, reason: err instanceof Error ? err.message : String(err) };
-    }
-  });
+  ipcMain.handle(
+    IPC.TOWER_START_ADVERTISING,
+    async (): Promise<{ ok: boolean; reason?: string }> => {
+      try {
+        await currentSource?.startAdvertising();
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, reason: err instanceof Error ? err.message : String(err) };
+      }
+    },
+  );
 
-  ipcMain.handle(IPC.TOWER_STOP_ADVERTISING, async (): Promise<{ ok: boolean; reason?: string }> => {
-    try {
-      await currentSource?.stopAdvertising();
-      return { ok: true };
-    } catch (err) {
-      return { ok: false, reason: err instanceof Error ? err.message : String(err) };
-    }
-  });
+  ipcMain.handle(
+    IPC.TOWER_STOP_ADVERTISING,
+    async (): Promise<{ ok: boolean; reason?: string }> => {
+      try {
+        await currentSource?.stopAdvertising();
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, reason: err instanceof Error ? err.message : String(err) };
+      }
+    },
+  );
 
-  ipcMain.handle(IPC.SET_SOURCE, (_e, mode: SourceMode): Promise<{ ok: boolean; reason?: string }> => {
-    if (mode !== 'emulator' && mode !== 'mock' && mode !== 'real') {
-      return Promise.resolve({ ok: false, reason: `Unknown source '${String(mode)}'` });
-    }
-    return switchSource(mode);
-  });
+  ipcMain.handle(
+    IPC.SET_SOURCE,
+    (_e, mode: SourceMode): Promise<{ ok: boolean; reason?: string }> => {
+      if (mode !== 'emulator' && mode !== 'mock' && mode !== 'real') {
+        return Promise.resolve({ ok: false, reason: `Unknown source '${String(mode)}'` });
+      }
+      return switchSource(mode);
+    },
+  );
 
   ipcMain.handle(IPC.TOGGLE_LOGGING, (): { enabled: boolean } => {
     const enabled = logger.setEnabled(!logger.enabled);
@@ -767,7 +831,12 @@ async function startServices(): Promise<void> {
   try {
     await relay.start();
     const urls = getLocalIPs().map((ip) => `ws://${ip}:${relayPort}`);
-    relayStatus = { running: true, port: Number(relayPort), message: `Relay listening on ${relayPort}`, urls };
+    relayStatus = {
+      running: true,
+      port: Number(relayPort),
+      message: `Relay listening on ${relayPort}`,
+      urls,
+    };
     mainWindow?.webContents.send(IPC.RELAY_STATUS, relayStatus);
     console.log(`[main] Relay server listening on ws://0.0.0.0:${relayPort}`);
   } catch (err: unknown) {
@@ -779,7 +848,9 @@ async function startServices(): Promise<void> {
         message: `Relay unavailable: port ${relayPort} is already in use`,
         urls: [],
       };
-      console.error(`[main] Relay port ${relayPort} is already in use. Stop the other process or set RELAY_PORT.`);
+      console.error(
+        `[main] Relay port ${relayPort} is already in use. Stop the other process or set RELAY_PORT.`,
+      );
     } else {
       relayStatus = {
         running: false,
@@ -806,12 +877,36 @@ async function startServices(): Promise<void> {
 
 async function shutdown(): Promise<void> {
   console.log('[main] Shutting down…');
-  try { currentSynth?.destroy(); } catch { /* best-effort */ }
-  try { if (currentSource) await currentSource.stopAdvertising(); } catch { /* best-effort */ }
-  try { if (relay) await relay.stop(); } catch { /* best-effort */ }
-  try { if (logger) await logger.close(); } catch { /* best-effort */ }
-  try { if (eventLog) await eventLog.close(); } catch { /* best-effort */ }
-  try { if (currentSource instanceof TowerEmulator) currentSource.destroy(); } catch { /* best-effort */ }
+  try {
+    currentSynth?.destroy();
+  } catch {
+    /* best-effort */
+  }
+  try {
+    if (currentSource) await currentSource.stopAdvertising();
+  } catch {
+    /* best-effort */
+  }
+  try {
+    if (relay) await relay.stop();
+  } catch {
+    /* best-effort */
+  }
+  try {
+    if (logger) await logger.close();
+  } catch {
+    /* best-effort */
+  }
+  try {
+    if (eventLog) await eventLog.close();
+  } catch {
+    /* best-effort */
+  }
+  try {
+    if (currentSource instanceof TowerEmulator) currentSource.destroy();
+  } catch {
+    /* best-effort */
+  }
 }
 
 // ─── Lifecycle ───────────────────────────────────────────────────────────────

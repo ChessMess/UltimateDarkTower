@@ -60,12 +60,12 @@ The tower has **24 LEDs** arranged in 6 layers of 4. See [TOWER_TECH_NOTES.md](.
 ```typescript
 import { LIGHT_EFFECTS } from 'ultimatedarktower';
 
-LIGHT_EFFECTS.off;              // 0
-LIGHT_EFFECTS.on;               // 1 — solid
-LIGHT_EFFECTS.breathe;          // 2
-LIGHT_EFFECTS.breatheFast;      // 3
+LIGHT_EFFECTS.off; // 0
+LIGHT_EFFECTS.on; // 1 — solid
+LIGHT_EFFECTS.breathe; // 2
+LIGHT_EFFECTS.breatheFast; // 3
 LIGHT_EFFECTS.breathe50percent; // 4
-LIGHT_EFFECTS.flicker;          // 5
+LIGHT_EFFECTS.flicker; // 5
 ```
 
 ### `Lights(lights: Lights): Promise<void>`
@@ -77,16 +77,14 @@ import { LIGHT_EFFECTS } from 'ultimatedarktower';
 
 await tower.Lights({
   doorway: [
-    { position: 'north', level: 'top',    style: LIGHT_EFFECTS.breathe },
+    { position: 'north', level: 'top', style: LIGHT_EFFECTS.breathe },
     { position: 'south', level: 'middle', style: LIGHT_EFFECTS.flicker },
   ],
   ledge: [
     { position: 'east', style: LIGHT_EFFECTS.on },
     { position: 'west', style: LIGHT_EFFECTS.breatheFast },
   ],
-  base: [
-    { position: { side: 'north', level: 'top' }, style: LIGHT_EFFECTS.on },
-  ],
+  base: [{ position: { side: 'north', level: 'top' }, style: LIGHT_EFFECTS.on }],
 });
 ```
 
@@ -119,7 +117,10 @@ Send special sequence overrides (twinkle, flare-then-fade, angry strobe, gloat, 
 
 ```typescript
 import { TOWER_LIGHT_SEQUENCES, TOWER_AUDIO_LIBRARY } from 'ultimatedarktower';
-await tower.lightOverrides(TOWER_LIGHT_SEQUENCES.angryStrobe01, TOWER_AUDIO_LIBRARY.TowerAngry1.value);
+await tower.lightOverrides(
+  TOWER_LIGHT_SEQUENCES.angryStrobe01,
+  TOWER_AUDIO_LIBRARY.TowerAngry1.value,
+);
 ```
 
 ---
@@ -160,15 +161,15 @@ await tower.rotateDrumStateful(2, RING_LIGHT_POSITIONS.WEST, /* playSound */ tru
 
 Randomize one or more drums.
 
-| `level` | Drums rotated |
-|---|---|
-| `0` | All three (default) |
-| `1` | Top only |
-| `2` | Middle only |
-| `3` | Bottom only |
-| `4` | Top + middle |
-| `5` | Top + bottom |
-| `6` | Middle + bottom |
+| `level` | Drums rotated       |
+| ------- | ------------------- |
+| `0`     | All three (default) |
+| `1`     | Top only            |
+| `2`     | Middle only         |
+| `3`     | Bottom only         |
+| `4`     | Top + middle        |
+| `5`     | Top + bottom        |
+| `6`     | Middle + bottom     |
 
 ### `getCurrentDrumPosition(level): TowerSide`
 

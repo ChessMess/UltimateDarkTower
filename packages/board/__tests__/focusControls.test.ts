@@ -31,7 +31,7 @@ describe('mountFocusControls', () => {
     const host = document.createElement('div');
     const controls = mountFocusControls(host, {
       focus: { kingdom: 'east', angle: 'overhead' },
-      onChange: () => { },
+      onChange: () => {},
     });
     const east = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === 'E');
     expect(east?.getAttribute('aria-pressed')).toBe('true');

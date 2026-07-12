@@ -62,26 +62,26 @@ Note that NiMH rechargeable batteries will lose capacity over the course of a fe
 
 ### Good
 
--   1.2v NiMH rechargeable cells with capacity above 2000mAh, eg:
-    -   Duracell Rechargeable AA 2500mAh
-    -   Eneloop Pro 2500mAh
-    -   Energizer Recharge Extreme 2300mAh
--   1.5v Alkaline non-rechargeable cells from a name brand, eg:
-    -   Duracell Plus AA Alkaline - 2850
-    -   Duracell Optimum AA Alkaline
--   1.5v / 1.6v Lithium Iron Disulphide (LiFeS2) non-rechargeable cells, eg:
-    -   Energizer Ultimate Lithium
--   Mains adapters / “battery eliminators” designed for 3xAA / 4.5v operation only. Cable length may be an issue depending on model / you may want to use masking tape to secure the cable and prevent it from knocking parts off the game board.
+- 1.2v NiMH rechargeable cells with capacity above 2000mAh, eg:
+  - Duracell Rechargeable AA 2500mAh
+  - Eneloop Pro 2500mAh
+  - Energizer Recharge Extreme 2300mAh
+- 1.5v Alkaline non-rechargeable cells from a name brand, eg:
+  - Duracell Plus AA Alkaline - 2850
+  - Duracell Optimum AA Alkaline
+- 1.5v / 1.6v Lithium Iron Disulphide (LiFeS2) non-rechargeable cells, eg:
+  - Energizer Ultimate Lithium
+- Mains adapters / “battery eliminators” designed for 3xAA / 4.5v operation only. Cable length may be an issue depending on model / you may want to use masking tape to secure the cable and prevent it from knocking parts off the game board.
 
 ### Not Recommended
 
 The cells below may work, but with reduced lifetime, technical issues, or untested:
 
--   1.2v NiMH rechargeables with capacity below 2000mAh (2.0Ah)
--   1.2v NiCd rechargeables, regardless of capacity
--   1.5v Zinc-Carbon batteries, regardless of capacity
--   Lithium-Ion rechargeable cells with integrated circuit to reduce to 1.5v
+- 1.2v NiMH rechargeables with capacity below 2000mAh (2.0Ah)
+- 1.2v NiCd rechargeables, regardless of capacity
+- 1.5v Zinc-Carbon batteries, regardless of capacity
+- Lithium-Ion rechargeable cells with integrated circuit to reduce to 1.5v
 
 ### Bad (may damage the Tower)
 
--   14500 Lithium-Ion rechargeable cells (often marketed for use in high-power flashlights or vape pens)
+- 14500 Lithium-Ion rechargeable cells (often marketed for use in high-power flashlights or vape pens)

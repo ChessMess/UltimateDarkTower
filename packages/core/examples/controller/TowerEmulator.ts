@@ -54,12 +54,18 @@ audioEnableButton.addEventListener('click', async () => {
   try {
     const res = await fetch(probeUrl);
     if (!res.ok) {
-      setStatus(`Audio assets not reachable (HTTP ${res.status} for ${probeUrl}).\nServe the page over http:// (e.g. \`npx http-server dist\`) instead of file://.`, true);
+      setStatus(
+        `Audio assets not reachable (HTTP ${res.status} for ${probeUrl}).\nServe the page over http:// (e.g. \`npx http-server dist\`) instead of file://.`,
+        true,
+      );
       return;
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    setStatus(`Audio assets not reachable: ${message}\nProbe URL: ${probeUrl}\nIf this is a file:// URL, browsers block fetch() — serve the page over http:// (e.g. \`npx http-server dist\`).`, true);
+    setStatus(
+      `Audio assets not reachable: ${message}\nProbe URL: ${probeUrl}\nIf this is a file:// URL, browsers block fetch() — serve the page over http:// (e.g. \`npx http-server dist\`).`,
+      true,
+    );
     return;
   }
 
@@ -149,7 +155,7 @@ const initializeDisplay = () => {
     setStatus('Popup ready. Waiting for tower state from the controller.', false, true);
     window.opener?.postMessage({ type: 'emulatorReady' }, '*');
   } catch (error) {
-    const message = error instanceof Error ? error.stack ?? error.message : String(error);
+    const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
     setStatus(`Failed to initialize emulator display.\n\n${message}`, true);
   }
 };
@@ -159,7 +165,10 @@ window.addEventListener('error', (event: ErrorEvent) => {
 });
 
 window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
-  const message = event.reason instanceof Error ? event.reason.stack ?? event.reason.message : String(event.reason);
+  const message =
+    event.reason instanceof Error
+      ? (event.reason.stack ?? event.reason.message)
+      : String(event.reason);
   setStatus(`Unhandled popup error: ${message}`, true);
 });
 
@@ -189,7 +198,7 @@ window.addEventListener('message', (event: MessageEvent) => {
       display.applyState(state as any);
       setStatus('Rendering live tower state.');
     } catch (error) {
-      const message = error instanceof Error ? error.stack ?? error.message : String(error);
+      const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
       setStatus(`Failed to render tower state.\n\n${message}`, true);
     }
   } else if (type === 'calibrate') {
@@ -198,13 +207,21 @@ window.addEventListener('message', (event: MessageEvent) => {
     // sequence settles to the calibrated state and fires onCalibrationComplete.
     popupCalibrating = true;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    display?.applyState({ ...(lastState ?? createDefaultTowerState()), command: TOWER_COMMANDS.calibration } as any);
+    display?.applyState({
+      ...(lastState ?? createDefaultTowerState()),
+      command: TOWER_COMMANDS.calibration,
+    } as any);
     setStatus('Calibrating…', false, true);
   } else if (type === 'showIdle') {
     display?.showIdle();
     setStatus('Waiting for tower state from the controller.', false, true);
   } else if (type === 'playAudio') {
-    const { name, loop, volume, sample } = event.data as { name: string; loop: boolean; volume: number; sample: number };
+    const { name, loop, volume, sample } = event.data as {
+      name: string;
+      loop: boolean;
+      volume: number;
+      sample: number;
+    };
     showAudioNotification(name, loop, volume);
     // Drive audio via the display's new one-shot API (UltimateDarkTowerDisplay
     // 0.6.0+). The framework strips audio from state, so this is the only path

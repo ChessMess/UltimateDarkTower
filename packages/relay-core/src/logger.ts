@@ -166,10 +166,9 @@ export class HostLogger {
 
   private openStream(tag: 'host' | 'all', segment: number): WriteStream {
     const suffix = segment > 1 ? `-${segment}` : '';
-    return createWriteStream(
-      join(this.logDir, `session-${this.ts}-${tag}${suffix}.jsonl`),
-      { flags: 'a' },
-    );
+    return createWriteStream(join(this.logDir, `session-${this.ts}-${tag}${suffix}.jsonl`), {
+      flags: 'a',
+    });
   }
 
   private writeToHost(entry: LogEntry): void {

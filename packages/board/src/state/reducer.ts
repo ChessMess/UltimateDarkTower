@@ -1,4 +1,10 @@
-import type { BoardState, BuildingState, LocationName, QuestMarker, SpaceMarker } from './boardState';
+import type {
+  BoardState,
+  BuildingState,
+  LocationName,
+  QuestMarker,
+  SpaceMarker,
+} from './boardState';
 import { createDefaultBoardState } from './boardState';
 import { BOARD_LOCATION_BY_NAME } from '../data/udtReexports';
 import type { BoardCommand } from './commands';
@@ -12,7 +18,7 @@ function buildingAt(state: BoardState, location: LocationName): BuildingState {
 function withBuilding(
   state: BoardState,
   location: LocationName,
-  next: BuildingState
+  next: BuildingState,
 ): BoardState['buildings'] {
   return { ...state.buildings, [location]: next };
 }
@@ -116,7 +122,11 @@ export function applyBoardCommand(state: BoardState, command: BoardCommand): Boa
       warnUnknownLocation(command.location);
       return {
         ...state,
-        adversary: { ...state.adversary, id: state.adversary?.id ?? '', location: command.location },
+        adversary: {
+          ...state.adversary,
+          id: state.adversary?.id ?? '',
+          location: command.location,
+        },
       };
 
     case 'clearAdversary': {

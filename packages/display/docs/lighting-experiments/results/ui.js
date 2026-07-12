@@ -2,9 +2,21 @@
 // Sections rendered: matrix, charts, per-alt cards, gallery, decision framework, methodology.
 // Hero is in index.html (static).
 
-import { meta, baseline, alternatives, all, decisionFramework, vsyncWinners, pctDelta } from './bakeoff.js';
 import {
-  chartSeq5FpsRetina, chartFrameMsRetinaLog, chartPrograms, chartDrawCallsAllLeds, dataTable,
+  meta,
+  baseline,
+  alternatives,
+  all,
+  decisionFramework,
+  vsyncWinners,
+  pctDelta,
+} from './bakeoff.js';
+import {
+  chartSeq5FpsRetina,
+  chartFrameMsRetinaLog,
+  chartPrograms,
+  chartDrawCallsAllLeds,
+  dataTable,
 } from './charts.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -14,11 +26,16 @@ const create = (tag, cls, html) => {
   if (html != null) el.innerHTML = html;
   return el;
 };
-const text = (tag, cls, t) => { const el = document.createElement(tag); if (cls) el.className = cls; if (t != null) el.textContent = t; return el; };
-const fmt = (v, d = 1) => v == null ? '—' : (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(d));
-const fmtMs = v => v == null ? '—' : `${fmt(v)} ms`;
-const fmtFps = v => v == null ? '—' : fmt(v);
-const fmtPct = v => v == null ? '—' : `${v > 0 ? '+' : ''}${v.toFixed(0)}%`;
+const text = (tag, cls, t) => {
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  if (t != null) el.textContent = t;
+  return el;
+};
+const fmt = (v, d = 1) => (v == null ? '—' : Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(d));
+const fmtMs = (v) => (v == null ? '—' : `${fmt(v)} ms`);
+const fmtFps = (v) => (v == null ? '—' : fmt(v));
+const fmtPct = (v) => (v == null ? '—' : `${v > 0 ? '+' : ''}${v.toFixed(0)}%`);
 
 // ───────────────────────────────────────── MATRIX ─────────────────────────────────────────
 function renderMatrix() {
@@ -43,7 +60,7 @@ function renderMatrix() {
 
   const thead = document.createElement('thead');
   const trH = document.createElement('tr');
-  columns.forEach(col => {
+  columns.forEach((col) => {
     const th = document.createElement('th');
     th.textContent = col.label;
     if (col.sortable) {
@@ -154,28 +171,35 @@ function renderMatrix() {
   const sortState = { col: null, dir: null };
   function valueOf(a, key) {
     switch (key) {
-      case 'seq5FpsRetina': return a.retina.seq5.fps;
-      case 'seq5MsRetina': return a.retina.seq5.ms;
-      case 'programs': return a.signals.programs;
-      case 'drawsAllLeds': return a.retina.allLeds.draws;
-      default: return 0;
+      case 'seq5FpsRetina':
+        return a.retina.seq5.fps;
+      case 'seq5MsRetina':
+        return a.retina.seq5.ms;
+      case 'programs':
+        return a.signals.programs;
+      case 'drawsAllLeds':
+        return a.retina.allLeds.draws;
+      default:
+        return 0;
     }
   }
-  thead.querySelectorAll('th.sortable').forEach(th => {
+  thead.querySelectorAll('th.sortable').forEach((th) => {
     th.addEventListener('click', () => {
       const col = th.dataset.col;
       let dir = sortState.col === col && sortState.dir === 'asc' ? 'desc' : 'asc';
-      sortState.col = col; sortState.dir = dir;
-      thead.querySelectorAll('th.sortable').forEach(o => o.setAttribute('aria-sort', 'none'));
+      sortState.col = col;
+      sortState.dir = dir;
+      thead.querySelectorAll('th.sortable').forEach((o) => o.setAttribute('aria-sort', 'none'));
       th.setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
       const rows = [...tbody.querySelectorAll('tr')];
       rows.sort((r1, r2) => {
-        const a1 = all.find(x => x.id === r1.dataset.id);
-        const a2 = all.find(x => x.id === r2.dataset.id);
-        const v1 = valueOf(a1, col), v2 = valueOf(a2, col);
+        const a1 = all.find((x) => x.id === r1.dataset.id);
+        const a2 = all.find((x) => x.id === r2.dataset.id);
+        const v1 = valueOf(a1, col),
+          v2 = valueOf(a2, col);
         return dir === 'asc' ? v1 - v2 : v2 - v1;
       });
-      rows.forEach(r => tbody.appendChild(r));
+      rows.forEach((r) => tbody.appendChild(r));
     });
   });
 }
@@ -188,9 +212,10 @@ function renderCharts() {
     {
       svg: chartSeq5FpsRetina(all),
       sub: 'Bar chart · colored by Path · gold = v-sync ceiling',
-      caption: 'Five alternatives reach the v-sync ceiling (~100+ fps). 4.18 mid-tier; 4.2 partial; 4.16 ≈ baseline (validation-only). The bake-off perf question is answered — the decision moves to visual + structural.',
+      caption:
+        'Five alternatives reach the v-sync ceiling (~100+ fps). 4.18 mid-tier; 4.2 partial; 4.16 ≈ baseline (validation-only). The bake-off perf question is answered — the decision moves to visual + structural.',
       tableHeaders: ['Alternative', 'Retina Seq-5 fps', 'Δ vs baseline'],
-      tableRows: all.map(a => [
+      tableRows: all.map((a) => [
         `${a.id === '00' ? 'baseline' : '§' + a.id + ' ' + a.name}`,
         fmtFps(a.retina.seq5.fps),
         a.id === '00' ? '—' : fmtPct(pctDelta(a.retina.seq5.fps, baseline.retina.seq5.fps)),
@@ -199,23 +224,35 @@ function renderCharts() {
     {
       svg: chartFrameMsRetinaLog(all),
       sub: 'Bar chart · log scale · gold = ≤ 9 ms (v-sync class)',
-      caption: 'Log scale exposes the discrete cost tiers: ~8.3 ms (v-sync), ~16.6 ms (4.18, half v-sync), ~76 ms (4.2), ~141 ms (baseline). The dashed gold line marks the 60 Hz v-sync budget of 16.7 ms.',
+      caption:
+        'Log scale exposes the discrete cost tiers: ~8.3 ms (v-sync), ~16.6 ms (4.18, half v-sync), ~76 ms (4.2), ~141 ms (baseline). The dashed gold line marks the 60 Hz v-sync budget of 16.7 ms.',
       tableHeaders: ['Alternative', 'frameMs.median (Retina Seq-5)'],
-      tableRows: all.map(a => [`${a.id === '00' ? 'baseline' : '§' + a.id + ' ' + a.name}`, fmtMs(a.retina.seq5.ms)]),
+      tableRows: all.map((a) => [
+        `${a.id === '00' ? 'baseline' : '§' + a.id + ' ' + a.name}`,
+        fmtMs(a.retina.seq5.ms),
+      ]),
     },
     {
       svg: chartPrograms(all),
       sub: 'Compiled GLSL programs · cold-start + memory proxy',
-      caption: '4.11 drops to 6 programs — bloom pipeline alone accounted for 16 variants. 4.5/4.1/4.4/4.19 cluster at 22 (no PointLights = NUM_POINT_LIGHTS=36 variants removed). 4.16 drops one variant by sharing with drum-interior material. 4.18/4.2 stay at 30 (kept PointLights).',
+      caption:
+        '4.11 drops to 6 programs — bloom pipeline alone accounted for 16 variants. 4.5/4.1/4.4/4.19 cluster at 22 (no PointLights = NUM_POINT_LIGHTS=36 variants removed). 4.16 drops one variant by sharing with drum-interior material. 4.18/4.2 stay at 30 (kept PointLights).',
       tableHeaders: ['Alternative', 'Programs (steady)'],
-      tableRows: all.map(a => [`${a.id === '00' ? 'baseline' : '§' + a.id + ' ' + a.name}`, String(a.signals.programs)]),
+      tableRows: all.map((a) => [
+        `${a.id === '00' ? 'baseline' : '§' + a.id + ' ' + a.name}`,
+        String(a.signals.programs),
+      ]),
     },
     {
       svg: chartDrawCallsAllLeds(all),
       sub: 'Draw calls per frame · additive vs subtractive techniques',
-      caption: '4.19 increases draws (+48: 24 interior sprites × 2 bloom+main passes). 4.11 cuts draws to 87 by eliminating the bloom 2nd-composer pass entirely. All other alts inherit baseline draws — their wins come from the lights loop, not draw-call count.',
+      caption:
+        '4.19 increases draws (+48: 24 interior sprites × 2 bloom+main passes). 4.11 cuts draws to 87 by eliminating the bloom 2nd-composer pass entirely. All other alts inherit baseline draws — their wins come from the lights loop, not draw-call count.',
       tableHeaders: ['Alternative', 'drawCalls @ All-LEDs Retina'],
-      tableRows: all.map(a => [`${a.id === '00' ? 'baseline' : '§' + a.id + ' ' + a.name}`, String(a.retina.allLeds.draws)]),
+      tableRows: all.map((a) => [
+        `${a.id === '00' ? 'baseline' : '§' + a.id + ' ' + a.name}`,
+        String(a.retina.allLeds.draws),
+      ]),
     },
   ];
 
@@ -229,7 +266,8 @@ function renderCharts() {
     fig.appendChild(c.svg);
     fig.appendChild(text('figcaption', '', c.caption));
     const det = document.createElement('details');
-    const sum = document.createElement('summary'); sum.textContent = 'Data table';
+    const sum = document.createElement('summary');
+    sum.textContent = 'Data table';
     det.appendChild(sum);
     det.appendChild(dataTable(c.tableRows, c.tableHeaders));
     fig.appendChild(det);
@@ -239,31 +277,37 @@ function renderCharts() {
 
 // ─────────────────────────────────── PER-ALT CARDS ───────────────────────────────────
 function renderPerfTable(label, canvas) {
-  const tbl = document.createElement('table'); tbl.className = 'perf-table';
-  const cap = document.createElement('caption'); cap.textContent = label; tbl.appendChild(cap);
+  const tbl = document.createElement('table');
+  tbl.className = 'perf-table';
+  const cap = document.createElement('caption');
+  cap.textContent = label;
+  tbl.appendChild(cap);
   const thead = document.createElement('thead');
   const trH = document.createElement('tr');
-  ['', 'Empty', '1-LED', 'All-LEDs', 'Seq-5'].forEach(h => {
-    const th = document.createElement('th'); th.textContent = h; trH.appendChild(th);
+  ['', 'Empty', '1-LED', 'All-LEDs', 'Seq-5'].forEach((h) => {
+    const th = document.createElement('th');
+    th.textContent = h;
+    trH.appendChild(th);
   });
-  thead.appendChild(trH); tbl.appendChild(thead);
+  thead.appendChild(trH);
+  tbl.appendChild(thead);
   const tbody = document.createElement('tbody');
   const cols = ['empty', 'oneLed', 'allLeds', 'seq5'];
   const rows = [
-    { label: 'fps', get: r => fmtFps(r.fps) },
-    { label: 'frameMs median', get: r => fmtMs(r.ms) },
-    { label: 'frameMs p95 / max', get: r => `${fmt(r.p95)} / ${fmt(r.max)}` },
-    { label: 'bloomTotalMs', get: r => r.bloom == null ? '—' : fmt(r.bloom, 1) },
-    { label: 'drawCalls', get: r => String(r.draws) },
+    { label: 'fps', get: (r) => fmtFps(r.fps) },
+    { label: 'frameMs median', get: (r) => fmtMs(r.ms) },
+    { label: 'frameMs p95 / max', get: (r) => `${fmt(r.p95)} / ${fmt(r.max)}` },
+    { label: 'bloomTotalMs', get: (r) => (r.bloom == null ? '—' : fmt(r.bloom, 1)) },
+    { label: 'drawCalls', get: (r) => String(r.draws) },
   ];
   for (const row of rows) {
     const tr = document.createElement('tr');
     if (row.label === 'fps') {
-      const allVsync = cols.every(c => canvas[c].ms <= 9);
+      const allVsync = cols.every((c) => canvas[c].ms <= 9);
       if (allVsync) tr.classList.add('vsync-row');
     }
     tr.appendChild(text('td', '', row.label));
-    cols.forEach(c => tr.appendChild(text('td', '', row.get(canvas[c]))));
+    cols.forEach((c) => tr.appendChild(text('td', '', row.get(canvas[c]))));
     tbody.appendChild(tr);
   }
   tbl.appendChild(tbody);
@@ -271,12 +315,19 @@ function renderPerfTable(label, canvas) {
 }
 
 function renderSignals(a) {
-  const wrap = create('div', 'signals-row' + (a.signals.bloomEnabled === false ? ' bloom-off' : ''));
+  const wrap = create(
+    'div',
+    'signals-row' + (a.signals.bloomEnabled === false ? ' bloom-off' : ''),
+  );
   const sigs = [
     { label: 'programs', value: a.signals.programs },
     { label: 'visiblePointLights', value: a.signals.visiblePointLights },
     { label: 'visibleDirectionalLights', value: a.signals.visibleDirectionalLights },
-    { label: 'bloomEnabled', value: String(a.signals.bloomEnabled), cls: a.signals.bloomEnabled === false ? 'bloom-off' : null },
+    {
+      label: 'bloomEnabled',
+      value: String(a.signals.bloomEnabled),
+      cls: a.signals.bloomEnabled === false ? 'bloom-off' : null,
+    },
   ];
   for (const s of sigs) {
     const span = document.createElement('span');
@@ -289,14 +340,24 @@ function renderSignals(a) {
 
 function renderProgramsStability(stab) {
   if (!stab) return create('p', 'stab-note', 'Not separately captured.');
-  const tbl = document.createElement('table'); tbl.className = 'stab-table';
+  const tbl = document.createElement('table');
+  tbl.className = 'stab-table';
   const thead = document.createElement('thead');
   const trH = document.createElement('tr');
   trH.appendChild(text('th', '', 'Stage'));
   trH.appendChild(text('th', '', 'Programs'));
-  thead.appendChild(trH); tbl.appendChild(thead);
+  thead.appendChild(trH);
+  tbl.appendChild(thead);
   const tbody = document.createElement('tbody');
-  const stages = ['initial empty', 'seq5 iter 1 mid', 'seq5 iter 1 post-idle', 'seq5 iter 2 mid', 'seq5 iter 2 post-idle', 'seq5 iter 3 mid', 'seq5 iter 3 post-idle'];
+  const stages = [
+    'initial empty',
+    'seq5 iter 1 mid',
+    'seq5 iter 1 post-idle',
+    'seq5 iter 2 mid',
+    'seq5 iter 2 post-idle',
+    'seq5 iter 3 mid',
+    'seq5 iter 3 post-idle',
+  ];
   stab.samples.forEach((p, i) => {
     const tr = document.createElement('tr');
     tr.appendChild(text('td', '', stages[i] || `sample ${i + 1}`));
@@ -325,21 +386,32 @@ function renderShotPair(pair) {
   const grid = create('div', 'pair-grid');
   const sideB = create('div', 'side is-baseline');
   const sideA = create('div', 'side is-after');
-  const imgB = document.createElement('img'); imgB.src = pair.baseline; imgB.alt = `Baseline: ${pair.label} before changes.`; imgB.loading = 'lazy';
-  const imgA = document.createElement('img'); imgA.src = pair.after; imgA.alt = `After: ${pair.label} with the alternative applied.`; imgA.loading = 'lazy';
+  const imgB = document.createElement('img');
+  imgB.src = pair.baseline;
+  imgB.alt = `Baseline: ${pair.label} before changes.`;
+  imgB.loading = 'lazy';
+  const imgA = document.createElement('img');
+  imgA.src = pair.after;
+  imgA.alt = `After: ${pair.label} with the alternative applied.`;
+  imgA.loading = 'lazy';
   sideB.appendChild(imgB);
   sideA.appendChild(imgA);
   sideB.appendChild(text('span', 'side-lbl', 'baseline'));
   sideA.appendChild(text('span', 'side-lbl', 'after'));
-  grid.appendChild(sideB); grid.appendChild(sideA);
+  grid.appendChild(sideB);
+  grid.appendChild(sideA);
 
   const track = create('div', 'slider-track');
   const range = document.createElement('input');
-  range.type = 'range'; range.min = '0'; range.max = '100'; range.value = '50';
+  range.type = 'range';
+  range.min = '0';
+  range.max = '100';
+  range.value = '50';
   range.setAttribute('aria-label', `Comparison slider for ${pair.label}`);
   range.addEventListener('input', () => stage.style.setProperty('--split', `${range.value}%`));
   track.appendChild(range);
-  stage.appendChild(grid); stage.appendChild(track);
+  stage.appendChild(grid);
+  stage.appendChild(track);
   compare.appendChild(stage);
   compare.appendChild(text('p', 'shot-caption', pair.caption));
 
@@ -352,10 +424,14 @@ function renderShotPair(pair) {
     toggle.setAttribute('aria-pressed', isSlider ? 'true' : 'false');
     if (isSlider) {
       // Initial split set via style; ensure aspect ratio carries across
-      imgB.addEventListener('load', () => {
-        const ar = `${imgB.naturalWidth} / ${imgB.naturalHeight}`;
-        stage.style.setProperty('--shot-aspect', ar);
-      }, { once: true });
+      imgB.addEventListener(
+        'load',
+        () => {
+          const ar = `${imgB.naturalWidth} / ${imgB.naturalHeight}`;
+          stage.style.setProperty('--shot-aspect', ar);
+        },
+        { once: true },
+      );
       if (imgB.naturalWidth) {
         stage.style.setProperty('--shot-aspect', `${imgB.naturalWidth} / ${imgB.naturalHeight}`);
       }
@@ -383,12 +459,13 @@ function renderCard(a) {
   // Perf pill
   const fps = a.retina.seq5.fps;
   let pillCls = 'cool';
-  if (a.id !== '00') pillCls = fps >= 100 ? '' : (fps >= 50 ? 'warm' : 'cool');
+  if (a.id !== '00') pillCls = fps >= 100 ? '' : fps >= 50 ? 'warm' : 'cool';
   if (a.id === '00') pillCls = 'cool';
   const perfPill = create('span', 'perf-pill ' + pillCls);
-  perfPill.textContent = a.id === '00'
-    ? `Retina Seq-5: ${fmt(fps)} fps`
-    : `Retina Seq-5: ${fmt(fps)} fps · ${fmtPct(pctDelta(fps, baseline.retina.seq5.fps))}`;
+  perfPill.textContent =
+    a.id === '00'
+      ? `Retina Seq-5: ${fmt(fps)} fps`
+      : `Retina Seq-5: ${fmt(fps)} fps · ${fmtPct(pctDelta(fps, baseline.retina.seq5.fps))}`;
   meta.appendChild(perfPill);
   // Path tag
   const pt = text('span', 'path-tag', a.path === 'baseline' ? 'BASE' : a.path);
@@ -414,7 +491,13 @@ function renderCard(a) {
     block.appendChild(text('h4', '', 'Implementation summary'));
     block.appendChild(text('p', '', a.implementation.summary));
     if (a.implementation.loc) {
-      block.appendChild(text('p', '', `Footprint: ${a.implementation.loc} · ${a.implementation.files} file${a.implementation.files === 1 ? '' : 's'} touched.`));
+      block.appendChild(
+        text(
+          'p',
+          '',
+          `Footprint: ${a.implementation.loc} · ${a.implementation.files} file${a.implementation.files === 1 ? '' : 's'} touched.`,
+        ),
+      );
     }
     narrative.appendChild(block);
   }
@@ -498,7 +581,9 @@ function renderCard(a) {
 
   if (a.programsStability) {
     const stabBlock = create('div', 'card-block');
-    stabBlock.appendChild(text('h4', '', `Programs stability across ${a.programsStability.iters} repeated sequences`));
+    stabBlock.appendChild(
+      text('h4', '', `Programs stability across ${a.programsStability.iters} repeated sequences`),
+    );
     stabBlock.appendChild(renderProgramsStability(a.programsStability));
     numbers.appendChild(stabBlock);
   }
@@ -522,10 +607,18 @@ function renderCard(a) {
   // Footer links
   const foot = create('div', 'card-foot');
   if (a.sourceFile) {
-    const a1 = document.createElement('a'); a1.href = a.sourceFile; a1.textContent = 'Source result MD →'; foot.appendChild(a1);
+    const a1 = document.createElement('a');
+    a1.href = a.sourceFile;
+    a1.textContent = 'Source result MD →';
+    foot.appendChild(a1);
   }
   if (a.branchUrl) {
-    const a2 = document.createElement('a'); a2.href = a.branchUrl; a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = 'Code diff vs main →'; foot.appendChild(a2);
+    const a2 = document.createElement('a');
+    a2.href = a.branchUrl;
+    a2.target = '_blank';
+    a2.rel = 'noopener';
+    a2.textContent = 'Code diff vs main →';
+    foot.appendChild(a2);
   }
   body.appendChild(foot);
 
@@ -545,24 +638,44 @@ function renderGallery() {
   // Baseline reference (from 4.4 baseline shot — same scene, mandatory pair)
   const baselineShot = 'screenshots/4.4-two-directional-allon-baseline.jpeg';
   const cells = [
-    { id: '00', name: 'baseline', label: 'before', vis: baseline.visualCharacter, img: baselineShot, path: 'baseline' },
-    ...vsyncWinners.filter(id => ['4.1','4.4','4.11','4.19'].includes(id)).map(id => {
-      const a = alternatives.find(x => x.id === id);
-      // Use the all-on / allon after-shot
-      const allonPair = a.screenshots.pairs.find(p => p.id === 'allon-retina') || a.screenshots.pairs[0];
-      return { id, name: `§${id} ${a.name}`, label: 'after', vis: a.visualCharacter, img: allonPair.after, path: a.path };
-    }),
+    {
+      id: '00',
+      name: 'baseline',
+      label: 'before',
+      vis: baseline.visualCharacter,
+      img: baselineShot,
+      path: 'baseline',
+    },
+    ...vsyncWinners
+      .filter((id) => ['4.1', '4.4', '4.11', '4.19'].includes(id))
+      .map((id) => {
+        const a = alternatives.find((x) => x.id === id);
+        // Use the all-on / allon after-shot
+        const allonPair =
+          a.screenshots.pairs.find((p) => p.id === 'allon-retina') || a.screenshots.pairs[0];
+        return {
+          id,
+          name: `§${id} ${a.name}`,
+          label: 'after',
+          vis: a.visualCharacter,
+          img: allonPair.after,
+          path: a.path,
+        };
+      }),
   ];
   for (const c of cells) {
     const cell = document.createElement('article');
     cell.className = 'cell' + (c.path === 'baseline' ? ' is-baseline' : '');
     cell.dataset.path = c.path;
     const img = document.createElement('img');
-    img.src = c.img; img.alt = `${c.label}: ${c.name}, All-LEDs Retina. ${c.vis}`;
+    img.src = c.img;
+    img.alt = `${c.label}: ${c.name}, All-LEDs Retina. ${c.vis}`;
     img.loading = 'lazy';
     cell.appendChild(img);
     const meta = create('div', 'meta');
-    meta.appendChild(text('div', 'label', c.label === 'before' ? 'baseline · before' : 'after · All-LEDs Retina'));
+    meta.appendChild(
+      text('div', 'label', c.label === 'before' ? 'baseline · before' : 'after · All-LEDs Retina'),
+    );
     meta.appendChild(text('div', 'name', c.name));
     meta.appendChild(text('div', 'vis', '“' + c.vis + '”'));
     cell.appendChild(meta);

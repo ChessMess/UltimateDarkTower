@@ -13,25 +13,25 @@ ultimatedarktower (data) ──► data/udtReexports ──► state/ ──► 
   `applyBoardCommand` reducer on dispatch, and emits events; renderers/UI subscribe.
 - **No rules.** The library stores/renders/emits; the host owns game rules.
 - **Decoupled UI seams.** Two observables — a `SelectionStore` (active token) and a `LocationPickStore`
-  (armed add-placement) — connect the renderers (which *produce* clicks/picks) to the editing UI (which
-  *consumes* them) without either importing the other. `BoardRenderView` owns/exposes both
+  (armed add-placement) — connect the renderers (which _produce_ clicks/picks) to the editing UI (which
+  _consumes_ them) without either importing the other. `BoardRenderView` owns/exposes both
   (`view.selection`, `view.locationPick`), so a click/pick from the 2D map **or** the 3D plugin drives the
   same `ui/` panels. The UI calls only the controller's public command API.
 
 ## Controlled vs. uncontrolled ownership
 
-One command vocabulary and one event surface; only *who owns the truth* differs, selected by
+One command vocabulary and one event surface; only _who owns the truth_ differs, selected by
 `new BoardStateController({ mode })`:
 
 - **`self`** (default — uncontrolled): the controller's internal `BoardState` is authoritative.
   `dispatch` / named methods run the reducer, replace the held state, and emit `change` plus the
   derived specific event. Right for the example app, tests, and quick homebrews.
-- **`host`** (controlled): the *host* owns the truth (e.g. a future digital game that runs the rules).
+- **`host`** (controlled): the _host_ owns the truth (e.g. a future digital game that runs the rules).
   `dispatch` computes the projected next state and emits it as a `change` **intent** without mutating
   held state; the host applies its rules and commits via `applyState(next)` — the sole commit path in
   both modes. Right for a host that must validate/transform commands before they take effect.
 
-The board enforces **no** rules in either mode — `host` simply moves the decision of *what to commit*
+The board enforces **no** rules in either mode — `host` simply moves the decision of _what to commit_
 out to the host.
 
 ## Data flow

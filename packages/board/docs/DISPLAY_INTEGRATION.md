@@ -9,15 +9,21 @@ import { TowerRenderView } from 'ultimatedarktowerdisplay';
 import { attachBoard3D } from 'ultimatedarktowerboard/plugin';
 
 const view = new TowerRenderView({ container, modelUrl }); // a tower GLB
-const board = view.view3D && attachBoard3D(view.view3D, {
-  boardState,                 // initial BoardState (the plugin reads; the host owns mutations)
-  assetBaseUrl: './tokens/',  // token art, loaded at runtime (never bundled)
-  boardImageUrl: './board.png', // render OUR board on the disc + hide Display's (omit to keep Display's)
-  onTokenSelect: (sel) => { /* { kind, id, location } — same shape as the 2D map */ },
-});
+const board =
+  view.view3D &&
+  attachBoard3D(view.view3D, {
+    boardState, // initial BoardState (the plugin reads; the host owns mutations)
+    assetBaseUrl: './tokens/', // token art, loaded at runtime (never bundled)
+    boardImageUrl: './board.png', // render OUR board on the disc + hide Display's (omit to keep Display's)
+    onTokenSelect: (sel) => {
+      /* { kind, id, location } — same shape as the 2D map */
+    },
+  });
 
 // Push board-state updates from your controller (Display's onStateApplied is *tower* state, not board):
-controller.subscribe((e) => { if (e.type === 'change') board?.setBoardState(e.state); });
+controller.subscribe((e) => {
+  if (e.type === 'change') board?.setBoardState(e.state);
+});
 ```
 
 `attachBoard3D(view3D, options)` wraps `attachScenePlugin` (mirroring Display's own

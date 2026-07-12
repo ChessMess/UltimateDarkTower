@@ -30,6 +30,7 @@ export const Sequence = z
     tracks: z.array(Track),
   })
   .refine((s) => !(s.loop && s.endBehavior === 'cutToBlack'), {
-    message: "endBehavior: 'cutToBlack' is incompatible with loop: true (would cut on every iteration)",
+    message:
+      "endBehavior: 'cutToBlack' is incompatible with loop: true (would cut on every iteration)",
   });
 export type Sequence = z.infer<typeof Sequence>;

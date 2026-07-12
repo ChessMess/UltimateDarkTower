@@ -6,7 +6,11 @@
  * PhysicalTowerReplay (mirror writes) + UltimateDarkTower (Web Bluetooth local tower).
  */
 
-import { RelayClient, PhysicalTowerReplay, type RelayClientEvent } from 'ultimatedarktowerrelay-client';
+import {
+  RelayClient,
+  PhysicalTowerReplay,
+  type RelayClientEvent,
+} from 'ultimatedarktowerrelay-client';
 import { UltimateDarkTower } from 'ultimatedarktower';
 
 const $ = (id: string): HTMLElement => {

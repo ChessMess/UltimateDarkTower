@@ -6,18 +6,18 @@ The Return to Dark Tower companion app generates 12-character base-36 game seeds
 
 ## User-Selectable Game Setup Fields
 
-| Field | Options | Min bits |
-|-------|---------|----------|
-| Game Mode | Cooperative, Competitive | 1 |
-| Difficulty | Heroic, Gritty (Coop only) | 1 |
-| Game Type | Core, Alliances, Covenant | 2 |
-| Player Count | 1-4 | 2 |
-| Main Goal | 9 options | 4 |
-| Adversary | 8 options | 3 |
-| Level 2 Foe | 4 options | 2 |
-| Level 3 Foe | 4 options | 2 |
-| Level 4 Foe | 4 options | 2 |
-| **Total selectable** | | **~19 bits** |
+| Field                | Options                    | Min bits     |
+| -------------------- | -------------------------- | ------------ |
+| Game Mode            | Cooperative, Competitive   | 1            |
+| Difficulty           | Heroic, Gritty (Coop only) | 1            |
+| Game Type            | Core, Alliances, Covenant  | 2            |
+| Player Count         | 1-4                        | 2            |
+| Main Goal            | 9 options                  | 4            |
+| Adversary            | 8 options                  | 3            |
+| Level 2 Foe          | 4 options                  | 2            |
+| Level 3 Foe          | 4 options                  | 2            |
+| Level 4 Foe          | 4 options                  | 2            |
+| **Total selectable** |                            | **~19 bits** |
 
 Remaining ~43 bits of the 62 total encode: timeline, quests, dungeons, companion events, battle cards, expansion space, etc.
 
@@ -28,6 +28,7 @@ Remaining ~43 bits of the 62 total encode: timeline, quests, dungeons, companion
 **Location:** `UltimateDarkTower/src/udtSeedDecoder.ts`
 
 ### Types
+
 - `Adversary` — union of 8 names (Ashstrider, Bane of Omens, Empress of Shades, Gaze Eternal, Gravemaw, Isa the Hollow, Lingering Rot, Utuk'Ku)
 - `Ally` — union of 10 names (Gleb, Grigor, Hakan, Letha, Miras, Nimet, Tomas, Vasa, Yana, Zaida)
 - `Foe` — union of 12 names
@@ -39,6 +40,7 @@ Remaining ~43 bits of the 62 total encode: timeline, quests, dungeons, companion
 - `DecodedSeed` — return type with raw data + optional decoded fields + unknown regions
 
 ### Functions
+
 - `validateSeed(seed)` — normalize, validate `XXXX-XXXX-XXXX` format
 - `seedGroupToNumber(group)` — 4 base-36 chars → number
 - `extractBits(groups, offset, length)` — extract N bits from position P across three groups
@@ -47,6 +49,7 @@ Remaining ~43 bits of the 62 total encode: timeline, quests, dungeons, companion
 - `dumpSeedBits(seed)` — all 62 bits with region labels and raw values
 
 ### Exports to add in `src/index.ts`
+
 ```typescript
 export { decodeSeed, validateSeed, compareSeedsRaw, dumpSeedBits } from './udtSeedDecoder';
 export type { DecodedSeed, DecodedField } from './udtSeedDecoder';
@@ -61,17 +64,20 @@ A new Vite-based web app in the monorepo (same pattern as `packages/client/`). N
 ### App Features
 
 **1. Seed Entry Panel**
+
 - Text input for seed (validates format on the fly)
 - "New Baseline" button — starts a fresh comparison session
 - "Add Variant" button — adds seed to current session, prompts user to select what changed
 - Session history list showing all entered seeds with their noted changes
 
 **2. Change Selector**
+
 - When adding a variant, user picks which field changed from a dropdown (Adversary, Main Goal, Foe L2, etc.)
 - Then selects the new value from the appropriate option list
 - This metadata is stored alongside the seed for analysis
 
 **3. Bit Map Display** (modeled after TowerStateReadout)
+
 - Visual grid showing all 62 bits
 - Each bit is a colored cell (like `.tdr-led` circles but square for bit display)
 - Color-coded by field assignment:
@@ -83,16 +89,19 @@ A new Vite-based web app in the monorepo (same pattern as `packages/client/`). N
 - Field labels along the bit grid edges
 
 **4. Comparison View**
+
 - Side-by-side or diff view of baseline vs variant
 - Highlights exactly which bits changed
 - Auto-suggests field assignments when bit changes correlate with the user's noted change
 
 **5. Field Mapping Editor**
+
 - Table of discovered field mappings: name, bit offset, bit length, confidence
 - Editable — user can manually assign/adjust mappings
 - Persisted to localStorage
 
 **6. LLM Export**
+
 - "Copy as LLM Prompt" button — generates a structured text summary of:
   - All collected seeds with their known configurations
   - Bit-level diffs between baseline and variants
@@ -100,10 +109,12 @@ A new Vite-based web app in the monorepo (same pattern as `packages/client/`). N
   - Formatted for pasting into an LLM conversation for pattern analysis
 
 **7. Data Persistence**
+
 - All sessions/seeds/mappings saved to localStorage
 - Export/Import as JSON for backup and sharing
 
 ### File Structure
+
 ```
 packages/seed-decoder/
 ├── index.html
@@ -121,7 +132,9 @@ packages/seed-decoder/
 ```
 
 ### Visual Style
+
 Follow existing Dark Tower app conventions:
+
 - Dark background (`#161616`), light text (`#e8e8e8`)
 - Red accent (`#c0392b`), green for confirmed (`#27ae60`), orange for suspected (`#f39c12`)
 - Cards with gradient background and top border highlight
@@ -134,6 +147,7 @@ Follow existing Dark Tower app conventions:
 ## Part 3: Tests
 
 ### `tests/udtSeedDecoder.test.ts` (new)
+
 1. Format validation — valid/invalid seeds, normalization
 2. Numeric conversion — known base-36 values
 3. Bit extraction — unit tests with known inputs
@@ -141,19 +155,20 @@ Follow existing Dark Tower app conventions:
 5. Compare utility — identical = no diffs, different = correct positions
 
 ### `tests/exports.test.ts` (modify)
+
 Add `decodeSeed`, `validateSeed`, `compareSeedsRaw`, `dumpSeedBits` to imports and verify.
 
 ---
 
 ## Files Summary
 
-| File | Action | Repo |
-|------|--------|------|
-| `src/udtSeedDecoder.ts` | **Create** | UltimateDarkTower |
-| `src/index.ts` | **Modify** — add exports | UltimateDarkTower |
-| `tests/udtSeedDecoder.test.ts` | **Create** | UltimateDarkTower |
-| `tests/exports.test.ts` | **Modify** | UltimateDarkTower |
-| `packages/seed-decoder/` | **Create** — entire package | UltimateDarkTowerSync |
+| File                           | Action                      | Repo                  |
+| ------------------------------ | --------------------------- | --------------------- |
+| `src/udtSeedDecoder.ts`        | **Create**                  | UltimateDarkTower     |
+| `src/index.ts`                 | **Modify** — add exports    | UltimateDarkTower     |
+| `tests/udtSeedDecoder.test.ts` | **Create**                  | UltimateDarkTower     |
+| `tests/exports.test.ts`        | **Modify**                  | UltimateDarkTower     |
+| `packages/seed-decoder/`       | **Create** — entire package | UltimateDarkTowerSync |
 
 ---
 

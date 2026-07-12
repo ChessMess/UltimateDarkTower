@@ -26,7 +26,8 @@ export class FieldMapper {
     if (mappings.length === 0) {
       const empty = document.createElement('p');
       empty.className = 'empty-msg';
-      empty.textContent = 'No field mappings yet. Add variants and use auto-suggest, or add manually.';
+      empty.textContent =
+        'No field mappings yet. Add variants and use auto-suggest, or add manually.';
       this.container.appendChild(empty);
     } else {
       const table = document.createElement('table');
@@ -86,7 +87,8 @@ export class FieldMapper {
       const name = (form.querySelector('#map-name') as HTMLInputElement).value.trim();
       const offset = parseInt((form.querySelector('#map-offset') as HTMLInputElement).value, 10);
       const length = parseInt((form.querySelector('#map-length') as HTMLInputElement).value, 10);
-      const confidence = (form.querySelector('#map-confidence') as HTMLSelectElement).value as FieldMapping['confidence'];
+      const confidence = (form.querySelector('#map-confidence') as HTMLSelectElement)
+        .value as FieldMapping['confidence'];
       if (!name || isNaN(offset) || isNaN(length)) return;
       this.analyzer.addFieldMapping({ name, bitOffset: offset, bitLength: length, confidence });
       this.render();

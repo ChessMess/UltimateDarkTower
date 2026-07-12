@@ -39,7 +39,7 @@ export class LedEffectAnimator {
     private readonly ledRefs: Map<string, LedRef>,
     private readonly getConfig: () => ResolvedLightingConfig,
     private readonly sealManager?: SealManager,
-  ) { }
+  ) {}
 
   private getSealKey(layer: number, light: number): string | null {
     if (layer >= 3 || !this.sealManager) return null;
@@ -89,8 +89,7 @@ export class LedEffectAnimator {
     }
     if (ref.haloSprite && layer >= 4 && baseCfg.enabled) {
       if (baseCfg.halo.enabled) {
-        (ref.haloSprite.material as THREE.SpriteMaterial).opacity =
-          driver.v * baseCfg.halo.opacity;
+        (ref.haloSprite.material as THREE.SpriteMaterial).opacity = driver.v * baseCfg.halo.opacity;
         ref.haloSprite.visible = driver.v > 0.001;
       } else {
         ref.haloSprite.visible = false;
@@ -116,10 +115,7 @@ export class LedEffectAnimator {
     });
   }
 
-  private buildFlickerLoop(
-    driver: { v: number },
-    write: () => void,
-  ): gsap.core.Timeline {
+  private buildFlickerLoop(driver: { v: number }, write: () => void): gsap.core.Timeline {
     const flickerTarget = { value: 0 };
     const tl = gsap.timeline({ repeat: -1 });
     tl.call(

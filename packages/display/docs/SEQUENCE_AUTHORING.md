@@ -1,6 +1,6 @@
 # Authoring light sequences in JSON
 
-*Docs: [Index](README.md) > Sequence author > Sequence authoring*
+_Docs: [Index](README.md) > Sequence author > Sequence authoring_
 
 This document explains how to write a new light sequence as a JSON file and have the player run it on the tower. It assumes you've never touched this code before — a junior dev should be able to read this top-to-bottom and end up with a working sequence.
 
@@ -23,7 +23,7 @@ The simplest possible sequence:
   "loop": false,
   "endBehavior": "cutToBlack",
   "tracks": [
-    { "kind": "solid", "atTick": 0, "layers": [0,1,2,3,4,5], "lights": "all", "level": 1 }
+    { "kind": "solid", "atTick": 0, "layers": [0, 1, 2, 3, 4, 5], "lights": "all", "level": 1 }
   ]
 }
 ```
@@ -36,14 +36,14 @@ That sequence: at tick 0, every LED snaps to full brightness; at tick 50 (1 seco
 
 Every JSON file has the same outer shape, validated by [src/sequences/schema.ts](../src/sequences/schema.ts):
 
-| Field           | Type                          | Required | Notes                                                                                                                                |
-| --------------- | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `name`          | string                        | yes      | Human label. Should match the file name (`defeat.json` → `"name": "defeat"`).                                                        |
-| `description`   | string                        | no       | Free-form. Goes nowhere at runtime; appears in the file for the next person who reads it.                                            |
-| `totalTicks`    | positive int                  | yes      | When the sequence ends (non-loop) or how long one loop iteration is (loop). Ticks are 20 ms each.                                    |
-| `loop`          | boolean                       | yes      | `true` → the timeline repeats forever (until the state changes). `false` → runs once and signals completion.                         |
-| `endBehavior`   | `"cutToBlack"` \| `"hold"`    | yes      | What happens at `totalTicks`. `cutToBlack` writes 0 to every LED; `hold` leaves them as-is. **`cutToBlack` is rejected if `loop: true`** — it would zero out every iteration. |
-| `tracks`        | Track[]                       | yes      | Ordered list of tracks (animation primitives). Order matters when two tracks fire at the same tick — see [Intra-tick ordering](#intra-tick-ordering). |
+| Field         | Type                       | Required | Notes                                                                                                                                                                         |
+| ------------- | -------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | string                     | yes      | Human label. Should match the file name (`defeat.json` → `"name": "defeat"`).                                                                                                 |
+| `description` | string                     | no       | Free-form. Goes nowhere at runtime; appears in the file for the next person who reads it.                                                                                     |
+| `totalTicks`  | positive int               | yes      | When the sequence ends (non-loop) or how long one loop iteration is (loop). Ticks are 20 ms each.                                                                             |
+| `loop`        | boolean                    | yes      | `true` → the timeline repeats forever (until the state changes). `false` → runs once and signals completion.                                                                  |
+| `endBehavior` | `"cutToBlack"` \| `"hold"` | yes      | What happens at `totalTicks`. `cutToBlack` writes 0 to every LED; `hold` leaves them as-is. **`cutToBlack` is rejected if `loop: true`** — it would zero out every iteration. |
+| `tracks`      | Track[]                    | yes      | Ordered list of tracks (animation primitives). Order matters when two tracks fire at the same tick — see [Intra-tick ordering](#intra-tick-ordering).                         |
 
 Every **track** has a `kind` discriminator that picks the schema the rest of the object follows. Every track may also include an `_comment: string` — the schema accepts it and the player ignores it. Use it the same way you'd use a `//` comment in code.
 
@@ -63,18 +63,18 @@ A handful of conventions that apply to all kinds:
 
 ### Quick reference table
 
-| Kind              | One-line summary                                                                  | Used by                                                              |
-| ----------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `solid`           | Write a constant level to a scope of LEDs at one tick.                            | victory, sealReveal ph3, dungeonIdle, rotation steady, final cuts.   |
-| `linearRamp`      | Interpolate every LED in scope linearly from `from` → `to`.                       | defeat, monthStarted ph1, slowFlareThenFade.                         |
-| `scaleAll`        | Multiply every LED by `mul/div` once per tick over a range.                       | flare ph2, gloat per-tick, angryStrobe ph2, victory ramp-up, twinkle decay. |
-| `discreteSet`     | At specific ticks: setAll, subtractAll-from-shadow, or randomLed.                 | gloat chortles, monthStarted ph2, victory random-drop.               |
-| `exponentialRamp` | Per-tick read-modify-write `× mul/div`, clamped to `[floor, 1]`.                  | flareThenFade, flareThenFadeBase, flareThenFlicker ph1.              |
-| `flickerStep`     | Per-LED random-target lerp; or respawn-one-LED-conditionally per tick.            | flareThenFlicker ph2, angryStrobe ph1, dungeonIdle, twinkle.         |
-| `breathe`         | Symmetric triangle wave applied to all 24 LEDs in lockstep.                       | wholeTowerBreathing.                                                 |
-| `rotationChase`   | Chase pattern across layers + steady-fill layer + decay tail.                     | rotation × 4 (AllDrums + per-drum variants).                         |
-| `pulseFlicker`    | Per-LED pulse-and-decay with reseedable delays.                                   | sealReveal ph1+2.                                                    |
-| `custom`          | Escape hatch — names a TS handler registered at runtime.                          | none initially.                                                      |
+| Kind              | One-line summary                                                       | Used by                                                                     |
+| ----------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `solid`           | Write a constant level to a scope of LEDs at one tick.                 | victory, sealReveal ph3, dungeonIdle, rotation steady, final cuts.          |
+| `linearRamp`      | Interpolate every LED in scope linearly from `from` → `to`.            | defeat, monthStarted ph1, slowFlareThenFade.                                |
+| `scaleAll`        | Multiply every LED by `mul/div` once per tick over a range.            | flare ph2, gloat per-tick, angryStrobe ph2, victory ramp-up, twinkle decay. |
+| `discreteSet`     | At specific ticks: setAll, subtractAll-from-shadow, or randomLed.      | gloat chortles, monthStarted ph2, victory random-drop.                      |
+| `exponentialRamp` | Per-tick read-modify-write `× mul/div`, clamped to `[floor, 1]`.       | flareThenFade, flareThenFadeBase, flareThenFlicker ph1.                     |
+| `flickerStep`     | Per-LED random-target lerp; or respawn-one-LED-conditionally per tick. | flareThenFlicker ph2, angryStrobe ph1, dungeonIdle, twinkle.                |
+| `breathe`         | Symmetric triangle wave applied to all 24 LEDs in lockstep.            | wholeTowerBreathing.                                                        |
+| `rotationChase`   | Chase pattern across layers + steady-fill layer + decay tail.          | rotation × 4 (AllDrums + per-drum variants).                                |
+| `pulseFlicker`    | Per-LED pulse-and-decay with reseedable delays.                        | sealReveal ph1+2.                                                           |
+| `custom`          | Escape hatch — names a TS handler registered at runtime.               | none initially.                                                             |
 
 Detailed reference for each follows.
 
@@ -94,14 +94,14 @@ Write a constant `level` to a scope of LEDs at one tick. The LEDs hold that valu
 }
 ```
 
-| Field                | Type                                  | Required | Notes                                                            |
-| -------------------- | ------------------------------------- | -------- | ---------------------------------------------------------------- |
-| `kind`               | `"solid"`                             | yes      |                                                                  |
-| `atTick`             | int ≥ 0                               | yes      | When to write.                                                   |
-| `endTick`            | int > 0                               | no       | Informational only — the player does not write at endTick.       |
-| `layers`             | int[] (each 0..5), min length 1       | yes      |                                                                  |
-| `lights`             | `"all"` \| int[] (each 0..3)          | yes      |                                                                  |
-| `level` / `levelPwm` | one of: number 0..1 / int 0..255      | yes (one)| Exactly one must be set.                                         |
+| Field                | Type                             | Required  | Notes                                                      |
+| -------------------- | -------------------------------- | --------- | ---------------------------------------------------------- |
+| `kind`               | `"solid"`                        | yes       |                                                            |
+| `atTick`             | int ≥ 0                          | yes       | When to write.                                             |
+| `endTick`            | int > 0                          | no        | Informational only — the player does not write at endTick. |
+| `layers`             | int[] (each 0..5), min length 1  | yes       |                                                            |
+| `lights`             | `"all"` \| int[] (each 0..3)     | yes       |                                                            |
+| `level` / `levelPwm` | one of: number 0..1 / int 0..255 | yes (one) | Exactly one must be set.                                   |
 
 **When to use it:** any time you want LEDs to snap to a value and stay there. Stage builds (victory's bottom-up phases), final cuts, "off" states.
 
@@ -124,16 +124,16 @@ Linearly interpolate every LED in `scope` from `from` to `to` over `durationTick
 }
 ```
 
-| Field           | Type                                  | Required | Notes                                                                                                                                |
-| --------------- | ------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `kind`          | `"linearRamp"`                        | yes      |                                                                                                                                      |
-| `atTick`        | int ≥ 0                               | yes      |                                                                                                                                      |
-| `durationTicks` | int > 0                               | yes      |                                                                                                                                      |
-| `layers`        | int[] (each 0..5), min length 1       | yes      |                                                                                                                                      |
-| `lights`        | `"all"` \| int[] (each 0..3)          | yes      |                                                                                                                                      |
-| `from`          | number 0..1                           | yes      | Starting level.                                                                                                                      |
-| `to`            | number 0..1                           | yes      | Ending level.                                                                                                                        |
-| `interpolation` | `"gsapTween"` \| `"perTick"`          | yes      | See below.                                                                                                                           |
+| Field           | Type                            | Required | Notes           |
+| --------------- | ------------------------------- | -------- | --------------- |
+| `kind`          | `"linearRamp"`                  | yes      |                 |
+| `atTick`        | int ≥ 0                         | yes      |                 |
+| `durationTicks` | int > 0                         | yes      |                 |
+| `layers`        | int[] (each 0..5), min length 1 | yes      |                 |
+| `lights`        | `"all"` \| int[] (each 0..3)    | yes      |                 |
+| `from`          | number 0..1                     | yes      | Starting level. |
+| `to`            | number 0..1                     | yes      | Ending level.   |
+| `interpolation` | `"gsapTween"` \| `"perTick"`    | yes      | See below.      |
 
 **Two interpolation modes:**
 
@@ -160,13 +160,13 @@ Multiply every LED's level by `multiplierNum / multiplierDen` once per tick acro
 
 Despite the name, the multiplier can be **greater than 1** (victory's flurry uses `200/198 ≈ 1.01` to ramp UP). Naming reflects "scale every LED" rather than "decay every LED."
 
-| Field           | Type                                  | Required |
-| --------------- | ------------------------------------- | -------- |
-| `kind`          | `"scaleAll"`                          | yes      |
-| `atTick`        | int ≥ 0                               | yes      |
-| `endTick`       | int > 0                               | yes      |
-| `multiplierNum` | positive int                          | yes      |
-| `multiplierDen` | positive int                          | yes      |
+| Field           | Type         | Required |
+| --------------- | ------------ | -------- |
+| `kind`          | `"scaleAll"` | yes      |
+| `atTick`        | int ≥ 0      | yes      |
+| `endTick`       | int > 0      | yes      |
+| `multiplierNum` | positive int | yes      |
+| `multiplierDen` | positive int | yes      |
 
 The math mirrors the firmware's `lights_decay_all` primitive in [src/sequences/builders/ledMath.ts:16-21](../src/sequences/builders/ledMath.ts#L16-L21) — it operates on PWM bytes via integer division, so the result is rounded to PWM granularity (1/255). This means decay sequences eventually reach exactly 0 instead of asymptoting to a tiny float.
 
@@ -218,14 +218,14 @@ One random `(layer, light)` is written to `level`. **Consumes 2 RNG draws per fi
 }
 ```
 
-| Field                  | Type                                  | Required           | Notes                                |
-| ---------------------- | ------------------------------------- | ------------------ | ------------------------------------ |
-| `kind`                 | `"discreteSet"`                       | yes                |                                      |
-| `atTicks`              | int[] (each ≥ 0), min length 1        | yes                |                                      |
-| `mode`                 | `"setAll"` \| `"subtractAll"` \| `"randomLed"` | yes                |                                      |
-| `level` / `levelPwm`   | one of: number 0..1 / int 0..255      | yes for setAll/randomLed | Exactly one.                         |
-| `delta` / `deltaPwm`   | one of: number 0..1 / int 0..255      | yes for subtractAll | Exactly one.                         |
-| `from`                 | number 0..1                           | yes for subtractAll | Initial shadow level.                |
+| Field                | Type                                           | Required                 | Notes                 |
+| -------------------- | ---------------------------------------------- | ------------------------ | --------------------- |
+| `kind`               | `"discreteSet"`                                | yes                      |                       |
+| `atTicks`            | int[] (each ≥ 0), min length 1                 | yes                      |                       |
+| `mode`               | `"setAll"` \| `"subtractAll"` \| `"randomLed"` | yes                      |                       |
+| `level` / `levelPwm` | one of: number 0..1 / int 0..255               | yes for setAll/randomLed | Exactly one.          |
+| `delta` / `deltaPwm` | one of: number 0..1 / int 0..255               | yes for subtractAll      | Exactly one.          |
+| `from`               | number 0..1                                    | yes for subtractAll      | Initial shadow level. |
 
 ---
 
@@ -249,17 +249,17 @@ Per-tick read-modify-write: every tick in `[atTick, atTick + durationTicks)`, re
 
 The first tick lifts every LED from 0 up to `floorLevel` (because `0 × 5/4 = 0`, then clamped up to `floorLevel`). After that, growth compounds. Mirrors firmware's flare ramp.
 
-| Field                                       | Type                                  | Required | Notes                                                  |
-| ------------------------------------------- | ------------------------------------- | -------- | ------------------------------------------------------ |
-| `kind`                                      | `"exponentialRamp"`                   | yes      |                                                        |
-| `atTick`                                    | int ≥ 0                               | yes      |                                                        |
-| `durationTicks`                             | int > 0                               | yes      |                                                        |
-| `layers`                                    | int[] (each 0..5), min length 1       | yes      |                                                        |
-| `lights`                                    | `"all"` \| int[] (each 0..3)          | yes      |                                                        |
-| `multiplierNum`                             | positive int                          | yes      | Per-tick growth ratio numerator (e.g. 5 for ×5/4).     |
-| `multiplierDen`                             | positive int                          | yes      | Per-tick growth ratio denominator.                     |
-| `floorLevel` / `floorLevelPwm`              | one of: number 0..1 / int 0..255      | yes (one)| Initial seed when the LED is dark.                     |
-| `saturationLevel` / `saturationLevelPwm`    | one of: number 0..1 / int 0..255      | yes (one)| Once an LED reaches this, snap to 1.                   |
+| Field                                    | Type                             | Required  | Notes                                              |
+| ---------------------------------------- | -------------------------------- | --------- | -------------------------------------------------- |
+| `kind`                                   | `"exponentialRamp"`              | yes       |                                                    |
+| `atTick`                                 | int ≥ 0                          | yes       |                                                    |
+| `durationTicks`                          | int > 0                          | yes       |                                                    |
+| `layers`                                 | int[] (each 0..5), min length 1  | yes       |                                                    |
+| `lights`                                 | `"all"` \| int[] (each 0..3)     | yes       |                                                    |
+| `multiplierNum`                          | positive int                     | yes       | Per-tick growth ratio numerator (e.g. 5 for ×5/4). |
+| `multiplierDen`                          | positive int                     | yes       | Per-tick growth ratio denominator.                 |
+| `floorLevel` / `floorLevelPwm`           | one of: number 0..1 / int 0..255 | yes (one) | Initial seed when the LED is dark.                 |
+| `saturationLevel` / `saturationLevelPwm` | one of: number 0..1 / int 0..255 | yes (one) | Once an LED reaches this, snap to 1.               |
 
 ---
 
@@ -317,19 +317,19 @@ This is the twinkle pattern.
 
 `alpha` is required by the schema even in respawn mode — set it to `0`.
 
-| Field                          | Type                                  | Required | Notes                                                       |
-| ------------------------------ | ------------------------------------- | -------- | ----------------------------------------------------------- |
-| `kind`                         | `"flickerStep"`                       | yes      |                                                             |
-| `atTick`                       | int ≥ 0                               | yes      |                                                             |
-| `endTick`                      | int > 0 \| `"forever"`                | yes      | `"forever"` wraps the per-tick callback in a `repeat: -1` sub-timeline. |
-| `layers`                       | int[] (each 0..5), min length 1       | yes      |                                                             |
-| `lights`                       | `"all"` \| int[] (each 0..3)          | yes      |                                                             |
-| `alpha`                        | number 0..1                           | yes      | Lerp factor for standard mode. Set to 0 in respawn mode.    |
-| `respawn`                      | object                                | no       | If present, switches to respawn mode.                       |
-| `respawn.probability`          | number 0..1                           | yes      | Chance per tick of attempting a spawn.                      |
-| `respawn.threshold` / `respawn.thresholdPwm` | one of: number 0..1 / int 0..255 | yes (one) | LEDs brighter than this aren't overwritten.                 |
-| `respawn.levelMin`             | number 0..1                           | yes      | Lower bound of random level.                                |
-| `respawn.levelMax`             | number 0..1                           | yes      | Upper bound of random level.                                |
+| Field                                        | Type                             | Required  | Notes                                                                   |
+| -------------------------------------------- | -------------------------------- | --------- | ----------------------------------------------------------------------- |
+| `kind`                                       | `"flickerStep"`                  | yes       |                                                                         |
+| `atTick`                                     | int ≥ 0                          | yes       |                                                                         |
+| `endTick`                                    | int > 0 \| `"forever"`           | yes       | `"forever"` wraps the per-tick callback in a `repeat: -1` sub-timeline. |
+| `layers`                                     | int[] (each 0..5), min length 1  | yes       |                                                                         |
+| `lights`                                     | `"all"` \| int[] (each 0..3)     | yes       |                                                                         |
+| `alpha`                                      | number 0..1                      | yes       | Lerp factor for standard mode. Set to 0 in respawn mode.                |
+| `respawn`                                    | object                           | no        | If present, switches to respawn mode.                                   |
+| `respawn.probability`                        | number 0..1                      | yes       | Chance per tick of attempting a spawn.                                  |
+| `respawn.threshold` / `respawn.thresholdPwm` | one of: number 0..1 / int 0..255 | yes (one) | LEDs brighter than this aren't overwritten.                             |
+| `respawn.levelMin`                           | number 0..1                      | yes       | Lower bound of random level.                                            |
+| `respawn.levelMax`                           | number 0..1                      | yes       | Upper bound of random level.                                            |
 
 ---
 
@@ -360,14 +360,14 @@ Period is `2 × (peakPwm + 1)` ticks (so `peakPwm: 255` gives a 512-tick double-
 
 **Idiomatic usage** is a forever-loop: pair with `loop: true, totalTicks: 1` and `endTick: 1` (one breathe call per outer-loop iteration). See [twinkle.json](../src/sequences/data/twinkle.json) for the same pattern.
 
-| Field         | Type                       | Required | Notes                                       |
-| ------------- | -------------------------- | -------- | ------------------------------------------- |
-| `kind`        | `"breathe"`                | yes      |                                             |
-| `atTick`      | int ≥ 0                    | yes      |                                             |
-| `endTick`     | int > 0 \| `"forever"`     | yes      |                                             |
-| `periodTicks` | positive int               | yes      | Triangle period.                            |
-| `peakPwm`     | int 0..255                 | yes      | Peak PWM byte; defines the bitmask range.   |
-| `divisor`     | positive int               | yes      | Brightness divisor (firmware uses 6 → ~17%). |
+| Field         | Type                   | Required | Notes                                        |
+| ------------- | ---------------------- | -------- | -------------------------------------------- |
+| `kind`        | `"breathe"`            | yes      |                                              |
+| `atTick`      | int ≥ 0                | yes      |                                              |
+| `endTick`     | int > 0 \| `"forever"` | yes      |                                              |
+| `periodTicks` | positive int           | yes      | Triangle period.                             |
+| `peakPwm`     | int 0..255             | yes      | Peak PWM byte; defines the bitmask range.    |
+| `divisor`     | positive int           | yes      | Brightness divisor (firmware uses 6 → ~17%). |
 
 ---
 
@@ -405,19 +405,19 @@ for each chaseLayer:
 
 So with `lightStepTicks: 12` and `periodTicks: 48`, each layer's lit position moves through lights 0→3 over 48 ticks, and `phaseOffsetTicks: 16` staggers consecutive layers by 1/3 period.
 
-| Field                                   | Type                                  | Required           | Notes                                |
-| --------------------------------------- | ------------------------------------- | ------------------ | ------------------------------------ |
-| `kind`                                  | `"rotationChase"`                     | yes                |                                      |
-| `atTick`                                | int ≥ 0                               | yes                |                                      |
-| `endTick`                               | int > 0 \| `"forever"`                | yes                |                                      |
-| `chaseLayers`                           | int[] (each 0..5), min length 1       | yes                |                                      |
-| `steadyLayer`                           | int 0..5                              | no                 | Hold at `steadyLevel` every tick.    |
-| `steadyLevel` / `steadyLevelPwm`        | one of: number 0..1 / int 0..255      | only with `steadyLayer` |                                      |
-| `phaseOffsetTicks`                      | int ≥ 0                               | yes                | Phase stagger between chase layers.  |
-| `lightStepTicks`                        | positive int                          | yes                | Ticks between adjacent light positions. |
-| `decayMultiplierNum`                    | positive int                          | yes                |                                      |
-| `decayMultiplierDen`                    | positive int                          | yes                |                                      |
-| `periodTicks`                           | positive int                          | yes                | One full revolution.                 |
+| Field                            | Type                             | Required                | Notes                                   |
+| -------------------------------- | -------------------------------- | ----------------------- | --------------------------------------- |
+| `kind`                           | `"rotationChase"`                | yes                     |                                         |
+| `atTick`                         | int ≥ 0                          | yes                     |                                         |
+| `endTick`                        | int > 0 \| `"forever"`           | yes                     |                                         |
+| `chaseLayers`                    | int[] (each 0..5), min length 1  | yes                     |                                         |
+| `steadyLayer`                    | int 0..5                         | no                      | Hold at `steadyLevel` every tick.       |
+| `steadyLevel` / `steadyLevelPwm` | one of: number 0..1 / int 0..255 | only with `steadyLayer` |                                         |
+| `phaseOffsetTicks`               | int ≥ 0                          | yes                     | Phase stagger between chase layers.     |
+| `lightStepTicks`                 | positive int                     | yes                     | Ticks between adjacent light positions. |
+| `decayMultiplierNum`             | positive int                     | yes                     |                                         |
+| `decayMultiplierDen`             | positive int                     | yes                     |                                         |
+| `periodTicks`                    | positive int                     | yes                     | One full revolution.                    |
 
 ---
 
@@ -445,17 +445,17 @@ Specialized for sealReveal. Allocates one slot per LED in scope, each with `{lay
 
 The `reseed[i].atTick` is the tick **relative to the track's `atTick`**, not absolute.
 
-| Field                                    | Type                                  | Required | Notes                                          |
-| ---------------------------------------- | ------------------------------------- | -------- | ---------------------------------------------- |
-| `kind`                                   | `"pulseFlicker"`                      | yes      |                                                |
-| `atTick`                                 | int ≥ 0                               | yes      |                                                |
-| `endTick`                                | int > 0                               | yes      |                                                |
-| `layers`                                 | int[] (each 0..5), min length 1       | yes      | Allocates 4 slots per layer (all 4 lights).    |
-| `pulseLevel` / `pulseLevelPwm`           | one of: number 0..1 / int 0..255      | yes (one)|                                                |
-| `decayPerTick`                           | number 0..1                           | yes      | Per-tick multiplier when not pulsing.          |
-| `reseed`                                 | object[]                              | yes      | Empty array OK if no reseeds.                  |
-| `reseed[i].atTick`                       | int ≥ 0                               | yes      | Relative to the track's `atTick`.              |
-| `reseed[i].magnitude`                    | positive int                          | yes      | Larger → longer delays.                        |
+| Field                          | Type                             | Required  | Notes                                       |
+| ------------------------------ | -------------------------------- | --------- | ------------------------------------------- |
+| `kind`                         | `"pulseFlicker"`                 | yes       |                                             |
+| `atTick`                       | int ≥ 0                          | yes       |                                             |
+| `endTick`                      | int > 0                          | yes       |                                             |
+| `layers`                       | int[] (each 0..5), min length 1  | yes       | Allocates 4 slots per layer (all 4 lights). |
+| `pulseLevel` / `pulseLevelPwm` | one of: number 0..1 / int 0..255 | yes (one) |                                             |
+| `decayPerTick`                 | number 0..1                      | yes       | Per-tick multiplier when not pulsing.       |
+| `reseed`                       | object[]                         | yes       | Empty array OK if no reseeds.               |
+| `reseed[i].atTick`             | int ≥ 0                          | yes       | Relative to the track's `atTick`.           |
+| `reseed[i].magnitude`          | positive int                     | yes       | Larger → longer delays.                     |
 
 ---
 
@@ -473,11 +473,11 @@ Escape hatch for sequences that don't fit any data-driven kind. The player resol
 
 If the player can't find a registered handler matching `handlerId`, it logs a warning and skips the track. Use this only when you've actually registered a handler in TS — see [src/sequences/SequencePlayer.ts](../src/sequences/SequencePlayer.ts) for the API.
 
-| Field        | Type                              | Required | Notes                                                |
-| ------------ | --------------------------------- | -------- | ---------------------------------------------------- |
-| `kind`       | `"custom"`                        | yes      |                                                      |
-| `handlerId`  | non-empty string                  | yes      | Looked up at build time.                             |
-| `params`     | object (string-keyed unknowns)    | no       | Passed verbatim to the handler.                      |
+| Field       | Type                           | Required | Notes                           |
+| ----------- | ------------------------------ | -------- | ------------------------------- |
+| `kind`      | `"custom"`                     | yes      |                                 |
+| `handlerId` | non-empty string               | yes      | Looked up at build time.        |
+| `params`    | object (string-keyed unknowns) | no       | Passed verbatim to the handler. |
 
 ---
 
@@ -502,8 +502,8 @@ flareThenFlicker has a 80-tick ramp followed by an indefinite flicker. The seque
   "loop": false,
   "endBehavior": "hold",
   "tracks": [
-    { "kind": "exponentialRamp", "atTick": 0, "durationTicks": 80, /* ... */ },
-    { "kind": "flickerStep",     "atTick": 80, "endTick": "forever", /* ... */ }
+    { "kind": "exponentialRamp", "atTick": 0, "durationTicks": 80 /* ... */ },
+    { "kind": "flickerStep", "atTick": 80, "endTick": "forever" /* ... */ }
   ]
 }
 ```
@@ -555,11 +555,12 @@ After you write `src/sequences/data/myThing.json`, two things have to happen:
 import myThingJson from './data/myThing.json';
 
 export const JSON_SEQUENCE_DATA: ReadonlyMap<number, Sequence> = new Map(
-  ([
-    /* ... existing entries ... */
-    [TOWER_LIGHT_SEQUENCES.myThing, parseSafe('myThing', myThingJson)],
-  ] as ReadonlyArray<[number, Sequence | null]>)
-    .filter((kv): kv is [number, Sequence] => kv[1] !== null),
+  (
+    [
+      /* ... existing entries ... */
+      [TOWER_LIGHT_SEQUENCES.myThing, parseSafe('myThing', myThingJson)],
+    ] as ReadonlyArray<[number, Sequence | null]>
+  ).filter((kv): kv is [number, Sequence] => kv[1] !== null),
 );
 ```
 
@@ -567,7 +568,7 @@ The map is keyed by the numeric id from `TOWER_LIGHT_SEQUENCES` (defined in the 
 
 ### 2. Verify against the committed baseline
 
-[tests/sequenceSnapshots/parity.test.ts](../tests/sequenceSnapshots/parity.test.ts) runs your JSON through the player and diffs against the committed snapshot in [tests/sequenceSnapshots/__snapshots__/](../tests/sequenceSnapshots/__snapshots__/) — every (tick, LED) must agree within 1/255 PWM.
+[tests/sequenceSnapshots/parity.test.ts](../tests/sequenceSnapshots/parity.test.ts) runs your JSON through the player and diffs against the committed snapshot in [tests/sequenceSnapshots/**snapshots**/](../tests/sequenceSnapshots/__snapshots__/) — every (tick, LED) must agree within 1/255 PWM.
 
 ```sh
 npm test                                # runs everything including parity

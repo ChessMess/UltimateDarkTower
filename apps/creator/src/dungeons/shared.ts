@@ -82,7 +82,9 @@ export function roomAtCell(d: Dungeon, col: number, row: number): DungeonRoom | 
 export function referencedBySubflow(doc: ScenarioDoc | null, dungeonId: string): boolean {
   if (!doc) return false;
   return doc.graph.nodes.some(
-    (n) => n.kind === 'dungeon.subflow' && (n.props as { dungeonId?: string } | undefined)?.dungeonId === dungeonId,
+    (n) =>
+      n.kind === 'dungeon.subflow' &&
+      (n.props as { dungeonId?: string } | undefined)?.dungeonId === dungeonId,
   );
 }
 

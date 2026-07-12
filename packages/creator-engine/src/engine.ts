@@ -15,12 +15,25 @@
 // entry points (step/replay) that thread run + resume, and re-exports the §2.3 public API. Test
 // suites and src/index.ts require THIS file ('../dist/engine' / './engine'); the file resolves ahead
 // of the ./engine/ directory, so the module tree is an implementation detail.
-import { ENGINE_VERSION, SUPPORTED_SCHEMA_RANGE, serialize, deserialize, digest, clone } from './engine/core';
+import {
+  ENGINE_VERSION,
+  SUPPORTED_SCHEMA_RANGE,
+  serialize,
+  deserialize,
+  digest,
+  clone,
+} from './engine/core';
 import { evalCondition } from './engine/conditions';
 import { applyEffect } from './engine/effects';
 import { deriveGlyphFacing, homeKingdomOf, recomputeGlyphFacing } from './engine/glyph';
 import { applyTrade } from './engine/turn';
-import { startBattle, resolveBattle, startCardBattle, battleCardInput, battleHeroChoiceInput } from './engine/battle';
+import {
+  startBattle,
+  resolveBattle,
+  startCardBattle,
+  battleCardInput,
+  battleHeroChoiceInput,
+} from './engine/battle';
 import { resolveRoomEntry, finalizeRoom, completeDungeon } from './engine/dungeon';
 import { interpretNode } from './engine/nodes';
 import { resume } from './engine/resume';
@@ -51,7 +64,9 @@ export function step(prevState: EngineState, input: Input): StepResult {
     return { state: prevState, directives: [], status: prevState.outcome.status };
   }
   const status =
-    state.outcome.status === 'running' || state.outcome.status === 'awaitingInput' ? run(state, directives) : state.outcome.status;
+    state.outcome.status === 'running' || state.outcome.status === 'awaitingInput'
+      ? run(state, directives)
+      : state.outcome.status;
   // cast (not a plain annotation) — TS's flow analysis otherwise carries the `null` narrowing from
   // the `state.clock.pending = null` assignment above through this independent later read, even
   // though run(state, directives) can itself set it back to non-null internally (run.ts).

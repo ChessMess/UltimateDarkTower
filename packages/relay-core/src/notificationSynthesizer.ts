@@ -47,7 +47,11 @@ import {
   makeCalibrationCompleteEvent,
   makeHeartbeatEvent,
 } from 'ultimatedarktowerrelay-shared';
-import { buildSkullDropPacket, TOWER_COMMAND_LENGTH, TOWER_STATE_NOTIFICATION_TYPE } from './commandParser';
+import {
+  buildSkullDropPacket,
+  TOWER_COMMAND_LENGTH,
+  TOWER_STATE_NOTIFICATION_TYPE,
+} from './commandParser';
 
 /** 1-byte command header that precedes the 19-byte state data in a 20-byte packet. */
 const COMMAND_HEADER_SIZE = 1;
@@ -99,7 +103,7 @@ export interface NotificationSynthesizerOptions {
 
 interface SynthesizerEventMap {
   /** A semantic relay event was produced (for logging / the future event log). */
-  'event': [event: RelayEvent];
+  event: [event: RelayEvent];
 }
 
 /**
@@ -186,7 +190,10 @@ export class NotificationSynthesizer extends EventEmitter<SynthesizerEventMap> {
     const send = (): void => {
       const packet = this.buildCalibrationPacket();
       if (this.sink.sendTxNotification(packet)) {
-        this.emit('event', makeCalibrationCompleteEvent(this.calibrationReplyType, Array.from(packet)));
+        this.emit(
+          'event',
+          makeCalibrationCompleteEvent(this.calibrationReplyType, Array.from(packet)),
+        );
       }
     };
 

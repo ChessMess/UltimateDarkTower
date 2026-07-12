@@ -14,5 +14,4 @@
  * the start when a drum begins turning and cut to the exact rotation length when
  * the drum settles, so it never plays longer than the drum turns.
  */
-export const DRUM_ROTATION_SOUND_URL =
-  new URL('./assets/drumRotation.ogg', import.meta.url).href;
+export const DRUM_ROTATION_SOUND_URL = new URL('./assets/drumRotation.ogg', import.meta.url).href;

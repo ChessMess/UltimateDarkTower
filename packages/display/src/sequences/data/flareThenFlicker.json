@@ -5,17 +5,25 @@
   "loop": false,
   "endBehavior": "hold",
   "tracks": [
-    { "_comment": "Phase 1 — 80-tick exponential ramp on all 6 layers.",
+    {
+      "_comment": "Phase 1 — 80-tick exponential ramp on all 6 layers.",
       "kind": "exponentialRamp",
-      "atTick": 0, "durationTicks": 80,
-      "layers": [0, 1, 2, 3, 4, 5], "lights": "all",
-      "multiplierNum": 5, "multiplierDen": 4,
-      "floorLevelPwm": 5, "saturationLevelPwm": 204
+      "atTick": 0,
+      "durationTicks": 80,
+      "layers": [0, 1, 2, 3, 4, 5],
+      "lights": "all",
+      "multiplierNum": 5,
+      "multiplierDen": 4,
+      "floorLevelPwm": 5,
+      "saturationLevelPwm": 204
     },
-    { "_comment": "Phase 2 — per-LED flicker, looping forever (sub-timeline with repeat: -1).",
+    {
+      "_comment": "Phase 2 — per-LED flicker, looping forever (sub-timeline with repeat: -1).",
       "kind": "flickerStep",
-      "atTick": 80, "endTick": "forever",
-      "layers": [0, 1, 2, 3, 4, 5], "lights": "all",
+      "atTick": 80,
+      "endTick": "forever",
+      "layers": [0, 1, 2, 3, 4, 5],
+      "lights": "all",
       "alpha": 0.15
     }
   ]

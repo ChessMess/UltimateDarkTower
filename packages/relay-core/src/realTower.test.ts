@@ -177,7 +177,10 @@ describe('RealTower reconnect resilience (FR-5.3)', () => {
 
   it('reconnects after a drop and signals resumed', async () => {
     const mock = new MockDriver();
-    const { tower, connected, disconnected } = makeTower(mock, { reconnect: true, reconnectBaseMs: 1000 });
+    const { tower, connected, disconnected } = makeTower(mock, {
+      reconnect: true,
+      reconnectBaseMs: 1000,
+    });
     await tower.startAdvertising();
     expect(connected).toEqual([TOWER_DEVICE_NAME]);
 

@@ -21,14 +21,14 @@ Considerations, Success Metrics, and Open Questions. Functional requirements are
 
 ## Index
 
-| PRD | Title | Scope |
-|---|---|---|
-| [_overview](_overview.md) | Vision & Architecture | Read first |
-| [assumptions](assumptions-and-open-questions.md) | Assumptions, Verified Facts, Risks & IP | Read second — verified vs. assumed, known discrepancies, IP stance |
-| [00](prd-00-scaffolding.md) | Scaffolding & Architecture | Repo skeleton, stack, state-source seam, app shell, CI/deploy |
-| [01](prd-01-tower-emulator.md) | Tower Emulator & Interactions | Render tower; drop skull, break seal, rotate, lights/sounds |
-| [02](prd-02-game-board.md) | Digital Game Board | Place/move heroes, foes, adversary, skulls, markers on locations |
-| [03](prd-03-player-boards.md) | Digital Player Boards | Per-hero tracking: virtues, resources, items, corruption |
-| [04](prd-04-session-solo.md) | Game Session & Solo Orchestration | Manual setup capture; the single portable `GameSession` JSON (save / load / export / import / share); month-turn tracker |
-| [05](prd-05-official-app-bridge.md) | Official App Bridge *(future)* | Node FakeTower + WS; swap ManualSource→BridgeSource |
-| [06](prd-06-online-multiplayer.md) | Online Multiplayer *(future)* | Networked shared session |
+| PRD                                              | Title                                   | Scope                                                                                                                    |
+| ------------------------------------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| [_overview](_overview.md)                        | Vision & Architecture                   | Read first                                                                                                               |
+| [assumptions](assumptions-and-open-questions.md) | Assumptions, Verified Facts, Risks & IP | Read second — verified vs. assumed, known discrepancies, IP stance                                                       |
+| [00](prd-00-scaffolding.md)                      | Scaffolding & Architecture              | Repo skeleton, stack, state-source seam, app shell, CI/deploy                                                            |
+| [01](prd-01-tower-emulator.md)                   | Tower Emulator & Interactions           | Render tower; drop skull, break seal, rotate, lights/sounds                                                              |
+| [02](prd-02-game-board.md)                       | Digital Game Board                      | Place/move heroes, foes, adversary, skulls, markers on locations                                                         |
+| [03](prd-03-player-boards.md)                    | Digital Player Boards                   | Per-hero tracking: virtues, resources, items, corruption                                                                 |
+| [04](prd-04-session-solo.md)                     | Game Session & Solo Orchestration       | Manual setup capture; the single portable `GameSession` JSON (save / load / export / import / share); month-turn tracker |
+| [05](prd-05-official-app-bridge.md)              | Official App Bridge _(future)_          | Node FakeTower + WS; swap ManualSource→BridgeSource                                                                      |
+| [06](prd-06-online-multiplayer.md)               | Online Multiplayer _(future)_           | Networked shared session                                                                                                 |

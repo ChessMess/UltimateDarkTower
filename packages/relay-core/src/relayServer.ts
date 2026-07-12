@@ -88,7 +88,11 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
   private readonly port: number;
   private readonly host: string;
   private readonly onClientLog?: (clientId: string, entries: LogEntry[]) => void;
-  private readonly onClientConnected?: (clientId: string, label?: string, observer?: boolean) => void;
+  private readonly onClientConnected?: (
+    clientId: string,
+    label?: string,
+    observer?: boolean,
+  ) => void;
   private readonly onClientDisconnected?: (clientId: string, label?: string) => void;
   private readonly onClientReady?: (clientId: string, ready: boolean, label?: string) => void;
   private readonly onClientAction?: (clientId: string, action: 'dropSkull', label?: string) => void;
@@ -147,7 +151,10 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
         // Parse incoming messages.
         socket.on('message', (raw: Buffer) => {
           try {
-            const msg = JSON.parse(raw.toString()) as { type?: string; payload?: Record<string, unknown> };
+            const msg = JSON.parse(raw.toString()) as {
+              type?: string;
+              payload?: Record<string, unknown>;
+            };
             if (msg.type === MessageType.CLIENT_HELLO && msg.payload) {
               // Always clear the handshake timer, even on a version mismatch.
               this.manager.markHandshakeComplete(clientId);
@@ -155,7 +162,9 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
               if (this.manager.isHelloComplete(clientId)) return;
               const clientVersion = (msg.payload as { protocolVersion?: string }).protocolVersion;
               if (clientVersion !== PROTOCOL_VERSION) {
-                console.warn(`[relay] Client ${clientId} protocol mismatch: ${clientVersion} vs ${PROTOCOL_VERSION}`);
+                console.warn(
+                  `[relay] Client ${clientId} protocol mismatch: ${clientVersion} vs ${PROTOCOL_VERSION}`,
+                );
                 const reason = `Protocol version mismatch: client=${clientVersion ?? 'unknown'} server=${PROTOCOL_VERSION}`;
                 socket.close(CLOSE_CODE_PROTOCOL_VERSION_MISMATCH, reason);
                 return;
@@ -203,7 +212,9 @@ export class RelayServer extends EventEmitter<RelayServerEventMap> {
               if (client && !client.observer && action === 'dropSkull') {
                 this.onClientAction?.(clientId, action, client.label);
               } else if (client?.observer) {
-                console.warn(`[relay] Ignoring action '${action ?? 'unknown'}' from observer ${clientId}`);
+                console.warn(
+                  `[relay] Ignoring action '${action ?? 'unknown'}' from observer ${clientId}`,
+                );
               }
             } else if (msg.type === MessageType.CLIENT_LOG && msg.payload) {
               const entries = (msg.payload as { entries?: LogEntry[] }).entries;

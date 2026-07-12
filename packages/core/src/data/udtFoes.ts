@@ -22,7 +22,13 @@ import type { Tier1Foe, Tier2Foe, Tier3Foe, Adversary } from '../seed/udtSeedPar
 export type FoeStatus = 'panicked' | 'unsteady' | 'ready' | 'savage' | 'lethal';
 
 /** The statuses in progression order, lowest → highest threat. */
-export const FOE_STATUSES: readonly FoeStatus[] = ['panicked', 'unsteady', 'ready', 'savage', 'lethal'];
+export const FOE_STATUSES: readonly FoeStatus[] = [
+  'panicked',
+  'unsteady',
+  'ready',
+  'savage',
+  'lethal',
+];
 
 /** A foe's identity level (the number on its card). Foes are 2–4; adversaries are 5. */
 export type FoeLevel = 2 | 3 | 4 | 5;
@@ -59,7 +65,14 @@ export const FOES: readonly Foe[] = [
   { id: 'frost-trolls', name: 'Frost Trolls', kind: 'foe', level: 3, tier: 2, source: 'base' },
   { id: 'clan-of-neuri', name: 'Clan of Neuri', kind: 'foe', level: 3, tier: 2, source: 'base' },
   { id: 'lemures', name: 'Lemures', kind: 'foe', level: 3, tier: 2, source: 'base' },
-  { id: 'widowmade-spiders', name: 'Widowmade Spiders', kind: 'foe', level: 3, tier: 2, source: 'base' },
+  {
+    id: 'widowmade-spiders',
+    name: 'Widowmade Spiders',
+    kind: 'foe',
+    level: 3,
+    tier: 2,
+    source: 'base',
+  },
   // Tier 3 — level 4
   { id: 'dragons', name: 'Dragons', kind: 'foe', level: 4, tier: 3, source: 'base' },
   { id: 'mormos', name: 'Mormos', kind: 'foe', level: 4, tier: 3, source: 'base' },
@@ -71,7 +84,13 @@ export const FOES: readonly Foe[] = [
 export const ADVERSARY_ROSTER: readonly Foe[] = [
   { id: 'ashstrider', name: 'Ashstrider', kind: 'adversary', level: 5, source: 'base' },
   { id: 'bane-of-omens', name: 'Bane of Omens', kind: 'adversary', level: 5, source: 'base' },
-  { id: 'empress-of-shades', name: 'Empress of Shades', kind: 'adversary', level: 5, source: 'base' },
+  {
+    id: 'empress-of-shades',
+    name: 'Empress of Shades',
+    kind: 'adversary',
+    level: 5,
+    source: 'base',
+  },
   { id: 'gaze-eternal', name: 'Gaze Eternal', kind: 'adversary', level: 5, source: 'base' },
   { id: 'gravemaw', name: 'Gravemaw', kind: 'adversary', level: 5, source: 'base' },
   { id: 'isa-the-exile', name: 'Isa the Exile', kind: 'adversary', level: 5, source: 'base' },
@@ -87,7 +106,7 @@ export const FOE_BY_ID: Readonly<Record<FoeId, Foe>> = Object.freeze(
   ALL_FOES.reduce<Record<FoeId, Foe>>((acc, foe) => {
     acc[foe.id] = foe;
     return acc;
-  }, {})
+  }, {}),
 );
 
 /** Every foe/adversary keyed by its display `name` (interop with the seed-parser unions). */
@@ -95,5 +114,5 @@ export const FOE_BY_NAME: Readonly<Record<FoeName, Foe>> = Object.freeze(
   ALL_FOES.reduce<Record<string, Foe>>((acc, foe) => {
     acc[foe.name] = foe;
     return acc;
-  }, {})
+  }, {}),
 ) as Readonly<Record<FoeName, Foe>>;

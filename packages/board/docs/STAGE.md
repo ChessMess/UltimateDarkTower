@@ -19,7 +19,7 @@ const stage = new BoardStageView({
   container: document.getElementById('board')!,
   assetBaseUrl: './tokens/',
   boardImageUrl: './board.png',
-  modelUrl: './tower.glb',   // omit for a 2D-only stage (no `three` is ever loaded)
+  modelUrl: './tower.glb', // omit for a 2D-only stage (no `three` is ever loaded)
 });
 
 stage.controller.spawnFoe('foe-1', 'Brigands', 'Dayside'); // mutate via the shared controller
@@ -52,21 +52,21 @@ instead with `injectStyles: false` and import the `BOARD_STAGE_CSS` string (or `
 
 ## Options
 
-| Option | Default | Notes |
-| --- | --- | --- |
-| `container` | — | **Required.** The stage fills this element. |
-| `initialState` | empty board | Seeds the shared controller. |
-| `assetBaseUrl` / `boardImageUrl` / `tokenArt` | — | Token art + board image, shared by both renderers. |
-| `resolveTokenImage` | — | Override the token-art path; `null` → fallback. |
-| `modelUrl` | — | Tower GLB; required to enable the 3D tower. |
-| `tower3D` | `'auto'` | `'auto'` \| `true` \| `false` (see above). |
-| `towerToggle` | `false` | Add a built-in Tower 3D on/off button (the mode pills already cover most needs). |
-| `defaultMode` | `pip-3dbig` (tower on) / `2d` | A stored preference wins. |
-| `editingUI` | `true` | `false` to skip; or a `mountBoardUI` config object. |
-| `enableZoom` / `maxZoom` / `dragMode` | `true` / `8` / `'rotate'` | Forwarded to the 2D map. |
-| `persist` | `true` | Persist mode / drag / PiP inset. `false`, or `{ prefix }` to namespace. |
-| `injectStyles` | `true` | Inject `BOARD_STAGE_CSS`. |
-| `onTokenSelect` / `onFocusChange` / `onModeChange` / `onTowerToggle` / `onPopOut` | — | Callbacks. |
+| Option                                                                            | Default                       | Notes                                                                            |
+| --------------------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------- |
+| `container`                                                                       | —                             | **Required.** The stage fills this element.                                      |
+| `initialState`                                                                    | empty board                   | Seeds the shared controller.                                                     |
+| `assetBaseUrl` / `boardImageUrl` / `tokenArt`                                     | —                             | Token art + board image, shared by both renderers.                               |
+| `resolveTokenImage`                                                               | —                             | Override the token-art path; `null` → fallback.                                  |
+| `modelUrl`                                                                        | —                             | Tower GLB; required to enable the 3D tower.                                      |
+| `tower3D`                                                                         | `'auto'`                      | `'auto'` \| `true` \| `false` (see above).                                       |
+| `towerToggle`                                                                     | `false`                       | Add a built-in Tower 3D on/off button (the mode pills already cover most needs). |
+| `defaultMode`                                                                     | `pip-3dbig` (tower on) / `2d` | A stored preference wins.                                                        |
+| `editingUI`                                                                       | `true`                        | `false` to skip; or a `mountBoardUI` config object.                              |
+| `enableZoom` / `maxZoom` / `dragMode`                                             | `true` / `8` / `'rotate'`     | Forwarded to the 2D map.                                                         |
+| `persist`                                                                         | `true`                        | Persist mode / drag / PiP inset. `false`, or `{ prefix }` to namespace.          |
+| `injectStyles`                                                                    | `true`                        | Inject `BOARD_STAGE_CSS`.                                                        |
+| `onTokenSelect` / `onFocusChange` / `onModeChange` / `onTowerToggle` / `onPopOut` | —                             | Callbacks.                                                                       |
 
 ## API
 
@@ -80,8 +80,8 @@ instead with `injectStyles: false` and import the `BOARD_STAGE_CSS` string (or `
 
 ## When to use which entry
 
-| You want… | Use |
-| --- | --- |
-| Just headless state, the readout, or the 2D map (no chrome) | `ultimatedarktowerboard` ([`BoardRenderView`](./RENDERERS.md)) |
-| The full interactive stage (2D + 3D + all controls) | `ultimatedarktowerboard/stage` (**this**) |
-| To embed only the 3D board into your own Display scene | `ultimatedarktowerboard/plugin` ([Display integration](./DISPLAY_INTEGRATION.md)) |
+| You want…                                                   | Use                                                                               |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Just headless state, the readout, or the 2D map (no chrome) | `ultimatedarktowerboard` ([`BoardRenderView`](./RENDERERS.md))                    |
+| The full interactive stage (2D + 3D + all controls)         | `ultimatedarktowerboard/stage` (**this**)                                         |
+| To embed only the 3D board into your own Display scene      | `ultimatedarktowerboard/plugin` ([Display integration](./DISPLAY_INTEGRATION.md)) |

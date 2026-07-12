@@ -6,13 +6,7 @@
 // SoundCategory types remain top-level (`export * from './udtConstants'`). This module maps them
 // back to the same flat `UDTReferenceLayer` shape so downstream (resolver, engine) is unchanged.
 
-import {
-  data,
-  seed,
-  GLYPHS,
-  TOWER_LIGHT_SEQUENCES,
-  TOWER_AUDIO_LIBRARY,
-} from 'ultimatedarktower';
+import { data, seed, GLYPHS, TOWER_LIGHT_SEQUENCES, TOWER_AUDIO_LIBRARY } from 'ultimatedarktower';
 
 const { FOE_BY_ID, ADVERSARY_ROSTER, ALL_FOES, FOES } = data.foes;
 const { HEROES, HERO_BY_ID } = data.heroes;

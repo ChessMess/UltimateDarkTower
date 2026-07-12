@@ -1,5 +1,9 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { TowerEmulatorState, ConnectedClient, RelayEvent } from 'ultimatedarktowerrelay-shared';
+import type {
+  TowerEmulatorState,
+  ConnectedClient,
+  RelayEvent,
+} from 'ultimatedarktowerrelay-shared';
 import type { SessionSummary, TimelineRow } from 'ultimatedarktowerrelay-core';
 
 // ─── IPC channel names (must match main.ts IPC constants) ───────────────────
@@ -166,7 +170,8 @@ contextBridge.exposeInMainWorld('darkTowerRelay', {
   triggerSkullDrop: (): Promise<ActionResult> => ipcRenderer.invoke(CH.TRIGGER_SKULL_DROP),
 
   /** Start the current source (BLE advertising for the emulator; connect for real). */
-  startTowerAdvertising: (): Promise<ActionResult> => ipcRenderer.invoke(CH.TOWER_START_ADVERTISING),
+  startTowerAdvertising: (): Promise<ActionResult> =>
+    ipcRenderer.invoke(CH.TOWER_START_ADVERTISING),
 
   /** Stop the current source. */
   stopTowerAdvertising: (): Promise<ActionResult> => ipcRenderer.invoke(CH.TOWER_STOP_ADVERTISING),
@@ -199,6 +204,5 @@ contextBridge.exposeInMainWorld('darkTowerRelay', {
    * (clamped to the display). Fire-and-forget; called on load and whenever a
    * collapsible section toggles.
    */
-  resizeContentHeight: (height: number): void =>
-    ipcRenderer.send(CH.RESIZE_CONTENT_HEIGHT, height),
+  resizeContentHeight: (height: number): void => ipcRenderer.send(CH.RESIZE_CONTENT_HEIGHT, height),
 });

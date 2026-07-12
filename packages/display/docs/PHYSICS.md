@@ -1,6 +1,6 @@
 # Physics for the Ultimate Dark Tower Display
 
-*Docs: [Index](README.md) > Physics user > Physics*
+_Docs: [Index](README.md) > Physics user > Physics_
 
 **Before reading:** [GETTING_STARTED](GETTING_STARTED.md) covers install and the first `Tower3DView`. [ARCHITECTURE §where physics plugs in](ARCHITECTURE.md#where-physics-plugs-in) explains the `TowerPhysicsHooks` seam.
 
@@ -26,7 +26,7 @@ subpath never load Rapier and never pay any bundle cost for it.
 npm install ultimatedarktowerdisplay @dimforge/rapier3d-compat three gsap
 ```
 
-Rapier is declared as an *optional* peer dependency: leave it out of
+Rapier is declared as an _optional_ peer dependency: leave it out of
 the install if you only want the 2D/3D display without physics.
 
 **TypeScript users**: subpath imports require
@@ -58,7 +58,7 @@ Pass a partial `PhysicsConfig` to override any subset of the defaults:
 ```ts
 const physics = attachSkullPhysics(view, {
   skull: { radiusFactor: 0.03, restitution: 0.1 },
-  drum:  { friction: 0.2 },
+  drum: { friction: 0.2 },
   debug: { sealColliders: true },
 });
 ```
@@ -105,12 +105,12 @@ Each frame after `world.step()` the mesh position and quaternion are copied from
 
 ### Skull Appearance
 
-| Visual | Collider | How |
-| --- | --- | --- |
-| Default sphere | Ball | (default — no extra config) |
-| GLB model | Ball | `skull: { modelUrl: '/foo.glb' }` |
-| GLB model | Convex hull | `skull: { modelUrl: '/foo.glb', colliderShape: 'hull' }` |
-| Custom `Object3D` | Ball (forced) | `skull: { meshFactory: (r) => myObj }` |
+| Visual            | Collider      | How                                                      |
+| ----------------- | ------------- | -------------------------------------------------------- |
+| Default sphere    | Ball          | (default — no extra config)                              |
+| GLB model         | Ball          | `skull: { modelUrl: '/foo.glb' }`                        |
+| GLB model         | Convex hull   | `skull: { modelUrl: '/foo.glb', colliderShape: 'hull' }` |
+| Custom `Object3D` | Ball (forced) | `skull: { meshFactory: (r) => myObj }`                   |
 
 `meshFactory` overrides `modelUrl` when both are set. Hull collider requires `modelUrl` — falls back to ball with a console warn otherwise.
 
@@ -121,7 +121,7 @@ The library accepts any Draco-compressed `.glb` via `skull.modelUrl`. The exampl
 **Blender export workflow (recommended):**
 
 1. **File → Import → STL** — pick your source mesh.
-2. *(Optional but recommended for high-poly STLs.)* Add a **Decimate** modifier in the Properties panel → set Ratio between `0.05` and `0.10` → **Apply**. Target ~5–10k triangles for crisp visuals at typical skull sizes.
+2. _(Optional but recommended for high-poly STLs.)_ Add a **Decimate** modifier in the Properties panel → set Ratio between `0.05` and `0.10` → **Apply**. Target ~5–10k triangles for crisp visuals at typical skull sizes.
 3. **Edit Mode → A → Mesh → Normals → Recalculate Outside** to fix any flipped triangles.
 4. **Object Mode → File → Export → glTF 2.0 (.glb)**.
 5. In the export sidebar:
@@ -166,30 +166,30 @@ Attaches the physics manager to a `Tower3DView`. Returns immediately. Rapier WAS
 
 A deeply-nested partial. Every field is optional; missing leaves fall back to `DEFAULT_PHYSICS`. Grouped by domain:
 
-| Path                       | Type      | Default | Lifecycle      | Notes                                                                  |
-| -------------------------- | --------- | ------- | -------------- | ---------------------------------------------------------------------- |
-| `debug.colliders`          | `boolean` | `false` | Attach time    | `THREE.LineSegments` overlay of every Rapier collider.                 |
-| `debug.sealColliders`      | `boolean` | `false` | Live           | Seal-only wireframes (green=intact, red=broken).                       |
-| `skull.radiusFactor`       | `number`  | `0.025` | Next drop      | Skull radius as a fraction of `modelRadius`.                           |
-| `skull.friction`           | `number`  | `0.8`   | Next drop      | Friction on the skull collider.                                        |
-| `skull.restitution`        | `number`  | `0.2`   | Next drop      | Bounciness of the skull body. `0` = stick, `1` = perfect bounce.       |
-| `skull.angularDamping`     | `number`  | `1.0`   | Live           | Exponential decay on angular velocity (rolling resistance proxy).      |
-| `skull.linearDamping`      | `number`  | `0.0`   | Live           | Exponential decay on linear velocity. Use sparingly.                   |
-| `skull.maxCount`           | `number`  | `30`    | Live           | Maximum simultaneous skulls. Drops past the cap are no-ops; lowering this does not remove existing skulls. |
-| `skull.modelUrl`           | `string`  | `undefined` | Next drop (async) | URL to a Draco-compressed `.glb` used as the visual mesh. `.stl` is accepted with a warn (heavier, slower); export to Draco GLB from Blender for production. Library caches loaded templates module-globally — repeated attach/detach cycles never re-fetch. See [Authoring skull models](#authoring-skull-models) for the recommended workflow. |
-| `skull.colliderShape`      | `'sphere' \| 'hull'` | `'sphere'` | Next drop | Collider shape. `'hull'` derives a convex hull from `modelUrl`'s point cloud; falls back to sphere when `modelUrl` is unset or the hull is degenerate. May need re-tuning of friction/restitution. |
-| `skull.meshFactory`        | `(r: number) => Object3D` | `undefined` | Next drop | Per-spawn visual override. Forces `colliderShape` to `'sphere'`. The consumer owns asset lifecycle — the manager only calls `removeFromParent()` on despawn. Not JSON-serializable (function). |
-| `skull.density`            | `number`  | `undefined` | Next drop | Density override. Only meaningful for hull colliders, where the template carries an auto-computed density that normalizes hull mass to the equivalent sphere. |
-| `skull.autoDropOnSkullCountIncrease` | `boolean` | `false` | Live | When true, auto-calls `dropSkull()` each time `state.beam.count` increases between consecutive `applyState` calls. Mirrors the readout's "💀 Skull Drop!" highlight. Honors `skull.maxCount` like manual drops. |
-| `drum.innerRadiusFactor`   | `number`  | `0.30`  | World rebuild  | Used for drop-jitter heuristics and (future) parametric drum walls.    |
-| `drum.halfHeightFactor`    | `number`  | `0.15`  | Unused         | Reserved for future parametric drum walls; currently feeds only the discarded drum-wall spec and has no runtime effect. |
-| `drum.friction`            | `number`  | `0.15`  | Live           | Friction on kinematic drum trimeshes (Min combine rule).               |
-| `seal.friction`            | `number`  | `0.05`  | Live           | Friction on kinematic seal trimeshes (Min combine rule).               |
-| `static.friction`          | `number`  | `0.1`   | Live           | Friction on every static GLB trimesh (Min combine rule).               |
-| `board.radiusFactor`       | `number`  | `3.0`   | Live           | Board cylinder radius as a fraction of `modelRadius`.                  |
-| `board.thicknessFactor`    | `number`  | `0.3`   | World rebuild  | Board cylinder thickness as a fraction of `modelRadius`.               |
-| `board.friction`           | `number`  | `0.5`   | Live           | Friction on the game-board floor + lip (Average combine rule).         |
-| `oob.depthFactor`          | `number`  | `5.0`   | Live           | Out-of-bounds despawn distance below `modelBottomY`, read every frame. |
+| Path                                 | Type                      | Default     | Lifecycle         | Notes                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------ | ------------------------- | ----------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `debug.colliders`                    | `boolean`                 | `false`     | Attach time       | `THREE.LineSegments` overlay of every Rapier collider.                                                                                                                                                                                                                                                                                           |
+| `debug.sealColliders`                | `boolean`                 | `false`     | Live              | Seal-only wireframes (green=intact, red=broken).                                                                                                                                                                                                                                                                                                 |
+| `skull.radiusFactor`                 | `number`                  | `0.025`     | Next drop         | Skull radius as a fraction of `modelRadius`.                                                                                                                                                                                                                                                                                                     |
+| `skull.friction`                     | `number`                  | `0.8`       | Next drop         | Friction on the skull collider.                                                                                                                                                                                                                                                                                                                  |
+| `skull.restitution`                  | `number`                  | `0.2`       | Next drop         | Bounciness of the skull body. `0` = stick, `1` = perfect bounce.                                                                                                                                                                                                                                                                                 |
+| `skull.angularDamping`               | `number`                  | `1.0`       | Live              | Exponential decay on angular velocity (rolling resistance proxy).                                                                                                                                                                                                                                                                                |
+| `skull.linearDamping`                | `number`                  | `0.0`       | Live              | Exponential decay on linear velocity. Use sparingly.                                                                                                                                                                                                                                                                                             |
+| `skull.maxCount`                     | `number`                  | `30`        | Live              | Maximum simultaneous skulls. Drops past the cap are no-ops; lowering this does not remove existing skulls.                                                                                                                                                                                                                                       |
+| `skull.modelUrl`                     | `string`                  | `undefined` | Next drop (async) | URL to a Draco-compressed `.glb` used as the visual mesh. `.stl` is accepted with a warn (heavier, slower); export to Draco GLB from Blender for production. Library caches loaded templates module-globally — repeated attach/detach cycles never re-fetch. See [Authoring skull models](#authoring-skull-models) for the recommended workflow. |
+| `skull.colliderShape`                | `'sphere' \| 'hull'`      | `'sphere'`  | Next drop         | Collider shape. `'hull'` derives a convex hull from `modelUrl`'s point cloud; falls back to sphere when `modelUrl` is unset or the hull is degenerate. May need re-tuning of friction/restitution.                                                                                                                                               |
+| `skull.meshFactory`                  | `(r: number) => Object3D` | `undefined` | Next drop         | Per-spawn visual override. Forces `colliderShape` to `'sphere'`. The consumer owns asset lifecycle — the manager only calls `removeFromParent()` on despawn. Not JSON-serializable (function).                                                                                                                                                   |
+| `skull.density`                      | `number`                  | `undefined` | Next drop         | Density override. Only meaningful for hull colliders, where the template carries an auto-computed density that normalizes hull mass to the equivalent sphere.                                                                                                                                                                                    |
+| `skull.autoDropOnSkullCountIncrease` | `boolean`                 | `false`     | Live              | When true, auto-calls `dropSkull()` each time `state.beam.count` increases between consecutive `applyState` calls. Mirrors the readout's "💀 Skull Drop!" highlight. Honors `skull.maxCount` like manual drops.                                                                                                                                  |
+| `drum.innerRadiusFactor`             | `number`                  | `0.30`      | World rebuild     | Used for drop-jitter heuristics and (future) parametric drum walls.                                                                                                                                                                                                                                                                              |
+| `drum.halfHeightFactor`              | `number`                  | `0.15`      | Unused            | Reserved for future parametric drum walls; currently feeds only the discarded drum-wall spec and has no runtime effect.                                                                                                                                                                                                                          |
+| `drum.friction`                      | `number`                  | `0.15`      | Live              | Friction on kinematic drum trimeshes (Min combine rule).                                                                                                                                                                                                                                                                                         |
+| `seal.friction`                      | `number`                  | `0.05`      | Live              | Friction on kinematic seal trimeshes (Min combine rule).                                                                                                                                                                                                                                                                                         |
+| `static.friction`                    | `number`                  | `0.1`       | Live              | Friction on every static GLB trimesh (Min combine rule).                                                                                                                                                                                                                                                                                         |
+| `board.radiusFactor`                 | `number`                  | `3.0`       | Live              | Board cylinder radius as a fraction of `modelRadius`.                                                                                                                                                                                                                                                                                            |
+| `board.thicknessFactor`              | `number`                  | `0.3`       | World rebuild     | Board cylinder thickness as a fraction of `modelRadius`.                                                                                                                                                                                                                                                                                         |
+| `board.friction`                     | `number`                  | `0.5`       | Live              | Friction on the game-board floor + lip (Average combine rule).                                                                                                                                                                                                                                                                                   |
+| `oob.depthFactor`                    | `number`                  | `5.0`       | Live              | Out-of-bounds despawn distance below `modelBottomY`, read every frame.                                                                                                                                                                                                                                                                           |
 
 **Lifecycle semantics:**
 
@@ -232,13 +232,24 @@ Copy-paste into an editor (or the example app's "Physics" config tab) to see eve
 
 ```json
 {
-  "debug":  { "colliders": false, "sealColliders": false },
-  "skull":  { "radiusFactor": 0.025, "friction": 0.8, "restitution": 0.2, "angularDamping": 1.0, "linearDamping": 0.0, "maxCount": 30, "modelUrl": null, "colliderShape": "sphere", "density": null, "autoDropOnSkullCountIncrease": false },
-  "drum":   { "innerRadiusFactor": 0.30, "halfHeightFactor": 0.15, "friction": 0.15 },
-  "seal":   { "friction": 0.05 },
+  "debug": { "colliders": false, "sealColliders": false },
+  "skull": {
+    "radiusFactor": 0.025,
+    "friction": 0.8,
+    "restitution": 0.2,
+    "angularDamping": 1.0,
+    "linearDamping": 0.0,
+    "maxCount": 30,
+    "modelUrl": null,
+    "colliderShape": "sphere",
+    "density": null,
+    "autoDropOnSkullCountIncrease": false
+  },
+  "drum": { "innerRadiusFactor": 0.3, "halfHeightFactor": 0.15, "friction": 0.15 },
+  "seal": { "friction": 0.05 },
   "static": { "friction": 0.1 },
-  "board":  { "radiusFactor": 3.0, "thicknessFactor": 0.3, "friction": 0.5 },
-  "oob":    { "depthFactor": 5.0 }
+  "board": { "radiusFactor": 3.0, "thicknessFactor": 0.3, "friction": 0.5 },
+  "oob": { "depthFactor": 5.0 }
 }
 ```
 
@@ -246,17 +257,17 @@ Copy-paste into an editor (or the example app's "Physics" config tab) to see eve
 
 Turn on `debug.sealColliders` (seal-only) or `debug.colliders` (world) and inspect the wireframes against the visual model.
 
-| Symptom                                                       | Try                                                                                            |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Skulls slip off the drum during rotation.                     | Raise `drum.friction` (and, if needed, `skull.friction` on next drop).                         |
-| Skulls bounce wildly after landing.                           | Lower `skull.restitution` (try `0.05`).                                                        |
-| Seal collider debug is hard to inspect.                       | Use `debug.sealColliders` for seal-only wireframes; `debug.colliders` shows the full world.    |
-| Skull is comically large or small.                            | Adjust `skull.radiusFactor`.                                                                   |
-| Skull tunnels through closed geometry at high rotation speed. | Verify CCD is still enabled, and avoid teleport-style drum updates where possible.             |
-| Skull falls off the visual board edge.                        | Increase `board.radiusFactor`; floor and lip are intentionally decoupled from board visibility.|
-| Skull rolls for too long after landing.                       | Increase `skull.angularDamping` (and optionally `skull.linearDamping`).                        |
-| Hull-collider skulls feel floaty or settle wrong.             | Set `skull.density` explicitly (default heuristic normalizes to sphere-equivalent mass; precise tuning needs your hull's true volume). |
-| Switching to a GLB model wedged a skull in the geometry.      | Set `colliderShape: 'sphere'` for the affected model — visual stays, physics reverts to the proven sphere tuning. |
+| Symptom                                                            | Try                                                                                                                                                          |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Skulls slip off the drum during rotation.                          | Raise `drum.friction` (and, if needed, `skull.friction` on next drop).                                                                                       |
+| Skulls bounce wildly after landing.                                | Lower `skull.restitution` (try `0.05`).                                                                                                                      |
+| Seal collider debug is hard to inspect.                            | Use `debug.sealColliders` for seal-only wireframes; `debug.colliders` shows the full world.                                                                  |
+| Skull is comically large or small.                                 | Adjust `skull.radiusFactor`.                                                                                                                                 |
+| Skull tunnels through closed geometry at high rotation speed.      | Verify CCD is still enabled, and avoid teleport-style drum updates where possible.                                                                           |
+| Skull falls off the visual board edge.                             | Increase `board.radiusFactor`; floor and lip are intentionally decoupled from board visibility.                                                              |
+| Skull rolls for too long after landing.                            | Increase `skull.angularDamping` (and optionally `skull.linearDamping`).                                                                                      |
+| Hull-collider skulls feel floaty or settle wrong.                  | Set `skull.density` explicitly (default heuristic normalizes to sphere-equivalent mass; precise tuning needs your hull's true volume).                       |
+| Switching to a GLB model wedged a skull in the geometry.           | Set `colliderShape: 'sphere'` for the affected model — visual stays, physics reverts to the proven sphere tuning.                                            |
 | Auto-drop triggers on every state apply, not just count increases. | Verify `state.beam.count` is actually increasing — the delta-check uses strict `>`. Snapshot-replay tools that re-feed identical states won't trigger drops. |
 
 ## Limitations (MVP)

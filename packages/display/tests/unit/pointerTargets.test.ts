@@ -16,7 +16,12 @@ function hitObject(distance = 1): THREE.Object3D {
 }
 
 function pointerDownAt(canvas: HTMLElement, x = 50, y = 50): MouseEvent {
-  const ev = new MouseEvent('pointerdown', { clientX: x, clientY: y, bubbles: true, cancelable: true });
+  const ev = new MouseEvent('pointerdown', {
+    clientX: x,
+    clientY: y,
+    bubbles: true,
+    cancelable: true,
+  });
   canvas.dispatchEvent(ev);
   return ev;
 }
@@ -46,9 +51,17 @@ describe('pointer/raycast contract', () => {
   /** Build a view and return it with its canvas (rect stubbed to a real size). */
   function makeView(): { view: Tower3DView; canvas: HTMLCanvasElement } {
     const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
-    const canvas = (view as unknown as { renderer: { domElement: HTMLCanvasElement } }).renderer.domElement;
+    const canvas = (view as unknown as { renderer: { domElement: HTMLCanvasElement } }).renderer
+      .domElement;
     jest.spyOn(canvas, 'getBoundingClientRect').mockReturnValue({
-      left: 0, top: 0, width: 100, height: 100, right: 100, bottom: 100, x: 0, y: 0,
+      left: 0,
+      top: 0,
+      width: 100,
+      height: 100,
+      right: 100,
+      bottom: 100,
+      x: 0,
+      y: 0,
       toJSON: () => ({}),
     } as DOMRect);
     return { view, canvas };
@@ -97,12 +110,18 @@ describe('pointer/raycast contract', () => {
     const low: PointerTarget = {
       objects: [hitObject(2)],
       priority: 1,
-      onPointerDown: () => { order.push('low'); return true; },
+      onPointerDown: () => {
+        order.push('low');
+        return true;
+      },
     };
     const high: PointerTarget = {
       objects: [hitObject(1)],
       priority: 10,
-      onPointerDown: () => { order.push('high'); return true; },
+      onPointerDown: () => {
+        order.push('high');
+        return true;
+      },
     };
     // Register low first to prove ordering is by priority, not registration order.
     view.registerPointerTarget(low);
@@ -121,12 +140,19 @@ describe('pointer/raycast contract', () => {
     canvas.addEventListener('pointerdown', orbitSpy);
 
     view.registerPointerTarget({
-      objects: [hitObject(1)], priority: 10,
-      onPointerDown: () => { order.push('high'); /* no consume */ },
+      objects: [hitObject(1)],
+      priority: 10,
+      onPointerDown: () => {
+        order.push('high'); /* no consume */
+      },
     });
     view.registerPointerTarget({
-      objects: [hitObject(2)], priority: 1,
-      onPointerDown: () => { order.push('low'); return true; },
+      objects: [hitObject(2)],
+      priority: 1,
+      onPointerDown: () => {
+        order.push('low');
+        return true;
+      },
     });
 
     pointerDownAt(canvas);
@@ -161,7 +187,9 @@ describe('pointer/raycast contract', () => {
     view.registerPointerTarget({ objects: [obj], onPointerDown, onPointerMove, onPointerUp });
 
     pointerDownAt(canvas);
-    canvas.dispatchEvent(new MouseEvent('pointermove', { clientX: 55, clientY: 55, bubbles: true }));
+    canvas.dispatchEvent(
+      new MouseEvent('pointermove', { clientX: 55, clientY: 55, bubbles: true }),
+    );
     canvas.dispatchEvent(new MouseEvent('pointerup', { clientX: 60, clientY: 60, bubbles: true }));
 
     expect(onPointerMove).toHaveBeenCalledTimes(1);
@@ -170,7 +198,9 @@ describe('pointer/raycast contract', () => {
 
     // After up, a fresh move is no longer delivered (gesture ended).
     onPointerMove.mockClear();
-    canvas.dispatchEvent(new MouseEvent('pointermove', { clientX: 70, clientY: 70, bubbles: true }));
+    canvas.dispatchEvent(
+      new MouseEvent('pointermove', { clientX: 70, clientY: 70, bubbles: true }),
+    );
     expect(onPointerMove).not.toHaveBeenCalled();
 
     view.dispose();
@@ -184,7 +214,9 @@ describe('pointer/raycast contract', () => {
 
     const handle = attachScenePlugin(view, {
       id: 'p',
-      attach: (ctx) => { ctx.registerPointerTarget({ objects: [hitObject()], onPointerDown }); },
+      attach: (ctx) => {
+        ctx.registerPointerTarget({ objects: [hitObject()], onPointerDown });
+      },
       dispose: () => {},
     });
     expect(view.pointerTargetCount).toBe(1);

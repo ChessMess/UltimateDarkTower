@@ -1,6 +1,11 @@
 import type { TowerState, TowerSide, SealIdentifier } from 'ultimatedarktower';
 import type * as THREE from 'three';
-import type { LightingConfig, CameraConfig, ApplyCameraConfigOptions, AudioConfig } from './3d/types';
+import type {
+  LightingConfig,
+  CameraConfig,
+  ApplyCameraConfigOptions,
+  AudioConfig,
+} from './3d/types';
 import type { SoundPack } from './audio/soundPack';
 
 export type { TowerState, TowerSide, SealIdentifier };
@@ -159,18 +164,12 @@ export interface ITowerDisplay {
    * facades that wrap it); not implemented by the 2D side-view or text
    * readout. See {@link Tower3DView.playSample}.
    */
-  playSample?(
-    sample: number,
-    opts?: { loop?: boolean; volume?: number },
-  ): { stop: () => void };
+  playSample?(sample: number, opts?: { loop?: boolean; volume?: number }): { stop: () => void };
   /**
    * Optional — fire an LED light sequence as a transient, one-shot event
    * independent of the state-driven path. Implemented by 3D-capable renderers
    * (Tower3DView and the facades that wrap it); not implemented by the 2D
    * side-view or text readout. See {@link Tower3DView.playSequence}.
    */
-  playSequence?(
-    sequenceId: number,
-    opts?: { onComplete?: () => void },
-  ): boolean;
+  playSequence?(sequenceId: number, opts?: { onComplete?: () => void }): boolean;
 }

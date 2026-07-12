@@ -20,10 +20,38 @@
   },
   "library": {
     "buildingTypes": {
-      "citadel":   { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"resource.gain","resource":"warriors","amount":2}]}, "skullCapacity": 3 },
-      "sanctuary": { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"corruption.remove","all":true}]}, "skullCapacity": 3 },
-      "village":   { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"resource.gain","resource":"spirit","amount":1}]}, "skullCapacity": 3 },
-      "bazaar":    { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"market.refresh"}]}, "skullCapacity": 3 }
+      "citadel": {
+        "free": [{ "op": "resource.gain", "resource": "warriors", "amount": 1 }],
+        "enhanced": {
+          "cost": { "resource": "spirit", "amount": 1 },
+          "effects": [{ "op": "resource.gain", "resource": "warriors", "amount": 2 }]
+        },
+        "skullCapacity": 3
+      },
+      "sanctuary": {
+        "free": [{ "op": "resource.gain", "resource": "warriors", "amount": 1 }],
+        "enhanced": {
+          "cost": { "resource": "spirit", "amount": 1 },
+          "effects": [{ "op": "corruption.remove", "all": true }]
+        },
+        "skullCapacity": 3
+      },
+      "village": {
+        "free": [{ "op": "resource.gain", "resource": "warriors", "amount": 1 }],
+        "enhanced": {
+          "cost": { "resource": "spirit", "amount": 1 },
+          "effects": [{ "op": "resource.gain", "resource": "spirit", "amount": 1 }]
+        },
+        "skullCapacity": 3
+      },
+      "bazaar": {
+        "free": [{ "op": "resource.gain", "resource": "warriors", "amount": 1 }],
+        "enhanced": {
+          "cost": { "resource": "spirit", "amount": 1 },
+          "effects": [{ "op": "market.refresh" }]
+        },
+        "skullCapacity": 3
+      }
     },
     "battleDefs": {
       "ashstrider": {
@@ -36,13 +64,21 @@
               {
                 "text": "The plague spreads — each hero in this kingdom loses 3 warriors",
                 "effects": [
-                  { "op": "hero.scope", "scope": "kingdom", "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 3 }] }
+                  {
+                    "op": "hero.scope",
+                    "scope": "kingdom",
+                    "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 3 }]
+                  }
                 ]
               },
               {
                 "text": "You and another hero lose 1 warrior each",
                 "effects": [
-                  { "op": "hero.scope", "scope": "selfAndOther", "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 1 }] }
+                  {
+                    "op": "hero.scope",
+                    "scope": "selfAndOther",
+                    "effects": [{ "op": "resource.lose", "resource": "warriors", "amount": 1 }]
+                  }
                 ]
               },
               { "text": "The wind dies down — no losses" }
@@ -54,8 +90,6 @@
   },
   "graph": {
     "entry": "n-start",
-    "nodes": [
-      { "id": "n-start", "kind": "lifecycle.gameStart" }
-    ]
+    "nodes": [{ "id": "n-start", "kind": "lifecycle.gameStart" }]
   }
 }

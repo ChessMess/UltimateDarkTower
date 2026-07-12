@@ -124,7 +124,13 @@ describe('Package Exports', () => {
     test('sub-types are usable', () => {
       const light: Light = { effect: 0, loop: false };
       const layer: Layer = { light: [light, light, light, light] };
-      const drum: Drum = { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false };
+      const drum: Drum = {
+        jammed: false,
+        calibrated: false,
+        position: 0,
+        playSound: false,
+        reverse: false,
+      };
       const audio: Audio = { sample: 0, loop: false, volume: 0 };
       const beam: Beam = { count: 0, fault: false };
 
@@ -259,7 +265,9 @@ describe('Package Exports', () => {
       for (const loc of BOARD_LOCATIONS) {
         expect(typeof loc.name).toBe('string');
         expect(loc.name.length).toBeGreaterThan(0);
-        expect(['Hills', 'Lake', 'Desert', 'Mountains', 'Grasslands', 'Forest']).toContain(loc.terrain);
+        expect(['Hills', 'Lake', 'Desert', 'Mountains', 'Grasslands', 'Forest']).toContain(
+          loc.terrain,
+        );
         expect(['north', 'east', 'west', 'south']).toContain(loc.kingdom);
         if (loc.building !== undefined) {
           expect(['Bazaar', 'Village', 'Sanctuary', 'Citadel']).toContain(loc.building);
@@ -287,11 +295,17 @@ describe('Package Exports', () => {
       const longWater = BOARD_LOCATIONS.filter((l) => l.grouping === BOARD_GROUPINGS.LONG_WATER);
       expect(longWater.map((l) => l.name).sort()).toEqual(['Dayside', 'Fivepint']);
 
-      const greatWoods = BOARD_LOCATIONS.filter((l) => l.grouping === BOARD_GROUPINGS.THE_GREAT_WOODS);
+      const greatWoods = BOARD_LOCATIONS.filter(
+        (l) => l.grouping === BOARD_GROUPINGS.THE_GREAT_WOODS,
+      );
       expect(greatWoods.map((l) => l.name).sort()).toEqual(['Arkartus', 'Delmsmire', 'Yellowpike']);
 
       const regalRun = BOARD_LOCATIONS.filter((l) => l.grouping === BOARD_GROUPINGS.REGAL_RUN);
-      expect(regalRun.map((l) => l.name).sort()).toEqual(['Archmont', 'The Cloister', 'The Throne']);
+      expect(regalRun.map((l) => l.name).sort()).toEqual([
+        'Archmont',
+        'The Cloister',
+        'The Throne',
+      ]);
     });
 
     test('each kingdom has 15 locations', () => {
@@ -483,9 +497,14 @@ describe('Package Exports', () => {
 
   describe('Grouped data namespace (v5)', () => {
     test('data exposes all domain sub-namespaces', () => {
-      expect(Object.keys(data).sort()).toEqual(
-        ['board', 'content', 'foes', 'heroes', 'inventory', 'monuments'],
-      );
+      expect(Object.keys(data).sort()).toEqual([
+        'board',
+        'content',
+        'foes',
+        'heroes',
+        'inventory',
+        'monuments',
+      ]);
     });
 
     test('data.heroes / monuments / foes board rosters resolve', () => {

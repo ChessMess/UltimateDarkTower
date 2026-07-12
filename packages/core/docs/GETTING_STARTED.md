@@ -156,10 +156,7 @@ Disconnects the BLE session, stops monitoring timers, and releases adapter resou
 Putting it all together:
 
 ```typescript
-import UltimateDarkTower, {
-  LIGHT_EFFECTS,
-  RING_LIGHT_POSITIONS,
-} from 'ultimatedarktower';
+import UltimateDarkTower, { LIGHT_EFFECTS, RING_LIGHT_POSITIONS } from 'ultimatedarktower';
 
 async function main() {
   const tower = new UltimateDarkTower();
@@ -190,11 +187,11 @@ Run this in Node.js with `npx tsx getting-started.ts` (or compile to JS first). 
 
 ## Where to go next
 
-| You want to… | Read |
-|---|---|
-| See every public method on the tower | [docs/api/README.md](api/README.md) |
-| Understand the layers, adapter pattern, and lifecycle | [docs/ARCHITECTURE.md](ARCHITECTURE.md) |
-| Run a working demo | [docs/EXAMPLES.md](EXAMPLES.md) |
-| Diagnose a disconnect | [docs/TROUBLESHOOTING.md](TROUBLESHOOTING.md) and [docs/BLE_DIAGNOSTICS.md](BLE_DIAGNOSTICS.md) |
-| Build a React Native / Cordova adapter | [docs/api/adapters.md](api/adapters.md) |
-| Decode a game seed | [docs/api/seed.md](api/seed.md) and [docs/SEED_FORMAT.md](SEED_FORMAT.md) |
+| You want to…                                          | Read                                                                                            |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| See every public method on the tower                  | [docs/api/README.md](api/README.md)                                                             |
+| Understand the layers, adapter pattern, and lifecycle | [docs/ARCHITECTURE.md](ARCHITECTURE.md)                                                         |
+| Run a working demo                                    | [docs/EXAMPLES.md](EXAMPLES.md)                                                                 |
+| Diagnose a disconnect                                 | [docs/TROUBLESHOOTING.md](TROUBLESHOOTING.md) and [docs/BLE_DIAGNOSTICS.md](BLE_DIAGNOSTICS.md) |
+| Build a React Native / Cordova adapter                | [docs/api/adapters.md](api/adapters.md)                                                         |
+| Decode a game seed                                    | [docs/api/seed.md](api/seed.md) and [docs/SEED_FORMAT.md](SEED_FORMAT.md)                       |

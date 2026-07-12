@@ -24,12 +24,40 @@ import {
 
 describe('charToValue / valueToChar', () => {
   const expectedMappings: [string, number][] = [
-    ['a', 0], ['1', 1], ['2', 2], ['3', 3], ['4', 4], ['5', 5],
-    ['6', 6], ['7', 7], ['8', 8], ['9', 9], ['b', 10], ['c', 11],
-    ['d', 12], ['e', 13], ['f', 14], ['g', 15], ['h', 16], ['i', 17],
-    ['j', 18], ['k', 19], ['l', 20], ['m', 21], ['n', 22], ['p', 23],
-    ['q', 24], ['r', 25], ['s', 26], ['t', 27], ['u', 28], ['v', 29],
-    ['w', 30], ['x', 31], ['y', 32], ['z', 33],
+    ['a', 0],
+    ['1', 1],
+    ['2', 2],
+    ['3', 3],
+    ['4', 4],
+    ['5', 5],
+    ['6', 6],
+    ['7', 7],
+    ['8', 8],
+    ['9', 9],
+    ['b', 10],
+    ['c', 11],
+    ['d', 12],
+    ['e', 13],
+    ['f', 14],
+    ['g', 15],
+    ['h', 16],
+    ['i', 17],
+    ['j', 18],
+    ['k', 19],
+    ['l', 20],
+    ['m', 21],
+    ['n', 22],
+    ['p', 23],
+    ['q', 24],
+    ['r', 25],
+    ['s', 26],
+    ['t', 27],
+    ['u', 28],
+    ['v', 29],
+    ['w', 30],
+    ['x', 31],
+    ['y', 32],
+    ['z', 33],
   ];
 
   test.each(expectedMappings)("charToValue('%s') === %i", (char, value) => {
@@ -198,8 +226,13 @@ describe('decodeSeed', () => {
       // setup[0]=0 (a), setup[1]=0 (a), rest=a
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+          expansions: [],
         },
         0,
       );
@@ -209,8 +242,13 @@ describe('decodeSeed', () => {
     test('Mormos: setup[0] bit4=1, setup[1] bit4=0', () => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Mormos'], expansions: []
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Mormos'],
+          expansions: [],
         },
         0,
       );
@@ -220,8 +258,13 @@ describe('decodeSeed', () => {
     test('Striga: setup[0] bit4=0, setup[1] bit4=1', () => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Striga'], expansions: []
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Striga'],
+          expansions: [],
         },
         0,
       );
@@ -231,8 +274,13 @@ describe('decodeSeed', () => {
     test('Titans: setup[0] bit4=1, setup[1] bit4=1', () => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Titans'], expansions: []
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Titans'],
+          expansions: [],
         },
         0,
       );
@@ -244,8 +292,13 @@ describe('decodeSeed', () => {
     test.each(TIER1_FOES.map((f, i) => [f, i] as const))('%s (index %i)', (foe) => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: [foe, 'Frost Trolls', 'Dragons'], expansions: []
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: [foe, 'Frost Trolls', 'Dragons'],
+          expansions: [],
         },
         0,
       );
@@ -257,8 +310,13 @@ describe('decodeSeed', () => {
     test.each(TIER2_FOES.map((f, i) => [f, i] as const))('%s (index %i)', (foe) => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', foe, 'Dragons'], expansions: []
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', foe, 'Dragons'],
+          expansions: [],
         },
         0,
       );
@@ -270,8 +328,13 @@ describe('decodeSeed', () => {
     test.each(ADVERSARIES.map((a, i) => [a, i] as const))('%s (index %i)', (adversary) => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary, ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+          source: 'Core',
+          playerCount: 1,
+          adversary,
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+          expansions: [],
         },
         0,
       );
@@ -283,8 +346,13 @@ describe('decodeSeed', () => {
     test.each(ALLIES.map((a, i) => [a, i] as const))('%s (index %i)', (ally) => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally,
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally,
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+          expansions: [],
         },
         0,
       );
@@ -296,8 +364,13 @@ describe('decodeSeed', () => {
     test('Heroic / no expansions / Core', () => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+          expansions: [],
         },
         0,
       );
@@ -310,8 +383,13 @@ describe('decodeSeed', () => {
     test('Gritty / no expansions / Core', () => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Gritty', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Gritty',
+          foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+          expansions: [],
         },
         0,
       );
@@ -323,8 +401,13 @@ describe('decodeSeed', () => {
     test('Heroic / Monuments / Core', () => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: ['Monuments']
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+          expansions: ['Monuments'],
         },
         0,
       );
@@ -335,8 +418,13 @@ describe('decodeSeed', () => {
     test('Heroic / Alliances / Core', () => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: ['Alliances']
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+          expansions: ['Alliances'],
         },
         0,
       );
@@ -347,9 +435,13 @@ describe('decodeSeed', () => {
     test('Heroic / Alliances + Monuments / Core', () => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'],
-          expansions: ['Alliances', 'Monuments']
+          source: 'Core',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+          expansions: ['Alliances', 'Monuments'],
         },
         0,
       );
@@ -361,8 +453,13 @@ describe('decodeSeed', () => {
     test('Heroic / no expansions / Competitive', () => {
       const seed = encodeSeed(
         {
-          source: 'Competitive', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+          source: 'Competitive',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+          expansions: [],
         },
         0,
       );
@@ -372,8 +469,13 @@ describe('decodeSeed', () => {
     test('Gritty / no expansions / Competitive', () => {
       const seed = encodeSeed(
         {
-          source: 'Competitive', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Gritty', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+          source: 'Competitive',
+          playerCount: 1,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Gritty',
+          foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+          expansions: [],
         },
         0,
       );
@@ -387,8 +489,13 @@ describe('decodeSeed', () => {
     test.each([1, 2, 3, 4])('%i player(s)', (count) => {
       const seed = encodeSeed(
         {
-          source: 'Core', playerCount: count, adversary: 'Ashstrider', ally: 'Gleb',
-          difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: []
+          source: 'Core',
+          playerCount: count,
+          adversary: 'Ashstrider',
+          ally: 'Gleb',
+          difficulty: 'Heroic',
+          foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+          expansions: [],
         },
         0,
       );
@@ -458,18 +565,21 @@ describe('createSeed', () => {
   });
 
   test('rejects invalid foe', () => {
-    expect(() => createSeed({ ...baseConfig, foes: ['InvalidFoe' as never, 'Frost Trolls', 'Dragons'] }))
-      .toThrow('Invalid Tier 1 foe');
+    expect(() =>
+      createSeed({ ...baseConfig, foes: ['InvalidFoe' as never, 'Frost Trolls', 'Dragons'] }),
+    ).toThrow('Invalid Tier 1 foe');
   });
 
   test('rejects invalid adversary', () => {
-    expect(() => createSeed({ ...baseConfig, adversary: 'InvalidAdversary' as never }))
-      .toThrow('Invalid adversary');
+    expect(() => createSeed({ ...baseConfig, adversary: 'InvalidAdversary' as never })).toThrow(
+      'Invalid adversary',
+    );
   });
 
   test('rejects invalid ally', () => {
-    expect(() => createSeed({ ...baseConfig, ally: 'InvalidAlly' as never }))
-      .toThrow('Invalid ally');
+    expect(() => createSeed({ ...baseConfig, ally: 'InvalidAlly' as never })).toThrow(
+      'Invalid ally',
+    );
   });
 });
 
@@ -578,8 +688,13 @@ describe('compareSeedsRaw', () => {
   test('seeds differing only in setup have setupDiffs but no rngDiffs', () => {
     // Same RNG, different setup[0] (different Tier 1 foe)
     const config1: SeedConfig = {
-      source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-      difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: [],
+      source: 'Core',
+      playerCount: 1,
+      adversary: 'Ashstrider',
+      ally: 'Gleb',
+      difficulty: 'Heroic',
+      foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+      expansions: [],
     };
     const config2: SeedConfig = { ...config1, foes: ['Oreks', 'Frost Trolls', 'Dragons'] };
     const rng = 100000;
@@ -593,8 +708,13 @@ describe('compareSeedsRaw', () => {
 
   test('seeds differing only in RNG have rngDiffs but no setupDiffs', () => {
     const config: SeedConfig = {
-      source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-      difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: [],
+      source: 'Core',
+      playerCount: 1,
+      adversary: 'Ashstrider',
+      ally: 'Gleb',
+      difficulty: 'Heroic',
+      foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+      expansions: [],
     };
     const seed1 = encodeSeed(config, 100000);
     const seed2 = encodeSeed(config, 200000);
@@ -606,8 +726,13 @@ describe('compareSeedsRaw', () => {
 
   test('diffs include character info', () => {
     const config: SeedConfig = {
-      source: 'Core', playerCount: 1, adversary: 'Ashstrider', ally: 'Gleb',
-      difficulty: 'Heroic', foes: ['Brigands', 'Frost Trolls', 'Dragons'], expansions: [],
+      source: 'Core',
+      playerCount: 1,
+      adversary: 'Ashstrider',
+      ally: 'Gleb',
+      difficulty: 'Heroic',
+      foes: ['Brigands', 'Frost Trolls', 'Dragons'],
+      expansions: [],
     };
     const seed1 = encodeSeed(config, 0);
     const seed2 = encodeSeed(config, 1);

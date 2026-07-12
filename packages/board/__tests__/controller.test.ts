@@ -32,12 +32,20 @@ describe('BoardStateController — self mode (default)', () => {
     let marker: BoardEvent | undefined;
     c.on('spaceMarkerChanged', (e) => (marker = e));
     c.setSpaceMarker(GENERIC, 'wasteland', true);
-    expect(marker).toEqual({ type: 'spaceMarkerChanged', location: GENERIC, markers: ['wasteland'] });
+    expect(marker).toEqual({
+      type: 'spaceMarkerChanged',
+      location: GENERIC,
+      markers: ['wasteland'],
+    });
 
     let quest: BoardEvent | undefined;
     c.on('questMarkerChanged', (e) => (quest = e));
     c.setQuestMarker(GENERIC, 'main-goal', true);
-    expect(quest).toEqual({ type: 'questMarkerChanged', location: GENERIC, markers: ['main-goal'] });
+    expect(quest).toEqual({
+      type: 'questMarkerChanged',
+      location: GENERIC,
+      markers: ['main-goal'],
+    });
 
     let selection: BoardEvent | undefined;
     c.on('selectionChanged', (e) => (selection = e));

@@ -41,8 +41,7 @@ const nodeTypes: NodeTypes = {
 function buildBaseScenario(): ScenarioDoc {
   const doc = goldenFull as ScenarioDoc;
   const dungeons = (doc.library as Record<string, unknown> | undefined)?.dungeons as
-    | Record<string, Dungeon>
-    | undefined;
+    Record<string, Dungeon> | undefined;
   if (!dungeons || Object.keys(dungeons).length === 0) return doc;
   const { nodes, positions } = syncDungeonNodes(doc, dungeons);
   return {

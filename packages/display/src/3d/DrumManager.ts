@@ -62,12 +62,12 @@ export class DrumManager {
 
   /** Log a one-shot warning listing any expected drum nodes absent from the model. */
   warnOnMissing(): void {
-    const missing = DRUM_LEVELS_BY_INDEX.filter(level => !this.drumRefs.has(level));
+    const missing = DRUM_LEVELS_BY_INDEX.filter((level) => !this.drumRefs.has(level));
     if (missing.length === 0) return;
     // eslint-disable-next-line no-console
     console.warn(
       `[Tower3DView] ${missing.length} drum node(s) missing from the loaded model; ` +
-      `applyDrums will be a no-op for them. Missing: ${missing.map(l => `${DRUM_NAME_PREFIX}${l}`).join(', ')}.`,
+        `applyDrums will be a no-op for them. Missing: ${missing.map((l) => `${DRUM_NAME_PREFIX}${l}`).join(', ')}.`,
     );
   }
 
@@ -112,7 +112,9 @@ export class DrumManager {
         currentY: finalY,
         duration: drumRotationDurationS(delta),
         ease: DRUM_ROTATION_EASE,
-        onUpdate: () => { ref.node.rotation.y = ref.currentY; },
+        onUpdate: () => {
+          ref.node.rotation.y = ref.currentY;
+        },
         onComplete: () => {
           ref.tween = null;
           endOnce();
@@ -132,7 +134,10 @@ export class DrumManager {
    * to the shared instance. The calibration command passes a dedicated player so
    * its recording plays without touching the normal drum-rotation audio.
    */
-  calibrateDrum(level: DrumLevel, audio: DrumRotationAudio | null = this.audio ?? null): Promise<void> {
+  calibrateDrum(
+    level: DrumLevel,
+    audio: DrumRotationAudio | null = this.audio ?? null,
+  ): Promise<void> {
     const ref = this.drumRefs.get(level);
     if (!ref) return Promise.resolve();
 
@@ -160,7 +165,9 @@ export class DrumManager {
         currentY: finalY,
         duration: drumRotationDurationS(sweep),
         ease: DRUM_ROTATION_EASE,
-        onUpdate: () => { ref.node.rotation.y = ref.currentY; },
+        onUpdate: () => {
+          ref.node.rotation.y = ref.currentY;
+        },
         onComplete: () => {
           ref.tween = null;
           endOnce();

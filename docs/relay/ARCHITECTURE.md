@@ -1,6 +1,6 @@
 # Architecture
 
-*Docs: [Index](README.md) > Integrator > Architecture*
+_Docs: [Index](README.md) > Integrator > Architecture_
 
 How UltimateDarkTowerRelay is put together: the packages, the data flow, the state model, the selectable
 tower sources, and the event log. For a hands-on intro see [GETTING_STARTED.md](GETTING_STARTED.md); for
@@ -10,7 +10,7 @@ the wire protocol see [PROTOCOL.md](PROTOCOL.md).
 
 ## The core idea
 
-The official *Return to Dark Tower* companion app drives the physical tower over Bluetooth LE, with the
+The official _Return to Dark Tower_ companion app drives the physical tower over Bluetooth LE, with the
 **app as the BLE central** and the **tower as the peripheral**. A browser cannot advertise as a BLE
 peripheral, so the relay runs in Node and advertises a **tower emulator peripheral** the app connects to. It
 then decodes every command, fans it out to consumers over WebSocket, and synthesizes the tower→app return
@@ -36,13 +36,13 @@ This is why the **live state path is a single last-command snapshot, not event s
 An npm-workspaces monorepo built on the published [`ultimatedarktower`](https://github.com/ChessMess/UltimateDarkTower)
 core library. Build order is `shared → core → client → cli` via TypeScript composite project references.
 
-| Package | Responsibility |
-|---|---|
-| `packages/shared` | The wire contract: the message envelope, `MessageType` + `make*Message` factories, the `RelayEvent` semantic-event union, and `PROTOCOL_VERSION`. No BLE or `ultimatedarktower` dependency. |
-| `packages/core` | The headless engine: `TowerEmulator` (BLE peripheral), `RelayServer` + `ConnectionManager` (WebSocket transport), `NotificationSynthesizer`, `RealTower` (real-tower mirror), `EventLog`, `HostLogger`, and the pure `logAnalysis` helpers. Usable as a library. |
-| `packages/cli` | A headless daemon (`index.ts`) plus the `replayEvents` and `analyzeLogs` tools. Suitable for servers, Raspberry Pi, Docker, or an always-on host. |
-| `packages/electron` | An operator GUI over `core`: status dashboard, runtime tower-source switching, manual controls, and an in-app log viewer. |
-| `packages/client` | The published, framework-agnostic consumer SDK — `RelayClient` (transport) and `PhysicalTowerReplay` (local-tower mirroring). Imports `shared` + `ultimatedarktower` types only; never `core`. |
+| Package             | Responsibility                                                                                                                                                                                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/shared`   | The wire contract: the message envelope, `MessageType` + `make*Message` factories, the `RelayEvent` semantic-event union, and `PROTOCOL_VERSION`. No BLE or `ultimatedarktower` dependency.                                                                      |
+| `packages/core`     | The headless engine: `TowerEmulator` (BLE peripheral), `RelayServer` + `ConnectionManager` (WebSocket transport), `NotificationSynthesizer`, `RealTower` (real-tower mirror), `EventLog`, `HostLogger`, and the pure `logAnalysis` helpers. Usable as a library. |
+| `packages/cli`      | A headless daemon (`index.ts`) plus the `replayEvents` and `analyzeLogs` tools. Suitable for servers, Raspberry Pi, Docker, or an always-on host.                                                                                                                |
+| `packages/electron` | An operator GUI over `core`: status dashboard, runtime tower-source switching, manual controls, and an in-app log viewer.                                                                                                                                        |
+| `packages/client`   | The published, framework-agnostic consumer SDK — `RelayClient` (transport) and `PhysicalTowerReplay` (local-tower mirroring). Imports `shared` + `ultimatedarktower` types only; never `core`.                                                                   |
 
 `core` is consumed as a library by both the CLI and the Electron main process — the composition root that
 wires a tower source to the relay lives in `packages/cli/src/index.ts` (and, source-swappable, in
@@ -78,12 +78,12 @@ the synthesizer, which sends a tower→app notification back through `TowerEmula
 
 ## State model
 
-The relay keeps a **hybrid state model** — a live snapshot *plus* a semantic event log — explicitly
-*not* strict event sourcing, because the commands are already full-state idempotent snapshots.
+The relay keeps a **hybrid state model** — a live snapshot _plus_ a semantic event log — explicitly
+_not_ strict event sourcing, because the commands are already full-state idempotent snapshots.
 
 - **Live state:** a single `TowerState` derived from the last full command. Drives consumers and the
   `sync:state` catch-up. Idempotent replays mean no drift.
-- **Event log:** an append-only, monotonic-`seq` stream of *semantic* [`RelayEvent`](../packages/shared/src/relayEvents.ts)s
+- **Event log:** an append-only, monotonic-`seq` stream of _semantic_ [`RelayEvent`](../packages/shared/src/relayEvents.ts)s
   (`app-connected` / `app-disconnected`, `command-received`, `skull-dropped`, `calibration-complete`,
   `heartbeat`, `consumer-joined` / `consumer-left`), persisted as JSONL.
 
@@ -98,14 +98,14 @@ export (`loadEventLog` / `replayEventLog` / `exportEventLog`), exposed through t
 
 `core` defines a `TowerSource` seam — `startAdvertising()` / `stopAdvertising()` plus
 `command` / `state-change` / `companion-connected` / `companion-disconnected` events — so the relay is
-agnostic to *where* the tower traffic comes from. The CLI selects one via `TOWER_SOURCE`:
+agnostic to _where_ the tower traffic comes from. The CLI selects one via `TOWER_SOURCE`:
 
-| `TOWER_SOURCE` | Source | Notes |
-|---|---|---|
-| `emulator` (default) | `TowerEmulator` | BLE peripheral the official app connects to. The standard mode. (Legacy alias: `fake`.) |
-| `mock` | `MockTower` | BLE-free canned-command source for headless testing/demos. |
-| `real` | `RealTower` | Connects to a **physical master tower** as a BLE central and relays its state outward (read-only mirror). |
-| `bridge` | `TowerEmulator` + `RealTower` | The app drives a tower emulator whose commands are forwarded verbatim onto a real master tower. |
+| `TOWER_SOURCE`       | Source                        | Notes                                                                                                     |
+| -------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `emulator` (default) | `TowerEmulator`               | BLE peripheral the official app connects to. The standard mode. (Legacy alias: `fake`.)                   |
+| `mock`               | `MockTower`                   | BLE-free canned-command source for headless testing/demos.                                                |
+| `real`               | `RealTower`                   | Connects to a **physical master tower** as a BLE central and relays its state outward (read-only mirror). |
+| `bridge`             | `TowerEmulator` + `RealTower` | The app drives a tower emulator whose commands are forwarded verbatim onto a real master tower.           |
 
 `TowerEmulator` and `MockTower` also implement a `NotificationSink`, so the CLI wires the
 `NotificationSynthesizer` only for sink-capable sources. `RealTower` has no sink — a real tower produces
@@ -121,7 +121,7 @@ tower on), following UDT's documented `onTowerDisconnect → connect()` pattern.
 state verbatim via UDT's public `onTowerResponse` hook. `@stoprocent/noble` is an **optional** dependency,
 constructed lazily at connect time — the emulator/mock paths never load it.
 
-> **Bridge caveat:** `bridge` mode needs the host BLE stack to act as peripheral (bleno) *and* central
+> **Bridge caveat:** `bridge` mode needs the host BLE stack to act as peripheral (bleno) _and_ central
 > (noble) simultaneously, which not every adapter supports — it may require a second BLE dongle. See
 > [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 

@@ -86,4 +86,6 @@ const totalBytes = Object.values(images).reduce((a, u) => a + u.length, 0);
 console.log(
   `wrote ${files.length} map(s) → ${out}  (~${(totalBytes / 1_000_000).toFixed(1)} MB of embedded images)`,
 );
-console.log('Load it via the Creator → Dungeons → "Import JSON" button, then use "Detect rooms from image".');
+console.log(
+  'Load it via the Creator → Dungeons → "Import JSON" button, then use "Detect rooms from image".',
+);

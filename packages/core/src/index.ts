@@ -6,7 +6,15 @@
 export { default as UltimateDarkTower } from './UltimateDarkTower';
 export type { UltimateDarkTowerConfig } from './UltimateDarkTower';
 export * from './udtConstants';
-export { logger, Logger, ConsoleOutput, DOMOutput, BufferOutput, type LogLevel, type LogOutput } from './udtLogger';
+export {
+  logger,
+  Logger,
+  ConsoleOutput,
+  DOMOutput,
+  BufferOutput,
+  type LogLevel,
+  type LogOutput,
+} from './udtLogger';
 export { milliVoltsToPercentage, milliVoltsToPercentageNumber } from './udtHelpers';
 
 // Bluetooth adapter interfaces for custom implementations
@@ -23,7 +31,11 @@ export { BluetoothPlatform, BluetoothAdapterFactory } from './udtBluetoothAdapte
 // Tower state types and utilities
 export type { TowerState, Light, Layer, Drum, Audio, Beam } from './udtTowerState';
 export { rtdt_unpack_state, rtdt_pack_state, isCalibrated } from './udtTowerState';
-export { createDefaultTowerState, parseDifferentialReadings, type ParsedDifferentialReadings } from './udtHelpers';
+export {
+  createDefaultTowerState,
+  parseDifferentialReadings,
+  type ParsedDifferentialReadings,
+} from './udtHelpers';
 
 // Tower response types
 export type { TowerResponseConfig } from './udtTowerResponse';
@@ -34,8 +46,14 @@ export type { TowerEventCallbacks, DeviceInformation, ConnectionStatus } from '.
 // BLE disconnect diagnostics ("flight recorder") - off by default, see docs/BLE_DIAGNOSTICS.md
 export { UdtDiagnosticsRecorder, InMemorySink, bytesToHex } from './udtDiagnostics';
 export type {
-  DiagnosticsConfig, DiagnosticsSink, DiagEvent, DiagEventKind,
-  DisconnectCause, IncidentReport, BatterySample, CommandQueueSnapshot,
+  DiagnosticsConfig,
+  DiagnosticsSink,
+  DiagEvent,
+  DiagEventKind,
+  DisconnectCause,
+  IncidentReport,
+  BatterySample,
+  CommandQueueSnapshot,
 } from './udtDiagnostics';
 export { IndexedDBSink } from './sinks/IndexedDBSink';
 

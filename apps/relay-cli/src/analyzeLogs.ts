@@ -145,7 +145,9 @@ function printSessionSummary(entries: LogEntry[]): void {
 
   console.log(`  Time range:  ${first.ts}  →  ${last.ts}`);
   console.log(`  Duration:    ${durationStr}`);
-  console.log(`  Entries:     ${entries.length} total (${commands.length} commands, ${events.length} events)`);
+  console.log(
+    `  Entries:     ${entries.length} total (${commands.length} commands, ${events.length} events)`,
+  );
   console.log(`  Sequences:   1 → ${maxSeq}`);
   console.log(`  Sources:     ${Array.from(sources).join(', ')}`);
   console.log();
@@ -174,7 +176,9 @@ function printTimeline(entries: LogEntry[], seqFilter: number | null): void {
 
     if (decoded) {
       if (decoded.ledOverride !== 0) {
-        extras.push(`ledOverride=0x${decoded.ledOverride.toString(16).padStart(2, '0')} (${ledSeqName(decoded.ledOverride)})`);
+        extras.push(
+          `ledOverride=0x${decoded.ledOverride.toString(16).padStart(2, '0')} (${ledSeqName(decoded.ledOverride)})`,
+        );
       }
       if (decoded.audio !== 0) {
         extras.push(`audio=${audioName(decoded.audio)}`);
@@ -214,7 +218,9 @@ function printCorrelation(entries: LogEntry[]): void {
     const firstTs = new Date(sorted[0].ts).getTime();
     for (const entry of sorted) {
       const delta = new Date(entry.ts).getTime() - firstTs;
-      console.log(`    ${entry.dir?.padEnd(16) ?? '?'.padEnd(16)} ${entry.src.padEnd(12)} +${delta}ms  ${entry.hex?.slice(0, 8) ?? ''}…`);
+      console.log(
+        `    ${entry.dir?.padEnd(16) ?? '?'.padEnd(16)} ${entry.src.padEnd(12)} +${delta}ms  ${entry.hex?.slice(0, 8) ?? ''}…`,
+      );
     }
 
     // Check hex consistency.
@@ -260,7 +266,9 @@ function printLedOverrideAnalysis(entries: LogEntry[]): void {
 
   console.log('  Override value breakdown:');
   for (const [value, count] of Array.from(byValue.entries()).sort((a, b) => a[0] - b[0])) {
-    console.log(`    0x${value.toString(16).padStart(2, '0')} (${ledSeqName(value)}): ${count} occurrences`);
+    console.log(
+      `    0x${value.toString(16).padStart(2, '0')} (${ledSeqName(value)}): ${count} occurrences`,
+    );
   }
   console.log();
 
@@ -268,15 +276,21 @@ function printLedOverrideAnalysis(entries: LogEntry[]): void {
   for (let i = 0; i < ledCommands.length; i++) {
     const { entry, decoded } = ledCommands[i];
     console.log(`  ${formatLogEntry(entry)}`);
-    console.log(`    ↳ ledOverride=0x${decoded.ledOverride.toString(16).padStart(2, '0')} (${ledSeqName(decoded.ledOverride)})`);
-    console.log(`    ↳ audio=${audioName(decoded.audio)} | cmdType=0x${decoded.cmdType.toString(16).padStart(2, '0')}`);
+    console.log(
+      `    ↳ ledOverride=0x${decoded.ledOverride.toString(16).padStart(2, '0')} (${ledSeqName(decoded.ledOverride)})`,
+    );
+    console.log(
+      `    ↳ audio=${audioName(decoded.audio)} | cmdType=0x${decoded.cmdType.toString(16).padStart(2, '0')}`,
+    );
 
     // Find the preceding command in the same direction from the same source.
     const cmdIndex = commands.indexOf(entry);
     if (cmdIndex > 0) {
       const prev = commands[cmdIndex - 1];
       const prevDecoded = prev.decoded ?? (prev.hex ? decodeCommand(bytesFromHex(prev.hex)) : null);
-      console.log(`    ← preceding: ${formatLogEntry(prev)}${prevDecoded ? ` ledOvr=0x${prevDecoded.ledOverride.toString(16).padStart(2, '0')}` : ''}`);
+      console.log(
+        `    ← preceding: ${formatLogEntry(prev)}${prevDecoded ? ` ledOvr=0x${prevDecoded.ledOverride.toString(16).padStart(2, '0')}` : ''}`,
+      );
     }
     console.log();
   }
@@ -340,7 +354,9 @@ function printClientSummary(entries: LogEntry[]): void {
       }
     }
     if (latencyCount > 0) {
-      console.log(`    Avg replay latency: ${(totalLatency / latencyCount).toFixed(1)}ms (${latencyCount} samples)`);
+      console.log(
+        `    Avg replay latency: ${(totalLatency / latencyCount).toFixed(1)}ms (${latencyCount} samples)`,
+      );
     }
     console.log();
   }

@@ -17,8 +17,8 @@ import type { NotificationSink } from './notificationSynthesizer';
  * a valid packet that `CommandParser` accepts and `ObserverDisplay` can decode.
  */
 const DEFAULT_MOCK_COMMAND: number[] = [
-  0x00, 0x11, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x11, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00,
 ];
 
 /** Options for {@link MockTower}. */
@@ -39,7 +39,10 @@ export interface MockTowerOptions {
  * await tower.startAdvertising(); // emits one canned command immediately
  * ```
  */
-export class MockTower extends EventEmitter<TowerSourceEventMap> implements TowerSource, NotificationSink {
+export class MockTower
+  extends EventEmitter<TowerSourceEventMap>
+  implements TowerSource, NotificationSink
+{
   private _advertising = false;
   private _timer: ReturnType<typeof setInterval> | null = null;
   private readonly _command: Buffer;

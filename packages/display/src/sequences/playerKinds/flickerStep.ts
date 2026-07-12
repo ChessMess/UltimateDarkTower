@@ -40,10 +40,9 @@ const Respawn = z
     levelMin: NormalizedLevel,
     levelMax: NormalizedLevel,
   })
-  .refine(
-    (o) => (o.threshold === undefined) !== (o.thresholdPwm === undefined),
-    { message: "respawn: specify exactly one of 'threshold' or 'thresholdPwm'" },
-  );
+  .refine((o) => (o.threshold === undefined) !== (o.thresholdPwm === undefined), {
+    message: "respawn: specify exactly one of 'threshold' or 'thresholdPwm'",
+  });
 export type Respawn = z.infer<typeof Respawn>;
 
 export const FlickerStepTrack = z.object({
@@ -69,9 +68,7 @@ export function flickerStepHandler(
   const flickerTargets = makeFlickerTargetBuffer();
 
   const respawnThreshold =
-    respawn === undefined
-      ? undefined
-      : respawn.threshold ?? respawn.thresholdPwm! / 255;
+    respawn === undefined ? undefined : (respawn.threshold ?? respawn.thresholdPwm! / 255);
 
   const tickFn = respawn
     ? () => {
@@ -80,8 +77,7 @@ export function flickerStepHandler(
           const layer = Math.floor(rng() * TOWER_LAYER_COUNT);
           const light = Math.floor(rng() * LIGHTS_PER_LAYER);
           if (deps.ledAnimator.getLevel(layer, light) < respawnThreshold!) {
-            const level =
-              respawn.levelMin + (respawn.levelMax - respawn.levelMin) * rng();
+            const level = respawn.levelMin + (respawn.levelMax - respawn.levelMin) * rng();
             deps.ledAnimator.setLevel(layer, light, level, 0);
           }
         }
@@ -89,14 +85,7 @@ export function flickerStepHandler(
     : () => {
         for (const layer of layers) {
           for (const light of lightList) {
-            applyFlickerStep(
-              deps.ledAnimator,
-              layer,
-              light,
-              flickerTargets,
-              alpha,
-              deps.rng,
-            );
+            applyFlickerStep(deps.ledAnimator, layer, light, flickerTargets, alpha, deps.rng);
           }
         }
       };

@@ -1,8 +1,8 @@
 # Setup — running the relay per platform
 
-*Docs: [Index](README.md) > Operator > Setup*
+_Docs: [Index](README.md) > Operator > Setup_
 
-The relay advertises a **BLE tower emulator** the official *Return to Dark Tower* companion
+The relay advertises a **BLE tower emulator** the official _Return to Dark Tower_ companion
 app connects to, then relays tower traffic to digital consumers over WebSocket.
 
 > **Key platform fact:** only **non-macOS** hosts can expose the Device Information
@@ -22,13 +22,13 @@ npm run start:mock   # BLE-free canned-command source
 
 Environment:
 
-| Var | Default | Purpose |
-|---|---|---|
-| `RELAY_PORT` | `8765` | WebSocket relay port |
-| `TOWER_SOURCE` | `emulator` | `emulator` (real BLE; legacy alias `fake`) · `mock` (BLE-free) · `real` (drive from a physical master tower) · `bridge` (app→TowerEmulator→real tower) |
-| `LOGGING` | on | set `0` to disable JSONL logging |
-| `TOWER_DIS_FIRMWARE_REVISION` | captured value | DIS firmware revision the app gates on |
-| `TOWER_DIS_{MANUFACTURER,MODEL,HARDWARE_REVISION,SOFTWARE_REVISION}` | captured values | other DIS fields |
+| Var                                                                  | Default         | Purpose                                                                                                                                                |
+| -------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `RELAY_PORT`                                                         | `8765`          | WebSocket relay port                                                                                                                                   |
+| `TOWER_SOURCE`                                                       | `emulator`      | `emulator` (real BLE; legacy alias `fake`) · `mock` (BLE-free) · `real` (drive from a physical master tower) · `bridge` (app→TowerEmulator→real tower) |
+| `LOGGING`                                                            | on              | set `0` to disable JSONL logging                                                                                                                       |
+| `TOWER_DIS_FIRMWARE_REVISION`                                        | captured value  | DIS firmware revision the app gates on                                                                                                                 |
+| `TOWER_DIS_{MANUFACTURER,MODEL,HARDWARE_REVISION,SOFTWARE_REVISION}` | captured values | other DIS fields                                                                                                                                       |
 
 ---
 
@@ -126,7 +126,7 @@ tower drops (showing "Game Paused", then resuming).
 Runs a **TowerEmulator** (the official app connects to it, as in `emulator` mode) **and** a
 **RealTower** together: every command the app writes is forwarded **verbatim** onto a
 physical master tower the relay drives as a BLE central, while the same commands are
-broadcast to mirror / digital consumers. This lets the app drive a real tower *through*
+broadcast to mirror / digital consumers. This lets the app drive a real tower _through_
 the relay (simultaneous emulator + real).
 
 ```bash
@@ -134,11 +134,12 @@ TOWER_SOURCE=bridge npm start
 ```
 
 Requirements & caveats:
+
 - Needs **both** `@stoprocent/bleno` (peripheral, for the app) **and** `@stoprocent/noble`
   (central, for the real tower).
 - The app needs the DIS, so — like standalone `emulator` mode — bridge mode realistically runs
   on **Linux/Raspberry Pi or Windows**, not macOS.
-- ⚠️ **Concurrent BLE roles:** the host's adapter must act as peripheral *and* central at the
+- ⚠️ **Concurrent BLE roles:** the host's adapter must act as peripheral _and_ central at the
   same time. Not all adapters/stacks support this, and the two native addons may contend for
   the HCI device — you may need a **second BLE dongle**. This is a hardware constraint to
   validate on your setup.

@@ -15,27 +15,27 @@
 
 ## Verified facts (safe to build on)
 
-| Fact | Source |
-| --- | --- |
-| Game runs **6 months**, cooperative, all win/lose together | rules.md |
-| Turns per month: 1p→6, 2p→7, 3p→8, 4p→9 (fewer on Gritty) | rules.md |
-| Turn = Banner → (move / one heroic action / Reinforce, any order) → **drop 1 skull (mandatory)** | rules.md |
-| Heroic actions: Cleanse / Battle / Quest; **gain 2 spirit** after any heroic action | rules.md |
-| Start resources: **7 warriors, 1 spirit**; base move value typically **3**; spend 1 spirit to double move | rules.md / heroes.md |
-| Item caps: potions ∞, **gear 1 of each of 6 types**, **treasures max 4**, quest items ∞ | heroes.md |
-| Corruption: **max 2; 3rd = loss**; removable at a Sanctuary | rules.md / glossary.md |
-| Win = complete main goal **then** defeat adversary. Lose = 3rd corruption / end of month 6 / must drop skull with none left | rules.md |
-| Buildings: 16 total (4 kingdoms × Citadel/Sanctuary/Village/Bazaar); ≤3 skulls each, 4th destroys (home-kingdom destruction → corruption) | rules.md |
-| Foes: levels 2/3/4 chosen at setup; adversary (level 5) spawns only after the main goal is complete | rules.md |
-| Base heroes (4): Brutal Warlord, Relic Hunter, Orphaned Scion, Spymaster | udtHeroes.ts / heroes.md |
-| 60 board locations; buildings are a **property of named locations**, not locations themselves | udtGameBoard.ts |
-| Official app connects to the tower as a **BLE peripheral** (browser can't be one) | udtSync FakeTower / Web Bluetooth spec |
+| Fact                                                                                                                                      | Source                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Game runs **6 months**, cooperative, all win/lose together                                                                                | rules.md                               |
+| Turns per month: 1p→6, 2p→7, 3p→8, 4p→9 (fewer on Gritty)                                                                                 | rules.md                               |
+| Turn = Banner → (move / one heroic action / Reinforce, any order) → **drop 1 skull (mandatory)**                                          | rules.md                               |
+| Heroic actions: Cleanse / Battle / Quest; **gain 2 spirit** after any heroic action                                                       | rules.md                               |
+| Start resources: **7 warriors, 1 spirit**; base move value typically **3**; spend 1 spirit to double move                                 | rules.md / heroes.md                   |
+| Item caps: potions ∞, **gear 1 of each of 6 types**, **treasures max 4**, quest items ∞                                                   | heroes.md                              |
+| Corruption: **max 2; 3rd = loss**; removable at a Sanctuary                                                                               | rules.md / glossary.md                 |
+| Win = complete main goal **then** defeat adversary. Lose = 3rd corruption / end of month 6 / must drop skull with none left               | rules.md                               |
+| Buildings: 16 total (4 kingdoms × Citadel/Sanctuary/Village/Bazaar); ≤3 skulls each, 4th destroys (home-kingdom destruction → corruption) | rules.md                               |
+| Foes: levels 2/3/4 chosen at setup; adversary (level 5) spawns only after the main goal is complete                                       | rules.md                               |
+| Base heroes (4): Brutal Warlord, Relic Hunter, Orphaned Scion, Spymaster                                                                  | udtHeroes.ts / heroes.md               |
+| 60 board locations; buildings are a **property of named locations**, not locations themselves                                             | udtGameBoard.ts                        |
+| Official app connects to the tower as a **BLE peripheral** (browser can't be one)                                                         | udtSync FakeTower / Web Bluetooth spec |
 
 ## Known discrepancies & risks
 
 1. **Foe status: 3 vs 5 states — RESOLVED.** The library's `FOE_STATUSES` originally modeled **3**
    (`ready → savage → lethal`), but the rules glossary lists **5** (`Panicked → Unsteady → Ready →
-   Savage → Lethal`). Decision: extend the library. `ultimatedarktower`'s `FoeStatus`/`FOE_STATUSES`
+Savage → Lethal`). Decision: extend the library. `ultimatedarktower`'s `FoeStatus`/`FOE_STATUSES`
    were widened to all 5 (`panicked | unsteady | ready | savage | lethal`, lowest→highest threat) in
    `src/udtFoes.ts`; `dist` rebuilt locally so UTDD picks it up via the `file:` symlink. **Not yet
    released to npm** — a version bump + CHANGELOG + full lib CI are deferred to a later release pass.
@@ -50,8 +50,8 @@
    it into its JS bundle (~30 MB chunk) — see PRD-00 Non-Functional Requirements. Affects load time and
    is being addressed upstream.
 
-4. **Board placement instructions are out-of-band.** The BLE tower protocol carries *tower* state, not
-   *board* placement. So "the app tells you where to place a foe" cannot arrive over the tower channel —
+4. **Board placement instructions are out-of-band.** The BLE tower protocol carries _tower_ state, not
+   _board_ placement. So "the app tells you where to place a foe" cannot arrive over the tower channel —
    in MVP the player reads the official app and places manually; PRD-05 must define how/if this is ever
    automated.
 
@@ -64,7 +64,7 @@
 
 ## Intellectual property & asset provenance
 
-*Return to Dark Tower* and its art, card text, sounds, board, and tower model are © Restoration Games.
+_Return to Dark Tower_ and its art, card text, sounds, board, and tower model are © Restoration Games.
 UTDD is an **unofficial, fan-made** companion in the same family as the other UDT libraries. Intent:
 
 - Use the existing UDT libraries' assets/data for development and personal play; do **not** redistribute

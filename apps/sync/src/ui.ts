@@ -6,7 +6,8 @@
  */
 
 /** Connection state reflected in the UI status indicators. */
-export type UiConnectionState = 'disconnected' | 'connecting' | 'calibrating' | 'connected' | 'error';
+export type UiConnectionState =
+  'disconnected' | 'connecting' | 'calibrating' | 'connected' | 'error';
 
 /**
  * UI manages all DOM interaction for the DarkTowerSync client page.

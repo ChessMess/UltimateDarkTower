@@ -118,7 +118,9 @@ interface EngineStateShape {
 function ActionInput() {
   const awaiting = usePlayerStore((s) => s.awaiting);
   const phase = usePlayerStore((s) => s.phase);
-  const inDungeon = usePlayerStore((s) => !!(s.engineState as EngineStateShape | null)?.clock?.dungeon);
+  const inDungeon = usePlayerStore(
+    (s) => !!(s.engineState as EngineStateShape | null)?.clock?.dungeon,
+  );
   if (phase !== 'playing' || !awaiting) return null;
 
   // Inside a dungeon, the masked-map DungeonPanel owns both the move and improve prompts.

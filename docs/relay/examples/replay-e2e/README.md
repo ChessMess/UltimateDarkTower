@@ -7,6 +7,7 @@ Web Bluetooth. Not shipped code — it's the exact wiring documented in
 (Web Bluetooth). First validated live on 2026-06-17 (drums physically mirrored relayed rotations).
 
 ## Files
+
 - `host.cjs` — a `RelayServer` that broadcasts a cycle of **genuine** 20-byte rotation commands
   (all drums N→E→S→W) every 2.5s, each built with the library's own `rtdt_pack_state` (no guessed
   bytes). The "master" stand-in.
@@ -20,6 +21,7 @@ Web Bluetooth. Not shipped code — it's the exact wiring documented in
   another central).
 
 ## Run
+
 ```sh
 # 1. host relay (from repo root) — needs the workspace packages built (npm run build)
 node examples/replay-e2e/host.cjs
@@ -34,11 +36,13 @@ node examples/replay-e2e/host.cjs
 # 3. serve over http://localhost (a secure context for Web Bluetooth)
 python3 -m http.server 8080 --directory examples/replay-e2e
 ```
+
 Open **http://localhost:8080/index.html in real Chrome/Edge** (not VSCode's embedded browser — it
 can't show the Bluetooth device chooser). Click **Connect to Host**, then **Connect to Tower**, pick
 `ReturnToDarkTower`.
 
 ## What success looks like
+
 - No `🗼 Replayed …` lines until `tower calibrated ✓` (the tower-ready gate).
 - A no-seq `🗼 Replayed command on tower` right after calibration (`replayLast()` self-heal).
 - Each `◀ relayed command (seq N)` paired 1:1 with `🗼 Replayed command on tower (seq N)`, and the

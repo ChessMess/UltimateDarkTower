@@ -57,15 +57,15 @@ automatically, and all characters are lowercase. Try the documented baseline `AA
 
 ## Scripts
 
-| Script               | Description                                  |
-| -------------------- | -------------------------------------------- |
-| `npm run dev`        | Vite dev server on port **3002**             |
-| `npm run build`      | Production build to `dist/`                  |
-| `npm run preview`    | Preview the production build                 |
-| `npm run type-check` | Type-check with `tsc --noEmit`               |
-| `npm run lint`       | ESLint over `src/`                           |
-| `npm run format`     | Format with Prettier                         |
-| `npm run clean`      | Remove `dist/`                               |
+| Script               | Description                      |
+| -------------------- | -------------------------------- |
+| `npm run dev`        | Vite dev server on port **3002** |
+| `npm run build`      | Production build to `dist/`      |
+| `npm run preview`    | Preview the production build     |
+| `npm run type-check` | Type-check with `tsc --noEmit`   |
+| `npm run lint`       | ESLint over `src/`               |
+| `npm run format`     | Format with Prettier             |
+| `npm run clean`      | Remove `dist/`                   |
 
 ## Seed format
 

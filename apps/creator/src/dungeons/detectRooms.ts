@@ -90,10 +90,15 @@ export async function detectRooms(
     if (!isRoom[nr][nc]) return false;
     if (dir === 'E' || dir === 'W') {
       const edgeX = (dir === 'E' ? c + 1 : c) * cw;
-      return contentFraction(edgeX - cw * 0.06, (r + 0.35) * ch, edgeX + cw * 0.06, (r + 0.65) * ch) > 0.3;
+      return (
+        contentFraction(edgeX - cw * 0.06, (r + 0.35) * ch, edgeX + cw * 0.06, (r + 0.65) * ch) >
+        0.3
+      );
     }
     const edgeY = (dir === 'S' ? r + 1 : r) * ch;
-    return contentFraction((c + 0.35) * cw, edgeY - ch * 0.06, (c + 0.65) * cw, edgeY + ch * 0.06) > 0.3;
+    return (
+      contentFraction((c + 0.35) * cw, edgeY - ch * 0.06, (c + 0.65) * cw, edgeY + ch * 0.06) > 0.3
+    );
   };
 
   const rooms: DungeonRoom[] = [];

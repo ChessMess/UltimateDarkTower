@@ -43,11 +43,16 @@ function encode(text) {
   if (!t || /^no (losses?|effect)\.?$/i.test(t)) return [];
   const effects = [];
   let m;
-  if ((m = /^lose (\d+) warriors?/i.exec(t))) effects.push({ op: 'resource.lose', resource: 'warriors', amount: +m[1] });
-  else if ((m = /^lose (\d+) spirit/i.exec(t))) effects.push({ op: 'resource.lose', resource: 'spirit', amount: +m[1] });
-  else if ((m = /^gain (\d+) warriors?/i.exec(t))) effects.push({ op: 'resource.gain', resource: 'warriors', amount: +m[1] });
-  else if ((m = /^gain (\d+) spirit/i.exec(t))) effects.push({ op: 'resource.gain', resource: 'spirit', amount: +m[1] });
-  else if ((m = /^gain (\d+) corruptions?/i.exec(t))) for (let i = 0; i < +m[1]; i++) effects.push({ op: 'corruption.gain' });
+  if ((m = /^lose (\d+) warriors?/i.exec(t)))
+    effects.push({ op: 'resource.lose', resource: 'warriors', amount: +m[1] });
+  else if ((m = /^lose (\d+) spirit/i.exec(t)))
+    effects.push({ op: 'resource.lose', resource: 'spirit', amount: +m[1] });
+  else if ((m = /^gain (\d+) warriors?/i.exec(t)))
+    effects.push({ op: 'resource.gain', resource: 'warriors', amount: +m[1] });
+  else if ((m = /^gain (\d+) spirit/i.exec(t)))
+    effects.push({ op: 'resource.gain', resource: 'spirit', amount: +m[1] });
+  else if ((m = /^gain (\d+) corruptions?/i.exec(t)))
+    for (let i = 0; i < +m[1]; i++) effects.push({ op: 'corruption.gain' });
   return effects;
 }
 
@@ -75,10 +80,15 @@ for (const key of keys) {
 // Emit a battleDefs map: one deck per family, cards ordered by index, 2 copies each (the observed
 // 2×N deck-composition model). Card names are derived from the family — rename freely in the editor.
 const advForFamily = (f) => {
-  for (const a of ['beast', 'humanoid', 'magic', 'melee', 'undead', 'stealth']) if (f.includes(a)) return a[0].toUpperCase() + a.slice(1);
+  for (const a of ['beast', 'humanoid', 'magic', 'melee', 'undead', 'stealth'])
+    if (f.includes(a)) return a[0].toUpperCase() + a.slice(1);
   return 'Wild';
 };
-const titleCase = (f) => f.replace(/^card_/, '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const titleCase = (f) =>
+  f
+    .replace(/^card_/, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 
 const battleDefs = {};
 for (const [family, cardMap] of Object.entries(decks)) {
@@ -101,4 +111,6 @@ for (const [family, cardMap] of Object.entries(decks)) {
 }
 
 writeFileSync(out, JSON.stringify(battleDefs, null, 2));
-console.log(`wrote ${Object.keys(battleDefs).length} decks to ${out} (do not commit — proprietary source text)`);
+console.log(
+  `wrote ${Object.keys(battleDefs).length} decks to ${out} (do not commit — proprietary source text)`,
+);

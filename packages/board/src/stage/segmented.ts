@@ -17,7 +17,7 @@ export interface Segmented<T extends string> {
 export function createSegmented<T extends string>(
   host: HTMLElement,
   items: SegmentedItem<T>[],
-  onSelect: (key: T) => void
+  onSelect: (key: T) => void,
 ): Segmented<T> {
   host.classList.add('udt-focus-group');
   host.setAttribute('role', 'group');

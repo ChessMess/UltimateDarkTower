@@ -15,7 +15,14 @@
 //   --raw  dump raw Ogg Opus slices verbatim — no transcoding, no enhancement,
 //          no library regen
 
-import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  existsSync,
+  mkdirSync,
+  unlinkSync,
+} from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -66,7 +73,8 @@ function parseUdtLibrary(text) {
   const block = text.match(/TOWER_AUDIO_LIBRARY\s*:\s*AudioLibrary\s*=\s*\{([\s\S]*?)\n\}/);
   if (!block) throw new Error('TOWER_AUDIO_LIBRARY not found in udtConstants.ts');
   const valueToKey = new Map();
-  const re = /^\s*([A-Za-z][A-Za-z0-9]*)\s*:\s*\{\s*name:\s*"[^"]*"\s*,\s*value:\s*(0x[0-9a-fA-F]+|\d+)/gm;
+  const re =
+    /^\s*([A-Za-z][A-Za-z0-9]*)\s*:\s*\{\s*name:\s*"[^"]*"\s*,\s*value:\s*(0x[0-9a-fA-F]+|\d+)/gm;
   for (const m of block[1].matchAll(re)) {
     const key = m[1];
     const value = m[2].startsWith('0x') ? parseInt(m[2], 16) : parseInt(m[2], 10);
@@ -85,31 +93,33 @@ function parseUdtLibrary(text) {
 //   - dynaudnorm: even out levels per clip
 const ENHANCE_FILTER =
   '[0:a] aformat=channel_layouts=mono,' +
-         'lowpass=f=13000,' +
-         'bass=g=3:f=120:w=0.6,' +
-         'equalizer=f=220:t=q:w=1.4:g=3,' +
-         'equalizer=f=600:t=q:w=2:g=1,' +
-         'equalizer=f=4500:t=q:w=1.4:g=1.5,' +
-         'acompressor=threshold=-22dB:ratio=2.5:attack=8:release=80:makeup=2,' +
-         'asplit=3 [DRY][WL][WR];' +
+  'lowpass=f=13000,' +
+  'bass=g=3:f=120:w=0.6,' +
+  'equalizer=f=220:t=q:w=1.4:g=3,' +
+  'equalizer=f=600:t=q:w=2:g=1,' +
+  'equalizer=f=4500:t=q:w=1.4:g=1.5,' +
+  'acompressor=threshold=-22dB:ratio=2.5:attack=8:release=80:makeup=2,' +
+  'asplit=3 [DRY][WL][WR];' +
   '[WL] aecho=0.7:0.5:23|55|97:0.35|0.20|0.10 [revL];' +
   '[WR] aecho=0.7:0.5:33|71|113:0.35|0.20|0.10 [revR];' +
   '[DRY] pan=stereo|c0=c0|c1=c0 [dryS];' +
   '[revL] pan=stereo|c0=c0|c1=0*c0 [revLP];' +
   '[revR] pan=stereo|c0=0*c0|c1=c0 [revRP];' +
   '[dryS][revLP][revRP] amix=inputs=3:weights=1.0 0.35 0.35:normalize=0,' +
-                       'dynaudnorm=p=0.92:m=10';
+  'dynaudnorm=p=0.92:m=10';
 
 function transcodeOpusToVorbis(opusBuffer, outputPath) {
-  const tmpOpus = join(tmpdir(), `extract-audio-${process.pid}-${Math.random().toString(36).slice(2)}.opus.ogg`);
+  const tmpOpus = join(
+    tmpdir(),
+    `extract-audio-${process.pid}-${Math.random().toString(36).slice(2)}.opus.ogg`,
+  );
   writeFileSync(tmpOpus, opusBuffer);
   try {
-    const ff = spawnSync('ffmpeg', [
-      '-v', 'error',
-      '-i', tmpOpus,
-      '-filter_complex', ENHANCE_FILTER,
-      '-f', 'wav', '-',
-    ], { maxBuffer: 64 * 1024 * 1024 });
+    const ff = spawnSync(
+      'ffmpeg',
+      ['-v', 'error', '-i', tmpOpus, '-filter_complex', ENHANCE_FILTER, '-f', 'wav', '-'],
+      { maxBuffer: 64 * 1024 * 1024 },
+    );
     if (ff.status !== 0) {
       throw new Error(`ffmpeg failed (exit ${ff.status}): ${ff.stderr?.toString() ?? ''}`);
     }
@@ -121,7 +131,11 @@ function transcodeOpusToVorbis(opusBuffer, outputPath) {
       throw new Error(`oggenc failed (exit ${og.status}): ${og.stderr?.toString() ?? ''}`);
     }
   } finally {
-    try { unlinkSync(tmpOpus); } catch { /* ignore */ }
+    try {
+      unlinkSync(tmpOpus);
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -138,7 +152,7 @@ function caseInsensitiveIndex(dir) {
 function generateLibraryTs(orderedMappings) {
   const fileLines = orderedMappings.map(({ key, file }) => `  [A.${key}.value]: '${file}',`);
   const urlLines = orderedMappings.map(
-    ({ key, file }) => `  [A.${key}.value]: new URL('./assets/${file}', import.meta.url).href,`
+    ({ key, file }) => `  [A.${key}.value]: new URL('./assets/${file}', import.meta.url).href,`,
   );
   return `import { TOWER_AUDIO_LIBRARY } from 'ultimatedarktower';
 import type { SoundPack } from './soundPack';
@@ -244,7 +258,7 @@ function main() {
 
   if (names.length !== offsets.length || names.length !== lengths.length) {
     throw new Error(
-      `length mismatch: enum=${names.length} offsets=${offsets.length} lengths=${lengths.length}`
+      `length mismatch: enum=${names.length} offsets=${offsets.length} lengths=${lengths.length}`,
     );
   }
   if (names[0] !== 'None') throw new Error(`expected index 0 to be None, got ${names[0]}`);
@@ -269,7 +283,7 @@ function main() {
     const magic = slice.subarray(0, 4).toString('ascii');
     if (magic !== 'OggS') {
       throw new Error(
-        `track ${i} ${name}: expected OggS at offset ${offset}, got ${slice.subarray(0, 4).toString('hex')}`
+        `track ${i} ${name}: expected OggS at offset ${offset}, got ${slice.subarray(0, 4).toString('hex')}`,
       );
     }
 
@@ -302,7 +316,7 @@ function main() {
   mappings.sort((a, b) => a.value - b.value);
   writeFileSync(LIBRARY_TS, generateLibraryTs(mappings));
   console.log(
-    `\nDone: ${wrote} written, ${skipped} skipped, ${mappings.length} mapped, ${unmapped} unmapped.`
+    `\nDone: ${wrote} written, ${skipped} skipped, ${mappings.length} mapped, ${unmapped} unmapped.`,
   );
   console.log(`Updated ${LIBRARY_TS}`);
 }

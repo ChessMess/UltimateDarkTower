@@ -20,11 +20,16 @@ import type {
 } from './types';
 
 // ---------- public API: init (§2.3) ----------
-export function buildKingdoms(scenario: Scenario, playerCount: number): { active: Kingdom[]; dormant: Kingdom[] } {
+export function buildKingdoms(
+  scenario: Scenario,
+  playerCount: number,
+): { active: Kingdom[]; dormant: Kingdom[] } {
   const pcs = (scenario.setup && scenario.setup.playerCountScaling) || {};
   const byPC = pcs.dormantKingdoms && pcs.dormantKingdoms.byPlayerCount;
   const dormant: Kingdom[] =
-    byPC && Array.isArray(byPC[String(playerCount)]) ? byPC[String(playerCount)].slice() : KINGDOMS.slice(playerCount);
+    byPC && Array.isArray(byPC[String(playerCount)])
+      ? byPC[String(playerCount)].slice()
+      : KINGDOMS.slice(playerCount);
   const active = KINGDOMS.filter((k) => !dormant.includes(k));
   if (active.length !== playerCount)
     throw fault(
@@ -102,7 +107,8 @@ export function init(scenario: unknown, opts: InitOpts): StepResult {
   // complement, and clockwise seating. Fail at load (§ "fail at load, never mid-game") on a bad count
   // or a dormant-set that doesn't leave exactly one active kingdom per player.
   const playerCount = (opts.playerCount as number) | 0 || 1;
-  if (playerCount < 1 || playerCount > 4) throw fault('playerCount must be 1–4 (got ' + opts.playerCount + ')');
+  if (playerCount < 1 || playerCount > 4)
+    throw fault('playerCount must be 1–4 (got ' + opts.playerCount + ')');
   const { active, dormant } = buildKingdoms(sc, playerCount);
   // Full-turn discriminator (fidelity gate): the actionMiddle node opts in with props.turn === "full".
   // Legacy scenarios (no prop) keep the single-action-per-turn MVP loop byte-identical.
@@ -221,7 +227,8 @@ export function init(scenario: unknown, opts: InitOpts): StepResult {
         const nq = sc.graph.nodes.find((n) => n.kind === 'lifecycle.newQuests');
         const ids: string[] = [];
         const monthly = (nq?.props || {}).monthly;
-        if (monthly) for (const m of Object.values(monthly)) for (const v of Object.values(m)) ids.push(v);
+        if (monthly)
+          for (const m of Object.values(monthly)) for (const v of Object.values(m)) ids.push(v);
         return ids;
       })(),
     },
@@ -345,7 +352,10 @@ export function makeTestState(overrides?: Partial<EngineState>): EngineState {
   } as unknown as EngineState;
   return Object.assign(state, overrides || {});
 }
-export function applyOne(state: EngineState, eff: Effect): { state: EngineState; directives: Directive[] } {
+export function applyOne(
+  state: EngineState,
+  eff: Effect,
+): { state: EngineState; directives: Directive[] } {
   const directives: Directive[] = [];
   applyEffect(eff, state, directives);
   return { state, directives };

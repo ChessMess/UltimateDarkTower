@@ -63,6 +63,10 @@ export function applyDagreLayout(nodes: CreatorNode[], edges: Edge[]): CreatorNo
   return laidOut.map((node) => {
     const rect = groupRects[node.id];
     if (!rect) return node;
-    return { ...node, position: { x: rect.x, y: rect.y }, style: { width: rect.width, height: rect.height } };
+    return {
+      ...node,
+      position: { x: rect.x, y: rect.y },
+      style: { width: rect.width, height: rect.height },
+    };
   });
 }

@@ -71,12 +71,20 @@ registerKindHandler('pulseFlicker', pulseFlickerHandler);
  */
 const CUSTOM_HANDLERS = new Map<
   string,
-  (params: Record<string, unknown> | undefined, tl: gsap.core.Timeline, deps: SequenceAnimatorDeps) => void
+  (
+    params: Record<string, unknown> | undefined,
+    tl: gsap.core.Timeline,
+    deps: SequenceAnimatorDeps,
+  ) => void
 >();
 
 export function registerCustomHandler(
   handlerId: string,
-  fn: (params: Record<string, unknown> | undefined, tl: gsap.core.Timeline, deps: SequenceAnimatorDeps) => void,
+  fn: (
+    params: Record<string, unknown> | undefined,
+    tl: gsap.core.Timeline,
+    deps: SequenceAnimatorDeps,
+  ) => void,
 ): void {
   CUSTOM_HANDLERS.set(handlerId, fn);
 }

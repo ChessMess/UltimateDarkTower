@@ -44,7 +44,10 @@ export class CameraController {
     this.preserveViewOnSideSelect = config.preserveViewOnSideSelect ?? false;
   }
 
-  fitToModel(modelRadius: number, debugLog?: (label: string, data: Record<string, unknown>) => void): void {
+  fitToModel(
+    modelRadius: number,
+    debugLog?: (label: string, data: Record<string, unknown>) => void,
+  ): void {
     this.modelRadius = modelRadius;
     const distance = this.fitBaseDistance() * this.distanceFactor;
     const targetY = modelRadius * this.targetHeightFactor;
@@ -105,17 +108,14 @@ export class CameraController {
     const horiz = Math.sqrt(Math.max(0, distance * distance - vertical * vertical));
     const xz = polarToXZ(azimuth, horiz);
 
-    this.tweenCameraAlongOrbit(
-      sourceState,
-      {
-        position: new THREE.Vector3(
-          cameraState.target.x + xz.x,
-          cameraState.target.y + vertical,
-          cameraState.target.z + xz.z,
-        ),
-        target: cameraState.target.clone(),
-      },
-    );
+    this.tweenCameraAlongOrbit(sourceState, {
+      position: new THREE.Vector3(
+        cameraState.target.x + xz.x,
+        cameraState.target.y + vertical,
+        cameraState.target.z + xz.z,
+      ),
+      target: cameraState.target.clone(),
+    });
   }
 
   resetView(): void {
@@ -171,7 +171,10 @@ export class CameraController {
    * camera back to the north face at the same height/distance framing, which is
    * exactly the board-facing preset semantics.
    */
-  getLiveCameraFactors(): Pick<Required<CameraConfig>, 'elevationFactor' | 'targetHeightFactor' | 'distanceFactor'> {
+  getLiveCameraFactors(): Pick<
+    Required<CameraConfig>,
+    'elevationFactor' | 'targetHeightFactor' | 'distanceFactor'
+  > {
     const base = this.fitBaseDistance();
     const dx = this.camera.position.x - this.controls.target.x;
     const dz = this.camera.position.z - this.controls.target.z;
@@ -185,7 +188,8 @@ export class CameraController {
 
   applyCameraConfig(config: CameraConfig, options: ApplyCameraConfigOptions = {}): void {
     if (config.elevationFactor !== undefined) this.elevationFactor = config.elevationFactor;
-    if (config.targetHeightFactor !== undefined) this.targetHeightFactor = config.targetHeightFactor;
+    if (config.targetHeightFactor !== undefined)
+      this.targetHeightFactor = config.targetHeightFactor;
     if (config.distanceFactor !== undefined) this.distanceFactor = config.distanceFactor;
     if (config.zoomToCursor !== undefined) this.setZoomToCursor(config.zoomToCursor);
     if (config.preserveViewOnSideSelect !== undefined) {
@@ -213,15 +217,18 @@ export class CameraController {
     const azimuth = Math.atan2(dx, dz);
     const currentHoriz = Math.sqrt(dx * dx + dz * dz);
 
-    const horiz = config.distanceFactor !== undefined
-      ? this.fitBaseDistance() * this.distanceFactor
-      : currentHoriz;
-    const cameraY = config.elevationFactor !== undefined
-      ? this.modelRadius * this.elevationFactor
-      : this.camera.position.y;
-    const targetY = config.targetHeightFactor !== undefined
-      ? this.modelRadius * this.targetHeightFactor
-      : this.controls.target.y;
+    const horiz =
+      config.distanceFactor !== undefined
+        ? this.fitBaseDistance() * this.distanceFactor
+        : currentHoriz;
+    const cameraY =
+      config.elevationFactor !== undefined
+        ? this.modelRadius * this.elevationFactor
+        : this.camera.position.y;
+    const targetY =
+      config.targetHeightFactor !== undefined
+        ? this.modelRadius * this.targetHeightFactor
+        : this.controls.target.y;
 
     const xz = polarToXZ(azimuth, horiz);
     this.controls.target.set(this.controls.target.x, targetY, this.controls.target.z);
@@ -287,9 +294,21 @@ export class CameraController {
     target: { x: number; y: number; z: number },
   ): void {
     if (this.activeTween) this.activeTween.kill();
-    const tl = gsap.timeline({ onComplete: () => { this.activeTween = null; } });
-    tl.to(this.camera.position, { ...position, duration: SIDE_SNAP_DURATION_S, ease: 'power2.inOut' }, 0);
-    tl.to(this.controls.target, { ...target, duration: SIDE_SNAP_DURATION_S, ease: 'power2.inOut' }, 0);
+    const tl = gsap.timeline({
+      onComplete: () => {
+        this.activeTween = null;
+      },
+    });
+    tl.to(
+      this.camera.position,
+      { ...position, duration: SIDE_SNAP_DURATION_S, ease: 'power2.inOut' },
+      0,
+    );
+    tl.to(
+      this.controls.target,
+      { ...target, duration: SIDE_SNAP_DURATION_S, ease: 'power2.inOut' },
+      0,
+    );
     this.activeTween = tl;
   }
 
@@ -308,8 +327,8 @@ export class CameraController {
     );
     const destinationRadius = Math.sqrt(
       destinationOffsetX * destinationOffsetX +
-      destinationOffsetY * destinationOffsetY +
-      destinationOffsetZ * destinationOffsetZ,
+        destinationOffsetY * destinationOffsetY +
+        destinationOffsetZ * destinationOffsetZ,
     );
     const sourceAzimuth = Math.atan2(sourceOffsetX, sourceOffsetZ);
     const destinationAzimuth = Math.atan2(destinationOffsetX, destinationOffsetZ);
@@ -379,7 +398,10 @@ export class CameraController {
       // point at the orbit-target depth that the cursor is actually hovering over,
       // regardless of the camera's tilt angle.
       const viewDir = this.controls.target.clone().sub(this.camera.position).normalize();
-      const focalPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(viewDir, this.controls.target);
+      const focalPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+        viewDir,
+        this.controls.target,
+      );
       const focalPoint = new THREE.Vector3();
       if (!raycaster.ray.intersectPlane(focalPlane, focalPoint)) return;
 

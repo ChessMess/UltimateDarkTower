@@ -1,9 +1,9 @@
 # Ecosystem & Related Projects
 
-*Docs: [Index](README.md) > All > Ecosystem*
+_Docs: [Index](README.md) > All > Ecosystem_
 
-UltimateDarkTowerRelay is part of the unofficial, fan-made *Ultimate Dark Tower* family of *Return to Dark
-Tower* projects. This page shows where the relay sits and which companion libraries pair with it.
+UltimateDarkTowerRelay is part of the unofficial, fan-made _Ultimate Dark Tower_ family of _Return to Dark
+Tower_ projects. This page shows where the relay sits and which companion libraries pair with it.
 
 ---
 
@@ -50,7 +50,7 @@ npm install ultimatedarktowerdisplay
 
 ### [UltimateDarkTowerBoard](https://github.com/ChessMess/UltimateDarkTowerBoard)
 
-Composable state + renderers for the game **board/mat**. The relay carries *tower* state, not *board*
+Composable state + renderers for the game **board/mat**. The relay carries _tower_ state, not _board_
 placement (the official app handles board placement out-of-band), so board state stays a separate concern
 a consumer can compose alongside `TowerState`.
 

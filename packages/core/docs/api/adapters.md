@@ -31,10 +31,10 @@ The interface deliberately matches the shape of a GATT session — `connect` ope
 
 ## Built-in adapters
 
-| Adapter | Platform | Auto-detected | Source |
-|---|---|---|---|
-| `WebBluetoothAdapter` | Browser (Chrome, Edge, Samsung Internet) | Yes | [src/adapters/WebBluetoothAdapter.ts](../../src/adapters/WebBluetoothAdapter.ts) |
-| `NodeBluetoothAdapter` | Node.js 18+ with `@stoprocent/noble` | Yes | [src/adapters/NodeBluetoothAdapter.ts](../../src/adapters/NodeBluetoothAdapter.ts) |
+| Adapter                | Platform                                 | Auto-detected | Source                                                                             |
+| ---------------------- | ---------------------------------------- | ------------- | ---------------------------------------------------------------------------------- |
+| `WebBluetoothAdapter`  | Browser (Chrome, Edge, Samsung Internet) | Yes           | [src/adapters/WebBluetoothAdapter.ts](../../src/adapters/WebBluetoothAdapter.ts)   |
+| `NodeBluetoothAdapter` | Node.js 18+ with `@stoprocent/noble`     | Yes           | [src/adapters/NodeBluetoothAdapter.ts](../../src/adapters/NodeBluetoothAdapter.ts) |
 
 Auto-detection happens inside `BluetoothAdapterFactory` based on whether `navigator.bluetooth` is available. Electron renderer processes resolve to `WebBluetoothAdapter`; Electron main processes resolve to `NodeBluetoothAdapter`.
 
@@ -43,12 +43,12 @@ Auto-detection happens inside `BluetoothAdapterFactory` based on whether `naviga
 ```typescript
 import { BluetoothAdapterFactory, BluetoothPlatform } from 'ultimatedarktower';
 
-const adapter = BluetoothAdapterFactory.create();                       // auto-detect
-const web    = BluetoothAdapterFactory.create(BluetoothPlatform.WEB);
-const node   = BluetoothAdapterFactory.create(BluetoothPlatform.NODE);
-const none   = BluetoothAdapterFactory.create(BluetoothPlatform.NONE);  // no-op adapter, never connects
+const adapter = BluetoothAdapterFactory.create(); // auto-detect
+const web = BluetoothAdapterFactory.create(BluetoothPlatform.WEB);
+const node = BluetoothAdapterFactory.create(BluetoothPlatform.NODE);
+const none = BluetoothAdapterFactory.create(BluetoothPlatform.NONE); // no-op adapter, never connects
 
-const platform = BluetoothAdapterFactory.detectPlatform();              // 'web' | 'node'
+const platform = BluetoothAdapterFactory.detectPlatform(); // 'web' | 'node'
 ```
 
 ---
@@ -58,10 +58,7 @@ const platform = BluetoothAdapterFactory.detectPlatform();              // 'web'
 ### React Native (via `react-native-ble-plx`)
 
 ```typescript
-import {
-  IBluetoothAdapter,
-  DeviceInformation,
-} from 'ultimatedarktower';
+import { IBluetoothAdapter, DeviceInformation } from 'ultimatedarktower';
 import { BleManager, Device, Characteristic } from 'react-native-ble-plx';
 
 class ReactNativeAdapter implements IBluetoothAdapter {
@@ -112,7 +109,7 @@ class ReactNativeAdapter implements IBluetoothAdapter {
 
   async readDeviceInformation(): Promise<DeviceInformation> {
     // Read DIS characteristics via this.device.readCharacteristicForService(...)
-    return { /* … */ };
+    return {/* … */};
   }
 
   async cleanup(): Promise<void> {
@@ -156,17 +153,17 @@ expect(/* … */);
 
 ## Platform support matrix
 
-| Platform | Adapter | Status |
-|---|---|---|
-| Chrome / Edge / Samsung Internet (desktop + Android) | `WebBluetoothAdapter` | Auto-detected |
-| Node.js 18+ | `NodeBluetoothAdapter` | Auto-detected (needs `@stoprocent/noble`) |
-| Electron renderer | `WebBluetoothAdapter` | Auto-detected |
-| Electron main | `NodeBluetoothAdapter` | Auto-detected |
-| iOS Safari / iOS Chrome | — | Not supported (use [Bluefy](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)) |
-| Firefox | — | Not supported |
-| Software-only / no Bluetooth | `NoopBluetoothAdapter` | Opt-in via `BluetoothPlatform.NONE` (never connects) |
-| React Native (iOS/Android) | Custom (`react-native-ble-plx` recommended) | Bring your own |
-| Cordova / Capacitor | Custom (platform plugin) | Bring your own |
+| Platform                                             | Adapter                                     | Status                                                                                          |
+| ---------------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Chrome / Edge / Samsung Internet (desktop + Android) | `WebBluetoothAdapter`                       | Auto-detected                                                                                   |
+| Node.js 18+                                          | `NodeBluetoothAdapter`                      | Auto-detected (needs `@stoprocent/noble`)                                                       |
+| Electron renderer                                    | `WebBluetoothAdapter`                       | Auto-detected                                                                                   |
+| Electron main                                        | `NodeBluetoothAdapter`                      | Auto-detected                                                                                   |
+| iOS Safari / iOS Chrome                              | —                                           | Not supported (use [Bluefy](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)) |
+| Firefox                                              | —                                           | Not supported                                                                                   |
+| Software-only / no Bluetooth                         | `NoopBluetoothAdapter`                      | Opt-in via `BluetoothPlatform.NONE` (never connects)                                            |
+| React Native (iOS/Android)                           | Custom (`react-native-ble-plx` recommended) | Bring your own                                                                                  |
+| Cordova / Capacitor                                  | Custom (platform plugin)                    | Bring your own                                                                                  |
 
 ---
 

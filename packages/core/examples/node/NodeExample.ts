@@ -16,7 +16,7 @@ import UltimateDarkTower, {
   BluetoothPlatform,
   TOWER_AUDIO_LIBRARY,
   milliVoltsToPercentage,
-  type DeviceInformation
+  type DeviceInformation,
 } from '../../src';
 
 const tower = new UltimateDarkTower({ platform: BluetoothPlatform.NODE });
@@ -67,7 +67,9 @@ tower.onTowerDisconnect = () => {
   console.log('\n✖ Tower disconnected.');
   showMenu();
   // Reset after a short delay to allow future disconnects
-  setTimeout(() => { handlingDisconnect = false; }, 500);
+  setTimeout(() => {
+    handlingDisconnect = false;
+  }, 500);
 };
 
 tower.onCalibrationComplete = () => {
@@ -77,7 +79,7 @@ tower.onCalibrationComplete = () => {
 // CLI menu
 const rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
 });
 
 function showMenu(): void {
@@ -155,14 +157,22 @@ async function handleInput(input: string): Promise<void> {
         if (info.firmwareRevision) console.log(`  Firmware:      ${info.firmwareRevision}`);
         if (info.softwareRevision) console.log(`  Software:      ${info.softwareRevision}`);
         if (info.serialNumber) console.log(`  Serial:        ${info.serialNumber}`);
-        if (!info.manufacturerName && !info.modelNumber && !info.hardwareRevision &&
-          !info.firmwareRevision && !info.softwareRevision && !info.serialNumber) {
+        if (
+          !info.manufacturerName &&
+          !info.modelNumber &&
+          !info.hardwareRevision &&
+          !info.firmwareRevision &&
+          !info.softwareRevision &&
+          !info.serialNumber
+        ) {
           console.log('  (No device information available)');
         }
         console.log('\n--- Status ---');
         console.log(`  Connected:    ${tower.isConnected}`);
         console.log(`  Calibrated:   ${tower.isCalibrated}`);
-        console.log(`  Battery:      ${tower.currentBattery ? `${tower.currentBattery} mV (${milliVoltsToPercentage(tower.currentBattery)})` : 'N/A'}`);
+        console.log(
+          `  Battery:      ${tower.currentBattery ? `${tower.currentBattery} mV (${milliVoltsToPercentage(tower.currentBattery)})` : 'N/A'}`,
+        );
       }
       break;
 

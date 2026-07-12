@@ -15,7 +15,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      'ultimatedarktower': udtCjsPath,
+      ultimatedarktower: udtCjsPath,
     },
     dedupe: ['react', 'react-dom', 'three', 'gsap', '@dimforge/rapier3d-compat'],
   },

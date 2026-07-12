@@ -10,7 +10,16 @@ import { FOES, ADVERSARY_ROSTER, resolveTokenImageFor } from '../../../src/index
 import type { TokenArtRef } from '../../../src/index';
 import { createCanvas } from './canvas';
 import type { DesignCanvas } from './canvas';
-import { FONT_OPTIONS, newDesign, newFieldId, makeBackground, CANVAS_W, CANVAS_H, MIN_CANVAS, MAX_CANVAS } from './types';
+import {
+  FONT_OPTIONS,
+  newDesign,
+  newFieldId,
+  makeBackground,
+  CANVAS_W,
+  CANVAS_H,
+  MIN_CANVAS,
+  MAX_CANVAS,
+} from './types';
 import type { Align, TextField } from './types';
 import { saveProject, loadProject, readImageFile, exportPng, fileBase } from './io';
 
@@ -62,7 +71,10 @@ function loadBackgrounds(): BgOption[] {
   const out = new Map<string, string>(); // url → label
   const roster: { ref: TokenArtRef; name: string }[] = [
     ...FOES.map((f) => ({ ref: { kind: 'foe', id: f.id } as TokenArtRef, name: f.name })),
-    ...ADVERSARY_ROSTER.map((a) => ({ ref: { kind: 'adversary', id: a.id } as TokenArtRef, name: a.name })),
+    ...ADVERSARY_ROSTER.map((a) => ({
+      ref: { kind: 'adversary', id: a.id } as TokenArtRef,
+      name: a.name,
+    })),
   ];
   for (const { ref, name } of roster) {
     const art = resolveTokenImageFor(ref, '3d', { assetBaseUrl: ASSET_BASE });
@@ -70,7 +82,9 @@ function loadBackgrounds(): BgOption[] {
     if (art) out.set(art, `${name} (art)`);
     if (icon && icon !== art) out.set(icon, `${name} (token)`);
   }
-  return [...out.entries()].map(([url, label]) => ({ url, label })).sort((a, b) => a.label.localeCompare(b.label));
+  return [...out.entries()]
+    .map(([url, label]) => ({ url, label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 }
 
 // ── dirty tracking ─────────────────────────────────────────────────────────
@@ -233,7 +247,8 @@ function canvasSection(): HTMLElement {
 
   const note = document.createElement('p');
   note.className = 'td-inline-hint';
-  note.textContent = 'Exports at exactly this size. The canvas is drawn enlarged for easier editing.';
+  note.textContent =
+    'Exports at exactly this size. The canvas is drawn enlarged for easier editing.';
   sec.appendChild(note);
 
   const applySize = (w: number, h: number): void => {
@@ -246,17 +261,23 @@ function canvasSection(): HTMLElement {
 
   const row = twoCol(sec);
   labeledInput(row, 'Width px', 'number', String(state.design.canvas.width), (v) =>
-    applySize(clampNum(v, MIN_CANVAS, MAX_CANVAS, state.design.canvas.width), state.design.canvas.height)
+    applySize(
+      clampNum(v, MIN_CANVAS, MAX_CANVAS, state.design.canvas.width),
+      state.design.canvas.height,
+    ),
   );
   labeledInput(row, 'Height px', 'number', String(state.design.canvas.height), (v) =>
-    applySize(state.design.canvas.width, clampNum(v, MIN_CANVAS, MAX_CANVAS, state.design.canvas.height))
+    applySize(
+      state.design.canvas.width,
+      clampNum(v, MIN_CANVAS, MAX_CANVAS, state.design.canvas.height),
+    ),
   );
 
   sec.appendChild(
     button(`Reset to foe-token size (${CANVAS_W}×${CANVAS_H})`, 'btn-link td-full', () => {
       applySize(CANVAS_W, CANVAS_H);
       renderInspector();
-    })
+    }),
   );
   return sec;
 }
@@ -288,7 +309,7 @@ function designSection(): HTMLElement {
     select.append(o);
   }
   select.addEventListener('change', () => {
-    if (select.value === '' ) {
+    if (select.value === '') {
       state.design.background = null;
     } else if (select.value !== '__custom__') {
       const bg = state.backgrounds.find((b) => b.url === select.value);
@@ -332,7 +353,7 @@ function designSection(): HTMLElement {
         activeBg.fit = v === 'contain' ? 'contain' : 'cover';
         canvas.refresh();
         touched();
-      }
+      },
     );
 
     // Zoom slider (25%–400%), label reflects the live value.
@@ -460,21 +481,33 @@ function fieldsSection(): HTMLElement {
       f.bold = v === 'bold';
       canvas.refresh();
       touched();
-    }
+    },
   );
 
   // Size + rotation row.
   const sizeRow = twoCol(sec);
-  liveInputs.fontSize = labeledInput(sizeRow, 'Size', 'number', String(Math.round(f.fontSize)), (v) => {
-    f.fontSize = clampNum(v, 4, 200, f.fontSize);
-    canvas.refresh();
-    touched();
-  });
-  liveInputs.rotation = labeledInput(sizeRow, 'Rotation°', 'number', String(Math.round(f.rotation)), (v) => {
-    f.rotation = clampNum(v, -360, 360, f.rotation);
-    canvas.refresh();
-    touched();
-  });
+  liveInputs.fontSize = labeledInput(
+    sizeRow,
+    'Size',
+    'number',
+    String(Math.round(f.fontSize)),
+    (v) => {
+      f.fontSize = clampNum(v, 4, 200, f.fontSize);
+      canvas.refresh();
+      touched();
+    },
+  );
+  liveInputs.rotation = labeledInput(
+    sizeRow,
+    'Rotation°',
+    'number',
+    String(Math.round(f.rotation)),
+    (v) => {
+      f.rotation = clampNum(v, -360, 360, f.rotation);
+      canvas.refresh();
+      touched();
+    },
+  );
 
   // X + Y row.
   const posRow = twoCol(sec);
@@ -504,7 +537,7 @@ function fieldsSection(): HTMLElement {
       f.align = v as Align;
       canvas.refresh();
       touched();
-    }
+    },
   );
   labeledInput(styleRow, 'Color', 'color', f.color, (v) => {
     f.color = v;
@@ -628,7 +661,7 @@ function labeledInput(
   label: string,
   type: string,
   value: string,
-  onChange: (v: string) => void
+  onChange: (v: string) => void,
 ): HTMLInputElement {
   const field = document.createElement('div');
   field.className = 'field';
@@ -649,7 +682,7 @@ function labeledSelect(
   label: string,
   options: { label: string; value: string }[],
   value: string,
-  onChange: (v: string) => void
+  onChange: (v: string) => void,
 ): HTMLSelectElement {
   const field = document.createElement('div');
   field.className = 'field';

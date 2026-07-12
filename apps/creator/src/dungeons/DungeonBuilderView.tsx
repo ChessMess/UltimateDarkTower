@@ -34,8 +34,20 @@ function starterDungeon(id: string): Dungeon {
     grid: { cols: 2, rows: 1 },
     masterBitmap: `${id}-map`,
     rooms: [
-      { id: 'room-entry', name: 'Entrance', cell: { col: 0, row: 0 }, exits: { E: 'door' }, isEntrance: true },
-      { id: 'room-target', name: 'Target', cell: { col: 1, row: 0 }, exits: { W: 'door' }, isTarget: true },
+      {
+        id: 'room-entry',
+        name: 'Entrance',
+        cell: { col: 0, row: 0 },
+        exits: { E: 'door' },
+        isEntrance: true,
+      },
+      {
+        id: 'room-target',
+        name: 'Target',
+        cell: { col: 1, row: 0 },
+        exits: { W: 'door' },
+        isTarget: true,
+      },
     ],
   };
 }
@@ -59,7 +71,11 @@ export function DungeonBuilderView() {
   }, [selectedId, setDungeonSelection]);
 
   if (!schemaDoc) {
-    return <div style={{ padding: 24, color: 'var(--c-text-muted)' }}>Load a scenario to build dungeons.</div>;
+    return (
+      <div style={{ padding: 24, color: 'var(--c-text-muted)' }}>
+        Load a scenario to build dungeons.
+      </div>
+    );
   }
 
   const dungeons = dungeonsOf(schemaDoc);

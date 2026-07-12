@@ -6,24 +6,43 @@ import { dir, fault } from './core';
 import { evalCondition } from './conditions';
 import { applyEffect, completeQuest } from './effects';
 import { awardHeroic } from './turn';
-import type { EngineState, Directive, EngineNode, NodeOfKind, DungeonCursor, DungeonRunState, DungeonRoomDef, NodeResult } from './types';
+import type {
+  EngineState,
+  Directive,
+  EngineNode,
+  NodeOfKind,
+  DungeonCursor,
+  DungeonRunState,
+  DungeonRoomDef,
+  NodeResult,
+} from './types';
 
 export function dungeonState(state: EngineState, id: string): DungeonRunState {
   if (!state.dungeons[id]) state.dungeons[id] = { clearedRooms: [], improvedRooms: [] };
   if (!state.dungeons[id].improvedRooms) state.dungeons[id].improvedRooms = [];
   return state.dungeons[id];
 }
-export function roomOf(state: EngineState, dc: DungeonCursor, roomId: string | null): DungeonRoomDef {
+export function roomOf(
+  state: EngineState,
+  dc: DungeonCursor,
+  roomId: string | null,
+): DungeonRoomDef {
   const d = state._lib.dungeons?.[dc.dungeonId];
   const room = (d?.rooms || []).find((r) => r.id === roomId);
   if (!room)
-    throw fault("dungeon.room references unknown room '" + roomId + "' in dungeon '" + dc.dungeonId + "'");
+    throw fault(
+      "dungeon.room references unknown room '" + roomId + "' in dungeon '" + dc.dungeonId + "'",
+    );
   return room;
 }
 
 // Resolve entry into the room a `dungeon.room` node names: gate → insideEvent → (improve boundary) →
 // finalize. Returns {goto}|{await}|{terminal}.
-export function resolveRoomEntry(node: NodeOfKind<'dungeon.room'>, state: EngineState, directives: Directive[]): NodeResult {
+export function resolveRoomEntry(
+  node: NodeOfKind<'dungeon.room'>,
+  state: EngineState,
+  directives: Directive[],
+): NodeResult {
   const dc = state.clock.dungeon;
   if (!dc) throw fault('dungeon.room walked outside an active dungeon subflow: ' + node.id);
   const roomId = node.props?.roomId;
@@ -35,7 +54,8 @@ export function resolveRoomEntry(node: NodeOfKind<'dungeon.room'>, state: Engine
     command: 'revealRoom',
     args: { dungeon: dc.dungeonId, room: roomId, slice: room.bitmapSlice },
   });
-  if (room.displayText) dir(directives, 'ui.update', { delta: { dungeonRoomText: room.displayText } });
+  if (room.displayText)
+    dir(directives, 'ui.update', { delta: { dungeonRoomText: room.displayText } });
 
   const ds = dungeonState(state, dc.dungeonId);
   if (ds.clearedRooms.includes(roomId)) {
@@ -93,7 +113,11 @@ export function resolveRoomEntry(node: NodeOfKind<'dungeon.room'>, state: Engine
   return finalizeRoom(node, state, directives);
 }
 
-export function finalizeRoom(node: EngineNode, state: EngineState, directives: Directive[]): NodeResult {
+export function finalizeRoom(
+  node: EngineNode,
+  state: EngineState,
+  directives: Directive[],
+): NodeResult {
   const dc = state.clock.dungeon as DungeonCursor;
   const ds = dungeonState(state, dc.dungeonId);
   const room = roomOf(state, dc, dc.currentRoom);
@@ -109,7 +133,11 @@ export function finalizeRoom(node: EngineNode, state: EngineState, directives: D
   return awaitDungeonMove(node, state, directives);
 }
 
-export function awaitDungeonMove(_node: EngineNode, state: EngineState, directives: Directive[]): NodeResult {
+export function awaitDungeonMove(
+  _node: EngineNode,
+  state: EngineState,
+  directives: Directive[],
+): NodeResult {
   const dc = state.clock.dungeon as DungeonCursor;
   const room = roomOf(state, dc, dc.currentRoom);
   const doors = (['N', 'E', 'S', 'W'] as const).filter((d) => (room.exits || {})[d] === 'door');

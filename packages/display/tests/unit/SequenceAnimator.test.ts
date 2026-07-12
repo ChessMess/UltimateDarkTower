@@ -27,7 +27,9 @@ beforeEach(() => {
 describe('SequenceAnimator state-driven apply (existing behavior, unchanged)', () => {
   it('apply(seqId) creates a timeline; apply(0) kills it', () => {
     const { animator } = makeAnimator();
-    const active = animator.apply(SEQ_DEFEAT, () => { /* */ });
+    const active = animator.apply(SEQ_DEFEAT, () => {
+      /* */
+    });
     expect(active).toBe(true);
 
     const timelines = gsapMock.__getTimelines();
@@ -35,25 +37,35 @@ describe('SequenceAnimator state-driven apply (existing behavior, unchanged)', (
     const tl = timelines[timelines.length - 1];
     expect(tl.killed).toBe(false);
 
-    const stillActive = animator.apply(0, () => { /* */ });
+    const stillActive = animator.apply(0, () => {
+      /* */
+    });
     expect(stillActive).toBe(false);
     expect(tl.killed).toBe(true);
   });
 
   it('same-id reapply is a no-op (returns true, no new timeline)', () => {
     const { animator } = makeAnimator();
-    animator.apply(SEQ_DEFEAT, () => { /* */ });
+    animator.apply(SEQ_DEFEAT, () => {
+      /* */
+    });
     const before = gsapMock.__getTimelines().length;
-    const stillActive = animator.apply(SEQ_DEFEAT, () => { /* */ });
+    const stillActive = animator.apply(SEQ_DEFEAT, () => {
+      /* */
+    });
     expect(stillActive).toBe(true);
     expect(gsapMock.__getTimelines().length).toBe(before);
   });
 
   it('different-id reapply replaces the timeline (old killed, new active)', () => {
     const { animator } = makeAnimator();
-    animator.apply(SEQ_DEFEAT, () => { /* */ });
+    animator.apply(SEQ_DEFEAT, () => {
+      /* */
+    });
     const firstTl = gsapMock.__getTimelines().at(-1)!;
-    animator.apply(SEQ_VICTORY, () => { /* */ });
+    animator.apply(SEQ_VICTORY, () => {
+      /* */
+    });
     const secondTl = gsapMock.__getTimelines().at(-1)!;
     expect(firstTl.killed).toBe(true);
     expect(firstTl).not.toBe(secondTl);
@@ -83,7 +95,9 @@ describe('SequenceAnimator transient mode (new in 0.7.0)', () => {
     expect(tl.killed).toBe(false);
 
     // Simulate the framework's state-mirror reset arriving immediately after.
-    const stillActive = animator.apply(0, () => { /* */ });
+    const stillActive = animator.apply(0, () => {
+      /* */
+    });
     expect(stillActive).toBe(true);
     expect(tl.killed).toBe(false);
     expect(animator.isActive(SEQ_DEFEAT)).toBe(true);
@@ -101,10 +115,14 @@ describe('SequenceAnimator transient mode (new in 0.7.0)', () => {
     expect(animator.isActive(SEQ_DEFEAT)).toBe(false);
 
     // A subsequent state-driven sequence behaves normally now.
-    animator.apply(SEQ_VICTORY, () => { /* */ });
+    animator.apply(SEQ_VICTORY, () => {
+      /* */
+    });
     const nextTl = gsapMock.__getTimelines().at(-1)!;
     expect(nextTl.killed).toBe(false);
-    animator.apply(0, () => { /* */ });
+    animator.apply(0, () => {
+      /* */
+    });
     expect(nextTl.killed).toBe(true);
   });
 
@@ -151,7 +169,9 @@ describe('SequenceAnimator transient mode (new in 0.7.0)', () => {
     transientTl.__fireComplete();
 
     // Now a different state-driven sequence should work normally.
-    animator.apply(SEQ_VICTORY, () => { /* */ });
+    animator.apply(SEQ_VICTORY, () => {
+      /* */
+    });
     expect(animator.isActive(SEQ_VICTORY)).toBe(true);
   });
 });

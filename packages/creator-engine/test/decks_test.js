@@ -196,7 +196,9 @@ check('deck.draw resolve applies the drawn card own effects', () => {
   const s = makeTestState();
   const before = s.heroes.hero1.spirit;
   s._lib = {
-    cards: { crown: { id: 'crown', name: 'Crown', type: 'treasure', effects: [gain(2, 'spirit')] } },
+    cards: {
+      crown: { id: 'crown', name: 'Crown', type: 'treasure', effects: [gain(2, 'spirit')] },
+    },
     decks: {},
   };
   s.decks = { treasure: { draw: ['crown'], discard: [] } };
@@ -282,32 +284,38 @@ function ladderLib() {
   };
 }
 
-check('emitBattlePrompt surfaces deck appearance + per-card artRef for an adorned ladder deck', () => {
-  const s = makeTestState();
-  s._lib = ladderLib();
-  const dirs = [];
-  startCardBattle(s, dirs, { foeId: 'grunts', defId: 'grunts', isAdversary: false, level: 2 });
-  const prompt = dirs.find((d) => d.type === 'ui.prompt' && d.kind === 'battleCard');
-  return (
-    !!prompt &&
-    !!prompt.battle.appearance &&
-    prompt.battle.appearance.backRef === 'grunt-back' &&
-    prompt.battle.cards.some((c) => c.artRef === 'art-jab')
-  );
-});
+check(
+  'emitBattlePrompt surfaces deck appearance + per-card artRef for an adorned ladder deck',
+  () => {
+    const s = makeTestState();
+    s._lib = ladderLib();
+    const dirs = [];
+    startCardBattle(s, dirs, { foeId: 'grunts', defId: 'grunts', isAdversary: false, level: 2 });
+    const prompt = dirs.find((d) => d.type === 'ui.prompt' && d.kind === 'battleCard');
+    return (
+      !!prompt &&
+      !!prompt.battle.appearance &&
+      prompt.battle.appearance.backRef === 'grunt-back' &&
+      prompt.battle.cards.some((c) => c.artRef === 'art-jab')
+    );
+  },
+);
 
-check('emitBattlePrompt for an unadorned deck has NO appearance and NO card artRef keys (legacy byte-identical)', () => {
-  const s = makeTestState();
-  s._lib = ladderLib();
-  const dirs = [];
-  startCardBattle(s, dirs, { foeId: 'plain', defId: 'plain', isAdversary: false, level: 1 });
-  const prompt = dirs.find((d) => d.type === 'ui.prompt' && d.kind === 'battleCard');
-  return (
-    !!prompt &&
-    !('appearance' in prompt.battle) &&
-    prompt.battle.cards.every((c) => !('artRef' in c))
-  );
-});
+check(
+  'emitBattlePrompt for an unadorned deck has NO appearance and NO card artRef keys (legacy byte-identical)',
+  () => {
+    const s = makeTestState();
+    s._lib = ladderLib();
+    const dirs = [];
+    startCardBattle(s, dirs, { foeId: 'plain', defId: 'plain', isAdversary: false, level: 1 });
+    const prompt = dirs.find((d) => d.type === 'ui.prompt' && d.kind === 'battleCard');
+    return (
+      !!prompt &&
+      !('appearance' in prompt.battle) &&
+      prompt.battle.cards.every((c) => !('artRef' in c))
+    );
+  },
+);
 
 // ---- goldenFull vault treasury: an E-then-S walk draws + resolves a treasure (room deck.draw) ----
 
@@ -315,7 +323,11 @@ const { goldenFull } = require('../dist/golden-fixture');
 const hsel = (heroId) => ({ requestId: 'heroSelect', value: { heroId }, kind: 'decision' });
 const act = (choice) => ({ requestId: 'action', value: { choice }, kind: 'decision' });
 const obs0 = { requestId: 'skullCounter', value: 0, kind: 'observed' };
-const dimp = (improve) => ({ requestId: 'dungeonRoomAdvantage', value: { improve }, kind: 'decision' });
+const dimp = (improve) => ({
+  requestId: 'dungeonRoomAdvantage',
+  value: { improve },
+  kind: 'decision',
+});
 const dmove = (direction) => ({ requestId: 'dungeonMove', value: { direction }, kind: 'decision' });
 
 // step through a decision script, auto-answering skullCounter (obs 0) and heroSelect (first offered)
@@ -327,9 +339,15 @@ function drive(scenario, o, script) {
   while (r.status === 'awaitingInput' && guard++ < 500) {
     const req = r.awaiting;
     let input;
-    if (req.id === 'skullCounter' && !(i < script.length && script[i].requestId === 'skullCounter')) {
+    if (
+      req.id === 'skullCounter' &&
+      !(i < script.length && script[i].requestId === 'skullCounter')
+    ) {
       input = obs0;
-    } else if (req.id === 'heroSelect' && !(i < script.length && script[i].requestId === 'heroSelect')) {
+    } else if (
+      req.id === 'heroSelect' &&
+      !(i < script.length && script[i].requestId === 'heroSelect')
+    ) {
       input = hsel(req.options[0].id);
     } else {
       if (i >= script.length) break;
@@ -341,11 +359,12 @@ function drive(scenario, o, script) {
   return results;
 }
 
-const vaultRun = drive(
-  goldenFull,
-  { seed: 'mvp-runtime-seed', playerCount: 1 },
-  [act('dungeon'), dimp(false), dmove('E'), dmove('S')],
-);
+const vaultRun = drive(goldenFull, { seed: 'mvp-runtime-seed', playerCount: 1 }, [
+  act('dungeon'),
+  dimp(false),
+  dmove('E'),
+  dmove('S'),
+]);
 let drawIdx = -1;
 let drawPrompt = null;
 for (let i = 0; i < vaultRun.length; i++) {
@@ -368,8 +387,7 @@ check("the drawn treasure's resource delta lands on the hero (reveal+resolve roo
   const exp = { warriors: 0, spirit: 0 };
   for (const e of card.effects || []) if (e.op === 'resource.gain') exp[e.resource] += e.amount;
   return (
-    after.warriors - before.warriors === exp.warriors &&
-    after.spirit - before.spirit === exp.spirit
+    after.warriors - before.warriors === exp.warriors && after.spirit - before.spirit === exp.spirit
   );
 });
 

@@ -36,10 +36,19 @@ const board = new BoardRenderView({ mapContainer: mapHost, uiContainer: uiHost }
 Or standalone (bring your own stores):
 
 ```ts
-import { BoardStateController, createSelectionStore, createLocationPickStore, mountBoardUI } from 'ultimatedarktowerboard';
+import {
+  BoardStateController,
+  createSelectionStore,
+  createLocationPickStore,
+  mountBoardUI,
+} from 'ultimatedarktowerboard';
 
 const controller = new BoardStateController();
-const ui = mountBoardUI(uiHost, { controller, selection: createSelectionStore(), locationPick: createLocationPickStore() });
+const ui = mountBoardUI(uiHost, {
+  controller,
+  selection: createSelectionStore(),
+  locationPick: createLocationPickStore(),
+});
 ```
 
 The `.` entry — including the UI — pulls **no** `three` / Display. For the 3D board see

@@ -1,4 +1,9 @@
-import { BoardStateController, createSelectionStore, createLocationPickStore, mountBoardUI } from '../src/index';
+import {
+  BoardStateController,
+  createSelectionStore,
+  createLocationPickStore,
+  mountBoardUI,
+} from '../src/index';
 
 function setup() {
   const controller = new BoardStateController();
@@ -146,7 +151,9 @@ describe('Palette', () => {
     expect(controller.getState().questMarkers).toEqual({}); // no mutation before Confirm
     // Quests target any space (not buildings-only) — a non-building space is available.
     const loc = $<HTMLSelectElement>(host, '.udt-palette-location');
-    expect(Array.from(loc.querySelectorAll('option')).map((o) => o.value)).toContain('Broken Lands');
+    expect(Array.from(loc.querySelectorAll('option')).map((o) => o.value)).toContain(
+      'Broken Lands',
+    );
     loc.value = 'Broken Lands';
     $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
     expect(controller.getState().questMarkers['Broken Lands']).toEqual(['main-goal']);
@@ -157,7 +164,10 @@ describe('Palette', () => {
     $<HTMLSelectElement>(host, '.udt-setup-difficulty').value = 'Heroic';
     $<HTMLInputElement>(host, '.udt-setup-allies').value = 'Gleb, Yana';
     $<HTMLButtonElement>(host, '.udt-setup-apply').click();
-    expect(controller.getState().selections).toEqual({ difficulty: 'Heroic', allies: ['Gleb', 'Yana'] });
+    expect(controller.getState().selections).toEqual({
+      difficulty: 'Heroic',
+      allies: ['Gleb', 'Yana'],
+    });
   });
 
   it('generateId mints non-colliding foe ids', () => {

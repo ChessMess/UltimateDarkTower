@@ -1,9 +1,6 @@
 import type { TowerDisplay, TowerStateReadout } from '../src/index';
 import type { LightingConfig, CameraConfig, AudioConfig } from '../src/3d/types';
-import type {
-  PhysicsConfig,
-  SkullPhysicsHandle,
-} from '../src/physics';
+import type { PhysicsConfig, SkullPhysicsHandle } from '../src/physics';
 import type { TowerState } from 'ultimatedarktower';
 import type { DomElements } from './dom';
 import { armTowerAudioFromUserGesture, is3DViewVisible, getLastState } from './rendererController';
@@ -57,7 +54,10 @@ export function setConfigPreviewMessage(text: string, els: DomElements): void {
   if (els.btnApplyConfig) els.btnApplyConfig.disabled = true;
 }
 
-export function syncConfigSelectorVisibility(getDisplay: () => TowerDisplay, els: DomElements): void {
+export function syncConfigSelectorVisibility(
+  getDisplay: () => TowerDisplay,
+  els: DomElements,
+): void {
   const visible = is3DViewVisible();
   const optLighting = document.getElementById('opt-lighting') as HTMLOptionElement | null;
   const optCamera = document.getElementById('opt-camera') as HTMLOptionElement | null;
@@ -69,12 +69,13 @@ export function syncConfigSelectorVisibility(getDisplay: () => TowerDisplay, els
   if (optAudio) optAudio.disabled = !visible;
   if (optPhysics) optPhysics.disabled = !visible;
 
-  if (!visible && (
-    activeConfigType === 'lighting' ||
-    activeConfigType === 'camera' ||
-    activeConfigType === 'audio' ||
-    activeConfigType === 'physics'
-  )) {
+  if (
+    !visible &&
+    (activeConfigType === 'lighting' ||
+      activeConfigType === 'camera' ||
+      activeConfigType === 'audio' ||
+      activeConfigType === 'physics')
+  ) {
     activeConfigType = 'state';
     if (els.selConfigType) els.selConfigType.value = 'state';
     refreshConfigPreview(getDisplay, els);
@@ -82,7 +83,8 @@ export function syncConfigSelectorVisibility(getDisplay: () => TowerDisplay, els
 }
 
 let physicsHandleGetter: (() => SkullPhysicsHandle | null) | null = null;
-let physicsSyncSliders: ((cfg: import('../src/physics').ResolvedPhysicsConfig) => void) | null = null;
+let physicsSyncSliders: ((cfg: import('../src/physics').ResolvedPhysicsConfig) => void) | null =
+  null;
 let editorGetDisplay: (() => TowerDisplay) | null = null;
 let editorEls: DomElements | null = null;
 

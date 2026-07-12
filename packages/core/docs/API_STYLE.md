@@ -7,7 +7,7 @@ navigation. This file is copied into each repo (the repos have no shared docs to
 `GETTING_STARTED` / `ARCHITECTURE` / `TROUBLESHOOTING` are duplicated).
 
 These are hand-authored, curated docs — **not** generated from TypeScript. The point is the prose a
-generator can't write: *what a symbol is for* and *when to use it vs. the alternative*. Signatures are kept
+generator can't write: _what a symbol is for_ and _when to use it vs. the alternative_. Signatures are kept
 in sync with the source by review (see the checklist), not by extraction.
 
 ---
@@ -40,13 +40,15 @@ The unit of consistency. Model: Display `docs/API.md` § `TowerRenderView`.
 ```
 
 #### Constructor / Signature
-`new Foo(opts: FooOptions)`  — or —  `fn(args): ReturnType`
+
+`new Foo(opts: FooOptions)` — or — `fn(args): ReturnType`
 
 | Parameter | Type | Default | Description |
-|---|---|---|---|
-| `opts.x` | `…` | `…` | … |
+| --------- | ---- | ------- | ----------- |
+| `opts.x`  | `…`  | `…`     | …           |
 
-#### Methods            (classes only)
+#### Methods (classes only)
+
 - `method(args)` — one-line purpose
 ````
 

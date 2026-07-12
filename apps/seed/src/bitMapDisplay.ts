@@ -59,7 +59,7 @@ export class BitMapDisplay {
         cell.classList.add('bitmap-changed');
       } else if (field) {
         cell.classList.add(
-          field.confidence === 'confirmed' ? 'bitmap-confirmed' : 'bitmap-suspected'
+          field.confidence === 'confirmed' ? 'bitmap-confirmed' : 'bitmap-suspected',
         );
       } else if (isSetup) {
         cell.classList.add('bitmap-unknown');

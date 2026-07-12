@@ -154,7 +154,9 @@ function printSummary(events: RelayEvent[], file: string): void {
     console.log(`  Seq:      ${Math.min(...seqs)} → ${Math.max(...seqs)}`);
     console.log(`  Time:     ${events[0].timestamp} → ${events[events.length - 1].timestamp}`);
     console.log(
-      `  By type:  ${Array.from(counts.entries()).map(([t, n]) => `${t}=${n}`).join(', ')}`,
+      `  By type:  ${Array.from(counts.entries())
+        .map(([t, n]) => `${t}=${n}`)
+        .join(', ')}`,
     );
   }
   console.log();
@@ -173,7 +175,9 @@ async function main(): Promise<void> {
   printSummary(events, file);
 
   if (args.replay) {
-    console.log(`Replaying ${events.length} events${args.realtime ? ` (realtime ×${args.speed})` : ''}…\n`);
+    console.log(
+      `Replaying ${events.length} events${args.realtime ? ` (realtime ×${args.speed})` : ''}…\n`,
+    );
     await replayEventLog(events, (e) => console.log(formatEvent(e)), {
       realtime: args.realtime,
       speed: args.speed,

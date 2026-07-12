@@ -22,8 +22,12 @@ class MockBufferSource {
   connect = jest.fn();
   startCalls = 0;
   stopCalls = 0;
-  start(): void { this.startCalls++; }
-  stop(_when?: number): void { this.stopCalls++; }
+  start(): void {
+    this.startCalls++;
+  }
+  stop(_when?: number): void {
+    this.stopCalls++;
+  }
 }
 
 class MockAudioContext {
@@ -84,7 +88,7 @@ async function flush(): Promise<void> {
 
 const LIB = {
   0x25: '/audio/Battle_start_01.ogg', // BattleStart
-  0x6E: '/audio/Music-Battle-Loop.ogg', // RotateLoop placeholder
+  0x6e: '/audio/Music-Battle-Loop.ogg', // RotateLoop placeholder
 };
 
 // ───── Tests ──────────────────────────────────────────────────────────────
@@ -129,7 +133,7 @@ describe('TowerSampleAudio', () => {
     await flush();
     expect(createdBufferSources).toHaveLength(1);
 
-    audio.sync(0x6E, true, 0);
+    audio.sync(0x6e, true, 0);
     await flush();
     expect(createdBufferSources).toHaveLength(2);
     expect(createdBufferSources[0].stopCalls).toBe(1);
@@ -214,7 +218,7 @@ describe('TowerSampleAudio', () => {
   });
 
   it('unknown sample id warns once and does not start a source', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => { });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     const audio = new TowerSampleAudio();
     audio.setLibrary(LIB);
     audio.setEnabled(true);
@@ -256,7 +260,7 @@ describe('TowerSampleAudio', () => {
     await flush();
     expect(fetchCalls).toHaveLength(1);
 
-    audio.sync(0, false, 0);  // silence
+    audio.sync(0, false, 0); // silence
     audio.sync(0x25, false, 0); // play same sample again
     await flush();
     expect(fetchCalls).toHaveLength(1); // cached
@@ -336,7 +340,7 @@ describe('TowerSampleAudio', () => {
     audio.setEnabled(true);
 
     audio.sync(0x25, false, 0); // decode A in flight
-    audio.sync(0x6E, false, 0); // decode B starts before A resolves
+    audio.sync(0x6e, false, 0); // decode B starts before A resolves
     await flush();
 
     // Only the newest sample should result in an active source.
@@ -384,7 +388,7 @@ describe('TowerSampleAudio', () => {
     expect(createdBufferSources[0].stopCalls).toBe(1);
 
     // One-shot a different sample — must not change lastSample to that id.
-    audio.playSampleOneShot(0x6E, false, 0);
+    audio.playSampleOneShot(0x6e, false, 0);
     await flush();
 
     // Now re-syncing 0x25 (which differs from lastSample === 0) MUST trigger a
@@ -394,13 +398,11 @@ describe('TowerSampleAudio', () => {
     // lastSample was clobbered to 0x6E, sampleChanged=false (no play); if it
     // stayed 0, sampleChanged=true and a sync-driven source is created.
     audio.sync(0, false, 0);
-    audio.sync(0x6E, false, 0);
+    audio.sync(0x6e, false, 0);
     await flush();
 
     // The sync-driven source for 0x6E must exist (lastSample was 0, not 0x6E).
-    const syncSourcesFor6E = createdBufferSources.filter(
-      (s) => s.buffer && s.startCalls > 0,
-    );
+    const syncSourcesFor6E = createdBufferSources.filter((s) => s.buffer && s.startCalls > 0);
     expect(syncSourcesFor6E.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -425,7 +427,7 @@ describe('TowerSampleAudio', () => {
 
     // Even a follow-up sync to a different sample (which would stop this.source
     // if it were tracked) must not touch the one-shot.
-    audio.sync(0x6E, false, 0);
+    audio.sync(0x6e, false, 0);
     await flush();
     expect(oneShotSrc.stopCalls).toBe(0);
   });
@@ -436,7 +438,7 @@ describe('TowerSampleAudio', () => {
     audio.setEnabled(true);
 
     audio.playSampleOneShot(0x25, false, 0);
-    audio.playSampleOneShot(0x6E, false, 0);
+    audio.playSampleOneShot(0x6e, false, 0);
     await flush();
 
     expect(createdBufferSources).toHaveLength(2);
@@ -471,7 +473,7 @@ describe('TowerSampleAudio', () => {
   });
 
   it('playSampleOneShot warns once for an unknown sample id', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => { });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     const audio = new TowerSampleAudio();
     audio.setLibrary(LIB);
     audio.setEnabled(true);
@@ -530,7 +532,7 @@ describe('TowerSampleAudio', () => {
     // A one-shot fired now must restore the master gain to unity so it is
     // audible, rather than staying at the stopped-state's 0.
     masterGain.gain.setValueAtTime.mockClear();
-    audio.playSampleOneShot(0x6E, false, 0);
+    audio.playSampleOneShot(0x6e, false, 0);
     await flush();
 
     expect(masterGain.gain.setValueAtTime).toHaveBeenCalledWith(1.0, expect.any(Number));

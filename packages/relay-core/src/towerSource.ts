@@ -14,7 +14,7 @@ import type { TowerEmulatorState } from 'ultimatedarktowerrelay-shared';
 /** Events a tower source emits to the relay daemon. */
 export interface TowerSourceEventMap {
   /** A 20-byte command was produced (companion app write, or a canned mock command). */
-  'command': [data: Buffer];
+  command: [data: Buffer];
   /** The source's peripheral state changed. */
   'state-change': [state: TowerEmulatorState];
   /** The companion app (or its mock stand-in) connected. */

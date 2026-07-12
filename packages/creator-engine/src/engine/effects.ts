@@ -137,10 +137,12 @@ export function applyEffect(
     case 'virtue.activate': {
       const e = eff;
       if (hero.virtues.inactive.length === 0) throw fault('no inactive virtue to activate');
-      const v = e.virtue && hero.virtues.inactive.includes(e.virtue) ? e.virtue : hero.virtues.inactive[0];
+      const v =
+        e.virtue && hero.virtues.inactive.includes(e.virtue) ? e.virtue : hero.virtues.inactive[0];
       hero.virtues.inactive = hero.virtues.inactive.filter((x) => x !== v);
       hero.virtues.active.push(v);
-      if (!e.virtue) dir(directives, 'ui.prompt', { kind: 'choice', text: 'Activate which virtue?' });
+      if (!e.virtue)
+        dir(directives, 'ui.prompt', { kind: 'choice', text: 'Activate which virtue?' });
       ui({ hero: state.clock.activeHero, virtues: hero.virtues });
       break;
     }
@@ -219,7 +221,10 @@ export function applyEffect(
         ? state.foes.find((x) => x.instanceId === e.instanceId)
         : state.foes.find((x) => x.foeId === e.foeId);
       if (f)
-        f.status = FOE_LADDER[Math.min(FOE_LADDER.length - 1, FOE_LADDER.indexOf(f.status) + (e.steps || 1))];
+        f.status =
+          FOE_LADDER[
+            Math.min(FOE_LADDER.length - 1, FOE_LADDER.indexOf(f.status) + (e.steps || 1))
+          ];
       ui({ foe: e.foeId });
       break;
     }
@@ -272,7 +277,10 @@ export function applyEffect(
       const cfg = (state._lib.tokenTypes || {})[e.tokenTypeId] || {};
       if (cfg.removable === false) throw fault('token ' + e.tokenTypeId + ' is not removable');
       state.tokens = state.tokens.filter(
-        (t) => !(t.tokenTypeId === e.tokenTypeId && JSON.stringify(t.target) === JSON.stringify(e.target)),
+        (t) =>
+          !(
+            t.tokenTypeId === e.tokenTypeId && JSON.stringify(t.target) === JSON.stringify(e.target)
+          ),
       );
       dir(directives, 'board.mutate', {
         command: 'removeToken',
@@ -368,7 +376,9 @@ export function applyEffect(
       // building is the case that previously left the registry out of sync.
       const bd =
         (state.buildings || []).find((x) => x.location === e.location) ||
-        (e.kingdom ? (state.buildings || []).find((x) => x.kingdom === e.kingdom && !x.destroyed) : undefined);
+        (e.kingdom
+          ? (state.buildings || []).find((x) => x.kingdom === e.kingdom && !x.destroyed)
+          : undefined);
       if (bd && !bd.destroyed) {
         state.skulls.onBoard = Math.max(0, (state.skulls.onBoard || 0) - bd.skulls);
         bd.skulls = 0;
@@ -384,7 +394,12 @@ export function applyEffect(
       const dormant = kingdom ? state.kingdoms.dormant.includes(kingdom) : false;
       // the hero whose home kingdom lost the building gains the corruption (none if dormant)
       if (!dormant)
-        gainCorruption(state, directives, 'building-destroyed', kingdom ? state.kingdoms.ownership[kingdom] : undefined);
+        gainCorruption(
+          state,
+          directives,
+          'building-destroyed',
+          kingdom ? state.kingdoms.ownership[kingdom] : undefined,
+        );
       break;
     }
     case 'skull.modifySupply': {
@@ -553,7 +568,8 @@ export function applyEffect(
         case 'selfAndOther':
           if (others.length === 0) targets = [activeId];
           else if (others.length === 1) targets = [activeId, others[0]];
-          else throw fault('hero.scope "selfAndOther" needs a hero choice (battle-card context only)');
+          else
+            throw fault('hero.scope "selfAndOther" needs a hero choice (battle-card context only)');
           break;
         default: {
           const _s: never = e.scope;
@@ -579,7 +595,11 @@ export function applyEffect(
       // exhaustive over the Effect union: `eff` is `never` here (all ops handled). Read the op via a
       // cast for the runtime message (an un-typechecked caller can still reach this).
       const _exhaustive: never = eff;
-      throw fault('unknown effect verb: ' + (_exhaustive as { op: string }).op + ' (closed set is the 36 of §4.3)');
+      throw fault(
+        'unknown effect verb: ' +
+          (_exhaustive as { op: string }).op +
+          ' (closed set is the 36 of §4.3)',
+      );
     }
   }
 }
@@ -684,7 +704,10 @@ export function capacityOf(state: EngineState, b: BuildingState): number {
 // dormantKingdoms.skullRedirect "nearestActive"): least-loaded first, registry order tie-break.
 export function pickBuildingForSkull(
   state: EngineState,
-  placement: { kingdom: BuildingState['kingdom']; type?: BuildingState['type']; location?: string } | null | undefined,
+  placement:
+    | { kingdom: BuildingState['kingdom']; type?: BuildingState['type']; location?: string }
+    | null
+    | undefined,
 ): BuildingState | null {
   if (placement) {
     const b = (state.buildings || []).find(
@@ -698,7 +721,9 @@ export function pickBuildingForSkull(
     return b;
   }
   const dormant = state.kingdoms.dormant || [];
-  const candidates = (state.buildings || []).filter((b) => !b.destroyed && !dormant.includes(b.kingdom));
+  const candidates = (state.buildings || []).filter(
+    (b) => !b.destroyed && !dormant.includes(b.kingdom),
+  );
   if (!candidates.length) return null;
   return candidates.reduce((best, b) => (b.skulls < best.skulls ? b : best), candidates[0]);
 }

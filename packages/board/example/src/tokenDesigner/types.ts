@@ -105,10 +105,46 @@ export function defaultFields(): TextField[] {
   const SERIF = FONT_OPTIONS[0].value; // Georgia
   const IMPACT = FONT_OPTIONS[2].value; // Impact
   return [
-    field({ text: 'NAME', x: 131.27, y: 205.89, fontSize: 28.48, rotation: 0, align: 'middle', fontFamily: SERIF, bold: false }),
-    field({ text: '2', x: 88.07, y: 174.25, fontSize: 30, rotation: 0, align: 'middle', fontFamily: IMPACT, bold: false }),
-    field({ text: 'MELEE', x: 56.65, y: 186.93, fontSize: 23.88, rotation: 270, align: 'start', fontFamily: SERIF, bold: false }),
-    field({ text: 'BEAST', x: 31.41, y: 186.98, fontSize: 23, rotation: 270, align: 'start', fontFamily: SERIF, bold: false }),
+    field({
+      text: 'NAME',
+      x: 131.27,
+      y: 205.89,
+      fontSize: 28.48,
+      rotation: 0,
+      align: 'middle',
+      fontFamily: SERIF,
+      bold: false,
+    }),
+    field({
+      text: '2',
+      x: 88.07,
+      y: 174.25,
+      fontSize: 30,
+      rotation: 0,
+      align: 'middle',
+      fontFamily: IMPACT,
+      bold: false,
+    }),
+    field({
+      text: 'MELEE',
+      x: 56.65,
+      y: 186.93,
+      fontSize: 23.88,
+      rotation: 270,
+      align: 'start',
+      fontFamily: SERIF,
+      bold: false,
+    }),
+    field({
+      text: 'BEAST',
+      x: 31.41,
+      y: 186.98,
+      fontSize: 23,
+      rotation: 270,
+      align: 'start',
+      fontFamily: SERIF,
+      bold: false,
+    }),
   ];
 }
 

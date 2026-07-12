@@ -128,7 +128,11 @@ describe('CameraController', () => {
 
     controller.centerView();
 
-    const tl = (gsapMock.__getTimelines() as { children: { target: unknown; vars: Record<string, number> }[] }[]).at(-1)!;
+    const tl = (
+      gsapMock.__getTimelines() as {
+        children: { target: unknown; vars: Record<string, number> }[];
+      }[]
+    ).at(-1)!;
     const posTween = tl.children.find((c) => c.target === camera.position)!;
     const tgtTween = tl.children.find((c) => c.target === controls.target)!;
 

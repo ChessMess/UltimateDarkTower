@@ -43,7 +43,10 @@ export function tokenArtDevPlugin(opts: { exampleDir: string }): Plugin {
         if (req.method !== 'POST') return next();
         void (async (): Promise<void> => {
           try {
-            const { kind, tokens } = JSON.parse(await readBody(req)) as { kind?: string; tokens?: unknown };
+            const { kind, tokens } = JSON.parse(await readBody(req)) as {
+              kind?: string;
+              tokens?: unknown;
+            };
             if (!kind || !(KINDS as readonly string[]).includes(kind)) {
               sendJson(res, 400, { error: `unknown or missing kind: ${String(kind)}` });
               return;

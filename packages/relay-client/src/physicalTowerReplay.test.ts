@@ -26,7 +26,11 @@ class MockTower implements TowerWriter {
   writes: number[][] = [];
 
   /** When set, sendTowerCommandDirect returns this promise (to control ordering/timing). */
-  private pending: { promise: Promise<void>; resolve: () => void; reject: (e: unknown) => void } | null = null;
+  private pending: {
+    promise: Promise<void>;
+    resolve: () => void;
+    reject: (e: unknown) => void;
+  } | null = null;
 
   async sendTowerCommandDirect(command: Uint8Array): Promise<void> {
     this.writes.push(Array.from(command));
@@ -55,7 +59,7 @@ class MockTower implements TowerWriter {
 const flush = (): Promise<void> => new Promise((r) => setImmediate(r));
 
 describe('PhysicalTowerReplay.handleEvent()', () => {
-  it('writes a tower:command\'s 20 bytes to the local tower', async () => {
+  it("writes a tower:command's 20 bytes to the local tower", async () => {
     const tower = new MockTower();
     const replay = new PhysicalTowerReplay({ tower });
 
@@ -230,7 +234,10 @@ describe('PhysicalTowerReplay write serialization + error handling', () => {
   it('catches a write rejection, reports it via onLog, and keeps the queue alive', async () => {
     const tower = new MockTower();
     const logs: { message: string; error?: unknown }[] = [];
-    const replay = new PhysicalTowerReplay({ tower, onLog: (message, error) => logs.push({ message, error }) });
+    const replay = new PhysicalTowerReplay({
+      tower,
+      onLog: (message, error) => logs.push({ message, error }),
+    });
 
     tower.shouldFail = true;
     replay.handleEvent({ type: 'tower:command', data: packet(1), seq: 1 });

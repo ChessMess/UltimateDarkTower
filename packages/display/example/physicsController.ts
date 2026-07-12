@@ -165,9 +165,7 @@ export function initPhysicsController(): void {
     for (const [path, url] of Object.entries(skullModules)) {
       const filename = path.split('/').pop() ?? '';
       const stem = filename.replace(/\.glb$/i, '');
-      const label = stem
-        .replace(/^skull_?/i, 'Skull #')
-        .replace(/_/g, ' ');
+      const label = stem.replace(/^skull_?/i, 'Skull #').replace(/_/g, ' ');
       const opt = document.createElement('option');
       opt.value = url;
       opt.text = label;
@@ -185,7 +183,7 @@ export function initPhysicsController(): void {
         skull: {
           modelUrl: selModel.value || undefined,
           colliderShape: selCollider.value as 'sphere' | 'hull',
-        }
+        },
       });
     });
 
@@ -224,37 +222,58 @@ export function initPhysicsController(): void {
   }
 
   wireSlider(
-    'rng-skull-radius', 'lbl-skull-radius', 3, DEFAULT_PHYSICS.skull.radiusFactor,
+    'rng-skull-radius',
+    'lbl-skull-radius',
+    3,
+    DEFAULT_PHYSICS.skull.radiusFactor,
     (v) => applyConfig({ skull: { radiusFactor: v } }),
     (cfg) => cfg.skull.radiusFactor,
   );
   wireSlider(
-    'rng-skull-max', 'lbl-skull-max', 0, DEFAULT_PHYSICS.skull.maxCount,
+    'rng-skull-max',
+    'lbl-skull-max',
+    0,
+    DEFAULT_PHYSICS.skull.maxCount,
     (v) => applyConfig({ skull: { maxCount: v } }),
     (cfg) => cfg.skull.maxCount,
   );
   wireSlider(
-    'rng-skull-friction', 'lbl-skull-friction', 2, DEFAULT_PHYSICS.skull.friction,
+    'rng-skull-friction',
+    'lbl-skull-friction',
+    2,
+    DEFAULT_PHYSICS.skull.friction,
     (v) => applyConfig({ skull: { friction: v } }),
     (cfg) => cfg.skull.friction,
   );
   wireSlider(
-    'rng-drum-friction', 'lbl-drum-friction', 3, DEFAULT_PHYSICS.drum.friction,
+    'rng-drum-friction',
+    'lbl-drum-friction',
+    3,
+    DEFAULT_PHYSICS.drum.friction,
     (v) => applyConfig({ drum: { friction: v } }),
     (cfg) => cfg.drum.friction,
   );
   wireSlider(
-    'rng-seal-friction', 'lbl-seal-friction', 3, DEFAULT_PHYSICS.seal.friction,
+    'rng-seal-friction',
+    'lbl-seal-friction',
+    3,
+    DEFAULT_PHYSICS.seal.friction,
     (v) => applyConfig({ seal: { friction: v } }),
     (cfg) => cfg.seal.friction,
   );
   wireSlider(
-    'rng-static-friction', 'lbl-static-friction', 3, DEFAULT_PHYSICS.static.friction,
+    'rng-static-friction',
+    'lbl-static-friction',
+    3,
+    DEFAULT_PHYSICS.static.friction,
     (v) => applyConfig({ static: { friction: v } }),
     (cfg) => cfg.static.friction,
   );
   wireSlider(
-    'rng-board-friction', 'lbl-board-friction', 3, DEFAULT_PHYSICS.board.friction,
+    'rng-board-friction',
+    'lbl-board-friction',
+    3,
+    DEFAULT_PHYSICS.board.friction,
     (v) => applyConfig({ board: { friction: v } }),
     (cfg) => cfg.board.friction,
   );
@@ -269,17 +288,26 @@ export function initPhysicsController(): void {
     });
   }
   wireSlider(
-    'rng-restitution', 'lbl-restitution', 2, DEFAULT_PHYSICS.skull.restitution,
+    'rng-restitution',
+    'lbl-restitution',
+    2,
+    DEFAULT_PHYSICS.skull.restitution,
     (v) => applyConfig({ skull: { restitution: v } }),
     (cfg) => cfg.skull.restitution,
   );
   wireSlider(
-    'rng-skull-ang-damp', 'lbl-skull-ang-damp', 2, DEFAULT_PHYSICS.skull.angularDamping,
+    'rng-skull-ang-damp',
+    'lbl-skull-ang-damp',
+    2,
+    DEFAULT_PHYSICS.skull.angularDamping,
     (v) => applyConfig({ skull: { angularDamping: v } }),
     (cfg) => cfg.skull.angularDamping,
   );
   wireSlider(
-    'rng-skull-lin-damp', 'lbl-skull-lin-damp', 2, DEFAULT_PHYSICS.skull.linearDamping,
+    'rng-skull-lin-damp',
+    'lbl-skull-lin-damp',
+    2,
+    DEFAULT_PHYSICS.skull.linearDamping,
     (v) => applyConfig({ skull: { linearDamping: v } }),
     (cfg) => cfg.skull.linearDamping,
   );

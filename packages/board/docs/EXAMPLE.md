@@ -99,7 +99,7 @@ the demo → `npm run promote-token-art` → paste the entries + copy the assets
 
 ## Token Designer
 
-Where the Forge *assigns* art, the **Token Designer** *composes* a token. Open
+Where the Forge _assigns_ art, the **Token Designer** _composes_ a token. Open
 [`/token-designer.html`](../example/token-designer.html) (linked from the demo sidebar and the Forge header),
 or run `npm run dev:example` and visit `/token-designer.html`. The official RTDT foe tokens bake the
 name / strength / attack-type / foe-type text into the artwork; the Designer lets you (re)create that text

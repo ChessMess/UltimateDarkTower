@@ -14,7 +14,7 @@
 
 import UltimateDarkTower, { BluetoothPlatform, LIGHT_EFFECTS } from '../../src';
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 (async () => {
   const prefix = '[LIGHTS INTEGRATION TEST]';
@@ -34,12 +34,14 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
         if (light.effect !== LIGHT_EFFECTS.on || light.loop !== true) {
           throw new Error(
             `Expected layer[${i}].light[${j}] to be effect=${LIGHT_EFFECTS.on} loop=true, ` +
-            `got effect=${light.effect} loop=${light.loop}`
+              `got effect=${light.effect} loop=${light.loop}`,
           );
         }
       }
     }
-    console.log(`${prefix} Step 3: PASS — all 24 LEDs on (effect=1, loop=true). Holding 2s for visual check...`);
+    console.log(
+      `${prefix} Step 3: PASS — all 24 LEDs on (effect=1, loop=true). Holding 2s for visual check...`,
+    );
     await delay(2000);
 
     // --- allLightsOn with breathe effect ---
@@ -51,12 +53,14 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
         const light = stateBreathe.layer[i].light[j];
         if (light.effect !== LIGHT_EFFECTS.breathe) {
           throw new Error(
-            `Expected layer[${i}].light[${j}].effect=${LIGHT_EFFECTS.breathe}, got ${light.effect}`
+            `Expected layer[${i}].light[${j}].effect=${LIGHT_EFFECTS.breathe}, got ${light.effect}`,
           );
         }
       }
     }
-    console.log(`${prefix} Step 4: PASS — all 24 LEDs breathe (effect=2). Holding 3s for visual check...`);
+    console.log(
+      `${prefix} Step 4: PASS — all 24 LEDs breathe (effect=2). Holding 3s for visual check...`,
+    );
     await delay(3000);
 
     // --- allLightsOff ---
@@ -69,7 +73,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
         if (light.effect !== LIGHT_EFFECTS.off || light.loop !== false) {
           throw new Error(
             `Expected layer[${i}].light[${j}] to be effect=${LIGHT_EFFECTS.off} loop=false, ` +
-            `got effect=${light.effect} loop=${light.loop}`
+              `got effect=${light.effect} loop=${light.loop}`,
           );
         }
       }

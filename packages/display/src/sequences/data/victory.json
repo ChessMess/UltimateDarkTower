@@ -5,37 +5,76 @@
   "loop": false,
   "endBehavior": "hold",
   "tracks": [
-    { "_comment": "Phase 0 — reset all LEDs at tick 0.",
-      "kind": "solid", "atTick": 0,
-      "layers": [0, 1, 2, 3, 4, 5], "lights": "all", "level": 0 },
-    { "_comment": "Phase 1 — base layers 4 and 5 light at tick 3.",
-      "kind": "solid", "atTick": 3,
-      "layers": [4, 5], "lights": "all", "levelPwm": 165 },
-    { "_comment": "Phase 2 — ledge layer 3 lights at tick 133.",
-      "kind": "solid", "atTick": 133,
-      "layers": [3], "lights": "all", "levelPwm": 165 },
-    { "_comment": "Phase 3 — ring 2 lights at tick 262.",
-      "kind": "solid", "atTick": 262,
-      "layers": [2], "lights": "all", "levelPwm": 165 },
-    { "_comment": "Phase 4 — ring 1 lights at tick 390.",
-      "kind": "solid", "atTick": 390,
-      "layers": [1], "lights": "all", "levelPwm": 165 },
-    { "_comment": "Phase 5 — ring 0 (top) lights at tick 519.",
-      "kind": "solid", "atTick": 519,
-      "layers": [0], "lights": "all", "levelPwm": 165 },
-    { "_comment": "Phase 6 sparkle: every 4th tick in [649, 713) drop one random LED to PWM 128. Registered BEFORE scaleAll so within-tick order matches victory.ts:75-80 (drop first, then decay).",
+    {
+      "_comment": "Phase 0 — reset all LEDs at tick 0.",
+      "kind": "solid",
+      "atTick": 0,
+      "layers": [0, 1, 2, 3, 4, 5],
+      "lights": "all",
+      "level": 0
+    },
+    {
+      "_comment": "Phase 1 — base layers 4 and 5 light at tick 3.",
+      "kind": "solid",
+      "atTick": 3,
+      "layers": [4, 5],
+      "lights": "all",
+      "levelPwm": 165
+    },
+    {
+      "_comment": "Phase 2 — ledge layer 3 lights at tick 133.",
+      "kind": "solid",
+      "atTick": 133,
+      "layers": [3],
+      "lights": "all",
+      "levelPwm": 165
+    },
+    {
+      "_comment": "Phase 3 — ring 2 lights at tick 262.",
+      "kind": "solid",
+      "atTick": 262,
+      "layers": [2],
+      "lights": "all",
+      "levelPwm": 165
+    },
+    {
+      "_comment": "Phase 4 — ring 1 lights at tick 390.",
+      "kind": "solid",
+      "atTick": 390,
+      "layers": [1],
+      "lights": "all",
+      "levelPwm": 165
+    },
+    {
+      "_comment": "Phase 5 — ring 0 (top) lights at tick 519.",
+      "kind": "solid",
+      "atTick": 519,
+      "layers": [0],
+      "lights": "all",
+      "levelPwm": 165
+    },
+    {
+      "_comment": "Phase 6 sparkle: every 4th tick in [649, 713) drop one random LED to PWM 128. Registered BEFORE scaleAll so within-tick order matches victory.ts:75-80 (drop first, then decay).",
       "kind": "discreteSet",
       "atTicks": [649, 653, 657, 661, 665, 669, 673, 677, 681, 685, 689, 693, 697, 701, 705, 709],
       "mode": "randomLed",
       "levelPwm": 128
     },
-    { "_comment": "Phases 6 & 7 — every tick from 649 through 844 inclusive run decayAll(200, 198) ≈ ×1.01 (ramp-up).",
+    {
+      "_comment": "Phases 6 & 7 — every tick from 649 through 844 inclusive run decayAll(200, 198) ≈ ×1.01 (ramp-up).",
       "kind": "scaleAll",
-      "atTick": 649, "endTick": 845,
-      "multiplierNum": 200, "multiplierDen": 198
+      "atTick": 649,
+      "endTick": 845,
+      "multiplierNum": 200,
+      "multiplierDen": 198
     },
-    { "_comment": "Phase 8 — cut to black at tick 845.",
-      "kind": "solid", "atTick": 845,
-      "layers": [0, 1, 2, 3, 4, 5], "lights": "all", "level": 0 }
+    {
+      "_comment": "Phase 8 — cut to black at tick 845.",
+      "kind": "solid",
+      "atTick": 845,
+      "layers": [0, 1, 2, 3, 4, 5],
+      "lights": "all",
+      "level": 0
+    }
   ]
 }

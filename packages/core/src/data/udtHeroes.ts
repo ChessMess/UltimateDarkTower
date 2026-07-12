@@ -55,5 +55,5 @@ export const HERO_BY_ID: Readonly<Record<HeroId, Hero>> = Object.freeze(
   HEROES.reduce<Record<HeroId, Hero>>((acc, hero) => {
     acc[hero.id] = hero;
     return acc;
-  }, {})
+  }, {}),
 );

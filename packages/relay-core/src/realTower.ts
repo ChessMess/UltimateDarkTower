@@ -241,7 +241,10 @@ export class RealTower extends EventEmitter<TowerSourceEventMap> implements Towe
   /** Schedule the next reconnect attempt with capped exponential backoff. */
   private scheduleReconnect(): void {
     if (this._intentionalStop || this._reconnectTimer) return;
-    const delay = Math.min(this._reconnectBaseMs * 2 ** this._reconnectAttempts, this._reconnectMaxMs);
+    const delay = Math.min(
+      this._reconnectBaseMs * 2 ** this._reconnectAttempts,
+      this._reconnectMaxMs,
+    );
     this._reconnectAttempts++;
     console.log(`[RealTower] reconnecting in ${delay}ms (attempt ${this._reconnectAttempts})`);
     this._reconnectTimer = setTimeout(() => {

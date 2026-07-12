@@ -6,16 +6,16 @@ A minimal interactive CLI app for verifying the UltimateDarkTower Node.js Blueto
 
 1. Install the BLE dependency:
 
-    ```bash
-    npm install @stoprocent/noble --save-dev
-    ```
+   ```bash
+   npm install @stoprocent/noble --save-dev
+   ```
 
-    > **Note:** You must use `--save-dev` (or `--save`). A plain `npm install @stoprocent/noble` may not persist the package because it is already listed as an optional peer dependency.
+   > **Note:** You must use `--save-dev` (or `--save`). A plain `npm install @stoprocent/noble` may not persist the package because it is already listed as an optional peer dependency.
 
 2. Platform-specific requirements:
-    - **macOS** — Works out of the box (CoreBluetooth)
-    - **Linux** — Requires BlueZ: `sudo apt install bluetooth bluez libbluetooth-dev`
-    - **Windows** — Windows 10+ with BLE support
+   - **macOS** — Works out of the box (CoreBluetooth)
+   - **Linux** — Requires BlueZ: `sudo apt install bluetooth bluez libbluetooth-dev`
+   - **Windows** — Windows 10+ with BLE support
 
 ## Usage
 

@@ -71,8 +71,12 @@ describe('BoardStageView — DOM + 2D wiring (no 3D)', () => {
 
     stage.setDisplayMode('pip-3dbig');
     expect(panel.classList.contains('bsv-mode-pip')).toBe(true);
-    expect((container.querySelector('.bsv-pane-3d') as HTMLElement).classList.contains('is-big')).toBe(true);
-    expect((container.querySelector('.bsv-pane-2d') as HTMLElement).classList.contains('is-mini')).toBe(true);
+    expect(
+      (container.querySelector('.bsv-pane-3d') as HTMLElement).classList.contains('is-big'),
+    ).toBe(true);
+    expect(
+      (container.querySelector('.bsv-pane-2d') as HTMLElement).classList.contains('is-mini'),
+    ).toBe(true);
     expect(stage.mode).toBe('pip-3dbig');
   });
 
@@ -81,9 +85,9 @@ describe('BoardStageView — DOM + 2D wiring (no 3D)', () => {
     const spy = jest.spyOn(stage.map2d!, 'setDragMode');
     stage.setDragMode('pan');
     expect(spy).toHaveBeenCalledWith('pan');
-    const panBtn = Array.from(stage.root.querySelectorAll<HTMLButtonElement>('.bsv-dragmode .udt-focus-button')).find(
-      (b) => b.textContent === 'Pan'
-    )!;
+    const panBtn = Array.from(
+      stage.root.querySelectorAll<HTMLButtonElement>('.bsv-dragmode .udt-focus-button'),
+    ).find((b) => b.textContent === 'Pan')!;
     expect(panBtn.classList.contains('is-active')).toBe(true);
   });
 
@@ -163,7 +167,9 @@ describe('BoardStageView — lazy 3D tower', () => {
     const { stage } = mount({ tower3D: false, modelUrl: 'mock://tower.glb' });
     await stage.setTowerEnabled(true);
 
-    const options = createBoardTower3D.mock.calls[0][0] as { onFocusChange?: (f: { kingdom: string; angle: string }) => void };
+    const options = createBoardTower3D.mock.calls[0][0] as {
+      onFocusChange?: (f: { kingdom: string; angle: string }) => void;
+    };
     expect(typeof options.onFocusChange).toBe('function');
 
     options.onFocusChange!({ kingdom: 'south', angle: stage.focus.angle });

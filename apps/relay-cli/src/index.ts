@@ -61,9 +61,12 @@ function readDeviceInfoFromEnv(): Partial<DeviceInformation> {
   const info: Partial<DeviceInformation> = {};
   if (env['TOWER_DIS_MANUFACTURER']) info.manufacturerName = env['TOWER_DIS_MANUFACTURER'];
   if (env['TOWER_DIS_MODEL']) info.modelNumber = env['TOWER_DIS_MODEL'];
-  if (env['TOWER_DIS_HARDWARE_REVISION']) info.hardwareRevision = env['TOWER_DIS_HARDWARE_REVISION'];
-  if (env['TOWER_DIS_FIRMWARE_REVISION']) info.firmwareRevision = env['TOWER_DIS_FIRMWARE_REVISION'];
-  if (env['TOWER_DIS_SOFTWARE_REVISION']) info.softwareRevision = env['TOWER_DIS_SOFTWARE_REVISION'];
+  if (env['TOWER_DIS_HARDWARE_REVISION'])
+    info.hardwareRevision = env['TOWER_DIS_HARDWARE_REVISION'];
+  if (env['TOWER_DIS_FIRMWARE_REVISION'])
+    info.firmwareRevision = env['TOWER_DIS_FIRMWARE_REVISION'];
+  if (env['TOWER_DIS_SOFTWARE_REVISION'])
+    info.softwareRevision = env['TOWER_DIS_SOFTWARE_REVISION'];
   return info;
 }
 
@@ -134,11 +137,19 @@ async function main(): Promise<void> {
   const relay = new RelayServer({
     port,
     onClientLog: (clientId, entries) => {
-      logger.logEvent('event', 'host', `Received ${entries.length} log entries from ${clientId.slice(0, 8)}`);
+      logger.logEvent(
+        'event',
+        'host',
+        `Received ${entries.length} log entries from ${clientId.slice(0, 8)}`,
+      );
       logger.writeClientEntries(clientId, entries);
     },
     onClientConnected: (clientId, label, observer) => {
-      logger.logEvent('event', 'host', `Client connected: ${label ?? clientId.slice(0, 8)}${observer ? ' (observer)' : ''}`);
+      logger.logEvent(
+        'event',
+        'host',
+        `Client connected: ${label ?? clientId.slice(0, 8)}${observer ? ' (observer)' : ''}`,
+      );
       eventLog.append(makeConsumerJoinedEvent(clientId, label, observer));
     },
     onClientDisconnected: (clientId, label) => {
@@ -146,16 +157,29 @@ async function main(): Promise<void> {
       eventLog.append(makeConsumerLeftEvent(clientId, label));
     },
     onClientReady: (clientId, ready, label) =>
-      logger.logEvent('event', 'host', `Client ${label ?? clientId.slice(0, 8)} tower: ${ready ? 'connected' : 'disconnected'}`),
+      logger.logEvent(
+        'event',
+        'host',
+        `Client ${label ?? clientId.slice(0, 8)} tower: ${ready ? 'connected' : 'disconnected'}`,
+      ),
     onClientAction: (clientId, action, label) => {
       logger.logEvent('event', 'host', `Action '${action}' from ${label ?? clientId.slice(0, 8)}`);
       if (action !== 'dropSkull') return;
       if (!synth) {
-        logger.logEvent('warn', 'host', 'dropSkull ignored — real tower source generates its own notifications');
+        logger.logEvent(
+          'warn',
+          'host',
+          'dropSkull ignored — real tower source generates its own notifications',
+        );
         return;
       }
       const sent = synth.dropSkull();
-      if (!sent) logger.logEvent('warn', 'host', 'dropSkull: no companion app subscriber — notification not sent');
+      if (!sent)
+        logger.logEvent(
+          'warn',
+          'host',
+          'dropSkull: no companion app subscriber — notification not sent',
+        );
     },
   });
 
@@ -187,9 +211,11 @@ async function main(): Promise<void> {
   if (bridgeTarget) {
     const real = bridgeTarget;
     source.on('command', (data) => {
-      void real.sendToTower(data).catch((err) =>
-        logger.logEvent('warn', 'host', `Bridge write to real tower failed: ${String(err)}`),
-      );
+      void real
+        .sendToTower(data)
+        .catch((err) =>
+          logger.logEvent('warn', 'host', `Bridge write to real tower failed: ${String(err)}`),
+        );
     });
     real.on('state-change', (state) =>
       logger.logEvent('event', 'host', `Bridge real-tower state: ${state}`),
@@ -218,7 +244,11 @@ async function main(): Promise<void> {
   });
   if (source instanceof TowerEmulator) {
     source.on('ghost-connection', (fromState) => {
-      logger.logEvent('event', 'host', `Ghost BLE connection detected (was ${fromState}) — recovering`);
+      logger.logEvent(
+        'event',
+        'host',
+        `Ghost BLE connection detected (was ${fromState}) — recovering`,
+      );
     });
   }
 
@@ -237,7 +267,7 @@ async function main(): Promise<void> {
         ? 'Mock tower source running — emitting canned commands.'
         : sourceMode === 'bridge'
           ? 'Bridge mode — app drives the tower emulator; commands forwarded to the real master tower.'
-          : 'Advertising tower emulator — open the companion app to connect.'
+          : 'Advertising tower emulator — open the companion app to connect.',
   );
 
   // Graceful shutdown.

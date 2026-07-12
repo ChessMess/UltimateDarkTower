@@ -4,7 +4,14 @@
 
 import { dir, fault } from './core';
 import { applyEffect, gainCorruption, capacityOf, pickBuildingForSkull } from './effects';
-import { markHeroic, awardHeroic, performAction, applyTrade, collectDueEvents, rotateActiveHero } from './turn';
+import {
+  markHeroic,
+  awardHeroic,
+  performAction,
+  applyTrade,
+  collectDueEvents,
+  rotateActiveHero,
+} from './turn';
 import { startBattle, resolveBattle, battleCardInput, battleHeroChoiceInput } from './battle';
 import { dungeonState, roomOf, finalizeRoom } from './dungeon';
 import type {
@@ -49,7 +56,8 @@ export function resume(
   directives: Directive[],
 ): NodeResult {
   const inputRequestId = (input as { requestId?: string } | undefined)?.requestId;
-  if (pending.request.id !== inputRequestId) throw fault('input requestId mismatch: expected ' + pending.request.id);
+  if (pending.request.id !== inputRequestId)
+    throw fault('input requestId mismatch: expected ' + pending.request.id);
   const node = state._nodes[state.clock.cursor as string];
   const next = node.wires && node.wires.out ? node.wires.out[0] : undefined;
   const requestId: InputRequest['id'] = pending.request.id;
@@ -57,7 +65,8 @@ export function resume(
     case 'action': {
       // legacy: a bare string choice; full-turn protocol: { choice, ...args } (e.g. questId, enhanced)
       const raw = (input as ActionInput).value;
-      const choice: ActionChoice = typeof raw === 'string' ? raw : (raw || ({} as ActionDecision)).choice;
+      const choice: ActionChoice =
+        typeof raw === 'string' ? raw : (raw || ({} as ActionDecision)).choice;
       const args = raw && typeof raw === 'object' ? raw : {};
       const full = state._setup && state._setup.fullTurn;
       if (choice === 'battle' && state._spine.battleEntry) {
@@ -100,7 +109,10 @@ export function resume(
             seen.add(cancelTarget);
             const n = state._nodes[cancelTarget];
             if (!n) break;
-            if (n.kind === 'action.battle' || (typeof n.kind === 'string' && n.kind.indexOf('battle.') === 0)) {
+            if (
+              n.kind === 'action.battle' ||
+              (typeof n.kind === 'string' && n.kind.indexOf('battle.') === 0)
+            ) {
               cancelTarget = (n.wires && n.wires.out && n.wires.out[0]) || undefined;
               continue;
             }
@@ -200,7 +212,8 @@ export function resume(
       }
       const d4 = v.direction as CardinalDirection; // "N"|"E"|"S"|"W"
       const room = roomOf(state, dc, dc.currentRoom);
-      if ((room.exits || {})[d4] !== 'door') throw fault('dungeonMove: no door ' + d4 + ' from room ' + dc.currentRoom);
+      if ((room.exits || {})[d4] !== 'door')
+        throw fault('dungeonMove: no door ' + d4 + ' from room ' + dc.currentRoom);
       const tgt = ((node.wires && node.wires[d4]) || [])[0]; // doors = wires on directional ports (catalog §5)
       if (!tgt) throw fault('dungeonMove: door ' + d4 + ' not wired from node ' + node.id);
       return { goto: tgt };
@@ -223,7 +236,8 @@ export function resume(
           // kingdom's hero gains a corruption (rules.md §Placing Skulls).
           const b = pickBuildingForSkull(
             state,
-            placements[i] as { kingdom: Kingdom; type?: BuildingType; location?: string } | undefined,
+            placements[i] as
+              { kingdom: Kingdom; type?: BuildingType; location?: string } | undefined,
           );
           if (b) {
             b.skulls += 1;
@@ -236,7 +250,11 @@ export function resume(
               b.destroyed = true;
               state.skulls.onBoard = Math.max(0, state.skulls.onBoard - b.skulls); // 3 out of the game + the 4th back to supply
               b.skulls = 0;
-              applyEffect({ op: 'building.destroy', kingdom: b.kingdom, location: b.location }, state, directives);
+              applyEffect(
+                { op: 'building.destroy', kingdom: b.kingdom, location: b.location },
+                state,
+                directives,
+              );
               if (state.outcome.status !== 'running') return { terminal: true };
             }
           } else {

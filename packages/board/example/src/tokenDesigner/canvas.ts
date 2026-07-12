@@ -46,7 +46,11 @@ export function createCanvas(cb: CanvasCallbacks): DesignCanvas {
 
   // Click on empty canvas → deselect. (Field clicks stopPropagation.)
   svg.addEventListener('pointerdown', (e) => {
-    if (e.target === svg || e.target === bgLayer || (e.target as Element).classList.contains('td-bg')) {
+    if (
+      e.target === svg ||
+      e.target === bgLayer ||
+      (e.target as Element).classList.contains('td-bg')
+    ) {
       cb.onSelect(null);
     }
   });
@@ -87,7 +91,10 @@ export function createCanvas(cb: CanvasCallbacks): DesignCanvas {
       img.setAttribute('y', '0');
       img.setAttribute('width', String(w));
       img.setAttribute('height', String(h));
-      img.setAttribute('preserveAspectRatio', bg.fit === 'contain' ? 'xMidYMid meet' : 'xMidYMid slice');
+      img.setAttribute(
+        'preserveAspectRatio',
+        bg.fit === 'contain' ? 'xMidYMid meet' : 'xMidYMid slice',
+      );
       // Drag the background to pan it within the token.
       img.addEventListener('pointerdown', (e) => startBgPan(e));
       group.appendChild(img);

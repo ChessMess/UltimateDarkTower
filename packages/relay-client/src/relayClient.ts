@@ -140,8 +140,7 @@ export class RelayClient {
     this.onEvent = options.onEvent ?? (() => undefined);
 
     const ctor =
-      options.webSocketImpl ??
-      (globalThis as { WebSocket?: WebSocketConstructor }).WebSocket;
+      options.webSocketImpl ?? (globalThis as { WebSocket?: WebSocketConstructor }).WebSocket;
     if (!ctor) {
       throw new Error(
         'RelayClient: no WebSocket implementation available. In Node, pass ' +
@@ -341,7 +340,11 @@ export class RelayClient {
         this.onEvent({ type: 'host:status', status: message.payload });
         break;
       case MessageType.CLIENT_CONNECTED:
-        this.onEvent({ type: 'client:connected', clientId: message.payload.clientId, label: message.payload.label });
+        this.onEvent({
+          type: 'client:connected',
+          clientId: message.payload.clientId,
+          label: message.payload.label,
+        });
         break;
       case MessageType.CLIENT_DISCONNECTED:
         this.onEvent({ type: 'client:disconnected', clientId: message.payload.clientId });

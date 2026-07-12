@@ -1,6 +1,6 @@
 # API reference
 
-*Docs: [Index](README.md) > Integrator > API*
+_Docs: [Index](README.md) > Integrator > API_
 
 **Before reading:** [GETTING_STARTED](GETTING_STARTED.md) covers install and your first render;
 [ARCHITECTURE](ARCHITECTURE.md) is the mental model (unidirectional state → renderers);
@@ -9,35 +9,82 @@
 
 `ultimatedarktowerboard` has **three entry points**:
 
-| Import | What you get | Heavy deps |
-| --- | --- | --- |
-| `ultimatedarktowerboard` (`.`) | headless `BoardState` + controller/reducer/commands/events/save-load, the **readout** and **2D map** renderers, the dockable **editing UI**, and UDT data re-exports | **none** (no `three`, no Display) |
-| `ultimatedarktowerboard/stage` | `BoardStageView` — the all-in-one render stage (2D + 3D + every control) | **none statically** — the 3D tower is **lazy-loaded** |
-| `ultimatedarktowerboard/plugin` | `Board3DPlugin` / `attachBoard3D` — the 3D board, a Display `ScenePlugin` | `three` + `ultimatedarktowerdisplay` |
+| Import                          | What you get                                                                                                                                                         | Heavy deps                                            |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `ultimatedarktowerboard` (`.`)  | headless `BoardState` + controller/reducer/commands/events/save-load, the **readout** and **2D map** renderers, the dockable **editing UI**, and UDT data re-exports | **none** (no `three`, no Display)                     |
+| `ultimatedarktowerboard/stage`  | `BoardStageView` — the all-in-one render stage (2D + 3D + every control)                                                                                             | **none statically** — the 3D tower is **lazy-loaded** |
+| `ultimatedarktowerboard/plugin` | `Board3DPlugin` / `attachBoard3D` — the 3D board, a Display `ScenePlugin`                                                                                            | `three` + `ultimatedarktowerdisplay`                  |
 
 ## Exports
 
 ```ts
 // `.` — headless core, readout + 2D renderers, editing UI, UDT data re-exports (three-free)
 import {
-  createDefaultBoardState, applyBoardCommand, BoardStateController,
-  saveState, loadState, BOARD_STATE_SCHEMA_VERSION, BoardStateLoadError,
-  BoardReadout, BoardMap2D, kebab,
-  DEFAULT_FOCUS, focusEquals, mountFocusControls, BoardRenderView,
-  mountBoardUI, createSelectionStore, createLocationPickStore,
+  createDefaultBoardState,
+  applyBoardCommand,
+  BoardStateController,
+  saveState,
+  loadState,
+  BOARD_STATE_SCHEMA_VERSION,
+  BoardStateLoadError,
+  BoardReadout,
+  BoardMap2D,
+  kebab,
+  DEFAULT_FOCUS,
+  focusEquals,
+  mountFocusControls,
+  BoardRenderView,
+  mountBoardUI,
+  createSelectionStore,
+  createLocationPickStore,
   // UDT data re-exports (subset — see "UDT re-exports" below for the full list)
-  BOARD_LOCATIONS, BOARD_ANCHORS, BOARD_ADJACENCY, neighborsOf, stepDistance, shortestPath,
-  HEROES, MONUMENTS, TIER1_FOES, ADVERSARIES, FOE_STATUSES,
+  BOARD_LOCATIONS,
+  BOARD_ANCHORS,
+  BOARD_ADJACENCY,
+  neighborsOf,
+  stepDistance,
+  shortestPath,
+  HEROES,
+  MONUMENTS,
+  TIER1_FOES,
+  ADVERSARIES,
+  FOE_STATUSES,
 } from 'ultimatedarktowerboard';
 import type {
-  BoardState, HeroToken, FoeToken, BuildingState, FoeStatus, SpaceMarker, HeroId, FoeId, LocationName,
-  BoardCommand, BoardCommandType, BoardEvent, BoardEventType, BoardEventListener,
+  BoardState,
+  HeroToken,
+  FoeToken,
+  BuildingState,
+  FoeStatus,
+  SpaceMarker,
+  HeroId,
+  FoeId,
+  LocationName,
+  BoardCommand,
+  BoardCommandType,
+  BoardEvent,
+  BoardEventType,
+  BoardEventListener,
   BoardStateControllerOptions,
-  BoardRenderer, BoardMap2DOptions, TokenSelection, TokenArtRef,
-  BoardFocus, BoardViewAngle, FocusControlsOptions, FocusControlsHandle,
+  BoardRenderer,
+  BoardMap2DOptions,
+  TokenSelection,
+  TokenArtRef,
+  BoardFocus,
+  BoardViewAngle,
+  FocusControlsOptions,
+  FocusControlsHandle,
   BoardRenderViewOptions,
-  BoardUIOptions, BoardUIHandle, PanelId, PanelPlacement, BoardUIRosters, RosterEntry,
-  SelectionStore, LocationPickStore, PendingPlacement, LocationPickEvent,
+  BoardUIOptions,
+  BoardUIHandle,
+  PanelId,
+  PanelPlacement,
+  BoardUIRosters,
+  RosterEntry,
+  SelectionStore,
+  LocationPickStore,
+  PendingPlacement,
+  LocationPickEvent,
 } from 'ultimatedarktowerboard';
 
 // `./stage` — the all-in-one render stage (three-free statically; lazy-loads the 3D tower)
@@ -46,7 +93,11 @@ import type { BoardStageViewOptions, DisplayMode } from 'ultimatedarktowerboard/
 
 // `./plugin` — the 3D board (imports three + ultimatedarktowerdisplay)
 import { attachBoard3D, Board3DPlugin } from 'ultimatedarktowerboard/plugin';
-import type { Board3DPluginOptions, Board3DHandle, TokenBuildContext } from 'ultimatedarktowerboard/plugin';
+import type {
+  Board3DPluginOptions,
+  Board3DHandle,
+  TokenBuildContext,
+} from 'ultimatedarktowerboard/plugin';
 ```
 
 ---
@@ -57,20 +108,26 @@ import type { Board3DPluginOptions, Board3DHandle, TokenBuildContext } from 'ult
 
 ### `BoardState`
 
-The full board state — a *dumb container*. It stores what it's told and enforces no game rules; renderers
+The full board state — a _dumb container_. It stores what it's told and enforces no game rules; renderers
 read it, hosts own the rules. All values are plain JSON-serializable data (no class instances, no
 `Map`/`Set`, no functions), so state round-trips through JSON cleanly. The schema version is not stored
 here — it lives in the save envelope (see [Save / load](#save--load)).
 
 ```ts
 interface BoardState {
-  heroes: Record<HeroId, HeroToken>;                 // placed heroes, keyed by instance id
-  foes: Record<FoeId, FoeToken>;                     // placed foes, keyed by instance id
+  heroes: Record<HeroId, HeroToken>; // placed heroes, keyed by instance id
+  foes: Record<FoeId, FoeToken>; // placed foes, keyed by instance id
   adversary?: { id: string; location?: LocationName };
-  buildings: Record<LocationName, BuildingState>;    // the 16 building spaces
+  buildings: Record<LocationName, BuildingState>; // the 16 building spaces
   spaceMarkers: Record<LocationName, SpaceMarker[]>; // a key is present only while it has markers
-  selections?: { difficulty?: string; adversary?: string; allies?: string[]; foes?: string[]; expansions?: string[] };
-  meta?: Record<string, unknown>;                    // host-specific escape hatch
+  selections?: {
+    difficulty?: string;
+    adversary?: string;
+    allies?: string[];
+    foes?: string[];
+    expansions?: string[];
+  };
+  meta?: Record<string, unknown>; // host-specific escape hatch
 }
 ```
 
@@ -78,14 +135,14 @@ Token shapes:
 
 - **`HeroToken`** — `{ location: LocationName; owner?: BoardKingdom; meta? }`. A hero pawn on the board.
 - **`FoeToken`** — `{ foe: string; location: LocationName; status: FoeStatus; meta? }`. `foe` is the foe
-  *type* id (from UDT's tiered rosters); `status` is the in-play power progression (tracked, not rendered).
+  _type_ id (from UDT's tiered rosters); `status` is the in-play power progression (tracked, not rendered).
 - **`BuildingState`** — `{ skulls: number; destroyed: boolean; monument?: string | null }`. One building space.
 
 Identity / value types (all `string`-based; the board never validates them):
 
 - **`LocationName`** — a `BOARD_LOCATIONS[n].name`.
-- **`HeroId`** / **`FoeId`** — caller-assigned *instance* ids for a placed hero/foe (distinct from a UDT
-  roster *identity* id; see the note in [UDT re-exports](#udt-re-exports)).
+- **`HeroId`** / **`FoeId`** — caller-assigned _instance_ ids for a placed hero/foe (distinct from a UDT
+  roster _identity_ id; see the note in [UDT re-exports](#udt-re-exports)).
 - **`SpaceMarker`** — a per-space overlay; an open set across expansions (`'wasteland'`, `'power-skull'`,
   …). The literal members are documentation; the type is `string`.
 - **`FoeStatus`** — `'ready' | 'savage' | 'lethal'`. Re-exported from `ultimatedarktower`.
@@ -105,32 +162,32 @@ const state = createDefaultBoardState();
 
 ### `BoardCommand` / `BoardCommandType`
 
-The command vocabulary the reducer understands — the *only* way state mutates. A discriminated union on
+The command vocabulary the reducer understands — the _only_ way state mutates. A discriminated union on
 `type`; the reducer applies each command faithfully and enforces no rules. `BoardCommandType` is
 `BoardCommand['type']`.
 
-| `type` | Payload | Effect |
-|---|---|---|
-| `placeHero` | `{ heroId, location, owner? }` | Place a hero (its instance id) at a location |
-| `moveHero` | `{ heroId, location }` | Move a placed hero (no-op if absent) |
-| `removeHero` | `{ heroId }` | Remove a hero |
-| `spawnFoe` | `{ foeId, foe, location, status? }` | Add a foe instance of type `foe` |
-| `moveFoe` | `{ foeId, location }` | Move a placed foe (no-op if absent) |
-| `setFoeStatus` | `{ foeId, status }` | Set a foe's `ready`/`savage`/`lethal` status |
-| `removeFoe` | `{ foeId }` | Remove a foe |
-| `selectAdversary` | `{ id }` | Set the adversary identity (no location yet) |
-| `placeAdversary` | `{ location }` | Set/move the adversary's location |
-| `clearAdversary` | `{}` | Remove the adversary |
-| `addSkull` | `{ location, n? }` | Add `n` skulls to a building (default `1`) |
-| `removeSkull` | `{ location, n? }` | Remove `n` skulls (default `1`) |
-| `setSkulls` | `{ location, n }` | Set the absolute skull count |
-| `destroyBuilding` | `{ location }` | Mark a building razed |
-| `restoreBuilding` | `{ location }` | Un-raze a building |
-| `setMonument` | `{ location, monumentId }` | Place a monument on a building (`null` clears it) |
-| `setSpaceMarker` | `{ location, marker, on }` | Add (`on: true`) or remove a per-space overlay |
-| `setSelections` | `{ selections }` | Shallow-merge game-setup selections |
-| `replaceState` | `{ state }` | Wholesale-replace the state |
-| `reset` | `{}` | Back to `createDefaultBoardState()` |
+| `type`            | Payload                             | Effect                                            |
+| ----------------- | ----------------------------------- | ------------------------------------------------- |
+| `placeHero`       | `{ heroId, location, owner? }`      | Place a hero (its instance id) at a location      |
+| `moveHero`        | `{ heroId, location }`              | Move a placed hero (no-op if absent)              |
+| `removeHero`      | `{ heroId }`                        | Remove a hero                                     |
+| `spawnFoe`        | `{ foeId, foe, location, status? }` | Add a foe instance of type `foe`                  |
+| `moveFoe`         | `{ foeId, location }`               | Move a placed foe (no-op if absent)               |
+| `setFoeStatus`    | `{ foeId, status }`                 | Set a foe's `ready`/`savage`/`lethal` status      |
+| `removeFoe`       | `{ foeId }`                         | Remove a foe                                      |
+| `selectAdversary` | `{ id }`                            | Set the adversary identity (no location yet)      |
+| `placeAdversary`  | `{ location }`                      | Set/move the adversary's location                 |
+| `clearAdversary`  | `{}`                                | Remove the adversary                              |
+| `addSkull`        | `{ location, n? }`                  | Add `n` skulls to a building (default `1`)        |
+| `removeSkull`     | `{ location, n? }`                  | Remove `n` skulls (default `1`)                   |
+| `setSkulls`       | `{ location, n }`                   | Set the absolute skull count                      |
+| `destroyBuilding` | `{ location }`                      | Mark a building razed                             |
+| `restoreBuilding` | `{ location }`                      | Un-raze a building                                |
+| `setMonument`     | `{ location, monumentId }`          | Place a monument on a building (`null` clears it) |
+| `setSpaceMarker`  | `{ location, marker, on }`          | Add (`on: true`) or remove a per-space overlay    |
+| `setSelections`   | `{ selections }`                    | Shallow-merge game-setup selections               |
+| `replaceState`    | `{ state }`                         | Wholesale-replace the state                       |
+| `reset`           | `{}`                                | Back to `createDefaultBoardState()`               |
 
 ### `applyBoardCommand(state, command)`
 
@@ -142,7 +199,9 @@ than calling it directly.
 import { applyBoardCommand, createDefaultBoardState } from 'ultimatedarktowerboard';
 
 const next = applyBoardCommand(createDefaultBoardState(), {
-  type: 'placeHero', heroId: 'hero-1', location: 'Broken Lands',
+  type: 'placeHero',
+  heroId: 'hero-1',
+  location: 'Broken Lands',
 });
 ```
 
@@ -170,14 +229,14 @@ controller.placeHero('hero-1', 'Broken Lands');
 
 `new BoardStateController(options?: BoardStateControllerOptions)`
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `options.initial` | `BoardState` | `createDefaultBoardState()` | Starting state. |
-| `options.mode` | `'self' \| 'host'` | `'self'` | Ownership mode (below). |
+| Parameter         | Type               | Default                     | Description             |
+| ----------------- | ------------------ | --------------------------- | ----------------------- |
+| `options.initial` | `BoardState`       | `createDefaultBoardState()` | Starting state.         |
+| `options.mode`    | `'self' \| 'host'` | `'self'`                    | Ownership mode (below). |
 
 **Mode semantics** — `self` (uncontrolled, default): `dispatch`/named methods/`reset` run the reducer,
 replace the held state, then emit `change` plus the derived specific event(s). `host` (controlled): the
-host owns the truth; `dispatch` computes the projected next state and emits it as a `change` *intent*
+host owns the truth; `dispatch` computes the projected next state and emits it as a `change` _intent_
 without mutating held state — only `applyState(next)` commits. `applyState` is the commit path in both modes.
 
 #### Methods
@@ -217,13 +276,13 @@ wholesale `applyState`) carrying the resulting state. The rest are conveniences 
 a consumer can subscribe narrowly. `BoardEventType` is `BoardEvent['type']`; `BoardEventListener` is
 `(event: BoardEvent) => void`.
 
-| `type` | Shape | Fires when |
-|---|---|---|
-| `change` | `{ state, command }` | Any command applied or `applyState` committed |
-| `tokenAdded` / `tokenMoved` / `tokenRemoved` | `{ kind: 'hero'\|'foe'\|'adversary'; id; location? }` | A token is placed / moved / removed |
-| `buildingChanged` | `{ location; building: BuildingState }` | Skulls / destroy / monument change |
-| `spaceMarkerChanged` | `{ location; markers: SpaceMarker[] }` | A space marker toggles |
-| `selectionChanged` | `{ selections }` | `setSelections` applied |
+| `type`                                       | Shape                                                 | Fires when                                    |
+| -------------------------------------------- | ----------------------------------------------------- | --------------------------------------------- |
+| `change`                                     | `{ state, command }`                                  | Any command applied or `applyState` committed |
+| `tokenAdded` / `tokenMoved` / `tokenRemoved` | `{ kind: 'hero'\|'foe'\|'adversary'; id; location? }` | A token is placed / moved / removed           |
+| `buildingChanged`                            | `{ location; building: BuildingState }`               | Skulls / destroy / monument change            |
+| `spaceMarkerChanged`                         | `{ location; markers: SpaceMarker[] }`                | A space marker toggles                        |
+| `selectionChanged`                           | `{ selections }`                                      | `setSelections` applied                       |
 
 ```ts
 // Events with a unique `type` narrow through `on(...)`:
@@ -317,7 +376,7 @@ convention. **Hero** tokens in the standard roster (base + all expansions) defau
 **left-drag** does is set by [`dragMode`](#boardmap2doptions): `'rotate'` (the default) **spins** the
 whole board about its center — grab a point and it follows the cursor, like a lazy-susan — while `'pan'`
 moves the zoomed-in view. Switch at runtime with [`setDragMode()`](#methods). The **middle mouse button**
-always runs the *other* action — a quick pan while in spin mode, or a press-and-hold spin while in pan
+always runs the _other_ action — a quick pan while in spin mode, or a press-and-hold spin while in pan
 mode. Zoom/pan/spin stay inside the current focus region and never touch `BoardState`. Pass
 `enableZoom: false` to drop wheel-zoom (e.g. when the map lives in a scroll container); drag-spin still
 works in that case.
@@ -339,18 +398,18 @@ map.render(controller.getState());
 
 ### `BoardMap2DOptions`
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `assetBaseUrl` | `string` | `''` | Token-art root, e.g. `'./tokens/'`. Empty → all tokens use the fallback. |
-| `boardImageUrl` | `string` | — | Base-layer board image. Omit to draw tokens over a blank board. |
-| `tokenArt` | `TokenArtConfig` | — | Per-token art overrides. The 2D map uses each entry's `image2d`. See [Per-token art](#per-token-art-tokenart). |
-| `resolveTokenImage` | `(ref: TokenArtRef, view: '2d' \| '3d') => string \| null` | convention | Override the default art path; `null` → fallback. `view` is `'2d'` here. |
-| `onTokenSelect` | `(sel: TokenSelection) => void` | — | Fired on a token click. Selection is renderer-local — never written to `BoardState`. |
-| `locationPick` | `LocationPickStore` | — | Drives the armed space-pick (the editing add flow); see [Stores](#stores-ui-seams). |
-| `onLocationPick` | `(location: LocationName) => void` | — | Fired when a space is clicked while armed. |
-| `enableZoom` | `boolean` | `true` | Wheel-zoom toward the cursor + double-click-reset. `false` opts out (drag-spin still works). |
-| `maxZoom` | `number` | `8` | Max zoom-in factor relative to the focus view. |
-| `dragMode` | `'rotate' \| 'pan'` | `'rotate'` | What a left-drag does: `'rotate'` spins the board about its center (grab & spin); `'pan'` moves the zoomed-in view. |
+| Parameter           | Type                                                       | Default    | Description                                                                                                         |
+| ------------------- | ---------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------- |
+| `assetBaseUrl`      | `string`                                                   | `''`       | Token-art root, e.g. `'./tokens/'`. Empty → all tokens use the fallback.                                            |
+| `boardImageUrl`     | `string`                                                   | —          | Base-layer board image. Omit to draw tokens over a blank board.                                                     |
+| `tokenArt`          | `TokenArtConfig`                                           | —          | Per-token art overrides. The 2D map uses each entry's `image2d`. See [Per-token art](#per-token-art-tokenart).      |
+| `resolveTokenImage` | `(ref: TokenArtRef, view: '2d' \| '3d') => string \| null` | convention | Override the default art path; `null` → fallback. `view` is `'2d'` here.                                            |
+| `onTokenSelect`     | `(sel: TokenSelection) => void`                            | —          | Fired on a token click. Selection is renderer-local — never written to `BoardState`.                                |
+| `locationPick`      | `LocationPickStore`                                        | —          | Drives the armed space-pick (the editing add flow); see [Stores](#stores-ui-seams).                                 |
+| `onLocationPick`    | `(location: LocationName) => void`                         | —          | Fired when a space is clicked while armed.                                                                          |
+| `enableZoom`        | `boolean`                                                  | `true`     | Wheel-zoom toward the cursor + double-click-reset. `false` opts out (drag-spin still works).                        |
+| `maxZoom`           | `number`                                                   | `8`        | Max zoom-in factor relative to the focus view.                                                                      |
+| `dragMode`          | `'rotate' \| 'pan'`                                        | `'rotate'` | What a left-drag does: `'rotate'` spins the board about its center (grab & spin); `'pan'` moves the zoomed-in view. |
 
 #### Methods
 
@@ -362,10 +421,10 @@ map.render(controller.getState());
 ### `TokenSelection` / `TokenArtRef` / `kebab()`
 
 - **`TokenSelection`** — what a click/tap reports: `{ kind: 'hero' | 'foe' | 'adversary' | 'building' |
-  'marker'; id: string; location: LocationName }`. `id` is the hero/foe instance id, adversary id, or the
+'marker'; id: string; location: LocationName }`. `id` is the hero/foe instance id, adversary id, or the
   host location (building/marker).
 - **`TokenArtRef`** — what the art resolver is asked for: `{ kind; id }` where `kind` is `'hero' | 'foe' |
-  'adversary' | 'monument' | 'marker' | 'skull'` and `id` is the *art* id (foe type, adversary id, monument
+'adversary' | 'monument' | 'marker' | 'skull'` and `id` is the _art_ id (foe type, adversary id, monument
   id, marker name; `'skull'` for skulls).
 - **`kebab(value)`** — `(string) => string`. The id slug used in art paths: `kebab("Utuk'Ku")` → `utuk-ku`.
 
@@ -379,18 +438,22 @@ renderer and the 3D plugin (the same object). Tokens with no entry render exactl
 type TokenArtConfig = Partial<Record<TokenArtRef['kind'], Record<string, TokenArt>>>;
 
 interface TokenArt {
-  image2d?: string;        // image for the 2D map, and the 3D billboard when image3d is unset
-  image3d?: string;        // 3D billboard image when it should differ from image2d (defaults to image2d)
+  image2d?: string; // image for the 2D map, and the 3D billboard when image3d is unset
+  image3d?: string; // 3D billboard image when it should differ from image2d (defaults to image2d)
   model3d?: TokenModelRef; // GLB model rendered in place of the 3D sprite (preferred over image3d/image2d)
 }
 
 // A `.glb` URL with optional placement (also accepted by `resolveTokenModel`):
-type TokenModelRef = string | { url: string; scale?: number; rotation?: { x?; y?; z? }; dracoDecoderPath?: string | null };
+type TokenModelRef =
+  | string
+  | { url: string; scale?: number; rotation?: { x?; y?; z? }; dracoDecoderPath?: string | null };
 ```
 
 ```ts
 const tokenArt: TokenArtConfig = {
-  foe:  { Dragons: { image2d: './tokens/foes/dragons.png', model3d: { url: './dragon.glb', scale: 0.8 } } },
+  foe: {
+    Dragons: { image2d: './tokens/foes/dragons.png', model3d: { url: './dragon.glb', scale: 0.8 } },
+  },
   hero: { 'brutal-warlord': { image2d: './heroes/warlord.png' } }, // override the built-in roster portrait
 };
 new BoardMap2D(el, { tokenArt, assetBaseUrl: './tokens/' }); // 2D reads image2d
@@ -484,27 +547,27 @@ view.dispose();
 
 ### `BoardRenderViewOptions`
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `initialState` | `BoardState` | `createDefaultBoardState()` | Seed state. |
-| `mode` | `'self' \| 'host'` | `'self'` | Controller ownership mode. |
-| `mapContainer` | `HTMLElement` | — | When set, a `BoardMap2D` is built and rendered here. |
-| `controlsContainer` | `HTMLElement` | — | When set, focus controls are mounted here. |
-| `uiContainer` | `HTMLElement` | — | When set, the editing UI is mounted here. |
-| `ui` | `Omit<BoardUIOptions, 'controller'\|'selection'\|'locationPick'>` | — | Editing-UI config (panels/rosters/…); the view supplies the controller + stores. |
-| `assetBaseUrl` | `string` | — | Token-art root for the 2D map. |
-| `boardImageUrl` | `string` | — | Base-layer board image for the 2D map. |
-| `tokenArt` | `TokenArtConfig` | — | Per-token art for the 2D map (the `image2d` slot); pass the same object to the 3D plugin. See [Per-token art](#per-token-art-tokenart). |
-| `resolveTokenImage` | `(ref: TokenArtRef, view: '2d' \| '3d') => string \| null` | convention | Override the 2D-map art path; `null` → fallback. |
-| `enableZoom` | `boolean` | `true` | 2D-map wheel-zoom + double-click-reset (forwarded to `BoardMap2D`). |
-| `maxZoom` | `number` | `8` | Max 2D-map zoom-in factor (forwarded to `BoardMap2D`). |
-| `dragMode` | `'rotate' \| 'pan'` | `'rotate'` | 2D-map left-drag behavior: spin about center vs pan (forwarded to `BoardMap2D`). |
-| `onTokenSelect` | `(sel: TokenSelection) => void` | — | Forwarded from the 2D map (also updates `selection`). |
-| `onFocusChange` | `(focus: BoardFocus) => void` | — | Fired whenever the focus changes. |
+| Parameter           | Type                                                              | Default                     | Description                                                                                                                             |
+| ------------------- | ----------------------------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `initialState`      | `BoardState`                                                      | `createDefaultBoardState()` | Seed state.                                                                                                                             |
+| `mode`              | `'self' \| 'host'`                                                | `'self'`                    | Controller ownership mode.                                                                                                              |
+| `mapContainer`      | `HTMLElement`                                                     | —                           | When set, a `BoardMap2D` is built and rendered here.                                                                                    |
+| `controlsContainer` | `HTMLElement`                                                     | —                           | When set, focus controls are mounted here.                                                                                              |
+| `uiContainer`       | `HTMLElement`                                                     | —                           | When set, the editing UI is mounted here.                                                                                               |
+| `ui`                | `Omit<BoardUIOptions, 'controller'\|'selection'\|'locationPick'>` | —                           | Editing-UI config (panels/rosters/…); the view supplies the controller + stores.                                                        |
+| `assetBaseUrl`      | `string`                                                          | —                           | Token-art root for the 2D map.                                                                                                          |
+| `boardImageUrl`     | `string`                                                          | —                           | Base-layer board image for the 2D map.                                                                                                  |
+| `tokenArt`          | `TokenArtConfig`                                                  | —                           | Per-token art for the 2D map (the `image2d` slot); pass the same object to the 3D plugin. See [Per-token art](#per-token-art-tokenart). |
+| `resolveTokenImage` | `(ref: TokenArtRef, view: '2d' \| '3d') => string \| null`        | convention                  | Override the 2D-map art path; `null` → fallback.                                                                                        |
+| `enableZoom`        | `boolean`                                                         | `true`                      | 2D-map wheel-zoom + double-click-reset (forwarded to `BoardMap2D`).                                                                     |
+| `maxZoom`           | `number`                                                          | `8`                         | Max 2D-map zoom-in factor (forwarded to `BoardMap2D`).                                                                                  |
+| `dragMode`          | `'rotate' \| 'pan'`                                               | `'rotate'`                  | 2D-map left-drag behavior: spin about center vs pan (forwarded to `BoardMap2D`).                                                        |
+| `onTokenSelect`     | `(sel: TokenSelection) => void`                                   | —                           | Forwarded from the 2D map (also updates `selection`).                                                                                   |
+| `onFocusChange`     | `(focus: BoardFocus) => void`                                     | —                           | Fired whenever the focus changes.                                                                                                       |
 
 ## Editing UI
 
-The optional, framework-agnostic editing UI. A *dumb-container client*: it calls **only** the controller's
+The optional, framework-agnostic editing UI. A _dumb-container client_: it calls **only** the controller's
 public command methods — strip it out and the host keeps every endpoint. Part of the `.` entry
 (three-free / Display-free). See [RENDERERS.md](RENDERERS.md#dockable-editing-ui) for the panel tour.
 
@@ -515,14 +578,17 @@ Mounts the **palette** / **inspector** / **summary** panels into `host` (any ele
 
 ```ts
 import {
-  BoardStateController, createSelectionStore, createLocationPickStore, mountBoardUI,
+  BoardStateController,
+  createSelectionStore,
+  createLocationPickStore,
+  mountBoardUI,
 } from 'ultimatedarktowerboard';
 
 const controller = new BoardStateController();
 const ui = mountBoardUI(document.getElementById('ui')!, {
   controller,
-  selection: createSelectionStore(),       // active token → the inspector
-  locationPick: createLocationPickStore(),  // armed add-placement channel
+  selection: createSelectionStore(), // active token → the inspector
+  locationPick: createLocationPickStore(), // armed add-placement channel
 });
 ui.setPanelVisible('summary', false);
 ui.dispose();
@@ -530,15 +596,15 @@ ui.dispose();
 
 ### `BoardUIOptions`
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `controller` | `BoardStateController` | — | The controller the UI drives. |
-| `selection` | `SelectionStore` | — | Active-selection source the inspector reads (renderers/palette write). |
-| `locationPick` | `LocationPickStore` | — | Enables board-click placement; the location dropdown works without it. |
-| `panels` | `Partial<Record<PanelId, boolean \| PanelPlacement>>` | all visible | Which panels render + each one's placement; `false` ⇒ start hidden. |
-| `rosters` | `Partial<BoardUIRosters>` | UDT re-exports | Palette roster lists. |
-| `generateId` | `(kind: 'foe', state: BoardState) => string` | next-free `foe-N` | Mint an instance id for an added foe. |
-| `floating` | `boolean` | `true` | Draggable floating panels. |
+| Parameter      | Type                                                  | Default           | Description                                                            |
+| -------------- | ----------------------------------------------------- | ----------------- | ---------------------------------------------------------------------- |
+| `controller`   | `BoardStateController`                                | —                 | The controller the UI drives.                                          |
+| `selection`    | `SelectionStore`                                      | —                 | Active-selection source the inspector reads (renderers/palette write). |
+| `locationPick` | `LocationPickStore`                                   | —                 | Enables board-click placement; the location dropdown works without it. |
+| `panels`       | `Partial<Record<PanelId, boolean \| PanelPlacement>>` | all visible       | Which panels render + each one's placement; `false` ⇒ start hidden.    |
+| `rosters`      | `Partial<BoardUIRosters>`                             | UDT re-exports    | Palette roster lists.                                                  |
+| `generateId`   | `(kind: 'foe', state: BoardState) => string`          | next-free `foe-N` | Mint an instance id for an added foe.                                  |
+| `floating`     | `boolean`                                             | `true`            | Draggable floating panels.                                             |
 
 ### `BoardUIHandle` / `PanelId` / `PanelPlacement` / `BoardUIRosters` / `RosterEntry`
 
@@ -547,14 +613,14 @@ ui.dispose();
 - **`PanelPlacement`** — `{ corner?: 'tl' | 'tr' | 'bl' | 'br'; x?: number; y?: number }`. Initial position
   of a floating panel.
 - **`BoardUIRosters`** — `{ foes: string[]; adversaries: string[]; allies: string[]; markers: string[];
-  heroes: ReadonlyArray<RosterEntry>; monuments: ReadonlyArray<RosterEntry> }`. Defaults from the UDT
+heroes: ReadonlyArray<RosterEntry>; monuments: ReadonlyArray<RosterEntry> }`. Defaults from the UDT
   re-exports.
 - **`RosterEntry`** — `{ id: string; name: string }`.
 
 ## Stores (UI seams)
 
-Shared observables that decouple the renderers (which *produce* selections + location picks) from the
-editing UI (which *consumes* them). Plain subscribe/notify, no dependencies. `BoardRenderView` creates and
+Shared observables that decouple the renderers (which _produce_ selections + location picks) from the
+editing UI (which _consumes_ them). Plain subscribe/notify, no dependencies. `BoardRenderView` creates and
 shares these for you; create them by hand only when wiring `mountBoardUI` standalone.
 
 ### `createSelectionStore()` → `SelectionStore`
@@ -573,7 +639,7 @@ pick(location): void; subscribe(listener): () => void }`.
 - **`PendingPlacement`** — `{ kind: TokenSelection['kind']; label: string; targets: 'all' | 'buildings' }`.
   What the palette is waiting to place (`buildings` for skulls/monuments).
 - **`LocationPickEvent`** — `{ type: 'armed'; pending } | { type: 'disarmed' } | { type: 'picked';
-  location }`.
+location }`.
 
 ## UDT re-exports
 
@@ -581,19 +647,19 @@ Static board data + rosters from `ultimatedarktower` (≥ 4.1.0), re-exported he
 consumers get them from this package too. Documented upstream — see the
 [`ultimatedarktower` API docs](https://github.com/ChessMess/UltimateDarkTower/tree/main/docs/api).
 
-| Re-export | Kind | Purpose |
-|---|---|---|
-| `BOARD_LOCATIONS`, `BOARD_LOCATION_BY_NAME`, `BOARD_GROUPINGS` | data | The board's locations + lookups |
-| `BOARD_ANCHORS`, `BOARD_IMAGE_INFO` | data | Normalized token-placement anchors + image metadata |
-| `BOARD_ADJACENCY`, `neighborsOf`, `stepDistance`, `shortestPath` | data + helpers | Movement graph + pure BFS helpers (move-validation; the board enforces no rules) |
-| `TIER1_FOES` / `TIER2_FOES` / `TIER3_FOES`, `ADVERSARIES`, `ALLIES` | rosters | Setup roster lists |
-| `HEROES`, `HERO_BY_ID`, `MONUMENTS`, `MONUMENT_BY_ID` | rosters | Hero / monument rosters + lookups |
-| `FOE_STATUSES`, `FOES`, `ADVERSARY_ROSTER`, `ALL_FOES`, `FOE_BY_ID`, `FOE_BY_NAME` | rosters | Foe status + identity metadata |
-| `DIFFICULTIES`, `GAME_SOURCES` | enums | Setup enums |
-| **types** | — | `BoardLocation`, `TerrainType`, `BuildingType`, `BoardKingdom`, `BoardGrouping`, `Anchor`, `AnchorSlot`, `LocationAnchors`, `BoardAnchorMap`, `BoardImageInfo`, `BoardAdjacency`, `Hero`, `Monument`, `MonumentId`, `Tier1Foe`/`Tier2Foe`/`Tier3Foe`, `Adversary`, `Ally`, `Foe`, `FoeStatus`, `FoeLevel`, `FoeName`, `ContentSource`, `Difficulty`, `GameSource`, `ExpansionType` |
+| Re-export                                                                          | Kind           | Purpose                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BOARD_LOCATIONS`, `BOARD_LOCATION_BY_NAME`, `BOARD_GROUPINGS`                     | data           | The board's locations + lookups                                                                                                                                                                                                                                                                                                                                                    |
+| `BOARD_ANCHORS`, `BOARD_IMAGE_INFO`                                                | data           | Normalized token-placement anchors + image metadata                                                                                                                                                                                                                                                                                                                                |
+| `BOARD_ADJACENCY`, `neighborsOf`, `stepDistance`, `shortestPath`                   | data + helpers | Movement graph + pure BFS helpers (move-validation; the board enforces no rules)                                                                                                                                                                                                                                                                                                   |
+| `TIER1_FOES` / `TIER2_FOES` / `TIER3_FOES`, `ADVERSARIES`, `ALLIES`                | rosters        | Setup roster lists                                                                                                                                                                                                                                                                                                                                                                 |
+| `HEROES`, `HERO_BY_ID`, `MONUMENTS`, `MONUMENT_BY_ID`                              | rosters        | Hero / monument rosters + lookups                                                                                                                                                                                                                                                                                                                                                  |
+| `FOE_STATUSES`, `FOES`, `ADVERSARY_ROSTER`, `ALL_FOES`, `FOE_BY_ID`, `FOE_BY_NAME` | rosters        | Foe status + identity metadata                                                                                                                                                                                                                                                                                                                                                     |
+| `DIFFICULTIES`, `GAME_SOURCES`                                                     | enums          | Setup enums                                                                                                                                                                                                                                                                                                                                                                        |
+| **types**                                                                          | —              | `BoardLocation`, `TerrainType`, `BuildingType`, `BoardKingdom`, `BoardGrouping`, `Anchor`, `AnchorSlot`, `LocationAnchors`, `BoardAnchorMap`, `BoardImageInfo`, `BoardAdjacency`, `Hero`, `Monument`, `MonumentId`, `Tier1Foe`/`Tier2Foe`/`Tier3Foe`, `Adversary`, `Ally`, `Foe`, `FoeStatus`, `FoeLevel`, `FoeName`, `ContentSource`, `Difficulty`, `GameSource`, `ExpansionType` |
 
-> **Identity vs. instance ids.** UDT's `HeroId` / `FoeId` (roster *identity* ids) are deliberately **not**
-> re-exported — this package's own `HeroId` / `FoeId` (caller-assigned *instance* ids) own those names. Use
+> **Identity vs. instance ids.** UDT's `HeroId` / `FoeId` (roster _identity_ ids) are deliberately **not**
+> re-exported — this package's own `HeroId` / `FoeId` (caller-assigned _instance_ ids) own those names. Use
 > a `Hero`/`Foe`'s `id` field for the identity.
 
 ---
@@ -616,34 +682,38 @@ import { TowerRenderView } from 'ultimatedarktowerdisplay';
 import { attachBoard3D } from 'ultimatedarktowerboard/plugin';
 
 const view = new TowerRenderView({ container, modelUrl }); // a tower GLB
-const board = view.view3D && attachBoard3D(view.view3D, {
-  boardState,                    // initial BoardState (the plugin reads; the host owns mutations)
-  assetBaseUrl: './tokens/',     // token art, loaded at runtime (never bundled)
-  boardImageUrl: './board.png',  // render OUR board on the disc + hide Display's (omit to keep Display's)
-  onTokenSelect: (sel) => {},    // { kind, id, location } — same shape as the 2D map
-});
+const board =
+  view.view3D &&
+  attachBoard3D(view.view3D, {
+    boardState, // initial BoardState (the plugin reads; the host owns mutations)
+    assetBaseUrl: './tokens/', // token art, loaded at runtime (never bundled)
+    boardImageUrl: './board.png', // render OUR board on the disc + hide Display's (omit to keep Display's)
+    onTokenSelect: (sel) => {}, // { kind, id, location } — same shape as the 2D map
+  });
 
 // Push board-state updates from your controller:
-controller.subscribe((e) => { if (e.type === 'change') board?.setBoardState(e.state); });
+controller.subscribe((e) => {
+  if (e.type === 'change') board?.setBoardState(e.state);
+});
 ```
 
 ### `Board3DPluginOptions`
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `boardState` | `BoardState` | — | Initial state to render (the plugin reads; the host owns mutations). |
-| `assetBaseUrl` | `string` | — | Token-art root, loaded at runtime (never bundled). |
-| `boardImageUrl` | `string` | — | When set, the plugin renders its **own** board on the disc and hides Display's; without it, Display's board stays. |
-| `northKingdom` | `0 \| 1 \| 2 \| 3` | `0` | Which kingdom faces +Z on the disc. Board-owned, not read from Display's lighting config. |
-| `tokenArt` | `TokenArtConfig` | — | Per-token art. The 3D path uses each entry's `model3d` (preferred), else its image as a billboard (`image3d ?? image2d`); pass the same object to the 2D map. See [Per-token art](#per-token-art-tokenart). |
-| `resolveTokenImage` | `(ref: TokenArtRef, view: '2d' \| '3d') => string \| null` | convention | Override the default sprite-art path; `null` → fallback. `view` is `'3d'` here. |
-| `resolveTokenModel` | `(ref: TokenArtRef) => TokenModelRef \| null \| undefined` | — | Map a token to a GLB model rendered in place of its sprite. A per-token `tokenArt.model3d` is preferred over this; `tokenFactory` over both. |
-| `onTokenSelect` | `(sel: TokenSelection) => void` | — | Fired on a token click. Renderer-local — never written to `BoardState`. |
-| `onFocusChange` | `(focus: BoardFocus) => void` | — | Fired when the camera side (the focus source of truth) changes. |
-| `debugCamera` | `boolean` | `false` | Logs the live camera's `{ elevationFactor, targetHeightFactor, distanceFactor }` on move — a preset-tuning aid; leave off in production. |
-| `locationPick` | `LocationPickStore` | — | Enables the armed in-scene space-pick (the editing add flow), mirroring the 2D map. |
-| `onLocationPick` | `(location: LocationName) => void` | — | Fired when a space is clicked while armed. |
-| `tokenFactory` | `(ctx: TokenBuildContext) => THREE.Object3D \| null` | sprite | Seam for real 3D models; default builds a `THREE.Sprite` billboard. `null` skips the token. |
+| Parameter           | Type                                                       | Default    | Description                                                                                                                                                                                                 |
+| ------------------- | ---------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `boardState`        | `BoardState`                                               | —          | Initial state to render (the plugin reads; the host owns mutations).                                                                                                                                        |
+| `assetBaseUrl`      | `string`                                                   | —          | Token-art root, loaded at runtime (never bundled).                                                                                                                                                          |
+| `boardImageUrl`     | `string`                                                   | —          | When set, the plugin renders its **own** board on the disc and hides Display's; without it, Display's board stays.                                                                                          |
+| `northKingdom`      | `0 \| 1 \| 2 \| 3`                                         | `0`        | Which kingdom faces +Z on the disc. Board-owned, not read from Display's lighting config.                                                                                                                   |
+| `tokenArt`          | `TokenArtConfig`                                           | —          | Per-token art. The 3D path uses each entry's `model3d` (preferred), else its image as a billboard (`image3d ?? image2d`); pass the same object to the 2D map. See [Per-token art](#per-token-art-tokenart). |
+| `resolveTokenImage` | `(ref: TokenArtRef, view: '2d' \| '3d') => string \| null` | convention | Override the default sprite-art path; `null` → fallback. `view` is `'3d'` here.                                                                                                                             |
+| `resolveTokenModel` | `(ref: TokenArtRef) => TokenModelRef \| null \| undefined` | —          | Map a token to a GLB model rendered in place of its sprite. A per-token `tokenArt.model3d` is preferred over this; `tokenFactory` over both.                                                                |
+| `onTokenSelect`     | `(sel: TokenSelection) => void`                            | —          | Fired on a token click. Renderer-local — never written to `BoardState`.                                                                                                                                     |
+| `onFocusChange`     | `(focus: BoardFocus) => void`                              | —          | Fired when the camera side (the focus source of truth) changes.                                                                                                                                             |
+| `debugCamera`       | `boolean`                                                  | `false`    | Logs the live camera's `{ elevationFactor, targetHeightFactor, distanceFactor }` on move — a preset-tuning aid; leave off in production.                                                                    |
+| `locationPick`      | `LocationPickStore`                                        | —          | Enables the armed in-scene space-pick (the editing add flow), mirroring the 2D map.                                                                                                                         |
+| `onLocationPick`    | `(location: LocationName) => void`                         | —          | Fired when a space is clicked while armed.                                                                                                                                                                  |
+| `tokenFactory`      | `(ctx: TokenBuildContext) => THREE.Object3D \| null`       | sprite     | Seam for real 3D models; default builds a `THREE.Sprite` billboard. `null` skips the token.                                                                                                                 |
 
 ### `Board3DPlugin`
 
@@ -686,7 +756,7 @@ const stage = new BoardStageView({
   container: document.getElementById('board')!,
   assetBaseUrl: './tokens/',
   boardImageUrl: './board.png',
-  modelUrl: './tower.glb',        // omit for a 2D-only stage (no `three` is loaded)
+  modelUrl: './tower.glb', // omit for a 2D-only stage (no `three` is loaded)
 });
 stage.controller.spawnFoe('foe-1', 'Brigands', 'Dayside'); // mutate via the shared controller
 await stage.setTowerEnabled(false); // turn the 3D tower off at runtime (drops to 2D)
@@ -700,21 +770,21 @@ await stage.setTowerEnabled(false); // turn the 3D tower off at runtime (drops t
 
 ### `BoardStageViewOptions`
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `container` | `HTMLElement` | — | **Required.** The stage fills this element (you size it). |
-| `initialState` | `BoardState` | empty board | Seeds the shared controller. |
-| `assetBaseUrl` / `boardImageUrl` / `tokenArt` | — | — | Token art + board image, shared by both renderers. |
-| `resolveTokenImage` | `(ref, view) => string \| null` | convention | Override the token-art path. |
-| `modelUrl` | `string` | — | Tower GLB; required to enable the 3D tower. |
-| `tower3D` | `'auto' \| boolean` | `'auto'` | `'auto'` = on iff `modelUrl` set; `true` forces on; `false` 2D-only. |
-| `towerToggle` | `boolean` | `false` | Add a built-in Tower 3D on/off button (the mode pills already cover showing/hiding 3D). |
-| `defaultMode` | `DisplayMode` | `pip-3dbig` / `2d` | Initial mode (a stored preference wins). |
-| `editingUI` | `boolean \| BoardUIOptions` | `true` | Mount the palette/inspector; `false` to skip; object to configure. |
-| `enableZoom` / `maxZoom` / `dragMode` | — | `true` / `8` / `'rotate'` | Forwarded to the 2D map. |
-| `persist` | `boolean \| { prefix }` | `true` | Persist mode/drag/PiP inset (default prefix `udtb.stage`). |
-| `injectStyles` | `boolean` | `true` | Inject `BOARD_STAGE_CSS`. |
-| `onTokenSelect` / `onFocusChange` / `onModeChange` / `onTowerToggle` / `onPopOut` | callbacks | — | — |
+| Parameter                                                                         | Type                            | Default                   | Description                                                                             |
+| --------------------------------------------------------------------------------- | ------------------------------- | ------------------------- | --------------------------------------------------------------------------------------- |
+| `container`                                                                       | `HTMLElement`                   | —                         | **Required.** The stage fills this element (you size it).                               |
+| `initialState`                                                                    | `BoardState`                    | empty board               | Seeds the shared controller.                                                            |
+| `assetBaseUrl` / `boardImageUrl` / `tokenArt`                                     | —                               | —                         | Token art + board image, shared by both renderers.                                      |
+| `resolveTokenImage`                                                               | `(ref, view) => string \| null` | convention                | Override the token-art path.                                                            |
+| `modelUrl`                                                                        | `string`                        | —                         | Tower GLB; required to enable the 3D tower.                                             |
+| `tower3D`                                                                         | `'auto' \| boolean`             | `'auto'`                  | `'auto'` = on iff `modelUrl` set; `true` forces on; `false` 2D-only.                    |
+| `towerToggle`                                                                     | `boolean`                       | `false`                   | Add a built-in Tower 3D on/off button (the mode pills already cover showing/hiding 3D). |
+| `defaultMode`                                                                     | `DisplayMode`                   | `pip-3dbig` / `2d`        | Initial mode (a stored preference wins).                                                |
+| `editingUI`                                                                       | `boolean \| BoardUIOptions`     | `true`                    | Mount the palette/inspector; `false` to skip; object to configure.                      |
+| `enableZoom` / `maxZoom` / `dragMode`                                             | —                               | `true` / `8` / `'rotate'` | Forwarded to the 2D map.                                                                |
+| `persist`                                                                         | `boolean \| { prefix }`         | `true`                    | Persist mode/drag/PiP inset (default prefix `udtb.stage`).                              |
+| `injectStyles`                                                                    | `boolean`                       | `true`                    | Inject `BOARD_STAGE_CSS`.                                                               |
+| `onTokenSelect` / `onFocusChange` / `onModeChange` / `onTowerToggle` / `onPopOut` | callbacks                       | —                         | —                                                                                       |
 
 `DisplayMode = '2d' | '3d' | '2d3d' | 'pip-2dbig' | 'pip-3dbig'`.
 

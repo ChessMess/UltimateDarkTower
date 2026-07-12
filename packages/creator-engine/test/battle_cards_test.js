@@ -5,7 +5,8 @@
 
 const engine = require('../dist/engine');
 const { __internals } = engine;
-const { makeTestState, startCardBattle, battleCardInput, battleHeroChoiceInput, startBattle } = __internals;
+const { makeTestState, startCardBattle, battleCardInput, battleHeroChoiceInput, startBattle } =
+  __internals;
 
 let pass = 0,
   fail = 0;
@@ -52,71 +53,196 @@ function ladderLib() {
     battleDefs: {
       grunts: {
         cards: [
-          { name: 'Jab', advantage: 'Melee', steps: [
-            { text: 'lose 3 warriors', effects: [lose(3)] },
-            { text: 'lose 1 warrior', effects: [lose(1)] },
-            { text: 'no losses' },
-          ] },
-          { name: 'Feint', advantage: 'Stealth', steps: [
-            { text: 'lose 1 warrior', effects: [lose(1)] },
-            { text: 'no losses' },
-          ] },
-          { name: 'Rally', advantage: 'Humanoid', steps: [
-            { text: 'lose 2 warriors', effects: [lose(2)] },
-            { text: 'no losses' },
-          ] },
+          {
+            name: 'Jab',
+            advantage: 'Melee',
+            steps: [
+              { text: 'lose 3 warriors', effects: [lose(3)] },
+              { text: 'lose 1 warrior', effects: [lose(1)] },
+              { text: 'no losses' },
+            ],
+          },
+          {
+            name: 'Feint',
+            advantage: 'Stealth',
+            steps: [{ text: 'lose 1 warrior', effects: [lose(1)] }, { text: 'no losses' }],
+          },
+          {
+            name: 'Rally',
+            advantage: 'Humanoid',
+            steps: [{ text: 'lose 2 warriors', effects: [lose(2)] }, { text: 'no losses' }],
+          },
         ],
       },
       // homogeneous decks used to make draws deterministic (every card identical)
-      rally: { cards: [{ name: 'Rally', advantage: 'Humanoid', copies: 2, steps: [
-        { text: 'lose 2 warriors', effects: [lose(2)] },
-        { text: 'gain 3 warriors', effects: [gain(3)] },
-      ] }] },
-      onestep: { cards: [{ name: 'Skewer', advantage: 'Melee', critical: true, copies: 2, steps: [
-        { text: 'lose 4 warriors', effects: [lose(4)] },
-      ] }] },
-      critimprove: { cards: [{ name: 'Slash', advantage: 'Beast', critical: true, copies: 2, steps: [
-        { text: 'lose 3 warriors', effects: [lose(3)] },
-        { text: 'lose 1 warrior', effects: [lose(1)] },
-      ] }] },
-      doubleloss: { cards: [{ name: 'Rend', advantage: 'Beast', copies: 2, steps: [
-        { text: 'lose everything', effects: [lose(100, 'warriors'), lose(100, 'spirit')] },
-      ] }] },
-      longladder: { cards: [{ name: 'Grind', advantage: 'Melee', copies: 2, steps: [
-        { text: 's0', effects: [lose(1)] }, { text: 's1', effects: [lose(1)] },
-        { text: 's2', effects: [lose(1)] }, { text: 's3', effects: [lose(1)] },
-        { text: 's4', effects: [lose(1)] }, { text: 's5', effects: [lose(1)] },
-        { text: 's6', effects: [lose(1)] }, { text: 's7', effects: [lose(1)] },
-        { text: 's8', effects: [lose(1)] }, { text: 's9', effects: [lose(1)] },
-        { text: 's10', effects: [lose(1)] }, { text: 's11 clear' },
-      ] }] },
+      rally: {
+        cards: [
+          {
+            name: 'Rally',
+            advantage: 'Humanoid',
+            copies: 2,
+            steps: [
+              { text: 'lose 2 warriors', effects: [lose(2)] },
+              { text: 'gain 3 warriors', effects: [gain(3)] },
+            ],
+          },
+        ],
+      },
+      onestep: {
+        cards: [
+          {
+            name: 'Skewer',
+            advantage: 'Melee',
+            critical: true,
+            copies: 2,
+            steps: [{ text: 'lose 4 warriors', effects: [lose(4)] }],
+          },
+        ],
+      },
+      critimprove: {
+        cards: [
+          {
+            name: 'Slash',
+            advantage: 'Beast',
+            critical: true,
+            copies: 2,
+            steps: [
+              { text: 'lose 3 warriors', effects: [lose(3)] },
+              { text: 'lose 1 warrior', effects: [lose(1)] },
+            ],
+          },
+        ],
+      },
+      doubleloss: {
+        cards: [
+          {
+            name: 'Rend',
+            advantage: 'Beast',
+            copies: 2,
+            steps: [
+              { text: 'lose everything', effects: [lose(100, 'warriors'), lose(100, 'spirit')] },
+            ],
+          },
+        ],
+      },
+      longladder: {
+        cards: [
+          {
+            name: 'Grind',
+            advantage: 'Melee',
+            copies: 2,
+            steps: [
+              { text: 's0', effects: [lose(1)] },
+              { text: 's1', effects: [lose(1)] },
+              { text: 's2', effects: [lose(1)] },
+              { text: 's3', effects: [lose(1)] },
+              { text: 's4', effects: [lose(1)] },
+              { text: 's5', effects: [lose(1)] },
+              { text: 's6', effects: [lose(1)] },
+              { text: 's7', effects: [lose(1)] },
+              { text: 's8', effects: [lose(1)] },
+              { text: 's9', effects: [lose(1)] },
+              { text: 's10', effects: [lose(1)] },
+              { text: 's11 clear' },
+            ],
+          },
+        ],
+      },
       // adversary deck: 5 distinct x2 copies = 10, each a 3-step ladder
       boss: {
         cards: [
-          { name: 'Ember', advantage: 'Magic', copies: 2, steps: [
-            { text: 'lose 4', effects: [lose(4)] }, { text: 'lose 2', effects: [lose(2)] }, { text: 'none' } ] },
-          { name: 'Cinder', advantage: 'Beast', copies: 2, steps: [
-            { text: 'lose 4', effects: [lose(4)] }, { text: 'lose 2', effects: [lose(2)] }, { text: 'none' } ] },
-          { name: 'Ash', advantage: 'Undead', copies: 2, steps: [
-            { text: 'lose 4', effects: [lose(4)] }, { text: 'lose 2', effects: [lose(2)] }, { text: 'none' } ] },
-          { name: 'Soot', advantage: 'Humanoid', copies: 2, steps: [
-            { text: 'lose 4', effects: [lose(4)] }, { text: 'lose 2', effects: [lose(2)] }, { text: 'none' } ] },
-          { name: 'Lash', advantage: 'Melee', copies: 2, steps: [
-            { text: 'lose 4', effects: [lose(4)] }, { text: 'lose 2', effects: [lose(2)] }, { text: 'none' } ] },
+          {
+            name: 'Ember',
+            advantage: 'Magic',
+            copies: 2,
+            steps: [
+              { text: 'lose 4', effects: [lose(4)] },
+              { text: 'lose 2', effects: [lose(2)] },
+              { text: 'none' },
+            ],
+          },
+          {
+            name: 'Cinder',
+            advantage: 'Beast',
+            copies: 2,
+            steps: [
+              { text: 'lose 4', effects: [lose(4)] },
+              { text: 'lose 2', effects: [lose(2)] },
+              { text: 'none' },
+            ],
+          },
+          {
+            name: 'Ash',
+            advantage: 'Undead',
+            copies: 2,
+            steps: [
+              { text: 'lose 4', effects: [lose(4)] },
+              { text: 'lose 2', effects: [lose(2)] },
+              { text: 'none' },
+            ],
+          },
+          {
+            name: 'Soot',
+            advantage: 'Humanoid',
+            copies: 2,
+            steps: [
+              { text: 'lose 4', effects: [lose(4)] },
+              { text: 'lose 2', effects: [lose(2)] },
+              { text: 'none' },
+            ],
+          },
+          {
+            name: 'Lash',
+            advantage: 'Melee',
+            copies: 2,
+            steps: [
+              { text: 'lose 4', effects: [lose(4)] },
+              { text: 'lose 2', effects: [lose(2)] },
+              { text: 'none' },
+            ],
+          },
         ],
       },
       // hero.scope decks
-      plague: { cards: [{ name: 'Plague', advantage: 'Undead', copies: 2, steps: [
-        { text: 'all lose 2', effects: [scope('all', [lose(2)])] },
-      ] }] },
-      curse: { cards: [{ name: 'Curse', advantage: 'Magic', copies: 2, steps: [
-        { text: 'another loses 4', effects: [scope('other', [lose(4)])] },
-      ] }] },
-      duel: { cards: [{ name: 'Duel', advantage: 'Melee', copies: 2, steps: [
-        { text: 'you and another lose 5', effects: [scope('selfAndOther', [lose(5)])] },
-      ] }] },
+      plague: {
+        cards: [
+          {
+            name: 'Plague',
+            advantage: 'Undead',
+            copies: 2,
+            steps: [{ text: 'all lose 2', effects: [scope('all', [lose(2)])] }],
+          },
+        ],
+      },
+      curse: {
+        cards: [
+          {
+            name: 'Curse',
+            advantage: 'Magic',
+            copies: 2,
+            steps: [{ text: 'another loses 4', effects: [scope('other', [lose(4)])] }],
+          },
+        ],
+      },
+      duel: {
+        cards: [
+          {
+            name: 'Duel',
+            advantage: 'Melee',
+            copies: 2,
+            steps: [
+              { text: 'you and another lose 5', effects: [scope('selfAndOther', [lose(5)])] },
+            ],
+          },
+        ],
+      },
       // legacy strikes deck, to prove the gate still routes to resolveBattle
-      legacy: { cards: [{ advantage: 'Melee', strikes: 1 }, { advantage: 'Beast', strikes: 1 }] },
+      legacy: {
+        cards: [
+          { advantage: 'Melee', strikes: 1 },
+          { advantage: 'Beast', strikes: 1 },
+        ],
+      },
     },
   };
 }
@@ -134,10 +260,16 @@ function mkHeroes(n, over) {
     const id = 'hero' + i;
     order.push(id);
     heroes[id] = {
-      warriors: 10, spirit: 3, corruption: 0, advantages: 6,
+      warriors: 10,
+      spirit: 3,
+      corruption: 0,
+      advantages: 6,
       virtues: { active: [], inactive: [] },
       items: { gear: [], treasure: [], potions: [], questItems: [] },
-      companions: [], counters: {}, location: 'delmsmire', heroRef: null,
+      companions: [],
+      counters: {},
+      location: 'delmsmire',
+      heroRef: null,
     };
   }
   const s = mk(
@@ -170,7 +302,9 @@ check('same seed ⇒ identical hand + deck order', () => {
 
 // ---------- reveal + resolve advances the hand ----------
 check('reveal→resolve×2 defeats a level-2 foe (done)', () => {
-  const s = mk({ heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 50 }) } });
+  const s = mk({
+    heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 50 }) },
+  });
   s.foes = [{ instanceId: 'g1', foeId: 'grunts', status: 'ready', location: 'delmsmire' }];
   start(s, { foeId: 'grunts', defId: 'grunts', instanceId: 'g1' });
   bc(s, { reveal: true });
@@ -188,7 +322,11 @@ check('improve moves step +1 and (fullTurn) deducts 1 Advantage', () => {
   const before = s.heroes.hero1.advantages;
   bc(s, { improve: true });
   const dc = s.clock.battle.deck[s.clock.battle.hand[0]];
-  return dc.step === 1 && s.clock.battle.advantagesSpent === 1 && s.heroes.hero1.advantages === before - 1;
+  return (
+    dc.step === 1 &&
+    s.clock.battle.advantagesSpent === 1 &&
+    s.heroes.hero1.advantages === before - 1
+  );
 });
 check('improve does NOT deduct Advantages in legacy (non-fullTurn) states', () => {
   const s = mk(); // no _setup ⇒ fullTurn falsy
@@ -220,7 +358,10 @@ check('resolve at step 0 applies step-0 effects; at step 1 applies step-1', () =
   start(a, { foeId: 'rally', defId: 'rally' });
   bc(a, { reveal: true });
   bc(a, { resolve: true }); // step 0: lose 2 ⇒ 7 → 5
-  const b = mk({ _setup: { fullTurn: true }, heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 7, advantages: 6 }) } });
+  const b = mk({
+    _setup: { fullTurn: true },
+    heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 7, advantages: 6 }) },
+  });
   start(b, { foeId: 'rally', defId: 'rally' });
   bc(b, { reveal: true });
   bc(b, { improve: true }); // step 1
@@ -237,7 +378,9 @@ check('unpayable loss yields exactly 1 corruption', () => {
   return s.heroes.hero1.corruption === 1;
 });
 check('a card with two unpayable losses still corrupts a hero only once (FAQ latch)', () => {
-  const s = mk({ heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 0, spirit: 0 }) } });
+  const s = mk({
+    heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 0, spirit: 0 }) },
+  });
   start(s, { foeId: 'doubleloss', defId: 'doubleloss' });
   bc(s, { reveal: true });
   bc(s, { resolve: true });
@@ -250,7 +393,9 @@ check('hero.scope "all" hits every hero deterministically', () => {
   start(s, { foeId: 'plague', defId: 'plague', level: 1 });
   bc(s, { reveal: true });
   bc(s, { resolve: true });
-  return s.heroes.hero1.warriors === 8 && s.heroes.hero2.warriors === 8 && s.heroes.hero3.warriors === 8;
+  return (
+    s.heroes.hero1.warriors === 8 && s.heroes.hero2.warriors === 8 && s.heroes.hero3.warriors === 8
+  );
 });
 check('hero.scope "other" with >1 candidates prompts, then the pick takes the loss', () => {
   const s = mkHeroes(3);
@@ -259,7 +404,11 @@ check('hero.scope "other" with >1 candidates prompts, then the pick takes the lo
   const out = bc(s, { resolve: true });
   if (out !== 'continue' || !s.clock.battle.pendingHeroChoice) return false;
   battleHeroChoiceInput(s, [], { heroId: 'hero3' });
-  return s.heroes.hero1.warriors === 10 && s.heroes.hero2.warriors === 10 && s.heroes.hero3.warriors === 6;
+  return (
+    s.heroes.hero1.warriors === 10 &&
+    s.heroes.hero2.warriors === 10 &&
+    s.heroes.hero3.warriors === 6
+  );
 });
 check('hero.scope "other" solo (0 others) skips silently, no fault, no loss', () => {
   const s = mkHeroes(1);
@@ -278,16 +427,25 @@ check('hero.scope "selfAndOther" auto-resolves with exactly 1 other (both lose)'
 
 // ---------- adversary: lazy persistent deck + cross-battle improvement + retreat ----------
 check('adversary deck is instantiated lazily (10 cards) and reused, not rebuilt', () => {
-  const s = mk({ heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 500 }) } });
+  const s = mk({
+    heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 500 }) },
+  });
   const before = s.adversary.cardDeck;
   startCardBattle(s, [], { foeId: 'ashstrider', defId: 'boss', isAdversary: true, level: 5 });
   const created = s.adversary.cardDeck;
   s.clock.battle = null;
   startCardBattle(s, [], { foeId: 'ashstrider', defId: 'boss', isAdversary: true, level: 5 });
-  return before === undefined && created && created.length === 10 && s.adversary.cardDeck === created;
+  return (
+    before === undefined && created && created.length === 10 && s.adversary.cardDeck === created
+  );
 });
 check('adversary improvements persist across a retreat and re-battle', () => {
-  const s = mk({ _setup: { fullTurn: true }, heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 500, advantages: 6 }) } });
+  const s = mk({
+    _setup: { fullTurn: true },
+    heroes: {
+      hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 500, advantages: 6 }),
+    },
+  });
   startCardBattle(s, [], { foeId: 'ashstrider', defId: 'boss', isAdversary: true, level: 5 });
   bc(s, { reveal: true });
   bc(s, { improve: true });
@@ -297,8 +455,12 @@ check('adversary improvements persist across a retreat and re-battle', () => {
   const persisted = s.adversary.cardDeck.filter((c) => c.step === 2).length;
   // re-battle: advantagesSpent resets; the improved deck card is still at step 2 somewhere
   startCardBattle(s, [], { foeId: 'ashstrider', defId: 'boss', isAdversary: true, level: 5 });
-  return out === 'done' && persisted === 1 && s.clock.battle.advantagesSpent === 0 &&
-    s.adversary.cardDeck.filter((c) => c.step === 2).length === 1;
+  return (
+    out === 'done' &&
+    persisted === 1 &&
+    s.clock.battle.advantagesSpent === 0 &&
+    s.adversary.cardDeck.filter((c) => c.step === 2).length === 1
+  );
 });
 expectFault('retreat faults against a regular foe', () => {
   const s = mk();
@@ -307,7 +469,9 @@ expectFault('retreat faults against a regular foe', () => {
   bc(s, { retreat: true });
 });
 expectFault('retreat faults from the adversary before resolving ≥1 card', () => {
-  const s = mk({ heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 500 }) } });
+  const s = mk({
+    heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 500 }) },
+  });
   startCardBattle(s, [], { foeId: 'ashstrider', defId: 'boss', isAdversary: true, level: 5 });
   bc(s, { reveal: true });
   bc(s, { retreat: true });
@@ -315,7 +479,12 @@ expectFault('retreat faults from the adversary before resolving ≥1 card', () =
 
 // ---------- advantage cap 10 per battle ----------
 check('the 11th improve in a battle faults (cap 10)', () => {
-  const s = mk({ _setup: { fullTurn: true }, heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 500, advantages: 20 }) } });
+  const s = mk({
+    _setup: { fullTurn: true },
+    heroes: {
+      hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 500, advantages: 20 }),
+    },
+  });
   start(s, { foeId: 'longladder', defId: 'longladder', level: 1 });
   bc(s, { reveal: true });
   for (let i = 0; i < 10; i++) bc(s, { improve: true });
@@ -330,20 +499,35 @@ check('the 11th improve in a battle faults (cap 10)', () => {
 
 // ---------- adversary defeat → win ----------
 check('resolving the whole adversary hand wins the game', () => {
-  const s = mk({ heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 1000 }) } });
+  const s = mk({
+    heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 1000 }) },
+  });
   startCardBattle(s, [], { foeId: 'ashstrider', defId: 'boss', isAdversary: true, level: 5 });
   let out;
   for (let i = 0; i < 5; i++) {
     bc(s, { reveal: true });
     out = bc(s, { resolve: true });
   }
-  return out === 'terminal' && s.adversary.defeated && s.flags.adversaryDefeated &&
-    s.outcome.reason === 'adversary-defeated';
+  return (
+    out === 'terminal' &&
+    s.adversary.defeated &&
+    s.flags.adversaryDefeated &&
+    s.outcome.reason === 'adversary-defeated'
+  );
 });
 
 // ---------- full-turn heroic reward ----------
 check('completing a card battle awards +2 spirit in full-turn scenarios', () => {
-  const s = mk({ _setup: { fullTurn: true }, heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 500, spirit: 3, advantages: 6 }) } });
+  const s = mk({
+    _setup: { fullTurn: true },
+    heroes: {
+      hero1: Object.assign(makeTestState().heroes.hero1, {
+        warriors: 500,
+        spirit: 3,
+        advantages: 6,
+      }),
+    },
+  });
   s.foes = [{ instanceId: 'g1', foeId: 'grunts', status: 'ready', location: 'delmsmire' }];
   start(s, { foeId: 'grunts', defId: 'grunts', instanceId: 'g1' });
   bc(s, { reveal: true });
@@ -355,7 +539,10 @@ check('completing a card battle awards +2 spirit in full-turn scenarios', () => 
 
 // ---------- mid-battle checkpoint round-trips to a digest-identical continuation ----------
 check('serialize/deserialize mid-battle yields an identical digest and continuation', () => {
-  const s = mk({ _setup: { fullTurn: true }, heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 50, advantages: 6 }) } });
+  const s = mk({
+    _setup: { fullTurn: true },
+    heroes: { hero1: Object.assign(makeTestState().heroes.hero1, { warriors: 50, advantages: 6 }) },
+  });
   start(s, { foeId: 'grunts', defId: 'grunts' });
   bc(s, { reveal: true });
   bc(s, { improve: true });
@@ -374,7 +561,11 @@ check('a legacy strikes battleDef routes to the old flow (no ladder cursor)', ()
   // point the foe at the legacy deck via battleDefId
   s._lib.foes = { grunts: { level: 2, battleDefId: 'legacy' } };
   startBattle(s, [], { foeId: 'grunts' });
-  return s.clock.battle.hand === undefined && Array.isArray(s.clock.battle.cards) && s.clock.battle.cards.length === 2;
+  return (
+    s.clock.battle.hand === undefined &&
+    Array.isArray(s.clock.battle.cards) &&
+    s.clock.battle.cards.length === 2
+  );
 });
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

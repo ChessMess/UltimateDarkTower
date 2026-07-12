@@ -96,7 +96,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   no regression and no shader recompile on sequence transitions.
 - **Replaced deprecated `THREE.Clock` with `THREE.Timer`.** `Tower3DView`'s physics-frame `dt` source now
   uses `THREE.Timer` (`update()` / `getDelta()` / `reset()`), silencing the `THREE.Clock: This module has
-  been deprecated` console warning. The dt cadence is preserved — the timer is advanced only while
+been deprecated` console warning. The dt cadence is preserved — the timer is advanced only while
   physics-frame listeners are attached, matching the previous `Clock.getDelta()` behavior.
 
 ## [0.9.0] - 2026-06-19
@@ -108,8 +108,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   tested against three 0.184. The peer is now **`>=0.184.0`** (kept `optional` — three remains optional for
   text/2D-only consumers). Caret on a `0.x` version locks the minor (`^0.170.0` = `>=0.170.0 <0.171.0`), so
   the old range could never resolve a three with `HDRLoader`. This fixes consumers' `vite build` failing with
-  *"Rollup failed to resolve … HDRLoader.js"* or *"`Color`/`Vector3` is not exported by
-  `__vite-optional-peer-dep:three`"*.
+  _"Rollup failed to resolve … HDRLoader.js"_ or _"`Color`/`Vector3` is not exported by
+  `__vite-optional-peer-dep:three`"_.
 
 ### Documentation
 
@@ -151,7 +151,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 
-- **Example app no longer crashes on iOS.** `example/sealController.ts` builds a module-scoped `UltimateDarkTower` purely to hold software-only broken-seal state and never opens a BLE connection, but on iOS (Safari/Chrome — all WebKit, no Web Bluetooth) the constructor's eager platform auto-detection threw *"Unable to detect Bluetooth platform"* and took down the whole example on load. It now constructs with `{ platform: BluetoothPlatform.NONE }` (a no-op adapter) to state the software-only intent explicitly. Added an iOS section to [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md). Requires the `ultimatedarktower` release that adds `BluetoothPlatform.NONE` / deferred construction.
+- **Example app no longer crashes on iOS.** `example/sealController.ts` builds a module-scoped `UltimateDarkTower` purely to hold software-only broken-seal state and never opens a BLE connection, but on iOS (Safari/Chrome — all WebKit, no Web Bluetooth) the constructor's eager platform auto-detection threw _"Unable to detect Bluetooth platform"_ and took down the whole example on load. It now constructs with `{ platform: BluetoothPlatform.NONE }` (a no-op adapter) to state the software-only intent explicitly. Added an iOS section to [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md). Requires the `ultimatedarktower` release that adds `BluetoothPlatform.NONE` / deferred construction.
 
 ### Added
 

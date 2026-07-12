@@ -27,7 +27,11 @@ import {
   type DeckSelection,
 } from './shared';
 
-const blankLadderCard = (): LadderCard => ({ name: 'New Card', advantage: 'Melee', steps: [{ text: '' }] });
+const blankLadderCard = (): LadderCard => ({
+  name: 'New Card',
+  advantage: 'Melee',
+  steps: [{ text: '' }],
+});
 
 // Destructive actions awaiting ConfirmDialog approval — deletes autosave in ~800ms with no undo.
 type PendingDelete = { type: 'deck'; sel: DeckSelection } | { type: 'card' };
@@ -64,7 +68,11 @@ export function DeckBuilderView() {
   }, [cardKey, setDeckCardKey]);
 
   if (!schemaDoc) {
-    return <div style={{ padding: 24, color: 'var(--c-text-muted)' }}>Load a scenario to build decks.</div>;
+    return (
+      <div style={{ padding: 24, color: 'var(--c-text-muted)' }}>
+        Load a scenario to build decks.
+      </div>
+    );
   }
 
   const library = libraryOf(schemaDoc);
@@ -79,9 +87,12 @@ export function DeckBuilderView() {
   const legacyBattleIds = new Set(battleIds.filter((id) => isLegacyBattleDeck(battleDefs[id])));
   const foeIds = Object.keys(foes);
 
-  const commitBattle = (next: Record<string, BattleDeck>) => updateBattleDefs(next as Record<string, unknown>);
-  const commitDecks = (next: Record<string, GenericDeck>) => updateLibraryDecks(next as Record<string, unknown>);
-  const commitCards = (next: Record<string, GenericCard>) => updateLibraryCards(next as Record<string, unknown>);
+  const commitBattle = (next: Record<string, BattleDeck>) =>
+    updateBattleDefs(next as Record<string, unknown>);
+  const commitDecks = (next: Record<string, GenericDeck>) =>
+    updateLibraryDecks(next as Record<string, unknown>);
+  const commitCards = (next: Record<string, GenericCard>) =>
+    updateLibraryCards(next as Record<string, unknown>);
 
   const select = (sel: DeckSelection) => {
     setSelection(sel);
@@ -115,7 +126,10 @@ export function DeckBuilderView() {
   }
 
   const addBattleDeck = (id: string) => {
-    commitBattle({ ...battleDefs, [id]: { cards: [blankLadderCard() as unknown as Record<string, unknown>] } });
+    commitBattle({
+      ...battleDefs,
+      [id]: { cards: [blankLadderCard() as unknown as Record<string, unknown>] },
+    });
     setSelection({ kind: 'battle', id });
     setCardKey('0');
   };
@@ -182,7 +196,11 @@ export function DeckBuilderView() {
   } else if (selDeck) {
     tiles = (selDeck.cards ?? []).map((entry) => ({
       key: entry.cardId,
-      face: genericToFace(schemaDoc, cards[entry.cardId] ?? { id: entry.cardId, name: entry.cardId }, appearance),
+      face: genericToFace(
+        schemaDoc,
+        cards[entry.cardId] ?? { id: entry.cardId, name: entry.cardId },
+        appearance,
+      ),
       copies: entry.copies,
     }));
   }
@@ -190,13 +208,18 @@ export function DeckBuilderView() {
   // ----- battle-card ops -----
   const addBattleCard = () => {
     if (!selBattle || !sel) return;
-    const nextCards = [...(selBattle.cards ?? []), blankLadderCard() as unknown as Record<string, unknown>];
+    const nextCards = [
+      ...(selBattle.cards ?? []),
+      blankLadderCard() as unknown as Record<string, unknown>,
+    ];
     commitBattle({ ...battleDefs, [sel.id]: { ...selBattle, cards: nextCards } });
     setCardKey(String(nextCards.length - 1));
   };
   const changeBattleCard = (i: number, card: LadderCard) => {
     if (!selBattle || !sel) return;
-    const nextCards = (selBattle.cards ?? []).map((c, idx) => (idx === i ? (card as unknown as Record<string, unknown>) : c));
+    const nextCards = (selBattle.cards ?? []).map((c, idx) =>
+      idx === i ? (card as unknown as Record<string, unknown>) : c,
+    );
     commitBattle({ ...battleDefs, [sel.id]: { ...selBattle, cards: nextCards } });
   };
   const removeBattleCard = (i: number) => {
@@ -210,7 +233,10 @@ export function DeckBuilderView() {
   const addGenericCard = () => {
     if (!selDeck || !sel) return;
     const id = uniqueKey('card', cards);
-    const nextCards = { ...cards, [id]: { id, name: 'New Card', type: selDeck.category ?? 'treasure' } };
+    const nextCards = {
+      ...cards,
+      [id]: { id, name: 'New Card', type: selDeck.category ?? 'treasure' },
+    };
     const nextEntries = [...(selDeck.cards ?? []), { cardId: id, copies: 1 }];
     commitCards(nextCards);
     commitDecks({ ...decks, [sel.id]: { ...selDeck, cards: nextEntries } });
@@ -221,7 +247,9 @@ export function DeckBuilderView() {
   };
   const changeGenericCopies = (cardId: string, copies: number) => {
     if (!selDeck || !sel) return;
-    const nextEntries = (selDeck.cards ?? []).map((e) => (e.cardId === cardId ? { ...e, copies } : e));
+    const nextEntries = (selDeck.cards ?? []).map((e) =>
+      e.cardId === cardId ? { ...e, copies } : e,
+    );
     commitDecks({ ...decks, [sel.id]: { ...selDeck, cards: nextEntries } });
   };
   const removeGenericCard = (cardId: string) => {
@@ -230,7 +258,9 @@ export function DeckBuilderView() {
     const nextDecks = { ...decks, [sel.id]: { ...selDeck, cards: nextEntries } };
     commitDecks(nextDecks);
     // drop the library.cards entry if no remaining deck references it
-    const stillUsed = Object.values(nextDecks).some((d) => (d.cards ?? []).some((e) => e.cardId === cardId));
+    const stillUsed = Object.values(nextDecks).some((d) =>
+      (d.cards ?? []).some((e) => e.cardId === cardId),
+    );
     if (!stillUsed) {
       const nextCards = { ...cards };
       delete nextCards[cardId];
@@ -239,23 +269,34 @@ export function DeckBuilderView() {
     setCardKey(nextEntries.length > 0 ? nextEntries[0].cardId : null);
   };
 
-  const selectedBattleCard = selBattle && cardKey !== null ? (selBattle.cards?.[Number(cardKey)] as LadderCard | undefined) : undefined;
-  const selectedGenericEntry = selDeck && cardKey !== null ? selDeck.cards?.find((e) => e.cardId === cardKey) : undefined;
+  const selectedBattleCard =
+    selBattle && cardKey !== null
+      ? (selBattle.cards?.[Number(cardKey)] as LadderCard | undefined)
+      : undefined;
+  const selectedGenericEntry =
+    selDeck && cardKey !== null ? selDeck.cards?.find((e) => e.cardId === cardKey) : undefined;
   const selectedGenericCard = selectedGenericEntry ? cards[selectedGenericEntry.cardId] : undefined;
 
   // ----- pending-delete confirmation copy + action -----
-  type ConfirmSpec = { title: string; message: React.ReactNode; confirmLabel: string; run: () => void };
+  type ConfirmSpec = {
+    title: string;
+    message: React.ReactNode;
+    confirmLabel: string;
+    run: () => void;
+  };
   const confirm = ((): ConfirmSpec | null => {
     if (pendingDelete?.type === 'deck') {
       const del = pendingDelete.sel;
       const count =
-        del.kind === 'battle' ? (battleDefs[del.id]?.cards?.length ?? 0) : (decks[del.id]?.cards?.length ?? 0);
+        del.kind === 'battle'
+          ? (battleDefs[del.id]?.cards?.length ?? 0)
+          : (decks[del.id]?.cards?.length ?? 0);
       return {
         title: 'Delete deck?',
         message: (
           <>
-            Delete <strong>{del.id}</strong>? It contains {count} card{count === 1 ? '' : 's'}. This cannot be
-            undone.
+            Delete <strong>{del.id}</strong>? It contains {count} card{count === 1 ? '' : 's'}. This
+            cannot be undone.
           </>
         ),
         confirmLabel: 'Delete',
@@ -268,8 +309,8 @@ export function DeckBuilderView() {
           title: 'Delete card?',
           message: (
             <>
-              Delete <strong>{selectedBattleCard?.name ?? 'this card'}</strong> from <strong>{sel.id}</strong>?
-              This cannot be undone.
+              Delete <strong>{selectedBattleCard?.name ?? 'this card'}</strong> from{' '}
+              <strong>{sel.id}</strong>? This cannot be undone.
             </>
           ),
           confirmLabel: 'Delete',
@@ -280,8 +321,9 @@ export function DeckBuilderView() {
         title: 'Remove card?',
         message: (
           <>
-            Remove <strong>{selectedGenericCard?.name ?? cardKey}</strong> from <strong>{sel.id}</strong>? If no
-            other deck uses it, it is also deleted from the card library.
+            Remove <strong>{selectedGenericCard?.name ?? cardKey}</strong> from{' '}
+            <strong>{sel.id}</strong>? If no other deck uses it, it is also deleted from the card
+            library.
           </>
         ),
         confirmLabel: 'Remove',
@@ -304,7 +346,9 @@ export function DeckBuilderView() {
         onAddBattle={addBattleDeck}
         onAddCardDeck={addCardDeck}
         onRemove={(delSel) => setPendingDelete({ type: 'deck', sel: delSel })}
-        onImportBattle={(defs) => commitBattle({ ...battleDefs, ...(defs as Record<string, BattleDeck>) })}
+        onImportBattle={(defs) =>
+          commitBattle({ ...battleDefs, ...(defs as Record<string, BattleDeck>) })
+        }
       />
 
       {sel ? (
@@ -318,12 +362,18 @@ export function DeckBuilderView() {
             onManageImages={() => setAssetOpen(true)}
             legacy={legacy}
             foeIds={sel.kind === 'battle' ? foeIds : undefined}
-            foeAssignments={sel.kind === 'battle' ? Object.fromEntries(foeIds.map((f) => [f, foes[f]?.battleDefId])) : undefined}
+            foeAssignments={
+              sel.kind === 'battle'
+                ? Object.fromEntries(foeIds.map((f) => [f, foes[f]?.battleDefId]))
+                : undefined
+            }
             battleDeckIds={sel.kind === 'battle' ? battleIds : undefined}
             onAssignFoe={updateFoeBattleDefId}
             category={selDeck?.category}
             marketSize={selDeck?.marketSize}
-            onCategoryChange={(cat) => selDeck && commitDecks({ ...decks, [sel.id]: { ...selDeck, category: cat } })}
+            onCategoryChange={(cat) =>
+              selDeck && commitDecks({ ...decks, [sel.id]: { ...selDeck, category: cat } })
+            }
             onMarketSizeChange={(n) => {
               if (!selDeck) return;
               const d = { ...selDeck };
@@ -340,7 +390,14 @@ export function DeckBuilderView() {
           />
         </div>
       ) : (
-        <div style={{ ...center, alignItems: 'center', justifyContent: 'center', color: 'var(--c-text-muted)' }}>
+        <div
+          style={{
+            ...center,
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--c-text-muted)',
+          }}
+        >
           Create a deck to begin.
         </div>
       )}
@@ -391,7 +448,12 @@ export function DeckBuilderView() {
   );
 }
 
-const root: CSSProperties = { display: 'flex', height: '100%', minHeight: 0, background: 'var(--c-bg)' };
+const root: CSSProperties = {
+  display: 'flex',
+  height: '100%',
+  minHeight: 0,
+  background: 'var(--c-bg)',
+};
 const center: CSSProperties = {
   flex: 1,
   minWidth: 0,

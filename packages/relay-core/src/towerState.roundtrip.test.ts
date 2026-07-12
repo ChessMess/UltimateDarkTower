@@ -64,9 +64,27 @@ describe('rtdt_pack_state / rtdt_unpack_state round-trip', () => {
     const decoded = roundTrip(makeRichState());
 
     // Drums
-    expect(decoded.drum[0]).toEqual({ jammed: true, calibrated: true, position: 2, playSound: true, reverse: false });
-    expect(decoded.drum[1]).toEqual({ jammed: false, calibrated: true, position: 1, playSound: false, reverse: true });
-    expect(decoded.drum[2]).toEqual({ jammed: true, calibrated: false, position: 3, playSound: true, reverse: true });
+    expect(decoded.drum[0]).toEqual({
+      jammed: true,
+      calibrated: true,
+      position: 2,
+      playSound: true,
+      reverse: false,
+    });
+    expect(decoded.drum[1]).toEqual({
+      jammed: false,
+      calibrated: true,
+      position: 1,
+      playSound: false,
+      reverse: true,
+    });
+    expect(decoded.drum[2]).toEqual({
+      jammed: true,
+      calibrated: false,
+      position: 3,
+      playSound: true,
+      reverse: true,
+    });
 
     // Lights
     decoded.layer.forEach((layer, li) => {

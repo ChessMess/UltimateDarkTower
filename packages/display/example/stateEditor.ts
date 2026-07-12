@@ -1,10 +1,22 @@
 import type { TowerDisplay, TowerStateReadout } from '../src/index';
 import type { TowerState } from 'ultimatedarktower';
 import type { DomElements } from './dom';
-import { refreshConfigPreview, setConfigPreviewMessage, syncConfigSelectorVisibility } from './configEditor';
+import {
+  refreshConfigPreview,
+  setConfigPreviewMessage,
+  syncConfigSelectorVisibility,
+} from './configEditor';
 import { refreshLightingConfigBox } from './lightingController';
 import { armTowerAudioFromUserGesture, is3DViewVisible, getLastState } from './rendererController';
-import { createReadmeExampleState, createRandomState, createAllOnState, createSequenceState, createEmptyState, createCalibrationCommandState, SEQUENCE_AUDIO_MAP } from './presets';
+import {
+  createReadmeExampleState,
+  createRandomState,
+  createAllOnState,
+  createSequenceState,
+  createEmptyState,
+  createCalibrationCommandState,
+  SEQUENCE_AUDIO_MAP,
+} from './presets';
 import { removeAllSeals, resetSeals, toggleSeal, getTower } from './sealController';
 import { clearLedOverrides } from './ledOverrideController';
 import { SEQUENCE_METADATA } from '../src/sequences/sequenceMetadata';
@@ -21,7 +33,7 @@ function applyAndShow(
   getReadout: () => TowerStateReadout,
   setLastState: (s: TowerState | null) => void,
   els: DomElements,
-  fromUserGesture = true
+  fromUserGesture = true,
 ): void {
   setLastState(state);
   if (fromUserGesture) {
@@ -41,7 +53,7 @@ export function initStateEditor(
   getDisplay: () => TowerDisplay,
   getReadout: () => TowerStateReadout,
   setLastState: (s: TowerState | null) => void,
-  els: DomElements
+  els: DomElements,
 ): void {
   if (els.btnReadme) {
     els.btnReadme.addEventListener('click', () => {
@@ -96,7 +108,14 @@ export function initStateEditor(
       const level = target.dataset.sealLevel;
       const side = target.dataset.sealSide;
       if (!level || !side) return;
-      toggleSeal({ side: side as 'north' | 'east' | 'south' | 'west', level: level as 'top' | 'middle' | 'bottom' }, getDisplay(), getReadout());
+      toggleSeal(
+        {
+          side: side as 'north' | 'east' | 'south' | 'west',
+          level: level as 'top' | 'middle' | 'bottom',
+        },
+        getDisplay(),
+        getReadout(),
+      );
       refreshSealToggleActive(els);
     });
   }
@@ -125,12 +144,21 @@ export function initStateEditor(
       if (!sel) return;
       const sequenceId = Number(sel.value);
       if (!Number.isFinite(sequenceId) || sequenceId === 0) return;
-      const meta = SEQUENCE_METADATA[sel.options[sel.selectedIndex].dataset.name as keyof typeof SEQUENCE_METADATA];
+      const meta =
+        SEQUENCE_METADATA[
+          sel.options[sel.selectedIndex].dataset.name as keyof typeof SEQUENCE_METADATA
+        ];
       const label = meta ? formatSequenceName(meta.name) : `sequence 0x${sequenceId.toString(16)}`;
       setStateName(label, els);
       getDisplay().showIdle();
       getReadout().showIdle();
-      applyAndShow(createSequenceState(sequenceId, getLastState() ?? undefined), getDisplay, getReadout, setLastState, els);
+      applyAndShow(
+        createSequenceState(sequenceId, getLastState() ?? undefined),
+        getDisplay,
+        getReadout,
+        setLastState,
+        els,
+      );
     });
   }
 
@@ -211,7 +239,7 @@ export function initInitialState(
   getDisplay: () => TowerDisplay,
   getReadout: () => TowerStateReadout,
   setLastState: (s: TowerState | null) => void,
-  els: DomElements
+  els: DomElements,
 ): void {
   syncConfigSelectorVisibility(getDisplay, els);
   if (els.stateBadge) els.stateBadge.textContent = 'empty';

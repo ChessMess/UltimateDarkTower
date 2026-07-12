@@ -26,8 +26,8 @@ const SEAL_WIRE_COLOR_BROKEN = 0xff2e2e;
 const SEAL_NAME_PREFIX = 'seal_';
 const SEAL_SIDES = ['north', 'east', 'south', 'west'] as const;
 const SEAL_LEVELS = ['top', 'middle', 'bottom'] as const;
-type SealSide = typeof SEAL_SIDES[number];
-type SealLevel = typeof SEAL_LEVELS[number];
+type SealSide = (typeof SEAL_SIDES)[number];
+type SealLevel = (typeof SEAL_LEVELS)[number];
 
 function parseSealNode(name: string): { side: SealSide; level: SealLevel } | null {
   if (!name.startsWith(SEAL_NAME_PREFIX)) return null;
@@ -86,10 +86,10 @@ export class PhysicsManager {
   private config: ResolvedPhysicsConfig;
   private readonly hooks: TowerPhysicsHooks;
 
-  private unsubFrame: () => void = () => { };
-  private unsubSeal: () => void = () => { };
-  private unsubModel: () => void = () => { };
-  private unsubState: () => void = () => { };
+  private unsubFrame: () => void = () => {};
+  private unsubSeal: () => void = () => {};
+  private unsubModel: () => void = () => {};
+  private unsubState: () => void = () => {};
   /** Last seen `state.beam.count` — used to detect increases for auto-drop. */
   private prevBeamCount: number | null = null;
 
@@ -280,9 +280,9 @@ export class PhysicsManager {
     // user asked for it. Factory mode forces sphere — no model data to hull.
     let colliderDesc: RapierColliderDesc | null = null;
     if (
-      !this.config.skull.meshFactory
-      && this.skullTemplate
-      && this.config.skull.colliderShape === 'hull'
+      !this.config.skull.meshFactory &&
+      this.skullTemplate &&
+      this.config.skull.colliderShape === 'hull'
     ) {
       const density = this.config.skull.density ?? this.skullTemplate.density;
       colliderDesc = buildHullColliderDesc(
@@ -350,10 +350,10 @@ export class PhysicsManager {
     this.unsubSeal();
     this.unsubModel();
     this.unsubState();
-    this.unsubFrame = () => { };
-    this.unsubSeal = () => { };
-    this.unsubModel = () => { };
-    this.unsubState = () => { };
+    this.unsubFrame = () => {};
+    this.unsubSeal = () => {};
+    this.unsubModel = () => {};
+    this.unsubState = () => {};
     this.skullLoadAbort?.abort();
     this.skullLoadAbort = null;
 
@@ -405,8 +405,11 @@ export class PhysicsManager {
     // resolved config (synced to the host app's visual board-size slider).
     {
       const halfThick = specs.boardFloor.thickness / 2;
-      const desc = RAPIER.RigidBodyDesc.fixed()
-        .setTranslation(0, specs.boardFloor.y - halfThick, 0);
+      const desc = RAPIER.RigidBodyDesc.fixed().setTranslation(
+        0,
+        specs.boardFloor.y - halfThick,
+        0,
+      );
       const body = world.createRigidBody(desc);
       const cd = RAPIER.ColliderDesc.cylinder(halfThick, specs.boardFloor.radius)
         .setFriction(this.config.board.friction)
@@ -461,8 +464,12 @@ export class PhysicsManager {
       const x = Math.cos(a) * radius;
       const z = Math.sin(a) * radius;
       const o = i * 6;
-      verts[o + 0] = x; verts[o + 1] = y0; verts[o + 2] = z;
-      verts[o + 3] = x; verts[o + 4] = y1; verts[o + 5] = z;
+      verts[o + 0] = x;
+      verts[o + 1] = y0;
+      verts[o + 2] = z;
+      verts[o + 3] = x;
+      verts[o + 4] = y1;
+      verts[o + 5] = z;
     }
     // 2N triangles (two per segment) → 6N index entries.
     const indices = new Uint32Array(N * 6);
@@ -701,7 +708,6 @@ export class PhysicsManager {
       }
     }
 
-
     // Rapier's step uses its own fixed timestep internally; `dt` is unused for
     // numerical integration but is reserved for future variable-step modes.
     void dt;
@@ -730,7 +736,11 @@ export class PhysicsManager {
     const geom = new THREE.BufferGeometry();
     geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(0), 3));
     geom.setAttribute('color', new THREE.BufferAttribute(new Float32Array(0), 4));
-    const mat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.85 });
+    const mat = new THREE.LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85,
+    });
     const lines = new THREE.LineSegments(geom, mat);
     lines.renderOrder = 999;
     (lines.material as THREE.LineBasicMaterial).depthTest = false;
@@ -823,14 +833,14 @@ export class PhysicsManager {
       }
     }
     if (
-      this.config.skull.colliderShape === 'hull'
-      && !this.config.skull.modelUrl
-      && prev.skull.colliderShape !== 'hull'
+      this.config.skull.colliderShape === 'hull' &&
+      !this.config.skull.modelUrl &&
+      prev.skull.colliderShape !== 'hull'
     ) {
       // eslint-disable-next-line no-console
       console.warn(
         '[ultimatedarktowerdisplay/physics] colliderShape: "hull" requires a modelUrl — ' +
-        'next drop will fall back to a ball collider.',
+          'next drop will fall back to a ball collider.',
       );
     }
     // Note: `debug.colliders` toggles the full Rapier debug overlay. We
@@ -855,9 +865,9 @@ export class PhysicsManager {
   private handleStateApplied(state: TowerState): void {
     const count = state.beam.count;
     if (
-      this.config.skull.autoDropOnSkullCountIncrease
-      && this.prevBeamCount !== null
-      && count > this.prevBeamCount
+      this.config.skull.autoDropOnSkullCountIncrease &&
+      this.prevBeamCount !== null &&
+      count > this.prevBeamCount
     ) {
       this.dropSkull();
     }
@@ -867,7 +877,7 @@ export class PhysicsManager {
   /** Apply broken-seal updates by toggling seal collider enablement. */
   private applyBrokenSeals(broken: SealIdentifier[]): void {
     if (!this.world) return;
-    const newBroken = new Set<string>(broken.map(b => sealKey(b.level, b.side)));
+    const newBroken = new Set<string>(broken.map((b) => sealKey(b.level, b.side)));
 
     for (const [key, ref] of this.sealColliders) {
       const isBroken = newBroken.has(key);

@@ -16,7 +16,7 @@
 
 ## What this is
 
-A relay **host** advertises a tower-emulator the official *Return to Dark Tower* companion app connects to, decodes every 20-byte command, and broadcasts it over WebSocket. **This package is what a consumer runs.** It speaks the relay's WebSocket protocol so you don't have to: handshake, decoded `TowerState` events, participant actions, auto-reconnect with backoff, and protocol-version-mismatch handling.
+A relay **host** advertises a tower-emulator the official _Return to Dark Tower_ companion app connects to, decodes every 20-byte command, and broadcasts it over WebSocket. **This package is what a consumer runs.** It speaks the relay's WebSocket protocol so you don't have to: handshake, decoded `TowerState` events, participant actions, auto-reconnect with backoff, and protocol-version-mismatch handling.
 
 It's **isomorphic** — use the browser's global `WebSocket`, or inject the `ws` package in Node. Consumers fall into two roles:
 
@@ -67,7 +67,7 @@ await client.connect('ws://192.168.1.5:8765');
 import { RelayClient, PhysicalTowerReplay } from 'ultimatedarktowerrelay-client';
 import UltimateDarkTower from 'ultimatedarktower';
 
-const tower = new UltimateDarkTower();        // satisfies TowerWriter structurally
+const tower = new UltimateDarkTower(); // satisfies TowerWriter structurally
 const replay = new PhysicalTowerReplay({ tower });
 
 const client = new RelayClient({
@@ -85,14 +85,14 @@ client.dropSkull();
 
 `onEvent` receives a discriminated union (`RelayClientEvent`). Common types:
 
-| Type | Meaning |
-|---|---|
-| `state` | Decoded `TowerState` + the raw `lastCommand`. |
-| `tower:command` | Raw 20-byte command with a monotonic `seq`. |
-| `sync:state` | Late-join catch-up (last command). |
-| `relay:connected` · `relay:disconnected` · `relay:reconnecting` | Connection lifecycle. |
-| `relay:version-mismatch` | Host/client `PROTOCOL_VERSION` disagree. |
-| `host:status` · `client:connected` · `client:disconnected` | Room/host status. |
+| Type                                                            | Meaning                                       |
+| --------------------------------------------------------------- | --------------------------------------------- |
+| `state`                                                         | Decoded `TowerState` + the raw `lastCommand`. |
+| `tower:command`                                                 | Raw 20-byte command with a monotonic `seq`.   |
+| `sync:state`                                                    | Late-join catch-up (last command).            |
+| `relay:connected` · `relay:disconnected` · `relay:reconnecting` | Connection lifecycle.                         |
+| `relay:version-mismatch`                                        | Host/client `PROTOCOL_VERSION` disagree.      |
+| `host:status` · `client:connected` · `client:disconnected`      | Room/host status.                             |
 
 ## Documentation
 
@@ -103,4 +103,4 @@ client.dropSkull();
 
 ## License
 
-MIT. *Return to Dark Tower* and its art, sounds, and likeness are © Restoration Games. This is an unofficial, fan-made project.
+MIT. _Return to Dark Tower_ and its art, sounds, and likeness are © Restoration Games. This is an unofficial, fan-made project.

@@ -6,7 +6,15 @@
 import { dir, fault } from './core';
 import { evalCondition } from './conditions';
 import { applyEffect, completeQuest, buildingAt } from './effects';
-import type { EngineState, Directive, ActionChoice, TradeDecision, TradeAsset, HeroState, TriggerDef } from './types';
+import type {
+  EngineState,
+  Directive,
+  ActionChoice,
+  TradeDecision,
+  TradeAsset,
+  HeroState,
+  TriggerDef,
+} from './types';
 
 export function resetLatches(state: EngineState): void {
   state.clock.latches = {
@@ -90,14 +98,16 @@ export function performAction(
         if (!questId) throw fault('quest action requires a questId (full-turn protocol)');
         const q = (state._lib.quests || {})[questId];
         if (!q) throw fault('unknown quest: ' + questId);
-        if ((state.quests[questId] || {}).complete) throw fault('quest already complete: ' + questId);
+        if ((state.quests[questId] || {}).complete)
+          throw fault('quest already complete: ' + questId);
         if (
           (state._setup.monthlyQuestIds || []).includes(questId) &&
           !(state.activeQuests || []).some((x) => x.questId === questId)
         )
           throw fault('monthly quest is not currently active: ' + questId);
         for (const r of q.requirements || [])
-          if (!evalCondition(r.condition, state)) throw fault('quest requirement not met: ' + (r.label || questId));
+          if (!evalCondition(r.condition, state))
+            throw fault('quest requirement not met: ' + (r.label || questId));
         completeQuest(state, directives, questId); // applies the authored success outcomes (full-turn)
         if (state.outcome.status !== 'running') return;
         awardHeroic(state, directives);
@@ -118,7 +128,8 @@ export function performAction(
         markHeroic(state);
         const hero = state.heroes[state.clock.activeHero];
         const b = buildingAt(state, hero.location);
-        if (!b || b.destroyed) throw fault('cleanse: no standing building at ' + (hero.location || '(nowhere)'));
+        if (!b || b.destroyed)
+          throw fault('cleanse: no standing building at ' + (hero.location || '(nowhere)'));
         if (b.skulls <= 0) throw fault('cleanse: no skulls on the building at ' + hero.location);
         const removed = b.skulls;
         b.skulls = 0;
@@ -145,7 +156,8 @@ export function performAction(
         const hero = state.heroes[state.clock.activeHero];
         const b = buildingAt(state, hero.location);
         if (!b) throw fault('reinforce: no building at ' + (hero.location || '(nowhere)'));
-        if (b.destroyed) throw fault('reinforce: the building at ' + hero.location + ' is destroyed');
+        if (b.destroyed)
+          throw fault('reinforce: the building at ' + hero.location + ' is destroyed');
         const def = (state._lib.buildingTypes || {})[b.type];
         if (!def) throw fault('reinforce: no buildingType definition for ' + b.type);
         const effects = a.enhanced ? def.enhanced?.effects : def.free;
@@ -213,7 +225,12 @@ export function applyTrade(state: EngineState, directives: Directive[], t: Trade
         break;
       }
       case 'item': {
-        const buckets: Array<keyof HeroState['items']> = ['gear', 'treasure', 'potions', 'questItems'];
+        const buckets: Array<keyof HeroState['items']> = [
+          'gear',
+          'treasure',
+          'potions',
+          'questItems',
+        ];
         let found = false;
         for (const bk of buckets) {
           const i = giver.items[bk].indexOf(asset.itemRef);
@@ -236,7 +253,10 @@ export function applyTrade(state: EngineState, directives: Directive[], t: Trade
       }
       default: {
         const _exhaustive: never = asset;
-        throw fault('trade: untradeable asset (virtues/corruptions are structurally untradeable): ' + _exhaustive);
+        throw fault(
+          'trade: untradeable asset (virtues/corruptions are structurally untradeable): ' +
+            _exhaustive,
+        );
       }
     }
   };

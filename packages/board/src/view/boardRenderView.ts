@@ -3,7 +3,13 @@ import type { BoardState } from '../state/boardState';
 import { createDefaultBoardState } from '../state/boardState';
 import { BoardReadout } from '../renderers/readout';
 import { BoardMap2D } from '../renderers/map2d';
-import type { TokenSelection, TokenArtRef, TokenArtConfig, BoardView, DragMode } from '../renderers/map2d';
+import type {
+  TokenSelection,
+  TokenArtRef,
+  TokenArtConfig,
+  BoardView,
+  DragMode,
+} from '../renderers/map2d';
 import type { BoardFocus } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
 import { mountFocusControls } from './focusControls';

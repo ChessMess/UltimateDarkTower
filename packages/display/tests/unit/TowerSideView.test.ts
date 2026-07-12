@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-jest.mock('../../src/2d/TowerSide.svg?raw', () => `
+jest.mock(
+  '../../src/2d/TowerSide.svg?raw',
+  () => `
   <svg viewBox="0 0 180 374" xmlns="http://www.w3.org/2000/svg">
     <g id="layer1">
       <circle id="base-right-back-led" />
@@ -14,7 +16,8 @@ jest.mock('../../src/2d/TowerSide.svg?raw', () => `
       <circle id="top-doorway-led" />
     </g>
   </svg>
-`);
+`,
+);
 
 import { TowerSideView } from '../../src/2d/TowerSideView';
 import { _resetStyleInjection } from '../../src/styles';
@@ -113,9 +116,9 @@ describe('TowerSideView', () => {
 
   it('applyState() maps light effects onto SVG LED markers', () => {
     const state = createDefaultTowerState();
-    state.layer[0].light[0].effect = LIGHT_EFFECTS.on;       // NORTH ring → top doorway on N view
+    state.layer[0].light[0].effect = LIGHT_EFFECTS.on; // NORTH ring → top doorway on N view
     state.layer[3].light[0].effect = LIGHT_EFFECTS.breatheFast; // NE corner → right ledge on N view
-    state.layer[5].light[3].effect = LIGHT_EFFECTS.flicker;  // NW corner → left base-back on N view
+    state.layer[5].light[3].effect = LIGHT_EFFECTS.flicker; // NW corner → left base-back on N view
 
     view.applyState(state);
 
@@ -159,13 +162,13 @@ describe('TowerSideView', () => {
     expect(ledgeRight?.getAttribute('data-effect')).toBe('off');
 
     const buttons = container.querySelectorAll('.tower-side-btn');
-    (buttons[1] as HTMLButtonElement).click();  // east
+    (buttons[1] as HTMLButtonElement).click(); // east
 
     // NW corner (light[3]) is not adjacent to the east face; neither side shows it
     expect(ledgeLeft?.getAttribute('data-effect')).toBe('off');
     expect(ledgeRight?.getAttribute('data-effect')).toBe('off');
 
-    (buttons[2] as HTMLButtonElement).click();  // south
+    (buttons[2] as HTMLButtonElement).click(); // south
     expect(ledgeLeft?.getAttribute('data-effect')).toBe('off');
     expect(ledgeRight?.getAttribute('data-effect')).toBe('off');
   });
@@ -190,7 +193,7 @@ describe('TowerSideView', () => {
     expect(baseLeftBack?.getAttribute('data-effect')).toBe('on');
 
     const buttons = container.querySelectorAll('.tower-side-btn');
-    (buttons[1] as HTMLButtonElement).click();  // east — NW corner not adjacent to east face
+    (buttons[1] as HTMLButtonElement).click(); // east — NW corner not adjacent to east face
 
     expect(ledgeLeft?.getAttribute('data-effect')).toBe('off');
     expect(ledgeRight?.getAttribute('data-effect')).toBe('off');

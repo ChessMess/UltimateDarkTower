@@ -25,7 +25,14 @@ import type { LocationPickStore } from '../ui/stores';
 // Re-export the shared token-art convention so existing consumers keep importing
 // `TokenSelection`/`TokenArtRef`/`kebab` from here (and via the package barrel).
 export { kebab, lookupTokenArt, resolveTokenImageFor } from './assetPaths';
-export type { TokenSelection, TokenArtRef, TokenArt, TokenArtConfig, TokenModelRef, BoardView } from './assetPaths';
+export type {
+  TokenSelection,
+  TokenArtRef,
+  TokenArt,
+  TokenArtConfig,
+  TokenModelRef,
+  BoardView,
+} from './assetPaths';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
@@ -125,7 +132,13 @@ export class BoardMap2D implements BoardRenderer {
   private panStart?: { clientX: number; clientY: number; view: Rect };
   private panMoved = false;
   /** In-flight grab-&-spin state: the on-screen pivot (board center) plus the angle/rotation at grab. */
-  private rotateStart?: { pivot: ClientPoint; downX: number; downY: number; startAngle: number; startRotation: number };
+  private rotateStart?: {
+    pivot: ClientPoint;
+    downX: number;
+    downY: number;
+    startAngle: number;
+    startRotation: number;
+  };
   private rotateMoved = false;
   /** Current spin about the board center, in degrees (applied to `rotateLayer`). */
   private rotationDeg = 0;
@@ -139,7 +152,7 @@ export class BoardMap2D implements BoardRenderer {
 
   constructor(
     private readonly container: HTMLElement,
-    options: BoardMap2DOptions = {}
+    options: BoardMap2DOptions = {},
   ) {
     this.assetBaseUrl = normalizeAssetBaseUrl(options.assetBaseUrl);
     this.boardImageUrl = options.boardImageUrl;
@@ -303,7 +316,8 @@ export class BoardMap2D implements BoardRenderer {
     for (const [loc, slots] of Object.entries(BOARD_ANCHORS)) {
       const anchor = slots[slot];
       if (!anchor) continue;
-      if (focus.kingdom !== 'all' && BOARD_LOCATION_BY_NAME[loc]?.kingdom !== focus.kingdom) continue;
+      if (focus.kingdom !== 'all' && BOARD_LOCATION_BY_NAME[loc]?.kingdom !== focus.kingdom)
+        continue;
       const circle = document.createElementNS(SVG_NS, 'circle');
       circle.setAttribute('class', 'udt-space');
       circle.setAttribute('data-location', loc);
@@ -325,18 +339,23 @@ export class BoardMap2D implements BoardRenderer {
     const layers: Array<{ z: number; render: () => void }> = [
       {
         z: KIND_Z_2D.foe,
-        render: () => this.renderFannedByLocation(
-          root, focus, foeEntries(state), 'foe',
-          (entry) => ({ kind: 'foe', id: entry.id, location: entry.location }),
-          (entry) => ({ kind: 'foe', id: entry.art ?? entry.id })
-        ),
+        render: () =>
+          this.renderFannedByLocation(
+            root,
+            focus,
+            foeEntries(state),
+            'foe',
+            (entry) => ({ kind: 'foe', id: entry.id, location: entry.location }),
+            (entry) => ({ kind: 'foe', id: entry.art ?? entry.id }),
+          ),
       },
       {
         z: KIND_Z_2D.adversary,
         render: () => {
           const adversary = state.adversary;
           if (adversary?.location) {
-            const px = anchorPx(adversary.location, 'foe') ?? anchorPx(adversary.location, 'building');
+            const px =
+              anchorPx(adversary.location, 'foe') ?? anchorPx(adversary.location, 'building');
             if (px) {
               root.appendChild(
                 this.makeToken(
@@ -344,8 +363,8 @@ export class BoardMap2D implements BoardRenderer {
                   { kind: 'adversary', id: adversary.id },
                   px,
                   SLOT_SIZE,
-                  this.dim(adversary.location, focus)
-                )
+                  this.dim(adversary.location, focus),
+                ),
               );
             }
           }
@@ -360,9 +379,19 @@ export class BoardMap2D implements BoardRenderer {
               const px = anchorPx(loc, 'skull');
               if (px) {
                 const count = Math.min(b.skulls, MAX_FANNED_SKULLS);
-                const group = this.makeSelectableGroup({ kind: 'building', id: loc, location: loc }, px, opacity);
+                const group = this.makeSelectableGroup(
+                  { kind: 'building', id: loc, location: loc },
+                  px,
+                  opacity,
+                );
                 for (let i = 0; i < count; i++) {
-                  this.appendArtOrFallback(group, { kind: 'skull', id: 'skull' }, 'building', SKULL_SIZE, fanOffset(i, count, FAN_RADIUS));
+                  this.appendArtOrFallback(
+                    group,
+                    { kind: 'skull', id: 'skull' },
+                    'building',
+                    SKULL_SIZE,
+                    fanOffset(i, count, FAN_RADIUS),
+                  );
                 }
                 root.appendChild(group);
               }
@@ -370,8 +399,18 @@ export class BoardMap2D implements BoardRenderer {
             if (b.monument || b.destroyed) {
               const px = anchorPx(loc, 'building');
               if (px) {
-                const group = this.makeSelectableGroup({ kind: 'building', id: loc, location: loc }, px, opacity);
-                if (b.monument) this.appendArtOrFallback(group, { kind: 'monument', id: b.monument }, 'building', SLOT_SIZE);
+                const group = this.makeSelectableGroup(
+                  { kind: 'building', id: loc, location: loc },
+                  px,
+                  opacity,
+                );
+                if (b.monument)
+                  this.appendArtOrFallback(
+                    group,
+                    { kind: 'monument', id: b.monument },
+                    'building',
+                    SLOT_SIZE,
+                  );
                 if (b.destroyed) group.appendChild(razedOverlay(SLOT_SIZE));
                 root.appendChild(group);
               }
@@ -381,28 +420,40 @@ export class BoardMap2D implements BoardRenderer {
       },
       {
         z: KIND_Z_2D.marker,
-        render: () => this.renderFannedByLocation(
-          root, focus, markerEntries(state), 'marker',
-          (entry) => ({ kind: 'marker', id: entry.id, location: entry.location }),
-          (entry) => ({ kind: 'marker', id: entry.art ?? entry.id })
-        ),
+        render: () =>
+          this.renderFannedByLocation(
+            root,
+            focus,
+            markerEntries(state),
+            'marker',
+            (entry) => ({ kind: 'marker', id: entry.id, location: entry.location }),
+            (entry) => ({ kind: 'marker', id: entry.art ?? entry.id }),
+          ),
       },
       {
         // Quests are their own kind but share the `marker` anchor slot (no dedicated board anchor).
         z: KIND_Z_2D.quest,
-        render: () => this.renderFannedByLocation(
-          root, focus, questEntries(state), 'marker',
-          (entry) => ({ kind: 'quest', id: entry.id, location: entry.location }),
-          (entry) => ({ kind: 'quest', id: entry.art ?? entry.id })
-        ),
+        render: () =>
+          this.renderFannedByLocation(
+            root,
+            focus,
+            questEntries(state),
+            'marker',
+            (entry) => ({ kind: 'quest', id: entry.id, location: entry.location }),
+            (entry) => ({ kind: 'quest', id: entry.art ?? entry.id }),
+          ),
       },
       {
         z: KIND_Z_2D.hero,
-        render: () => this.renderFannedByLocation(
-          root, focus, heroEntries(state), 'hero',
-          (entry) => ({ kind: 'hero', id: entry.id, location: entry.location }),
-          (entry) => ({ kind: 'hero', id: entry.id })
-        ),
+        render: () =>
+          this.renderFannedByLocation(
+            root,
+            focus,
+            heroEntries(state),
+            'hero',
+            (entry) => ({ kind: 'hero', id: entry.id, location: entry.location }),
+            (entry) => ({ kind: 'hero', id: entry.id }),
+          ),
       },
     ];
     layers.sort((a, b) => a.z - b.z);
@@ -416,7 +467,7 @@ export class BoardMap2D implements BoardRenderer {
     byLocation: Map<LocationName, LocatedEntry[]>,
     slot: AnchorSlot,
     toSelection: (entry: LocatedEntry) => TokenSelection,
-    toArt: (entry: LocatedEntry) => TokenArtRef
+    toArt: (entry: LocatedEntry) => TokenArtRef,
   ): void {
     for (const [loc, entries] of byLocation) {
       const px = anchorPx(loc, slot);
@@ -439,14 +490,18 @@ export class BoardMap2D implements BoardRenderer {
     art: TokenArtRef,
     px: Point,
     size: number,
-    opacity: number
+    opacity: number,
   ): SVGGElement {
     const group = this.makeSelectableGroup(selection, px, opacity);
     this.appendArtOrFallback(group, art, selection.kind, size);
     return group;
   }
 
-  private makeSelectableGroup(selection: TokenSelection, center: Point, opacity: number): SVGGElement {
+  private makeSelectableGroup(
+    selection: TokenSelection,
+    center: Point,
+    opacity: number,
+  ): SVGGElement {
     const group = document.createElementNS(SVG_NS, 'g');
     group.setAttribute('class', 'udt-token');
     group.setAttribute('data-kind', selection.kind);
@@ -454,7 +509,10 @@ export class BoardMap2D implements BoardRenderer {
     group.setAttribute('data-location', selection.location);
     group.setAttribute('data-cx', String(center.x));
     group.setAttribute('data-cy', String(center.y));
-    group.setAttribute('transform', `translate(${center.x} ${center.y}) rotate(${inwardAlignDeg(center)})`);
+    group.setAttribute(
+      'transform',
+      `translate(${center.x} ${center.y}) rotate(${inwardAlignDeg(center)})`,
+    );
     if (opacity < 1) group.setAttribute('opacity', String(opacity));
     group.style.cursor = 'pointer';
     return group;
@@ -470,7 +528,7 @@ export class BoardMap2D implements BoardRenderer {
     art: TokenArtRef,
     kind: TokenSelection['kind'],
     size: number,
-    off: Offset = { dx: 0, dy: 0 }
+    off: Offset = { dx: 0, dy: 0 },
   ): void {
     const addFallback = (): void => {
       const disc = fallbackDisc(kind, art.id, size);
@@ -491,7 +549,7 @@ export class BoardMap2D implements BoardRenderer {
         image.remove();
         addFallback();
       },
-      { once: true }
+      { once: true },
     );
     group.appendChild(image);
   }
@@ -500,7 +558,9 @@ export class BoardMap2D implements BoardRenderer {
 
   private dim(loc: LocationName, focus: BoardFocus): number {
     if (focus.kingdom === 'all') return 1;
-    return BOARD_LOCATION_BY_NAME[loc]?.kingdom === (focus.kingdom as BoardKingdom) ? 1 : DIM_OPACITY;
+    return BOARD_LOCATION_BY_NAME[loc]?.kingdom === (focus.kingdom as BoardKingdom)
+      ? 1
+      : DIM_OPACITY;
   }
 
   private focusViewBox(focus: BoardFocus, width: number, height: number): Rect {
@@ -555,7 +615,11 @@ export class BoardMap2D implements BoardRenderer {
     if (!primary && !middle) return;
     // The middle button runs the OTHER drag action: a quick pan while in spin mode, or a
     // press-and-hold spin while in pan mode (the left button always does the active mode).
-    const action: DragMode = middle ? (this.dragMode === 'rotate' ? 'pan' : 'rotate') : this.dragMode;
+    const action: DragMode = middle
+      ? this.dragMode === 'rotate'
+        ? 'pan'
+        : 'rotate'
+      : this.dragMode;
     if (middle) event.preventDefault(); // suppress the browser's middle-click autoscroll
     if (action === 'rotate') {
       this.beginRotate(event);
@@ -599,12 +663,18 @@ export class BoardMap2D implements BoardRenderer {
     const dyPx = event.clientY - this.panStart.clientY;
     // Flag a real drag from the pixel delta alone (no layout needed) so the trailing click is
     // suppressed even where `getBoundingClientRect` reports nothing (jsdom / hidden element).
-    if (Math.abs(dxPx) > DRAG_THRESHOLD_PX || Math.abs(dyPx) > DRAG_THRESHOLD_PX) this.panMoved = true;
+    if (Math.abs(dxPx) > DRAG_THRESHOLD_PX || Math.abs(dyPx) > DRAG_THRESHOLD_PX)
+      this.panMoved = true;
     const rect = this.svg.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return; // no layout → can't translate the view
     // A drag moves the content under the cursor, so pan the view in the opposite direction.
     const view = this.panStart.view;
-    const next = panRect(view, this.baseViewBox, (-dxPx * view.w) / rect.width, (-dyPx * view.h) / rect.height);
+    const next = panRect(
+      view,
+      this.baseViewBox,
+      (-dxPx * view.w) / rect.width,
+      (-dyPx * view.h) / rect.height,
+    );
     this.applyView(next);
   }
 
@@ -613,7 +683,10 @@ export class BoardMap2D implements BoardRenderer {
     const start = this.rotateStart;
     if (!start || !this.rotateLayer) return;
     // Flag a real drag from the pixel delta so the trailing click doesn't select a token.
-    if (Math.abs(event.clientX - start.downX) > DRAG_THRESHOLD_PX || Math.abs(event.clientY - start.downY) > DRAG_THRESHOLD_PX) {
+    if (
+      Math.abs(event.clientX - start.downX) > DRAG_THRESHOLD_PX ||
+      Math.abs(event.clientY - start.downY) > DRAG_THRESHOLD_PX
+    ) {
       this.rotateMoved = true;
     }
     const angle = pointerAngleDeg(start.pivot, { x: event.clientX, y: event.clientY });
@@ -695,7 +768,7 @@ export class BoardMap2D implements BoardRenderer {
           kind: g.getAttribute('data-kind') as TokenSelection['kind'],
           id: g.getAttribute('data-id') ?? '',
           location: g.getAttribute('data-location') ?? '',
-        }) === this.selectedKey
+        }) === this.selectedKey,
     );
     if (!ringHost) return;
     const ring = document.createElementNS(SVG_NS, 'circle');

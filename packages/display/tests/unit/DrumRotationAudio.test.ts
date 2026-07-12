@@ -22,8 +22,12 @@ class MockOscillator {
   connect = jest.fn();
   startCalls = 0;
   stopCalls = 0;
-  start(): void { this.startCalls++; }
-  stop(_when?: number): void { this.stopCalls++; }
+  start(): void {
+    this.startCalls++;
+  }
+  stop(_when?: number): void {
+    this.stopCalls++;
+  }
 }
 
 class MockBufferSource {
@@ -32,8 +36,12 @@ class MockBufferSource {
   connect = jest.fn();
   startCalls = 0;
   stopCalls = 0;
-  start(): void { this.startCalls++; }
-  stop(_when?: number): void { this.stopCalls++; }
+  start(): void {
+    this.startCalls++;
+  }
+  stop(_when?: number): void {
+    this.stopCalls++;
+  }
 }
 
 class MockAudioContext {

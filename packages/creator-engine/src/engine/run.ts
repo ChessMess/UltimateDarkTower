@@ -10,7 +10,11 @@ import type { EngineState, Directive, Status } from './types';
 export function run(state: EngineState, directives: Directive[]): Status {
   // safety bound so a malformed graph can't spin forever
   for (let guard = 0; guard < 100000; guard++) {
-    if (state.outcome.status === 'won' || state.outcome.status === 'lost' || state.outcome.status === 'ended')
+    if (
+      state.outcome.status === 'won' ||
+      state.outcome.status === 'lost' ||
+      state.outcome.status === 'ended'
+    )
       return state.outcome.status;
     const node = state._nodes[state.clock.cursor as string];
     if (!node) {

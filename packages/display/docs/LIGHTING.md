@@ -1,6 +1,6 @@
 # 3D lighting reference
 
-*Docs: [Index](README.md) > 3D tuner > Lighting*
+_Docs: [Index](README.md) > 3D tuner > Lighting_
 
 **Before reading:** [API §Tower3DView](API.md#tower3dview) covers the lighting and camera methods that consume this config. [EXAMPLE §3D Options](EXAMPLE.md#panel-3d-options-lighting-and-scene) shows the demo's live editor.
 
@@ -233,13 +233,13 @@ The entrance cinematic dips this to `0.7 × 0.15 = 0.105` for the silhouette bea
 
 `UnrealBloomPass` plus a two-composer pipeline (`bloomComposer` → `finalComposer`) built in `initScene` ([Tower3DView.ts:420-449](../src/3d/Tower3DView.ts#L420-L449)).
 
-| Field                          | Type      | Default | Description                                                                                                 |
-| ------------------------------ | --------- | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `scene.bloom.enabled`          | `boolean` | `true`  | Build the bloom pipeline at all                                                                             |
-| `scene.bloom.strength`         | `number`  | `1.5`   | Glow intensity (0–3)                                                                                        |
-| `scene.bloom.radius`           | `number`  | `0.5`   | Bloom spread radius (0–1)                                                                                   |
-| `scene.bloom.threshold`        | `number`  | `1.0`   | Luminance threshold — `1.0` means only HDR-bright pixels (the LED proxies/halos, scaled by `HDR_PROXY_SCALE`) bloom |
-| `scene.bloom.resolutionScale`  | `number`  | `0.5`   | Bloom render-target size as a fraction of the canvas backing buffer. Visually transparent; ~4× GPU savings. |
+| Field                         | Type      | Default | Description                                                                                                         |
+| ----------------------------- | --------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| `scene.bloom.enabled`         | `boolean` | `true`  | Build the bloom pipeline at all                                                                                     |
+| `scene.bloom.strength`        | `number`  | `1.5`   | Glow intensity (0–3)                                                                                                |
+| `scene.bloom.radius`          | `number`  | `0.5`   | Bloom spread radius (0–1)                                                                                           |
+| `scene.bloom.threshold`       | `number`  | `1.0`   | Luminance threshold — `1.0` means only HDR-bright pixels (the LED proxies/halos, scaled by `HDR_PROXY_SCALE`) bloom |
+| `scene.bloom.resolutionScale` | `number`  | `0.5`   | Bloom render-target size as a fraction of the canvas backing buffer. Visually transparent; ~4× GPU savings.         |
 
 `resolutionScale` only affects the `bloomComposer` (the offscreen target where the scene is re-rendered for bloom extraction + UnrealBloomPass blurs); `finalComposer` always renders at full canvas resolution. The bloom result is upsampled by the GPU's bilinear sampler when composited. Bloom is intrinsically a wide Gaussian blur — rendering it at half or quarter resolution is visually indistinguishable from full res because the blur smears over any aliasing introduced by the downsample. See [`docs/framerate-issue.md`](framerate-issue.md) for the perf rationale.
 
@@ -256,10 +256,10 @@ Note: `scene.bloom.enabled: false` skips constructing the pipeline entirely; the
 
 Two ways to set what is behind the model.
 
-| Field              | Type       | Default    | Description                                             |
-| ------------------ | ---------- | ---------- | ------------------------------------------------------- |
-| `scene.background` | `HexColor` | `0x000000` | Solid clear color when no skybox is loaded              |
-| `scene.skyboxUrl`  | `string`   | `''`       | Equirectangular image URL — `.hdr`/`.png`/`.jpg`        |
+| Field              | Type       | Default    | Description                                      |
+| ------------------ | ---------- | ---------- | ------------------------------------------------ |
+| `scene.background` | `HexColor` | `0x000000` | Solid clear color when no skybox is loaded       |
+| `scene.skyboxUrl`  | `string`   | `''`       | Equirectangular image URL — `.hdr`/`.png`/`.jpg` |
 
 `SkyboxManager.apply(url, bgColor)` ([SkyboxManager.ts:19-52](../src/3d/SkyboxManager.ts#L19-L52)) handles loading: `.hdr` goes through `HDRLoader`, others through `THREE.TextureLoader`. Loaded textures get `mapping = THREE.EquirectangularReflectionMapping` and are assigned to `scene.background`.
 
@@ -343,7 +343,7 @@ There is **no** light positioned outside the drum aimed inward at the seal exter
 1. The **proxy mesh** is a tiny HDR-bright sphere (`MeshBasicMaterial`, `toneMapped: false`, on `BLOOM_LAYER`) visible through the cutout.
 2. The **halo sprite** is a `0.14 × modelRadius` billboard whose pixels, after `UnrealBloomPass` (`strength: 1.5` by default), bleed visually well beyond the cutout edges.
 
-Both emitters sit inside the drum, yet the bloomed result reads as an exterior glow at the cutout. Because there is no longer an accent `PointLight`, the drum-interior surfaces *between* seals read dark — the glow is localized to the cutouts rather than washing the interior. If a true exterior fill on seal faces (or an interior wash) is wanted, it is a new feature — see the recipe gap in [Section 18](#18-tuning-recipes).
+Both emitters sit inside the drum, yet the bloomed result reads as an exterior glow at the cutout. Because there is no longer an accent `PointLight`, the drum-interior surfaces _between_ seals read dark — the glow is localized to the cutouts rather than washing the interior. If a true exterior fill on seal faces (or an interior wash) is wanted, it is a new feature — see the recipe gap in [Section 18](#18-tuning-recipes).
 
 ### 11.5 Driver coupling and broken seals
 
@@ -358,18 +358,18 @@ Broken-seal handling: `applySeals(brokenSeals, lighting)` ([SealManager.ts:193-2
 
 ### 11.6 Configuration
 
-| Field                                     | Type                     | Default    | Description                                     |
-| ----------------------------------------- | ------------------------ | ---------- | ----------------------------------------------- |
-| `leds.sealBacklights.enabled`             | `boolean`                | `true`     | Master enable for all seal LED visuals          |
-| `leds.sealBacklights.color`               | `HexColor`               | `0xff2020` | Color for the proxy mesh and halo sprite        |
-| `leds.sealBacklights.radiusFactor`        | `number`                 | `0.15`     | Radial position factor (inside drum)            |
-| `leds.sealBacklights.backlightWhenBroken` | `boolean`                | `true`     | Keep backlight on when seal is broken           |
-| `leds.sealBacklights.proxy.enabled`       | `boolean`                | `true`     | Render the proxy mesh                           |
-| `leds.sealBacklights.proxy.sizeFactor`    | `number`                 | `0.025`    | Proxy sphere radius factor                      |
-| `leds.sealBacklights.proxy.geometry`      | `'sphere' \| 'cylinder'` | `'sphere'` | Proxy mesh shape                                |
-| `leds.sealBacklights.halo.enabled`        | `boolean`                | `true`     | Render the halo sprite                          |
-| `leds.sealBacklights.halo.sizeFactor`     | `number`                 | `0.14`     | Halo sprite scale factor                        |
-| `leds.sealBacklights.halo.opacity`        | `number`                 | `0.75`     | Halo peak opacity at `driver.v = 1`             |
+| Field                                     | Type                     | Default    | Description                              |
+| ----------------------------------------- | ------------------------ | ---------- | ---------------------------------------- |
+| `leds.sealBacklights.enabled`             | `boolean`                | `true`     | Master enable for all seal LED visuals   |
+| `leds.sealBacklights.color`               | `HexColor`               | `0xff2020` | Color for the proxy mesh and halo sprite |
+| `leds.sealBacklights.radiusFactor`        | `number`                 | `0.15`     | Radial position factor (inside drum)     |
+| `leds.sealBacklights.backlightWhenBroken` | `boolean`                | `true`     | Keep backlight on when seal is broken    |
+| `leds.sealBacklights.proxy.enabled`       | `boolean`                | `true`     | Render the proxy mesh                    |
+| `leds.sealBacklights.proxy.sizeFactor`    | `number`                 | `0.025`    | Proxy sphere radius factor               |
+| `leds.sealBacklights.proxy.geometry`      | `'sphere' \| 'cylinder'` | `'sphere'` | Proxy mesh shape                         |
+| `leds.sealBacklights.halo.enabled`        | `boolean`                | `true`     | Render the halo sprite                   |
+| `leds.sealBacklights.halo.sizeFactor`     | `number`                 | `0.14`     | Halo sprite scale factor                 |
+| `leds.sealBacklights.halo.opacity`        | `number`                 | `0.75`     | Halo peak opacity at `driver.v = 1`      |
 
 ## 12. LED effects & driver model
 
@@ -458,21 +458,21 @@ All beat values live under `entrance.beats.*` and are merged via spread (`{ ...b
 
 [`GroundDiscManager`](../src/3d/GroundDiscManager.ts) owns a `THREE.Mesh` with `THREE.CylinderGeometry` and a 3-element material array `[sideMat, topMat, bottomMat]`. Built lazily on first `setVisible(true)` so initial setup does not pay for it if the disc is never shown. Positioned at `modelBottomY - modelRadius × 0.002 - h/2` (where `h = max(modelRadius × thicknessFactor, 1e-4)`) so the top face sits at the same world-Y as the original flat disc, `receiveShadow: true`. The same mesh is also the **shadow-catcher** for the key light, so its size (`groundDisc.radiusFactor`) determines how much of the cast shadow is visible.
 
-| Field                       | Type                      | Default    | Description                                                                                                                                                                               |
-| --------------------------- | ------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `groundDisc.color`          | `HexColor`                | `0x050505` | Disc color (no board overlay)                                                                                                                                                             |
-| `groundDisc.roughness`      | `number`                  | `0.92`     | Material roughness                                                                                                                                                                        |
-| `groundDisc.metalness`      | `number`                  | `0`        | Material metalness                                                                                                                                                                        |
-| `groundDisc.radiusFactor`           | `number`                  | `3`        | Disc radius as factor of `modelRadius`. Doubles as the board's size since the board texture fills the disc geometry. Shrinking too far clips the tower's cast shadow at the edges         |
-| `groundDisc.undersideLightIntensity` | `number`                  | `0.15`     | `emissiveIntensity` applied to the disc's side wall and bottom cap (warm `0xffe8c8` tint). Makes the edge ring and underside glow when the camera dips below. Set to `0` to disable      |
-| `boardDisc.enabled`         | `boolean`                 | `true`     | Render the game board texture on the disc                                                                                                                                                 |
-| `boardDisc.opacity`         | `number`                  | `0.9`      | Material opacity when board overlay is active                                                                                                                                             |
-| `boardDisc.source`          | `'image' \| 'procedural'` | `'image'`  | Texture source — see "Image vs procedural" below                                                                                                                                          |
-| `boardDisc.northKingdom`    | `0 \| 1 \| 2 \| 3`        | `0`        | Which of the four kingdoms faces the +Z (tower-north) direction. Rotates the image texture in 90° steps; `0` aligns the board's north with the tower's north. No effect on `'procedural'`. Also settable by cardinal name via `setGameBoardKingdom(side)` |
-| `boardDisc.brightness`      | `number`                  | `1`        | Per-board diffuse-color multiplier on top of scene lighting. `0` = black, `1` = native texture brightness, up to `2` for over-bright. Stacks with `scene.exposure` and key/hemi intensity |
-| `boardDisc.thicknessFactor` | `number`                  | `0.06`     | Cylinder height as a fraction of `modelRadius`. Values `0.01`–`0.04` look natural; clamped to a minimum of `1e-4` to avoid degenerate geometry                                            |
-| `boardDisc.edgeColor`       | `HexColor`                | `0x5c3318` | Color of the board's side-wall. Two common presets: `0x5c3318` (medium warm wood/cardboard), `0x0e0e0e` (near-black neoprene mat)                                                         |
-| `boardDisc.bottomCap`       | `boolean`                 | `true`     | Render the underside face of the board cylinder. Normally invisible unless the camera dips below the board; set `false` to skip that draw call                                            |
+| Field                                | Type                      | Default    | Description                                                                                                                                                                                                                                               |
+| ------------------------------------ | ------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `groundDisc.color`                   | `HexColor`                | `0x050505` | Disc color (no board overlay)                                                                                                                                                                                                                             |
+| `groundDisc.roughness`               | `number`                  | `0.92`     | Material roughness                                                                                                                                                                                                                                        |
+| `groundDisc.metalness`               | `number`                  | `0`        | Material metalness                                                                                                                                                                                                                                        |
+| `groundDisc.radiusFactor`            | `number`                  | `3`        | Disc radius as factor of `modelRadius`. Doubles as the board's size since the board texture fills the disc geometry. Shrinking too far clips the tower's cast shadow at the edges                                                                         |
+| `groundDisc.undersideLightIntensity` | `number`                  | `0.15`     | `emissiveIntensity` applied to the disc's side wall and bottom cap (warm `0xffe8c8` tint). Makes the edge ring and underside glow when the camera dips below. Set to `0` to disable                                                                       |
+| `boardDisc.enabled`                  | `boolean`                 | `true`     | Render the game board texture on the disc                                                                                                                                                                                                                 |
+| `boardDisc.opacity`                  | `number`                  | `0.9`      | Material opacity when board overlay is active                                                                                                                                                                                                             |
+| `boardDisc.source`                   | `'image' \| 'procedural'` | `'image'`  | Texture source — see "Image vs procedural" below                                                                                                                                                                                                          |
+| `boardDisc.northKingdom`             | `0 \| 1 \| 2 \| 3`        | `0`        | Which of the four kingdoms faces the +Z (tower-north) direction. Rotates the image texture in 90° steps; `0` aligns the board's north with the tower's north. No effect on `'procedural'`. Also settable by cardinal name via `setGameBoardKingdom(side)` |
+| `boardDisc.brightness`               | `number`                  | `1`        | Per-board diffuse-color multiplier on top of scene lighting. `0` = black, `1` = native texture brightness, up to `2` for over-bright. Stacks with `scene.exposure` and key/hemi intensity                                                                 |
+| `boardDisc.thicknessFactor`          | `number`                  | `0.06`     | Cylinder height as a fraction of `modelRadius`. Values `0.01`–`0.04` look natural; clamped to a minimum of `1e-4` to avoid degenerate geometry                                                                                                            |
+| `boardDisc.edgeColor`                | `HexColor`                | `0x5c3318` | Color of the board's side-wall. Two common presets: `0x5c3318` (medium warm wood/cardboard), `0x0e0e0e` (near-black neoprene mat)                                                                                                                         |
+| `boardDisc.bottomCap`                | `boolean`                 | `true`     | Render the underside face of the board cylinder. Normally invisible unless the camera dips below the board; set `false` to skip that draw call                                                                                                            |
 
 ### Image vs procedural
 
@@ -511,24 +511,24 @@ display.applyLightingConfig({
 
 Every spatial parameter that drives lighting placement is expressed as a **fraction of `modelRadius`** (the half-size of the loaded GLB's bounding sphere). This is deliberate — swapping the GLB for a different-sized model rescales every light and disc automatically.
 
-| Constant                                   | Default | Source                                                   | Purpose                                                                     |
-| ------------------------------------------ | ------- | -------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `LED_LAYOUT.topY`                          | `0.83`  | [constants.ts](../src/3d/constants.ts#L79)               | Top ring Y                                                                  |
-| `LED_LAYOUT.middleY`                       | `0.53`  | [constants.ts](../src/3d/constants.ts#L80)               | Middle ring Y                                                               |
-| `LED_LAYOUT.bottomY`                       | `0.23`  | [constants.ts](../src/3d/constants.ts#L81)               | Bottom ring Y                                                               |
-| `LED_LAYOUT.ledgeY`                        | `-0.36` | [constants.ts](../src/3d/constants.ts#L82)               | Ledge Y                                                                     |
-| `LED_LAYOUT.base1Y`                        | `-0.26` | [constants.ts](../src/3d/constants.ts#L83)               | Base 1 Y                                                                    |
-| `LED_LAYOUT.base2Y`                        | `0.02`  | [constants.ts](../src/3d/constants.ts#L84)               | Base 2 Y                                                                    |
-| `RED_LIGHT_LAYOUT.ringInsetRadius`         | `0.35`  | [constants.ts](../src/3d/constants.ts#L94)               | Ring layers (0–2) red light radial inset                                    |
-| `RED_LIGHT_LAYOUT.cornerNearSurfaceRadius` | `0.52`  | [constants.ts](../src/3d/constants.ts#L95)               | Ledge/base layers (3–5) red light radial position                           |
-| `SEAL_LED_RADIUS_FACTOR`                   | `0.15`  | [constants.ts](../src/3d/constants.ts#L76)               | Hard-coded constant; mirrored in `leds.sealBacklights.radiusFactor` default |
-| `leds.sealBacklights.radiusFactor`         | `0.15`  | [LightingResolver.ts](../src/3d/LightingResolver.ts) | Seal proxy/halo radial position                                            |
-| `leds.sealBacklights.proxy.sizeFactor`     | `0.025` | [LightingResolver.ts](../src/3d/LightingResolver.ts) | Proxy sphere radius                                                         |
-| `leds.sealBacklights.halo.sizeFactor`      | `0.14`  | [LightingResolver.ts](../src/3d/LightingResolver.ts#L61) | Halo sprite scale                                                           |
-| `groundDisc.radiusFactor`                  | `3`     | [LightingResolver.ts](../src/3d/LightingResolver.ts#L98) | Ground disc radius                                                          |
-| `groundDisc.undersideLightIntensity`       | `0.15`  | [LightingResolver.ts](../src/3d/LightingResolver.ts#L120) | Disc edge/underside emissive intensity                                     |
-| `key.shadow.frustumRadiusFactor`           | `1.3`   | [LightingResolver.ts](../src/3d/LightingResolver.ts#L16) | Shadow ortho half-size                                                      |
-| `key.shadow.farFactor`                     | `10`    | [LightingResolver.ts](../src/3d/LightingResolver.ts#L17) | Shadow camera far plane                                                     |
+| Constant                                   | Default | Source                                                    | Purpose                                                                     |
+| ------------------------------------------ | ------- | --------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `LED_LAYOUT.topY`                          | `0.83`  | [constants.ts](../src/3d/constants.ts#L79)                | Top ring Y                                                                  |
+| `LED_LAYOUT.middleY`                       | `0.53`  | [constants.ts](../src/3d/constants.ts#L80)                | Middle ring Y                                                               |
+| `LED_LAYOUT.bottomY`                       | `0.23`  | [constants.ts](../src/3d/constants.ts#L81)                | Bottom ring Y                                                               |
+| `LED_LAYOUT.ledgeY`                        | `-0.36` | [constants.ts](../src/3d/constants.ts#L82)                | Ledge Y                                                                     |
+| `LED_LAYOUT.base1Y`                        | `-0.26` | [constants.ts](../src/3d/constants.ts#L83)                | Base 1 Y                                                                    |
+| `LED_LAYOUT.base2Y`                        | `0.02`  | [constants.ts](../src/3d/constants.ts#L84)                | Base 2 Y                                                                    |
+| `RED_LIGHT_LAYOUT.ringInsetRadius`         | `0.35`  | [constants.ts](../src/3d/constants.ts#L94)                | Ring layers (0–2) red light radial inset                                    |
+| `RED_LIGHT_LAYOUT.cornerNearSurfaceRadius` | `0.52`  | [constants.ts](../src/3d/constants.ts#L95)                | Ledge/base layers (3–5) red light radial position                           |
+| `SEAL_LED_RADIUS_FACTOR`                   | `0.15`  | [constants.ts](../src/3d/constants.ts#L76)                | Hard-coded constant; mirrored in `leds.sealBacklights.radiusFactor` default |
+| `leds.sealBacklights.radiusFactor`         | `0.15`  | [LightingResolver.ts](../src/3d/LightingResolver.ts)      | Seal proxy/halo radial position                                             |
+| `leds.sealBacklights.proxy.sizeFactor`     | `0.025` | [LightingResolver.ts](../src/3d/LightingResolver.ts)      | Proxy sphere radius                                                         |
+| `leds.sealBacklights.halo.sizeFactor`      | `0.14`  | [LightingResolver.ts](../src/3d/LightingResolver.ts#L61)  | Halo sprite scale                                                           |
+| `groundDisc.radiusFactor`                  | `3`     | [LightingResolver.ts](../src/3d/LightingResolver.ts#L98)  | Ground disc radius                                                          |
+| `groundDisc.undersideLightIntensity`       | `0.15`  | [LightingResolver.ts](../src/3d/LightingResolver.ts#L120) | Disc edge/underside emissive intensity                                      |
+| `key.shadow.frustumRadiusFactor`           | `1.3`   | [LightingResolver.ts](../src/3d/LightingResolver.ts#L16)  | Shadow ortho half-size                                                      |
+| `key.shadow.farFactor`                     | `10`    | [LightingResolver.ts](../src/3d/LightingResolver.ts#L17)  | Shadow camera far plane                                                     |
 
 Azimuth tables ([constants.ts:29, 57-62](../src/3d/constants.ts#L29-L62)):
 

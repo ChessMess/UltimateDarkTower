@@ -38,4 +38,4 @@ import { PROTOCOL_VERSION, MessageType } from 'ultimatedarktowerrelay-shared';
 
 ## License
 
-MIT. Unofficial, fan-made project; *Return to Dark Tower* is © Restoration Games.
+MIT. Unofficial, fan-made project; _Return to Dark Tower_ is © Restoration Games.

@@ -18,15 +18,51 @@ import sealContent from './Seal.svg?raw';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const LED_BINDINGS = {
-  'top-doorway-led': { id: 'top-doorway-led', layer: TOWER_LAYERS.TOP_RING, light: RING_LIGHT_POSITIONS.SOUTH },
-  'middle-doorway-led': { id: 'middle-doorway-led', layer: TOWER_LAYERS.MIDDLE_RING, light: RING_LIGHT_POSITIONS.SOUTH },
-  'bottom-doorway-led': { id: 'bottom-doorway-led', layer: TOWER_LAYERS.BOTTOM_RING, light: RING_LIGHT_POSITIONS.SOUTH },
-  'ledge-left-led': { id: 'ledge-left-led', layer: TOWER_LAYERS.LEDGE, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
-  'ledge-right-led': { id: 'ledge-right-led', layer: TOWER_LAYERS.LEDGE, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
-  'base-left-front-led': { id: 'base-left-front-led', layer: TOWER_LAYERS.BASE1, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
-  'base-right-front-led': { id: 'base-right-front-led', layer: TOWER_LAYERS.BASE1, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
-  'base-left-back-led': { id: 'base-left-back-led', layer: TOWER_LAYERS.BASE2, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST },
-  'base-right-back-led': { id: 'base-right-back-led', layer: TOWER_LAYERS.BASE2, light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
+  'top-doorway-led': {
+    id: 'top-doorway-led',
+    layer: TOWER_LAYERS.TOP_RING,
+    light: RING_LIGHT_POSITIONS.SOUTH,
+  },
+  'middle-doorway-led': {
+    id: 'middle-doorway-led',
+    layer: TOWER_LAYERS.MIDDLE_RING,
+    light: RING_LIGHT_POSITIONS.SOUTH,
+  },
+  'bottom-doorway-led': {
+    id: 'bottom-doorway-led',
+    layer: TOWER_LAYERS.BOTTOM_RING,
+    light: RING_LIGHT_POSITIONS.SOUTH,
+  },
+  'ledge-left-led': {
+    id: 'ledge-left-led',
+    layer: TOWER_LAYERS.LEDGE,
+    light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST,
+  },
+  'ledge-right-led': {
+    id: 'ledge-right-led',
+    layer: TOWER_LAYERS.LEDGE,
+    light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST,
+  },
+  'base-left-front-led': {
+    id: 'base-left-front-led',
+    layer: TOWER_LAYERS.BASE1,
+    light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST,
+  },
+  'base-right-front-led': {
+    id: 'base-right-front-led',
+    layer: TOWER_LAYERS.BASE1,
+    light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST,
+  },
+  'base-left-back-led': {
+    id: 'base-left-back-led',
+    layer: TOWER_LAYERS.BASE2,
+    light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST,
+  },
+  'base-right-back-led': {
+    id: 'base-right-back-led',
+    layer: TOWER_LAYERS.BASE2,
+    light: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST,
+  },
 };
 
 type LedLabel = keyof typeof LED_BINDINGS;
@@ -40,10 +76,22 @@ const CENTER_LIGHT_BY_SIDE: Record<TowerSide, number> = {
 };
 
 const EDGE_LIGHTS_BY_SIDE: Record<TowerSide, { left: number; right: number }> = {
-  north: { left: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST, right: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
-  east: { left: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST, right: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST },
-  south: { left: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST, right: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST },
-  west: { left: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST, right: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST },
+  north: {
+    left: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST,
+    right: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST,
+  },
+  east: {
+    left: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST,
+    right: LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST,
+  },
+  south: {
+    left: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST,
+    right: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST,
+  },
+  west: {
+    left: LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST,
+    right: LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST,
+  },
 };
 
 const LED_LIGHT_ROLES: Record<LedLabel, LightRole> = {
@@ -154,9 +202,7 @@ export class TowerSideView implements ITowerDisplay {
 
   private updateSealVisibility(): void {
     const externalBroken = new Set(
-      this.latestBrokenSeals
-        .filter(s => s.side === this.currentSide)
-        .map(s => s.level)
+      this.latestBrokenSeals.filter((s) => s.side === this.currentSide).map((s) => s.level),
     );
     for (const level of ['top', 'middle', 'bottom'] as const) {
       const node = this.sealNodes[level];
@@ -268,12 +314,10 @@ export class TowerSideView implements ITowerDisplay {
       const role = LED_LIGHT_ROLES[label];
       const centerIndex = CENTER_LIGHT_BY_SIDE[this.currentSide];
       const edgeIndices = EDGE_LIGHTS_BY_SIDE[this.currentSide];
-      const lightIndex = role === 'center'
-        ? centerIndex
-        : role === 'left'
-          ? edgeIndices.left
-          : edgeIndices.right;
-      const effectValue = state.layer[binding.layer]?.light[lightIndex]?.effect ?? LIGHT_EFFECTS.off;
+      const lightIndex =
+        role === 'center' ? centerIndex : role === 'left' ? edgeIndices.left : edgeIndices.right;
+      const effectValue =
+        state.layer[binding.layer]?.light[lightIndex]?.effect ?? LIGHT_EFFECTS.off;
       const effectLabel = EFFECT_LABELS[effectValue] ?? 'off';
       led.setAttribute('data-effect', effectLabel);
     }

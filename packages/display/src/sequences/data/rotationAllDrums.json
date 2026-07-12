@@ -5,13 +5,17 @@
   "loop": true,
   "endBehavior": "hold",
   "tracks": [
-    { "kind": "rotationChase",
-      "atTick": 0, "endTick": 1,
+    {
+      "kind": "rotationChase",
+      "atTick": 0,
+      "endTick": 1,
       "chaseLayers": [0, 1, 2],
-      "steadyLayer": 3, "steadyLevelPwm": 180,
+      "steadyLayer": 3,
+      "steadyLevelPwm": 180,
       "phaseOffsetTicks": 16,
       "lightStepTicks": 12,
-      "decayMultiplierNum": 700, "decayMultiplierDen": 768,
+      "decayMultiplierNum": 700,
+      "decayMultiplierDen": 768,
       "periodTicks": 48
     }
   ]

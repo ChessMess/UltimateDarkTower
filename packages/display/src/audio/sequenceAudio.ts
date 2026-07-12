@@ -64,5 +64,6 @@ export function buildSequenceAudioMap(
  * `AudioConfig.bindSequenceToSample` is true and neither `AudioConfig.sequenceMap`
  * nor `pack.sequenceMap` overrides it.
  */
-export const DEFAULT_SEQUENCE_AUDIO_MAP: Readonly<Record<number, number>> =
-  Object.freeze(buildSequenceAudioMap(DEFAULT_SEQUENCE_AUDIO_CONFIG));
+export const DEFAULT_SEQUENCE_AUDIO_MAP: Readonly<Record<number, number>> = Object.freeze(
+  buildSequenceAudioMap(DEFAULT_SEQUENCE_AUDIO_CONFIG),
+);

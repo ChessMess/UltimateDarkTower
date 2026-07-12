@@ -70,7 +70,7 @@ import { DEFAULT_TOWER_SOUND_PACK } from 'ultimatedarktowerdisplay';
 const myPack: SoundPack = {
   name: 'My Custom Voices',
   samples: {
-    ...DEFAULT_TOWER_SOUND_PACK.samples,           // start from the official pack
+    ...DEFAULT_TOWER_SOUND_PACK.samples, // start from the official pack
     [TOWER_AUDIO_LIBRARY.Ashstrider.value]: '/audio/my-ashstrider.ogg', // override one
   },
 };
@@ -106,7 +106,7 @@ import { buildSequenceAudioMap } from 'ultimatedarktowerdisplay';
 
 const map = buildSequenceAudioMap({
   victory: 'TowerGloat1',
-  defeat:  'ClassicTowerLost',
+  defeat: 'ClassicTowerLost',
 });
 display.applyAudioConfig({ sequenceMap: map, bindSequenceToSample: true });
 ```
@@ -132,12 +132,12 @@ The `volume` field matches the firmware's 0–3 range and maps to a distinct lin
 `gainForVolume()`), applied consistently across the state-driven `sync`, the one-shot, and the
 `applyGain` paths:
 
-| `volume` | Meaning | Gain |
-|----------|---------|------|
-| `0` | Loud | `1.0` |
-| `1` | Medium | `0.6` |
-| `2` | Quiet | `0.3` |
-| `3` | Mute | `0.0` |
+| `volume` | Meaning | Gain  |
+| -------- | ------- | ----- |
+| `0`      | Loud    | `1.0` |
+| `1`      | Medium  | `0.6` |
+| `2`      | Quiet   | `0.3` |
+| `3`      | Mute    | `0.0` |
 
 (Earlier versions treated only `3` as mute and played `0`/`1`/`2` all at full gain — so Loud, Medium,
 and Quiet sounded identical.)
@@ -151,12 +151,12 @@ and Quiet sounded identical.)
 
 ### When to use which
 
-| Driver | API |
-| --- | --- |
-| BLE state-mirror notification carrying `audio.sample` | `applyState(state)` |
-| App preset or "trigger sequence" button (re-fire same sample) | `applyState(state, true)` (force=true) |
-| Auto-derive sample from `state.led_sequence` | `applyAudioConfig({ bindSequenceToSample: true })` then `applyState` |
-| Fire-and-forget command event (emulator, framework, custom UI) | `display.playSample(id, opts?)` |
+| Driver                                                                                           | API                                                                                                        |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| BLE state-mirror notification carrying `audio.sample`                                            | `applyState(state)`                                                                                        |
+| App preset or "trigger sequence" button (re-fire same sample)                                    | `applyState(state, true)` (force=true)                                                                     |
+| Auto-derive sample from `state.led_sequence`                                                     | `applyAudioConfig({ bindSequenceToSample: true })` then `applyState`                                       |
+| Fire-and-forget command event (emulator, framework, custom UI)                                   | `display.playSample(id, opts?)`                                                                            |
 | Fire-and-forget light-override command (also auto-plays bound audio when `bindSequenceToSample`) | `display.playSequence(id, opts?)` — see [API.md](API.md#one-shot-transient-led-sequence-playsequence--070) |
 
 `playSample` still requires `applyAudioConfig({ enabled: true })` from a user gesture (browsers' autoplay policy). The eager AudioContext creation on `setEnabled(true)` captures that gesture so subsequent `playSample` calls from non-gesture contexts (e.g. postMessage handlers) work correctly.
@@ -184,7 +184,7 @@ To bundle a new sound shipped with the package (as `drumRotation.ogg` and `drumC
 3. **Add that module's path to `OGG_URL_HOSTS` in `vite.config.ts`.** Vite's lib build inlines `new URL(literal, import.meta.url)` assets as base64 data URIs by default; the `emitOggsAsFiles` plugin emits them as separate files **only** for modules on this list. Skip this step and your asset's bytes get base64-inlined into the JS bundle.
 4. Export the URL constant from `src/index.ts` if consumers should reference it.
 
-(This is distinct from the [Bundler compatibility](#bundler-compatibility) section below, which is about *consumers* bundling the published package — not this repo's own build.)
+(This is distinct from the [Bundler compatibility](#bundler-compatibility) section below, which is about _consumers_ bundling the published package — not this repo's own build.)
 
 ## Calibration sound
 
@@ -204,12 +204,12 @@ The library references each `.ogg` via its own literal `new URL('./assets/<filen
 
 ### Bundlers that detect the pattern automatically
 
-| Bundler | Setup |
-| --- | --- |
-| **Vite** | Nothing — the published dist already resolves URLs via Vite's lib build. Consumers using Vite themselves see emitted .ogg files in their build. |
-| **Webpack 5+** | Add a rule: `{ test: /\.ogg$/, type: 'asset/resource' }`. |
-| **Rollup** | Use `@rollup/plugin-url` (or equivalent) and include `.ogg` in its match list. |
-| **Parcel** | Works out of the box. |
+| Bundler        | Setup                                                                                                                                           |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vite**       | Nothing — the published dist already resolves URLs via Vite's lib build. Consumers using Vite themselves see emitted .ogg files in their build. |
+| **Webpack 5+** | Add a rule: `{ test: /\.ogg$/, type: 'asset/resource' }`.                                                                                       |
+| **Rollup**     | Use `@rollup/plugin-url` (or equivalent) and include `.ogg` in its match list.                                                                  |
+| **Parcel**     | Works out of the box.                                                                                                                           |
 
 ### esbuild
 
@@ -229,168 +229,168 @@ All 113 bundled files are **Ogg Vorbis, stereo (2-channel)**. Sample rates are e
 
 ### Adversary voices
 
-| Library key | Filename | Duration | kHz | Size |
-|---|---|---:|---:|---:|
-| `Ashstrider` | Adversary_Ashstrider_01.ogg | 3.3s | 48 | 52 KB |
-| `BaneofOmens` | Adversary_Bane_01.ogg | 3.4s | 48 | 47 KB |
-| `EmpressofShades` | Adversary_Empress_01.ogg | 4.9s | 48 | 71 KB |
-| `GazeEternal` | Adversary_Gaze_01.ogg | 4.5s | 48 | 64 KB |
-| `Gravemaw` | Adversary_Gravemaw_01.ogg | 5.3s | 48 | 72 KB |
-| `IsatheHollow` | Adversary_Isa_01.ogg | 3.1s | 48 | 51 KB |
-| `LingeringRot` | Adversary_Rot_03.ogg | 2.4s | 48 | 38 KB |
-| `UtukKu` | Adversary_Utuk_03.ogg | 3.1s | 48 | 44 KB |
+| Library key       | Filename                    | Duration | kHz |  Size |
+| ----------------- | --------------------------- | -------: | --: | ----: |
+| `Ashstrider`      | Adversary_Ashstrider_01.ogg |     3.3s |  48 | 52 KB |
+| `BaneofOmens`     | Adversary_Bane_01.ogg       |     3.4s |  48 | 47 KB |
+| `EmpressofShades` | Adversary_Empress_01.ogg    |     4.9s |  48 | 71 KB |
+| `GazeEternal`     | Adversary_Gaze_01.ogg       |     4.5s |  48 | 64 KB |
+| `Gravemaw`        | Adversary_Gravemaw_01.ogg   |     5.3s |  48 | 72 KB |
+| `IsatheHollow`    | Adversary_Isa_01.ogg        |     3.1s |  48 | 51 KB |
+| `LingeringRot`    | Adversary_Rot_03.ogg        |     2.4s |  48 | 38 KB |
+| `UtukKu`          | Adversary_Utuk_03.ogg       |     3.1s |  48 | 44 KB |
 
 ### Ally voices
 
-| Library key | Filename | Duration | kHz | Size |
-|---|---|---:|---:|---:|
-| `Gleb` | Ally_Gleb_01.ogg | 2.0s | 22 | 44 KB |
-| `Grigor` | Ally_Grigor_01.ogg | 2.8s | 22 | 49 KB |
-| `Hakan` | Ally_Hakan_02.ogg | 3.2s | 48 | 49 KB |
-| `Letha` | Ally_Letha_02.ogg | 3.2s | 48 | 58 KB |
-| `Miras` | Ally_Miras_01.ogg | 2.1s | 22 | 45 KB |
-| `Nimet` | Ally_Nimet_01.ogg | 5.7s | 22 | 138 KB |
-| `Tomas` | Ally_Tomas_03.ogg | 2.4s | 48 | 37 KB |
-| `Vasa` | Ally_Vasa_03.ogg | 3.4s | 48 | 52 KB |
-| `Yana` | Ally_Yana_01.ogg | 3.7s | 22 | 69 KB |
-| `Zaida` | Ally_Zaida_01.ogg | 5.1s | 22 | 115 KB |
+| Library key | Filename           | Duration | kHz |   Size |
+| ----------- | ------------------ | -------: | --: | -----: |
+| `Gleb`      | Ally_Gleb_01.ogg   |     2.0s |  22 |  44 KB |
+| `Grigor`    | Ally_Grigor_01.ogg |     2.8s |  22 |  49 KB |
+| `Hakan`     | Ally_Hakan_02.ogg  |     3.2s |  48 |  49 KB |
+| `Letha`     | Ally_Letha_02.ogg  |     3.2s |  48 |  58 KB |
+| `Miras`     | Ally_Miras_01.ogg  |     2.1s |  22 |  45 KB |
+| `Nimet`     | Ally_Nimet_01.ogg  |     5.7s |  22 | 138 KB |
+| `Tomas`     | Ally_Tomas_03.ogg  |     2.4s |  48 |  37 KB |
+| `Vasa`      | Ally_Vasa_03.ogg   |     3.4s |  48 |  52 KB |
+| `Yana`      | Ally_Yana_01.ogg   |     3.7s |  22 |  69 KB |
+| `Zaida`     | Ally_Zaida_01.ogg  |     5.1s |  22 | 115 KB |
 
 ### Battle sounds
 
-| Library key | Filename | Duration | kHz | Size |
-|---|---|---:|---:|---:|
-| `ApplyAdvantage01` | Battle_Advantage_Applied_01.ogg | 1.8s | 22 | 37 KB |
-| `ApplyAdvantage02` | Battle_Advantage_Applied_02.ogg | 1.6s | 22 | 33 KB |
-| `ApplyAdvantage03` | Battle_Advantage_Applied_03.ogg | 2.2s | 22 | 47 KB |
-| `ApplyAdvantage04` | Battle_Advantage_Applied_04.ogg | 2.2s | 22 | 45 KB |
-| `ApplyAdvantage05` | Battle_Advantage_Applied_05.ogg | 2.2s | 22 | 43 KB |
-| `MaxAdvantages` | Battle_Advantages_Maxed_01.ogg | 4.2s | 22 | 89 KB |
-| `NoAdvantages` | Battle_Advantages_None_01.ogg | 3.6s | 48 | 50 KB |
-| `AdversaryEscaped` | Battle_Adversary_Escape_01.ogg | 5.0s | 48 | 68 KB |
-| `BattleButton` | Battle_Button_01.ogg | 1.4s | 22 | 28 KB |
-| `CardFlip01` | Battle_Card_Flip_01.ogg | 0.6s | 22 | 13 KB |
-| `CardFlip02` | Battle_Card_Flip_02.ogg | 0.7s | 22 | 15 KB |
-| `CardFlip03` | Battle_Card_Flip_03.ogg | 0.7s | 22 | 16 KB |
-| `CardFlipPaper01` | Battle_Card_Flip_Paper_01.ogg | 0.6s | 48 | 13 KB |
-| `CardFlipPaper02` | Battle_Card_Flip_Paper_02.ogg | 0.6s | 48 | 13 KB |
-| `CardFlipPaper03` | Battle_Card_Flip_Paper_03.ogg | 0.6s | 48 | 13 KB |
-| `CardSelect01` | Battle_Card_Select_01.ogg | 0.6s | 22 | 15 KB |
-| `CardSelect02` | Battle_Card_Select_02.ogg | 0.6s | 22 | 15 KB |
-| `CardSelect03` | Battle_Card_Select_03.ogg | 0.7s | 22 | 15 KB |
-| `BattleStart` | Battle_start_01.ogg | 4.4s | 22 | 88 KB |
-| `BattleVictory` | Battle_Victory_01.ogg | 4.9s | 22 | 96 KB |
+| Library key        | Filename                        | Duration | kHz |  Size |
+| ------------------ | ------------------------------- | -------: | --: | ----: |
+| `ApplyAdvantage01` | Battle_Advantage_Applied_01.ogg |     1.8s |  22 | 37 KB |
+| `ApplyAdvantage02` | Battle_Advantage_Applied_02.ogg |     1.6s |  22 | 33 KB |
+| `ApplyAdvantage03` | Battle_Advantage_Applied_03.ogg |     2.2s |  22 | 47 KB |
+| `ApplyAdvantage04` | Battle_Advantage_Applied_04.ogg |     2.2s |  22 | 45 KB |
+| `ApplyAdvantage05` | Battle_Advantage_Applied_05.ogg |     2.2s |  22 | 43 KB |
+| `MaxAdvantages`    | Battle_Advantages_Maxed_01.ogg  |     4.2s |  22 | 89 KB |
+| `NoAdvantages`     | Battle_Advantages_None_01.ogg   |     3.6s |  48 | 50 KB |
+| `AdversaryEscaped` | Battle_Adversary_Escape_01.ogg  |     5.0s |  48 | 68 KB |
+| `BattleButton`     | Battle_Button_01.ogg            |     1.4s |  22 | 28 KB |
+| `CardFlip01`       | Battle_Card_Flip_01.ogg         |     0.6s |  22 | 13 KB |
+| `CardFlip02`       | Battle_Card_Flip_02.ogg         |     0.7s |  22 | 15 KB |
+| `CardFlip03`       | Battle_Card_Flip_03.ogg         |     0.7s |  22 | 16 KB |
+| `CardFlipPaper01`  | Battle_Card_Flip_Paper_01.ogg   |     0.6s |  48 | 13 KB |
+| `CardFlipPaper02`  | Battle_Card_Flip_Paper_02.ogg   |     0.6s |  48 | 13 KB |
+| `CardFlipPaper03`  | Battle_Card_Flip_Paper_03.ogg   |     0.6s |  48 | 13 KB |
+| `CardSelect01`     | Battle_Card_Select_01.ogg       |     0.6s |  22 | 15 KB |
+| `CardSelect02`     | Battle_Card_Select_02.ogg       |     0.6s |  22 | 15 KB |
+| `CardSelect03`     | Battle_Card_Select_03.ogg       |     0.7s |  22 | 15 KB |
+| `BattleStart`      | Battle_start_01.ogg             |     4.4s |  22 | 88 KB |
+| `BattleVictory`    | Battle_Victory_01.ogg           |     4.9s |  22 | 96 KB |
 
 ### Button sounds
 
-| Library key | Filename | Duration | kHz | Size |
-|---|---|---:|---:|---:|
-| `ButtonHold` | Button_Hold_01.ogg | 3.9s | 22 | 59 KB |
-| `ButtonHoldPressCombo` | Button_HoldandPressComboDemo.ogg | 4.3s | 48 | 72 KB |
-| `ButtonPress` | Button_Press_01.ogg | 1.5s | 22 | 33 KB |
+| Library key            | Filename                         | Duration | kHz |  Size |
+| ---------------------- | -------------------------------- | -------: | --: | ----: |
+| `ButtonHold`           | Button_Hold_01.ogg               |     3.9s |  22 | 59 KB |
+| `ButtonHoldPressCombo` | Button_HoldandPressComboDemo.ogg |     4.3s |  48 | 72 KB |
+| `ButtonPress`          | Button_Press_01.ogg              |     1.5s |  22 | 33 KB |
 
 ### Classic sounds
 
 Recreations of sounds from the original 1981 Dark Tower game.
 
-| Library key | Filename | Duration | kHz | Size |
-|---|---|---:|---:|---:|
-| `ClassicAdvantageApplied` | Classic_AdvantageApplied.ogg | 1.0s | 48 | 20 KB |
-| `ClassicAttackTower` | Classic_Attack_Tower.ogg | 2.9s | 48 | 51 KB |
-| `ClassicBazaar` | Classic_Bazaar.ogg | 2.9s | 48 | 56 KB |
-| `ClassicConfirmation` | Classic_Confirmation_Beep.ogg | 0.3s | 48 | 8 KB |
-| `ClassicDragons` | Classic_DragonStrike.ogg | 2.1s | 48 | 39 KB |
-| `ClassicQuestFailed` | Classic_Quest_Failure.ogg | 2.6s | 48 | 51 KB |
-| `ClassicRetreat` | Classic_Retreat.ogg | 1.7s | 48 | 28 KB |
-| `ClassicStartMonth` | Classic_StartOfMonth.ogg | 5.0s | 48 | 91 KB |
-| `ClassicStartDungeon` | Classic_StartingDungeon.ogg | 4.3s | 48 | 90 KB |
-| `ClassicTowerLost` | Classic_TowerLost.ogg | 1.6s | 48 | 33 KB |
-| `ClassicUnsure` | Classic_Unsure_5.ogg | 1.1s | 48 | 23 KB |
+| Library key               | Filename                      | Duration | kHz |  Size |
+| ------------------------- | ----------------------------- | -------: | --: | ----: |
+| `ClassicAdvantageApplied` | Classic_AdvantageApplied.ogg  |     1.0s |  48 | 20 KB |
+| `ClassicAttackTower`      | Classic_Attack_Tower.ogg      |     2.9s |  48 | 51 KB |
+| `ClassicBazaar`           | Classic_Bazaar.ogg            |     2.9s |  48 | 56 KB |
+| `ClassicConfirmation`     | Classic_Confirmation_Beep.ogg |     0.3s |  48 |  8 KB |
+| `ClassicDragons`          | Classic_DragonStrike.ogg      |     2.1s |  48 | 39 KB |
+| `ClassicQuestFailed`      | Classic_Quest_Failure.ogg     |     2.6s |  48 | 51 KB |
+| `ClassicRetreat`          | Classic_Retreat.ogg           |     1.7s |  48 | 28 KB |
+| `ClassicStartMonth`       | Classic_StartOfMonth.ogg      |     5.0s |  48 | 91 KB |
+| `ClassicStartDungeon`     | Classic_StartingDungeon.ogg   |     4.3s |  48 | 90 KB |
+| `ClassicTowerLost`        | Classic_TowerLost.ogg         |     1.6s |  48 | 33 KB |
+| `ClassicUnsure`           | Classic_Unsure_5.ogg          |     1.1s |  48 | 23 KB |
 
 ### Dungeon sounds
 
-| Library key | Filename | Duration | kHz | Size |
-|---|---|---:|---:|---:|
-| `DungeonAdvantage01` | Dungeon_Advantage_01.ogg | 2.5s | 22 | 50 KB |
-| `DungeonAdvantage02` | Dungeon_Advantage_02.ogg | 2.7s | 48 | 43 KB |
-| `DungeonButton` | Dungeon_Button_01.ogg | 2.4s | 48 | 34 KB |
-| `DungeonFootsteps` | Dungeon_Button_Footsteps_01.ogg | 3.7s | 22 | 75 KB |
-| `DungeonCaves` | Dungeon_Caves_01.ogg | 5.7s | 22 | 141 KB |
-| `DungeonComplete` | Dungeon_Complete_01.ogg | 6.4s | 22 | 108 KB |
-| `DungeonEncampment` | Dungeon_Encampment_01.ogg | 4.9s | 22 | 95 KB |
-| `DungeonEscape` | Dungeon_Escape_01.ogg | 6.9s | 22 | 131 KB |
-| `DungeonFortress` | Dungeon_Fortress_01.ogg | 5.0s | 22 | 95 KB |
-| `DungeonRuins` | Dungeon_Ruins_01.ogg | 4.5s | 22 | 104 KB |
-| `DungeonShrine` | Dungeon_Shrine_01.ogg | 5.3s | 22 | 104 KB |
-| `DungeonTomb` | Dungeon_Tomb_01.ogg | 5.7s | 22 | 117 KB |
+| Library key          | Filename                        | Duration | kHz |   Size |
+| -------------------- | ------------------------------- | -------: | --: | -----: |
+| `DungeonAdvantage01` | Dungeon_Advantage_01.ogg        |     2.5s |  22 |  50 KB |
+| `DungeonAdvantage02` | Dungeon_Advantage_02.ogg        |     2.7s |  48 |  43 KB |
+| `DungeonButton`      | Dungeon_Button_01.ogg           |     2.4s |  48 |  34 KB |
+| `DungeonFootsteps`   | Dungeon_Button_Footsteps_01.ogg |     3.7s |  22 |  75 KB |
+| `DungeonCaves`       | Dungeon_Caves_01.ogg            |     5.7s |  22 | 141 KB |
+| `DungeonComplete`    | Dungeon_Complete_01.ogg         |     6.4s |  22 | 108 KB |
+| `DungeonEncampment`  | Dungeon_Encampment_01.ogg       |     4.9s |  22 |  95 KB |
+| `DungeonEscape`      | Dungeon_Escape_01.ogg           |     6.9s |  22 | 131 KB |
+| `DungeonFortress`    | Dungeon_Fortress_01.ogg         |     5.0s |  22 |  95 KB |
+| `DungeonRuins`       | Dungeon_Ruins_01.ogg            |     4.5s |  22 | 104 KB |
+| `DungeonShrine`      | Dungeon_Shrine_01.ogg           |     5.3s |  22 | 104 KB |
+| `DungeonTomb`        | Dungeon_Tomb_01.ogg             |     5.7s |  22 | 117 KB |
 
 ### Events
 
-| Library key | Filename | Duration | kHz | Size |
-|---|---|---:|---:|---:|
-| `FoeEvent` | Event_Foe.ogg | 6.0s | 22 | 100 KB |
-| `FoeSpawn` | Event_Spawn.ogg | 5.2s | 22 | 98 KB |
+| Library key | Filename        | Duration | kHz |   Size |
+| ----------- | --------------- | -------: | --: | -----: |
+| `FoeEvent`  | Event_Foe.ogg   |     6.0s |  22 | 100 KB |
+| `FoeSpawn`  | Event_Spawn.ogg |     5.2s |  22 |  98 KB |
 
 ### Foe sounds
 
-| Library key | Filename | Duration | kHz | Size |
-|---|---|---:|---:|---:|
-| `Brigands` | Foe_Brigands_03.ogg | 1.3s | 48 | 23 KB |
-| `ClanofNeuri` | Foe_Clan_01.ogg | 2.6s | 48 | 40 KB |
-| `Dragons` | Foe_Dragon_01.ogg | 2.5s | 48 | 41 KB |
-| `Lemures` | Foe_Lemure_01.ogg | 3.2s | 48 | 45 KB |
-| `LeveledUp` | Foe_Level_Up_01.ogg | 4.8s | 48 | 64 KB |
-| `Mormos` | Foe_Mormo_01.ogg | 2.0s | 48 | 30 KB |
-| `Oreks` | Foe_Oreks_01.ogg | 2.3s | 48 | 35 KB |
-| `ShadowWolves` | Foe_Shadow_01.ogg | 4.5s | 48 | 61 KB |
-| `SpineFiends` | Foe_Spine_01.ogg | 2.3s | 48 | 35 KB |
-| `Strigas` | Foe_Striga_01.ogg | 3.2s | 48 | 44 KB |
-| `Titans` | Foe_Titan_01.ogg | 3.5s | 48 | 58 KB |
-| `FrostTrolls` | Foe_Troll_01.ogg | 2.4s | 48 | 36 KB |
-| `WidowmadeSpiders` | Foe_Widowmade_01.ogg | 3.4s | 48 | 54 KB |
+| Library key        | Filename             | Duration | kHz |  Size |
+| ------------------ | -------------------- | -------: | --: | ----: |
+| `Brigands`         | Foe_Brigands_03.ogg  |     1.3s |  48 | 23 KB |
+| `ClanofNeuri`      | Foe_Clan_01.ogg      |     2.6s |  48 | 40 KB |
+| `Dragons`          | Foe_Dragon_01.ogg    |     2.5s |  48 | 41 KB |
+| `Lemures`          | Foe_Lemure_01.ogg    |     3.2s |  48 | 45 KB |
+| `LeveledUp`        | Foe_Level_Up_01.ogg  |     4.8s |  48 | 64 KB |
+| `Mormos`           | Foe_Mormo_01.ogg     |     2.0s |  48 | 30 KB |
+| `Oreks`            | Foe_Oreks_01.ogg     |     2.3s |  48 | 35 KB |
+| `ShadowWolves`     | Foe_Shadow_01.ogg    |     4.5s |  48 | 61 KB |
+| `SpineFiends`      | Foe_Spine_01.ogg     |     2.3s |  48 | 35 KB |
+| `Strigas`          | Foe_Striga_01.ogg    |     3.2s |  48 | 44 KB |
+| `Titans`           | Foe_Titan_01.ogg     |     3.5s |  48 | 58 KB |
+| `FrostTrolls`      | Foe_Troll_01.ogg     |     2.4s |  48 | 36 KB |
+| `WidowmadeSpiders` | Foe_Widowmade_01.ogg |     3.4s |  48 | 54 KB |
 
 ### Boss spawn announcements
 
-| Library key | Filename | Duration | kHz | Size |
-|---|---|---:|---:|---:|
-| `AshstriderSpawn` | MainObjectiveVictory_BossSpawn_Ashstrider.ogg | 10.7s | 48 | 153 KB |
-| `BaneofOmensSpawn` | MainObjectiveVictory_BossSpawn_Bane.ogg | 10.5s | 48 | 146 KB |
-| `EmpressofShadesSpawn` | MainObjectiveVictory_BossSpawn_Empress.ogg | 11.4s | 48 | 163 KB |
-| `GazeEternalSpawn` | MainObjectiveVictory_BossSpawn_Gaze.ogg | 11.3s | 48 | 159 KB |
-| `GravemawSpawn` | MainObjectiveVictory_BossSpawn_Gravemaw.ogg | 11.4s | 48 | 159 KB |
-| `IsatheHollowSpawn` | MainObjectiveVictory_BossSpawn_Isa.ogg | 10.4s | 48 | 153 KB |
-| `LingeringRotSpawn` | MainObjectiveVictory_BossSpawn_Rot.ogg | 9.6s | 48 | 137 KB |
-| `UtukKuSpawn` | MainObjectiveVictory_BossSpawn_Utuk.ogg | 10.5s | 48 | 149 KB |
+| Library key            | Filename                                      | Duration | kHz |   Size |
+| ---------------------- | --------------------------------------------- | -------: | --: | -----: |
+| `AshstriderSpawn`      | MainObjectiveVictory_BossSpawn_Ashstrider.ogg |    10.7s |  48 | 153 KB |
+| `BaneofOmensSpawn`     | MainObjectiveVictory_BossSpawn_Bane.ogg       |    10.5s |  48 | 146 KB |
+| `EmpressofShadesSpawn` | MainObjectiveVictory_BossSpawn_Empress.ogg    |    11.4s |  48 | 163 KB |
+| `GazeEternalSpawn`     | MainObjectiveVictory_BossSpawn_Gaze.ogg       |    11.3s |  48 | 159 KB |
+| `GravemawSpawn`        | MainObjectiveVictory_BossSpawn_Gravemaw.ogg   |    11.4s |  48 | 159 KB |
+| `IsatheHollowSpawn`    | MainObjectiveVictory_BossSpawn_Isa.ogg        |    10.4s |  48 | 153 KB |
+| `LingeringRotSpawn`    | MainObjectiveVictory_BossSpawn_Rot.ogg        |     9.6s |  48 | 137 KB |
+| `UtukKuSpawn`          | MainObjectiveVictory_BossSpawn_Utuk.ogg       |    10.5s |  48 | 149 KB |
 
 ### Tower sounds
 
-| Library key | Filename | Duration | kHz | Size |
-|---|---|---:|---:|---:|
-| `QuestComplete` | Quest_Complete_01.ogg | 6.3s | 22 | 113 KB |
-| `TowerAllGlyphs` | Tower_All_Glyphs_01.ogg | 4.7s | 48 | 59 KB |
-| `TowerAngry1` | Tower_Angry_01.ogg | 4.9s | 48 | 63 KB |
-| `TowerAngry2` | Tower_Angry_02.ogg | 4.4s | 48 | 56 KB |
-| `TowerAngry3` | Tower_Angry_03.ogg | 4.3s | 48 | 55 KB |
-| `TowerAngry4` | Tower_Angry_04.ogg | 4.2s | 48 | 58 KB |
-| `TowerConnected` | Tower_Connected_04.ogg | 1.8s | 48 | 31 KB |
-| `GameStart` | Tower_Game_Start.ogg | 8.0s | 48 | 105 KB |
-| `TowerGloat1` | Tower_Gloat_01.ogg | 4.0s | 48 | 56 KB |
-| `TowerGloat2` | Tower_Gloat_02.ogg | 4.0s | 48 | 52 KB |
-| `TowerGloat3` | Tower_Gloat_03.ogg | 4.7s | 48 | 60 KB |
-| `TowerGlyph` | Tower_Glyph_01.ogg | 13.6s | 48 | 197 KB |
-| `TowerIdle1` | Tower_Idle_01.ogg | 5.8s | 48 | 76 KB |
-| `TowerIdle2` | Tower_Idle_02.ogg | 5.6s | 48 | 73 KB |
-| `TowerIdle3` | Tower_Idle_03.ogg | 6.8s | 48 | 83 KB |
-| `TowerIdle4` | Tower_Idle_04.ogg | 5.5s | 48 | 72 KB |
-| `TowerIdle5` | Tower_Idle_05.ogg | 6.2s | 48 | 80 KB |
-| `TowerDisconnected` | Tower_Lost_Connection_04.ogg | 2.1s | 48 | 32 KB |
-| `MonthEnded` | Tower_Month_End_06.ogg | 4.7s | 48 | 61 KB |
-| `MonthStarted` | Tower_Month_Start_01.ogg | 8.7s | 48 | 131 KB |
-| `QuestFailed` | Tower_Quest_Failure.ogg | 5.4s | 48 | 71 KB |
-| `RotateExit` | Tower_Rotate_Exit.ogg | 2.2s | 48 | 32 KB |
-| `RotateLoop` | Tower_Rotate_Loop.ogg | 9.0s | 48 | 122 KB |
-| `RotateStart` | Tower_Rotate_Start.ogg | 3.9s | 48 | 58 KB |
-| `TowerSeal` | Tower_Seal_01.ogg | 9.3s | 48 | 130 KB |
-| `TowerSkullDropped` | Tower_Skull_Drop_01.ogg | 3.9s | 48 | 53 KB |
+| Library key         | Filename                     | Duration | kHz |   Size |
+| ------------------- | ---------------------------- | -------: | --: | -----: |
+| `QuestComplete`     | Quest_Complete_01.ogg        |     6.3s |  22 | 113 KB |
+| `TowerAllGlyphs`    | Tower_All_Glyphs_01.ogg      |     4.7s |  48 |  59 KB |
+| `TowerAngry1`       | Tower_Angry_01.ogg           |     4.9s |  48 |  63 KB |
+| `TowerAngry2`       | Tower_Angry_02.ogg           |     4.4s |  48 |  56 KB |
+| `TowerAngry3`       | Tower_Angry_03.ogg           |     4.3s |  48 |  55 KB |
+| `TowerAngry4`       | Tower_Angry_04.ogg           |     4.2s |  48 |  58 KB |
+| `TowerConnected`    | Tower_Connected_04.ogg       |     1.8s |  48 |  31 KB |
+| `GameStart`         | Tower_Game_Start.ogg         |     8.0s |  48 | 105 KB |
+| `TowerGloat1`       | Tower_Gloat_01.ogg           |     4.0s |  48 |  56 KB |
+| `TowerGloat2`       | Tower_Gloat_02.ogg           |     4.0s |  48 |  52 KB |
+| `TowerGloat3`       | Tower_Gloat_03.ogg           |     4.7s |  48 |  60 KB |
+| `TowerGlyph`        | Tower_Glyph_01.ogg           |    13.6s |  48 | 197 KB |
+| `TowerIdle1`        | Tower_Idle_01.ogg            |     5.8s |  48 |  76 KB |
+| `TowerIdle2`        | Tower_Idle_02.ogg            |     5.6s |  48 |  73 KB |
+| `TowerIdle3`        | Tower_Idle_03.ogg            |     6.8s |  48 |  83 KB |
+| `TowerIdle4`        | Tower_Idle_04.ogg            |     5.5s |  48 |  72 KB |
+| `TowerIdle5`        | Tower_Idle_05.ogg            |     6.2s |  48 |  80 KB |
+| `TowerDisconnected` | Tower_Lost_Connection_04.ogg |     2.1s |  48 |  32 KB |
+| `MonthEnded`        | Tower_Month_End_06.ogg       |     4.7s |  48 |  61 KB |
+| `MonthStarted`      | Tower_Month_Start_01.ogg     |     8.7s |  48 | 131 KB |
+| `QuestFailed`       | Tower_Quest_Failure.ogg      |     5.4s |  48 |  71 KB |
+| `RotateExit`        | Tower_Rotate_Exit.ogg        |     2.2s |  48 |  32 KB |
+| `RotateLoop`        | Tower_Rotate_Loop.ogg        |     9.0s |  48 | 122 KB |
+| `RotateStart`       | Tower_Rotate_Start.ogg       |     3.9s |  48 |  58 KB |
+| `TowerSeal`         | Tower_Seal_01.ogg            |     9.3s |  48 | 130 KB |
+| `TowerSkullDropped` | Tower_Skull_Drop_01.ogg      |     3.9s |  48 |  53 KB |
 
 ## See also
 

@@ -5,14 +5,7 @@
   "loop": false,
   "endBehavior": "hold",
   "tracks": [
-    { "kind": "discreteSet",
-      "atTicks": [25, 50, 67, 92],
-      "mode": "setAll",
-      "levelPwm": 160
-    },
-    { "kind": "scaleAll",
-      "atTick": 0, "endTick": 401,
-      "multiplierNum": 700, "multiplierDen": 769
-    }
+    { "kind": "discreteSet", "atTicks": [25, 50, 67, 92], "mode": "setAll", "levelPwm": 160 },
+    { "kind": "scaleAll", "atTick": 0, "endTick": 401, "multiplierNum": 700, "multiplierDen": 769 }
   ]
 }

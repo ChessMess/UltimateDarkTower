@@ -14,8 +14,12 @@ function makeMockRapier(): {
   shouldReturnNull: { value: boolean };
 } {
   const setDensitySpy = jest.fn().mockReturnThis();
-  const setRestitutionSpy = jest.fn(function (this: unknown) { return this; });
-  const setFrictionSpy = jest.fn(function (this: unknown) { return this; });
+  const setRestitutionSpy = jest.fn(function (this: unknown) {
+    return this;
+  });
+  const setFrictionSpy = jest.fn(function (this: unknown) {
+    return this;
+  });
 
   const chainable = {
     setFriction: setFrictionSpy,
@@ -94,7 +98,11 @@ describe('cloneSkullMesh', () => {
       children: [],
       scale: {
         ...scaleVal,
-        setScalar(v: number) { this.x = v; this.y = v; this.z = v; },
+        setScalar(v: number) {
+          this.x = v;
+          this.y = v;
+          this.z = v;
+        },
       },
       clone(recursive?: boolean): CloneStub {
         const c = makeStub(geometry, material);

@@ -48,14 +48,14 @@ export function selectionKey(selection: TokenSelection): string {
 /** Heroes grouped by location. No hero art exists → callers always use the programmatic fallback. */
 export function heroEntries(state: BoardState): Map<LocationName, LocatedEntry[]> {
   return groupByLocation(
-    Object.entries(state.heroes).map(([id, h]) => ({ id, location: h.location }))
+    Object.entries(state.heroes).map(([id, h]) => ({ id, location: h.location })),
   );
 }
 
 /** Foes grouped by location. Art id = foe *type*; selection id = the instance id. */
 export function foeEntries(state: BoardState): Map<LocationName, LocatedEntry[]> {
   return groupByLocation(
-    Object.entries(state.foes).map(([id, f]) => ({ id, location: f.location, art: f.foe }))
+    Object.entries(state.foes).map(([id, f]) => ({ id, location: f.location, art: f.foe })),
   );
 }
 

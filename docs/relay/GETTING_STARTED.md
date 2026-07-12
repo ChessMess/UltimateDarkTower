@@ -1,10 +1,10 @@
 # Getting Started
 
-*Docs: [Index](README.md) > Integrator > Getting Started*
+_Docs: [Index](README.md) > Integrator > Getting Started_
 
 A walkthrough from zero to a consumer that connects to a relay host, receives decoded tower state, and
 (optionally) reports player actions. This guide is for building a **consumer** with the SDK. If you want
-to *run the relay host*, start at [SETUP.md](SETUP.md) instead.
+to _run the relay host_, start at [SETUP.md](SETUP.md) instead.
 
 > **New here?** This covers the happy path for the `ultimatedarktowerrelay-client` SDK. For the full
 > surface see [API.md](API.md); for how the pieces fit together see [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -22,10 +22,10 @@ to *run the relay host*, start at [SETUP.md](SETUP.md) instead.
 
 ## Consumer roles at a glance
 
-| Role | Has a physical tower? | What it does | Sends actions? |
-|---|---|---|---|
-| **Observer / screen-only** | No | Decodes and renders the relayed tower state (LEDs, drums, audio, skull count). | No |
-| **Participant** | Yes (or reports actions) | Mirrors relayed commands onto a local tower, and/or reports player actions the tower would detect. | Yes (`dropSkull()`) |
+| Role                       | Has a physical tower?    | What it does                                                                                       | Sends actions?      |
+| -------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------- | ------------------- |
+| **Observer / screen-only** | No                       | Decodes and renders the relayed tower state (LEDs, drums, audio, skull count).                     | No                  |
+| **Participant**            | Yes (or reports actions) | Mirrors relayed commands onto a local tower, and/or reports player actions the tower would detect. | Yes (`dropSkull()`) |
 
 Pick `observer: true` for a screen-only consumer; omit it (the default) for a participant.
 
@@ -140,7 +140,7 @@ tower.onCalibrationComplete = () => {
 };
 
 await client.connect('ws://192.168.1.5:8765');
-await tower.connect();   // opens the Web Bluetooth chooser (user gesture)
+await tower.connect(); // opens the Web Bluetooth chooser (user gesture)
 await tower.calibrate();
 ```
 
@@ -162,7 +162,9 @@ const client = new RelayClient({
   label: 'headless-consumer',
   observer: true,
   webSocketImpl: WebSocket,
-  onEvent: (e) => { /* … */ },
+  onEvent: (e) => {
+    /* … */
+  },
 });
 await client.connect('ws://192.168.1.5:8765');
 ```
@@ -174,12 +176,12 @@ For a runnable headless consumer, see `packages/cli/src/mockConsumer.ts`
 
 ## Where to go next
 
-| You want to… | Read |
-|---|---|
-| See every method, option, and event | [API.md](API.md) |
-| Understand the relay's design | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| Read the wire protocol | [PROTOCOL.md](PROTOCOL.md) |
-| Run the relay host | [SETUP.md](SETUP.md) |
-| Diagnose a problem | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
+| You want to…                        | Read                                     |
+| ----------------------------------- | ---------------------------------------- |
+| See every method, option, and event | [API.md](API.md)                         |
+| Understand the relay's design       | [ARCHITECTURE.md](ARCHITECTURE.md)       |
+| Read the wire protocol              | [PROTOCOL.md](PROTOCOL.md)               |
+| Run the relay host                  | [SETUP.md](SETUP.md)                     |
+| Diagnose a problem                  | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
 
 **See also:** [API.md](API.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [PROTOCOL.md](PROTOCOL.md)

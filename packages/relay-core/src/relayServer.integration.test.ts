@@ -76,7 +76,7 @@ function sendHelloAs(ws: WebSocket, label: string, version: string = PROTOCOL_VE
       type: MessageType.CLIENT_HELLO,
       payload: { label, protocolVersion: version, observer: true },
       timestamp: new Date().toISOString(),
-    })
+    }),
   );
 }
 
@@ -84,7 +84,9 @@ function sendHelloAs(ws: WebSocket, label: string, version: string = PROTOCOL_VE
 function collectClient(port: number): { ws: WebSocket; messages: AnyMessage[] } {
   const ws = new WebSocket(`ws://127.0.0.1:${port}`);
   const messages: AnyMessage[] = [];
-  ws.on('message', (raw: WebSocket.RawData) => messages.push(JSON.parse(raw.toString()) as AnyMessage));
+  ws.on('message', (raw: WebSocket.RawData) =>
+    messages.push(JSON.parse(raw.toString()) as AnyMessage),
+  );
   return { ws, messages };
 }
 
@@ -191,9 +193,7 @@ describe('RelayServer ↔ mock WebSocket consumer', () => {
     // The joining client is not told about its own arrival.
     expect(bob.messages.some((m) => m.type === MessageType.CLIENT_CONNECTED)).toBe(false);
     // Alice was first, so no one ever announced her to herself.
-    expect(
-      alice.messages.filter((m) => m.type === MessageType.CLIENT_CONNECTED).length,
-    ).toBe(1);
+    expect(alice.messages.filter((m) => m.type === MessageType.CLIENT_CONNECTED).length).toBe(1);
   });
 
   it('never announces connect/disconnect for a client that fails the version check', async () => {

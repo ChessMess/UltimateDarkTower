@@ -1,7 +1,4 @@
-import {
-    type IBluetoothAdapter,
-    BluetoothError,
-} from '../udtBluetoothAdapter';
+import { type IBluetoothAdapter, BluetoothError } from '../udtBluetoothAdapter';
 import { type DeviceInformation } from '../udtBleConnection';
 
 /**
@@ -14,50 +11,51 @@ import { type DeviceInformation } from '../udtBleConnection';
  * hanging silently.
  */
 export class NoopBluetoothAdapter implements IBluetoothAdapter {
-    // Stored but never invoked — this adapter produces no events.
-    private characteristicCallback?: (data: Uint8Array) => void;
-    private disconnectCallback?: () => void;
-    private availabilityCallback?: (available: boolean) => void;
+  // Stored but never invoked — this adapter produces no events.
+  private characteristicCallback?: (data: Uint8Array) => void;
+  private disconnectCallback?: () => void;
+  private availabilityCallback?: (available: boolean) => void;
 
-    async connect(_deviceName: string, _serviceUuids: string[]): Promise<void> {
-        void _deviceName; void _serviceUuids;
-        throw new BluetoothError('Bluetooth is disabled (platform: none)');
-    }
+  async connect(_deviceName: string, _serviceUuids: string[]): Promise<void> {
+    void _deviceName;
+    void _serviceUuids;
+    throw new BluetoothError('Bluetooth is disabled (platform: none)');
+  }
 
-    async disconnect(): Promise<void> {
-        // nothing to disconnect
-    }
+  async disconnect(): Promise<void> {
+    // nothing to disconnect
+  }
 
-    isConnected(): boolean {
-        return false;
-    }
+  isConnected(): boolean {
+    return false;
+  }
 
-    isGattConnected(): boolean {
-        return false;
-    }
+  isGattConnected(): boolean {
+    return false;
+  }
 
-    async writeCharacteristic(_data: Uint8Array): Promise<void> {
-        void _data;
-        throw new BluetoothError('Bluetooth is disabled (platform: none)');
-    }
+  async writeCharacteristic(_data: Uint8Array): Promise<void> {
+    void _data;
+    throw new BluetoothError('Bluetooth is disabled (platform: none)');
+  }
 
-    onCharacteristicValueChanged(callback: (data: Uint8Array) => void): void {
-        this.characteristicCallback = callback;
-    }
+  onCharacteristicValueChanged(callback: (data: Uint8Array) => void): void {
+    this.characteristicCallback = callback;
+  }
 
-    onDisconnect(callback: () => void): void {
-        this.disconnectCallback = callback;
-    }
+  onDisconnect(callback: () => void): void {
+    this.disconnectCallback = callback;
+  }
 
-    onBluetoothAvailabilityChanged(callback: (available: boolean) => void): void {
-        this.availabilityCallback = callback;
-    }
+  onBluetoothAvailabilityChanged(callback: (available: boolean) => void): void {
+    this.availabilityCallback = callback;
+  }
 
-    async readDeviceInformation(): Promise<DeviceInformation> {
-        return {};
-    }
+  async readDeviceInformation(): Promise<DeviceInformation> {
+    return {};
+  }
 
-    async cleanup(): Promise<void> {
-        // nothing to clean up
-    }
+  async cleanup(): Promise<void> {
+    // nothing to clean up
+  }
 }

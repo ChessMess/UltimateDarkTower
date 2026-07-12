@@ -24,10 +24,7 @@ export function replayLedOverrides(display: TowerDisplay): void {
   }
 }
 
-export function clearLedOverrides(
-  display: TowerDisplay,
-  readout: TowerStateReadout,
-): void {
+export function clearLedOverrides(display: TowerDisplay, readout: TowerStateReadout): void {
   overrides.clear();
   display.clearLedOverrides();
   readout.clearLedOverrides();

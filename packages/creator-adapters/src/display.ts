@@ -113,7 +113,12 @@ export function createDisplayAdapter(opts: {
         }
 
         case 'rotationBundle': {
-          const o = op as { channel: 'rotationBundle'; top?: string; middle?: string; bottom?: string };
+          const o = op as {
+            channel: 'rotationBundle';
+            top?: string;
+            middle?: string;
+            bottom?: string;
+          };
           for (const level of ['top', 'middle', 'bottom'] as const) {
             const side = o[level] as 'north' | 'east' | 'south' | 'west' | undefined;
             if (!side) continue;

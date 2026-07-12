@@ -20,14 +20,14 @@ performs the "physical" inputs (drop skull, break seal).
 
 ## 3. User Stories
 
-- *As a player*, I can drop a skull into the emulated tower and see the skull-drop count increase, so
+- _As a player_, I can drop a skull into the emulated tower and see the skull-drop count increase, so
   I can perform the mandatory end-of-turn action.
-- *As a player*, I can break (remove) a seal at a chosen level/side and see its glyph revealed on the
+- _As a player_, I can break (remove) a seal at a chosen level/side and see its glyph revealed on the
   tower, so I can track which glyphs are in play.
-- *As a player*, I can rotate the drums and see the new positions, so the tower reflects events the app
+- _As a player_, I can rotate the drums and see the new positions, so the tower reflects events the app
   would normally trigger.
-- *As a player*, I can trigger a light effect or sound to rehearse/visualize a tower cue.
-- *As a player*, I can see which glyph currently faces each kingdom, so I know when a glyph constraint
+- _As a player_, I can trigger a light effect or sound to rehearse/visualize a tower cue.
+- _As a player_, I can see which glyph currently faces each kingdom, so I know when a glyph constraint
   applies to my home kingdom.
 
 ## 4. Functional Requirements
@@ -54,7 +54,7 @@ performs the "physical" inputs (drop skull, break seal).
 ## 5. Non-Goals (Out of Scope)
 
 - Connecting to a real tower or the official app over BLE (PRD-05).
-- Deciding *which* kingdom skulls emerge from or *how many* (that's the app's rules logic; in MVP the
+- Deciding _which_ kingdom skulls emerge from or _how many_ (that's the app's rules logic; in MVP the
   player resolves emergence manually on the board, see PRD-02).
 - Skull physics simulation beyond what UDT Display offers out of the box.
 - Calibration flow (no hardware to calibrate; default to calibrated state).
@@ -86,7 +86,7 @@ Resolved for MVP (decisions made during implementation):
 
 - **Player vs. app-driven actions** — the player only performs the two **physical** tower actions:
   **drop a skull** and **break/remove a seal**. **Drum rotation, lights, and sounds are driven by
-  the official app**, not the player, so they are *not* exposed as manual controls in MVP. They stay
+  the official app**, not the player, so they are _not_ exposed as manual controls in MVP. They stay
   on the `TowerStateSource` (so hydration and the PRD-05 bridge can set them) and the 3D tower already
   reflects them via `applyState` — they simply have no player UI. This narrows FR-01.5/FR-01.6 to
   "reflected in 3D, driven by the source" rather than "player-operated".

@@ -34,7 +34,8 @@ export function startBattle(state: EngineState, directives: Directive[], sel: Ta
   const foeId = isAdversary ? state.adversary.foeId : sel.foeId;
   // Cards are drawn from the battleDef keyed by the foe's optional battleDefId, defaulting to the
   // foeId (no fixture sets battleDefId, so this is a no-op for every legacy scenario).
-  const defId = (foeId ? (state._lib.foes || {})[foeId]?.battleDefId : undefined) || (foeId as string);
+  const defId =
+    (foeId ? (state._lib.foes || {})[foeId]?.battleDefId : undefined) || (foeId as string);
   const def = foeId ? (state._lib.battleDefs || {})[defId] : undefined;
   // a battle with no authored cards would "clear" instantly (0 of 0) — fail loudly instead
   if (!def || !(def.cards || []).length)
@@ -55,7 +56,9 @@ export function startBattle(state: EngineState, directives: Directive[], sel: Ta
       if (!state.adversary.spawned)
         throw fault('battle: the adversary has not spawned (complete the main goal first)');
       if (state.adversary.location !== hero.location)
-        throw fault('battle: the adversary is at ' + state.adversary.location + ', not on your space');
+        throw fault(
+          'battle: the adversary is at ' + state.adversary.location + ', not on your space',
+        );
     } else if (!targetFoe || targetFoe.location !== hero.location) {
       throw fault('battle: no ' + foeId + ' on your space (' + (hero.location || 'nowhere') + ')');
     }
@@ -110,7 +113,11 @@ export function startBattle(state: EngineState, directives: Directive[], sel: Ta
 // resolveBattle: apply spent Advantages (capped 10/action and by the hero pool), fire each cleared
 // card's onResolve, tally remaining strikes as warrior loss, then defeat / escalate. The adversary
 // banks applied Advantages across battles (cumulative) and allows retreat after ≥1 card.
-export function resolveBattle(state: EngineState, directives: Directive[], decision: AdvantageSpendDecision): void {
+export function resolveBattle(
+  state: EngineState,
+  directives: Directive[],
+  decision: AdvantageSpendDecision,
+): void {
   const b = state.clock.battle;
   if (!b) throw fault('resolveBattle with no active battle');
   const hero = state.heroes[state.clock.activeHero];
@@ -150,14 +157,19 @@ export function resolveBattle(state: EngineState, directives: Directive[], decis
     remainingStrikes += s;
     if (state.outcome.status !== 'running') break;
   }
-  if (b.isAdversary) state.adversary.advantagesBanked = (state.adversary.advantagesBanked || 0) + spend; // persists
+  if (b.isAdversary)
+    state.adversary.advantagesBanked = (state.adversary.advantagesBanked || 0) + spend; // persists
   // if an onResolve effect already decided the game, do not run the strike/defeat tail on top of it
   if (state.outcome.status !== 'running') {
     state.clock.battle = null;
     return;
   }
   if (remainingStrikes > 0)
-    applyEffect({ op: 'resource.lose', resource: 'warriors', amount: remainingStrikes }, state, directives);
+    applyEffect(
+      { op: 'resource.lose', resource: 'warriors', amount: remainingStrikes },
+      state,
+      directives,
+    );
   if (state.outcome.status !== 'running') {
     // warrior-loss shortfall drove a corruption loss — don't overwrite it with a defeat win
     state.clock.battle = null;
@@ -175,13 +187,22 @@ export function resolveBattle(state: EngineState, directives: Directive[], decis
       raiseEvent(state, directives, 'foeDefeated');
       winGame(state, directives, 'adversary-defeated');
     } else {
-      applyEffect({ op: 'foe.remove', foeId: b.foeId, instanceId: b.instanceId }, state, directives);
+      applyEffect(
+        { op: 'foe.remove', foeId: b.foeId, instanceId: b.instanceId },
+        state,
+        directives,
+      );
     }
   } else if (state.outcome.status === 'running') {
-    applyEffect({ op: 'foe.escalateStatus', foeId: b.foeId, instanceId: b.instanceId }, state, directives);
+    applyEffect(
+      { op: 'foe.escalateStatus', foeId: b.foeId, instanceId: b.instanceId },
+      state,
+      directives,
+    );
   }
   // full turn: the battle heroic action is complete (all cards resolved) → +2 spirit (rules.md §100)
-  if (state._setup && state._setup.fullTurn && state.outcome.status === 'running') awardHeroic(state, directives);
+  if (state._setup && state._setup.fullTurn && state.outcome.status === 'running')
+    awardHeroic(state, directives);
   state.clock.battle = null;
 }
 
@@ -246,7 +267,9 @@ function battleDeck(state: EngineState, b: BattleCursor): LadderDeckCard[] {
   return b.isAdversary ? state.adversary.cardDeck! : b.deck!;
 }
 function cardDef(state: EngineState, b: BattleCursor, deckCard: LadderDeckCard): LadderBattleCard {
-  return ((state._lib.battleDefs || {})[b.defId!]?.cards || [])[deckCard.defIndex] as LadderBattleCard;
+  return ((state._lib.battleDefs || {})[b.defId!]?.cards || [])[
+    deckCard.defIndex
+  ] as LadderBattleCard;
 }
 // The active card = the one currently face-up and unresolved (index === resolved once revealed).
 function activeDeckCard(state: EngineState, b: BattleCursor): LadderDeckCard | undefined {
@@ -286,7 +309,8 @@ export function emitBattlePrompt(state: EngineState, directives: Directive[]): v
       step: dc.step,
       stepCount: def.steps.length,
       text: revealed ? def.steps[dc.step]?.text : undefined,
-      nextText: revealed && dc.step < def.steps.length - 1 ? def.steps[dc.step + 1]?.text : undefined,
+      nextText:
+        revealed && dc.step < def.steps.length - 1 ? def.steps[dc.step + 1]?.text : undefined,
       // 0.4.3 — presentational front-art passthrough; absent for legacy decks → byte-identical JSON.
       ...(def.artRef ? { artRef: def.artRef } : {}),
     };
@@ -304,7 +328,10 @@ export function emitBattlePrompt(state: EngineState, directives: Directive[]): v
     resolvedCount: b.resolved || 0,
     advantagesSpent: b.advantagesSpent || 0,
     advantagesMax: ADV_MAX,
-    canReveal: !pending && (b.revealedCount || 0) === (b.resolved || 0) && (b.revealedCount || 0) < b.hand.length,
+    canReveal:
+      !pending &&
+      (b.revealedCount || 0) === (b.resolved || 0) &&
+      (b.revealedCount || 0) < b.hand.length,
     canImprove: !pending && canImproveActive(state, b),
     canResolve: !pending && (b.revealedCount || 0) === (b.resolved || 0) + 1,
     canRetreat: !pending && b.isAdversary && (b.resolved || 0) >= 1,
@@ -312,9 +339,10 @@ export function emitBattlePrompt(state: EngineState, directives: Directive[]): v
   };
   if (pending) {
     const activeId = state.clock.activeHero;
-    const order = state.clock.turnOrder && state.clock.turnOrder.length
-      ? state.clock.turnOrder.filter((h) => state.heroes[h])
-      : Object.keys(state.heroes);
+    const order =
+      state.clock.turnOrder && state.clock.turnOrder.length
+        ? state.clock.turnOrder.filter((h) => state.heroes[h])
+        : Object.keys(state.heroes);
     payload.heroChoice = {
       text: 'Choose another hero to share the effect',
       candidates: order.filter((h) => h !== activeId).map((heroId) => ({ heroId })),
@@ -332,7 +360,11 @@ type CardOutcome = 'continue' | 'done' | 'terminal';
 
 // Apply the active card's current-step effects starting at resolveIndex. A choice-scope hero.scope
 // with >1 candidates pauses the loop (pendingHeroChoice) and awaits a battleHeroTarget pick.
-function resolveActiveCard(state: EngineState, directives: Directive[], b: BattleCursor): CardOutcome {
+function resolveActiveCard(
+  state: EngineState,
+  directives: Directive[],
+  b: BattleCursor,
+): CardOutcome {
   const dc = battleDeck(state, b)[b.hand![b.resolved]];
   const def = cardDef(state, b, dc);
   const effects = def.steps[dc.step]?.effects || [];
@@ -359,14 +391,19 @@ function resolveActiveCard(state: EngineState, directives: Directive[], b: Battl
 // degrades gracefully).
 function heroChoiceNeeded(state: EngineState, _scope: HeroScope): boolean {
   const activeId = state.clock.activeHero;
-  const order = state.clock.turnOrder && state.clock.turnOrder.length
-    ? state.clock.turnOrder.filter((h) => state.heroes[h])
-    : Object.keys(state.heroes);
+  const order =
+    state.clock.turnOrder && state.clock.turnOrder.length
+      ? state.clock.turnOrder.filter((h) => state.heroes[h])
+      : Object.keys(state.heroes);
   return order.filter((h) => h !== activeId).length > 1;
 }
 
 // Advance past the resolved card; if the whole hand is resolved, run the defeat tail.
-function finishActiveCard(state: EngineState, directives: Directive[], b: BattleCursor): CardOutcome {
+function finishActiveCard(
+  state: EngineState,
+  directives: Directive[],
+  b: BattleCursor,
+): CardOutcome {
   b.resolveIndex = undefined;
   b.cardCorrupted = undefined;
   b.resolved = (b.resolved || 0) + 1;
@@ -409,7 +446,8 @@ export function battleCardInput(
   if (!b || !b.hand) throw fault('battleCardInput with no card battle');
   if (b.pendingHeroChoice) throw fault('battle: awaiting a hero choice, not a card action');
   const verbs = [value.reveal, value.improve, value.resolve, value.retreat].filter(Boolean).length;
-  if (verbs !== 1) throw fault('battleCard input needs exactly one of reveal/improve/resolve/retreat');
+  if (verbs !== 1)
+    throw fault('battleCard input needs exactly one of reveal/improve/resolve/retreat');
 
   if (value.retreat) {
     if (!(b.isAdversary && (b.resolved || 0) >= 1))
@@ -435,7 +473,8 @@ export function battleCardInput(
   }
 
   if (value.improve) {
-    if (!canImproveActive(state, b)) throw fault('battle: cannot improve (top step, cap, or empty pool)');
+    if (!canImproveActive(state, b))
+      throw fault('battle: cannot improve (top step, cap, or empty pool)');
     const dc = activeDeckCard(state, b)!;
     b.advantagesSpent = (b.advantagesSpent || 0) + 1;
     dc.step += 1;
@@ -464,7 +503,8 @@ export function battleHeroChoiceInput(
   value: { heroId: string },
 ): CardOutcome {
   const b = state.clock.battle;
-  if (!b || !b.hand || !b.pendingHeroChoice) throw fault('battleHeroTarget with no pending hero choice');
+  if (!b || !b.hand || !b.pendingHeroChoice)
+    throw fault('battleHeroTarget with no pending hero choice');
   const activeId = state.clock.activeHero;
   if (value.heroId === activeId || !state.heroes[value.heroId])
     throw fault('battle: invalid hero choice ' + value.heroId);

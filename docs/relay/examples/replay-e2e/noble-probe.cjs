@@ -23,18 +23,26 @@ const ts = () => new Date().toISOString().slice(11, 23);
   let count = 0;
   adapter.onCharacteristicValueChanged((data) => {
     count++;
-    console.log(`${ts()}  notif #${count}  len=${data.length}  ${Buffer.from(data).toString('hex')}`);
+    console.log(
+      `${ts()}  notif #${count}  len=${data.length}  ${Buffer.from(data).toString('hex')}`,
+    );
   });
   adapter.onDisconnect(() => console.log(`${ts()}  DISCONNECTED`));
 
   console.log(`${ts()}  scanning for "${TOWER_DEVICE_NAME}"…`);
   await adapter.connect(TOWER_DEVICE_NAME, [UART_SERVICE_UUID, DIS_SERVICE_UUID]);
-  console.log(`${ts()}  connected — logging notifications for 25s (expect a battery beat ~every 2s)`);
+  console.log(
+    `${ts()}  connected — logging notifications for 25s (expect a battery beat ~every 2s)`,
+  );
 
   setTimeout(async () => {
     console.log(`${ts()}  total notifications in 25s: ${count}`);
-    try { await adapter.disconnect(); } catch {}
-    try { await adapter.cleanup(); } catch {}
+    try {
+      await adapter.disconnect();
+    } catch {}
+    try {
+      await adapter.cleanup();
+    } catch {}
     process.exit(0);
   }, 25000);
 })().catch((err) => {

@@ -62,7 +62,12 @@ describe('rotate math', () => {
     });
 
     it('falls back to the rect origin for a zero-size rect (jsdom / hidden)', () => {
-      const p = viewBoxPointToClient(CENTER.bx, CENTER.by, BASE, { left: 5, top: 7, width: 0, height: 0 });
+      const p = viewBoxPointToClient(CENTER.bx, CENTER.by, BASE, {
+        left: 5,
+        top: 7,
+        width: 0,
+        height: 0,
+      });
       expect(p).toEqual({ x: 5, y: 7 });
     });
   });

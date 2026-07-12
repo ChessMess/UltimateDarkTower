@@ -88,7 +88,11 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
   };
 
   const open = (): void => {
-    const win = window.open('', 'bsv-render', 'width=1000,height=1000,resizable=yes,scrollbars=yes');
+    const win = window.open(
+      '',
+      'bsv-render',
+      'width=1000,height=1000,resizable=yes,scrollbars=yes',
+    );
     if (!win) {
       hooks.onError?.('Pop-out blocked — allow pop-ups for this site and try again.');
       return;
@@ -164,7 +168,8 @@ export function createPopOut(hooks: PopOutHooks): PopOutController {
   };
 
   hooks.toggleButton.addEventListener('click', () => {
-    if (popup && !popup.closed) popup.close(); // the poll calls restore()
+    if (popup && !popup.closed)
+      popup.close(); // the poll calls restore()
     else open();
   });
 

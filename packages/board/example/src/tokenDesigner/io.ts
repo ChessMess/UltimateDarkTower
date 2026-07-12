@@ -22,7 +22,11 @@ function download(blob: Blob, filename: string): void {
 
 /** Sanitise a design name into a safe file base. */
 export function fileBase(name: string): string {
-  const base = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const base = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
   return base || 'token';
 }
 
@@ -95,7 +99,11 @@ function loadImage(src: string): Promise<HTMLImageElement> {
  * for the shipped foe tokens. `supersample` rasterises the vector SVG larger and downscales for
  * crisp text — the output file is always 256×222 regardless of it.
  */
-export async function exportPng(design: TokenDesign, liveSvg: SVGSVGElement, supersample = 2): Promise<void> {
+export async function exportPng(
+  design: TokenDesign,
+  liveSvg: SVGSVGElement,
+  supersample = 2,
+): Promise<void> {
   const clone = liveSvg.cloneNode(true) as SVGSVGElement;
   // Drop selection chrome so the export is clean.
   clone.querySelectorAll('.td-handle, .td-bbox, .td-stem').forEach((n) => n.remove());

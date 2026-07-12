@@ -1,6 +1,6 @@
 # Architecture
 
-*Docs: [Index](README.md) > Integrator + contributor > Architecture*
+_Docs: [Index](README.md) > Integrator + contributor > Architecture_
 
 **Before reading:** [GETTING_STARTED](GETTING_STARTED.md) covers install and the first `applyState` call.
 
@@ -63,17 +63,17 @@ flowchart LR
 
 All three implement the same `ITowerDisplay` interface: `applyState`, `applySeals`, `showIdle`, `dispose`. Beyond that they diverge sharply.
 
-| Renderer | Tech | Side-aware | Animated | Bundle cost |
-|---|---|---|---|---|
-| `TowerStateReadout` | DOM text | No | No | Tiny |
-| `TowerSideView` | Inline SVG | Yes | LED tweens only | Small |
-| `Tower3DView` | Three.js + WebGL | Yes | Full | Three.js + GSAP + 22 MB GLB |
+| Renderer            | Tech             | Side-aware | Animated        | Bundle cost                 |
+| ------------------- | ---------------- | ---------- | --------------- | --------------------------- |
+| `TowerStateReadout` | DOM text         | No         | No              | Tiny                        |
+| `TowerSideView`     | Inline SVG       | Yes        | LED tweens only | Small                       |
+| `Tower3DView`       | Three.js + WebGL | Yes        | Full            | Three.js + GSAP + 22 MB GLB |
 
 For the full comparison see [RENDERERS](RENDERERS.md).
 
 ## `TowerStateController`
 
-`TowerStateController` is the headless merge layer that sits between an external state source and the renderers. It owns two pieces of user-toggle state — clicked-seal visibility and LED effect overrides — and combines them with the incoming `TowerState` to produce a *resolved* state every renderer agrees on.
+`TowerStateController` is the headless merge layer that sits between an external state source and the renderers. It owns two pieces of user-toggle state — clicked-seal visibility and LED effect overrides — and combines them with the incoming `TowerState` to produce a _resolved_ state every renderer agrees on.
 
 It exists as a public export ([API §TowerStateController](API.md#towerstatecontroller)) because some hosts want a non-DOM source of truth — for example a Vuex/Pinia/Zustand store that survives view switches. The example app uses it that way ([EXAMPLE §panel-seals](EXAMPLE.md#panel-seals)).
 
@@ -128,16 +128,16 @@ When the user clicks a side button on the 2D view, `selectSide` fans out: `Tower
 
 ## Subsystem map
 
-| Folder | Role | Key files |
-|---|---|---|
-| [src/](../src/) | Public entry points + state controller | `index.ts`, `TowerDisplay.ts`, `TowerStateReadout.ts`, `TowerStateController.ts`, `styles.ts`, `types.ts` |
-| [src/2d/](../src/2d/) | SVG side view | `TowerSideView.ts`, `TowerSide.svg`, `Seal.svg` |
-| [src/3d/](../src/3d/) | Three.js 3D view and managers | `Tower3DView.ts`, `ScenePlugin.ts`, `SceneLighting.ts`, `LedEffectAnimator.ts`, `SealManager.ts`, `DrumManager.ts`, `CameraController.ts`, `GroundDiscManager.ts`, `SkyboxManager.ts`, `LightingResolver.ts`, `GameBoardImageTexture.ts`, `EntranceAnimator.ts` |
-| [src/audio/](../src/audio/) | Web Audio playback + bundled official sound pack | `TowerSampleAudio.ts`, `DrumRotationAudio.ts`, `audioLibrary.ts`, `sequenceAudio.ts`, `soundPack.ts`, `assets/*.ogg` |
-| [src/sequences/](../src/sequences/) | LED sequence player | `SequencePlayer.ts`, `SequenceAnimator.ts`, JSON sequence data |
-| [src/state/](../src/state/) | Headless state merge | `TowerStateController.ts` |
-| [src/physics/](../src/physics/) | Optional Rapier skull physics | `index.ts`, `PhysicsManager.ts`, `PhysicsResolver.ts`, `buildColliders.ts`, `SkullModelLoader.ts`, `SkullSpawner.ts` |
-| [src/shared/](../src/shared/) | Cross-renderer utilities | `SideButtons.ts` |
+| Folder                              | Role                                             | Key files                                                                                                                                                                                                                                                       |
+| ----------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [src/](../src/)                     | Public entry points + state controller           | `index.ts`, `TowerDisplay.ts`, `TowerStateReadout.ts`, `TowerStateController.ts`, `styles.ts`, `types.ts`                                                                                                                                                       |
+| [src/2d/](../src/2d/)               | SVG side view                                    | `TowerSideView.ts`, `TowerSide.svg`, `Seal.svg`                                                                                                                                                                                                                 |
+| [src/3d/](../src/3d/)               | Three.js 3D view and managers                    | `Tower3DView.ts`, `ScenePlugin.ts`, `SceneLighting.ts`, `LedEffectAnimator.ts`, `SealManager.ts`, `DrumManager.ts`, `CameraController.ts`, `GroundDiscManager.ts`, `SkyboxManager.ts`, `LightingResolver.ts`, `GameBoardImageTexture.ts`, `EntranceAnimator.ts` |
+| [src/audio/](../src/audio/)         | Web Audio playback + bundled official sound pack | `TowerSampleAudio.ts`, `DrumRotationAudio.ts`, `audioLibrary.ts`, `sequenceAudio.ts`, `soundPack.ts`, `assets/*.ogg`                                                                                                                                            |
+| [src/sequences/](../src/sequences/) | LED sequence player                              | `SequencePlayer.ts`, `SequenceAnimator.ts`, JSON sequence data                                                                                                                                                                                                  |
+| [src/state/](../src/state/)         | Headless state merge                             | `TowerStateController.ts`                                                                                                                                                                                                                                       |
+| [src/physics/](../src/physics/)     | Optional Rapier skull physics                    | `index.ts`, `PhysicsManager.ts`, `PhysicsResolver.ts`, `buildColliders.ts`, `SkullModelLoader.ts`, `SkullSpawner.ts`                                                                                                                                            |
+| [src/shared/](../src/shared/)       | Cross-renderer utilities                         | `SideButtons.ts`                                                                                                                                                                                                                                                |
 
 ## Where physics plugs in
 
@@ -160,24 +160,33 @@ import { TowerRenderView, attachScenePlugin } from 'ultimatedarktowerdisplay';
 import type { ScenePlugin } from 'ultimatedarktowerdisplay';
 
 const view = new TowerRenderView({ container, modelUrl, overlay: true });
-view.view3D!.setBoardDiscEnabled(false);      // 2. board-surface hand-off
+view.view3D!.setBoardDiscEnabled(false); // 2. board-surface hand-off
 
-const handle = attachScenePlugin(view.view3D!, {  // 1. scene-plugin seam
+const handle = attachScenePlugin(view.view3D!, {
+  // 1. scene-plugin seam
   id: 'my-board',
   attach(ctx) {
     const { topY, radius } = view.view3D!.getDiscMetrics();
     // build Object3Ds, add to ctx.scene, register pointer targets…
-    ctx.registerPointerTarget({                  // 4. pointer/raycast contract
+    ctx.registerPointerTarget({
+      // 4. pointer/raycast contract
       objects: () => myTokens,
       priority: 10,
-      onPointerDown: (hit) => { select(hit.object); return true; },
+      onPointerDown: (hit) => {
+        select(hit.object);
+        return true;
+      },
     });
   },
-  onStateApplied(state) { /* react to tower state */ },
-  dispose() { /* free your resources */ },
+  onStateApplied(state) {
+    /* react to tower state */
+  },
+  dispose() {
+    /* free your resources */
+  },
 });
 
-view.getOverlayContainer().appendChild(myHud);   // 3. UI docking
+view.getOverlayContainer().appendChild(myHud); // 3. UI docking
 ```
 
 The four additive capabilities that make an external content/editor package possible:

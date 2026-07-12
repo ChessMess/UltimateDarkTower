@@ -22,8 +22,8 @@ export function runValidation(doc: unknown): ValidationResults {
   const l1Ok = validateFn(doc) as boolean;
   const l1Errors = l1Ok
     ? []
-    : (validateFn.errors ?? []).map((e: { instancePath?: string; message?: string }) =>
-        `${e.instancePath || '/'} ${e.message}`,
+    : (validateFn.errors ?? []).map(
+        (e: { instancePath?: string; message?: string }) => `${e.instancePath || '/'} ${e.message}`,
       );
 
   // L2 — reference resolution (only when L1 passes so doc shape is guaranteed)

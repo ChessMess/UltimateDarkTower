@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import type { Plugin as EsbuildPlugin } from 'esbuild';
 
 const udtCjsEntry = fileURLToPath(
-  new URL('./node_modules/ultimatedarktower/dist/src/index.js', import.meta.url)
+  new URL('./node_modules/ultimatedarktower/dist/src/index.js', import.meta.url),
 );
 
 function esbuildNodeModuleShim(): EsbuildPlugin {

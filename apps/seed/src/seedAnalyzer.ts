@@ -25,7 +25,9 @@ export class SeedAnalyzer {
     try {
       const json = localStorage.getItem(STORAGE_KEY);
       if (json) return JSON.parse(json);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return { sessions: [], activeSessionId: null, fieldMappings: [] };
   }
 

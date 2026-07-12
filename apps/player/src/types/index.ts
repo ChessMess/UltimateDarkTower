@@ -14,14 +14,14 @@ export type {
 } from '@udtc/engine';
 
 export type GamePhase =
-  | 'idle'        // no scenario loaded
-  | 'validating'  // L1-L4 in progress
-  | 'ready'       // scenario loaded; waiting for explicit user start
-  | 'connecting'  // relay WS opening
-  | 'waiting'     // relay connected, target not yet calibrated
-  | 'playing'     // game in progress
-  | 'ended'       // won / lost / ended
-  | 'error';      // validation or connection error
+  | 'idle' // no scenario loaded
+  | 'validating' // L1-L4 in progress
+  | 'ready' // scenario loaded; waiting for explicit user start
+  | 'connecting' // relay WS opening
+  | 'waiting' // relay connected, target not yet calibrated
+  | 'playing' // game in progress
+  | 'ended' // won / lost / ended
+  | 'error'; // validation or connection error
 
 export type { RelayConnState, RelayTargetState, RelayStatus } from '@udtc/adapters';
 

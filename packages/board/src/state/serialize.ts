@@ -80,7 +80,7 @@ export function loadState(serialized: string): BoardState {
   if (!envelope.success) {
     throw new BoardStateLoadError(
       'Board state envelope is malformed (expected { version, state }).',
-      envelope.error
+      envelope.error,
     );
   }
 

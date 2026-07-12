@@ -1,7 +1,11 @@
 import { BoardStateController, createSelectionStore, mountBoardUI } from '../src/index';
 import type { SelectionStore } from '../src/index';
 
-function setup(): { controller: BoardStateController; selection: SelectionStore; host: HTMLElement } {
+function setup(): {
+  controller: BoardStateController;
+  selection: SelectionStore;
+  host: HTMLElement;
+} {
   const controller = new BoardStateController();
   const selection = createSelectionStore();
   const host = document.createElement('div');

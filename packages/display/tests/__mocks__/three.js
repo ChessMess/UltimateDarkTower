@@ -13,7 +13,7 @@ class Layers {
     this.mask = 1 << channel;
   }
   enable(channel) {
-    this.mask |= (1 << channel);
+    this.mask |= 1 << channel;
   }
   test(layers) {
     return (this.mask & layers.mask) !== 0;
@@ -208,10 +208,16 @@ class WebGLRenderer {
   }
   setPixelRatio() {}
   setSize() {}
-  getPixelRatio() { return 1; }
+  getPixelRatio() {
+    return 1;
+  }
   render() {}
-  compile() { return new Set(); }
-  compileAsync() { return Promise.resolve(new Set()); }
+  compile() {
+    return new Set();
+  }
+  compileAsync() {
+    return Promise.resolve(new Set());
+  }
   dispose() {}
   forceContextLoss() {}
 }
@@ -291,7 +297,7 @@ class Mesh {
     this.castShadow = false;
     this.receiveShadow = false;
     this.layers = new Layers();
-    this.uuid = 'mock-mesh-' + (++_uuidSeq);
+    this.uuid = 'mock-mesh-' + ++_uuidSeq;
   }
   add(obj) {
     this.children.push(obj);
@@ -354,7 +360,10 @@ class Sprite {
     this.renderOrder = 0;
     this.layers = new Layers();
   }
-  add(obj) { this.children.push(obj); if (obj) obj.parent = this; }
+  add(obj) {
+    this.children.push(obj);
+    if (obj) obj.parent = this;
+  }
   removeFromParent() {
     if (this.parent && this.parent.children) {
       const i = this.parent.children.indexOf(this);
@@ -365,7 +374,9 @@ class Sprite {
 }
 
 class CanvasTexture {
-  constructor() { this.needsUpdate = false; }
+  constructor() {
+    this.needsUpdate = false;
+  }
   dispose() {}
 }
 
@@ -475,19 +486,37 @@ class Clock {
     this.autoStart = autoStart;
     this.running = false;
   }
-  start() { this.running = true; }
-  stop() { this.running = false; }
-  getDelta() { return 0; }
-  getElapsedTime() { return 0; }
+  start() {
+    this.running = true;
+  }
+  stop() {
+    this.running = false;
+  }
+  getDelta() {
+    return 0;
+  }
+  getElapsedTime() {
+    return 0;
+  }
 }
 
 // Mirrors the core THREE.Timer API surface used by Tower3DView (update/getDelta/reset).
 class Timer {
-  update() { return this; }
-  getDelta() { return 0; }
-  getElapsed() { return 0; }
-  reset() { return this; }
-  setTimescale() { return this; }
+  update() {
+    return this;
+  }
+  getDelta() {
+    return 0;
+  }
+  getElapsed() {
+    return 0;
+  }
+  reset() {
+    return this;
+  }
+  setTimescale() {
+    return this;
+  }
   connect() {}
   disconnect() {}
   dispose() {}
@@ -515,9 +544,15 @@ class AxesHelper {
 // drive hit results deterministically without real WebGL/geometry.
 class Raycaster {
   constructor() {
-    this.ray = { intersectPlane() { return null; } };
+    this.ray = {
+      intersectPlane() {
+        return null;
+      },
+    };
   }
-  setFromCamera() { return this; }
+  setFromCamera() {
+    return this;
+  }
   intersectObjects(objects /* , recursive */) {
     const hits = [];
     for (const o of objects || []) {

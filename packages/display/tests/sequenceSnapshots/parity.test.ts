@@ -39,8 +39,7 @@ describe('sequence player ↔ TS parity', () => {
   // before the per-sequence parity tests so a future-added id (e.g. a new
   // entry in TOWER_LIGHT_SEQUENCES upstream) surfaces immediately.
   test('every spec sequence has a JSON entry', () => {
-    const missing = SEQUENCES.filter((s) => !JSON_SEQUENCE_DATA.has(s.id))
-      .map((s) => s.name);
+    const missing = SEQUENCES.filter((s) => !JSON_SEQUENCE_DATA.has(s.id)).map((s) => s.name);
     expect(missing).toEqual([]);
   });
 
@@ -53,18 +52,16 @@ describe('sequence player ↔ TS parity', () => {
       const rng = mulberry32(SEED);
       const result = driveSequence(
         (onComplete) =>
-          SequencePlayer.build(
-            json,
-            { ledAnimator: animator.asLedAnimator(), rng },
-            onComplete,
-          ),
+          SequencePlayer.build(json, { ledAnimator: animator.asLedAnimator(), rng }, onComplete),
         animator,
         spec.driveTicks,
       );
 
       const snapshotPath = path.join(SNAPSHOT_DIR, `${spec.name}.snap.json`);
       if (!fs.existsSync(snapshotPath)) {
-        throw new Error(`Missing TS baseline ${snapshotPath} (run record-sequence-snapshots first)`);
+        throw new Error(
+          `Missing TS baseline ${snapshotPath} (run record-sequence-snapshots first)`,
+        );
       }
       const expected = JSON.parse(fs.readFileSync(snapshotPath, 'utf8')) as RecordedSnapshot;
 

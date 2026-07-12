@@ -11,7 +11,11 @@ export function imageSlot(
 ): HTMLElement {
   const slot = el('div', 'slot');
   const preview = el('div', 'slot-preview');
-  const input = makeInput({ value: value ?? '', placeholder: './tokens/…/art.png', list: 'imgAssets' });
+  const input = makeInput({
+    value: value ?? '',
+    placeholder: './tokens/…/art.png',
+    list: 'imgAssets',
+  });
 
   // Render an <img>; `isDefault` marks the convention fallback (dimmed + "default" tag, no is-set).
   const showImage = (src: string, isDefault: boolean): void => {
@@ -20,7 +24,9 @@ export function imageSlot(
     img.alt = name;
     img.addEventListener('error', () => {
       preview.classList.remove('is-default');
-      preview.replaceChildren(emptyState(isDefault ? 'no art file — fallback disc' : 'broken link'));
+      preview.replaceChildren(
+        emptyState(isDefault ? 'no art file — fallback disc' : 'broken link'),
+      );
     });
     preview.classList.toggle('is-default', isDefault);
     if (isDefault) {

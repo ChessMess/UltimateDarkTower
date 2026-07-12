@@ -8,7 +8,7 @@ import { type TowerState } from './udtTowerState';
  */
 function calculateBatteryPercentage(mv: number): number {
   const batLevel = mv ? mv / 3 : 0; // lookup is based on single AA
-  const levels = VOLTAGE_LEVELS.filter(v => batLevel >= v);
+  const levels = VOLTAGE_LEVELS.filter((v) => batLevel >= v);
   return levels.length * 5;
 }
 
@@ -53,9 +53,11 @@ export function getMilliVoltsFromTowerResponse(command: Uint8Array): number {
  */
 export function commandToPacketString(command: Uint8Array): string {
   if (command.length === 0) {
-    return "[]";
+    return '[]';
   }
-  return `[${Array.from(command).map(n => n.toString(16).padStart(2, '0')).join(',')}]`;
+  return `[${Array.from(command)
+    .map((n) => n.toString(16).padStart(2, '0'))
+    .join(',')}]`;
 }
 
 /**
@@ -67,7 +69,10 @@ export function commandToPacketString(command: Uint8Array): string {
  * @param lightIndex - The light index within the layer (0-3)
  * @returns Object containing the tower level, direction, and LED channel
  */
-export function getTowerPosition(layerIndex: number, lightIndex: number): { level: string, direction: string, ledChannel?: number } {
+export function getTowerPosition(
+  layerIndex: number,
+  lightIndex: number,
+): { level: string; direction: string; ledChannel?: number } {
   const isRingLayer = layerIndex <= 2;
   const ledChannel = LED_CHANNEL_LOOKUP[layerIndex * 4 + lightIndex];
 
@@ -78,7 +83,7 @@ export function getTowerPosition(layerIndex: number, lightIndex: number): { leve
     return {
       level: layerNames[layerIndex],
       direction: directions[lightIndex],
-      ledChannel
+      ledChannel,
     };
   } else {
     // Ledge/Base layers: ordinal directions (position 0 = North-East)
@@ -87,7 +92,7 @@ export function getTowerPosition(layerIndex: number, lightIndex: number): { leve
     return {
       level: layerNames[layerIndex - 3],
       direction: directions[lightIndex],
-      ledChannel
+      ledChannel,
     };
   }
 }
@@ -97,8 +102,11 @@ export function getTowerPosition(layerIndex: number, lightIndex: number): { leve
  * @param state - The tower state object
  * @returns Array of objects describing each active light
  */
-export function getActiveLights(state: TowerState): Array<{ level: string, direction: string, effect: number, loop: boolean }> {
-  const activeLights: Array<{ level: string, direction: string, effect: number, loop: boolean }> = [];
+export function getActiveLights(
+  state: TowerState,
+): Array<{ level: string; direction: string; effect: number; loop: boolean }> {
+  const activeLights: Array<{ level: string; direction: string; effect: number; loop: boolean }> =
+    [];
 
   state.layer.forEach((layer, layerIndex) => {
     layer.light.forEach((light, lightIndex) => {
@@ -108,7 +116,7 @@ export function getActiveLights(state: TowerState): Array<{ level: string, direc
           level: position.level,
           direction: position.direction,
           effect: light.effect,
-          loop: light.loop
+          loop: light.loop,
         });
       }
     });
@@ -137,9 +145,9 @@ export interface ParsedDifferentialReadings {
  * - signals_smoothed[1] = Drum 1 (top)
  * - signals_smoothed[2] = Drum 2 (middle)
  * - signals_smoothed[3] = Drum 3 (bottom)
- * 
+ *
  * Transmitted as: [cmd_byte][IR_beam][drum1][drum2][drum3]
- * 
+ *
  * @param response - Tower response packet (should be MESSAGE_DIFFERENTIAL_READINGS with command value 6)
  * @returns Parsed differential readings or null if not a valid differential response
  */
@@ -152,18 +160,18 @@ export function parseDifferentialReadings(response: Uint8Array): ParsedDifferent
   // Based on debug output, the packet format is: [cmd][unknown/saturated][drum1][drum2][drum3]
   // The 0xff (255) in byte 1 appears to be either a saturated value or different data
   // The actual drum readings are in bytes 2, 3, 4 matching your log data
-  
+
   // Looking at your data pattern: "D1: 2, D2: 0, D3: 0" matches bytes [0x02, 0x00, 0x00]
   // This suggests the IR beam might be calculated differently or is in a different position
-  
+
   // For now, let's extract what we can identify from the pattern:
-  const drum1 = response[2];   // Drum 1 - matches your "D1: 2" 
-  const drum2 = response[3];   // Drum 2 - matches your "D2: 0"
-  const drum3 = response[4];   // Drum 3 - matches your "D3: 0"
-  
+  const drum1 = response[2]; // Drum 1 - matches your "D1: 2"
+  const drum2 = response[3]; // Drum 2 - matches your "D2: 0"
+  const drum3 = response[4]; // Drum 3 - matches your "D3: 0"
+
   // The IR beam (drop sensor) might be derived differently or require calibration
   // For now, we'll use byte 1 but this needs further investigation
-  const irBeam = response[1];  // This is the 255 value - might be saturated/inverted
+  const irBeam = response[1]; // This is the 255 value - might be saturated/inverted
 
   return {
     irBeam,
@@ -171,7 +179,7 @@ export function parseDifferentialReadings(response: Uint8Array): ParsedDifferent
     drum2,
     drum3,
     timestamp: Date.now(),
-    rawData: new Uint8Array(response)
+    rawData: new Uint8Array(response),
   };
 }
 
@@ -184,18 +192,60 @@ export function createDefaultTowerState(): TowerState {
     drum: [
       { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
       { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
-      { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false }
+      { jammed: false, calibrated: false, position: 0, playSound: false, reverse: false },
     ],
     layer: [
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] },
-      { light: [{ effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }, { effect: 0, loop: false }] }
+      {
+        light: [
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+        ],
+      },
+      {
+        light: [
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+        ],
+      },
+      {
+        light: [
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+        ],
+      },
+      {
+        light: [
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+        ],
+      },
+      {
+        light: [
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+        ],
+      },
+      {
+        light: [
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+          { effect: 0, loop: false },
+        ],
+      },
     ],
     audio: { sample: 0, loop: false, volume: 0 },
     beam: { count: 0, fault: false },
-    led_sequence: 0
+    led_sequence: 0,
   };
 }

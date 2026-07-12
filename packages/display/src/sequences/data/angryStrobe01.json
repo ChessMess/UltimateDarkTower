@@ -5,16 +5,22 @@
   "loop": false,
   "endBehavior": "hold",
   "tracks": [
-    { "_comment": "Phase 1 — 121 ticks of per-LED flicker (layer-major-light-minor).",
+    {
+      "_comment": "Phase 1 — 121 ticks of per-LED flicker (layer-major-light-minor).",
       "kind": "flickerStep",
-      "atTick": 0, "endTick": 121,
-      "layers": [0, 1, 2, 3, 4, 5], "lights": "all",
+      "atTick": 0,
+      "endTick": 121,
+      "layers": [0, 1, 2, 3, 4, 5],
+      "lights": "all",
       "alpha": 0.4
     },
-    { "_comment": "Phase 2 — slow tail decay across 600-tick budget.",
+    {
+      "_comment": "Phase 2 — slow tail decay across 600-tick budget.",
       "kind": "scaleAll",
-      "atTick": 121, "endTick": 721,
-      "multiplierNum": 766, "multiplierDen": 769
+      "atTick": 121,
+      "endTick": 721,
+      "multiplierNum": 766,
+      "multiplierDen": 769
     }
   ]
 }

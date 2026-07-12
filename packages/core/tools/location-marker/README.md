@@ -11,7 +11,7 @@ It also captures `BOARD_IMAGE_INFO` (board-circle center / radius / north headin
 previews BFS step-distances so the graph can be sanity-checked while it's authored.
 
 This is **dev-only** — it has no runtime relationship to the published package (the
-package's `files` whitelist already excludes `tools/`). It only *produces files* that
+package's `files` whitelist already excludes `tools/`). It only _produces files_ that
 get dropped into the library's `src/`.
 
 ## Run it
@@ -42,14 +42,14 @@ ln -s ../../../UltimateDarkTowerDisplay/src/3d/assets/board.png board.png
   no building.
 - **Adjacency** — click location A then B to toggle the undirected edge (symmetry is
   guaranteed on every mutation). Click an edge line to select it, then <kbd>Del</kbd> to
-  remove. *Suggest* proposes edges between anchors within a % of board width — review,
-  then *Apply* or *Dismiss* (never auto-committed). A location must have at least one
+  remove. _Suggest_ proposes edges between anchors within a % of board width — review,
+  then _Apply_ or _Dismiss_ (never auto-committed). A location must have at least one
   anchor to appear/clickable on the canvas.
 - **Calibrate** — click the board center, then a point on the circle edge (radius), then
   set `northHeadingDegrees` (numeric, or "From selected location"). Feeds Display's
   `getDiscMetrics()` mapping of normalized image coords onto the 3D disc.
 - **Distance preview** — pick two locations (dropdowns or click) for BFS step count +
-  highlighted shortest path. *Connectivity report* lists connected components.
+  highlighted shortest path. _Connectivity report_ lists connected components.
 
 **Validate** surfaces missing required slots, out-of-range coords, isolated nodes,
 asymmetry, name typos, and the component breakdown. Export is allowed despite warnings.

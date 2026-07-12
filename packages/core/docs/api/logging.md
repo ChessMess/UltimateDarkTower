@@ -11,11 +11,7 @@ A small logger with pluggable outputs. Console by default; add DOM or buffer out
 ### `setLoggerOutputs(outputs: LogOutput[]): void`
 
 ```typescript
-import {
-  ConsoleOutput,
-  DOMOutput,
-  BufferOutput,
-} from 'ultimatedarktower';
+import { ConsoleOutput, DOMOutput, BufferOutput } from 'ultimatedarktower';
 
 // Default — console only
 tower.setLoggerOutputs([new ConsoleOutput()]);
@@ -23,7 +19,7 @@ tower.setLoggerOutputs([new ConsoleOutput()]);
 // Console + a DOM panel (browser only)
 tower.setLoggerOutputs([
   new ConsoleOutput(),
-  new DOMOutput('log-container', 200),  // element id, max lines
+  new DOMOutput('log-container', 200), // element id, max lines
 ]);
 
 // Console + in-memory buffer (good for tests and "save logs" UI buttons)
@@ -40,8 +36,8 @@ tower.setLoggerOutputs([new ConsoleOutput(), buf]);
 ### `logDetail: boolean`
 
 ```typescript
-tower.logDetail = true;   // verbose
-tower.logDetail = false;  // default
+tower.logDetail = true; // verbose
+tower.logDetail = false; // default
 ```
 
 ---
@@ -75,11 +71,11 @@ Set `LOG_ALL: true` to enable every category in one go.
 
 The `onBatteryLevelNotify` callback always fires (~5 Hz when connected). These properties only affect _logging_ of battery readings, not the callback.
 
-| Property | Default | Effect |
-|---|---|---|
-| `batteryLogEnabled` | `true` | Master switch |
-| `batteryLogFrequency` | `1000` (ms) | Minimum interval between logged readings |
-| `batteryLogOnChangeOnly` | `false` | Only log when percentage changes |
+| Property                 | Default     | Effect                                   |
+| ------------------------ | ----------- | ---------------------------------------- |
+| `batteryLogEnabled`      | `true`      | Master switch                            |
+| `batteryLogFrequency`    | `1000` (ms) | Minimum interval between logged readings |
+| `batteryLogOnChangeOnly` | `false`     | Only log when percentage changes         |
 
 ```typescript
 tower.batteryLogEnabled = true;

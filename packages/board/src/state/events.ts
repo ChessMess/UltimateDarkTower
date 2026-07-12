@@ -1,4 +1,10 @@
-import type { BoardState, BuildingState, LocationName, QuestMarker, SpaceMarker } from './boardState';
+import type {
+  BoardState,
+  BuildingState,
+  LocationName,
+  QuestMarker,
+  SpaceMarker,
+} from './boardState';
 import type { BoardCommand } from './commands';
 
 /** The instance-token kinds carried on the board (heroes, foes, and the singleton adversary). */

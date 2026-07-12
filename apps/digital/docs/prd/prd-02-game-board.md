@@ -20,14 +20,14 @@ this manually).
 
 ## 3. User Stories
 
-- *As a player*, when the app says "place a [foe] at [location]", I can add that foe token there, so
+- _As a player_, when the app says "place a [foe] at [location]", I can add that foe token there, so
   the board matches the app's instruction.
-- *As a player*, I can move a hero from one location to an adjacent one, so I can take my movement.
-- *As a player*, I can add skulls to a building and see it become destroyed at the 4th skull, so the
+- _As a player_, I can move a hero from one location to an adjacent one, so I can take my movement.
+- _As a player_, I can add skulls to a building and see it become destroyed at the 4th skull, so the
   board reflects skull emergence.
-- *As a player*, I can place the adversary when it spawns and advance a foe's status, so the board
+- _As a player_, I can place the adversary when it spawns and advance a foe's status, so the board
   tracks escalation.
-- *As a player*, I can switch between 2D map and 3D disc, so I can use whichever view I prefer.
+- _As a player_, I can switch between 2D map and 3D disc, so I can use whichever view I prefer.
 
 ## 4. Functional Requirements
 
@@ -56,13 +56,13 @@ this manually).
    are modeled as a marker variant (there is no dedicated quest-marker field).
 9. **FR-02.9** Selecting a token MUST surface its details (type, location, status) in an inspector.
 10. **FR-02.10** The board MUST support the stage's display modes (`2d | 3d | 2d3d | pip-2dbig |
-    pip-3dbig`) and kingdom focus (N/E/S/W/all).
+pip-3dbig`) and kingdom focus (N/E/S/W/all).
 11. **FR-02.11** Token art MUST load from the configured `assetBaseUrl` using the `${group}/${kebab(id)}`
     convention; missing art MUST degrade gracefully (placeholder, no crash).
 
 ## 5. Non-Goals (Out of Scope)
 
-- Deciding *where* foes spawn or *which* foe spawns (the app's rules; player enters it).
+- Deciding _where_ foes spawn or _which_ foe spawns (the app's rules; player enters it).
 - Battle resolution, quest resolution, dungeon exploration (app-owned; UTDD only reflects outcomes via
   token/skull changes).
 - Enforcing movement range or legality.

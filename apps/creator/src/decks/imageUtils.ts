@@ -43,7 +43,12 @@ function loadImage(file: File): Promise<HTMLImageElement> {
 export async function resizeAndEncode(file: File, opts: EncodeOpts): Promise<string> {
   const { maxW, maxH, capBytes } = opts;
   const img = await loadImage(file);
-  const { width, height } = containFit(img.naturalWidth || img.width, img.naturalHeight || img.height, maxW, maxH);
+  const { width, height } = containFit(
+    img.naturalWidth || img.width,
+    img.naturalHeight || img.height,
+    maxW,
+    maxH,
+  );
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;

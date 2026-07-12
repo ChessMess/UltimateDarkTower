@@ -6,10 +6,18 @@ let sealNamesOverride = null;
 const instances = [];
 
 const DEFAULT_SEAL_NAMES = [
-  'seal_north_top', 'seal_north_middle', 'seal_north_bottom',
-  'seal_south_top', 'seal_south_middle', 'seal_south_bottom',
-  'seal_east_top',  'seal_east_middle',  'seal_east_bottom',
-  'seal_west_top',  'seal_west_middle',  'seal_west_bottom',
+  'seal_north_top',
+  'seal_north_middle',
+  'seal_north_bottom',
+  'seal_south_top',
+  'seal_south_middle',
+  'seal_south_bottom',
+  'seal_east_top',
+  'seal_east_middle',
+  'seal_east_bottom',
+  'seal_west_top',
+  'seal_west_middle',
+  'seal_west_bottom',
 ];
 
 const DEFAULT_DRUM_NAMES = ['drum_top', 'drum_middle', 'drum_bottom'];
@@ -19,12 +27,14 @@ function sealWorldPos(name) {
   const side = parts[1];
   const level = parts[2];
   const y = { top: 0.83, middle: 0.53, bottom: 0.23 }[level] ?? 0;
-  return {
-    north: { x: 0, y, z: 1.0 },
-    east:  { x: 1.0, y, z: 0 },
-    south: { x: 0, y, z: -1.0 },
-    west:  { x: -1.0, y, z: 0 },
-  }[side] ?? { x: 0, y: 0, z: 1.0 };
+  return (
+    {
+      north: { x: 0, y, z: 1.0 },
+      east: { x: 1.0, y, z: 0 },
+      south: { x: 0, y, z: -1.0 },
+      west: { x: -1.0, y, z: 0 },
+    }[side] ?? { x: 0, y: 0, z: 1.0 }
+  );
 }
 
 function makeNode(name) {
@@ -57,9 +67,15 @@ function makeMockScene() {
     children: [],
     parent: null,
     position: {
-      x: 0, y: 0, z: 0,
-      sub() { return this; },
-      toArray() { return [0, 0, 0]; },
+      x: 0,
+      y: 0,
+      z: 0,
+      sub() {
+        return this;
+      },
+      toArray() {
+        return [0, 0, 0];
+      },
     },
     add(child) {
       this.children.push(child);
@@ -71,7 +87,9 @@ function makeMockScene() {
         if (typeof c.traverse === 'function') c.traverse(cb);
       }
     },
-    removeFromParent() { this.parent = null; },
+    removeFromParent() {
+      this.parent = null;
+    },
   };
 
   const sealNames = sealNamesOverride ?? DEFAULT_SEAL_NAMES;
@@ -111,9 +129,15 @@ class GLTFLoader {
 
 module.exports = {
   GLTFLoader,
-  __setAutoLoad(v) { autoLoad = v; },
-  __setSealNames(names) { sealNamesOverride = names; },
-  __getLastInstance() { return instances[instances.length - 1]; },
+  __setAutoLoad(v) {
+    autoLoad = v;
+  },
+  __setSealNames(names) {
+    sealNamesOverride = names;
+  },
+  __getLastInstance() {
+    return instances[instances.length - 1];
+  },
   __reset() {
     autoLoad = true;
     sealNamesOverride = null;

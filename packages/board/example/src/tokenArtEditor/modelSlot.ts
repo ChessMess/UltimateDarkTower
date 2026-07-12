@@ -33,7 +33,11 @@ export function modelSlot(
 
   const slot = el('div', 'slot');
   const preview = el('div', 'slot-preview');
-  const url = makeInput({ value: m?.url ?? image3d ?? '', placeholder: './model.glb · ./art.png', list: 'modelAssets' });
+  const url = makeInput({
+    value: m?.url ?? image3d ?? '',
+    placeholder: './model.glb · ./art.png',
+    list: 'modelAssets',
+  });
 
   // Live model preview via Google's <model-viewer> (loaded from CDN in tokens.html). The element
   // only re-fetches when `src` changes.
@@ -73,10 +77,16 @@ export function modelSlot(
         d.model3d = undefined;
         return;
       }
-      const next: { url: string; scale?: number; rotation?: { x?: number; y?: number; z?: number }; dracoDecoderPath?: string | null } = { url: u };
+      const next: {
+        url: string;
+        scale?: number;
+        rotation?: { x?: number; y?: number; z?: number };
+        dracoDecoderPath?: string | null;
+      } = { url: u };
       if (passthrough.scale != null) next.scale = passthrough.scale;
       if (passthrough.rotation) next.rotation = passthrough.rotation;
-      if (passthrough.dracoDecoderPath !== undefined) next.dracoDecoderPath = passthrough.dracoDecoderPath;
+      if (passthrough.dracoDecoderPath !== undefined)
+        next.dracoDecoderPath = passthrough.dracoDecoderPath;
       d.model3d = next;
       d.image3d = undefined;
     });
@@ -92,7 +102,9 @@ export function modelSlot(
     img.alt = '3D billboard';
     img.addEventListener('error', () => {
       preview.classList.remove('is-default');
-      preview.replaceChildren(emptyState(isDefault ? 'no art file — fallback disc' : 'broken link'));
+      preview.replaceChildren(
+        emptyState(isDefault ? 'no art file — fallback disc' : 'broken link'),
+      );
     });
     preview.classList.toggle('is-default', isDefault);
     const tagEl = el('span', 'preview-tag');

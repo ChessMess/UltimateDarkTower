@@ -167,89 +167,64 @@ export function resolveLighting(
         strength: user?.scene?.bloom?.strength ?? base.scene.bloom.strength,
         radius: user?.scene?.bloom?.radius ?? base.scene.bloom.radius,
         threshold: user?.scene?.bloom?.threshold ?? base.scene.bloom.threshold,
-        resolutionScale:
-          user?.scene?.bloom?.resolutionScale ?? base.scene.bloom.resolutionScale,
+        resolutionScale: user?.scene?.bloom?.resolutionScale ?? base.scene.bloom.resolutionScale,
       },
     },
     leds: {
       sealBacklights: {
-        enabled:
-          user?.leds?.sealBacklights?.enabled ?? base.leds.sealBacklights.enabled,
-        color:
-          user?.leds?.sealBacklights?.color ?? base.leds.sealBacklights.color,
+        enabled: user?.leds?.sealBacklights?.enabled ?? base.leds.sealBacklights.enabled,
+        color: user?.leds?.sealBacklights?.color ?? base.leds.sealBacklights.color,
         radiusFactor:
-          user?.leds?.sealBacklights?.radiusFactor ??
-          base.leds.sealBacklights.radiusFactor,
+          user?.leds?.sealBacklights?.radiusFactor ?? base.leds.sealBacklights.radiusFactor,
         backlightWhenBroken:
           user?.leds?.sealBacklights?.backlightWhenBroken ??
           base.leds.sealBacklights.backlightWhenBroken,
         proxy: {
           enabled:
-            user?.leds?.sealBacklights?.proxy?.enabled ??
-            base.leds.sealBacklights.proxy.enabled,
+            user?.leds?.sealBacklights?.proxy?.enabled ?? base.leds.sealBacklights.proxy.enabled,
           sizeFactor:
             user?.leds?.sealBacklights?.proxy?.sizeFactor ??
             base.leds.sealBacklights.proxy.sizeFactor,
           geometry:
-            user?.leds?.sealBacklights?.proxy?.geometry ??
-            base.leds.sealBacklights.proxy.geometry,
+            user?.leds?.sealBacklights?.proxy?.geometry ?? base.leds.sealBacklights.proxy.geometry,
         },
         halo: {
           enabled:
-            user?.leds?.sealBacklights?.halo?.enabled ??
-            base.leds.sealBacklights.halo.enabled,
+            user?.leds?.sealBacklights?.halo?.enabled ?? base.leds.sealBacklights.halo.enabled,
           sizeFactor:
             user?.leds?.sealBacklights?.halo?.sizeFactor ??
             base.leds.sealBacklights.halo.sizeFactor,
           opacity:
-            user?.leds?.sealBacklights?.halo?.opacity ??
-            base.leds.sealBacklights.halo.opacity,
+            user?.leds?.sealBacklights?.halo?.opacity ?? base.leds.sealBacklights.halo.opacity,
         },
       },
       ledgeLeds: {
         enabled: user?.leds?.ledgeLeds?.enabled ?? base.leds.ledgeLeds.enabled,
         color: user?.leds?.ledgeLeds?.color ?? base.leds.ledgeLeds.color,
         proxy: {
-          enabled:
-            user?.leds?.ledgeLeds?.proxy?.enabled ??
-            base.leds.ledgeLeds.proxy.enabled,
+          enabled: user?.leds?.ledgeLeds?.proxy?.enabled ?? base.leds.ledgeLeds.proxy.enabled,
           sizeFactor:
-            user?.leds?.ledgeLeds?.proxy?.sizeFactor ??
-            base.leds.ledgeLeds.proxy.sizeFactor,
+            user?.leds?.ledgeLeds?.proxy?.sizeFactor ?? base.leds.ledgeLeds.proxy.sizeFactor,
         },
         halo: {
-          enabled:
-            user?.leds?.ledgeLeds?.halo?.enabled ??
-            base.leds.ledgeLeds.halo.enabled,
+          enabled: user?.leds?.ledgeLeds?.halo?.enabled ?? base.leds.ledgeLeds.halo.enabled,
           sizeFactor:
-            user?.leds?.ledgeLeds?.halo?.sizeFactor ??
-            base.leds.ledgeLeds.halo.sizeFactor,
-          opacity:
-            user?.leds?.ledgeLeds?.halo?.opacity ??
-            base.leds.ledgeLeds.halo.opacity,
+            user?.leds?.ledgeLeds?.halo?.sizeFactor ?? base.leds.ledgeLeds.halo.sizeFactor,
+          opacity: user?.leds?.ledgeLeds?.halo?.opacity ?? base.leds.ledgeLeds.halo.opacity,
         },
       },
       baseLeds: {
         enabled: user?.leds?.baseLeds?.enabled ?? base.leds.baseLeds.enabled,
         color: user?.leds?.baseLeds?.color ?? base.leds.baseLeds.color,
         proxy: {
-          enabled:
-            user?.leds?.baseLeds?.proxy?.enabled ??
-            base.leds.baseLeds.proxy.enabled,
+          enabled: user?.leds?.baseLeds?.proxy?.enabled ?? base.leds.baseLeds.proxy.enabled,
           sizeFactor:
-            user?.leds?.baseLeds?.proxy?.sizeFactor ??
-            base.leds.baseLeds.proxy.sizeFactor,
+            user?.leds?.baseLeds?.proxy?.sizeFactor ?? base.leds.baseLeds.proxy.sizeFactor,
         },
         halo: {
-          enabled:
-            user?.leds?.baseLeds?.halo?.enabled ??
-            base.leds.baseLeds.halo.enabled,
-          sizeFactor:
-            user?.leds?.baseLeds?.halo?.sizeFactor ??
-            base.leds.baseLeds.halo.sizeFactor,
-          opacity:
-            user?.leds?.baseLeds?.halo?.opacity ??
-            base.leds.baseLeds.halo.opacity,
+          enabled: user?.leds?.baseLeds?.halo?.enabled ?? base.leds.baseLeds.halo.enabled,
+          sizeFactor: user?.leds?.baseLeds?.halo?.sizeFactor ?? base.leds.baseLeds.halo.sizeFactor,
+          opacity: user?.leds?.baseLeds?.halo?.opacity ?? base.leds.baseLeds.halo.opacity,
         },
       },
     },
@@ -257,8 +232,7 @@ export function resolveLighting(
       idleBreathe: {
         peakFactor:
           user?.animation?.idleBreathe?.peakFactor ?? base.animation.idleBreathe.peakFactor,
-        durationS:
-          user?.animation?.idleBreathe?.durationS ?? base.animation.idleBreathe.durationS,
+        durationS: user?.animation?.idleBreathe?.durationS ?? base.animation.idleBreathe.durationS,
       },
     },
     entrance: {
@@ -270,7 +244,8 @@ export function resolveLighting(
       roughness: user?.groundDisc?.roughness ?? base.groundDisc.roughness,
       metalness: user?.groundDisc?.metalness ?? base.groundDisc.metalness,
       radiusFactor: user?.groundDisc?.radiusFactor ?? base.groundDisc.radiusFactor,
-      undersideLightIntensity: user?.groundDisc?.undersideLightIntensity ?? base.groundDisc.undersideLightIntensity,
+      undersideLightIntensity:
+        user?.groundDisc?.undersideLightIntensity ?? base.groundDisc.undersideLightIntensity,
     },
     boardDisc: {
       enabled: user?.boardDisc?.enabled ?? base.boardDisc.enabled,

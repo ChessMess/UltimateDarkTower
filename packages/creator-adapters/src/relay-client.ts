@@ -12,7 +12,7 @@
 export type RelayConnState = 'disconnected' | 'connecting' | 'connected' | 'resyncing';
 
 export type RelayTargetState =
-  | 'idle' | 'connecting' | 'connected' | 'calibrating' | 'ready' | 'dropped' | 'error';
+  'idle' | 'connecting' | 'connected' | 'calibrating' | 'ready' | 'dropped' | 'error';
 
 export interface RelayStatus {
   relaying: boolean;
@@ -23,7 +23,13 @@ export interface RelayStatus {
 
 // Relay wire-message shapes (inbound)
 type RelayInbound =
-  | { type: 'relay:status'; relaying: boolean; targetKind: 'tower' | 'emulator' | null; targetState: string; calibrated: boolean }
+  | {
+      type: 'relay:status';
+      relaying: boolean;
+      targetKind: 'tower' | 'emulator' | null;
+      targetState: string;
+      calibrated: boolean;
+    }
   | { type: 'tower:observed'; observed: 'skullCounter'; value: number }
   | { type: 'tower:seals'; seals: string[] }
   | { type: 'relay:sync'; lastCommand: number[] | null }
@@ -72,7 +78,10 @@ export class RelayClient {
   disconnect(): void {
     this.destroyed = true;
     this.clearReconnectTimer();
-    if (this.ws) { this.ws.close(); this.ws = null; }
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
     this.setConnState('disconnected');
   }
 
@@ -80,7 +89,9 @@ export class RelayClient {
   simulateDisconnect(): void {
     if (this.mode === 'stub') {
       this.setConnState('disconnected');
-      setTimeout(() => { if (!this.destroyed) this.runStubResync(); }, 600);
+      setTimeout(() => {
+        if (!this.destroyed) this.runStubResync();
+      }, 600);
     } else if (this.ws) {
       this.ws.close();
     }
@@ -108,7 +119,9 @@ export class RelayClient {
     this.lastCommand = data;
     this.seq = seq ?? this.seq + 1;
     if (this.mode === 'stub') {
-      setTimeout(() => { if (!this.destroyed) this.cbs.onAck(); }, 15);
+      setTimeout(() => {
+        if (!this.destroyed) this.cbs.onAck();
+      }, 15);
     } else if (this.ws?.readyState === WebSocket.OPEN) {
       this.send({ type: 'tower:command', data, seq: this.seq });
     }
@@ -144,7 +157,12 @@ export class RelayClient {
     setTimeout(() => {
       if (this.destroyed) return;
       this.setConnState('connected');
-      this.cbs.onStatus({ relaying: false, targetKind: null, targetState: 'idle', calibrated: false });
+      this.cbs.onStatus({
+        relaying: false,
+        targetKind: null,
+        targetState: 'idle',
+        calibrated: false,
+      });
     }, 120);
   }
 
@@ -190,7 +208,9 @@ export class RelayClient {
       try {
         const msg = JSON.parse(evt.data) as RelayInbound;
         this.handleInbound(msg);
-      } catch { /* ignore malformed frames */ }
+      } catch {
+        /* ignore malformed frames */
+      }
     };
 
     ws.onclose = (evt) => {
@@ -203,7 +223,9 @@ export class RelayClient {
       if (!this.destroyed) this.scheduleReconnect();
     };
 
-    ws.onerror = () => { ws.close(); };
+    ws.onerror = () => {
+      ws.close();
+    };
   }
 
   private handleInbound(msg: RelayInbound): void {

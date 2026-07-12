@@ -7,8 +7,17 @@ import { BitMapDisplay } from './bitMapDisplay';
 import { FieldMapper } from './fieldMapper';
 import { generateLLMPrompt } from './llmExport';
 import {
-  CHANGEABLE_FIELDS, FIELD_OPTIONS, type ChangeableField, type GameConfig,
-  EVENT_TYPES, KINGDOMS, ALL_FOES, COMPANIONS, QUEST_TYPES, type EventType, type GameEvent,
+  CHANGEABLE_FIELDS,
+  FIELD_OPTIONS,
+  type ChangeableField,
+  type GameConfig,
+  EVENT_TYPES,
+  KINGDOMS,
+  ALL_FOES,
+  COMPANIONS,
+  QUEST_TYPES,
+  type EventType,
+  type GameEvent,
 } from './types';
 import { seed as seedApi } from 'ultimatedarktower';
 
@@ -170,7 +179,9 @@ export class App {
           confidence: 'suspected',
         });
       } else {
-        alert('Not enough data to suggest a mapping for this field. Add more variants that change only this field.');
+        alert(
+          'Not enough data to suggest a mapping for this field. Add more variants that change only this field.',
+        );
       }
     });
   }
@@ -190,7 +201,10 @@ export class App {
   private updateChangeSummary(): void {
     const container = document.getElementById('variant-change-summary')!;
     const session = this.analyzer.getActiveSession();
-    if (!session) { container.innerHTML = ''; return; }
+    if (!session) {
+      container.innerHTML = '';
+      return;
+    }
 
     const fieldSelect = document.getElementById('field-select') as HTMLSelectElement;
     const valueSelect = document.getElementById('value-select') as HTMLSelectElement;
@@ -225,17 +239,23 @@ export class App {
     this.updateEventContextFields();
 
     addBtn.addEventListener('click', () => {
-      const month = parseInt((document.getElementById('event-month') as HTMLInputElement).value, 10) || 1;
+      const month =
+        parseInt((document.getElementById('event-month') as HTMLInputElement).value, 10) || 1;
       const turnRaw = (document.getElementById('event-turn') as HTMLInputElement).value.trim();
       const turnParsed = turnRaw !== '' ? parseInt(turnRaw, 10) : undefined;
       const turn = turnParsed !== undefined && !isNaN(turnParsed) ? turnParsed : undefined;
       const type = typeSelect.value as EventType;
-      const notes = (document.getElementById('event-notes') as HTMLInputElement).value.trim() || undefined;
+      const notes =
+        (document.getElementById('event-notes') as HTMLInputElement).value.trim() || undefined;
 
       const kingdomSelect = document.getElementById('event-kingdom') as HTMLSelectElement | null;
       const foeSelect = document.getElementById('event-foe') as HTMLSelectElement | null;
-      const companionSelect = document.getElementById('event-companion') as HTMLSelectElement | null;
-      const questTypeSelect = document.getElementById('event-quest-type') as HTMLSelectElement | null;
+      const companionSelect = document.getElementById(
+        'event-companion',
+      ) as HTMLSelectElement | null;
+      const questTypeSelect = document.getElementById(
+        'event-quest-type',
+      ) as HTMLSelectElement | null;
 
       const kingdom = (kingdomSelect?.value || undefined) as GameEvent['kingdom'];
       const foe = foeSelect?.value || undefined;
@@ -243,7 +263,16 @@ export class App {
       const questType = (questTypeSelect?.value || undefined) as GameEvent['questType'];
 
       if (this.editingEventId) {
-        this.analyzer.updateEvent(this.editingEventId, { month, turn, type, kingdom, foe, companion, questType, notes });
+        this.analyzer.updateEvent(this.editingEventId, {
+          month,
+          turn,
+          type,
+          kingdom,
+          foe,
+          companion,
+          questType,
+          notes,
+        });
         this.resetEventForm();
       } else {
         this.analyzer.addEvent({ month, turn, type, kingdom, foe, companion, questType, notes });
@@ -258,7 +287,13 @@ export class App {
     const type = (document.getElementById('event-type') as HTMLSelectElement).value as EventType;
     container.innerHTML = '';
 
-    const needsKingdom = ['Foe Spawn', 'Foe Defeated', 'Dungeon Discovered', 'Quest Appeared', 'Battle'].includes(type);
+    const needsKingdom = [
+      'Foe Spawn',
+      'Foe Defeated',
+      'Dungeon Discovered',
+      'Quest Appeared',
+      'Battle',
+    ].includes(type);
     const needsFoe = ['Foe Spawn', 'Foe Defeated', 'Battle'].includes(type);
     const needsCompanion = type === 'Companion Event';
     const needsQuestType = ['Quest Appeared', 'Quest Completed'].includes(type);
@@ -349,7 +384,8 @@ export class App {
     container.innerHTML = '';
 
     if (events.length === 0) {
-      container.innerHTML = '<p class="empty-msg">No events recorded yet. Start the game and log what happens.</p>';
+      container.innerHTML =
+        '<p class="empty-msg">No events recorded yet. Start the game and log what happens.</p>';
       return;
     }
 
@@ -423,7 +459,8 @@ export class App {
     this.editingEventId = event.id;
 
     (document.getElementById('event-month') as HTMLInputElement).value = String(event.month);
-    (document.getElementById('event-turn') as HTMLInputElement).value = event.turn != null ? String(event.turn) : '';
+    (document.getElementById('event-turn') as HTMLInputElement).value =
+      event.turn != null ? String(event.turn) : '';
     (document.getElementById('event-type') as HTMLSelectElement).value = event.type;
 
     // Regenerate context fields for the event type, then populate them
@@ -454,7 +491,9 @@ export class App {
 
     document.getElementById('events-panel')!.classList.add('editing');
     requestAnimationFrame(() => {
-      document.getElementById('events-panel')!.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document
+        .getElementById('events-panel')!
+        .scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
@@ -470,7 +509,8 @@ export class App {
     container.innerHTML = '';
 
     if (state.sessions.length === 0) {
-      container.innerHTML = '<p class="empty-msg">No sessions yet. Enter a seed and click "Create Baseline Session" to start.</p>';
+      container.innerHTML =
+        '<p class="empty-msg">No sessions yet. Enter a seed and click "Create Baseline Session" to start.</p>';
       return;
     }
 
@@ -557,7 +597,9 @@ export class App {
 
     for (const v of session.variants) {
       const comp = session.baseline ? seedApi.compareSeedsRaw(session.baseline.seed, v.seed) : null;
-      const baselineValue = v.changedField ? session.baselineConfig[v.changedField as ChangeableField] : null;
+      const baselineValue = v.changedField
+        ? session.baselineConfig[v.changedField as ChangeableField]
+        : null;
       const changeLabel = baselineValue
         ? `${v.changedField}: ${baselineValue} → ${v.changedValue ?? '?'}`
         : `${v.changedField ?? '?'} → ${v.changedValue ?? '?'}`;
@@ -632,7 +674,7 @@ export class App {
           btn.textContent = 'Copied!';
           setTimeout(() => (btn.textContent = original), 2000);
         },
-        () => alert('Failed to copy to clipboard')
+        () => alert('Failed to copy to clipboard'),
       );
     });
 

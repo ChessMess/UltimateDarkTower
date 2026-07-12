@@ -1,14 +1,25 @@
 import { LIGHT_EFFECTS } from 'ultimatedarktower';
 import type { TowerState } from 'ultimatedarktower';
-import { Tower3DView, __testables, DEFAULT_LIGHTING, resolveLighting } from '../../src/3d/Tower3DView';
+import {
+  Tower3DView,
+  __testables,
+  DEFAULT_LIGHTING,
+  resolveLighting,
+} from '../../src/3d/Tower3DView';
 import * as gltfLoaderMock from '../__mocks__/gltfLoader.js';
 import * as gsapMock from '../__mocks__/gsap.js';
 
 const {
-  LED_LAYOUT, LEDGE_LED_LAYOUT,
-  computeRedLightPosition, RED_LIGHT_LAYOUT, getLedRef,
-  getSealNode, getSealNodeCount,
-  computeSealLedPose, getSealBacklight, getSealBacklightCount,
+  LED_LAYOUT,
+  LEDGE_LED_LAYOUT,
+  computeRedLightPosition,
+  RED_LIGHT_LAYOUT,
+  getLedRef,
+  getSealNode,
+  getSealNodeCount,
+  computeSealLedPose,
+  getSealBacklight,
+  getSealBacklightCount,
 } = __testables;
 
 const TEST_MODEL_URL = 'mock://tower.glb';
@@ -78,9 +89,9 @@ describe('Tower3DView instance', () => {
   beforeAll(() => {
     // jsdom has no ResizeObserver — stub it so initScene() can construct one.
     (global as unknown as { ResizeObserver: unknown }).ResizeObserver = class {
-      observe(): void { }
-      unobserve(): void { }
-      disconnect(): void { }
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
     };
   });
 
@@ -230,9 +241,11 @@ describe('Tower3DView instance', () => {
       view.applyState(breatheState);
 
       expect(ref.driver.v).toBe(0);
-      const tween = gsapMock.__getTweens().find(
-        (t: { target: object; vars: { v: number } }) => t.target === ref.driver && t.vars.v === 1
-      );
+      const tween = gsapMock
+        .__getTweens()
+        .find(
+          (t: { target: object; vars: { v: number } }) => t.target === ref.driver && t.vars.v === 1,
+        );
       expect(tween).toBeDefined();
       view.dispose();
     });
@@ -254,9 +267,11 @@ describe('Tower3DView instance', () => {
       view.applyState(breatheFastState);
 
       expect(ref.driver.v).toBe(0);
-      const tween = gsapMock.__getTweens().find(
-        (t: { target: object; vars: { v: number } }) => t.target === ref.driver && t.vars.v === 1
-      );
+      const tween = gsapMock
+        .__getTweens()
+        .find(
+          (t: { target: object; vars: { v: number } }) => t.target === ref.driver && t.vars.v === 1,
+        );
       expect(tween).toBeDefined();
       view.dispose();
     });
@@ -340,34 +355,44 @@ describe('Tower3DView instance', () => {
       expect(typeof report.frames).toBe('number');
       expect(typeof report.durationMs).toBe('number');
       expect(typeof report.bloomEnabled).toBe('boolean');
-      expect(report.frameMs).toEqual(expect.objectContaining({
-        median: expect.any(Number),
-        p95: expect.any(Number),
-        max: expect.any(Number),
-      }));
-      expect(report.drawCalls).toEqual(expect.objectContaining({
-        median: expect.any(Number),
-        max: expect.any(Number),
-      }));
-      expect(report.triangles).toEqual(expect.objectContaining({
-        median: expect.any(Number),
-        max: expect.any(Number),
-      }));
-      expect(report.scene).toEqual(expect.objectContaining({
-        visibleBloomMeshes: expect.any(Number),
-        visibleNonBloomMeshes: expect.any(Number),
-        visiblePointLights: expect.any(Number),
-        visibleSprites: expect.any(Number),
-        totalMeshes: expect.any(Number),
-      }));
+      expect(report.frameMs).toEqual(
+        expect.objectContaining({
+          median: expect.any(Number),
+          p95: expect.any(Number),
+          max: expect.any(Number),
+        }),
+      );
+      expect(report.drawCalls).toEqual(
+        expect.objectContaining({
+          median: expect.any(Number),
+          max: expect.any(Number),
+        }),
+      );
+      expect(report.triangles).toEqual(
+        expect.objectContaining({
+          median: expect.any(Number),
+          max: expect.any(Number),
+        }),
+      );
+      expect(report.scene).toEqual(
+        expect.objectContaining({
+          visibleBloomMeshes: expect.any(Number),
+          visibleNonBloomMeshes: expect.any(Number),
+          visiblePointLights: expect.any(Number),
+          visibleSprites: expect.any(Number),
+          totalMeshes: expect.any(Number),
+        }),
+      );
       expect(report.drivers).toEqual({ ledsActive: expect.any(Number) });
-      expect(report.canvas).toEqual(expect.objectContaining({
-        cssW: expect.any(Number),
-        cssH: expect.any(Number),
-        bufW: expect.any(Number),
-        bufH: expect.any(Number),
-        pixelRatio: expect.any(Number),
-      }));
+      expect(report.canvas).toEqual(
+        expect.objectContaining({
+          cssW: expect.any(Number),
+          cssH: expect.any(Number),
+          bufW: expect.any(Number),
+          bufH: expect.any(Number),
+          pixelRatio: expect.any(Number),
+        }),
+      );
 
       // Bloom sub-step stats are present when bloom is enabled (default true).
       if (report.bloomEnabled) {
@@ -442,10 +467,12 @@ describe('Tower3DView instance', () => {
 
     it('warns once when expected seal nodes are missing from the model', () => {
       gltfLoaderMock.__setSealNames([
-        'seal_north_top', 'seal_north_middle', 'seal_north_bottom',
+        'seal_north_top',
+        'seal_north_middle',
+        'seal_north_bottom',
         // south / east / west intentionally omitted
       ]);
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => { });
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
       const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
 
@@ -460,7 +487,7 @@ describe('Tower3DView instance', () => {
     });
 
     it('does not warn when every expected seal is present', () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => { });
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
       expect(warnSpy).not.toHaveBeenCalled();
       warnSpy.mockRestore();
@@ -525,10 +552,8 @@ describe('Tower3DView instance', () => {
     });
 
     it('creates only as many backlights as available seal nodes', () => {
-      gltfLoaderMock.__setSealNames([
-        'seal_north_top', 'seal_north_middle', 'seal_north_bottom',
-      ]);
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => { });
+      gltfLoaderMock.__setSealNames(['seal_north_top', 'seal_north_middle', 'seal_north_bottom']);
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
       const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
       expect(getSealBacklightCount(view)).toBe(3);
@@ -545,22 +570,38 @@ describe('Tower3DView instance', () => {
       const radius = (view as unknown as { modelRadius: number }).modelRadius;
 
       const cases: Array<[string, string, (p: { x: number; y: number; z: number }) => void]> = [
-        ['north', 'top', (p) => {
-          expect(p.x).toBeCloseTo(0, 10);
-          expect(p.z).toBeCloseTo(radius * cfg.radiusFactor, 10);
-        }],
-        ['east', 'middle', (p) => {
-          expect(p.x).toBeCloseTo(radius * cfg.radiusFactor, 10);
-          expect(p.z).toBeCloseTo(0, 10);
-        }],
-        ['south', 'bottom', (p) => {
-          expect(p.x).toBeCloseTo(0, 10);
-          expect(p.z).toBeCloseTo(-radius * cfg.radiusFactor, 10);
-        }],
-        ['west', 'top', (p) => {
-          expect(p.x).toBeCloseTo(-radius * cfg.radiusFactor, 10);
-          expect(p.z).toBeCloseTo(0, 10);
-        }],
+        [
+          'north',
+          'top',
+          (p) => {
+            expect(p.x).toBeCloseTo(0, 10);
+            expect(p.z).toBeCloseTo(radius * cfg.radiusFactor, 10);
+          },
+        ],
+        [
+          'east',
+          'middle',
+          (p) => {
+            expect(p.x).toBeCloseTo(radius * cfg.radiusFactor, 10);
+            expect(p.z).toBeCloseTo(0, 10);
+          },
+        ],
+        [
+          'south',
+          'bottom',
+          (p) => {
+            expect(p.x).toBeCloseTo(0, 10);
+            expect(p.z).toBeCloseTo(-radius * cfg.radiusFactor, 10);
+          },
+        ],
+        [
+          'west',
+          'top',
+          (p) => {
+            expect(p.x).toBeCloseTo(-radius * cfg.radiusFactor, 10);
+            expect(p.z).toBeCloseTo(0, 10);
+          },
+        ],
       ];
 
       for (const [side, level, check] of cases) {
@@ -659,7 +700,9 @@ describe('Tower3DView instance', () => {
       for (const side of ['north', 'south', 'east', 'west']) {
         for (const level of ['top', 'middle', 'bottom']) {
           const ref = getSealBacklight(view, side, level)!;
-          const proxyColor = (ref.proxyMesh.material as { color: { r: number; g: number; b: number } }).color;
+          const proxyColor = (
+            ref.proxyMesh.material as { color: { r: number; g: number; b: number } }
+          ).color;
           expect(proxyColor.g).toBeCloseTo(expectedG, 10);
           expect(proxyColor.r).toBeCloseTo(0, 10);
           expect(proxyColor.b).toBeCloseTo(0, 10);
@@ -693,10 +736,14 @@ describe('Tower3DView instance', () => {
     it('marks north active after initial load', () => {
       const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
 
-      const camCtrl = (view as unknown as {
-        cameraController: { getCurrentSide(): string | null };
-      }).cameraController;
-      const northButton = container.querySelector('[data-side="north"]') as HTMLButtonElement | null;
+      const camCtrl = (
+        view as unknown as {
+          cameraController: { getCurrentSide(): string | null };
+        }
+      ).cameraController;
+      const northButton = container.querySelector(
+        '[data-side="north"]',
+      ) as HTMLButtonElement | null;
 
       expect(camCtrl.getCurrentSide()).toBe('north');
       expect(northButton?.dataset.active).toBe('true');
@@ -710,9 +757,11 @@ describe('Tower3DView instance', () => {
 
       view.selectSide('east');
 
-      const camCtrl = (view as unknown as {
-        cameraController: { getCurrentSide(): string | null };
-      }).cameraController;
+      const camCtrl = (
+        view as unknown as {
+          cameraController: { getCurrentSide(): string | null };
+        }
+      ).cameraController;
       expect(camCtrl.getCurrentSide()).toBe('east');
       expect(spy).toHaveBeenCalledWith('east');
       view.dispose();
@@ -737,9 +786,11 @@ describe('Tower3DView instance', () => {
 
       // Model not loaded yet — snapToSide sets currentSide immediately (for re-entry guard
       // correctness) but defers the camera tween until the model loads.
-      const camCtrl = (view as unknown as {
-        cameraController: { getCurrentSide(): string | null };
-      }).cameraController;
+      const camCtrl = (
+        view as unknown as {
+          cameraController: { getCurrentSide(): string | null };
+        }
+      ).cameraController;
       expect(camCtrl.getCurrentSide()).toBe('south');
 
       const loader = gltfLoaderMock.__getLastInstance();
@@ -755,10 +806,14 @@ describe('Tower3DView instance', () => {
       view.selectSide('west');
 
       const resetButton = container.querySelector('.t3v-reset-btn') as HTMLButtonElement | null;
-      const camCtrl = (view as unknown as {
-        cameraController: { getCurrentSide(): string | null };
-      }).cameraController;
-      const northButton = container.querySelector('[data-side="north"]') as HTMLButtonElement | null;
+      const camCtrl = (
+        view as unknown as {
+          cameraController: { getCurrentSide(): string | null };
+        }
+      ).cameraController;
+      const northButton = container.querySelector(
+        '[data-side="north"]',
+      ) as HTMLButtonElement | null;
       const westButton = container.querySelector('[data-side="west"]') as HTMLButtonElement | null;
 
       resetButton?.click();
@@ -843,7 +898,11 @@ describe('Tower3DView instance', () => {
 describe('DEFAULT_LIGHTING', () => {
   it('scene values match historical literals', () => {
     expect(DEFAULT_LIGHTING.scene.background).toBe(0x000000);
-    expect(DEFAULT_LIGHTING.scene.hemisphere).toEqual({ color: 0xffffff, ground: 0x000000, intensity: 0.04 });
+    expect(DEFAULT_LIGHTING.scene.hemisphere).toEqual({
+      color: 0xffffff,
+      ground: 0x000000,
+      intensity: 0.04,
+    });
     expect(DEFAULT_LIGHTING.scene.key.color).toBe(0xffffff);
     expect(DEFAULT_LIGHTING.scene.key.intensity).toBe(1.6);
     expect(DEFAULT_LIGHTING.scene.key.position).toEqual([3, 4.5, -1]);

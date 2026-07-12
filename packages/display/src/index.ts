@@ -8,7 +8,12 @@ export type {
 } from './TowerRenderView';
 export { TowerStateReadout } from './TowerStateReadout';
 export { TowerSideView } from './2d/TowerSideView';
-export { Tower3DView, type Tower3DViewOptions, type PerfReport, type PerfStat } from './3d/Tower3DView';
+export {
+  Tower3DView,
+  type Tower3DViewOptions,
+  type PerfReport,
+  type PerfStat,
+} from './3d/Tower3DView';
 export { anchorToWorld } from './3d/boardMapping';
 export type { BoardAnchor, DiscMetrics } from './3d/boardMapping';
 export { attachScenePlugin } from './3d/ScenePlugin';
@@ -41,10 +46,7 @@ export {
   buildOfficialSoundPack,
   hasDefaultAudioAsset,
 } from './audio/audioLibrary';
-export {
-  DEFAULT_SEQUENCE_AUDIO_MAP,
-  buildSequenceAudioMap,
-} from './audio/sequenceAudio';
+export { DEFAULT_SEQUENCE_AUDIO_MAP, buildSequenceAudioMap } from './audio/sequenceAudio';
 export { DrumRotationAudio } from './audio/DrumRotationAudio';
 export { TowerSampleAudio } from './audio/TowerSampleAudio';
 export { CALIBRATION_SOUND_URL } from './audio/calibrationAudio';

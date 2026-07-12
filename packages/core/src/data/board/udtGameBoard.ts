@@ -13,8 +13,7 @@ export type BuildingType = 'Bazaar' | 'Village' | 'Sanctuary' | 'Citadel';
 export type BoardKingdom = 'north' | 'south' | 'east' | 'west';
 
 /** A named grouping of thematically connected locations on the board. */
-export type BoardGrouping =
-  (typeof BOARD_GROUPINGS)[keyof typeof BOARD_GROUPINGS];
+export type BoardGrouping = (typeof BOARD_GROUPINGS)[keyof typeof BOARD_GROUPINGS];
 
 /** A single location on the Return to Dark Tower game board. */
 export type BoardLocation = {
@@ -44,7 +43,13 @@ export const BOARD_GROUPINGS = {
 export const BOARD_LOCATIONS: BoardLocation[] = [
   // ── North ───────────────────────────────────────────────────────────────
   { name: 'Broken Lands', terrain: 'Hills', kingdom: 'north' },
-  { name: 'Dayside', terrain: 'Lake', building: 'Bazaar', kingdom: 'north', grouping: BOARD_GROUPINGS.LONG_WATER },
+  {
+    name: 'Dayside',
+    terrain: 'Lake',
+    building: 'Bazaar',
+    kingdom: 'north',
+    grouping: BOARD_GROUPINGS.LONG_WATER,
+  },
   { name: "Egan's End", terrain: 'Grasslands', building: 'Village', kingdom: 'north' },
   { name: 'Fivepint', terrain: 'Lake', kingdom: 'north', grouping: BOARD_GROUPINGS.LONG_WATER },
   { name: 'Green Bridge', terrain: 'Grasslands', kingdom: 'north' },
@@ -78,10 +83,21 @@ export const BOARD_LOCATIONS: BoardLocation[] = [
 
   // ── West ────────────────────────────────────────────────────────────────
   { name: 'Anza', terrain: 'Grasslands', building: 'Village', kingdom: 'west' },
-  { name: 'Arkartus', terrain: 'Forest', building: 'Sanctuary', kingdom: 'west', grouping: BOARD_GROUPINGS.THE_GREAT_WOODS },
+  {
+    name: 'Arkartus',
+    terrain: 'Forest',
+    building: 'Sanctuary',
+    kingdom: 'west',
+    grouping: BOARD_GROUPINGS.THE_GREAT_WOODS,
+  },
   { name: 'Ash Hills', terrain: 'Hills', kingdom: 'west' },
   { name: 'Cloudhold', terrain: 'Mountains', kingdom: 'west' },
-  { name: 'Delmsmire', terrain: 'Forest', kingdom: 'west', grouping: BOARD_GROUPINGS.THE_GREAT_WOODS },
+  {
+    name: 'Delmsmire',
+    terrain: 'Forest',
+    kingdom: 'west',
+    grouping: BOARD_GROUPINGS.THE_GREAT_WOODS,
+  },
   { name: 'Hissing Groves', terrain: 'Forest', building: 'Citadel', kingdom: 'west' },
   { name: 'Idran Forest', terrain: 'Forest', kingdom: 'west' },
   { name: 'Lonelight Hills', terrain: 'Hills', kingdom: 'west' },
@@ -91,10 +107,20 @@ export const BOARD_LOCATIONS: BoardLocation[] = [
   { name: 'The Empty Glade', terrain: 'Grasslands', kingdom: 'west' },
   { name: 'The Grass Sea', terrain: 'Grasslands', kingdom: 'west' },
   { name: 'Weeping Waters', terrain: 'Lake', kingdom: 'west' },
-  { name: 'Yellowpike', terrain: 'Forest', kingdom: 'west', grouping: BOARD_GROUPINGS.THE_GREAT_WOODS },
+  {
+    name: 'Yellowpike',
+    terrain: 'Forest',
+    kingdom: 'west',
+    grouping: BOARD_GROUPINGS.THE_GREAT_WOODS,
+  },
 
   // ── South ───────────────────────────────────────────────────────────────
-  { name: 'Archmont', terrain: 'Grasslands', kingdom: 'south', grouping: BOARD_GROUPINGS.REGAL_RUN },
+  {
+    name: 'Archmont',
+    terrain: 'Grasslands',
+    kingdom: 'south',
+    grouping: BOARD_GROUPINGS.REGAL_RUN,
+  },
   { name: "Azkol's Bane", terrain: 'Desert', kingdom: 'south' },
   { name: 'Bone Hills', terrain: 'Hills', kingdom: 'south' },
   { name: 'Howling Desert', terrain: 'Desert', building: 'Citadel', kingdom: 'south' },
@@ -105,12 +131,23 @@ export const BOARD_LOCATIONS: BoardLocation[] = [
   { name: 'Pine Barrens', terrain: 'Forest', kingdom: 'south' },
   { name: 'Sands of Madness', terrain: 'Desert', building: 'Sanctuary', kingdom: 'south' },
   { name: 'Southern Wastes', terrain: 'Desert', building: 'Village', kingdom: 'south' },
-  { name: 'The Cloister', terrain: 'Grasslands', kingdom: 'south', grouping: BOARD_GROUPINGS.REGAL_RUN },
+  {
+    name: 'The Cloister',
+    terrain: 'Grasslands',
+    kingdom: 'south',
+    grouping: BOARD_GROUPINGS.REGAL_RUN,
+  },
   { name: 'The Emerald Expanse', terrain: 'Grasslands', building: 'Bazaar', kingdom: 'south' },
-  { name: 'The Throne', terrain: 'Grasslands', kingdom: 'south', grouping: BOARD_GROUPINGS.REGAL_RUN },
+  {
+    name: 'The Throne',
+    terrain: 'Grasslands',
+    kingdom: 'south',
+    grouping: BOARD_GROUPINGS.REGAL_RUN,
+  },
   { name: "Ulamel's Hollow", terrain: 'Grasslands', kingdom: 'south' },
 ];
 
 /** All 60 board locations indexed by name for O(1) lookup. */
-export const BOARD_LOCATION_BY_NAME: Record<string, BoardLocation> =
-  Object.fromEntries(BOARD_LOCATIONS.map((loc) => [loc.name, loc]));
+export const BOARD_LOCATION_BY_NAME: Record<string, BoardLocation> = Object.fromEntries(
+  BOARD_LOCATIONS.map((loc) => [loc.name, loc]),
+);

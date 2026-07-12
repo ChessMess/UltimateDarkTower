@@ -30,9 +30,7 @@ export function initPanelCollapseController(): void {
   const column = document.getElementById('config-column');
   if (!column) return;
 
-  const panels = Array.from(
-    column.querySelectorAll<HTMLElement>('.panel[data-collapse-key]'),
-  );
+  const panels = Array.from(column.querySelectorAll<HTMLElement>('.panel[data-collapse-key]'));
   const collapsed = readStored();
 
   for (const panel of panels) {

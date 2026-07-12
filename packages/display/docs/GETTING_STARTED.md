@@ -1,6 +1,6 @@
 # Getting started
 
-*Docs: [Index](README.md) > Hobbyist + integrator > Getting started*
+_Docs: [Index](README.md) > Hobbyist + integrator > Getting started_
 
 This guide picks up where the [repo README quick start](../README.md#quick-start) leaves off. By the end you should know what `TowerState` looks like, how to mount a `TowerDisplay`, which renderer to pick, and how to wire it to a live tower via [`ultimatedarktower`](https://github.com/ChessMess/ultimatedarktower) (UDT).
 
@@ -33,7 +33,7 @@ For optional skull physics:
 npm install @dimforge/rapier3d-compat
 ```
 
-Rapier is an *optional* peer dependency — only install it if you import `ultimatedarktowerdisplay/physics`. See [PHYSICS](PHYSICS.md).
+Rapier is an _optional_ peer dependency — only install it if you import `ultimatedarktowerdisplay/physics`. See [PHYSICS](PHYSICS.md).
 
 ## What is `TowerState`?
 
@@ -237,7 +237,10 @@ onMounted(() => {
   view.applyState(props.state);
 });
 
-watch(() => props.state, (next) => view?.applyState(next));
+watch(
+  () => props.state,
+  (next) => view?.applyState(next),
+);
 onBeforeUnmount(() => view?.dispose());
 </script>
 

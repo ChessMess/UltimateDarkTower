@@ -5,7 +5,7 @@ describe('SealManager.onSealsApplied', () => {
   it('fires registered listeners after applySeals with the broken-seals list', () => {
     const mgr = new SealManager();
     const calls: SealIdentifier[][] = [];
-    mgr.onSealsApplied(broken => calls.push(broken));
+    mgr.onSealsApplied((broken) => calls.push(broken));
 
     const broken1: SealIdentifier[] = [{ side: 'east', level: 'top' }];
     mgr.applySeals(broken1);
@@ -17,7 +17,7 @@ describe('SealManager.onSealsApplied', () => {
   it('fires listeners even when no seal nodes have been registered', () => {
     const mgr = new SealManager();
     const calls: SealIdentifier[][] = [];
-    mgr.onSealsApplied(broken => calls.push(broken));
+    mgr.onSealsApplied((broken) => calls.push(broken));
 
     mgr.applySeals([]);
     mgr.applySeals([{ side: 'west', level: 'middle' }]);
@@ -29,7 +29,9 @@ describe('SealManager.onSealsApplied', () => {
   it('returns an unsubscribe function that stops further notifications', () => {
     const mgr = new SealManager();
     let count = 0;
-    const unsub = mgr.onSealsApplied(() => { count++; });
+    const unsub = mgr.onSealsApplied(() => {
+      count++;
+    });
 
     mgr.applySeals([]);
     expect(count).toBe(1);
@@ -41,12 +43,16 @@ describe('SealManager.onSealsApplied', () => {
   });
 
   it('isolates listener exceptions so subsequent listeners still fire', () => {
-    const spy = jest.spyOn(console, 'error').mockImplementation(() => { });
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
     try {
       const mgr = new SealManager();
       let secondFired = false;
-      mgr.onSealsApplied(() => { throw new Error('boom'); });
-      mgr.onSealsApplied(() => { secondFired = true; });
+      mgr.onSealsApplied(() => {
+        throw new Error('boom');
+      });
+      mgr.onSealsApplied(() => {
+        secondFired = true;
+      });
 
       mgr.applySeals([]);
 
@@ -59,8 +65,8 @@ describe('SealManager.onSealsApplied', () => {
 
   it('dispose clears all registered listeners', () => {
     const mgr = new SealManager();
-    mgr.onSealsApplied(() => { });
-    mgr.onSealsApplied(() => { });
+    mgr.onSealsApplied(() => {});
+    mgr.onSealsApplied(() => {});
     expect(mgr.sealListenerCount).toBe(2);
 
     mgr.dispose();

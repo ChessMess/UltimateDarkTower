@@ -10,7 +10,7 @@
 
 ## Implementation summary
 
-Baseline — no code change. This document records the perf numbers `main` produces *before* any lighting alternative is implemented. Every per-alternative result in [`docs/lighting-experiments/`](.) references this file as its before-state and must record numbers captured at the same canvas sizes on the same machine.
+Baseline — no code change. This document records the perf numbers `main` produces _before_ any lighting alternative is implemented. Every per-alternative result in [`docs/lighting-experiments/`](.) references this file as its before-state and must record numbers captured at the same canvas sizes on the same machine.
 
 If `main` advances in any of [src/3d/](../../src/3d/), [src/3d/BloomManager.ts](../../src/3d/BloomManager.ts), [src/3d/Tower3DView.ts](../../src/3d/Tower3DView.ts), [src/3d/SealManager.ts](../../src/3d/SealManager.ts), [src/3d/LedEffectAnimator.ts](../../src/3d/LedEffectAnimator.ts), or `tests/`, this baseline is re-captured per [§4 of the testing plan](../lighting-testing-plan.md#4-baseline) — the prior file moves to `00-baseline-<short-sha>.md` for history.
 
@@ -18,11 +18,11 @@ If `main` advances in any of [src/3d/](../../src/3d/), [src/3d/BloomManager.ts](
 
 Per the [darktower-3d-perf skill](../../.claude/skills/darktower-3d-perf/SKILL.md). Each scenario is a `collectPerfReport(3000)` window. Scenarios:
 
-| State | How it was set |
-|---|---|
-| Empty | `document.getElementById('btn-empty').click()` (applies `createEmptyState()`), settle 800–1000ms |
-| 1-LED on | `window.display.setLedOverride(0, 0, 1)`, settle 800–1000ms |
-| All-LEDs on | `document.getElementById('btn-allon').click()` (applies `createAllOnState()`), settle 800–1000ms |
+| State                      | How it was set                                                                                                             |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Empty                      | `document.getElementById('btn-empty').click()` (applies `createEmptyState()`), settle 800–1000ms                           |
+| 1-LED on                   | `window.display.setLedOverride(0, 0, 1)`, settle 800–1000ms                                                                |
+| All-LEDs on                | `document.getElementById('btn-allon').click()` (applies `createAllOnState()`), settle 800–1000ms                           |
 | Sequence-5 (angryStrobe01) | `window.display.clearLedOverrides(); btn-empty.click()`, settle 800ms, `window.display.playSequence(5)`, settle 800–1000ms |
 
 `playSequence(5)` is called directly on `window.display` rather than via `#btn-trigger-sequence` because the latter routes through `display.showIdle()` which toggles a UI panel that collapses `.t3v-wrapper` and invalidates the capture (see [darktower-3d-perf SKILL.md "Gotchas"](../../.claude/skills/darktower-3d-perf/SKILL.md#gotchas)).
@@ -31,19 +31,19 @@ Per the [darktower-3d-perf skill](../../.claude/skills/darktower-3d-perf/SKILL.m
 
 **Browser window:** 1440×900 (chrome-devtools-mcp). **Canvas:** 1390×1322 buffer / 694×659 CSS at DPR 2 — **1,837,580 backing px**. Close to the perf-skill's "Display example default ~1.7 M" target (within ~8%).
 
-| Metric | Empty | 1-LED | All-LEDs | Sequence-5 |
-|---|---:|---:|---:|---:|
-| fps | 120 | 13.8 | 14.9 | 13.1 |
-| frames | 360 | 41 | 44 | 39 |
-| frameMs.median / p95 / max | 8.3 / 8.6 / 9.3 | 74.1 / 83.4 / 90.8 | 66.6 / 75.1 / 91.6 | 75.1 / 91.7 / 91.8 |
-| bloomTotalMs.median / max | 0.7 / 2.0 | 1.0 / 3.5 | 0.6 / 1.0 | 0.9 / 3.3 |
-| drawCalls.median / max | 91 / 91 | 95 / 95 | 187 / 187 | 187 / 187 |
-| triangles.median / max | 1,648,143 / 1,648,143 | 1,648,307 / 1,648,307 | 1,652,079 / 1,652,079 | 1,652,079 / 1,652,079 |
-| programs | 30 | 30 | 30 | 30 |
-| scene.visiblePointLights | 0 | 36 | 36 | 36 |
-| scene.visibleBloomMeshes | 0 | 1 | 24 | 12 |
-| scene.visibleSprites | 0 | 1 | 24 | 12 |
-| drivers.ledsActive | 0 | 1 | 24 | 12 |
+| Metric                     |                 Empty |                 1-LED |              All-LEDs |            Sequence-5 |
+| -------------------------- | --------------------: | --------------------: | --------------------: | --------------------: |
+| fps                        |                   120 |                  13.8 |                  14.9 |                  13.1 |
+| frames                     |                   360 |                    41 |                    44 |                    39 |
+| frameMs.median / p95 / max |       8.3 / 8.6 / 9.3 |    74.1 / 83.4 / 90.8 |    66.6 / 75.1 / 91.6 |    75.1 / 91.7 / 91.8 |
+| bloomTotalMs.median / max  |             0.7 / 2.0 |             1.0 / 3.5 |             0.6 / 1.0 |             0.9 / 3.3 |
+| drawCalls.median / max     |               91 / 91 |               95 / 95 |             187 / 187 |             187 / 187 |
+| triangles.median / max     | 1,648,143 / 1,648,143 | 1,648,307 / 1,648,307 | 1,652,079 / 1,652,079 | 1,652,079 / 1,652,079 |
+| programs                   |                    30 |                    30 |                    30 |                    30 |
+| scene.visiblePointLights   |                     0 |                    36 |                    36 |                    36 |
+| scene.visibleBloomMeshes   |                     0 |                     1 |                    24 |                    12 |
+| scene.visibleSprites       |                     0 |                     1 |                    24 |                    12 |
+| drivers.ledsActive         |                     0 |                     1 |                    24 |                    12 |
 
 ## Results — Retina full-window (~8.08 M backing px)
 
@@ -51,19 +51,19 @@ Per the [darktower-3d-perf skill](../../.claude/skills/darktower-3d-perf/SKILL.m
 
 The canvas aspect here is wide-and-short (2416×833 CSS) rather than the square-ish ratio of a real Retina full-window — total backing pixel count is what matters for per-fragment cost, so this is comparable on the fragment-cost axis.
 
-| Metric | Empty | 1-LED | All-LEDs | Sequence-5 |
-|---|---:|---:|---:|---:|
-| fps | 105.3 | 7.1 | 7.0 | 6.9 |
-| frames | 316 | 21 | 21 | 21 |
-| frameMs.median / p95 / max | 8.3 / 16.7 / 18.6 | 140.2 / 155.4 / 157.6 | 141.5 / 157.8 / 169.1 | 141.6 / 159.7 / 161.1 |
-| bloomTotalMs.median / max | 0.6 / 3.8 | 0.5 / 0.7 | 0.7 / 1.1 | 0.6 / 0.9 |
-| drawCalls.median / max | 91 / 91 | 95 / 95 | 187 / 187 | 187 / 187 |
-| triangles.median / max | 1,648,143 / 1,648,143 | 1,648,307 / 1,648,307 | 1,652,079 / 1,652,079 | 1,652,079 / 1,652,079 |
-| programs | 30 | 30 | 30 | 30 |
-| scene.visiblePointLights | 0 | 36 | 36 | 36 |
-| scene.visibleBloomMeshes | 0 | 1 | 24 | 4 |
-| scene.visibleSprites | 0 | 1 | 24 | 4 |
-| drivers.ledsActive | 0 | 1 | 24 | 4 |
+| Metric                     |                 Empty |                 1-LED |              All-LEDs |            Sequence-5 |
+| -------------------------- | --------------------: | --------------------: | --------------------: | --------------------: |
+| fps                        |                 105.3 |                   7.1 |                   7.0 |                   6.9 |
+| frames                     |                   316 |                    21 |                    21 |                    21 |
+| frameMs.median / p95 / max |     8.3 / 16.7 / 18.6 | 140.2 / 155.4 / 157.6 | 141.5 / 157.8 / 169.1 | 141.6 / 159.7 / 161.1 |
+| bloomTotalMs.median / max  |             0.6 / 3.8 |             0.5 / 0.7 |             0.7 / 1.1 |             0.6 / 0.9 |
+| drawCalls.median / max     |               91 / 91 |               95 / 95 |             187 / 187 |             187 / 187 |
+| triangles.median / max     | 1,648,143 / 1,648,143 | 1,648,307 / 1,648,307 | 1,652,079 / 1,652,079 | 1,652,079 / 1,652,079 |
+| programs                   |                    30 |                    30 |                    30 |                    30 |
+| scene.visiblePointLights   |                     0 |                    36 |                    36 |                    36 |
+| scene.visibleBloomMeshes   |                     0 |                     1 |                    24 |                     4 |
+| scene.visibleSprites       |                     0 |                     1 |                    24 |                     4 |
+| drivers.ledsActive         |                     0 |                     1 |                    24 |                     4 |
 
 ## Visual capture
 

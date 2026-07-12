@@ -54,8 +54,8 @@ export function buildBoardTexture(): THREE.CanvasTexture | null {
 
   const TERRAIN_RINGS = [
     { ir: 0.21, or: 0.42, shade: 1.15 },
-    { ir: 0.42, or: 0.60, shade: 1.00 },
-    { ir: 0.60, or: 0.75, shade: 0.85 },
+    { ir: 0.42, or: 0.6, shade: 1.0 },
+    { ir: 0.6, or: 0.75, shade: 0.85 },
   ];
 
   for (const tring of TERRAIN_RINGS) {
@@ -79,26 +79,26 @@ export function buildBoardTexture(): THREE.CanvasTexture | null {
     ctx.stroke();
   }
 
-  ring(r(0.10), r(0.21), '#190a0a');
-  const innerGrad = ctx.createRadialGradient(cx, cy, r(0.10), cx, cy, r(0.21));
+  ring(r(0.1), r(0.21), '#190a0a');
+  const innerGrad = ctx.createRadialGradient(cx, cy, r(0.1), cx, cy, r(0.21));
   innerGrad.addColorStop(0, 'rgba(100,30,10,0.35)');
   innerGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.beginPath();
   ctx.arc(cx, cy, r(0.21), 0, Math.PI * 2);
-  ctx.arc(cx, cy, r(0.10), Math.PI * 2, 0, true);
+  ctx.arc(cx, cy, r(0.1), Math.PI * 2, 0, true);
   ctx.fillStyle = innerGrad;
   ctx.fill();
 
-  ring(0, r(0.10), '#060404');
-  const centerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r(0.10));
+  ring(0, r(0.1), '#060404');
+  const centerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r(0.1));
   centerGrad.addColorStop(0, 'rgba(60,20,8,0.6)');
   centerGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.beginPath();
-  ctx.arc(cx, cy, r(0.10), 0, Math.PI * 2);
+  ctx.arc(cx, cy, r(0.1), 0, Math.PI * 2);
   ctx.fillStyle = centerGrad;
   ctx.fill();
 
-  ring(r(0.75), r(0.90), '#0c0908');
+  ring(r(0.75), r(0.9), '#0c0908');
   const skullBaseR = r(0.825);
   const skullSize = r(0.038);
   for (let s = 0; s < SECTORS; s++) {
@@ -112,11 +112,11 @@ export function buildBoardTexture(): THREE.CanvasTexture | null {
     );
   }
 
-  ring(r(0.90), R, '#050403');
+  ring(r(0.9), R, '#050403');
 
   ctx.strokeStyle = 'rgba(80,40,15,0.25)';
   ctx.lineWidth = 1;
-  for (const rf of [0.10, 0.21, 0.42, 0.60, 0.75, 0.90] as const) {
+  for (const rf of [0.1, 0.21, 0.42, 0.6, 0.75, 0.9] as const) {
     ctx.beginPath();
     ctx.arc(cx, cy, r(rf), 0, Math.PI * 2);
     ctx.stroke();

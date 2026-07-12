@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial standalone release of the **Seed Decoder**, a browser Vite SPA for decoding and
-  reverse-engineering *Return to Dark Tower* game seeds. Extracted from the
+  reverse-engineering _Return to Dark Tower_ game seeds. Extracted from the
   `UltimateDarkTowerSync` monorepo into its own repository.
 - Baseline sessions: enter a seed plus the recorded game configuration, then decode the
   base-34, two-section seed format (setup chars 0–5, RNG chars 6–11).

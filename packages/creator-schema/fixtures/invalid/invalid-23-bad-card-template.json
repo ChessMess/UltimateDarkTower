@@ -21,7 +21,9 @@
   "library": {
     "cards": {
       "azkol-crown": {
-        "id": "azkol-crown", "name": "Crown of Azkol", "type": "treasure",
+        "id": "azkol-crown",
+        "name": "Crown of Azkol",
+        "type": "treasure",
         "effects": [{ "op": "resource.gain", "resource": "spirit", "amount": 2 }]
       }
     },
@@ -35,8 +37,6 @@
   },
   "graph": {
     "entry": "n-start",
-    "nodes": [
-      { "id": "n-start", "kind": "lifecycle.gameStart" }
-    ]
+    "nodes": [{ "id": "n-start", "kind": "lifecycle.gameStart" }]
   }
 }

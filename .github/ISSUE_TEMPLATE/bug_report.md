@@ -12,14 +12,13 @@ Which part of the monorepo? (e.g. `packages/core`, `packages/display`, `apps/cre
 A clear and concise description of what the bug is.
 
 **To reproduce**
-Steps to reproduce the behavior:
-1.
-2.
+Steps to reproduce the behavior: 1. 2.
 
 **Expected behavior**
 What you expected to happen.
 
 **Environment**
+
 - OS:
 - Node / pnpm version:
 - Package version (or commit):

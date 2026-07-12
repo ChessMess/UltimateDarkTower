@@ -19,7 +19,7 @@ function populated(): BoardState {
 
 function makeMap(
   onTokenSelect?: (s: TokenSelection) => void,
-  dragMode?: DragMode
+  dragMode?: DragMode,
 ): { map: BoardMap2D; host: HTMLElement } {
   const host = document.createElement('div');
   const map = new BoardMap2D(host, {
@@ -53,7 +53,9 @@ describe('BoardMap2D', () => {
     const by = BOARD_IMAGE_INFO.height / 2;
     const deg = Math.round((Math.atan2(cy - by, cx - bx) * (180 / Math.PI) - 90) * 100) / 100;
     expect(foe.getAttribute('transform')).toBe(`translate(${cx} ${cy}) rotate(${deg})`);
-    expect(foe.querySelector('image')?.getAttribute('href')).toBe('/t/foes/Foe-Token-L2-Brigands.png');
+    expect(foe.querySelector('image')?.getAttribute('href')).toBe(
+      '/t/foes/Foe-Token-L2-Brigands.png',
+    );
   });
 
   it('renders heroes with the programmatic fallback (no hero art)', () => {
@@ -70,14 +72,22 @@ describe('BoardMap2D', () => {
     const map = new BoardMap2D(host, {
       assetBaseUrl: '/t/',
       // `image3d` must NOT affect 2D; the lowercase key matches the `Brigands` foe type.
-      tokenArt: { foe: { brigands: { image2d: '/custom/brigands-2d.png', image3d: '/custom/brigands-3d.png' } } },
+      tokenArt: {
+        foe: {
+          brigands: { image2d: '/custom/brigands-2d.png', image3d: '/custom/brigands-3d.png' },
+        },
+      },
     });
     map.render(populated());
     const foe = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-1"]') as SVGGElement;
     expect(foe.querySelector('image')?.getAttribute('href')).toBe('/custom/brigands-2d.png');
     // A foe without an entry still uses the default convention (2D → official flat icon).
-    const dragons = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-2"]') as SVGGElement;
-    expect(dragons.querySelector('image')?.getAttribute('href')).toBe('/t/foes/Foe-Token-L4-Dragon.png');
+    const dragons = host.querySelector(
+      '.udt-token[data-kind="foe"][data-id="foe-2"]',
+    ) as SVGGElement;
+    expect(dragons.querySelector('image')?.getAttribute('href')).toBe(
+      '/t/foes/Foe-Token-L4-Dragon.png',
+    );
   });
 
   it('renders hero art from a tokenArt override (id with no roster-default art)', () => {
@@ -97,11 +107,15 @@ describe('BoardMap2D', () => {
     s.questMarkers = { 'Radiant Mountains': ['main-goal'], 'Broken Lands': ['some-custom-quest'] };
     map.render(s);
     // A shipped quest marker renders its `quests/<id>.png` art (assetBaseUrl '/t/').
-    const mainGoal = host.querySelector('.udt-token[data-kind="quest"][data-id="main-goal"]') as SVGGElement;
+    const mainGoal = host.querySelector(
+      '.udt-token[data-kind="quest"][data-id="main-goal"]',
+    ) as SVGGElement;
     expect(mainGoal).not.toBeNull();
     expect(mainGoal.querySelector('image')?.getAttribute('href')).toBe('/t/quests/main-goal.png');
     // A quest id with no official art → programmatic gold disc, never a broken request.
-    const custom = host.querySelector('.udt-token[data-kind="quest"][data-id="some-custom-quest"]') as SVGGElement;
+    const custom = host.querySelector(
+      '.udt-token[data-kind="quest"][data-id="some-custom-quest"]',
+    ) as SVGGElement;
     expect(custom.querySelector('image')).toBeNull();
     expect(custom.querySelector('circle')).not.toBeNull();
   });
@@ -173,7 +187,9 @@ describe('BoardMap2D', () => {
 
     // A drag past the threshold; mousemove/mouseup go to `document` (the panel-drag idiom).
     const foe = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-1"]') as SVGGElement;
-    svg.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: 0, clientY: 0, bubbles: true }));
+    svg.dispatchEvent(
+      new MouseEvent('mousedown', { button: 0, clientX: 0, clientY: 0, bubbles: true }),
+    );
     document.dispatchEvent(new MouseEvent('mousemove', { clientX: 50, clientY: 50 }));
     document.dispatchEvent(new MouseEvent('mouseup', {}));
     foe.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -194,7 +210,9 @@ describe('BoardMap2D', () => {
     // A drag past the threshold, but no trailing `click` is fired on the svg at all — this is
     // what happens when the mouseup lands outside the map, so the browser never dispatches a
     // click into the svg's listener (only that listener clears `suppressClick`).
-    svg.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: 0, clientY: 0, bubbles: true }));
+    svg.dispatchEvent(
+      new MouseEvent('mousedown', { button: 0, clientX: 0, clientY: 0, bubbles: true }),
+    );
     document.dispatchEvent(new MouseEvent('mousemove', { clientX: 50, clientY: 50 }));
     document.dispatchEvent(new MouseEvent('mouseup', {}));
 
@@ -218,7 +236,9 @@ describe('BoardMap2D', () => {
     // jsdom getBoundingClientRect() is all-zero → the pivot collapses to (0,0); a drag from
     // (10,0) to (0,10) sweeps a 90° angle about it, so the board spins.
     const foe = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-1"]') as SVGGElement;
-    svg.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: 10, clientY: 0, bubbles: true }));
+    svg.dispatchEvent(
+      new MouseEvent('mousedown', { button: 0, clientX: 10, clientY: 0, bubbles: true }),
+    );
     document.dispatchEvent(new MouseEvent('mousemove', { clientX: 0, clientY: 10 }));
     document.dispatchEvent(new MouseEvent('mouseup', {}));
     expect(rotateLayer.getAttribute('transform')).not.toBe(IDENTITY_ROTATE);
@@ -237,7 +257,9 @@ describe('BoardMap2D', () => {
     const rotateLayer = host.querySelector('.udt-board-rotate') as SVGGElement;
 
     const spin = (): void => {
-      svg.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: 10, clientY: 0, bubbles: true }));
+      svg.dispatchEvent(
+        new MouseEvent('mousedown', { button: 0, clientX: 10, clientY: 0, bubbles: true }),
+      );
       document.dispatchEvent(new MouseEvent('mousemove', { clientX: 0, clientY: 10 }));
       document.dispatchEvent(new MouseEvent('mouseup', {}));
     };
@@ -260,7 +282,15 @@ describe('BoardMap2D', () => {
     const svg = host.querySelector('svg') as SVGSVGElement;
     const rotateLayer = host.querySelector('.udt-board-rotate') as SVGGElement;
     // Middle-button (button 1) → pan, not spin, so the rotate transform is untouched.
-    svg.dispatchEvent(new MouseEvent('mousedown', { button: 1, clientX: 10, clientY: 0, bubbles: true, cancelable: true }));
+    svg.dispatchEvent(
+      new MouseEvent('mousedown', {
+        button: 1,
+        clientX: 10,
+        clientY: 0,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
     document.dispatchEvent(new MouseEvent('mousemove', { clientX: 0, clientY: 10 }));
     document.dispatchEvent(new MouseEvent('mouseup', {}));
     expect(rotateLayer.getAttribute('transform')).toBe(IDENTITY_ROTATE);
@@ -273,7 +303,15 @@ describe('BoardMap2D', () => {
     const rotateLayer = host.querySelector('.udt-board-rotate') as SVGGElement;
     expect(rotateLayer.getAttribute('transform')).toBe(IDENTITY_ROTATE);
     // Middle-button press-and-hold → spin even though the active mode is pan.
-    svg.dispatchEvent(new MouseEvent('mousedown', { button: 1, clientX: 10, clientY: 0, bubbles: true, cancelable: true }));
+    svg.dispatchEvent(
+      new MouseEvent('mousedown', {
+        button: 1,
+        clientX: 10,
+        clientY: 0,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
     document.dispatchEvent(new MouseEvent('mousemove', { clientX: 0, clientY: 10 }));
     document.dispatchEvent(new MouseEvent('mouseup', {}));
     expect(rotateLayer.getAttribute('transform')).not.toBe(IDENTITY_ROTATE);
@@ -284,7 +322,9 @@ describe('BoardMap2D', () => {
     map.render(createDefaultBoardState(), { kingdom: 'all', angle: 'overhead' });
     const svg = host.querySelector('svg') as SVGSVGElement;
     svg.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
-    expect(svg.getAttribute('viewBox')).not.toBe(`0 0 ${BOARD_IMAGE_INFO.width} ${BOARD_IMAGE_INFO.height}`);
+    expect(svg.getAttribute('viewBox')).not.toBe(
+      `0 0 ${BOARD_IMAGE_INFO.width} ${BOARD_IMAGE_INFO.height}`,
+    );
     // Re-render at a new focus → fresh svg at the kingdom base, manual zoom dropped.
     map.render(createDefaultBoardState(), { kingdom: 'north', angle: 'overhead' });
     const next = host.querySelector('svg') as SVGSVGElement;
@@ -306,13 +346,18 @@ describe('BoardMap2D', () => {
     const onLocationPick = jest.fn();
     const onTokenSelect = jest.fn();
     const host = document.createElement('div');
-    const map = new BoardMap2D(host, { boardImageUrl: '/b.png', locationPick, onLocationPick, onTokenSelect });
+    const map = new BoardMap2D(host, {
+      boardImageUrl: '/b.png',
+      locationPick,
+      onLocationPick,
+      onTokenSelect,
+    });
     map.render(populated());
 
     // Disarmed → no space layer; token click still selects.
     expect(host.querySelector('.udt-space')).toBeNull();
     (host.querySelector('.udt-token[data-id="foe-1"]') as SVGGElement).dispatchEvent(
-      new MouseEvent('click', { bubbles: true })
+      new MouseEvent('click', { bubbles: true }),
     );
     expect(onTokenSelect).toHaveBeenCalledTimes(1);
 
@@ -328,7 +373,7 @@ describe('BoardMap2D', () => {
     // Token clicks are ignored while armed.
     onTokenSelect.mockClear();
     (host.querySelector('.udt-token[data-id="foe-1"]') as SVGGElement).dispatchEvent(
-      new MouseEvent('click', { bubbles: true })
+      new MouseEvent('click', { bubbles: true }),
     );
     expect(onTokenSelect).not.toHaveBeenCalled();
   });

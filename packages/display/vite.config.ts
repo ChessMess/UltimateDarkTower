@@ -3,7 +3,11 @@ import { resolve, dirname } from 'path';
 import { copyFileSync, mkdirSync, readFileSync } from 'fs';
 
 function redirectExamplePath(): Plugin {
-  const redirect = (req: { url?: string }, res: { statusCode: number; setHeader(name: string, value: string): void; end(): void }, next: () => void) => {
+  const redirect = (
+    req: { url?: string },
+    res: { statusCode: number; setHeader(name: string, value: string): void; end(): void },
+    next: () => void,
+  ) => {
     if (req.url === '/') {
       res.statusCode = 302;
       res.setHeader('Location', '/example/');
@@ -65,13 +69,18 @@ function copyTowerAsset(): Plugin {
 // Add any new hand-maintained `new URL('./assets/*.ogg', import.meta.url)` module
 // here, or the lib build base64-inlines its bytes instead of emitting a file.
 // See docs/AUDIO.md → "Adding a bundled sound to the library".
-const OGG_URL_HOSTS = ['/audio/audioLibrary.ts', '/audio/calibrationAudio.ts', '/audio/drumRotationSound.ts'];
+const OGG_URL_HOSTS = [
+  '/audio/audioLibrary.ts',
+  '/audio/calibrationAudio.ts',
+  '/audio/drumRotationSound.ts',
+];
 function emitOggsAsFiles(): Plugin {
   // Match the full `new URL('./assets/<file>.ogg', import.meta.url).href`
   // expression so the .href is part of what gets substituted — Rollup's
   // ROLLUP_FILE_URL_ placeholder already expands to a `.href` string, so
   // capturing .href in the match avoids a redundant double-wrap.
-  const URL_RE = /new URL\(\s*['"]\.\/assets\/([A-Za-z0-9_.-]+\.ogg)['"]\s*,\s*import\.meta\.url\s*\)\.href/g;
+  const URL_RE =
+    /new URL\(\s*['"]\.\/assets\/([A-Za-z0-9_.-]+\.ogg)['"]\s*,\s*import\.meta\.url\s*\)\.href/g;
   return {
     name: 'emit-oggs-as-files',
     apply: 'build',
@@ -127,21 +136,14 @@ export default defineConfig({
         physics: resolve(__dirname, 'src/physics/index.ts'),
       },
       formats: ['es', 'cjs'],
-      fileName: (format, entryName) =>
-        `${entryName}.${format === 'es' ? 'esm' : 'cjs'}.js`,
+      fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'esm' : 'cjs'}.js`,
     },
     // Force large binary assets (GLB model) to emit as separate files rather
     // than inlining as base64 in the JS bundle.
     assetsInlineLimit: 0,
     rollupOptions: {
       // Peer/external deps — not bundled.
-      external: [
-        'ultimatedarktower',
-        'three',
-        /^three\/.*/,
-        'gsap',
-        '@dimforge/rapier3d-compat',
-      ],
+      external: ['ultimatedarktower', 'three', /^three\/.*/, 'gsap', '@dimforge/rapier3d-compat'],
       output: {
         // Keep .ogg filenames stable under dist/audio/assets/ so consumers
         // using `buildOfficialSoundPack` to self-host from the package's

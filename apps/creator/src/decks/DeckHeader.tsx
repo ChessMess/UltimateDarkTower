@@ -67,8 +67,8 @@ export function DeckHeader(props: DeckHeaderProps) {
 
           {legacy ? (
             <div style={{ fontSize: 11, color: 'var(--c-text-muted)' }}>
-              This deck uses the legacy strikes format. Remove and re-create it to author a card-ladder deck
-              with art.
+              This deck uses the legacy strikes format. Remove and re-create it to author a
+              card-ladder deck with art.
             </div>
           ) : (
             <>
@@ -86,7 +86,9 @@ export function DeckHeader(props: DeckHeaderProps) {
                   <div style={labelStyle}>Template</div>
                   <select
                     value={appearance?.template ?? ''}
-                    onChange={(e) => patch({ template: (e.target.value || undefined) as Appearance['template'] })}
+                    onChange={(e) =>
+                      patch({ template: (e.target.value || undefined) as Appearance['template'] })
+                    }
                     style={inputStyle}
                   >
                     <option value="">classic (default)</option>
@@ -104,7 +106,14 @@ export function DeckHeader(props: DeckHeaderProps) {
                       type="color"
                       value={appearance?.accent ?? DEFAULT_ACCENT}
                       onChange={(e) => patch({ accent: e.target.value })}
-                      style={{ width: 34, height: 26, padding: 0, border: '1px solid var(--c-border-strong)', borderRadius: 4, background: 'none' }}
+                      style={{
+                        width: 34,
+                        height: 26,
+                        padding: 0,
+                        border: '1px solid var(--c-border-strong)',
+                        borderRadius: 4,
+                        background: 'none',
+                      }}
                     />
                     {appearance?.accent && (
                       <button style={smallBtn} onClick={() => patch({ accent: undefined })}>
@@ -143,7 +152,11 @@ export function DeckHeader(props: DeckHeaderProps) {
               min={0}
               value={props.marketSize ?? ''}
               placeholder="—"
-              onChange={(e) => props.onMarketSizeChange?.(e.target.value === '' ? undefined : Math.max(0, Number(e.target.value)))}
+              onChange={(e) =>
+                props.onMarketSizeChange?.(
+                  e.target.value === '' ? undefined : Math.max(0, Number(e.target.value)),
+                )
+              }
               style={{ ...inputStyle, width: 80 }}
             />
           </div>
@@ -155,7 +168,10 @@ export function DeckHeader(props: DeckHeaderProps) {
         <div style={{ marginTop: 12 }}>
           <div style={labelStyle}>Foe → Deck</div>
           {props.foeIds.map((foeId) => (
-            <div key={foeId} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+            <div
+              key={foeId}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}
+            >
               <span style={{ fontSize: 11, flex: 1 }}>{foeId}</span>
               <select
                 value={props.foeAssignments?.[foeId] ?? ''}

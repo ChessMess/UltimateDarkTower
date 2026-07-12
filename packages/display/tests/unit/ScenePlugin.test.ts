@@ -2,7 +2,11 @@ import { LIGHT_EFFECTS } from 'ultimatedarktower';
 import type { TowerState } from 'ultimatedarktower';
 import { Tower3DView } from '../../src/3d/Tower3DView';
 import { attachScenePlugin } from '../../src/3d/ScenePlugin';
-import type { ScenePlugin, ScenePluginContext, ScenePluginModelInfo } from '../../src/3d/ScenePlugin';
+import type {
+  ScenePlugin,
+  ScenePluginContext,
+  ScenePluginModelInfo,
+} from '../../src/3d/ScenePlugin';
 import { attachSkullPhysics } from '../../src/physics';
 import * as gltfLoaderMock from '../__mocks__/gltfLoader.js';
 import * as gsapMock from '../__mocks__/gsap.js';
@@ -127,7 +131,9 @@ describe('attachScenePlugin', () => {
 
     attachScenePlugin(view, {
       id: 'p',
-      attach: (ctx) => { unsub = ctx.registerFrameCallback(frameCb); },
+      attach: (ctx) => {
+        unsub = ctx.registerFrameCallback(frameCb);
+      },
       dispose: () => {},
     });
 
@@ -197,7 +203,9 @@ describe('attachScenePlugin', () => {
     const sideCb = jest.fn();
     attachScenePlugin(view, {
       id: 'p',
-      attach: (ctx) => { ctx.onSideChange(sideCb); },
+      attach: (ctx) => {
+        ctx.onSideChange(sideCb);
+      },
       dispose: () => {},
     });
 
@@ -215,7 +223,9 @@ describe('attachScenePlugin', () => {
     let loadedAtAttach = true;
     attachScenePlugin(view, {
       id: 'p',
-      attach: (ctx) => { loadedAtAttach = ctx.isModelLoaded(); },
+      attach: (ctx) => {
+        loadedAtAttach = ctx.isModelLoaded();
+      },
       onModelLoaded,
       dispose: () => {},
     });

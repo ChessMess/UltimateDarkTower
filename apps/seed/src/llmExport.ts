@@ -20,8 +20,12 @@ export function generateLLMPrompt(session: Session, fieldMappings: FieldMapping[
     lines.push(`Seed: ${session.baseline.seed}`);
     try {
       const decoded = seedApi.decodeSeed(session.baseline.seed);
-      lines.push(`Decoded: ${decoded.tier1Foe}/${decoded.tier2Foe}/${decoded.tier3Foe} | ${decoded.adversary} | ${decoded.ally} | ${decoded.difficulty} | ${decoded.source} | ${decoded.playerCount}P | RNG=${decoded.rngSeed}`);
-    } catch { /* skip decode if invalid */ }
+      lines.push(
+        `Decoded: ${decoded.tier1Foe}/${decoded.tier2Foe}/${decoded.tier3Foe} | ${decoded.adversary} | ${decoded.ally} | ${decoded.difficulty} | ${decoded.source} | ${decoded.playerCount}P | RNG=${decoded.rngSeed}`,
+      );
+    } catch {
+      /* skip decode if invalid */
+    }
     const dump = seedApi.dumpSeedChars(session.baseline.seed);
     lines.push(`Chars: ${dump.chars.map((c) => `${c.char}(${c.value})`).join(' ')}`);
     lines.push('');
@@ -50,7 +54,7 @@ export function generateLLMPrompt(session: Session, fieldMappings: FieldMapping[
       const comp = session.baseline ? seedApi.compareSeedsRaw(session.baseline.seed, v.seed) : null;
       const charsChanged = comp ? comp.diffs.length : '?';
       lines.push(
-        `| ${i + 1} | ${v.seed} | ${v.changedField ?? '?'} | ${v.changedValue ?? '?'} | ${charsChanged} |`
+        `| ${i + 1} | ${v.seed} | ${v.changedField ?? '?'} | ${v.changedValue ?? '?'} | ${charsChanged} |`,
       );
     }
     lines.push('');
@@ -64,12 +68,18 @@ export function generateLLMPrompt(session: Session, fieldMappings: FieldMapping[
     for (let i = 0; i < session.variants.length; i++) {
       const v = session.variants[i];
       const comp = seedApi.compareSeedsRaw(session.baseline.seed, v.seed);
-      lines.push(`### Variant ${i + 1}: ${v.seed} (${v.changedField ?? '?'} → ${v.changedValue ?? '?'})`);
+      lines.push(
+        `### Variant ${i + 1}: ${v.seed} (${v.changedField ?? '?'} → ${v.changedValue ?? '?'})`,
+      );
       if (comp.diffs.length === 0) {
         lines.push('No character differences.');
       } else {
-        lines.push(`Setup diffs (${comp.setupDiffs.length}): ${comp.setupDiffs.map((d) => `[${d.charIndex}]: ${d.char1}→${d.char2}`).join(', ') || 'none'}`);
-        lines.push(`RNG diffs (${comp.rngDiffs.length}): ${comp.rngDiffs.map((d) => `[${d.charIndex}]: ${d.char1}→${d.char2}`).join(', ') || 'none'}`);
+        lines.push(
+          `Setup diffs (${comp.setupDiffs.length}): ${comp.setupDiffs.map((d) => `[${d.charIndex}]: ${d.char1}→${d.char2}`).join(', ') || 'none'}`,
+        );
+        lines.push(
+          `RNG diffs (${comp.rngDiffs.length}): ${comp.rngDiffs.map((d) => `[${d.charIndex}]: ${d.char1}→${d.char2}`).join(', ') || 'none'}`,
+        );
       }
       lines.push('');
     }
@@ -96,7 +106,7 @@ export function generateLLMPrompt(session: Session, fieldMappings: FieldMapping[
     lines.push('|-------|------|------|-----------|-----|---------|-----------|-------|');
     for (const e of events) {
       lines.push(
-        `| ${e.month} | ${e.turn ?? ''} | ${e.type} | ${e.questType ?? ''} | ${e.foe ?? ''} | ${e.kingdom ?? ''} | ${e.companion ?? ''} | ${e.notes ?? ''} |`
+        `| ${e.month} | ${e.turn ?? ''} | ${e.type} | ${e.questType ?? ''} | ${e.foe ?? ''} | ${e.kingdom ?? ''} | ${e.companion ?? ''} | ${e.notes ?? ''} |`,
       );
     }
     lines.push('');
@@ -105,17 +115,32 @@ export function generateLLMPrompt(session: Session, fieldMappings: FieldMapping[
   // All seeds with character values for pattern analysis
   lines.push('## All Seeds — Character Values');
   lines.push('');
-  const allSeeds = [session.baseline, ...session.variants].filter(Boolean) as typeof session.variants;
+  const allSeeds = [session.baseline, ...session.variants].filter(
+    Boolean,
+  ) as typeof session.variants;
   for (const entry of allSeeds) {
     const dump = seedApi.dumpSeedChars(entry.seed);
-    const label = entry === session.baseline ? '(baseline)' : `(${entry.changedField ?? '?'}: ${entry.changedValue ?? '?'})`;
+    const label =
+      entry === session.baseline
+        ? '(baseline)'
+        : `(${entry.changedField ?? '?'}: ${entry.changedValue ?? '?'})`;
     lines.push(`${entry.seed} ${label}`);
-    lines.push(`  Setup: ${dump.chars.slice(0, 6).map((c) => `${c.char}=${c.value}`).join(' ')}  RNG: ${dump.chars.slice(6).map((c) => `${c.char}=${c.value}`).join(' ')}`);
+    lines.push(
+      `  Setup: ${dump.chars
+        .slice(0, 6)
+        .map((c) => `${c.char}=${c.value}`)
+        .join(' ')}  RNG: ${dump.chars
+        .slice(6)
+        .map((c) => `${c.char}=${c.value}`)
+        .join(' ')}`,
+    );
   }
   lines.push('');
 
   lines.push('---');
-  lines.push('Please analyze the bit patterns above and identify which bit ranges correspond to which game setup fields.');
+  lines.push(
+    'Please analyze the bit patterns above and identify which bit ranges correspond to which game setup fields.',
+  );
 
   return lines.join('\n');
 }

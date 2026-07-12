@@ -11,25 +11,25 @@ import {
   TC,
   DRUM_PACKETS,
   GLYPHS,
-  TOWER_AUDIO_LIBRARY
+  TOWER_AUDIO_LIBRARY,
 } from '../src/udtConstants';
 
 describe('Constants', () => {
   describe('Bluetooth UUIDs', () => {
     test('should have correct UART service UUID', () => {
-      expect(UART_SERVICE_UUID).toBe("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
+      expect(UART_SERVICE_UUID).toBe('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
     });
 
     test('should have correct TX characteristic UUID', () => {
-      expect(UART_TX_CHARACTERISTIC_UUID).toBe("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
+      expect(UART_TX_CHARACTERISTIC_UUID).toBe('6e400002-b5a3-f393-e0a9-e50e24dcca9e');
     });
 
     test('should have correct RX characteristic UUID', () => {
-      expect(UART_RX_CHARACTERISTIC_UUID).toBe("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
+      expect(UART_RX_CHARACTERISTIC_UUID).toBe('6e400003-b5a3-f393-e0a9-e50e24dcca9e');
     });
 
     test('should have correct tower device name', () => {
-      expect(TOWER_DEVICE_NAME).toBe("ReturnToDarkTower");
+      expect(TOWER_DEVICE_NAME).toBe('ReturnToDarkTower');
     });
   });
 
@@ -55,15 +55,15 @@ describe('Constants', () => {
 
   describe('Tower Command Types', () => {
     test('should have all required TC constants', () => {
-      expect(TC.STATE).toBe("TOWER_STATE");
-      expect(TC.INVALID_STATE).toBe("INVALID_STATE");
-      expect(TC.FAILURE).toBe("HARDWARE_FAILURE");
-      expect(TC.JIGGLE).toBe("MECH_JIGGLE_TRIGGERED");
-      expect(TC.UNEXPECTED).toBe("MECH_UNEXPECTED_TRIGGER");
-      expect(TC.DURATION).toBe("MECH_DURATION");
-      expect(TC.DIFFERENTIAL).toBe("DIFFERENTIAL_READINGS");
-      expect(TC.CALIBRATION).toBe("CALIBRATION_FINISHED");
-      expect(TC.BATTERY).toBe("BATTERY_READING");
+      expect(TC.STATE).toBe('TOWER_STATE');
+      expect(TC.INVALID_STATE).toBe('INVALID_STATE');
+      expect(TC.FAILURE).toBe('HARDWARE_FAILURE');
+      expect(TC.JIGGLE).toBe('MECH_JIGGLE_TRIGGERED');
+      expect(TC.UNEXPECTED).toBe('MECH_UNEXPECTED_TRIGGER');
+      expect(TC.DURATION).toBe('MECH_DURATION');
+      expect(TC.DIFFERENTIAL).toBe('DIFFERENTIAL_READINGS');
+      expect(TC.CALIBRATION).toBe('CALIBRATION_FINISHED');
+      expect(TC.BATTERY).toBe('BATTERY_READING');
     });
   });
 
@@ -73,7 +73,6 @@ describe('Constants', () => {
       expect(DRUM_PACKETS.bottom).toBe(2);
     });
   });
-
 
   describe('Glyphs', () => {
     test('should have GLYPHS object defined', () => {

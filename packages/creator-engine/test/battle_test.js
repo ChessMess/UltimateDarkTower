@@ -11,7 +11,11 @@ const { goldenFull } = require('../dist/golden-fixture');
 function initGF(o) {
   let r = engine.init(goldenFull, o);
   while (r.status === 'awaitingInput' && r.awaiting.id === 'heroSelect') {
-    r = engine.step(r.state, { requestId: 'heroSelect', value: { heroId: r.awaiting.options[0].id }, kind: 'decision' });
+    r = engine.step(r.state, {
+      requestId: 'heroSelect',
+      value: { heroId: r.awaiting.options[0].id },
+      kind: 'decision',
+    });
   }
   return r;
 }

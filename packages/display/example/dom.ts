@@ -114,7 +114,9 @@ export function queryDom(): DomElements {
     inpSkyboxUrl: document.getElementById('inp-skybox-url') as HTMLInputElement | null,
     chkTowerAudio: document.getElementById('chk-tower-audio') as HTMLInputElement | null,
     chkZoomToCursor: document.getElementById('chk-zoom-to-cursor') as HTMLInputElement | null,
-    chkPreserveViewOnSideSelect: document.getElementById('chk-preserve-view-on-side-select') as HTMLInputElement | null,
+    chkPreserveViewOnSideSelect: document.getElementById(
+      'chk-preserve-view-on-side-select',
+    ) as HTMLInputElement | null,
     rngBloomStrength: document.getElementById('rng-bloom-strength') as HTMLInputElement | null,
     rngBloomRadius: document.getElementById('rng-bloom-radius') as HTMLInputElement | null,
     rngBloomThreshold: document.getElementById('rng-bloom-threshold') as HTMLInputElement | null,
@@ -131,10 +133,14 @@ export function queryDom(): DomElements {
     lblBoardThickness: document.getElementById('lbl-board-thickness'),
     chkBoardBottomCap: document.getElementById('chk-board-bottom-cap') as HTMLInputElement | null,
     btnBoardEdgeWood: document.getElementById('btn-board-edge-wood') as HTMLButtonElement | null,
-    btnBoardEdgeNeoprene: document.getElementById('btn-board-edge-neoprene') as HTMLButtonElement | null,
+    btnBoardEdgeNeoprene: document.getElementById(
+      'btn-board-edge-neoprene',
+    ) as HTMLButtonElement | null,
     rngElevationFactor: document.getElementById('rng-elevation-factor') as HTMLInputElement | null,
     lblElevationFactor: document.getElementById('lbl-elevation-factor'),
-    rngTargetHeightFactor: document.getElementById('rng-target-height-factor') as HTMLInputElement | null,
+    rngTargetHeightFactor: document.getElementById(
+      'rng-target-height-factor',
+    ) as HTMLInputElement | null,
     lblTargetHeightFactor: document.getElementById('lbl-target-height-factor'),
     rngDistanceFactor: document.getElementById('rng-distance-factor') as HTMLInputElement | null,
     lblDistanceFactor: document.getElementById('lbl-distance-factor'),

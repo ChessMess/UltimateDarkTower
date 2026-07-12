@@ -12,7 +12,7 @@ const TWO_PI = Math.PI * 2;
 
 /** Two angles are visually equivalent if (a - b) is a multiple of 2π. */
 function expectAngleEquivalent(actual: number, expected: number, eps = 1e-9): void {
-  const diff = ((actual - expected) % TWO_PI + TWO_PI) % TWO_PI;
+  const diff = (((actual - expected) % TWO_PI) + TWO_PI) % TWO_PI;
   const min = Math.min(diff, TWO_PI - diff);
   if (min > eps) {
     throw new Error(`angles not equivalent: ${actual} vs ${expected} (min mod-2π distance ${min})`);
@@ -33,9 +33,15 @@ function makeAudioStub(): AudioStub {
     starts: 0,
     ends: 0,
     stopAlls: 0,
-    startRotation() { this.starts++; },
-    endRotation() { this.ends++; },
-    stopAll() { this.stopAlls++; },
+    startRotation() {
+      this.starts++;
+    },
+    endRotation() {
+      this.ends++;
+    },
+    stopAll() {
+      this.stopAlls++;
+    },
   };
 }
 
@@ -82,7 +88,7 @@ describe('DrumManager', () => {
       expect(mgr.drumRefs.get('bottom')).toBeDefined();
     });
 
-    it('seeds currentY from the node\'s existing rotation.y', () => {
+    it("seeds currentY from the node's existing rotation.y", () => {
       const root = makeRoot([]);
       const drum = makeDrumNode('drum_top');
       drum.rotation.y = 1.23;

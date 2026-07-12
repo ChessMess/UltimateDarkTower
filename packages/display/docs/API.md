@@ -1,6 +1,6 @@
 # API reference
 
-*Docs: [Index](README.md) > Integrator > API*
+_Docs: [Index](README.md) > Integrator > API_
 
 **Before reading:** [GETTING_STARTED](GETTING_STARTED.md) covers prerequisites and the first render. [RENDERERS](RENDERERS.md) compares the three renderers at a glance. **Changelog:** [../CHANGELOG.md](../CHANGELOG.md).
 
@@ -11,26 +11,68 @@ This document covers the public API exported by `ultimatedarktowerdisplay`. It f
 ```ts
 // Main entry — renderers, controller, scene-plugin seam, audio
 import {
-  TowerRenderView, TowerDisplay, TowerStateReadout, TowerSideView, Tower3DView,
-  TowerStateController, attachScenePlugin, anchorToWorld, TOWER_DISPLAY_CSS,
+  TowerRenderView,
+  TowerDisplay,
+  TowerStateReadout,
+  TowerSideView,
+  Tower3DView,
+  TowerStateController,
+  attachScenePlugin,
+  anchorToWorld,
+  TOWER_DISPLAY_CSS,
   // audio (see "Audio exports")
-  DEFAULT_TOWER_SOUND_PACK, buildOfficialSoundPack, hasDefaultAudioAsset,
-  DEFAULT_SEQUENCE_AUDIO_MAP, buildSequenceAudioMap,
-  DrumRotationAudio, TowerSampleAudio, CALIBRATION_SOUND_URL, DRUM_ROTATION_SOUND_URL,
+  DEFAULT_TOWER_SOUND_PACK,
+  buildOfficialSoundPack,
+  hasDefaultAudioAsset,
+  DEFAULT_SEQUENCE_AUDIO_MAP,
+  buildSequenceAudioMap,
+  DrumRotationAudio,
+  TowerSampleAudio,
+  CALIBRATION_SOUND_URL,
+  DRUM_ROTATION_SOUND_URL,
 } from 'ultimatedarktowerdisplay';
 import type {
-  TowerRenderViewOptions, TowerRenderViewBadge, TowerRenderViewBadgeTone, TowerRenderViewPanelPosition,
-  TowerDisplayOptions, Tower3DViewOptions, PerfReport, PerfStat, BloomFrameMetrics,
-  TowerStateControllerOptions, CameraConfig, ApplyCameraConfigOptions, AudioConfig, SoundPack, TowerPhysicsHooks,
-  ITowerDisplay, RendererType, TowerSide, SealIdentifier, AppliedTowerState,
-  ScenePlugin, ScenePluginContext, ScenePluginHandle, ScenePluginModelInfo, PointerTarget,
-  BoardAnchor, DiscMetrics,
+  TowerRenderViewOptions,
+  TowerRenderViewBadge,
+  TowerRenderViewBadgeTone,
+  TowerRenderViewPanelPosition,
+  TowerDisplayOptions,
+  Tower3DViewOptions,
+  PerfReport,
+  PerfStat,
+  BloomFrameMetrics,
+  TowerStateControllerOptions,
+  CameraConfig,
+  ApplyCameraConfigOptions,
+  AudioConfig,
+  SoundPack,
+  TowerPhysicsHooks,
+  ITowerDisplay,
+  RendererType,
+  TowerSide,
+  SealIdentifier,
+  AppliedTowerState,
+  ScenePlugin,
+  ScenePluginContext,
+  ScenePluginHandle,
+  ScenePluginModelInfo,
+  PointerTarget,
+  BoardAnchor,
+  DiscMetrics,
 } from 'ultimatedarktowerdisplay';
 
 // `./physics` subpath — opt-in skull physics (pulls @dimforge/rapier3d; see "Physics")
-import { attachSkullPhysics, DEFAULT_PHYSICS, resolvePhysics } from 'ultimatedarktowerdisplay/physics';
+import {
+  attachSkullPhysics,
+  DEFAULT_PHYSICS,
+  resolvePhysics,
+} from 'ultimatedarktowerdisplay/physics';
 import type {
-  PhysicsConfig, ResolvedPhysicsConfig, SkullPhysicsHandle, SkullTemplate, DeepRequired,
+  PhysicsConfig,
+  ResolvedPhysicsConfig,
+  SkullPhysicsHandle,
+  SkullTemplate,
+  DeepRequired,
 } from 'ultimatedarktowerdisplay/physics';
 ```
 
@@ -62,16 +104,16 @@ view.updateBadge('conn', { value: 'disconnected', tone: 'warn' });
 new TowerRenderView(options: TowerRenderViewOptions)
 ```
 
-| Parameter                | Type                              | Default     | Description                                                                                              |
-| ------------------------ | --------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------- |
-| `options.container`      | `HTMLElement`                     | —           | DOM element to render into.                                                                              |
-| `options.renderers`      | `RendererType \| RendererType[]`  | `'3d-view'` | Which renderer(s) to show. Defaults to the headline 3D render.                                           |
-| `options.modelUrl`       | `string`                          | —           | Required when `renderers` includes `'3d-view'`. Forwarded to `TowerDisplay`.                             |
-| `options.title`          | `string`                          | —           | Optional header title. Header renders only when at least one chrome option is set.                       |
-| `options.subtitle`       | `string`                          | —           | Optional header subtitle.                                                                                |
-| `options.badges`         | `TowerRenderViewBadge[]`          | —           | Optional status badge row in the header.                                                                 |
-| `options.actions`        | `HTMLElement[]`                   | —           | Optional action elements appended to the header's action slot.                                           |
-| `options.className`      | `string`                          | —           | Extra class on `.trv-root` for theming hooks (e.g. consumer-specific palette overrides).                 |
+| Parameter           | Type                             | Default     | Description                                                                              |
+| ------------------- | -------------------------------- | ----------- | ---------------------------------------------------------------------------------------- |
+| `options.container` | `HTMLElement`                    | —           | DOM element to render into.                                                              |
+| `options.renderers` | `RendererType \| RendererType[]` | `'3d-view'` | Which renderer(s) to show. Defaults to the headline 3D render.                           |
+| `options.modelUrl`  | `string`                         | —           | Required when `renderers` includes `'3d-view'`. Forwarded to `TowerDisplay`.             |
+| `options.title`     | `string`                         | —           | Optional header title. Header renders only when at least one chrome option is set.       |
+| `options.subtitle`  | `string`                         | —           | Optional header subtitle.                                                                |
+| `options.badges`    | `TowerRenderViewBadge[]`         | —           | Optional status badge row in the header.                                                 |
+| `options.actions`   | `HTMLElement[]`                  | —           | Optional action elements appended to the header's action slot.                           |
+| `options.className` | `string`                         | —           | Extra class on `.trv-root` for theming hooks (e.g. consumer-specific palette overrides). |
 
 All other `TowerDisplayOptions` fields (`lighting`, `camera`, `audio`, `dracoDecoderPath`, `debug3D`, `showGroundDisc`, `clickToToggleSeals`, `injectStyles`, `onSealClick`, `onSideChange`, `onLoadError`) are accepted and forwarded to the inner `TowerDisplay` unchanged.
 
@@ -122,7 +164,7 @@ Tear down the inner `TowerDisplay` and remove `.trv-root` from the container.
 
 ```ts
 interface TowerRenderViewBadge {
-  id?: string;                                          // handle for updateBadge()
+  id?: string; // handle for updateBadge()
   label: string;
   value?: string;
   tone?: 'neutral' | 'accent' | 'warn' | 'good';
@@ -598,11 +640,11 @@ Pass `force: true` to replay the current sample even if it matches the previousl
 The full audio surface — sound pack, master enable, sequence-to-sample binding, drum-rotation URL — is exposed as a single `AudioConfig` object that mirrors the `LightingConfig` / `CameraConfig` pattern.
 
 ```ts
-display.applyAudioConfig({ enabled: true });                    // master toggle
-display.applyAudioConfig({ pack: myCustomSoundPack });           // swap samples
-display.applyAudioConfig({ bindSequenceToSample: true });        // auto-bind sequences
-display.applyAudioConfig({ sequenceMap: { 0x12: 0x33 } });       // per-sequence override
-const resolved = display.getAudioConfig();                       // serialise full state
+display.applyAudioConfig({ enabled: true }); // master toggle
+display.applyAudioConfig({ pack: myCustomSoundPack }); // swap samples
+display.applyAudioConfig({ bindSequenceToSample: true }); // auto-bind sequences
+display.applyAudioConfig({ sequenceMap: { 0x12: 0x33 } }); // per-sequence override
+const resolved = display.getAudioConfig(); // serialise full state
 ```
 
 `applyAudioConfig` sparse-merges — fields that are `undefined` are left alone. `getAudioConfig` returns `Required<AudioConfig>` with every field populated (the `sequenceMap` is the resolved effective map after fallback resolution, so the result round-trips through `applyAudioConfig` cleanly).
@@ -621,6 +663,7 @@ playSample(
 Available on `TowerRenderView`, `TowerDisplay`, and `Tower3DView`. Fires a transient sample play independent of `applyState`'s sync pipeline — each call allocates its own `AudioBufferSourceNode`, so subsequent state-driven `sync(0)`/`stop()` calls will not interrupt it. Use this when the audio model is fire-and-forget (e.g. the `ultimatedarktower` framework's `playSoundStateful`, which deliberately does not persist audio in tower state). For state-mirror playback, keep using `applyState(state)`.
 
 Trade-offs:
+
 - **Polyphony**: simultaneous calls play in parallel.
 - **Looped one-shots** (`opts.loop = true`) require holding the returned `{ stop }` handle; there is no automatic stop. For unbounded loops, prefer the state-driven path.
 - **Master mute/volume still apply** — per-shot gain feeds through the same master gain `applyAudioConfig` controls.
@@ -829,10 +872,10 @@ Attaches a plugin to a `Tower3DView`. Calls `plugin.attach(ctx)` once (synchrono
 interface ScenePlugin {
   readonly id: string;
   attach(ctx: ScenePluginContext): void;
-  onStateApplied?(state: TowerState): void;        // after every applyState, post-update
+  onStateApplied?(state: TowerState): void; // after every applyState, post-update
   onSealsApplied?(brokenSeals: SealIdentifier[]): void;
   onModelLoaded?(info: ScenePluginModelInfo): void; // fires immediately if already loaded
-  update?(dtSeconds: number): void;                 // per-frame, dt in seconds
+  update?(dtSeconds: number): void; // per-frame, dt in seconds
   dispose(): void;
 }
 ```
@@ -844,16 +887,16 @@ interface ScenePluginContext {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
-  readonly modelRadius: number;   // live; defaults to 1 before load
-  readonly modelBottomY: number;  // live
-  readonly modelTopY: number;     // live
+  readonly modelRadius: number; // live; defaults to 1 before load
+  readonly modelBottomY: number; // live
+  readonly modelTopY: number; // live
   drumNode(level: 'top' | 'middle' | 'bottom'): THREE.Object3D | null;
   registerFrameCallback(cb: (dtSeconds: number) => void): () => void;
   onStateApplied(cb: (state: TowerState) => void): () => void;
   onSealsApplied(cb: (broken: SealIdentifier[]) => void): () => void;
   onModelLoaded(cb: (info: ScenePluginModelInfo) => void): () => void;
   registerPointerTarget(target: PointerTarget): () => void;
-  getSide(): TowerSide;           // 'north' before the camera is ready
+  getSide(): TowerSide; // 'north' before the camera is ready
   onSideChange(cb: (side: TowerSide) => void): () => void;
   isModelLoaded(): boolean;
 }
@@ -877,7 +920,7 @@ interface ScenePluginModelInfo {
 ```ts
 interface ScenePluginHandle {
   readonly plugin: ScenePlugin;
-  detach(): void;   // disposes the plugin + frees its subscriptions; idempotent
+  detach(): void; // disposes the plugin + frees its subscriptions; idempotent
 }
 ```
 
@@ -886,7 +929,7 @@ interface ScenePluginHandle {
 ```ts
 interface PointerTarget {
   objects: THREE.Object3D[] | (() => THREE.Object3D[]);
-  priority?: number;                                   // higher tested first; default 0
+  priority?: number; // higher tested first; default 0
   onPointerDown?(hit: THREE.Intersection, ev: PointerEvent): boolean | void; // return true to consume
   onPointerMove?(hit: THREE.Intersection | null, ev: PointerEvent): void;
   onPointerUp?(hit: THREE.Intersection | null, ev: PointerEvent): boolean | void;
@@ -941,17 +984,17 @@ The bundled audio system. The default pack ships in the package — no consumer 
 to work; pass these to `AudioConfig` (see [`TowerDisplayOptions`](#towerdisplayoptions)) only to customize.
 See [AUDIO](AUDIO.md) for the full guide (pack authoring, sequence binding, bundler-compatibility notes).
 
-| Export | Type | Purpose |
-|---|---|---|
-| `DEFAULT_TOWER_SOUND_PACK` | `SoundPack` | The bundled official sound pack (the default `AudioConfig.pack`). |
-| `buildOfficialSoundPack(baseUrl)` | `(string) => SoundPack` | Build the official pack against a custom asset base URL. |
-| `hasDefaultAudioAsset(sample)` | `(number) => boolean` | Whether the bundled pack has a sample for an audio index. |
-| `DEFAULT_SEQUENCE_AUDIO_MAP` | `Readonly<Record<number, number>>` | Default LED-sequence → audio-sample mapping. |
-| `buildSequenceAudioMap(entries)` | fn | Build a sequence → audio map from named `{ sequence: audio }` entries. |
-| `DrumRotationAudio` | class | Pitch/rate-driven drum-rotation loop player. |
-| `TowerSampleAudio` | class | One-shot sample player (backs `TowerDisplay.playSample`). |
-| `CALIBRATION_SOUND_URL` | `string` | Bundled calibration-sound asset URL. |
-| `DRUM_ROTATION_SOUND_URL` | `string` | Bundled drum-rotation-sound asset URL. |
+| Export                            | Type                               | Purpose                                                                |
+| --------------------------------- | ---------------------------------- | ---------------------------------------------------------------------- |
+| `DEFAULT_TOWER_SOUND_PACK`        | `SoundPack`                        | The bundled official sound pack (the default `AudioConfig.pack`).      |
+| `buildOfficialSoundPack(baseUrl)` | `(string) => SoundPack`            | Build the official pack against a custom asset base URL.               |
+| `hasDefaultAudioAsset(sample)`    | `(number) => boolean`              | Whether the bundled pack has a sample for an audio index.              |
+| `DEFAULT_SEQUENCE_AUDIO_MAP`      | `Readonly<Record<number, number>>` | Default LED-sequence → audio-sample mapping.                           |
+| `buildSequenceAudioMap(entries)`  | fn                                 | Build a sequence → audio map from named `{ sequence: audio }` entries. |
+| `DrumRotationAudio`               | class                              | Pitch/rate-driven drum-rotation loop player.                           |
+| `TowerSampleAudio`                | class                              | One-shot sample player (backs `TowerDisplay.playSample`).              |
+| `CALIBRATION_SOUND_URL`           | `string`                           | Bundled calibration-sound asset URL.                                   |
+| `DRUM_ROTATION_SOUND_URL`         | `string`                           | Bundled drum-rotation-sound asset URL.                                 |
 
 ---
 

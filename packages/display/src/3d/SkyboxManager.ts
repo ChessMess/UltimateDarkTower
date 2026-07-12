@@ -10,7 +10,7 @@ export class SkyboxManager {
   private currentUrl = '';
   private texture: THREE.Texture | null = null;
 
-  constructor(private readonly scene: THREE.Scene) { }
+  constructor(private readonly scene: THREE.Scene) {}
 
   /**
    * Load `url` as the scene background. Pass an empty string to clear the

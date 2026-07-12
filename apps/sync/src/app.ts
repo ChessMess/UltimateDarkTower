@@ -5,9 +5,18 @@
  * (Web Bluetooth) into the top-level event loop.
  */
 
-import { UltimateDarkTower, BluetoothUserCancelledError, rtdt_unpack_state, TOWER_STATE_DATA_OFFSET } from 'ultimatedarktower';
+import {
+  UltimateDarkTower,
+  BluetoothUserCancelledError,
+  rtdt_unpack_state,
+  TOWER_STATE_DATA_OFFSET,
+} from 'ultimatedarktower';
 import { UI } from './ui';
-import { RelayClient, PhysicalTowerReplay, type RelayClientEvent } from 'ultimatedarktowerrelay-client';
+import {
+  RelayClient,
+  PhysicalTowerReplay,
+  type RelayClientEvent,
+} from 'ultimatedarktowerrelay-client';
 import { ClientLogger } from './clientLogger';
 // Type-only import: the runtime value is pulled in via a dynamic import() in
 // loadTowerDisplay() so the heavy visualizer (three / rapier / model / audio)
@@ -26,7 +35,9 @@ import type { TowerDisplay } from 'ultimatedarktowerdisplay';
 export class App {
   private readonly ui: UI;
   private readonly logger: ClientLogger;
-  private readonly isObserver: boolean = new URLSearchParams(window.location.search).has('observer');
+  private readonly isObserver: boolean = new URLSearchParams(window.location.search).has(
+    'observer',
+  );
   private relay: RelayClient | null = null;
   private tower: UltimateDarkTower | null = null;
   private towerDisplay: TowerDisplay | null = null;
@@ -355,8 +366,13 @@ export class App {
         break;
 
       case 'relay:reconnecting':
-        this.ui.setRelayState('connecting', `Reconnecting in ${Math.round(event.delayMs / 1000)}s (attempt ${event.attempt})…`);
-        this.ui.log(`Reconnecting in ${Math.round(event.delayMs / 1000)}s (attempt ${event.attempt})…`);
+        this.ui.setRelayState(
+          'connecting',
+          `Reconnecting in ${Math.round(event.delayMs / 1000)}s (attempt ${event.attempt})…`,
+        );
+        this.ui.log(
+          `Reconnecting in ${Math.round(event.delayMs / 1000)}s (attempt ${event.attempt})…`,
+        );
         break;
 
       case 'relay:reconnect-failed':
@@ -366,7 +382,9 @@ export class App {
         this.ui.connectBtn.disabled = false;
         this.ui.disconnectRelayBtn.setAttribute('hidden', '');
         this.ui.playerNameInput.disabled = false;
-        this.ui.log(`Could not reconnect after ${event.attempts} attempts. Click "Connect to Host" to try again.`);
+        this.ui.log(
+          `Could not reconnect after ${event.attempts} attempts. Click "Connect to Host" to try again.`,
+        );
         break;
 
       case 'relay:error':
@@ -378,7 +396,9 @@ export class App {
         break;
 
       case 'relay:paused':
-        this.ui.showPauseOverlay('Host tower disconnected — game paused. Waiting for host to reconnect…');
+        this.ui.showPauseOverlay(
+          'Host tower disconnected — game paused. Waiting for host to reconnect…',
+        );
         this.ui.log(`Game paused: ${event.reason}`);
         break;
 
@@ -398,7 +418,9 @@ export class App {
       case 'sync:state':
         if (event.lastCommand) {
           this.ui.log('Received full tower state sync from host.');
-          const syncState = rtdt_unpack_state(Uint8Array.from(event.lastCommand).slice(TOWER_STATE_DATA_OFFSET));
+          const syncState = rtdt_unpack_state(
+            Uint8Array.from(event.lastCommand).slice(TOWER_STATE_DATA_OFFSET),
+          );
           this.towerDisplay?.applyState(syncState);
         } else {
           this.ui.log('Connected — no prior tower state to sync.');
@@ -407,7 +429,9 @@ export class App {
 
       case 'host:resend': {
         this.ui.log('Host operator re-sent last tower state.');
-        const resendState = rtdt_unpack_state(Uint8Array.from(event.data).slice(TOWER_STATE_DATA_OFFSET));
+        const resendState = rtdt_unpack_state(
+          Uint8Array.from(event.data).slice(TOWER_STATE_DATA_OFFSET),
+        );
         this.towerDisplay?.applyState(resendState);
         break;
       }
@@ -422,9 +446,10 @@ export class App {
 
       case 'host:status': {
         const obs = event.status.observerCount;
-        const detail = obs > 0
-          ? `Connected (${event.status.clientCount} players, ${obs} observer${obs !== 1 ? 's' : ''})`
-          : `Connected (${event.status.clientCount} players)`;
+        const detail =
+          obs > 0
+            ? `Connected (${event.status.clientCount} players, ${obs} observer${obs !== 1 ? 's' : ''})`
+            : `Connected (${event.status.clientCount} players)`;
         this.ui.setRelayState('connected', detail);
         break;
       }

@@ -19,8 +19,8 @@ import {
 } from 'ultimatedarktower';
 
 interface TowerState {
-  drum: [Drum, Drum, Drum];                              // top, middle, bottom
-  layer: [Layer, Layer, Layer, Layer, Layer, Layer];     // 6 LED layers × 4 lights
+  drum: [Drum, Drum, Drum]; // top, middle, bottom
+  layer: [Layer, Layer, Layer, Layer, Layer, Layer]; // 6 LED layers × 4 lights
   audio: Audio;
   beam: Beam;
   led_sequence: number;
@@ -29,15 +29,27 @@ interface TowerState {
 interface Drum {
   jammed: boolean;
   calibrated: boolean;
-  position: number;       // 0–3, see RING_LIGHT_POSITIONS
+  position: number; // 0–3, see RING_LIGHT_POSITIONS
   playSound: boolean;
-  reverse: boolean;       // DO NOT USE — hardware-only flag
+  reverse: boolean; // DO NOT USE — hardware-only flag
 }
 
-interface Layer { light: [Light, Light, Light, Light]; }
-interface Light { effect: number; loop: boolean; }
-interface Audio { sample: number; loop: boolean; volume: number; }  // volume 0–15
-interface Beam  { count: number; fault: boolean; }
+interface Layer {
+  light: [Light, Light, Light, Light];
+}
+interface Light {
+  effect: number;
+  loop: boolean;
+}
+interface Audio {
+  sample: number;
+  loop: boolean;
+  volume: number;
+} // volume 0–15
+interface Beam {
+  count: number;
+  fault: boolean;
+}
 ```
 
 The 19-byte wire format is documented in [TOWER_TECH_NOTES.md](../TOWER_TECH_NOTES.md).
@@ -93,10 +105,10 @@ The five glyphs (`'cleanse' | 'quest' | 'battle' | 'banner' | 'reinforce'`) live
 ```typescript
 import { GLYPHS } from 'ultimatedarktower';
 
-GLYPHS.cleanse;   // { name: 'Cleanse',   level: 'top',    side: 'north' }
-GLYPHS.quest;     // { name: 'Quest',     level: 'top',    side: 'south' }
-GLYPHS.battle;    // { name: 'Battle',    level: 'middle', side: 'north' }
-GLYPHS.banner;    // { name: 'Banner',    level: 'bottom', side: 'north' }
+GLYPHS.cleanse; // { name: 'Cleanse',   level: 'top',    side: 'north' }
+GLYPHS.quest; // { name: 'Quest',     level: 'top',    side: 'south' }
+GLYPHS.battle; // { name: 'Battle',    level: 'middle', side: 'north' }
+GLYPHS.banner; // { name: 'Banner',    level: 'bottom', side: 'north' }
 GLYPHS.reinforce; // { name: 'Reinforce', level: 'bottom', side: 'south' }
 ```
 
@@ -144,8 +156,8 @@ The tower has **12 physical seal covers** — 4 sides × 3 levels. The firmware 
 
 ```typescript
 type SealIdentifier = {
-  side: TowerSide;       // 'north' | 'east' | 'south' | 'west'
-  level: TowerLevels;    // 'top' | 'middle' | 'bottom'
+  side: TowerSide; // 'north' | 'east' | 'south' | 'west'
+  level: TowerLevels; // 'top' | 'middle' | 'bottom'
 };
 ```
 
@@ -200,7 +212,7 @@ Clear all software seal state (no hardware command).
 const tower = new UltimateDarkTower({
   brokenSeals: [
     { side: 'north', level: 'top' },
-    { side: 'east',  level: 'middle' },
+    { side: 'east', level: 'middle' },
   ],
 });
 ```

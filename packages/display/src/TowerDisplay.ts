@@ -1,5 +1,11 @@
 import type { TowerState, SealIdentifier, TowerSide } from 'ultimatedarktower';
-import type { LightingConfig, ResolvedLightingConfig, CameraConfig, ApplyCameraConfigOptions, AudioConfig } from './3d/types';
+import type {
+  LightingConfig,
+  ResolvedLightingConfig,
+  CameraConfig,
+  ApplyCameraConfigOptions,
+  AudioConfig,
+} from './3d/types';
 import type { TowerDisplayOptions, ITowerDisplay, RendererType, AppliedTowerState } from './types';
 import type { SoundPack } from './audio/soundPack';
 import { TowerStateReadout } from './TowerStateReadout';
@@ -25,7 +31,11 @@ function normalizeRenderers(input?: RendererType | RendererType[]): RendererType
   return Array.isArray(input) ? input : [input];
 }
 
-function createRenderer(type: RendererType, container: HTMLElement, options: TowerDisplayOptions): ITowerDisplay {
+function createRenderer(
+  type: RendererType,
+  container: HTMLElement,
+  options: TowerDisplayOptions,
+): ITowerDisplay {
   switch (type) {
     case 'readout':
       return new TowerStateReadout(container);
@@ -35,8 +45,8 @@ function createRenderer(type: RendererType, container: HTMLElement, options: Tow
       if (!options.modelUrl) {
         throw new Error(
           "TowerDisplay: `modelUrl` is required when using the '3d-view' renderer. " +
-          "The package ships the model at `dist/3d/assets/tower.glb` — import it through " +
-          "your bundler or copy it to a static asset path and pass the URL via `modelUrl`."
+            'The package ships the model at `dist/3d/assets/tower.glb` — import it through ' +
+            'your bundler or copy it to a static asset path and pass the URL via `modelUrl`.',
         );
       }
       return new Tower3DView(container, {
@@ -330,7 +340,9 @@ export class TowerDisplay implements ITowerDisplay {
    * (`elevationFactor`, `targetHeightFactor`, `distanceFactor`). Returns
    * undefined when no 3D view is active.
    */
-  getLiveCameraFactors(): Pick<Required<CameraConfig>, 'elevationFactor' | 'targetHeightFactor' | 'distanceFactor'> | undefined {
+  getLiveCameraFactors():
+    | Pick<Required<CameraConfig>, 'elevationFactor' | 'targetHeightFactor' | 'distanceFactor'>
+    | undefined {
     return this.view3d?.getLiveCameraFactors();
   }
 
@@ -406,11 +418,14 @@ export class TowerDisplay implements ITowerDisplay {
    * {@link Tower3DView.playSample}. No-op (returns an inert handle) when the
    * display has no 3D renderer — audio only lives on the 3D view.
    */
-  playSample(
-    sample: number,
-    opts?: { loop?: boolean; volume?: number },
-  ): { stop: () => void } {
-    return this.view3d?.playSample(sample, opts) ?? { stop: () => { /* no-op */ } };
+  playSample(sample: number, opts?: { loop?: boolean; volume?: number }): { stop: () => void } {
+    return (
+      this.view3d?.playSample(sample, opts) ?? {
+        stop: () => {
+          /* no-op */
+        },
+      }
+    );
   }
 
   /**

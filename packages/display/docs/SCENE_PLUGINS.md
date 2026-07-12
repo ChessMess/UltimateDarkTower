@@ -48,13 +48,13 @@ A `ScenePlugin` is a plain object:
 
 ```ts
 interface ScenePlugin {
-  readonly id: string;                                  // diagnostics / de-dup
-  attach(ctx: ScenePluginContext): void;                // build your content here
-  onStateApplied?(state: TowerState): void;             // after every applyState
+  readonly id: string; // diagnostics / de-dup
+  attach(ctx: ScenePluginContext): void; // build your content here
+  onStateApplied?(state: TowerState): void; // after every applyState
   onSealsApplied?(brokenSeals: SealIdentifier[]): void; // when seals change
-  onModelLoaded?(info: ScenePluginModelInfo): void;     // GLB loaded (or already loaded)
-  update?(dtSeconds: number): void;                      // per-frame, dt in seconds
-  dispose(): void;                                       // free everything you added
+  onModelLoaded?(info: ScenePluginModelInfo): void; // GLB loaded (or already loaded)
+  update?(dtSeconds: number): void; // per-frame, dt in seconds
+  dispose(): void; // free everything you added
 }
 ```
 
@@ -74,16 +74,16 @@ interface ScenePluginContext {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
-  readonly modelRadius: number;     // live; defaults to 1 before load
-  readonly modelBottomY: number;    // live
-  readonly modelTopY: number;       // live
+  readonly modelRadius: number; // live; defaults to 1 before load
+  readonly modelBottomY: number; // live
+  readonly modelTopY: number; // live
   drumNode(level: 'top' | 'middle' | 'bottom'): THREE.Object3D | null;
   registerFrameCallback(cb: (dtSeconds: number) => void): () => void;
   onStateApplied(cb: (state: TowerState) => void): () => void;
   onSealsApplied(cb: (broken: SealIdentifier[]) => void): () => void;
   onModelLoaded(cb: (info: ScenePluginModelInfo) => void): () => void;
   registerPointerTarget(target: PointerTarget): () => void;
-  getSide(): TowerSide;                                   // 'north' before camera ready
+  getSide(): TowerSide; // 'north' before camera ready
   onSideChange(cb: (side: TowerSide) => void): () => void;
   isModelLoaded(): boolean;
 }
@@ -123,7 +123,11 @@ const base = anchorToWorld(anchor, view.view3D!);
 const { radius } = view.view3D!.getDiscMetrics();
 tokens.forEach((t, i) => {
   const a = (i / tokens.length) * Math.PI * 2;
-  t.position.set(base.x + Math.cos(a) * radius * 0.03, base.y, base.z + Math.sin(a) * radius * 0.03);
+  t.position.set(
+    base.x + Math.cos(a) * radius * 0.03,
+    base.y,
+    base.z + Math.sin(a) * radius * 0.03,
+  );
 });
 ```
 
@@ -145,14 +149,18 @@ By default, pointer drags orbit the camera. To make clicking your objects select
 
 ```ts
 ctx.registerPointerTarget({
-  objects: () => myTokenMeshes,   // array, or a getter for dynamic sets
-  priority: 10,                   // higher is tested first; outrank camera controls
+  objects: () => myTokenMeshes, // array, or a getter for dynamic sets
+  priority: 10, // higher is tested first; outrank camera controls
   onPointerDown(hit, ev) {
     selectToken(hit.object);
-    return true;                  // consume → camera does not orbit this gesture
+    return true; // consume → camera does not orbit this gesture
   },
-  onPointerMove(hit, ev) { /* hit is the nearest intersection or null */ },
-  onPointerUp(hit, ev) { return true; },
+  onPointerMove(hit, ev) {
+    /* hit is the nearest intersection or null */
+  },
+  onPointerUp(hit, ev) {
+    return true;
+  },
 });
 ```
 

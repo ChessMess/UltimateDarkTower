@@ -4,5 +4,4 @@
 // regenerates that file wholesale and would wipe a hand-added export.
 
 /** Bundled calibration-sweep recording. Played only during the calibration command. */
-export const CALIBRATION_SOUND_URL =
-  new URL('./assets/drumCalibration.ogg', import.meta.url).href;
+export const CALIBRATION_SOUND_URL = new URL('./assets/drumCalibration.ogg', import.meta.url).href;

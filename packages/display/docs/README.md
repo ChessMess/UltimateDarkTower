@@ -45,11 +45,13 @@ If you are a **hobbyist** with a Dark Tower and want it on screen with minimal c
 ## By role
 
 ### Hobbyist getting first pixels on screen
+
 1. [GETTING_STARTED](GETTING_STARTED.md) — prerequisites, install, what `TowerState` is, first render.
 2. [EXAMPLE](EXAMPLE.md) — guided tour of the demo and every control it exposes.
 3. [RENDERERS](RENDERERS.md) — pick the renderer that fits your app.
 
 ### Integrator embedding the renderer in a companion app
+
 1. [GETTING_STARTED](GETTING_STARTED.md) — covers framework integration sketches (vanilla, React, Vue).
 2. [ARCHITECTURE](ARCHITECTURE.md) — data flow, composition, lifecycle, subsystem map.
 3. [API](API.md) — full reference for every public class, method, and option.
@@ -57,39 +59,43 @@ If you are a **hobbyist** with a Dark Tower and want it on screen with minimal c
 5. [TROUBLESHOOTING](TROUBLESHOOTING.md) — common failure modes with fixes.
 
 ### 3D tuner styling the rendered scene
+
 1. [LIGHTING](LIGHTING.md) — three-point rig, bloom, skybox, ground disc, full default config.
 2. [API §Tower3DView](API.md#tower3dview) — lighting and camera config methods.
 3. [EXAMPLE §3D Options](EXAMPLE.md#panel-3d-options-lighting-and-scene) — what the demo's sliders do.
 
 ### Sequence author writing LED animations
+
 1. [SEQUENCE_AUTHORING](SEQUENCE_AUTHORING.md) — JSON schema, every track kind, examples.
 
 ### Physics add-on user
+
 1. [PHYSICS](PHYSICS.md) — quick start, parallel-collider model, tuning guide.
 2. [ARCHITECTURE §where physics plugs in](ARCHITECTURE.md#where-physics-plugs-in) — the `TowerPhysicsHooks` seam.
 
 ### Scene-plugin / content author
+
 1. [SCENE_PLUGINS](SCENE_PLUGINS.md) — the plugin lifecycle, context, disc positioning, pointer targets, UI docking, a minimal example.
 2. [ARCHITECTURE §scene plugins](ARCHITECTURE.md#scene-plugins-the-generalized-seam) — where the seam sits in the system.
 3. [API §Scene plugins](API.md#scene-plugins) — type-level reference.
 
 ## By topic
 
-| Doc | Audience | Type | Lines | What it covers |
-|---|---|---|---|---|
-| [GETTING_STARTED](GETTING_STARTED.md) | Hobbyist + integrator | Guide | ~280 | Prerequisites, install, `TowerState` shape, lifecycle, framework patterns, UDT wiring. |
-| [ARCHITECTURE](ARCHITECTURE.md) | Integrator + contributor | Guide | ~260 | Mental model, data flow, composition, lifecycle, subsystem map, extension points. |
-| [RENDERERS](RENDERERS.md) | Hobbyist + integrator | Reference | ~240 | Feature matrix, per-renderer deep dives, idle states, compat, bundle size. |
-| [EXAMPLE](EXAMPLE.md) | Hobbyist + integrator | Walkthrough | ~290 | Tour of `example/`, one section per toolbar panel, patterns to lift. |
-| [API](API.md) | Integrator | Reference | ~680 | Canonical reference for every public class, method, option, and type. |
-| [API_STYLE](API_STYLE.md) | Contributor | Standard | ~70 | The shared UDT-family API-doc standard every reference follows. |
-| [LIGHTING](LIGHTING.md) | 3D tuner | Reference | ~842 | Three-point rig, bloom, skybox, LEDs, animations, full default config, tuning recipes. |
-| [AUDIO](AUDIO.md) | Integrator + audio author | Guide | ~120 | `SoundPack` model, bundled official pack, custom packs, sequence binding, bundler compatibility. |
-| [PHYSICS](PHYSICS.md) | Physics user | Guide | ~236 | Skull physics MVP, opt-in subpath, config, tuning, verification checklist. |
-| [SCENE_PLUGINS](SCENE_PLUGINS.md) | Plugin author | Guide | ~170 | The scene-plugin seam: lifecycle, context, disc positioning, board hand-off, pointer targets, UI docking. |
-| [SEQUENCE_AUTHORING](SEQUENCE_AUTHORING.md) | Sequence author | Reference | ~653 | JSON schema, nine track kinds, examples, snapshot test integration. |
-| [ELECTRON](ELECTRON.md) | Electron integrator | Guide | ~182 | BrowserWindow setup, CSP, modelUrl, Web Bluetooth picker. |
-| [TROUBLESHOOTING](TROUBLESHOOTING.md) | All readers | FAQ | ~260 | Predictable failure modes: GLB load, Rapier WASM, BLE gestures, CSP, subpath resolution. |
+| Doc                                         | Audience                  | Type        | Lines | What it covers                                                                                            |
+| ------------------------------------------- | ------------------------- | ----------- | ----- | --------------------------------------------------------------------------------------------------------- |
+| [GETTING_STARTED](GETTING_STARTED.md)       | Hobbyist + integrator     | Guide       | ~280  | Prerequisites, install, `TowerState` shape, lifecycle, framework patterns, UDT wiring.                    |
+| [ARCHITECTURE](ARCHITECTURE.md)             | Integrator + contributor  | Guide       | ~260  | Mental model, data flow, composition, lifecycle, subsystem map, extension points.                         |
+| [RENDERERS](RENDERERS.md)                   | Hobbyist + integrator     | Reference   | ~240  | Feature matrix, per-renderer deep dives, idle states, compat, bundle size.                                |
+| [EXAMPLE](EXAMPLE.md)                       | Hobbyist + integrator     | Walkthrough | ~290  | Tour of `example/`, one section per toolbar panel, patterns to lift.                                      |
+| [API](API.md)                               | Integrator                | Reference   | ~680  | Canonical reference for every public class, method, option, and type.                                     |
+| [API_STYLE](API_STYLE.md)                   | Contributor               | Standard    | ~70   | The shared UDT-family API-doc standard every reference follows.                                           |
+| [LIGHTING](LIGHTING.md)                     | 3D tuner                  | Reference   | ~842  | Three-point rig, bloom, skybox, LEDs, animations, full default config, tuning recipes.                    |
+| [AUDIO](AUDIO.md)                           | Integrator + audio author | Guide       | ~120  | `SoundPack` model, bundled official pack, custom packs, sequence binding, bundler compatibility.          |
+| [PHYSICS](PHYSICS.md)                       | Physics user              | Guide       | ~236  | Skull physics MVP, opt-in subpath, config, tuning, verification checklist.                                |
+| [SCENE_PLUGINS](SCENE_PLUGINS.md)           | Plugin author             | Guide       | ~170  | The scene-plugin seam: lifecycle, context, disc positioning, board hand-off, pointer targets, UI docking. |
+| [SEQUENCE_AUTHORING](SEQUENCE_AUTHORING.md) | Sequence author           | Reference   | ~653  | JSON schema, nine track kinds, examples, snapshot test integration.                                       |
+| [ELECTRON](ELECTRON.md)                     | Electron integrator       | Guide       | ~182  | BrowserWindow setup, CSP, modelUrl, Web Bluetooth picker.                                                 |
+| [TROUBLESHOOTING](TROUBLESHOOTING.md)       | All readers               | FAQ         | ~260  | Predictable failure modes: GLB load, Rapier WASM, BLE gestures, CSP, subpath resolution.                  |
 
 ## Glossary
 

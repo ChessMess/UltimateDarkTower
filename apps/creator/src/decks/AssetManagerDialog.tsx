@@ -93,7 +93,12 @@ export function AssetManagerDialog({ doc, images, onSetImage, onClose }: AssetMa
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
           <strong style={{ fontSize: 14 }}>Images</strong>
           <span style={{ flex: 1 }} />
-          <span style={{ fontSize: 11, color: total > IMAGE_BUDGET_BYTES ? 'var(--c-danger)' : 'var(--c-text-muted)' }}>
+          <span
+            style={{
+              fontSize: 11,
+              color: total > IMAGE_BUDGET_BYTES ? 'var(--c-danger)' : 'var(--c-text-muted)',
+            }}
+          >
             {kb(total)} / ~{Math.round(IMAGE_BUDGET_BYTES / 1_000_000)} MB
           </span>
         </div>
@@ -112,14 +117,19 @@ export function AssetManagerDialog({ doc, images, onSetImage, onClose }: AssetMa
         <div style={{ maxHeight: 320, overflowY: 'auto', margin: '10px 0' }}>
           {ids.length === 0 && (
             <div style={{ fontSize: 12, color: 'var(--c-text-faint)', padding: 8 }}>
-              No images yet. Upload a PNG/JPG — it lands as a compact WebP data URL embedded in the scenario.
+              No images yet. Upload a PNG/JPG — it lands as a compact WebP data URL embedded in the
+              scenario.
             </div>
           )}
           {ids.map((id) => {
             const uses = countUsage(doc, id);
             return (
               <div key={id} style={imageRow}>
-                <img src={images[id]} alt={id} style={{ width: 40, height: 56, objectFit: 'cover', borderRadius: 4 }} />
+                <img
+                  src={images[id]}
+                  alt={id}
+                  style={{ width: 40, height: 56, objectFit: 'cover', borderRadius: 4 }}
+                />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {renaming === id ? (
                     <div style={{ display: 'flex', gap: 4 }}>
@@ -130,12 +140,24 @@ export function AssetManagerDialog({ doc, images, onSetImage, onClose }: AssetMa
                         placeholder="new-id"
                         style={renameInput}
                       />
-                      <button style={smallBtn} onClick={() => doRename(id)}>Save</button>
-                      <button style={smallBtn} onClick={() => setRenaming(null)}>✕</button>
+                      <button style={smallBtn} onClick={() => doRename(id)}>
+                        Save
+                      </button>
+                      <button style={smallBtn} onClick={() => setRenaming(null)}>
+                        ✕
+                      </button>
                     </div>
                   ) : (
                     <>
-                      <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         {id}
                       </div>
                       <div style={{ fontSize: 10, color: 'var(--c-text-muted)' }}>
@@ -146,10 +168,19 @@ export function AssetManagerDialog({ doc, images, onSetImage, onClose }: AssetMa
                 </div>
                 {renaming !== id && (
                   <>
-                    <button style={smallBtn} onClick={() => { setRenaming(id); setRenameTo(id); setError(null); }}>
+                    <button
+                      style={smallBtn}
+                      onClick={() => {
+                        setRenaming(id);
+                        setRenameTo(id);
+                        setError(null);
+                      }}
+                    >
                       Rename
                     </button>
-                    <button style={dangerBtn} onClick={() => doDelete(id)}>Delete</button>
+                    <button style={dangerBtn} onClick={() => doDelete(id)}>
+                      Delete
+                    </button>
                   </>
                 )}
               </div>
@@ -157,7 +188,9 @@ export function AssetManagerDialog({ doc, images, onSetImage, onClose }: AssetMa
           })}
         </div>
 
-        {error && <div style={{ color: 'var(--c-danger)', fontSize: 11, marginBottom: 8 }}>{error}</div>}
+        {error && (
+          <div style={{ color: 'var(--c-danger)', fontSize: 11, marginBottom: 8 }}>{error}</div>
+        )}
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button style={primaryBtn} disabled={busy} onClick={() => fileRef.current?.click()}>
@@ -171,7 +204,9 @@ export function AssetManagerDialog({ doc, images, onSetImage, onClose }: AssetMa
             onChange={onUpload}
           />
           <span style={{ flex: 1 }} />
-          <button style={smallBtn} onClick={onClose}>Close</button>
+          <button style={smallBtn} onClick={onClose}>
+            Close
+          </button>
         </div>
       </div>
 
@@ -180,8 +215,8 @@ export function AssetManagerDialog({ doc, images, onSetImage, onClose }: AssetMa
           title="Delete image?"
           message={
             <>
-              <strong>{pendingDeleteId}</strong> is referenced {countUsage(doc, pendingDeleteId)} time(s). Those
-              refs will show a placeholder. This cannot be undone.
+              <strong>{pendingDeleteId}</strong> is referenced {countUsage(doc, pendingDeleteId)}{' '}
+              time(s). Those refs will show a placeholder. This cannot be undone.
             </>
           }
           onConfirm={() => {

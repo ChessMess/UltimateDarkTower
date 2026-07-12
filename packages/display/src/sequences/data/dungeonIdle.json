@@ -5,16 +5,29 @@
   "loop": true,
   "endBehavior": "hold",
   "tracks": [
-    { "_comment": "Layer 3 cleared each tick (steady at 0).",
-      "kind": "solid", "atTick": 0,
-      "layers": [3], "lights": "all", "level": 0 },
-    { "_comment": "Steady warm glow on base layers.",
-      "kind": "solid", "atTick": 0,
-      "layers": [4, 5], "lights": "all", "levelPwm": 70 },
-    { "_comment": "Top ring flickers, layer-major-light-minor.",
+    {
+      "_comment": "Layer 3 cleared each tick (steady at 0).",
+      "kind": "solid",
+      "atTick": 0,
+      "layers": [3],
+      "lights": "all",
+      "level": 0
+    },
+    {
+      "_comment": "Steady warm glow on base layers.",
+      "kind": "solid",
+      "atTick": 0,
+      "layers": [4, 5],
+      "lights": "all",
+      "levelPwm": 70
+    },
+    {
+      "_comment": "Top ring flickers, layer-major-light-minor.",
       "kind": "flickerStep",
-      "atTick": 0, "endTick": 1,
-      "layers": [0], "lights": "all",
+      "atTick": 0,
+      "endTick": 1,
+      "layers": [0],
+      "lights": "all",
       "alpha": 0.15
     }
   ]

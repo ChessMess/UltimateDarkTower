@@ -15,7 +15,11 @@
     "skipLibCheck": true,
     "strict": true
   },
-  "references": [{ "path": "../../packages/relay-core" }, { "path": "../../packages/relay-client" }, { "path": "../../packages/relay-shared" }],
+  "references": [
+    { "path": "../../packages/relay-core" },
+    { "path": "../../packages/relay-client" },
+    { "path": "../../packages/relay-shared" }
+  ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
 }

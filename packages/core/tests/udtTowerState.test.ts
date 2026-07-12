@@ -3,11 +3,7 @@
  * These functions handle binary serialization/deserialization of tower state
  */
 
-import {
-  rtdt_pack_state,
-  rtdt_unpack_state,
-  type TowerState,
-} from '../src/udtTowerState';
+import { rtdt_pack_state, rtdt_unpack_state, type TowerState } from '../src/udtTowerState';
 import { STATE_DATA_LENGTH } from '../src/udtConstants';
 import { createDefaultTowerState } from '../src/udtHelpers';
 import testData from './tower-state-test-data.json';
@@ -34,7 +30,9 @@ describe('Pack/Unpack Functions', () => {
     // Compare layers
     for (let layer = 0; layer < 6; layer++) {
       for (let light = 0; light < 4; light++) {
-        expect(actual.layer[layer].light[light].effect).toBe(expected.layer[layer].light[light].effect);
+        expect(actual.layer[layer].light[light].effect).toBe(
+          expected.layer[layer].light[light].effect,
+        );
         expect(actual.layer[layer].light[light].loop).toBe(expected.layer[layer].light[light].loop);
       }
     }
@@ -60,14 +58,14 @@ describe('Pack/Unpack Functions', () => {
   describe('Round-trip Testing', () => {
     test.each(testData as TestCase[])('$id: $description', (testCase) => {
       const buffer = createBuffer();
-      
+
       // Pack the state
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, testCase.tower_state_test);
       expect(packResult).toBe(true);
-      
+
       // Unpack the state
       const unpackedState = rtdt_unpack_state(buffer);
-      
+
       // Compare with expected result (use tower_state_expected if provided, otherwise use original)
       const expectedState = testCase.tower_state_expected || testCase.tower_state_test;
       compareTowerStates(unpackedState, expectedState);
@@ -78,10 +76,10 @@ describe('Pack/Unpack Functions', () => {
     test('should handle default tower state correctly', () => {
       const defaultState = createDefaultTowerState();
       const buffer = createBuffer();
-      
+
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, defaultState);
       expect(packResult).toBe(true);
-      
+
       const unpackedState = rtdt_unpack_state(buffer);
       compareTowerStates(unpackedState, defaultState);
     });
@@ -89,9 +87,9 @@ describe('Pack/Unpack Functions', () => {
     test('should create buffer with all zeros for default state', () => {
       const defaultState = createDefaultTowerState();
       const buffer = createBuffer();
-      
+
       rtdt_pack_state(buffer, STATE_DATA_LENGTH, defaultState);
-      
+
       // All bytes should be zero for default state
       for (let i = 0; i < STATE_DATA_LENGTH; i++) {
         expect(buffer[i]).toBe(0);
@@ -116,11 +114,11 @@ describe('Pack/Unpack Functions', () => {
     ])('should handle drum $drumIndex at position $position', ({ drumIndex, position }) => {
       const state = createDefaultTowerState();
       state.drum[drumIndex].position = position;
-      
+
       const buffer = createBuffer();
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
       expect(packResult).toBe(true);
-      
+
       const unpackedState = rtdt_unpack_state(buffer);
       expect(unpackedState.drum[drumIndex].position).toBe(position);
     });
@@ -140,11 +138,11 @@ describe('Pack/Unpack Functions', () => {
     ])('should handle drum $drumIndex $property = true', ({ drumIndex, property }) => {
       const state = createDefaultTowerState();
       state.drum[drumIndex][property] = true;
-      
+
       const buffer = createBuffer();
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
       expect(packResult).toBe(true);
-      
+
       const unpackedState = rtdt_unpack_state(buffer);
       expect(unpackedState.drum[drumIndex][property]).toBe(true);
     });
@@ -179,11 +177,11 @@ describe('Pack/Unpack Functions', () => {
     ])('should handle layer $layer light $light effect $effect', ({ layer, light, effect }) => {
       const state = createDefaultTowerState();
       state.layer[layer].light[light].effect = effect;
-      
+
       const buffer = createBuffer();
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
       expect(packResult).toBe(true);
-      
+
       const unpackedState = rtdt_unpack_state(buffer);
       expect(unpackedState.layer[layer].light[light].effect).toBe(effect);
     });
@@ -219,11 +217,11 @@ describe('Pack/Unpack Functions', () => {
       const state = createDefaultTowerState();
       state.layer[layer].light[light].effect = 3; // Set a non-zero effect
       state.layer[layer].light[light].loop = true;
-      
+
       const buffer = createBuffer();
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
       expect(packResult).toBe(true);
-      
+
       const unpackedState = rtdt_unpack_state(buffer);
       expect(unpackedState.layer[layer].light[light].loop).toBe(true);
       expect(unpackedState.layer[layer].light[light].effect).toBe(3);
@@ -244,11 +242,11 @@ describe('Pack/Unpack Functions', () => {
     ])('should handle audio $property = $value', ({ property, value }) => {
       const state = createDefaultTowerState();
       state.audio[property] = value;
-      
+
       const buffer = createBuffer();
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
       expect(packResult).toBe(true);
-      
+
       const unpackedState = rtdt_unpack_state(buffer);
       expect(unpackedState.audio[property]).toBe(value);
     });
@@ -257,11 +255,11 @@ describe('Pack/Unpack Functions', () => {
       const state = createDefaultTowerState();
       state.audio.loop = true;
       state.audio.sample = 50; // Set a sample to make it meaningful
-      
+
       const buffer = createBuffer();
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
       expect(packResult).toBe(true);
-      
+
       const unpackedState = rtdt_unpack_state(buffer);
       expect(unpackedState.audio.loop).toBe(true);
       expect(unpackedState.audio.sample).toBe(50);
@@ -269,26 +267,27 @@ describe('Pack/Unpack Functions', () => {
   });
 
   describe('LED Sequence Testing', () => {
-    test.each([
-      0, 1, 50, 100, 128, 200, 255
-    ])('should handle led_sequence = %i', (sequenceValue) => {
-      const state = createDefaultTowerState();
-      state.led_sequence = sequenceValue;
-      
-      const buffer = createBuffer();
-      const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
-      expect(packResult).toBe(true);
-      
-      const unpackedState = rtdt_unpack_state(buffer);
-      expect(unpackedState.led_sequence).toBe(sequenceValue);
-    });
+    test.each([0, 1, 50, 100, 128, 200, 255])(
+      'should handle led_sequence = %i',
+      (sequenceValue) => {
+        const state = createDefaultTowerState();
+        state.led_sequence = sequenceValue;
+
+        const buffer = createBuffer();
+        const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
+        expect(packResult).toBe(true);
+
+        const unpackedState = rtdt_unpack_state(buffer);
+        expect(unpackedState.led_sequence).toBe(sequenceValue);
+      },
+    );
   });
 
   describe('Error Condition Testing', () => {
     test('should return false when buffer is too small', () => {
       const state = createDefaultTowerState();
       const smallBuffer = new Uint8Array(STATE_DATA_LENGTH - 1);
-      
+
       const packResult = rtdt_pack_state(smallBuffer, smallBuffer.length, state);
       expect(packResult).toBe(false);
     });
@@ -296,7 +295,7 @@ describe('Pack/Unpack Functions', () => {
     test('should return false when length parameter is too small', () => {
       const state = createDefaultTowerState();
       const buffer = createBuffer();
-      
+
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH - 1, state);
       expect(packResult).toBe(false);
     });
@@ -304,10 +303,10 @@ describe('Pack/Unpack Functions', () => {
     test('should handle empty buffer correctly', () => {
       const emptyBuffer = new Uint8Array(STATE_DATA_LENGTH);
       emptyBuffer.fill(0);
-      
+
       const unpackedState = rtdt_unpack_state(emptyBuffer);
       const expectedState = createDefaultTowerState();
-      
+
       compareTowerStates(unpackedState, expectedState);
     });
   });
@@ -315,7 +314,7 @@ describe('Pack/Unpack Functions', () => {
   describe('Boundary Value Testing', () => {
     test('should handle all maximum values correctly', () => {
       const state = createDefaultTowerState();
-      
+
       // Set all drums to maximum values
       for (let i = 0; i < 3; i++) {
         state.drum[i].position = 3;
@@ -324,7 +323,7 @@ describe('Pack/Unpack Functions', () => {
         state.drum[i].playSound = true;
         // Note: reverse excluded per user request
       }
-      
+
       // Set all lights to maximum effect with loop
       for (let layer = 0; layer < 6; layer++) {
         for (let light = 0; light < 4; light++) {
@@ -332,26 +331,26 @@ describe('Pack/Unpack Functions', () => {
           state.layer[layer].light[light].loop = true;
         }
       }
-      
+
       // Set audio to maximum values
       state.audio.sample = 127;
       state.audio.loop = true;
       state.audio.volume = 15;
-      
+
       // Set LED sequence to maximum
       state.led_sequence = 255;
-      
+
       const buffer = createBuffer();
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
       expect(packResult).toBe(true);
-      
+
       const unpackedState = rtdt_unpack_state(buffer);
       compareTowerStates(unpackedState, state);
     });
 
     test('should handle mixed maximum and minimum values', () => {
       const state = createDefaultTowerState();
-      
+
       // Mix of max and min values
       state.drum[0].position = 3;
       state.drum[0].jammed = true;
@@ -359,7 +358,7 @@ describe('Pack/Unpack Functions', () => {
       state.drum[1].calibrated = true;
       state.drum[2].position = 2;
       state.drum[2].playSound = true;
-      
+
       // Some lights at max, some at zero
       state.layer[0].light[0].effect = 7;
       state.layer[0].light[0].loop = true;
@@ -367,17 +366,17 @@ describe('Pack/Unpack Functions', () => {
       state.layer[1].light[1].loop = false;
       state.layer[2].light[2].effect = 4;
       state.layer[2].light[2].loop = true;
-      
+
       state.audio.sample = 127;
       state.audio.volume = 0;
       state.audio.loop = true;
-      
+
       state.led_sequence = 128;
-      
+
       const buffer = createBuffer();
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
       expect(packResult).toBe(true);
-      
+
       const unpackedState = rtdt_unpack_state(buffer);
       compareTowerStates(unpackedState, state);
     });
@@ -386,15 +385,15 @@ describe('Pack/Unpack Functions', () => {
   describe('Bit Precision Testing', () => {
     test('should preserve exact bit patterns for drum positions', () => {
       const state = createDefaultTowerState();
-      
+
       // Test all possible 2-bit position values
       state.drum[0].position = 0b00; // 0
       state.drum[1].position = 0b01; // 1
       state.drum[2].position = 0b10; // 2
-      
+
       const buffer = createBuffer();
       rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
-      
+
       // Check actual bit patterns in buffer
       // Drum 0 position is bits 1-2 of byte 0
       expect((buffer[0] & 0b00000110) >> 1).toBe(0);
@@ -406,14 +405,14 @@ describe('Pack/Unpack Functions', () => {
 
     test('should preserve exact bit patterns for light effects', () => {
       const state = createDefaultTowerState();
-      
+
       // Test 3-bit effect values
       state.layer[0].light[0].effect = 0b101; // 5
       state.layer[0].light[1].effect = 0b011; // 3
-      
+
       const buffer = createBuffer();
       rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
-      
+
       // Check actual bit patterns in buffer
       // Layer 0 light 0 effect is bits 5-7 of byte 2
       expect((buffer[2] & 0b11100000) >> 5).toBe(5);
@@ -423,14 +422,14 @@ describe('Pack/Unpack Functions', () => {
 
     test('should preserve exact bit patterns for audio fields', () => {
       const state = createDefaultTowerState();
-      
+
       state.audio.sample = 0b1010101; // 85
       state.audio.loop = true;
       state.audio.volume = 0b1100; // 12
-      
+
       const buffer = createBuffer();
       rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
-      
+
       // Check actual bit patterns in buffer
       // Audio sample is bits 0-6 of byte 14, loop is bit 7
       expect(buffer[14] & 0b01111111).toBe(85);
@@ -443,7 +442,7 @@ describe('Pack/Unpack Functions', () => {
   describe('Complex State Integration Testing', () => {
     test('should handle complex multi-element states correctly', () => {
       const state = createDefaultTowerState();
-      
+
       // Complex drum configuration
       state.drum[0].position = 2;
       state.drum[0].jammed = true;
@@ -452,7 +451,7 @@ describe('Pack/Unpack Functions', () => {
       state.drum[1].playSound = true;
       state.drum[2].position = 3;
       state.drum[2].calibrated = true;
-      
+
       // Complex light configuration
       state.layer[0].light[0].effect = 3;
       state.layer[0].light[0].loop = true;
@@ -463,19 +462,19 @@ describe('Pack/Unpack Functions', () => {
       state.layer[4].light[0].effect = 4;
       state.layer[4].light[0].loop = true;
       state.layer[5].light[2].effect = 6;
-      
+
       // Complex audio configuration
       state.audio.sample = 99;
       state.audio.loop = true;
       state.audio.volume = 11;
-      
+
       // LED sequence
       state.led_sequence = 177;
-      
+
       const buffer = createBuffer();
       const packResult = rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
       expect(packResult).toBe(true);
-      
+
       const unpackedState = rtdt_unpack_state(buffer);
       compareTowerStates(unpackedState, state);
     });
@@ -485,13 +484,13 @@ describe('Pack/Unpack Functions', () => {
     test('should clear buffer before packing', () => {
       const state = createDefaultTowerState();
       const buffer = createBuffer();
-      
+
       // Fill buffer with non-zero values
-      buffer.fill(0xFF);
-      
+      buffer.fill(0xff);
+
       // Pack default state (should clear buffer)
       rtdt_pack_state(buffer, STATE_DATA_LENGTH, state);
-      
+
       // All bytes should be zero for default state
       for (let i = 0; i < STATE_DATA_LENGTH; i++) {
         expect(buffer[i]).toBe(0);
@@ -501,19 +500,19 @@ describe('Pack/Unpack Functions', () => {
     test('should respect buffer length parameter', () => {
       const state = createDefaultTowerState();
       const largerBuffer = new Uint8Array(STATE_DATA_LENGTH + 10);
-      largerBuffer.fill(0xFF);
-      
+      largerBuffer.fill(0xff);
+
       // Pack with exact length
       const packResult = rtdt_pack_state(largerBuffer, STATE_DATA_LENGTH, state);
       expect(packResult).toBe(true);
-      
+
       // Only the first STATE_DATA_LENGTH bytes should be cleared
       for (let i = 0; i < STATE_DATA_LENGTH; i++) {
         expect(largerBuffer[i]).toBe(0);
       }
       // Remaining bytes should be unchanged
       for (let i = STATE_DATA_LENGTH; i < largerBuffer.length; i++) {
-        expect(largerBuffer[i]).toBe(0xFF);
+        expect(largerBuffer[i]).toBe(0xff);
       }
     });
   });

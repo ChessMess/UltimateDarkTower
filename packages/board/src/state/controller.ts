@@ -49,7 +49,11 @@ export class BoardStateController {
   /** Wholesale-set the held state (bypasses the reducer) and emit `change`. The commit path in both modes. */
   applyState(next: BoardState): void {
     this.state = next;
-    this.events.emit({ type: 'change', state: next, command: { type: 'replaceState', state: next } });
+    this.events.emit({
+      type: 'change',
+      state: next,
+      command: { type: 'replaceState', state: next },
+    });
   }
 
   /**
@@ -85,7 +89,7 @@ export class BoardStateController {
   /** Subscribe to a single event type. Returns an unsubscribe function. */
   on<T extends BoardEventType>(
     type: T,
-    listener: (event: Extract<BoardEvent, { type: T }>) => void
+    listener: (event: Extract<BoardEvent, { type: T }>) => void,
   ): () => void {
     return this.subscribe((event) => {
       if (event.type === type) {
@@ -186,7 +190,7 @@ export class BoardStateController {
 function deriveSpecificEvents(
   command: BoardCommand,
   prev: BoardState,
-  next: BoardState
+  next: BoardState,
 ): BoardEvent[] {
   switch (command.type) {
     case 'placeHero':
@@ -234,7 +238,11 @@ function deriveSpecificEvents(
     case 'restoreBuilding':
     case 'setMonument':
       return [
-        { type: 'buildingChanged', location: command.location, building: next.buildings[command.location] },
+        {
+          type: 'buildingChanged',
+          location: command.location,
+          building: next.buildings[command.location],
+        },
       ];
 
     case 'setSpaceMarker':

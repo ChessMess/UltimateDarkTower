@@ -104,13 +104,13 @@ export function scaffoldScenario(input: ScaffoldInput): ScenarioDoc {
     graph: {
       entry: 'n-start',
       nodes: [
-        { id: 'n-start',        kind: 'lifecycle.gameStart',    wires: { out: ['n-board-setup'] } },
-        { id: 'n-board-setup',  kind: 'lifecycle.boardSetup',   wires: { out: ['n-start-month'] } },
-        { id: 'n-start-month',  kind: 'lifecycle.startMonth',   wires: { out: ['n-player-turn'] } },
-        { id: 'n-player-turn',  kind: 'lifecycle.playerTurn',   wires: { out: ['n-action-start'] } },
-        { id: 'n-action-start', kind: 'lifecycle.actionStart',  wires: { out: ['n-action-mid'] } },
-        { id: 'n-action-mid',   kind: 'lifecycle.actionMiddle', wires: { out: ['n-action-end'] } },
-        { id: 'n-action-end',   kind: 'lifecycle.actionEnd',    wires: { out: ['n-month-check'] } },
+        { id: 'n-start', kind: 'lifecycle.gameStart', wires: { out: ['n-board-setup'] } },
+        { id: 'n-board-setup', kind: 'lifecycle.boardSetup', wires: { out: ['n-start-month'] } },
+        { id: 'n-start-month', kind: 'lifecycle.startMonth', wires: { out: ['n-player-turn'] } },
+        { id: 'n-player-turn', kind: 'lifecycle.playerTurn', wires: { out: ['n-action-start'] } },
+        { id: 'n-action-start', kind: 'lifecycle.actionStart', wires: { out: ['n-action-mid'] } },
+        { id: 'n-action-mid', kind: 'lifecycle.actionMiddle', wires: { out: ['n-action-end'] } },
+        { id: 'n-action-end', kind: 'lifecycle.actionEnd', wires: { out: ['n-month-check'] } },
         {
           id: 'n-month-check',
           kind: 'lifecycle.newMonthCheck',

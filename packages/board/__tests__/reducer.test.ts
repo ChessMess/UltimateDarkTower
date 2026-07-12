@@ -97,7 +97,10 @@ describe('reducer — foes', () => {
 
 describe('reducer — adversary', () => {
   it('select, place, then clear', () => {
-    let s = applyBoardCommand(createDefaultBoardState(), { type: 'selectAdversary', id: 'utuk-ku' });
+    let s = applyBoardCommand(createDefaultBoardState(), {
+      type: 'selectAdversary',
+      id: 'utuk-ku',
+    });
     expect(s.adversary).toEqual({ id: 'utuk-ku' });
     s = applyBoardCommand(s, { type: 'placeAdversary', location: BUILDING });
     expect(s.adversary).toEqual({ id: 'utuk-ku', location: BUILDING });
@@ -108,20 +111,32 @@ describe('reducer — adversary', () => {
 
 describe('reducer — buildings (no rule enforcement)', () => {
   it('addSkull defaults to 1 and does NOT clamp (3 -> 4 stays 4)', () => {
-    let s = applyBoardCommand(createDefaultBoardState(), { type: 'setSkulls', location: BUILDING, n: 3 });
+    let s = applyBoardCommand(createDefaultBoardState(), {
+      type: 'setSkulls',
+      location: BUILDING,
+      n: 3,
+    });
     s = applyBoardCommand(s, { type: 'addSkull', location: BUILDING });
     expect(s.buildings[BUILDING].skulls).toBe(4);
   });
 
   it('removeSkull floors at 0; setSkulls writes exactly (incl. > 3)', () => {
-    let s = applyBoardCommand(createDefaultBoardState(), { type: 'removeSkull', location: BUILDING, n: 5 });
+    let s = applyBoardCommand(createDefaultBoardState(), {
+      type: 'removeSkull',
+      location: BUILDING,
+      n: 5,
+    });
     expect(s.buildings[BUILDING].skulls).toBe(0);
     s = applyBoardCommand(s, { type: 'setSkulls', location: BUILDING, n: 7 });
     expect(s.buildings[BUILDING].skulls).toBe(7);
   });
 
   it('destroy/restore toggle the flag and leave skulls untouched', () => {
-    let s = applyBoardCommand(createDefaultBoardState(), { type: 'setSkulls', location: BUILDING, n: 2 });
+    let s = applyBoardCommand(createDefaultBoardState(), {
+      type: 'setSkulls',
+      location: BUILDING,
+      n: 2,
+    });
     s = applyBoardCommand(s, { type: 'destroyBuilding', location: BUILDING });
     expect(s.buildings[BUILDING]).toMatchObject({ skulls: 2, destroyed: true });
     s = applyBoardCommand(s, { type: 'restoreBuilding', location: BUILDING });
@@ -162,14 +177,34 @@ describe('reducer — space markers', () => {
     });
     expect(s.spaceMarkers[GENERIC]).toEqual(['wasteland']);
 
-    s = applyBoardCommand(s, { type: 'setSpaceMarker', location: GENERIC, marker: 'wasteland', on: true });
+    s = applyBoardCommand(s, {
+      type: 'setSpaceMarker',
+      location: GENERIC,
+      marker: 'wasteland',
+      on: true,
+    });
     expect(s.spaceMarkers[GENERIC]).toEqual(['wasteland']); // deduped
 
-    s = applyBoardCommand(s, { type: 'setSpaceMarker', location: GENERIC, marker: 'power-skull', on: true });
+    s = applyBoardCommand(s, {
+      type: 'setSpaceMarker',
+      location: GENERIC,
+      marker: 'power-skull',
+      on: true,
+    });
     expect(s.spaceMarkers[GENERIC]).toEqual(['wasteland', 'power-skull']);
 
-    s = applyBoardCommand(s, { type: 'setSpaceMarker', location: GENERIC, marker: 'wasteland', on: false });
-    s = applyBoardCommand(s, { type: 'setSpaceMarker', location: GENERIC, marker: 'power-skull', on: false });
+    s = applyBoardCommand(s, {
+      type: 'setSpaceMarker',
+      location: GENERIC,
+      marker: 'wasteland',
+      on: false,
+    });
+    s = applyBoardCommand(s, {
+      type: 'setSpaceMarker',
+      location: GENERIC,
+      marker: 'power-skull',
+      on: false,
+    });
     expect(GENERIC in s.spaceMarkers).toBe(false); // key removed
   });
 });
@@ -184,14 +219,34 @@ describe('reducer — quest markers', () => {
     });
     expect(s.questMarkers[GENERIC]).toEqual(['main-goal']);
 
-    s = applyBoardCommand(s, { type: 'setQuestMarker', location: GENERIC, marker: 'main-goal', on: true });
+    s = applyBoardCommand(s, {
+      type: 'setQuestMarker',
+      location: GENERIC,
+      marker: 'main-goal',
+      on: true,
+    });
     expect(s.questMarkers[GENERIC]).toEqual(['main-goal']); // deduped
 
-    s = applyBoardCommand(s, { type: 'setQuestMarker', location: GENERIC, marker: 'guild-quest', on: true });
+    s = applyBoardCommand(s, {
+      type: 'setQuestMarker',
+      location: GENERIC,
+      marker: 'guild-quest',
+      on: true,
+    });
     expect(s.questMarkers[GENERIC]).toEqual(['main-goal', 'guild-quest']);
 
-    s = applyBoardCommand(s, { type: 'setQuestMarker', location: GENERIC, marker: 'main-goal', on: false });
-    s = applyBoardCommand(s, { type: 'setQuestMarker', location: GENERIC, marker: 'guild-quest', on: false });
+    s = applyBoardCommand(s, {
+      type: 'setQuestMarker',
+      location: GENERIC,
+      marker: 'main-goal',
+      on: false,
+    });
+    s = applyBoardCommand(s, {
+      type: 'setQuestMarker',
+      location: GENERIC,
+      marker: 'guild-quest',
+      on: false,
+    });
     expect(GENERIC in s.questMarkers).toBe(false); // key removed
   });
 });
@@ -214,9 +269,9 @@ describe('reducer — selections / replace / reset', () => {
       spaceMarkers: {},
       questMarkers: {},
     };
-    expect(applyBoardCommand(createDefaultBoardState(), { type: 'replaceState', state: replacement })).toBe(
-      replacement
-    );
+    expect(
+      applyBoardCommand(createDefaultBoardState(), { type: 'replaceState', state: replacement }),
+    ).toBe(replacement);
 
     const reset = applyBoardCommand(replacement, { type: 'reset' });
     expect(reset).toEqual(createDefaultBoardState());

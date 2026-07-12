@@ -112,7 +112,7 @@ export function mountBoardUI(host: HTMLElement, options: BoardUIOptions): BoardU
   const makeAndRegister = (
     id: PanelId,
     title: string,
-    build: (body: HTMLElement) => void
+    build: (body: HTMLElement) => void,
   ): void => {
     // Panels are always built; `false` starts them hidden so `setPanelVisible` can reveal them.
     const config = options.panels?.[id];
@@ -124,11 +124,9 @@ export function mountBoardUI(host: HTMLElement, options: BoardUIOptions): BoardU
   };
 
   makeAndRegister('palette', 'Palette', (body) =>
-    buildPalette(body, controller, locationPick, rosters, genId)
+    buildPalette(body, controller, locationPick, rosters, genId),
   );
-  makeAndRegister('inspector', 'Inspector', (body) =>
-    buildInspector(body, controller, selection)
-  );
+  makeAndRegister('inspector', 'Inspector', (body) => buildInspector(body, controller, selection));
   makeAndRegister('summary', 'Summary', (body) => buildSummary(body, controller));
 
   host.appendChild(root);
@@ -177,7 +175,7 @@ function makePanel(
   title: string,
   placement: PanelPlacement | undefined,
   floating: boolean,
-  cascadeIndex: number
+  cascadeIndex: number,
 ): PanelHost {
   const panel = document.createElement('div');
   panel.className = 'udt-panel';
@@ -229,7 +227,7 @@ function makePanel(
 function applyPlacement(
   panel: HTMLElement,
   placement: PanelPlacement | undefined,
-  cascadeIndex: number
+  cascadeIndex: number,
 ): void {
   if (placement && (placement.x != null || placement.y != null)) {
     panel.style.left = `${placement.x ?? 12}px`;
@@ -279,7 +277,7 @@ function buildPalette(
   controller: BoardStateController,
   locationPick: LocationPickStore | undefined,
   rosters: BoardUIRosters,
-  genId: (kind: 'foe', state: BoardState) => string
+  genId: (kind: 'foe', state: BoardState) => string,
 ): void {
   const kindSelect = makeSelect(
     [
@@ -291,33 +289,33 @@ function buildPalette(
       { value: 'skull', label: 'Skull' },
       { value: 'monument', label: 'Monument' },
     ],
-    'udt-palette-kind'
+    'udt-palette-kind',
   );
 
   // Per-kind detail controls (shown/hidden by the kind selector).
   const heroSelect = makeSelect(
     rosters.heroes.map((h) => ({ value: h.id, label: h.name })),
-    'udt-palette-hero'
+    'udt-palette-hero',
   );
   const heroRow = fieldRow('Hero', heroSelect);
 
   const foeType = makeFoeSelect(rosters.foes, 'udt-palette-foe-type');
   const foeStatus = makeSelect(
     FOE_STATUSES.map((s) => ({ value: s, label: s })),
-    'udt-palette-foe-status'
+    'udt-palette-foe-status',
   );
   foeStatus.value = 'ready'; // matches spawnFoe's own default; FOE_STATUSES[0] is 'panicked'
   const foeRow = fieldRow('Type', foeType, 'Status', foeStatus);
 
   const adversaryId = makeSelect(
     rosters.adversaries.map((a) => ({ value: a, label: a })),
-    'udt-palette-adversary-id'
+    'udt-palette-adversary-id',
   );
   const adversaryRow = fieldRow('Adversary', adversaryId);
 
   const markerSelect = makeSelect(
     rosters.markers.map((m) => ({ value: m, label: m })),
-    'udt-palette-marker'
+    'udt-palette-marker',
   );
   const markerCustom = document.createElement('input');
   markerCustom.type = 'text';
@@ -327,14 +325,14 @@ function buildPalette(
 
   const questSelect = makeSelect(
     rosters.quests.map((q) => ({ value: q.id, label: q.name })),
-    'udt-palette-quest'
+    'udt-palette-quest',
   );
   const questRow = fieldRow('Quest', questSelect);
 
   // Monuments sit on a building (setMonument), so the kind targets building spaces only.
   const monumentSelect = makeSelect(
     rosters.monuments.map((m) => ({ value: m.id, label: m.name })),
-    'udt-palette-monument'
+    'udt-palette-monument',
   );
   const monumentCustom = document.createElement('input');
   monumentCustom.type = 'text';
@@ -462,11 +460,11 @@ function buildSetupSection(controller: BoardStateController, rosters: BoardUIRos
 
   const difficulty = makeSelect(
     [{ value: '', label: '—' }, ...DIFFICULTIES.map((d) => ({ value: d, label: d }))],
-    'udt-setup-difficulty'
+    'udt-setup-difficulty',
   );
   const adversary = makeSelect(
     [{ value: '', label: '—' }, ...rosters.adversaries.map((a) => ({ value: a, label: a }))],
-    'udt-setup-adversary'
+    'udt-setup-adversary',
   );
   const allies = textInput('allies (comma-separated)', 'udt-setup-allies');
   const foes = textInput('foes (comma-separated)', 'udt-setup-foes');
@@ -492,7 +490,7 @@ function buildSetupSection(controller: BoardStateController, rosters: BoardUIRos
     allies,
     foes,
     expansions,
-    apply
+    apply,
   );
   return section;
 }
@@ -502,7 +500,7 @@ function buildSetupSection(controller: BoardStateController, rosters: BoardUIRos
 function buildInspector(
   body: HTMLElement,
   controller: BoardStateController,
-  selection: SelectionStore
+  selection: SelectionStore,
 ): void {
   const render = (): void => {
     body.replaceChildren();
@@ -544,7 +542,7 @@ function buildInspector(
       unsubSelection();
       unsubState();
     }) as EventListener,
-    { once: true }
+    { once: true },
   );
   render();
 }
@@ -553,21 +551,24 @@ function renderHero(
   body: HTMLElement,
   controller: BoardStateController,
   state: BoardState,
-  sel: TokenSelection
+  sel: TokenSelection,
 ): void {
   const hero = state.heroes[sel.id];
   if (!hero) return void body.appendChild(emptyNote('Hero no longer on the board.'));
   body.appendChild(heading(`Hero: ${sel.id}`));
   const move = makeLocationSelect('all', hero.location, 'udt-inspector-move');
   move.addEventListener('change', () => controller.moveHero(sel.id, move.value));
-  body.append(labeled('Location', move), removeButton('Remove', () => controller.removeHero(sel.id)));
+  body.append(
+    labeled('Location', move),
+    removeButton('Remove', () => controller.removeHero(sel.id)),
+  );
 }
 
 function renderFoe(
   body: HTMLElement,
   controller: BoardStateController,
   state: BoardState,
-  sel: TokenSelection
+  sel: TokenSelection,
 ): void {
   const foe = state.foes[sel.id];
   if (!foe) return void body.appendChild(emptyNote('Foe no longer on the board.'));
@@ -576,18 +577,24 @@ function renderFoe(
   move.addEventListener('change', () => controller.moveFoe(sel.id, move.value));
   const status = makeSelect(
     FOE_STATUSES.map((s) => ({ value: s, label: s })),
-    'udt-inspector-status'
+    'udt-inspector-status',
   );
   status.value = foe.status;
-  status.addEventListener('change', () => controller.setFoeStatus(sel.id, status.value as FoeStatus));
+  status.addEventListener('change', () =>
+    controller.setFoeStatus(sel.id, status.value as FoeStatus),
+  );
   body.append(
     labeled('Location', move),
     labeled('Status', status),
-    removeButton('Remove', () => controller.removeFoe(sel.id))
+    removeButton('Remove', () => controller.removeFoe(sel.id)),
   );
 }
 
-function renderAdversary(body: HTMLElement, controller: BoardStateController, state: BoardState): void {
+function renderAdversary(
+  body: HTMLElement,
+  controller: BoardStateController,
+  state: BoardState,
+): void {
   const adv = state.adversary;
   if (!adv) return void body.appendChild(emptyNote('No adversary selected.'));
   body.appendChild(heading(`Adversary: ${adv.id}`));
@@ -595,7 +602,7 @@ function renderAdversary(body: HTMLElement, controller: BoardStateController, st
   move.addEventListener('change', () => controller.placeAdversary(move.value));
   body.append(
     labeled('Location', move),
-    removeButton('Remove', () => controller.clearAdversary())
+    removeButton('Remove', () => controller.clearAdversary()),
   );
 }
 
@@ -603,7 +610,7 @@ function renderBuilding(
   body: HTMLElement,
   controller: BoardStateController,
   state: BoardState,
-  sel: TokenSelection
+  sel: TokenSelection,
 ): void {
   const loc = sel.location || sel.id;
   const building = state.buildings[loc];
@@ -625,7 +632,7 @@ function renderBuilding(
     ? makeButton('Restore', 'udt-inspector-restore')
     : makeButton('Destroy', 'udt-inspector-destroy');
   destroyBtn.addEventListener('click', () =>
-    building.destroyed ? controller.restoreBuilding(loc) : controller.destroyBuilding(loc)
+    building.destroyed ? controller.restoreBuilding(loc) : controller.destroyBuilding(loc),
   );
 
   const monument = document.createElement('input');
@@ -635,7 +642,7 @@ function renderBuilding(
   monument.value = building.monument ?? '';
   const monumentSet = makeButton('Set', 'udt-inspector-monument-set');
   monumentSet.addEventListener('click', () =>
-    controller.setMonument(loc, monument.value.trim() || null)
+    controller.setMonument(loc, monument.value.trim() || null),
   );
   const monumentRow = document.createElement('div');
   monumentRow.className = 'udt-inspector-row';
@@ -648,13 +655,13 @@ function renderMarker(
   body: HTMLElement,
   controller: BoardStateController,
   state: BoardState,
-  sel: TokenSelection
+  sel: TokenSelection,
 ): void {
   const present = state.spaceMarkers[sel.location]?.includes(sel.id);
   if (!present) return void body.appendChild(emptyNote('Marker no longer on the board.'));
   body.appendChild(heading(`Marker: ${sel.id} @ ${sel.location}`));
   body.appendChild(
-    removeButton('Remove', () => controller.setSpaceMarker(sel.location, sel.id, false))
+    removeButton('Remove', () => controller.setSpaceMarker(sel.location, sel.id, false)),
   );
 }
 
@@ -662,13 +669,13 @@ function renderQuest(
   body: HTMLElement,
   controller: BoardStateController,
   state: BoardState,
-  sel: TokenSelection
+  sel: TokenSelection,
 ): void {
   const present = state.questMarkers[sel.location]?.includes(sel.id);
   if (!present) return void body.appendChild(emptyNote('Quest no longer on the board.'));
   body.appendChild(heading(`Quest: ${sel.id} @ ${sel.location}`));
   body.appendChild(
-    removeButton('Remove', () => controller.setQuestMarker(sel.location, sel.id, false))
+    removeButton('Remove', () => controller.setQuestMarker(sel.location, sel.id, false)),
   );
 }
 
@@ -800,7 +807,7 @@ function makeFoeSelect(foes: string[], className: string): HTMLSelectElement {
 function makeLocationSelect(
   targets: 'all' | 'buildings',
   value: string | undefined,
-  className: string
+  className: string,
 ): HTMLSelectElement {
   const select = document.createElement('select');
   select.className = className;
@@ -854,7 +861,7 @@ function fieldRow(
   label1: string,
   control1: HTMLElement,
   label2?: string,
-  control2?: HTMLElement
+  control2?: HTMLElement,
 ): HTMLElement {
   const row = document.createElement('div');
   row.className = 'udt-field-row';
@@ -910,7 +917,14 @@ function markerValue(select: HTMLSelectElement, custom: HTMLInputElement): strin
 
 function placementLabel(
   kind: AddKind,
-  values: { hero: string; foe: string; adversary: string; marker: string; quest: string; monument: string }
+  values: {
+    hero: string;
+    foe: string;
+    adversary: string;
+    marker: string;
+    quest: string;
+    monument: string;
+  },
 ): string {
   switch (kind) {
     case 'hero':

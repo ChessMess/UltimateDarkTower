@@ -30,7 +30,9 @@ export function clearLocalStorage(): void {
 
 /** A filesystem-friendly file name for an export. */
 export function sessionFileName(session: GameSession): string {
-  const base = (session.meta.name ?? 'rtdt-game').replace(/[^a-z0-9-_]+/gi, '-').replace(/^-+|-+$/g, '');
+  const base = (session.meta.name ?? 'rtdt-game')
+    .replace(/[^a-z0-9-_]+/gi, '-')
+    .replace(/^-+|-+$/g, '');
   const stamp = session.meta.updatedAt.slice(0, 10);
   return `${base || 'rtdt-game'}-${stamp}.json`;
 }

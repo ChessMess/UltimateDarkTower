@@ -27,7 +27,7 @@ function makeState(): TowerState {
 }
 
 const seal = (side: string, level: number): SealIdentifier =>
-  ({ side, level } as unknown as SealIdentifier);
+  ({ side, level }) as unknown as SealIdentifier;
 
 describe('TowerStateController', () => {
   describe('applyState', () => {
@@ -116,7 +116,11 @@ describe('TowerStateController', () => {
       ctrl.applySeals([seal('N', 1)]);
       const list = ctrl.toggleSeal(seal('N', 1));
       // Toggling a seal that's already external keeps it deduplicated
-      const keyed = list.filter(s => (s as unknown as { side: string; level: number }).side === 'N' && (s as unknown as { side: string; level: number }).level === 1);
+      const keyed = list.filter(
+        (s) =>
+          (s as unknown as { side: string; level: number }).side === 'N' &&
+          (s as unknown as { side: string; level: number }).level === 1,
+      );
       expect(keyed).toHaveLength(1);
     });
 

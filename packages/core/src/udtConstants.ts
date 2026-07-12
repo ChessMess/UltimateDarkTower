@@ -1,21 +1,20 @@
-
 // Nordic Semicondutor's UART/Serial IDs for Bluetooth LE
-export const UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-export const UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-export const UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
-export const TOWER_DEVICE_NAME = "ReturnToDarkTower";
+export const UART_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+export const UART_TX_CHARACTERISTIC_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+export const UART_RX_CHARACTERISTIC_UUID = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+export const TOWER_DEVICE_NAME = 'ReturnToDarkTower';
 
 // Device Information Service (DIS) UUIDs
-export const DIS_SERVICE_UUID = "0000180a-0000-1000-8000-00805f9b34fb";
-export const DIS_MANUFACTURER_NAME_UUID = "00002a29-0000-1000-8000-00805f9b34fb";
-export const DIS_MODEL_NUMBER_UUID = "00002a24-0000-1000-8000-00805f9b34fb";
-export const DIS_SERIAL_NUMBER_UUID = "00002a25-0000-1000-8000-00805f9b34fb";
-export const DIS_HARDWARE_REVISION_UUID = "00002a27-0000-1000-8000-00805f9b34fb";
-export const DIS_FIRMWARE_REVISION_UUID = "00002a26-0000-1000-8000-00805f9b34fb";
-export const DIS_SOFTWARE_REVISION_UUID = "00002a28-0000-1000-8000-00805f9b34fb";
-export const DIS_SYSTEM_ID_UUID = "00002a23-0000-1000-8000-00805f9b34fb";
-export const DIS_IEEE_REGULATORY_UUID = "00002a2a-0000-1000-8000-00805f9b34fb";
-export const DIS_PNP_ID_UUID = "00002a50-0000-1000-8000-00805f9b34fb";
+export const DIS_SERVICE_UUID = '0000180a-0000-1000-8000-00805f9b34fb';
+export const DIS_MANUFACTURER_NAME_UUID = '00002a29-0000-1000-8000-00805f9b34fb';
+export const DIS_MODEL_NUMBER_UUID = '00002a24-0000-1000-8000-00805f9b34fb';
+export const DIS_SERIAL_NUMBER_UUID = '00002a25-0000-1000-8000-00805f9b34fb';
+export const DIS_HARDWARE_REVISION_UUID = '00002a27-0000-1000-8000-00805f9b34fb';
+export const DIS_FIRMWARE_REVISION_UUID = '00002a26-0000-1000-8000-00805f9b34fb';
+export const DIS_SOFTWARE_REVISION_UUID = '00002a28-0000-1000-8000-00805f9b34fb';
+export const DIS_SYSTEM_ID_UUID = '00002a23-0000-1000-8000-00805f9b34fb';
+export const DIS_IEEE_REGULATORY_UUID = '00002a2a-0000-1000-8000-00805f9b34fb';
+export const DIS_PNP_ID_UUID = '00002a50-0000-1000-8000-00805f9b34fb';
 export type CommandPacket = Uint8Array;
 
 // Tower command packet structure constants
@@ -38,7 +37,7 @@ export const DEFAULT_RETRY_SEND_COMMAND_MAX = 5;
 // Tower geometry constants
 export const TOWER_SIDES_COUNT = 4; // north, east, south, west
 
-// tower commands 
+// tower commands
 export const TOWER_COMMANDS = {
   towerState: 0, // not a sendable command
   doorReset: 1,
@@ -51,69 +50,68 @@ export const TOWER_COMMANDS = {
 
 // tower commands enum
 export const TC = {
-  STATE: "TOWER_STATE",
-  INVALID_STATE: "INVALID_STATE",
-  FAILURE: "HARDWARE_FAILURE",
-  JIGGLE: "MECH_JIGGLE_TRIGGERED",
-  UNEXPECTED: "MECH_UNEXPECTED_TRIGGER",
-  DURATION: "MECH_DURATION",
-  DIFFERENTIAL: "DIFFERENTIAL_READINGS",
-  CALIBRATION: "CALIBRATION_FINISHED",
-  BATTERY: "BATTERY_READING",
-}
+  STATE: 'TOWER_STATE',
+  INVALID_STATE: 'INVALID_STATE',
+  FAILURE: 'HARDWARE_FAILURE',
+  JIGGLE: 'MECH_JIGGLE_TRIGGERED',
+  UNEXPECTED: 'MECH_UNEXPECTED_TRIGGER',
+  DURATION: 'MECH_DURATION',
+  DIFFERENTIAL: 'DIFFERENTIAL_READINGS',
+  CALIBRATION: 'CALIBRATION_FINISHED',
+  BATTERY: 'BATTERY_READING',
+};
 
 export const DRUM_PACKETS = {
   topMiddle: 1,
   bottom: 2,
-}
+};
 
-
-export type Glyphs = "cleanse" | "quest" | "battle" | "banner" | "reinforce";
+export type Glyphs = 'cleanse' | 'quest' | 'battle' | 'banner' | 'reinforce';
 
 // positions based on calibrated drum orientation
 export const GLYPHS = {
-  cleanse: { name: "Cleanse", level: "top", side: "north" },
-  quest: { name: "Quest", level: "top", side: "south" },
-  battle: { name: "Battle", level: "middle", side: "north" },
-  banner: { name: "Banner", level: "bottom", side: "north" },
-  reinforce: { name: "Reinforce", level: "bottom", side: "south" },
-}
+  cleanse: { name: 'Cleanse', level: 'top', side: 'north' },
+  quest: { name: 'Quest', level: 'top', side: 'south' },
+  battle: { name: 'Battle', level: 'middle', side: 'north' },
+  banner: { name: 'Banner', level: 'bottom', side: 'north' },
+  reinforce: { name: 'Reinforce', level: 'bottom', side: 'south' },
+};
 
 export const AUDIO_COMMAND_POS = 15;
 export const SKULL_DROP_COUNT_POS = 17;
 
-export type TowerLevels = "top" | "middle" | "bottom";
-export type TowerSide = "north" | "south" | "east" | "west";
-export type TowerCorner = "northeast" | "southeast" | "southwest" | "northwest";
+export type TowerLevels = 'top' | 'middle' | 'bottom';
+export type TowerSide = 'north' | 'south' | 'east' | 'west';
+export type TowerCorner = 'northeast' | 'southeast' | 'southwest' | 'northwest';
 
 export type SealIdentifier = {
   side: TowerSide;
   level: TowerLevels;
 };
 
-export type LightTypes = "base" | "doorway" | "ledge";
+export type LightTypes = 'base' | 'doorway' | 'ledge';
 
-export type DoorwayLight = { position: TowerSide, level: TowerLevels, style: string };
+export type DoorwayLight = { position: TowerSide; level: TowerLevels; style: string };
 
-export type LedgeLight = { position: TowerCorner, style: string };
+export type LedgeLight = { position: TowerCorner; style: string };
 
-export type BaseLightLevel = "top" | "bottom" | "a" | "b";
-export type BaseLightPosition = { side: TowerSide, level: BaseLightLevel };
-export type BaseLightCornerPosition = { side: TowerCorner, level: BaseLightLevel };
-export type BaseLight = { position: BaseLightPosition, style: string };
-export type BaseLightCorner = { position: BaseLightCornerPosition, style: string };
+export type BaseLightLevel = 'top' | 'bottom' | 'a' | 'b';
+export type BaseLightPosition = { side: TowerSide; level: BaseLightLevel };
+export type BaseLightCornerPosition = { side: TowerCorner; level: BaseLightLevel };
+export type BaseLight = { position: BaseLightPosition; style: string };
+export type BaseLightCorner = { position: BaseLightCornerPosition; style: string };
 
 export type Lights = {
-  doorway?: Array<DoorwayLight>,
-  ledge?: Array<LedgeLight>,
-  base?: Array<BaseLight>
+  doorway?: Array<DoorwayLight>;
+  ledge?: Array<LedgeLight>;
+  base?: Array<BaseLight>;
 };
 
 export type RotateCommand = {
-  top: TowerSide,
-  middle: TowerSide,
-  bottom: TowerSide
-}
+  top: TowerSide;
+  middle: TowerSide;
+  bottom: TowerSide;
+};
 
 // prettier-ignore
 export const drumPositionCmds = {
@@ -122,7 +120,6 @@ export const drumPositionCmds = {
   bottom: { north: 0b01000010, east: 0b01001010, south: 0b01010010, west: 0b01011010 },
 }
 
-
 export const LIGHT_EFFECTS: Record<string, number> = {
   off: 0,
   on: 1,
@@ -130,8 +127,7 @@ export const LIGHT_EFFECTS: Record<string, number> = {
   breatheFast: 3,
   breathe50percent: 4,
   flicker: 5,
-}
-
+};
 
 export const TOWER_LIGHT_SEQUENCES = {
   twinkle: 0x01,
@@ -155,12 +151,21 @@ export const TOWER_LIGHT_SEQUENCES = {
   monthStarted: 0x13,
   wholeTowerBreathing: 0x14,
   slowFlareThenFade: 0x15,
-}
+};
 
 export type SoundCategory =
-  "Adversary" | "Ally" | "Battle" |
-  "Classic" | "Unlisted" | "Dungeon" | "Foe" |
-  "Spawn" | "Quest" | "Glyph" | "State" | "Seals";
+  | 'Adversary'
+  | 'Ally'
+  | 'Battle'
+  | 'Classic'
+  | 'Unlisted'
+  | 'Dungeon'
+  | 'Foe'
+  | 'Spawn'
+  | 'Quest'
+  | 'Glyph'
+  | 'State'
+  | 'Seals';
 
 // Tower Responses
 // prettier-ignore
@@ -176,14 +181,31 @@ export const TOWER_MESSAGES = {
   CALIBRATION_FINISHED: { name: "Calibration Finished", value: 8, critical: false },
 }
 
-// 5% increments - voltages are in millivolts and typical for a 250mA discharge 
+// 5% increments - voltages are in millivolts and typical for a 250mA discharge
 // at room temperature which roughly matches a single Energizer EN91
 // This is a rough approximation as chemical makeup of batteries have differing
 // battery performace (Alkaline vs NiMH vs Li etc).
 export const VOLTAGE_LEVELS = [
-  1500, 1390, 1350, 1320, 1295, 1270, 1245, 1225, 1205,
-  1180, 1175, 1166, 1150, 1133, 1125, 1107, 1095, 1066, 1033,
-  980 // There's an additional 5% until 800mV is reached
+  1500,
+  1390,
+  1350,
+  1320,
+  1295,
+  1270,
+  1245,
+  1225,
+  1205,
+  1180,
+  1175,
+  1166,
+  1150,
+  1133,
+  1125,
+  1107,
+  1095,
+  1066,
+  1033,
+  980, // There's an additional 5% until 800mV is reached
 ];
 
 // Tower Layer Mapping Constants (moved from functions.ts)
@@ -218,7 +240,7 @@ export const LEDGE_BASE_LIGHT_POSITIONS = {
 export const LED_CHANNEL_LOOKUP = [
   // Layer 0: Top Ring (C0 R0, C0 R3, C0 R2, C0 R1)
   0, 3, 2, 1,
-  // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0) 
+  // Layer 1: Middle Ring (C1 R3, C1 R2, C1 R1, C1 R0)
   7, 6, 5, 4,
   // Layer 2: Bottom Ring (C2 R2, C2 R1, C2 R0, C2 R3)
   10, 9, 8, 11,
@@ -226,7 +248,7 @@ export const LED_CHANNEL_LOOKUP = [
   12, 13, 14, 15,
   // Layer 4: Base1 (BASE1 R4, BASE1 R5, BASE1 R6, BASE1 R7)
   16, 17, 18, 19,
-  // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7) 
+  // Layer 5: Base2 (BASE2 R4, BASE2 R5, BASE2 R6, BASE2 R7)
   20, 21, 22, 23,
 ];
 
@@ -237,25 +259,25 @@ export const LAYER_TO_POSITION = {
   [TOWER_LAYERS.BOTTOM_RING]: 'BOTTOM_RING',
   [TOWER_LAYERS.LEDGE]: 'LEDGE',
   [TOWER_LAYERS.BASE1]: 'BASE1',
-  [TOWER_LAYERS.BASE2]: 'BASE2'
+  [TOWER_LAYERS.BASE2]: 'BASE2',
 } as const;
 
 export const LIGHT_INDEX_TO_DIRECTION = {
   [RING_LIGHT_POSITIONS.NORTH]: 'NORTH',
   [RING_LIGHT_POSITIONS.EAST]: 'EAST',
   [RING_LIGHT_POSITIONS.SOUTH]: 'SOUTH',
-  [RING_LIGHT_POSITIONS.WEST]: 'WEST'
+  [RING_LIGHT_POSITIONS.WEST]: 'WEST',
 } as const;
 
 export const STATE_DATA_LENGTH = 19;
 
 export type AudioLibrary = {
   [name: string]: {
-    name: string,
-    value: number,
-    category: SoundCategory
-  }
-}
+    name: string;
+    value: number;
+    category: SoundCategory;
+  };
+};
 
 // prettier-ignore
 export const TOWER_AUDIO_LIBRARY: AudioLibrary = {
@@ -379,7 +401,7 @@ export const VOLUME_DESCRIPTIONS = {
   0: 'Loud',
   1: 'Medium',
   2: 'Quiet',
-  3: 'Mute'
+  3: 'Mute',
 } as const;
 
 // Volume level icons
@@ -387,5 +409,5 @@ export const VOLUME_ICONS = {
   0: '🔊', // Loud - biggest speaker
   1: '🔉', // Medium - medium speaker
   2: '🔈', // Quiet - small speaker
-  3: '🔇'  // Mute - muted speaker
+  3: '🔇', // Mute - muted speaker
 } as const;

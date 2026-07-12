@@ -35,22 +35,22 @@ export const KIND_TINT: Record<TokenSelection['kind'], string> = {
 
 /** 2D SVG render order — higher value = appended later = paints on top (SVG painters algorithm). */
 export const KIND_Z_2D: Record<TokenSelection['kind'], number> = {
-  building:  1,
-  foe:       2,
+  building: 1,
+  foe: 2,
   adversary: 3,
-  marker:    4,
-  quest:     4,
-  hero:      5,
+  marker: 4,
+  quest: 4,
+  hero: 5,
 };
 
 /** 3D Three.js renderOrder — higher value = drawn on top for coplanar objects. */
 export const KIND_Z_3D: Record<TokenSelection['kind'], number> = {
-  building:  10,
-  foe:       10,
+  building: 10,
+  foe: 10,
   adversary: 10,
-  marker:    10,
-  quest:     10,
-  hero:      11,
+  marker: 10,
+  quest: 10,
+  hero: 11,
 };
 
 /** `Foo Bar` / `Utuk'Ku` → `foo-bar` / `utuk-ku`. */
@@ -160,7 +160,7 @@ const OFFICIAL_QUEST_ART: Record<string, string | null> = {
 export function defaultTokenImagePath(
   ref: TokenArtRef,
   assetBaseUrl: string | undefined,
-  view: BoardView
+  view: BoardView,
 ): string | null {
   const base = normalizeAssetBaseUrl(assetBaseUrl);
   if (!base) return null;
@@ -207,15 +207,15 @@ export type BoardView = '2d' | '3d';
 export type TokenModelRef =
   | string
   | {
-    /** Consumer-hosted `.glb` URL (Draco-compressed ok). Never bundled. */
-    url: string;
-    /** Multiplies the token kind's default world size. Default `1`. */
-    scale?: number;
-    /** Euler rotation (radians) to correct the model's native up/forward axis. */
-    rotation?: { x?: number; y?: number; z?: number };
-    /** Draco decoder source for THIS model; defaults to Display's gstatic CDN. `null` → uncompressed. */
-    dracoDecoderPath?: string | null;
-  };
+      /** Consumer-hosted `.glb` URL (Draco-compressed ok). Never bundled. */
+      url: string;
+      /** Multiplies the token kind's default world size. Default `1`. */
+      scale?: number;
+      /** Euler rotation (radians) to correct the model's native up/forward axis. */
+      rotation?: { x?: number; y?: number; z?: number };
+      /** Draco decoder source for THIS model; defaults to Display's gstatic CDN. `null` → uncompressed. */
+      dracoDecoderPath?: string | null;
+    };
 
 /**
  * Per-token art override. Any omitted field falls back to the resolver callback, then the
@@ -242,7 +242,10 @@ export interface TokenArt {
 export type TokenArtConfig = Partial<Record<TokenArtRef['kind'], Record<string, TokenArt>>>;
 
 /** Look up a per-token art override by ref, matching the raw id then its kebab slug. */
-export function lookupTokenArt(config: TokenArtConfig | undefined, ref: TokenArtRef): TokenArt | undefined {
+export function lookupTokenArt(
+  config: TokenArtConfig | undefined,
+  ref: TokenArtRef,
+): TokenArt | undefined {
   const byKind = config?.[ref.kind];
   if (!byKind) return undefined;
   return byKind[ref.id] ?? byKind[kebab(ref.id)];
@@ -266,10 +269,10 @@ export interface ResolveTokenImageOptions {
 export function resolveTokenImageFor(
   ref: TokenArtRef,
   view: BoardView,
-  opts: ResolveTokenImageOptions
+  opts: ResolveTokenImageOptions,
 ): string | null {
   const override = lookupTokenArt(opts.tokenArt, ref);
-  const fromConfig = view === '2d' ? override?.image2d : override?.image3d ?? override?.image2d;
+  const fromConfig = view === '2d' ? override?.image2d : (override?.image3d ?? override?.image2d);
   if (fromConfig != null) return fromConfig;
   if (opts.resolveTokenImage) return opts.resolveTokenImage(ref, view);
   return defaultTokenImagePath(ref, opts.assetBaseUrl, view);

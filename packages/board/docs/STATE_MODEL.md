@@ -10,10 +10,10 @@ Plain, JSON-serializable data — no class instances, `Map`/`Set`, or functions.
 ```ts
 interface BoardState {
   heroes: Record<HeroId, { location; owner?; meta? }>;
-  foes: Record<FoeId, { foe; location; status; meta? }>;     // status: 'ready' | 'savage' | 'lethal'
+  foes: Record<FoeId, { foe; location; status; meta? }>; // status: 'ready' | 'savage' | 'lethal'
   adversary?: { id; location? };
-  buildings: Record<LocationName, { skulls; destroyed; monument? }>;  // the 16 building spaces
-  spaceMarkers: Record<LocationName, SpaceMarker[]>;          // open set; key present only while non-empty
+  buildings: Record<LocationName, { skulls; destroyed; monument? }>; // the 16 building spaces
+  spaceMarkers: Record<LocationName, SpaceMarker[]>; // open set; key present only while non-empty
   selections?: { difficulty?; adversary?; allies?; foes?; expansions? };
   meta?: Record<string, unknown>;
 }
@@ -50,7 +50,7 @@ never throws or blocks.
 - **`self`** (default, uncontrolled): `dispatch` / named methods / `reset` run the reducer, replace the
   held state, and emit `change` + the derived specific event.
 - **`host`** (controlled): the host owns the truth. `dispatch` computes the projected next state and emits
-  it as a `change` *intent* without mutating held state; `applyState(next)` is the sole commit path (in
+  it as a `change` _intent_ without mutating held state; `applyState(next)` is the sole commit path (in
   both modes).
 
 Subscribe with `subscribe(listener)` (full firehose) or `on(type, listener)` (one event type). Both return

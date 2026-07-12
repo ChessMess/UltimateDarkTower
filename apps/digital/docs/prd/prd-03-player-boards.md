@@ -20,14 +20,14 @@ displays the values; it does not enforce rules or costs.
 
 ## 3. User Stories
 
-- *As a player*, I can add and remove warriors and spirit, so I can track my pools as they change.
-- *As a player*, I can add a corruption and be clearly warned that a 3rd corruption is a loss, so I
+- _As a player_, I can add and remove warriors and spirit, so I can track my pools as they change.
+- _As a player_, I can add a corruption and be clearly warned that a 3rd corruption is a loss, so I
   don't miss it.
-- *As a player*, I can mark gear (one of each of the 6 types), treasures (up to 4), potions, quest
+- _As a player_, I can mark gear (one of each of the 6 types), treasures (up to 4), potions, quest
   items, and companions I'm carrying.
-- *As a player*, I can flip a virtue between inactive and active and see my kingdom virtue, so I can
+- _As a player_, I can flip a virtue between inactive and active and see my kingdom virtue, so I can
   track virtue activation.
-- *As a player controlling 4 heroes*, I can switch between each hero's board, so I can manage all of
+- _As a player controlling 4 heroes_, I can switch between each hero's board, so I can manage all of
   them in a solo game.
 
 ## 4. Functional Requirements
@@ -83,12 +83,12 @@ displays the values; it does not enforce rules or costs.
 
 Resolved for MVP (decisions made during implementation):
 
-- **Bundled card/virtue/companion text** — *none*. The text is © Restoration Games and the
+- **Bundled card/virtue/companion text** — _none_. The text is © Restoration Games and the
   local game-content is explicitly TODO, so UTDD ships **no card text**. Instead the player
   **labels their own** gear, treasures, quest items, and companions (free-text lists). Virtue
   tiles are generic ("Virtue 1–3" + "Kingdom") with an optional player label. A curated
   data file can be added later if licensing is cleared.
-- **Gear model** — the 6 gear *type* names aren't available (IP/TODO), so gear is a
+- **Gear model** — the 6 gear _type_ names aren't available (IP/TODO), so gear is a
   **labeled list capped at 6** ("up to one of each of the 6 types") rather than 6 named
   slots. Same approach for treasures (labeled list capped at 4).
 - **Free-form per-hero notes** — **deferred**. `GameProgress.notes` already exists for a

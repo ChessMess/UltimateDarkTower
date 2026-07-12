@@ -22,10 +22,12 @@ function syncSceneLightControls(lighting: ResolvedLightingConfig, els: DomElemen
   const boardSize = lighting.groundDisc.radiusFactor;
   const boardBrightness = lighting.boardDisc.brightness;
   const syncTargets: [HTMLInputElement | null, HTMLElement | null, number, number][] = [
-    [els.rngHemi, els.lblHemi, hemi, 2], [els.rngKey, els.lblKey, key, 2],
+    [els.rngHemi, els.lblHemi, hemi, 2],
+    [els.rngKey, els.lblKey, key, 2],
     [els.rngFill, els.lblFill, fill, 2],
     [els.rngExposure, els.lblExposure, exposure, 2],
-    [els.rngKeyX, els.lblKeyX, keyX, 1], [els.rngKeyY, els.lblKeyY, keyY, 1],
+    [els.rngKeyX, els.lblKeyX, keyX, 1],
+    [els.rngKeyY, els.lblKeyY, keyY, 1],
     [els.rngKeyZ, els.lblKeyZ, keyZ, 1],
     [els.rngBloomStrength, els.lblBloomStrength, bloom.strength, 2],
     [els.rngBloomRadius, els.lblBloomRadius, bloom.radius, 2],
@@ -78,57 +80,148 @@ export function refreshCameraConfigBox(getDisplay: () => TowerDisplay, els: DomE
 export function initLightingController(getDisplay: () => TowerDisplay, els: DomElements): void {
   const sceneLights = getSceneLights();
 
-  bindLightSlider(els.rngHemi, els.lblHemi, v => {
-    sceneLights.hemiIntensity = v;
-    getDisplay().setSceneLights({ hemi: v });
-  }, getDisplay, els);
+  bindLightSlider(
+    els.rngHemi,
+    els.lblHemi,
+    (v) => {
+      sceneLights.hemiIntensity = v;
+      getDisplay().setSceneLights({ hemi: v });
+    },
+    getDisplay,
+    els,
+  );
 
-  bindLightSlider(els.rngKey, els.lblKey, v => {
-    sceneLights.keyIntensity = v;
-    getDisplay().setSceneLights({ key: v });
-  }, getDisplay, els);
+  bindLightSlider(
+    els.rngKey,
+    els.lblKey,
+    (v) => {
+      sceneLights.keyIntensity = v;
+      getDisplay().setSceneLights({ key: v });
+    },
+    getDisplay,
+    els,
+  );
 
-  bindLightSlider(els.rngFill, els.lblFill, v => {
-    sceneLights.fillIntensity = v;
-    getDisplay().setSceneLights({ fill: v });
-  }, getDisplay, els);
+  bindLightSlider(
+    els.rngFill,
+    els.lblFill,
+    (v) => {
+      sceneLights.fillIntensity = v;
+      getDisplay().setSceneLights({ fill: v });
+    },
+    getDisplay,
+    els,
+  );
 
-  bindLightSlider(els.rngExposure, els.lblExposure, v => getDisplay().setSceneLights({ exposure: v }), getDisplay, els);
-  bindLightSlider(els.rngKeyX, els.lblKeyX, v => getDisplay().setSceneLights({ keyX: v }), getDisplay, els, 1);
-  bindLightSlider(els.rngKeyY, els.lblKeyY, v => getDisplay().setSceneLights({ keyY: v }), getDisplay, els, 1);
-  bindLightSlider(els.rngKeyZ, els.lblKeyZ, v => getDisplay().setSceneLights({ keyZ: v }), getDisplay, els, 1);
+  bindLightSlider(
+    els.rngExposure,
+    els.lblExposure,
+    (v) => getDisplay().setSceneLights({ exposure: v }),
+    getDisplay,
+    els,
+  );
+  bindLightSlider(
+    els.rngKeyX,
+    els.lblKeyX,
+    (v) => getDisplay().setSceneLights({ keyX: v }),
+    getDisplay,
+    els,
+    1,
+  );
+  bindLightSlider(
+    els.rngKeyY,
+    els.lblKeyY,
+    (v) => getDisplay().setSceneLights({ keyY: v }),
+    getDisplay,
+    els,
+    1,
+  );
+  bindLightSlider(
+    els.rngKeyZ,
+    els.lblKeyZ,
+    (v) => getDisplay().setSceneLights({ keyZ: v }),
+    getDisplay,
+    els,
+    1,
+  );
 
-  bindLightSlider(els.rngBloomStrength, els.lblBloomStrength, v => {
-    getDisplay().applyLightingConfig({ scene: { bloom: { strength: v } } });
-  }, getDisplay, els);
+  bindLightSlider(
+    els.rngBloomStrength,
+    els.lblBloomStrength,
+    (v) => {
+      getDisplay().applyLightingConfig({ scene: { bloom: { strength: v } } });
+    },
+    getDisplay,
+    els,
+  );
 
-  bindLightSlider(els.rngBloomRadius, els.lblBloomRadius, v => {
-    getDisplay().applyLightingConfig({ scene: { bloom: { radius: v } } });
-  }, getDisplay, els);
+  bindLightSlider(
+    els.rngBloomRadius,
+    els.lblBloomRadius,
+    (v) => {
+      getDisplay().applyLightingConfig({ scene: { bloom: { radius: v } } });
+    },
+    getDisplay,
+    els,
+  );
 
-  bindLightSlider(els.rngBloomThreshold, els.lblBloomThreshold, v => {
-    getDisplay().applyLightingConfig({ scene: { bloom: { threshold: v } } });
-  }, getDisplay, els);
+  bindLightSlider(
+    els.rngBloomThreshold,
+    els.lblBloomThreshold,
+    (v) => {
+      getDisplay().applyLightingConfig({ scene: { bloom: { threshold: v } } });
+    },
+    getDisplay,
+    els,
+  );
 
-  bindLightSlider(els.rngUndersideLight, els.lblUndersideLight, v => {
-    getDisplay().applyLightingConfig({ groundDisc: { undersideLightIntensity: v } });
-  }, getDisplay, els);
+  bindLightSlider(
+    els.rngUndersideLight,
+    els.lblUndersideLight,
+    (v) => {
+      getDisplay().applyLightingConfig({ groundDisc: { undersideLightIntensity: v } });
+    },
+    getDisplay,
+    els,
+  );
 
-  bindLightSlider(els.rngBoardSize, els.lblBoardSize, v => {
-    getDisplay().applyLightingConfig({ groundDisc: { radiusFactor: v } });
-  }, getDisplay, els, 1);
+  bindLightSlider(
+    els.rngBoardSize,
+    els.lblBoardSize,
+    (v) => {
+      getDisplay().applyLightingConfig({ groundDisc: { radiusFactor: v } });
+    },
+    getDisplay,
+    els,
+    1,
+  );
 
-  bindLightSlider(els.rngBoardBrightness, els.lblBoardBrightness, v => {
-    getDisplay().applyLightingConfig({ boardDisc: { brightness: v } });
-  }, getDisplay, els);
+  bindLightSlider(
+    els.rngBoardBrightness,
+    els.lblBoardBrightness,
+    (v) => {
+      getDisplay().applyLightingConfig({ boardDisc: { brightness: v } });
+    },
+    getDisplay,
+    els,
+  );
 
-  bindLightSlider(els.rngBoardThickness, els.lblBoardThickness, v => {
-    getDisplay().applyLightingConfig({ boardDisc: { thicknessFactor: v } });
-  }, getDisplay, els, 3);
+  bindLightSlider(
+    els.rngBoardThickness,
+    els.lblBoardThickness,
+    (v) => {
+      getDisplay().applyLightingConfig({ boardDisc: { thicknessFactor: v } });
+    },
+    getDisplay,
+    els,
+    3,
+  );
 
   if (els.chkBoardBottomCap) {
     els.chkBoardBottomCap.addEventListener('change', () => {
-      getDisplay().applyLightingConfig({ boardDisc: { bottomCap: els.chkBoardBottomCap!.checked } });
+      getDisplay().applyLightingConfig({
+        boardDisc: { bottomCap: els.chkBoardBottomCap!.checked },
+      });
     });
   }
 

@@ -15,18 +15,33 @@ import {
   DEFAULT_CONNECTION_MONITORING_FREQUENCY,
   DEFAULT_CONNECTION_MONITORING_TIMEOUT,
   DEFAULT_BATTERY_HEARTBEAT_TIMEOUT,
-  TOWER_SIDES_COUNT
+  TOWER_SIDES_COUNT,
 } from './udtConstants';
 import { type TowerState, isCalibrated, rtdt_pack_state, rtdt_unpack_state } from './udtTowerState';
-import { createDefaultTowerState, milliVoltsToPercentageNumber, commandToPacketString, milliVoltsToPercentage } from './udtHelpers';
+import {
+  createDefaultTowerState,
+  milliVoltsToPercentageNumber,
+  commandToPacketString,
+  milliVoltsToPercentage,
+} from './udtHelpers';
 import { Logger, type LogOutput } from './udtLogger';
-import { UdtBleConnection, type TowerEventCallbacks, type ConnectionStatus, type DeviceInformation } from './udtBleConnection';
+import {
+  UdtBleConnection,
+  type TowerEventCallbacks,
+  type ConnectionStatus,
+  type DeviceInformation,
+} from './udtBleConnection';
 import { TowerResponseProcessor, type TowerResponseConfig } from './udtTowerResponse';
 import { UdtCommandFactory } from './udtCommandFactory';
 import { UdtTowerCommands, type TowerCommandDependencies } from './udtTowerCommands';
 import { type IBluetoothAdapter } from './udtBluetoothAdapter';
 import { BluetoothAdapterFactory, BluetoothPlatform } from './udtBluetoothAdapterFactory';
-import { UdtDiagnosticsRecorder, InMemorySink, type DiagnosticsConfig, type IncidentReport } from './udtDiagnostics';
+import {
+  UdtDiagnosticsRecorder,
+  InMemorySink,
+  type DiagnosticsConfig,
+  type IncidentReport,
+} from './udtDiagnostics';
 
 /**
  * Configuration options for the UltimateDarkTower class.
@@ -48,14 +63,14 @@ export interface UltimateDarkTowerConfig {
  * @description
  * The UltimateDarkTower class is the main control interface for the Return To Dark Tower board game device.
  * It provides a comprehensive API for interacting with the tower through Bluetooth Low Energy (BLE).
- * 
+ *
  * Usage:
  * 1. Create instance: const tower = new UltimateDarkTower()
  * 2. Connect to tower: await tower.connect()
  * 3. Calibrate tower: await tower.calibrate()
  * 4. Use tower commands: await tower.playSound(1), await tower.Lights({...}), etc.
  * 5. Clean up: await tower.cleanup()
- * 
+ *
  * Event Callbacks:
  * - onTowerConnect: Called when tower connects
  * - onTowerDisconnect: Called when tower disconnects
@@ -106,18 +121,24 @@ class UltimateDarkTower {
     quest: null,
     battle: null,
     banner: null,
-    reinforce: null
+    reinforce: null,
   };
 
   // Event callback functions
   // Override these with your own functions to handle events in your app
-  onTowerConnect = (): void => { };
-  onTowerDisconnect = (): void => { };
-  onCalibrationComplete = (): void => { };
-  onSkullDrop = (towerSkullCount: number): void => { void towerSkullCount; };
-  onBatteryLevelNotify = (millivolts: number): void => { void millivolts; };
+  onTowerConnect = (): void => {};
+  onTowerDisconnect = (): void => {};
+  onCalibrationComplete = (): void => {};
+  onSkullDrop = (towerSkullCount: number): void => {
+    void towerSkullCount;
+  };
+  onBatteryLevelNotify = (millivolts: number): void => {
+    void millivolts;
+  };
   onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: string): void => {
-    void newState; void oldState; void source;
+    void newState;
+    void oldState;
+    void source;
   };
   /**
    * Called with the raw bytes of every non-battery tower notification (e.g.
@@ -125,7 +146,9 @@ class UltimateDarkTower {
    * than the decoded `TowerState` from {@link onTowerStateUpdate} — for example
    * a relay forwarding the tower's exact 20-byte state to other consumers.
    */
-  onTowerResponse = (response: Uint8Array): void => { void response; };
+  onTowerResponse = (response: Uint8Array): void => {
+    void response;
+  };
 
   constructor(config?: UltimateDarkTowerConfig) {
     this.initializeLogger();
@@ -175,7 +198,12 @@ class UltimateDarkTower {
 
     // Initialize BLE connection with tower event handlers
     this.towerEventCallbacks = this.createTowerEventCallbacks();
-    this.bleConnection = new UdtBleConnection(this.logger, this.towerEventCallbacks, adapter, this.diagnosticsRecorder);
+    this.bleConnection = new UdtBleConnection(
+      this.logger,
+      this.towerEventCallbacks,
+      adapter,
+      this.diagnosticsRecorder,
+    );
 
     // Initialize response processor
     this.responseProcessor = new TowerResponseProcessor(this.logDetail);
@@ -215,7 +243,9 @@ class UltimateDarkTower {
       if (this.diagnosticsRecorder.enabled && this.bleConnection?.isConnected) {
         try {
           this.bleConnection.recordIncidentPublic('page_unload');
-        } catch { /* best-effort */ }
+        } catch {
+          /* best-effort */
+        }
       }
     };
     window.addEventListener('beforeunload', this.beforeUnloadHandler);
@@ -236,7 +266,10 @@ class UltimateDarkTower {
       }
 
       // Check if this is a tower state response and update our state tracking
-      if (response.length >= TOWER_STATE_RESPONSE_MIN_LENGTH && this.responseProcessor.isTowerStateResponse(cmdKey)) {
+      if (
+        response.length >= TOWER_STATE_RESPONSE_MIN_LENGTH &&
+        this.responseProcessor.isTowerStateResponse(cmdKey)
+      ) {
         // Extract the 19-byte state data (skip command byte)
         const stateData = response.slice(TOWER_STATE_DATA_OFFSET, TOWER_STATE_RESPONSE_MIN_LENGTH);
         this.updateTowerStateFromResponse(stateData);
@@ -270,7 +303,9 @@ class UltimateDarkTower {
       },
       onSkullDrop: (towerSkullCount: number) => this.onSkullDrop(towerSkullCount),
       // onTowerResponse will be set up after tower commands are initialized
-      onTowerResponse: () => { /* will be overridden */ }
+      onTowerResponse: () => {
+        /* will be overridden */
+      },
     };
   }
 
@@ -292,7 +327,7 @@ class UltimateDarkTower {
       // same object).
       getCurrentTowerState: () => this.commandFactory.deepCopyTowerState(this.currentTowerState),
       setTowerState: (newState: TowerState, source: string) => this.setTowerState(newState, source),
-      recorder: this.diagnosticsRecorder
+      recorder: this.diagnosticsRecorder,
     };
   }
 
@@ -336,35 +371,73 @@ class UltimateDarkTower {
   }
 
   // Getter methods for connection state
-  get isConnected(): boolean { return this.bleConnection.isConnected; }
-  get isCalibrated(): boolean { return isCalibrated(this.currentTowerState); }
-  get performingCalibration(): boolean { return this.bleConnection.performingCalibration; }
-  get performingLongCommand(): boolean { return this.bleConnection.performingLongCommand; }
-  get towerSkullDropCount(): number { return this.bleConnection.towerSkullDropCount; }
+  get isConnected(): boolean {
+    return this.bleConnection.isConnected;
+  }
+  get isCalibrated(): boolean {
+    return isCalibrated(this.currentTowerState);
+  }
+  get performingCalibration(): boolean {
+    return this.bleConnection.performingCalibration;
+  }
+  get performingLongCommand(): boolean {
+    return this.bleConnection.performingLongCommand;
+  }
+  get towerSkullDropCount(): number {
+    return this.bleConnection.towerSkullDropCount;
+  }
 
   // Getter methods for battery state
-  get currentBattery(): number { return this.currentBatteryValue; }
-  get previousBattery(): number { return this.previousBatteryValue; }
-  get currentBatteryPercent(): number { return this.currentBatteryPercentage; }
-  get previousBatteryPercent(): number { return this.previousBatteryPercentage; }
+  get currentBattery(): number {
+    return this.currentBatteryValue;
+  }
+  get previousBattery(): number {
+    return this.previousBatteryValue;
+  }
+  get currentBatteryPercent(): number {
+    return this.currentBatteryPercentage;
+  }
+  get previousBatteryPercent(): number {
+    return this.previousBatteryPercentage;
+  }
 
   // Getter/setter methods for connection configuration
-  get batteryLogFrequency(): number { return this.bleConnection.batteryLogFrequency; }
-  set batteryLogFrequency(value: number) { this.bleConnection.batteryLogFrequency = value; }
+  get batteryLogFrequency(): number {
+    return this.bleConnection.batteryLogFrequency;
+  }
+  set batteryLogFrequency(value: number) {
+    this.bleConnection.batteryLogFrequency = value;
+  }
 
-  get batteryLogOnChangeOnly(): boolean { return this.bleConnection.batteryLogOnChangeOnly; }
-  set batteryLogOnChangeOnly(value: boolean) { this.bleConnection.batteryLogOnChangeOnly = value; }
+  get batteryLogOnChangeOnly(): boolean {
+    return this.bleConnection.batteryLogOnChangeOnly;
+  }
+  set batteryLogOnChangeOnly(value: boolean) {
+    this.bleConnection.batteryLogOnChangeOnly = value;
+  }
 
-  get batteryLogEnabled(): boolean { return this.bleConnection.batteryLogEnabled; }
-  set batteryLogEnabled(value: boolean) { this.bleConnection.batteryLogEnabled = value; }
+  get batteryLogEnabled(): boolean {
+    return this.bleConnection.batteryLogEnabled;
+  }
+  set batteryLogEnabled(value: boolean) {
+    this.bleConnection.batteryLogEnabled = value;
+  }
 
-  get logTowerResponses(): boolean { return this.bleConnection.logTowerResponses; }
-  set logTowerResponses(value: boolean) { this.bleConnection.logTowerResponses = value; }
+  get logTowerResponses(): boolean {
+    return this.bleConnection.logTowerResponses;
+  }
+  set logTowerResponses(value: boolean) {
+    this.bleConnection.logTowerResponses = value;
+  }
 
-  get logTowerResponseConfig(): TowerResponseConfig { return this.bleConnection.logTowerResponseConfig; }
-  set logTowerResponseConfig(value: TowerResponseConfig) { this.bleConnection.logTowerResponseConfig = value; }
+  get logTowerResponseConfig(): TowerResponseConfig {
+    return this.bleConnection.logTowerResponseConfig;
+  }
+  set logTowerResponseConfig(value: TowerResponseConfig) {
+    this.bleConnection.logTowerResponseConfig = value;
+  }
 
-  //#region Tower Commands 
+  //#region Tower Commands
   /**
    * Initiates tower calibration to determine the current position of all tower drums.
    * This must be performed after connection before other tower operations.
@@ -373,7 +446,6 @@ class UltimateDarkTower {
   async calibrate(): Promise<void> {
     return this.towerCommands.calibrate();
   }
-
 
   /**
    * Plays a sound from the tower's audio library.
@@ -467,7 +539,12 @@ class UltimateDarkTower {
    * @param loop - Whether to loop the effect
    * @returns Promise that resolves when command is sent
    */
-  async setLED(layerIndex: number, lightIndex: number, effect: number, loop: boolean = false): Promise<void> {
+  async setLED(
+    layerIndex: number,
+    lightIndex: number,
+    effect: number,
+    loop: boolean = false,
+  ): Promise<void> {
     return await this.towerCommands.setLEDStateful(layerIndex, lightIndex, effect, loop);
   }
 
@@ -478,7 +555,11 @@ class UltimateDarkTower {
    * @param volume - Audio volume (0-3, 0=loudest, 3=softest), optional. Out-of-range values are clamped.
    * @returns Promise that resolves when command is sent
    */
-  async playSoundStateful(soundIndex: number, loop: boolean = false, volume?: number): Promise<void> {
+  async playSoundStateful(
+    soundIndex: number,
+    loop: boolean = false,
+    volume?: number,
+  ): Promise<void> {
     return await this.towerCommands.playSoundStateful(soundIndex, loop, volume);
   }
 
@@ -489,7 +570,11 @@ class UltimateDarkTower {
    * @param playSound - Whether to play sound during rotation
    * @returns Promise that resolves when command is sent
    */
-  async rotateDrumStateful(drumIndex: number, position: number, playSound: boolean = false): Promise<void> {
+  async rotateDrumStateful(
+    drumIndex: number,
+    position: number,
+    playSound: boolean = false,
+  ): Promise<void> {
     return await this.towerCommands.rotateDrumStateful(drumIndex, position, playSound);
   }
 
@@ -529,9 +614,9 @@ class UltimateDarkTower {
     const loop = effect !== LIGHT_EFFECTS.off;
     const newState: TowerState = {
       ...currentState,
-      layer: currentState.layer.map(layer => ({
-        light: layer.light.map(() => ({ effect, loop }))
-      })) as TowerState['layer']
+      layer: currentState.layer.map((layer) => ({
+        light: layer.light.map(() => ({ effect, loop })),
+      })) as TowerState['layer'],
     };
     return this.sendTowerState(newState);
   }
@@ -761,7 +846,11 @@ class UltimateDarkTower {
    * @param oldPosition - The position before rotation
    * @param newPosition - The position after rotation
    */
-  private calculateAndUpdateGlyphPositions(level: TowerLevels, oldPosition: TowerSide, newPosition: TowerSide): void {
+  private calculateAndUpdateGlyphPositions(
+    level: TowerLevels,
+    oldPosition: TowerSide,
+    newPosition: TowerSide,
+  ): void {
     // Calculate rotation steps
     const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
     const oldIndex = sides.indexOf(oldPosition);
@@ -794,7 +883,7 @@ class UltimateDarkTower {
    * @returns Array of SealIdentifier objects representing all broken seals
    */
   getBrokenSeals(): SealIdentifier[] {
-    return Array.from(this.brokenSeals).map(sealKey => {
+    return Array.from(this.brokenSeals).map((sealKey) => {
       const [level, side] = sealKey.split('-');
       return { level: level as TowerLevels, side: side as TowerSide };
     });
@@ -845,7 +934,7 @@ class UltimateDarkTower {
     }
 
     // Filter out broken seals
-    const unbrokenSeals = allSeals.filter(seal => !this.isSealBroken(seal));
+    const unbrokenSeals = allSeals.filter((seal) => !this.isSealBroken(seal));
 
     if (unbrokenSeals.length === 0) {
       return null; // All seals are broken
@@ -886,7 +975,7 @@ class UltimateDarkTower {
   setLoggerOutputs(outputs: LogOutput[]) {
     // Clear existing outputs and add new ones to maintain logger instance references
     this.logger.clearOutputs();
-    outputs.forEach(output => this.logger.addOutput(output));
+    outputs.forEach((output) => this.logger.addOutput(output));
   }
 
   /**
@@ -933,7 +1022,10 @@ class UltimateDarkTower {
    * @param {number} [frequency=2000] - How often to check connection (milliseconds)
    * @param {number} [timeout=30000] - How long to wait for responses before considering connection lost (milliseconds)
    */
-  configureConnectionMonitoring(frequency: number = DEFAULT_CONNECTION_MONITORING_FREQUENCY, timeout: number = DEFAULT_CONNECTION_MONITORING_TIMEOUT) {
+  configureConnectionMonitoring(
+    frequency: number = DEFAULT_CONNECTION_MONITORING_FREQUENCY,
+    timeout: number = DEFAULT_CONNECTION_MONITORING_TIMEOUT,
+  ) {
     this.bleConnection.configureConnectionMonitoring(frequency, timeout);
   }
 
@@ -944,7 +1036,11 @@ class UltimateDarkTower {
    * @param {number} [timeout=3000] - How long to wait for battery status before considering disconnected (milliseconds)
    * @param {boolean} [verifyConnection=true] - Whether to verify connection status before triggering disconnection on heartbeat timeout
    */
-  configureBatteryHeartbeatMonitoring(enabled: boolean = true, timeout: number = DEFAULT_BATTERY_HEARTBEAT_TIMEOUT, verifyConnection: boolean = true) {
+  configureBatteryHeartbeatMonitoring(
+    enabled: boolean = true,
+    timeout: number = DEFAULT_BATTERY_HEARTBEAT_TIMEOUT,
+    verifyConnection: boolean = true,
+  ) {
     this.bleConnection.configureBatteryHeartbeatMonitoring(enabled, timeout, verifyConnection);
   }
 
@@ -972,7 +1068,6 @@ class UltimateDarkTower {
     return this.bleConnection.getDeviceInformation();
   }
   //#endregion
-
 
   //#region cleanup
 
@@ -1038,14 +1133,18 @@ class UltimateDarkTower {
    * Useful as a one-liner in a "copy diagnostic info" button.
    */
   exportDiagnosticsJSON(): string {
-    return JSON.stringify({
-      schemaVersion: 1,
-      capturedAt: Date.now(),
-      sessionId: this.diagnosticsRecorder.getSessionId(),
-      ringBuffer: this.diagnosticsRecorder.getRingBuffer(),
-      batteryHistory: this.diagnosticsRecorder.getBatteryHistory(),
-      lastIncident: this.diagnosticsRecorder.getLastIncident(),
-    }, null, 2);
+    return JSON.stringify(
+      {
+        schemaVersion: 1,
+        capturedAt: Date.now(),
+        sessionId: this.diagnosticsRecorder.getSessionId(),
+        ringBuffer: this.diagnosticsRecorder.getRingBuffer(),
+        batteryHistory: this.diagnosticsRecorder.getBatteryHistory(),
+        lastIncident: this.diagnosticsRecorder.getLastIncident(),
+      },
+      null,
+      2,
+    );
   }
 
   //#endregion

@@ -58,31 +58,46 @@ export function parseSafe(label: string, raw: unknown): Sequence | null {
  * `SequenceAnimator.apply(id)` return `false` and the renderer plays nothing.
  */
 export const JSON_SEQUENCE_DATA: ReadonlyMap<number, Sequence> = new Map(
-  ([
-    [TOWER_LIGHT_SEQUENCES.defeat, parseSafe('defeat', defeatJson)],
-    [TOWER_LIGHT_SEQUENCES.monthStarted, parseSafe('monthStarted', monthStartedJson)],
-    [TOWER_LIGHT_SEQUENCES.slowFlareThenFade, parseSafe('slowFlareThenFade', slowFlareThenFadeJson)],
-    [TOWER_LIGHT_SEQUENCES.victory, parseSafe('victory', victoryJson)],
-    [TOWER_LIGHT_SEQUENCES.flareThenFade, parseSafe('flareThenFade', flareThenFadeJson)],
-    [TOWER_LIGHT_SEQUENCES.flareThenFadeBase, parseSafe('flareThenFadeBase', flareThenFadeBaseJson)],
-    [TOWER_LIGHT_SEQUENCES.gloat01, parseSafe('gloat01', gloat01Json)],
-    [TOWER_LIGHT_SEQUENCES.gloat02, parseSafe('gloat02', gloat02Json)],
-    [TOWER_LIGHT_SEQUENCES.gloat03, parseSafe('gloat03', gloat03Json)],
-    [TOWER_LIGHT_SEQUENCES.wholeTowerBreathing, parseSafe('wholeTowerBreathing', wholeTowerBreathingJson)],
-    [TOWER_LIGHT_SEQUENCES.rotationAllDrums, parseSafe('rotationAllDrums', rotationAllDrumsJson)],
-    [TOWER_LIGHT_SEQUENCES.rotationDrumTop, parseSafe('rotationDrumTop', rotationDrumTopJson)],
-    [TOWER_LIGHT_SEQUENCES.rotationDrumMiddle, parseSafe('rotationDrumMiddle', rotationDrumMiddleJson)],
-    [TOWER_LIGHT_SEQUENCES.rotationDrumBottom, parseSafe('rotationDrumBottom', rotationDrumBottomJson)],
-    [TOWER_LIGHT_SEQUENCES.dungeonIdle, parseSafe('dungeonIdle', dungeonIdleJson)],
-    [TOWER_LIGHT_SEQUENCES.twinkle, parseSafe('twinkle', twinkleJson)],
-    [TOWER_LIGHT_SEQUENCES.flareThenFlicker, parseSafe('flareThenFlicker', flareThenFlickerJson)],
-    [TOWER_LIGHT_SEQUENCES.angryStrobe01, parseSafe('angryStrobe01', angryStrobe01Json)],
-    [TOWER_LIGHT_SEQUENCES.angryStrobe02, parseSafe('angryStrobe02', angryStrobe02Json)],
-    [TOWER_LIGHT_SEQUENCES.angryStrobe03, parseSafe('angryStrobe03', angryStrobe03Json)],
-    [TOWER_LIGHT_SEQUENCES.sealReveal, parseSafe('sealReveal', sealRevealJson)],
-  ] as ReadonlyArray<[number, Sequence | null]>).filter(
-    (kv): kv is [number, Sequence] => kv[1] !== null,
-  ),
+  (
+    [
+      [TOWER_LIGHT_SEQUENCES.defeat, parseSafe('defeat', defeatJson)],
+      [TOWER_LIGHT_SEQUENCES.monthStarted, parseSafe('monthStarted', monthStartedJson)],
+      [
+        TOWER_LIGHT_SEQUENCES.slowFlareThenFade,
+        parseSafe('slowFlareThenFade', slowFlareThenFadeJson),
+      ],
+      [TOWER_LIGHT_SEQUENCES.victory, parseSafe('victory', victoryJson)],
+      [TOWER_LIGHT_SEQUENCES.flareThenFade, parseSafe('flareThenFade', flareThenFadeJson)],
+      [
+        TOWER_LIGHT_SEQUENCES.flareThenFadeBase,
+        parseSafe('flareThenFadeBase', flareThenFadeBaseJson),
+      ],
+      [TOWER_LIGHT_SEQUENCES.gloat01, parseSafe('gloat01', gloat01Json)],
+      [TOWER_LIGHT_SEQUENCES.gloat02, parseSafe('gloat02', gloat02Json)],
+      [TOWER_LIGHT_SEQUENCES.gloat03, parseSafe('gloat03', gloat03Json)],
+      [
+        TOWER_LIGHT_SEQUENCES.wholeTowerBreathing,
+        parseSafe('wholeTowerBreathing', wholeTowerBreathingJson),
+      ],
+      [TOWER_LIGHT_SEQUENCES.rotationAllDrums, parseSafe('rotationAllDrums', rotationAllDrumsJson)],
+      [TOWER_LIGHT_SEQUENCES.rotationDrumTop, parseSafe('rotationDrumTop', rotationDrumTopJson)],
+      [
+        TOWER_LIGHT_SEQUENCES.rotationDrumMiddle,
+        parseSafe('rotationDrumMiddle', rotationDrumMiddleJson),
+      ],
+      [
+        TOWER_LIGHT_SEQUENCES.rotationDrumBottom,
+        parseSafe('rotationDrumBottom', rotationDrumBottomJson),
+      ],
+      [TOWER_LIGHT_SEQUENCES.dungeonIdle, parseSafe('dungeonIdle', dungeonIdleJson)],
+      [TOWER_LIGHT_SEQUENCES.twinkle, parseSafe('twinkle', twinkleJson)],
+      [TOWER_LIGHT_SEQUENCES.flareThenFlicker, parseSafe('flareThenFlicker', flareThenFlickerJson)],
+      [TOWER_LIGHT_SEQUENCES.angryStrobe01, parseSafe('angryStrobe01', angryStrobe01Json)],
+      [TOWER_LIGHT_SEQUENCES.angryStrobe02, parseSafe('angryStrobe02', angryStrobe02Json)],
+      [TOWER_LIGHT_SEQUENCES.angryStrobe03, parseSafe('angryStrobe03', angryStrobe03Json)],
+      [TOWER_LIGHT_SEQUENCES.sealReveal, parseSafe('sealReveal', sealRevealJson)],
+    ] as ReadonlyArray<[number, Sequence | null]>
+  ).filter((kv): kv is [number, Sequence] => kv[1] !== null),
 );
 
 /**

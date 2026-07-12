@@ -5,17 +5,25 @@
   "loop": false,
   "endBehavior": "hold",
   "tracks": [
-    { "_comment": "Phase 1 — 25-tick exponential ramp on all 6 layers.",
+    {
+      "_comment": "Phase 1 — 25-tick exponential ramp on all 6 layers.",
       "kind": "exponentialRamp",
-      "atTick": 0, "durationTicks": 25,
-      "layers": [0, 1, 2, 3, 4, 5], "lights": "all",
-      "multiplierNum": 5, "multiplierDen": 4,
-      "floorLevelPwm": 5, "saturationLevelPwm": 204
+      "atTick": 0,
+      "durationTicks": 25,
+      "layers": [0, 1, 2, 3, 4, 5],
+      "lights": "all",
+      "multiplierNum": 5,
+      "multiplierDen": 4,
+      "floorLevelPwm": 5,
+      "saturationLevelPwm": 204
     },
-    { "_comment": "Phase 2 — exponential decay over 200 ticks (worst-case budget).",
+    {
+      "_comment": "Phase 2 — exponential decay over 200 ticks (worst-case budget).",
       "kind": "scaleAll",
-      "atTick": 25, "endTick": 225,
-      "multiplierNum": 768, "multiplierDen": 800
+      "atTick": 25,
+      "endTick": 225,
+      "multiplierNum": 768,
+      "multiplierDen": 800
     }
   ]
 }

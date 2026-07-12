@@ -36,11 +36,9 @@ function defaultInputFor(awaiting: InputRequest, state: EngineState): Input {
       const opts = awaiting.options?.map((o) => o.id) ?? [];
       // legacy loop: 'pass' is the safe no-op; full-turn loop: 'endTurn' is (quest would fault
       // without a questId, and everything else burns a latch without progressing the walk).
-      const value = (opts.includes('pass')
-        ? 'pass'
-        : opts.includes('endTurn')
-          ? 'endTurn'
-          : (opts[0] ?? 'pass')) as ActionChoice;
+      const value = (
+        opts.includes('pass') ? 'pass' : opts.includes('endTurn') ? 'endTurn' : (opts[0] ?? 'pass')
+      ) as ActionChoice;
       return { requestId: 'action', value, kind: 'decision' };
     }
     case 'skullCounter':
@@ -80,12 +78,18 @@ function defaultInputFor(awaiting: InputRequest, state: EngineState): Input {
       // it. Each input strictly advances revealed/resolved, so the battle ends after 2×level steps.
       const b = state.clock.battle;
       const pending = b && (b.revealedCount ?? 0) > (b.resolved ?? 0);
-      return { requestId: 'battleCard', value: pending ? { resolve: true } : { reveal: true }, kind: 'decision' };
+      return {
+        requestId: 'battleCard',
+        value: pending ? { resolve: true } : { reveal: true },
+        kind: 'decision',
+      };
     }
     case 'battleHeroTarget': {
       // pick the first other hero in turn order (a choice-scope hero.scope only prompts with ≥2 others)
       const active = state.clock.activeHero;
-      const order = state.clock.turnOrder?.length ? state.clock.turnOrder : Object.keys(state.heroes);
+      const order = state.clock.turnOrder?.length
+        ? state.clock.turnOrder
+        : Object.keys(state.heroes);
       const heroId = order.find((h) => h !== active) ?? active;
       return { requestId: 'battleHeroTarget', value: { heroId }, kind: 'decision' };
     }
@@ -275,7 +279,15 @@ export function SimulatorPanel() {
   const canStart = schemaDoc && validationResults?.allOk;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'monospace', fontSize: 11 }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        fontFamily: 'monospace',
+        fontSize: 11,
+      }}
+    >
       {/* Controls */}
       <div
         style={{
@@ -334,7 +346,14 @@ export function SimulatorPanel() {
             </button>
             <button
               onClick={handleStop}
-              style={{ padding: '3px 10px', border: '1px solid #FCA5A5', borderRadius: 4, cursor: 'pointer', color: '#DC2626', fontSize: 11 }}
+              style={{
+                padding: '3px 10px',
+                border: '1px solid #FCA5A5',
+                borderRadius: 4,
+                cursor: 'pointer',
+                color: '#DC2626',
+                fontSize: 11,
+              }}
             >
               ■ Stop
             </button>
@@ -345,7 +364,11 @@ export function SimulatorPanel() {
             style={{
               marginLeft: 4,
               color:
-                lastResult.status === 'won' ? '#059669' : lastResult.status === 'lost' ? '#DC2626' : '#374151',
+                lastResult.status === 'won'
+                  ? '#059669'
+                  : lastResult.status === 'lost'
+                    ? '#DC2626'
+                    : '#374151',
               fontWeight: 700,
             }}
           >
@@ -367,10 +390,7 @@ export function SimulatorPanel() {
       )}
 
       {/* Tower preview */}
-      <div
-        ref={towerContainerRef}
-        style={{ height: 200, background: '#0F172A', flexShrink: 0 }}
-      />
+      <div ref={towerContainerRef} style={{ height: 200, background: '#0F172A', flexShrink: 0 }} />
 
       {/* Trace */}
       <div style={{ overflowY: 'auto', flex: 1, padding: '4px 0' }}>
@@ -389,12 +409,20 @@ export function SimulatorPanel() {
               gridTemplateColumns: '30px 70px 120px 50px 60px 80px',
               gap: 4,
               color:
-                entry.status === 'won' ? '#059669' : entry.status === 'lost' ? '#DC2626' : '#374151',
+                entry.status === 'won'
+                  ? '#059669'
+                  : entry.status === 'lost'
+                    ? '#DC2626'
+                    : '#374151',
             }}
           >
             <span style={{ color: '#94A3B8' }}>#{entry.stepIndex}</span>
-            <span style={{ fontWeight: entry.status !== 'running' ? 700 : 400 }}>{entry.status}</span>
-            <span style={{ color: '#64748B' }}>{entry.awaitingId ? `await:${entry.awaitingId}` : ''}</span>
+            <span style={{ fontWeight: entry.status !== 'running' ? 700 : 400 }}>
+              {entry.status}
+            </span>
+            <span style={{ color: '#64748B' }}>
+              {entry.awaitingId ? `await:${entry.awaitingId}` : ''}
+            </span>
             <span style={{ color: '#94A3B8' }}>
               m{entry.month}t{entry.turn}
             </span>

@@ -28,7 +28,10 @@ const PING_INTERVAL_MS = 20_000;
  * ```
  */
 export class ConnectionManager {
-  private clients: Map<ClientId, { meta: ConnectedClient; socket: WebSocket; alive: boolean; helloComplete: boolean }> = new Map();
+  private clients: Map<
+    ClientId,
+    { meta: ConnectedClient; socket: WebSocket; alive: boolean; helloComplete: boolean }
+  > = new Map();
   private handshakeTimers: Map<ClientId, ReturnType<typeof setTimeout>> = new Map();
   private pingInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -78,7 +81,9 @@ export class ConnectionManager {
       this.handshakeTimers.delete(id);
       const entry = this.clients.get(id);
       if (entry) {
-        console.warn(`[ConnectionManager] Client ${id} did not complete handshake within ${HANDSHAKE_TIMEOUT_MS}ms — removing`);
+        console.warn(
+          `[ConnectionManager] Client ${id} did not complete handshake within ${HANDSHAKE_TIMEOUT_MS}ms — removing`,
+        );
         socket.close(1008, 'Handshake timeout');
         timeoutCb?.();
       }
@@ -86,7 +91,9 @@ export class ConnectionManager {
     this.handshakeTimers.set(id, timer);
 
     return {
-      onHandshakeTimeout: (cb: () => void) => { timeoutCb = cb; },
+      onHandshakeTimeout: (cb: () => void) => {
+        timeoutCb = cb;
+      },
     };
   }
 

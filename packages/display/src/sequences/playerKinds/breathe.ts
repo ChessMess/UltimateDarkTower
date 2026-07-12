@@ -46,8 +46,7 @@ export function breatheHandler(
 
   const tickFn = (): void => {
     const doubled = (2 * elapsed.ticks) & fullPeriodDoubledMask;
-    const magnitude =
-      doubled >= halfPeriodDoubled ? fullPeriodDoubledMask - doubled : doubled;
+    const magnitude = doubled >= halfPeriodDoubled ? fullPeriodDoubledMask - doubled : doubled;
     const level = magnitude / divisor / 255;
     setAll(deps.ledAnimator, level);
     elapsed.ticks = (elapsed.ticks + 1) % periodTicks;

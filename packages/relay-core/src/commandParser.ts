@@ -88,7 +88,11 @@ export class CommandParser {
     const raw = Array.from(data);
     const valid = raw.length === TOWER_COMMAND_LENGTH;
     if (!valid) {
-      return { raw, valid, description: `Invalid packet: expected ${TOWER_COMMAND_LENGTH} bytes, got ${raw.length}` };
+      return {
+        raw,
+        valid,
+        description: `Invalid packet: expected ${TOWER_COMMAND_LENGTH} bytes, got ${raw.length}`,
+      };
     }
 
     const parts: string[] = [];

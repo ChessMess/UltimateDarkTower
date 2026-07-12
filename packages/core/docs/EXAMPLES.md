@@ -2,11 +2,11 @@
 
 Three example apps ship with this library, each showing a different slice of what you can do with it. Use them as a reference for your own code or as a quick test harness when verifying library changes against real hardware.
 
-| Example | Runtime | Demonstrates | Source |
-|---|---|---|---|
-| **Controller** | Browser (Web Bluetooth) | Full command surface, BLE diagnostics tab, tower emulator | [examples/controller/](../examples/controller/) |
-| **Game** | Browser (Web Bluetooth) | A complete playable game (The Tower's Challenge) with scoring, glyph mechanics, and confetti | [examples/game/](../examples/game/) |
-| **Node CLI** | Node.js | Minimal command-line driver for verifying the Node adapter | [examples/node/](../examples/node/) |
+| Example        | Runtime                 | Demonstrates                                                                                 | Source                                          |
+| -------------- | ----------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Controller** | Browser (Web Bluetooth) | Full command surface, BLE diagnostics tab, tower emulator                                    | [examples/controller/](../examples/controller/) |
+| **Game**       | Browser (Web Bluetooth) | A complete playable game (The Tower's Challenge) with scoring, glyph mechanics, and confetti | [examples/game/](../examples/game/)             |
+| **Node CLI**   | Node.js                 | Minimal command-line driver for verifying the Node adapter                                   | [examples/node/](../examples/node/)             |
 
 ---
 

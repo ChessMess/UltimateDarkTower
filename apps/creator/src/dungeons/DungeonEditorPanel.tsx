@@ -50,7 +50,10 @@ export function DungeonEditorPanel({
   const room = selectedRoomId ? dungeon.rooms.find((r) => r.id === selectedRoomId) : undefined;
 
   const patchRoom = (id: string, patch: Partial<DungeonRoom>) =>
-    onChange({ ...dungeon, rooms: dungeon.rooms.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
+    onChange({
+      ...dungeon,
+      rooms: dungeon.rooms.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+    });
 
   // exactly-one enforcement: setting entrance/target on a room clears it on all others.
   const setUnique = (id: string, key: 'isEntrance' | 'isTarget', on: boolean) =>
@@ -105,7 +108,10 @@ export function DungeonEditorPanel({
             style={{ ...inputStyle, width: 64 }}
             value={dungeon.grid.cols}
             onChange={(e) =>
-              onChange({ ...dungeon, grid: { ...dungeon.grid, cols: Math.max(1, +e.target.value | 0) } })
+              onChange({
+                ...dungeon,
+                grid: { ...dungeon.grid, cols: Math.max(1, +e.target.value | 0) },
+              })
             }
           />
           <span style={{ color: 'var(--c-text-faint)' }}>×</span>
@@ -115,7 +121,10 @@ export function DungeonEditorPanel({
             style={{ ...inputStyle, width: 64 }}
             value={dungeon.grid.rows}
             onChange={(e) =>
-              onChange({ ...dungeon, grid: { ...dungeon.grid, rows: Math.max(1, +e.target.value | 0) } })
+              onChange({
+                ...dungeon,
+                grid: { ...dungeon.grid, rows: Math.max(1, +e.target.value | 0) },
+              })
             }
           />
         </div>
@@ -148,9 +157,7 @@ export function DungeonEditorPanel({
         <select
           style={inputStyle}
           value={dungeon.spawningQuestId ?? ''}
-          onChange={(e) =>
-            onChange({ ...dungeon, spawningQuestId: e.target.value || undefined })
-          }
+          onChange={(e) => onChange({ ...dungeon, spawningQuestId: e.target.value || undefined })}
         >
           <option value="">— none —</option>
           {Object.keys(quests).map((q) => (
@@ -162,7 +169,8 @@ export function DungeonEditorPanel({
 
         <p style={hintStyle}>
           Select a cell on the map to add or edit a room. Wire this dungeon into play with a
-          <b> dungeon.subflow </b> node (or the “Add &amp; wire dungeon subflow” button in the rail).
+          <b> dungeon.subflow </b> node (or the “Add &amp; wire dungeon subflow” button in the
+          rail).
         </p>
       </div>
     );
@@ -170,7 +178,14 @@ export function DungeonEditorPanel({
 
   return (
     <div style={panelStyle}>
-      <div style={{ ...headerStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        style={{
+          ...headerStyle,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <span>Room · {room.id}</span>
         <button style={smallBtn} onClick={() => onSelectRoom(null)}>
           ← Dungeon
@@ -223,7 +238,9 @@ export function DungeonEditorPanel({
       <label style={labelStyle}>Inside event (applied on entry)</label>
       <EffectListEditor
         value={room.insideEvent ?? []}
-        onChange={(effects) => patchRoom(room.id, { insideEvent: effects.length ? effects : undefined })}
+        onChange={(effects) =>
+          patchRoom(room.id, { insideEvent: effects.length ? effects : undefined })
+        }
         deckIds={deckIds}
         foeIds={foeIds}
       />

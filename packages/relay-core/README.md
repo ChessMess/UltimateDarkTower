@@ -43,4 +43,4 @@ For a ready-to-run daemon, see the CLI and Electron operator console in the [mai
 
 ## License
 
-MIT. Unofficial, fan-made project; *Return to Dark Tower* is © Restoration Games.
+MIT. Unofficial, fan-made project; _Return to Dark Tower_ is © Restoration Games.

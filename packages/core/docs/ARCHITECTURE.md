@@ -111,13 +111,13 @@ stateDiagram-v2
 
 The library doesn't trust any single signal to declare the connection dead. It watches five:
 
-| Path | Trigger | Latency |
-|---|---|---|
-| **Battery heartbeat** | No battery notification for the configured timeout (default 3 s) | ~3 s |
-| **GATT disconnect event** | Adapter reports the GATT session went down | Immediate |
-| **Command response timeout** | A queued command's 30 s response timer expired | 30 s |
-| **Bluetooth availability** | Browser reports BT was turned off or removed | Immediate |
-| **Manual** | App called `disconnect()` or `cleanup()` | Immediate |
+| Path                         | Trigger                                                          | Latency   |
+| ---------------------------- | ---------------------------------------------------------------- | --------- |
+| **Battery heartbeat**        | No battery notification for the configured timeout (default 3 s) | ~3 s      |
+| **GATT disconnect event**    | Adapter reports the GATT session went down                       | Immediate |
+| **Command response timeout** | A queued command's 30 s response timer expired                   | 30 s      |
+| **Bluetooth availability**   | Browser reports BT was turned off or removed                     | Immediate |
+| **Manual**                   | App called `disconnect()` or `cleanup()`                         | Immediate |
 
 Whichever fires first wins. The diagnostics recorder tags incidents by which path detected the loss, which is the single most useful field when triaging flaky disconnects — see [BLE_DIAGNOSTICS.md](BLE_DIAGNOSTICS.md).
 

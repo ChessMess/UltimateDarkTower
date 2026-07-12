@@ -3,7 +3,7 @@ import { MockBluetoothAdapter } from './mocks/MockBluetoothAdapter';
 import { TOWER_LIGHT_SEQUENCES, TOWER_AUDIO_LIBRARY } from '../src/udtConstants';
 
 // Command byte offsets (20-byte packet: byte[0] = command type, bytes[1-19] = state data)
-const AUDIO_BYTE = 15;       // state data[14] → command[15]: audio.sample
+const AUDIO_BYTE = 15; // state data[14] → command[15]: audio.sample
 const LED_SEQUENCE_BYTE = 19; // state data[18] → command[19]: led_sequence
 
 /**
@@ -39,7 +39,10 @@ describe('lightOverrides()', () => {
   });
 
   test('sets led_sequence (byte 19) and audio (byte 15) when both provided', async () => {
-    await darkTower.lightOverrides(TOWER_LIGHT_SEQUENCES.sealReveal, TOWER_AUDIO_LIBRARY.TowerSeal.value);
+    await darkTower.lightOverrides(
+      TOWER_LIGHT_SEQUENCES.sealReveal,
+      TOWER_AUDIO_LIBRARY.TowerSeal.value,
+    );
 
     expect(writes).toHaveLength(1);
     expect(writes[0][LED_SEQUENCE_BYTE]).toBe(TOWER_LIGHT_SEQUENCES.sealReveal); // 0x0e

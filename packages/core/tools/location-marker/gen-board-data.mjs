@@ -28,11 +28,11 @@ const round5 = (n) => Number(n.toFixed(5));
 // --- anchors: round coordinates, preserve location/slot order ---
 const anchors = {};
 for (const [loc, slots] of Object.entries(data.anchors)) {
-    const out = {};
-    for (const [slot, { x, y }] of Object.entries(slots)) {
-        out[slot] = { x: round5(x), y: round5(y) };
-    }
-    anchors[loc] = out;
+  const out = {};
+  for (const [slot, { x, y }] of Object.entries(slots)) {
+    out[slot] = { x: round5(x), y: round5(y) };
+  }
+  anchors[loc] = out;
 }
 
 const anchorsFile = `/**

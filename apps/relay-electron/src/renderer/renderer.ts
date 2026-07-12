@@ -1,13 +1,27 @@
-import type { TowerEmulatorState, ConnectedClient, RelayEvent } from 'ultimatedarktowerrelay-shared';
+import type {
+  TowerEmulatorState,
+  ConnectedClient,
+  RelayEvent,
+} from 'ultimatedarktowerrelay-shared';
 import type { SessionSummary, TimelineRow } from 'ultimatedarktowerrelay-core';
 
 // ─── Window type augmentation ─────────────────────────────────────────────────
 
 type SourceMode = 'emulator' | 'mock' | 'real';
-interface ActionResult { ok: boolean; reason?: string }
+interface ActionResult {
+  ok: boolean;
+  reason?: string;
+}
 
-interface LogFileInfo { name: string; sizeBytes: number; mtimeMs: number }
-interface LogListResult { sessions: LogFileInfo[]; events: LogFileInfo[] }
+interface LogFileInfo {
+  name: string;
+  sizeBytes: number;
+  mtimeMs: number;
+}
+interface LogListResult {
+  sessions: LogFileInfo[];
+  events: LogFileInfo[];
+}
 type LogAnalysisResult =
   | {
       ok: true;
@@ -31,7 +45,9 @@ interface DarkTowerRelayAPI {
   onTowerState(cb: (payload: { state: TowerEmulatorState; detail?: string }) => void): () => void;
   onRelayClientChange(cb: (payload: { clients: ConnectedClient[] }) => void): () => void;
   onTowerCommand(cb: (payload: { count: number; lastAt: string }) => void): () => void;
-  onRelayStatus(cb: (payload: { running: boolean; port: number; message: string; urls: string[] }) => void): () => void;
+  onRelayStatus(
+    cb: (payload: { running: boolean; port: number; message: string; urls: string[] }) => void,
+  ): () => void;
   onBleAdapterState(cb: (payload: { state: string }) => void): () => void;
   onSourceChanged(cb: (payload: { source: SourceMode }) => void): () => void;
   triggerSkullDrop(): Promise<ActionResult>;
@@ -62,7 +78,9 @@ const sourceFeedbackEl = document.getElementById('source-feedback') as HTMLSpanE
 const towerStateEl = document.getElementById('tower-state') as HTMLSpanElement;
 const towerStateDotEl = document.getElementById('tower-state-dot') as HTMLSpanElement;
 const bleAdapterDetailEl = document.getElementById('ble-adapter-detail') as HTMLDivElement;
-const bleAdapterStateLabelEl = document.getElementById('ble-adapter-state-label') as HTMLSpanElement;
+const bleAdapterStateLabelEl = document.getElementById(
+  'ble-adapter-state-label',
+) as HTMLSpanElement;
 const bleAdapterHelpEl = document.getElementById('ble-adapter-help') as HTMLDivElement;
 const bleErrorDetailEl = document.getElementById('ble-error-detail') as HTMLDivElement;
 const clientCountEl = document.getElementById('client-count') as HTMLSpanElement;
@@ -85,7 +103,9 @@ const toggleLoggingBtnEl = document.getElementById('btn-toggle-logging') as HTML
 const openLogsBtnEl = document.getElementById('btn-open-logs') as HTMLButtonElement;
 const loggingFeedbackEl = document.getElementById('logging-feedback') as HTMLSpanElement;
 const loggingSectionEl = document.getElementById('card-logging') as HTMLElement;
-const loggingCollapseToggleEl = document.getElementById('logging-collapse-toggle') as HTMLButtonElement;
+const loggingCollapseToggleEl = document.getElementById(
+  'logging-collapse-toggle',
+) as HTMLButtonElement;
 
 // Logs panel (FR-7.3 log viewer)
 const logsRefreshBtnEl = document.getElementById('btn-logs-refresh') as HTMLButtonElement;
@@ -143,9 +163,8 @@ function setTowerState(state: TowerEmulatorState, detail?: string): void {
   }
 
   skullDropBtnEl.disabled = !skullDropAvailable();
-  skullDropBtnEl.title = currentSource === 'real'
-    ? 'Real tower reports its own skull drops'
-    : 'Trigger skull drop';
+  skullDropBtnEl.title =
+    currentSource === 'real' ? 'Real tower reports its own skull drops' : 'Trigger skull drop';
   if (!skullDropAvailable()) clearSkullFeedback();
 
   // BLE lifecycle controls — driven by tower state (apply to every source:
@@ -188,7 +207,8 @@ function setClients(clients: ConnectedClient[]): void {
     const towerIcon = client.towerConnected ? '✓' : '✗'; // ✓ or ✗
     const towerClass = client.towerConnected ? 'tower-ok' : 'tower-disconnected';
 
-    li.innerHTML = `<span class="client-name">${escapeHtml(name)}</span>` +
+    li.innerHTML =
+      `<span class="client-name">${escapeHtml(name)}</span>` +
       `<span class="client-health">` +
       `<span class="health-relay" title="Relay connected">${relayBadge}</span>` +
       `<span class="health-tower ${towerClass}" title="Tower ${client.towerConnected ? 'connected' : 'disconnected'}">${towerIcon}</span>` +
@@ -286,7 +306,9 @@ function setRelayStatus(status: { running: boolean; message: string; urls?: stri
       copyBtn.addEventListener('click', () => {
         navigator.clipboard.writeText(url).then(() => {
           copyBtn.textContent = 'Copied!';
-          setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy';
+          }, 1500);
         });
       });
 
@@ -304,7 +326,10 @@ function setRelayStatus(status: { running: boolean; message: string; urls?: stri
 let _feedbackTimer: ReturnType<typeof setTimeout> | null = null;
 
 function clearSkullFeedback(): void {
-  if (_feedbackTimer) { clearTimeout(_feedbackTimer); _feedbackTimer = null; }
+  if (_feedbackTimer) {
+    clearTimeout(_feedbackTimer);
+    _feedbackTimer = null;
+  }
   skullDropFeedbackEl.hidden = true;
   skullDropFeedbackEl.className = 'action-feedback';
   skullDropFeedbackEl.textContent = '';
@@ -328,12 +353,19 @@ function showTransientFeedback(el: HTMLElement, ok: boolean, message: string): v
   el.textContent = message;
   el.className = `action-feedback ${ok ? 'feedback-ok' : 'feedback-err'}`;
   el.hidden = false;
-  _transientTimers.set(el, setTimeout(() => { el.hidden = true; }, 3000));
+  _transientTimers.set(
+    el,
+    setTimeout(() => {
+      el.hidden = true;
+    }, 3000),
+  );
 }
 
 function setLoggingState(enabled: boolean): void {
   loggingStateDotEl.className = `dot ${enabled ? 'state-connected' : 'state-idle'}`;
-  loggingStateLabelEl.textContent = enabled ? 'Active — recording to file' : 'Paused — not recording';
+  loggingStateLabelEl.textContent = enabled
+    ? 'Active — recording to file'
+    : 'Paused — not recording';
   loggingBadgeEl.textContent = enabled ? 'ON' : 'OFF';
   // Color the badge so the recording state stays obvious when the section is collapsed.
   loggingBadgeEl.className = `badge ${enabled ? 'badge-on' : 'badge-off'}`;
@@ -365,11 +397,16 @@ function scheduleWindowSync(): void {
 let _logsFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
 
 function showLogsFeedback(ok: boolean, message: string): void {
-  if (_logsFeedbackTimer) { clearTimeout(_logsFeedbackTimer); _logsFeedbackTimer = null; }
+  if (_logsFeedbackTimer) {
+    clearTimeout(_logsFeedbackTimer);
+    _logsFeedbackTimer = null;
+  }
   logsFeedbackEl.textContent = message;
   logsFeedbackEl.className = `action-feedback ${ok ? 'feedback-ok' : 'feedback-err'}`;
   logsFeedbackEl.hidden = false;
-  _logsFeedbackTimer = setTimeout(() => { logsFeedbackEl.hidden = true; }, 3000);
+  _logsFeedbackTimer = setTimeout(() => {
+    logsFeedbackEl.hidden = true;
+  }, 3000);
 }
 
 function formatBytes(n: number): string {
@@ -512,7 +549,11 @@ function renderEvents(result: EventLogResult): void {
       const seq = ev.seq !== undefined ? `#${ev.seq}` : '—';
       const time = new Date(ev.timestamp).toLocaleTimeString();
       let payload = '';
-      try { payload = JSON.stringify(ev.payload); } catch { payload = ''; }
+      try {
+        payload = JSON.stringify(ev.payload);
+      } catch {
+        payload = '';
+      }
       if (payload.length > 140) payload = `${payload.slice(0, 137)}…`;
       div.innerHTML =
         `<span class="log-seq">${escapeHtml(seq)}</span>` +
@@ -565,67 +606,89 @@ async function init(): Promise<void> {
     const previous = currentSource;
     sourceSelectEl.disabled = true;
     sourceFeedbackEl.hidden = true;
-    api.setSource(target).then(({ ok, reason }) => {
-      if (ok) {
-        showTransientFeedback(sourceFeedbackEl, true, `Source: ${target}`);
-      } else {
-        sourceSelectEl.value = previous; // revert
+    api
+      .setSource(target)
+      .then(({ ok, reason }) => {
+        if (ok) {
+          showTransientFeedback(sourceFeedbackEl, true, `Source: ${target}`);
+        } else {
+          sourceSelectEl.value = previous; // revert
+          setSourceUI(previous);
+          showTransientFeedback(sourceFeedbackEl, false, reason ?? 'Switch failed');
+        }
+      })
+      .catch(() => {
+        sourceSelectEl.value = previous;
         setSourceUI(previous);
-        showTransientFeedback(sourceFeedbackEl, false, reason ?? 'Switch failed');
-      }
-    }).catch(() => {
-      sourceSelectEl.value = previous;
-      setSourceUI(previous);
-      showTransientFeedback(sourceFeedbackEl, false, 'IPC error');
-    }).finally(() => {
-      sourceSelectEl.disabled = false;
-    });
+        showTransientFeedback(sourceFeedbackEl, false, 'IPC error');
+      })
+      .finally(() => {
+        sourceSelectEl.disabled = false;
+      });
   });
 
   // ── Manual controls ─────────────────────────────────────────────────────────
   skullDropBtnEl.addEventListener('click', () => {
     skullDropBtnEl.disabled = true;
     clearSkullFeedback();
-    api.triggerSkullDrop().then(({ ok, reason }) => {
-      showSkullFeedback(ok, ok ? 'Skull dropped ✓' : (reason ?? 'Failed'));
-    }).catch(() => {
-      showSkullFeedback(false, 'IPC error');
-    }).finally(() => {
-      skullDropBtnEl.disabled = !skullDropAvailable();
-    });
+    api
+      .triggerSkullDrop()
+      .then(({ ok, reason }) => {
+        showSkullFeedback(ok, ok ? 'Skull dropped ✓' : (reason ?? 'Failed'));
+      })
+      .catch(() => {
+        showSkullFeedback(false, 'IPC error');
+      })
+      .finally(() => {
+        skullDropBtnEl.disabled = !skullDropAvailable();
+      });
   });
 
   startAdvertisingBtnEl.addEventListener('click', () => {
     startAdvertisingBtnEl.disabled = true;
     bleControlFeedbackEl.hidden = true;
-    api.startTowerAdvertising().then(({ ok, reason }) => {
-      if (!ok) showTransientFeedback(bleControlFeedbackEl, false, reason ?? 'Failed to start');
-    }).catch(() => {
-      showTransientFeedback(bleControlFeedbackEl, false, 'IPC error');
-    });
+    api
+      .startTowerAdvertising()
+      .then(({ ok, reason }) => {
+        if (!ok) showTransientFeedback(bleControlFeedbackEl, false, reason ?? 'Failed to start');
+      })
+      .catch(() => {
+        showTransientFeedback(bleControlFeedbackEl, false, 'IPC error');
+      });
     // Re-enable is driven by onTowerState when the state settles.
   });
 
   stopBleBtnEl.addEventListener('click', () => {
     stopBleBtnEl.disabled = true;
     bleControlFeedbackEl.hidden = true;
-    api.stopTowerAdvertising().then(({ ok, reason }) => {
-      if (!ok) showTransientFeedback(bleControlFeedbackEl, false, reason ?? 'Failed to stop');
-    }).catch(() => {
-      showTransientFeedback(bleControlFeedbackEl, false, 'IPC error');
-    });
+    api
+      .stopTowerAdvertising()
+      .then(({ ok, reason }) => {
+        if (!ok) showTransientFeedback(bleControlFeedbackEl, false, reason ?? 'Failed to stop');
+      })
+      .catch(() => {
+        showTransientFeedback(bleControlFeedbackEl, false, 'IPC error');
+      });
   });
 
   toggleLoggingBtnEl.addEventListener('click', () => {
     toggleLoggingBtnEl.disabled = true;
-    api.toggleLogging().then(({ enabled }) => {
-      setLoggingState(enabled);
-      showTransientFeedback(loggingFeedbackEl, true, enabled ? 'Logging resumed' : 'Logging paused');
-    }).catch(() => {
-      showTransientFeedback(loggingFeedbackEl, false, 'IPC error');
-    }).finally(() => {
-      toggleLoggingBtnEl.disabled = false;
-    });
+    api
+      .toggleLogging()
+      .then(({ enabled }) => {
+        setLoggingState(enabled);
+        showTransientFeedback(
+          loggingFeedbackEl,
+          true,
+          enabled ? 'Logging resumed' : 'Logging paused',
+        );
+      })
+      .catch(() => {
+        showTransientFeedback(loggingFeedbackEl, false, 'IPC error');
+      })
+      .finally(() => {
+        toggleLoggingBtnEl.disabled = false;
+      });
   });
 
   openLogsBtnEl.addEventListener('click', () => {
@@ -645,13 +708,19 @@ async function init(): Promise<void> {
   resendBtnEl.addEventListener('click', () => {
     resendBtnEl.disabled = true;
     resendFeedbackEl.hidden = true;
-    api.resendLastState().then(({ ok, reason }) => {
-      showTransientFeedback(resendFeedbackEl, ok, ok ? 'Sent' : (reason ?? 'Failed'));
-    }).catch(() => {
-      showTransientFeedback(resendFeedbackEl, false, 'IPC error');
-    }).finally(() => {
-      setTimeout(() => { resendBtnEl.disabled = false; }, 1000);
-    });
+    api
+      .resendLastState()
+      .then(({ ok, reason }) => {
+        showTransientFeedback(resendFeedbackEl, ok, ok ? 'Sent' : (reason ?? 'Failed'));
+      })
+      .catch(() => {
+        showTransientFeedback(resendFeedbackEl, false, 'IPC error');
+      })
+      .finally(() => {
+        setTimeout(() => {
+          resendBtnEl.disabled = false;
+        }, 1000);
+      });
   });
 
   // ── Logs panel ────────────────────────────────────────────────────────────
@@ -659,27 +728,40 @@ async function init(): Promise<void> {
     logsRefreshBtnEl.disabled = true;
     refreshLogs()
       .then(() => showLogsFeedback(true, 'Refreshed'))
-      .catch((err) => showLogsFeedback(false, err instanceof Error ? err.message : 'Refresh failed'))
-      .finally(() => { logsRefreshBtnEl.disabled = false; });
+      .catch((err) =>
+        showLogsFeedback(false, err instanceof Error ? err.message : 'Refresh failed'),
+      )
+      .finally(() => {
+        logsRefreshBtnEl.disabled = false;
+      });
   });
 
   logsAnalyzeBtnEl.addEventListener('click', () => {
     const session = logsSessionSelectEl.value || null;
     logsAnalyzeBtnEl.disabled = true;
-    api.analyzeLogs(session)
+    api
+      .analyzeLogs(session)
       .then(renderAnalysis)
       .catch(() => showLogsFeedback(false, 'IPC error'))
-      .finally(() => { logsAnalyzeBtnEl.disabled = false; });
+      .finally(() => {
+        logsAnalyzeBtnEl.disabled = false;
+      });
   });
 
   logsLoadEventsBtnEl.addEventListener('click', () => {
     const file = logsEventSelectEl.value;
-    if (!file) { showLogsFeedback(false, 'Choose an event-log file'); return; }
+    if (!file) {
+      showLogsFeedback(false, 'Choose an event-log file');
+      return;
+    }
     logsLoadEventsBtnEl.disabled = true;
-    api.loadEventLogFile(file)
+    api
+      .loadEventLogFile(file)
       .then(renderEvents)
       .catch(() => showLogsFeedback(false, 'IPC error'))
-      .finally(() => { logsLoadEventsBtnEl.disabled = false; });
+      .finally(() => {
+        logsLoadEventsBtnEl.disabled = false;
+      });
   });
 
   // Populate the file lists eagerly but GUARDED + non-awaited, so a not-yet-

@@ -1,12 +1,7 @@
 import { z } from 'zod';
 import type gsap from 'gsap';
 import type { SequenceAnimatorDeps } from '../builders/types';
-import {
-  LayerList,
-  LightScope,
-  TICK_S,
-  writeScope,
-} from './_helpers';
+import { LayerList, LightScope, TICK_S, writeScope } from './_helpers';
 
 /**
  * `linearRamp` — interpolate every LED in `scope` linearly from `from` to `to`
@@ -68,10 +63,6 @@ export function linearRampHandler(
   for (let tick = atTick; tick < atTick + durationTicks; tick++) {
     const progress = (tick - atTick) / durationTicks;
     const level = from + (to - from) * progress;
-    tl.call(
-      () => writeScope(deps.ledAnimator, layers, lights, level),
-      undefined,
-      tick * TICK_S,
-    );
+    tl.call(() => writeScope(deps.ledAnimator, layers, lights, level), undefined, tick * TICK_S);
   }
 }

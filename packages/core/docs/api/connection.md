@@ -51,10 +51,10 @@ const custom = new UltimateDarkTower({ adapter: myCustomAdapter });
 
 ```typescript
 enum BluetoothPlatform {
-  WEB  = 'web',   // Browser Web Bluetooth API
-  NODE = 'node',  // Node.js @stoprocent/noble
-  AUTO = 'auto',  // Auto-detect (default)
-  NONE = 'none',  // Software-only — no Bluetooth (e.g. headless rendering, iOS Safari)
+  WEB = 'web', // Browser Web Bluetooth API
+  NODE = 'node', // Node.js @stoprocent/noble
+  AUTO = 'auto', // Auto-detect (default)
+  NONE = 'none', // Software-only — no Bluetooth (e.g. headless rendering, iOS Safari)
 }
 ```
 
@@ -108,11 +108,11 @@ Returns fields read from the tower's Device Information Service during connectio
 
 ```typescript
 const info = tower.getDeviceInformation();
-console.log(info.manufacturerName);   // "Restoration Games LLC"
-console.log(info.modelNumber);        // "ReturnToDarkTower"
-console.log(info.hardwareRevision);   // "1.11"
+console.log(info.manufacturerName); // "Restoration Games LLC"
+console.log(info.modelNumber); // "ReturnToDarkTower"
+console.log(info.hardwareRevision); // "1.11"
 console.log(info.firmwareRevision);
-console.log(info.softwareRevision);   // "1.0.0"
+console.log(info.softwareRevision); // "1.0.0"
 ```
 
 ```typescript
@@ -190,13 +190,13 @@ try {
 }
 ```
 
-| Error | When it fires |
-|---|---|
-| `BluetoothDeviceNotFoundError` | Scan completed without finding `ReturnToDarkTower` |
-| `BluetoothUserCancelledError` | User dismissed the browser device picker |
-| `BluetoothTimeoutError` | Scan or any individual op exceeded its timeout |
-| `BluetoothConnectionError` | GATT connect failed (catch-all for the connect step) |
-| `BluetoothError` | Base class — catch this if you don't need to differentiate |
+| Error                          | When it fires                                              |
+| ------------------------------ | ---------------------------------------------------------- |
+| `BluetoothDeviceNotFoundError` | Scan completed without finding `ReturnToDarkTower`         |
+| `BluetoothUserCancelledError`  | User dismissed the browser device picker                   |
+| `BluetoothTimeoutError`        | Scan or any individual op exceeded its timeout             |
+| `BluetoothConnectionError`     | GATT connect failed (catch-all for the connect step)       |
+| `BluetoothError`               | Base class — catch this if you don't need to differentiate |
 
 ---
 

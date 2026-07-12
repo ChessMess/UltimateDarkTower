@@ -23,7 +23,11 @@
       "brigands": {
         "appearance": { "backRef": "deck-back", "template": "classic" },
         "cards": [
-          { "advantage": "Humanoid", "strikes": 2, "onResolve": [{ "op": "resource.lose", "resource": "warriors", "amount": 1 }] },
+          {
+            "advantage": "Humanoid",
+            "strikes": 2,
+            "onResolve": [{ "op": "resource.lose", "resource": "warriors", "amount": 1 }]
+          },
           { "advantage": "Melee", "strikes": 3 }
         ]
       }
@@ -31,8 +35,6 @@
   },
   "graph": {
     "entry": "n-start",
-    "nodes": [
-      { "id": "n-start", "kind": "lifecycle.gameStart" }
-    ]
+    "nodes": [{ "id": "n-start", "kind": "lifecycle.gameStart" }]
   }
 }

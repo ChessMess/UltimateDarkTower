@@ -53,9 +53,7 @@ export function exponentialRampHandler(
   tl: gsap.core.Timeline,
   deps: SequenceAnimatorDeps,
 ): void {
-  const {
-    layers, lights, atTick, durationTicks, multiplierNum, multiplierDen,
-  } = track;
+  const { layers, lights, atTick, durationTicks, multiplierNum, multiplierDen } = track;
   const floor = track.floorLevel ?? track.floorLevelPwm! / 255;
   const saturation = track.saturationLevel ?? track.saturationLevelPwm! / 255;
   const lightList = resolveLights(lights);

@@ -18,14 +18,22 @@ import UltimateDarkTower, {
   LEDGE_BASE_LIGHT_POSITIONS,
   GLYPHS,
   VOLUME_DESCRIPTIONS,
-  VOLUME_ICONS
+  VOLUME_ICONS,
 } from '../../src';
 import {
-  logger, DOMOutput, ConsoleOutput,
-  rtdt_pack_state, rtdt_unpack_state, type TowerState,
-  createDefaultTowerState, parseDifferentialReadings, type ParsedDifferentialReadings,
-  IndexedDBSink, InMemorySink,
-  type IncidentReport, type DisconnectCause
+  logger,
+  DOMOutput,
+  ConsoleOutput,
+  rtdt_pack_state,
+  rtdt_unpack_state,
+  type TowerState,
+  createDefaultTowerState,
+  parseDifferentialReadings,
+  type ParsedDifferentialReadings,
+  IndexedDBSink,
+  InMemorySink,
+  type IncidentReport,
+  type DisconnectCause,
 } from '../../src';
 
 declare const __UDT_DISPLAY_AVAILABLE__: boolean;
@@ -38,7 +46,11 @@ const incidentSink = new IndexedDBSink();
 const memorySink = new InMemorySink();
 
 function readBoolStorage(key: string, fallback: boolean): boolean {
-  try { return localStorage.getItem(key) === 'true' || (localStorage.getItem(key) === null && fallback); } catch { return fallback; }
+  try {
+    return localStorage.getItem(key) === 'true' || (localStorage.getItem(key) === null && fallback);
+  } catch {
+    return fallback;
+  }
 }
 
 function buildDiagnosticsConfig() {
@@ -84,7 +96,8 @@ const postStateToTowerEmulatorWindow = (state: TowerState) => {
 };
 
 const postAudioEventToEmulatorWindow = (sample: number, loop: boolean, volume: number) => {
-  const name = Object.values(TOWER_AUDIO_LIBRARY).find(s => s.value === sample)?.name ?? `#${sample}`;
+  const name =
+    Object.values(TOWER_AUDIO_LIBRARY).find((s) => s.value === sample)?.name ?? `#${sample}`;
   towerEmulatorWindow?.postMessage({ type: 'playAudio', name, sample, loop, volume }, '*');
 };
 
@@ -121,7 +134,11 @@ async function handleTowerEmulatorWindowClosed(): Promise<void> {
 
   towerEmulatorWindow = null;
 
-  if (currentConnectionMode !== 'emulator' || !Tower.isConnected || towerEmulatorWindowDisconnectInFlight) {
+  if (
+    currentConnectionMode !== 'emulator' ||
+    !Tower.isConnected ||
+    towerEmulatorWindowDisconnectInFlight
+  ) {
     updateEmulatorSealTabVisibility();
     return;
   }
@@ -163,17 +180,16 @@ interface ChartDisplayConfig {
 let differentialChart: any = null;
 let differentialReadings: DifferentialReading[] = [];
 let chartDisplayConfig: ChartDisplayConfig = {
-  showIrBeam: true,   // Default to showing IR beam
+  showIrBeam: true, // Default to showing IR beam
   showDrum1: false,
   showDrum2: false,
-  showDrum3: false
+  showDrum3: false,
 };
 let isCollectingData: boolean = false;
 let chartTimeWindow: number = 30; // seconds
 let lastChartUpdate: number = 0;
 const CHART_UPDATE_THROTTLE = 200; // ms
 const MAX_DATA_POINTS = 1000;
-
 
 // Setup loggers with DOM output after DOM is ready
 const initializeLogger = () => {
@@ -223,11 +239,11 @@ if (document.readyState === 'loading') {
 
 // skull drop callback
 const updateSkullDropCount = (count: number) => {
-  const el = document.getElementById("skull-count");
+  const el = document.getElementById('skull-count');
   if (el) {
     el.innerText = count.toString();
   }
-}
+};
 Tower.onSkullDrop = updateSkullDropCount;
 
 async function connectToTower() {
@@ -239,7 +255,11 @@ async function connectToTower() {
 
   // If we previously used the emulator, recreate Tower with the default BLE adapter
   if (currentConnectionMode !== 'ble') {
-    try { await Tower.cleanup(); } catch { /* ignore */ }
+    try {
+      await Tower.cleanup();
+    } catch {
+      /* ignore */
+    }
     emulatorAdapter = null;
     Tower = new UltimateDarkTower({ diagnostics: buildDiagnosticsConfig() });
     Tower.onSkullDrop = updateSkullDropCount;
@@ -254,7 +274,7 @@ async function connectToTower() {
     currentConnectionMode = 'ble';
   }
 
-  logger.info("Attempting to connect to tower...", '[TC]');
+  logger.info('Attempting to connect to tower...', '[TC]');
   try {
     await Tower.connect();
   } catch (error) {
@@ -272,7 +292,7 @@ async function connectToTowerEmulator() {
     return;
   }
 
-  logger.info("Connecting to Tower Emulator...", '[TC]');
+  logger.info('Connecting to Tower Emulator...', '[TC]');
 
   if (towerEmulatorConnectInFlight) {
     if (hasOpenTowerEmulatorWindow()) {
@@ -287,7 +307,7 @@ async function connectToTowerEmulator() {
       towerEmulatorWindow = window.open(
         'TowerEmulator.html',
         'TowerEmulator',
-        'width=1900,height=855,resizable=yes,scrollbars=yes'
+        'width=1900,height=855,resizable=yes,scrollbars=yes',
       );
     }
 
@@ -308,7 +328,7 @@ async function connectToTowerEmulator() {
     towerEmulatorWindow = window.open(
       'TowerEmulator.html',
       'TowerEmulator',
-      'width=900,height=900,resizable=yes,scrollbars=yes'
+      'width=900,height=900,resizable=yes,scrollbars=yes',
     );
   }
 
@@ -322,7 +342,9 @@ async function connectToTowerEmulator() {
   if (currentConnectionMode !== 'emulator') {
     try {
       await Tower.cleanup();
-    } catch { /* ignore if not yet connected */ }
+    } catch {
+      /* ignore if not yet connected */
+    }
 
     emulatorAdapter = new TowerEmulatorAdapter({
       onAudioCommand: postAudioEventToEmulatorWindow,
@@ -360,18 +382,20 @@ const onTowerConnected = () => {
   syncTowerEmulatorWindow();
   updateEmulatorSealTabVisibility();
 
-  const el = document.getElementById("tower-connection-state");
+  const el = document.getElementById('tower-connection-state');
   if (el) {
-    el.innerText = "Tower Connected"
+    el.innerText = 'Tower Connected';
     el.style.background = 'rgb(2 255 14 / 30%)';
   }
-  logger.info("Tower connected successfully", '[TC]');
+  logger.info('Tower connected successfully', '[TC]');
 
   // Configure battery logging settings
   Tower.batteryLogFrequency = 1000;
   // Apply the UI battery filter setting
-  const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]') as NodeListOf<HTMLInputElement>;
-  const selectedValue = Array.from(batteryFilterRadios).find(radio => radio.checked)?.value;
+  const batteryFilterRadios = document.querySelectorAll(
+    'input[name="batteryFilter"]',
+  ) as NodeListOf<HTMLInputElement>;
+  const selectedValue = Array.from(batteryFilterRadios).find((radio) => radio.checked)?.value;
   if (selectedValue === 'none') {
     Tower.batteryLogEnabled = false;
   } else {
@@ -408,20 +432,20 @@ const onTowerConnected = () => {
         refreshStatusPacket();
       }
     } catch (error) {
-      logger.debug("Error initializing status packet: " + error, '[TC]');
+      logger.debug('Error initializing status packet: ' + error, '[TC]');
     }
   }, 500);
-}
+};
 Tower.onTowerConnect = onTowerConnected;
 
 const onTowerDisconnected = () => {
   towerEmulatorWindow?.postMessage({ type: 'showIdle' }, '*');
-  const el = document.getElementById("tower-connection-state");
+  const el = document.getElementById('tower-connection-state');
   if (el) {
-    el.innerText = "Tower Disconnected";
+    el.innerText = 'Tower Disconnected';
     el.style.background = 'rgb(255 1 1 / 30%)';
   }
-  logger.warn("Tower disconnected", '[TC]');
+  logger.warn('Tower disconnected', '[TC]');
 
   // Update chart status and stop data collection
   isCollectingData = false;
@@ -435,15 +459,15 @@ const onTowerDisconnected = () => {
   // An in-flight calibration won't complete after a disconnect (the adapter
   // cancels its pending reply), so clear the calibrating UI here.
   setCalibrateButtonDisabled(false);
-  document.getElementById("calibrating-message")?.classList.add("hidden");
-}
+  document.getElementById('calibrating-message')?.classList.add('hidden');
+};
 Tower.onTowerDisconnect = onTowerDisconnected;
 
 // Disable the Calibrate button while a calibration is in flight so it can't be
 // spammed (which would queue overlapping commands and re-trigger the sweep).
 // Re-enabled on completion / disconnect.
 const setCalibrateButtonDisabled = (disabled: boolean) => {
-  const btn = document.getElementById("calibrate") as HTMLButtonElement | null;
+  const btn = document.getElementById('calibrate') as HTMLButtonElement | null;
   if (btn) btn.disabled = disabled;
 };
 
@@ -458,21 +482,21 @@ async function calibrate() {
     postCalibrateToTowerEmulatorWindow();
   }
   await Tower.calibrate();
-  const el = document.getElementById("calibrating-message");
+  const el = document.getElementById('calibrating-message');
   if (el) {
-    el.classList.remove("hidden");
+    el.classList.remove('hidden');
   }
 }
 
 const onCalibrationComplete = () => {
   setCalibrateButtonDisabled(false);
-  const el = document.getElementById("calibrating-message");
+  const el = document.getElementById('calibrating-message');
   if (el) {
-    el.classList.add("hidden");
+    el.classList.add('hidden');
   }
 
   // Auto-refresh glyph positions after calibration
-  logger.info("Calibration complete", '[TC]');
+  logger.info('Calibration complete', '[TC]');
 
   // Note: calibration status will be updated via onTowerStateUpdate callback
   // when the tower state changes, no need for setTimeout here
@@ -482,22 +506,22 @@ const onCalibrationComplete = () => {
     try {
       if (typeof (window as any).refreshGlyphPositions === 'function') {
         (window as any).refreshGlyphPositions();
-        logger.info("Glyph positions refreshed after calibration", '[TC]');
+        logger.info('Glyph positions refreshed after calibration', '[TC]');
       } else {
-        logger.warn("refreshGlyphPositions function not available", '[TC]');
+        logger.warn('refreshGlyphPositions function not available', '[TC]');
       }
 
       // Update drum dropdowns after calibration completes
       updateDrumDropdowns();
     } catch (error) {
-      logger.error("Error refreshing glyph positions after calibration: " + error, '[TC]');
+      logger.error('Error refreshing glyph positions after calibration: ' + error, '[TC]');
     }
   }, 1500);
-}
+};
 Tower.onCalibrationComplete = onCalibrationComplete;
 
 const updateBatteryTrend = () => {
-  const trendElement = document.getElementById("batteryTrend");
+  const trendElement = document.getElementById('batteryTrend');
   if (!trendElement) return;
 
   const currentBatteryPercent = Tower.currentBatteryPercent;
@@ -519,17 +543,17 @@ const updateBatteryTrend = () => {
     // Battery same - light grey right arrow
     trendElement.innerHTML = '<span style="color: #d1d5db; font-size: 16px;">→</span>';
   }
-}
+};
 
 const onBatteryLevelNotify = (millivolts: number) => {
-  const el = document.getElementById("battery");
+  const el = document.getElementById('battery');
   if (el) {
     el.innerText = Tower.milliVoltsToPercentage(millivolts).toString();
   }
 
   // Update battery trend after battery display is updated
   updateBatteryTrend();
-}
+};
 Tower.onBatteryLevelNotify = onBatteryLevelNotify;
 
 const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: string) => {
@@ -543,7 +567,7 @@ const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: 
     newState.drum[2].calibrated !== oldState.drum[2].calibrated;
 
   if (calibrationChanged) {
-    logger.info("Calibration status changed, updating display", '[TC]');
+    logger.info('Calibration status changed, updating display', '[TC]');
     updateCalibrationStatus();
   }
 
@@ -555,9 +579,9 @@ const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: 
   const fullyCalibrated =
     newState.drum[0].calibrated && newState.drum[1].calibrated && newState.drum[2].calibrated;
   if (fullyCalibrated) {
-    const calMsg = document.getElementById("calibrating-message");
-    if (calMsg && !calMsg.classList.contains("hidden")) {
-      calMsg.classList.add("hidden");
+    const calMsg = document.getElementById('calibrating-message');
+    if (calMsg && !calMsg.classList.contains('hidden')) {
+      calMsg.classList.add('hidden');
       setCalibrateButtonDisabled(false);
     }
   }
@@ -569,7 +593,7 @@ const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: 
     newState.drum[2].position !== oldState.drum[2].position;
 
   if (drumPositionsChanged) {
-    logger.info("Drum positions changed, updating dropdowns", '[TC]');
+    logger.info('Drum positions changed, updating dropdowns', '[TC]');
     updateDrumDropdowns();
   }
 
@@ -587,7 +611,7 @@ const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: 
       refreshStatusPacket();
     }
   } catch (error) {
-    logger.debug("Error auto-refreshing status packet: " + error, '[TC]');
+    logger.debug('Error auto-refreshing status packet: ' + error, '[TC]');
   }
 };
 Tower.onTowerStateUpdate = onTowerStateUpdate;
@@ -598,13 +622,15 @@ const handleTowerResponse = (response: Uint8Array) => {
 
   // Check if this is a differential reading (command value 6)
   const commandValue = response[0];
-  if (commandValue === 6) { // TC.DIFFERENTIAL_READINGS value
+  if (commandValue === 6) {
+    // TC.DIFFERENTIAL_READINGS value
     // Use the new helper function to parse individual readings
     const parsedReadings = parseDifferentialReadings(response);
 
     if (parsedReadings) {
       // Calculate combined voltage for backward compatibility
-      const voltage = parsedReadings.irBeam + parsedReadings.drum1 + parsedReadings.drum2 + parsedReadings.drum3;
+      const voltage =
+        parsedReadings.irBeam + parsedReadings.drum1 + parsedReadings.drum2 + parsedReadings.drum3;
 
       const reading: DifferentialReading = {
         timestamp: parsedReadings.timestamp,
@@ -613,11 +639,14 @@ const handleTowerResponse = (response: Uint8Array) => {
         drum1: parsedReadings.drum1,
         drum2: parsedReadings.drum2,
         drum3: parsedReadings.drum3,
-        rawData: parsedReadings.rawData
+        rawData: parsedReadings.rawData,
       };
 
       addDifferentialReading(reading);
-      logger.debug(`Diff readings IR: ${parsedReadings.irBeam}, D1: ${parsedReadings.drum1}, D2: ${parsedReadings.drum2}, D3: ${parsedReadings.drum3}`, '[Charts]');
+      logger.debug(
+        `Diff readings IR: ${parsedReadings.irBeam}, D1: ${parsedReadings.drum1}, D2: ${parsedReadings.drum2}, D3: ${parsedReadings.drum3}`,
+        '[Charts]',
+      );
     }
   }
 };
@@ -627,8 +656,8 @@ const addDifferentialReading = (reading: DifferentialReading) => {
   differentialReadings.push(reading);
 
   // Remove old readings outside time window
-  const cutoffTime = Date.now() - (chartTimeWindow * 1000);
-  differentialReadings = differentialReadings.filter(r => r.timestamp > cutoffTime);
+  const cutoffTime = Date.now() - chartTimeWindow * 1000;
+  differentialReadings = differentialReadings.filter((r) => r.timestamp > cutoffTime);
 
   // Limit total data points
   if (differentialReadings.length > MAX_DATA_POINTS) {
@@ -662,23 +691,23 @@ const setupDifferentialReadingsHandler = () => {
 };
 
 const updateCalibrationStatus = () => {
-  const topIcon = document.getElementById("calibration-top");
-  const middleIcon = document.getElementById("calibration-middle");
-  const bottomIcon = document.getElementById("calibration-bottom");
+  const topIcon = document.getElementById('calibration-top');
+  const middleIcon = document.getElementById('calibration-middle');
+  const bottomIcon = document.getElementById('calibration-bottom');
 
   if (!topIcon || !middleIcon || !bottomIcon) {
-    logger.warn("Calibration icon elements not found", '[TC]');
+    logger.warn('Calibration icon elements not found', '[TC]');
     return;
   }
 
   if (!Tower.isConnected) {
     // Unknown state - gray question circles
-    topIcon.className = "fas fa-question-circle text-gray-400 text-lg";
-    topIcon.title = "Top drum status unknown";
-    middleIcon.className = "fas fa-question-circle text-gray-400 text-lg";
-    middleIcon.title = "Middle drum status unknown";
-    bottomIcon.className = "fas fa-question-circle text-gray-400 text-lg";
-    bottomIcon.title = "Bottom drum status unknown";
+    topIcon.className = 'fas fa-question-circle text-gray-400 text-lg';
+    topIcon.title = 'Top drum status unknown';
+    middleIcon.className = 'fas fa-question-circle text-gray-400 text-lg';
+    middleIcon.title = 'Middle drum status unknown';
+    bottomIcon.className = 'fas fa-question-circle text-gray-400 text-lg';
+    bottomIcon.title = 'Bottom drum status unknown';
     return;
   }
 
@@ -686,44 +715,44 @@ const updateCalibrationStatus = () => {
 
   // Update top drum calibration icon
   if (towerState.drum[0].calibrated) {
-    topIcon.className = "fas fa-check-circle text-green-400 text-lg";
-    topIcon.title = "Top drum calibrated";
+    topIcon.className = 'fas fa-check-circle text-green-400 text-lg';
+    topIcon.title = 'Top drum calibrated';
   } else {
-    topIcon.className = "fas fa-times-circle text-red-400 text-lg";
-    topIcon.title = "Top drum not calibrated";
+    topIcon.className = 'fas fa-times-circle text-red-400 text-lg';
+    topIcon.title = 'Top drum not calibrated';
   }
 
   // Update middle drum calibration icon
   if (towerState.drum[1].calibrated) {
-    middleIcon.className = "fas fa-check-circle text-green-400 text-lg";
-    middleIcon.title = "Middle drum calibrated";
+    middleIcon.className = 'fas fa-check-circle text-green-400 text-lg';
+    middleIcon.title = 'Middle drum calibrated';
   } else {
-    middleIcon.className = "fas fa-times-circle text-red-400 text-lg";
-    middleIcon.title = "Middle drum not calibrated";
+    middleIcon.className = 'fas fa-times-circle text-red-400 text-lg';
+    middleIcon.title = 'Middle drum not calibrated';
   }
 
   // Update bottom drum calibration icon
   if (towerState.drum[2].calibrated) {
-    bottomIcon.className = "fas fa-check-circle text-green-400 text-lg";
-    bottomIcon.title = "Bottom drum calibrated";
+    bottomIcon.className = 'fas fa-check-circle text-green-400 text-lg';
+    bottomIcon.title = 'Bottom drum calibrated';
   } else {
-    bottomIcon.className = "fas fa-times-circle text-red-400 text-lg";
-    bottomIcon.title = "Bottom drum not calibrated";
+    bottomIcon.className = 'fas fa-times-circle text-red-400 text-lg';
+    bottomIcon.title = 'Bottom drum not calibrated';
   }
-}
+};
 
 const updateDrumDropdowns = () => {
-  const topSelect = document.getElementById("top") as HTMLSelectElement;
-  const middleSelect = document.getElementById("middle") as HTMLSelectElement;
-  const bottomSelect = document.getElementById("bottom") as HTMLSelectElement;
+  const topSelect = document.getElementById('top') as HTMLSelectElement;
+  const middleSelect = document.getElementById('middle') as HTMLSelectElement;
+  const bottomSelect = document.getElementById('bottom') as HTMLSelectElement;
 
   if (!topSelect || !middleSelect || !bottomSelect) {
-    logger.warn("Drum dropdown elements not found", '[TC]');
+    logger.warn('Drum dropdown elements not found', '[TC]');
     return;
   }
 
   if (!Tower.isConnected) {
-    logger.debug("Tower not connected, cannot update drum positions", '[TC]');
+    logger.debug('Tower not connected, cannot update drum positions', '[TC]');
     return;
   }
 
@@ -743,8 +772,15 @@ const updateDrumDropdowns = () => {
     const bottomPositionFromRaw = sides[towerState.drum[2].position] || 'north';
 
     // Verify that the method and raw state match (they should now)
-    if (topPosition !== topPositionFromRaw || middlePosition !== middlePositionFromRaw || bottomPosition !== bottomPositionFromRaw) {
-      logger.warn(`Position mismatch detected! Method vs Raw - Top: ${topPosition}!=${topPositionFromRaw}, Middle: ${middlePosition}!=${middlePositionFromRaw}, Bottom: ${bottomPosition}!=${bottomPositionFromRaw}`, '[TC]');
+    if (
+      topPosition !== topPositionFromRaw ||
+      middlePosition !== middlePositionFromRaw ||
+      bottomPosition !== bottomPositionFromRaw
+    ) {
+      logger.warn(
+        `Position mismatch detected! Method vs Raw - Top: ${topPosition}!=${topPositionFromRaw}, Middle: ${middlePosition}!=${middlePositionFromRaw}, Bottom: ${bottomPosition}!=${bottomPositionFromRaw}`,
+        '[TC]',
+      );
     }
 
     // Update dropdown selections to match current drum positions
@@ -754,7 +790,7 @@ const updateDrumDropdowns = () => {
   } catch (error) {
     logger.error(`Failed to update drum dropdowns: ${error}`, '[TC]');
   }
-}
+};
 
 async function resetSkullCount() {
   if (!Tower.isConnected) {
@@ -765,7 +801,7 @@ async function resetSkullCount() {
 }
 
 const playSound = () => {
-  const select = document.getElementById("sounds") as HTMLInputElement;
+  const select = document.getElementById('sounds') as HTMLInputElement;
   const soundValue = Number(select.value);
 
   if (soundValue === 0) {
@@ -776,70 +812,70 @@ const playSound = () => {
   // Use the current local volume for playing the sound
   logger.info(`Playing sound ${soundValue} at volume ${localVolume}`, '[Audio]');
   Tower.playSoundStateful(soundValue, false, localVolume);
-}
+};
 
 const overrides = () => {
-  const select = document.getElementById("lightOverrideDropDown") as HTMLInputElement;
+  const select = document.getElementById('lightOverrideDropDown') as HTMLInputElement;
   Tower.lightOverrides(Number(select.value));
-}
+};
 
 const rotate = () => {
-  const top = document.getElementById("top") as HTMLInputElement;
-  const middle = document.getElementById("middle") as HTMLInputElement;
-  const bottom = document.getElementById("bottom") as HTMLInputElement;
+  const top = document.getElementById('top') as HTMLInputElement;
+  const middle = document.getElementById('middle') as HTMLInputElement;
+  const bottom = document.getElementById('bottom') as HTMLInputElement;
   Tower.rotateWithState(
     top.value as TowerSide,
     middle.value as TowerSide,
-    bottom.value as TowerSide
+    bottom.value as TowerSide,
   );
-}
+};
 
 const randomizeLevels = () => {
-  const select = document.getElementById("randomLevels") as HTMLSelectElement;
+  const select = document.getElementById('randomLevels') as HTMLSelectElement;
   const levelValue = parseInt(select.value);
 
   if (levelValue === -1) {
-    logger.warn("No level selected for randomization", '[TC]');
+    logger.warn('No level selected for randomization', '[TC]');
     return;
   }
 
   if (!Tower.isConnected) {
-    logger.warn("Tower is not connected", '[TC]');
+    logger.warn('Tower is not connected', '[TC]');
     return;
   }
 
   Tower.randomRotateLevels(levelValue);
-}
+};
 
 const breakSeal = async () => {
-  const select = document.getElementById("sealSelect") as HTMLSelectElement;
+  const select = document.getElementById('sealSelect') as HTMLSelectElement;
   const sealValue = select.value;
 
   if (!sealValue) {
-    logger.warn("No seal selected", '[TC]');
+    logger.warn('No seal selected', '[TC]');
     return;
   }
 
   // Check if we're in timeout period
   if (breakSealTimeout !== null) {
-    logger.warn("Break seal is in progress. Please wait before breaking another seal.", '[TC]');
+    logger.warn('Break seal is in progress. Please wait before breaking another seal.', '[TC]');
     return;
   }
 
   // Map seal names to SealIdentifier objects
   const sealMap: { [key: string]: SealIdentifier } = {
-    "North Top": { side: 'north', level: 'top' },
-    "East Top": { side: 'east', level: 'top' },
-    "South Top": { side: 'south', level: 'top' },
-    "West Top": { side: 'west', level: 'top' },
-    "North Middle": { side: 'north', level: 'middle' },
-    "East Middle": { side: 'east', level: 'middle' },
-    "South Middle": { side: 'south', level: 'middle' },
-    "West Middle": { side: 'west', level: 'middle' },
-    "North Bottom": { side: 'north', level: 'bottom' },
-    "East Bottom": { side: 'east', level: 'bottom' },
-    "South Bottom": { side: 'south', level: 'bottom' },
-    "West Bottom": { side: 'west', level: 'bottom' }
+    'North Top': { side: 'north', level: 'top' },
+    'East Top': { side: 'east', level: 'top' },
+    'South Top': { side: 'south', level: 'top' },
+    'West Top': { side: 'west', level: 'top' },
+    'North Middle': { side: 'north', level: 'middle' },
+    'East Middle': { side: 'east', level: 'middle' },
+    'South Middle': { side: 'south', level: 'middle' },
+    'West Middle': { side: 'west', level: 'middle' },
+    'North Bottom': { side: 'north', level: 'bottom' },
+    'East Bottom': { side: 'east', level: 'bottom' },
+    'South Bottom': { side: 'south', level: 'bottom' },
+    'West Bottom': { side: 'west', level: 'bottom' },
   };
 
   const sealIdentifier = sealMap[sealValue];
@@ -854,12 +890,14 @@ const breakSeal = async () => {
     // Start cooldown and disable button
     startBreakSealCooldown();
   }
-}
+};
 
 const clearAllLightCheckboxes = async () => {
   // Unselect all light checkboxes
-  const allLightCheckboxes = document.querySelectorAll('input[type="checkbox"][data-light-type]') as NodeListOf<HTMLInputElement>;
-  allLightCheckboxes.forEach(checkbox => {
+  const allLightCheckboxes = document.querySelectorAll(
+    'input[type="checkbox"][data-light-type]',
+  ) as NodeListOf<HTMLInputElement>;
+  allLightCheckboxes.forEach((checkbox) => {
     checkbox.checked = false;
     checkbox.setAttribute('data-light-style', 'off');
   });
@@ -870,17 +908,21 @@ const clearAllLightCheckboxes = async () => {
   } catch (error) {
     console.error('Error sending tower state for all lights off:', error);
   }
-}
+};
 
 const allLightsOn = async () => {
   // Get the currently selected light style from the dropdown
-  const lightStyleSelect = document.getElementById("lightStyles") as HTMLSelectElement;
-  const selectedLightStyle = lightStyleSelect?.options[lightStyleSelect.selectedIndex]?.textContent || "on";
-  const effect = LIGHT_EFFECTS[selectedLightStyle as keyof typeof LIGHT_EFFECTS] || LIGHT_EFFECTS.on;
+  const lightStyleSelect = document.getElementById('lightStyles') as HTMLSelectElement;
+  const selectedLightStyle =
+    lightStyleSelect?.options[lightStyleSelect.selectedIndex]?.textContent || 'on';
+  const effect =
+    LIGHT_EFFECTS[selectedLightStyle as keyof typeof LIGHT_EFFECTS] || LIGHT_EFFECTS.on;
 
   // Check all light checkboxes and set their style
-  const allLightCheckboxes = document.querySelectorAll('input[type="checkbox"][data-light-type]') as NodeListOf<HTMLInputElement>;
-  allLightCheckboxes.forEach(checkbox => {
+  const allLightCheckboxes = document.querySelectorAll(
+    'input[type="checkbox"][data-light-type]',
+  ) as NodeListOf<HTMLInputElement>;
+  allLightCheckboxes.forEach((checkbox) => {
     checkbox.checked = true;
     checkbox.setAttribute('data-light-style', selectedLightStyle);
   });
@@ -891,18 +933,18 @@ const allLightsOn = async () => {
   } catch (error) {
     console.error('Error sending tower state for all lights on:', error);
   }
-}
+};
 
 const allLightsOff = async () => {
   // Uncheck all light checkboxes and send tower state
   await clearAllLightCheckboxes();
-}
+};
 
 const clearAllLights = async () => {
   // Clear checkboxes first, before sending tower command
   await clearAllLightCheckboxes();
 
-  logger.info("All lights cleared", '[TC]');
+  logger.info('All lights cleared', '[TC]');
 
   // Reset all broken seals and update the visual grid
   Tower.resetBrokenSeals();
@@ -910,17 +952,17 @@ const clearAllLights = async () => {
   postSealsToTowerEmulatorWindow();
 
   // Reset the dropdown to default selection
-  const sealSelect = document.getElementById("sealSelect") as HTMLSelectElement;
+  const sealSelect = document.getElementById('sealSelect') as HTMLSelectElement;
   if (sealSelect) {
-    sealSelect.value = "";
+    sealSelect.value = '';
   }
-}
+};
 
 const singleLight = async (el: HTMLInputElement) => {
   // Get the light style based on checkbox state
-  let style: string = "off";
+  let style: string = 'off';
   if (el.checked) {
-    const ls = document.getElementById("lightStyles") as HTMLSelectElement;
+    const ls = document.getElementById('lightStyles') as HTMLSelectElement;
     if (ls && ls.selectedIndex >= 0) {
       style = ls.options[ls.selectedIndex].innerHTML;
     }
@@ -970,59 +1012,80 @@ const singleLight = async (el: HTMLInputElement) => {
   } catch (error) {
     console.error('Error sending tower state:', error);
   }
-}
+};
 
 // Helper functions for light mapping (same logic as in udtTowerCommands.ts)
 const getTowerLayerForLevel = (level: TowerLevels): number => {
   switch (level) {
-    case 'top': return TOWER_LAYERS.TOP_RING;
-    case 'middle': return TOWER_LAYERS.MIDDLE_RING;
-    case 'bottom': return TOWER_LAYERS.BOTTOM_RING;
-    default: return TOWER_LAYERS.TOP_RING;
+    case 'top':
+      return TOWER_LAYERS.TOP_RING;
+    case 'middle':
+      return TOWER_LAYERS.MIDDLE_RING;
+    case 'bottom':
+      return TOWER_LAYERS.BOTTOM_RING;
+    default:
+      return TOWER_LAYERS.TOP_RING;
   }
 };
 
 const getLightIndexForSide = (side: TowerSide): number => {
   switch (side) {
-    case 'north': return RING_LIGHT_POSITIONS.NORTH;
-    case 'east': return RING_LIGHT_POSITIONS.EAST;
-    case 'south': return RING_LIGHT_POSITIONS.SOUTH;
-    case 'west': return RING_LIGHT_POSITIONS.WEST;
-    default: return RING_LIGHT_POSITIONS.NORTH;
+    case 'north':
+      return RING_LIGHT_POSITIONS.NORTH;
+    case 'east':
+      return RING_LIGHT_POSITIONS.EAST;
+    case 'south':
+      return RING_LIGHT_POSITIONS.SOUTH;
+    case 'west':
+      return RING_LIGHT_POSITIONS.WEST;
+    default:
+      return RING_LIGHT_POSITIONS.NORTH;
   }
 };
-
 
 const getLedgeLightIndexForSide = (side: string): number => {
   // Map ordinal directions directly to ledge light positions
   switch (side) {
-    case 'northeast': return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
-    case 'southeast': return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;
-    case 'southwest': return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;
-    case 'northwest': return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;
-    default: return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+    case 'northeast':
+      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+    case 'southeast':
+      return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;
+    case 'southwest':
+      return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;
+    case 'northwest':
+      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;
+    default:
+      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
   }
 };
 
 const getBaseLightIndexForSide = (side: TowerSide): number => {
   // Map cardinal directions to ordinal positions for base lights
   switch (side) {
-    case 'north': return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;  // Closest to north
-    case 'east': return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;   // Closest to east
-    case 'south': return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;  // Closest to south
-    case 'west': return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;   // Closest to west
-    default: return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
+    case 'north':
+      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST; // Closest to north
+    case 'east':
+      return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST; // Closest to east
+    case 'south':
+      return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST; // Closest to south
+    case 'west':
+      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST; // Closest to west
+    default:
+      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
   }
 };
 
 const lights = () => {
   // Get the currently selected light style from the dropdown
-  const lightStyleSelect = document.getElementById("lightStyles") as HTMLSelectElement;
-  const selectedLightStyle = lightStyleSelect?.options[lightStyleSelect.selectedIndex]?.textContent || "off";
+  const lightStyleSelect = document.getElementById('lightStyles') as HTMLSelectElement;
+  const selectedLightStyle =
+    lightStyleSelect?.options[lightStyleSelect.selectedIndex]?.textContent || 'off';
 
   // Apply the selected style to all checked lights and turn off unchecked lights
-  const allLEDLights = document.querySelectorAll('input[type="checkbox"][data-light-type]') as NodeListOf<HTMLInputElement>;
-  allLEDLights.forEach(checkbox => {
+  const allLEDLights = document.querySelectorAll(
+    'input[type="checkbox"][data-light-type]',
+  ) as NodeListOf<HTMLInputElement>;
+  allLEDLights.forEach((checkbox) => {
     if (checkbox.checked) {
       checkbox.setAttribute('data-light-style', selectedLightStyle);
     } else {
@@ -1035,59 +1098,63 @@ const lights = () => {
   const baseLights: Array<BaseLight> = getBaseLights();
   const allLights = { doorway: doorwayLights, ledge: ledgeLights, base: baseLights };
   Tower.Lights(allLights);
-}
+};
 
 const getDoorwayLights = (): Array<DoorwayLight> => {
-  const qs = 'input[type="checkbox"][data-light-type="doorway"]:checked'
+  const qs = 'input[type="checkbox"][data-light-type="doorway"]:checked';
   const checked = document.querySelectorAll(qs) as NodeListOf<HTMLInputElement>;
-  const ls = document.getElementById("lightStyles") as HTMLSelectElement;
-  const selectedLightStyle = ls?.options[ls.selectedIndex]?.textContent || "off";
+  const ls = document.getElementById('lightStyles') as HTMLSelectElement;
+  const selectedLightStyle = ls?.options[ls.selectedIndex]?.textContent || 'off';
   let doorwayCmds: Array<DoorwayLight> = [];
-  Array.from(checked).forEach(cb => {
+  Array.from(checked).forEach((cb) => {
     let { lightSide, lightStyle, lightLevel } = getDataAttributes(cb);
     if (lightStyle !== selectedLightStyle) {
       lightStyle = selectedLightStyle;
       cb.setAttribute('data-light-style', lightStyle);
     }
     if (lightSide && lightLevel && lightStyle) {
-      doorwayCmds.push({ position: lightSide as TowerSide, level: lightLevel as TowerLevels, style: lightStyle });
+      doorwayCmds.push({
+        position: lightSide as TowerSide,
+        level: lightLevel as TowerLevels,
+        style: lightStyle,
+      });
     }
   });
   return doorwayCmds;
-}
+};
 
 const getLedgeLights = (): Array<LedgeLight> => {
   const qs = 'input[type="checkbox"][data-light-type="ledge"]:checked';
   const checked = document.querySelectorAll(qs) as NodeListOf<HTMLInputElement>;
   let ledgeCmds: Array<LedgeLight> = [];
-  Array.from(checked).forEach(cb => {
+  Array.from(checked).forEach((cb) => {
     const { lightSide, lightStyle } = getDataAttributes(cb);
     if (lightSide && lightStyle) {
       ledgeCmds.push({ position: lightSide as TowerCorner, style: lightStyle });
     }
   });
   return ledgeCmds;
-}
+};
 
 const getBaseLights = (): Array<BaseLight> => {
   const qs = 'input[type="checkbox"][data-light-type="base"]:checked';
   const checked = document.querySelectorAll(qs) as NodeListOf<HTMLInputElement>;
   let baseCmds: Array<BaseLight> = [];
-  Array.from(checked).forEach(cb => {
+  Array.from(checked).forEach((cb) => {
     const { lightSide, lightStyle, lightBaseLocation } = getDataAttributes(cb);
     if (lightSide && lightStyle && lightBaseLocation) {
       baseCmds.push({
         position: {
           side: lightSide as TowerSide,
-          level: lightBaseLocation as BaseLightLevel
+          level: lightBaseLocation as BaseLightLevel,
         },
-        style: lightStyle
+        style: lightStyle,
       });
     }
   });
 
   return baseCmds;
-}
+};
 
 const getDataAttributes = (el: HTMLElement) => {
   const lightType = el.getAttribute('data-light-type');
@@ -1096,14 +1163,14 @@ const getDataAttributes = (el: HTMLElement) => {
   const lightBaseLocation = el.getAttribute('data-light-base-location');
   const lightStyle = el.getAttribute('data-light-style');
 
-  return ({
+  return {
     lightSide: lightSide,
     lightLevel: lightLevel,
     lightBaseLocation: lightBaseLocation,
     lightStyle: lightStyle,
     lightType: lightType,
-  });
-}
+  };
+};
 
 /**
  * Updates the visual representation of a specific seal in the grid
@@ -1111,7 +1178,9 @@ const getDataAttributes = (el: HTMLElement) => {
  * @param isBroken - Whether the seal is broken or not
  */
 const updateSealGrid = (seal: SealIdentifier, isBroken: boolean) => {
-  const sealSquare = document.querySelector(`[data-seal-level="${seal.level}"][data-seal-side="${seal.side}"]`) as HTMLElement;
+  const sealSquare = document.querySelector(
+    `[data-seal-level="${seal.level}"][data-seal-side="${seal.side}"]`,
+  ) as HTMLElement;
   if (sealSquare) {
     if (isBroken) {
       sealSquare.classList.add('broken');
@@ -1119,17 +1188,17 @@ const updateSealGrid = (seal: SealIdentifier, isBroken: boolean) => {
       sealSquare.classList.remove('broken');
     }
   }
-}
+};
 
 /**
  * Resets all seals in the visual grid to their default (unbroken) state
  */
 const resetSealGrid = () => {
   const allSealSquares = document.querySelectorAll('.seal-square') as NodeListOf<HTMLElement>;
-  allSealSquares.forEach(square => {
+  allSealSquares.forEach((square) => {
     square.classList.remove('broken');
   });
-}
+};
 
 // Global variable to track break seal timeout
 let breakSealTimeout: number | null = null;
@@ -1138,29 +1207,29 @@ let breakSealTimeout: number | null = null;
  * Starts the break seal cooldown and manages button state
  */
 const startBreakSealCooldown = () => {
-  const breakSealButton = document.getElementById("breakSealButton") as HTMLButtonElement;
+  const breakSealButton = document.getElementById('breakSealButton') as HTMLButtonElement;
 
   // Disable the button and update text
   if (breakSealButton) {
     breakSealButton.disabled = true;
-    breakSealButton.style.opacity = "0.5";
+    breakSealButton.style.opacity = '0.5';
   }
 
   // Start 10-second timeout
-  logger.info("Break seal cooldown started (10 seconds)", '[TC]');
+  logger.info('Break seal cooldown started (10 seconds)', '[TC]');
   breakSealTimeout = window.setTimeout(() => {
     breakSealTimeout = null;
 
     // Re-enable the button and restore text
     if (breakSealButton) {
       breakSealButton.disabled = false;
-      breakSealButton.textContent = "Break Seal";
-      breakSealButton.style.opacity = "1";
+      breakSealButton.textContent = 'Break Seal';
+      breakSealButton.style.opacity = '1';
     }
 
-    logger.info("Break seal cooldown ended", '[TC]');
+    logger.info('Break seal cooldown ended', '[TC]');
   }, 10000);
-}
+};
 
 const postSealsToTowerEmulatorWindow = () => {
   towerEmulatorWindow?.postMessage({ type: 'applySeals', seals: Tower.getBrokenSeals() }, '*');
@@ -1168,9 +1237,11 @@ const postSealsToTowerEmulatorWindow = () => {
 
 const refreshEmulatorSealGrid = () => {
   const brokenSeals = Tower.getBrokenSeals();
-  const brokenKeys = new Set(brokenSeals.map(s => `${s.level}-${s.side}`));
-  const buttons = document.querySelectorAll('[data-emulator-seal-level]') as NodeListOf<HTMLElement>;
-  buttons.forEach(btn => {
+  const brokenKeys = new Set(brokenSeals.map((s) => `${s.level}-${s.side}`));
+  const buttons = document.querySelectorAll(
+    '[data-emulator-seal-level]',
+  ) as NodeListOf<HTMLElement>;
+  buttons.forEach((btn) => {
     const level = btn.getAttribute('data-emulator-seal-level');
     const side = btn.getAttribute('data-emulator-seal-side');
     if (level && side) {
@@ -1213,7 +1284,7 @@ const emulatorRemoveAllSeals = () => {
   }
   refreshEmulatorSealGrid();
   const allSealSquares = document.querySelectorAll('.seal-square') as NodeListOf<HTMLElement>;
-  allSealSquares.forEach(sq => sq.classList.add('broken'));
+  allSealSquares.forEach((sq) => sq.classList.add('broken'));
   postSealsToTowerEmulatorWindow();
 };
 
@@ -1233,11 +1304,11 @@ const sealSquareClick = (element: HTMLElement) => {
   const side = element.getAttribute('data-seal-side');
 
   if (!level || !side) {
-    logger.warn("Invalid seal square data", '[TC]');
+    logger.warn('Invalid seal square data', '[TC]');
     return;
   }
 
-  const sealSelect = document.getElementById("sealSelect") as HTMLSelectElement;
+  const sealSelect = document.getElementById('sealSelect') as HTMLSelectElement;
   const isCurrentlyBroken = element.classList.contains('broken');
 
   if (isCurrentlyBroken) {
@@ -1251,14 +1322,14 @@ const sealSquareClick = (element: HTMLElement) => {
 
     // Reset dropdown to default
     if (sealSelect) {
-      sealSelect.value = "";
+      sealSelect.value = '';
     }
 
     logger.info(`Reset seal at ${level}-${side}`, '[TC]');
   } else {
     // Seal is not broken - check if we're in timeout period
     if (breakSealTimeout !== null) {
-      logger.warn("Break seal is on cooldown. Please wait before breaking another seal.", '[TC]');
+      logger.warn('Break seal is on cooldown. Please wait before breaking another seal.', '[TC]');
       return;
     }
 
@@ -1275,7 +1346,7 @@ const sealSquareClick = (element: HTMLElement) => {
     // Trigger the break seal function
     breakSeal();
   }
-}
+};
 
 // Tab switching functionality
 const switchTab = (tabName: string) => {
@@ -1293,13 +1364,13 @@ const switchTab = (tabName: string) => {
 
   // Hide all tab contents
   const allTabContents = document.querySelectorAll('.tower-tab-content');
-  allTabContents.forEach(content => {
+  allTabContents.forEach((content) => {
     content.classList.remove('tower-tab-content-active');
   });
 
   // Remove active class from all tab buttons
   const allTabButtons = document.querySelectorAll('.tower-tab-button');
-  allTabButtons.forEach(button => {
+  allTabButtons.forEach((button) => {
     button.classList.remove('tower-tab-active');
   });
 
@@ -1332,7 +1403,7 @@ const switchTab = (tabName: string) => {
   if (tabName === 'seals') {
     updateEmulatorSealTabVisibility();
   }
-}
+};
 
 // Glyph management functionality with light tracking
 const moveGlyph = async () => {
@@ -1354,7 +1425,10 @@ const moveGlyph = async () => {
     const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph as Glyphs);
 
     if (!currentGlyphPosition) {
-      logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, '[Glyphs]');
+      logger.error(
+        `Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`,
+        '[Glyphs]',
+      );
       return;
     }
 
@@ -1391,7 +1465,10 @@ const moveGlyph = async () => {
       const targetGlyphIndex = sides.indexOf(targetSide);
 
       // Debug logging to understand the calculation
-      logger.debug(`Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`, '[Glyphs]');
+      logger.debug(
+        `Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`,
+        '[Glyphs]',
+      );
 
       // Calculate how many steps the glyph needs to move
       let glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
@@ -1400,18 +1477,31 @@ const moveGlyph = async () => {
       const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
       targetDrumPosition = sides[newDrumIndex];
 
-      logger.debug(`Move calculation result: glyphSteps=${glyphSteps}, newDrumIndex=${newDrumIndex}, targetDrumPosition=${targetDrumPosition}`, '[Glyphs]');
+      logger.debug(
+        `Move calculation result: glyphSteps=${glyphSteps}, newDrumIndex=${newDrumIndex}, targetDrumPosition=${targetDrumPosition}`,
+        '[Glyphs]',
+      );
     }
 
     // Set positions for all three drums
-    const topPosition = glyphLevel === 'top' ? targetDrumPosition : Tower.getCurrentDrumPosition('top');
-    const middlePosition = glyphLevel === 'middle' ? targetDrumPosition : Tower.getCurrentDrumPosition('middle');
-    const bottomPosition = glyphLevel === 'bottom' ? targetDrumPosition : Tower.getCurrentDrumPosition('bottom');
+    const topPosition =
+      glyphLevel === 'top' ? targetDrumPosition : Tower.getCurrentDrumPosition('top');
+    const middlePosition =
+      glyphLevel === 'middle' ? targetDrumPosition : Tower.getCurrentDrumPosition('middle');
+    const bottomPosition =
+      glyphLevel === 'bottom' ? targetDrumPosition : Tower.getCurrentDrumPosition('bottom');
 
-    logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, '[Glyphs]');
+    logger.info(
+      `Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`,
+      '[Glyphs]',
+    );
 
     // Execute the rotation with all three drum positions
-    await Tower.rotateWithState(topPosition as TowerSide, middlePosition as TowerSide, bottomPosition as TowerSide);
+    await Tower.rotateWithState(
+      topPosition as TowerSide,
+      middlePosition as TowerSide,
+      bottomPosition as TowerSide,
+    );
 
     // Restore lights after rotation
     // Wait a moment for rotation to complete, then restore all lights and refresh UI
@@ -1423,9 +1513,15 @@ const moveGlyph = async () => {
         // Restore all lights on the physical tower based on current glyph positions
         const allDoorwayLights = getCurrentDoorwayLights();
         if (allDoorwayLights.length > 0) {
-          logger.info(`About to restore ${allDoorwayLights.length} lights: ${JSON.stringify(allDoorwayLights)}`, '[Glyphs]');
+          logger.info(
+            `About to restore ${allDoorwayLights.length} lights: ${JSON.stringify(allDoorwayLights)}`,
+            '[Glyphs]',
+          );
           await Tower.Lights({ doorway: allDoorwayLights });
-          logger.info(`Successfully restored ${allDoorwayLights.length} lights after glyph movement`, '[Glyphs]');
+          logger.info(
+            `Successfully restored ${allDoorwayLights.length} lights after glyph movement`,
+            '[Glyphs]',
+          );
         } else {
           logger.warn('No lights to restore after glyph movement', '[Glyphs]');
         }
@@ -1435,17 +1531,15 @@ const moveGlyph = async () => {
     }, 1000);
 
     logger.info(`Successfully moved ${selectedGlyph} glyph to ${targetSide} position`, '[Glyphs]');
-
   } catch (error) {
     console.error('Error moving glyph:', error);
     logger.error('Error moving glyph: ' + error, '[Glyphs]');
   }
-}
-
+};
 
 const refreshGlyphPositions = () => {
   if (!Tower.isConnected) {
-    logger.warn("Tower is not connected", '[TC]');
+    logger.warn('Tower is not connected', '[TC]');
     return;
   }
 
@@ -1455,7 +1549,7 @@ const refreshGlyphPositions = () => {
 
     // Clear all existing glyph displays
     const allGlyphCells = document.querySelectorAll('.glyph-cell');
-    allGlyphCells.forEach(cell => {
+    allGlyphCells.forEach((cell) => {
       cell.innerHTML = '';
       cell.classList.remove('glyph-lit');
     });
@@ -1485,22 +1579,23 @@ const refreshGlyphPositions = () => {
         const level = GLYPHS[glyphName as keyof typeof GLYPHS].level;
         const cellId = `glyph-${level}-${currentPosition}`;
         const cell = document.getElementById(cellId);
-        if (cell && cell.querySelector('img')) { // Only if cell has a glyph (img element)
+        if (cell && cell.querySelector('img')) {
+          // Only if cell has a glyph (img element)
           cell.classList.add('glyph-lit');
         }
       }
     }
 
-    logger.info("Glyph positions refreshed", '[TC]');
+    logger.info('Glyph positions refreshed', '[TC]');
   } catch (error) {
     logger.error(`Failed to refresh glyph positions: ${error}`, '[TC]');
   }
-}
+};
 
 // Log filtering functionality
 const filterLogs = () => {
   if (!sharedDOMOutput) {
-    logger.warn("DOM output not initialized", '[TC]');
+    logger.warn('DOM output not initialized', '[TC]');
     return;
   }
 
@@ -1510,22 +1605,24 @@ const filterLogs = () => {
   // Use refreshFilter method instead of setFilter
   sharedDOMOutput.refreshFilter();
   logger.info(`Log filter set to: ${selectedLevel}`, '[TC]');
-}
+};
 
 const clearLogs = () => {
   if (!sharedDOMOutput) {
-    logger.warn("DOM output not initialized", '[TC]');
+    logger.warn('DOM output not initialized', '[TC]');
     return;
   }
 
   sharedDOMOutput.clearAll();
-  logger.info("Logs cleared", '[TC]');
-}
+  logger.info('Logs cleared', '[TC]');
+};
 
 // Battery filter functionality
 const updateBatteryFilter = () => {
-  const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]') as NodeListOf<HTMLInputElement>;
-  const selectedValue = Array.from(batteryFilterRadios).find(radio => radio.checked)?.value;
+  const batteryFilterRadios = document.querySelectorAll(
+    'input[name="batteryFilter"]',
+  ) as NodeListOf<HTMLInputElement>;
+  const selectedValue = Array.from(batteryFilterRadios).find((radio) => radio.checked)?.value;
 
   if (selectedValue) {
     if (selectedValue === 'none') {
@@ -1536,19 +1633,19 @@ const updateBatteryFilter = () => {
     }
     logger.info(`Battery logging set to: ${selectedValue}`, '[TC]');
   }
-}
+};
 
 // State management functionality
 const saveState = () => {
   if (!Tower.isConnected) {
-    logger.warn("Tower is not connected", '[TC]');
+    logger.warn('Tower is not connected', '[TC]');
     return;
   }
 
   try {
     const state = Tower.getCurrentTowerState();
     if (!state) {
-      logger.warn("No current tower state available", '[TC]');
+      logger.warn('No current tower state available', '[TC]');
       return;
     }
 
@@ -1557,7 +1654,7 @@ const saveState = () => {
     const success = rtdt_pack_state(buffer, buffer.length, state);
 
     if (!success) {
-      logger.error("Failed to pack tower state", '[TC]');
+      logger.error('Failed to pack tower state', '[TC]');
       return;
     }
 
@@ -1573,22 +1670,22 @@ const saveState = () => {
       stateDisplay.value = JSON.stringify(packedState, null, 2);
     }
 
-    logger.info("Tower state saved", '[TC]');
+    logger.info('Tower state saved', '[TC]');
   } catch (error) {
     logger.error(`Failed to save state: ${error}`, '[TC]');
   }
-}
+};
 
 const loadState = async () => {
   if (!Tower.isConnected) {
-    logger.warn("Tower is not connected", '[TC]');
+    logger.warn('Tower is not connected', '[TC]');
     return;
   }
 
   try {
     const savedState = localStorage.getItem('towerState');
     if (!savedState) {
-      logger.warn("No saved state found", '[TC]');
+      logger.warn('No saved state found', '[TC]');
       return;
     }
 
@@ -1597,13 +1694,13 @@ const loadState = async () => {
     const state = rtdt_unpack_state(buffer);
 
     if (!state) {
-      logger.error("Failed to unpack tower state", '[TC]');
+      logger.error('Failed to unpack tower state', '[TC]');
       return;
     }
 
     // Send the state to the tower
     await Tower.sendTowerState(state);
-    logger.info("Tower state loaded", '[TC]');
+    logger.info('Tower state loaded', '[TC]');
 
     // Refresh displays
     if (typeof refreshGlyphPositions === 'function') {
@@ -1612,11 +1709,11 @@ const loadState = async () => {
   } catch (error) {
     logger.error(`Failed to load state: ${error}`, '[TC]');
   }
-}
+};
 
 const resetState = async () => {
   if (!Tower.isConnected) {
-    logger.warn("Tower is not connected", '[TC]');
+    logger.warn('Tower is not connected', '[TC]');
     return;
   }
 
@@ -1644,11 +1741,11 @@ const resetState = async () => {
       refreshGlyphPositions();
     }
 
-    logger.info("Tower state reset", '[TC]');
+    logger.info('Tower state reset', '[TC]');
   } catch (error) {
     logger.error(`Failed to reset state: ${error}`, '[TC]');
   }
-}
+};
 
 // Initialize dropdowns and UI elements
 const initializeUI = () => {
@@ -1673,7 +1770,7 @@ const initializeUI = () => {
       lightStyleSelect.appendChild(option);
     });
     // Set default selection to 'on' if available
-    const onIndex = Array.from(lightStyleSelect.options).findIndex(opt => opt.value === 'on');
+    const onIndex = Array.from(lightStyleSelect.options).findIndex((opt) => opt.value === 'on');
     if (onIndex >= 0) {
       lightStyleSelect.selectedIndex = onIndex;
     }
@@ -1691,8 +1788,10 @@ const initializeUI = () => {
   }
 
   // Set up event listeners for battery filter radio buttons
-  const batteryFilterRadios = document.querySelectorAll('input[name="batteryFilter"]') as NodeListOf<HTMLInputElement>;
-  batteryFilterRadios.forEach(radio => {
+  const batteryFilterRadios = document.querySelectorAll(
+    'input[name="batteryFilter"]',
+  ) as NodeListOf<HTMLInputElement>;
+  batteryFilterRadios.forEach((radio) => {
     radio.addEventListener('change', updateBatteryFilter);
   });
 
@@ -1710,7 +1809,7 @@ const initializeUI = () => {
 
   // Initialize calibration status display
   updateCalibrationStatus();
-}
+};
 
 // Initialize UI when DOM is ready
 if (document.readyState === 'loading') {
@@ -1719,14 +1818,15 @@ if (document.readyState === 'loading') {
   initializeUI();
 }
 
-
 // Log control functions
 const updateLogLevel = () => {
   if ((window as any).logger) {
-    const checkboxes = document.querySelectorAll('input[id^="logLevel-"]') as NodeListOf<HTMLInputElement>;
+    const checkboxes = document.querySelectorAll(
+      'input[id^="logLevel-"]',
+    ) as NodeListOf<HTMLInputElement>;
     const selectedLevels = Array.from(checkboxes)
-      .filter(checkbox => checkbox.checked)
-      .map(checkbox => checkbox.value);
+      .filter((checkbox) => checkbox.checked)
+      .map((checkbox) => checkbox.value);
 
     if (selectedLevels.length > 0) {
       (window as any).logger.setEnabledLevels(selectedLevels);
@@ -1740,7 +1840,7 @@ const updateLogLevel = () => {
   if (sharedDOMOutput) {
     sharedDOMOutput.refreshFilter();
   }
-}
+};
 
 const clearLog = () => {
   // Clear shared DOM output
@@ -1749,20 +1849,20 @@ const clearLog = () => {
   }
 
   // Fallback to direct container clearing
-  const container = document.getElementById("log-container");
+  const container = document.getElementById('log-container');
   if (container) {
     container.innerHTML = '';
   }
 
   // Clear the text filter input
-  const textFilter = document.getElementById("logTextFilter") as HTMLInputElement;
+  const textFilter = document.getElementById('logTextFilter') as HTMLInputElement;
   if (textFilter) {
     textFilter.value = '';
   }
-}
+};
 
 const copyDisplayedLogs = (event: Event) => {
-  const logContainer = document.getElementById("log-container");
+  const logContainer = document.getElementById('log-container');
   if (!logContainer) return;
 
   // Get all currently displayed log entries
@@ -1774,31 +1874,34 @@ const copyDisplayedLogs = (event: Event) => {
 
   // Extract text content from each log line
   const logText = Array.from(logLines)
-    .map(line => line.textContent || '')
+    .map((line) => line.textContent || '')
     .join('\n');
 
   // Copy to clipboard
-  navigator.clipboard.writeText(logText).then(() => {
-    // Optional: Show temporary success feedback
-    const button = (event.target as HTMLElement).closest('button');
-    if (button) {
-      const originalIcon = button.innerHTML;
-      button.innerHTML = '<i class="fas fa-check"></i>';
-      button.style.backgroundColor = '#10b981';
+  navigator.clipboard
+    .writeText(logText)
+    .then(() => {
+      // Optional: Show temporary success feedback
+      const button = (event.target as HTMLElement).closest('button');
+      if (button) {
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.style.backgroundColor = '#10b981';
 
-      setTimeout(() => {
-        button.innerHTML = originalIcon;
-        button.style.backgroundColor = '';
-      }, 1000);
-    }
-  }).catch(err => {
-    console.error('Failed to copy logs: ', err);
-    alert('Failed to copy logs to clipboard');
-  });
-}
+        setTimeout(() => {
+          button.innerHTML = originalIcon;
+          button.style.backgroundColor = '';
+        }, 1000);
+      }
+    })
+    .catch((err) => {
+      console.error('Failed to copy logs: ', err);
+      alert('Failed to copy logs to clipboard');
+    });
+};
 
 const downloadDisplayedLogs = (event: Event) => {
-  const logContainer = document.getElementById("log-container");
+  const logContainer = document.getElementById('log-container');
   if (!logContainer) return;
 
   // Get all currently displayed log entries
@@ -1810,7 +1913,7 @@ const downloadDisplayedLogs = (event: Event) => {
 
   // Extract text content from each log line
   const logText = Array.from(logLines)
-    .map(line => line.textContent || '')
+    .map((line) => line.textContent || '')
     .join('\n');
 
   // Create header with current date and time
@@ -1847,7 +1950,7 @@ const downloadDisplayedLogs = (event: Event) => {
       button.style.backgroundColor = '';
     }, 1000);
   }
-}
+};
 
 // Tower Status Packet functions
 const STATE_BUFFER_SIZE = 19;
@@ -1856,7 +1959,7 @@ const EMPTY_STATUS_PACKET = new Array(DISPLAY_BUFFER_SIZE).fill(0);
 
 const refreshStatusPacket = () => {
   if (!Tower.isConnected) {
-    logger.warn("Tower is not connected", '[Status Packet]');
+    logger.warn('Tower is not connected', '[Status Packet]');
     updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
     return;
   }
@@ -1864,7 +1967,7 @@ const refreshStatusPacket = () => {
   try {
     const state = Tower.getCurrentTowerState();
     if (!state) {
-      logger.warn("No current tower state available", '[Status Packet]');
+      logger.warn('No current tower state available', '[Status Packet]');
       updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
       return;
     }
@@ -1877,7 +1980,7 @@ const refreshStatusPacket = () => {
     const success = rtdt_pack_state(stateBuffer, STATE_BUFFER_SIZE, state);
 
     if (!success) {
-      logger.error("Failed to pack tower state", '[Status Packet]');
+      logger.error('Failed to pack tower state', '[Status Packet]');
       updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
       return;
     }
@@ -1891,12 +1994,11 @@ const refreshStatusPacket = () => {
     // Convert to array for display
     const packedState = Array.from(buffer);
     updateStatusPacketDisplay(packedState);
-
   } catch (error) {
     logger.error(`Failed to refresh status packet: ${error}`, '[TC]');
     updateStatusPacketDisplay(EMPTY_STATUS_PACKET);
   }
-}
+};
 
 const updateStatusPacketDisplay = (packetData: number[]) => {
   const display = document.getElementById('status-packet-display');
@@ -1923,7 +2025,7 @@ const updateStatusPacketDisplay = (packetData: number[]) => {
     'Extended Flags',
     'Skull Drop Count',
     'Reserved',
-    'Checksum'
+    'Checksum',
   ];
 
   // Clear existing content
@@ -1944,7 +2046,7 @@ const updateStatusPacketDisplay = (packetData: number[]) => {
     span.title = `Byte ${index}: ${byte}D - ${description}`;
     display.appendChild(span);
   });
-}
+};
 
 // Enhanced glyph management functions
 const getGlyphsFacingDirection = (direction: TowerSide) => {
@@ -1972,7 +2074,7 @@ const getCurrentDoorwayLights = (): Array<DoorwayLight> => {
       const lightCommand: DoorwayLight = {
         position: currentPosition,
         level: level as TowerLevels,
-        style: 'on'
+        style: 'on',
       };
       doorwayLights.push(lightCommand);
     } else {
@@ -2036,7 +2138,7 @@ const toggleGlyphLight = async (element: HTMLElement) => {
     const specificLightCommand: DoorwayLight = {
       position: side as TowerSide,
       level: glyphLevel as TowerLevels,
-      style: lightEffect
+      style: lightEffect,
     };
 
     // If turning on, send all current lights including this one
@@ -2049,7 +2151,6 @@ const toggleGlyphLight = async (element: HTMLElement) => {
       // Send explicit off command for this specific light
       await Tower.Lights({ doorway: [specificLightCommand] });
     }
-
   } catch (error) {
     logger.error('Error toggling glyph light: ' + error, '[TC]');
 
@@ -2081,7 +2182,6 @@ const getGlyphLevel = (glyph: string) => {
   return GLYPHS[glyph as keyof typeof GLYPHS]?.level || 'middle';
 };
 
-
 // Enhanced moveGlyph function with full functionality
 const enhancedMoveGlyph = async () => {
   const glyphSelect = document.getElementById('glyph-select') as HTMLSelectElement;
@@ -2100,7 +2200,10 @@ const enhancedMoveGlyph = async () => {
     const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph as Glyphs);
 
     if (!currentGlyphPosition) {
-      logger.error(`Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`, '[TC]');
+      logger.error(
+        `Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`,
+        '[TC]',
+      );
       return;
     }
 
@@ -2142,18 +2245,27 @@ const enhancedMoveGlyph = async () => {
       // Calculate the new drum position
       const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
       targetDrumPosition = sides[newDrumIndex];
-
     }
 
     // Set positions for all three drums
-    const topPosition = glyphLevel === 'top' ? targetDrumPosition : Tower.getCurrentDrumPosition('top');
-    const middlePosition = glyphLevel === 'middle' ? targetDrumPosition : Tower.getCurrentDrumPosition('middle');
-    const bottomPosition = glyphLevel === 'bottom' ? targetDrumPosition : Tower.getCurrentDrumPosition('bottom');
+    const topPosition =
+      glyphLevel === 'top' ? targetDrumPosition : Tower.getCurrentDrumPosition('top');
+    const middlePosition =
+      glyphLevel === 'middle' ? targetDrumPosition : Tower.getCurrentDrumPosition('middle');
+    const bottomPosition =
+      glyphLevel === 'bottom' ? targetDrumPosition : Tower.getCurrentDrumPosition('bottom');
 
-    logger.info(`Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`, '[TC]');
+    logger.info(
+      `Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`,
+      '[TC]',
+    );
 
     // Execute the rotation with all three drum positions
-    await Tower.rotateWithState(topPosition as TowerSide, middlePosition as TowerSide, bottomPosition as TowerSide);
+    await Tower.rotateWithState(
+      topPosition as TowerSide,
+      middlePosition as TowerSide,
+      bottomPosition as TowerSide,
+    );
 
     // Restore lights after rotation
     // Wait a moment for rotation to complete, then restore all lights and refresh UI
@@ -2173,7 +2285,6 @@ const enhancedMoveGlyph = async () => {
     }, 1000);
 
     logger.info(`Moved ${selectedGlyph} glyph to ${targetSide} position`, '[TC]');
-
   } catch (error) {
     logger.error('Error moving glyph: ' + error, '[TC]');
   }
@@ -2211,7 +2322,6 @@ const volumeUp = async () => {
 
     // Update the display
     updateVolumeDisplay(newVolume);
-
   } catch (error) {
     logger.error(`Error increasing volume: ${error}`, '[TC]');
   }
@@ -2243,7 +2353,6 @@ const volumeDown = async () => {
 
     // Update the display
     updateVolumeDisplay(newVolume);
-
   } catch (error) {
     logger.error(`Error decreasing volume: ${error}`, '[TC]');
   }
@@ -2254,7 +2363,8 @@ const updateVolumeDisplay = (volume: number) => {
   const volumeIconElement = document.getElementById('volumeIcon');
 
   if (volumeLevelElement) {
-    const description = VOLUME_DESCRIPTIONS[volume as keyof typeof VOLUME_DESCRIPTIONS] || 'Unknown';
+    const description =
+      VOLUME_DESCRIPTIONS[volume as keyof typeof VOLUME_DESCRIPTIONS] || 'Unknown';
     volumeLevelElement.textContent = description;
   }
 
@@ -2296,7 +2406,7 @@ const initializeChart = () => {
           tension: 0.1,
           pointRadius: 1,
           pointHoverRadius: 4,
-          hidden: !chartDisplayConfig.showIrBeam
+          hidden: !chartDisplayConfig.showIrBeam,
         },
         {
           label: 'Drum 1',
@@ -2308,7 +2418,7 @@ const initializeChart = () => {
           tension: 0.1,
           pointRadius: 1,
           pointHoverRadius: 4,
-          hidden: !chartDisplayConfig.showDrum1
+          hidden: !chartDisplayConfig.showDrum1,
         },
         {
           label: 'Drum 2',
@@ -2320,7 +2430,7 @@ const initializeChart = () => {
           tension: 0.1,
           pointRadius: 1,
           pointHoverRadius: 4,
-          hidden: !chartDisplayConfig.showDrum2
+          hidden: !chartDisplayConfig.showDrum2,
         },
         {
           label: 'Drum 3',
@@ -2332,9 +2442,9 @@ const initializeChart = () => {
           tension: 0.1,
           pointRadius: 1,
           pointHoverRadius: 4,
-          hidden: !chartDisplayConfig.showDrum3
-        }
-      ]
+          hidden: !chartDisplayConfig.showDrum3,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -2345,21 +2455,21 @@ const initializeChart = () => {
           time: {
             unit: 'second',
             displayFormats: {
-              second: 'mm:ss'
-            }
+              second: 'mm:ss',
+            },
           },
           title: {
             display: true,
-            text: 'Time'
-          }
+            text: 'Time',
+          },
         },
         y: {
           title: {
             display: true,
-            text: 'Voltage'
+            text: 'Voltage',
           },
-          beginAtZero: false
-        }
+          beginAtZero: false,
+        },
       },
       plugins: {
         legend: {
@@ -2369,8 +2479,8 @@ const initializeChart = () => {
             filter: function (legendItem: any, chartData: any) {
               const dataset = chartData.datasets[legendItem.datasetIndex];
               return !dataset.hidden;
-            }
-          }
+            },
+          },
         },
         tooltip: {
           mode: 'nearest',
@@ -2384,16 +2494,16 @@ const initializeChart = () => {
             },
             label: function (context: any) {
               return `Voltage: ${context.parsed.y.toFixed(2)}`;
-            }
-          }
-        }
+            },
+          },
+        },
       },
       interaction: {
         mode: 'nearest',
         axis: 'x',
-        intersect: false
-      }
-    }
+        intersect: false,
+      },
+    },
   });
 };
 
@@ -2401,28 +2511,28 @@ const updateChart = () => {
   if (!differentialChart) return;
 
   // Prepare data for Chart.js (filter by time window)
-  const cutoffTime = Date.now() - (chartTimeWindow * 1000);
-  const filteredReadings = differentialReadings.filter(r => r.timestamp > cutoffTime);
+  const cutoffTime = Date.now() - chartTimeWindow * 1000;
+  const filteredReadings = differentialReadings.filter((r) => r.timestamp > cutoffTime);
 
   // Prepare data for each dataset
-  const irBeamData = filteredReadings.map(reading => ({
+  const irBeamData = filteredReadings.map((reading) => ({
     x: reading.timestamp,
-    y: reading.irBeam
+    y: reading.irBeam,
   }));
 
-  const drum1Data = filteredReadings.map(reading => ({
+  const drum1Data = filteredReadings.map((reading) => ({
     x: reading.timestamp,
-    y: reading.drum1
+    y: reading.drum1,
   }));
 
-  const drum2Data = filteredReadings.map(reading => ({
+  const drum2Data = filteredReadings.map((reading) => ({
     x: reading.timestamp,
-    y: reading.drum2
+    y: reading.drum2,
   }));
 
-  const drum3Data = filteredReadings.map(reading => ({
+  const drum3Data = filteredReadings.map((reading) => ({
     x: reading.timestamp,
-    y: reading.drum3
+    y: reading.drum3,
   }));
 
   // Update each dataset
@@ -2449,14 +2559,14 @@ const updateChartStatistics = () => {
   if (!statsPoints || !statsLatest || !statsMin || !statsMax) return;
 
   // Filter by current time window
-  const cutoffTime = Date.now() - (chartTimeWindow * 1000);
-  const filteredReadings = differentialReadings.filter(r => r.timestamp > cutoffTime);
+  const cutoffTime = Date.now() - chartTimeWindow * 1000;
+  const filteredReadings = differentialReadings.filter((r) => r.timestamp > cutoffTime);
 
   statsPoints.textContent = filteredReadings.length.toString();
 
   if (filteredReadings.length > 0) {
     const latest = filteredReadings[filteredReadings.length - 1];
-    const voltages = filteredReadings.map(r => r.voltage);
+    const voltages = filteredReadings.map((r) => r.voltage);
     const minVoltage = Math.min(...voltages);
     const maxVoltage = Math.max(...voltages);
 
@@ -2540,14 +2650,16 @@ const clearChartData = () => {
   differentialReadings = [];
 
   if (differentialChart) {
-    differentialChart.data.datasets.forEach((dataset: { data: never[]; }) => {
+    differentialChart.data.datasets.forEach((dataset: { data: never[] }) => {
       dataset.data = [];
     });
     differentialChart.update();
   }
 
   updateChartStatistics();
-  updateChartStatus(Tower.isConnected ? 'Data cleared - ready to collect' : 'Data cleared - connect to tower');
+  updateChartStatus(
+    Tower.isConnected ? 'Data cleared - ready to collect' : 'Data cleared - connect to tower',
+  );
   logger.info('Chart data cleared', '[Charts]');
 };
 
@@ -2557,9 +2669,8 @@ const updateChartDisplayConfig = (type: keyof ChartDisplayConfig, show: boolean)
 
   if (differentialChart) {
     // Update chart visibility immediately
-    const datasetIndex = type === 'showIrBeam' ? 0 :
-      type === 'showDrum1' ? 1 :
-        type === 'showDrum2' ? 2 : 3;
+    const datasetIndex =
+      type === 'showIrBeam' ? 0 : type === 'showDrum1' ? 1 : type === 'showDrum2' ? 2 : 3;
 
     differentialChart.data.datasets[datasetIndex].hidden = !show;
     differentialChart.update('none');
@@ -2582,12 +2693,23 @@ const exportChartData = () => {
   }
 
   // Create CSV content with individual readings
-  const headers = ['Timestamp', 'Time', 'Combined_Voltage', 'IR_Beam', 'Drum1_Top', 'Drum2_Middle', 'Drum3_Bottom', 'Raw_Data'];
+  const headers = [
+    'Timestamp',
+    'Time',
+    'Combined_Voltage',
+    'IR_Beam',
+    'Drum1_Top',
+    'Drum2_Middle',
+    'Drum3_Bottom',
+    'Raw_Data',
+  ];
   const csvRows = [headers.join(',')];
 
-  differentialReadings.forEach(reading => {
+  differentialReadings.forEach((reading) => {
     const timeString = new Date(reading.timestamp).toISOString();
-    const rawDataHex = Array.from(reading.rawData).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    const rawDataHex = Array.from(reading.rawData)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join(' ');
     const row = [
       reading.timestamp,
       timeString,
@@ -2596,7 +2718,7 @@ const exportChartData = () => {
       reading.drum1,
       reading.drum2,
       reading.drum3,
-      `"${rawDataHex}"`
+      `"${rawDataHex}"`,
     ];
     csvRows.push(row.join(','));
   });
@@ -2614,7 +2736,10 @@ const exportChartData = () => {
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
 
-  logger.info(`Exported ${differentialReadings.length} differential readings with individual channel data`, '[Charts]');
+  logger.info(
+    `Exported ${differentialReadings.length} differential readings with individual channel data`,
+    '[Charts]',
+  );
 };
 
 // Expose functions globally for HTML onclick handlers
@@ -2700,7 +2825,9 @@ function syncBleDebugCheckboxes() {
   const enabled = readBoolStorage(DIAG_ENABLED_KEY, false);
   const payloads = readBoolStorage(DIAG_PAYLOADS_KEY, false);
   const enabledEl = document.getElementById('ble-debug-enabled') as HTMLInputElement | null;
-  const payloadsEl = document.getElementById('ble-debug-capture-payloads') as HTMLInputElement | null;
+  const payloadsEl = document.getElementById(
+    'ble-debug-capture-payloads',
+  ) as HTMLInputElement | null;
   if (enabledEl) enabledEl.checked = enabled;
   if (payloadsEl) payloadsEl.checked = payloads;
 }
@@ -2708,7 +2835,11 @@ function syncBleDebugCheckboxes() {
 function toggleDiagnosticsEnabled() {
   const el = document.getElementById('ble-debug-enabled') as HTMLInputElement | null;
   if (!el) return;
-  try { localStorage.setItem(DIAG_ENABLED_KEY, String(el.checked)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(DIAG_ENABLED_KEY, String(el.checked));
+  } catch {
+    /* ignore */
+  }
   Tower.setDiagnosticsEnabled(el.checked);
   refreshBleDebug();
 }
@@ -2716,7 +2847,11 @@ function toggleDiagnosticsEnabled() {
 function toggleCapturePayloads() {
   const el = document.getElementById('ble-debug-capture-payloads') as HTMLInputElement | null;
   if (!el) return;
-  try { localStorage.setItem(DIAG_PAYLOADS_KEY, String(el.checked)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(DIAG_PAYLOADS_KEY, String(el.checked));
+  } catch {
+    /* ignore */
+  }
   Tower.getDiagnosticsRecorder().capturePayloads = el.checked;
 }
 
@@ -2752,19 +2887,24 @@ function refreshBleDebug() {
       eventsEl.innerHTML = '<div class="text-gray-500">No events yet. Connect to a tower.</div>';
     } else {
       const recent = events.slice(-100);
-      eventsEl.innerHTML = recent.map(e => {
-        const color = EVENT_COLOR[e.kind] ?? 'text-white';
-        const time = new Date(e.t).toLocaleTimeString();
-        const data = e.data ? ` ${escapeHtml(JSON.stringify(e.data))}` : '';
-        return `<div class="${color} break-all"><span class="text-gray-500">${time}</span> ${e.kind}${data}</div>`;
-      }).join('');
+      eventsEl.innerHTML = recent
+        .map((e) => {
+          const color = EVENT_COLOR[e.kind] ?? 'text-white';
+          const time = new Date(e.t).toLocaleTimeString();
+          const data = e.data ? ` ${escapeHtml(JSON.stringify(e.data))}` : '';
+          return `<div class="${color} break-all"><span class="text-gray-500">${time}</span> ${e.kind}${data}</div>`;
+        })
+        .join('');
       eventsEl.scrollTop = eventsEl.scrollHeight;
     }
   }
 }
 
 function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  );
 }
 
 async function refreshIncidentLog() {
@@ -2775,22 +2915,29 @@ async function refreshIncidentLog() {
   const listEl = document.getElementById('ble-debug-incidents');
 
   if (totalEl) totalEl.textContent = String(incidents.length);
-  if (lastEl) lastEl.textContent = incidents[0] ? new Date(incidents[0].triggeredAt).toLocaleString() : '-';
+  if (lastEl)
+    lastEl.textContent = incidents[0] ? new Date(incidents[0].triggeredAt).toLocaleString() : '-';
 
   if (causesEl) {
     const counts: Record<string, number> = {};
     for (const r of incidents) counts[r.cause] = (counts[r.cause] ?? 0) + 1;
     const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    causesEl.innerHTML = entries.length === 0
-      ? '<div class="text-gray-500">none</div>'
-      : entries.map(([cause, n]) => `<div><span class="text-yellow-300">${n}×</span> ${escapeHtml(CAUSE_LABEL[cause as DisconnectCause] ?? cause)}</div>`).join('');
+    causesEl.innerHTML =
+      entries.length === 0
+        ? '<div class="text-gray-500">none</div>'
+        : entries
+            .map(
+              ([cause, n]) =>
+                `<div><span class="text-yellow-300">${n}×</span> ${escapeHtml(CAUSE_LABEL[cause as DisconnectCause] ?? cause)}</div>`,
+            )
+            .join('');
   }
 
   if (listEl) {
     if (incidents.length === 0) {
       listEl.innerHTML = '<div class="text-gray-500">No incidents recorded.</div>';
     } else {
-      listEl.innerHTML = incidents.map(r => renderIncidentRow(r)).join('');
+      listEl.innerHTML = incidents.map((r) => renderIncidentRow(r)).join('');
     }
   }
 }
@@ -2830,7 +2977,11 @@ async function exportIncident(incidentId: string) {
 
 async function exportAllIncidents() {
   const incidents = await incidentSink.list();
-  downloadJSON(`udt-incidents-${new Date().toISOString().split('T')[0]}.json`, { schemaVersion: 1, exportedAt: Date.now(), incidents });
+  downloadJSON(`udt-incidents-${new Date().toISOString().split('T')[0]}.json`, {
+    schemaVersion: 1,
+    exportedAt: Date.now(),
+    incidents,
+  });
 }
 
 async function deleteIncident(incidentId: string) {

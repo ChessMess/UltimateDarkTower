@@ -63,7 +63,9 @@ export function is3DViewVisible(): boolean {
 
 export function onViewChange(cb: () => void): () => void {
   viewChangeListeners.add(cb);
-  return () => { viewChangeListeners.delete(cb); };
+  return () => {
+    viewChangeListeners.delete(cb);
+  };
 }
 
 function fireViewChange(): void {
@@ -77,14 +79,19 @@ function fireViewChange(): void {
   }
 }
 
-function buildViewOptions(renderers: RendererType | RendererType[], els: DomElements): TowerRenderViewOptions {
+function buildViewOptions(
+  renderers: RendererType | RendererType[],
+  els: DomElements,
+): TowerRenderViewOptions {
   return {
     container: els.towerContainer,
     renderers,
     modelUrl: towerModelUrl,
     clickToToggleSeals: false, // external source of truth lives in sealController.
     onSealClick: (seal) => toggleSeal(seal, view.display, readout),
-    onSideChange: (side) => { lastSide = side; },
+    onSideChange: (side) => {
+      lastSide = side;
+    },
     onCalibrationComplete: (finalState) => {
       // The 3D view already settled on the calibrated state internally; mirror
       // the result to the standalone readout, remember it, and clear the status.
@@ -93,7 +100,7 @@ function buildViewOptions(renderers: RendererType | RendererType[], els: DomElem
       if (els.calibratingMsg) els.calibratingMsg.hidden = true;
       if (els.stateBadge) els.stateBadge.textContent = 'calibrated';
     },
-    debug3D: (els.debug3dCheckbox?.checked ?? false),
+    debug3D: els.debug3dCheckbox?.checked ?? false,
     camera: {
       zoomToCursor: els.chkZoomToCursor?.checked ?? true,
       preserveViewOnSideSelect: els.chkPreserveViewOnSideSelect?.checked ?? false,
@@ -110,9 +117,12 @@ function buildViewOptions(renderers: RendererType | RendererType[], els: DomElem
 
 function getViewButtonRef(id: ViewButtonId, els: DomElements): HTMLButtonElement | null {
   switch (id) {
-    case 'btn-view-2d': return els.btnView2d;
-    case 'btn-view-3d': return els.btnView3d;
-    case 'btn-view-2d3d': return els.btnView2d3d;
+    case 'btn-view-2d':
+      return els.btnView2d;
+    case 'btn-view-3d':
+      return els.btnView3d;
+    case 'btn-view-2d3d':
+      return els.btnView2d3d;
   }
 }
 
@@ -144,7 +154,11 @@ export function armTowerAudioFromUserGesture(els: DomElements): void {
   view.applyAudioConfig({ enabled: true });
 }
 
-function recreateView(renderers: RendererType | RendererType[], activeId: ViewButtonId, els: DomElements): void {
+function recreateView(
+  renderers: RendererType | RendererType[],
+  activeId: ViewButtonId,
+  els: DomElements,
+): void {
   view.dispose();
   currentRenderers = renderers;
   currentActiveId = activeId;
@@ -174,13 +188,17 @@ export function initRendererController(els: DomElements): void {
   readout.clickToToggleSeals = true;
   readout.onSealClick = (seal) => toggleSeal(seal, view.display, readout);
   readout.clickToToggleLeds = true;
-  readout.onLedClick = (layer, light, effect) => recordLedOverride(layer, light, effect, view.display);
+  readout.onLedClick = (layer, light, effect) =>
+    recordLedOverride(layer, light, effect, view.display);
   view = new TowerRenderView(buildViewOptions('3d-view', els));
   publishDisplay();
   // Audio is armed on a user gesture (view-switch click / armTowerAudioFromUserGesture),
   // not here — enabling at init can't unmute the AudioContext without a gesture.
 
-  for (const [id, renderers] of Object.entries(viewButtons) as [ViewButtonId, RendererType | RendererType[]][]) {
+  for (const [id, renderers] of Object.entries(viewButtons) as [
+    ViewButtonId,
+    RendererType | RendererType[],
+  ][]) {
     const btn = getViewButtonRef(id, els);
     if (btn) btn.addEventListener('click', () => recreateView(renderers, id, els));
   }

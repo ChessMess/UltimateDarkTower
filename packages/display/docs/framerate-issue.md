@@ -55,11 +55,19 @@ The fix is fully shipped in the Display package's `dist/` and pulled in by the C
 1. Open the Controller's Tower Emulator at your usual URL (`http://localhost:8080/controller/TowerEmulator` if you've still got the dev server running).
 2. Open DevTools console.
 3. Paste this and watch the fps line:
+
    ```js
    window.postMessage({ type: 'playSequence', sequenceId: 5 }, '*'); // angryStrobe01
-   let n=0,t=performance.now();
-   (function tick(){ n++; performance.now()-t<3000 ? requestAnimationFrame(tick) : console.log('fps:', (n/3).toFixed(1)); })();
+   let n = 0,
+     t = performance.now();
+   (function tick() {
+     n++;
+     performance.now() - t < 3000
+       ? requestAnimationFrame(tick)
+       : console.log('fps:', (n / 3).toFixed(1));
+   })();
    ```
+
    You should see fps at your monitor's refresh cap (60 / 120 / 144), not 13.
 
 4. Repeat with `flareThenFlicker` (`sequenceId: 4`).
@@ -91,6 +99,7 @@ When this hash changes, every material in the scene that interacts with lights m
 In `BloomManager.darkenNonBloom`, the bloom-pass scene render swaps every non-bloom-layer mesh to a `MeshBasicMaterial` (unaffected by lights), but the `finalComposer`'s scene render uses the original lit materials — and those are what get recompiled.
 
 The display's LED system created 36 `PointLight`s:
+
 - 24 in [Tower3DView.ts:927-1040](../src/3d/Tower3DView.ts#L927-L1040) `buildLeds` — one per LED slot.
 - 12 in [SealManager.ts:140-148](../src/3d/SealManager.ts#L140-L148) `buildSealBacklights` — atmospheric accents for the seal cutouts.
 
@@ -159,6 +168,7 @@ ref.light.visible = cfg.enabled && cfg.accentLight;
 ### 4.4 Why this works
 
 All 36 lights are now `visible: true` for the entire scene lifetime. Their `intensity` is animated from 0 to peak by the existing `LedEffectAnimator` / `SealManager` paths. Three.js still iterates each light in the fragment shader, but:
+
 - An intensity-0 light contributes `color × 0 = 0` per-fragment — visually nothing.
 - The lights-count hash never changes, so the shader program cache stays hit across every sequence transition.
 - The per-frame iteration cost of N lights with intensity 0 is much smaller than one ~800 ms recompile stall.
@@ -175,17 +185,17 @@ Shipped on `Tower3DView`, `TowerDisplay`, and `TowerRenderView`. Diagnostic-only
 
 ### 5.1 What it measures
 
-| Field | Meaning |
-|---|---|
-| `fps` | Computed from rAF tick count / window duration |
-| `frameMs.median / .p95 / .max` | rAF interval — **canonical ground truth** for frame time (CPU + GPU + browser composite) |
-| `bloomTotalMs.median / .max` etc. | CPU-side wall time of each `BloomManager.render()` sub-step (darken / bloomComposer / restore / finalComposer). CPU dispatch only — GPU work is async. Only present when bloom is enabled. |
-| `drawCalls.median / .max` | Per-frame totals across ALL `renderer.render()` calls (`autoReset` temporarily disabled during the report) |
-| `triangles.median / .max` | Same, but triangles |
-| `programs` | Snapshot of `renderer.info.programs.length` at the end of the window. **If this grows between samples, shader recompiles are happening.** |
-| `scene.{visibleBloomMeshes, visibleNonBloomMeshes, visibleSprites, visiblePointLights, totalMeshes}` | End-of-window scene state |
-| `drivers.ledsActive` | LEDs with `driver.v > 0.001` |
-| `canvas.{cssW, cssH, bufW, bufH, pixelRatio}` | End-of-window canvas dimensions |
+| Field                                                                                                | Meaning                                                                                                                                                                                    |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `fps`                                                                                                | Computed from rAF tick count / window duration                                                                                                                                             |
+| `frameMs.median / .p95 / .max`                                                                       | rAF interval — **canonical ground truth** for frame time (CPU + GPU + browser composite)                                                                                                   |
+| `bloomTotalMs.median / .max` etc.                                                                    | CPU-side wall time of each `BloomManager.render()` sub-step (darken / bloomComposer / restore / finalComposer). CPU dispatch only — GPU work is async. Only present when bloom is enabled. |
+| `drawCalls.median / .max`                                                                            | Per-frame totals across ALL `renderer.render()` calls (`autoReset` temporarily disabled during the report)                                                                                 |
+| `triangles.median / .max`                                                                            | Same, but triangles                                                                                                                                                                        |
+| `programs`                                                                                           | Snapshot of `renderer.info.programs.length` at the end of the window. **If this grows between samples, shader recompiles are happening.**                                                  |
+| `scene.{visibleBloomMeshes, visibleNonBloomMeshes, visibleSprites, visiblePointLights, totalMeshes}` | End-of-window scene state                                                                                                                                                                  |
+| `drivers.ledsActive`                                                                                 | LEDs with `driver.v > 0.001`                                                                                                                                                               |
+| `canvas.{cssW, cssH, bufW, bufH, pixelRatio}`                                                        | End-of-window canvas dimensions                                                                                                                                                            |
 
 ### 5.2 How to use it (recipe)
 
@@ -201,7 +211,7 @@ Rebuild: `cd UltimateDarkTower && node build-examples.js`. Reload the Emulator p
 ```js
 // IDLE baseline
 window.display.showIdle?.();
-await new Promise(r => setTimeout(r, 800));
+await new Promise((r) => setTimeout(r, 800));
 const idle = await display.collectPerfReport(3000);
 console.log('IDLE:', JSON.stringify(idle, null, 2));
 ```
@@ -209,7 +219,7 @@ console.log('IDLE:', JSON.stringify(idle, null, 2));
 ```js
 // DURING the slow sequence
 window.postMessage({ type: 'playSequence', sequenceId: 5 }, '*');
-await new Promise(r => setTimeout(r, 500));
+await new Promise((r) => setTimeout(r, 500));
 const seq = await display.collectPerfReport(3000);
 console.log('SEQUENCE:', JSON.stringify(seq, null, 2));
 ```
@@ -260,27 +270,27 @@ All captures via `collectPerfReport(3000)` on the Controller's Tower Emulator, c
 
 ### Pre-fix (the smoking gun)
 
-| Metric | Idle | Sequence 1 | After Seq 1 (idle) | Sequence 2 |
-|---|---:|---:|---:|---:|
-| `fps` | 120 | 79.1 | — | 88.9 |
-| `frameMs.median` | 8.3 | 8.3 | — | 8.3 |
-| **`frameMs.max`** | **9.4** | **883.4** | — | **883.3** |
-| `bloomTotalMs.max` | 3.8 | 123.2 | — | — |
-| **`programs`** | **15** | **35** | **86** | **107** |
-| `visiblePointLights` | 0 | 36 | — | 36 |
+| Metric               |    Idle | Sequence 1 | After Seq 1 (idle) | Sequence 2 |
+| -------------------- | ------: | ---------: | -----------------: | ---------: |
+| `fps`                |     120 |       79.1 |                  — |       88.9 |
+| `frameMs.median`     |     8.3 |        8.3 |                  — |        8.3 |
+| **`frameMs.max`**    | **9.4** |  **883.4** |                  — |  **883.3** |
+| `bloomTotalMs.max`   |     3.8 |      123.2 |                  — |          — |
+| **`programs`**       |  **15** |     **35** |             **86** |    **107** |
+| `visiblePointLights` |       0 |         36 |                  — |         36 |
 
 Programs grew on every transition (start AND end). The stall happened every time, not just once. Median frame time barely moved — fps collapsed because of 1–2 stall frames per 3-second window.
 
 ### Post-fix (visible-toggle removed)
 
-| Metric | Idle | Sequence 1 | After Seq 1 (idle) | Sequence 2 |
-|---|---:|---:|---:|---:|
-| `fps` | **120** | **120.0** | — | **120.1** |
-| `frameMs.median` | 8.4 | 8.4 | — | 8.4 |
-| **`frameMs.max`** | **9.4** | **9.4** | — | **9.6** |
-| `bloomTotalMs.max` | 3.0 | 3.6 | — | 3.0 |
-| **`programs`** | **15** | **17** | — | **17 (stable)** |
-| `visiblePointLights` | 36 | 36 | 36 | 36 |
+| Metric               |    Idle | Sequence 1 | After Seq 1 (idle) |      Sequence 2 |
+| -------------------- | ------: | ---------: | -----------------: | --------------: |
+| `fps`                | **120** |  **120.0** |                  — |       **120.1** |
+| `frameMs.median`     |     8.4 |        8.4 |                  — |             8.4 |
+| **`frameMs.max`**    | **9.4** |    **9.4** |                  — |         **9.6** |
+| `bloomTotalMs.max`   |     3.0 |        3.6 |                  — |             3.0 |
+| **`programs`**       |  **15** |     **17** |                  — | **17 (stable)** |
+| `visiblePointLights` |      36 |         36 |                 36 |              36 |
 
 Programs grew by exactly **+2** when the first sequence triggered (cached three.js material variants for newly visible bloom-layer meshes — a one-time cost) and **never grew again** on any subsequent transition. Frame max stays within v-sync interval.
 
@@ -292,28 +302,28 @@ This section is preserved so a future LLM session knows what was tried, what was
 
 ### 8.1 Investigation timeline
 
-| Date | Event |
-|---|---|
-| pre-2026-05-20 | User reports "many LEDs on = laggy" — first attributed to per-light fragment cost. |
-| 2026-05-20 | Hypothesis A implemented: remove LED PointLights by default, also remove visible-toggle. User tested, reported 13 fps post-fix vs 20 fps stash — fix appeared to make things slightly worse (noise at small canvas). |
-| 2026-05-20 | Bloom `resolutionScale: 0.5` shipped as separate fix. Validated against three.js docs. |
-| 2026-05-21 | User clarified: Display example fps is FINE; bad fps is in the Controller's Tower Emulator. Canvas size delta noted. |
-| 2026-05-21 | Playwright instrumentation. CPU-side bloom timing showed bloom was cheap — couldn't find a bottleneck. |
-| 2026-05-21 | Hypothesis A reverted (defaults restored, visible-toggle restored) because no evidence it helped. |
-| 2026-05-21 | `collectPerfReport` debug API designed and shipped. |
-| 2026-05-21 | First `collectPerfReport` run on the Controller: **`programs: 15 → 35 → 86 → 107`, `frameMs.max: 883 ms`**. Shader-recompile stall identified. |
-| 2026-05-22 | Visible-toggle removal re-applied (the actual fix, no default flips this time). Verified. Resolved. |
+| Date           | Event                                                                                                                                                                                                                |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pre-2026-05-20 | User reports "many LEDs on = laggy" — first attributed to per-light fragment cost.                                                                                                                                   |
+| 2026-05-20     | Hypothesis A implemented: remove LED PointLights by default, also remove visible-toggle. User tested, reported 13 fps post-fix vs 20 fps stash — fix appeared to make things slightly worse (noise at small canvas). |
+| 2026-05-20     | Bloom `resolutionScale: 0.5` shipped as separate fix. Validated against three.js docs.                                                                                                                               |
+| 2026-05-21     | User clarified: Display example fps is FINE; bad fps is in the Controller's Tower Emulator. Canvas size delta noted.                                                                                                 |
+| 2026-05-21     | Playwright instrumentation. CPU-side bloom timing showed bloom was cheap — couldn't find a bottleneck.                                                                                                               |
+| 2026-05-21     | Hypothesis A reverted (defaults restored, visible-toggle restored) because no evidence it helped.                                                                                                                    |
+| 2026-05-21     | `collectPerfReport` debug API designed and shipped.                                                                                                                                                                  |
+| 2026-05-21     | First `collectPerfReport` run on the Controller: **`programs: 15 → 35 → 86 → 107`, `frameMs.max: 883 ms`**. Shader-recompile stall identified.                                                                       |
+| 2026-05-22     | Visible-toggle removal re-applied (the actual fix, no default flips this time). Verified. Resolved.                                                                                                                  |
 
 ### 8.2 What we tried that didn't work — and shouldn't be tried again
 
-| Attempted | Outcome | Why it didn't work |
-|---|---|---|
-| Remove LED PointLights entirely (default off) | Reverted | Removed atmospheric drum spill (visual regression). The lights aren't expensive per-frame; only the recompile is. |
+| Attempted                                                   | Outcome            | Why it didn't work                                                                                                                            |
+| ----------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Remove LED PointLights entirely (default off)               | Reverted           | Removed atmospheric drum spill (visual regression). The lights aren't expensive per-frame; only the recompile is.                             |
 | Cap bloom render-target resolution (`resolutionScale: 0.5`) | **Shipped (kept)** | Real GPU-cost reduction at large canvases. Did NOT fix the user's actual cliff because bloom wasn't the bottleneck — the recompile stall was. |
-| Camera-layer mask instead of material-swap in BloomManager | Not implemented | Speculative architectural change. Bloom wasn't the bottleneck; doesn't need this. |
-| Cache `scene.traverse()` results in BloomManager | Not implemented | Traverse cost was negligible — `darkenMs` measured 0–0.2 ms median. Not worth the cache-invalidation complexity. |
-| Disable halo sprite rendering during sequences | Not implemented | Sprite overdraw was a theory based on bloom-bound assumption. Real bug was elsewhere. |
-| Cap bloom DPR independently | Not implemented | Same as above — `resolutionScale` already covers this case. |
+| Camera-layer mask instead of material-swap in BloomManager  | Not implemented    | Speculative architectural change. Bloom wasn't the bottleneck; doesn't need this.                                                             |
+| Cache `scene.traverse()` results in BloomManager            | Not implemented    | Traverse cost was negligible — `darkenMs` measured 0–0.2 ms median. Not worth the cache-invalidation complexity.                              |
+| Disable halo sprite rendering during sequences              | Not implemented    | Sprite overdraw was a theory based on bloom-bound assumption. Real bug was elsewhere.                                                         |
+| Cap bloom DPR independently                                 | Not implemented    | Same as above — `resolutionScale` already covers this case.                                                                                   |
 
 ### 8.3 Lessons (kept here so future LLM sessions don't repeat the path)
 
@@ -330,18 +340,18 @@ This section is preserved so a future LLM session knows what was tried, what was
 
 The earlier sections of this doc proposed multiple fix directions. Their statuses:
 
-| Proposal | Status | Notes |
-|---|---|---|
-| Remove LED PointLights, keep visual (Hypothesis A defaults) | ❌ **Not needed** | Reverted. The visible-toggle removal alone fixes the issue without removing visual quality. |
-| Stop toggling `light.visible` | ✅ **DONE — the actual fix** | See §4. |
-| Bloom `resolutionScale: 0.5` default | ✅ **DONE — secondary win** | Helps at ≥4 M-pixel canvases. Kept. |
-| `collectPerfReport` debug API | ✅ **DONE** | See §5. Exported as `PerfReport` / `PerfStat` / `BloomFrameMetrics`. |
-| Camera-layer mask instead of material-swap in BloomManager | ❌ **Not needed** | Bloom was not the bottleneck. |
-| Cache `scene.traverse()` in BloomManager | ❌ **Not needed** | Traverse cost negligible. |
-| Cap bloom render-target DPR independently | ❌ **Not needed** | Subsumed by `resolutionScale`. |
-| Disable halo sprites during sequences | ❌ **Not needed** | Was a theory based on wrong hypothesis. |
-| Profile on user's actual hardware | 🔵 **Optional** | The fix is universal — it removes a deterministic main-thread stall, not a hardware-tuned optimisation. User's machine should see the cliff disappear. If it doesn't, see §12. |
-| Expose `TowerRenderView` to `window` via opt-in option | 🔵 **Optional, low priority** | `collectPerfReport` reduces the need. Could still be a nice-to-have for general debugging. |
+| Proposal                                                    | Status                        | Notes                                                                                                                                                                          |
+| ----------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Remove LED PointLights, keep visual (Hypothesis A defaults) | ❌ **Not needed**             | Reverted. The visible-toggle removal alone fixes the issue without removing visual quality.                                                                                    |
+| Stop toggling `light.visible`                               | ✅ **DONE — the actual fix**  | See §4.                                                                                                                                                                        |
+| Bloom `resolutionScale: 0.5` default                        | ✅ **DONE — secondary win**   | Helps at ≥4 M-pixel canvases. Kept.                                                                                                                                            |
+| `collectPerfReport` debug API                               | ✅ **DONE**                   | See §5. Exported as `PerfReport` / `PerfStat` / `BloomFrameMetrics`.                                                                                                           |
+| Camera-layer mask instead of material-swap in BloomManager  | ❌ **Not needed**             | Bloom was not the bottleneck.                                                                                                                                                  |
+| Cache `scene.traverse()` in BloomManager                    | ❌ **Not needed**             | Traverse cost negligible.                                                                                                                                                      |
+| Cap bloom render-target DPR independently                   | ❌ **Not needed**             | Subsumed by `resolutionScale`.                                                                                                                                                 |
+| Disable halo sprites during sequences                       | ❌ **Not needed**             | Was a theory based on wrong hypothesis.                                                                                                                                        |
+| Profile on user's actual hardware                           | 🔵 **Optional**               | The fix is universal — it removes a deterministic main-thread stall, not a hardware-tuned optimisation. User's machine should see the cliff disappear. If it doesn't, see §12. |
+| Expose `TowerRenderView` to `window` via opt-in option      | 🔵 **Optional, low priority** | `collectPerfReport` reduces the need. Could still be a nice-to-have for general debugging.                                                                                     |
 
 ---
 
@@ -349,23 +359,23 @@ The earlier sections of this doc proposed multiple fix directions. Their statuse
 
 Reflects the shipped state — §4 first fix PLUS §13 follow-up gate fix together.
 
-| File | Repo | Status |
-|---|---|---|
+| File                                                                                          | Repo                     | Status                                                                                                                                                                                                                                                                                                                  |
+| --------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/3d/Tower3DView.ts` (`buildLeds`, `applyLightingToScene`, `loadModel`, `startRenderLoop`) | UltimateDarkTowerDisplay | ✅ `redLight.visible = false` at construction; gate owns visibility. New methods: `prewarmLightPrograms`, `setBulkLightsVisible`, `updateLightsGate`, `renderOnce`. `lightsGateOpen` field. Per-tick `updateLightsGate()` call in render loop. Async `loadModel` callback awaits prewarm before `_loadState = 'ready'`. |
-| `src/3d/LedEffectAnimator.ts` (`writeLed`) | UltimateDarkTowerDisplay | ✅ `writeLed` drives only `intensity`; visibility owned by Tower3DView's gate. |
-| `src/3d/SealManager.ts` (`buildSealBacklights`, `setSealLed`, `updateLighting`) | UltimateDarkTowerDisplay | ✅ `light.visible = false` at construction (gate owns visibility); `setSealLed` drives only intensity; `updateLighting` no longer touches `visible`. |
-| `src/3d/BloomManager.ts` | UltimateDarkTowerDisplay | ✅ `resolutionScale` field added (default 0.5); `collectMetrics` / `lastMetrics` for `collectPerfReport`. |
-| `src/3d/LightingResolver.ts` + `src/3d/types.ts` | UltimateDarkTowerDisplay | ✅ `scene.bloom.resolutionScale` (default 0.5) added. Other defaults unchanged. |
-| `src/3d/Tower3DView.ts` (`collectPerfReport` + `__testables`) | UltimateDarkTowerDisplay | ✅ Added. Forwarded through TowerDisplay + TowerRenderView. `__testables` exports `tickLightsGate` and `isLightsGateOpen` for jsdom-friendly tests. |
-| `src/index.ts` | UltimateDarkTowerDisplay | ✅ Re-exports `PerfReport`, `PerfStat`, `BloomFrameMetrics`. |
-| `tests/unit/Tower3DView.test.ts` | UltimateDarkTowerDisplay | ✅ Visibility assertions updated to drive `tickLightsGate(view)`; new "bulk lights gate" describe block validates open/close transitions; `collectPerfReport` shape test added; "replays latestState" test became `async` and awaits microtasks (load callback is now async). |
-| `tests/__mocks__/three.js` | UltimateDarkTowerDisplay | ✅ Added `Clock`, `TextureLoader`, `WebGLRenderer.capabilities.getMaxAnisotropy`, `WebGLRenderer.info.{render,programs,autoReset,reset}`, `getPixelRatio()`, `compile()`, `compileAsync()`. |
-| `tests/__mocks__/pngUrl.js` + `jest.config.cjs` png mapper | UltimateDarkTowerDisplay | ✅ Kept. |
-| `docs/LIGHTING.md` | UltimateDarkTowerDisplay | ✅ Updated: §8 adds `resolutionScale` row + bloom-scaling note; §10 driver code snippet updated (no per-frame visible); new §10.1 "Bulk lights gate"; §11.3 accent-light visibility note; §16 render pipeline adds `updateLightsGate`; §17 default config adds `resolutionScale: 0.5`. |
-| `CHANGELOG.md` | UltimateDarkTowerDisplay | ✅ Entries: `Fixed` (visible-toggle removal — original §4 fix); `Fixed` (bulk-lights gate + prewarm — §13 follow-up); `Added` (`collectPerfReport`); `Changed` (bloom `resolutionScale`). |
-| `examples/controller/TowerEmulator.ts` (`window.display` debug expose) | UltimateDarkTower | ✅ Reverted. Rebuilt clean (`grep -c "__view\|window\.display" dist/...` = 0). |
-| `dist/index.esm.js` etc. | UltimateDarkTowerDisplay | ✅ Rebuilt via `npm run build` after each fix. |
-| `examples/dist/...` | UltimateDarkTower | ✅ Rebuilt via `node build-examples.js` after each fix. |
+| `src/3d/LedEffectAnimator.ts` (`writeLed`)                                                    | UltimateDarkTowerDisplay | ✅ `writeLed` drives only `intensity`; visibility owned by Tower3DView's gate.                                                                                                                                                                                                                                          |
+| `src/3d/SealManager.ts` (`buildSealBacklights`, `setSealLed`, `updateLighting`)               | UltimateDarkTowerDisplay | ✅ `light.visible = false` at construction (gate owns visibility); `setSealLed` drives only intensity; `updateLighting` no longer touches `visible`.                                                                                                                                                                    |
+| `src/3d/BloomManager.ts`                                                                      | UltimateDarkTowerDisplay | ✅ `resolutionScale` field added (default 0.5); `collectMetrics` / `lastMetrics` for `collectPerfReport`.                                                                                                                                                                                                               |
+| `src/3d/LightingResolver.ts` + `src/3d/types.ts`                                              | UltimateDarkTowerDisplay | ✅ `scene.bloom.resolutionScale` (default 0.5) added. Other defaults unchanged.                                                                                                                                                                                                                                         |
+| `src/3d/Tower3DView.ts` (`collectPerfReport` + `__testables`)                                 | UltimateDarkTowerDisplay | ✅ Added. Forwarded through TowerDisplay + TowerRenderView. `__testables` exports `tickLightsGate` and `isLightsGateOpen` for jsdom-friendly tests.                                                                                                                                                                     |
+| `src/index.ts`                                                                                | UltimateDarkTowerDisplay | ✅ Re-exports `PerfReport`, `PerfStat`, `BloomFrameMetrics`.                                                                                                                                                                                                                                                            |
+| `tests/unit/Tower3DView.test.ts`                                                              | UltimateDarkTowerDisplay | ✅ Visibility assertions updated to drive `tickLightsGate(view)`; new "bulk lights gate" describe block validates open/close transitions; `collectPerfReport` shape test added; "replays latestState" test became `async` and awaits microtasks (load callback is now async).                                           |
+| `tests/__mocks__/three.js`                                                                    | UltimateDarkTowerDisplay | ✅ Added `Clock`, `TextureLoader`, `WebGLRenderer.capabilities.getMaxAnisotropy`, `WebGLRenderer.info.{render,programs,autoReset,reset}`, `getPixelRatio()`, `compile()`, `compileAsync()`.                                                                                                                             |
+| `tests/__mocks__/pngUrl.js` + `jest.config.cjs` png mapper                                    | UltimateDarkTowerDisplay | ✅ Kept.                                                                                                                                                                                                                                                                                                                |
+| `docs/LIGHTING.md`                                                                            | UltimateDarkTowerDisplay | ✅ Updated: §8 adds `resolutionScale` row + bloom-scaling note; §10 driver code snippet updated (no per-frame visible); new §10.1 "Bulk lights gate"; §11.3 accent-light visibility note; §16 render pipeline adds `updateLightsGate`; §17 default config adds `resolutionScale: 0.5`.                                  |
+| `CHANGELOG.md`                                                                                | UltimateDarkTowerDisplay | ✅ Entries: `Fixed` (visible-toggle removal — original §4 fix); `Fixed` (bulk-lights gate + prewarm — §13 follow-up); `Added` (`collectPerfReport`); `Changed` (bloom `resolutionScale`).                                                                                                                               |
+| `examples/controller/TowerEmulator.ts` (`window.display` debug expose)                        | UltimateDarkTower        | ✅ Reverted. Rebuilt clean (`grep -c "__view\|window\.display" dist/...` = 0).                                                                                                                                                                                                                                          |
+| `dist/index.esm.js` etc.                                                                      | UltimateDarkTowerDisplay | ✅ Rebuilt via `npm run build` after each fix.                                                                                                                                                                                                                                                                          |
+| `examples/dist/...`                                                                           | UltimateDarkTower        | ✅ Rebuilt via `node build-examples.js` after each fix.                                                                                                                                                                                                                                                                 |
 
 **Tests:** 279 unit tests pass (added `collectPerfReport` shape test + bulk-gate describe block since the original count of 277). Both `tsc --noEmit` configs are clean.
 
@@ -377,7 +387,7 @@ External sources consulted during the investigation:
 
 - [three.js — UnrealBloomPass docs](https://threejs.org/docs/pages/UnrealBloomPass.html) — confirms passing a lower-resolution `Vector2` is a documented optimization.
 - [three.js — selective bloom example source](https://github.com/mrdoob/three.js/blob/master/examples/webgl_postprocessing_unreal_bloom_selective.html) — official pattern (material-swap, not camera-layer), what `BloomManager` mirrors.
-- [Discover three.js — Tips & Tricks](https://discoverthreejs.com/tips-and-tricks/) — *"Direct lights are slow. Use as few direct lights as possible."* Notes that adding/removing lights triggers shader recompiles. (Correct on the recompile claim — but per investigation, intensity-modulating a stable set of lights avoids the recompile penalty entirely.)
+- [Discover three.js — Tips & Tricks](https://discoverthreejs.com/tips-and-tricks/) — _"Direct lights are slow. Use as few direct lights as possible."_ Notes that adding/removing lights triggers shader recompiles. (Correct on the recompile claim — but per investigation, intensity-modulating a stable set of lights avoids the recompile penalty entirely.)
 - [Three.js Journey — Lights, Shading, Shaders](https://threejs-journey.com/lessons/lights-shading-shaders) — recommends ≤3 active lights, with fallback to baked lighting / env maps beyond that. (We're 12× over that recommendation but the fix proves it's manageable as long as the count is stable.)
 - [Three.js forum — Optimizing PointLights](https://discourse.threejs.org/t/optimizing-point-lights/36153) — light-pool pattern. Not applicable here but useful future reference.
 
@@ -431,8 +441,14 @@ Two scenarios to test (one for each fix). Open the Controller's Tower Emulator a
 
 ```js
 // Make sure no sequence is playing, then measure 3 seconds of idle
-let n=0,t=performance.now();
-(function tick(){ n++; performance.now()-t<3000 ? requestAnimationFrame(tick) : console.log('IDLE fps:', (n/3).toFixed(1)); })();
+let n = 0,
+  t = performance.now();
+(function tick() {
+  n++;
+  performance.now() - t < 3000
+    ? requestAnimationFrame(tick)
+    : console.log('IDLE fps:', (n / 3).toFixed(1));
+})();
 ```
 
 Expected: fps at your monitor's refresh cap (60 / 120 / 144). Pre-§13, idle on a Retina full-window canvas could drop to ~13 fps because 36 always-active `PointLight`s ran in every fragment. After §13, idle should be back to v-sync cap.
@@ -441,8 +457,14 @@ Expected: fps at your monitor's refresh cap (60 / 120 / 144). Pre-§13, idle on 
 
 ```js
 window.postMessage({ type: 'playSequence', sequenceId: 5 }, '*'); // angryStrobe01
-let n=0,t=performance.now();
-(function tick(){ n++; performance.now()-t<3000 ? requestAnimationFrame(tick) : console.log('SEQUENCE fps:', (n/3).toFixed(1)); })();
+let n = 0,
+  t = performance.now();
+(function tick() {
+  n++;
+  performance.now() - t < 3000
+    ? requestAnimationFrame(tick)
+    : console.log('SEQUENCE fps:', (n / 3).toFixed(1));
+})();
 ```
 
 Expected: no one-frame stall on transition (was ~880 ms pre-§4). Sustained fps during sequence depends on your GPU's per-fragment cost for 36 active `PointLight`s — typically still well above 30 fps at natural canvas sizes.
@@ -477,20 +499,20 @@ If the cliff is gone on your machine: this issue is fully closed. The earlier th
 
 The fix in §4 traded one problem for another. Eliminating per-frame `light.visible` toggling meant all 36 LED-related `PointLight`s stayed `visible: true` for the scene's lifetime, even at idle. Three.js's fragment shader iterates every active light per fragment regardless of intensity, so:
 
-| Era | Active lights at idle | Active lights during sequence |
-|---|---:|---:|
-| Pre-original-bug | 0 | varies 0–36 (with recompile stalls on transitions) |
-| §4 fix | **36 always** | 36 always (no stalls) |
-| §13 fix (now) | **0** | 36 (no stalls, cached programs) |
+| Era              | Active lights at idle |                      Active lights during sequence |
+| ---------------- | --------------------: | -------------------------------------------------: |
+| Pre-original-bug |                     0 | varies 0–36 (with recompile stalls on transitions) |
+| §4 fix           |         **36 always** |                              36 always (no stalls) |
+| §13 fix (now)    |                 **0** |                    36 (no stalls, cached programs) |
 
 User reported: "the overall framerate now feels lower than it did even with no lights on."
 
 Measured at 7.84 M backing pixels (canvas = 1400 × 1400 with DPR 2, typical of full-window Retina layouts):
 
-| State | fps | frameMs.median |
-|---|---:|---:|
-| 36 lights visible (§4 fix's idle) | 13.7 | 74.2 ms |
-| 0 lights visible (simulated pre-fix idle) | 120.0 | 8.3 ms |
+| State                                     |   fps | frameMs.median |
+| ----------------------------------------- | ----: | -------------: |
+| 36 lights visible (§4 fix's idle)         |  13.7 |        74.2 ms |
+| 0 lights visible (simulated pre-fix idle) | 120.0 |         8.3 ms |
 
 The 36 always-active lights added **~66 ms / frame** of GPU work. On the test machine this was invisible at smaller canvases (v-sync hid the cost) but became dominant the moment the GPU was challenged. On the user's actual hardware, with less GPU slack than Apple Silicon, the cost is enough to make the renderer feel sluggish even at idle.
 
@@ -509,7 +531,7 @@ To avoid shader recompiles on gate transitions, **pre-compile both program varia
 - **[src/3d/LedEffectAnimator.ts](../src/3d/LedEffectAnimator.ts)** — unchanged from §4: `writeLed` drives only `intensity`. Gate owns visibility.
 - **[src/3d/SealManager.ts](../src/3d/SealManager.ts)** — `buildSealBacklights` sets `light.visible = false` initially (Tower3DView's gate owns visibility now); `setSealLed` drives only intensity; `updateLighting` no longer touches `light.visible`.
 - **[tests/unit/Tower3DView.test.ts](../tests/unit/Tower3DView.test.ts)** — visibility-related assertions updated to drive `tickLightsGate(view)` from the new `__testables.tickLightsGate` (rAF doesn't run in jsdom); new "bulk lights gate" describe block validates open/close transitions; the "replays latestState" test became `async` and awaits microtasks since `loadModel` is now async.
-- **[tests/__mocks__/three.js](../tests/__mocks__/three.js)** — added `compile()` / `compileAsync()` stubs to the `WebGLRenderer` mock.
+- **[tests/**mocks**/three.js](../tests/__mocks__/three.js)** — added `compile()` / `compileAsync()` stubs to the `WebGLRenderer` mock.
 
 ### 13.4 Async sequencing in the model-load callback
 
@@ -521,25 +543,26 @@ The prewarm guards against `dispose()` during its awaits (`if (!this.scene || !t
 
 Playwright run on Controller, forced canvas to 7.84 M backing pixels (the regression-surfacing scale), three transitions: IDLE → SEQUENCE 1 → idle → SEQUENCE 2.
 
-| Metric | Idle | Sequence 1 | Sequence 2 |
-|---|---:|---:|---:|
-| `fps` | **120** | 16.8 | 14.2 |
-| `frameMs.median` | **8.3 ms** | 65.8 ms | 68.8 ms |
-| `frameMs.max` | 9.4 ms | 148.6 ms | 150.3 ms |
-| `visiblePointLights` | **0** | 36 | 0 (sequence ended mid-window) |
-| `programs` | 27 | 30 | **30 (stable)** |
+| Metric               |       Idle | Sequence 1 |                    Sequence 2 |
+| -------------------- | ---------: | ---------: | ----------------------------: |
+| `fps`                |    **120** |       16.8 |                          14.2 |
+| `frameMs.median`     | **8.3 ms** |    65.8 ms |                       68.8 ms |
+| `frameMs.max`        |     9.4 ms |   148.6 ms |                      150.3 ms |
+| `visiblePointLights` |      **0** |         36 | 0 (sequence ended mid-window) |
+| `programs`           |         27 |         30 |               **30 (stable)** |
 
 At the user's natural canvas size (1.1 M backing pixels):
 
-| Metric | Idle | Sequence |
-|---|---:|---:|
-| `fps` | **120** | **120** |
-| `frameMs.median` | 8.3 ms | 8.3 ms |
-| `frameMs.max` | 10.3 ms | 10.4 ms |
-| `visiblePointLights` | 0 | 36 |
-| `programs` | 27 | 30 |
+| Metric               |    Idle | Sequence |
+| -------------------- | ------: | -------: |
+| `fps`                | **120** |  **120** |
+| `frameMs.median`     |  8.3 ms |   8.3 ms |
+| `frameMs.max`        | 10.3 ms |  10.4 ms |
+| `visiblePointLights` |       0 |       36 |
+| `programs`           |      27 |       30 |
 
 **Key signals:**
+
 - Idle restored to v-sync cap with 0 active lights — exactly the pre-bug idle perf.
 - Programs grew by exactly +3 on first sequence (one-time cost for a few sprite/halo material variants prewarm doesn't fully cover) and stayed stable across subsequent transitions.
 - At natural canvas size, no measurable stall on sequence transitions (max frame stays inside one 120 Hz v-sync interval).
@@ -564,10 +587,10 @@ The instructions in §4 ("The Fix — Code Changes") describe the first fix (kee
 
 In the Display example app ([example/popOutController.ts](../example/popOutController.ts)) the "Pop Out" button transplants `#rendered-panel` into a separate browser window (`window.open`) and recreates the renderer inside it. With all LEDs manually lit via the override panel:
 
-| Scenario | Canvas (CSS) | fps |
-|---|---|---:|
+| Scenario            | Canvas (CSS) | fps |
+| ------------------- | ------------ | --: |
 | Main page, embedded | ~1194 × 1053 | ~30 |
-| Popup window | 940 × 907 | ~18 |
+| Popup window        | 940 × 907    | ~18 |
 
 Same scene, smaller canvas in popup, still slower. The §13 prewarm + gate fix is in effect in both cases (verified — `programs` only grows by +3 on first sequence).
 
@@ -576,12 +599,14 @@ Same scene, smaller canvas in popup, still slower. The §13 prewarm + gate fix i
 Two `collectPerfReport(3000)` captures inside the popup (M1 Pro, ANGLE Metal renderer):
 
 **Popup at idle (no LEDs lit):**
+
 - `fps: 50`, `frameMs.median: 20.0 ms` exactly, `max: 21 ms`
 - `bloomTotalMs.median: 1.0 ms` — CPU dispatch is essentially free
 - `drawCalls: 91`, `triangles: 1.6 M`, `bufW × bufH: 942 × 909` (DPR 1, gate closed)
 - `programs: 27`, `visiblePointLights: 0`
 
 **Popup with all LEDs on:**
+
 - `fps: 14.2`, `frameMs.median: 20.0 ms`, **`p95: 480 ms`, `max: 1140 ms`**
 - `programs: 30` (only +3 from idle — prewarm gap, expected)
 - `visiblePointLights: 36`, `drawCalls: 195`, `triangles: 1.8 M`
@@ -589,13 +614,13 @@ Two `collectPerfReport(3000)` captures inside the popup (M1 Pro, ANGLE Metal ren
 
 ### 14.3 What we ruled out
 
-| Hypothesis | Test | Verdict |
-|---|---|---|
-| Canvas is cross-document-adopted; WebGL context degrades when moved between docs | Ran `canvas.ownerDocument` check while popup open; got `where: "popup"` ✓ | The canvas IS correctly owned by the popup's document. Not the cause. |
-| Pixel count (DPR 2 × large canvas = many fragments × 36 active lights) | Added a `maxPixelRatio` option, capped popup to DPR 1 (~860 K backing pixels) | No measurable fps improvement. Pixel count is not the dominant cost in this regime. Reverted. |
-| Popup's fps cap is a Chrome cross-window throttle | Moved popup between external (50 Hz) and built-in (120 Hz) monitor; fps idle scaled accordingly | It's just per-display vsync. Not a Chrome quirk. The "50 fps" floor was the user's external monitor. |
-| Same-document fullscreen overlay would avoid cross-window cost | Replaced popup with `position: fixed; inset: 0` body class; live canvas + WebGL context stayed alive (no recreate) | Got WORSE — ~4 fps with all LEDs on at fullscreen. Overlay canvas is larger than the popup was, and even with DPR cap the per-fragment cost dominates. Reverted. |
-| `transferControlToOffscreen` / OffscreenCanvas would help | Not tested | Speculative. Significant rearchitecture. |
+| Hypothesis                                                                       | Test                                                                                                               | Verdict                                                                                                                                                          |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Canvas is cross-document-adopted; WebGL context degrades when moved between docs | Ran `canvas.ownerDocument` check while popup open; got `where: "popup"` ✓                                          | The canvas IS correctly owned by the popup's document. Not the cause.                                                                                            |
+| Pixel count (DPR 2 × large canvas = many fragments × 36 active lights)           | Added a `maxPixelRatio` option, capped popup to DPR 1 (~860 K backing pixels)                                      | No measurable fps improvement. Pixel count is not the dominant cost in this regime. Reverted.                                                                    |
+| Popup's fps cap is a Chrome cross-window throttle                                | Moved popup between external (50 Hz) and built-in (120 Hz) monitor; fps idle scaled accordingly                    | It's just per-display vsync. Not a Chrome quirk. The "50 fps" floor was the user's external monitor.                                                             |
+| Same-document fullscreen overlay would avoid cross-window cost                   | Replaced popup with `position: fixed; inset: 0` body class; live canvas + WebGL context stayed alive (no recreate) | Got WORSE — ~4 fps with all LEDs on at fullscreen. Overlay canvas is larger than the popup was, and even with DPR cap the per-fragment cost dominates. Reverted. |
+| `transferControlToOffscreen` / OffscreenCanvas would help                        | Not tested                                                                                                         | Speculative. Significant rearchitecture.                                                                                                                         |
 
 ### 14.4 Where the cost actually is
 
@@ -607,6 +632,7 @@ The data points at **transient stall frames during sequence playback in the popu
 - But each program compile in the popup's WebGL context appears to be much more expensive than in the main window's context (3 compiles × ~40 ms = 120 ms doesn't account for a 1140 ms frame)
 
 The stalls might come from:
+
 1. **Popup-context shader compile cost amplified by cross-process compositing** — the popup has its own GPU process binding; compile + first-render of new programs may serialize across a process boundary.
 2. **Backpressured GPU pipeline during gate transitions** — when 36 lights become visible, the popup's compositor may struggle to consume the larger frame and back-pressure the renderer.
 3. **rAF coordination between main page and popup compositor** — the render loop's `requestAnimationFrame` is bound to the main page's window; the popup paints on its own compositor schedule.
@@ -615,11 +641,11 @@ We don't have a smoking-gun measurement that distinguishes these.
 
 ### 14.5 What did NOT work — do not try again
 
-| Attempted | Outcome | Why |
-|---|---|---|
-| `maxPixelRatio` option on Tower3DView, capping popup to DPR 1 | No measurable improvement | Per-fragment cost wasn't the bottleneck in the popup case. The plumbing existed on `Tower3DView` / `TowerDisplay` / `TowerRenderView` / `TowerRenderViewOptions` and the example wired it via a `popoutActive` flag. **All reverted.** Only the popup hits this perf class — adding API surface for no benefit is the wrong trade. |
-| In-page fullscreen CSS overlay instead of `window.open` | Worse fps than the popup it was meant to replace (~4 fps with all LEDs on at full viewport) | Overlay canvas is large (full viewport at DPR 2). Even with DPR cap to 1, fragment work for 36 lights dominates. User preferred the popup back — **reverted**. |
-| Public `Tower3DView.setPixelRatio(value)` runtime method | Added then removed | Was added to support the overlay path; never used by anything else. Removed when overlay was reverted. |
+| Attempted                                                     | Outcome                                                                                     | Why                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `maxPixelRatio` option on Tower3DView, capping popup to DPR 1 | No measurable improvement                                                                   | Per-fragment cost wasn't the bottleneck in the popup case. The plumbing existed on `Tower3DView` / `TowerDisplay` / `TowerRenderView` / `TowerRenderViewOptions` and the example wired it via a `popoutActive` flag. **All reverted.** Only the popup hits this perf class — adding API surface for no benefit is the wrong trade. |
+| In-page fullscreen CSS overlay instead of `window.open`       | Worse fps than the popup it was meant to replace (~4 fps with all LEDs on at full viewport) | Overlay canvas is large (full viewport at DPR 2). Even with DPR cap to 1, fragment work for 36 lights dominates. User preferred the popup back — **reverted**.                                                                                                                                                                     |
+| Public `Tower3DView.setPixelRatio(value)` runtime method      | Added then removed                                                                          | Was added to support the overlay path; never used by anything else. Removed when overlay was reverted.                                                                                                                                                                                                                             |
 
 ### 14.6 What to try next (productive directions, untested)
 
@@ -649,15 +675,21 @@ The Playwright MCP server is available locally (see `~/.claude/memory/reference_
 Two console snippets useful for any future popup-perf investigation. Run in the **main** window's DevTools with the popup open:
 
 **Locate the canvas across both documents:**
+
 ```js
 (() => {
   const canvases = [];
   const winB = window.open('', 'udtd-render'); // returns existing popup if open
   [window, winB].forEach((w, i) => {
     try {
-      w?.document.querySelectorAll('canvas').forEach(c =>
-        canvases.push({ where: i === 0 ? 'main' : 'popup', w: c.width, h: c.height }));
-    } catch (e) { canvases.push({ where: i === 0 ? 'main' : 'popup', error: String(e) }); }
+      w?.document
+        .querySelectorAll('canvas')
+        .forEach((c) =>
+          canvases.push({ where: i === 0 ? 'main' : 'popup', w: c.width, h: c.height }),
+        );
+    } catch (e) {
+      canvases.push({ where: i === 0 ? 'main' : 'popup', error: String(e) });
+    }
   });
   return { popupOpen: !!winB && !winB.closed, canvases };
 })();

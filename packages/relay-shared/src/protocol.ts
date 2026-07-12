@@ -147,10 +147,7 @@ export type ClientActionMessage = BaseMessage<
 >;
 
 /** Batch of structured log entries sent from a client to the host for centralized storage. */
-export type ClientLogMessage = BaseMessage<
-  typeof MessageType.CLIENT_LOG,
-  { entries: LogEntry[] }
->;
+export type ClientLogMessage = BaseMessage<typeof MessageType.CLIENT_LOG, { entries: LogEntry[] }>;
 
 /** Host tells clients whether automatic log submission is enabled or disabled. */
 export type HostLogConfigMessage = BaseMessage<
@@ -159,10 +156,7 @@ export type HostLogConfigMessage = BaseMessage<
 >;
 
 /** Broadcast when the companion app disconnects from TowerEmulator — game should pause. */
-export type RelayPausedMessage = BaseMessage<
-  typeof MessageType.RELAY_PAUSED,
-  { reason: string }
->;
+export type RelayPausedMessage = BaseMessage<typeof MessageType.RELAY_PAUSED, { reason: string }>;
 
 /** Broadcast when the companion app reconnects to TowerEmulator — game can resume. */
 export type RelayResumedMessage = BaseMessage<
@@ -185,10 +179,7 @@ export type RelayTowerAlertMessage = BaseMessage<
  * Carries the same data as a tower:command but uses a distinct type so logs
  * and clients can distinguish an operator-triggered resend from a live command.
  */
-export type HostResendMessage = BaseMessage<
-  typeof MessageType.HOST_RESEND,
-  { data: number[] }
->;
+export type HostResendMessage = BaseMessage<typeof MessageType.HOST_RESEND, { data: number[] }>;
 
 // ---------------------------------------------------------------------------
 // Union type
@@ -226,7 +217,10 @@ function now(): string {
  * @param data - Raw 20-byte tower command.
  * @param seq  - Optional monotonic sequence number assigned by the relay.
  */
-export function makeTowerCommandMessage(data: TowerCommandBytes, seq?: number): TowerCommandMessage {
+export function makeTowerCommandMessage(
+  data: TowerCommandBytes,
+  seq?: number,
+): TowerCommandMessage {
   return {
     type: MessageType.TOWER_COMMAND,
     payload: { data: Array.from(data), seq },

@@ -32,10 +32,15 @@ async function main() {
   const relay = new RelayServer({
     port: PORT,
     onClientConnected: (id, label, observer) =>
-      console.log(`[host] client connected: ${label || id.slice(0, 8)}${observer ? ' (observer)' : ''}`),
+      console.log(
+        `[host] client connected: ${label || id.slice(0, 8)}${observer ? ' (observer)' : ''}`,
+      ),
     onClientReady: (id, ready, label) =>
-      console.log(`[host] client ${label || id.slice(0, 8)} tower: ${ready ? 'READY ✓' : 'not ready'}`),
-    onClientDisconnected: (id, label) => console.log(`[host] client left: ${label || id.slice(0, 8)}`),
+      console.log(
+        `[host] client ${label || id.slice(0, 8)} tower: ${ready ? 'READY ✓' : 'not ready'}`,
+      ),
+    onClientDisconnected: (id, label) =>
+      console.log(`[host] client left: ${label || id.slice(0, 8)}`),
   });
 
   await relay.start();

@@ -21,7 +21,12 @@ export interface DisplayModeElements {
   panel: HTMLElement;
   pane2d: HTMLElement;
   pane3d: HTMLElement;
-  pills: { d2: HTMLButtonElement; d3: HTMLButtonElement; d2d3: HTMLButtonElement; pip: HTMLButtonElement };
+  pills: {
+    d2: HTMLButtonElement;
+    d3: HTMLButtonElement;
+    d2d3: HTMLButtonElement;
+    pip: HTMLButtonElement;
+  };
   swap: HTMLButtonElement;
 }
 
@@ -43,7 +48,7 @@ export interface DisplayModeController {
 
 export function createDisplayMode(
   els: DisplayModeElements,
-  opts: DisplayModeOptions
+  opts: DisplayModeOptions,
 ): DisplayModeController {
   let current: DisplayMode = opts.initial;
   const stored = opts.storage.read(STORAGE_KEY);
@@ -94,7 +99,7 @@ export function createDisplayMode(
   els.pills.d2d3.addEventListener('click', () => apply('2d3d'));
   // Entering PiP keeps the last big/mini choice (default 3D big, matching the demo).
   els.pills.pip.addEventListener('click', () =>
-    apply(current === 'pip-2dbig' ? 'pip-2dbig' : 'pip-3dbig')
+    apply(current === 'pip-2dbig' ? 'pip-2dbig' : 'pip-3dbig'),
   );
   els.swap.addEventListener('click', swap);
 

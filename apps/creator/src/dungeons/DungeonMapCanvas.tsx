@@ -200,7 +200,16 @@ export function DungeonMapCanvas({
   const imgH = rect.h * CELL;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, flex: 1, minHeight: 0 }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        minWidth: 0,
+        flex: 1,
+        minHeight: 0,
+      }}
+    >
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         {imageUrl && (
           <button
@@ -348,9 +357,13 @@ export function DungeonMapCanvas({
                 if (!neighbor) return null;
                 const isDoor = room.exits[dir] === 'door';
                 const left =
-                  dir === 'E' ? (room.cell.col + 1) * CELL - 9 : room.cell.col * CELL + CELL / 2 - 9;
+                  dir === 'E'
+                    ? (room.cell.col + 1) * CELL - 9
+                    : room.cell.col * CELL + CELL / 2 - 9;
                 const top =
-                  dir === 'S' ? (room.cell.row + 1) * CELL - 9 : room.cell.row * CELL + CELL / 2 - 9;
+                  dir === 'S'
+                    ? (room.cell.row + 1) * CELL - 9
+                    : room.cell.row * CELL + CELL / 2 - 9;
                 return (
                   <button
                     key={`${room.id}-${dir}`}
@@ -432,4 +445,9 @@ const toggleBtn: CSSProperties = {
   fontSize: 12,
   cursor: 'pointer',
 };
-const toggleActive: CSSProperties = { ...toggleBtn, background: 'var(--c-primary)', color: 'var(--c-primary-fg)', borderColor: 'transparent' };
+const toggleActive: CSSProperties = {
+  ...toggleBtn,
+  background: 'var(--c-primary)',
+  color: 'var(--c-primary-fg)',
+  borderColor: 'transparent',
+};

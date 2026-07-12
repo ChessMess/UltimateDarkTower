@@ -14,7 +14,11 @@ import type { EngineState, Directive, EngineNode, NodeResult } from './types';
 
 // ---------- node interpretation (§4.2) ----------
 // Returns {goto} | {await:{request,ctx}} | {terminal} | {end}.
-export function interpretNode(node: EngineNode, state: EngineState, directives: Directive[]): NodeResult {
+export function interpretNode(
+  node: EngineNode,
+  state: EngineState,
+  directives: Directive[],
+): NodeResult {
   const out = (node.wires && node.wires.out) || [];
   const next = out[0];
   switch (node.kind) {
@@ -27,13 +31,18 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
       // is never told about heroes otherwise, so it can't render or later move them.
       for (const h of state.clock.turnOrder) {
         const loc = state.heroes[h].location;
-        if (loc != null) dir(directives, 'board.mutate', { command: 'placeHero', args: { hero: h, to: loc } });
+        if (loc != null)
+          dir(directives, 'board.mutate', { command: 'placeHero', args: { hero: h, to: loc } });
       }
       // Author-defined initial foe placement — each entry runs the shared foe.spawn effect
       // so a setup spawn is byte-identical to an authored effect.apply foe.spawn.
       const spawns = (node.props && node.props.spawns) || [];
       for (const sp of spawns)
-        applyEffect({ op: 'foe.spawn', foeId: sp.foeId, location: sp.location, status: sp.status }, state, directives);
+        applyEffect(
+          { op: 'foe.spawn', foeId: sp.foeId, location: sp.location, status: sp.status },
+          state,
+          directives,
+        );
       dir(directives, 'ui.update', { delta: { phase: 'setup' } });
       return { goto: next };
     }
@@ -52,7 +61,10 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
         state.clock.heroSelect = { pool, seatOrder, seatIndex: 0 };
       }
       const hs = state.clock.heroSelect;
-      while (hs.seatIndex < hs.seatOrder.length && state.heroes[hs.seatOrder[hs.seatIndex]].heroRef != null) {
+      while (
+        hs.seatIndex < hs.seatOrder.length &&
+        state.heroes[hs.seatOrder[hs.seatIndex]].heroRef != null
+      ) {
         hs.seatIndex += 1;
       }
       if (hs.seatIndex >= hs.seatOrder.length) {
@@ -91,7 +103,9 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
       const range = (me.perMonth && me.perMonth[state.clock.month]) || me.default;
       const rng = pcg32.deserialize(state.rng);
       state.clock.turnsThisMonth =
-        me.resolution === 'randomInRange' ? pcg32.nextRange(rng, range.minTurn, range.maxTurn) : range.maxTurn;
+        me.resolution === 'randomInRange'
+          ? pcg32.nextRange(rng, range.minTurn, range.maxTurn)
+          : range.maxTurn;
       state.rng = pcg32.serialize(rng);
       resetLatches(state);
       dir(directives, 'log.entry', {
@@ -211,7 +225,10 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
     case 'lifecycle.newQuests': {
       // Issue the upcoming month's companion + adversary quests (months 2+; rules.md §Monthly Quests).
       const upcoming = state.clock.month + 1;
-      const monthlyAll = ((node.props || {}).monthly || {}) as Record<string, Record<string, string>>;
+      const monthlyAll = ((node.props || {}).monthly || {}) as Record<
+        string,
+        Record<string, string>
+      >;
       const monthly = monthlyAll[String(upcoming)];
       if (monthly) {
         if (!state.activeQuests) state.activeQuests = [];
@@ -258,7 +275,8 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
       return { goto: tgt };
     }
     case 'cond.check':
-      if (!evalCondition(node.props.condition, state)) throw fault('cond.check failed at ' + node.id);
+      if (!evalCondition(node.props.condition, state))
+        throw fault('cond.check failed at ' + node.id);
       return { goto: next };
     case 'winloss.mainGoal':
       return { goto: next };
@@ -323,7 +341,8 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
       const ds = dungeonState(state, dId);
       const target = (d.rooms || []).find((r) => r.isTarget);
       // re-entry after the dungeon is already cleared → straight to `completed` (no re-walk)
-      if (target && ds.clearedRooms.includes(target.id)) return { goto: (node.wires!.completed || [])[0] };
+      if (target && ds.clearedRooms.includes(target.id))
+        return { goto: (node.wires!.completed || [])[0] };
       state.clock.dungeon = {
         dungeonId: dId,
         completed: (node.wires!.completed || [])[0],
@@ -339,7 +358,8 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
       });
       dir(directives, 'board.mutate', { command: 'enterDungeon', args: { dungeon: dId } });
       const entrance = (node.wires!.enter || [])[0];
-      if (!entrance) throw fault("dungeon.subflow missing 'enter' wire to its entrance room node: " + node.id);
+      if (!entrance)
+        throw fault("dungeon.subflow missing 'enter' wire to its entrance room node: " + node.id);
       return { goto: entrance };
     }
     case 'dungeon.room':
@@ -388,13 +408,15 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
         }
       }
       const moves = (node.props || {}).moves || [];
-      for (const mv of moves) applyEffect({ op: 'foe.move', foeId: mv.foeId, to: mv.to }, state, directives);
+      for (const mv of moves)
+        applyEffect({ op: 'foe.move', foeId: mv.foeId, to: mv.to }, state, directives);
       return { goto: next };
     }
     case 'event.foesGrow': {
       const steps = (node.props || {}).steps || 1;
       for (const f of state.foes)
-        f.status = FOE_LADDER[Math.min(FOE_LADDER.length - 1, FOE_LADDER.indexOf(f.status) + steps)];
+        f.status =
+          FOE_LADDER[Math.min(FOE_LADDER.length - 1, FOE_LADDER.indexOf(f.status) + steps)];
       dir(directives, 'log.entry', {
         event: 'foesGrow',
         foes: state.foes.map((f) => ({ foeId: f.foeId, status: f.status })),
@@ -404,7 +426,11 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
     case 'event.foesSpawn': {
       const spawns = (node.props || {}).spawns || [];
       for (const sp of spawns)
-        applyEffect({ op: 'foe.spawn', foeId: sp.foeId, location: sp.location, status: sp.status }, state, directives);
+        applyEffect(
+          { op: 'foe.spawn', foeId: sp.foeId, location: sp.location, status: sp.status },
+          state,
+          directives,
+        );
       return { goto: next };
     }
     case 'event.towerStirs': {
@@ -456,7 +482,9 @@ export function interpretNode(node: EngineNode, state: EngineState, directives: 
       // exhaustive over the EngineNode union: `node` is `never` here (all kinds handled). Read the
       // kind via a cast for the runtime message (an un-typechecked caller can still reach this).
       const _exhaustive: never = node;
-      throw fault('node kind not implemented in MVP slice: ' + (_exhaustive as { kind: string }).kind);
+      throw fault(
+        'node kind not implemented in MVP slice: ' + (_exhaustive as { kind: string }).kind,
+      );
     }
   }
 }

@@ -51,10 +51,9 @@ export function createBoardAdapter(): {
   // Dynamic import defers board-package init to call time, keeping it lazy and recoverable.
   import('ultimatedarktowerboard')
     .then(({ BoardStateController, createDefaultBoardState }) => {
-      ctrl = new (BoardStateController as new (opts: {
-        initial: BoardState;
-        mode: string;
-      }) => BoardCtrl)({ initial: createDefaultBoardState() as BoardState, mode: 'self' });
+      ctrl = new (
+        BoardStateController as new (opts: { initial: BoardState; mode: string }) => BoardCtrl
+      )({ initial: createDefaultBoardState() as BoardState, mode: 'self' });
       for (const cmd of pendingMutations.splice(0)) mutate(cmd);
       ready = true;
       for (const cb of readyCbs.splice(0)) cb();

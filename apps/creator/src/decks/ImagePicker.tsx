@@ -21,11 +21,20 @@ export function ImagePicker({ images, value, onChange, onManage, label }: ImageP
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
-      <button style={{ ...smallBtn, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => setOpen((o) => !o)}>
+      <button
+        style={{ ...smallBtn, display: 'flex', alignItems: 'center', gap: 6 }}
+        onClick={() => setOpen((o) => !o)}
+      >
         {currentUrl ? (
           <img src={currentUrl} alt={value} style={thumb} />
         ) : (
-          <span style={{ ...thumb, background: 'var(--c-surface)', border: '1px dashed var(--c-border-strong)' }} />
+          <span
+            style={{
+              ...thumb,
+              background: 'var(--c-surface)',
+              border: '1px dashed var(--c-border-strong)',
+            }}
+          />
         )}
         <span style={{ fontSize: 11 }}>{value || label || 'no image'}</span>
         <span style={{ fontSize: 9, color: 'var(--c-text-faint)' }}>▾</span>
@@ -41,7 +50,13 @@ export function ImagePicker({ images, value, onChange, onManage, label }: ImageP
                 setOpen(false);
               }}
             >
-              <span style={{ ...thumb, background: 'var(--c-surface)', border: '1px dashed var(--c-border-strong)' }} />
+              <span
+                style={{
+                  ...thumb,
+                  background: 'var(--c-surface)',
+                  border: '1px dashed var(--c-border-strong)',
+                }}
+              />
               none
             </button>
             {value && !ids.includes(value) && (
@@ -64,10 +79,16 @@ export function ImagePicker({ images, value, onChange, onManage, label }: ImageP
               </button>
             ))}
             {ids.length === 0 && (
-              <div style={{ padding: 8, fontSize: 11, color: 'var(--c-text-faint)' }}>No images yet.</div>
+              <div style={{ padding: 8, fontSize: 11, color: 'var(--c-text-faint)' }}>
+                No images yet.
+              </div>
             )}
             <button
-              style={{ ...pickItem, borderTop: '1px solid var(--c-border)', color: 'var(--c-primary)' }}
+              style={{
+                ...pickItem,
+                borderTop: '1px solid var(--c-border)',
+                color: 'var(--c-primary)',
+              }}
               onClick={() => {
                 onManage();
                 setOpen(false);

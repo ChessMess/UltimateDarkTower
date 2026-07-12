@@ -43,20 +43,23 @@ const ANGLES: { label: string; value: BoardViewAngle }[] = [
  * Returns a {@link FocusControlsHandle}: `setFocus` re-renders the pressed state when the focus
  * changes elsewhere (the view facade's fan-out), and `unmount` removes the controls.
  */
-export function mountFocusControls(host: HTMLElement, options: FocusControlsOptions): FocusControlsHandle {
+export function mountFocusControls(
+  host: HTMLElement,
+  options: FocusControlsOptions,
+): FocusControlsHandle {
   let focus = options.focus;
   const root = document.createElement('div');
   root.className = 'udt-focus-controls';
 
   const kingdomGroup = makeGroup('Kingdom');
   const kingdomButtons = KINGDOMS.map((choice) =>
-    makeButton(choice.label, () => options.onChange({ ...focus, kingdom: choice.value }))
+    makeButton(choice.label, () => options.onChange({ ...focus, kingdom: choice.value })),
   );
   kingdomButtons.forEach((b) => kingdomGroup.appendChild(b));
 
   const angleGroup = makeGroup('View');
   const angleButtons = ANGLES.map((choice) =>
-    makeButton(choice.label, () => options.onChange({ ...focus, angle: choice.value }))
+    makeButton(choice.label, () => options.onChange({ ...focus, angle: choice.value })),
   );
   angleButtons.forEach((b) => angleGroup.appendChild(b));
 

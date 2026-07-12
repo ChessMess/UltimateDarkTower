@@ -18,7 +18,10 @@ export function evalCondition(cond: Condition | undefined, state: EngineState): 
   let lhs: unknown;
   switch (subject) {
     case 'resource': {
-      const hero = (state.heroes[state.clock.activeHero] || {}) as unknown as Record<string, unknown>;
+      const hero = (state.heroes[state.clock.activeHero] || {}) as unknown as Record<
+        string,
+        unknown
+      >;
       lhs = hero[key as string];
       break;
     }

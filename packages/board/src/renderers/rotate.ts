@@ -41,7 +41,12 @@ export function pointerAngleDeg(pivot: ClientPoint, point: ClientPoint): number 
  * board center lands exactly under the cursor's pivot at any zoom/pan. A zero-size rect
  * (jsdom / hidden element) collapses to the rect origin — degenerate but never `NaN`.
  */
-export function viewBoxPointToClient(bx: number, by: number, view: Rect, rect: ClientRect): ClientPoint {
+export function viewBoxPointToClient(
+  bx: number,
+  by: number,
+  view: Rect,
+  rect: ClientRect,
+): ClientPoint {
   if (rect.width === 0 || rect.height === 0 || view.w === 0 || view.h === 0) {
     return { x: rect.left, y: rect.top };
   }

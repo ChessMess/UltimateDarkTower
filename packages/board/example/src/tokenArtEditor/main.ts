@@ -7,7 +7,14 @@
 // (foes/adversaries → flat 2D icon, roster heroes → portrait, else the group convention), so the
 // Forge always mirrors what the board renders. Editing a token writes a demo override on top.
 import './editor.css';
-import { HEROES, FOES, ADVERSARY_ROSTER, MONUMENTS, kebab, resolveTokenImageFor } from '../../../src/index';
+import {
+  HEROES,
+  FOES,
+  ADVERSARY_ROSTER,
+  MONUMENTS,
+  kebab,
+  resolveTokenImageFor,
+} from '../../../src/index';
 import type { TokenArt, TokenModelRef, TokenArtRef, BoardView } from '../../../src/index';
 import { tokenArt as bundledConfig } from '../tokenArt';
 import { highlight } from './helpers';
@@ -29,8 +36,16 @@ interface Assets {
 const KINDS: { kind: Kind; label: string; roster: RosterEntry[] }[] = [
   { kind: 'hero', label: 'Hero', roster: HEROES.map((h) => ({ id: h.id, name: h.name })) },
   { kind: 'foe', label: 'Foe', roster: FOES.map((f) => ({ id: f.id, name: f.name })) },
-  { kind: 'adversary', label: 'Adversary', roster: ADVERSARY_ROSTER.map((a) => ({ id: a.id, name: a.name })) },
-  { kind: 'monument', label: 'Monument', roster: MONUMENTS.map((m) => ({ id: m.id, name: m.name })) },
+  {
+    kind: 'adversary',
+    label: 'Adversary',
+    roster: ADVERSARY_ROSTER.map((a) => ({ id: a.id, name: a.name })),
+  },
+  {
+    kind: 'monument',
+    label: 'Monument',
+    roster: MONUMENTS.map((m) => ({ id: m.id, name: m.name })),
+  },
   {
     kind: 'marker',
     label: 'Space marker',
@@ -68,7 +83,10 @@ const ASSET_BASE = './tokens/';
  */
 function conventionImageUrl(kind: Kind, id: string, view: BoardView): string | undefined {
   if (!id) return undefined;
-  return resolveTokenImageFor({ kind, id } as TokenArtRef, view, { assetBaseUrl: ASSET_BASE }) ?? undefined;
+  return (
+    resolveTokenImageFor({ kind, id } as TokenArtRef, view, { assetBaseUrl: ASSET_BASE }) ??
+    undefined
+  );
 }
 
 const state = {
@@ -87,7 +105,9 @@ const SELECTION_KEY = 'tokenArtForge.selection';
 function saveSelection(): void {
   try {
     sessionStorage.setItem(SELECTION_KEY, JSON.stringify({ kind: state.kind, id: state.id }));
-  } catch { /* storage disabled — selection just won't persist */ }
+  } catch {
+    /* storage disabled — selection just won't persist */
+  }
 }
 
 function loadSelection(): { kind: Kind; id: string } | null {
@@ -95,8 +115,11 @@ function loadSelection(): { kind: Kind; id: string } | null {
     const raw = sessionStorage.getItem(SELECTION_KEY);
     if (!raw) return null;
     const p = JSON.parse(raw) as { kind?: string; id?: string };
-    if (p.kind && KINDS.some((k) => k.kind === p.kind)) return { kind: p.kind as Kind, id: p.id ?? '' };
-  } catch { /* ignore malformed value */ }
+    if (p.kind && KINDS.some((k) => k.kind === p.kind))
+      return { kind: p.kind as Kind, id: p.id ?? '' };
+  } catch {
+    /* ignore malformed value */
+  }
   return null;
 }
 
@@ -127,7 +150,10 @@ async function boot(): Promise<void> {
     state.assets = deriveAssets(state.config);
   }
   const saved = loadSelection();
-  if (saved) { state.kind = saved.kind; state.id = saved.id; }
+  if (saved) {
+    state.kind = saved.kind;
+    state.id = saved.id;
+  }
   buildUI();
   selectKind(state.kind, saved?.id);
 }
@@ -201,11 +227,22 @@ function cleanArt(art: TokenArt | undefined): TokenArt | null {
   if (art.image3d) out.image3d = art.image3d;
   const m = typeof art.model3d === 'string' ? { url: art.model3d } : art.model3d;
   if (m?.url) {
-    const model: { url: string; scale?: number; rotation?: { x?: number; y?: number; z?: number }; dracoDecoderPath?: string | null } = { url: m.url };
+    const model: {
+      url: string;
+      scale?: number;
+      rotation?: { x?: number; y?: number; z?: number };
+      dracoDecoderPath?: string | null;
+    } = { url: m.url };
     if (typeof m.scale === 'number' && !Number.isNaN(m.scale)) model.scale = m.scale;
     const r = m.rotation;
-    if (r && (r.x || r.y || r.z)) model.rotation = { ...(r.x ? { x: r.x } : {}), ...(r.y ? { y: r.y } : {}), ...(r.z ? { z: r.z } : {}) };
-    if ('dracoDecoderPath' in m && m.dracoDecoderPath !== undefined) model.dracoDecoderPath = m.dracoDecoderPath;
+    if (r && (r.x || r.y || r.z))
+      model.rotation = {
+        ...(r.x ? { x: r.x } : {}),
+        ...(r.y ? { y: r.y } : {}),
+        ...(r.z ? { z: r.z } : {}),
+      };
+    if ('dracoDecoderPath' in m && m.dracoDecoderPath !== undefined)
+      model.dracoDecoderPath = m.dracoDecoderPath;
     out.model3d = model;
   }
   return out.image2d || out.image3d || out.model3d ? out : null;
@@ -300,7 +337,8 @@ function buildUI(): void {
 
   for (const url of state.assets.images) imgList.append(new Option(url));
   // The 3D card accepts a GLB model OR a flat image, so offer both here (models first).
-  for (const url of [...state.assets.models, ...state.assets.images]) modelList.append(new Option(url));
+  for (const url of [...state.assets.models, ...state.assets.images])
+    modelList.append(new Option(url));
 
   const saveBtn = forge.querySelector<HTMLButtonElement>('#saveBtn')!;
   saveBtn.textContent = state.mode === 'live' ? 'Save to disk' : 'Download file';
@@ -309,7 +347,10 @@ function buildUI(): void {
   copyBtn.addEventListener('click', () => void copyText(fileJson(), copyBtn));
   forge.querySelector<HTMLButtonElement>('#downloadBtn')!.addEventListener('click', downloadFile);
   forge.querySelectorAll<HTMLButtonElement>('.copy-btn').forEach((btn) => {
-    btn.addEventListener('click', () => void copyText(btn.dataset.copy === 'file' ? fileJson() : tokenJson(), btn));
+    btn.addEventListener(
+      'click',
+      () => void copyText(btn.dataset.copy === 'file' ? fileJson() : tokenJson(), btn),
+    );
   });
 }
 
@@ -355,7 +396,12 @@ function update(mutate: (draft: TokenArt) => void): void {
   const draft: TokenArt = {
     image2d: cur.image2d,
     image3d: cur.image3d,
-    model3d: m === undefined ? undefined : typeof m === 'string' ? { url: m } : { ...m, rotation: m.rotation ? { ...m.rotation } : undefined },
+    model3d:
+      m === undefined
+        ? undefined
+        : typeof m === 'string'
+          ? { url: m }
+          : { ...m, rotation: m.rotation ? { ...m.rotation } : undefined },
   };
   mutate(draft);
   state.config[state.kind][state.id] = cleanArt(draft) ?? {};
@@ -373,7 +419,9 @@ function renderSlots(): void {
   const billboard = e.image2d ?? fallback3d;
   // The persistent per-token JSON panel rides in the third cell (where the 3D-model card used to be).
   slotGrid.replaceChildren(
-    imageSlot('2D View', 'tag-2d', 'IMG', e.image2d, fallback2d, (v) => update((d) => (d.image2d = v))),
+    imageSlot('2D View', 'tag-2d', 'IMG', e.image2d, fallback2d, (v) =>
+      update((d) => (d.image2d = v)),
+    ),
     modelSlot(e.model3d, e.image3d, billboard, update),
     tokenCard,
   );
@@ -382,7 +430,9 @@ function renderSlots(): void {
 // ── code panels + status ──────────────────────────────────────────────
 function tokenJson(): string {
   const e = cleanArt(state.config[state.kind][state.id]);
-  return e ? JSON.stringify({ [state.id]: e }, null, 2) : '// no override — uses the board library default';
+  return e
+    ? JSON.stringify({ [state.id]: e }, null, 2)
+    : '// no override — uses the board library default';
 }
 
 function fileJson(): string {
@@ -449,5 +499,3 @@ async function copyText(text: string, btn: HTMLElement): Promise<void> {
     setStatus('Clipboard blocked — select the code and copy manually', 'err');
   }
 }
-
-

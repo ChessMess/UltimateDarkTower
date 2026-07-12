@@ -9,7 +9,14 @@ import { scenarioSchema } from '@udtc/schema';
 export const RESOURCES = ['warriors', 'spirit'] as const;
 export const KINGDOMS = ['north', 'south', 'east', 'west'] as const;
 export const FOE_STATUSES = ['panicked', 'unsteady', 'ready', 'savage', 'lethal'] as const;
-export const HERO_SCOPES = ['self', 'other', 'selfAndOther', 'allOthers', 'all', 'kingdom'] as const;
+export const HERO_SCOPES = [
+  'self',
+  'other',
+  'selfAndOther',
+  'allOthers',
+  'all',
+  'kingdom',
+] as const;
 /** hero.scope nesting is capped at this depth; deeper scopes use the JSON fallback */
 export const SCOPE_DEPTH_CAP = 2;
 
@@ -25,14 +32,7 @@ export function getOpEnum(): string[] {
 }
 
 export type FieldKind =
-  | 'number'
-  | 'text'
-  | 'bool'
-  | 'resource'
-  | 'kingdom'
-  | 'foeStatus'
-  | 'deck'
-  | 'foe';
+  'number' | 'text' | 'bool' | 'resource' | 'kingdom' | 'foeStatus' | 'deck' | 'foe';
 
 export interface FieldSpec {
   key: string;

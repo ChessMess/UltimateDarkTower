@@ -6,9 +6,24 @@ import type { CardTemplate, CardFaceData } from '@udtc/card-render';
 import type { ScenarioDoc } from '../types';
 
 export const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-export const ADVANTAGES = ['Beast', 'Magic', 'Humanoid', 'Melee', 'Undead', 'Stealth', 'Wild'] as const;
+export const ADVANTAGES = [
+  'Beast',
+  'Magic',
+  'Humanoid',
+  'Melee',
+  'Undead',
+  'Stealth',
+  'Wild',
+] as const;
 export const TEMPLATES: CardTemplate[] = ['classic', 'fullArt', 'textOnly'];
-export const DECK_CATEGORIES = ['gear', 'treasure', 'potion', 'corruption', 'quest', 'companion'] as const;
+export const DECK_CATEGORIES = [
+  'gear',
+  'treasure',
+  'potion',
+  'corruption',
+  'quest',
+  'companion',
+] as const;
 export const DEFAULT_ACCENT = '#7a5cff';
 /** ~5 MB localStorage budget for the whole draft; the asset manager warns as images approach it. */
 export const IMAGE_BUDGET_BYTES = 5_000_000;

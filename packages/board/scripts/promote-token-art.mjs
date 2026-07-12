@@ -22,13 +22,16 @@ const ASSET_BASE = './tokens/'; // the base the demo (and this comparison) uses
 
 const distPath = resolve(root, 'dist/index.cjs');
 if (!existsSync(distPath)) {
-  console.error('dist/ not found — run `npm run build` first so the current library defaults are available.');
+  console.error(
+    'dist/ not found — run `npm run build` first so the current library defaults are available.',
+  );
   process.exit(1);
 }
 const { resolveTokenImageFor } = require(distPath);
 
 /** The library's current default image for a token in the 2D view (null = disc / no default). */
-const currentDefault = (kind, id) => resolveTokenImageFor({ kind, id }, '2d', { assetBaseUrl: ASSET_BASE });
+const currentDefault = (kind, id) =>
+  resolveTokenImageFor({ kind, id }, '2d', { assetBaseUrl: ASSET_BASE });
 
 /** Read a demo override file, tolerating a missing/empty file. */
 function readOverrides(kind) {
@@ -66,14 +69,20 @@ console.log('Token-art promotion — demo overrides vs. the board library defaul
 
 if (overrideCount === 0) {
   console.log('No demo overrides found in example/src/tokenArt/{foe,adversary,hero}_tokens.json.');
-  console.log('Add art in the Token Art Forge (npm run dev, open /tokens.html), then re-run to promote it.');
+  console.log(
+    'Add art in the Token Art Forge (npm run dev, open /tokens.html), then re-run to promote it.',
+  );
   process.exit(0);
 }
 
 if (promotable.length === 0) {
-  console.log('Nothing to promote — every demo image2d override already matches the library default.');
+  console.log(
+    'Nothing to promote — every demo image2d override already matches the library default.',
+  );
 } else {
-  console.log(`Paste these into the tables in src/renderers/assetPaths.ts (${promotable.length} entr${promotable.length === 1 ? 'y' : 'ies'}):\n`);
+  console.log(
+    `Paste these into the tables in src/renderers/assetPaths.ts (${promotable.length} entr${promotable.length === 1 ? 'y' : 'ies'}):\n`,
+  );
   // OFFICIAL_2D_ICON is nested by kind; OFFICIAL_HERO_ART is a flat id → filename map.
   const iconRows = promotable.filter((p) => TARGET[p.kind].tableName === 'OFFICIAL_2D_ICON');
   const heroRows = promotable.filter((p) => TARGET[p.kind].tableName === 'OFFICIAL_HERO_ART');
@@ -95,13 +104,17 @@ if (promotable.length === 0) {
   }
   console.log("Asset checklist — copy each file into every consumer's public token folder:");
   for (const { filename, group } of promotable) {
-    console.log(`  ${group}/${filename}   (e.g. apps/player/public/assets/tokens/${group}/${filename})`);
+    console.log(
+      `  ${group}/${filename}   (e.g. apps/player/public/assets/tokens/${group}/${filename})`,
+    );
   }
   console.log('');
 }
 
 if (threeDOnly.length) {
-  console.log('Note — these overrides set image3d/model3d, which stay demo-only (the library 3D default');
+  console.log(
+    'Note — these overrides set image3d/model3d, which stay demo-only (the library 3D default',
+  );
   console.log('uses the group convention and has no 3D-override table):');
   for (const { kind, id } of threeDOnly) console.log(`  ${kind}/${id}`);
 }

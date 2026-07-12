@@ -28,11 +28,7 @@ export type SpaceMarker = 'wasteland' | 'power-skull' | string;
  * literal members are the canonical roster and double as documentation.
  */
 export type QuestMarker =
-  | 'main-goal'
-  | 'adversary-quest'
-  | 'guild-quest'
-  | 'companion-quest'
-  | string;
+  'main-goal' | 'adversary-quest' | 'guild-quest' | 'companion-quest' | string;
 
 /** A hero pawn placed on the board. */
 export interface HeroToken {

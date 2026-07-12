@@ -5,14 +5,14 @@
 ## 1. Introduction / Overview
 
 This PRD ties the tower, board, and player boards into a single playable **solo session** and defines
-the **`GameSession`** — *one* JSON object that holds the entire game: the initial configuration, the
+the **`GameSession`** — _one_ JSON object that holds the entire game: the initial configuration, the
 tower state, the board state, the player boards, and the progress meta. That single object is the unit
 of **save, load, and share** — drop it in localStorage to resume, export it to a file, or send it to
 another person who imports it and continues the exact game.
 
 Because the official app does the game setup, UTDD must let the player **enter that initial
 configuration by hand** (heroes, adversary, foes, difficulty, main goal, etc.) — there is no live app
-connection in MVP. That configuration is captured *inside* the `GameSession` so the saved/shared object
+connection in MVP. That configuration is captured _inside_ the `GameSession` so the saved/shared object
 is self-describing.
 
 This is the glue layer, not a rules engine — it orchestrates the pieces and tracks progress markers the
@@ -30,15 +30,15 @@ player advances manually.
 
 ## 3. User Stories
 
-- *As a player*, I can enter the setup the official app gave me (heroes + home kingdoms, adversary, the
+- _As a player_, I can enter the setup the official app gave me (heroes + home kingdoms, adversary, the
   three foes, difficulty, main goal) so UTDD matches my table.
-- *As a player*, I can paste an official game **seed** and have the adversary/foes/difficulty/player
+- _As a player_, I can paste an official game **seed** and have the adversary/foes/difficulty/player
   count pre-filled, so I type less.
-- *As a player*, I can save my game and resume it later exactly where I left off.
-- *As a player*, I can **export my game to a single file** (or copy its JSON) and **send it to a friend**,
+- _As a player_, I can save my game and resume it later exactly where I left off.
+- _As a player_, I can **export my game to a single file** (or copy its JSON) and **send it to a friend**,
   who imports it and sees the identical tower, board, and player boards.
-- *As a player*, I can advance the turn and month counters, so I can track the 6-month timeline.
-- *As a player*, I can see the tower, board, and my hero boards together and act on each.
+- _As a player_, I can advance the turn and month counters, so I can track the 6-month timeline.
+- _As a player_, I can see the tower, board, and my hero boards together and act on each.
 
 ## 4. Functional Requirements
 
@@ -55,7 +55,7 @@ player advances manually.
    MUST be reported without crashing.
 3. **FR-04.3** Completing setup MUST initialize the `BoardStateSource` (heroes on their home-kingdom
    citadel — the location found via `BOARD_LOCATIONS.find(l => l.kingdom === k && l.building ===
-   'Citadel')`, not a location literally named "Citadel"; plus the starting buildings), the
+'Citadel')`, not a location literally named "Citadel"; plus the starting buildings), the
    `TowerStateSource` (default calibrated state), and a player board per hero with base-game starting
    resources (**7 warriors, 1 spirit**; 3 inactive + 3 active hero virtues + 1 kingdom virtue).
 
@@ -102,7 +102,7 @@ player advances manually.
 ## 6. Design Considerations
 
 - Setup as a short wizard (seed paste shortcut → heroes + home kingdoms → adversary/foes/difficulty →
-  main goal → confirm). The wizard's output *is* `GameSession.config`.
+  main goal → confirm). The wizard's output _is_ `GameSession.config`.
 - The turn/month tracker is a slim persistent header; loss reminders are gentle, dismissible hints.
 - Save/load/share menu: New, Save, Load, **Export (file / copy)**, **Import (file / paste)**, Reset.
   Autosave on meaningful changes is a nice-to-have.
@@ -114,25 +114,31 @@ player advances manually.
 
   ```ts
   interface GameSession {
-    schemaVersion: number;            // bump on breaking changes; validate on load
+    schemaVersion: number; // bump on breaking changes; validate on load
     meta: { id: string; name?: string; createdAt: string; updatedAt: string; appVersion: string };
-    config: GameConfig;               // FR-04.1 — the manually-entered official-app setup
-    progress: { month: number; turn: number; activeHeroId?: string; dismissedReminders?: string[]; notes?: string };
-    tower: TowerState;                // from `ultimatedarktower` (plain JSON-serializable object)
-    board: BoardState;                // from `ultimatedarktowerboard`
-    playerBoards: PlayerBoard[];      // PRD-03 (UTDD-native)
+    config: GameConfig; // FR-04.1 — the manually-entered official-app setup
+    progress: {
+      month: number;
+      turn: number;
+      activeHeroId?: string;
+      dismissedReminders?: string[];
+      notes?: string;
+    };
+    tower: TowerState; // from `ultimatedarktower` (plain JSON-serializable object)
+    board: BoardState; // from `ultimatedarktowerboard`
+    playerBoards: PlayerBoard[]; // PRD-03 (UTDD-native)
   }
 
   interface GameConfig {
-    mode: 'cooperative';              // 'competitive' is future
-    difficulty: Difficulty;          // 'Heroic' | 'Gritty'
-    expansions: never[];             // none in MVP (base game only)
-    playerCount: number;             // 1–4
+    mode: 'cooperative'; // 'competitive' is future
+    difficulty: Difficulty; // 'Heroic' | 'Gritty'
+    expansions: never[]; // none in MVP (base game only)
+    playerCount: number; // 1–4
     heroes: { heroId: string; homeKingdom: BoardKingdom }[];
-    adversary: string;               // adversary id
+    adversary: string; // adversary id
     foes: { level2: string; level3: string; level4: string };
-    mainGoal: string;                // not in the libs — manual entry
-    seed?: string;                   // optional; if present, used to pre-fill the above
+    mainGoal: string; // not in the libs — manual entry
+    seed?: string; // optional; if present, used to pre-fill the above
   }
   ```
 
@@ -156,7 +162,7 @@ player advances manually.
 
 Resolved for MVP (decisions made during implementation):
 
-- **Main goal** — *free text* in MVP (`GameConfig.mainGoal`). A curated list can come later when the
+- **Main goal** — _free text_ in MVP (`GameConfig.mainGoal`). A curated list can come later when the
   base-game main goals are sourced (PRD-03's IP note applies).
 - **Starting resources** — **7 warriors, 1 spirit, 0 corruption** per hero (`factory.ts`
   `STARTING_WARRIORS`/`STARTING_SPIRIT`). Starting skulls are **not** pre-placed (the player follows the

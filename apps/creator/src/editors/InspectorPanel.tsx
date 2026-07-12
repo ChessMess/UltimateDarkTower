@@ -158,7 +158,9 @@ export function InspectorPanel() {
     return (
       <div style={style.panel}>
         <div style={style.header}>Inspector</div>
-        <div style={{ padding: 12, color: 'var(--c-text-faint)', fontStyle: 'italic', fontSize: 11 }}>
+        <div
+          style={{ padding: 12, color: 'var(--c-text-faint)', fontStyle: 'italic', fontSize: 11 }}
+        >
           No scenario loaded
         </div>
       </div>
@@ -169,7 +171,9 @@ export function InspectorPanel() {
     return (
       <div style={style.panel}>
         <div style={style.header}>Inspector</div>
-        <div style={{ padding: 12, color: 'var(--c-text-faint)', fontStyle: 'italic', fontSize: 11 }}>
+        <div
+          style={{ padding: 12, color: 'var(--c-text-faint)', fontStyle: 'italic', fontSize: 11 }}
+        >
           Select a node to inspect
         </div>
 
@@ -180,16 +184,22 @@ export function InspectorPanel() {
           collapsedSummary={
             <>
               <div style={{ ...style.value, fontWeight: 700 }}>{schemaDoc.meta.title}</div>
-              <div>v{schemaDoc.meta.scenarioVersion} · {schemaDoc.graph.nodes.length} nodes</div>
+              <div>
+                v{schemaDoc.meta.scenarioVersion} · {schemaDoc.graph.nodes.length} nodes
+              </div>
             </>
           }
           sectionStyle={style.section}
           labelStyle={style.label}
         >
           <div style={{ ...style.value, fontWeight: 700 }}>{schemaDoc.meta.title}</div>
-          <div style={{ color: 'var(--c-text-muted)', marginTop: 2 }}>v{schemaDoc.meta.scenarioVersion}</div>
+          <div style={{ color: 'var(--c-text-muted)', marginTop: 2 }}>
+            v{schemaDoc.meta.scenarioVersion}
+          </div>
           <div style={{ color: 'var(--c-text-muted)' }}>by {schemaDoc.meta.designer?.name}</div>
-          <div style={{ marginTop: 6, color: 'var(--c-text-muted)' }}>Entry: <code>{schemaDoc.graph.entry}</code></div>
+          <div style={{ marginTop: 6, color: 'var(--c-text-muted)' }}>
+            Entry: <code>{schemaDoc.graph.entry}</code>
+          </div>
           <div style={{ color: 'var(--c-text-muted)' }}>{schemaDoc.graph.nodes.length} nodes</div>
 
           <div style={{ ...style.label, marginTop: 10 }}>Description</div>
@@ -258,14 +268,25 @@ export function InspectorPanel() {
 
   return (
     <div style={style.panel}>
-      <div style={{ ...style.header, background: cat.bgColor, color: cat.textColor, borderLeft: `3px solid ${cat.color}` }}>
+      <div
+        style={{
+          ...style.header,
+          background: cat.bgColor,
+          color: cat.textColor,
+          borderLeft: `3px solid ${cat.color}`,
+        }}
+      >
         Inspector — {cat.label}
       </div>
 
       {nodeErrors.length > 0 && (
-        <div style={{ padding: '8px 12px', background: '#FEF2F2', borderBottom: '1px solid #FECACA' }}>
+        <div
+          style={{ padding: '8px 12px', background: '#FEF2F2', borderBottom: '1px solid #FECACA' }}
+        >
           {nodeErrors.map((e, i) => (
-            <div key={i} style={{ fontSize: 11, color: 'var(--c-danger)' }}>⚠ {e}</div>
+            <div key={i} style={{ fontSize: 11, color: 'var(--c-danger)' }}>
+              ⚠ {e}
+            </div>
           ))}
         </div>
       )}
@@ -306,7 +327,11 @@ export function InspectorPanel() {
       </div>
 
       {sn.kind === 'util.group' && (
-        <GroupEditor sn={sn} allNodes={rfNodes.map((n) => n.data.schemaNode)} onUpdate={(props) => updateNodeProps(sn.id, props)} />
+        <GroupEditor
+          sn={sn}
+          allNodes={rfNodes.map((n) => n.data.schemaNode)}
+          onUpdate={(props) => updateNodeProps(sn.id, props)}
+        />
       )}
 
       {sn.props && sn.kind !== 'util.group' && sn.kind !== 'util.comment' && (
@@ -349,7 +374,9 @@ export function InspectorPanel() {
           </button>
         )}
         {isEntry && (
-          <span style={{ fontSize: 11, color: 'var(--c-success)', fontWeight: 600 }}>✓ Entry node</span>
+          <span style={{ fontSize: 11, color: 'var(--c-success)', fontWeight: 600 }}>
+            ✓ Entry node
+          </span>
         )}
         <button style={style.btnDanger} onClick={handleDelete}>
           Delete
@@ -358,10 +385,7 @@ export function InspectorPanel() {
 
       {/* Props editor for effect.apply */}
       {sn.kind === 'effect.apply' && (
-        <EffectApplyEditor
-          sn={sn}
-          onUpdate={(props) => updateNodeProps(sn.id, props)}
-        />
+        <EffectApplyEditor sn={sn} onUpdate={(props) => updateNodeProps(sn.id, props)} />
       )}
 
       {/* Props editor for tower.op */}
@@ -440,7 +464,11 @@ function DungeonSubflowEditor({
   return (
     <div style={{ marginTop: 12 }}>
       <div style={labelStyle}>Dungeon</div>
-      <select style={inputStyle} value={current} onChange={(e) => onUpdate({ dungeonId: e.target.value })}>
+      <select
+        style={inputStyle}
+        value={current}
+        onChange={(e) => onUpdate({ dungeonId: e.target.value })}
+      >
         <option value="">— select a dungeon —</option>
         {ids.map((id) => (
           <option key={id} value={id}>
@@ -493,7 +521,14 @@ function EffectApplyEditor({
 
   return (
     <div style={{ padding: '8px 12px', borderTop: '1px solid var(--c-border)' }}>
-      <div style={{ fontSize: 10, color: 'var(--c-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>
+      <div
+        style={{
+          fontSize: 10,
+          color: 'var(--c-text-faint)',
+          textTransform: 'uppercase',
+          marginBottom: 4,
+        }}
+      >
         Edit Effects (JSON)
       </div>
       <textarea
@@ -518,9 +553,17 @@ function EffectApplyEditor({
 }
 
 const TOWER_CHANNELS = [
-  'skull.dropTrigger', 'light.named', 'sound', 'drum.rotate',
-  'seal.break', 'seal.replace', 'wait', 'rotationBundle', 'timeline',
-  'light.custom', 'light.effect',
+  'skull.dropTrigger',
+  'light.named',
+  'sound',
+  'drum.rotate',
+  'seal.break',
+  'seal.replace',
+  'wait',
+  'rotationBundle',
+  'timeline',
+  'light.custom',
+  'light.effect',
 ];
 
 function TowerOpEditor({
@@ -543,17 +586,33 @@ function TowerOpEditor({
 
   return (
     <div style={{ padding: '8px 12px', borderTop: '1px solid var(--c-border)' }}>
-      <div style={{ fontSize: 10, color: 'var(--c-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>
+      <div
+        style={{
+          fontSize: 10,
+          color: 'var(--c-text-faint)',
+          textTransform: 'uppercase',
+          marginBottom: 4,
+        }}
+      >
         Tower Channel
       </div>
       <select
         value={currentChannel}
         onChange={handleChannelChange}
-        style={{ width: '100%', padding: '4px 8px', border: '1px solid var(--c-border-strong)', borderRadius: 4, fontSize: 12,
-                 background: 'var(--c-surface-raised)', color: 'var(--c-text)' }}
+        style={{
+          width: '100%',
+          padding: '4px 8px',
+          border: '1px solid var(--c-border-strong)',
+          borderRadius: 4,
+          fontSize: 12,
+          background: 'var(--c-surface-raised)',
+          color: 'var(--c-text)',
+        }}
       >
         {TOWER_CHANNELS.map((ch) => (
-          <option key={ch} value={ch}>{ch}</option>
+          <option key={ch} value={ch}>
+            {ch}
+          </option>
         ))}
       </select>
     </div>
@@ -589,7 +648,14 @@ function GroupEditor({
 
   return (
     <div style={{ padding: '8px 12px', borderTop: '1px solid var(--c-border)' }}>
-      <div style={{ fontSize: 10, color: 'var(--c-text-faint)', textTransform: 'uppercase', marginBottom: 6 }}>
+      <div
+        style={{
+          fontSize: 10,
+          color: 'var(--c-text-faint)',
+          textTransform: 'uppercase',
+          marginBottom: 6,
+        }}
+      >
         Group Color
       </div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
@@ -611,11 +677,25 @@ function GroupEditor({
         ))}
       </div>
 
-      <div style={{ fontSize: 10, color: 'var(--c-text-faint)', textTransform: 'uppercase', marginBottom: 6 }}>
+      <div
+        style={{
+          fontSize: 10,
+          color: 'var(--c-text-faint)',
+          textTransform: 'uppercase',
+          marginBottom: 6,
+        }}
+      >
         Members ({memberIds.length})
       </div>
       {memberIds.length === 0 && (
-        <div style={{ fontSize: 11, color: 'var(--c-text-faint)', fontStyle: 'italic', marginBottom: 6 }}>
+        <div
+          style={{
+            fontSize: 11,
+            color: 'var(--c-text-faint)',
+            fontStyle: 'italic',
+            marginBottom: 6,
+          }}
+        >
           No members yet.
         </div>
       )}
@@ -717,7 +797,9 @@ function CollapsibleSection({
           textAlign: 'left',
         }}
       >
-        <span style={{ width: 10, fontSize: 10, color: 'var(--c-text-muted)' }}>{open ? '▾' : '▸'}</span>
+        <span style={{ width: 10, fontSize: 10, color: 'var(--c-text-muted)' }}>
+          {open ? '▾' : '▸'}
+        </span>
         <span style={{ ...labelStyle, marginBottom: 0 }}>{title}</span>
       </button>
       {open ? (
@@ -795,11 +877,31 @@ function ScenarioSetupEditor({
       <div style={{ fontSize: 10, color: 'var(--c-text-faint)', marginBottom: 8 }}>
         Optional standard-game selections. Leave blank for custom rules.
       </div>
-      {dropdown('Adversary', curAdversary, (v) => updateSetupSelections({ adversaryId: v }), ADVERSARY_OPTIONS)}
+      {dropdown(
+        'Adversary',
+        curAdversary,
+        (v) => updateSetupSelections({ adversaryId: v }),
+        ADVERSARY_OPTIONS,
+      )}
       {dropdown('Ally', curAlly, (v) => updateSetupSelections({ allyId: v }), ALLY_OPTIONS)}
-      {dropdown('Tier 1 Foe', curTier1, (v) => updateSetupSelections({ tier1FoeId: v }), TIER1_OPTIONS)}
-      {dropdown('Tier 2 Foe', curTier2, (v) => updateSetupSelections({ tier2FoeId: v }), TIER2_OPTIONS)}
-      {dropdown('Tier 3 Foe', curTier3, (v) => updateSetupSelections({ tier3FoeId: v }), TIER3_OPTIONS)}
+      {dropdown(
+        'Tier 1 Foe',
+        curTier1,
+        (v) => updateSetupSelections({ tier1FoeId: v }),
+        TIER1_OPTIONS,
+      )}
+      {dropdown(
+        'Tier 2 Foe',
+        curTier2,
+        (v) => updateSetupSelections({ tier2FoeId: v }),
+        TIER2_OPTIONS,
+      )}
+      {dropdown(
+        'Tier 3 Foe',
+        curTier3,
+        (v) => updateSetupSelections({ tier3FoeId: v }),
+        TIER3_OPTIONS,
+      )}
       <div style={labelStyle}>Main Goal</div>
       {/* Uncontrolled + keyed on the committed name: typing stays local to the DOM (smooth, no
           per-keystroke quest churn) and commits once on blur. The key remounts the field with a
@@ -881,11 +983,25 @@ function BoardSetupEditor({
 
   return (
     <div style={{ padding: '8px 12px', borderTop: '1px solid var(--c-border)' }}>
-      <div style={{ fontSize: 10, color: 'var(--c-text-faint)', textTransform: 'uppercase', marginBottom: 6 }}>
+      <div
+        style={{
+          fontSize: 10,
+          color: 'var(--c-text-faint)',
+          textTransform: 'uppercase',
+          marginBottom: 6,
+        }}
+      >
         Foe Spawns (setup)
       </div>
       {spawns.length === 0 && (
-        <div style={{ fontSize: 11, color: 'var(--c-text-faint)', fontStyle: 'italic', marginBottom: 6 }}>
+        <div
+          style={{
+            fontSize: 11,
+            color: 'var(--c-text-faint)',
+            fontStyle: 'italic',
+            marginBottom: 6,
+          }}
+        >
           No foes placed at setup.
         </div>
       )}
@@ -898,7 +1014,9 @@ function BoardSetupEditor({
             title="Foe"
           >
             {withCurrent(foeIds, row.foeId).map((id) => (
-              <option key={id} value={id}>{id}</option>
+              <option key={id} value={id}>
+                {id}
+              </option>
             ))}
           </select>
           <select
@@ -908,7 +1026,9 @@ function BoardSetupEditor({
             title="Board location"
           >
             {withCurrent(BOARD_LOCATION_NAMES, row.location).map((loc) => (
-              <option key={loc} value={loc}>{loc}</option>
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
             ))}
           </select>
           <select
@@ -918,13 +1038,23 @@ function BoardSetupEditor({
             title="Starting status"
           >
             {FOE_STATUSES.map((st) => (
-              <option key={st} value={st}>{st}</option>
+              <option key={st} value={st}>
+                {st}
+              </option>
             ))}
           </select>
           <button
             onClick={() => removeRow(i)}
             title="Remove spawn"
-            style={{ padding: '2px 6px', border: '1px solid #FCA5A5', borderRadius: 4, fontSize: 11, cursor: 'pointer', background: '#FEF2F2', color: 'var(--c-danger)' }}
+            style={{
+              padding: '2px 6px',
+              border: '1px solid #FCA5A5',
+              borderRadius: 4,
+              fontSize: 11,
+              cursor: 'pointer',
+              background: '#FEF2F2',
+              color: 'var(--c-danger)',
+            }}
           >
             ✕
           </button>
@@ -932,7 +1062,16 @@ function BoardSetupEditor({
       ))}
       <button
         onClick={addRow}
-        style={{ marginTop: 4, padding: '4px 10px', border: '1px solid var(--c-border-strong)', borderRadius: 4, fontSize: 11, cursor: 'pointer', background: 'var(--c-surface-raised)', color: 'var(--c-text-2)' }}
+        style={{
+          marginTop: 4,
+          padding: '4px 10px',
+          border: '1px solid var(--c-border-strong)',
+          borderRadius: 4,
+          fontSize: 11,
+          cursor: 'pointer',
+          background: 'var(--c-surface-raised)',
+          color: 'var(--c-text-2)',
+        }}
       >
         + Add spawn
       </button>
@@ -992,11 +1131,25 @@ function SelectHeroEditor({
 
   return (
     <div style={{ padding: '8px 12px', borderTop: '1px solid var(--c-border)' }}>
-      <div style={{ fontSize: 10, color: 'var(--c-text-faint)', textTransform: 'uppercase', marginBottom: 6 }}>
+      <div
+        style={{
+          fontSize: 10,
+          color: 'var(--c-text-faint)',
+          textTransform: 'uppercase',
+          marginBottom: 6,
+        }}
+      >
         Hero Candidate Pool (setup)
       </div>
       {heroIds.length === 0 && (
-        <div style={{ fontSize: 11, color: 'var(--c-text-faint)', fontStyle: 'italic', marginBottom: 6 }}>
+        <div
+          style={{
+            fontSize: 11,
+            color: 'var(--c-text-faint)',
+            fontStyle: 'italic',
+            marginBottom: 6,
+          }}
+        >
           No heroes in the pool yet — add at least one.
         </div>
       )}
@@ -1010,7 +1163,15 @@ function SelectHeroEditor({
             <button
               onClick={() => removeHero(id)}
               title="Remove from pool"
-              style={{ padding: '2px 6px', border: '1px solid #FCA5A5', borderRadius: 4, fontSize: 11, cursor: 'pointer', background: '#FEF2F2', color: 'var(--c-danger)' }}
+              style={{
+                padding: '2px 6px',
+                border: '1px solid #FCA5A5',
+                borderRadius: 4,
+                fontSize: 11,
+                cursor: 'pointer',
+                background: '#FEF2F2',
+                color: 'var(--c-danger)',
+              }}
             >
               ✕
             </button>
@@ -1018,12 +1179,10 @@ function SelectHeroEditor({
         );
       })}
       {available.length > 0 && (
-        <select
-          value=""
-          onChange={(e) => addHero(e.target.value)}
-          style={selectStyle}
-        >
-          <option value="" disabled>+ Add hero…</option>
+        <select value="" onChange={(e) => addHero(e.target.value)} style={selectStyle}>
+          <option value="" disabled>
+            + Add hero…
+          </option>
           {available.map((id) => {
             const h = heroById[id];
             return (

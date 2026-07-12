@@ -5,10 +5,12 @@
   "loop": false,
   "endBehavior": "hold",
   "tracks": [
-    { "_comment": "Phases 1+2 — per-LED pulse-and-decay on the 12 ring LEDs (layers 0-2). Reseed events skip per-LED writes that tick; all other ticks pulse-or-decay each slot.",
+    {
+      "_comment": "Phases 1+2 — per-LED pulse-and-decay on the 12 ring LEDs (layers 0-2). Reseed events skip per-LED writes that tick; all other ticks pulse-or-decay each slot.",
       "kind": "pulseFlicker",
       "layers": [0, 1, 2],
-      "atTick": 0, "endTick": 60,
+      "atTick": 0,
+      "endTick": 60,
       "pulseLevelPwm": 200,
       "decayPerTick": 0.911,
       "reseed": [
@@ -16,10 +18,12 @@
         { "atTick": 30, "magnitude": 8 }
       ]
     },
-    { "_comment": "Phase 3 — all 12 ring LEDs held solid at PWM 200 from tick 60 through 90.",
+    {
+      "_comment": "Phase 3 — all 12 ring LEDs held solid at PWM 200 from tick 60 through 90.",
       "kind": "solid",
       "atTick": 60,
-      "layers": [0, 1, 2], "lights": "all",
+      "layers": [0, 1, 2],
+      "lights": "all",
       "levelPwm": 200
     }
   ]

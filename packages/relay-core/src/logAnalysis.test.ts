@@ -89,10 +89,7 @@ describe('selectLogFiles', () => {
       'session-A-host-2.jsonl',
       'session-A-all-2.jsonl',
     ];
-    expect(selectLogFiles(files, null)).toEqual([
-      'session-A-all-2.jsonl',
-      'session-A-all.jsonl',
-    ]);
+    expect(selectLogFiles(files, null)).toEqual(['session-A-all-2.jsonl', 'session-A-all.jsonl']);
   });
 
   it('keeps a lone -host file when no matching -all exists', () => {
@@ -161,10 +158,7 @@ describe('detectAnomalies', () => {
   });
 
   it('flags DUPLICATE_SEQ for the same seq/dir/src', () => {
-    const entries = [
-      cmd('host→clients', 5, 'host', HEX),
-      cmd('host→clients', 5, 'host', HEX),
-    ];
+    const entries = [cmd('host→clients', 5, 'host', HEX), cmd('host→clients', 5, 'host', HEX)];
     expect(detectAnomalies(entries).map((a) => a.type)).toContain('DUPLICATE_SEQ');
   });
 
@@ -186,7 +180,15 @@ describe('detectAnomalies', () => {
 
   it('flags ERROR-level events', () => {
     const entries: LogEntry[] = [
-      { ts: new Date(0).toISOString(), seq: null, dir: null, hex: null, src: 'host', level: 'error', note: 'boom' },
+      {
+        ts: new Date(0).toISOString(),
+        seq: null,
+        dir: null,
+        hex: null,
+        src: 'host',
+        level: 'error',
+        note: 'boom',
+      },
     ];
     const anomalies = detectAnomalies(entries);
     expect(anomalies).toHaveLength(1);

@@ -51,11 +51,7 @@ export interface ConnectedClient {
 // ---------------------------------------------------------------------------
 
 /** Status of the host's BLE peripheral (tower emulator). */
-export type TowerEmulatorState =
-  | 'idle'
-  | 'advertising'
-  | 'connected'
-  | 'error';
+export type TowerEmulatorState = 'idle' | 'advertising' | 'connected' | 'error';
 
 /** Overall status reported by the host to connected clients. */
 export interface HostStatus {

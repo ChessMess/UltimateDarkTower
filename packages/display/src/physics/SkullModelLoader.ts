@@ -67,13 +67,11 @@ export function loadSkullModel(
   url: string,
   signalOrOptions?: AbortSignal | LoadSkullModelOptions,
 ): Promise<SkullTemplate> {
-  const opts: LoadSkullModelOptions = signalOrOptions instanceof AbortSignal
-    ? { signal: signalOrOptions }
-    : (signalOrOptions ?? {});
+  const opts: LoadSkullModelOptions =
+    signalOrOptions instanceof AbortSignal ? { signal: signalOrOptions } : (signalOrOptions ?? {});
   const signal = opts.signal;
-  const dracoDecoderPath = opts.dracoDecoderPath === undefined
-    ? DEFAULT_DRACO_DECODER_PATH
-    : opts.dracoDecoderPath;
+  const dracoDecoderPath =
+    opts.dracoDecoderPath === undefined ? DEFAULT_DRACO_DECODER_PATH : opts.dracoDecoderPath;
 
   const cached = cache.get(url);
   const load = cached ?? loadAndNormalize(url, dracoDecoderPath);
@@ -85,11 +83,20 @@ export function loadSkullModel(
     const onAbort = (): void => {
       reject(new DOMException('Aborted', 'AbortError'));
     };
-    if (signal.aborted) { onAbort(); return; }
+    if (signal.aborted) {
+      onAbort();
+      return;
+    }
     signal.addEventListener('abort', onAbort, { once: true });
     load.then(
-      (t) => { signal.removeEventListener('abort', onAbort); resolve(t); },
-      (err) => { signal.removeEventListener('abort', onAbort); reject(err); },
+      (t) => {
+        signal.removeEventListener('abort', onAbort);
+        resolve(t);
+      },
+      (err) => {
+        signal.removeEventListener('abort', onAbort);
+        reject(err);
+      },
     );
   });
 }
@@ -110,9 +117,9 @@ async function loadAndNormalize(
     // eslint-disable-next-line no-console
     console.warn(
       `[ultimatedarktowerdisplay/physics] loading STL directly (${url}). ` +
-      'STLs are heavy and unindexed — re-export to a Draco-compressed .glb ' +
-      '(Blender: File → Export → glTF 2.0, enable Geometry Compression) ' +
-      'for a 10×+ smaller download.',
+        'STLs are heavy and unindexed — re-export to a Draco-compressed .glb ' +
+        '(Blender: File → Export → glTF 2.0, enable Geometry Compression) ' +
+        'for a 10×+ smaller download.',
     );
     const { STLLoader } = await import('three/examples/jsm/loaders/STLLoader.js');
     geometry = await loadWithLoader(new STLLoader(), url);
@@ -196,7 +203,10 @@ function normalizeGeometry(input: THREE.BufferGeometry): THREE.BufferGeometry {
  * script. Falls back to a stride-sampled position attribute when the
  * sidecar is missing (404). Always returns a fresh `Float32Array`.
  */
-async function loadHullPoints(modelUrl: string, geometry: THREE.BufferGeometry): Promise<Float32Array> {
+async function loadHullPoints(
+  modelUrl: string,
+  geometry: THREE.BufferGeometry,
+): Promise<Float32Array> {
   const sidecarUrl = modelUrl.replace(/\.(glb|stl)$/i, '.hull.json');
   try {
     const res = await fetch(sidecarUrl);

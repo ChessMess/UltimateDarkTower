@@ -27,14 +27,20 @@
     },
     "cards": {
       "azkol-crown": {
-        "id": "azkol-crown", "name": "Crown of Azkol", "type": "treasure",
-        "description": "Gain 2 spirit.", "flavor": "Cold gold, colder history.",
+        "id": "azkol-crown",
+        "name": "Crown of Azkol",
+        "type": "treasure",
+        "description": "Gain 2 spirit.",
+        "flavor": "Cold gold, colder history.",
         "artRef": "art-relic",
         "effects": [{ "op": "resource.gain", "resource": "spirit", "amount": 2 }]
       },
       "azkol-chalice": {
-        "id": "azkol-chalice", "name": "Chalice of Azkol", "type": "treasure",
-        "description": "Gain 1 warrior.", "flavor": "Still stained.",
+        "id": "azkol-chalice",
+        "name": "Chalice of Azkol",
+        "type": "treasure",
+        "description": "Gain 1 warrior.",
+        "flavor": "Still stained.",
         "effects": [{ "op": "resource.gain", "resource": "warriors", "amount": 1 }]
       }
     },

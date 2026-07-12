@@ -30,7 +30,8 @@ export function syncCameraTuneControls(getDisplay: () => TowerDisplay, els: DomE
   }
 
   if (els.chkZoomToCursor) els.chkZoomToCursor.checked = cfg.zoomToCursor;
-  if (els.chkPreserveViewOnSideSelect) els.chkPreserveViewOnSideSelect.checked = cfg.preserveViewOnSideSelect;
+  if (els.chkPreserveViewOnSideSelect)
+    els.chkPreserveViewOnSideSelect.checked = cfg.preserveViewOnSideSelect;
 }
 
 function bindCameraSlider(
@@ -52,12 +53,27 @@ function bindCameraSlider(
 export function initCameraTuneController(getDisplay: () => TowerDisplay, els: DomElements): void {
   // Sliders tune one factor against the *current* view (preserveView) so dragging
   // one doesn't snap the camera back to the north fit and lose your orbited angle.
-  bindCameraSlider(els.rngElevationFactor, els.lblElevationFactor,
-    v => getDisplay().applyCameraConfig({ elevationFactor: v }, { preserveView: true }), getDisplay, els);
-  bindCameraSlider(els.rngTargetHeightFactor, els.lblTargetHeightFactor,
-    v => getDisplay().applyCameraConfig({ targetHeightFactor: v }, { preserveView: true }), getDisplay, els);
-  bindCameraSlider(els.rngDistanceFactor, els.lblDistanceFactor,
-    v => getDisplay().applyCameraConfig({ distanceFactor: v }, { preserveView: true }), getDisplay, els);
+  bindCameraSlider(
+    els.rngElevationFactor,
+    els.lblElevationFactor,
+    (v) => getDisplay().applyCameraConfig({ elevationFactor: v }, { preserveView: true }),
+    getDisplay,
+    els,
+  );
+  bindCameraSlider(
+    els.rngTargetHeightFactor,
+    els.lblTargetHeightFactor,
+    (v) => getDisplay().applyCameraConfig({ targetHeightFactor: v }, { preserveView: true }),
+    getDisplay,
+    els,
+  );
+  bindCameraSlider(
+    els.rngDistanceFactor,
+    els.lblDistanceFactor,
+    (v) => getDisplay().applyCameraConfig({ distanceFactor: v }, { preserveView: true }),
+    getDisplay,
+    els,
+  );
 
   if (els.chkZoomToCursor) {
     els.chkZoomToCursor.addEventListener('change', () => {
@@ -93,14 +109,17 @@ export function initCameraTuneController(getDisplay: () => TowerDisplay, els: Do
 
       const fullConfig = getDisplay().getCameraConfig();
       if (!fullConfig) return;
-      navigator.clipboard.writeText(JSON.stringify(fullConfig, null, 2)).then(() => {
-        if (resetTimer !== null) clearTimeout(resetTimer);
-        btn.textContent = 'Copied!';
-        resetTimer = setTimeout(() => {
-          btn.textContent = SNAPSHOT_LABEL;
-          resetTimer = null;
-        }, 1500);
-      }).catch((err: unknown) => showBannerError(els.banner, 'Copy failed', err));
+      navigator.clipboard
+        .writeText(JSON.stringify(fullConfig, null, 2))
+        .then(() => {
+          if (resetTimer !== null) clearTimeout(resetTimer);
+          btn.textContent = 'Copied!';
+          resetTimer = setTimeout(() => {
+            btn.textContent = SNAPSHOT_LABEL;
+            resetTimer = null;
+          }, 1500);
+        })
+        .catch((err: unknown) => showBannerError(els.banner, 'Copy failed', err));
     });
   }
 

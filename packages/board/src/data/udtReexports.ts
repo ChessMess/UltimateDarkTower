@@ -63,14 +63,7 @@ export type ExpansionType = seed.ExpansionType;
 
 // Foe in-play status + foe/adversary identity metadata (level/tier/source). `FoeStatus` is the
 // ready→savage→lethal progression this package tracks in board state (was a local copy).
-export const {
-  FOE_STATUSES,
-  FOES,
-  ADVERSARY_ROSTER,
-  ALL_FOES,
-  FOE_BY_ID,
-  FOE_BY_NAME,
-} = data.foes;
+export const { FOE_STATUSES, FOES, ADVERSARY_ROSTER, ALL_FOES, FOE_BY_ID, FOE_BY_NAME } = data.foes;
 export type FoeStatus = data.foes.FoeStatus;
 export type FoeLevel = data.foes.FoeLevel;
 export type FoeName = data.foes.FoeName;

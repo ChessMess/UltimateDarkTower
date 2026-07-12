@@ -1,10 +1,10 @@
 # Renderers
 
-| Renderer | Entry | Notes |
-| --- | --- | --- |
-| `BoardReadout` | `.` | Deterministic text; the snapshot test target. Optional per-kingdom filter via focus. |
-| `BoardMap2D` | `.` | Inline SVG over the board image; tokens placed via `BOARD_ANCHORS`. Click-to-select. |
-| `Board3DPlugin` | `./plugin` | 3D in-scene board; a Display `ScenePlugin`. |
+| Renderer        | Entry      | Notes                                                                                |
+| --------------- | ---------- | ------------------------------------------------------------------------------------ |
+| `BoardReadout`  | `.`        | Deterministic text; the snapshot test target. Optional per-kingdom filter via focus. |
+| `BoardMap2D`    | `.`        | Inline SVG over the board image; tokens placed via `BOARD_ANCHORS`. Click-to-select. |
+| `Board3DPlugin` | `./plugin` | 3D in-scene board; a Display `ScenePlugin`.                                          |
 
 All visual renderers implement `BoardRenderer` (`render(state, focus?)`, optional `dispose()`).
 
@@ -52,7 +52,7 @@ const DEFAULT_FOCUS: BoardFocus = { kingdom: 'all', angle: 'overhead' };
 - **Click-to-select** fires `onTokenSelect({ kind, id, location })` and draws a selection ring. Selection
   is renderer-local UI state — it is never written to `BoardState`. Add/move/delete editing lives in the
   dockable UI (below).
-- **Armed space-pick.** Pass a `LocationPickStore` as `locationPick`. While it reports *armed* (the
+- **Armed space-pick.** Pass a `LocationPickStore` as `locationPick`. While it reports _armed_ (the
   palette's add flow), the map draws clickable space targets at the anchors (building-only when the pending
   placement targets buildings); a space click calls `store.pick(loc)` (and `onLocationPick`). Disarmed, the
   map behaves exactly as before.
@@ -71,15 +71,20 @@ discs. See [DISPLAY_INTEGRATION.md](DISPLAY_INTEGRATION.md) for the `attachBoard
 ## Dockable editing UI
 
 The optional, framework-agnostic editing UI (`mountBoardUI`) lives in the **`.` entry** (`three`-free /
-Display-free) and turns the board into an authoring surface. It is a *dumb-container client*: it calls
+Display-free) and turns the board into an authoring surface. It is a _dumb-container client_: it calls
 **only** the controller's public named command methods and reads state/selection — strip it out and the
 host keeps every endpoint.
 
 ```ts
-import { BoardStateController, createSelectionStore, createLocationPickStore, mountBoardUI } from 'ultimatedarktowerboard';
+import {
+  BoardStateController,
+  createSelectionStore,
+  createLocationPickStore,
+  mountBoardUI,
+} from 'ultimatedarktowerboard';
 
 const controller = new BoardStateController();
-const selection = createSelectionStore();      // active token → the inspector
+const selection = createSelectionStore(); // active token → the inspector
 const locationPick = createLocationPickStore(); // armed add-placement channel
 
 const ui = mountBoardUI(host, { controller, selection, locationPick });

@@ -5,14 +5,14 @@
   "loop": false,
   "endBehavior": "hold",
   "tracks": [
-    { "kind": "flickerStep",
-      "atTick": 0, "endTick": 96,
-      "layers": [0, 1, 2, 3, 4, 5], "lights": "all",
+    {
+      "kind": "flickerStep",
+      "atTick": 0,
+      "endTick": 96,
+      "layers": [0, 1, 2, 3, 4, 5],
+      "lights": "all",
       "alpha": 0.4
     },
-    { "kind": "scaleAll",
-      "atTick": 96, "endTick": 696,
-      "multiplierNum": 766, "multiplierDen": 769
-    }
+    { "kind": "scaleAll", "atTick": 96, "endTick": 696, "multiplierNum": 766, "multiplierDen": 769 }
   ]
 }

@@ -5,7 +5,15 @@
 
 import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { smallBtn, dangerIconBtn, legacyBadge, inputStyle, ID_RE, type DeckSelection, type DeckKind } from './shared';
+import {
+  smallBtn,
+  dangerIconBtn,
+  legacyBadge,
+  inputStyle,
+  ID_RE,
+  type DeckSelection,
+  type DeckKind,
+} from './shared';
 
 export interface DeckListRailProps {
   battleIds: string[];
@@ -54,7 +62,9 @@ export function DeckListRail(props: DeckListRailProps) {
       <Section
         title="Battle Decks"
         ids={battleIds}
-        renderBadge={(id) => (legacyBattleIds.has(id) ? <span style={legacyBadge}>legacy</span> : null)}
+        renderBadge={(id) =>
+          legacyBattleIds.has(id) ? <span style={legacyBadge}>legacy</span> : null
+        }
         isSelected={(id) => isSel('battle', id)}
         onSelect={(id) => onSelect({ kind: 'battle', id })}
         onRemove={(id) => onRemove({ kind: 'battle', id })}
@@ -64,7 +74,13 @@ export function DeckListRail(props: DeckListRailProps) {
             <button style={{ ...smallBtn, fontSize: 10 }} onClick={() => fileRef.current?.click()}>
               Import JSON
             </button>
-            <input ref={fileRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={onImport} />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json"
+              style={{ display: 'none' }}
+              onChange={onImport}
+            />
           </>
         }
       />
@@ -114,10 +130,27 @@ function Section({
         <span style={{ flex: 1 }} />
         {extra}
       </div>
-      {ids.length === 0 && <div style={{ fontSize: 11, color: 'var(--c-text-faint)', padding: '2px 4px' }}>None yet.</div>}
+      {ids.length === 0 && (
+        <div style={{ fontSize: 11, color: 'var(--c-text-faint)', padding: '2px 4px' }}>
+          None yet.
+        </div>
+      )}
       {ids.map((id) => (
-        <div key={id} style={{ ...deckItem, ...(isSelected(id) ? deckItemSelected : null) }} onClick={() => onSelect(id)}>
-          <span style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{id}</span>
+        <div
+          key={id}
+          style={{ ...deckItem, ...(isSelected(id) ? deckItemSelected : null) }}
+          onClick={() => onSelect(id)}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {id}
+          </span>
           {renderBadge(id)}
           <span style={{ flex: 1 }} />
           <button
@@ -137,7 +170,11 @@ function Section({
           onChange={(e) => setNewId(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && add()}
           placeholder="new-deck-id"
-          style={{ ...inputStyle, flex: 1, borderColor: newId && !valid ? 'var(--c-danger)' : 'var(--c-border-strong)' }}
+          style={{
+            ...inputStyle,
+            flex: 1,
+            borderColor: newId && !valid ? 'var(--c-danger)' : 'var(--c-border-strong)',
+          }}
         />
         <button style={smallBtn} disabled={!valid} onClick={add}>
           +

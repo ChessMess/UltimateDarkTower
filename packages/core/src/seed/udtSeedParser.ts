@@ -42,16 +42,7 @@ export type Adversary =
   | 'Lingering Rot'
   | "Utuk'Ku";
 export type Ally =
-  | 'Gleb'
-  | 'Grigor'
-  | 'Hakan'
-  | 'Letha'
-  | 'Miras'
-  | 'Nimet'
-  | 'Tomas'
-  | 'Vasa'
-  | 'Yana'
-  | 'Zaida';
+  'Gleb' | 'Grigor' | 'Hakan' | 'Letha' | 'Miras' | 'Nimet' | 'Tomas' | 'Vasa' | 'Yana' | 'Zaida';
 export type Difficulty = 'Heroic' | 'Gritty';
 export type GameSource = 'Core' | 'Competitive';
 export type ExpansionType = 'Alliances' | 'Monuments';
@@ -59,8 +50,18 @@ export type Confidence = 'confirmed' | 'suspected' | 'unknown';
 
 // ── Lookup Arrays (index = encoded value) ──────────────────────────────────
 
-export const TIER1_FOES: readonly Tier1Foe[] = ['Brigands', 'Oreks', 'Shadow Wolves', 'Spine Fiends'];
-export const TIER2_FOES: readonly Tier2Foe[] = ['Frost Trolls', 'Clan of Neuri', 'Lemures', 'Widowmade Spiders'];
+export const TIER1_FOES: readonly Tier1Foe[] = [
+  'Brigands',
+  'Oreks',
+  'Shadow Wolves',
+  'Spine Fiends',
+];
+export const TIER2_FOES: readonly Tier2Foe[] = [
+  'Frost Trolls',
+  'Clan of Neuri',
+  'Lemures',
+  'Widowmade Spiders',
+];
 export const TIER3_FOES: readonly Tier3Foe[] = ['Dragons', 'Mormos', 'Striga', 'Titans'];
 export const ADVERSARIES: readonly Adversary[] = [
   'Ashstrider',
@@ -73,8 +74,16 @@ export const ADVERSARIES: readonly Adversary[] = [
   "Utuk'Ku",
 ];
 export const ALLIES: readonly Ally[] = [
-  'Gleb', 'Grigor', 'Hakan', 'Letha', 'Miras',
-  'Nimet', 'Tomas', 'Vasa', 'Yana', 'Zaida',
+  'Gleb',
+  'Grigor',
+  'Hakan',
+  'Letha',
+  'Miras',
+  'Nimet',
+  'Tomas',
+  'Vasa',
+  'Yana',
+  'Zaida',
 ];
 export const DIFFICULTIES: readonly Difficulty[] = ['Heroic', 'Gritty'];
 export const GAME_SOURCES: readonly GameSource[] = ['Core', 'Competitive'];
@@ -174,7 +183,9 @@ export function valueToChar(v: number): string {
 export function validateSeed(seed: string): string {
   const stripped = seed.replace(/[-\s]/g, '').toLowerCase();
   if (stripped.length !== SEED_LENGTH) {
-    throw new Error(`Invalid seed length: expected ${SEED_LENGTH} characters, got ${stripped.length}`);
+    throw new Error(
+      `Invalid seed length: expected ${SEED_LENGTH} characters, got ${stripped.length}`,
+    );
   }
   for (const c of stripped) {
     if (!CHAR_TO_VALUE.has(c)) {
@@ -397,8 +408,12 @@ export function encodeSeed(config: SeedConfig, rngValue: number): string {
   if (config.difficulty === 'Gritty') extraByte |= 0b00001;
   for (const expansion of config.expansions) {
     switch (expansion) {
-      case 'Monuments': extraByte |= 0b00010; break;
-      case 'Alliances': extraByte |= 0b00100; break;
+      case 'Monuments':
+        extraByte |= 0b00010;
+        break;
+      case 'Alliances':
+        extraByte |= 0b00100;
+        break;
     }
   }
   if (config.source === 'Competitive') extraByte |= 0b01000;

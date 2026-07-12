@@ -1,6 +1,6 @@
 # Using UltimateDarkTowerDisplay in Electron
 
-*Docs: [Index](README.md) > Electron integrator > Electron*
+_Docs: [Index](README.md) > Electron integrator > Electron_
 
 **Before reading:** [GETTING_STARTED](GETTING_STARTED.md) covers install and the first render. [TROUBLESHOOTING §electron-specific](TROUBLESHOOTING.md#electron-specific) lists the predictable failure modes; this doc is the full walkthrough.
 
@@ -18,9 +18,9 @@ import { BrowserWindow } from 'electron';
 
 const win = new BrowserWindow({
   webPreferences: {
-    contextIsolation: true,   // required for security
-    nodeIntegration: false,   // renderer behaves like a normal browser page
-    sandbox: true,            // additional isolation (optional but recommended)
+    contextIsolation: true, // required for security
+    nodeIntegration: false, // renderer behaves like a normal browser page
+    sandbox: true, // additional isolation (optional but recommended)
   },
 });
 ```
@@ -46,10 +46,7 @@ import { resolve } from 'path';
 export default {
   resolve: {
     alias: {
-      ultimatedarktower: resolve(
-        __dirname,
-        'node_modules/ultimatedarktower/dist/src/index.js'
-      ),
+      ultimatedarktower: resolve(__dirname, 'node_modules/ultimatedarktower/dist/src/index.js'),
     },
   },
 };
@@ -144,7 +141,7 @@ app.on('web-contents-created', (_, contents) => {
   contents.session.on('select-bluetooth-device', (event, devices, callback) => {
     event.preventDefault();
     // Pick the first device named "Dark Tower" (or show a picker UI):
-    const tower = devices.find(d => d.deviceName.includes('Dark Tower'));
+    const tower = devices.find((d) => d.deviceName.includes('Dark Tower'));
     if (tower) callback(tower.deviceId);
     else callback(''); // cancel
   });

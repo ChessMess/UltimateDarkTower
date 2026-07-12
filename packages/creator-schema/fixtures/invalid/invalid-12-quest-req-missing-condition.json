@@ -20,25 +20,49 @@
   },
   "library": {
     "buildingTypes": {
-      "citadel":   { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"resource.gain","resource":"warriors","amount":2}]}, "skullCapacity": 3 },
-      "sanctuary": { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"corruption.remove","all":true}]}, "skullCapacity": 3 },
-      "village":   { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"resource.gain","resource":"spirit","amount":1}]}, "skullCapacity": 3 },
-      "bazaar":    { "free": [{"op":"resource.gain","resource":"warriors","amount":1}], "enhanced": {"cost":{"resource":"spirit","amount":1},"effects":[{"op":"market.refresh"}]}, "skullCapacity": 3 }
+      "citadel": {
+        "free": [{ "op": "resource.gain", "resource": "warriors", "amount": 1 }],
+        "enhanced": {
+          "cost": { "resource": "spirit", "amount": 1 },
+          "effects": [{ "op": "resource.gain", "resource": "warriors", "amount": 2 }]
+        },
+        "skullCapacity": 3
+      },
+      "sanctuary": {
+        "free": [{ "op": "resource.gain", "resource": "warriors", "amount": 1 }],
+        "enhanced": {
+          "cost": { "resource": "spirit", "amount": 1 },
+          "effects": [{ "op": "corruption.remove", "all": true }]
+        },
+        "skullCapacity": 3
+      },
+      "village": {
+        "free": [{ "op": "resource.gain", "resource": "warriors", "amount": 1 }],
+        "enhanced": {
+          "cost": { "resource": "spirit", "amount": 1 },
+          "effects": [{ "op": "resource.gain", "resource": "spirit", "amount": 1 }]
+        },
+        "skullCapacity": 3
+      },
+      "bazaar": {
+        "free": [{ "op": "resource.gain", "resource": "warriors", "amount": 1 }],
+        "enhanced": {
+          "cost": { "resource": "spirit", "amount": 1 },
+          "effects": [{ "op": "market.refresh" }]
+        },
+        "skullCapacity": 3
+      }
     },
     "quests": {
       "side-quest": {
         "id": "side-quest",
         "name": "Side Quest",
-        "requirements": [
-          { "label": "Condition field intentionally omitted" }
-        ]
+        "requirements": [{ "label": "Condition field intentionally omitted" }]
       }
     }
   },
   "graph": {
     "entry": "n-start",
-    "nodes": [
-      { "id": "n-start", "kind": "lifecycle.gameStart" }
-    ]
+    "nodes": [{ "id": "n-start", "kind": "lifecycle.gameStart" }]
   }
 }

@@ -198,8 +198,8 @@ describe('ClientLogger — flush()', () => {
   it('does nothing when there are no unsent entries', () => {
     const { logger, sendFn } = makeLogger();
     pushN(logger, 2);
-    logger.sendLogs();   // mark as sent
-    logger.flush();      // nothing new
+    logger.sendLogs(); // mark as sent
+    logger.flush(); // nothing new
 
     expect(sendFn).toHaveBeenCalledTimes(1);
   });

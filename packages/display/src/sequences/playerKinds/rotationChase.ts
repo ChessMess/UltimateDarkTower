@@ -52,11 +52,19 @@ export function rotationChaseHandler(
   deps: SequenceAnimatorDeps,
 ): void {
   const {
-    chaseLayers, steadyLayer, phaseOffsetTicks, lightStepTicks,
-    decayMultiplierNum, decayMultiplierDen, periodTicks, atTick, endTick,
+    chaseLayers,
+    steadyLayer,
+    phaseOffsetTicks,
+    lightStepTicks,
+    decayMultiplierNum,
+    decayMultiplierDen,
+    periodTicks,
+    atTick,
+    endTick,
   } = track;
   const steady =
-    track.steadyLevel ?? (track.steadyLevelPwm !== undefined ? track.steadyLevelPwm / 255 : undefined);
+    track.steadyLevel ??
+    (track.steadyLevelPwm !== undefined ? track.steadyLevelPwm / 255 : undefined);
   const elapsed = { ticks: 0 };
 
   const tickFn = (): void => {

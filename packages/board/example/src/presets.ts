@@ -1,11 +1,5 @@
 // Board presets used by the sidebar buttons and the initial load.
-import {
-  ADVERSARIES,
-  BOARD_LOCATIONS,
-  TIER1_FOES,
-  TIER2_FOES,
-  TIER3_FOES,
-} from '../../src/index';
+import { ADVERSARIES, BOARD_LOCATIONS, TIER1_FOES, TIER2_FOES, TIER3_FOES } from '../../src/index';
 import type { BoardStateController } from '../../src/index';
 
 const ALL_FOES = [...TIER1_FOES, ...TIER2_FOES, ...TIER3_FOES];

@@ -1,5 +1,10 @@
 import type { TowerState, TowerSide, SealIdentifier } from 'ultimatedarktower';
-import type { LightingConfig, CameraConfig, ApplyCameraConfigOptions, AudioConfig } from './3d/types';
+import type {
+  LightingConfig,
+  CameraConfig,
+  ApplyCameraConfigOptions,
+  AudioConfig,
+} from './3d/types';
 import type { ITowerDisplay, RendererType, TowerDisplayOptions, AppliedTowerState } from './types';
 import { TowerDisplay } from './TowerDisplay';
 import type { Tower3DView, PerfReport } from './3d/Tower3DView';
@@ -184,10 +189,7 @@ export class TowerRenderView implements ITowerDisplay {
    * Play a tower sample as a one-shot, transient event — independent of the
    * state-driven `applyState` audio path. See {@link TowerDisplay.playSample}.
    */
-  playSample(
-    sample: number,
-    opts?: { loop?: boolean; volume?: number },
-  ): { stop: () => void } {
+  playSample(sample: number, opts?: { loop?: boolean; volume?: number }): { stop: () => void } {
     return this.innerDisplay.playSample(sample, opts);
   }
 

@@ -29,8 +29,19 @@ import type { AnchorSlot, BoardKingdom } from '../data/udtReexports';
 import { BOARD_ANCHORS } from '../data/udtReexports';
 import type { BoardFocus, BoardViewAngle } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
-import { KIND_TINT, KIND_Z_3D, lookupTokenArt, resolveTokenImageFor } from '../renderers/assetPaths';
-import type { TokenArtRef, TokenSelection, TokenArtConfig, TokenModelRef, BoardView } from '../renderers/assetPaths';
+import {
+  KIND_TINT,
+  KIND_Z_3D,
+  lookupTokenArt,
+  resolveTokenImageFor,
+} from '../renderers/assetPaths';
+import type {
+  TokenArtRef,
+  TokenSelection,
+  TokenArtConfig,
+  TokenModelRef,
+  BoardView,
+} from '../renderers/assetPaths';
 import {
   MAX_FANNED_SKULLS,
   fanOffset,
@@ -44,7 +55,14 @@ import type { LocatedEntry } from '../renderers/tokenLayout';
 // Type-only — the store INSTANCE is supplied by the caller; no runtime UI dependency.
 import type { LocationPickStore } from '../ui/stores';
 
-export type { TokenSelection, TokenArtRef, TokenArt, TokenArtConfig, TokenModelRef, BoardView } from '../renderers/assetPaths';
+export type {
+  TokenSelection,
+  TokenArtRef,
+  TokenArt,
+  TokenArtConfig,
+  TokenModelRef,
+  BoardView,
+} from '../renderers/assetPaths';
 
 // The lazily-loaded 3D adapter used by the `./stage` entry's `BoardStageView`.
 // Advertised here too for advanced consumers wiring their own 3D shell.
@@ -153,7 +171,10 @@ export interface Board3DHandle {
  * `getDiscMetrics`/`setBoardDiscEnabled`/camera, which the `ScenePluginContext`
  * does not expose) and returns a small handle.
  */
-export function attachBoard3D(view3D: Tower3DView, options: Board3DPluginOptions = {}): Board3DHandle {
+export function attachBoard3D(
+  view3D: Tower3DView,
+  options: Board3DPluginOptions = {},
+): Board3DHandle {
   const plugin = new Board3DPlugin(view3D, options);
   const handle = attachScenePlugin(view3D, plugin);
   return {
@@ -191,7 +212,7 @@ export class Board3DPlugin implements ScenePlugin {
 
   constructor(
     private readonly view3D: Tower3DView,
-    private readonly options: Board3DPluginOptions = {}
+    private readonly options: Board3DPluginOptions = {},
   ) {
     this.boardState = options.boardState ?? null;
   }
@@ -205,14 +226,14 @@ export class Board3DPlugin implements ScenePlugin {
         objects: () => this.tokens,
         priority: POINTER_PRIORITY,
         onPointerDown: (hit) => this.handlePointerDown(hit),
-      })
+      }),
     );
     // The 3D camera is the focus source of truth — reflect side changes outward.
     this.unsubs.push(
       ctx.onSideChange((side) => {
         this.currentFocus = { kingdom: sideToKingdom(side), angle: this.currentFocus.angle };
         this.options.onFocusChange?.(this.currentFocus);
-      })
+      }),
     );
     // Armed space-pick: only registered when configured, so the token target stays the
     // sole pointer target for non-editing consumers. Outranks tokens while armed.
@@ -222,7 +243,7 @@ export class Board3DPlugin implements ScenePlugin {
           objects: () => this.armedSpaceTargets(),
           priority: SPACE_POINTER_PRIORITY,
           onPointerDown: (hit) => this.handleSpacePointerDown(hit),
-        })
+        }),
       );
     }
     // Camera-tuning logger: prints the live `{ elevationFactor, targetHeightFactor }` whenever
@@ -247,7 +268,11 @@ export class Board3DPlugin implements ScenePlugin {
     // Display's board visible so tokens still rest on a board.
     if (this.options.boardImageUrl) {
       this.view3D.setBoardDiscEnabled(false);
-      this.board = this.buildBoard(this.options.boardImageUrl, this.disc, this.options.northKingdom ?? 0);
+      this.board = this.buildBoard(
+        this.options.boardImageUrl,
+        this.disc,
+        this.options.northKingdom ?? 0,
+      );
       this.group.add(this.board);
     }
     this.renderTokens();
@@ -337,7 +362,7 @@ export class Board3DPlugin implements ScenePlugin {
     const r = (n: number): number => +n.toFixed(2);
     // eslint-disable-next-line no-console
     console.log(
-      `[board3d] camera → { elevationFactor: ${r(f.elevationFactor)}, targetHeightFactor: ${r(f.targetHeightFactor)}, distanceFactor: ${r(f.distanceFactor)} }`
+      `[board3d] camera → { elevationFactor: ${r(f.elevationFactor)}, targetHeightFactor: ${r(f.targetHeightFactor)}, distanceFactor: ${r(f.distanceFactor)} }`,
     );
   }
 
@@ -378,7 +403,7 @@ export class Board3DPlugin implements ScenePlugin {
       heroEntries(state),
       'hero',
       (e) => ({ kind: 'hero', id: e.id, location: e.location }),
-      (e) => ({ kind: 'hero', id: e.id })
+      (e) => ({ kind: 'hero', id: e.id }),
     );
 
     // Foes (fanned), at the `foe` slot. Art id = foe type; selection id = instance id.
@@ -386,7 +411,7 @@ export class Board3DPlugin implements ScenePlugin {
       foeEntries(state),
       'foe',
       (e) => ({ kind: 'foe', id: e.id, location: e.location }),
-      (e) => ({ kind: 'foe', id: e.art ?? e.id })
+      (e) => ({ kind: 'foe', id: e.art ?? e.id }),
     );
 
     // Adversary, at its location's `foe` slot (falls back to `building`).
@@ -399,7 +424,7 @@ export class Board3DPlugin implements ScenePlugin {
           { kind: 'adversary', id: adversary.id, location: adversary.location },
           { kind: 'adversary', id: adversary.id },
           this.worldAt(anchor),
-          this.tokenSize()
+          this.tokenSize(),
         );
       }
     }
@@ -414,7 +439,12 @@ export class Board3DPlugin implements ScenePlugin {
           const radius = this.fanRadius();
           for (let i = 0; i < count; i++) {
             const pos = base.clone().add(fanVec3(i, count, radius));
-            this.addToken({ kind: 'building', id: loc, location: loc }, { kind: 'skull', id: 'skull' }, pos, this.skullSize());
+            this.addToken(
+              { kind: 'building', id: loc, location: loc },
+              { kind: 'skull', id: 'skull' },
+              pos,
+              this.skullSize(),
+            );
           }
         }
       }
@@ -436,7 +466,7 @@ export class Board3DPlugin implements ScenePlugin {
       markerEntries(state),
       'marker',
       (e) => ({ kind: 'marker', id: e.id, location: e.location }),
-      (e) => ({ kind: 'marker', id: e.art ?? e.id })
+      (e) => ({ kind: 'marker', id: e.art ?? e.id }),
     );
 
     // Quest markers (own kind, but sharing the `marker` anchor slot — no dedicated board anchor).
@@ -444,7 +474,7 @@ export class Board3DPlugin implements ScenePlugin {
       questEntries(state),
       'marker',
       (e) => ({ kind: 'quest', id: e.id, location: e.location }),
-      (e) => ({ kind: 'quest', id: e.art ?? e.id })
+      (e) => ({ kind: 'quest', id: e.art ?? e.id }),
     );
 
     this.applyHighlight();
@@ -455,7 +485,7 @@ export class Board3DPlugin implements ScenePlugin {
     byLocation: Map<LocationName, LocatedEntry[]>,
     slot: AnchorSlot,
     toSelection: (entry: LocatedEntry) => TokenSelection,
-    toArt: (entry: LocatedEntry) => TokenArtRef
+    toArt: (entry: LocatedEntry) => TokenArtRef,
   ): void {
     const radius = this.fanRadius();
     for (const [loc, entries] of byLocation) {
@@ -469,11 +499,23 @@ export class Board3DPlugin implements ScenePlugin {
     }
   }
 
-  private addToken(selection: TokenSelection, art: TokenArtRef, position: THREE.Vector3, size: number): void {
+  private addToken(
+    selection: TokenSelection,
+    art: TokenArtRef,
+    position: THREE.Vector3,
+    size: number,
+  ): void {
     let node: THREE.Object3D | null;
     if (this.options.tokenFactory) {
       // Consumer override wins — full control, builds with the consumer's `three`.
-      node = this.options.tokenFactory({ selection, art, position, size, disc: this.disc as DiscMetrics, three: THREE });
+      node = this.options.tokenFactory({
+        selection,
+        art,
+        position,
+        size,
+        disc: this.disc as DiscMetrics,
+        three: THREE,
+      });
     } else {
       const model = this.resolveModel(art);
       node = model
@@ -515,13 +557,18 @@ export class Board3DPlugin implements ScenePlugin {
    * win). The clone is tagged `shared` so {@link disposeObject} never disposes those singletons
    * (Display's module cache owns them).
    */
-  private cloneModelMesh(template: SkullTemplate, size: number, model: { scale?: number; rotation?: { x?: number; y?: number; z?: number } }): THREE.Object3D {
+  private cloneModelMesh(
+    template: SkullTemplate,
+    size: number,
+    model: { scale?: number; rotation?: { x?: number; y?: number; z?: number } },
+  ): THREE.Object3D {
     const mesh = (template.template as THREE.Mesh).clone();
     mesh.userData.shared = true;
     const s = size * (model.scale ?? 1);
     mesh.scale.setScalar(s); // template is normalized to a unit bounding sphere (radius 1)
     mesh.position.y = s; // lift so the sphere's bottom rests on the disc (rotation-invariant)
-    if (model.rotation) mesh.rotation.set(model.rotation.x ?? 0, model.rotation.y ?? 0, model.rotation.z ?? 0);
+    if (model.rotation)
+      mesh.rotation.set(model.rotation.x ?? 0, model.rotation.y ?? 0, model.rotation.z ?? 0);
     return mesh;
   }
 
@@ -532,7 +579,12 @@ export class Board3DPlugin implements ScenePlugin {
     this.register(sprite, selection);
   }
 
-  private buildSprite(selection: TokenSelection, art: TokenArtRef, position: THREE.Vector3, size: number): THREE.Sprite {
+  private buildSprite(
+    selection: TokenSelection,
+    art: TokenArtRef,
+    position: THREE.Vector3,
+    size: number,
+  ): THREE.Sprite {
     const url = this.resolveArt(art);
     const sprite = this.makeSprite(url ? '#ffffff' : KIND_TINT[selection.kind], size, position);
     if (url) {

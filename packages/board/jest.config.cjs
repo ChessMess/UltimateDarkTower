@@ -40,10 +40,8 @@ module.exports = {
     '^three$': '<rootDir>/__tests__/__mocks__/three.js',
     '^three/examples/jsm/controls/OrbitControls\\.js$':
       '<rootDir>/__tests__/__mocks__/orbitControls.js',
-    '^three/examples/jsm/loaders/DRACOLoader\\.js$':
-      '<rootDir>/__tests__/__mocks__/dracoLoader.js',
-    '^three/examples/jsm/loaders/GLTFLoader\\.js$':
-      '<rootDir>/__tests__/__mocks__/gltfLoader.js',
+    '^three/examples/jsm/loaders/DRACOLoader\\.js$': '<rootDir>/__tests__/__mocks__/dracoLoader.js',
+    '^three/examples/jsm/loaders/GLTFLoader\\.js$': '<rootDir>/__tests__/__mocks__/gltfLoader.js',
     '^three/examples/jsm/loaders/HDRLoader\\.js$': '<rootDir>/__tests__/__mocks__/hdrLoader.js',
     // Pulled in by Display's physics chunk (for `loadSkullModel`); the real module is ESM,
     // which Jest's CJS transform can't parse, so stub it.

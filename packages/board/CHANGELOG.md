@@ -41,7 +41,7 @@ All notable changes to this project are documented here. The format is based on
   mirroring the 3D board's mouse-orbit. `dragMode: 'rotate' | 'pan'` (default `'rotate'`) selects the
   left-drag behavior (`'pan'` keeps the classic move-the-zoomed-view drag); switch at runtime via the new
   `setDragMode()` (on `BoardMap2D`, forwarded through `BoardRenderView`). The **middle mouse button** always
-  runs the *other* action — a quick pan while spinning, a press-and-hold spin while panning.
+  runs the _other_ action — a quick pan while spinning, a press-and-hold spin while panning.
   `resetView()` / double-click now also clears the spin. Pure presentation: a new DOM-free
   `src/renderers/rotate.ts` does the angle/pivot math and all content rides one `.udt-board-rotate` SVG
   layer; `BoardState`, selection, and focus are untouched. The example gains a persisted **Spin / Pan**
@@ -116,13 +116,13 @@ All notable changes to this project are documented here. The format is based on
 
 - **Per-token 2D-vs-3D art — the `tokenArt` config.** A token can now use **different art in the 2D map
   vs the 3D view** (and, in 3D, a flat image or a GLB model), declared per token instead of in branching
-  callback logic. `tokenArt: TokenArtConfig` is a table keyed by token kind → **art id** (the foe *type* for
+  callback logic. `tokenArt: TokenArtConfig` is a table keyed by token kind → **art id** (the foe _type_ for
   foes, so instances share an entry; the id/name otherwise; `"skull"` for skulls — `building` lives under
   `monument`; keys are kebab-insensitive). Each `TokenArt` entry sets `image2d`, `image3d`, and/or `model3d`
   (a `TokenModelRef`). Pass the **same object** to both `BoardMap2D` / `BoardRenderView` (reads `image2d`)
   and the `Board3DPlugin` (reads `model3d`, then `image3d`). Resolution is layered on the existing seam, so
   tokens with no entry render exactly as before: image precedence is `tokenArt` → `resolveTokenImage(ref,
-  view)` → the `${assetBaseUrl}${group}/${kebab(id)}.png` convention → fallback; 3D-model precedence is
+view)` → the `${assetBaseUrl}${group}/${kebab(id)}.png` convention → fallback; 3D-model precedence is
   `tokenFactory` → `tokenArt.model3d` → `resolveTokenModel`. `resolveTokenImage` gains a `view: '2d' | '3d'`
   argument (additive — existing one-arg callbacks are unaffected); `BoardRenderView` now forwards
   `tokenArt` + `resolveTokenImage` to its 2D map. Heroes — which have no convention art — can finally be
@@ -131,7 +131,7 @@ All notable changes to this project are documented here. The format is based on
   model in place of its flat sprite, via the new `resolveTokenModel(art) => TokenModelRef | null` option
   (mirrors `resolveTokenImage`; keyed on `{ kind, id }`, so it works for **any** token kind — skulls today,
   foes/monuments as model art lands). `TokenModelRef` is a model-URL string or `{ url, scale?, rotation?,
-  dracoDecoderPath? }`. Models load by **reusing Display's `loadSkullModel`** (load-once / cache-per-URL,
+dracoDecoderPath? }`. Models load by **reusing Display's `loadSkullModel`** (load-once / cache-per-URL,
   normalized to a unit bounding sphere), imported from the externalized `ultimatedarktowerdisplay/physics`
   subpath so the GLTF / DRACO loaders stay in Display's chunk — never the board's bundle. Clones **share**
   geometry/material (load-once-clone-many) and skip disposal of the shared template; the async load is

@@ -1,4 +1,4 @@
-# PRD-06 — Online Multiplayer *(future — stub)*
+# PRD-06 — Online Multiplayer _(future — stub)_
 
 > **Status: future / not MVP.** Captured so the MVP architecture stays compatible. Flesh out before
 > implementation. Read [_overview.md](_overview.md) first.

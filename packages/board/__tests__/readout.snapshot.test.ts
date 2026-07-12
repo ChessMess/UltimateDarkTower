@@ -38,7 +38,13 @@ describe('BoardReadout', () => {
   });
 
   it('is deterministic regardless of hero insertion order', () => {
-    const base = (): BoardState => ({ heroes: {}, foes: {}, buildings: {}, spaceMarkers: {}, questMarkers: {} });
+    const base = (): BoardState => ({
+      heroes: {},
+      foes: {},
+      buildings: {},
+      spaceMarkers: {},
+      questMarkers: {},
+    });
     const a = base();
     a.heroes = { b: { location: 'Dayside' }, a: { location: 'Broken Lands' } };
     const b = base();

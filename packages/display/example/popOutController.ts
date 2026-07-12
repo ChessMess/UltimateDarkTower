@@ -117,11 +117,7 @@ function openPopOut(els: DomElements): void {
   // again before the 500 ms poll caught the close).
   if (slots.length > 0) restore(els);
 
-  const win = window.open(
-    '',
-    'udtd-render',
-    'width=960,height=960,resizable=yes,scrollbars=yes',
-  );
+  const win = window.open('', 'udtd-render', 'width=960,height=960,resizable=yes,scrollbars=yes');
   if (!win) {
     showBanner(els, 'Pop-out blocked — allow pop-ups for this site and try again.');
     return;

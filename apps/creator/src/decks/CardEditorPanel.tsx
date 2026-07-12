@@ -50,10 +50,14 @@ export function CardEditorPanel(props: CardEditorPanelProps) {
     return <div style={panel}>Legacy strikes decks are read-only.</div>;
   }
   if (props.selection.kind === 'battle' && props.battleCard && props.onBattleCardChange) {
-    return <BattleCardEditor {...props} card={props.battleCard} onChange={props.onBattleCardChange} />;
+    return (
+      <BattleCardEditor {...props} card={props.battleCard} onChange={props.onBattleCardChange} />
+    );
   }
   if (props.selection.kind === 'card' && props.genericCard && props.onGenericCardChange) {
-    return <GenericCardEditor {...props} card={props.genericCard} onChange={props.onGenericCardChange} />;
+    return (
+      <GenericCardEditor {...props} card={props.genericCard} onChange={props.onGenericCardChange} />
+    );
   }
   return <div style={panel}>Select a card to edit, or add one with the “+ Card” tile.</div>;
 }
@@ -61,7 +65,8 @@ export function CardEditorPanel(props: CardEditorPanelProps) {
 function BattleCardEditor(
   props: CardEditorPanelProps & { card: LadderCard; onChange: (c: LadderCard) => void },
 ) {
-  const { doc, appearance, images, onManageImages, deckIds, foeIds, onRemove, card, onChange } = props;
+  const { doc, appearance, images, onManageImages, deckIds, foeIds, onRemove, card, onChange } =
+    props;
   const steps = card.steps ?? [];
   const [previewStep, setPreviewStep] = useState(0);
   const clampStep = Math.min(previewStep, Math.max(0, steps.length - 1));
@@ -90,11 +95,19 @@ function BattleCardEditor(
       </Preview>
 
       <Field label="Name">
-        <input value={card.name ?? ''} onChange={(e) => patch({ name: e.target.value })} style={{ ...inputStyle, width: '100%' }} />
+        <input
+          value={card.name ?? ''}
+          onChange={(e) => patch({ name: e.target.value })}
+          style={{ ...inputStyle, width: '100%' }}
+        />
       </Field>
       <div style={{ display: 'flex', gap: 10 }}>
         <Field label="Advantage">
-          <select value={card.advantage ?? ''} onChange={(e) => patch({ advantage: e.target.value })} style={inputStyle}>
+          <select
+            value={card.advantage ?? ''}
+            onChange={(e) => patch({ advantage: e.target.value })}
+            style={inputStyle}
+          >
             <option value="">—</option>
             {ADVANTAGES.map((a) => (
               <option key={a} value={a}>
@@ -113,15 +126,30 @@ function BattleCardEditor(
           />
         </Field>
       </div>
-      <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, margin: '8px 0' }}>
-        <input type="checkbox" checked={!!card.critical} onChange={(e) => patch({ critical: e.target.checked })} />
+      <label
+        style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, margin: '8px 0' }}
+      >
+        <input
+          type="checkbox"
+          checked={!!card.critical}
+          onChange={(e) => patch({ critical: e.target.checked })}
+        />
         critical (red styling)
       </label>
       <Field label="Note">
-        <input value={card.note ?? ''} onChange={(e) => patch({ note: e.target.value || undefined })} style={{ ...inputStyle, width: '100%' }} />
+        <input
+          value={card.note ?? ''}
+          onChange={(e) => patch({ note: e.target.value || undefined })}
+          style={{ ...inputStyle, width: '100%' }}
+        />
       </Field>
       <Field label="Art">
-        <ImagePicker images={images} value={card.artRef} onChange={(k) => patch({ artRef: k })} onManage={onManageImages} />
+        <ImagePicker
+          images={images}
+          value={card.artRef}
+          onChange={(k) => patch({ artRef: k })}
+          onManage={onManageImages}
+        />
       </Field>
 
       <div style={labelStyle}>Steps (worst → best)</div>
@@ -135,7 +163,10 @@ function BattleCardEditor(
               onChange={(e) => patchStep(i, { text: e.target.value })}
               style={{ ...inputStyle, flex: 1 }}
             />
-            <button style={dangerIconBtn} onClick={() => setSteps(steps.filter((_, idx) => idx !== i))}>
+            <button
+              style={dangerIconBtn}
+              onClick={() => setSteps(steps.filter((_, idx) => idx !== i))}
+            >
               ✕
             </button>
           </div>
@@ -163,7 +194,19 @@ function BattleCardEditor(
 function GenericCardEditor(
   props: CardEditorPanelProps & { card: GenericCard; onChange: (c: GenericCard) => void },
 ) {
-  const { doc, appearance, images, onManageImages, deckIds, foeIds, onRemove, card, onChange, copies, onCopiesChange } = props;
+  const {
+    doc,
+    appearance,
+    images,
+    onManageImages,
+    deckIds,
+    foeIds,
+    onRemove,
+    card,
+    onChange,
+    copies,
+    onCopiesChange,
+  } = props;
   const patch = (p: Partial<GenericCard>) => onChange({ ...card, ...p });
 
   return (
@@ -173,14 +216,26 @@ function GenericCardEditor(
       </Preview>
 
       <Field label="Id">
-        <input value={card.id} readOnly style={{ ...inputStyle, width: '100%', color: 'var(--c-text-muted)' }} />
+        <input
+          value={card.id}
+          readOnly
+          style={{ ...inputStyle, width: '100%', color: 'var(--c-text-muted)' }}
+        />
       </Field>
       <div style={{ display: 'flex', gap: 10 }}>
         <Field label="Name">
-          <input value={card.name ?? ''} onChange={(e) => patch({ name: e.target.value })} style={{ ...inputStyle, width: '100%' }} />
+          <input
+            value={card.name ?? ''}
+            onChange={(e) => patch({ name: e.target.value })}
+            style={{ ...inputStyle, width: '100%' }}
+          />
         </Field>
         <Field label="Type">
-          <input value={card.type ?? ''} onChange={(e) => patch({ type: e.target.value })} style={{ ...inputStyle, width: 100 }} />
+          <input
+            value={card.type ?? ''}
+            onChange={(e) => patch({ type: e.target.value })}
+            style={{ ...inputStyle, width: 100 }}
+          />
         </Field>
       </div>
       {onCopiesChange && (
@@ -203,10 +258,19 @@ function GenericCardEditor(
         />
       </Field>
       <Field label="Flavor">
-        <input value={card.flavor ?? ''} onChange={(e) => patch({ flavor: e.target.value || undefined })} style={{ ...inputStyle, width: '100%' }} />
+        <input
+          value={card.flavor ?? ''}
+          onChange={(e) => patch({ flavor: e.target.value || undefined })}
+          style={{ ...inputStyle, width: '100%' }}
+        />
       </Field>
       <Field label="Art">
-        <ImagePicker images={images} value={card.artRef} onChange={(k) => patch({ artRef: k })} onManage={onManageImages} />
+        <ImagePicker
+          images={images}
+          value={card.artRef}
+          onChange={(k) => patch({ artRef: k })}
+          onManage={onManageImages}
+        />
       </Field>
 
       <div style={labelStyle}>Effects (applied on resolve)</div>
@@ -237,7 +301,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Preview({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12 }}>
+    <div
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12 }}
+    >
       {children}
     </div>
   );
@@ -268,4 +334,7 @@ const pip: CSSProperties = {
   cursor: 'pointer',
   padding: 0,
 };
-const pipActive: CSSProperties = { background: 'var(--c-primary)', borderColor: 'var(--c-primary)' };
+const pipActive: CSSProperties = {
+  background: 'var(--c-primary)',
+  borderColor: 'var(--c-primary)',
+};

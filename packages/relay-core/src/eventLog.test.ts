@@ -9,12 +9,7 @@
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import {
-  EventLog,
-  loadEventLog,
-  replayEventLog,
-  exportEventLog,
-} from './eventLog';
+import { EventLog, loadEventLog, replayEventLog, exportEventLog } from './eventLog';
 import {
   type RelayEvent,
   makeCommandReceivedEvent,
@@ -134,7 +129,11 @@ describe('replayEventLog', () => {
 
     it('waits the inter-event timestamp deltas', async () => {
       const events = withTimestamps(
-        [makeAppConnectedEvent(), makeCommandReceivedEvent([0x00]), makeSkullDroppedEvent(1, [0x00])],
+        [
+          makeAppConnectedEvent(),
+          makeCommandReceivedEvent([0x00]),
+          makeSkullDroppedEvent(1, [0x00]),
+        ],
         [0, 100, 250], // deltas: 100ms, 150ms
       );
       const handler = jest.fn();
@@ -151,7 +150,11 @@ describe('replayEventLog', () => {
 
     it('clamps a huge gap and treats out-of-order timestamps as no wait', async () => {
       const events = withTimestamps(
-        [makeAppConnectedEvent(), makeCommandReceivedEvent([0x00]), makeSkullDroppedEvent(1, [0x00])],
+        [
+          makeAppConnectedEvent(),
+          makeCommandReceivedEvent([0x00]),
+          makeSkullDroppedEvent(1, [0x00]),
+        ],
         [0, 3_600_000, 3_600_000 - 5_000], // 1h gap (clamped to 10s), then negative delta
       );
       const handler = jest.fn();

@@ -1,4 +1,9 @@
-import { rtdt_unpack_state, createDefaultTowerState, TOWER_STATE_DATA_OFFSET, type TowerState } from 'ultimatedarktower';
+import {
+  rtdt_unpack_state,
+  createDefaultTowerState,
+  TOWER_STATE_DATA_OFFSET,
+  type TowerState,
+} from 'ultimatedarktower';
 
 /**
  * ObserverDisplay tracks decoded tower state on the host side.
@@ -31,9 +36,15 @@ export class ObserverDisplay {
     this.lastReceivedAt = new Date();
   }
 
-  getCurrentState(): TowerState { return this.currentState; }
-  getCommandCount(): number { return this.commandCount; }
-  getLastReceivedAt(): Date | null { return this.lastReceivedAt; }
+  getCurrentState(): TowerState {
+    return this.currentState;
+  }
+  getCommandCount(): number {
+    return this.commandCount;
+  }
+  getLastReceivedAt(): Date | null {
+    return this.lastReceivedAt;
+  }
 
   reset(): void {
     this.currentState = createDefaultTowerState();

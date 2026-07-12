@@ -24,7 +24,7 @@
 ## Problem Statement
 
 The UltimateDarkTowerSync host process runs `FakeTower`, a BLE peripheral that impersonates the
-*Return to Dark Tower* hardware so the official companion app (iPad/iPhone) believes it is connected
+_Return to Dark Tower_ hardware so the official companion app (iPad/iPhone) believes it is connected
 to a real tower. The real tower exposes a **Device Information Service (DIS)** — Bluetooth GATT
 service UUID `0x180A` — which the companion app reads immediately after connecting to verify the
 tower's firmware version before proceeding to gameplay.
@@ -46,14 +46,14 @@ firmware-update prompt, and **immediately disconnects**. No game commands are ev
 The following sequence was observed when running the host on macOS with an iPad as the companion
 app client:
 
-| Step | Event | Console Output |
-|------|-------|----------------|
-| 1 | Host starts, UART service registers successfully | `services set — tower ready` |
-| 2 | DIS service (`0x180A`) is rejected asynchronously | `servicesSetError: The specified UUID is not allowed` |
-| 3 | iPad connects and subscribes to UART notify char | `companion subscribed to state notifications` |
-| 4 | iPad reads DIS → service not found → firmware = blank | *(no DIS read log — handler never fires)* |
-| 5 | Companion app shows firmware-update dialog | *(observed on iPad UI)* |
-| 6 | Companion app disconnects | `companion disconnected` |
+| Step | Event                                                 | Console Output                                        |
+| ---- | ----------------------------------------------------- | ----------------------------------------------------- |
+| 1    | Host starts, UART service registers successfully      | `services set — tower ready`                          |
+| 2    | DIS service (`0x180A`) is rejected asynchronously     | `servicesSetError: The specified UUID is not allowed` |
+| 3    | iPad connects and subscribes to UART notify char      | `companion subscribed to state notifications`         |
+| 4    | iPad reads DIS → service not found → firmware = blank | _(no DIS read log — handler never fires)_             |
+| 5    | Companion app shows firmware-update dialog            | _(observed on iPad UI)_                               |
+| 6    | Companion app disconnects                             | `companion disconnected`                              |
 
 The UART service itself works correctly — the subscription in step 3 succeeds and the initial
 heartbeat packet (`07 00 00 0c 10`) is delivered. The blocker is exclusively the missing DIS.
@@ -84,14 +84,14 @@ cannot reach without disabling System Integrity Protection.
 All of the following standard Bluetooth SIG service UUIDs return `CBError.uuidNotAllowed` (error
 code 6) when passed to `CBPeripheralManager.addService()` on macOS:
 
-| UUID | Service Name | Why macOS Blocks It |
-|------|-------------|---------------------|
-| `0x1800` | Generic Access (GAP) | System-managed |
-| `0x1801` | Generic Attribute (GATT) | System-managed |
-| `0x180A` | Device Information | System UI |
-| `0x180F` | Battery Service | System UI |
-| `0x1805` | Current Time Service | System-managed |
-| `0x1812` | Human Interface Device | Kernel HID stack |
+| UUID     | Service Name             | Why macOS Blocks It |
+| -------- | ------------------------ | ------------------- |
+| `0x1800` | Generic Access (GAP)     | System-managed      |
+| `0x1801` | Generic Attribute (GATT) | System-managed      |
+| `0x180A` | Device Information       | System UI           |
+| `0x180F` | Battery Service          | System UI           |
+| `0x1805` | Current Time Service     | System-managed      |
+| `0x1812` | Human Interface Device   | Kernel HID stack    |
 
 Custom 128-bit UUIDs and non-SIG 16-bit UUIDs (e.g., `0xFFFF`) are **not** affected and work
 normally in `CBPeripheralManager`.
@@ -104,7 +104,7 @@ normally in `CBPeripheralManager`.
 
 Apple's documentation for
 [`CBError.Code.uuidNotAllowed`](https://developer.apple.com/documentation/corebluetooth/cberror-swift.struct/code/uuidnotallowed)
-states only: *"The specified UUID isn't permitted"* with the note "Available in OS X v10.9 and
+states only: _"The specified UUID isn't permitted"_ with the note "Available in OS X v10.9 and
 later." Apple provides no list of which UUIDs are blocked or the reason.
 
 The restriction was first reported and confirmed publicly in a
@@ -183,11 +183,11 @@ node packages/host/dist/index.js
 
 **Recommended hardware:**
 
-| Board | Price | Notes |
-|-------|-------|-------|
-| Raspberry Pi Zero 2 W | ~$15 | Ideal — compact, built-in BLE 5.0, WiFi |
-| Raspberry Pi 3B/3B+ | ~$35 | More RAM, better for development |
-| Any Linux box with Bluetooth | — | Works if it has a BLE adapter |
+| Board                        | Price | Notes                                   |
+| ---------------------------- | ----- | --------------------------------------- |
+| Raspberry Pi Zero 2 W        | ~$15  | Ideal — compact, built-in BLE 5.0, WiFi |
+| Raspberry Pi 3B/3B+          | ~$35  | More RAM, better for development        |
+| Any Linux box with Bluetooth | —     | Works if it has a BLE adapter           |
 
 **Resulting architecture:**
 
@@ -203,6 +203,7 @@ The Pi sits near whoever has the physical tower. Remote players connect to the r
 WebSocket. The Mac/PC runs the Electron client only — no BLE peripheral needed on the Mac.
 
 **References:**
+
 - [bleno on Raspberry Pi — original README](https://github.com/noble/bleno#readme)
 - [Node.js on Raspberry Pi — official guide](https://nodejs.org/en/download)
 
@@ -218,12 +219,12 @@ HCI connection to it via a serial port — bypassing CoreBluetooth entirely.
 
 **Compatible hardware:**
 
-| Device | Price | Notes |
-|--------|-------|-------|
-| Nordic nRF52840 DK | ~$40 | Official dev kit; well-tested with HCI UART |
-| Adafruit nRF52840 Feather | ~$25 | Compact; needs HCI UART firmware flashing |
-| Nordic nRF52840 Dongle (PCA10059) | ~$10 | USB dongle form factor; needs firmware |
-| ESP32-S3 board | ~$10 | Flash with Apache Mynewt/NimBLE HCI UART |
+| Device                            | Price | Notes                                       |
+| --------------------------------- | ----- | ------------------------------------------- |
+| Nordic nRF52840 DK                | ~$40  | Official dev kit; well-tested with HCI UART |
+| Adafruit nRF52840 Feather         | ~$25  | Compact; needs HCI UART firmware flashing   |
+| Nordic nRF52840 Dongle (PCA10059) | ~$10  | USB dongle form factor; needs firmware      |
+| ESP32-S3 board                    | ~$10  | Flash with Apache Mynewt/NimBLE HCI UART    |
 
 **Configuration in this project:**
 
@@ -239,6 +240,7 @@ the CoreBluetooth (`'mac'`) binding to the HCI UART (`'hci'`) binding. No code c
 needed in `FakeTower` or any other module.
 
 **References:**
+
 - [@stoprocent/node-bluetooth-hci-socket README](https://github.com/stoprocent/node-bluetooth-hci-socket)
 - [nRF52840 HCI UART firmware guide — Nordic DevZone](https://developer.nordicsemi.com)
 - [bleno resolve-bindings.js — HCI env var detection](../packages/host/node_modules/@stoprocent/bleno/lib/resolve-bindings.js)
@@ -254,6 +256,7 @@ for this purpose. The macOS `IOBluetoothFamily` kext claims the device immediate
 no supported way for userspace to open a competing HCI socket.
 
 Technically possible workarounds (not recommended):
+
 - Disable SIP and unload `IOBluetoothFamily` for the specific device — fragile, unsupported,
   breaks other Bluetooth functionality
 - Use a Linux VM with USB passthrough — the dongle would appear as a Linux HCI device inside the
@@ -271,6 +274,7 @@ In testing, a game session that already passed firmware validation on the real t
 continue after reconnecting to FakeTower on macOS, without re-triggering the firmware gate.
 
 **Observed sequence that worked:**
+
 1. Start the official companion app and connect to the real tower.
 2. Begin a game so initial tower validation completes.
 3. Turn off the real tower.
@@ -281,6 +285,7 @@ If the app remains in an active gameplay state, it may skip re-checking the Devi
 Service and proceed with in-session commands.
 
 **Important limitations:**
+
 - This is not guaranteed across all app states or versions.
 - Starting a new game, force-closing the app, or ending the session may re-run full validation and
   fail again on macOS.
@@ -294,16 +299,17 @@ Service and proceed with in-session commands.
 The macOS restriction only affects the BLE peripheral role. All of the following continue to work
 normally on Mac:
 
-| Component | Status on Mac | Notes |
-|-----------|--------------|-------|
-| `RelayServer` (WebSocket) | Fully functional | No BLE involvement |
-| Electron client UI | Fully functional | Relay client only |
-| `captureTower.ts` script | Fully functional | Uses noble (BLE central) — no peripheral restrictions |
-| Shared protocol (`@dark-tower-sync/shared`) | Fully functional | Platform-agnostic |
-| UART service in FakeTower | Works on Mac | Only DIS fails |
-| WebSocket relay end-to-end testing | Fully functional | Use `wscat` or the Electron client |
+| Component                                   | Status on Mac    | Notes                                                 |
+| ------------------------------------------- | ---------------- | ----------------------------------------------------- |
+| `RelayServer` (WebSocket)                   | Fully functional | No BLE involvement                                    |
+| Electron client UI                          | Fully functional | Relay client only                                     |
+| `captureTower.ts` script                    | Fully functional | Uses noble (BLE central) — no peripheral restrictions |
+| Shared protocol (`@dark-tower-sync/shared`) | Fully functional | Platform-agnostic                                     |
+| UART service in FakeTower                   | Works on Mac     | Only DIS fails                                        |
+| WebSocket relay end-to-end testing          | Fully functional | Use `wscat` or the Electron client                    |
 
 The recommended development workflow on Mac is:
+
 1. Develop and test the relay server, Electron client, and protocol on Mac
 2. Deploy `packages/host` to a Raspberry Pi for end-to-end BLE testing
 3. Use `npm run capture -w packages/host` on Mac with the real tower for protocol research
@@ -312,14 +318,14 @@ The recommended development workflow on Mac is:
 
 ## Supporting References
 
-| Resource | URL | Relevance |
-|----------|-----|-----------|
-| Apple — `CBError.Code.uuidNotAllowed` | https://developer.apple.com/documentation/corebluetooth/cberror-swift.struct/code/uuidnotallowed | Official error documentation |
-| Apple Developer Forums — thread 103557 | https://developer.apple.com/forums/thread/103557 | Original developer report |
-| Apple Developer Forums — HID over GATT | https://developer.apple.com/forums/thread/70979 | Confirms iOS/macOS restriction |
-| noble/bleno Issue #133 | https://github.com/noble/bleno/issues/133 | First public acknowledgement (2015); full list of blocked UUIDs |
-| GitHub Gist — CoreBluetooth HID Peripheral | https://gist.github.com/conath/c606d95d58bbcb50e9715864eeeecf07 | 128-bit UUID workaround analysis |
-| @stoprocent/bleno on npm | https://www.npmjs.com/package/@stoprocent/bleno | Library in use; macOS restriction unresolved |
-| stoprocent/node-bluetooth-hci-socket | https://github.com/stoprocent/node-bluetooth-hci-socket | UART HCI transport (Option B) |
-| Google Bumble Issue #97 | https://github.com/google/bumble/issues/97 | macOS HCI access deep-dive |
-| Hacking IOBluetooth (blog) | https://colemancda.github.io/2018/03/25/Hacking-IOBluetooth | Technical analysis of macOS Bluetooth stack |
+| Resource                                   | URL                                                                                              | Relevance                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| Apple — `CBError.Code.uuidNotAllowed`      | https://developer.apple.com/documentation/corebluetooth/cberror-swift.struct/code/uuidnotallowed | Official error documentation                                    |
+| Apple Developer Forums — thread 103557     | https://developer.apple.com/forums/thread/103557                                                 | Original developer report                                       |
+| Apple Developer Forums — HID over GATT     | https://developer.apple.com/forums/thread/70979                                                  | Confirms iOS/macOS restriction                                  |
+| noble/bleno Issue #133                     | https://github.com/noble/bleno/issues/133                                                        | First public acknowledgement (2015); full list of blocked UUIDs |
+| GitHub Gist — CoreBluetooth HID Peripheral | https://gist.github.com/conath/c606d95d58bbcb50e9715864eeeecf07                                  | 128-bit UUID workaround analysis                                |
+| @stoprocent/bleno on npm                   | https://www.npmjs.com/package/@stoprocent/bleno                                                  | Library in use; macOS restriction unresolved                    |
+| stoprocent/node-bluetooth-hci-socket       | https://github.com/stoprocent/node-bluetooth-hci-socket                                          | UART HCI transport (Option B)                                   |
+| Google Bumble Issue #97                    | https://github.com/google/bumble/issues/97                                                       | macOS HCI access deep-dive                                      |
+| Hacking IOBluetooth (blog)                 | https://colemancda.github.io/2018/03/25/Hacking-IOBluetooth                                      | Technical analysis of macOS Bluetooth stack                     |

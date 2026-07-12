@@ -396,7 +396,8 @@ describe('TowerStateReadout', () => {
       firstLed!.click();
 
       // Should have advanced to the next effect in the cycle (LIGHT_EFFECTS.on)
-      const expectedNext = EFFECT_CYCLE[(EFFECT_CYCLE.indexOf(LIGHT_EFFECTS.off) + 1) % EFFECT_CYCLE.length];
+      const expectedNext =
+        EFFECT_CYCLE[(EFFECT_CYCLE.indexOf(LIGHT_EFFECTS.off) + 1) % EFFECT_CYCLE.length];
       expect(spy).toHaveBeenCalledWith(0, 0, expectedNext);
     });
 
@@ -405,7 +406,9 @@ describe('TowerStateReadout', () => {
       readout.applyState(makeState()); // all off by default
 
       const getFirstLed = () =>
-        container.querySelector<HTMLButtonElement>('[data-tdr-led][data-layer="0"][data-light="0"]')!;
+        container.querySelector<HTMLButtonElement>(
+          '[data-tdr-led][data-layer="0"][data-light="0"]',
+        )!;
 
       const visited: number[] = [];
       for (let i = 0; i < EFFECT_CYCLE.length; i++) {
@@ -413,7 +416,12 @@ describe('TowerStateReadout', () => {
         const effectValue = EFFECT_CYCLE.indexOf(
           EFFECT_CYCLE.find((v) => {
             const mapped: Record<number, string> = {
-              0: 'off', 1: 'on', 2: 'breathe', 3: 'breathe-fast', 4: 'breathe-50', 5: 'flicker',
+              0: 'off',
+              1: 'on',
+              2: 'breathe',
+              3: 'breathe-fast',
+              4: 'breathe-50',
+              5: 'flicker',
             };
             return mapped[v] === led.getAttribute('data-effect');
           })!,
@@ -447,7 +455,9 @@ describe('TowerStateReadout', () => {
       readout.applyState(makeState()); // layer 0 light 0 = off
 
       const led = () =>
-        container.querySelector<HTMLButtonElement>('[data-tdr-led][data-layer="0"][data-light="0"]')!;
+        container.querySelector<HTMLButtonElement>(
+          '[data-tdr-led][data-layer="0"][data-light="0"]',
+        )!;
 
       led().click(); // off → on
 
@@ -486,7 +496,9 @@ describe('TowerStateReadout', () => {
     it('dispose() clears LED overrides (new instance starts clean)', () => {
       readout.clickToToggleLeds = true;
       readout.applyState(makeState());
-      container.querySelector<HTMLButtonElement>('[data-tdr-led][data-layer="0"][data-light="0"]')!.click();
+      container
+        .querySelector<HTMLButtonElement>('[data-tdr-led][data-layer="0"][data-light="0"]')!
+        .click();
 
       readout.dispose();
 

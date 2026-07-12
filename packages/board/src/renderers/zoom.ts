@@ -19,7 +19,10 @@ export function rectToViewBox(r: Rect): string {
 }
 
 export function viewBoxToRect(s: string): Rect {
-  const [x, y, w, h] = s.trim().split(/[\s,]+/).map(Number);
+  const [x, y, w, h] = s
+    .trim()
+    .split(/[\s,]+/)
+    .map(Number);
   return { x, y, w, h };
 }
 
@@ -50,7 +53,7 @@ export function zoomRect(
   fx: number,
   fy: number,
   factor: number,
-  maxZoom: number
+  maxZoom: number,
 ): Rect {
   const px = current.x + fx * current.w;
   const py = current.y + fy * current.h;

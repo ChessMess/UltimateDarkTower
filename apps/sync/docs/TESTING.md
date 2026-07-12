@@ -25,12 +25,12 @@ TypeScript on the fly.
 
 ## Prerequisites
 
-| Requirement | Minimum | Notes |
-|-------------|---------|-------|
-| Node.js | 18+ | LTS recommended |
-| npm | 7+ | Workspaces support |
-| Dependencies | installed | Run `npm install` at the repo root first |
-| Relay built | yes | `ts-jest` type-checks the relay SDK imports against the relay's built `dist` (see below) |
+| Requirement  | Minimum   | Notes                                                                                    |
+| ------------ | --------- | ---------------------------------------------------------------------------------------- |
+| Node.js      | 18+       | LTS recommended                                                                          |
+| npm          | 7+        | Workspaces support                                                                       |
+| Dependencies | installed | Run `npm install` at the repo root first                                                 |
+| Relay built  | yes       | `ts-jest` type-checks the relay SDK imports against the relay's built `dist` (see below) |
 
 No physical tower, BLE hardware, or browser is needed to run the tests.
 

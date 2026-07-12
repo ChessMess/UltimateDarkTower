@@ -27,7 +27,8 @@ export function EffectListEditor({
   depth = 0,
 }: EffectListEditorProps) {
   const effects = Array.isArray(value) ? value : [];
-  const setAt = (i: number, eff: unknown) => onChange(effects.map((e, idx) => (idx === i ? eff : e)));
+  const setAt = (i: number, eff: unknown) =>
+    onChange(effects.map((e, idx) => (idx === i ? eff : e)));
   const removeAt = (i: number) => onChange(effects.filter((_, idx) => idx !== i));
   const add = () => onChange([...effects, defaultEffect('resource.gain')]);
 

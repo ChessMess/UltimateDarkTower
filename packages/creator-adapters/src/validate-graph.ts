@@ -85,9 +85,7 @@ export function validateGraph(scenario: unknown): L3Result {
           if (!targetId) continue;
           neighbors.push(targetId);
           if (!nodeIds.has(targetId)) {
-            errors.push(
-              `node "${id}" wire "${port}" references nonexistent node id "${targetId}"`,
-            );
+            errors.push(`node "${id}" wire "${port}" references nonexistent node id "${targetId}"`);
           } else {
             const targetKind = kindById.get(targetId);
             if (targetKind !== undefined && ANNOTATION_KINDS.has(targetKind)) {
@@ -120,7 +118,9 @@ export function validateGraph(scenario: unknown): L3Result {
           if (!nodeIds.has(memberId)) {
             errors.push(`node "${id}" props.nodeIds references nonexistent node id "${memberId}"`);
           } else if (kindById.get(memberId) === 'util.group') {
-            errors.push(`node "${id}" props.nodeIds references another util.group "${memberId}" — nested groups are not supported`);
+            errors.push(
+              `node "${id}" props.nodeIds references another util.group "${memberId}" — nested groups are not supported`,
+            );
           }
         }
       }
@@ -179,11 +179,7 @@ const DELTA: Record<Dir, { dc: number; dr: number }> = {
 // entry; the room-node/wiring rules apply ONLY to a dungeon that a dungeon.subflow node references
 // (the Creator auto-syncs those nodes — this is the load-time backstop for hand-edited/imported
 // drift, mirroring the lifecycle.selectHero L2 backstop). A library-only dungeon is not flagged.
-function validateDungeons(
-  s: Record<string, unknown>,
-  rawNodes: unknown[],
-  errors: string[],
-): void {
+function validateDungeons(s: Record<string, unknown>, rawNodes: unknown[], errors: string[]): void {
   const library = obj(s['library']);
   const dungeons = library ? obj(library['dungeons']) : undefined;
   if (!dungeons) return;
@@ -247,18 +243,24 @@ function validateDungeons(
       const pos = cellOf(room);
       if (!pos) continue;
       if (pos.col < 0 || pos.row < 0 || pos.col >= cols || pos.row >= rows) {
-        errors.push(`dungeon "${dId}" room "${rid}" cell (${pos.col},${pos.row}) is outside the ${cols}x${rows} grid`);
+        errors.push(
+          `dungeon "${dId}" room "${rid}" cell (${pos.col},${pos.row}) is outside the ${cols}x${rows} grid`,
+        );
       }
       const key = `${pos.col},${pos.row}`;
       if (roomByCell.has(key)) {
-        errors.push(`dungeon "${dId}" room "${rid}" shares cell (${pos.col},${pos.row}) with another room`);
+        errors.push(
+          `dungeon "${dId}" room "${rid}" shares cell (${pos.col},${pos.row}) with another room`,
+        );
       } else {
         roomByCell.set(key, room);
       }
     }
 
     if (entranceCount !== 1) {
-      errors.push(`dungeon "${dId}" must have exactly one isEntrance room (found ${entranceCount})`);
+      errors.push(
+        `dungeon "${dId}" must have exactly one isEntrance room (found ${entranceCount})`,
+      );
     }
     if (targetCount !== 1) {
       errors.push(`dungeon "${dId}" must have exactly one isTarget room (found ${targetCount})`);
@@ -282,7 +284,9 @@ function validateDungeons(
         const nExits = obj(neighbor['exits']) ?? {};
         if (nExits[OPPOSITE[dir]] !== 'door') {
           const nid = str(neighbor['id']) ?? '?';
-          errors.push(`dungeon "${dId}" room "${rid}" ${dir} door is not reciprocated by room "${nid}" (${OPPOSITE[dir]} door)`);
+          errors.push(
+            `dungeon "${dId}" room "${rid}" ${dir} door is not reciprocated by room "${nid}" (${OPPOSITE[dir]} door)`,
+          );
         }
       }
     }
@@ -313,7 +317,9 @@ function validateDungeons(
       const target = rooms.find((r) => r['isTarget'] === true);
       const targetId = target ? str(target['id']) : undefined;
       if (targetId && !seen.has(targetId)) {
-        errors.push(`dungeon "${dId}" target room "${targetId}" is not reachable from the entrance via doors`);
+        errors.push(
+          `dungeon "${dId}" target room "${targetId}" is not reachable from the entrance via doors`,
+        );
       }
     }
 
@@ -327,7 +333,9 @@ function validateDungeons(
         if (!rid) continue;
         const cands = roomNodesByRoomId.get(rid) ?? [];
         if (cands.length === 0) {
-          errors.push(`dungeon "${dId}" (referenced by a dungeon.subflow) has no dungeon.room node for room "${rid}"`);
+          errors.push(
+            `dungeon "${dId}" (referenced by a dungeon.subflow) has no dungeon.room node for room "${rid}"`,
+          );
         } else {
           nodeForRoom.set(rid, cands[0]);
         }
@@ -346,9 +354,13 @@ function validateDungeons(
           const isDoor = exits[dir] === 'door';
           const wired = arr(wires[dir]) ?? [];
           if (isDoor && wired.length === 0) {
-            errors.push(`dungeon "${dId}" room node "${nodeId}" is missing a ${dir} wire for its ${dir} door`);
+            errors.push(
+              `dungeon "${dId}" room node "${nodeId}" is missing a ${dir} wire for its ${dir} door`,
+            );
           } else if (!isDoor && wired.length > 0) {
-            errors.push(`dungeon "${dId}" room node "${nodeId}" has a ${dir} wire but room "${rid}" has no ${dir} door`);
+            errors.push(
+              `dungeon "${dId}" room node "${nodeId}" has a ${dir} wire but room "${rid}" has no ${dir} door`,
+            );
           }
           if (isDoor && wired.length > 0 && pos) {
             const nb = roomByCell.get(`${pos.col + DELTA[dir].dc},${pos.row + DELTA[dir].dr}`);
@@ -356,7 +368,9 @@ function validateDungeons(
             const expected = nbId ? nodeForRoom.get(nbId) : undefined;
             const expectedNodeId = expected ? str(expected['id']) : undefined;
             if (expectedNodeId && !wired.map(str).includes(expectedNodeId)) {
-              errors.push(`dungeon "${dId}" room node "${nodeId}" ${dir} wire does not target the adjacent room's node "${expectedNodeId}"`);
+              errors.push(
+                `dungeon "${dId}" room node "${nodeId}" ${dir} wire does not target the adjacent room's node "${expectedNodeId}"`,
+              );
             }
           }
         }
@@ -371,7 +385,9 @@ function validateDungeons(
           const wires = obj(sf['wires']) ?? {};
           const enter = (arr(wires['enter']) ?? []).map(str);
           if (!enter.includes(entranceNodeId)) {
-            errors.push(`dungeon.subflow "${sfId}" enter wire must target the entrance room node "${entranceNodeId}" of dungeon "${dId}"`);
+            errors.push(
+              `dungeon.subflow "${sfId}" enter wire must target the entrance room node "${entranceNodeId}" of dungeon "${dId}"`,
+            );
           }
         }
       }

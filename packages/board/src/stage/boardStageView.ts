@@ -102,7 +102,12 @@ interface StageElements {
   dragHost: HTMLDivElement;
   kingdomHost: HTMLDivElement;
   allHost: HTMLDivElement;
-  pills: { d2: HTMLButtonElement; d3: HTMLButtonElement; d2d3: HTMLButtonElement; pip: HTMLButtonElement };
+  pills: {
+    d2: HTMLButtonElement;
+    d3: HTMLButtonElement;
+    d2d3: HTMLButtonElement;
+    pip: HTMLButtonElement;
+  };
   swap: HTMLButtonElement;
   popOut: HTMLButtonElement;
   towerBtn: HTMLButtonElement;
@@ -166,14 +171,15 @@ export class BoardStageView {
     // share one look and fill the toolbar row: Spin/Pan, then N/E/S/W, then All in its
     // own trailing group (the angle/Overhead-Isometric toggle is a 3D-camera concept and
     // deliberately not shown on the 2D-anchored bar).
-    this.currentDrag = (this.storage.read('dragMode') as DragMode | null) ?? options.dragMode ?? 'rotate';
+    this.currentDrag =
+      (this.storage.read('dragMode') as DragMode | null) ?? options.dragMode ?? 'rotate';
     this.dragModeBar = createSegmented<DragMode>(
       this.els.dragHost,
       [
         { key: 'rotate', label: 'Spin' },
         { key: 'pan', label: 'Pan' },
       ],
-      (mode) => this.setDragMode(mode)
+      (mode) => this.setDragMode(mode),
     );
     this.kingdomBar = createSegmented<BoardKingdom>(
       this.els.kingdomHost,
@@ -183,12 +189,10 @@ export class BoardStageView {
         { key: 'south', label: 'S' },
         { key: 'west', label: 'W' },
       ],
-      (kingdom) => this.focusKingdom(kingdom)
+      (kingdom) => this.focusKingdom(kingdom),
     );
-    this.allBar = createSegmented<'all'>(
-      this.els.allHost,
-      [{ key: 'all', label: 'All' }],
-      () => this.focusKingdom('all')
+    this.allBar = createSegmented<'all'>(this.els.allHost, [{ key: 'all', label: 'All' }], () =>
+      this.focusKingdom('all'),
     );
     this.reflectKingdom(this.view.focus.kingdom);
 
@@ -204,12 +208,14 @@ export class BoardStageView {
     }
 
     // Display-mode switcher.
-    const wantTower = options.tower3D === true || (options.tower3D !== false && Boolean(options.modelUrl));
+    const wantTower =
+      options.tower3D === true || (options.tower3D !== false && Boolean(options.modelUrl));
     const initialMode: DisplayMode = options.defaultMode ?? (wantTower ? 'pip-3dbig' : '2d');
     this.displayMode = createDisplayMode(this.els, {
       initial: initialMode,
       storage: this.storage,
-      applyPipInset: () => applyPipInset([this.els.pane2d, this.els.pane3d], this.els.panel, this.storage),
+      applyPipInset: () =>
+        applyPipInset([this.els.pane2d, this.els.pane3d], this.els.panel, this.storage),
       onChange: (mode) => options.onModeChange?.(mode),
     });
     enablePipInteractions([this.els.pane2d, this.els.pane3d], this.els.panel, this.storage);
@@ -234,7 +240,10 @@ export class BoardStageView {
     // Optional tower on/off button (off by default — the mode pills already cover
     // showing/hiding the 3D view; this is an opt-in for apps that want to unload it).
     this.els.towerBtn.hidden = !(options.towerToggle ?? false);
-    this.els.towerBtn.addEventListener('click', () => void this.setTowerEnabled(!this.towerEnabled));
+    this.els.towerBtn.addEventListener(
+      'click',
+      () => void this.setTowerEnabled(!this.towerEnabled),
+    );
 
     // Push controller changes into the 3D tower (the 2D map + readout are handled by
     // the inner BoardRenderView). The host drives its own readout/JSON off `.controller`.

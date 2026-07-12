@@ -1,4 +1,12 @@
-import { overlay, panel, dialogTitle, dialogBody, buttonRow, secondaryBtn, primaryDialogBtn } from '../components/modal';
+import {
+  overlay,
+  panel,
+  dialogTitle,
+  dialogBody,
+  buttonRow,
+  secondaryBtn,
+  primaryDialogBtn,
+} from '../components/modal';
 
 interface Props {
   title: string;

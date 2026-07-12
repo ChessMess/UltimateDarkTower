@@ -1,6 +1,6 @@
 # Troubleshooting
 
-*Docs: [Index](README.md) > Operator / Integrator > Troubleshooting*
+_Docs: [Index](README.md) > Operator / Integrator > Troubleshooting_
 
 Operational fixes for running the relay host and connecting consumers. For setup steps see
 [SETUP.md](SETUP.md); for the design see [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -87,7 +87,7 @@ There's no stable global `WebSocket` in Node before v22. Pass one in:
 
 ```ts
 import { WebSocket } from 'ws';
-new RelayClient({ webSocketImpl: WebSocket, /* … */ });
+new RelayClient({ webSocketImpl: WebSocket /* … */ });
 ```
 
 ### A participant's local tower doesn't mirror commands

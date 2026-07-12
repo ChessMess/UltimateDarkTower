@@ -30,21 +30,20 @@ export class GroundDiscManager {
    * are ignored if the disc already exists. Must be called after the model
    * is loaded so that modelRadius and modelBottomY are accurate.
    */
-  build(
-    modelRadius: number,
-    modelBottomY: number,
-    lighting: ResolvedLightingConfig,
-  ): void {
+  build(modelRadius: number, modelBottomY: number, lighting: ResolvedLightingConfig): void {
     if (this.disc) return;
 
     const { roughness, metalness, radiusFactor } = lighting.groundDisc;
     const { thicknessFactor, edgeColor, bottomCap } = lighting.boardDisc;
     const h = Math.max(modelRadius * thicknessFactor, 1e-4);
-    const geom = new THREE.CylinderGeometry(modelRadius * radiusFactor, modelRadius * radiusFactor, h, 64);
+    const geom = new THREE.CylinderGeometry(
+      modelRadius * radiusFactor,
+      modelRadius * radiusFactor,
+      h,
+      64,
+    );
 
-    const boardTex = lighting.boardDisc.enabled
-      ? this.ensureBoardTexture(lighting)
-      : null;
+    const boardTex = lighting.boardDisc.enabled ? this.ensureBoardTexture(lighting) : null;
 
     const emissive = new THREE.Color(0xffe8c8);
     const emissiveIntensity = lighting.groundDisc.undersideLightIntensity;
@@ -59,18 +58,18 @@ export class GroundDiscManager {
     });
     const topMat = boardTex
       ? new THREE.MeshStandardMaterial({
-        map: boardTex,
-        color: new THREE.Color().setScalar(lighting.boardDisc.brightness),
-        roughness: 0.95,
-        metalness: 0,
-        opacity: lighting.boardDisc.opacity,
-        transparent: lighting.boardDisc.opacity < 1,
-      })
+          map: boardTex,
+          color: new THREE.Color().setScalar(lighting.boardDisc.brightness),
+          roughness: 0.95,
+          metalness: 0,
+          opacity: lighting.boardDisc.opacity,
+          transparent: lighting.boardDisc.opacity < 1,
+        })
       : new THREE.MeshStandardMaterial({
-        color: lighting.groundDisc.color,
-        roughness,
-        metalness,
-      });
+          color: lighting.groundDisc.color,
+          roughness,
+          metalness,
+        });
     const bottomMat = new THREE.MeshStandardMaterial({
       color: edgeColor,
       roughness: 0.85,
@@ -103,10 +102,7 @@ export class GroundDiscManager {
   }
 
   /** Toggle the board texture on the disc. */
-  setBoardDiscEnabled(
-    enabled: boolean,
-    lighting: ResolvedLightingConfig,
-  ): void {
+  setBoardDiscEnabled(enabled: boolean, lighting: ResolvedLightingConfig): void {
     if (!this.disc) return;
     const mats = this.disc.material as THREE.MeshStandardMaterial[];
     const topMat = mats[1];
@@ -209,7 +205,6 @@ export class GroundDiscManager {
       64,
     );
     this.disc.position.y = modelBottomY - modelRadius * 0.002 - h / 2;
-
   }
 
   dispose(): void {
@@ -242,9 +237,7 @@ export class GroundDiscManager {
    * the image resolves, the material's map is swapped live.
    * For `'procedural'`: always returns the procedural canvas texture.
    */
-  private ensureBoardTexture(
-    lighting: ResolvedLightingConfig,
-  ): THREE.Texture | null {
+  private ensureBoardTexture(lighting: ResolvedLightingConfig): THREE.Texture | null {
     const source = lighting.boardDisc.source;
 
     if (source === 'image' && !this.imageLoadFailed) {
@@ -283,10 +276,7 @@ export class GroundDiscManager {
     });
   }
 
-  private swapMaterialMap(
-    tex: THREE.Texture,
-    lighting: ResolvedLightingConfig,
-  ): void {
+  private swapMaterialMap(tex: THREE.Texture, lighting: ResolvedLightingConfig): void {
     if (!this.disc) return;
     if (!lighting.boardDisc.enabled) return;
     if (lighting.boardDisc.source !== 'image') return;

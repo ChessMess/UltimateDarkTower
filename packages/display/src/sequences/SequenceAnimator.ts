@@ -48,11 +48,7 @@ export class SequenceAnimator {
 
     const json = JSON_SEQUENCE_DATA.get(sequenceId);
     if (!json) return false;
-    const timeline = SequencePlayer.build(
-      json,
-      this.deps,
-      this.wrapComplete(onComplete),
-    );
+    const timeline = SequencePlayer.build(json, this.deps, this.wrapComplete(onComplete));
     if (!timeline) return false;
     this.currentSequenceId = sequenceId;
     this.currentTimeline = timeline;
@@ -86,7 +82,12 @@ export class SequenceAnimator {
     const timeline = SequencePlayer.build(
       json,
       this.deps,
-      this.wrapComplete(onComplete ?? (() => { /* no-op */ })),
+      this.wrapComplete(
+        onComplete ??
+          (() => {
+            /* no-op */
+          }),
+      ),
     );
     if (!timeline) return false;
     this.currentSequenceId = sequenceId;

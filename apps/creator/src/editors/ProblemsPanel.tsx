@@ -5,7 +5,14 @@ export function ProblemsPanel() {
 
   if (!validationResults) {
     return (
-      <div style={{ padding: '6px 12px', color: 'var(--c-text-faint)', fontSize: 11, fontStyle: 'italic' }}>
+      <div
+        style={{
+          padding: '6px 12px',
+          color: 'var(--c-text-faint)',
+          fontSize: 11,
+          fontStyle: 'italic',
+        }}
+      >
         No scenario loaded
       </div>
     );
@@ -16,7 +23,9 @@ export function ProblemsPanel() {
 
   if (allOk) {
     return (
-      <div style={{ padding: '6px 12px', color: 'var(--c-success)', fontSize: 12, fontWeight: 600 }}>
+      <div
+        style={{ padding: '6px 12px', color: 'var(--c-success)', fontSize: 12, fontWeight: 600 }}
+      >
         ✓ All validation layers pass — Export is enabled
       </div>
     );
@@ -35,9 +44,7 @@ export function ProblemsPanel() {
   ) {
     if (result.ok) {
       return (
-        <span style={{ fontSize: 11, color: 'var(--c-success)', marginRight: 12 }}>
-          {level} ✓
-        </span>
+        <span style={{ fontSize: 11, color: 'var(--c-success)', marginRight: 12 }}>{level} ✓</span>
       );
     }
     return (

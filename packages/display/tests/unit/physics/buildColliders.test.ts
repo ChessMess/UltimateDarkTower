@@ -16,9 +16,9 @@ describe('buildStaticColliderSpecs', () => {
     const { drumWalls } = buildStaticColliderSpecs(opts(1));
 
     expect(drumWalls).toHaveLength(3);
-    expect(drumWalls.map(w => w.level)).toEqual(['top', 'middle', 'bottom']);
+    expect(drumWalls.map((w) => w.level)).toEqual(['top', 'middle', 'bottom']);
 
-    expect(drumWalls[0].y).toBeCloseTo(DRUM_ROW_Y_FACTORS.top);    // 0.83
+    expect(drumWalls[0].y).toBeCloseTo(DRUM_ROW_Y_FACTORS.top); // 0.83
     expect(drumWalls[1].y).toBeCloseTo(DRUM_ROW_Y_FACTORS.middle); // 0.53
     expect(drumWalls[2].y).toBeCloseTo(DRUM_ROW_Y_FACTORS.bottom); // 0.23
   });

@@ -1070,12 +1070,7 @@
       "Southern Wastes",
       "The Cloister"
     ],
-    "Bone Hills": [
-      "Archmont",
-      "Azkol's Bane",
-      "Southern Wastes",
-      "The Emerald Expanse"
-    ],
+    "Bone Hills": ["Archmont", "Azkol's Bane", "Southern Wastes", "The Emerald Expanse"],
     "Little Sister": [
       "Archmont",
       "Middle Sister",
@@ -1107,34 +1102,11 @@
       "Three Rivers",
       "Ulamel's Hollow"
     ],
-    "Southern Wastes": [
-      "Archmont",
-      "Bone Hills",
-      "Little Sister",
-      "Ulamel's Hollow"
-    ],
-    "Ulamel's Hollow": [
-      "Little Sister",
-      "Middle Sister",
-      "Pine Barrens",
-      "Southern Wastes"
-    ],
-    "Pine Barrens": [
-      "Middle Sister",
-      "Three Rivers",
-      "Ulamel's Hollow"
-    ],
-    "Plains of Woldra": [
-      "Anza",
-      "Idran Forest",
-      "Lost Lands",
-      "Mountains of the Watchers"
-    ],
-    "Lost Lands": [
-      "Mountains of the Watchers",
-      "Plains of Woldra",
-      "The Emerald Expanse"
-    ],
+    "Southern Wastes": ["Archmont", "Bone Hills", "Little Sister", "Ulamel's Hollow"],
+    "Ulamel's Hollow": ["Little Sister", "Middle Sister", "Pine Barrens", "Southern Wastes"],
+    "Pine Barrens": ["Middle Sister", "Three Rivers", "Ulamel's Hollow"],
+    "Plains of Woldra": ["Anza", "Idran Forest", "Lost Lands", "Mountains of the Watchers"],
+    "Lost Lands": ["Mountains of the Watchers", "Plains of Woldra", "The Emerald Expanse"],
     "Weeping Waters": [
       "Anza",
       "Hissing Groves",
@@ -1143,12 +1115,7 @@
       "The Empty Glade",
       "Yellowpike"
     ],
-    "Anza": [
-      "Idran Forest",
-      "Plains of Woldra",
-      "Weeping Waters",
-      "Yellowpike"
-    ],
+    "Anza": ["Idran Forest", "Plains of Woldra", "Weeping Waters", "Yellowpike"],
     "Hissing Groves": [
       "Ash Hills",
       "Cloudhold",
@@ -1173,23 +1140,9 @@
       "Weeping Waters",
       "Yellowpike"
     ],
-    "Yellowpike": [
-      "Anza",
-      "Arkartus",
-      "The Empty Glade",
-      "Weeping Waters"
-    ],
-    "Arkartus": [
-      "Delmsmire",
-      "The Empty Glade",
-      "Yellowpike"
-    ],
-    "Delmsmire": [
-      "Arkartus",
-      "Cloudhold",
-      "Plains of Plovo",
-      "The Empty Glade"
-    ],
+    "Yellowpike": ["Anza", "Arkartus", "The Empty Glade", "Weeping Waters"],
+    "Arkartus": ["Delmsmire", "The Empty Glade", "Yellowpike"],
+    "Delmsmire": ["Arkartus", "Cloudhold", "Plains of Plovo", "The Empty Glade"],
     "Cloudhold": [
       "Ash Hills",
       "Broken Lands",
@@ -1198,12 +1151,7 @@
       "Plains of Plovo",
       "The Empty Glade"
     ],
-    "Plains of Plovo": [
-      "Broken Lands",
-      "Cloudhold",
-      "Delmsmire",
-      "Lodestone Mountains"
-    ],
+    "Plains of Plovo": ["Broken Lands", "Cloudhold", "Delmsmire", "Lodestone Mountains"],
     "Lodestone Mountains": [
       "Broken Lands",
       "Pearl of the North",
@@ -1241,11 +1189,7 @@
       "Muted Forest",
       "Pearl of the North"
     ],
-    "Pearl of the North": [
-      "Fivepint",
-      "Lodestone Mountains",
-      "Radiant Mountains"
-    ],
+    "Pearl of the North": ["Fivepint", "Lodestone Mountains", "Radiant Mountains"],
     "Green Bridge": [
       "Dayside",
       "Fivepint",
@@ -1254,18 +1198,8 @@
       "Radiant Mountains",
       "Upper Ice Fangs"
     ],
-    "Fivepint": [
-      "Dayside",
-      "Green Bridge",
-      "Pearl of the North",
-      "Radiant Mountains"
-    ],
-    "Dayside": [
-      "Fivepint",
-      "Green Bridge",
-      "Lower Ice Fangs",
-      "The Tundra"
-    ],
+    "Fivepint": ["Dayside", "Green Bridge", "Pearl of the North", "Radiant Mountains"],
+    "Dayside": ["Fivepint", "Green Bridge", "Lower Ice Fangs", "The Tundra"],
     "Upper Ice Fangs": [
       "Bleak Wastes",
       "Green Bridge",
@@ -1305,23 +1239,9 @@
       "Peaks of the Djinn",
       "The Tundra"
     ],
-    "Egan's End": [
-      "Outer Kinghills",
-      "Rimeweald",
-      "The Tundra"
-    ],
-    "The Tundra": [
-      "Dayside",
-      "Egan's End",
-      "Lower Ice Fangs",
-      "Rimeweald"
-    ],
-    "Outer Kinghills": [
-      "Copper Grove",
-      "Egan's End",
-      "Inner Kinghills",
-      "Rimeweald"
-    ],
+    "Egan's End": ["Outer Kinghills", "Rimeweald", "The Tundra"],
+    "The Tundra": ["Dayside", "Egan's End", "Lower Ice Fangs", "Rimeweald"],
+    "Outer Kinghills": ["Copper Grove", "Egan's End", "Inner Kinghills", "Rimeweald"],
     "Inner Kinghills": [
       "Copper Grove",
       "Dragontooth Lake",
@@ -1330,12 +1250,7 @@
       "Rimeweald",
       "The Decaying Wilds"
     ],
-    "Copper Grove": [
-      "Inner Kinghills",
-      "Jewel Hills",
-      "Outer Kinghills",
-      "The Decaying Wilds"
-    ],
+    "Copper Grove": ["Inner Kinghills", "Jewel Hills", "Outer Kinghills", "The Decaying Wilds"],
     "The Decaying Wilds": [
       "Copper Grove",
       "Dragontooth Lake",
@@ -1360,12 +1275,7 @@
       "The Decaying Wilds",
       "Utar's Barrows"
     ],
-    "Jewel Hills": [
-      "Copper Grove",
-      "Duwani",
-      "The Decaying Wilds",
-      "Utar's Barrows"
-    ],
+    "Jewel Hills": ["Copper Grove", "Duwani", "The Decaying Wilds", "Utar's Barrows"],
     "Utar's Barrows": [
       "Duwani",
       "Greater Tombstones",
@@ -1374,11 +1284,7 @@
       "Lesser Tombstones",
       "The Decaying Wilds"
     ],
-    "Duwani": [
-      "Jewel Hills",
-      "Lake of Songs",
-      "Utar's Barrows"
-    ],
+    "Duwani": ["Jewel Hills", "Lake of Songs", "Utar's Barrows"],
     "Lesser Tombstones": [
       "Big Sister",
       "Greater Tombstones",
@@ -1387,17 +1293,7 @@
       "Three Rivers",
       "Utar's Barrows"
     ],
-    "Lake of Songs": [
-      "Duwani",
-      "Lesser Tombstones",
-      "Three Rivers",
-      "Utar's Barrows"
-    ],
-    "Three Rivers": [
-      "Lake of Songs",
-      "Lesser Tombstones",
-      "Middle Sister",
-      "Pine Barrens"
-    ]
+    "Lake of Songs": ["Duwani", "Lesser Tombstones", "Three Rivers", "Utar's Barrows"],
+    "Three Rivers": ["Lake of Songs", "Lesser Tombstones", "Middle Sister", "Pine Barrens"]
   }
 }

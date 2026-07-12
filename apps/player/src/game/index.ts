@@ -5,7 +5,13 @@
 import Ajv from 'ajv/dist/2020';
 import addFormats from 'ajv-formats';
 import { scenarioSchema } from '@udtc/schema';
-import { validateRefs, validateGraph, createBoardAdapter, createDisplayAdapter, createResolver } from '@udtc/adapters';
+import {
+  validateRefs,
+  validateGraph,
+  createBoardAdapter,
+  createDisplayAdapter,
+  createResolver,
+} from '@udtc/adapters';
 import type { BoardState } from '@udtc/adapters';
 import { init, step, deserialize, ENGINE_VERSION } from '@udtc/engine';
 import type { Input, Directive, StepResult, EngineState } from '@udtc/engine';
@@ -99,7 +105,8 @@ function relay(): RelayClient {
       onConnStateChange: (state) => {
         usePlayerStore.getState().setRelayConnState(state);
         if (state === 'connected') usePlayerStore.getState().addLog('Relay connected');
-        if (state === 'disconnected') usePlayerStore.getState().addLog('Relay disconnected — reconnecting…');
+        if (state === 'disconnected')
+          usePlayerStore.getState().addLog('Relay disconnected — reconnecting…');
         if (state === 'resyncing') usePlayerStore.getState().addLog('Relay resyncing…');
       },
     });
@@ -231,27 +238,57 @@ export function validateScenario(doc: unknown): ValidationResults {
     : (fn.errors ?? []).map((e) => `${e.instancePath || '/'} ${e.message ?? 'invalid'}`);
 
   if (!l1Ok) {
-    return { l1: { ok: false, errors: l1Errors }, l2: { ok: false, errors: ['L1 must pass'] }, l3: { ok: false, errors: ['L1 must pass'] }, l4: { ok: false, errors: [] }, allOk: false };
+    return {
+      l1: { ok: false, errors: l1Errors },
+      l2: { ok: false, errors: ['L1 must pass'] },
+      l3: { ok: false, errors: ['L1 must pass'] },
+      l4: { ok: false, errors: [] },
+      allOk: false,
+    };
   }
 
   // L2 — reference resolution
   const l2 = validateRefs(doc);
   if (!l2.ok) {
-    return { l1: { ok: true, errors: [] }, l2: { ok: false, errors: l2.errors }, l3: { ok: false, errors: ['L2 must pass'] }, l4: { ok: false, errors: [] }, allOk: false };
+    return {
+      l1: { ok: true, errors: [] },
+      l2: { ok: false, errors: l2.errors },
+      l3: { ok: false, errors: ['L2 must pass'] },
+      l4: { ok: false, errors: [] },
+      allOk: false,
+    };
   }
 
   // L3 — graph semantics
   const l3 = validateGraph(doc);
   if (!l3.ok) {
-    return { l1: { ok: true, errors: [] }, l2: { ok: true, errors: [] }, l3: { ok: false, errors: l3.errors }, l4: { ok: false, errors: [] }, allOk: false };
+    return {
+      l1: { ok: true, errors: [] },
+      l2: { ok: true, errors: [] },
+      l3: { ok: false, errors: l3.errors },
+      l4: { ok: false, errors: [] },
+      allOk: false,
+    };
   }
 
   // L4 — engine.init (structural simulation check)
   try {
     init(doc, { seed: PLAYER_SEED, playerCount: PLAYER_COUNT });
-    return { l1: { ok: true, errors: [] }, l2: { ok: true, errors: [] }, l3: { ok: true, errors: [] }, l4: { ok: true, errors: [] }, allOk: true };
+    return {
+      l1: { ok: true, errors: [] },
+      l2: { ok: true, errors: [] },
+      l3: { ok: true, errors: [] },
+      l4: { ok: true, errors: [] },
+      allOk: true,
+    };
   } catch (e) {
-    return { l1: { ok: true, errors: [] }, l2: { ok: true, errors: [] }, l3: { ok: true, errors: [] }, l4: { ok: false, errors: [String(e)] }, allOk: false };
+    return {
+      l1: { ok: true, errors: [] },
+      l2: { ok: true, errors: [] },
+      l3: { ok: true, errors: [] },
+      l4: { ok: false, errors: [String(e)] },
+      allOk: false,
+    };
   }
 }
 
@@ -273,7 +310,12 @@ export function loadGame(doc: unknown): void {
   store.setScenario(doc, results);
 
   if (!results.allOk) {
-    const errs = [...results.l1.errors, ...results.l2.errors, ...results.l3.errors, ...results.l4.errors];
+    const errs = [
+      ...results.l1.errors,
+      ...results.l2.errors,
+      ...results.l3.errors,
+      ...results.l4.errors,
+    ];
     store.setValidationError(errs.join('\n'));
     store.addLog(`Validation failed: ${errs[0]}`);
     return;
@@ -281,7 +323,12 @@ export function loadGame(doc: unknown): void {
 
   store.addLog('Validation passed — initialising engine…');
   const initResult = init(doc, { seed: PLAYER_SEED, playerCount: PLAYER_COUNT });
-  store.setEngineResult(initResult.state, initResult.status, initResult.awaiting, initResult.directives);
+  store.setEngineResult(
+    initResult.state,
+    initResult.status,
+    initResult.awaiting,
+    initResult.directives,
+  );
   store.saveCheckpoint(JSON.stringify(initResult.state), []);
   dispatchAll(initResult.directives);
   persistSession();
@@ -343,8 +390,9 @@ function deriveRevealedRooms(state: EngineState): Record<string, string[]> {
   for (const [id, ds] of Object.entries(dungeons)) {
     out[id] = [...(ds.clearedRooms ?? [])];
   }
-  const dc = (state as { clock?: { dungeon?: { dungeonId?: string; currentRoom?: string | null } | null } })
-    .clock?.dungeon;
+  const dc = (
+    state as { clock?: { dungeon?: { dungeonId?: string; currentRoom?: string | null } | null } }
+  ).clock?.dungeon;
   if (dc?.dungeonId && dc.currentRoom) {
     const list = out[dc.dungeonId] ?? [];
     if (!list.includes(dc.currentRoom)) list.push(dc.currentRoom);
@@ -536,10 +584,7 @@ function dispatchDirective(d: Directive): void {
         const doSend = () => {
           _cmdSeq += 1;
           relay().sendCommand(snap.data, _cmdSeq);
-          store.saveCheckpoint(
-            JSON.stringify(usePlayerStore.getState().engineState),
-            snap.data,
-          );
+          store.saveCheckpoint(JSON.stringify(usePlayerStore.getState().engineState), snap.data);
           persistSession();
         };
         if (snap.delayMs === 0) doSend();

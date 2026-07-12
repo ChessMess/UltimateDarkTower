@@ -29,7 +29,15 @@ export interface EffectRowProps {
   depth: number;
 }
 
-export function EffectRow({ effect, ops, onChange, onRemove, deckIds, foeIds, depth }: EffectRowProps) {
+export function EffectRow({
+  effect,
+  ops,
+  onChange,
+  onRemove,
+  deckIds,
+  foeIds,
+  depth,
+}: EffectRowProps) {
   const op = typeof effect.op === 'string' ? effect.op : '';
   const scopeCapped = op === 'hero.scope' && depth >= SCOPE_DEPTH_CAP;
   const structured = hasStructuredForm(op) && !scopeCapped;
@@ -110,9 +118,7 @@ export function EffectRow({ effect, ops, onChange, onRemove, deckIds, foeIds, de
         </div>
       )}
 
-      {showJson && (
-        <JsonField effect={effect} onChange={onChange} />
-      )}
+      {showJson && <JsonField effect={effect} onChange={onChange} />}
     </div>
   );
 }
@@ -155,7 +161,13 @@ function Field({
       </label>
     );
   }
-  if (kind === 'resource' || kind === 'kingdom' || kind === 'foeStatus' || kind === 'deck' || kind === 'foe') {
+  if (
+    kind === 'resource' ||
+    kind === 'kingdom' ||
+    kind === 'foeStatus' ||
+    kind === 'deck' ||
+    kind === 'foe'
+  ) {
     const options =
       kind === 'resource'
         ? [...RESOURCES]
@@ -170,7 +182,11 @@ function Field({
     return (
       <label style={fieldRow}>
         <span style={fieldLabel}>{label}</span>
-        <select value={cur} onChange={(e) => onSet(key, e.target.value, optional)} style={fieldInput}>
+        <select
+          value={cur}
+          onChange={(e) => onSet(key, e.target.value, optional)}
+          style={fieldInput}
+        >
           {optional && <option value="">—</option>}
           {cur !== '' && !options.includes(cur) && <option value={cur}>{cur}</option>}
           {options.map((o) => (
@@ -190,7 +206,9 @@ function Field({
       <input
         type="text"
         value={raw === undefined || raw === null ? '' : String(raw)}
-        onChange={(e) => onSet(key, isFlagValue ? coerceFlagValue(e.target.value) : e.target.value, optional)}
+        onChange={(e) =>
+          onSet(key, isFlagValue ? coerceFlagValue(e.target.value) : e.target.value, optional)
+        }
         style={{ ...fieldInput, flex: 1 }}
       />
     </label>

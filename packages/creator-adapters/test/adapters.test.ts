@@ -236,7 +236,11 @@ describe('validateRefs (L2)', () => {
     });
     const result = validateRefs(bad);
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes('n-hero') && e.includes('not-a-hero') && e.includes('roster'))).toBe(true);
+    expect(
+      result.errors.some(
+        (e) => e.includes('n-hero') && e.includes('not-a-hero') && e.includes('roster'),
+      ),
+    ).toBe(true);
   });
 
   it('rejects a valid UDT hero missing from library.heroes', () => {
@@ -249,7 +253,11 @@ describe('validateRefs (L2)', () => {
     });
     const result = validateRefs(bad);
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes('n-hero') && e.includes('brutal-warlord') && e.includes('library.heroes'))).toBe(true);
+    expect(
+      result.errors.some(
+        (e) => e.includes('n-hero') && e.includes('brutal-warlord') && e.includes('library.heroes'),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -309,8 +317,17 @@ describe('validateGraph (L3)', () => {
   it('accepts unwired util.comment and util.group nodes (exempt from reachability)', () => {
     const ok = structuredClone(golden);
     (ok.graph.nodes as unknown[]).push(
-      { id: 'n-note', kind: 'util.comment', label: 'Setup phase', description: 'Spawns the L2 foe.' },
-      { id: 'n-group', kind: 'util.group', props: { color: '#3D5A80', nodeIds: [golden.graph.nodes[0].id] } },
+      {
+        id: 'n-note',
+        kind: 'util.comment',
+        label: 'Setup phase',
+        description: 'Spawns the L2 foe.',
+      },
+      {
+        id: 'n-group',
+        kind: 'util.group',
+        props: { color: '#3D5A80', nodeIds: [golden.graph.nodes[0].id] },
+      },
     );
     const result = validateGraph(ok);
     expect(result.ok).toBe(true);
@@ -381,7 +398,7 @@ function makeDungeonScenario() {
   const library = doc.library as Record<string, unknown>;
   library.quests = { 'find-relic': { id: 'find-relic', name: 'Find the Relic' } };
   library.dungeons = {
-    'crypt': {
+    crypt: {
       id: 'crypt',
       name: 'The Crypt',
       trait: 'Undead',
@@ -398,9 +415,24 @@ function makeDungeonScenario() {
   // n-tower is terminal in golden; route it into the dungeon so the subflow + rooms are reachable.
   nodes[3].wires = { out: ['n-dsub'] };
   nodes.push(
-    { id: 'n-dsub', kind: 'dungeon.subflow', props: { dungeonId: 'crypt' }, wires: { enter: ['n-room-a'] } },
-    { id: 'n-room-a', kind: 'dungeon.room', props: { roomId: 'room-a' }, wires: { E: ['n-room-b'] } },
-    { id: 'n-room-b', kind: 'dungeon.room', props: { roomId: 'room-b' }, wires: { W: ['n-room-a'] } },
+    {
+      id: 'n-dsub',
+      kind: 'dungeon.subflow',
+      props: { dungeonId: 'crypt' },
+      wires: { enter: ['n-room-a'] },
+    },
+    {
+      id: 'n-room-a',
+      kind: 'dungeon.room',
+      props: { roomId: 'room-a' },
+      wires: { E: ['n-room-b'] },
+    },
+    {
+      id: 'n-room-b',
+      kind: 'dungeon.room',
+      props: { roomId: 'room-b' },
+      wires: { W: ['n-room-a'] },
+    },
   );
   return doc;
 }
@@ -423,7 +455,9 @@ describe('dungeon L2 references', () => {
 
   it('rejects a dungeon spawningQuestId with no matching library.quests entry', () => {
     const bad = makeDungeonScenario();
-    ((bad.library as Record<string, unknown>).dungeons as Record<string, Record<string, unknown>>).crypt.spawningQuestId = 'ghost-quest';
+    (
+      (bad.library as Record<string, unknown>).dungeons as Record<string, Record<string, unknown>>
+    ).crypt.spawningQuestId = 'ghost-quest';
     const result = validateRefs(bad);
     expect(result.ok).toBe(false);
     expect(result.errors.some((e) => e.includes('crypt') && e.includes('ghost-quest'))).toBe(true);
@@ -432,7 +466,8 @@ describe('dungeon L2 references', () => {
 
 describe('dungeon L3 structural + graph checks', () => {
   const dungeonOf = (doc: Record<string, unknown>) =>
-    ((doc.library as Record<string, unknown>).dungeons as Record<string, Record<string, unknown>>).crypt;
+    ((doc.library as Record<string, unknown>).dungeons as Record<string, Record<string, unknown>>)
+      .crypt;
   const roomsOf = (doc: Record<string, unknown>) =>
     dungeonOf(doc).rooms as Array<Record<string, unknown>>;
 
@@ -479,7 +514,9 @@ describe('dungeon L3 structural + graph checks', () => {
     roomsOf(bad)[1].exits = {}; // room-b no longer has the reciprocal W door
     const result = validateGraph(bad);
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes('reciprocated') || e.includes('facing no room'))).toBe(true);
+    expect(
+      result.errors.some((e) => e.includes('reciprocated') || e.includes('facing no room')),
+    ).toBe(true);
   });
 
   it('rejects a target unreachable from the entrance', () => {
@@ -507,7 +544,9 @@ describe('dungeon L3 structural + graph checks', () => {
     roomsOf(bad)[1].exits = {};
     const result = validateGraph(bad);
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes('no dungeon.room node') && e.includes('room-b'))).toBe(true);
+    expect(
+      result.errors.some((e) => e.includes('no dungeon.room node') && e.includes('room-b')),
+    ).toBe(true);
   });
 
   it('rejects a subflow enter wire that does not target the entrance room node', () => {
@@ -516,7 +555,9 @@ describe('dungeon L3 structural + graph checks', () => {
     nodes.find((n) => n.id === 'n-dsub')!.wires = { enter: ['n-room-b'] };
     const result = validateGraph(bad);
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes('enter wire') && e.includes('n-room-a'))).toBe(true);
+    expect(result.errors.some((e) => e.includes('enter wire') && e.includes('n-room-a'))).toBe(
+      true,
+    );
   });
 
   it('does NOT require room nodes for a library-only dungeon (no referencing subflow)', () => {
@@ -524,7 +565,7 @@ describe('dungeon L3 structural + graph checks', () => {
     // this is the subflow-gated rule that keeps the Creator Problems panel clean before wiring.
     const ok = structuredClone(golden) as Record<string, unknown>;
     (ok.library as Record<string, unknown>).dungeons = {
-      'crypt': {
+      crypt: {
         id: 'crypt',
         name: 'The Crypt',
         trait: 'Undead',

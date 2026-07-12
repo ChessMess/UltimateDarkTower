@@ -115,7 +115,7 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
     // The board mesh is a non-token child of the plugin group (tokens are the pointer set).
     const tokens = tokensOf(registeredTarget());
     const boardMesh = tokens[0]?.parent?.children.find(
-      (c) => c instanceof THREE.Mesh && !tokens.includes(c)
+      (c) => c instanceof THREE.Mesh && !tokens.includes(c),
     );
     expect(boardMesh).toBeInstanceOf(THREE.Mesh);
     discSpy.mockRestore();
@@ -142,12 +142,14 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
     await flushModelLoad();
 
     const target = registeredTarget();
-    const hero = tokensOf(target).find((t) => (t.userData.selection as TokenSelection).kind === 'hero');
+    const hero = tokensOf(target).find(
+      (t) => (t.userData.selection as TokenSelection).kind === 'hero',
+    );
     expect(hero).toBeDefined();
 
     const consumed = target.onPointerDown?.(
       { object: hero } as unknown as THREE.Intersection,
-      {} as PointerEvent
+      {} as PointerEvent,
     );
     expect(consumed).toBe(true); // suppress orbit / side-select
     expect(selections).toEqual([{ kind: 'hero', id: 'h1', location: 'Broken Lands' }]);
@@ -161,7 +163,11 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
 
     // The isometric preset must be applied at startup so the camera matches the UI selection.
     expect(applyCamera).toHaveBeenCalledWith(
-      expect.objectContaining({ elevationFactor: 3, targetHeightFactor: -0.3, distanceFactor: 1.7 })
+      expect.objectContaining({
+        elevationFactor: 3,
+        targetHeightFactor: -0.3,
+        distanceFactor: 1.7,
+      }),
     );
     applyCamera.mockRestore();
   });
@@ -178,7 +184,7 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
     // Verify setFocus applied the overhead camera config (startup also calls applyCameraConfig,
     // so we check the specific overhead call rather than an exact invocation count).
     expect(applyCamera).toHaveBeenCalledWith(
-      expect.objectContaining({ elevationFactor: 9 }) // overhead preset
+      expect.objectContaining({ elevationFactor: 9 }), // overhead preset
     );
     selectSide.mockRestore();
     applyCamera.mockRestore();
@@ -215,7 +221,7 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
     expect(disc).toBeDefined();
     const consumed = spaceTarget.onPointerDown?.(
       { object: disc } as unknown as THREE.Intersection,
-      {} as PointerEvent
+      {} as PointerEvent,
     );
     expect(consumed).toBe(true);
     expect(picked).toEqual(['Dayside']);
@@ -241,7 +247,7 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
 
     const target = registeredTarget();
     const hero = tokensOf(target).find(
-      (t) => (t.userData.selection as TokenSelection).kind === 'hero'
+      (t) => (t.userData.selection as TokenSelection).kind === 'hero',
     ) as THREE.Sprite;
     const base = hero.userData.baseScale as THREE.Vector3;
 

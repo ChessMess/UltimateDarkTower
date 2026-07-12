@@ -128,7 +128,7 @@ export class SystemRandom {
    */
   private getSampleForLargeRange(): number {
     let result = this.internalSample();
-    const negative = (this.internalSample() % 2 === 0);
+    const negative = this.internalSample() % 2 === 0;
     if (negative) {
       result = -result;
     }

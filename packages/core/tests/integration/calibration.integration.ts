@@ -9,7 +9,6 @@
 
 import UltimateDarkTower, { BluetoothPlatform } from '../../src';
 
-
 (async () => {
   const prefix = '[INTEGRATION TEST]';
   const tower = new UltimateDarkTower({ platform: BluetoothPlatform.NODE });
@@ -18,7 +17,9 @@ import UltimateDarkTower, { BluetoothPlatform } from '../../src';
     await tower.connect();
     console.log(`${prefix} Step 2: Connected. Starting calibration...`);
     await tower.calibrate();
-    console.log(`${prefix} Step 3: Calibration command sent. Waiting for completion (up to 60s)...`);
+    console.log(
+      `${prefix} Step 3: Calibration command sent. Waiting for completion (up to 60s)...`,
+    );
     await new Promise<void>((resolve, reject) => {
       tower.onCalibrationComplete = () => {
         console.log(`${prefix} Step 4: Calibration complete!`);

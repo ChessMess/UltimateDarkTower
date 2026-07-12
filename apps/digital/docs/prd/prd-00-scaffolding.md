@@ -25,13 +25,13 @@ painted into a corner. PRD-00 makes both clean from day one.
 
 ## 3. User Stories
 
-- *As the developer*, I can run `npm install && npm run dev` and see the tower + board render in the
+- _As the developer_, I can run `npm install && npm run dev` and see the tower + board render in the
   browser, so I know the libraries are wired correctly.
-- *As the developer*, I can call a `ManualSource` method and watch both the React UI and the 3D scene
+- _As the developer_, I can call a `ManualSource` method and watch both the React UI and the 3D scene
   update, so I trust the state seam before building features on it.
-- *As the developer*, I can run `npm run ci` and have it lint, typecheck, test, and build, so broken
+- _As the developer_, I can run `npm run ci` and have it lint, typecheck, test, and build, so broken
   changes are caught before merge.
-- *As a future contributor*, I can read `_overview.md` + this PRD and understand where new code goes.
+- _As a future contributor_, I can read `_overview.md` + this PRD and understand where new code goes.
 
 ## 4. Functional Requirements
 
@@ -78,7 +78,7 @@ painted into a corner. PRD-00 makes both clean from day one.
 
 - Three-pane layout: tower + board can share the single 3D canvas (`BoardStageView` 3D mode), with the
   player board as a side/bottom panel. On narrow screens, panes stack or become tabs.
-- Wrapping imperative views: the React tree owns *where* the view mounts; the view owns its own canvas
+- Wrapping imperative views: the React tree owns _where_ the view mounts; the view owns its own canvas
   and render loop. Treat the UD view like an "escape hatch" ref, not React-rendered children.
 - Follow the sibling repos' look for parity (they ship `TOWER_DISPLAY_CSS` and example chrome to crib).
 
