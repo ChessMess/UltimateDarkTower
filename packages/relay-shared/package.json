@@ -28,13 +28,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ChessMess/UltimateDarkTowerRelay.git",
-    "directory": "packages/shared"
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "packages/relay-shared"
   },
   "bugs": {
-    "url": "https://github.com/ChessMess/UltimateDarkTowerRelay/issues"
+    "url": "https://github.com/ChessMess/UltimateDarkTower/issues"
   },
-  "homepage": "https://github.com/ChessMess/UltimateDarkTowerRelay#readme",
+  "homepage": "https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/relay-shared#readme",
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/chessmess"

@@ -68,12 +68,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/chessmess/UltimateDarkTower.git"
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "packages/core"
   },
   "bugs": {
-    "url": "https://github.com/chessmess/UltimateDarkTower/issues"
+    "url": "https://github.com/ChessMess/UltimateDarkTower/issues"
   },
-  "homepage": "https://github.com/chessmess/UltimateDarkTower#readme",
+  "homepage": "https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/core#readme",
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=7.0.0"

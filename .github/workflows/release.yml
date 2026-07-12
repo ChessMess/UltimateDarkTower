@@ -1,0 +1,48 @@
+name: Release
+
+# Changesets flow: on push to main, open/update a "Version Packages" PR when
+# changesets exist; when that PR merges (versions bumped, changesets consumed),
+# publish the changed libraries to npm with provenance.
+#
+# REQUIRES npm Trusted Publishing (OIDC) to be configured on npmjs.com for each
+# published package, pointing at this repo + this workflow. Until then, the
+# publish step is a no-op safety failure (no npm auth) — nothing is published.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write # create the version PR and git tags
+  pull-requests: write # open/update the "Version Packages" PR
+  id-token: write # npm provenance / OIDC Trusted Publishing
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install BLE build deps
+        run: sudo apt-get update && sudo apt-get install -y libbluetooth-dev libudev-dev
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create Release PR or publish
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset:version
+          publish: pnpm changeset:publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
