@@ -7,7 +7,7 @@ companion app connects to instead of a real tower. Decoding the app's commands a
 half the job — the relay must also **send back the tower→app return traffic** a real tower would, or the
 companion app's state machine stalls. This doc captures the **echo-response behavior** (the "why" behind the
 code); for the raw 20-byte packet layout itself see the UltimateDarkTower library's
-[TOWER_TECH_NOTES.md](../../UltimateDarkTower/docs/TOWER_TECH_NOTES.md). For the macOS DIS / "checking firmware"
+[TOWER_TECH_NOTES.md](../../packages/core/docs/TOWER_TECH_NOTES.md). For the macOS DIS / "checking firmware"
 limitation and ghost-connection handling, see [MACOS_BLE_PERIPHERAL_LIMITATION.md](MACOS_BLE_PERIPHERAL_LIMITATION.md).
 
 > The synthesis of _player-action_ responses (skull drops, calibration-complete) is a separate concern handled
@@ -72,7 +72,7 @@ timing matters most for the first:
 | Internal timer | `rotationAllDrums` (`0x0f`)  | App uses its own 8–13s timer regardless of the echo                  | Low — the echo arrives during the timer window                                   |
 | Rapid pair     | `flareThenFadeBase` (`0x03`) | Two commands sent 1–31ms apart without waiting                       | None — the echo is ignored for pacing                                            |
 
-See [TOWER_TECH_NOTES.md — Tower Response Behavior](../../UltimateDarkTower/docs/TOWER_TECH_NOTES.md#tower-response-behavior)
+See [TOWER_TECH_NOTES.md — Tower Response Behavior](../../packages/core/docs/TOWER_TECH_NOTES.md#tower-response-behavior)
 for the authoritative reference on transient fields, animation timing, and response types.
 
 ---
@@ -95,4 +95,4 @@ for the authoritative reference on transient fields, animation timing, and respo
 
 **See also:** [PROTOCOL.md](PROTOCOL.md) · [ARCHITECTURE.md](ARCHITECTURE.md) ·
 [MACOS_BLE_PERIPHERAL_LIMITATION.md](MACOS_BLE_PERIPHERAL_LIMITATION.md) ·
-[TOWER_TECH_NOTES.md](../../UltimateDarkTower/docs/TOWER_TECH_NOTES.md)
+[TOWER_TECH_NOTES.md](../../packages/core/docs/TOWER_TECH_NOTES.md)

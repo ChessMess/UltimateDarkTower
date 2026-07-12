@@ -5,7 +5,7 @@ _Docs: [Index](README.md) > Protocol-level developer > Protocol_
 This document describes the WebSocket message protocol between the **relay host** (`packages/core`'s
 `RelayServer`, run by `packages/cli` or `packages/electron`) and connected **consumer clients** (the
 `packages/client` SDK — `RelayClient`). Consumers may be _participants_ (a remote player driving a physical
-tower, e.g. [UltimateDarkTowerSync](../../UltimateDarkTowerSync)) or screen-only _observers_ / digital
+tower, e.g. [UltimateDarkTowerSync](../../apps/sync)) or screen-only _observers_ / digital
 consumers (e.g. a visualizer). The protocol is intentionally a low-churn **superset** of the protocol Sync
 originally defined.
 
@@ -115,7 +115,7 @@ it for display.
 > tower characteristic.
 >
 > **Packet format:** For the full byte-by-byte layout (drum positions, LED effects, audio, beam break counter,
-> volume) see [UltimateDarkTower TOWER_TECH_NOTES.md](../../UltimateDarkTower/docs/TOWER_TECH_NOTES.md#command-packet-structure-documentation).
+> volume) see [UltimateDarkTower TOWER_TECH_NOTES.md](../../packages/core/docs/TOWER_TECH_NOTES.md#command-packet-structure-documentation).
 
 ---
 

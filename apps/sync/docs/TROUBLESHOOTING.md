@@ -2,9 +2,9 @@
 
 Common issues and recovery steps during a live game session. DarkTowerSync is the **client**; for host-side
 issues (the relay, the tower emulator, BLE permissions, the operator app) see
-[UltimateDarkTowerRelay](../../UltimateDarkTowerRelay) — its
-[docs/SETUP.md](../../UltimateDarkTowerRelay/docs/SETUP.md) and
-[MACOS_BLE_PERIPHERAL_LIMITATION.md](../../UltimateDarkTowerRelay/docs/MACOS_BLE_PERIPHERAL_LIMITATION.md).
+[UltimateDarkTowerRelay](../../../docs/relay) — its
+[docs/SETUP.md](../../../docs/relay/SETUP.md) and
+[MACOS_BLE_PERIPHERAL_LIMITATION.md](../../../docs/relay/MACOS_BLE_PERIPHERAL_LIMITATION.md).
 
 ---
 
@@ -63,7 +63,7 @@ The client page must be served over `https://` or `localhost`. When hosting on a
 
 ## Host-side issues (the relay)
 
-The host runs [UltimateDarkTowerRelay](../../UltimateDarkTowerRelay), not this repo. For:
+The host runs [UltimateDarkTowerRelay](../../../docs/relay), not this repo. For:
 
 - **the host's tower / companion app disconnecting**, **the "Game Paused" overlay**, the tower emulator
   re-advertising,
@@ -71,5 +71,5 @@ The host runs [UltimateDarkTowerRelay](../../UltimateDarkTowerRelay), not this r
 - the **DIS / "checking firmware"** stall,
 - the **operator GUI** (Electron app) not launching or being blocked by Gatekeeper,
 
-see the relay's [docs/SETUP.md](../../UltimateDarkTowerRelay/docs/SETUP.md) and
-[MACOS_BLE_PERIPHERAL_LIMITATION.md](../../UltimateDarkTowerRelay/docs/MACOS_BLE_PERIPHERAL_LIMITATION.md).
+see the relay's [docs/SETUP.md](../../../docs/relay/SETUP.md) and
+[MACOS_BLE_PERIPHERAL_LIMITATION.md](../../../docs/relay/MACOS_BLE_PERIPHERAL_LIMITATION.md).

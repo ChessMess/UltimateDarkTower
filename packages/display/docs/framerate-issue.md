@@ -199,7 +199,7 @@ Shipped on `Tower3DView`, `TowerDisplay`, and `TowerRenderView`. Diagnostic-only
 
 ### 5.2 How to use it (recipe)
 
-The Display example app already exposes `window.display`. For the Controller's TowerEmulator (which doesn't), add one diagnostic line in [examples/controller/TowerEmulator.ts](../../UltimateDarkTower/examples/controller/TowerEmulator.ts) right after the `display = new TowerRenderView(...)` constructor:
+The Display example app already exposes `window.display`. For the Controller's TowerEmulator (which doesn't), add one diagnostic line in [examples/controller/TowerEmulator.ts](../../core/examples/controller/TowerEmulator.ts) right after the `display = new TowerRenderView(...)` constructor:
 
 ```ts
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -258,7 +258,7 @@ Remember to revert the `(window as any).display = display;` line and rebuild whe
 - **Path:** `/Users/wopr/Documents/GitHub/UltimateDarkTower`
 - **Role:** BLE Tower library plus example apps. The `controller` example imports `ultimatedarktowerdisplay` (via `file:..` symlink dep) for the emulator window.
 - **Symlink:** `node_modules/ultimatedarktowerdisplay` → `../../../UltimateDarkTowerDisplay`. Imports resolve to the **built dist/** of the Display package — dist must be rebuilt with `npm run build` for Display-side changes to be visible.
-- **Key file:** [examples/controller/TowerEmulator.ts](../../UltimateDarkTower/examples/controller/TowerEmulator.ts) — instantiates `TowerRenderView` with `audio: { bindSequenceToSample: true }`, gives the canvas the **full window** (no sidebar). This is where the user's reported cliff manifested.
+- **Key file:** [examples/controller/TowerEmulator.ts](../../core/examples/controller/TowerEmulator.ts) — instantiates `TowerRenderView` with `audio: { bindSequenceToSample: true }`, gives the canvas the **full window** (no sidebar). This is where the user's reported cliff manifested.
 - **Dev server:** `npm run dev` (= `tsc -watch`) compiles the library. Examples have a separate build: `node build-examples.js`. **`tsc -watch` does not recompile the examples** — edit-then-rebuild explicitly. Static server at port 8080 serves `dist/examples/`.
 - **URL:** http://localhost:8080/controller/TowerEmulator
 

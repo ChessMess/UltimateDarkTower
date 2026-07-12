@@ -29,7 +29,7 @@ board artwork lives in the sibling Display repo at
 drop a copy or symlink named `board.png` next to this file:
 
 ```sh
-ln -s ../../../UltimateDarkTowerDisplay/src/3d/assets/board.png board.png
+ln -s ../../../display/src/3d/assets/board.png board.png
 ```
 
 (`board.png` is git-ignored here so the multi-MB asset isn't committed.)

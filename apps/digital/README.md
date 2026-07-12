@@ -27,30 +27,22 @@ React UI ──reads──▶ game store (Zustand) ──subscribes──▶ sta
 
 ## Prerequisites
 
-UTDD depends on three sibling repos via `file:` links — clone them next to this repo and build them:
-
-```
-../UltimateDarkTower
-../UltimateDarkTowerDisplay
-../UltimateDarkTowerBoard
-```
-
-```bash
-# Build the libraries first (their dist/ must exist for file: links to resolve)
-for lib in UltimateDarkTower UltimateDarkTowerDisplay UltimateDarkTowerBoard; do
-  (cd ../$lib && npm install && npm run build)
-done
-```
+This app lives in the [UltimateDarkTower monorepo](../../README.md) and depends on the
+`ultimatedarktower`, `ultimatedarktowerdisplay`, and `ultimatedarktowerboard` workspace
+packages (`workspace:^`). A single `pnpm install` at the repo root links and builds them.
 
 ## Develop
 
+From the monorepo root:
+
 ```bash
-npm install
-npm run dev        # http://localhost:5173
-npm run ci         # lint + typecheck + test + build
+pnpm install                              # once, for the whole workspace
+pnpm --filter ultimatedarktowerdigital dev   # http://localhost:5173
+pnpm --filter ultimatedarktowerdigital build
 ```
 
-When you change a sibling library, rebuild it (`npm run build` in that repo) and Vite picks it up.
+The workspace packages are symlinked; when you change one, rebuild it
+(`pnpm --filter <pkg> build`) and Vite picks it up.
 
 ## Docs
 

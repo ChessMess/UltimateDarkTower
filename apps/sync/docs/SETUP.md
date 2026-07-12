@@ -1,7 +1,7 @@
 # DarkTowerSync Setup Guide
 
 DarkTowerSync is the **browser client**. Getting a game running needs two parts: a **relay host**
-(run separately — [UltimateDarkTowerRelay](../../UltimateDarkTowerRelay)) and this **client**, which each
+(run separately — [UltimateDarkTowerRelay](../../../docs/relay)) and this **client**, which each
 remote player opens in a browser.
 
 ## Prerequisites
@@ -16,8 +16,8 @@ remote player opens in a browser.
 
 ## Run the relay host
 
-The host role (BLE tower emulator + WebSocket relay + log server) is **[UltimateDarkTowerRelay](../../UltimateDarkTowerRelay)**.
-Follow its [docs/SETUP.md](../../UltimateDarkTowerRelay/docs/SETUP.md) for per-platform host setup (macOS
+The host role (BLE tower emulator + WebSocket relay + log server) is **[UltimateDarkTowerRelay](../../../docs/relay)**.
+Follow its [docs/SETUP.md](../../../docs/relay/SETUP.md) for per-platform host setup (macOS
 real-tower handoff, Raspberry Pi / Windows standalone, Bluetooth permissions, iPhone Mirroring, the DIS
 "checking firmware" workaround). In short:
 

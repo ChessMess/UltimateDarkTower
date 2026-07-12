@@ -102,10 +102,8 @@ export default defineConfig({
       // esbuild dev pre-bundler and the Rollup production build a real module to
       // resolve, instead of externalizing a package that doesn't exist.
       '@stoprocent/noble': fileURLToPath(new URL('./noble-stub.js', import.meta.url)),
-      // The relay SDK (ultimatedarktowerrelay-{client,shared}) is a published npm dep,
-      // so no source alias is needed here.
-      // For local development against a sibling checkout via npm link, e.g.:
-      // 'ultimatedarktowerdisplay': fileURLToPath(new URL('../../UltimateDarkTowerDisplay/src/index.ts', import.meta.url)),
+      // The relay SDK and ultimatedarktowerdisplay are workspace packages
+      // (workspace:^), resolved via pnpm symlinks — no source alias needed here.
     },
   },
   optimizeDeps: {

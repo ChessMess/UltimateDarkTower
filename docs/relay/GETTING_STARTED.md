@@ -48,7 +48,7 @@ The SDK is **isomorphic**: it uses the global `WebSocket` in the browser, or an 
 ## 2. Connect and receive state
 
 Set up the client, wire an event handler, and connect. The SDK decodes each relayed command into a
-[`TowerState`](../../UltimateDarkTower/docs/api/state.md) and emits a `state` event.
+[`TowerState`](../../packages/core/docs/api/state.md) and emits a `state` event.
 
 ```ts
 import { RelayClient } from 'ultimatedarktowerrelay-client';

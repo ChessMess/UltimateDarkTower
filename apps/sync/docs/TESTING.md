@@ -1,7 +1,7 @@
 # Testing Guide
 
 This document covers the DarkTowerSync **client** test suite. (Host / relay / protocol engine tests live in
-[UltimateDarkTowerRelay](../../UltimateDarkTowerRelay) — run `npm run ci` there.)
+[UltimateDarkTowerRelay](../../../docs/relay) — run `npm run ci` there.)
 
 ---
 
