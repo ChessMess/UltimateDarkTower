@@ -37,6 +37,11 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
+      # npm's OIDC Trusted Publishing needs npm >= 11.5.1, but Node 22 ships
+      # npm 10.x — without this the OIDC handshake fails even when the trusted
+      # publisher is configured on npmjs.com.
+      - run: npm install -g npm@latest
+
       - run: pnpm install --frozen-lockfile
 
       - name: Create Release PR or publish
