@@ -120,6 +120,20 @@ function emitAssetsAsFiles(): Plugin {
       segments.push(code.slice(last));
       return { code: segments.join(''), map: null };
     },
+    // Vite 6+/rolldown render `import.meta.url` as `{}.url` (i.e. `undefined`)
+    // in the CJS lib output, so the emitted `new URL('audio/assets/x.ogg', {}.url)`
+    // throws `Invalid URL` the moment the `.cjs.js` bundle is `require()`d — it
+    // breaks every CJS consumer (Node, jest/jsdom, tooling), not just tests
+    // (Vite 5 shimmed this safely; rolldown's `resolveFileUrl` hook is ignored).
+    // Post-process the CJS chunks only: give `import.meta.url` a require-safe,
+    // module-relative file URL. The ESM build is untouched — `import.meta.url`
+    // is valid in an ES module.
+    renderChunk(code, _chunk, options) {
+      if (options.format !== 'cjs' || !code.includes('{}.url')) return null;
+      const patched = code.replaceAll('{}.url', 'require("url").pathToFileURL(__filename).href');
+      // Sourcemap left as-is; this is a Node/tooling artifact, not browser-debugged.
+      return { code: patched, map: null };
+    },
   };
 }
 

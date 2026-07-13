@@ -1,0 +1,36 @@
+# Dependabot configuration.
+#
+# Scope note: this governs Dependabot *update PRs*, not the Security-tab *alerts*
+# list. Alerts are generated from the dependency graph independently — grouping
+# here reduces PR churn and keeps deps current (so fewer advisories accumulate),
+# but does not change the per-advisory alert count, and `ignore`/directory scope
+# does not retroactively close existing alerts.
+version: 2
+updates:
+  # pnpm workspace at the repo root. Dependabot handles pnpm under the `npm`
+  # ecosystem (it reads pnpm-lock.yaml + the workspace importers). The archived,
+  # never-installed `docs/history/**` snapshot is intentionally NOT listed as a
+  # directory, so no update PRs are opened against it.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      # One PR per week for all dev-dependency bumps instead of one-per-package.
+      dev-dependencies:
+        dependency-type: "development"
+      # Group the production-dependency bumps too, so a shared transitive fix
+      # (e.g. a single tar/tmp advisory) lands as one PR across the workspace.
+      production-dependencies:
+        dependency-type: "production"
+
+  # Keep the CI/release GitHub Actions current as well.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
