@@ -16,6 +16,18 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    ignore:
+      # typescript is pinned via the pnpm catalog (pnpm-workspace.yaml) and held
+      # at 5.9.x on purpose — TS 6.0 drops the automatic @types inclusion the
+      # packages rely on (see CLAUDE.md). Dependabot also can't resolve the
+      # `catalog:` protocol and errors the whole run when it tries, so skip it.
+      - dependency-name: "typescript"
+      # Only auto-propose patch/minor bumps here. Major dev/prod bumps
+      # (eslint 9→10, @types/node 22→26, @dagrejs/dagre 1→3, …) are reviewed and
+      # taken manually. Note: this also suppresses auto-PRs for security fixes
+      # that are major-only — those still surface as Security-tab alerts to act on.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       # One PR per week for all dev-dependency bumps instead of one-per-package.
       dev-dependencies:
