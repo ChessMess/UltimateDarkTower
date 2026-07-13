@@ -13,7 +13,9 @@ describe('CommandQueue', () => {
 
   beforeEach(() => {
     sendFn = jest.fn().mockResolvedValue(undefined);
-    queue = new CommandQueue(makeLogger(), sendFn);
+    // minCommandIntervalMs = 0 keeps these tests' existing fast/synchronous-tick
+    // assertions unchanged; the nonzero-interval behavior has its own test below.
+    queue = new CommandQueue(makeLogger(), sendFn, undefined, 0);
   });
 
   test('serialization: second command does not start until first receives a response', async () => {
@@ -108,5 +110,36 @@ describe('CommandQueue', () => {
     expect(sendFn).toHaveBeenCalledTimes(2);
     queue.onResponse();
     await p2; // resolves without error
+  });
+
+  test('enforces a minimum interval between a response and the next command dispatch', async () => {
+    jest.useFakeTimers();
+    try {
+      const intervalQueue = new CommandQueue(makeLogger(), sendFn, undefined, 250);
+
+      const p1 = intervalQueue.enqueue(new Uint8Array([1]), 'cmd1');
+      const p2 = intervalQueue.enqueue(new Uint8Array([2]), 'cmd2');
+
+      await Promise.resolve();
+      expect(sendFn).toHaveBeenCalledTimes(1);
+
+      // Resolving cmd1 must not dispatch cmd2 synchronously/immediately —
+      // this is what prevents a real adapter from issuing a new GATT write
+      // from within the previous command's response handler.
+      intervalQueue.onResponse();
+      await Promise.resolve();
+      expect(sendFn).toHaveBeenCalledTimes(1);
+
+      await jest.advanceTimersByTimeAsync(249);
+      expect(sendFn).toHaveBeenCalledTimes(1);
+
+      await jest.advanceTimersByTimeAsync(1);
+      expect(sendFn).toHaveBeenCalledTimes(2);
+
+      intervalQueue.onResponse();
+      await Promise.all([p1, p2]);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

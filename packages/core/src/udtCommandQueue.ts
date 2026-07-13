@@ -1,6 +1,12 @@
 import { Logger } from './udtLogger';
 import type { UdtDiagnosticsRecorder } from './udtDiagnostics';
 
+// Minimum gap (ms) enforced between a command's response and the next
+// command's dispatch. Inside the tower's documented ~200-500ms rate limit
+// (ARCHITECTURE.md); also matches the retry backoff unit used elsewhere
+// (udtTowerCommands.ts).
+const MIN_COMMAND_INTERVAL_MS = 250;
+
 /**
  * Internal interface for queued commands
  * @private
@@ -30,6 +36,7 @@ export class CommandQueue {
     private logger: Logger,
     private sendCommandFn: (command: Uint8Array) => Promise<void>,
     recorder?: UdtDiagnosticsRecorder,
+    private minCommandIntervalMs: number = MIN_COMMAND_INTERVAL_MS,
   ) {
     this.recorder = recorder ?? null;
   }
@@ -129,8 +136,19 @@ export class CommandQueue {
 
       resolve();
 
-      // Process next command in queue
-      this.processNext();
+      // Defer to a real timer tick so the next GATT write never fires from
+      // within the synchronous continuation of the BLE notification that
+      // resolved this command — issuing a write there races the browser's
+      // GATT transaction state ("GATT operation already in progress"). Also
+      // enforces the ~200-500ms inter-command spacing documented in
+      // ARCHITECTURE.md. A configured interval of 0 (test-only) opts out of
+      // the deferral entirely, since even setTimeout(fn, 0) is a real
+      // macrotask that isn't ordered consistently against other pending work.
+      if (this.minCommandIntervalMs > 0) {
+        setTimeout(() => this.processNext(), this.minCommandIntervalMs);
+      } else {
+        this.processNext();
+      }
     }
   }
 

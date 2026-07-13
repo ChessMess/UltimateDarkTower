@@ -1,10 +1,19 @@
 import UltimateDarkTower from '../src/UltimateDarkTower';
 import { MockBluetoothAdapter } from './mocks/MockBluetoothAdapter';
 import { TOWER_LIGHT_SEQUENCES, TOWER_AUDIO_LIBRARY } from '../src/udtConstants';
+import { rtdt_unpack_state, type Drum } from '../src/udtTowerState';
 
 // Command byte offsets (20-byte packet: byte[0] = command type, bytes[1-19] = state data)
 const AUDIO_BYTE = 15; // state data[14] → command[15]: audio.sample
 const LED_SEQUENCE_BYTE = 19; // state data[18] → command[19]: led_sequence
+
+function decodeDrumPositions(write: Uint8Array): number[] {
+  return rtdt_unpack_state(write.slice(1)).drum.map((d) => d.position);
+}
+
+function calibratedDrum(position: number): Drum {
+  return { jammed: false, calibrated: true, position, playSound: false, reverse: false };
+}
 
 /**
  * Override writeCharacteristic to capture writes and auto-simulate a tower
@@ -120,6 +129,138 @@ describe('breakSeal()', () => {
 
     expect(darkTower.isSealBroken({ side: 'north', level: 'middle' })).toBe(true);
     expect(darkTower.isSealBroken({ side: 'south', level: 'middle' })).toBe(false);
+  });
+});
+
+describe('rotateWithState()', () => {
+  let darkTower: UltimateDarkTower;
+  let mockAdapter: MockBluetoothAdapter;
+  let writes: Uint8Array[];
+
+  beforeEach(async () => {
+    mockAdapter = new MockBluetoothAdapter();
+    darkTower = new UltimateDarkTower({ adapter: mockAdapter });
+    darkTower.setLoggerOutputs([]);
+    writes = setupAutoRespond(mockAdapter);
+    await darkTower.connect();
+
+    // All three drums calibrated at north (0), matching the post-calibration
+    // state from the bug report (only the top drum's dropdown changed).
+    darkTower['currentTowerState'].drum[0] = calibratedDrum(0);
+    darkTower['currentTowerState'].drum[1] = calibratedDrum(0);
+    darkTower['currentTowerState'].drum[2] = calibratedDrum(0);
+  });
+
+  afterEach(async () => {
+    await darkTower.disconnect();
+  });
+
+  test('sends exactly one command when only the top drum changes', async () => {
+    await darkTower.rotateWithState('east', 'north', 'north');
+
+    expect(writes).toHaveLength(1);
+    expect(decodeDrumPositions(writes[0])).toEqual([1, 0, 0]);
+  });
+
+  test('sends exactly one command encoding two changed drums, preserving the unchanged one', async () => {
+    await darkTower.rotateWithState('north', 'west', 'south');
+
+    expect(writes).toHaveLength(1);
+    expect(decodeDrumPositions(writes[0])).toEqual([0, 3, 2]);
+  });
+
+  test('sends no command when no drum position changes', async () => {
+    await darkTower.rotateWithState('north', 'north', 'north');
+
+    expect(writes).toHaveLength(0);
+  });
+
+  test('sends only the sound command when no drum changes but a sound is requested', async () => {
+    await darkTower.rotateWithState('north', 'north', 'north', 1);
+
+    expect(writes).toHaveLength(1);
+    expect(writes[0][AUDIO_BYTE] & 0x7f).toBe(1);
+  });
+
+  test('sends the rotate command followed by the sound command', async () => {
+    await darkTower.rotateWithState('east', 'north', 'north', 1);
+
+    expect(writes).toHaveLength(2);
+    expect(decodeDrumPositions(writes[0])).toEqual([1, 0, 0]);
+    expect(writes[1][AUDIO_BYTE] & 0x7f).toBe(1);
+  });
+
+  test('still commands an uncalibrated drum whose tracked position happens to match the target', async () => {
+    darkTower['currentTowerState'].drum[1] = {
+      jammed: false,
+      calibrated: false,
+      position: 0,
+      playSound: false,
+      reverse: false,
+    };
+
+    await darkTower.rotateWithState('north', 'north', 'north');
+
+    expect(writes).toHaveLength(1);
+  });
+
+  test('rejects and still schedules the performingLongCommand reset when the write fails', async () => {
+    darkTower.retrySendCommandMax = 0;
+    mockAdapter.writeCharacteristic = async () => {
+      throw new Error('Mock write failed');
+    };
+
+    jest.useFakeTimers();
+    try {
+      const promise = darkTower.rotateWithState('east', 'north', 'north');
+      await expect(promise).rejects.toThrow('Mock write failed');
+
+      expect(darkTower['bleConnection'].performingLongCommand).toBe(true);
+
+      await jest.advanceTimersByTimeAsync(30000);
+      expect(darkTower['bleConnection'].performingLongCommand).toBe(false);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});
+
+describe('rotateDrumStateful()', () => {
+  let darkTower: UltimateDarkTower;
+  let mockAdapter: MockBluetoothAdapter;
+  let writes: Uint8Array[];
+
+  beforeEach(async () => {
+    mockAdapter = new MockBluetoothAdapter();
+    darkTower = new UltimateDarkTower({ adapter: mockAdapter });
+    darkTower.setLoggerOutputs([]);
+    writes = setupAutoRespond(mockAdapter);
+    await darkTower.connect();
+
+    darkTower['currentTowerState'].drum[0] = calibratedDrum(0);
+  });
+
+  afterEach(async () => {
+    await darkTower.disconnect();
+  });
+
+  test('skips the command when the drum is already calibrated at the requested position', async () => {
+    await darkTower.rotateDrumStateful(0, 0, false);
+
+    expect(writes).toHaveLength(0);
+  });
+
+  test('still sends the command when playSound is true, even at the same position', async () => {
+    await darkTower.rotateDrumStateful(0, 0, true);
+
+    expect(writes).toHaveLength(1);
+  });
+
+  test('sends the command when the position actually differs', async () => {
+    await darkTower.rotateDrumStateful(0, 1, false);
+
+    expect(writes).toHaveLength(1);
+    expect(decodeDrumPositions(writes[0])[0]).toBe(1);
   });
 });
 

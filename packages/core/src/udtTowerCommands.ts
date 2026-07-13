@@ -510,9 +510,21 @@ export class UdtTowerCommands {
       west: 3,
     };
 
-    this.deps.logger.info(
-      'Sending stateful rotate commands' + (soundIndex ? ' with sound' : ''),
-      '[UDT][CMD]',
+    const currentState = this.deps.getCurrentTowerState();
+    const targets = [
+      { index: 0, position: positionMap[top] },
+      { index: 1, position: positionMap[middle] },
+      { index: 2, position: positionMap[bottom] },
+    ];
+
+    // Only command drums that are actually moving, and send them all in a
+    // single packet. Gated on `calibrated`: an uncalibrated drum's tracked
+    // position defaults to 0 (north) regardless of where it physically is,
+    // so it must still be commanded even if position "matches" — otherwise
+    // a needed rotation could be silently dropped.
+    const changed = targets.filter(
+      ({ index, position }) =>
+        !currentState?.drum[index]?.calibrated || currentState.drum[index].position !== position,
     );
 
     // Flag that we're performing a long command
@@ -520,13 +532,43 @@ export class UdtTowerCommands {
     this.deps.bleConnection.performingLongCommand = true;
 
     try {
-      // Rotate each drum individually using the proven single-drum stateful commands
-      // This approach is more reliable than trying to change all drums in one command
-      await this.rotateDrumStateful(0, positionMap[top], false);
-      await this.rotateDrumStateful(1, positionMap[middle], false);
-      await this.rotateDrumStateful(2, positionMap[bottom], false);
+      if (changed.length > 0) {
+        const drum = [] as unknown as TowerState['drum'];
+        for (const { index, position } of changed) {
+          drum[index] = {
+            jammed: false,
+            calibrated: true,
+            position,
+            playSound: false,
+            reverse: false,
+          };
+        }
+        const command = this.deps.commandFactory.createStatefulCommand(currentState, {
+          drum,
+          audio: { sample: 0, loop: false, volume: 0 },
+        });
 
-      // Play sound if requested - do this after all rotations to avoid conflicts
+        this.deps.logger.info(
+          'Sending stateful rotate command' + (soundIndex ? ' with sound' : ''),
+          '[UDT][CMD]',
+        );
+
+        // Update local state so it reflects the commanded positions before
+        // sending, matching the pattern used elsewhere for stateful commands.
+        if (currentState) {
+          for (const { index, position } of changed) {
+            currentState.drum[index].position = position;
+          }
+          this.deps.setTowerState(currentState, 'rotateWithState');
+        }
+
+        await this.sendTowerCommand(
+          command,
+          `rotateWithState(${top}, ${middle}, ${bottom}${soundIndex ? `, ${soundIndex}` : ''})`,
+        );
+      }
+
+      // Play sound if requested - do this after rotation to avoid conflicts
       if (soundIndex) {
         await this.playSound(soundIndex);
       }
@@ -537,11 +579,6 @@ export class UdtTowerCommands {
         this.deps.bleConnection.performingLongCommand = false;
         this.deps.bleConnection.lastBatteryHeartbeat = Date.now(); // Reset heartbeat timer
       }, this.deps.bleConnection.longTowerCommandTimeout);
-
-      // Note: drum positions are NOT force-written here. Each rotateDrumStateful()
-      // call above already records its own drum's position via setTowerState() on
-      // success, so re-writing all three unconditionally would mask a partial
-      // failure (a drum that never rotated would be recorded as if it had).
     }
   }
 
@@ -822,6 +859,20 @@ export class UdtTowerCommands {
     playSound: boolean = false,
   ): Promise<void> {
     const currentState = this.deps.getCurrentTowerState();
+
+    // Skip no-op rotations: if this drum is already calibrated and already
+    // at the requested position, sending a command only adds BLE traffic.
+    // Gated on `calibrated`: an uncalibrated drum's tracked position
+    // defaults to 0 (north) regardless of where it physically is, so
+    // skipping there could silently drop a rotation the drum actually needs.
+    if (
+      currentState?.drum[drumIndex]?.calibrated &&
+      currentState.drum[drumIndex].position === position &&
+      !playSound
+    ) {
+      return;
+    }
+
     const command = this.deps.commandFactory.createStatefulDrumCommand(
       currentState,
       drumIndex,

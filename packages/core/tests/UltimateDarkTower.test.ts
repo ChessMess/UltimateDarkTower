@@ -656,23 +656,36 @@ describe('UltimateDarkTower', () => {
     });
 
     test('should queue commands sequentially', async () => {
-      // Send multiple commands rapidly
-      const promises = [darkTower.playSound(1), darkTower.playSound(2), darkTower.playSound(3)];
+      jest.useFakeTimers();
+      try {
+        // Send multiple commands rapidly
+        const promises = [darkTower.playSound(1), darkTower.playSound(2), darkTower.playSound(3)];
 
-      // Commands should be queued but only first one executed immediately
-      expect(mockAdapter.writeCalls).toBe(1);
+        // Commands should be queued but only first one executed immediately
+        expect(mockAdapter.writeCalls).toBe(1);
 
-      // Simulate tower responses to progress the queue
-      const towerCommands = darkTower['towerCommands'];
-      towerCommands.onTowerResponse(); // Complete first command
-      towerCommands.onTowerResponse(); // Complete second command
-      towerCommands.onTowerResponse(); // Complete third command
+        // Simulate tower responses to progress the queue. Each response is
+        // followed by the queue's minimum inter-command interval before the
+        // next command is actually dispatched.
+        const towerCommands = darkTower['towerCommands'];
+        towerCommands.onTowerResponse(); // Complete first command
+        await jest.advanceTimersByTimeAsync(250);
+        expect(mockAdapter.writeCalls).toBe(2);
 
-      // Wait for all commands to complete
-      await Promise.all(promises);
+        towerCommands.onTowerResponse(); // Complete second command
+        await jest.advanceTimersByTimeAsync(250);
+        expect(mockAdapter.writeCalls).toBe(3);
 
-      // All commands should have been executed
-      expect(mockAdapter.writeCalls).toBe(3);
+        towerCommands.onTowerResponse(); // Complete third command
+
+        // Wait for all commands to complete
+        await Promise.all(promises);
+
+        // All commands should have been executed
+        expect(mockAdapter.writeCalls).toBe(3);
+      } finally {
+        jest.useRealTimers();
+      }
     });
 
     test('should handle command timeout gracefully', async () => {
@@ -749,6 +762,37 @@ describe('UltimateDarkTower', () => {
       await expect(promises[1]).rejects.toThrow('Command queue cleared');
       await expect(promises[2]).rejects.toThrow('Command queue cleared');
     }, 10000);
+
+    test('does not dispatch the next command synchronously from within the previous response handler', async () => {
+      // Simulate the tower response arriving synchronously as part of the
+      // write itself — matching a real characteristicvaluechanged event
+      // firing before writeValue()'s promise resolves back to the caller.
+      // This is the exact mechanism behind a real adapter throwing
+      // "NetworkError: GATT operation already in progress" when the next
+      // command's write is issued from that same synchronous continuation.
+      mockAdapter.writeCharacteristic = async (data: Uint8Array) => {
+        mockAdapter.writeCalls++;
+        mockAdapter.lastWrittenData = data;
+        mockAdapter.simulateResponse(new Uint8Array(20));
+      };
+
+      jest.useFakeTimers();
+      try {
+        // rotate (1st write) + sound (2nd write) = two commands queued back to back.
+        const promise = darkTower.rotateWithState('east', 'north', 'north', 1);
+
+        // The first write's synchronous response handling must not have
+        // already dispatched the second write within the same tick.
+        expect(mockAdapter.writeCalls).toBe(1);
+
+        await jest.advanceTimersByTimeAsync(250);
+        expect(mockAdapter.writeCalls).toBe(2);
+
+        await promise;
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 
   describe('Glyph Position Tracking', () => {
