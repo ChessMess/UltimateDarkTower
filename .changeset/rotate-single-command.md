@@ -1,5 +1,5 @@
 ---
-"ultimatedarktower": patch
+'ultimatedarktower': patch
 ---
 
 Fix `rotateWithState()` sending a redundant command per drum (including drums that weren't
