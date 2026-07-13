@@ -1160,6 +1160,17 @@ const lights = () => {
   const baseLights: Array<BaseLight> = getBaseLights();
   const allLights = { doorway: doorwayLights, ledge: ledgeLights, base: baseLights };
   Tower.Lights(allLights);
+
+  // A style of 'off' means every checked light was just turned off — clear the
+  // checkmarks so the UI matches reality. Done after building the commands above,
+  // which read the still-checked boxes to know which lights to send 'off' to
+  // (mirrors clearAllLightCheckboxes()).
+  if (selectedLightStyle === 'off') {
+    allLEDLights.forEach((checkbox) => {
+      checkbox.checked = false;
+      checkbox.setAttribute('data-light-style', 'off');
+    });
+  }
 };
 
 const getDoorwayLights = (): Array<DoorwayLight> => {
