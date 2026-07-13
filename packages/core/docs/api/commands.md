@@ -24,6 +24,8 @@ True after a successful calibration in the current session. Resets when the towe
 
 True while a long-running operation is in progress. Heartbeat detection is suspended during these windows, so don't treat "no heartbeat" as a disconnect signal mid-calibration — the library already does this for you.
 
+While `performingCalibration` is `true`, any other command (`playSound`, `lights`, `rotate`, `allLightsOn`, etc.) is **ignored** rather than queued: the call resolves immediately without sending anything, and a `[UDT][CMD]` warning is logged. This is deliberate — calibration is a several-second physical procedure, and letting commands pile up in the queue during it would otherwise unleash a burst of stale commands on the tower the instant calibration completes. If you need to know whether your command actually went out, check `tower.performingCalibration` before calling, or (with `diagnostics.enabled`) look for a `cmd_ignored_calibration` event in the ring buffer.
+
 ---
 
 ## Audio

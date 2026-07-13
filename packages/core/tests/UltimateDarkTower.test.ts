@@ -736,6 +736,40 @@ describe('UltimateDarkTower', () => {
       await promise;
     });
 
+    test('a command issued mid-calibration is ignored: not written, not left pending in the queue', async () => {
+      const calibratePromise = darkTower.calibrate();
+      expect(darkTower.performingCalibration).toBe(true);
+      const writesAfterCalibrateSend = mockAdapter.writeCalls;
+
+      await darkTower.playSound(1); // must resolve immediately — no response needed
+      expect(mockAdapter.writeCalls).toBe(writesAfterCalibrateSend); // no new write
+      expect(darkTower['towerCommands'].getQueueStatus().queueLength).toBe(0); // never enqueued
+
+      mockAdapter.simulateResponse(new Uint8Array(20));
+      await calibratePromise;
+    });
+
+    test("calibrate()'s own command still sends after routing around its own guard", async () => {
+      const promise = darkTower.calibrate();
+      expect(mockAdapter.writeCalls).toBe(1); // the calibration packet itself was written
+      mockAdapter.simulateResponse(new Uint8Array(20));
+      await promise;
+    });
+
+    test('commands are processed normally again once calibration completes', async () => {
+      const calibratePromise = darkTower.calibrate();
+      mockAdapter.simulateResponse(new Uint8Array(20)); // completes calibration end-to-end
+      await calibratePromise;
+      expect(darkTower.performingCalibration).toBe(false);
+
+      const writesBefore = mockAdapter.writeCalls;
+      const promise = darkTower.playSound(1);
+      expect(mockAdapter.writeCalls).toBe(writesBefore + 1); // actually written this time
+
+      mockAdapter.simulateResponse(new Uint8Array(20));
+      await promise;
+    });
+
     test('a command enqueued before logDetail is toggled still resolves via the same queue', async () => {
       const promise = darkTower.playSound(1);
       expect(mockAdapter.writeCalls).toBe(1);
@@ -1206,6 +1240,45 @@ describe('UltimateDarkTower', () => {
         expect(darkTower.getGlyphPosition('banner')).toBe('west'); // north + 3 steps = west
         expect(darkTower.getGlyphPosition('reinforce')).toBe('east'); // south + 3 steps = east
       });
+    });
+  });
+
+  describe('command guard during calibration (direct-send bypass)', () => {
+    beforeEach(async () => {
+      // Real (unmocked) sendTowerState/sendTowerCommandDirect path, so the
+      // calibration guard on sendTowerCommandDirectPublic is actually exercised.
+      await darkTower.connect();
+      jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+      if (darkTower && darkTower.isConnected) {
+        const towerCommands = darkTower['towerCommands'];
+        towerCommands.clearQueue();
+        darkTower.disconnect();
+      }
+    });
+
+    test('allLightsOn() is ignored while calibrating — no write occurs', async () => {
+      const calibratePromise = darkTower.calibrate();
+      const writesAfterCalibrateSend = mockAdapter.writeCalls;
+
+      await darkTower.allLightsOn();
+      expect(mockAdapter.writeCalls).toBe(writesAfterCalibrateSend);
+
+      mockAdapter.simulateResponse(new Uint8Array(20));
+      await calibratePromise;
+    });
+
+    test('raw sendTowerCommandDirect() is ignored while calibrating', async () => {
+      const calibratePromise = darkTower.calibrate();
+      const writesAfterCalibrateSend = mockAdapter.writeCalls;
+
+      await darkTower.sendTowerCommandDirect(new Uint8Array(20));
+      expect(mockAdapter.writeCalls).toBe(writesAfterCalibrateSend);
+
+      mockAdapter.simulateResponse(new Uint8Array(20));
+      await calibratePromise;
     });
   });
 

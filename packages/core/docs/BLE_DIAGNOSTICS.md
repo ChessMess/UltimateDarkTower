@@ -74,6 +74,7 @@ optional `data` payload, and a millisecond `t` timestamp:
 | `cmd_response`                                 | Non-battery response received                                                                                                  |
 | `cmd_timeout`                                  | Command's 30s response timer expired                                                                                           |
 | `cmd_failed`                                   | Command write threw                                                                                                            |
+| `cmd_ignored_calibration`                      | Command was dropped (not sent, not queued) because it arrived while `performingCalibration` was true                           |
 | `tower_state_response`                         | Tower state response received                                                                                                  |
 | `skull_drop`                                   | Skull drop count changed                                                                                                       |
 | `heartbeat_late`                               | Battery heartbeat went past threshold but GATT was still up (a near-miss — multiple of these before a drop is a strong signal) |

@@ -31,6 +31,7 @@ export type DiagEventKind =
   | 'cmd_response'
   | 'cmd_timeout'
   | 'cmd_failed'
+  | 'cmd_ignored_calibration'
   | 'tower_state_response'
   | 'skull_drop'
   | 'heartbeat_late'

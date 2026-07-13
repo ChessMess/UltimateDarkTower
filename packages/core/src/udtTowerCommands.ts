@@ -54,12 +54,26 @@ export class UdtTowerCommands {
   }
 
   /**
-   * Sends a command packet to the tower via the command queue
+   * Sends a command packet to the tower via the command queue.
+   * While the tower is performing calibration, commands are ignored — not
+   * queued, not sent — rather than left waiting behind the calibration
+   * command. Calibration is a special multi-second procedure; letting
+   * commands pile up during it would otherwise unleash a burst of stale
+   * commands on the tower the instant calibration completes.
    * @param command - The command packet to send to the tower
    * @param description - Optional description for logging
-   * @returns Promise that resolves when command is completed
+   * @returns Promise that resolves when the command completes, or
+   *   immediately (without sending) if the tower is currently calibrating
    */
   async sendTowerCommand(command: Uint8Array, description?: string): Promise<void> {
+    if (this.deps.bleConnection.performingCalibration) {
+      this.deps.logger.warn(
+        `Ignoring command during calibration: ${description ?? 'unnamed'}`,
+        '[UDT][CMD]',
+      );
+      this.deps.recorder?.recordEvent('cmd_ignored_calibration', { description, source: 'queue' });
+      return;
+    }
     return await this.commandQueue.enqueue(command, description);
   }
 
@@ -144,7 +158,10 @@ export class UdtTowerCommands {
     this.deps.bleConnection.performingLongCommand = true;
 
     try {
-      await this.sendTowerCommand(new Uint8Array([TOWER_COMMANDS.calibration]), 'calibrate');
+      // Bypass sendTowerCommand's calibration guard: performingCalibration is
+      // already true above, and this is the one command allowed to send
+      // while it is.
+      await this.commandQueue.enqueue(new Uint8Array([TOWER_COMMANDS.calibration]), 'calibrate');
     } catch (error) {
       this.deps.bleConnection.performingCalibration = false;
       this.deps.bleConnection.performingLongCommand = false;
@@ -952,10 +969,19 @@ export class UdtTowerCommands {
   /**
    * Public access to sendTowerCommandDirect for testing purposes.
    * This bypasses the command queue and sends commands directly.
+   * While the tower is performing calibration, this is also ignored, for
+   * the same reason sendTowerCommand ignores commands: nothing should hit
+   * the wire mid-calibration.
    * @param command - The command packet to send directly to the tower
-   * @returns Promise that resolves when command is sent
+   * @returns Promise that resolves when command is sent, or immediately if
+   *   the tower is currently calibrating
    */
   async sendTowerCommandDirectPublic(command: Uint8Array): Promise<void> {
+    if (this.deps.bleConnection.performingCalibration) {
+      this.deps.logger.warn('Ignoring direct command during calibration', '[UDT][CMD]');
+      this.deps.recorder?.recordEvent('cmd_ignored_calibration', { source: 'direct' });
+      return;
+    }
     return await this.sendTowerCommandDirect(command);
   }
 

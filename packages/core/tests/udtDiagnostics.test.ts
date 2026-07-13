@@ -238,6 +238,26 @@ describe('UltimateDarkTower diagnostics integration', () => {
     expect(sink.list()).toHaveLength(1);
   });
 
+  test('cmd_ignored_calibration event is recorded when a command is dropped during calibration', async () => {
+    const adapter = new MockBluetoothAdapter();
+    const sink = new InMemorySink();
+    const tower = new UltimateDarkTower({
+      adapter,
+      diagnostics: { enabled: true, sinks: [sink] },
+    });
+
+    await tower.connect();
+
+    const calibratePromise = tower.calibrate();
+    await tower.playSound(1); // ignored while calibrating
+
+    const events = tower.getDiagnosticsRecorder().getRingBuffer();
+    expect(events.some((e) => e.kind === 'cmd_ignored_calibration')).toBe(true);
+
+    adapter.simulateResponse(new Uint8Array(20));
+    await calibratePromise;
+  });
+
   test('bt_unavailable cause fires when bluetooth becomes unavailable mid-session', async () => {
     const adapter = new MockBluetoothAdapter();
     const sink = new InMemorySink();
