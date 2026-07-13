@@ -12,6 +12,20 @@ packages:
 catalog:
   typescript: ^5.9.3
 
+# Security overrides (Dependabot triage, 2026-07): collapse stale duplicate copies
+# onto the already-patched versions that other deps already resolve in-tree.
+#  - tar: `tar@6.2.1` is pulled by the electron packaging toolchain
+#    (@electron/rebuild, @electron/node-gyp, cacache); every tar advisory <=7.5.15
+#    covers all of 6.x, and the fix ships only in 7.5.16+ (a major bump for those
+#    deps). Forcing 7.5.19 — which already resolves elsewhere — clears 7 alerts.
+#    Verify the electron native-rebuild path still works: `pnpm --filter
+#    ultimatedarktowerrelay-electron rebuild` (tar is build-time only, never runtime).
+#  - tmp: `tmp@0.0.33` is pulled by external-editor (interactive CLI prompts); the
+#    fix ships only in 0.2.6+. Forcing 0.2.7 clears 2 alerts.
+overrides:
+  tar: ^7.5.19
+  tmp: ^0.2.7
+
 # electron-forge's @electron/rebuild depends on a git-hosted @electron/node-gyp
 # fork; pnpm 11 blocks git-hosted subdeps by default. Allow them so the electron
 # app (apps/relay-electron) toolchain installs.
