@@ -17,13 +17,13 @@ output** (`dist/`), not source. If you ever skip the install-time build, run
 
 ## Apps (browser — Vite dev servers)
 
-| App | Command | URL |
-|---|---|---|
-| **Creator** (`@udtc/creator`) | `pnpm --filter @udtc/creator dev` | http://localhost:5173 |
-| **Player** (`@udtc/player`) | `pnpm --filter @udtc/player dev` | http://localhost:5174 |
-| **Digital** — solo digital play | `pnpm --filter ultimatedarktowerdigital dev` | http://localhost:5173 † |
-| **Seed** — seed decoder SPA | `pnpm --filter ultimatedarktowerseed dev` | http://localhost:3002 (auto-opens) |
-| **Sync** (`@dark-tower-sync/client`) | `pnpm --filter @dark-tower-sync/client dev` | http://localhost:3000 (auto-opens) |
+| App                                  | Command                                      | URL                                |
+| ------------------------------------ | -------------------------------------------- | ---------------------------------- |
+| **Creator** (`@udtc/creator`)        | `pnpm --filter @udtc/creator dev`            | http://localhost:5173              |
+| **Player** (`@udtc/player`)          | `pnpm --filter @udtc/player dev`             | http://localhost:5174              |
+| **Digital** — solo digital play      | `pnpm --filter ultimatedarktowerdigital dev` | http://localhost:5173 †            |
+| **Seed** — seed decoder SPA          | `pnpm --filter ultimatedarktowerseed dev`    | http://localhost:3002 (auto-opens) |
+| **Sync** (`@dark-tower-sync/client`) | `pnpm --filter @dark-tower-sync/client dev`  | http://localhost:3000 (auto-opens) |
 
 † Digital has no pinned port, so it takes 5173 — or the next free port if
 Creator is already running there. Vite prints the actual URL on start.
@@ -37,11 +37,11 @@ Sync, the relay) `dist/` produced by the initial `pnpm install`.
 These packages are libraries, so their runnable demo lives behind a dedicated
 **example** script — plain `dev` on these is not the demo.
 
-| Demo | Command | URL |
-|---|---|---|
-| **Tower Controller** (core) | `pnpm --filter ultimatedarktower run dev:controller` | http://localhost:8080 (auto-opens, live-reload) |
-| **Display** example | `pnpm --filter ultimatedarktowerdisplay run dev:example` | opens `/example/index.html` (5173) |
-| **Board** example | `pnpm --filter ultimatedarktowerboard run dev:example` | http://localhost:5173 |
+| Demo                        | Command                                                  | URL                                             |
+| --------------------------- | -------------------------------------------------------- | ----------------------------------------------- |
+| **Tower Controller** (core) | `pnpm --filter ultimatedarktower run dev:controller`     | http://localhost:8080 (auto-opens, live-reload) |
+| **Display** example         | `pnpm --filter ultimatedarktowerdisplay run dev:example` | opens `/example/index.html` (5173)              |
+| **Board** example           | `pnpm --filter ultimatedarktowerboard run dev:example`   | http://localhost:5173                           |
 
 The controller dev server (`dev-controller.js`) builds the core examples, serves
 them at :8080, opens `/controller/TowerController.html`, and live-reloads on

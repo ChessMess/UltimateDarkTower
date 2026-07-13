@@ -31,18 +31,18 @@ npm run ci
 
 ### Useful Commands
 
-| Command                     | Description                                         |
-| --------------------------- | --------------------------------------------------- |
-| `npm test`                  | Run test suite                                      |
-| `npm run test:watch`        | Run tests in watch mode                             |
-| `npm run test:coverage`     | Run tests with coverage report                      |
-| `npm run lint`              | Check code with ESLint                              |
-| `npm run lint:fix`          | Auto-fix lint issues                                |
-| `npm run lint:flat:preview` | Run ESLint using flat config preview mode           |
-| `npm run format`            | Format code with Prettier                           |
-| `npm run type-check`        | TypeScript type checking                            |
-| `npm run build`             | Full build (type-check + compile + examples)        |
-| `npm run ci`                | Full CI pipeline (lint + type-check + test + build) |
+| Command                     | Description                                        |
+| --------------------------- | -------------------------------------------------- |
+| `npm test`                  | Run test suite                                     |
+| `npm run test:watch`        | Run tests in watch mode                            |
+| `npm run test:coverage`     | Run tests with coverage report                     |
+| `npm run lint`              | Check code with ESLint                             |
+| `npm run lint:fix`          | Auto-fix lint issues                               |
+| `npm run lint:flat:preview` | Run ESLint using flat config preview mode          |
+| `npm run format`            | Format code with Prettier                          |
+| `npm run typecheck`         | TypeScript type checking                           |
+| `npm run build`             | Full build (typecheck + compile + examples)        |
+| `npm run ci`                | Full CI pipeline (lint + typecheck + test + build) |
 
 ### ESLint 9 Migration Readiness
 

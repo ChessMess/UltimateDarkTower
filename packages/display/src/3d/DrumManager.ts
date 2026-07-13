@@ -64,7 +64,7 @@ export class DrumManager {
   warnOnMissing(): void {
     const missing = DRUM_LEVELS_BY_INDEX.filter((level) => !this.drumRefs.has(level));
     if (missing.length === 0) return;
-     
+
     console.warn(
       `[Tower3DView] ${missing.length} drum node(s) missing from the loaded model; ` +
         `applyDrums will be a no-op for them. Missing: ${missing.map((l) => `${DRUM_NAME_PREFIX}${l}`).join(', ')}.`,

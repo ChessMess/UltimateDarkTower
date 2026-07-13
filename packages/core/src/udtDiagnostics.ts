@@ -123,7 +123,6 @@ function detectPlatform(): 'web' | 'node' | 'custom' {
 }
 
 function makeId(): string {
-   
   const g = globalThis as unknown as { crypto?: { randomUUID?: () => string } };
   if (g.crypto && typeof g.crypto.randomUUID === 'function') {
     try {

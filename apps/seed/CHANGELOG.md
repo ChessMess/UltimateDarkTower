@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed the `type-check` script to `typecheck` for workspace consistency (the root
+  `pnpm typecheck` now covers this app).
+
 ## [0.1.0] - 2026-06-29
 
 ### Added

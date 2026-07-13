@@ -186,7 +186,7 @@ export class PhysicsManager {
       (err) => {
         if (gen !== this.skullLoadGen) return;
         if ((err as { name?: string })?.name === 'AbortError') return;
-         
+
         console.error('[ultimatedarktowerdisplay/physics] skull model load failed', err);
       },
     );
@@ -294,7 +294,6 @@ export class PhysicsManager {
         density,
       );
       if (!colliderDesc) {
-         
         console.warn(
           '[ultimatedarktowerdisplay/physics] convex hull degenerate, falling back to ball',
         );
@@ -837,7 +836,6 @@ export class PhysicsManager {
       !this.config.skull.modelUrl &&
       prev.skull.colliderShape !== 'hull'
     ) {
-       
       console.warn(
         '[ultimatedarktowerdisplay/physics] colliderShape: "hull" requires a modelUrl — ' +
           'next drop will fall back to a ball collider.',

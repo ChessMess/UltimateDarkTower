@@ -58,7 +58,6 @@ export function attachSkullPhysics(
       // visible during development. Consumers wanting strict error handling can
       // wrap the returned handle.
       manager.init().catch((err) => {
-         
         console.error('[ultimatedarktowerdisplay/physics] init failed', err);
       });
     },

@@ -39,6 +39,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   intentionally _keeps_ calibration; reload / Tower-Type switch resets it), added a "calibration reset
   model" callout, added seal-removal / reconnect preconditions, reclassified the off-emulator 16.1
   step as `[Real Tower]`, and stopped propagating a hardware-locked step's track onto other steps.
+- **Monorepo tooling (no runtime or published-output change).** Renamed the `type-check` script to
+  `typecheck` so the workspace-wide `pnpm typecheck` covers this package, and replaced the generated
+  `tsconfig.json` `tsc --init` comment boilerplate with its effective options. The emitted `dist/` is
+  byte-identical.
 
 ## [5.0.1] - 2026-07-03
 

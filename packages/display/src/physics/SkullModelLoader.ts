@@ -114,7 +114,6 @@ async function loadAndNormalize(
   let geometry: THREE.BufferGeometry;
 
   if (lower.endsWith('.stl')) {
-     
     console.warn(
       `[ultimatedarktowerdisplay/physics] loading STL directly (${url}). ` +
         'STLs are heavy and unindexed — re-export to a Draco-compressed .glb ' +

@@ -30,6 +30,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   also be self-hosted directly from the package. The pure `getBoardTextureRotation` math moved to a
   new `boardTextureRotation` module (unchanged behavior) so it stays importable where `import.meta`
   can't be parsed.
+- **Build tooling (no output change).** `tsconfig.json` now extends the shared workspace
+  `tsconfig.browser-lib.json` (deduplicated with `board`); compiler options are unchanged and the
+  emitted `dist/` is byte-identical.
 
 ### Fixed
 

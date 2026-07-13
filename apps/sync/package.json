@@ -8,6 +8,7 @@
     "build": "vite build",
     "dev": "vite",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "author": "ChessMess",

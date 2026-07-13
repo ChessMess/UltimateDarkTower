@@ -44,7 +44,6 @@ const stage = new BoardStageView({
     },
   },
   onTokenSelect: (sel: TokenSelection) => {
-     
     console.log('token selected', sel);
   },
   onFocusChange: () => refresh(),

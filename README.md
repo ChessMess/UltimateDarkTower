@@ -9,14 +9,14 @@ and companion apps for _Return to Dark Tower_.
 
 Reusable libraries under [`packages/`](packages/). The six below are published to npm:
 
-| Package | npm | What it is |
-| --- | --- | --- |
-| [`packages/core`](packages/core) | [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) | BLE driver + core library for the physical tower |
-| [`packages/display`](packages/display) | [`ultimatedarktowerdisplay`](https://www.npmjs.com/package/ultimatedarktowerdisplay) | Composable text / 2D / 3D renderers for tower state |
-| [`packages/board`](packages/board) | [`ultimatedarktowerboard`](https://www.npmjs.com/package/ultimatedarktowerboard) | 2D game-board renderer, token layout, and Board3D plugin |
-| [`packages/relay-shared`](packages/relay-shared) | [`ultimatedarktowerrelay-shared`](https://www.npmjs.com/package/ultimatedarktowerrelay-shared) | Shared relay protocol types, message factories, constants |
-| [`packages/relay-core`](packages/relay-core) | [`ultimatedarktowerrelay-core`](https://www.npmjs.com/package/ultimatedarktowerrelay-core) | Headless relay engine (BLE tower-emulator peripheral + WebSocket) |
-| [`packages/relay-client`](packages/relay-client) | [`ultimatedarktowerrelay-client`](https://www.npmjs.com/package/ultimatedarktowerrelay-client) | Framework-agnostic consumer SDK for the relay |
+| Package                                          | npm                                                                                            | What it is                                                        |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [`packages/core`](packages/core)                 | [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower)                         | BLE driver + core library for the physical tower                  |
+| [`packages/display`](packages/display)           | [`ultimatedarktowerdisplay`](https://www.npmjs.com/package/ultimatedarktowerdisplay)           | Composable text / 2D / 3D renderers for tower state               |
+| [`packages/board`](packages/board)               | [`ultimatedarktowerboard`](https://www.npmjs.com/package/ultimatedarktowerboard)               | 2D game-board renderer, token layout, and Board3D plugin          |
+| [`packages/relay-shared`](packages/relay-shared) | [`ultimatedarktowerrelay-shared`](https://www.npmjs.com/package/ultimatedarktowerrelay-shared) | Shared relay protocol types, message factories, constants         |
+| [`packages/relay-core`](packages/relay-core)     | [`ultimatedarktowerrelay-core`](https://www.npmjs.com/package/ultimatedarktowerrelay-core)     | Headless relay engine (BLE tower-emulator peripheral + WebSocket) |
+| [`packages/relay-client`](packages/relay-client) | [`ultimatedarktowerrelay-client`](https://www.npmjs.com/package/ultimatedarktowerrelay-client) | Framework-agnostic consumer SDK for the relay                     |
 
 Internal (private) Creator libraries: `creator-schema` (`@udtc/schema`), `creator-engine`
 (`@udtc/engine`), `creator-adapters` (`@udtc/adapters`), `creator-card-render`
@@ -26,15 +26,15 @@ Internal (private) Creator libraries: `creator-schema` (`@udtc/schema`), `creato
 
 Runnable apps under [`apps/`](apps/) (not published):
 
-| App | Demo | What it is |
-| --- | --- | --- |
-| [`apps/creator`](apps/creator) | [`/creator/`](https://chessmess.github.io/UltimateDarkTower/creator/) | Scenario creator — deck, dungeon & battle builder |
-| [`apps/player`](apps/player) | [`/player/`](https://chessmess.github.io/UltimateDarkTower/player/) | Scenario player (masked-map play engine) |
-| [`apps/digital`](apps/digital) | [`/digital/`](https://chessmess.github.io/UltimateDarkTower/digital/) | Solo digital play |
-| [`apps/seed`](apps/seed) | [`/seed/`](https://chessmess.github.io/UltimateDarkTower/seed/) | Seed / tower-state decoder |
-| [`apps/sync`](apps/sync) | [`/sync/`](https://chessmess.github.io/UltimateDarkTower/sync/) | Browser client for the relay |
-| [`apps/relay-cli`](apps/relay-cli) | — | Relay daemon (CLI) |
-| [`apps/relay-electron`](apps/relay-electron) | — | BLE tower-emulator desktop console |
+| App                                          | Demo                                                                  | What it is                                        |
+| -------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------- |
+| [`apps/creator`](apps/creator)               | [`/creator/`](https://chessmess.github.io/UltimateDarkTower/creator/) | Scenario creator — deck, dungeon & battle builder |
+| [`apps/player`](apps/player)                 | [`/player/`](https://chessmess.github.io/UltimateDarkTower/player/)   | Scenario player (masked-map play engine)          |
+| [`apps/digital`](apps/digital)               | [`/digital/`](https://chessmess.github.io/UltimateDarkTower/digital/) | Solo digital play                                 |
+| [`apps/seed`](apps/seed)                     | [`/seed/`](https://chessmess.github.io/UltimateDarkTower/seed/)       | Seed / tower-state decoder                        |
+| [`apps/sync`](apps/sync)                     | [`/sync/`](https://chessmess.github.io/UltimateDarkTower/sync/)       | Browser client for the relay                      |
+| [`apps/relay-cli`](apps/relay-cli)           | —                                                                     | Relay daemon (CLI)                                |
+| [`apps/relay-electron`](apps/relay-electron) | —                                                                     | BLE tower-emulator desktop console                |
 
 ## Development
 

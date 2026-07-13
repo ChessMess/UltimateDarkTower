@@ -73,7 +73,6 @@ function fireViewChange(): void {
     try {
       cb();
     } catch (err) {
-       
       console.error('[rendererController] onViewChange listener threw', err);
     }
   }

@@ -204,7 +204,7 @@ window.addEventListener('message', (event: MessageEvent) => {
     // display runs its visual sweep + audio (matching the Display example). The
     // sequence settles to the calibrated state and fires onCalibrationComplete.
     popupCalibrating = true;
-     
+
     display?.applyState({
       ...(lastState ?? createDefaultTowerState()),
       command: TOWER_COMMANDS.calibration,

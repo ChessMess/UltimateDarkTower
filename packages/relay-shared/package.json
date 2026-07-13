@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "build": "tsc --build",
+    "typecheck": "tsc --noEmit",
     "prepack": "npm run clean && npm run build",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
@@ -41,5 +42,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

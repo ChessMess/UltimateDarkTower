@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsc --build",
     "dev": "tsc --build --watch",
+    "typecheck": "tsc --noEmit",
     "prepack": "npm run clean && npm run build",
     "clean": "rm -rf dist *.tsbuildinfo"
   },

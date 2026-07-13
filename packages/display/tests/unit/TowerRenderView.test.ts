@@ -304,7 +304,6 @@ describe('TowerRenderView', () => {
 
 describe('TOWER_DISPLAY_CSS docking rules', () => {
   it('includes the overlay + panel-slot rules so injectStyles:false consumers get them', () => {
-     
     const { TOWER_DISPLAY_CSS } = jest.requireActual('../../src/styles') as {
       TOWER_DISPLAY_CSS: string;
     };

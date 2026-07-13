@@ -6,7 +6,10 @@ export default defineConfig({
     alias: {
       // Point at TypeScript source so Vite/esbuild processes it directly,
       // avoiding Rollup's inability to statically analyze CJS dist output.
-      'ultimatedarktowerrelay-core': path.resolve(__dirname, '../../packages/relay-core/src/index.ts'),
+      'ultimatedarktowerrelay-core': path.resolve(
+        __dirname,
+        '../../packages/relay-core/src/index.ts',
+      ),
       'ultimatedarktowerrelay-shared': path.resolve(
         __dirname,
         '../../packages/relay-shared/src/index.ts',

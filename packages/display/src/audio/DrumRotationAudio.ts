@@ -114,7 +114,6 @@ export class DrumRotationAudio {
         this.play();
       }
     } catch (err) {
-       
       console.error('[DrumRotationAudio] failed to load', url, err);
     }
   }

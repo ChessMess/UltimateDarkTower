@@ -284,6 +284,12 @@ dracoDecoderPath? }`. Models load by **reusing Display's `loadSkullModel`** (loa
   and regenerated the readout snapshot. Updated `docs/STATE_MODEL.md`, `docs/API.md`,
   `docs/GETTING_STARTED.md`, and `README.md`.
 
+### Changed
+
+- **Build tooling (no output change).** `tsconfig.json` now extends the shared workspace
+  `tsconfig.browser-lib.json` (deduplicated with `display`); compiler options are unchanged and the
+  emitted `dist/` is byte-identical.
+
 ### Notes
 
 - Peers: `ultimatedarktower` `^4.1.0` (board datasets/graph helpers), `ultimatedarktowerdisplay` `^0.9.0`

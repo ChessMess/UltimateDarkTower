@@ -360,7 +360,7 @@ export class Board3DPlugin implements ScenePlugin {
 
     const f = this.view3D.getLiveCameraFactors();
     const r = (n: number): number => +n.toFixed(2);
-     
+
     console.log(
       `[board3d] camera → { elevationFactor: ${r(f.elevationFactor)}, targetHeightFactor: ${r(f.targetHeightFactor)}, distanceFactor: ${r(f.distanceFactor)} }`,
     );
