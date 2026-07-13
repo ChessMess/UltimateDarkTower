@@ -16,15 +16,15 @@ jobs:
     name: Build · Typecheck · Test (Node 22)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The relay BLE natives (@stoprocent/{bleno,noble,bluetooth-hci-socket})
       # build via node-gyp during `pnpm install`; on Linux they need these headers.
       - name: Install BLE build deps
         run: sudo apt-get update && sudo apt-get install -y libbluetooth-dev libudev-dev
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           # pnpm 11.9.0 requires Node >= 22.13 (it loads the node:sqlite
           # built-in); Node 20 crashes at `pnpm install`.
@@ -45,14 +45,14 @@ jobs:
         # Node 20 can't run pnpm 11.9.0 (needs >= 22.13); test 22 + 24.
         node: [22, 24]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install BLE build deps (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libbluetooth-dev libudev-dev
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
           cache: pnpm
