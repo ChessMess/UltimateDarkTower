@@ -7,8 +7,11 @@ const COMMAND_RESPONSE_DELAY_MS = 50;
 // Safety net only. Calibration normally completes when the emulator popup
 // reports its visual sweep finished (via completeCalibration()); this fires
 // only if that signal never arrives — e.g. the popup is closed, headless, or
-// the 3D model never loaded. Comfortably above the worst-case sweep (~20s).
-const CALIBRATION_FALLBACK_MS = 30000;
+// the 3D model never loaded. Comfortably above the worst-case sweep (~20s)
+// but below CommandQueue's own 30000ms hard timeout (udtCommandQueue.ts), so
+// this fallback always resolves Tower.calibrate() before the queue gives up
+// and rejects it.
+const CALIBRATION_FALLBACK_MS = 25000;
 
 // Response type byte values (from TC constants in udtConstants.ts)
 const TOWER_STATE_RESPONSE = 0x00;
@@ -140,24 +143,19 @@ export class TowerEmulatorAdapter implements IBluetoothAdapter {
         this.options.onLightSequenceCommand?.(sequenceId);
       }
     } else if (data.length === 1 && commandType === CMD_CALIBRATE) {
-      // Calibration takes TWO responses, mirroring real tower firmware:
-      //   1) an immediate ack (this echo) so the library's command queue
-      //      resolves Tower.calibrate() and then arms `performingCalibration`;
-      //   2) a later TOWER_STATE (completeCalibration(), below) that the library
-      //      sees while `performingCalibration` is armed → fires onCalibrationComplete.
-      // A single response can't work: the library arms the flag only AFTER the
-      // command's ack, and handleTowerStateResponse runs before the command
-      // completes — so the completion state must arrive after the ack.
+      // Mirror real tower firmware: exactly ONE TOWER_STATE response for a
+      // calibrate command, sent only when calibration actually finishes (the
+      // popup's visual sweep reports done via completeCalibration(), or the
+      // fallback timer). The library arms `performingCalibration` before this
+      // command is even sent (see UltimateDarkTower.test.ts: "performingCalibration
+      // is set synchronously before the calibration ack arrives"), so an early
+      // ack here would be indistinguishable from real completion and would fire
+      // onCalibrationComplete almost instantly instead of when the sweep ends.
       this.calibrationPending = true;
       if (this.calibrationFallbackTimer) clearTimeout(this.calibrationFallbackTimer);
       this.calibrationFallbackTimer = setTimeout(
         () => this.completeCalibration(),
         CALIBRATION_FALLBACK_MS,
-      );
-      // (1) ack — echo current state so the command resolves.
-      setTimeout(
-        () => this.rxCallback?.(new Uint8Array(this.lastStatePacket)),
-        COMMAND_RESPONSE_DELAY_MS,
       );
     } else {
       // Other basic commands (unjam, reset counter, etc.) — echo last known state

@@ -472,16 +472,16 @@ async function calibrate() {
     return;
   }
   setCalibrateButtonDisabled(true);
+  document.getElementById('calibrating-message')?.classList.remove('hidden');
   // Kick off the popup's visual calibration sweep on click (like the Display
   // example) before awaiting the BLE round-trip. No-op outside emulator mode.
   if (currentConnectionMode === 'emulator') {
     postCalibrateToTowerEmulatorWindow();
   }
   await Tower.calibrate();
-  const el = document.getElementById('calibrating-message');
-  if (el) {
-    el.classList.remove('hidden');
-  }
+  // Hiding the message is handled by onCalibrationComplete (normal path) and
+  // the self-heal check in onTowerStateUpdate (race-condition fallback) —
+  // both already run by the time this await resolves.
 }
 
 const onCalibrationComplete = () => {
