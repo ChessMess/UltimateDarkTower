@@ -88,6 +88,15 @@ export interface DiagnosticsSink {
 export interface DiagnosticsConfig {
   enabled: boolean;
   capturePayloads?: boolean;
+  /**
+   * Capture disconnect incident snapshots even when `enabled` is false.
+   *
+   * Incidents fire only on disconnect (cheap and low-volume), so a consumer can
+   * always persist "why did the tower drop?" without opting into the verbose,
+   * high-frequency event/battery stream that `enabled` controls. Default false,
+   * so the published library's behavior is unchanged unless a consumer opts in.
+   */
+  captureIncidents?: boolean;
   sinks?: DiagnosticsSink[];
 }
 
@@ -184,6 +193,8 @@ export class InMemorySink implements DiagnosticsSink {
 export class UdtDiagnosticsRecorder {
   enabled: boolean;
   capturePayloads: boolean;
+  /** Capture disconnect incidents even when `enabled` is false. See DiagnosticsConfig. */
+  captureIncidents: boolean;
   private sinks: DiagnosticsSink[];
 
   private events: DiagEvent[] = [];
@@ -196,7 +207,13 @@ export class UdtDiagnosticsRecorder {
   constructor(config: DiagnosticsConfig) {
     this.enabled = config.enabled;
     this.capturePayloads = config.capturePayloads ?? false;
+    this.captureIncidents = config.captureIncidents ?? false;
     this.sinks = config.sinks ?? [];
+  }
+
+  /** True when either verbose diagnostics or incident-only capture is active. */
+  private get incidentCaptureActive(): boolean {
+    return this.enabled || this.captureIncidents;
   }
 
   setSinks(sinks: DiagnosticsSink[]): void {
@@ -213,7 +230,9 @@ export class UdtDiagnosticsRecorder {
 
   /** Mark the start of a connected session. Called from BLE connect path. */
   beginSession(): void {
-    if (!this.enabled) return;
+    // Establish session context whenever incidents may be captured, so an
+    // incident carries a sessionId/connectedAt even with the verbose stream off.
+    if (!this.incidentCaptureActive) return;
     this.sessionId = makeId();
     this.connectedAt = Date.now();
     this.events = [];
@@ -273,7 +292,7 @@ export class UdtDiagnosticsRecorder {
    * Must be called BEFORE the BLE layer clears state.
    */
   recordIncident(inputs: IncidentSnapshotInputs): IncidentReport | null {
-    if (!this.enabled) return null;
+    if (!this.incidentCaptureActive) return null;
 
     const triggeredAt = Date.now();
     const inFlightCommandAgeMs = inputs.commandQueue.currentCommand

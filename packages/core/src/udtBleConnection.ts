@@ -201,7 +201,9 @@ export class UdtBleConnection {
   }
 
   private recordIncident(cause: DisconnectCause): IncidentReport | null {
-    if (!this.recorder || !this.recorder.enabled) return null;
+    // Honor incident-only capture (captureIncidents) as well as full diagnostics;
+    // the recorder applies the same gate before persisting.
+    if (!this.recorder || (!this.recorder.enabled && !this.recorder.captureIncidents)) return null;
     const queueSnapshot = this.snapshotProviders?.commandQueue() ?? {
       queueLength: 0,
       isProcessing: false,

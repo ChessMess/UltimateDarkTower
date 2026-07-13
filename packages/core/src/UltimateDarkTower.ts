@@ -172,10 +172,15 @@ class UltimateDarkTower {
    * a single boolean check at each hook site.
    */
   private initializeDiagnostics(config?: DiagnosticsConfig): void {
-    const sinks = config?.sinks ?? (config?.enabled ? [new InMemorySink()] : []);
+    // Give a default in-memory sink whenever anything will be captured — full
+    // diagnostics OR incident-only mode — so getLastIncident()/export work even
+    // when the caller supplies no sink.
+    const willCapture = config?.enabled || config?.captureIncidents;
+    const sinks = config?.sinks ?? (willCapture ? [new InMemorySink()] : []);
     this.diagnosticsRecorder = new UdtDiagnosticsRecorder({
       enabled: config?.enabled ?? false,
       capturePayloads: config?.capturePayloads,
+      captureIncidents: config?.captureIncidents,
       sinks,
     });
     this.logger.setDiagnosticsTarget(this.diagnosticsRecorder);

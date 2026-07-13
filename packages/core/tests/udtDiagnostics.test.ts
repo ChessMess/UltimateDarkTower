@@ -201,6 +201,74 @@ describe('UdtDiagnosticsRecorder', () => {
     });
   });
 
+  describe('incident-only capture (captureIncidents, verbose off)', () => {
+    let recorder: UdtDiagnosticsRecorder;
+    let sink: InMemorySink;
+
+    beforeEach(() => {
+      sink = new InMemorySink();
+      recorder = new UdtDiagnosticsRecorder({
+        enabled: false,
+        captureIncidents: true,
+        sinks: [sink],
+      });
+      recorder.beginSession();
+    });
+
+    test('beginSession establishes session context even with verbose off', () => {
+      expect(recorder.getSessionId()).not.toBe('');
+      expect(recorder.getConnectedAt()).not.toBeNull();
+    });
+
+    test('verbose event/battery stream stays off', () => {
+      recorder.recordEvent('cmd_sent', { id: 'x' });
+      recorder.recordBattery(3700, 80);
+      // enabled:false ⇒ recordEvent/recordBattery remain no-ops (incidents only).
+      expect(recorder.getRingBuffer()).toHaveLength(0);
+      expect(recorder.getBatteryHistory()).toHaveLength(0);
+    });
+
+    test('recordIncident captures and dispatches to sinks', () => {
+      const report = recorder.recordIncident({
+        cause: 'response_timeout',
+        connectionStatus: makeConnStatus(),
+        deviceInformation: {},
+        commandQueue: {
+          queueLength: 1,
+          isProcessing: true,
+          currentCommand: { id: 'cmd_1', description: 'play sound', timestamp: Date.now() - 300 },
+        },
+        towerState: null,
+        brokenSeals: [],
+      });
+
+      expect(report).not.toBeNull();
+      expect(report!.cause).toBe('response_timeout');
+      expect(report!.commandQueue.currentCommand?.description).toBe('play sound');
+      expect(report!.inFlightCommandAgeMs).toBeGreaterThanOrEqual(300);
+      expect(report!.sessionId).not.toBe('');
+      // Verbose off ⇒ no ring-buffer history carried on the incident.
+      expect(report!.recentEvents).toHaveLength(0);
+      expect(report!.batteryHistory).toHaveLength(0);
+      expect(sink.list()).toHaveLength(1);
+      expect(recorder.getLastIncident()?.cause).toBe('response_timeout');
+    });
+
+    test('both flags false (default) captures nothing', () => {
+      const off = new UdtDiagnosticsRecorder({ enabled: false });
+      const result = off.recordIncident({
+        cause: 'adapter_event',
+        connectionStatus: makeConnStatus(),
+        deviceInformation: {},
+        commandQueue: { queueLength: 0, isProcessing: false, currentCommand: null },
+        towerState: null,
+        brokenSeals: [],
+      });
+      expect(result).toBeNull();
+      expect(off.getLastIncident()).toBeNull();
+    });
+  });
+
   describe('bytesToHex', () => {
     test('encodes and pads short payloads', () => {
       expect(bytesToHex(new Uint8Array([0x00, 0x0a, 0xff]))).toBe('000aff');
@@ -236,6 +304,27 @@ describe('UltimateDarkTower diagnostics integration', () => {
     expect(incident).not.toBeNull();
     expect(incident!.cause).toBe('adapter_event');
     expect(sink.list()).toHaveLength(1);
+  });
+
+  test('captureIncidents:true records the incident with verbose diagnostics off', async () => {
+    const adapter = new MockBluetoothAdapter();
+    const sink = new InMemorySink();
+    const tower = new UltimateDarkTower({
+      adapter,
+      diagnostics: { enabled: false, captureIncidents: true, sinks: [sink] },
+    });
+
+    await tower.connect();
+    adapter.simulateDisconnect();
+
+    const incident = tower.getLastIncident();
+    expect(incident).not.toBeNull();
+    expect(incident!.cause).toBe('adapter_event');
+    expect(sink.list()).toHaveLength(1);
+    // Verbose stream off: incident carries no event/battery history, and the
+    // public "diagnostics enabled" flag stays false.
+    expect(incident!.recentEvents).toHaveLength(0);
+    expect(tower.isDiagnosticsEnabled()).toBe(false);
   });
 
   test('cmd_ignored_calibration event is recorded when a command is dropped during calibration', async () => {

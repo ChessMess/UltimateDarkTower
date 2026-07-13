@@ -562,6 +562,20 @@
             <option value="emulator">Tower Emulator</option>
           </select>
         </div>
+
+        <!-- Unexpected-disconnect banner. Shown by onTowerDisconnected() when the
+             tower drops for any reason other than a user-initiated disconnect. -->
+        <div id="disconnect-notice" class="hidden mx-2 mb-2 p-3 border border-red-500 bg-red-900 bg-opacity-40 rounded text-sm" role="alert">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="font-semibold text-red-300">Tower disconnected unexpectedly</div>
+              <div id="disconnect-notice-detail" class="text-red-100 mt-1"></div>
+              <div class="text-red-200 mt-1">A diagnostic incident was captured — open the <span class="font-semibold">BLE Debug</span> tab for details.</div>
+            </div>
+            <button type="button" onclick="dismissDisconnectNotice()" class="tower-button text-xs px-2 py-1 flex-shrink-0">Dismiss</button>
+          </div>
+        </div>
+
         <hr class="tower-hr" />
 
         <!-- Two-column layout for fieldsets -->

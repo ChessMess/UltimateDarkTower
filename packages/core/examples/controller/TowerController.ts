@@ -55,6 +55,10 @@ function buildDiagnosticsConfig() {
   return {
     enabled: readBoolStorage(DIAG_ENABLED_KEY, false),
     capturePayloads: readBoolStorage(DIAG_PAYLOADS_KEY, false),
+    // Always capture disconnect incidents (cheap, fires only on drop) so an
+    // unexpected disconnect leaves a diagnostic trail even when the verbose
+    // event stream is off — which it is by default. See onTowerDisconnected().
+    captureIncidents: true,
     sinks: [memorySink, incidentSink],
   };
 }
@@ -377,6 +381,8 @@ async function connectToTowerEmulator() {
 const onTowerConnected = () => {
   syncTowerEmulatorWindow();
   updateEmulatorSealTabVisibility();
+  // Clear any stale "unexpected disconnect" banner from a previous session.
+  dismissDisconnectNotice();
 
   const el = document.getElementById('tower-connection-state');
   if (el) {
@@ -456,8 +462,33 @@ const onTowerDisconnected = () => {
   // cancels its pending reply), so clear the calibrating UI here.
   setCalibrationControlsDisabled(false);
   document.getElementById('calibrating-message')?.classList.add('hidden');
+
+  // Surface unexpected drops. Incident capture is always-on for this app
+  // (captureIncidents:true), so recordIncident() has already run for every
+  // disconnect path by the time this callback fires — getLastIncident() is
+  // populated. A user-initiated disconnect is expected, so stays silent.
+  const cause = Tower.getLastIncident()?.cause;
+  if (cause && cause !== 'user_initiated') {
+    showDisconnectNotice(cause);
+    // Reflect the freshly captured incident in the BLE Debug tab immediately.
+    void refreshIncidentLog();
+  }
 };
 Tower.onTowerDisconnect = onTowerDisconnected;
+
+// Unexpected-disconnect banner (see onTowerDisconnected). Defined as hoisted
+// function declarations so the disconnect handler above can call them; they run
+// only at disconnect time, after all module-level state (CAUSE_LABEL) is set.
+function showDisconnectNotice(cause: DisconnectCause): void {
+  const detail = document.getElementById('disconnect-notice-detail');
+  if (detail) detail.textContent = `Cause: ${CAUSE_LABEL[cause] ?? cause}`;
+  document.getElementById('disconnect-notice')?.classList.remove('hidden');
+}
+
+function dismissDisconnectNotice(): void {
+  document.getElementById('disconnect-notice')?.classList.add('hidden');
+}
+(window as any).dismissDisconnectNotice = dismissDisconnectNotice;
 
 // Fieldsets containing controls that send real tower commands. Disabled for
 // the duration of a calibration: the library now ignores (not queues) any
