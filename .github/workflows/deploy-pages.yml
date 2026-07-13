@@ -76,6 +76,11 @@ jobs:
           cp -r packages/core/dist/examples/game/.       "$SITE/game/" || true
           cp -r packages/core/dist/examples/assets/.     "$SITE/assets/"
 
+          # Manual test plans (self-contained HTML, no build step) — served at
+          # /manual-testing/ so testers can open them from a stable URL.
+          mkdir -p "$SITE/manual-testing"
+          cp -r packages/core/manual-testing/.           "$SITE/manual-testing/"
+
           # Landing page, Jekyll bypass, and the legacy deep-URL redirect stub.
           cp docs/pages/index.html "$SITE/index.html"
           touch "$SITE/.nojekyll"
