@@ -51,9 +51,10 @@ jobs:
           # for the actual `npm info`/`npm publish` auth. Token-authenticated
           # reads work on any npm version, avoiding the OIDC+npm11 `npm info`
           # breakage that makes Changesets re-attempt already-published packages.
-          # Until the NPM_TOKEN secret exists these are empty → OIDC/no-op path
-          # (harmless: nothing to publish). Provenance still works alongside a
-          # token because id-token: write is granted above.
+          # The NPM_TOKEN secret is configured, so publishing uses token auth.
+          # (If it were ever removed these go empty → OIDC/no-op path, harmless:
+          # nothing publishes.) Provenance still works alongside a token because
+          # id-token: write is granted above.
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
