@@ -24,14 +24,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # pnpm install builds the relay BLE natives via node-gyp on Linux.
       - name: Install BLE build deps
         run: sudo apt-get update && sudo apt-get install -y libbluetooth-dev libudev-dev
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           # pnpm 11.9.0 requires Node >= 22.13 (node:sqlite built-in).
           node-version: 22
@@ -85,7 +85,7 @@ jobs:
 
           echo "Assembled site:"; ls -la "$SITE"
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
@@ -97,4 +97,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
