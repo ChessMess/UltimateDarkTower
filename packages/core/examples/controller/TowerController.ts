@@ -454,24 +454,41 @@ const onTowerDisconnected = () => {
 
   // An in-flight calibration won't complete after a disconnect (the adapter
   // cancels its pending reply), so clear the calibrating UI here.
-  setCalibrateButtonDisabled(false);
+  setCalibrationControlsDisabled(false);
   document.getElementById('calibrating-message')?.classList.add('hidden');
 };
 Tower.onTowerDisconnect = onTowerDisconnected;
 
-// Disable the Calibrate button while a calibration is in flight so it can't be
-// spammed (which would queue overlapping commands and re-trigger the sweep).
-// Re-enabled on completion / disconnect.
-const setCalibrateButtonDisabled = (disabled: boolean) => {
-  const btn = document.getElementById('calibrate') as HTMLButtonElement | null;
-  if (btn) btn.disabled = disabled;
+// Fieldsets containing controls that send real tower commands. Disabled for
+// the duration of a calibration: the library now ignores (not queues) any
+// command sent while performingCalibration is true, so leaving these clickable
+// would let a user "successfully" toggle lights/rotate drums/etc. that never
+// actually reach the tower. Includes the Drums fieldset (which also contains
+// the Calibrate button itself, so it can't be spammed to queue overlapping
+// commands or re-trigger the sweep).
+const CALIBRATION_LOCKED_FIELDSET_IDS = [
+  'fieldset-audio',
+  'fieldset-lights',
+  'fieldset-drums-rotate',
+  'fieldset-drums-random',
+  'fieldset-glyphs',
+  'fieldset-break-seal',
+];
+
+const setCalibrationControlsDisabled = (disabled: boolean) => {
+  for (const id of CALIBRATION_LOCKED_FIELDSET_IDS) {
+    const el = document.getElementById(id) as HTMLFieldSetElement | null;
+    if (el) el.disabled = disabled;
+  }
+  const resetSkullButton = document.getElementById('reset') as HTMLButtonElement | null;
+  if (resetSkullButton) resetSkullButton.disabled = disabled;
 };
 
 async function calibrate() {
   if (!Tower.isConnected) {
     return;
   }
-  setCalibrateButtonDisabled(true);
+  setCalibrationControlsDisabled(true);
   document.getElementById('calibrating-message')?.classList.remove('hidden');
   // Kick off the popup's visual calibration sweep on click (like the Display
   // example) before awaiting the BLE round-trip. No-op outside emulator mode.
@@ -485,7 +502,7 @@ async function calibrate() {
 }
 
 const onCalibrationComplete = () => {
-  setCalibrateButtonDisabled(false);
+  setCalibrationControlsDisabled(false);
   const el = document.getElementById('calibrating-message');
   if (el) {
     el.classList.add('hidden');
@@ -578,7 +595,7 @@ const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: 
     const calMsg = document.getElementById('calibrating-message');
     if (calMsg && !calMsg.classList.contains('hidden')) {
       calMsg.classList.add('hidden');
-      setCalibrateButtonDisabled(false);
+      setCalibrationControlsDisabled(false);
     }
   }
 
@@ -591,6 +608,13 @@ const onTowerStateUpdate = (newState: TowerState, oldState: TowerState, source: 
   if (drumPositionsChanged) {
     logger.info('Drum positions changed, updating dropdowns', '[TC]');
     updateDrumDropdowns();
+  }
+
+  // Check if any light state changed and resync the light checkboxes to match.
+  const layersChanged = JSON.stringify(newState.layer) !== JSON.stringify(oldState.layer);
+  if (layersChanged) {
+    logger.info('Light state changed, updating checkboxes', '[TC]');
+    updateLightCheckboxesFromState(newState);
   }
 
   // Check if volume changed and update the display (but don't override our local volume tracking)
@@ -1069,6 +1093,48 @@ const getBaseLightIndexForSide = (side: TowerSide): number => {
     default:
       return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
   }
+};
+
+// Reverse of singleLight()'s attribute → layer/light-index mapping: reads
+// real tower state back into the light checkboxes. The checkboxes are
+// otherwise pure optimistic UI (set directly by click handlers before/without
+// confirmation that the command was actually sent), so this is what brings
+// them back in line with truth — notably after calibration, where any light
+// commands issued during the calibration window were ignored, not queued.
+const updateLightCheckboxesFromState = (state: TowerState) => {
+  const checkboxes = document.querySelectorAll(
+    'input[type="checkbox"][data-light-type]',
+  ) as NodeListOf<HTMLInputElement>;
+
+  checkboxes.forEach((checkbox) => {
+    const lightType = checkbox.getAttribute('data-light-type');
+    const lightLocation = checkbox.getAttribute('data-light-location') as TowerSide;
+    const lightLevel = checkbox.getAttribute('data-light-level') as TowerLevels;
+    const lightBaseLocation = checkbox.getAttribute('data-light-base-location');
+
+    let layerIndex: number;
+    let lightIndex: number;
+
+    if (lightType === 'doorway') {
+      layerIndex = getTowerLayerForLevel(lightLevel);
+      lightIndex = getLightIndexForSide(lightLocation);
+    } else if (lightType === 'ledge') {
+      layerIndex = TOWER_LAYERS.LEDGE;
+      lightIndex = getLedgeLightIndexForSide(lightLocation);
+    } else if (lightType === 'base') {
+      layerIndex = lightBaseLocation === 'b' ? TOWER_LAYERS.BASE2 : TOWER_LAYERS.BASE1;
+      lightIndex = getBaseLightIndexForSide(lightLocation);
+    } else {
+      return;
+    }
+
+    const effect = state.layer[layerIndex]?.light[lightIndex]?.effect ?? LIGHT_EFFECTS.off;
+    const styleName =
+      Object.keys(LIGHT_EFFECTS).find((key) => LIGHT_EFFECTS[key] === effect) ?? 'off';
+
+    checkbox.checked = effect !== LIGHT_EFFECTS.off;
+    checkbox.setAttribute('data-light-style', checkbox.checked ? styleName : 'off');
+  });
 };
 
 const lights = () => {
