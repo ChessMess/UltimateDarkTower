@@ -55,7 +55,7 @@ pnpm run lint                    # eslint (see lint debt note below)
 - **Tooling:** one root [`eslint.config.js`](eslint.config.js) + [`.prettierrc`](.prettierrc).
   Lint is not yet part of `ci` — there is pre-existing lint debt (mostly `no-explicit-any`).
 - **Docs:** per-package docs live in each package; Creator/Relay/Sync guides are under
-  [`docs/`](docs/). Pre-merge repository history is preserved under [`docs/history/`](docs/history/).
+  [`docs/`](docs/).
 
 ## Publishing
 

@@ -34,7 +34,6 @@ On Linux, the relay BLE native deps need system headers:
 - **Formatting/lint:** single root `.prettierrc` and `eslint.config.js`. (Lint has known
   pre-existing debt and is not yet a CI gate — don't add new violations.)
 - **Don't commit build output** (`dist/`) — it is gitignored and built in CI.
-- **History:** pre-merge repo history is preserved under `docs/history/` — don't edit it.
 
 ## Merging
 

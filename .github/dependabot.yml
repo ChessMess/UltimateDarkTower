@@ -8,9 +8,7 @@
 version: 2
 updates:
   # pnpm workspace at the repo root. Dependabot handles pnpm under the `npm`
-  # ecosystem (it reads pnpm-lock.yaml + the workspace importers). The archived,
-  # never-installed `docs/history/**` snapshot is intentionally NOT listed as a
-  # directory, so no update PRs are opened against it.
+  # ecosystem (it reads pnpm-lock.yaml + the workspace importers).
   - package-ecosystem: "npm"
     directory: "/"
     schedule:

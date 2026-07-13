@@ -14,7 +14,6 @@ export default tseslint.config(
       '**/example/dist/**',
       '**/coverage/**',
       '**/node_modules/**',
-      'docs/history/**',
       '**/*.d.ts',
       // compiled/generated JS that lives alongside TS sources
       'packages/creator-engine/**/*.js',

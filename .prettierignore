@@ -6,8 +6,6 @@
 **/example/dist/
 **/coverage/
 
-# Preserved pre-merge history — never reformat the graveyard
-docs/history/
 
 # Generated / vendored
 pnpm-lock.yaml
