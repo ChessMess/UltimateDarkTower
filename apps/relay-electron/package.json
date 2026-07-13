@@ -19,7 +19,7 @@
     "ultimatedarktowerrelay-shared": "workspace:^",
     "electron-squirrel-startup": "^1.0.1",
     "@stoprocent/bleno": "^0.12.4",
-    "@stoprocent/noble": "^2.3.10",
+    "@stoprocent/noble": "^2.5.6",
     "ultimatedarktower": "workspace:^",
     "ws": "^8.18.0"
   },
