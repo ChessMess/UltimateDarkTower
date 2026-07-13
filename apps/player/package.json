@@ -37,7 +37,7 @@
     "@vitejs/plugin-react": "^6.0.0",
     "ajv": "^8.17.0",
     "ajv-formats": "^3.0.0",
-    "jsdom": "^25.0.0",
+    "jsdom": "^29.1.1",
     "vite": "^8.0.0",
     "vitest": "^4.1.0"
   }
