@@ -57,25 +57,30 @@ function copyTowerAsset(): Plugin {
 // assets as base64 data URIs (ignoring assetsInlineLimit). For the 113 .ogg
 // files in audioLibrary.ts that would mean a 41 MB JS bundle (and even a single
 // file like calibrationAudio.ts's bundled recording bloats the bundle by its
-// base64 size). This plugin runs *before* Vite's asset processor, intercepts
-// each per-file new URL expression, emits the .ogg as a separate Rollup asset,
-// and substitutes a ROLLUP_FILE_URL_ placeholder so the bundle references the
-// emitted file by relative path instead of inlining its bytes.
+// base64 size); the 21 MB `board.png` alone would add ~28 MB of base64 to *each*
+// of the ESM and CJS bundles. This plugin runs *before* Vite's asset processor,
+// intercepts each per-file new URL expression, emits the asset as a separate
+// Rollup asset, and substitutes a ROLLUP_FILE_URL_ placeholder so the bundle
+// references the emitted file by relative path instead of inlining its bytes.
 //
 // The source pattern in these modules remains the canonical
-// `new URL('./assets/<file>.ogg', import.meta.url)` shape so esbuild,
+// `new URL('./assets/<file>.<ext>', import.meta.url)` shape so esbuild,
 // webpack 5+, Rollup, and Parcel still detect and emit the assets on the
 // consumer side (each runs its own detector independently of Vite).
-// Add any new hand-maintained `new URL('./assets/*.ogg', import.meta.url)` module
-// here, or the lib build base64-inlines its bytes instead of emitting a file.
-// See docs/AUDIO.md → "Adding a bundled sound to the library".
-const OGG_URL_HOSTS = [
+// Add any new hand-maintained `new URL('./assets/*.{ogg,png}', import.meta.url)`
+// module here, or the lib build base64-inlines its bytes instead of emitting a
+// file. See docs/AUDIO.md → "Adding a bundled sound to the library".
+const URL_ASSET_HOSTS = [
   '/audio/audioLibrary.ts',
   '/audio/calibrationAudio.ts',
   '/audio/drumRotationSound.ts',
+  // The real Return to Dark Tower board art (21 MB). Emitted as a separate file
+  // (dist/3d/assets/board.png) rather than base64-inlined. See
+  // src/3d/GameBoardImageTexture.ts.
+  '/3d/GameBoardImageTexture.ts',
 ];
-function emitOggsAsFiles(): Plugin {
-  // Match the full `new URL('./assets/<file>.ogg', import.meta.url).href`
+function emitAssetsAsFiles(): Plugin {
+  // Match the full `new URL('./assets/<file>.<ext>', import.meta.url).href`
   // expression so the .href is part of what gets substituted — Rollup's
   // ROLLUP_FILE_URL_ placeholder already expands to a `.href` string, so
   // capturing .href in the match avoids a redundant double-wrap.
@@ -88,13 +93,13 @@ function emitOggsAsFiles(): Plugin {
   // emitted as separate assets. So allow an optional trailing comma before `)`
   // and arbitrary whitespace between `)` and `.href`.
   const URL_RE =
-    /new URL\(\s*['"]\.\/assets\/([A-Za-z0-9_.-]+\.ogg)['"]\s*,\s*import\.meta\.url\s*,?\s*\)\s*\.href/g;
+    /new URL\(\s*['"]\.\/assets\/([A-Za-z0-9_.-]+\.(?:ogg|png))['"]\s*,\s*import\.meta\.url\s*,?\s*\)\s*\.href/g;
   return {
-    name: 'emit-oggs-as-files',
+    name: 'emit-assets-as-files',
     apply: 'build',
     enforce: 'pre',
     transform(code, id) {
-      if (!OGG_URL_HOSTS.some((host) => id.endsWith(host))) return null;
+      if (!URL_ASSET_HOSTS.some((host) => id.endsWith(host))) return null;
       const assetsDir = resolve(dirname(id), 'assets');
       const segments: string[] = [];
       let last = 0;
@@ -119,7 +124,7 @@ function emitOggsAsFiles(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [redirectExamplePath(), copyTowerAsset(), emitOggsAsFiles()],
+  plugins: [redirectExamplePath(), copyTowerAsset(), emitAssetsAsFiles()],
   resolve: {
     alias: {
       // The ESM build of ultimatedarktower uses createRequire which is not
@@ -155,10 +160,13 @@ export default defineConfig({
       output: {
         // Keep .ogg filenames stable under dist/audio/assets/ so consumers
         // using `buildOfficialSoundPack` to self-host from the package's
-        // dist tree get predictable paths. Other assets (GLB) keep Vite's
-        // default hashed names for cache-busting.
+        // dist tree get predictable paths. board.png gets a stable path too
+        // (dist/3d/assets/board.png, alongside the copied tower.glb) so it can
+        // be self-hosted or served directly from the package. Other assets
+        // (GLB) keep Vite's default hashed names for cache-busting.
         assetFileNames: (asset) => {
           if (asset.name?.endsWith('.ogg')) return 'audio/assets/[name][extname]';
+          if (asset.name === 'board.png') return '3d/assets/[name][extname]';
           return 'assets/[name]-[hash][extname]';
         },
       },

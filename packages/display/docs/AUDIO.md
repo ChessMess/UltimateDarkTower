@@ -181,7 +181,7 @@ To bundle a new sound shipped with the package (as `drumRotation.ogg` and `drumC
 
 1. Drop the `.ogg` into `src/audio/assets/`.
 2. Reference it from a small hand-maintained module via the canonical pattern: `export const MY_SOUND_URL = new URL('./assets/my-sound.ogg', import.meta.url).href;`. Keep it in its own module — `scripts/extract-audio.mjs` regenerates `audioLibrary.ts` wholesale and would wipe a hand-added export there.
-3. **Add that module's path to `OGG_URL_HOSTS` in `vite.config.ts`.** Vite's lib build inlines `new URL(literal, import.meta.url)` assets as base64 data URIs by default; the `emitOggsAsFiles` plugin emits them as separate files **only** for modules on this list. Skip this step and your asset's bytes get base64-inlined into the JS bundle.
+3. **Add that module's path to `URL_ASSET_HOSTS` in `vite.config.ts`.** Vite's lib build inlines `new URL(literal, import.meta.url)` assets as base64 data URIs by default; the `emitAssetsAsFiles` plugin (which also de-inlines the board texture PNG) emits them as separate files **only** for modules on this list. Skip this step and your asset's bytes get base64-inlined into the JS bundle.
 4. Export the URL constant from `src/index.ts` if consumers should reference it.
 
 (This is distinct from the [Bundler compatibility](#bundler-compatibility) section below, which is about _consumers_ bundling the published package — not this repo's own build.)

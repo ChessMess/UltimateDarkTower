@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { anchorToWorld, type DiscMetrics } from '../../src/3d/boardMapping';
-import { getBoardTextureRotation } from '../../src/3d/GameBoardImageTexture';
+import { getBoardTextureRotation } from '../../src/3d/boardTextureRotation';
 import type { Tower3DView } from '../../src/3d/Tower3DView';
 
 const disc: DiscMetrics = {

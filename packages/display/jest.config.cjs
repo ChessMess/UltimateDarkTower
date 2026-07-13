@@ -30,6 +30,10 @@ module.exports = {
     '.*/audio/calibrationAudio$': '<rootDir>/tests/__mocks__/calibrationAudio.js',
     // Same reason as audioLibrary: drumRotationSound.ts uses `import.meta.url`.
     '.*/audio/drumRotationSound$': '<rootDir>/tests/__mocks__/drumRotationSound.js',
+    // GameBoardImageTexture.ts resolves board.png via `new URL(import.meta.url)`,
+    // which Jest's CJS transformer can't parse. The pure rotation math it needs
+    // lives in boardTextureRotation.ts (imported directly, not stubbed).
+    '.*/GameBoardImageTexture$': '<rootDir>/tests/__mocks__/gameBoardImageTexture.js',
     '\\.svg\\?raw$': '<rootDir>/tests/__mocks__/svgRaw.js',
     '\\.glb\\?url$': '<rootDir>/tests/__mocks__/glbUrl.js',
     '\\.png$': '<rootDir>/tests/__mocks__/pngUrl.js',

@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+
+- **`board.png` is no longer base64-inlined into the JS bundles — bundle size dropped from ~30 MB to
+  ~1.1 MB each.** `GameBoardImageTexture` imported the 21 MB board texture directly, which Vite's
+  library mode base64-inlines (ignoring `assetsInlineLimit`) into _both_ `dist/index.esm.js` and
+  `dist/index.cjs.js`. It's now referenced via `new URL('./assets/board.png', import.meta.url)` and
+  emitted as a standalone file at `dist/3d/assets/board.png` (beside `tower.glb`), using the same
+  `emitAssetsAsFiles` build plugin that already de-inlines the bundled `.ogg` audio. **No API or
+  behavior change:** the default `boardDisc.source: 'image'` still loads the real board art out of the
+  box (esbuild/webpack/Rollup/Parcel each re-emit the asset on the consumer side); the file can now
+  also be self-hosted directly from the package. The pure `getBoardTextureRotation` math moved to a
+  new `boardTextureRotation` module (unchanged behavior) so it stays importable where `import.meta`
+  can't be parsed.
+
 ### Fixed
 
 - **Sample-audio volume levels are now distinct, not just mute-vs-full.** `TowerSampleAudio` mapped

@@ -1,20 +1,19 @@
 import * as THREE from 'three';
-import boardImageUrl from './assets/board.png';
+import { getBoardTextureRotation } from './boardTextureRotation';
 
-/**
- * Base texture rotation (radians) that puts the board's north section (kingdom-0)
- * at the +Z (camera-forward / tower-north) direction, so the board's north aligns
- * with the tower's north face. The `Math.PI / 1.35` term is the fine angular
- * calibration of the shipped `board.png` (its north isn't axis-aligned); the
- * `- Math.PI / 2` corrects a one-cardinal-step (90°) offset that previously left
- * the board's north pointing east. Retune if the image is re-exported.
- */
-const BASE_NORTH_OFFSET = Math.PI / 1.35 - Math.PI / 2;
-
-/** Returns the `texture.rotation` value for the chosen north-kingdom anchor. */
-export function getBoardTextureRotation(northKingdom: 0 | 1 | 2 | 3): number {
-  return BASE_NORTH_OFFSET + northKingdom * (Math.PI / 2);
-}
+// Resolve the board art via `new URL(..., import.meta.url)` rather than a default
+// asset import: Vite's library mode base64-inlines default imports (and any
+// `new URL` asset) regardless of `assetsInlineLimit`, which would bloat both JS
+// bundles by ~28 MB. The library build intercepts this exact expression and emits
+// the PNG as a separate file instead (see vite.config.ts → `emitAssetsAsFiles`,
+// the same mechanism used for the bundled `.ogg` audio). esbuild, webpack 5+,
+// Rollup, and Parcel each detect this `new URL` shape and emit the asset on the
+// consumer side, so the default board texture still loads out of the box.
+//
+// `import.meta` can't be parsed by Jest's CommonJS transform, so this module is
+// stubbed in jest.config.cjs (like the audio modules). The pure rotation math it
+// needs lives in ./boardTextureRotation, which stays importable by tests.
+const boardImageUrl = new URL('./assets/board.png', import.meta.url).href;
 
 /**
  * Load the real Return to Dark Tower board art (`assets/board.png`) as a

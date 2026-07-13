@@ -8,42 +8,49 @@ Recorded here so they can be reviewed and scheduled independently of the cutover
 Status legend: **OPEN** (needs work/decision) · **DONE** (fixed on the migration
 branch) · **WONTFIX** (documented, intentionally left).
 
-> **Deferred (2026-07-12):** the remaining code-cleanup item — **#1 board.png
-> inlining** — is intentionally postponed to **after the cutover**. It is
-> non-blocking and does not affect correctness of the shipped apps; scheduling it
-> post-cutover keeps the migration branch stable for merge. (**#3 nested-ESLint
-> crash** and **#4 ESLint violation debt**, previously deferred alongside it, were
-> both resolved by PR #16 — see below.)
+> **Update (2026-07-12):** all three previously-deferred code-cleanup items are
+> now resolved — **#1 board.png inlining** (emit-as-file, non-breaking),
+> **#3 nested-ESLint crash**, and **#4 ESLint violation debt** (both via PR #16).
+> See each item below.
 
 ---
 
-## 1. `board.png` is base64-inlined into the display library bundle — OPEN (deferred, post-cutover) ⚠️
+## 1. `board.png` is base64-inlined into the display library bundle — DONE ✅
 
 **Severity:** high (published-package size) · **Package:** `packages/display`
 
-`src/3d/GameBoardImageTexture.ts:2` does a default asset import:
+`src/3d/GameBoardImageTexture.ts` did a default asset import
+(`import boardImageUrl from './assets/board.png'`). Vite **library mode
+base64-inlines** default asset imports regardless of `assetsInlineLimit: 0` (the
+same behavior the emit plugin exists to dodge for the `.ogg` files). The 21 MB
+`board.png` therefore became ~28 MB of base64 in **both** `dist/index.esm.js`
+and `dist/index.cjs.js` — each bundle was ~30 MB, almost entirely this one image.
 
-```ts
-import boardImageUrl from './assets/board.png';
-```
+**Fix (chosen approach: emit-as-file, non-breaking — mirrors the `.ogg`
+handling):** the source now references the PNG via
+`new URL('./assets/board.png', import.meta.url)`, and the generalized
+`emitAssetsAsFiles()` build plugin (was `emitOggsAsFiles()`) intercepts that
+expression and emits the PNG as a standalone file at `dist/3d/assets/board.png`
+(beside the copied `tower.glb`). Result: **both bundles dropped ~30 MB → ~1.1 MB**,
+zero base64 image bytes remain, and the CJS bundle uses a `pathToFileURL`
+reference (no raw `import.meta`). **No consumer API/behavior change** — the
+default `boardDisc.source: 'image'` still loads the real board art out of the box
+(esbuild/webpack/Rollup/Parcel each re-emit the asset), and it can now also be
+self-hosted directly from the package.
 
-Vite **library mode base64-inlines** default asset imports regardless of
-`assetsInlineLimit: 0` (the same behavior the `emitOggsAsFiles()` plugin exists
-to dodge for the `.ogg` files). The 21 MB `board.png` therefore becomes ~28 MB
-of base64 in **both** `dist/index.esm.js` and `dist/index.cjs.js` — the bundle
-is ~30 MB, almost entirely this one image. Every npm consumer downloads and
-parses that base64 whether or not they use the default board texture.
+Two follow-on fixes this required:
 
-**Proposed fix (mirrors the existing `tower.glb` handling):** stop importing the
-PNG directly; emit it as a separate asset and reference it by URL — either via a
-`copyBoardAsset()` closeBundle plugin like `copyTowerAsset()`, or the
-`new URL('./assets/board.png', import.meta.url)` + `emitOggsAsFiles`-style
-emit pattern, or make it consumer-supplied like `tower.glb`'s `modelUrl`.
-
-**Decision needed:** this changes how consumers obtain the default board texture
-(they'd need the emitted file served alongside, or to pass a URL), so it is a
-deliberate API/behavior change, not a silent edit. Pick the approach before
-implementing.
+- The pure `getBoardTextureRotation` math moved to a new `boardTextureRotation`
+  module so tests can import it where Jest's CJS transform can't parse
+  `import.meta`; `GameBoardImageTexture` (now `import.meta`-bearing) is stubbed in
+  `jest.config.cjs` like the audio modules.
+- Fixed a **pre-existing, local** Jest breakage surfaced while verifying: the
+  hoisted `node_modules` had a stray `signal-exit@4` nested under
+  `write-file-atomic@4.0.2` (which needs v3), crashing every suite with
+  `onExit is not a function` before any test ran. Removed the stray nested copy so
+  it falls back to the correct root `signal-exit@3.0.7` (matches the lockfile;
+  a clean install was never affected). Jest is green across core/board/display
+  again.
 
 ---
 

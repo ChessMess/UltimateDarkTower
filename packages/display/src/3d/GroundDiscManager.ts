@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type { ResolvedLightingConfig } from './types';
 import { buildBoardTexture } from './GameBoardTexture';
-import { buildBoardTextureFromImage, getBoardTextureRotation } from './GameBoardImageTexture';
+import { buildBoardTextureFromImage } from './GameBoardImageTexture';
+import { getBoardTextureRotation } from './boardTextureRotation';
 
 /**
  * Manages the noir shadow-catching ground disc and the optional game board

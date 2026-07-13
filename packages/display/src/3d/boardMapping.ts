@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { getBoardTextureRotation } from './GameBoardImageTexture';
+import { getBoardTextureRotation } from './boardTextureRotation';
 import type { Tower3DView } from './Tower3DView';
 
 /**
