@@ -1348,7 +1348,8 @@
                 <div class="step-instructions">
                     <div class="expected-result"><strong>Precondition:</strong> Remove any physical seals, and
                         <strong>calibrate first</strong>. Glyph positions are unknown (null) until calibration, so before
-                        calibrating the grid is legitimately all dark — no cells glow. Calibrate, then view the grid.</div>
+                        calibrating the grid is legitimately empty — no glyph icons appear and no cells glow. Calibrate,
+                        then view the grid.</div>
                     <div class="step-instructions">
                         In the <strong>Library</strong> tab, scroll down to the "Glyphs" section. You'll see a 3×4 grid
                         labeled with drum levels (Top / Mid / Bot rows) and compass directions (N / E / S / W columns).
@@ -1356,9 +1357,11 @@
                         Banner, or Reinforce) and another labeled "Side:" to select a compass direction (North / East /
                         South / West).
                     </div>
-                    <div class="expected-result"><strong>Expected:</strong> The grid displays. After calibration, cells
-                        that hold a glyph glow (amber/yellow highlight); cells without a glyph stay dark. (Before
-                        calibration, all cells are dark — that is expected, not a failure.)</div>
+                    <div class="expected-result"><strong>Expected:</strong> The grid displays. After calibration, each
+                        cell that holds a glyph shows a <strong>white glyph icon</strong> on a gray cell; empty cells stay
+                        dark. Merely holding a glyph does <strong>not</strong> make a cell glow — a cell only glows amber
+                        after you click that glyph cell to toggle its doorway light on. (Before calibration, the grid is
+                        empty — that is expected, not a failure.)</div>
                 </div>
                 <textarea class="notes-input" data-step="8.1" placeholder="Add notes..."></textarea>
             </div>
