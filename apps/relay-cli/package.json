@@ -19,7 +19,7 @@
     "ultimatedarktowerrelay-client": "workspace:^",
     "ultimatedarktowerrelay-shared": "workspace:^",
     "ultimatedarktower": "workspace:^",
-    "ws": "^8.18.0"
+    "ws": "^8.21.1"
   },
   "devDependencies": {
     "@types/ws": "^8.5.10"
