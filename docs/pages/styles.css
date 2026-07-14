@@ -132,15 +132,62 @@ a {
     linear-gradient(180deg, var(--bg) 0%, var(--bg) 58%, #0c0a15 100%);
 }
 .hero-bg::after {
-  /* Whisper of board texture at the very bottom edge — kept faint so the stats
-     and scroll cue read against clean dark, not a busy photo. */
+  /* The real board + tower, zoomed onto the map and kept subtle. A slow drift
+     gives it life (the "gif" feel) without pulling focus from the emblem. Masked
+     so the centre — behind the title — stays calm while the board reads toward the
+     lower half. Overscanned (inset: -8%) so the drift never reveals a hard edge. */
   content: "";
   position: absolute;
-  inset: 0;
-  background: url("./media/background.jpg") center 74% / cover no-repeat;
-  opacity: 0.07;
-  -webkit-mask-image: linear-gradient(180deg, transparent 68%, #000 100%);
-  mask-image: linear-gradient(180deg, transparent 68%, #000 100%);
+  inset: -8%;
+  background: url("./media/background.jpg") center 70% / 150% auto no-repeat;
+  opacity: 0.4;
+  -webkit-mask-image: radial-gradient(130% 100% at 50% 30%, transparent 20%, #000 72%);
+  mask-image: radial-gradient(130% 100% at 50% 30%, transparent 20%, #000 72%);
+  animation: heroDrift 46s ease-in-out infinite alternate;
+}
+
+/* Brutal Warlord standing sentinel over the board — faded low so it reads as
+   atmosphere, not a focal point; graded warm to sit with the gold/purple palette
+   and feathered top+bottom so the figure melts out of the dark. */
+.hero-warlord {
+  position: absolute;
+  bottom: 0;
+  left: max(0.5rem, calc(50% - 32rem));
+  height: min(72vh, 34rem);
+  width: auto;
+  z-index: -1;
+  opacity: 0.3;
+  filter: sepia(0.3) saturate(1.12) brightness(1.05) contrast(1.03)
+    drop-shadow(0 0 26px rgba(0, 0, 0, 0.5));
+  -webkit-mask-image: linear-gradient(180deg, transparent 3%, #000 33%, #000 93%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 3%, #000 33%, #000 93%, transparent 100%);
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes heroDrift {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.09) translate3d(0, -1.6%, 0);
+  }
+}
+
+/* Decorative gold filigree divider opening the apps section — echoes the board's
+   ring border (thin parallel lines fading at the ends + a central angular
+   ornament). */
+.section-rule {
+  display: block;
+  width: min(880px, 84%);
+  height: auto;
+  margin: 1.5rem auto 0;
+  opacity: 0.92;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(201, 162, 39, 0.28));
+}
+.section-rule + .group {
+  margin-top: 3rem;
 }
 
 .eyebrow {
@@ -635,7 +682,8 @@ footer code {
     scroll-behavior: auto;
   }
   .ring,
-  .scroll-cue {
+  .scroll-cue,
+  .hero-bg::after {
     animation: none;
   }
   .reveal {
