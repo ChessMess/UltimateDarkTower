@@ -71,12 +71,17 @@ export default tseslint.config(
     },
   },
 
-  // Bundled demo/example apps (e.g. packages/core/examples/**): reference code,
-  // not shipped library source. Explicit `any` is common in DOM/demo glue and
-  // not worth typing away; every other rule still applies. Must stay last so
-  // this relaxation wins over the base recommended config (last-match-wins).
+  // Demo/reference apps (packages/*/examples/**, plus the promoted controller and
+  // game apps): reference code, not shipped library source. Explicit `any` is
+  // common in DOM/demo glue and not worth typing away; every other rule still
+  // applies. Must stay last so this relaxation wins over the base recommended
+  // config (last-match-wins).
   {
-    files: ['**/examples/**/*.{ts,tsx}'],
+    files: [
+      '**/examples/**/*.{ts,tsx}',
+      'apps/controller/**/*.{ts,tsx}',
+      'apps/game/**/*.{ts,tsx}',
+    ],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
     },

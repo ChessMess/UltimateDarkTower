@@ -39,8 +39,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Build the libraries (core + its bundled examples, display, board, creator,
-      # relay). The apps are (re)built below with the correct Pages base path.
+      # Build the libraries (core, display, board, creator, relay) so the apps'
+      # Vite builds resolve each workspace dep against a built dist/. The apps —
+      # including the promoted controller and game — are built below with the
+      # correct Pages base path.
       - name: Build packages
         run: pnpm --filter "./packages/*" build
 
@@ -58,31 +60,29 @@ jobs:
           }
 
           # Apps (default vite config)
-          vbuild "@udtc/creator"            creator
-          vbuild "@udtc/player"             player
-          vbuild "ultimatedarktowerdigital" digital
-          vbuild "ultimatedarktowerseed"    seed
-          vbuild "@dark-tower-sync/client"  sync
+          vbuild "@udtc/creator"               creator
+          vbuild "@udtc/player"                player
+          vbuild "ultimatedarktowerdigital"    digital
+          vbuild "ultimatedarktowerseed"       seed
+          vbuild "@dark-tower-sync/client"     sync
+          vbuild "ultimatedarktowercontroller" controller
+          vbuild "ultimatedarktowergame"       game
 
           # Library demo sites (dedicated example vite configs)
           vbuild "ultimatedarktowerdisplay" display --config vite.config.example.ts
           vbuild "ultimatedarktowerboard"   board   --config vite.example.config.ts
-
-          # Core controller/game examples. Their HTML/CSS reference shared assets
-          # (background, fonts, style.css, glyphs) via ../assets/, so the examples/assets
-          # dir must sit at the site root as a sibling of controller/ and game/.
-          mkdir -p "$SITE/controller" "$SITE/game" "$SITE/assets"
-          cp -r packages/core/dist/examples/controller/. "$SITE/controller/"
-          cp -r packages/core/dist/examples/game/.       "$SITE/game/" || true
-          cp -r packages/core/dist/examples/assets/.     "$SITE/assets/"
 
           # Manual test plans (self-contained HTML, no build step) — served at
           # /manual-testing/ so testers can open them from a stable URL.
           mkdir -p "$SITE/manual-testing"
           cp -r packages/core/manual-testing/.           "$SITE/manual-testing/"
 
-          # Landing page, Jekyll bypass, and the legacy deep-URL redirect stub.
-          cp docs/pages/index.html "$SITE/index.html"
+          # Landing page — generated fresh so each component's version + latest
+          # commit are current at deploy time. Its imagery lives under /media/
+          # (distinct from each app's own /<app>/assets/ emitted by its Vite build).
+          node scripts/pages/build-landing.mjs "$SITE/index.html"
+          cp docs/pages/styles.css "$SITE/styles.css"
+          cp -r docs/pages/media "$SITE/media"
           touch "$SITE/.nojekyll"
           mkdir -p "$SITE/dist/examples/controller"
           cp docs/pages/legacy-controller-redirect.html \

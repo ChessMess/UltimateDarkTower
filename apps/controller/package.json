@@ -1,0 +1,39 @@
+{
+  "name": "ultimatedarktowercontroller",
+  "version": "0.1.0",
+  "description": "Web-based controller for the Return to Dark Tower tower — connect over Bluetooth (or a built-in 3D emulator) to rotate drums, light seals, and play sounds.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "ci": "npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.19.3",
+    "gsap": "^3.15.0",
+    "three": "^0.185.0",
+    "ultimatedarktower": "workspace:^",
+    "ultimatedarktowerdisplay": "workspace:^"
+  },
+  "devDependencies": {
+    "globals": "^15.0.0",
+    "jsdom": "^25.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "catalog:",
+    "vite": "^8.0.0",
+    "vitest": "^4.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

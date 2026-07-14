@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en" class="tower-controller-bg min-h-screen">
+
+<head>
+  <meta charset="utf-8">
+  <title>UDT Controller</title>
+  <meta name="UDT Controller"
+    content="example tower controller using the ultimate dark tower library for Return To Dark Tower">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <link rel="icon" type="image/png" href="./assets/rtdtlogo.png">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+  <style>
+    /* Custom font for tower controller */
+    @font-face {
+      font-family: 'azkolskerning7';
+      src: url('./assets/azkolskerning7-webfont.woff2') format('woff2'),
+        url('./assets/azkolskerning7-webfont.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    /* Custom background for the tower controller */
+    .tower-controller-bg {
+      background-image: url('./assets/background.jpeg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    /* Custom log styles */
+    .log-line {
+      margin: 2px 0;
+      padding: 1px 4px;
+      border-left: 4px solid transparent;
+      word-break: break-all;
+      overflow-wrap: break-word;
+      white-space: pre-wrap;
+    }
+
+    .log-debug {
+      color: #6b7280;
+      border-left-color: #9ca3af;
+    }
+
+    .log-info {
+      color: #1f2937;
+      border-left-color: #3b82f6;
+    }
+
+    .log-warn {
+      color: #c2410c;
+      border-left-color: #f97316;
+      background-color: #fefbf3;
+    }
+
+    .log-error {
+      color: #b91c1c;
+      border-left-color: #ef4444;
+      background-color: #fdf2f2;
+    }
+
+    .log-error {
+      color: #b91c1c;
+      border-left-color: #ef4444;
+      background-color: #fdf2f2;
+    }
+
+    /* Custom component classes to reduce duplication */
+    .tower-button {
+      background-color: #374151;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.75rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.375rem;
+      transition: background-color 0.15s ease-in-out;
+    }
+
+    .tower-button:hover {
+      background-color: #4b5563;
+    }
+
+    /* Primary/highlighted action buttons (Connect, Calibrate, Play, Clear all seals) */
+    .tower-button-primary {
+      background-color: #3b82f6;
+    }
+
+    .tower-button-primary:hover {
+      background-color: #2563eb;
+    }
+
+    .tower-select {
+      background-color: rgba(55, 65, 81, 0.6);
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.75rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.375rem;
+    }
+
+    .tower-fieldset {
+      background-color: rgba(0, 0, 0, 0.6);
+      border: 1px solid #9ca3af;
+      border-radius: 0.375rem;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+    }
+
+    .tower-legend {
+      padding: 0 0.5rem;
+      color: white;
+    }
+
+    .tower-checkbox {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    /* Reusable light control grid (Doorways, Ledges, Base) */
+    .light-grid {
+      display: grid;
+      gap: 0.25rem;
+      align-items: center;
+      width: fit-content;
+      margin: 0 auto;
+    }
+
+    .light-grid-doorways {
+      grid-template-columns: max-content repeat(4, 2rem);
+    }
+
+    .light-grid-ledges {
+      grid-template-columns: max-content 2rem;
+    }
+
+    .light-grid-base {
+      grid-template-columns: max-content repeat(2, 2rem);
+    }
+
+    .light-grid-header {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #d1d5db;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .light-grid-row-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #d1d5db;
+      text-align: right;
+      padding-right: 0.25rem;
+      padding-left: 0;
+      text-transform: uppercase;
+    }
+
+    .light-grid-cell {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      background-color: #374151;
+      border-radius: 0.25rem;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .light-grid-cell:hover {
+      background-color: #4b5563;
+    }
+
+    .light-grid-cell:has(input:checked) {
+      background-color: #d97706;
+      border-color: #f59e0b;
+    }
+
+    .light-grid-cell:has(input:checked):hover {
+      background-color: #f59e0b;
+    }
+
+    .light-grid-cell input[type="checkbox"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .tower-hr {
+      margin: 0.5rem 0;
+      border-color: #9ca3af;
+    }
+
+    .tower-link {
+      color: #f97316;
+      transition: color 0.15s ease-in-out;
+    }
+
+    .tower-link:hover {
+      color: #fb923c;
+    }
+
+    .nested-panel {
+      border: 1px solid #9ca3af;
+      border-radius: 0.25rem;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      width: fit-content;
+    }
+
+    .nested-panel-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: white;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 0.25rem;
+    }
+
+    .seal-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      padding: 0.25rem;
+      width: fit-content;
+    }
+
+    .seal-square {
+      width: 1rem;
+      height: 1rem;
+      background-color: #d1d5db;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      border: 1px solid transparent;
+    }
+
+    .seal-square:hover {
+      background-color: #9ca3af;
+      border-color: #6b7280;
+    }
+
+    .seal-square.broken {
+      background-color: #991b1b;
+    }
+
+    .seal-square.broken:hover {
+      background-color: #b91c1c;
+    }
+
+    .emulator-seal-grid {
+      display: grid;
+      grid-template-columns: 3rem repeat(4, 2rem);
+      gap: 0.25rem;
+      align-items: center;
+    }
+
+    .emulator-seal-btn {
+      background-color: #374151;
+      color: white;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      padding: 0.3rem;
+      border-radius: 0.25rem;
+      transition: all 0.15s ease-in-out;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+
+    .emulator-seal-btn:hover {
+      background-color: #4b5563;
+    }
+
+    .emulator-seal-btn.seal-removed {
+      background-color: #991b1b;
+      border-color: #b91c1c;
+    }
+
+    .emulator-seal-btn.seal-removed:hover {
+      background-color: #b91c1c;
+    }
+
+    /* Glyph grid cell styles */
+    .glyph-cell {
+      width: 2rem;
+      height: 2rem;
+      background-color: #4b5563;
+      border-radius: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #6b7280;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .glyph-cell:hover {
+      background-color: #6b7280;
+      border-color: #9ca3af;
+      cursor: pointer;
+    }
+
+    .glyph-cell.glyph-lit {
+      background-color: #fbbf24;
+      border-color: #f59e0b;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    }
+
+    .glyph-cell.glyph-lit:hover {
+      background-color: #f59e0b;
+      border-color: #d97706;
+    }
+
+    .glyph-cell img {
+      width: 1.5rem;
+      height: 1.5rem;
+      filter: brightness(0) invert(1);
+    }
+
+    /* Material Design Tab interface styles */
+    .tower-tabs {
+      display: flex;
+      width: 100%;
+      background-color: rgba(15, 23, 42, 0.8);
+      border-radius: 0.5rem;
+      padding: 0.25rem;
+      margin-bottom: 1rem;
+      border: 1px solid #334155;
+    }
+
+    .tower-tab-button {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: transparent;
+      color: #64748b;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.2s ease-in-out;
+      border-radius: 0.375rem;
+      z-index: 10;
+      position: relative;
+    }
+
+    .tower-tab-button:hover {
+      color: #cbd5e1;
+      background-color: rgba(51, 65, 85, 0.5);
+    }
+
+    .tower-tab-button.tower-tab-active {
+      color: #f97316;
+      background-color: rgba(249, 115, 22, 0.15);
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+    }
+
+    .tower-tab-content {
+      display: none;
+    }
+
+    .tower-tab-content.tower-tab-content-active {
+      display: block;
+    }
+
+    /* Align left column tabs with right column content */
+    .tower-left-column {
+      margin-top: 0.5rem;
+    }
+
+    /* Status packet display styles */
+    .status-byte {
+      display: inline-block;
+      min-width: 1.25rem;
+      height: 1.25rem;
+      background-color: #374151;
+      border: 1px solid #6b7280;
+      border-radius: 0.25rem;
+      color: #f3f4f6;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      font-size: 0.65rem;
+      text-align: center;
+      line-height: 1.25rem;
+      margin: 0.05rem;
+      cursor: default;
+    }
+
+    .status-byte:hover {
+      background-color: #4b5563;
+      border-color: #9ca3af;
+    }
+
+    .status-byte.non-zero {
+      background-color: rgba(254, 240, 138, 0.5);
+    }
+
+    .status-byte.non-zero:hover {
+      background-color: rgba(254, 240, 138, 0.75);
+    }
+
+    /* Chart container styles */
+    .chart-container {
+      position: relative;
+      height: 400px;
+      background: white;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    .chart-container canvas {
+      max-height: 100%;
+    }
+
+    /* Chart status and statistics styling */
+    .chart-stats-container {
+      background: rgba(31, 41, 55, 0.9);
+      border-radius: 0.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .chart-status {
+      background: rgba(55, 65, 81, 0.9);
+      border-radius: 0.375rem;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Troubleshooting modal */
+    #troubleshootingModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.75);
+    }
+
+    #troubleshootingModal.open {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #troubleshootingContent {
+      background: #111827;
+      border: 1px solid rgba(234, 179, 8, 0.5);
+      border-radius: 0.5rem;
+      padding: 1.25rem 1.5rem;
+      max-width: 680px;
+      width: calc(100% - 2rem);
+      position: relative;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    #troubleshootingContent h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #fbbf24;
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    #troubleshootingContent h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #d1d5db;
+      margin-top: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    #troubleshootingContent p {
+      color: #d1d5db;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
+    #troubleshootingContent ol {
+      color: #d1d5db;
+      padding-left: 1.25rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    #troubleshootingContent ul {
+      color: #d1d5db;
+      padding-left: 1.25rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    #troubleshootingContent li {
+      margin-bottom: 0.25rem;
+    }
+
+    #troubleshootingContent a {
+      color: #60a5fa;
+      text-decoration: underline;
+    }
+  </style>
+
+  <!-- Scripts (also at bottom of page) -->
+  <script type="module" src="/src/TowerController.ts"></script>
+  <script>
+    // Make GLYPHS constant available globally
+    window.GLYPHS = window.GLYPHS || {};
+  </script>
+</head>
+
+<body class="font-roboto text-white min-h-screen">
+  <div id="container" class="max-w-6xl mx-auto mt-3 border-2 border-yellow-500">
+    <div class="inner bg-black bg-opacity-60 p-3">
+      <div id="content">
+        <div class="text-center">
+          <h1 class="text-5xl font-light my-1" style="font-family: 'azkolskerning7', serif;">Tower Controller</h1>
+          <h3 class="text-center text-lg font-light">
+            A web based tower controller for
+            <a target="_blank" href="https://restorationgames.com/return-to-dark-tower/" class="tower-link">
+              Return To Dark Tower </a>
+          </h3>
+
+        </div>
+        <hr class="tower-hr" />
+        <div id="tower-connection-state" class="text-center">
+          Turn on your Tower and press the Connect button
+        </div>
+        <hr class="tower-hr" />
+        <div class="text-center pb-2 space-x-4">
+          <button id="connectButton" onclick="connectToTower()" class="tower-button tower-button-primary">Connect</button>
+          <button id="disconnectButton" onclick="Tower.disconnect()" class="tower-button">Disconnect</button>
+          <select id="towerTypeSelect" class="tower-select" aria-label="Tower type" title="Tower type">
+            <option value="ble">BLE Tower</option>
+            <option value="emulator">Tower Emulator</option>
+          </select>
+        </div>
+
+        <!-- Unexpected-disconnect banner. Shown by onTowerDisconnected() when the
+             tower drops for any reason other than a user-initiated disconnect. -->
+        <div id="disconnect-notice" class="hidden mx-2 mb-2 p-3 border border-red-500 bg-red-900 bg-opacity-40 rounded text-sm" role="alert">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="font-semibold text-red-300">Tower disconnected unexpectedly</div>
+              <div id="disconnect-notice-detail" class="text-red-100 mt-1"></div>
+              <div class="text-red-200 mt-1">A diagnostic incident was captured — open the <span class="font-semibold">BLE Debug</span> tab for details.</div>
+            </div>
+            <button type="button" onclick="dismissDisconnectNotice()" class="tower-button text-xs px-2 py-1 flex-shrink-0">Dismiss</button>
+          </div>
+        </div>
+
+        <hr class="tower-hr" />
+
+        <!-- Two-column layout for fieldsets -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+          <!-- Left Column -->
+          <div class="space-y-3 pt-3 tower-left-column">
+            <!-- Tab Navigation -->
+            <div class="tower-tabs">
+              <button id="diagnostics-tab" class="tower-tab-button tower-tab-active" onclick="switchTab('diagnostics')">
+                Diagnostics
+              </button>
+              <button id="library-tab" class="tower-tab-button" onclick="switchTab('library')">
+                Library
+              </button>
+              <button id="charts-tab" class="tower-tab-button" onclick="switchTab('charts')">
+                Charts
+              </button>
+              <button id="ble-debug-tab" class="tower-tab-button" onclick="switchTab('ble-debug')">
+                BLE Debug
+              </button>
+              <button id="seals-tab" class="tower-tab-button" onclick="switchTab('seals')">
+                Seals
+              </button>
+            </div>
+
+            <!-- Diagnostics Tab Content -->
+            <div id="diagnostics-content" class="tower-tab-content tower-tab-content-active">
+              <fieldset id="fieldset-audio" class="tower-fieldset">
+                <legend class="tower-legend">Audio</legend>
+                <div class="flex justify-evenly items-center p-1 space-x-6">
+                  <select id="sounds" class="tower-select flex-1" aria-label="Sound to play" title="Sound to play">
+                    <option value="0">select sound</option>
+                  </select>
+                  <button id="soundButton" onclick="playSound()" class="tower-button tower-button-primary">
+                    Play
+                  </button>
+                  <div class="flex items-center space-x-1">
+                    <span id="volumeIcon" class="text-white text-lg">🔊</span>
+                    <span id="volumeLevel" class="text-white text-sm font-bold min-w-[4rem] text-center"
+                      style="font-variant: small-caps;">Loud</span>
+                    <button id="volumeDownButton" onclick="volumeDown()" class="tower-button px-2 py-1 text-sm">
+                      &lt;
+                    </button>
+                    <button id="volumeUpButton" onclick="volumeUp()" class="tower-button px-2 py-1 text-sm">
+                      &gt;
+                    </button>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset id="fieldset-lights" class="tower-fieldset">
+                <legend class="tower-legend">Lights</legend>
+                <div class="flex justify-evenly items-start py-2 gap-4">
+                  <div class="nested-panel">
+                    <span class="nested-panel-label">Doorways</span>
+                    <div class="light-grid light-grid-doorways px-1 py-1">
+                      <!-- Header row -->
+                      <div></div>
+                      <div class="light-grid-header">N</div>
+                      <div class="light-grid-header">E</div>
+                      <div class="light-grid-header">S</div>
+                      <div class="light-grid-header">W</div>
+                      <!-- Top row -->
+                      <div class="light-grid-row-label">Top</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="north" data-light-level="top"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="east" data-light-level="top"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="south" data-light-level="top"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="west" data-light-level="top"
+                          class="tower-checkbox" /></label>
+                      <!-- Mid row -->
+                      <div class="light-grid-row-label">Mid</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="north" data-light-level="middle"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="east" data-light-level="middle"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="south" data-light-level="middle"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="west" data-light-level="middle"
+                          class="tower-checkbox" /></label>
+                      <!-- Btm row -->
+                      <div class="light-grid-row-label">Btm</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="north" data-light-level="bottom"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="east" data-light-level="bottom"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="south" data-light-level="bottom"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="doorway" data-light-location="west" data-light-level="bottom"
+                          class="tower-checkbox" /></label>
+                    </div>
+                  </div>
+                  <div class="nested-panel">
+                    <span class="nested-panel-label">Ledges</span>
+                    <div class="light-grid light-grid-ledges px-1 py-1">
+                      <div class="light-grid-row-label">NE</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="ledge" data-light-location="northeast" class="tower-checkbox" /></label>
+                      <div class="light-grid-row-label">SE</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="ledge" data-light-location="southeast" class="tower-checkbox" /></label>
+                      <div class="light-grid-row-label">SW</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="ledge" data-light-location="southwest" class="tower-checkbox" /></label>
+                      <div class="light-grid-row-label">NW</div>
+                      <label class="light-grid-cell"><input type="checkbox" onclick="singleLight(this)"
+                          data-light-type="ledge" data-light-location="northwest" class="tower-checkbox" /></label>
+                    </div>
+                  </div>
+                  <div class="nested-panel">
+                    <span class="nested-panel-label">Base</span>
+                    <div class="light-grid light-grid-base px-1 py-1">
+                      <!-- Header row -->
+                      <div></div>
+                      <div class="light-grid-header">Frt</div>
+                      <div class="light-grid-header">Bck</div>
+                      <!-- N row -->
+                      <div class="light-grid-row-label">N</div>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="north" data-light-base-location="a"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="north" data-light-base-location="b"
+                          class="tower-checkbox" /></label>
+                      <!-- E row -->
+                      <div class="light-grid-row-label">E</div>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="east" data-light-base-location="a"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="east" data-light-base-location="b"
+                          class="tower-checkbox" /></label>
+                      <!-- S row -->
+                      <div class="light-grid-row-label">S</div>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="south" data-light-base-location="a"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="south" data-light-base-location="b"
+                          class="tower-checkbox" /></label>
+                      <!-- W row -->
+                      <div class="light-grid-row-label">W</div>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="west" data-light-base-location="a"
+                          class="tower-checkbox" /></label>
+                      <label class="light-grid-cell"><input onclick="singleLight(this)" type="checkbox"
+                          data-light-type="base" data-light-location="west" data-light-base-location="b"
+                          class="tower-checkbox" /></label>
+                    </div>
+                  </div>
+                </div>
+                <div style="margin-bottom: 0.5rem;"></div>
+                <div class="p-1 flex flex-wrap gap-2 items-center">
+                  <button id="light" onclick="lights()" class="tower-button w-40 whitespace-nowrap">Apply
+                    to all lights</button>
+                  <select id="lightStyles" class="tower-select w-40" aria-label="Light effect style" title="Light effect style"></select>
+                  <button id="allLightsOn" onclick="allLightsOn()" class="tower-button tower-button-primary w-40 whitespace-nowrap">All
+                    On</button>
+                </div>
+                <div class="p-1 flex flex-wrap gap-2 items-center">
+                  <button id="lightOverrideButton" onclick="overrides()"
+                    class="tower-button w-40 whitespace-nowrap">Light
+                    Overrides</button>
+                  <select id="lightOverrideDropDown" class="tower-select w-40" aria-label="Light override sequence" title="Light override sequence">
+                    <option value="0">select override</option>
+                  </select>
+                  <button id="allLightsOff" onclick="allLightsOff()" class="tower-button tower-button-primary w-40 whitespace-nowrap">All
+                    Off</button>
+                </div>
+              </fieldset>
+
+              <fieldset id="fieldset-drums-rotate" class="tower-fieldset">
+                <legend class="tower-legend">Drums</legend>
+                <div class="flex justify-center items-start p-1">
+                  <div class="flex flex-col items-center space-y-2">
+                    <div class="flex gap-5">
+                      <label class="flex flex-col items-center gap-1 text-xs uppercase tracking-wide text-gray-400">Top
+                        <select id="top" class="tower-select" aria-label="Top drum position">
+                          <option value="north">North</option>
+                          <option value="south">South</option>
+                          <option value="east">East</option>
+                          <option value="west">West</option>
+                        </select>
+                      </label>
+                      <label class="flex flex-col items-center gap-1 text-xs uppercase tracking-wide text-gray-400">Middle
+                        <select id="middle" class="tower-select" aria-label="Middle drum position">
+                          <option value="north">North</option>
+                          <option value="south">South</option>
+                          <option value="east">East</option>
+                          <option value="west">West</option>
+                        </select>
+                      </label>
+                      <label class="flex flex-col items-center gap-1 text-xs uppercase tracking-wide text-gray-400">Bottom
+                        <select id="bottom" class="tower-select" aria-label="Bottom drum position">
+                          <option value="north">North</option>
+                          <option value="south">South</option>
+                          <option value="east">East</option>
+                          <option value="west">West</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="flex justify-center items-center gap-3">
+                      <button id="rotateButton" onclick="rotate()" class="tower-button tower-button-primary">Rotate</button>
+                      <button id="calibrate" onclick="calibrate()" class="tower-button tower-button-primary">Calibrate</button>
+                      <span class="hidden text-sm text-gray-400" id="calibrating-message">calibrating...</span>
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Tower State</legend>
+                <div class="flex justify-center p-1">
+                  <div class="w-full">
+                    <div id="status-packet-container" class="bg-gray-800 rounded p-2 border border-gray-600">
+                      <div class="flex flex-wrap justify-center gap-0.5" id="status-packet-display">
+                        <!-- Status packet bytes will be displayed here -->
+                        <span class="status-byte" title="Byte 0: Battery Level">0</span><span class="status-byte"
+                          title="Byte 1: Calibration Status">0</span><span class="status-byte"
+                          title="Byte 2: Drum Positions (Top)">0</span><span class="status-byte"
+                          title="Byte 3: Drum Positions (Middle)">0</span><span class="status-byte"
+                          title="Byte 4: Drum Positions (Bottom)">0</span><span class="status-byte"
+                          title="Byte 5: Light States (Doorways)">0</span><span class="status-byte"
+                          title="Byte 6: Light States (Ledges)">0</span><span class="status-byte"
+                          title="Byte 7: Light States (Base)">0</span><span class="status-byte"
+                          title="Byte 8: Glyph Positions">0</span><span class="status-byte"
+                          title="Byte 9: Seal States">0</span><span class="status-byte"
+                          title="Byte 10: Sound Effects">0</span><span class="status-byte"
+                          title="Byte 11: Player Count">0</span><span class="status-byte"
+                          title="Byte 12: Game State">0</span><span class="status-byte"
+                          title="Byte 13: Error Flags">0</span><span class="status-byte"
+                          title="Byte 14: Communication Status">0</span><span class="status-byte"
+                          title="Byte 15: Reserved">0</span><span class="status-byte"
+                          title="Byte 16: Extended Flags">0</span><span class="status-byte"
+                          title="Byte 17: Skull Drop Count">0</span><span class="status-byte"
+                          title="Byte 18: Reserved">0</span><span class="status-byte" title="Byte 19: Checksum">0</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+
+            </div>
+
+            <!-- Library Tab Content -->
+            <div id="library-content" class="tower-tab-content">
+              <fieldset id="fieldset-drums-random" class="tower-fieldset">
+                <legend class="tower-legend">Drums</legend>
+                <div class="flex justify-center items-center p-1 space-x-4">
+                  <select id="randomLevels" class="tower-select" aria-label="Drum levels to randomize" title="Drum levels to randomize">
+                    <option value="-1">select level(s)</option>
+                    <option value="0">all</option>
+                    <option value="1">top</option>
+                    <option value="2">middle</option>
+                    <option value="3">bottom</option>
+                    <option value="4">top & middle</option>
+                    <option value="5">top & bottom</option>
+                    <option value="6">middle & bottom</option>
+                  </select>
+                  <button id="randomizeButton" onclick="randomizeLevels()" class="tower-button tower-button-primary">Randomize</button>
+                </div>
+              </fieldset>
+
+              <fieldset id="fieldset-glyphs" class="tower-fieldset">
+                <legend class="tower-legend">Glyphs</legend>
+                <div class="grid grid-cols-2 gap-4">
+                  <!-- Left Column: Controls -->
+                  <div class="space-y-4">
+                    <div>
+                      <div class="space-y-3">
+                        <div class="flex items-center space-x-2">
+                          <label class="text-sm w-20">Glyph:</label>
+                          <select id="glyph-select" class="tower-select flex-1">
+                            <option value="">Select glyph</option>
+                            <option value="cleanse">Cleanse</option>
+                            <option value="quest">Quest</option>
+                            <option value="battle">Battle</option>
+                            <option value="banner">Banner</option>
+                            <option value="reinforce">Reinforce</option>
+                          </select>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                          <label class="text-sm w-20">Side:</label>
+                          <select id="side-select" class="tower-select flex-1">
+                            <option value="">Select side</option>
+                            <option value="north">North</option>
+                            <option value="east">East</option>
+                            <option value="south">South</option>
+                            <option value="west">West</option>
+                          </select>
+                        </div>
+                        <button id="move-glyph-btn" onclick="moveGlyph()" class="tower-button tower-button-primary w-full">
+                          Move Glyph
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Right Column: Current Positions -->
+                  <div>
+                    <div id="current-glyph-positions" class="bg-gray-800 rounded p-3">
+                      <!-- Grid headers -->
+                      <div class="grid grid-cols-5 gap-1 mb-2 text-xs text-center">
+                        <div></div>
+                        <div class="font-semibold">N</div>
+                        <div class="font-semibold">E</div>
+                        <div class="font-semibold">S</div>
+                        <div class="font-semibold">W</div>
+                      </div>
+                      <!-- Grid content -->
+                      <div class="grid grid-cols-5 gap-1">
+                        <!-- Top row -->
+                        <div class="text-xs font-semibold flex items-center justify-center">Top</div>
+                        <div id="glyph-top-north" class="glyph-cell" data-level="top" data-side="north"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-top-east" class="glyph-cell" data-level="top" data-side="east"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-top-south" class="glyph-cell" data-level="top" data-side="south"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-top-west" class="glyph-cell" data-level="top" data-side="west"
+                          onclick="toggleGlyphLight(this)"></div>
+
+                        <!-- Middle row -->
+                        <div class="text-xs font-semibold flex items-center justify-center">Mid</div>
+                        <div id="glyph-middle-north" class="glyph-cell" data-level="middle" data-side="north"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-middle-east" class="glyph-cell" data-level="middle" data-side="east"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-middle-south" class="glyph-cell" data-level="middle" data-side="south"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-middle-west" class="glyph-cell" data-level="middle" data-side="west"
+                          onclick="toggleGlyphLight(this)"></div>
+
+                        <!-- Bottom row -->
+                        <div class="text-xs font-semibold flex items-center justify-center">Bot</div>
+                        <div id="glyph-bottom-north" class="glyph-cell" data-level="bottom" data-side="north"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-bottom-east" class="glyph-cell" data-level="bottom" data-side="east"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-bottom-south" class="glyph-cell" data-level="bottom" data-side="south"
+                          onclick="toggleGlyphLight(this)"></div>
+                        <div id="glyph-bottom-west" class="glyph-cell" data-level="bottom" data-side="west"
+                          onclick="toggleGlyphLight(this)"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset id="fieldset-break-seal" class="tower-fieldset">
+                <legend class="tower-legend">Break Seal</legend>
+                <div class="flex justify-between items-start p-1">
+                  <!-- Left side: Controls -->
+                  <div class="flex-1 flex justify-center">
+                    <div class="flex flex-col space-y-2">
+                      <!-- Dropdown -->
+                      <select id="sealSelect" class="tower-select w-55" aria-label="Seal location" title="Seal location">
+                        <option value="">Select a Location</option>
+                        <option value="North Top">North Top</option>
+                        <option value="North Middle">North Middle</option>
+                        <option value="North Bottom">North Bottom</option>
+                        <option value="East Top">East Top</option>
+                        <option value="East Middle">East Middle</option>
+                        <option value="East Bottom">East Bottom</option>
+                        <option value="South Top">South Top</option>
+                        <option value="South Middle">South Middle</option>
+                        <option value="South Bottom">South Bottom</option>
+                        <option value="West Top">West Top</option>
+                        <option value="West Middle">West Middle</option>
+                        <option value="West Bottom">West Bottom</option>
+                      </select>
+                      <!-- Buttons -->
+                      <div class="flex justify-center items-center space-x-2">
+                        <button id="breakSealButton" onclick="breakSeal()" class="tower-button tower-button-primary">
+                          Break Seal
+                        </button>
+                        <button id="clearLightsButton" onclick="clearAllLights()" class="tower-button tower-button-primary">
+                          Clear Effect
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Right side: Seal Status Grid -->
+                  <div class="flex-1 flex justify-center">
+                    <div class="seal-grid">
+                      <!-- Top Row -->
+                      <div class="seal-square" data-seal-level="top" data-seal-side="north" title="North Top Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="top" data-seal-side="east" title="East Top Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="top" data-seal-side="south" title="South Top Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="top" data-seal-side="west" title="West Top Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <!-- Middle Row -->
+                      <div class="seal-square" data-seal-level="middle" data-seal-side="north" title="North Middle Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="middle" data-seal-side="east" title="East Middle Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="middle" data-seal-side="south" title="South Middle Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="middle" data-seal-side="west" title="West Middle Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <!-- Bottom Row -->
+                      <div class="seal-square" data-seal-level="bottom" data-seal-side="north" title="North Bottom Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="bottom" data-seal-side="east" title="East Bottom Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="bottom" data-seal-side="south" title="South Bottom Seal"
+                        onclick="sealSquareClick(this)"></div>
+                      <div class="seal-square" data-seal-level="bottom" data-seal-side="west" title="West Bottom Seal"
+                        onclick="sealSquareClick(this)"></div>
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+
+            <!-- Charts Tab Content -->
+            <div id="charts-content" class="tower-tab-content">
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">IR Detector Readings</legend>
+                <div class="space-y-4">
+                  <!-- Chart Controls -->
+                  <div class="flex flex-wrap items-center justify-center gap-4 p-3 bg-gray-800 rounded-lg">
+                    <div class="flex items-center space-x-2">
+                      <label class="text-sm font-semibold text-white">Time:</label>
+                      <select id="chart-time-window" class="tower-select" onchange="updateTimeWindow()">
+                        <option value="30" selected>30 Seconds</option>
+                        <option value="60">1 Minute</option>
+                        <option value="300">5 Minutes</option>
+                      </select>
+                    </div>
+                    <button id="chart-start-stop" onclick="toggleDataCollection()" class="tower-button">
+                      <i class="fas fa-play mr-1"></i>Start
+                    </button>
+                    <button id="chart-clear" onclick="clearChartData()" class="tower-button">
+                      <i class="fas fa-trash mr-1"></i>Clear
+                    </button>
+                    <button id="chart-export" onclick="exportChartData()" class="tower-button">
+                      <i class="fas fa-download mr-1"></i>Export
+                    </button>
+                  </div>
+                  <!-- Chart Type Selection -->
+                  <div class="flex flex-wrap items-center justify-center gap-4 p-3 bg-gray-700 rounded-lg">
+                    <span class="text-sm font-semibold text-white">Display:</span>
+                    <div class="flex items-center space-x-1">
+                      <input type="checkbox" id="chart-show-ir-beam" checked
+                        onchange="toggleChartDisplay('chart-show-ir-beam', 'showIrBeam')" class="tower-checkbox" />
+                      <label for="chart-show-ir-beam" class="text-white text-sm">IR Beam</label>
+                      <span class="inline-block w-3 h-1 ml-1 rounded-full" style="background-color: #f97316;"></span>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                      <input type="checkbox" id="chart-show-drum1"
+                        onchange="toggleChartDisplay('chart-show-drum1', 'showDrum1')" class="tower-checkbox" />
+                      <label for="chart-show-drum1" class="text-white text-sm">Drum 1</label>
+                      <span class="inline-block w-3 h-1 ml-1 rounded-full" style="background-color: #3b82f6;"></span>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                      <input type="checkbox" id="chart-show-drum2"
+                        onchange="toggleChartDisplay('chart-show-drum2', 'showDrum2')" class="tower-checkbox" />
+                      <label for="chart-show-drum2" class="text-white text-sm">Drum 2</label>
+                      <span class="inline-block w-3 h-1 ml-1 rounded-full" style="background-color: #10b981;"></span>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                      <input type="checkbox" id="chart-show-drum3"
+                        onchange="toggleChartDisplay('chart-show-drum3', 'showDrum3')" class="tower-checkbox" />
+                      <label for="chart-show-drum3" class="text-white text-sm">Drum 3</label>
+                      <span class="inline-block w-3 h-1 ml-1 rounded-full" style="background-color: #f59e0b;"></span>
+                    </div>
+                  </div>
+
+                  <!-- Chart Container -->
+                  <div class="chart-container bg-white rounded-lg p-4" style="position: relative; height: 400px;">
+                    <canvas id="differential-chart"></canvas>
+                  </div>
+
+                  <!-- Chart Statistics -->
+                  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-gray-800 rounded-lg text-white text-sm">
+                    <div class="text-center">
+                      <div class="font-semibold">Data Points</div>
+                      <div id="chart-stats-points" class="text-lg">0</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="font-semibold">Latest Value</div>
+                      <div id="chart-stats-latest" class="text-lg">--</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="font-semibold">Min Value</div>
+                      <div id="chart-stats-min" class="text-lg">--</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="font-semibold">Max Value</div>
+                      <div id="chart-stats-max" class="text-lg">--</div>
+                    </div>
+                  </div>
+
+                  <!-- Chart Status -->
+                  <div class="flex items-center justify-center p-2 bg-gray-700 rounded text-white text-sm">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <span id="chart-status">Connect to tower to start collecting differential readings</span>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <!-- BLE Debug Tab Content -->
+            <div id="ble-debug-content" class="tower-tab-content">
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Capture Settings</legend>
+                <div class="p-3 space-y-2 text-white text-sm">
+                  <div class="flex items-center space-x-3">
+                    <input type="checkbox" id="ble-debug-enabled" class="tower-checkbox"
+                      onclick="toggleDiagnosticsEnabled()" />
+                    <label for="ble-debug-enabled" class="font-semibold">Enable BLE diagnostics (flight
+                      recorder)</label>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <input type="checkbox" id="ble-debug-capture-payloads" class="tower-checkbox"
+                      onclick="toggleCapturePayloads()" />
+                    <label for="ble-debug-capture-payloads">Capture command/response payload bytes</label>
+                  </div>
+                  <p class="text-xs text-gray-400">Setting persists across page refresh. Existing connection captures
+                    starting from when toggled on.</p>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Live Status</legend>
+                <div class="p-3 grid grid-cols-2 gap-2 text-sm text-white" id="ble-debug-status-grid">
+                  <div>Session ID: <span id="ble-debug-session" class="text-yellow-300 font-mono">-</span></div>
+                  <div>Connected: <span id="ble-debug-connected" class="font-mono">-</span></div>
+                  <div>Ring buffer: <span id="ble-debug-ring-fill" class="font-mono">0 / 500</span></div>
+                  <div>Battery samples: <span id="ble-debug-batt-fill" class="font-mono">0 / 60</span></div>
+                  <div>Last heartbeat: <span id="ble-debug-last-hb" class="font-mono">-</span></div>
+                  <div>GATT: <span id="ble-debug-gatt" class="font-mono">-</span></div>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Live Event Stream</legend>
+                <div class="p-3 space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400">Last 100 events from the ring buffer</span>
+                    <button onclick="refreshBleDebug()" class="tower-button text-xs px-2 py-1">Refresh</button>
+                  </div>
+                  <div id="ble-debug-events"
+                    class="bg-black/60 border border-gray-700 rounded p-2 h-48 overflow-y-auto overflow-x-hidden font-mono text-xs space-y-0.5">
+                    <div class="text-gray-500">Diagnostics not enabled.</div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Metrics</legend>
+                <div class="p-3 grid grid-cols-2 gap-2 text-sm text-white" id="ble-debug-metrics-grid">
+                  <div>Total incidents: <span id="ble-debug-metric-total" class="font-mono">0</span></div>
+                  <div>Last incident: <span id="ble-debug-metric-last" class="font-mono">-</span></div>
+                  <div class="col-span-2">
+                    <div class="text-xs text-gray-400 mb-1">Breakdown by cause:</div>
+                    <div id="ble-debug-metric-causes" class="font-mono text-xs space-y-0.5"></div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="tower-fieldset">
+                <legend class="tower-legend">Incident Log</legend>
+                <div class="p-3 space-y-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="refreshIncidentLog()" class="tower-button text-xs px-2 py-1">Refresh</button>
+                    <button onclick="exportAllIncidents()" class="tower-button text-xs px-2 py-1">Export All
+                      JSON</button>
+                    <button onclick="clearIncidents()" class="tower-button text-xs px-2 py-1">Clear All</button>
+                    <span class="text-xs text-gray-400">stored in IndexedDB, survives refresh</span>
+                  </div>
+                  <div id="ble-debug-incidents"
+                    class="bg-black/60 border border-gray-700 rounded p-2 max-h-72 overflow-y-auto text-xs">
+                    <div class="text-gray-500">No incidents recorded.</div>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <!-- Seals Tab Content (Emulator only) -->
+            <div id="seals-content" class="tower-tab-content">
+              <div id="emulator-seals-notice" class="text-center text-gray-400 text-sm py-6">
+                Connect with <strong class="text-white">Tower Emulator</strong> to manage 3D seal visibility.
+              </div>
+              <fieldset id="emulator-seals-controls" class="tower-fieldset" style="display:none;">
+                <legend class="tower-legend">3D Seal Visibility</legend>
+                <p class="text-xs text-gray-400 mb-3 px-1">Toggle seals to show or hide them in the 3D emulator view.
+                </p>
+                <div class="emulator-seal-grid px-1">
+                  <span class="text-xs font-semibold text-right pr-1 text-gray-300">Top</span>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="top" data-emulator-seal-side="north"
+                    onclick="emulatorToggleSeal(this)">N</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="top" data-emulator-seal-side="east"
+                    onclick="emulatorToggleSeal(this)">E</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="top" data-emulator-seal-side="south"
+                    onclick="emulatorToggleSeal(this)">S</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="top" data-emulator-seal-side="west"
+                    onclick="emulatorToggleSeal(this)">W</button>
+                  <span class="text-xs font-semibold text-right pr-1 text-gray-300">Mid</span>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="middle" data-emulator-seal-side="north"
+                    onclick="emulatorToggleSeal(this)">N</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="middle" data-emulator-seal-side="east"
+                    onclick="emulatorToggleSeal(this)">E</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="middle" data-emulator-seal-side="south"
+                    onclick="emulatorToggleSeal(this)">S</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="middle" data-emulator-seal-side="west"
+                    onclick="emulatorToggleSeal(this)">W</button>
+                  <span class="text-xs font-semibold text-right pr-1 text-gray-300">Btm</span>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="bottom" data-emulator-seal-side="north"
+                    onclick="emulatorToggleSeal(this)">N</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="bottom" data-emulator-seal-side="east"
+                    onclick="emulatorToggleSeal(this)">E</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="bottom" data-emulator-seal-side="south"
+                    onclick="emulatorToggleSeal(this)">S</button>
+                  <button class="emulator-seal-btn" data-emulator-seal-level="bottom" data-emulator-seal-side="west"
+                    onclick="emulatorToggleSeal(this)">W</button>
+                </div>
+                <div class="flex gap-2 mt-3 px-1">
+                  <button onclick="emulatorRemoveAllSeals()" class="tower-button">Remove All</button>
+                  <button onclick="emulatorReplaceAllSeals()" class="tower-button">Replace All</button>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="space-y-3">
+            <fieldset class="tower-fieldset mb-6">
+              <legend class="tower-legend">⚡ Tower Status</legend>
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3">
+                <!-- Battery Status Card -->
+                <div
+                  class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-3 border border-yellow-500/30 hover:border-yellow-500/60 transition-all duration-300 transform hover:scale-105">
+                  <div class="flex items-center justify-center mb-2">
+                    <i class="fas fa-battery-half text-green-400 text-xl mr-2"></i>
+                    <h3 class="text-md font-semibold text-yellow-400">Battery</h3>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-xl font-bold text-white mb-1">
+                      <span id="battery">Unknown</span>
+                    </div>
+                    <div class="flex justify-center items-center space-x-2">
+                      <span class="text-xs text-gray-300">Level</span>
+                      <span id="batteryTrend" class="text-md">
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Calibration Status Card -->
+                <div
+                  class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-3 border border-blue-500/30 hover:border-blue-500/60 transition-all duration-300 transform hover:scale-105">
+                  <div class="flex items-center justify-center mb-2">
+                    <i class="fas fa-crosshairs text-blue-400 text-xl mr-2"></i>
+                    <h3 class="text-md font-semibold text-yellow-400">Calibration</h3>
+                  </div>
+                  <div class="text-center">
+                    <div class="flex justify-center items-center space-x-3 mb-1">
+                      <div class="flex flex-col items-center">
+                        <i id="calibration-top" class="fas fa-times-circle text-red-400 text-lg"
+                          title="Top drum not calibrated"></i>
+                        <span class="text-xs text-gray-300 mt-1">Top</span>
+                      </div>
+                      <div class="flex flex-col items-center">
+                        <i id="calibration-middle" class="fas fa-times-circle text-red-400 text-lg"
+                          title="Middle drum not calibrated"></i>
+                        <span class="text-xs text-gray-300 mt-1">Mid</span>
+                      </div>
+                      <div class="flex flex-col items-center">
+                        <i id="calibration-bottom" class="fas fa-times-circle text-red-400 text-lg"
+                          title="Bottom drum not calibrated"></i>
+                        <span class="text-xs text-gray-300 mt-1">Bot</span>
+                      </div>
+                    </div>
+                    <div class="flex justify-center items-center">
+                      <span class="text-xs text-gray-300">Drum Status</span>
+                    </div>
+                  </div>
+                  <!-- Hidden elements for backward compatibility -->
+                  <span id="calibration-status" class="hidden">Unknown</span>
+                  <span id="calibration-icon" class="hidden"></span>
+                </div>
+
+                <!-- Skulls Counter Card -->
+                <div
+                  class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-3 border border-red-500/30 hover:border-red-500/60 transition-all duration-300 transform hover:scale-105">
+                  <div class="flex items-center justify-center mb-2">
+                    <i class="fas fa-skull text-red-400 text-xl mr-2"></i>
+                    <h3 class="text-md font-semibold text-yellow-400">Skulls</h3>
+                  </div>
+                  <div class="text-center">
+                    <div
+                      class="bg-red-900/30 border border-red-500/50 rounded-lg px-3 py-1 mb-2 flex items-center justify-between">
+                      <div class="flex items-center">
+                        <span class="text-xs text-gray-300">Dropped:</span>
+                        <span id="skull-count" class="text-xl font-bold text-red-400 ml-1">
+                          <i class="fas fa-question-circle"></i>
+                        </span>
+                      </div>
+                      <button id="reset" onclick="resetSkullCount()"
+                        class="text-gray-400 hover:text-red-400 transition-colors duration-200 flex-shrink-0"
+                        title="Reset skull count">
+                        <i class="fas fa-times text-sm"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="tower-fieldset flex flex-col h-[500px]">
+              <legend class="tower-legend">Log</legend>
+              <div class="space-y-3">
+                <!-- Log Level Checkboxes - Single Row -->
+                <div class="flex items-center justify-center space-x-6">
+                  <div class="flex items-center space-x-1">
+                    <input type="checkbox" id="logLevel-info" value="info" onchange="updateLogLevel()" checked
+                      class="tower-checkbox" />
+                    <label for="logLevel-info" class="text-white uppercase tracking-wider text-xs">Info</label>
+                    <span class="inline-block w-3 h-3 ml-1 rounded-full"
+                      style="background-color: #3b82f6; border: 1px solid #1f2937;"></span>
+                  </div>
+                  <div class="flex items-center space-x-1">
+                    <input type="checkbox" id="logLevel-warn" value="warn" onchange="updateLogLevel()" checked
+                      class="tower-checkbox" />
+                    <label for="logLevel-warn" class="text-white uppercase tracking-wider text-xs">Warn</label>
+                    <span class="inline-block w-3 h-3 ml-1 rounded-full"
+                      style="background-color: #f97316; border: 1px solid #c2410c;"></span>
+                  </div>
+                  <div class="flex items-center space-x-1">
+                    <input type="checkbox" id="logLevel-error" value="error" onchange="updateLogLevel()" checked
+                      class="tower-checkbox" />
+                    <label for="logLevel-error" class="text-white uppercase tracking-wider text-xs">Error</label>
+                    <span class="inline-block w-3 h-3 ml-1 rounded-full"
+                      style="background-color: #ef4444; border: 1px solid #b91c1c;"></span>
+                  </div>
+                  <div class="flex items-center space-x-1">
+                    <input type="checkbox" id="logLevel-debug" value="debug" onchange="updateLogLevel()" checked
+                      class="tower-checkbox" />
+                    <label for="logLevel-debug" class="text-white uppercase tracking-wider text-xs">Debug</label>
+                    <span class="inline-block w-3 h-3 ml-1 rounded-full"
+                      style="background-color: #9ca3af; border: 1px solid #6b7280;"></span>
+                  </div>
+                </div>
+
+                <!-- Battery Filter Radio Buttons - Single Row -->
+                <div class="flex items-center justify-center space-x-6">
+                  <span class="text-white uppercase tracking-wider text-xs">Battery:</span>
+                  <div class="flex items-center space-x-1">
+                    <input type="radio" id="batteryAll" name="batteryFilter" value="all" class="tower-checkbox" />
+                    <label for="batteryAll" class="text-white uppercase tracking-wider text-xs">All</label>
+                  </div>
+                  <div class="flex items-center space-x-1">
+                    <input type="radio" id="batteryChanges" name="batteryFilter" value="changes"
+                      class="tower-checkbox" />
+                    <label for="batteryChanges" class="text-white uppercase tracking-wider text-xs">Changes</label>
+                  </div>
+                  <div class="flex items-center space-x-1">
+                    <input type="radio" id="batteryNone" name="batteryFilter" value="none" checked
+                      class="tower-checkbox" />
+                    <label for="batteryNone" class="text-white uppercase tracking-wider text-xs">None</label>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-2"></div>
+              <div id="log-container"
+                class="flex-1 overflow-y-auto overflow-x-hidden border border-gray-400 p-2 font-mono text-xs bg-gray-100 text-black rounded-md">
+              </div>
+              <div class="mt-2 flex gap-2">
+                <input type="text" id="logTextFilter" placeholder="Filter log messages..." onkeyup="updateLogLevel()"
+                  class="flex-1 tower-select placeholder-gray-400" />
+                <span id="logBufferSize" class="text-gray-400 text-sm px-2 py-1.5 whitespace-nowrap">0/0</span>
+                <button onclick="copyDisplayedLogs(event)" title="Copy displayed logs to clipboard"
+                  class="tower-button">
+                  <i class="fas fa-copy"></i>
+                </button>
+                <button onclick="downloadDisplayedLogs(event)" title="Download displayed logs to file"
+                  class="tower-button">
+                  <i class="fas fa-file-arrow-down"></i>
+                </button>
+                <button onclick="clearLog()" class="tower-button">
+                  Clear Log
+                </button>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+
+        <hr class="tower-hr" />
+        <div class="pb-1 text-center">
+          Come join us on the
+          <a target="_blank" href="https://discord.com/invite/87kffaR3jV" class="tower-link">
+            Ultimate Dark Tower Discord Server!
+          </a>
+          <hr class="tower-hr" />
+          Note: Web Bluetooth is not yet supported in Safari, Firefox or mobile. See <a target="_blank"
+            href="https://caniuse.com/?search=web%20bluetooth" class="tower-link">support
+            matrix</a> &mdash; <button onclick="openTroubleshooting()" class="tower-link"
+            style="background:none;border:none;cursor:pointer;padding:0;font-size:inherit;">Troubleshooting</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Troubleshooting Modal -->
+  <div id="troubleshootingModal" onclick="closeTroubleshootingOnBackdrop(event)">
+    <div id="troubleshootingContent">
+      <button onclick="closeTroubleshooting()" title="Close"
+        style="position:absolute;top:0.75rem;right:1rem;font-size:1.25rem;color:#9ca3af;background:none;border:none;cursor:pointer;"
+        onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#9ca3af'">&#x2715;</button>
+      <h1 style="font-size:1.5rem;font-weight:700;color:#fbbf24;margin-bottom:0.5rem;">Troubleshooting Guide</h1>
+      <p style="color:#6b7280;font-size:0.75rem;margin-bottom:1rem;">From Restoration Games</p>
+
+      <h2>App Reports Tower Jam</h2>
+      <p>Follow these steps in order:</p>
+      <ol>
+        <li>When the error message displays, note which Tower level is reported as being jammed.</li>
+        <li>Turn off the Tower and replace the batteries. Ensure you are using quality, named brand batteries with at
+          least 2100mAh capacity. Resume play. If the error displays again, proceed to the next step.</li>
+        <li>Turn off the Tower. Remove the seals from the jammed level and any skulls behind them. With the Seals now
+          open, carefully use your fingers to force the level to rotate in a clockwise direction. You'll hear some
+          audible clicks but don't be concerned — this is the clutch mechanism working as designed. Stop when you've
+          heard around five clicks. Replace the seals (including the skulls). Turn on the Tower and resume play.</li>
+        <li>If the problem persists you'll have to abandon the game. Quit the app. Turn off the Tower, remove all skulls
+          and replace all seals. Restart the app, turn on the Tower and try a new game.</li>
+        <li>If jams are still being reported, please email <a
+            href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+      </ol>
+
+      <h2>Tower Disconnects From App During Play</h2>
+      <p>Follow these steps in order:</p>
+      <ol>
+        <li>Ensure that the connected smart device is always kept within 3m / 10ft of the tower.</li>
+        <li>Some Android devices automatically shut down services to save battery life, which can cause disconnects.
+          Visit <a href="https://dontkillmyapp.com" target="_blank">dontkillmyapp.com</a> and follow the instructions to
+          make sure your device is playing nicely.</li>
+        <li>If that doesn't work, turn off the Tower and replace its batteries. Ensure you are using quality, named
+          brand batteries with at least 2100mAh capacity.</li>
+        <li>Fully restart your device (usually by pressing the sleep button until a restart prompt appears).</li>
+        <li>If you keep getting disconnected, please email <a
+            href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+      </ol>
+
+      <h2>Tower Firmware Update Fails (Error 133)</h2>
+      <ol>
+        <li>Try updating from a different device. The firmware update process requires more processing power than the
+          main game, which may cause some lower-end devices to fail.</li>
+        <li>If the firmware update succeeds, feel free to return to your original device.</li>
+        <li>If the problem persists, please email <a
+            href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+      </ol>
+
+      <h2>Tower Firmware Update Fails (Error 257)</h2>
+      <ol>
+        <li>Go into your bluetooth connections and disconnect from all other devices.</li>
+        <li>Turn off your Tower and completely close the Return to Dark Tower app.</li>
+        <li>Reopen the app and proceed normally.</li>
+        <li>If the problem persists, please email <a
+            href="mailto:help+rtdt@restorationgames.com">help+rtdt@restorationgames.com</a>.</li>
+      </ol>
+
+      <h2>Battery Specifications</h2>
+      <p>We recommend using name-brand rechargeable batteries for environmental reasons; however, it is also possible to
+        use Alkaline or Lithium Iron Disulphide non-rechargeable batteries.</p>
+      <p>Note that NiMH rechargeable batteries will lose capacity over the course of a few weeks, even if not used — we
+        recommend topping your rechargeable batteries up the night before playing!</p>
+
+      <h3>Good</h3>
+      <ul>
+        <li>1.2v NiMH rechargeable cells with capacity above 2000mAh (e.g. Duracell Rechargeable AA 2500mAh, Eneloop Pro
+          2500mAh, Energizer Recharge Extreme 2300mAh)</li>
+        <li>1.5v Alkaline non-rechargeable cells from a name brand (e.g. Duracell Plus AA Alkaline, Duracell Optimum AA
+          Alkaline)</li>
+        <li>1.5v / 1.6v Lithium Iron Disulphide (LiFeS2) non-rechargeable cells (e.g. Energizer Ultimate Lithium)</li>
+        <li>Mains adapters / "battery eliminators" designed for 3xAA / 4.5v operation only</li>
+      </ul>
+
+      <h3>Not Recommended</h3>
+      <ul>
+        <li>1.2v NiMH rechargeables with capacity below 2000mAh</li>
+        <li>1.2v NiCd rechargeables, regardless of capacity</li>
+        <li>1.5v Zinc-Carbon batteries, regardless of capacity</li>
+        <li>Lithium-Ion rechargeable cells with integrated circuit to reduce to 1.5v</li>
+      </ul>
+
+      <h3 style="color:#f87171;">Bad (may damage the Tower)</h3>
+      <ul style="color:#f87171;">
+        <li>14500 Lithium-Ion rechargeable cells (often marketed for use in high-power flashlights or vape pens)</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Initialize battery filter on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateBatteryFilter();
+    });
+
+    function openTroubleshooting() {
+      document.getElementById('troubleshootingModal').classList.add('open');
+      document.addEventListener('keydown', closeTroubleshootingOnEscape);
+    }
+
+    function closeTroubleshooting() {
+      document.getElementById('troubleshootingModal').classList.remove('open');
+      document.removeEventListener('keydown', closeTroubleshootingOnEscape);
+    }
+
+    function closeTroubleshootingOnBackdrop(event) {
+      if (event.target === document.getElementById('troubleshootingModal')) {
+        closeTroubleshooting();
+      }
+    }
+
+    function closeTroubleshootingOnEscape(event) {
+      if (event.key === 'Escape') {
+        closeTroubleshooting();
+      }
+    }
+  </script>
+</body>
+
+</html>

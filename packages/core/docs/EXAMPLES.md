@@ -1,12 +1,12 @@
 # Examples
 
-Three example apps ship with this library, each showing a different slice of what you can do with it. Use them as a reference for your own code or as a quick test harness when verifying library changes against real hardware.
+Three example apps demonstrate what you can do with this library. The **Controller** and **Game** have been promoted to standalone Vite apps under the monorepo's `apps/` directory; the **Node CLI** ships alongside the library here. Use them as a reference for your own code or as a quick test harness when verifying library changes against real hardware.
 
-| Example        | Runtime                 | Demonstrates                                                                                 | Source                                          |
-| -------------- | ----------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| **Controller** | Browser (Web Bluetooth) | Full command surface, BLE diagnostics tab, tower emulator                                    | [examples/controller/](../examples/controller/) |
-| **Game**       | Browser (Web Bluetooth) | A complete playable game (The Tower's Challenge) with scoring, glyph mechanics, and confetti | [examples/game/](../examples/game/)             |
-| **Node CLI**   | Node.js                 | Minimal command-line driver for verifying the Node adapter                                   | [examples/node/](../examples/node/)             |
+| Example        | Runtime                 | Demonstrates                                                                                 | Source                                        |
+| -------------- | ----------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| **Controller** | Browser (Web Bluetooth) | Full command surface, BLE diagnostics tab, 3D tower emulator                                 | [apps/controller/](../../../apps/controller/) |
+| **Game**       | Browser (Web Bluetooth) | A complete playable game (The Tower's Challenge) with scoring, glyph mechanics, and confetti | [apps/game/](../../../apps/game/)             |
+| **Node CLI**   | Node.js                 | Minimal command-line driver for verifying the Node adapter                                   | [examples/node/](../examples/node/)           |
 
 ---
 
@@ -21,24 +21,24 @@ A reference UI that exercises essentially every method on `UltimateDarkTower`. U
 - Real-time battery monitoring with a battery-history chart.
 - Glyph-position tracking after rotations.
 - A **BLE Debug** tab built on top of the diagnostics recorder ([BLE_DIAGNOSTICS.md](BLE_DIAGNOSTICS.md)) — toggle the flight recorder on/off, watch the live event stream, browse the persistent IndexedDB incident log, export JSON.
-- A **tower emulator** for when you don't have hardware on hand — drives the same UI without a real tower.
+- A **3D tower emulator** (powered by `ultimatedarktowerdisplay`) for when you don't have hardware on hand — drives the same UI without a real tower.
 
 **Run locally:**
 
 ```bash
-npm install
-npm run dev:controller
+pnpm install
+pnpm --filter ultimatedarktowercontroller dev
 ```
 
-Then open the printed URL in Chrome / Edge / Samsung Internet. Click **Connect**, pick "ReturnToDarkTower" from the chooser, and you're in.
+Vite opens the controller in Chrome / Edge / Samsung Internet. Click **Connect**, pick "ReturnToDarkTower" from the chooser, and you're in.
 
 **Live demo (no install required):**
 
-[chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html](https://chessmess.github.io/UltimateDarkTower/dist/examples/controller/TowerController.html)
+[chessmess.github.io/UltimateDarkTower/controller/](https://chessmess.github.io/UltimateDarkTower/controller/)
 
 > iOS users: open the live demo in the [Bluefy app](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055). Safari and Chrome on iOS don't expose Web Bluetooth.
 
-**Local README:** [examples/controller/README.md](../examples/controller/README.md)
+**Local README:** [apps/controller/README.md](../../../apps/controller/README.md)
 
 ---
 
@@ -57,13 +57,13 @@ A complete browser game built on top of the library. You pick a glyph, the tower
 **Run locally:**
 
 ```bash
-npm install
-npm run dev:examples
+pnpm install
+pnpm --filter ultimatedarktowergame dev
 ```
 
-Then open the Game HTML at the printed URL (`TowerGame.html`).
+Vite opens the game at the printed URL.
 
-**Local README:** [examples/game/README.md](../examples/game/README.md)
+**Local README:** [apps/game/README.md](../../../apps/game/README.md)
 
 ---
 
@@ -93,15 +93,9 @@ Make sure the tower is powered on and in range, then follow the menu prompts.
 
 ---
 
-## Building all examples for distribution
+## Deploying the browser demos
 
-The examples are bundled as static assets to `dist/examples/` for the live demo on GitHub Pages:
-
-```bash
-npm run build:examples
-```
-
-This runs `build-examples.js`, which uses esbuild to produce IIFE bundles for each example and copies HTML + asset files alongside them.
+The Controller and Game are ordinary Vite apps (`apps/controller`, `apps/game`), so they build with a standard `vite build`. The GitHub Pages workflow (`.github/workflows/deploy-pages.yml`) builds each one under its Pages subpath (`/controller/`, `/game/`) alongside the other apps. There is no separate example-bundling step.
 
 ---
 

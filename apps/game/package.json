@@ -1,0 +1,30 @@
+{
+  "name": "ultimatedarktowergame",
+  "version": "0.1.0",
+  "description": "The Tower's Challenge — a solo web game driving a real Return to Dark Tower tower over Bluetooth.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "dependencies": {
+    "ultimatedarktower": "workspace:^"
+  },
+  "devDependencies": {
+    "globals": "^15.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "catalog:",
+    "vite": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

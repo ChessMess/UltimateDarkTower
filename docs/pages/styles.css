@@ -1,0 +1,660 @@
+/* Ultimate Dark Tower — landing page styles.
+   Linked from index.template.html; deployed alongside the generated index.html.
+   Relative url()s resolve from the site root (styles.css sits beside index.html). */
+
+/* Azkols Kerning — the official Return to Dark Tower title face,
+   shipped with the tower-controller app. Self-hosted from ./media/fonts. */
+@font-face {
+  font-family: "Azkols Kerning";
+  src:
+    url("./media/fonts/azkolskerning7-webfont.woff2") format("woff2"),
+    url("./media/fonts/azkolskerning7-webfont.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #0a0810;
+  --bg-2: #0f0b18;
+  --panel: #15111f;
+  --panel-2: #1c1630;
+  --line: #2b2340;
+  --line-soft: #221b33;
+  --gold: #c9a227;
+  --gold-bright: #ecca6b;
+  --purple: #7b5cff;
+  --purple-bright: #a58dff;
+  --text: #efeaf7;
+  --muted: #a49bba;
+  --muted-2: #7d7595;
+  /* Status accents — legible on obsidian, distinct from each other */
+  --released: #64d29b;
+  --beta: #a58dff;
+  --alpha: #e6a13c;
+  --maxw: 1180px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  font-family: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a {
+  color: inherit;
+}
+
+/* ── Atmosphere: film grain + vignette, fixed over everything ────────── */
+.grain,
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+}
+.grain {
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.vignette {
+  background: radial-gradient(120% 80% at 50% 0%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+  z-index: 1;
+}
+
+/* ── Glyphs via CSS mask (recolorable) ──────────────────────────────── */
+.glyph {
+  display: inline-block;
+  background: currentColor;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.g-battle {
+  -webkit-mask-image: url("./media/glyphs/battle.svg");
+  mask-image: url("./media/glyphs/battle.svg");
+}
+.g-banner {
+  -webkit-mask-image: url("./media/glyphs/banner.svg");
+  mask-image: url("./media/glyphs/banner.svg");
+}
+.g-cleanse {
+  -webkit-mask-image: url("./media/glyphs/cleanse.svg");
+  mask-image: url("./media/glyphs/cleanse.svg");
+}
+.g-quest {
+  -webkit-mask-image: url("./media/glyphs/quest.svg");
+  mask-image: url("./media/glyphs/quest.svg");
+}
+.g-reinforce {
+  -webkit-mask-image: url("./media/glyphs/reinforce.svg");
+  mask-image: url("./media/glyphs/reinforce.svg");
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 5rem 1.5rem 4rem;
+  overflow: hidden;
+  isolation: isolate;
+}
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  /* Near-black so the tower photo (also shot on black) blends seamlessly — a
+     subtle purple/gold bloom for depth, and a faint board texture only at the
+     very bottom edge for context. */
+  background:
+    radial-gradient(80% 55% at 50% 30%, rgba(123, 92, 255, 0.18), transparent 60%),
+    radial-gradient(46% 42% at 50% 40%, rgba(201, 162, 39, 0.13), transparent 66%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg) 58%, #0c0a15 100%);
+}
+.hero-bg::after {
+  /* Whisper of board texture at the very bottom edge — kept faint so the stats
+     and scroll cue read against clean dark, not a busy photo. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("./media/background.jpg") center 74% / cover no-repeat;
+  opacity: 0.07;
+  -webkit-mask-image: linear-gradient(180deg, transparent 68%, #000 100%);
+  mask-image: linear-gradient(180deg, transparent 68%, #000 100%);
+}
+
+.eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.42em;
+  font-size: 0.72rem;
+  color: var(--gold-bright);
+  /* Sit higher up, with clear air between it and the rotating drum below */
+  margin: 0 0 2.6rem 0.42em;
+  opacity: 0.9;
+}
+
+/* Emblem: the tower + a rotating ring of drum glyphs */
+.emblem {
+  --size: min(370px, 74vw);
+  --r: 172px;
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+  display: grid;
+  place-items: center;
+  margin: 0.4rem 0 0.6rem;
+}
+.emblem .halo {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  /* Soft bloom — kept low so it lights the air around the tower, not a disc
+     behind its black margins. */
+  background: radial-gradient(circle, rgba(201, 162, 39, 0.22), rgba(123, 92, 255, 0.12) 48%, transparent 72%);
+  filter: blur(10px);
+}
+.emblem .track {
+  position: absolute;
+  width: calc(var(--r) * 2 + 46px);
+  height: calc(var(--r) * 2 + 46px);
+  border-radius: 50%;
+  border: 1px solid rgba(201, 162, 39, 0.16);
+  box-shadow:
+    inset 0 0 40px rgba(123, 92, 255, 0.08),
+    0 0 30px rgba(0, 0, 0, 0.4);
+}
+.emblem .tower {
+  position: relative;
+  height: calc(var(--size) * 1.04);
+  width: auto;
+  max-width: 100%;
+  /* Photo of the real tower. Its edges are feathered to transparent in the PNG
+     itself (a baked elliptical vignette), so it melts into the hero's dark with
+     no photo rectangle — regardless of the glow behind it. */
+  filter: contrast(1.09) brightness(1.16) saturate(1.16);
+  z-index: 2;
+  pointer-events: none;
+}
+.ring {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  animation: spin 60s linear infinite;
+}
+.ring .glyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 46px;
+  margin: -23px 0 0 -20px;
+  color: var(--gold);
+  opacity: 0.82;
+  filter: drop-shadow(0 0 7px rgba(201, 162, 39, 0.55));
+  transform: rotate(var(--a)) translateY(calc(-1 * var(--r)));
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+h1 {
+  font-family: "Azkols Kerning", "Cinzel Decorative", "Cinzel", serif;
+  font-weight: normal;
+  font-size: clamp(2.9rem, 8.4vw, 5.9rem);
+  line-height: 0.98;
+  letter-spacing: 0.005em;
+  margin: 0.2rem 0 0;
+  background: linear-gradient(180deg, #fff 0%, var(--gold-bright) 46%, var(--gold) 78%, #8a6f18 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 30px rgba(201, 162, 39, 0.25);
+}
+h1 .sub {
+  display: block;
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  font-size: 0.32em;
+  letter-spacing: 0.34em;
+  margin-top: 0.7rem;
+  color: var(--purple-bright);
+  background: none;
+  -webkit-text-fill-color: var(--purple-bright);
+  text-shadow: 0 0 18px rgba(123, 92, 255, 0.4);
+}
+.tagline {
+  max-width: 40rem;
+  margin: 1.3rem auto 0;
+  color: var(--muted);
+  font-size: clamp(0.98rem, 1.6vw, 1.12rem);
+}
+.tagline em {
+  color: var(--text);
+  font-style: italic;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+  justify-content: center;
+  margin-top: 1.6rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+.stats b {
+  color: var(--gold-bright);
+  font-weight: 600;
+}
+.stats .sep {
+  color: var(--line);
+}
+
+.scroll-cue {
+  margin-top: 2.6rem;
+  color: var(--muted-2);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  animation: bob 2.4s var(--ease) infinite;
+}
+.scroll-cue span {
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+/* ── Sections ────────────────────────────────────────────────────────── */
+main {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 1rem 1.5rem 2rem;
+  position: relative;
+  z-index: 2;
+}
+.group {
+  margin: 4.5rem 0 0;
+  scroll-margin-top: 2rem;
+}
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin-bottom: 1.8rem;
+}
+.group-head h2 {
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  letter-spacing: 0.06em;
+  margin: 0;
+  white-space: nowrap;
+  color: var(--text);
+}
+.group-head h2 .accent {
+  color: var(--gold);
+}
+.group-head .rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--gold) 0%, var(--line) 40%, transparent 100%);
+  opacity: 0.5;
+}
+.group-head .count {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  color: var(--muted-2);
+}
+.group-head .glyph {
+  width: 26px;
+  height: 30px;
+  color: var(--gold);
+  opacity: 0.9;
+  flex: none;
+}
+
+.grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+/* ── Cards ───────────────────────────────────────────────────────────── */
+.card {
+  --accent: var(--alpha);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(165deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  transition:
+    transform 0.25s var(--ease),
+    border-color 0.25s var(--ease),
+    box-shadow 0.25s var(--ease);
+}
+.card.status-released {
+  --accent: var(--released);
+}
+.card.status-beta {
+  --accent: var(--beta);
+}
+.card.status-alpha {
+  --accent: var(--alpha);
+}
+.card:hover {
+  transform: translateY(-5px);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.5),
+    0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.card-media {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line-soft);
+  text-decoration: none;
+  background: #0c0a13;
+}
+.card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  transition:
+    transform 0.4s var(--ease),
+    filter 0.4s var(--ease);
+  filter: saturate(1.02);
+}
+.card:hover .card-media img {
+  transform: scale(1.045);
+}
+/* Themed tile for components without a live demo */
+.card-media.tile {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgba(123, 92, 255, 0.16), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.014) 0 12px, transparent 12px 24px),
+    linear-gradient(160deg, #191326, #0f0b18);
+}
+.card-media.tile .glyph {
+  width: 78px;
+  height: 90px;
+  color: var(--gold);
+  opacity: 0.34;
+  filter: drop-shadow(0 0 16px rgba(201, 162, 39, 0.28));
+  transition: transform 0.4s var(--ease);
+}
+.card:hover .card-media.tile .glyph {
+  transform: scale(1.06) rotate(-3deg);
+}
+.card-media .tint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(10, 8, 16, 0.65) 100%);
+  pointer-events: none;
+}
+
+.ribbon {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(10, 8, 16, 0.72);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  backdrop-filter: blur(6px);
+}
+.ribbon .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.15rem 1.25rem 1.25rem;
+  flex: 1;
+}
+.card-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.7rem;
+}
+.card-badge {
+  width: 34px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(201, 162, 39, 0.08);
+  border: 1px solid var(--line);
+  flex: none;
+}
+.card-badge .glyph {
+  width: 18px;
+  height: 22px;
+  color: var(--gold-bright);
+}
+.card-title h3 {
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  font-size: 1.08rem;
+  letter-spacing: 0.02em;
+  margin: 0;
+  color: var(--text);
+}
+.card-title code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  color: var(--muted-2);
+}
+.ver {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--gold-bright);
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(201, 162, 39, 0.06);
+  white-space: nowrap;
+}
+.blurb {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  flex: 1;
+}
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line-soft);
+}
+.links a {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  color: var(--muted);
+  padding: 0.3rem 0.6rem;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+.links a:hover {
+  color: var(--gold-bright);
+  border-color: var(--line);
+  background: rgba(201, 162, 39, 0.06);
+}
+.links a.primary {
+  color: var(--gold-bright);
+  border-color: color-mix(in srgb, var(--gold) 40%, transparent);
+  background: rgba(201, 162, 39, 0.08);
+}
+.links a.primary:hover {
+  background: rgba(201, 162, 39, 0.16);
+}
+.links a::after {
+  content: " ↗";
+  opacity: 0.5;
+}
+.links a.nolink::after {
+  content: "";
+}
+
+/* Entrance animation, staggered by the generator via --d */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: rise 0.7s var(--ease) forwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────── */
+footer {
+  position: relative;
+  margin-top: 5rem;
+  padding: 3rem 1.5rem 3.5rem;
+  text-align: center;
+  border-top: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, transparent, rgba(123, 92, 255, 0.05));
+}
+footer .foot-glyphs {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1.4rem;
+}
+footer .foot-glyphs .glyph {
+  width: 22px;
+  height: 26px;
+  color: var(--gold);
+  opacity: 0.4;
+}
+footer p {
+  margin: 0.4rem 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+footer a {
+  color: var(--purple-bright);
+  text-decoration: none;
+}
+footer a:hover {
+  text-decoration: underline;
+}
+footer .built {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.74rem;
+  color: var(--muted-2);
+}
+footer code {
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--gold-bright);
+  font-size: 0.82rem;
+}
+
+:where(a, button):focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .ring,
+  .scroll-cue {
+    animation: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .card,
+  .card-media img,
+  .card-media .glyph {
+    transition: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .emblem {
+    --r: 128px;
+  }
+  .group-head .count {
+    display: none;
+  }
+}
