@@ -156,10 +156,13 @@ const sections = [
   renderSection('libraries', 'The', 'Libraries', libraries, 'battle'),
 ].join('\n\n      ');
 
+// The first two jump to their sections (`.group` already carries the
+// scroll-margin); "published to npm" spans both, so it stays plain text rather
+// than linking somewhere arbitrary.
 const stats = [
-  `<span><b>${libraries.length}</b> libraries</span>`,
+  `<a href="#libraries"><b>${libraries.length}</b> libraries</a>`,
   `<span class="sep">·</span>`,
-  `<span><b>${apps.length}</b> apps</span>`,
+  `<a href="#apps"><b>${apps.length}</b> apps</a>`,
   `<span class="sep">·</span>`,
   `<span><b>${npmCount}</b> published to npm</span>`,
 ].join('\n        ');
