@@ -25,39 +25,6 @@ export const site = {
 };
 
 export const components = [
-  // ── Libraries ──────────────────────────────────────────────────────────
-  {
-    dir: 'packages/core',
-    title: 'Tower Core',
-    blurb:
-      'The TypeScript library that connects to a real tower over Bluetooth — rotate drums, light seals, play sounds, and track glyphs from your own app.',
-    category: 'library',
-    demo: 'controller',
-    glyph: 'battle',
-    image: 'ble-connection.png',
-  },
-  {
-    dir: 'packages/display',
-    title: 'Tower Display',
-    blurb:
-      "Turns your tower's live state into visuals — plain text, a 2D diagram, or a full 3D model, skull physics included.",
-    category: 'library',
-    demo: 'display',
-    glyph: 'quest',
-    image: 'display.jpg',
-  },
-  {
-    dir: 'packages/board',
-    title: 'Tower Board',
-    blurb:
-      'Renders the whole game board in 2D or 3D — heroes, foes, quest markers, and more — straight from a JSON game state.',
-    category: 'library',
-    demo: 'board',
-    glyph: 'banner',
-    image: 'board.jpg',
-    status: 'beta',
-  },
-
   // ── Apps ───────────────────────────────────────────────────────────────
   {
     dir: 'apps/controller',
@@ -119,6 +86,17 @@ export const components = [
     image: 'sync.jpg',
   },
   {
+    dir: 'apps/game',
+    title: 'Tower Game',
+    blurb:
+      "The Tower's Challenge — an example web game: outguess the tower's glyph picks across six months to save the kingdom.",
+    category: 'app',
+    demo: 'game',
+    glyph: 'battle',
+    image: 'game.jpg',
+    status: 'released',
+  },
+  {
     dir: 'apps/relay-cli',
     title: 'Relay CLI',
     blurb:
@@ -138,15 +116,37 @@ export const components = [
     glyph: 'battle',
     image: null,
   },
+
+  // ── Libraries ──────────────────────────────────────────────────────────
   {
-    dir: 'apps/game',
-    title: 'Tower Game',
+    dir: 'packages/core',
+    title: 'Tower Core',
     blurb:
-      "The Tower's Challenge — a solo web game: outguess the tower's glyph picks across six months to save the kingdom.",
-    category: 'app',
-    demo: 'game',
+      'The TypeScript library that connects to a real tower over Bluetooth — rotate drums, light seals, play sounds, and track glyphs from your own app.',
+    category: 'library',
+    demo: 'controller',
     glyph: 'battle',
-    image: 'game.jpg',
-    status: 'released',
+    image: 'ble-connection.png',
+  },
+  {
+    dir: 'packages/display',
+    title: 'Tower Display',
+    blurb:
+      "Turns your tower's live state into visuals — plain text, a 2D diagram, or a full 3D model, skull physics included.",
+    category: 'library',
+    demo: 'display',
+    glyph: 'quest',
+    image: 'display.jpg',
+  },
+  {
+    dir: 'packages/board',
+    title: 'Tower Board',
+    blurb:
+      'Renders the whole game board in 2D or 3D — heroes, foes, quest markers, and more — straight from a JSON game state.',
+    category: 'library',
+    demo: 'board',
+    glyph: 'banner',
+    image: 'board.jpg',
+    status: 'beta',
   },
 ];
