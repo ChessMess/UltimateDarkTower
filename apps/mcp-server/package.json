@@ -1,6 +1,6 @@
 {
   "name": "mcp-server-return-to-dark-tower",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "description": "MCP server for controlling the Return to Dark Tower board game tower via Bluetooth",
   "type": "module",
