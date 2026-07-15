@@ -1,4 +1,4 @@
-import { TOWER_AUDIO_LIBRARY, TOWER_LIGHT_SEQUENCES, LIGHT_EFFECTS } from "ultimatedarktower";
+import { TOWER_AUDIO_LIBRARY, TOWER_LIGHT_SEQUENCES, LIGHT_EFFECTS } from 'ultimatedarktower';
 
 type AudioEntry = { name: string; value: number; category: string };
 

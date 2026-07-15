@@ -1,28 +1,28 @@
 #!/usr/bin/env node
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { localhostHostValidation } from "@modelcontextprotocol/sdk/server/middleware/hostHeaderValidation.js";
-import express from "express";
-import { randomUUID } from "node:crypto";
-import { createRequire } from "node:module";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { localhostHostValidation } from '@modelcontextprotocol/sdk/server/middleware/hostHeaderValidation.js';
+import express from 'express';
+import { randomUUID } from 'node:crypto';
+import { createRequire } from 'node:module';
 
-import { TowerController } from "./tower-controller.js";
-import { McpLogOutput } from "./utils/logger.js";
-import { registerConnectionTools } from "./tools/connection.js";
-import { registerAudioTools } from "./tools/audio.js";
-import { registerLightTools } from "./tools/lights.js";
-import { registerDrumTools } from "./tools/drums.js";
-import { registerSealTools } from "./tools/seals.js";
-import { registerStateTools } from "./tools/state.js";
-import { registerResources } from "./resources/index.js";
-import { registerPrompts } from "./prompts/index.js";
+import { TowerController } from './tower-controller.js';
+import { McpLogOutput } from './utils/logger.js';
+import { registerConnectionTools } from './tools/connection.js';
+import { registerAudioTools } from './tools/audio.js';
+import { registerLightTools } from './tools/lights.js';
+import { registerDrumTools } from './tools/drums.js';
+import { registerSealTools } from './tools/seals.js';
+import { registerStateTools } from './tools/state.js';
+import { registerResources } from './resources/index.js';
+import { registerPrompts } from './prompts/index.js';
 
 // Read from package.json so Changesets' version bump is the single source of
 // truth — a hardcoded literal here silently reported 0.1.0 while the package
 // was published at 1.0.0. Resolved at runtime (not imported) because tsconfig's
 // rootDir is src/, which excludes package.json from the program.
-const VERSION: string = createRequire(import.meta.url)("../package.json").version;
+const VERSION: string = createRequire(import.meta.url)('../package.json').version;
 
 function registerAll(server: McpServer, tower: TowerController): void {
   registerConnectionTools(server, tower);
@@ -37,9 +37,9 @@ function registerAll(server: McpServer, tower: TowerController): void {
 
 // Parse CLI args
 const args = process.argv.slice(2);
-const stdioOnly = args.includes("--stdio-only");
-const httpOnly = args.includes("--http-only");
-const portIndex = args.indexOf("--port");
+const stdioOnly = args.includes('--stdio-only');
+const httpOnly = args.includes('--http-only');
+const portIndex = args.indexOf('--port');
 const httpPort = portIndex !== -1 ? parseInt(args[portIndex + 1], 10) : 3001;
 
 // Shared tower controller singleton
@@ -52,8 +52,8 @@ let httpServer: McpServer | null = null;
 
 async function startStdio(): Promise<void> {
   stdioServer = new McpServer(
-    { name: "return-to-dark-tower", version: VERSION },
-    { capabilities: { logging: {} } }
+    { name: 'return-to-dark-tower', version: VERSION },
+    { capabilities: { logging: {} } },
   );
 
   registerAll(stdioServer, tower);
@@ -67,8 +67,8 @@ async function startStdio(): Promise<void> {
 
 async function startHttp(): Promise<void> {
   httpServer = new McpServer(
-    { name: "return-to-dark-tower-http", version: VERSION },
-    { capabilities: { logging: {} } }
+    { name: 'return-to-dark-tower-http', version: VERSION },
+    { capabilities: { logging: {} } },
   );
 
   registerAll(httpServer, tower);
@@ -78,7 +78,7 @@ async function startHttp(): Promise<void> {
   app.use(localhostHostValidation());
 
   // POST /mcp — main JSON-RPC endpoint
-  app.post("/mcp", async (req, res) => {
+  app.post('/mcp', async (req, res) => {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
     });
@@ -96,10 +96,10 @@ async function startHttp(): Promise<void> {
   });
 
   // GET /mcp — SSE stream for server-initiated notifications
-  app.get("/mcp", async (req, res) => {
-    const sessionId = req.headers["mcp-session-id"] as string | undefined;
+  app.get('/mcp', async (req, res) => {
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
     if (!sessionId || !transports.has(sessionId)) {
-      res.status(400).json({ error: "Invalid or missing session ID" });
+      res.status(400).json({ error: 'Invalid or missing session ID' });
       return;
     }
     const transport = transports.get(sessionId)!;
@@ -107,10 +107,10 @@ async function startHttp(): Promise<void> {
   });
 
   // DELETE /mcp — session teardown
-  app.delete("/mcp", async (req, res) => {
-    const sessionId = req.headers["mcp-session-id"] as string | undefined;
+  app.delete('/mcp', async (req, res) => {
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
     if (!sessionId || !transports.has(sessionId)) {
-      res.status(400).json({ error: "Invalid or missing session ID" });
+      res.status(400).json({ error: 'Invalid or missing session ID' });
       return;
     }
     const transport = transports.get(sessionId)!;
@@ -118,9 +118,9 @@ async function startHttp(): Promise<void> {
   });
 
   // Health check
-  app.get("/health", (_req, res) => {
+  app.get('/health', (_req, res) => {
     res.json({
-      status: "ok",
+      status: 'ok',
       towerConnected: tower.isConnected,
       towerCalibrated: tower.isCalibrated,
     });
@@ -133,7 +133,7 @@ async function startHttp(): Promise<void> {
 
 // Graceful shutdown
 async function shutdown(): Promise<void> {
-  console.error("Shutting down...");
+  console.error('Shutting down...');
   await tower.cleanup();
 
   for (const transport of transports.values()) {
@@ -146,15 +146,15 @@ async function shutdown(): Promise<void> {
   process.exit(0);
 }
 
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 // Start
 async function main(): Promise<void> {
   if (!httpOnly) {
     await startStdio();
     if (!stdioOnly) {
-      console.error("Stdio transport started");
+      console.error('Stdio transport started');
     }
   }
 
@@ -164,6 +164,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error("Fatal error:", err);
+  console.error('Fatal error:', err);
   process.exit(1);
 });

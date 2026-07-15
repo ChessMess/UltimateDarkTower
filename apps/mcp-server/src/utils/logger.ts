@@ -1,23 +1,16 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { LogOutput, LogLevel } from "ultimatedarktower";
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { LogOutput, LogLevel } from 'ultimatedarktower';
 
 type McpLogLevel =
-  | "debug"
-  | "info"
-  | "notice"
-  | "warning"
-  | "error"
-  | "critical"
-  | "alert"
-  | "emergency";
+  'debug' | 'info' | 'notice' | 'warning' | 'error' | 'critical' | 'alert' | 'emergency';
 
 // Map UDT log levels to MCP log levels
 const LOG_LEVEL_MAP: Record<string, McpLogLevel> = {
-  debug: "debug",
-  info: "info",
-  warn: "warning",
-  error: "error",
-  all: "debug",
+  debug: 'debug',
+  info: 'info',
+  warn: 'warning',
+  error: 'error',
+  all: 'debug',
 };
 
 /**
@@ -27,7 +20,7 @@ export class McpLogOutput implements LogOutput {
   constructor(private server: McpServer) {}
 
   write(level: LogLevel, message: string, _timestamp: Date): void {
-    const mcpLevel: McpLogLevel = LOG_LEVEL_MAP[level] ?? "info";
+    const mcpLevel: McpLogLevel = LOG_LEVEL_MAP[level] ?? 'info';
     this.server
       .sendLoggingMessage({
         level: mcpLevel,

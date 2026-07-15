@@ -85,11 +85,11 @@ The Model Context Protocol (MCP) is an open standard introduced by Anthropic in 
 
 MCP servers expose capabilities through three primitives:
 
-| Primitive | Description | Dark Tower Mapping |
-|-----------|-------------|-------------------|
-| **Resources** | Data accessible to clients (API responses, file contents) | Glyph positions, seal states, battery level, connection status |
-| **Tools** | Functional modules that LLMs can invoke | `playSound()`, `Lights()`, `Rotate()`, `breakSeal()`, `calibrate()` |
-| **Prompts** | Reusable templates for specific tasks | Pre-defined game scenarios, dramatic sequences, atmospheric effects |
+| Primitive     | Description                                               | Dark Tower Mapping                                                  |
+| ------------- | --------------------------------------------------------- | ------------------------------------------------------------------- |
+| **Resources** | Data accessible to clients (API responses, file contents) | Glyph positions, seal states, battery level, connection status      |
+| **Tools**     | Functional modules that LLMs can invoke                   | `playSound()`, `Lights()`, `Rotate()`, `breakSeal()`, `calibrate()` |
+| **Prompts**   | Reusable templates for specific tasks                     | Pre-defined game scenarios, dramatic sequences, atmospheric effects |
 
 ### Why MCP Fits the Dark Tower
 
@@ -156,9 +156,10 @@ An AI would translate this to the appropriate sequence of library calls.
 
 ### A. AI Dungeon Master / Game Master
 
-**Concept**: Let Claude *become* the Tower's malevolent intelligence.
+**Concept**: Let Claude _become_ the Tower's malevolent intelligence.
 
 **Capabilities**:
+
 - Control lighting and sounds based on narrative tension
 - Trigger drum rotations at dramatic moments
 - Break seals when story conditions are met
@@ -166,11 +167,12 @@ An AI would translate this to the appropriate sequence of library calls.
 - Generate emergent storytelling beyond scripted events
 
 **Example Interaction**:
+
 ```
 User: "The heroes approach the Tower's base. Build tension."
 
-AI: [dims all lights, starts slow breathing effect on base LEDs, 
-     plays distant rumbling sound, then slowly rotates middle 
+AI: [dims all lights, starts slow breathing effect on base LEDs,
+     plays distant rumbling sound, then slowly rotates middle
      drum to reveal the battle glyph]
 ```
 
@@ -179,16 +181,18 @@ AI: [dims all lights, starts slow breathing effect on base LEDs,
 **Concept**: Voice-driven AI assistance for players with visual impairments or those who prefer audio interaction.
 
 **Capabilities**:
-- Query glyph positions: *"What glyphs are facing my kingdom?"*
-- Track game state: *"How many seals remain unbroken?"*
-- Execute complex sequences: *"Perform the ritual cleansing effect"*
-- Announce tower events: *"Three skulls have dropped into the North kingdom"*
+
+- Query glyph positions: _"What glyphs are facing my kingdom?"_
+- Track game state: _"How many seals remain unbroken?"_
+- Execute complex sequences: _"Perform the ritual cleansing effect"_
+- Announce tower events: _"Three skulls have dropped into the North kingdom"_
 
 ### C. Custom Game Modes
 
 **Concept**: Create and share custom scenarios through natural language rather than code.
 
 **Examples**:
+
 - "Speed Run Mode": Rapid seal-breaking sequence challenges
 - "Horror Mode": Enhanced atmospheric effects with jump scares
 - "Training Mode": Tutorial walkthroughs for new players
@@ -199,16 +203,18 @@ AI: [dims all lights, starts slow breathing effect on base LEDs,
 **Concept**: AI-managed atmospheric effects for immersive game nights.
 
 **Example Commands**:
-- *"Create a tense atmosphere—low breathing lights, occasional distant thunder sounds"*
-- *"Victory celebration sequence!"*
-- *"The darkness grows—increase tension progressively over 10 minutes"*
-- *"Intermission mode—soft ambient glow while we take a break"*
+
+- _"Create a tense atmosphere—low breathing lights, occasional distant thunder sounds"_
+- _"Victory celebration sequence!"_
+- _"The darkness grows—increase tension progressively over 10 minutes"_
+- _"Intermission mode—soft ambient glow while we take a break"_
 
 ### E. Teaching and Demonstration
 
 **Concept**: Interactive tutorials without requiring a full game setup.
 
 **Capabilities**:
+
 - Walk new players through tower mechanics
 - Demonstrate light and sound capabilities
 - Explain glyph and seal systems visually
@@ -220,13 +226,13 @@ AI: [dims all lights, starts slow breathing effect on base LEDs,
 
 **Integration Ideas**:
 
-| Integration | Use Case |
-|-------------|----------|
-| Calendar MCP | Schedule game night reminders with Tower light alerts |
-| Spotify MCP | Synchronized background music with game events |
-| Note-taking MCP | Automatic session logs and game summaries |
-| BGG MCP | Rulebook lookups during gameplay |
-| Weather MCP | Match tower ambiance to real-world weather |
+| Integration     | Use Case                                              |
+| --------------- | ----------------------------------------------------- |
+| Calendar MCP    | Schedule game night reminders with Tower light alerts |
+| Spotify MCP     | Synchronized background music with game events        |
+| Note-taking MCP | Automatic session logs and game summaries             |
+| BGG MCP         | Rulebook lookups during gameplay                      |
+| Weather MCP     | Match tower ambiance to real-world weather            |
 
 ---
 
@@ -236,13 +242,13 @@ AI: [dims all lights, starts slow breathing effect on base LEDs,
 
 The UltimateDarkTower library already provides:
 
-| Feature | MCP Relevance |
-|---------|---------------|
-| Clean async/await API | Direct tool mapping |
-| Event callbacks | Real-time resource updates |
-| State tracking | Resource exposure |
-| TypeScript implementation | SDK compatibility |
-| Comprehensive logging | Debugging support |
+| Feature                   | MCP Relevance              |
+| ------------------------- | -------------------------- |
+| Clean async/await API     | Direct tool mapping        |
+| Event callbacks           | Real-time resource updates |
+| State tracking            | Resource exposure          |
+| TypeScript implementation | SDK compatibility          |
+| Comprehensive logging     | Debugging support          |
 
 ### Proposed MCP Tool Structure
 
@@ -322,7 +328,7 @@ monthly_transition: "Signal the passage of a month"
 
 ### The Value Proposition
 
-**Your library gives developers control; an MCP server gives *everyone* control.**
+**Your library gives developers control; an MCP server gives _everyone_ control.**
 
 The UltimateDarkTower library represents Phase 1—exposing the hardware through reverse engineering. An MCP server would be Phase 2—democratizing access through the most natural interface humans possess: language.
 
@@ -338,7 +344,7 @@ The UltimateDarkTower library represents Phase 1—exposing the hardware through
 
 > "If AI Can Play Dungeons & Dragons, It Can Run Your ERP."
 
-You've already done the hard part—reverse-engineering the Tower's protocol. The MCP wrapper is the final layer that transforms your library from a *developer tool* into an *AI-native interface*. It's the difference between providing a keyboard and providing a voice.
+You've already done the hard part—reverse-engineering the Tower's protocol. The MCP wrapper is the final layer that transforms your library from a _developer tool_ into an _AI-native interface_. It's the difference between providing a keyboard and providing a voice.
 
 ### Final Recommendation
 
@@ -353,21 +359,24 @@ The darkness stirs within the Tower. Perhaps it's time to give it a voice.
 ## Appendix: Resources
 
 ### MCP Documentation
+
 - [Anthropic MCP Documentation](https://docs.anthropic.com)
 - [MCP Server Directory](https://mcp.so)
 
 ### Related Projects
+
 - [D&D MCP Server](https://playbooks.com/mcp/dnd-tabletop-gaming)
 - [BGG MCP Server](https://github.com/kkjdaniel/bgg-mcp)
 - [Foundry VTT MCP](https://github.com/foundryvtt-mcp)
 - [MCP2Serial](https://mcp2everything.github.io)
 
 ### Return to Dark Tower
+
 - [Restoration Games Official](https://restorationgames.com/return-to-dark-tower/)
 - [BoardGameGeek Entry](https://boardgamegeek.com/boardgame/256680/return-to-dark-tower)
 - [UltimateDarkTower Library](https://github.com/chessmess/UltimateDarkTower)
 
 ---
 
-*Document compiled: February 2026*
-*Analysis based on research of MCP ecosystem, Return to Dark Tower mechanics, and UltimateDarkTower library documentation.*
+_Document compiled: February 2026_
+_Analysis based on research of MCP ecosystem, Return to Dark Tower mechanics, and UltimateDarkTower library documentation._

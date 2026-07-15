@@ -515,19 +515,19 @@ npx mcp-server-return-to-dark-tower
 // Generate a session ID once per user session
 const sessionId = crypto.randomUUID();
 
-const response = await fetch("http://localhost:3001/mcp", {
-  method: "POST",
+const response = await fetch('http://localhost:3001/mcp', {
+  method: 'POST',
   headers: {
-    "Content-Type": "application/json",
-    "mcp-session-id": sessionId, // keeps this session's context consistent
+    'Content-Type': 'application/json',
+    'mcp-session-id': sessionId, // keeps this session's context consistent
   },
   body: JSON.stringify({
-    jsonrpc: "2.0",
+    jsonrpc: '2.0',
     id: 1,
-    method: "tools/call",
+    method: 'tools/call',
     params: {
-      name: "tower_play_sound_by_name",
-      arguments: { name: "Ashstrider" },
+      name: 'tower_play_sound_by_name',
+      arguments: { name: 'Ashstrider' },
     },
   }),
 });
@@ -539,10 +539,10 @@ console.log(result);
 **Subscribe to streaming events (SSE):**
 
 ```javascript
-const eventSource = new EventSource("http://localhost:3001/mcp");
+const eventSource = new EventSource('http://localhost:3001/mcp');
 eventSource.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  console.log("Tower event:", data);
+  console.log('Tower event:', data);
 };
 ```
 

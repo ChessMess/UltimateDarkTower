@@ -14,7 +14,7 @@ import {
   SealIdentifier,
   Glyphs,
   LogOutput,
-} from "ultimatedarktower";
+} from 'ultimatedarktower';
 
 // ---------------------------------------------------------------------------
 // TowerState helpers
@@ -88,9 +88,9 @@ export class TowerController {
     if (!this.tower) {
       const platformEnv = process.env.TOWER_PLATFORM;
       const config =
-        platformEnv === "node"
+        platformEnv === 'node'
           ? { platform: BluetoothPlatform.NODE }
-          : platformEnv === "web"
+          : platformEnv === 'web'
             ? { platform: BluetoothPlatform.WEB }
             : undefined;
 
@@ -123,7 +123,7 @@ export class TowerController {
       this.tower.onTowerStateUpdate = (
         newState: TowerState,
         _oldState: TowerState,
-        _source: string
+        _source: string,
       ) => {
         this.lastTowerState = newState;
       };
@@ -206,7 +206,7 @@ export class TowerController {
   configureBatteryHeartbeatMonitoring(
     enabled?: boolean,
     timeout?: number,
-    verifyConnection?: boolean
+    verifyConnection?: boolean,
   ): void {
     this.ensureTower();
     this.tower!.configureBatteryHeartbeatMonitoring(enabled, timeout, verifyConnection);
@@ -241,7 +241,7 @@ export class TowerController {
     layerIndex: number,
     lightIndex: number,
     effect: number,
-    loop?: boolean
+    loop?: boolean,
   ): Promise<void> {
     this.requireConnected();
     await this.tower!.setLED(layerIndex, lightIndex, effect, loop);
@@ -268,7 +268,7 @@ export class TowerController {
     top: TowerSide,
     middle: TowerSide,
     bottom: TowerSide,
-    soundIndex?: number
+    soundIndex?: number,
   ): Promise<void> {
     this.requireConnected();
     this.requireCalibrated();
@@ -278,7 +278,7 @@ export class TowerController {
   async rotateDrumStateful(
     drumIndex: number,
     position: number,
-    playSound?: boolean
+    playSound?: boolean,
   ): Promise<void> {
     this.requireConnected();
     this.requireCalibrated();
@@ -291,7 +291,7 @@ export class TowerController {
     await this.tower!.randomRotateLevels(level);
   }
 
-  getCurrentDrumPosition(level: "top" | "middle" | "bottom"): TowerSide {
+  getCurrentDrumPosition(level: 'top' | 'middle' | 'bottom'): TowerSide {
     this.requireConnected();
     return this.tower!.getCurrentDrumPosition(level);
   }
@@ -406,9 +406,9 @@ export class TowerController {
     }
     try {
       return {
-        top: this.tower.getCurrentDrumPosition("top"),
-        middle: this.tower.getCurrentDrumPosition("middle"),
-        bottom: this.tower.getCurrentDrumPosition("bottom"),
+        top: this.tower.getCurrentDrumPosition('top'),
+        middle: this.tower.getCurrentDrumPosition('middle'),
+        bottom: this.tower.getCurrentDrumPosition('bottom'),
       };
     } catch {
       return { top: null, middle: null, bottom: null };
@@ -419,14 +419,14 @@ export class TowerController {
 
   private requireConnected(): void {
     if (!this.tower || !this.isConnected) {
-      throw new BluetoothConnectionError("Tower is not connected. Call tower_connect first.");
+      throw new BluetoothConnectionError('Tower is not connected. Call tower_connect first.');
     }
   }
 
   private requireCalibrated(): void {
     this.requireConnected();
     if (!this.isCalibrated) {
-      throw new BluetoothConnectionError("Tower is not calibrated. Call tower_calibrate first.");
+      throw new BluetoothConnectionError('Tower is not calibrated. Call tower_calibrate first.');
     }
   }
 }
@@ -435,19 +435,19 @@ export class TowerController {
  * Wraps a tool handler to catch UDT errors and return MCP-friendly error responses.
  */
 export function wrapToolHandler<T>(
-  fn: () => Promise<T>
-): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
+  fn: () => Promise<T>,
+): Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }> {
   return fn()
     .then((result) => ({
       content: [
         {
-          type: "text" as const,
-          text: typeof result === "string" ? result : JSON.stringify(result, null, 2),
+          type: 'text' as const,
+          text: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
         },
       ],
     }))
     .catch((err) => {
-      let message = "Unknown error";
+      let message = 'Unknown error';
       if (err instanceof BluetoothDeviceNotFoundError) {
         message = `Tower not found: ${err.message}`;
       } else if (err instanceof BluetoothTimeoutError) {
@@ -460,7 +460,7 @@ export function wrapToolHandler<T>(
         message = err.message;
       }
       return {
-        content: [{ type: "text" as const, text: message }],
+        content: [{ type: 'text' as const, text: message }],
         isError: true,
       };
     });
