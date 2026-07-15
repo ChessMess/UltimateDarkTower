@@ -40,4 +40,12 @@ describe('game-content assets', () => {
       );
     }
   });
+
+  // `cp -R src dst` copies *into* dst when dst already exists, so a rebuild over
+  // a warm dist/ nested the assets at dist/game-content/game-content and shipped
+  // both copies. Assert an exact match, not just presence — the build must be
+  // idempotent, since only a clean checkout gets a cold dist/.
+  it('mirrors src/game-content exactly, with no nesting on rebuild', () => {
+    expect(readdirSync(distContent).sort()).toEqual(files.sort());
+  });
 });

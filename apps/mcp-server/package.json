@@ -28,7 +28,7 @@
   },
   "author": "Chris Koerner-Zeller",
   "scripts": {
-    "build": "tsc && cp -R src/game-content dist/game-content",
+    "build": "tsc && rm -rf dist/game-content && cp -R src/game-content dist/game-content",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "inspect": "pnpm run build && npx @modelcontextprotocol/inspector node dist/index.js --stdio-only",
