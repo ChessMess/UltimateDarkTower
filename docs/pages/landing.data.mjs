@@ -12,6 +12,8 @@
 //   glyph    one of the tower drum glyphs: battle | banner | cleanse | quest | reinforce
 //            (accent icon on every card; the full tile for demo-less components)
 //   image    screenshot in media/thumbs/<image>, or null to fall back to a glyph tile
+//   alt      optional alt text; defaults to "<title> screenshot". Set it when the
+//            image isn't a screenshot of the component (e.g. a concept diagram)
 //   status   optional override of the auto-derived Alpha/Beta/Released label
 //
 // Status is auto-derived from the version: >=1.0 Released, 0.5–<1.0 Beta, <0.5 Alpha.
@@ -124,7 +126,8 @@ export const components = [
     category: 'app',
     demo: null,
     glyph: 'cleanse',
-    image: null,
+    image: 'mcp-server.jpg',
+    alt: 'Model Context Protocol — a hub wired to tools, files, APIs, and AI models',
   },
 
   // ── Libraries ──────────────────────────────────────────────────────────
