@@ -84,7 +84,7 @@ function renderCard(c, index) {
   const mediaHref = demoUrl || sourceUrl;
   const ribbon = `<span class="ribbon"><span class="dot"></span>${STATUS_LABEL[status]}</span>`;
   const media = c.image
-    ? `<a class="card-media" href="${esc(mediaHref)}"${demoUrl ? '' : ' target="_blank" rel="noopener"'}>
+    ? `<a class="card-media" href="${esc(mediaHref)}" target="_blank" rel="noopener">
           <img src="./media/thumbs/${esc(c.image)}" alt="${esc(c.title)} screenshot" loading="lazy" decoding="async" width="800" height="500" />
           <span class="tint"></span>${ribbon}
         </a>`
@@ -94,7 +94,8 @@ function renderCard(c, index) {
 
   const primaryLabel = c.category === 'library' ? 'Demo' : 'Launch';
   const links = [
-    demoUrl && `<a class="primary" href="${esc(demoUrl)}">${primaryLabel}</a>`,
+    demoUrl &&
+      `<a class="primary" href="${esc(demoUrl)}" target="_blank" rel="noopener">${primaryLabel}</a>`,
     npmUrl && `<a href="${esc(npmUrl)}" target="_blank" rel="noopener">npm</a>`,
     docsUrl && `<a href="${esc(docsUrl)}" target="_blank" rel="noopener">Docs</a>`,
     `<a href="${esc(sourceUrl)}" target="_blank" rel="noopener">Source</a>`,
