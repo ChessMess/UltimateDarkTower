@@ -8,7 +8,7 @@ An MCP server that lets AI assistants like Claude, ChatGPT, and Gemini control t
 
 ### Features <!-- omit in toc -->
 
-- **31 MCP tools** across 6 domains — connection, audio, lights, drums, seals, state & glyphs
+- **34 MCP tools** across 6 domains — connection, audio, lights, drums, seals, state & glyphs
 - **15 tower state resources** — connection status, battery, drum positions, glyphs, seals, audio library, light effects
 - **8 game knowledge resources** — rules, heroes, items, quests, adversaries, buildings, lore, glossary
 - **8 prompt templates** — dramatic entrance, victory/defeat sequences, monthly transitions, dungeon runs, battle starts, game master setup, sound browser
@@ -20,7 +20,7 @@ An MCP server that lets AI assistants like Claude, ChatGPT, and Gemini control t
 Ready-to-use AI agents for this server and the `ultimatedarktower` library:
 👉 **[return-to-dark-tower-agents](https://github.com/ChessMess/return-to-dark-tower-agents)**
 
-- **Return to Dark Tower agent** — system prompt for Claude.ai, ChatGPT, and other web AI tools; knows all 31 tools, 15 resources, and 8 prompts
+- **Return to Dark Tower agent** — system prompt for Claude.ai, ChatGPT, and other web AI tools; knows all 34 tools, 17 resources, and 8 prompts
 - **Ultimate Dark Tower agent** — VS Code / GitHub Copilot coding agent for building apps with the `ultimatedarktower` npm library
 
 Supported in VS Code (GitHub Copilot), Claude.ai, ChatGPT, and 20+ tools via the [AGENTS.md standard](https://agents.md).
@@ -131,7 +131,7 @@ When it starts, it runs the `npx` command above — `npx` fetches the package fr
 
 **MCP (Model Context Protocol)** is an open standard that lets AI assistants use tools and access data from external systems — similar to how a browser loads plugins. Instead of the AI just knowing about your tower, it can _control_ it.
 
-This server implements the MCP standard. Once configured, your AI assistant gains 31 tools it can call by name — things like `tower_play_sound`, `tower_break_seal`, or `tower_rotate_drum` — and it can chain them together to run full dramatic game sequences on command.
+This server implements the MCP standard. Once configured, your AI assistant gains 34 tools it can call by name — things like `tower_play_sound`, `tower_break_seal`, or `tower_rotate_drum` — and it can chain them together to run full dramatic game sequences on command.
 
 **Two ways to connect:**
 
@@ -171,6 +171,12 @@ npx -y mcp-server-return-to-dark-tower --stdio-only
 
 > **What is `npx`?** It's a tool that comes bundled with Node.js. It downloads and runs a package from the [npm registry](https://npmjs.com) on demand, so you don't have to install anything globally.
 
+> **Always pass a transport flag.** With no flags the server starts stdio **and**
+> an HTTP listener on port 3001 — so a desktop client launching it without
+> `--stdio-only` also opens a local port it never uses, and a second instance
+> fails to bind. Use `--stdio-only` for desktop clients (Claude Desktop, Cursor,
+> and friends) and `--http-only` for web clients.
+
 If you'd rather install it globally (for faster startup after the first run):
 
 ```bash
@@ -182,12 +188,16 @@ Pick your AI tool below for the exact config to paste in. You do **not** need to
 <details>
 <summary>Prefer to build from source?</summary>
 
+This server lives in the [UltimateDarkTower monorepo](https://github.com/ChessMess/UltimateDarkTower), which uses pnpm:
+
 ```bash
-git clone https://github.com/your-org/mcp-server-return-to-dark-tower.git
-cd mcp-server-return-to-dark-tower
-npm install
-npm run build
+git clone https://github.com/ChessMess/UltimateDarkTower.git
+cd UltimateDarkTower
+pnpm install
+pnpm --filter mcp-server-return-to-dark-tower build
 ```
+
+The built entry point is `apps/mcp-server/dist/index.js`.
 
 Then in all config snippets below, replace:
 
@@ -552,18 +562,19 @@ eventSource.onmessage = (event) => {
 
 ## Available Tools
 
-### Connection (8 tools)
+### Connection (9 tools)
 
-| Tool                   | Description                                       |
-| ---------------------- | ------------------------------------------------- |
-| `tower_connect`        | Connect to the tower via BLE                      |
-| `tower_disconnect`     | Disconnect from the tower                         |
-| `tower_calibrate`      | Calibrate drum positions                          |
-| `tower_status`         | Get connection status, calibration state, battery |
-| `tower_device_info`    | Get manufacturer, model, firmware info            |
-| `tower_is_responsive`  | Active connectivity check                         |
-| `tower_cleanup`        | Clean up resources                                |
-| `tower_set_monitoring` | Configure connection monitoring                   |
+| Tool                              | Description                                       |
+| --------------------------------- | ------------------------------------------------- |
+| `tower_connect`                   | Connect to the tower via BLE                      |
+| `tower_disconnect`                | Disconnect from the tower                         |
+| `tower_calibrate`                 | Calibrate drum positions                          |
+| `tower_status`                    | Get connection status, calibration state, battery |
+| `tower_device_info`               | Get manufacturer, model, firmware info            |
+| `tower_is_responsive`             | Active connectivity check                         |
+| `tower_reconnect`                 | Clean up, reconnect, and recalibrate              |
+| `tower_set_connection_monitoring` | Configure connection monitoring                   |
+| `tower_set_battery_monitoring`    | Configure battery heartbeat monitoring            |
 
 ### Audio (3 tools)
 
@@ -573,7 +584,7 @@ eventSource.onmessage = (event) => {
 | `tower_play_sound_by_name` | Play a sound by name (e.g., "Ashstrider")              |
 | `tower_list_sounds`        | List available sounds, optionally filtered by category |
 
-### Lights (5 tools)
+### Lights (6 tools)
 
 | Tool                           | Description                                    |
 | ------------------------------ | ---------------------------------------------- |
@@ -581,6 +592,7 @@ eventSource.onmessage = (event) => {
 | `tower_set_led`                | Set individual LED by layer and index          |
 | `tower_light_sequence`         | Run a named light sequence by ID               |
 | `tower_light_sequence_by_name` | Run a light sequence by name (e.g., "victory") |
+| `tower_lights_on`              | Turn all lights on                             |
 | `tower_lights_off`             | Turn all lights off                            |
 
 ### Drums (4 tools)
@@ -717,12 +729,22 @@ The `TowerController` singleton wraps `UltimateDarkTower` (v2.0.0) and is shared
 
 ## Development
 
+Run from the monorepo root. `pnpm --filter mcp-server-return-to-dark-tower <script>`:
+
 ```bash
-npm run dev      # Watch mode with tsx
-npm run build    # Compile TypeScript
-npm run lint     # Run ESLint + Prettier check
-npm test         # Run tests
+pnpm --filter mcp-server-return-to-dark-tower dev        # Watch mode with tsx
+pnpm --filter mcp-server-return-to-dark-tower build      # Compile + copy game-content
+pnpm --filter mcp-server-return-to-dark-tower typecheck  # tsc --noEmit
+pnpm --filter mcp-server-return-to-dark-tower test       # Vitest (build first)
+pnpm --filter mcp-server-return-to-dark-tower inspect    # Build + MCP Inspector
 ```
+
+Linting and formatting are workspace-wide, from the root: `pnpm lint`,
+`pnpm format`. Before committing, run the full gate with `pnpm run ci`.
+
+Note the build copies `src/game-content/*.md` into `dist/`, because `loadAsset()`
+resolves them relative to the compiled output. The test asserts on `dist/`, so
+build before you test — which is the order `pnpm run ci` already uses.
 
 ---
 
