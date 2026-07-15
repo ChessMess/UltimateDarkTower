@@ -116,6 +116,16 @@ export const components = [
     glyph: 'battle',
     image: null,
   },
+  {
+    dir: 'apps/mcp-server',
+    title: 'Tower MCP Server',
+    blurb:
+      'Point Claude, ChatGPT, or any MCP client at your tower — 34 tools for lights, sounds, drums, and seals, with the game rules bundled as context.',
+    category: 'app',
+    demo: null,
+    glyph: 'cleanse',
+    image: null,
+  },
 
   // ── Libraries ──────────────────────────────────────────────────────────
   {
