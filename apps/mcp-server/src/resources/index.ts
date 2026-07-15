@@ -7,12 +7,11 @@ import { TowerController } from "../tower-controller.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Resolves against dist/ at runtime, so the build must copy src/game-content
+// alongside the compiled output. Never swallow a miss: returning placeholder
+// text here shipped 8 silently-empty resources in v1.0.0.
 function loadAsset(relativePath: string): string {
-  try {
-    return readFileSync(join(__dirname, "..", relativePath), "utf-8");
-  } catch {
-    return `[File not found: ${relativePath}]`;
-  }
+  return readFileSync(join(__dirname, "..", relativePath), "utf-8");
 }
 
 export function registerResources(server: McpServer, tower: TowerController): void {
