@@ -485,7 +485,7 @@ main {
 
 .ribbon {
   position: absolute;
-  top: 0.7rem;
+  bottom: 0.7rem;
   right: 0.7rem;
   display: inline-flex;
   align-items: center;
