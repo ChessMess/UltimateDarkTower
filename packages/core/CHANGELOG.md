@@ -1,5 +1,32 @@
 # Changelog
 
+## 5.0.2
+
+### Patch Changes
+
+- c69a19f: Add a `captureIncidents` diagnostics option that persists disconnect incident
+  snapshots even when the verbose diagnostics stream (`enabled`) is off. Incidents
+  fire only on disconnect, so a consumer can now record "why did the tower drop?"
+  without opting into the high-frequency event/battery stream. Defaults to `false`,
+  so existing behavior is unchanged. `beginSession()` and `recordIncident()` (in
+  both `UdtDiagnosticsRecorder` and the BLE connection layer) now honor
+  `enabled || captureIncidents`.
+- 829f997: Commands issued while the tower is calibrating are now ignored instead of queued (or, for
+  `allLightsOn()`/`allLightsOff()`/`sendTowerState()`/`sendTowerCommandDirect()`, ignored instead
+  of sent immediately). Calibration is a multi-second procedure; previously, commands issued
+  during it would pile up in the queue and all fire in a burst the instant calibration completed.
+  Ignored commands resolve immediately without sending anything and log a `[UDT][CMD]` warning;
+  check `tower.performingCalibration` beforehand, or look for a new `cmd_ignored_calibration`
+  diagnostics event, if you need to know whether a command was dropped.
+- 3483d47: Fix `rotateWithState()` sending a redundant command per drum (including drums that weren't
+  actually changing position), which could throw `NetworkError: GATT operation already in
+progress` on real hardware. It now sends a single combined command covering only the drums
+  that are actually moving. `rotateDrumStateful()` also now skips sending a command when the
+  drum is already at the requested position. Additionally, `CommandQueue` now enforces a
+  minimum ~250ms gap between a command's response and the next command's dispatch, matching
+  the tower's documented rate limit and preventing the next BLE write from firing from within
+  the synchronous continuation of the previous command's response handler.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
