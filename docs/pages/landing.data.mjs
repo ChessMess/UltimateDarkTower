@@ -29,7 +29,8 @@ export const components = [
   {
     dir: 'packages/core',
     title: 'Tower Core',
-    blurb: 'BLE driver + core library that talks to the physical tower over Web Bluetooth.',
+    blurb:
+      'The TypeScript library that connects to a real tower over Bluetooth — rotate drums, light seals, play sounds, and track glyphs from your own app.',
     category: 'library',
     demo: 'controller',
     glyph: 'battle',
@@ -38,7 +39,8 @@ export const components = [
   {
     dir: 'packages/display',
     title: 'Tower Display',
-    blurb: 'Composable text, 2D, and 3D renderers for live tower state — with skull physics.',
+    blurb:
+      "Turns your tower's live state into visuals — plain text, a 2D diagram, or a full 3D model, skull physics included.",
     category: 'library',
     demo: 'display',
     glyph: 'quest',
@@ -48,7 +50,7 @@ export const components = [
     dir: 'packages/board',
     title: 'Tower Board',
     blurb:
-      'A 2d and 3d visualizer for displaying heros, foes, quest markers and more on the game board. Easily render an entire games state on the board from a Json string.',
+      'Renders the whole game board in 2D or 3D — heroes, foes, quest markers, and more — straight from a JSON game state.',
     category: 'library',
     demo: 'board',
     glyph: 'banner',
@@ -119,7 +121,8 @@ export const components = [
   {
     dir: 'apps/relay-cli',
     title: 'Relay CLI',
-    blurb: 'Headless relay daemon (BLE emulator + WebSocket) for servers, a Pi, or Docker.',
+    blurb:
+      'An always-on background service that connects your tower to the network — built for a Raspberry Pi, server, or Docker container with no screen attached.',
     category: 'app',
     demo: null,
     glyph: 'reinforce',
@@ -129,7 +132,7 @@ export const components = [
     dir: 'apps/relay-electron',
     title: 'Relay Console',
     blurb:
-      'Electron operator console over the relay core — source select, status, manual controls.',
+      'The point-and-click way to run a tower relay — pick a source, watch its status, and send manual commands without touching a terminal.',
     category: 'app',
     demo: null,
     glyph: 'battle',
