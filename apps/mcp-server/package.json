@@ -1,6 +1,7 @@
 {
   "name": "mcp-server-return-to-dark-tower",
   "version": "1.0.0",
+  "private": false,
   "description": "MCP server for controlling the Return to Dark Tower board game tower via Bluetooth",
   "type": "module",
   "main": "dist/index.js",
@@ -16,22 +17,26 @@
   "publishConfig": {
     "access": "public"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "apps/mcp-server"
+  },
+  "homepage": "https://github.com/ChessMess/UltimateDarkTower/tree/main/apps/mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/ChessMess/UltimateDarkTower/issues"
+  },
+  "author": "Chris Koerner-Zeller",
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js",
-    "inspect:dev": "npx @modelcontextprotocol/inspector tsx src/index.ts",
-    "lint": "eslint src/ && prettier --check src/",
-    "lint:fix": "eslint src/ --fix && prettier --write src/",
-    "test": "echo \"No tests yet\" && exit 0",
-    "type-check": "tsc --noEmit",
-    "format": "prettier --write src/",
-    "format:check": "prettier --check src/",
-    "ci": "npm run lint && npm run type-check && npm run test && npm run build",
-    "prepack": "npm run ci",
-    "prepublishOnly": "npm run prepack",
-    "publish:check": "npm pack --dry-run"
+    "inspect": "pnpm run build && npx @modelcontextprotocol/inspector node dist/index.js --stdio-only",
+    "inspect:dev": "npx @modelcontextprotocol/inspector tsx src/index.ts --stdio-only",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
   },
   "keywords": [
     "mcp",
@@ -45,25 +50,27 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=18"
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
     "express": "^4.21.0",
-    "ultimatedarktower": "^2.3.0",
+    "ultimatedarktower": "workspace:^",
     "zod": "^3.25.0"
   },
   "peerDependencies": {
     "@stoprocent/noble": "^2.0.0"
   },
+  "peerDependenciesMeta": {
+    "@stoprocent/noble": {
+      "optional": true
+    }
+  },
   "devDependencies": {
-    "@eslint/js": "^9.0.0",
-    "@types/express": "^5.0.0",
+    "@types/express": "^4.17.21",
     "@types/node": "^22.0.0",
-    "eslint": "^9.0.0",
-    "prettier": "^3.4.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0",
-    "typescript-eslint": "^8.0.0"
+    "typescript": "catalog:",
+    "vitest": "^4.1.0"
   }
 }
