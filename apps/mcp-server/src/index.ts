@@ -5,6 +5,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { localhostHostValidation } from "@modelcontextprotocol/sdk/server/middleware/hostHeaderValidation.js";
 import express from "express";
 import { randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
 
 import { TowerController } from "./tower-controller.js";
 import { McpLogOutput } from "./utils/logger.js";
@@ -17,7 +18,11 @@ import { registerStateTools } from "./tools/state.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
-const VERSION = "0.1.0";
+// Read from package.json so Changesets' version bump is the single source of
+// truth — a hardcoded literal here silently reported 0.1.0 while the package
+// was published at 1.0.0. Resolved at runtime (not imported) because tsconfig's
+// rootDir is src/, which excludes package.json from the program.
+const VERSION: string = createRequire(import.meta.url)("../package.json").version;
 
 function registerAll(server: McpServer, tower: TowerController): void {
   registerConnectionTools(server, tower);
