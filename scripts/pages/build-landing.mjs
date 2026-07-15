@@ -83,9 +83,12 @@ function renderCard(c, index) {
 
   const mediaHref = demoUrl || sourceUrl;
   const ribbon = `<span class="ribbon"><span class="dot"></span>${STATUS_LABEL[status]}</span>`;
+  // Most thumbs are screenshots of the component itself; `alt` overrides that
+  // wording for the ones that aren't (e.g. a conceptual diagram).
+  const imageAlt = c.alt || `${c.title} screenshot`;
   const media = c.image
     ? `<a class="card-media" href="${esc(mediaHref)}" target="_blank" rel="noopener">
-          <img src="./media/thumbs/${esc(c.image)}" alt="${esc(c.title)} screenshot" loading="lazy" decoding="async" width="800" height="500" />
+          <img src="./media/thumbs/${esc(c.image)}" alt="${esc(imageAlt)}" loading="lazy" decoding="async" width="800" height="500" />
           <span class="tint"></span>${ribbon}
         </a>`
     : `<a class="card-media tile" href="${esc(mediaHref)}" target="_blank" rel="noopener" aria-label="${esc(c.title)} source">

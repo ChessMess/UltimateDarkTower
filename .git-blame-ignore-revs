@@ -4,3 +4,6 @@
 
 # style: apply unified prettier formatting across the workspace
 a10875692bb56f353cd8d53262e132142f342d3f
+
+# style: apply the workspace prettier config to the imported MCP server
+b9d77b4ed0eaba3ca7491ec10e0724a74e28970e
