@@ -8,7 +8,7 @@
 // The validity readout lives HERE, next to Export, because it is the thing that explains why Export
 // is disabled — it is a property of the document, not of the canvas view.
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useCreatorStore } from '../store';
@@ -16,6 +16,18 @@ import type { ScenarioDoc } from '../types';
 import { SAMPLE_SCENARIO } from '../utils/sampleScenario';
 import { NewScenarioDialog } from './NewScenarioDialog';
 import { ScenarioListDialog } from './ScenarioListDialog';
+
+// Collapse state persists, like the bottom panel's (udtc-bottom-collapsed): it's a standing
+// preference about chrome, not something to re-set every session.
+const COLLAPSED_KEY = 'udtc-scenario-collapsed';
+
+function loadCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 export function ScenarioBar() {
   const {
@@ -35,6 +47,19 @@ export function ScenarioBar() {
   } = useCreatorStore();
   const { fitView } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [collapsed, setCollapsed] = useState<boolean>(loadCollapsed);
+
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0');
+      } catch {
+        // ignore — private browsing / storage disabled
+      }
+      return next;
+    });
+  }, []);
 
   const allOk = validationResults?.allOk ?? false;
   const hasErrors = validationResults && !validationResults.allOk;
@@ -135,111 +160,128 @@ export function ScenarioBar() {
         onChange={handleImport}
       />
 
-      <div style={sectionLabel}>Scenario</div>
-
-      <div style={row}>
-        <button
-          className="toolbar-btn"
-          style={grow}
-          onClick={handleNew}
-          title="Create a new scenario from scratch"
-        >
-          New
-        </button>
-        <button
-          className="toolbar-btn"
-          style={grow}
-          onClick={() => setScenarioDialog('list')}
-          title="Open a saved scenario"
-        >
-          Open…
-        </button>
-      </div>
-
-      <div style={row}>
-        <button
-          className="toolbar-btn"
-          style={{ ...grow, fontWeight: isDirty ? 700 : 400 }}
-          onClick={handleSave}
-          disabled={!schemaDoc}
-          title={
-            !schemaDoc
-              ? 'No scenario loaded'
-              : currentScenarioId
-                ? 'Save to this browser'
-                : 'Save to this browser (names the scenario)'
+      <div
+        className="rail-section-header"
+        role="button"
+        tabIndex={0}
+        aria-expanded={!collapsed}
+        aria-controls="scenario-actions"
+        onClick={toggleCollapsed}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleCollapsed();
           }
-        >
-          {isDirty || !currentScenarioId ? 'Save' : 'Saved'}
-        </button>
-        <button
-          className="toolbar-btn"
-          style={grow}
-          onClick={handleSaveAs}
-          disabled={!schemaDoc}
-          title="Save a copy under a new name"
-        >
-          Save As
-        </button>
-      </div>
-
-      <div style={row}>
-        <button
-          className="toolbar-btn"
-          style={grow}
-          onClick={() => fileInputRef.current?.click()}
-          title="Import a scenario .json"
-        >
-          Import
-        </button>
-        <button
-          className="toolbar-btn"
-          onClick={handleExport}
-          disabled={!schemaDoc || !allOk}
-          title={
-            !schemaDoc
-              ? 'No scenario loaded'
-              : !allOk
-                ? 'Fix validation errors before exporting'
-                : 'Export canonical JSON — the only durable copy'
-          }
-          style={{
-            ...grow,
-            background: schemaDoc && allOk ? '#059669' : '#9CA3AF',
-            color: '#fff',
-            cursor: schemaDoc && allOk ? 'pointer' : 'not-allowed',
-          }}
-        >
-          Export
-        </button>
-      </div>
-
-      <button
-        className="toolbar-btn"
-        onClick={handleLoadSampleScenario}
-        title="Load the sample scenario"
-        style={{ fontSize: 11 }}
+        }}
       >
-        Load Sample Scenario
-      </button>
-
-      {schemaDoc && (
-        <div style={statusRow}>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: hasErrors ? 'var(--c-danger)' : 'var(--c-success)',
-            }}
-          >
-            {hasErrors ? `⚠ ${errorCount} error${errorCount === 1 ? '' : 's'}` : '✓ Valid'}
-          </span>
-          <span style={{ flex: 1 }} />
-          {isDirty && (
-            <span style={{ color: 'var(--c-warning)', fontSize: 10 }} title="Unsaved changes">
-              ● unsaved
+        <span className={`palette-chevron${collapsed ? '' : ' palette-chevron--open'}`}>▸</span>
+        <span>Scenario</span>
+        {/* The status lives in the HEADER, not the body, so collapsing the section never hides
+            whether the scenario is valid or has unsaved work. */}
+        {schemaDoc && (
+          <span style={headerStatus}>
+            <span
+              style={{ color: hasErrors ? 'var(--c-danger)' : 'var(--c-success)' }}
+              title={hasErrors ? `${errorCount} validation error(s)` : 'All validation layers pass'}
+            >
+              {hasErrors ? `⚠ ${errorCount}` : '✓'}
             </span>
-          )}
+            {isDirty && (
+              <span style={{ color: 'var(--c-warning)' }} title="Unsaved changes">
+                ●
+              </span>
+            )}
+          </span>
+        )}
+      </div>
+
+      {!collapsed && (
+        <div id="scenario-actions" style={body}>
+          <div style={row}>
+            <button
+              className="toolbar-btn"
+              style={grow}
+              onClick={handleNew}
+              title="Create a new scenario from scratch"
+            >
+              New
+            </button>
+            <button
+              className="toolbar-btn"
+              style={grow}
+              onClick={() => setScenarioDialog('list')}
+              title="Open a saved scenario"
+            >
+              Open…
+            </button>
+          </div>
+
+          <div style={row}>
+            <button
+              className="toolbar-btn"
+              style={{ ...grow, fontWeight: isDirty ? 700 : 400 }}
+              onClick={handleSave}
+              disabled={!schemaDoc}
+              title={
+                !schemaDoc
+                  ? 'No scenario loaded'
+                  : currentScenarioId
+                    ? 'Save to this browser'
+                    : 'Save to this browser (names the scenario)'
+              }
+            >
+              {isDirty || !currentScenarioId ? 'Save' : 'Saved'}
+            </button>
+            <button
+              className="toolbar-btn"
+              style={grow}
+              onClick={handleSaveAs}
+              disabled={!schemaDoc}
+              title="Save a copy under a new name"
+            >
+              Save As
+            </button>
+          </div>
+
+          <div style={row}>
+            <button
+              className="toolbar-btn"
+              style={grow}
+              onClick={() => fileInputRef.current?.click()}
+              title="Import a scenario .json"
+            >
+              Import
+            </button>
+            <button
+              className="toolbar-btn"
+              onClick={handleExport}
+              disabled={!schemaDoc || !allOk}
+              title={
+                !schemaDoc
+                  ? 'No scenario loaded'
+                  : !allOk
+                    ? 'Fix validation errors before exporting'
+                    : 'Export canonical JSON — the only durable copy'
+              }
+              style={{
+                ...grow,
+                background: schemaDoc && allOk ? '#059669' : '#9CA3AF',
+                color: '#fff',
+                cursor: schemaDoc && allOk ? 'pointer' : 'not-allowed',
+              }}
+            >
+              Export
+            </button>
+          </div>
+
+          <button
+            className="toolbar-btn"
+            onClick={handleLoadSampleScenario}
+            title="Load the sample scenario"
+            style={{ fontSize: 11 }}
+          >
+            Load Sample Scenario
+          </button>
         </div>
       )}
 
@@ -272,23 +314,22 @@ export function ScenarioBar() {
 const wrap: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: 5,
-  padding: '8px 8px 10px',
+  flex: '0 0 auto',
   borderBottom: '1px solid var(--c-border)',
 };
-const sectionLabel: CSSProperties = {
+const body: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 5,
+  padding: '2px 8px 10px',
+};
+const headerStatus: CSSProperties = {
+  marginLeft: 'auto',
+  display: 'flex',
+  gap: 4,
+  alignItems: 'center',
   fontSize: 10,
-  fontWeight: 700,
-  letterSpacing: 0.06,
-  textTransform: 'uppercase',
-  color: 'var(--c-text-faint)',
-  padding: '0 2px 2px',
+  letterSpacing: 0,
 };
 const row: CSSProperties = { display: 'flex', gap: 5 };
 const grow: CSSProperties = { flex: 1, minWidth: 0 };
-const statusRow: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 6,
-  padding: '3px 2px 0',
-};

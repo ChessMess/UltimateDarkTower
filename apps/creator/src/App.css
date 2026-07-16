@@ -275,6 +275,31 @@ body,
   outline-offset: -2px;
 }
 
+/* Collapsible section header in the left rail. Matches the Node Palette title bar so the two
+   stacked sections read as siblings, and reuses .palette-chevron for the disclosure caret. */
+.rail-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 10px 6px;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rail-section-header:hover {
+  color: var(--c-text-2);
+}
+
+.rail-section-header:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: -2px;
+}
+
 .palette-chevron {
   display: inline-block;
   width: 9px;
