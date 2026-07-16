@@ -5,7 +5,8 @@
 
 import type { ScenarioDoc } from '../types';
 
-export { imagesOf, resolveImage, byteLen, IMAGE_BUDGET_BYTES } from '../dungeons/shared';
+export { imagesOf, resolveImage } from '../dungeons/shared';
+export { byteLen, IMAGE_BUDGET_BYTES } from '../utils/budget';
 export {
   inputStyle,
   smallBtn,

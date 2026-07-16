@@ -25,8 +25,7 @@ export const DECK_CATEGORIES = [
   'companion',
 ] as const;
 export const DEFAULT_ACCENT = '#7a5cff';
-/** ~5 MB localStorage budget for the whole draft; the asset manager warns as images approach it. */
-export const IMAGE_BUDGET_BYTES = 5_000_000;
+export { byteLen, IMAGE_BUDGET_BYTES } from '../utils/budget';
 
 export type Appearance = { backRef?: string; template?: CardTemplate; accent?: string };
 export type LadderStep = { text?: string; effects?: unknown[] };
@@ -148,9 +147,6 @@ export function genericToFace(
     accent: appearance?.accent,
   };
 }
-
-/** rough byte size of a stored string (data URLs are ASCII, so length ≈ bytes) */
-export const byteLen = (s: string): number => s.length;
 
 export const inputStyle: CSSProperties = {
   padding: '4px 6px',

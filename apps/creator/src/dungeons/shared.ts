@@ -88,10 +88,7 @@ export function referencedBySubflow(doc: ScenarioDoc | null, dungeonId: string):
   );
 }
 
-/** rough byte size of a stored string (data URLs are ASCII, so length ≈ bytes) */
-export const byteLen = (s: string): number => s.length;
-/** ~5 MB localStorage budget shared with decks (library.resources.images). */
-export const IMAGE_BUDGET_BYTES = 5_000_000;
+export { byteLen, IMAGE_BUDGET_BYTES } from '../utils/budget';
 
 export const inputStyle: CSSProperties = {
   padding: '4px 6px',

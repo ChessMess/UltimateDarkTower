@@ -56,6 +56,7 @@ export function DungeonBuilderView() {
   const schemaDoc = useCreatorStore((s) => s.schemaDoc);
   const commitDungeons = useCreatorStore((s) => s.commitDungeons);
   const updateResourceImage = useCreatorStore((s) => s.updateResourceImage);
+  const updateResourceImages = useCreatorStore((s) => s.updateResourceImages);
   const addDungeonSubflow = useCreatorStore((s) => s.addDungeonSubflow);
   const setDungeonSelection = useCreatorStore((s) => s.setDungeonSelection);
 
@@ -117,9 +118,12 @@ export function DungeonBuilderView() {
 
   const importFragment = (fragment: Record<string, unknown>) => {
     const incomingImages = (fragment.images as Record<string, string> | undefined) ?? {};
+    // One bulk write: looping updateResourceImage here revalidated the whole document per image.
+    const imagePatch: Record<string, string> = {};
     for (const [k, v] of Object.entries(incomingImages)) {
-      if (typeof v === 'string') updateResourceImage(k, v);
+      if (typeof v === 'string') imagePatch[k] = v;
     }
+    updateResourceImages(imagePatch);
     const incomingDungeons = (fragment.dungeons as Record<string, Dungeon> | undefined) ?? {};
     if (Object.keys(incomingDungeons).length > 0) {
       commitDungeons({ ...dungeons, ...incomingDungeons });

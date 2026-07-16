@@ -78,6 +78,9 @@ interface CreatorStore {
   updateLibraryCards: (cards: Record<string, unknown>) => void;
   updateLibraryDecks: (decks: Record<string, unknown>) => void;
   updateResourceImage: (id: string, dataUrlOrNull: string | null) => void;
+  // Bulk image write — one revalidate for the whole patch. Prefer this over looping
+  // updateResourceImage, which is O(N²) in bytes (see the implementation).
+  updateResourceImages: (patch: Record<string, string | null>) => void;
   // library.dungeons editing (schema 0.4.4, dungeon builder). Replaces the whole map (or clears it
   // when empty) AND re-syncs the subflow-gated dungeon.room graph nodes (see syncDungeonNodes).
   commitDungeons: (dungeons: Record<string, Dungeon>) => void;
@@ -599,13 +602,28 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   // Set or clear one library.resources.images[id] (a resolved data URL). Empty images/resources
   // containers are deleted so exports never carry empty scaffolding.
   updateResourceImage(id, dataUrlOrNull) {
+    get().updateResourceImages({ [id]: dataUrlOrNull });
+  },
+
+  // Bulk form of updateResourceImage: one clone + ONE revalidate for the whole patch.
+  //
+  // Calling the single form in a loop is O(N²) in bytes — each iteration revalidates a document
+  // that just grew, and AJV runs its `format: uri` regex over every embedded base64 payload again.
+  // Measured importing 20x400KB: 164ms into an empty doc, but 2123ms into one already holding a
+  // 50MB image budget. The cost scales with the document's existing size, not the patch's.
+  //
+  // A null/undefined value clears that id, matching updateResourceImage's contract.
+  updateResourceImages(patch) {
     const { schemaDoc } = get();
     if (!schemaDoc) return;
+    if (Object.keys(patch).length === 0) return;
     const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
     const resources = { ...((library.resources as Record<string, unknown>) ?? {}) };
     const images = { ...((resources.images as Record<string, unknown>) ?? {}) };
-    if (dataUrlOrNull) images[id] = dataUrlOrNull;
-    else delete images[id];
+    for (const [id, dataUrlOrNull] of Object.entries(patch)) {
+      if (dataUrlOrNull) images[id] = dataUrlOrNull;
+      else delete images[id];
+    }
     if (Object.keys(images).length > 0) resources.images = images;
     else delete resources.images;
     if (Object.keys(resources).length > 0) library.resources = resources;
