@@ -20,7 +20,13 @@ export default defineConfig({
     dedupe: ['react', 'react-dom', 'three', 'gsap', '@dimforge/rapier3d-compat'],
   },
   optimizeDeps: {
-    include: ['@udtc/engine', '@udtc/schema', '@udtc/adapters'],
+    // `ultimatedarktower` must be pre-bundled explicitly (as apps/digital does). Without it, the
+    // CJS entry the alias above points at is processed by Vite's ESM pipeline, which hoists UDT's
+    // optional `require('@stoprocent/noble')` (Node-only BLE, guarded by a try/catch in
+    // NodeBluetoothAdapter) into an eager import — noble then runs `os.platform()` at module init
+    // and takes the whole app down with "os.platform is not a function". esbuild's dep optimizer
+    // keeps that require lazy. Pre-existing on a cold `.vite` cache; see PR notes.
+    include: ['@udtc/engine', '@udtc/schema', '@udtc/adapters', 'ultimatedarktower'],
   },
   server: {
     port: 5173,
