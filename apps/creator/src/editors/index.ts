@@ -4,3 +4,4 @@ export { ProblemsPanel } from './ProblemsPanel';
 export { NewScenarioDialog } from './NewScenarioDialog';
 export { RecoveryDialog } from './RecoveryDialog';
 export { ScenarioListDialog } from './ScenarioListDialog';
+export { ScenarioBar } from './ScenarioBar';

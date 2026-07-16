@@ -5,7 +5,13 @@ import { CreatorCanvas } from './canvas';
 import { DeckBuilderView, DeckJsonPanel } from './decks';
 import { DungeonBuilderView, DungeonJsonPanel } from './dungeons';
 import { BoardBuilderView, BoardJsonPanel } from './boards';
-import { PalettePanel, InspectorPanel, ProblemsPanel, RecoveryDialog } from './editors';
+import {
+  PalettePanel,
+  InspectorPanel,
+  ProblemsPanel,
+  RecoveryDialog,
+  ScenarioBar,
+} from './editors';
 import { SimulatorPanel } from './simulator';
 import { useCreatorStore } from './store';
 import { useDraftPersistence, loadDraft, clearDraft, type DraftEnvelope } from './utils';
@@ -146,8 +152,9 @@ export default function App() {
           <ThemeToggle />
         </div>
 
-        {/* Left: Palette */}
+        {/* Left: scenario actions above the node palette */}
         <div className="creator-palette">
+          <ScenarioBar />
           <PalettePanel />
         </div>
 

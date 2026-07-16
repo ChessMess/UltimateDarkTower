@@ -93,6 +93,12 @@ interface CreatorStore {
   lastSavedImages: Record<string, string> | undefined;
   /** cached list rows for the scenario dialog; refreshed via refreshScenarioList() */
   scenarioList: ScenarioMeta[];
+  /**
+   * Which scenario dialog is open. Lives in the store (alongside centerView/canvasViewport) because
+   * two surfaces open them: the ScenarioBar in the left rail, and the canvas empty state. The
+   * ScenarioBar is the only thing that RENDERS them.
+   */
+  scenarioDialog: 'new' | 'list' | null;
   // last-known canvas pan/zoom, so switching to Decks/Dungeons and back doesn't reset the viewport.
   // null means "no saved viewport yet" — CreatorCanvas falls back to fitView on mount.
   canvasViewport: Viewport | null;
@@ -122,6 +128,7 @@ interface CreatorStore {
 
   // Center-view switcher + autosave-failure flag
   setCenterView: (view: CenterView) => void;
+  setScenarioDialog: (dialog: 'new' | 'list' | null) => void;
   setDraftSaveFailed: (failed: boolean) => void;
 
   // Mirrors DeckBuilderView's local selection state (see deckSelection/deckCardKey above)
@@ -299,9 +306,14 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   currentScenarioId: null,
   lastSavedImages: undefined,
   scenarioList: [],
+  scenarioDialog: null,
 
   setCenterView(view) {
     set({ centerView: view });
+  },
+
+  setScenarioDialog(dialog) {
+    set({ scenarioDialog: dialog });
   },
 
   setDraftSaveFailed(failed) {

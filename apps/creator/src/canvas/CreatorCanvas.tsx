@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -18,15 +18,11 @@ import {
   type Viewport,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { goldenFull } from '@udtc/engine';
 import { ScenarioNode, CommentNode, GroupNode } from './NodeTypes';
 import { useCreatorStore } from '../store';
-import type { ScenarioDoc, GroupProps } from '../types';
+import { SAMPLE_SCENARIO } from '../utils/sampleScenario';
+import type { GroupProps } from '../types';
 import { computeGroupRects, type CreatorNode } from '../utils/serializer';
-import { NewScenarioDialog } from '../editors/NewScenarioDialog';
-import { ScenarioListDialog } from '../editors/ScenarioListDialog';
-import { syncDungeonNodes } from '../dungeons/dungeonNodes';
-import type { Dungeon } from '../dungeons/shared';
 
 const nodeTypes: NodeTypes = {
   scenarioNode: ScenarioNode,
@@ -34,77 +30,28 @@ const nodeTypes: NodeTypes = {
   groupNode: GroupNode,
 };
 
-// goldenFull's dungeon.room nodes are hand-authored directly in the engine fixture, so they
-// never pass through the Creator's Dungeons-tab editing flow that would normally generate their
-// util.group wrapper (syncDungeonNodes). Run it once here, on load, so the sample scenario's
-// dungeon rooms render grouped on the canvas like any dungeon authored through the UI.
-function buildBaseScenario(): ScenarioDoc {
-  const doc = goldenFull as ScenarioDoc;
-  const dungeons = (doc.library as Record<string, unknown> | undefined)?.dungeons as
-    Record<string, Dungeon> | undefined;
-  if (!dungeons || Object.keys(dungeons).length === 0) return doc;
-  const { nodes, positions } = syncDungeonNodes(doc, dungeons);
-  return {
-    ...doc,
-    meta: {
-      ...doc.meta,
-      layout: {
-        ...doc.meta.layout,
-        positions: { ...(doc.meta.layout?.positions ?? {}), ...positions },
-      },
-    },
-    graph: { ...doc.graph, nodes },
-  };
-}
-
-// The engine's own golden scenario — the base-game fidelity build (full turn structure,
-// buildings, events, monthly quests), guaranteed runnable by the simulator: the same fixture
-// the engine's lockstep/full-turn test suites drive end-to-end.
-const BASE_SCENARIO = buildBaseScenario();
-
 type CreatorCanvasProps = {
   focusMode: boolean;
   onToggleFocusMode: () => void;
 };
 
 export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasProps) {
-  const {
-    schemaDoc,
-    rfNodes,
-    rfEdges,
-    selectedNodeId,
-    validationResults,
-    isDirty,
-    canvasViewport,
-  } = useCreatorStore();
+  const { schemaDoc, rfNodes, rfEdges, selectedNodeId, canvasViewport } = useCreatorStore();
   const {
     loadScenario,
-    clearScenario,
     syncFromRF,
     selectNode,
     addNode,
     applyLayout,
-    exportScenario,
     setCanvasViewport,
-    saveCurrent,
-    saveCurrentAs,
-    markExported,
-    currentScenarioId,
+    setScenarioDialog,
   } = useCreatorStore();
   const { fitView, screenToFlowPosition } = useReactFlow();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [newDialogOpen, setNewDialogOpen] = useState(false);
-  const [showScenarios, setShowScenarios] = useState(false);
   const groupDragRef = useRef<{
     groupId: string;
     groupStart: { x: number; y: number };
     memberStarts: Map<string, { x: number; y: number }>;
   } | null>(null);
-
-  const handleNew = useCallback(() => {
-    if (isDirty && !window.confirm('Discard unsaved changes and start a new scenario?')) return;
-    setNewDialogOpen(true);
-  }, [isDirty]);
 
   // Functional updater form (reads live store state, not the closure-captured rfNodes) —
   // required because RF's own dimension-tracking can fire onNodesChange asynchronously,
@@ -237,79 +184,6 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
     (n) => n.selected && n.data.schemaNode.kind !== 'util.group',
   );
 
-  // Import
-  const handleImport = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      if (isDirty && !window.confirm('Discard unsaved changes and import this scenario?')) {
-        e.target.value = '';
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const doc = JSON.parse(ev.target?.result as string) as ScenarioDoc;
-          // clearScenario first so the import can never inherit the previous scenario's id (which
-          // would make Save silently overwrite it) or its priorSetupBoard stash. A file carries no
-          // id — the schema forbids one — so an import is always a NEW scenario, and Save prompts.
-          clearScenario();
-          loadScenario(doc, !doc.meta.layout?.positions);
-          setTimeout(() => fitView({ padding: 0.2 }), 100);
-        } catch {
-          alert('Invalid JSON file');
-        }
-      };
-      reader.readAsText(file);
-      e.target.value = '';
-    },
-    [isDirty, loadScenario, clearScenario, fitView],
-  );
-
-  // Export — produces the Player-consumable artifact, so it keeps the allOk gate.
-  //
-  // It used to also set isDirty:false and clearDraft(), which conflated "exported a file" with
-  // "saved my work": marking the document clean suppressed the next autosave and the beforeunload
-  // warning. Saving is now Save's job. Export only records that a durable copy exists (markExported),
-  // which is what the library's "never exported" warning reads.
-  const handleExport = useCallback(() => {
-    if (!validationResults?.allOk) return;
-    const json = exportScenario();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${schemaDoc?.meta.title ?? 'scenario'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    void markExported();
-  }, [validationResults, exportScenario, schemaDoc, markExported]);
-
-  // Save — never gated on validity. Work in progress is exactly what needs saving.
-  const handleSave = useCallback(() => {
-    if (!schemaDoc) return;
-    if (currentScenarioId) {
-      void saveCurrent();
-      return;
-    }
-    const title = window.prompt('Save scenario as:', schemaDoc.meta.title || 'Untitled');
-    if (title === null) return;
-    void saveCurrentAs(title.trim() || 'Untitled');
-  }, [schemaDoc, currentScenarioId, saveCurrent, saveCurrentAs]);
-
-  const handleSaveAs = useCallback(() => {
-    if (!schemaDoc) return;
-    const title = window.prompt('Save a copy as:', `${schemaDoc.meta.title} (copy)`);
-    if (title === null) return;
-    void saveCurrentAs(title.trim() || 'Untitled');
-  }, [schemaDoc, saveCurrentAs]);
-
-  const handleLoadSampleScenario = useCallback(() => {
-    if (isDirty && !window.confirm('Discard unsaved changes and load the sample scenario?')) return;
-    loadScenario(BASE_SCENARIO, true);
-    setTimeout(() => fitView({ padding: 0.2 }), 100);
-  }, [isDirty, loadScenario, fitView]);
-
   const onDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -326,19 +200,8 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
     e.dataTransfer.dropEffect = 'copy';
   }, []);
 
-  const allOk = validationResults?.allOk ?? false;
-  const hasErrors = validationResults && !validationResults.allOk;
-
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json"
-        style={{ display: 'none' }}
-        onChange={handleImport}
-      />
-
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
@@ -385,77 +248,6 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
               fontSize: 13,
             }}
           >
-            <button
-              className="toolbar-btn"
-              onClick={handleNew}
-              title="Create a new scenario from scratch"
-              style={{ background: '#2563EB', color: '#fff' }}
-            >
-              New
-            </button>
-            <button
-              className="toolbar-btn"
-              onClick={handleLoadSampleScenario}
-              title="Load the sample scenario"
-            >
-              Load Sample Scenario
-            </button>
-            <button
-              className="toolbar-btn"
-              onClick={handleSave}
-              disabled={!schemaDoc}
-              title={
-                !schemaDoc
-                  ? 'No scenario loaded'
-                  : currentScenarioId
-                    ? 'Save to this browser'
-                    : 'Save to this browser (names the scenario)'
-              }
-            >
-              {isDirty || !currentScenarioId ? 'Save' : 'Saved'}
-            </button>
-            <button
-              className="toolbar-btn"
-              onClick={handleSaveAs}
-              disabled={!schemaDoc}
-              title="Save a copy under a new name"
-            >
-              Save As
-            </button>
-            <button
-              className="toolbar-btn"
-              onClick={() => setShowScenarios(true)}
-              title="Open a saved scenario"
-            >
-              Scenarios…
-            </button>
-            <button
-              className="toolbar-btn"
-              onClick={() => fileInputRef.current?.click()}
-              title="Import JSON scenario"
-            >
-              Import JSON
-            </button>
-            <button
-              className="toolbar-btn"
-              onClick={handleExport}
-              disabled={!schemaDoc || !allOk}
-              title={
-                !schemaDoc
-                  ? 'No scenario loaded'
-                  : !allOk
-                    ? 'Fix validation errors before exporting'
-                    : 'Export canonical JSON'
-              }
-              style={{
-                background: schemaDoc && allOk ? '#059669' : '#9CA3AF',
-                color: '#fff',
-                cursor: schemaDoc && allOk ? 'pointer' : 'not-allowed',
-              }}
-            >
-              Export JSON
-            </button>
-            <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
             <button
               className="toolbar-btn"
               onClick={() => {
@@ -507,23 +299,6 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
                 )}
               </svg>
             </button>
-            {schemaDoc && (
-              <>
-                <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: hasErrors ? 'var(--c-danger)' : 'var(--c-success)',
-                  }}
-                >
-                  {hasErrors
-                    ? `⚠ ${validationResults.l1.errors.length + validationResults.l2.errors.length + validationResults.l3.errors.length} error(s)`
-                    : '✓ Valid'}
-                </span>
-                {isDirty && <span style={{ color: 'var(--c-warning)', fontSize: 11 }}>●</span>}
-              </>
-            )}
           </div>
         </Panel>
 
@@ -541,7 +316,7 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                 <button
-                  onClick={handleNew}
+                  onClick={() => setScenarioDialog('new')}
                   style={{
                     padding: '8px 20px',
                     background: '#2563EB',
@@ -556,7 +331,10 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
                   New Scenario
                 </button>
                 <button
-                  onClick={handleLoadSampleScenario}
+                  onClick={() => {
+                    loadScenario(SAMPLE_SCENARIO, true);
+                    setTimeout(() => fitView({ padding: 0.2 }), 100);
+                  }}
                   style={{
                     padding: '8px 20px',
                     background: '#F1F5F9',
@@ -574,29 +352,6 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
           </Panel>
         )}
       </ReactFlow>
-
-      {newDialogOpen && (
-        <NewScenarioDialog
-          onClose={() => setNewDialogOpen(false)}
-          onConfirm={(doc) => {
-            // Detach from any open library entry so New never overwrites the scenario you had open.
-            clearScenario();
-            loadScenario(doc, true);
-            setNewDialogOpen(false);
-            setTimeout(() => fitView({ padding: 0.2 }), 100);
-          }}
-        />
-      )}
-
-      {showScenarios && (
-        <ScenarioListDialog
-          isDirty={isDirty}
-          onClose={() => {
-            setShowScenarios(false);
-            setTimeout(() => fitView({ padding: 0.2 }), 100);
-          }}
-        />
-      )}
 
       {/* Selection highlight */}
       {selectedNodeId && (

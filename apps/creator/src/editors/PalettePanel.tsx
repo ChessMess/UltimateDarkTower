@@ -58,6 +58,10 @@ export function PalettePanel() {
         display: 'flex',
         flexDirection: 'column',
         fontSize: 12,
+        // The rail is a flex column with the ScenarioBar pinned above: take the remaining height
+        // and scroll internally. minHeight:0 is what actually lets a flex child shrink and scroll.
+        flex: 1,
+        minHeight: 0,
       }}
     >
       <div

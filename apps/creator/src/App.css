@@ -83,10 +83,15 @@ body,
   color: var(--c-topbar-muted);
 }
 
+/* Works on both an <a> and a <button>: "Open in Player" has to save first, so it is a button here.
+   Without the reset it inherits the UA button background/font and renders as a grey box. */
 .creator-topbar .switch-link {
+  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   color: var(--c-topbar-fg);
+  background: none;
+  cursor: pointer;
   text-decoration: none;
   padding: 4px 10px;
   border: 1px solid var(--c-topbar-muted);
@@ -102,10 +107,13 @@ body,
 }
 
 /* Palette — left sidebar */
+/* Left rail: the ScenarioBar stays pinned at the top, the node palette scrolls beneath it. */
 .creator-palette {
   grid-column: 1;
   grid-row: 2;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: var(--c-surface);
   border-right: 1px solid var(--c-border);
 }
