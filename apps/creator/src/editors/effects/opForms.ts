@@ -32,7 +32,16 @@ export function getOpEnum(): string[] {
 }
 
 export type FieldKind =
-  'number' | 'text' | 'bool' | 'resource' | 'kingdom' | 'foeStatus' | 'deck' | 'foe';
+  | 'number'
+  | 'text'
+  | 'bool'
+  | 'resource'
+  | 'kingdom'
+  | 'foeStatus'
+  | 'deck'
+  | 'foe'
+  // a space on the ACTIVE board — a custom board's own names, else the built-in RtDT roster
+  | 'location';
 
 export interface FieldSpec {
   key: string;
@@ -65,12 +74,12 @@ export const OP_FORMS: Record<string, FieldSpec[]> = {
   'skull.remove': [{ key: 'count', kind: 'number', label: 'Count', min: 1 }],
   'foe.spawn': [
     { key: 'foeId', kind: 'foe', label: 'Foe' },
-    { key: 'location', kind: 'text', label: 'Location' },
+    { key: 'location', kind: 'location', label: 'Location' },
     { key: 'status', kind: 'foeStatus', label: 'Status', optional: true },
   ],
   'foe.move': [
     { key: 'foeId', kind: 'foe', label: 'Foe' },
-    { key: 'to', kind: 'text', label: 'To' },
+    { key: 'to', kind: 'location', label: 'To' },
   ],
   'foe.remove': [{ key: 'foeId', kind: 'foe', label: 'Foe', optional: true }],
   'foe.escalateStatus': [

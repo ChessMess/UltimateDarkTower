@@ -1,6 +1,7 @@
 import type { BoardState, LocationName } from '../state/boardState';
 import type { AnchorSlot, BoardKingdom } from '../data/udtReexports';
-import { BOARD_ANCHORS, BOARD_IMAGE_INFO, BOARD_LOCATION_BY_NAME } from '../data/udtReexports';
+import type { BoardDefImageInfo, BoardDefinition, ResolvedBoard } from '../data/boardDefinition';
+import { boardScaleFactor, resolveBoard } from '../data/boardDefinition';
 import type { BoardFocus, BoardRenderer } from './shared';
 import { DEFAULT_FOCUS, focusEquals } from './shared';
 import { KIND_TINT, KIND_Z_2D, normalizeAssetBaseUrl, resolveTokenImageFor } from './assetPaths';
@@ -37,7 +38,11 @@ export type {
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
 
-/** Token box (image-space px) and fan/selection geometry. The board image is 4096². */
+/**
+ * Token box (image-space px) and fan/selection geometry, tuned against the 4096² RtDT
+ * board image. A custom board of a different size scales these by `boardScaleFactor` —
+ * see {@link boardGeometry}. The RtDT factor is exactly 1, so its numbers are unchanged.
+ */
 const SLOT_SIZE = 150;
 const SKULL_SIZE = 90;
 const FAN_RADIUS = 55;
@@ -45,6 +50,28 @@ const SELECTION_RING_R = 95;
 const DIM_OPACITY = 0.22;
 const VIEWBOX_PAD = 250;
 const SPACE_HIT_R = 130;
+
+/** The above, scaled to a given board's image size. */
+interface BoardGeometry {
+  slotSize: number;
+  skullSize: number;
+  fanRadius: number;
+  selectionRingR: number;
+  viewboxPad: number;
+  spaceHitR: number;
+}
+
+function boardGeometry(info: BoardDefImageInfo): BoardGeometry {
+  const f = boardScaleFactor(info);
+  return {
+    slotSize: SLOT_SIZE * f,
+    skullSize: SKULL_SIZE * f,
+    fanRadius: FAN_RADIUS * f,
+    selectionRingR: SELECTION_RING_R * f,
+    viewboxPad: VIEWBOX_PAD * f,
+    spaceHitR: SPACE_HIT_R * f,
+  };
+}
 
 /** Mouse-zoom tuning. One wheel notch scales the view by `WHEEL_STEP`; `DEFAULT_MAX_ZOOM`
  *  caps how far in you can go (base width ÷ this). `DRAG_THRESHOLD_PX` is the movement that
@@ -92,14 +119,20 @@ export interface BoardMap2DOptions {
    * Wheel-zoom and double-click-reset work in both modes.
    */
   dragMode?: DragMode;
+  /**
+   * The board to render. Omit for the built-in Return to Dark Tower board — existing
+   * consumers need no change. A custom board supplies its own locations, anchors and
+   * image size; token geometry scales to that size automatically.
+   */
+  board?: BoardDefinition;
 }
 
 /** Left-drag behavior on the 2D map; see {@link BoardMap2DOptions.dragMode}. */
 export type DragMode = 'rotate' | 'pan';
 
 /**
- * 2D overhead map renderer. Draws the board image and places tokens via UDT's
- * normalized `BOARD_ANCHORS` (resolution-independent). Each token is rotated so
+ * 2D overhead map renderer. Draws the board image and places tokens via the board's
+ * normalized anchors (resolution-independent). Each token is rotated so
  * its "up" faces inward toward the central tower, matching the board's radially-printed
  * spaces. Inline SVG: jsdom-testable, DOM hit-testing for click-to-select, crisp scaling.
  * Display-/three-free.
@@ -115,6 +148,10 @@ export class BoardMap2D implements BoardRenderer {
   private readonly maxZoom: number;
   private dragMode: DragMode;
   private readonly unsubPick?: () => void;
+  /** The board being rendered (RtDT unless `options.board` said otherwise). */
+  private readonly boardData: ResolvedBoard;
+  /** Token/fan geometry scaled to `boardData`'s image size. */
+  private readonly geom: BoardGeometry;
 
   private svg?: SVGSVGElement;
   private rotateLayer?: SVGGElement;
@@ -125,7 +162,7 @@ export class BoardMap2D implements BoardRenderer {
   private readonly onClick = (event: Event): void => this.handleClick(event);
 
   /** The focus-derived view (recomputed each render); zoom/pan stay inside it. */
-  private baseViewBox: Rect = { x: 0, y: 0, w: BOARD_IMAGE_INFO.width, h: BOARD_IMAGE_INFO.height };
+  private baseViewBox: Rect;
   /** Present once the user has zoomed/panned; cleared by focus change or `resetView`. */
   private userViewBox?: Rect;
   /** In-flight drag-pan state (mouse events; jsdom has no PointerEvent). */
@@ -154,6 +191,10 @@ export class BoardMap2D implements BoardRenderer {
     private readonly container: HTMLElement,
     options: BoardMap2DOptions = {},
   ) {
+    this.boardData = resolveBoard(options.board);
+    this.geom = boardGeometry(this.boardData.def.imageInfo);
+    const { width, height } = this.boardData.def.imageInfo;
+    this.baseViewBox = { x: 0, y: 0, w: width, h: height };
     this.assetBaseUrl = normalizeAssetBaseUrl(options.assetBaseUrl);
     this.boardImageUrl = options.boardImageUrl;
     this.onTokenSelect = options.onTokenSelect;
@@ -182,7 +223,7 @@ export class BoardMap2D implements BoardRenderer {
     this.lastState = state;
     this.lastFocus = focus;
 
-    const { width, height } = BOARD_IMAGE_INFO;
+    const { width, height } = this.boardData.def.imageInfo;
     this.baseViewBox = this.focusViewBox(focus, width, height);
     const svg = document.createElementNS(SVG_NS, 'svg');
     svg.setAttribute('viewBox', rectToViewBox(this.userViewBox ?? this.baseViewBox));
@@ -297,7 +338,8 @@ export class BoardMap2D implements BoardRenderer {
 
   /** The `rotate(...)` transform for the content layer — spin about the board center. */
   private rotateTransform(): string {
-    return `rotate(${this.rotationDeg} ${BOARD_IMAGE_INFO.width / 2} ${BOARD_IMAGE_INFO.height / 2})`;
+    const { width, height } = this.boardData.def.imageInfo;
+    return `rotate(${this.rotationDeg} ${width / 2} ${height / 2})`;
   }
 
   /** Force a full re-render at the last state/focus (used when the armed state toggles). */
@@ -310,20 +352,20 @@ export class BoardMap2D implements BoardRenderer {
 
   /** Invisible-but-clickable space targets at the anchors (filtered by the pending placement). */
   private renderSpaceTargets(root: SVGGElement, focus: BoardFocus): void {
-    const { width, height } = BOARD_IMAGE_INFO;
+    const { width, height } = this.boardData.def.imageInfo;
     const targets = this.locationPick?.getPending()?.targets ?? 'all';
     const slot: AnchorSlot = targets === 'buildings' ? 'building' : 'hero';
-    for (const [loc, slots] of Object.entries(BOARD_ANCHORS)) {
+    for (const [loc, slots] of Object.entries(this.boardData.def.anchors)) {
       const anchor = slots[slot];
       if (!anchor) continue;
-      if (focus.kingdom !== 'all' && BOARD_LOCATION_BY_NAME[loc]?.kingdom !== focus.kingdom)
+      if (focus.kingdom !== 'all' && this.boardData.locationByName[loc]?.kingdom !== focus.kingdom)
         continue;
       const circle = document.createElementNS(SVG_NS, 'circle');
       circle.setAttribute('class', 'udt-space');
       circle.setAttribute('data-location', loc);
       circle.setAttribute('cx', String(anchor.x * width));
       circle.setAttribute('cy', String(anchor.y * height));
-      circle.setAttribute('r', String(SPACE_HIT_R));
+      circle.setAttribute('r', String(this.geom.spaceHitR));
       circle.setAttribute('fill', 'rgba(251, 191, 36, 0.18)');
       circle.setAttribute('stroke', '#fbbf24');
       circle.setAttribute('stroke-width', '6');
@@ -355,14 +397,15 @@ export class BoardMap2D implements BoardRenderer {
           const adversary = state.adversary;
           if (adversary?.location) {
             const px =
-              anchorPx(adversary.location, 'foe') ?? anchorPx(adversary.location, 'building');
+              anchorPx(this.boardData, adversary.location, 'foe') ??
+              anchorPx(this.boardData, adversary.location, 'building');
             if (px) {
               root.appendChild(
                 this.makeToken(
                   { kind: 'adversary', id: adversary.id, location: adversary.location },
                   { kind: 'adversary', id: adversary.id },
                   px,
-                  SLOT_SIZE,
+                  this.geom.slotSize,
                   this.dim(adversary.location, focus),
                 ),
               );
@@ -376,7 +419,7 @@ export class BoardMap2D implements BoardRenderer {
           for (const [loc, b] of Object.entries(state.buildings)) {
             const opacity = this.dim(loc, focus);
             if (b.skulls > 0) {
-              const px = anchorPx(loc, 'skull');
+              const px = anchorPx(this.boardData, loc, 'skull');
               if (px) {
                 const count = Math.min(b.skulls, MAX_FANNED_SKULLS);
                 const group = this.makeSelectableGroup(
@@ -389,15 +432,15 @@ export class BoardMap2D implements BoardRenderer {
                     group,
                     { kind: 'skull', id: 'skull' },
                     'building',
-                    SKULL_SIZE,
-                    fanOffset(i, count, FAN_RADIUS),
+                    this.geom.skullSize,
+                    fanOffset(i, count, this.geom.fanRadius),
                   );
                 }
                 root.appendChild(group);
               }
             }
             if (b.monument || b.destroyed) {
-              const px = anchorPx(loc, 'building');
+              const px = anchorPx(this.boardData, loc, 'building');
               if (px) {
                 const group = this.makeSelectableGroup(
                   { kind: 'building', id: loc, location: loc },
@@ -409,9 +452,9 @@ export class BoardMap2D implements BoardRenderer {
                     group,
                     { kind: 'monument', id: b.monument },
                     'building',
-                    SLOT_SIZE,
+                    this.geom.slotSize,
                   );
-                if (b.destroyed) group.appendChild(razedOverlay(SLOT_SIZE));
+                if (b.destroyed) group.appendChild(razedOverlay(this.geom.slotSize));
                 root.appendChild(group);
               }
             }
@@ -470,15 +513,15 @@ export class BoardMap2D implements BoardRenderer {
     toArt: (entry: LocatedEntry) => TokenArtRef,
   ): void {
     for (const [loc, entries] of byLocation) {
-      const px = anchorPx(loc, slot);
+      const px = anchorPx(this.boardData, loc, slot);
       if (!px) continue;
       const opacity = this.dim(loc, focus);
       entries.forEach((entry, i) => {
-        const off = fanOffset(i, entries.length, FAN_RADIUS);
+        const off = fanOffset(i, entries.length, this.geom.fanRadius);
         const center = { x: px.x + off.dx, y: px.y + off.dy };
         const selection = toSelection(entry);
         const group = this.makeSelectableGroup(selection, center, opacity);
-        this.appendArtOrFallback(group, toArt(entry), selection.kind, SLOT_SIZE);
+        this.appendArtOrFallback(group, toArt(entry), selection.kind, this.geom.slotSize);
         root.appendChild(group);
       });
     }
@@ -511,7 +554,7 @@ export class BoardMap2D implements BoardRenderer {
     group.setAttribute('data-cy', String(center.y));
     group.setAttribute(
       'transform',
-      `translate(${center.x} ${center.y}) rotate(${inwardAlignDeg(center)})`,
+      `translate(${center.x} ${center.y}) rotate(${inwardAlignDeg(this.boardData, center)})`,
     );
     if (opacity < 1) group.setAttribute('opacity', String(opacity));
     group.style.cursor = 'pointer';
@@ -558,7 +601,7 @@ export class BoardMap2D implements BoardRenderer {
 
   private dim(loc: LocationName, focus: BoardFocus): number {
     if (focus.kingdom === 'all') return 1;
-    return BOARD_LOCATION_BY_NAME[loc]?.kingdom === (focus.kingdom as BoardKingdom)
+    return this.boardData.locationByName[loc]?.kingdom === (focus.kingdom as BoardKingdom)
       ? 1
       : DIM_OPACITY;
   }
@@ -570,8 +613,8 @@ export class BoardMap2D implements BoardRenderer {
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
-    for (const [loc, slots] of Object.entries(BOARD_ANCHORS)) {
-      if (BOARD_LOCATION_BY_NAME[loc]?.kingdom !== (focus.kingdom as BoardKingdom)) continue;
+    for (const [loc, slots] of Object.entries(this.boardData.def.anchors)) {
+      if (this.boardData.locationByName[loc]?.kingdom !== (focus.kingdom as BoardKingdom)) continue;
       for (const anchor of Object.values(slots)) {
         if (!anchor) continue;
         minX = Math.min(minX, anchor.x * width);
@@ -581,11 +624,12 @@ export class BoardMap2D implements BoardRenderer {
       }
     }
     if (!Number.isFinite(minX)) return full;
+    const pad = this.geom.viewboxPad;
     return {
-      x: minX - VIEWBOX_PAD,
-      y: minY - VIEWBOX_PAD,
-      w: maxX - minX + VIEWBOX_PAD * 2,
-      h: maxY - minY + VIEWBOX_PAD * 2,
+      x: minX - pad,
+      y: minY - pad,
+      w: maxX - minX + pad * 2,
+      h: maxY - minY + pad * 2,
     };
   }
 
@@ -638,7 +682,7 @@ export class BoardMap2D implements BoardRenderer {
   private beginRotate(event: MouseEvent): void {
     if (!this.svg) return;
     const rect = this.svg.getBoundingClientRect();
-    const { width, height } = BOARD_IMAGE_INFO;
+    const { width, height } = this.boardData.def.imageInfo;
     const pivot = viewBoxPointToClient(width / 2, height / 2, this.currentViewBox(), rect);
     this.rotateStart = {
       pivot,
@@ -774,7 +818,7 @@ export class BoardMap2D implements BoardRenderer {
     const ring = document.createElementNS(SVG_NS, 'circle');
     ring.setAttribute('cx', ringHost.getAttribute('data-cx') ?? '0');
     ring.setAttribute('cy', ringHost.getAttribute('data-cy') ?? '0');
-    ring.setAttribute('r', String(SELECTION_RING_R));
+    ring.setAttribute('r', String(this.geom.selectionRingR));
     ring.setAttribute('fill', 'none');
     ring.setAttribute('stroke', '#fbbf24');
     ring.setAttribute('stroke-width', '10');
@@ -794,25 +838,26 @@ interface Offset {
   dy: number;
 }
 
-const BOARD_CENTER: Point = {
-  x: BOARD_IMAGE_INFO.width / 2,
-  y: BOARD_IMAGE_INFO.height / 2,
-};
+function boardCenter(board: ResolvedBoard): Point {
+  const { width, height } = board.def.imageInfo;
+  return { x: width / 2, y: height / 2 };
+}
 
 /**
  * Degrees to rotate a token at `center` so its "up" points inward toward the board center,
  * matching the board's radially-printed spaces. Composes with the lazy-susan layer rotation.
  */
-function inwardAlignDeg(center: Point): number {
-  const deg =
-    Math.atan2(center.y - BOARD_CENTER.y, center.x - BOARD_CENTER.x) * (180 / Math.PI) - 90;
+function inwardAlignDeg(board: ResolvedBoard, center: Point): number {
+  const origin = boardCenter(board);
+  const deg = Math.atan2(center.y - origin.y, center.x - origin.x) * (180 / Math.PI) - 90;
   return Math.round(deg * 100) / 100;
 }
 
-function anchorPx(loc: LocationName, slot: AnchorSlot): Point | null {
-  const anchor = BOARD_ANCHORS[loc]?.[slot];
+function anchorPx(board: ResolvedBoard, loc: LocationName, slot: AnchorSlot): Point | null {
+  const anchor = board.def.anchors[loc]?.[slot];
   if (!anchor) return null;
-  return { x: anchor.x * BOARD_IMAGE_INFO.width, y: anchor.y * BOARD_IMAGE_INFO.height };
+  const { width, height } = board.def.imageInfo;
+  return { x: anchor.x * width, y: anchor.y * height };
 }
 
 function makeImage(url: string, size: number, off: Offset): SVGImageElement {

@@ -26,7 +26,8 @@ import type {
 } from 'ultimatedarktowerdisplay';
 import type { BoardState, LocationName } from '../state/boardState';
 import type { AnchorSlot, BoardKingdom } from '../data/udtReexports';
-import { BOARD_ANCHORS } from '../data/udtReexports';
+import type { BoardDefinition, ResolvedBoard } from '../data/boardDefinition';
+import { resolveBoard } from '../data/boardDefinition';
 import type { BoardFocus, BoardViewAngle } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
 import {
@@ -113,6 +114,13 @@ export interface Board3DPluginOptions {
    */
   northKingdom?: 0 | 1 | 2 | 3;
   /**
+   * The board to place tokens for. Omit for the built-in RtDT board. A custom board's
+   * anchors are remapped from image space onto the disc via its circle calibration, so
+   * it must be calibrated (see `isBoardCalibrated`) — hosts should fall back to the 2D
+   * map otherwise.
+   */
+  board?: BoardDefinition;
+  /**
    * Per-token art overrides, keyed by kind → art id. The 3D path renders a per-token `model3d`
    * (GLB), else the token's image as a sprite billboard (`image3d ?? image2d`); pass the SAME
    * object to the 2D map for its `image2d` slot. A per-token `model3d` is preferred over
@@ -194,6 +202,8 @@ export class Board3DPlugin implements ScenePlugin {
   readonly id = 'ultimatedarktowerboard:board3d';
 
   private ctx: ScenePluginContext | null = null;
+  /** The board being placed (RtDT unless `options.board` said otherwise). */
+  private readonly boardData: ResolvedBoard;
   private disc: DiscMetrics | null = null;
   private group: THREE.Group | null = null;
   private board: THREE.Mesh | null = null;
@@ -215,6 +225,7 @@ export class Board3DPlugin implements ScenePlugin {
     private readonly options: Board3DPluginOptions = {},
   ) {
     this.boardState = options.boardState ?? null;
+    this.boardData = resolveBoard(options.board);
   }
 
   attach(ctx: ScenePluginContext): void {
@@ -289,8 +300,10 @@ export class Board3DPlugin implements ScenePlugin {
    */
   private buildBoard(url: string, disc: DiscMetrics, northKingdom: 0 | 1 | 2 | 3): THREE.Mesh {
     const lift = disc.radius * 0.001; // tiny lift above the disc mesh to avoid z-fighting
+    // Corners go through the same image→disc remap as the anchors, so a board whose
+    // printed circle is inset in its art is scaled to line the circle up with the disc.
     const corner = (x: number, y: number): THREE.Vector3 => {
-      const p = anchorToWorld({ x, y }, disc, northKingdom);
+      const p = anchorToWorld(this.toDiscAnchor({ x, y }), disc, northKingdom);
       p.y += lift;
       return p;
     };
@@ -418,7 +431,8 @@ export class Board3DPlugin implements ScenePlugin {
     const adversary = state.adversary;
     if (adversary?.location) {
       const anchor =
-        BOARD_ANCHORS[adversary.location]?.foe ?? BOARD_ANCHORS[adversary.location]?.building;
+        this.boardData.def.anchors[adversary.location]?.foe ??
+        this.boardData.def.anchors[adversary.location]?.building;
       if (anchor) {
         this.addToken(
           { kind: 'adversary', id: adversary.id, location: adversary.location },
@@ -432,7 +446,7 @@ export class Board3DPlugin implements ScenePlugin {
     // Buildings: skull stacks + monument / razed overlays (a click selects the building).
     for (const [loc, b] of Object.entries(state.buildings)) {
       if (b.skulls > 0) {
-        const anchor = BOARD_ANCHORS[loc]?.skull;
+        const anchor = this.boardData.def.anchors[loc]?.skull;
         if (anchor) {
           const base = this.worldAt(anchor);
           const count = Math.min(b.skulls, MAX_FANNED_SKULLS);
@@ -449,7 +463,7 @@ export class Board3DPlugin implements ScenePlugin {
         }
       }
       if (b.monument || b.destroyed) {
-        const anchor = BOARD_ANCHORS[loc]?.building;
+        const anchor = this.boardData.def.anchors[loc]?.building;
         if (anchor) {
           const pos = this.worldAt(anchor);
           const selection: TokenSelection = { kind: 'building', id: loc, location: loc };
@@ -489,7 +503,7 @@ export class Board3DPlugin implements ScenePlugin {
   ): void {
     const radius = this.fanRadius();
     for (const [loc, entries] of byLocation) {
-      const anchor = BOARD_ANCHORS[loc]?.[slot];
+      const anchor = this.boardData.def.anchors[loc]?.[slot];
       if (!anchor) continue;
       const base = this.worldAt(anchor);
       entries.forEach((entry, i) => {
@@ -643,7 +657,25 @@ export class Board3DPlugin implements ScenePlugin {
   }
 
   private worldAt(anchor: { x: number; y: number }): THREE.Vector3 {
-    return anchorToWorld(anchor, this.disc as DiscMetrics, this.options.northKingdom ?? 0);
+    return anchorToWorld(
+      this.toDiscAnchor(anchor),
+      this.disc as DiscMetrics,
+      this.options.northKingdom ?? 0,
+    );
+  }
+
+  /**
+   * Image-normalized anchor → disc-normalized anchor, so the board's printed circle lands
+   * on the 3D disc regardless of how the art is framed. For RtDT (center 0.5,0.5 / radius
+   * 0.5 — the circle inscribed in a square image) this is the identity.
+   */
+  private toDiscAnchor(anchor: { x: number; y: number }): { x: number; y: number } {
+    const { centerX, centerY, radius } = this.boardData.def.imageInfo;
+    if (typeof centerX !== 'number' || typeof centerY !== 'number' || !radius) return anchor;
+    return {
+      x: 0.5 + (anchor.x - centerX) / (2 * radius),
+      y: 0.5 + (anchor.y - centerY) / (2 * radius),
+    };
   }
 
   private tokenSize(): number {
@@ -693,7 +725,7 @@ export class Board3DPlugin implements ScenePlugin {
     this.clearSpaceTargets();
     if (!this.disc) return;
     const radius = this.tokenSize();
-    for (const [loc, slots] of Object.entries(BOARD_ANCHORS)) {
+    for (const [loc, slots] of Object.entries(this.boardData.def.anchors)) {
       const anchor = slots.hero ?? slots.building;
       if (!anchor) continue;
       const geometry = new THREE.SphereGeometry(radius, 6, 4);

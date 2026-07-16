@@ -14,6 +14,16 @@ This is **dev-only** — it has no runtime relationship to the published package
 package's `files` whitelist already excludes `tools/`). It only _produces files_ that
 get dropped into the library's `src/`.
 
+> **Authoring a _custom_ board? Use the Creator app's Board Designer instead**
+> (the **Boards** tab — see [`docs/creator/board-designer.md`](../../../../docs/creator/board-designer.md)).
+> It does the same job — locations, anchors, adjacency, circle calibration — but against
+> your own art, and stores the result in the scenario document (`library.boards`), so the
+> board renders and plays in `@udtc/player` with no code changes.
+>
+> This tool remains the pipeline for the **built-in Return to Dark Tower board data**: it is
+> what regenerates `BOARD_ANCHORS` / `BOARD_ADJACENCY` / `BOARD_IMAGE_INFO` as generated
+> TypeScript in `packages/core/src/data/board/` via `gen-board-data.mjs`.
+
 ## Run it
 
 No build step, no dependencies. Either:

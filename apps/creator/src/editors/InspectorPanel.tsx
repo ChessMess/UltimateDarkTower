@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { getUDTReferenceLayer } from '@udtc/adapters';
 import { useCreatorStore } from '../store';
+import { activeBoardLocationNames } from '../boards/vocabulary';
 import { categoryFor } from '../types';
 import type { ScenarioDoc, SchemaNode, GroupProps } from '../types';
 
@@ -921,9 +922,6 @@ function ScenarioSetupEditor({
 
 const FOE_STATUSES = ['panicked', 'unsteady', 'ready', 'savage', 'lethal'] as const;
 
-// UDT board-location vocabulary (60 named spaces) — resolved once at load, like NewScenarioDialog.
-const BOARD_LOCATION_NAMES: string[] = Object.keys(getUDTReferenceLayer().boardLocationByName);
-
 type SpawnRow = { foeId?: string; location?: string; status?: string };
 
 // The foes an author can place = those the scenario declares (library.foes keys ∪ tier selections),
@@ -958,12 +956,14 @@ function BoardSetupEditor({
   const raw = sn.props?.spawns;
   const spawns: SpawnRow[] = Array.isArray(raw) ? (raw as SpawnRow[]) : [];
   const foeIds = scenarioFoeIds(schemaDoc);
+  // The active board's vocabulary — a custom board's own names, else the built-in RtDT roster.
+  const locationNames = [...activeBoardLocationNames(schemaDoc)];
 
   const commit = (next: SpawnRow[]) => onUpdate({ spawns: next });
   const updateRow = (i: number, patch: SpawnRow) =>
     commit(spawns.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   const addRow = () =>
-    commit([...spawns, { foeId: foeIds[0] ?? '', location: BOARD_LOCATION_NAMES[0] ?? '' }]);
+    commit([...spawns, { foeId: foeIds[0] ?? '', location: locationNames[0] ?? '' }]);
   const removeRow = (i: number) => commit(spawns.filter((_, idx) => idx !== i));
 
   // Keep a hand-authored foe/location that isn't in the option list visible + selectable.
@@ -1025,7 +1025,7 @@ function BoardSetupEditor({
             style={selectStyle}
             title="Board location"
           >
-            {withCurrent(BOARD_LOCATION_NAMES, row.location).map((loc) => (
+            {withCurrent(locationNames, row.location).map((loc) => (
               <option key={loc} value={loc}>
                 {loc}
               </option>

@@ -405,6 +405,23 @@ export interface ScenarioLibrary {
    * validate lifecycle.selectHero's authored pool, never mutates it (the runtime pick lands on
    * HeroState.heroRef instead). */
   heroes?: Record<string, { heroId: string; source?: string }>;
+  /** custom game boards (schema 0.4.6 library.boards). Deliberately a MINIMAL view: setup only
+   *  needs each location's kingdom/building to synthesize hero homes + the buildings registry.
+   *  Anchors/adjacency/imageInfo are presentational and never reach engine state. */
+  boards?: Record<string, ScenarioBoardDef>;
+}
+
+/** The engine's structural view of a `library.boards` entry — see {@link ScenarioLibrary.boards}. */
+export interface ScenarioBoardDef {
+  id?: string;
+  name?: string;
+  locations?: Array<{
+    name: string;
+    kingdom: Kingdom;
+    terrain?: string;
+    /** lowercase in the schema, but compared case-insensitively — core spells it 'Citadel'. */
+    building?: string;
+  }>;
 }
 
 // ---- effects (§4.3 closed verb vocabulary) ----
@@ -809,6 +826,9 @@ export interface Scenario {
         home?: Record<string, string>;
         buildings?: Array<{ kingdom: Kingdom; type: BuildingType; location: string }>;
       };
+      /** schema 0.4.6 — names a `library.boards` entry (a custom board). Mutually exclusive
+       *  with `boardState`; when set, setup synthesizes the board state from that definition. */
+      boardRef?: string;
     };
     selections: {
       // Optional since schema 0.4.1: rule-variant scenarios may omit the standard adversary/

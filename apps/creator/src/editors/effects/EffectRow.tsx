@@ -18,6 +18,8 @@ import {
   coerceFlagValue,
   type FieldSpec,
 } from './opForms';
+import { useCreatorStore } from '../../store';
+import { activeBoardLocationNames } from '../../boards/vocabulary';
 
 export interface EffectRowProps {
   effect: Record<string, unknown>;
@@ -38,6 +40,8 @@ export function EffectRow({
   foeIds,
   depth,
 }: EffectRowProps) {
+  const schemaDoc = useCreatorStore((s) => s.schemaDoc);
+  const locationNames = [...activeBoardLocationNames(schemaDoc)];
   const op = typeof effect.op === 'string' ? effect.op : '';
   const scopeCapped = op === 'hero.scope' && depth >= SCOPE_DEPTH_CAP;
   const structured = hasStructuredForm(op) && !scopeCapped;
@@ -112,6 +116,7 @@ export function EffectRow({
               effect={effect}
               deckIds={deckIds}
               foeIds={foeIds}
+              locationNames={locationNames}
               onSet={setField}
             />
           ))}
@@ -128,12 +133,14 @@ function Field({
   effect,
   deckIds,
   foeIds,
+  locationNames,
   onSet,
 }: {
   spec: FieldSpec;
   effect: Record<string, unknown>;
   deckIds: string[];
   foeIds: string[];
+  locationNames: string[];
   onSet: (key: string, value: unknown, optional?: boolean) => void;
 }) {
   const { key, kind, label, min, optional } = spec;
@@ -166,7 +173,9 @@ function Field({
     kind === 'kingdom' ||
     kind === 'foeStatus' ||
     kind === 'deck' ||
-    kind === 'foe'
+    kind === 'foe' ||
+    // a board with no locations yet would render an empty dropdown — fall back to free text
+    (kind === 'location' && locationNames.length > 0)
   ) {
     const options =
       kind === 'resource'
@@ -177,7 +186,9 @@ function Field({
             ? [...FOE_STATUSES]
             : kind === 'deck'
               ? deckIds
-              : foeIds;
+              : kind === 'location'
+                ? locationNames
+                : foeIds;
     const cur = String(raw ?? '');
     return (
       <label style={fieldRow}>

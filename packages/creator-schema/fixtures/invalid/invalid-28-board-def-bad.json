@@ -1,0 +1,334 @@
+{
+  "schemaVersion": "0.4.6",
+  "meta": {
+    "title": "v0.4.6 fixture: invalid boardDef (capitalized building, unknown prop)",
+    "scenarioVersion": "0.1.0",
+    "designer": {
+      "name": "Test"
+    },
+    "pins": {
+      "udt": "5.0.0"
+    }
+  },
+  "setup": {
+    "mode": "coop",
+    "difficulty": {
+      "profile": "heroic",
+      "skullSupply": 24
+    },
+    "playerCountScaling": {
+      "turnsPerMonth": {
+        "1": 6,
+        "2": 7,
+        "3": 8,
+        "4": 9
+      }
+    },
+    "monthEnd": {
+      "resolution": "randomInRange",
+      "default": {
+        "minTurn": 3,
+        "maxTurn": 6
+      }
+    },
+    "selections": {
+      "adversaryId": "ashstrider",
+      "foes": {
+        "tier1": "brigands",
+        "tier2": "frost-trolls",
+        "tier3": "dragons"
+      },
+      "mainGoalId": "recover-azkols-treasures"
+    },
+    "board": {
+      "boardRef": "shattered-reach"
+    }
+  },
+  "library": {
+    "resources": {
+      "images": {
+        "dungeon-bitmap": "data:image/png;base64,iVBORw0KGgo=",
+        "board-shattered-reach": "data:image/png;base64,iVBORw0KGgo="
+      }
+    },
+    "buildingTypes": {
+      "citadel": {
+        "free": [
+          {
+            "op": "resource.gain",
+            "resource": "warriors",
+            "amount": 1
+          }
+        ],
+        "enhanced": {
+          "cost": {
+            "resource": "spirit",
+            "amount": 1
+          },
+          "effects": [
+            {
+              "op": "resource.gain",
+              "resource": "warriors",
+              "amount": 2
+            }
+          ]
+        },
+        "skullCapacity": 3
+      },
+      "sanctuary": {
+        "free": [
+          {
+            "op": "resource.gain",
+            "resource": "warriors",
+            "amount": 1
+          }
+        ],
+        "enhanced": {
+          "cost": {
+            "resource": "spirit",
+            "amount": 1
+          },
+          "effects": [
+            {
+              "op": "corruption.remove",
+              "all": true
+            }
+          ]
+        },
+        "skullCapacity": 3
+      },
+      "village": {
+        "free": [
+          {
+            "op": "resource.gain",
+            "resource": "warriors",
+            "amount": 1
+          }
+        ],
+        "enhanced": {
+          "cost": {
+            "resource": "spirit",
+            "amount": 1
+          },
+          "effects": [
+            {
+              "op": "resource.gain",
+              "resource": "spirit",
+              "amount": 1
+            }
+          ]
+        },
+        "skullCapacity": 3
+      },
+      "bazaar": {
+        "free": [
+          {
+            "op": "resource.gain",
+            "resource": "warriors",
+            "amount": 1
+          }
+        ],
+        "enhanced": {
+          "cost": {
+            "resource": "spirit",
+            "amount": 1
+          },
+          "effects": [
+            {
+              "op": "market.refresh"
+            }
+          ]
+        },
+        "skullCapacity": 3
+      }
+    },
+    "dungeons": {
+      "test-dungeon": {
+        "id": "test-dungeon",
+        "name": "Test Dungeon",
+        "trait": "Magic",
+        "grid": {
+          "cols": 2,
+          "rows": 1
+        },
+        "masterBitmap": "dungeon-bitmap",
+        "bitmapRect": {
+          "x": -0.15,
+          "y": 0.1,
+          "w": 2.3,
+          "h": 1.05
+        },
+        "rooms": [
+          {
+            "id": "room-entry",
+            "cell": {
+              "col": 0,
+              "row": 0
+            },
+            "exits": {
+              "E": "door"
+            },
+            "isEntrance": true
+          },
+          {
+            "id": "room-target",
+            "cell": {
+              "col": 1,
+              "row": 0
+            },
+            "exits": {
+              "W": "door"
+            },
+            "isTarget": true
+          }
+        ]
+      }
+    },
+    "boards": {
+      "shattered-reach": {
+        "id": "shattered-reach",
+        "name": "The Shattered Reach",
+        "imageRef": "board-shattered-reach",
+        "imageInfo": {
+          "width": 2048,
+          "height": 2048,
+          "centerX": 0.5,
+          "centerY": 0.5,
+          "radius": 0.48,
+          "northHeadingDegrees": 135
+        },
+        "locations": [
+          {
+            "name": "Emberfall",
+            "kingdom": "north",
+            "terrain": "Ash Flats",
+            "building": "Citadel"
+          },
+          {
+            "name": "Coldwatch",
+            "kingdom": "north",
+            "terrain": "Tundra",
+            "grouping": "Long Water"
+          },
+          {
+            "name": "Saltmere",
+            "kingdom": "east",
+            "terrain": "Lake",
+            "building": "bazaar"
+          },
+          {
+            "name": "Thornhollow",
+            "kingdom": "south",
+            "terrain": "Forest",
+            "building": "sanctuary"
+          },
+          {
+            "name": "Gravelrun",
+            "kingdom": "west",
+            "terrain": "Hills",
+            "building": "village"
+          }
+        ],
+        "anchors": {
+          "Emberfall": {
+            "building": {
+              "x": 0.31,
+              "y": 0.22
+            },
+            "skull": {
+              "x": 0.34,
+              "y": 0.25
+            },
+            "hero": {
+              "x": 0.28,
+              "y": 0.2
+            },
+            "foe": {
+              "x": 0.3,
+              "y": 0.27
+            },
+            "marker": {
+              "x": 0.33,
+              "y": 0.19
+            }
+          },
+          "Coldwatch": {
+            "hero": {
+              "x": 0.44,
+              "y": 0.12
+            },
+            "foe": {
+              "x": 0.47,
+              "y": 0.15
+            }
+          },
+          "Saltmere": {
+            "building": {
+              "x": 0.78,
+              "y": 0.44
+            },
+            "skull": {
+              "x": 0.81,
+              "y": 0.47
+            },
+            "hero": {
+              "x": 0.75,
+              "y": 0.42
+            }
+          },
+          "Thornhollow": {
+            "building": {
+              "x": 0.5,
+              "y": 0.82
+            },
+            "skull": {
+              "x": 0.53,
+              "y": 0.85
+            },
+            "hero": {
+              "x": 0.47,
+              "y": 0.8
+            }
+          },
+          "Gravelrun": {
+            "building": {
+              "x": 0.18,
+              "y": 0.58
+            },
+            "skull": {
+              "x": 0.21,
+              "y": 0.61
+            },
+            "hero": {
+              "x": 0.15,
+              "y": 0.56
+            }
+          }
+        },
+        "adjacency": {
+          "Emberfall": ["Coldwatch", "Gravelrun"],
+          "Coldwatch": ["Emberfall", "Saltmere"],
+          "Saltmere": ["Coldwatch", "Thornhollow"],
+          "Thornhollow": ["Saltmere", "Gravelrun"],
+          "Gravelrun": ["Thornhollow", "Emberfall"]
+        }
+      }
+    }
+  },
+  "graph": {
+    "entry": "n-start",
+    "nodes": [
+      {
+        "id": "n-start",
+        "kind": "lifecycle.gameStart"
+      },
+      {
+        "id": "n-dungeon",
+        "kind": "dungeon.subflow",
+        "props": {
+          "dungeonId": "test-dungeon"
+        }
+      }
+    ]
+  }
+}

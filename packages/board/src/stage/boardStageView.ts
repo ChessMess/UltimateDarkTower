@@ -13,6 +13,8 @@ import { BoardRenderView } from '../view/boardRenderView';
 import { mountBoardUI } from '../ui';
 import type { BoardUIHandle, BoardUIOptions } from '../ui';
 import type { BoardState } from '../state/boardState';
+import type { BoardDefinition } from '../data/boardDefinition';
+import { RTDT_BOARD_DEFINITION, isBoardCalibrated } from '../data/boardDefinition';
 import type { BoardKingdom } from '../data/udtReexports';
 import type { BoardFocus } from '../renderers/shared';
 import type {
@@ -49,6 +51,12 @@ export interface BoardStageViewOptions {
   assetBaseUrl?: string;
   /** Board surface image, e.g. `'./board.png'`. */
   boardImageUrl?: string;
+  /**
+   * The board to render. Omit for the built-in Return to Dark Tower board. A board without
+   * a full circle calibration is 2D-only: the 3D tower refuses to enable (see
+   * {@link BoardStageView.setTowerEnabled}).
+   */
+  board?: BoardDefinition;
   /** Per-token art overrides shared by the 2D map and the 3D tower. */
   tokenArt?: TokenArtConfig;
   /** Override the default token-art path; `null` → fallback. */
@@ -154,6 +162,7 @@ export class BoardStageView {
       mapContainer: this.els.mapHost,
       assetBaseUrl: options.assetBaseUrl,
       boardImageUrl: options.boardImageUrl,
+      board: options.board,
       tokenArt: options.tokenArt,
       resolveTokenImage: options.resolveTokenImage,
       enableZoom: options.enableZoom,
@@ -340,6 +349,15 @@ export class BoardStageView {
         console.warn('[BoardStageView] tower3D requested but no modelUrl was provided.');
         return;
       }
+      // The 3D disc projection needs the board's circle (center/radius/north). An
+      // uncalibrated custom board stays 2D rather than placing tokens at nonsense spots.
+      if (!isBoardCalibrated(this.options.board?.imageInfo ?? RTDT_BOARD_DEFINITION.imageInfo)) {
+        console.warn(
+          '[BoardStageView] tower3D requested but the board is not calibrated ' +
+            '(needs centerX/centerY/radius/northHeadingDegrees) — staying in 2D.',
+        );
+        return;
+      }
       if (!this.towerModule) this.towerModule = await import('../plugin/stageTower');
       this.buildTower(this.els.tower3dHost);
       this.towerEnabled = Boolean(this.tower);
@@ -398,6 +416,7 @@ export class BoardStageView {
       boardState: this.view.controller.getState(),
       assetBaseUrl: this.options.assetBaseUrl,
       boardImageUrl: this.options.boardImageUrl,
+      board: this.options.board,
       tokenArt: this.options.tokenArt,
       resolveTokenImage: this.options.resolveTokenImage,
       locationPick: this.view.locationPick,

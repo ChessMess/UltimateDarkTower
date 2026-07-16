@@ -2,6 +2,7 @@
 // or a valid intra-file library key. A miss is a hard fail — callers must block execution.
 
 import { getUDTReferenceLayer } from './udt';
+import { resolveActiveBoardDef } from './board-def';
 
 export type L2Result = { ok: boolean; errors: string[] };
 
@@ -25,6 +26,78 @@ export function validateRefs(scenario: unknown): L2Result {
 
   const setup = obj(s['setup']);
   const selections = setup ? obj(setup['selections']) : undefined;
+
+  // The location vocabulary every location-typed ref is checked against: the active custom
+  // board's names, or UDT's built-in RtDT roster when no custom board is selected.
+  const activeBoard = resolveActiveBoardDef(s);
+  const activeLocations: ReadonlySet<string> = activeBoard
+    ? new Set(activeBoard.def.locations.map((l) => l.name))
+    : new Set(Object.keys(udt.boardLocationByName));
+  const locationSource = activeBoard
+    ? `library.boards.${activeBoard.boardId}`
+    : 'UDT BOARD_LOCATIONS';
+
+  // A boardRef must name a real library.boards entry.
+  const boardRef = setup ? str(obj(setup['board'])?.['boardRef']) : undefined;
+  const boardsLib = obj(obj(s['library'])?.['boards']);
+  if (boardRef !== undefined && !(boardsLib && boardRef in boardsLib)) {
+    errors.push(`setup.board.boardRef "${boardRef}" is not a key in library.boards`);
+  }
+
+  // Per-board integrity: unique names; anchors/adjacency confined to this board's locations;
+  // adjacency symmetric. Checked for EVERY authored board, not just the active one, so an
+  // inactive board can't rot unnoticed.
+  if (boardsLib) {
+    for (const [bId, bRaw] of Object.entries(boardsLib)) {
+      const b = obj(bRaw);
+      if (!b) continue;
+      const locs = arr(b['locations']) ?? [];
+      const names = new Set<string>();
+      for (const lRaw of locs) {
+        const name = str(obj(lRaw)?.['name']);
+        if (name === undefined) continue;
+        if (names.has(name)) {
+          errors.push(`board "${bId}" has duplicate location name "${name}"`);
+        }
+        names.add(name);
+      }
+
+      const anchors = obj(b['anchors']);
+      if (anchors) {
+        for (const key of Object.keys(anchors)) {
+          if (!names.has(key)) {
+            errors.push(`board "${bId}" anchors key "${key}" is not a location on that board`);
+          }
+        }
+      }
+
+      const adjacency = obj(b['adjacency']);
+      if (adjacency) {
+        for (const [from, toRaw] of Object.entries(adjacency)) {
+          if (!names.has(from)) {
+            errors.push(`board "${bId}" adjacency key "${from}" is not a location on that board`);
+            continue;
+          }
+          for (const toVal of arr(toRaw) ?? []) {
+            const to = str(toVal);
+            if (to === undefined) continue;
+            if (!names.has(to)) {
+              errors.push(
+                `board "${bId}" adjacency "${from}" → "${to}" names a location not on that board`,
+              );
+              continue;
+            }
+            const back = arr(adjacency[to]) ?? [];
+            if (!back.some((v) => str(v) === from)) {
+              errors.push(
+                `board "${bId}" adjacency is not symmetric: "${from}" lists "${to}", but "${to}" does not list "${from}"`,
+              );
+            }
+          }
+        }
+      }
+    }
+  }
 
   // adversaryId must be a known adversary
   const adversaryId = selections ? str(selections['adversaryId']) : undefined;
@@ -97,9 +170,9 @@ export function validateRefs(scenario: unknown): L2Result {
         errors.push(`${ctx} foeId "${foeId}" is not in the UDT foe roster`);
       }
     }
-    if (location !== undefined && !(location in udt.boardLocationByName)) {
+    if (location !== undefined && !activeLocations.has(location)) {
       errors.push(
-        `${ctx} location "${location}" is not a known board location (UDT BOARD_LOCATIONS)`,
+        `${ctx} location "${location}" is not a known board location (${locationSource})`,
       );
     }
   };

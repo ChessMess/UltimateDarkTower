@@ -21,3 +21,4 @@ export * from './view/focusControls';
 export * from './ui';
 
 export * from './data/udtReexports';
+export * from './data/boardDefinition';

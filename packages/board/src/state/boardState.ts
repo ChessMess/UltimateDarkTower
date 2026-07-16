@@ -1,5 +1,6 @@
 import type { BoardKingdom, FoeStatus } from '../data/udtReexports';
-import { BOARD_LOCATIONS } from '../data/udtReexports';
+import type { BoardDefinition } from '../data/boardDefinition';
+import { resolveBoard } from '../data/boardDefinition';
 
 /** A `BOARD_LOCATIONS[n].name`. Kept as a string — the board never validates it. */
 export type LocationName = string;
@@ -87,16 +88,17 @@ export interface BoardState {
 }
 
 /**
- * An empty board: no heroes/foes/adversary/markers/quests, with all 16 building spaces
+ * An empty board: no heroes/foes/adversary/markers/quests, with every building space
  * present at `{ skulls: 0, destroyed: false }`. Optional keys are omitted so the
  * state round-trips through JSON without `undefined`-vs-absent mismatches.
+ *
+ * `board` selects which board's locations to seed from; omit it for the built-in
+ * Return to Dark Tower board (its 16 building spaces).
  */
-export function createDefaultBoardState(): BoardState {
+export function createDefaultBoardState(board?: BoardDefinition): BoardState {
   const buildings: Record<LocationName, BuildingState> = {};
-  for (const location of BOARD_LOCATIONS) {
-    if (location.building) {
-      buildings[location.name] = { skulls: 0, destroyed: false };
-    }
+  for (const location of resolveBoard(board).buildingLocations) {
+    buildings[location] = { skulls: 0, destroyed: false };
   }
   return { heroes: {}, foes: {}, buildings, spaceMarkers: {}, questMarkers: {} };
 }

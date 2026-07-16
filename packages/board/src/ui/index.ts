@@ -13,8 +13,6 @@ import type { BoardKingdom } from '../data/udtReexports';
 import {
   ADVERSARIES,
   ALLIES,
-  BOARD_LOCATIONS,
-  BOARD_LOCATION_BY_NAME,
   DIFFICULTIES,
   FOE_STATUSES,
   HEROES,
@@ -23,6 +21,8 @@ import {
   TIER2_FOES,
   TIER3_FOES,
 } from '../data/udtReexports';
+import type { BoardDefinition, ResolvedBoard } from '../data/boardDefinition';
+import { resolveBoard } from '../data/boardDefinition';
 import type { TokenSelection } from '../renderers/assetPaths';
 import type { LocationPickStore, PendingPlacement, SelectionStore } from './stores';
 
@@ -77,6 +77,8 @@ export interface BoardUIOptions {
   generateId?: (kind: 'foe', state: BoardState) => string;
   /** Draggable floating panels (default `true`). */
   floating?: boolean;
+  /** The board whose locations the panels offer. Omit for the built-in RtDT board. */
+  board?: BoardDefinition;
 }
 
 export interface BoardUIHandle {
@@ -90,7 +92,6 @@ const KINGDOMS: { value: BoardKingdom; label: string }[] = [
   { value: 'south', label: 'S' },
   { value: 'west', label: 'W' },
 ];
-const BUILDING_LOCATIONS = BOARD_LOCATIONS.filter((l) => l.building).map((l) => l.name);
 
 /**
  * Mounts the dockable editing UI into a host element. Returns a handle to toggle panels
@@ -103,6 +104,7 @@ export function mountBoardUI(host: HTMLElement, options: BoardUIOptions): BoardU
   const floating = options.floating ?? true;
   const rosters = resolveRosters(options.rosters);
   const genId = options.generateId ?? defaultFoeId;
+  const board = resolveBoard(options.board);
 
   const root = document.createElement('div');
   root.className = 'udt-board-ui';
@@ -124,10 +126,12 @@ export function mountBoardUI(host: HTMLElement, options: BoardUIOptions): BoardU
   };
 
   makeAndRegister('palette', 'Palette', (body) =>
-    buildPalette(body, controller, locationPick, rosters, genId),
+    buildPalette(body, controller, locationPick, rosters, genId, board),
   );
-  makeAndRegister('inspector', 'Inspector', (body) => buildInspector(body, controller, selection));
-  makeAndRegister('summary', 'Summary', (body) => buildSummary(body, controller));
+  makeAndRegister('inspector', 'Inspector', (body) =>
+    buildInspector(body, controller, selection, board),
+  );
+  makeAndRegister('summary', 'Summary', (body) => buildSummary(body, controller, board));
 
   host.appendChild(root);
 
@@ -278,6 +282,7 @@ function buildPalette(
   locationPick: LocationPickStore | undefined,
   rosters: BoardUIRosters,
   genId: (kind: 'foe', state: BoardState) => string,
+  board: ResolvedBoard,
 ): void {
   const kindSelect = makeSelect(
     [
@@ -352,7 +357,7 @@ function buildPalette(
   confirmRow.style.display = 'none';
   const hint = document.createElement('span');
   hint.className = 'udt-palette-hint';
-  let locationSelect = makeLocationSelect('all', undefined, 'udt-palette-location');
+  let locationSelect = makeLocationSelect('all', undefined, 'udt-palette-location', board);
   const confirmBtn = makeButton('Confirm', 'udt-palette-confirm-btn');
   const cancelBtn = makeButton('Cancel', 'udt-palette-cancel-btn');
   confirmRow.append(hint, locationSelect, confirmBtn, cancelBtn);
@@ -387,7 +392,7 @@ function buildPalette(
       monument: monumentCustom.value.trim() || optionText(monumentSelect),
     });
     // Rebuild the location select for the right target set.
-    const fresh = makeLocationSelect(targets, undefined, 'udt-palette-location');
+    const fresh = makeLocationSelect(targets, undefined, 'udt-palette-location', board);
     locationSelect.replaceWith(fresh);
     locationSelect = fresh;
     hint.textContent = locationPick
@@ -501,6 +506,7 @@ function buildInspector(
   body: HTMLElement,
   controller: BoardStateController,
   selection: SelectionStore,
+  board: ResolvedBoard,
 ): void {
   const render = (): void => {
     body.replaceChildren();
@@ -512,13 +518,13 @@ function buildInspector(
     const state = controller.getState();
     switch (sel.kind) {
       case 'hero':
-        renderHero(body, controller, state, sel);
+        renderHero(body, controller, state, sel, board);
         break;
       case 'foe':
-        renderFoe(body, controller, state, sel);
+        renderFoe(body, controller, state, sel, board);
         break;
       case 'adversary':
-        renderAdversary(body, controller, state);
+        renderAdversary(body, controller, state, board);
         break;
       case 'building':
         renderBuilding(body, controller, state, sel);
@@ -552,11 +558,12 @@ function renderHero(
   controller: BoardStateController,
   state: BoardState,
   sel: TokenSelection,
+  board: ResolvedBoard,
 ): void {
   const hero = state.heroes[sel.id];
   if (!hero) return void body.appendChild(emptyNote('Hero no longer on the board.'));
   body.appendChild(heading(`Hero: ${sel.id}`));
-  const move = makeLocationSelect('all', hero.location, 'udt-inspector-move');
+  const move = makeLocationSelect('all', hero.location, 'udt-inspector-move', board);
   move.addEventListener('change', () => controller.moveHero(sel.id, move.value));
   body.append(
     labeled('Location', move),
@@ -569,11 +576,12 @@ function renderFoe(
   controller: BoardStateController,
   state: BoardState,
   sel: TokenSelection,
+  board: ResolvedBoard,
 ): void {
   const foe = state.foes[sel.id];
   if (!foe) return void body.appendChild(emptyNote('Foe no longer on the board.'));
   body.appendChild(heading(`Foe: ${sel.id} (${foe.foe})`));
-  const move = makeLocationSelect('all', foe.location, 'udt-inspector-move');
+  const move = makeLocationSelect('all', foe.location, 'udt-inspector-move', board);
   move.addEventListener('change', () => controller.moveFoe(sel.id, move.value));
   const status = makeSelect(
     FOE_STATUSES.map((s) => ({ value: s, label: s })),
@@ -594,11 +602,12 @@ function renderAdversary(
   body: HTMLElement,
   controller: BoardStateController,
   state: BoardState,
+  board: ResolvedBoard,
 ): void {
   const adv = state.adversary;
   if (!adv) return void body.appendChild(emptyNote('No adversary selected.'));
   body.appendChild(heading(`Adversary: ${adv.id}`));
-  const move = makeLocationSelect('all', adv.location, 'udt-inspector-move');
+  const move = makeLocationSelect('all', adv.location, 'udt-inspector-move', board);
   move.addEventListener('change', () => controller.placeAdversary(move.value));
   body.append(
     labeled('Location', move),
@@ -681,7 +690,11 @@ function renderQuest(
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 
-function buildSummary(body: HTMLElement, controller: BoardStateController): void {
+function buildSummary(
+  body: HTMLElement,
+  controller: BoardStateController,
+  board: ResolvedBoard,
+): void {
   const table = document.createElement('table');
   table.className = 'udt-summary';
   body.appendChild(table);
@@ -696,7 +709,7 @@ function buildSummary(body: HTMLElement, controller: BoardStateController): void
     for (const k of KINGDOMS) {
       const row = document.createElement('tr');
       row.setAttribute('data-kingdom', k.value);
-      const m = kingdomMetrics(state, k.value);
+      const m = kingdomMetrics(state, k.value, board);
       row.appendChild(cell('th', k.label));
       row.appendChild(metricCell('heroes', m.heroes));
       row.appendChild(metricCell('foes', m.foes));
@@ -726,8 +739,12 @@ interface KingdomMetrics {
   adversary: boolean;
 }
 
-function kingdomMetrics(state: BoardState, kingdom: BoardKingdom): KingdomMetrics {
-  const inK = (loc: LocationName): boolean => BOARD_LOCATION_BY_NAME[loc]?.kingdom === kingdom;
+function kingdomMetrics(
+  state: BoardState,
+  kingdom: BoardKingdom,
+  board: ResolvedBoard,
+): KingdomMetrics {
+  const inK = (loc: LocationName): boolean => board.locationByName[loc]?.kingdom === kingdom;
   const heroes = Object.values(state.heroes).filter((h) => inK(h.location)).length;
   const foes = Object.values(state.foes).filter((f) => inK(f.location)).length;
   let skulls = 0;
@@ -808,15 +825,17 @@ function makeLocationSelect(
   targets: 'all' | 'buildings',
   value: string | undefined,
   className: string,
+  board: ResolvedBoard,
 ): HTMLSelectElement {
   const select = document.createElement('select');
   select.className = className;
-  const names = targets === 'buildings' ? BUILDING_LOCATIONS : BOARD_LOCATIONS.map((l) => l.name);
+  const names =
+    targets === 'buildings' ? board.buildingLocations : board.def.locations.map((l) => l.name);
   for (const k of KINGDOMS) {
     const group = document.createElement('optgroup');
     group.label = k.label;
     for (const name of names) {
-      if (BOARD_LOCATION_BY_NAME[name]?.kingdom !== k.value) continue;
+      if (board.locationByName[name]?.kingdom !== k.value) continue;
       const option = document.createElement('option');
       option.value = name;
       option.textContent = name;

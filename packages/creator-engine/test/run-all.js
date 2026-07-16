@@ -8,6 +8,7 @@ const suites = [
   'battle_test.js',
   'battle_cards_test.js',
   'dungeon_test.js',
+  'board_test.js',
   'lockstep_test.js',
   'corpus_test.js',
   'fixture_test.js',

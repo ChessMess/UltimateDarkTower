@@ -17,9 +17,11 @@ import { canonicalJson } from '../utils/canonical';
 import { applyDagreLayout } from '../utils/layout';
 import { syncDungeonNodes, BASE_X, BASE_Y } from '../dungeons/dungeonNodes';
 import type { Dungeon } from '../dungeons/shared';
+import type { Board } from '../boards/shared';
+import { activeBoardId } from '../boards/shared';
 
 // The center workspace view. The deck-builder-first-class switcher accommodates the dungeon builder.
-export type CenterView = 'canvas' | 'decks' | 'dungeons';
+export type CenterView = 'canvas' | 'decks' | 'dungeons' | 'boards';
 
 interface CreatorStore {
   schemaDoc: ScenarioDoc | null;
@@ -36,6 +38,18 @@ interface CreatorStore {
   deckCardKey: string | null;
   // read-only mirror of DungeonBuilderView's selected dungeonId (for the DungeonJsonPanel sidebar).
   dungeonSelection: string | null;
+  boardSelection: string | null;
+  /**
+   * The `setup.board` value displaced when a custom board was activated. `setup.board` is a
+   * schema `oneOf`, so `{boardRef}` is mutually exclusive with a hand-authored `{boardState}`
+   * (its `home` hero-start map and `buildings` registry) — writing one destroys the other.
+   * Stashing the outgoing value lets `setActiveBoard(null)` put it back verbatim.
+   *
+   * Session-scoped on purpose: it is NOT persisted (no schema surface for it). The editor
+   * therefore also confirms before overwriting a non-empty inline `boardState`, which covers
+   * activating a board in a later session than the one that authored it.
+   */
+  priorSetupBoard?: Record<string, unknown>;
   // set true when an autosave hits the localStorage quota (surfaced as a topbar warning chip, C3)
   draftSaveFailed: boolean;
   // last-known canvas pan/zoom, so switching to Decks/Dungeons and back doesn't reset the viewport.
@@ -55,6 +69,7 @@ interface CreatorStore {
   setDeckSelection: (sel: DeckSelection | null) => void;
   setDeckCardKey: (key: string | null) => void;
   setDungeonSelection: (id: string | null) => void;
+  setBoardSelection: (id: string | null) => void;
   setCanvasViewport: (viewport: Viewport | null) => void;
 
   // library.cards / library.decks / library.resources.images editing (schema 0.4.3, deck builder).
@@ -70,6 +85,13 @@ interface CreatorStore {
   // the turn loop (actionMiddle.dungeon → subflow, subflow.completed/left → actionEnd), which then
   // triggers room-node materialization. Switches to the canvas so the generated graph is visible.
   addDungeonSubflow: (dungeonId: string) => void;
+  // library.boards editing (schema 0.4.6, board designer). Replaces the whole map (or clears it
+  // when empty). No node sync — a board has no graph nodes (locations are opaque strings).
+  commitBoards: (boards: Record<string, Board>) => void;
+  // Points setup.board at a custom board, or back to the built-in RtDT board with `null`.
+  // setup.board is a oneOf, so {boardRef} is mutually exclusive with a hand-authored
+  // {boardState}/{boardStateRef} — see the implementation for how that value survives.
+  setActiveBoard: (boardId: string | null) => void;
 
   // RF state sync (called by canvas on drag-end, connect, delete)
   syncFromRF: (nodes: CreatorNode[], edges: Edge[]) => void;
@@ -154,6 +176,8 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   deckSelection: null,
   deckCardKey: null,
   dungeonSelection: null,
+  boardSelection: null,
+  priorSetupBoard: undefined,
   draftSaveFailed: false,
   canvasViewport: null,
 
@@ -175,6 +199,10 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
 
   setDungeonSelection(id) {
     set({ dungeonSelection: id });
+  },
+
+  setBoardSelection(id) {
+    set({ boardSelection: id });
   },
 
   setCanvasViewport(viewport) {
@@ -218,6 +246,8 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       deckSelection: null,
       deckCardKey: null,
       dungeonSelection: null,
+      boardSelection: null,
+      priorSetupBoard: undefined,
       validationResults: null,
       isDirty: false,
     });
@@ -607,6 +637,83 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       meta: { ...schemaDoc.meta, layout },
       graph: { ...schemaDoc.graph, nodes },
     };
+    const { nodes: rfNodes, edges } = deriveRF(updated);
+    const results = revalidate(updated);
+    const annotated = annotateErrors(rfNodes, results);
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+    });
+  },
+
+  commitBoards(boards) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
+    if (Object.keys(boards).length > 0) library.boards = boards;
+    else delete library.boards;
+
+    let updated: ScenarioDoc = { ...schemaDoc, library };
+
+    // If the ACTIVE board was just deleted, setup.board would be left pointing at nothing (a
+    // dangling boardRef — an L2 error). Fall back to the built-in RtDT board, restoring any
+    // stashed inline boardState exactly as setActiveBoard(null) does: deleting a board must not
+    // eat an authored boardState either.
+    const active = activeBoardId(updated);
+    if (active !== null && !(active in boards)) {
+      const prior = get().priorSetupBoard;
+      updated = {
+        ...updated,
+        setup: { ...updated.setup, board: prior ?? { boardStateRef: 'board-main' } },
+      };
+      set({ priorSetupBoard: undefined });
+    }
+
+    const { nodes: rfNodes, edges } = deriveRF(updated);
+    const results = revalidate(updated);
+    const annotated = annotateErrors(rfNodes, results);
+    set({
+      schemaDoc: updated,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+    });
+  },
+
+  setActiveBoard(boardId) {
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const setup = { ...(schemaDoc.setup as Record<string, unknown>) };
+    const current = setup.board;
+
+    if (boardId === null) {
+      // Back to the built-in RtDT board: restore whatever setup.board held before the custom
+      // board took over, so a hand-authored inline boardState (hero homes + buildings registry)
+      // survives the round-trip. Only fall back to the scaffold's boardStateRef if there was
+      // nothing to restore.
+      const prior = get().priorSetupBoard;
+      setup.board = prior ?? { boardStateRef: 'board-main' };
+      set({ priorSetupBoard: undefined });
+    } else {
+      // {boardRef} is a oneOf branch — writing it DESTROYS an inline {boardState}. Stash the
+      // outgoing value so toggling back restores it. (Stash it only on the way in from a
+      // non-boardRef value; switching custom→custom must not overwrite the original stash.)
+      const isBoardRef =
+        current !== null &&
+        typeof current === 'object' &&
+        !Array.isArray(current) &&
+        'boardRef' in (current as Record<string, unknown>);
+      if (!isBoardRef && current !== undefined) {
+        set({ priorSetupBoard: current as Record<string, unknown> });
+      }
+      setup.board = { boardRef: boardId };
+    }
+
+    const updated: ScenarioDoc = { ...schemaDoc, setup };
     const { nodes: rfNodes, edges } = deriveRF(updated);
     const results = revalidate(updated);
     const annotated = annotateErrors(rfNodes, results);

@@ -1,6 +1,7 @@
 import type { BoardState, LocationName } from '../state/boardState';
-import { BOARD_LOCATION_BY_NAME } from '../data/udtReexports';
 import type { BoardKingdom } from '../data/udtReexports';
+import type { BoardDefinition } from '../data/boardDefinition';
+import { resolveBoard } from '../data/boardDefinition';
 import type { BoardFocus, BoardRenderer } from './shared';
 import { DEFAULT_FOCUS } from './shared';
 
@@ -16,19 +17,27 @@ import { DEFAULT_FOCUS } from './shared';
 export class BoardReadout implements BoardRenderer {
   private last = '';
 
+  /** `board` selects the location vocabulary; omit for the built-in RtDT board. */
+  constructor(private readonly board?: BoardDefinition) {}
+
   render(state: BoardState, focus: BoardFocus = DEFAULT_FOCUS): void {
-    this.last = BoardReadout.toText(state, focus);
+    this.last = BoardReadout.toText(state, focus, this.board);
   }
 
   getText(): string {
     return this.last;
   }
 
-  static toText(state: BoardState, focus: BoardFocus = DEFAULT_FOCUS): string {
+  static toText(
+    state: BoardState,
+    focus: BoardFocus = DEFAULT_FOCUS,
+    board?: BoardDefinition,
+  ): string {
     const { kingdom } = focus;
+    const { locationByName } = resolveBoard(board);
     /** A location passes the filter when focus is `all`, or its kingdom matches. */
     const inFocus = (loc: LocationName): boolean =>
-      kingdom === 'all' || BOARD_LOCATION_BY_NAME[loc]?.kingdom === (kingdom as BoardKingdom);
+      kingdom === 'all' || locationByName[loc]?.kingdom === (kingdom as BoardKingdom);
 
     const lines: string[] = [`Board — focus: ${focus.kingdom}/${focus.angle}`];
 

@@ -10,7 +10,13 @@ import { data, seed, GLYPHS, TOWER_LIGHT_SEQUENCES, TOWER_AUDIO_LIBRARY } from '
 
 const { FOE_BY_ID, ADVERSARY_ROSTER, ALL_FOES, FOES } = data.foes;
 const { HEROES, HERO_BY_ID } = data.heroes;
-const { BOARD_LOCATIONS, BOARD_LOCATION_BY_NAME } = data.board;
+const {
+  BOARD_LOCATIONS,
+  BOARD_LOCATION_BY_NAME,
+  BOARD_ANCHORS,
+  BOARD_ADJACENCY,
+  BOARD_IMAGE_INFO,
+} = data.board;
 const { TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES } = seed;
 
 export type Foe = data.foes.Foe;
@@ -37,6 +43,13 @@ export interface UDTReferenceLayer {
   heroById: typeof HERO_BY_ID;
   boardLocations: typeof BOARD_LOCATIONS;
   boardLocationByName: typeof BOARD_LOCATION_BY_NAME;
+  /** Layout anchors / movement graph / image metadata for the built-in RtDT board. Exposed so
+   *  browser consumers (the Creator's RtDT board preset) can read them without importing
+   *  `ultimatedarktower` — or `ultimatedarktowerboard`, whose entry re-exports it — directly.
+   *  Both drag UDT's Node-only BLE stack (`@stoprocent/noble`) into a browser bundle. */
+  boardAnchors: typeof BOARD_ANCHORS;
+  boardAdjacency: typeof BOARD_ADJACENCY;
+  boardImageInfo: typeof BOARD_IMAGE_INFO;
   glyphs: typeof GLYPHS;
   lightSequences: typeof TOWER_LIGHT_SEQUENCES;
   audioLibrary: typeof TOWER_AUDIO_LIBRARY;
@@ -57,6 +70,9 @@ export function getUDTReferenceLayer(): UDTReferenceLayer {
     heroById: HERO_BY_ID,
     boardLocations: BOARD_LOCATIONS,
     boardLocationByName: BOARD_LOCATION_BY_NAME,
+    boardAnchors: BOARD_ANCHORS,
+    boardAdjacency: BOARD_ADJACENCY,
+    boardImageInfo: BOARD_IMAGE_INFO,
     glyphs: GLYPHS,
     lightSequences: TOWER_LIGHT_SEQUENCES,
     audioLibrary: TOWER_AUDIO_LIBRARY,
