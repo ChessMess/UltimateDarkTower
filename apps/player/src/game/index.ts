@@ -9,6 +9,7 @@ import {
   validateRefs,
   validateGraph,
   createBoardAdapter,
+  resolveActiveBoardDef,
   createDisplayAdapter,
   createResolver,
 } from '@udtc/adapters';
@@ -26,6 +27,12 @@ const PLAYER_COUNT = 1;
 // Module-level singletons — survive component remounts.
 let _relay: RelayClient | null = null;
 let _board: ReturnType<typeof createBoardAdapter> | null = null;
+// The scenario's custom board (schema 0.4.6 setup.board.boardRef), or null for the built-in
+// RtDT board. Resolved on load AND on session resume — a resumed scenario must render on the
+// board it was authored for, not the default.
+let _activeBoard: ReturnType<typeof resolveActiveBoardDef> = null;
+// Data URL of the custom board's art, pulled from library.resources.images.
+let _activeBoardImageUrl: string | undefined;
 let _display: ReturnType<typeof createDisplayAdapter> | null = null;
 // The all-in-one board stage (2D/3D/PiP switcher, pop-out, kingdom-zoom) shown for the
 // emulator target. Its `tower3D` is a Display TowerRenderView the engine drives directly.
@@ -56,8 +63,27 @@ const BOARD_IMAGE_URL = `${import.meta.env.BASE_URL}assets/board.png`;
 const BOARD_ASSET_BASE = `${import.meta.env.BASE_URL}assets/tokens/`;
 
 function board(): ReturnType<typeof createBoardAdapter> {
-  if (!_board) _board = createBoardAdapter();
+  if (!_board) _board = createBoardAdapter({ board: _activeBoard?.def });
   return _board;
+}
+
+/**
+ * Resolve the scenario's board + art, and force the board adapter to be rebuilt for it.
+ * Called from BOTH loadGame and resumeSession: the adapter seeds its building spaces from the
+ * board definition, so a stale adapter would track the wrong board.
+ */
+function adoptScenarioBoard(doc: unknown): void {
+  _activeBoard = resolveActiveBoardDef(doc);
+  _activeBoardImageUrl = resolveBoardImageUrl(doc, _activeBoard?.imageRef);
+  _board = null; // rebuilt on next board() with the new definition
+}
+
+/** The board art data URL for `imageRef`, read out of library.resources.images. */
+function resolveBoardImageUrl(doc: unknown, imageRef: string | undefined): string | undefined {
+  if (!imageRef) return undefined;
+  const d = doc as { library?: { resources?: { images?: Record<string, string> } } } | null;
+  const uri = d?.library?.resources?.images?.[imageRef];
+  return typeof uri === 'string' ? uri : undefined;
 }
 
 function display(): ReturnType<typeof createDisplayAdapter> {
@@ -148,12 +174,24 @@ export function mountDisplay(el: HTMLElement, mode: DisplayMode = 'lite'): void 
 
 async function mountStage(el: HTMLElement, gen: number): Promise<void> {
   const { BoardStageView } = await import('ultimatedarktowerboard/stage');
+  const { isBoardCalibrated } = await import('ultimatedarktowerboard');
   if (gen !== _mountGen) return;
+
+  // The 3D disc projection needs the board's circle calibration. An uncalibrated custom board
+  // renders in 2D instead of placing tokens at meaningless spots.
+  const canRender3D = !_activeBoard || isBoardCalibrated(_activeBoard.def.imageInfo);
+  if (!canRender3D) {
+    usePlayerStore
+      .getState()
+      .addLog('Custom board is not calibrated (no centre/radius/north) — using the 2D map.');
+  }
 
   const stage = new BoardStageView({
     container: el,
     modelUrl: TOWER_MODEL_URL,
-    boardImageUrl: BOARD_IMAGE_URL,
+    // A custom board draws its own uploaded art; a board with no art renders blank.
+    boardImageUrl: _activeBoard ? _activeBoardImageUrl : BOARD_IMAGE_URL,
+    board: _activeBoard?.def,
     assetBaseUrl: BOARD_ASSET_BASE,
     // Foe/adversary/hero art (2D icons + 3D portraits) all resolve from the board library's
     // built-in defaults now — no per-token tokenArt needed here.
@@ -169,12 +207,14 @@ async function mountStage(el: HTMLElement, gen: number): Promise<void> {
     initialState: board().isReady() ? board().getState() : undefined,
   });
 
-  await stage.setTowerEnabled(true);
+  if (canRender3D) await stage.setTowerEnabled(true);
   if (gen !== _mountGen) {
     stage.dispose();
     return;
   }
-  stage.setDisplayMode('2d3d'); // open on the combined 2D map + 3D tower; pills let the user switch
+  // Combined 2D map + 3D tower when the board supports it; 2D-only otherwise. Pills let the
+  // user switch within whatever is available.
+  stage.setDisplayMode(canRender3D ? '2d3d' : '2d');
 
   // Drive the engine's tower.program (lights / drums / seals) into the stage's TowerRenderView.
   const towerView = stage.tower3D;
@@ -305,6 +345,8 @@ export function loadGame(doc: unknown): void {
   void clearSession();
   store.setPhase('validating');
   store.addLog('Validating scenario (L1–L4)…');
+
+  adoptScenarioBoard(doc);
 
   const results = validateScenario(doc);
   store.setScenario(doc, results);
@@ -469,6 +511,9 @@ export async function resumeSession(): Promise<void> {
     store.setResumable(null);
     return;
   }
+
+  // Resume renders the SAVED scenario, so re-resolve its board before any adapter is built.
+  adoptScenarioBoard(saved.scenario);
 
   let engineState: EngineState;
   try {

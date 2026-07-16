@@ -8,10 +8,18 @@
 // exists once the promise resolves. Callers wanting the live state should attach via
 // `onReady`/`isReady` rather than reading `getState()` before it resolves ({}).
 
-import type { BoardState as UDTBoardState } from 'ultimatedarktowerboard';
+import type { BoardState as UDTBoardState, BoardDefinition } from 'ultimatedarktowerboard';
 
 export type BoardState = UDTBoardState;
 export type BoardMutateCommand = { command: string; args: Record<string, unknown> };
+
+export interface BoardAdapterOptions {
+  /**
+   * The board to track state for. Omit for the built-in Return to Dark Tower board —
+   * a custom board seeds its own building spaces instead of RtDT's 16.
+   */
+  board?: BoardDefinition;
+}
 
 // Minimal interface covering the BoardStateController methods we call.
 type BoardCtrl = {
@@ -32,7 +40,7 @@ type BoardCtrl = {
   reset(): void;
 };
 
-export function createBoardAdapter(): {
+export function createBoardAdapter(opts: BoardAdapterOptions = {}): {
   getState: () => BoardState;
   loadState: (state: BoardState) => void;
   mutate: (cmd: BoardMutateCommand) => void;
@@ -53,7 +61,7 @@ export function createBoardAdapter(): {
     .then(({ BoardStateController, createDefaultBoardState }) => {
       ctrl = new (
         BoardStateController as new (opts: { initial: BoardState; mode: string }) => BoardCtrl
-      )({ initial: createDefaultBoardState() as BoardState, mode: 'self' });
+      )({ initial: createDefaultBoardState(opts.board) as BoardState, mode: 'self' });
       for (const cmd of pendingMutations.splice(0)) mutate(cmd);
       ready = true;
       for (const cb of readyCbs.splice(0)) cb();

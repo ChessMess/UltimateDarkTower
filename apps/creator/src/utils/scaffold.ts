@@ -4,7 +4,7 @@
 
 import type { ScenarioDoc } from '../types';
 
-const SCHEMA_VERSION = '0.4.1';
+const SCHEMA_VERSION = '0.4.6';
 const UDT_PIN = '5.0.0';
 
 export interface ScaffoldInput {

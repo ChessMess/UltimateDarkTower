@@ -5,7 +5,10 @@ export { getUDTReferenceLayer } from './udt';
 export type { UDTReferenceLayer } from './udt';
 
 export { createBoardAdapter } from './board';
-export type { BoardState, BoardMutateCommand } from './board';
+export type { BoardState, BoardMutateCommand, BoardAdapterOptions } from './board';
+
+export { resolveActiveBoardDef, boardDefFromLibrary } from './board-def';
+export type { ActiveBoard } from './board-def';
 
 export { createDisplayAdapter } from './display';
 export type { DisplayAdapter, ScheduledSnapshot } from './display';

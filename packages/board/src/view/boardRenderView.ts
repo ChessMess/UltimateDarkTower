@@ -1,5 +1,6 @@
 import { BoardStateController } from '../state/controller';
 import type { BoardState } from '../state/boardState';
+import type { BoardDefinition } from '../data/boardDefinition';
 import { createDefaultBoardState } from '../state/boardState';
 import { BoardReadout } from '../renderers/readout';
 import { BoardMap2D } from '../renderers/map2d';
@@ -41,6 +42,11 @@ export interface BoardRenderViewOptions {
   /** Base-layer board image for the 2D map. */
   boardImageUrl?: string;
   /**
+   * The board to render. Omit for the built-in Return to Dark Tower board — existing
+   * consumers need no change.
+   */
+  board?: BoardDefinition;
+  /**
    * Per-token art overrides for the 2D map (the `image2d` slot). Pass the SAME object to the
    * 3D plugin (`attachBoard3D`) for the `image3d`/`model3d` slots. See {@link TokenArtConfig}.
    */
@@ -69,7 +75,7 @@ export interface BoardRenderViewOptions {
  */
 export class BoardRenderView {
   readonly controller: BoardStateController;
-  readonly readout = new BoardReadout();
+  readonly readout: BoardReadout;
   readonly map2d?: BoardMap2D;
   /** The active token selection — written by the renderers, read by the editing UI. */
   readonly selection: SelectionStore = createSelectionStore();
@@ -84,15 +90,17 @@ export class BoardRenderView {
 
   constructor(options: BoardRenderViewOptions = {}) {
     this.controller = new BoardStateController({
-      initial: options.initialState ?? createDefaultBoardState(),
+      initial: options.initialState ?? createDefaultBoardState(options.board),
       mode: options.mode,
     });
+    this.readout = new BoardReadout(options.board);
     this.onFocusChange = options.onFocusChange;
 
     if (options.mapContainer) {
       this.map2d = new BoardMap2D(options.mapContainer, {
         assetBaseUrl: options.assetBaseUrl,
         boardImageUrl: options.boardImageUrl,
+        board: options.board,
         tokenArt: options.tokenArt,
         resolveTokenImage: options.resolveTokenImage,
         enableZoom: options.enableZoom,
@@ -121,6 +129,8 @@ export class BoardRenderView {
         selection: this.selection,
         locationPick: this.locationPick,
         ...options.ui,
+        // The view owns the board; `ui.board` must not disagree with what the map renders.
+        board: options.board,
       });
     }
 

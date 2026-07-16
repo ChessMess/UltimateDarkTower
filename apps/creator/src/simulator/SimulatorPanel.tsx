@@ -9,7 +9,12 @@ import {
   type Directive,
   type StepResult,
 } from '@udtc/engine';
-import { createResolver, createDisplayAdapter, createBoardAdapter } from '@udtc/adapters';
+import {
+  createResolver,
+  createDisplayAdapter,
+  createBoardAdapter,
+  resolveActiveBoardDef,
+} from '@udtc/adapters';
 import { useCreatorStore } from '../store';
 import type { ScenarioDoc } from '../types';
 
@@ -139,7 +144,12 @@ export function SimulatorPanel() {
   useEffect(() => {
     const resolver = createResolver();
     const display = createDisplayAdapter({ resolver });
-    const board = createBoardAdapter();
+    // Seed the board adapter from the scenario's active board so its building spaces match a
+    // custom board. Read straight from the store: this effect intentionally runs once per panel
+    // lifetime, and re-creating the adapter on every doc keystroke would churn the 3D view.
+    const board = createBoardAdapter({
+      board: resolveActiveBoardDef(useCreatorStore.getState().schemaDoc)?.def,
+    });
     displayRef.current = display;
     boardRef.current = board;
 

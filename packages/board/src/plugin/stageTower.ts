@@ -11,6 +11,7 @@ import { TowerRenderView, TOWER_DISPLAY_CSS } from 'ultimatedarktowerdisplay';
 import type { Tower3DView } from 'ultimatedarktowerdisplay';
 import { attachBoard3D } from './index';
 import type { BoardState } from '../state/boardState';
+import type { BoardDefinition } from '../data/boardDefinition';
 import type { LocationName } from '../state/boardState';
 import type { BoardFocus } from '../renderers/shared';
 import type {
@@ -33,6 +34,8 @@ export interface BoardTower3DOptions {
   assetBaseUrl?: string;
   /** Board surface image; renders the board's own art on the disc and hides Display's placeholder. */
   boardImageUrl?: string;
+  /** The board to place tokens for. Omit for the built-in RtDT board. */
+  board?: BoardDefinition;
   /** Per-token art overrides (the SAME object passed to the 2D map). */
   tokenArt?: TokenArtConfig;
   /** Override the default 3D sprite art path; `null` → fallback. */
@@ -76,6 +79,7 @@ export function createBoardTower3D(options: BoardTower3DOptions): BoardTower3DHa
   const handle = attachBoard3D(view3D, {
     assetBaseUrl: options.assetBaseUrl,
     boardImageUrl: options.boardImageUrl,
+    board: options.board,
     boardState: options.boardState,
     tokenArt: options.tokenArt,
     resolveTokenImage: options.resolveTokenImage,

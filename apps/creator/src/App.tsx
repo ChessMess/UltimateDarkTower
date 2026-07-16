@@ -4,6 +4,7 @@ import './App.css';
 import { CreatorCanvas } from './canvas';
 import { DeckBuilderView, DeckJsonPanel } from './decks';
 import { DungeonBuilderView, DungeonJsonPanel } from './dungeons';
+import { BoardBuilderView, BoardJsonPanel } from './boards';
 import { PalettePanel, InspectorPanel, ProblemsPanel, RecoveryDialog } from './editors';
 import { SimulatorPanel } from './simulator';
 import { useCreatorStore } from './store';
@@ -111,7 +112,7 @@ export default function App() {
           <PalettePanel />
         </div>
 
-        {/* Center: Canvas | Decks switcher */}
+        {/* Center: Canvas | Decks | Dungeons | Boards switcher */}
         <div className="creator-canvas">
           <div className="creator-center-tabs">
             <button
@@ -132,6 +133,12 @@ export default function App() {
             >
               Dungeons
             </button>
+            <button
+              className={`creator-bottom-tab ${centerView === 'boards' ? 'active' : ''}`}
+              onClick={() => setCenterView('boards')}
+            >
+              Boards
+            </button>
           </div>
           <div className="creator-center-content">
             {centerView === 'canvas' ? (
@@ -141,18 +148,22 @@ export default function App() {
               />
             ) : centerView === 'decks' ? (
               <DeckBuilderView />
+            ) : centerView === 'boards' ? (
+              <BoardBuilderView />
             ) : (
               <DungeonBuilderView />
             )}
           </div>
         </div>
 
-        {/* Right: Inspector (canvas) | Deck JSON (decks) | Dungeon JSON (dungeons) */}
+        {/* Right: Inspector (canvas) | Deck JSON (decks) | Dungeon JSON (dungeons) | Board JSON (boards) */}
         <div className="creator-inspector">
           {centerView === 'decks' ? (
             <DeckJsonPanel />
           ) : centerView === 'dungeons' ? (
             <DungeonJsonPanel />
+          ) : centerView === 'boards' ? (
+            <BoardJsonPanel />
           ) : (
             <InspectorPanel />
           )}

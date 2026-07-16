@@ -17,7 +17,49 @@ import type {
   Effect,
   Directive,
   ScenarioLibrary,
+  ScenarioBoardDef,
+  BuildingType,
 } from './types';
+
+/**
+ * Synthesizes the `{home, buildings}` board state a custom board (schema 0.4.6
+ * `setup.board.boardRef` → `library.boards`) implies, so it feeds the exact same downstream
+ * path as a hand-authored inline `boardState`.
+ *
+ * - `buildings`: every location carrying a building, in authored order.
+ * - `home[kingdom]`: that kingdom's FIRST citadel location — where its hero starts.
+ *
+ * Building types are compared case-insensitively: the schema's enum is lowercase, but core's
+ * `BuildingType` is capitalized ('Citadel'), and a board can be built from either source.
+ *
+ * Returns `null` when there's no `boardRef`, it doesn't resolve, or the board has no locations —
+ * every one of which leaves the caller on the pre-0.4.6 default path.
+ */
+function boardStateFromDef(def: ScenarioBoardDef): {
+  home: Record<string, string>;
+  buildings: Array<{ kingdom: Kingdom; type: BuildingType; location: string }>;
+} | null {
+  const locations = def.locations;
+  if (!Array.isArray(locations) || locations.length === 0) return null;
+  const home: Record<string, string> = {};
+  const buildings: Array<{ kingdom: Kingdom; type: BuildingType; location: string }> = [];
+  for (const loc of locations) {
+    if (!loc || !loc.building) continue;
+    const type = String(loc.building).toLowerCase();
+    buildings.push({ kingdom: loc.kingdom, type: type as BuildingType, location: loc.name });
+    if (type === 'citadel' && home[loc.kingdom] === undefined) home[loc.kingdom] = loc.name;
+  }
+  return { home, buildings };
+}
+
+/** Resolves `setup.board.boardRef` against `library.boards` and synthesizes its board state. */
+function boardStateFromRef(sc: Scenario): ReturnType<typeof boardStateFromDef> {
+  const ref = sc.setup.board && sc.setup.board.boardRef;
+  if (!ref) return null;
+  const def = sc.library.boards && sc.library.boards[ref];
+  if (!def) return null;
+  return boardStateFromDef(def);
+}
 
 // ---------- public API: init (§2.3) ----------
 export function buildKingdoms(
@@ -125,7 +167,11 @@ export function init(scenario: unknown, opts: InitOpts): StepResult {
   // Buildings registry + hero start locations from the authored (opaque-to-L1) boardState:
   // { home: { kingdom: location }, buildings: [{ kingdom, type, location }] }. Heroes start on
   // their home kingdom's citadel space (rules.md §Hero Setup).
-  const boardState = (sc.setup.board && sc.setup.board.boardState) || null;
+  // A `boardRef` (schema 0.4.6) names a custom board in library.boards; its locations imply the
+  // same {home, buildings} shape an inline boardState spells out, so everything downstream is
+  // unchanged. An inline boardState always wins — the branches are mutually exclusive in the
+  // schema, and this ordering keeps every pre-0.4.6 document on its original path.
+  const boardState = (sc.setup.board && sc.setup.board.boardState) || boardStateFromRef(sc) || null;
   const buildings =
     boardState && Array.isArray(boardState.buildings)
       ? boardState.buildings.map((b) => ({

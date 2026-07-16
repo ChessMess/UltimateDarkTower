@@ -1,0 +1,173 @@
+import { describe, it, expect } from 'vitest';
+import { resolveActiveBoardDef, boardDefFromLibrary, validateRefs } from '../src/index';
+
+const BOARD = {
+  id: 'shattered-reach',
+  name: 'The Shattered Reach',
+  imageRef: 'board-shattered-reach',
+  imageInfo: { width: 2048, height: 2048 },
+  locations: [
+    { name: 'Emberfall', kingdom: 'north', terrain: 'Ash Flats', building: 'citadel' },
+    { name: 'Coldwatch', kingdom: 'north', terrain: 'Tundra' },
+  ],
+  anchors: { Emberfall: { hero: { x: 0.2, y: 0.2 } } },
+  adjacency: { Emberfall: ['Coldwatch'], Coldwatch: ['Emberfall'] },
+};
+
+/** A scenario shell that is only as complete as these tests need. */
+function scenario(over: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    schemaVersion: '0.4.6',
+    setup: { board: { boardRef: 'shattered-reach' } },
+    library: { boards: { 'shattered-reach': BOARD } },
+    graph: { nodes: [] },
+    ...over,
+  };
+}
+
+describe('resolveActiveBoardDef', () => {
+  it('resolves an authored boardRef to its definition', () => {
+    const active = resolveActiveBoardDef(scenario());
+    expect(active).not.toBeNull();
+    expect(active?.boardId).toBe('shattered-reach');
+    expect(active?.imageRef).toBe('board-shattered-reach');
+    expect(active?.def.locations.map((l) => l.name)).toEqual(['Emberfall', 'Coldwatch']);
+  });
+
+  it('returns null for the implicit RtDT board (boardStateRef / boardState branches)', () => {
+    expect(
+      resolveActiveBoardDef(scenario({ setup: { board: { boardStateRef: 'board-main' } } })),
+    ).toBeNull();
+    expect(
+      resolveActiveBoardDef(scenario({ setup: { board: { boardState: { home: {} } } } })),
+    ).toBeNull();
+  });
+
+  it('returns null (not a throw) for a DANGLING boardRef — L2 reports it separately', () => {
+    const doc = scenario({ library: { boards: {} } });
+    expect(resolveActiveBoardDef(doc)).toBeNull();
+  });
+
+  it('returns null for junk input', () => {
+    expect(resolveActiveBoardDef(null)).toBeNull();
+    expect(resolveActiveBoardDef({})).toBeNull();
+    expect(resolveActiveBoardDef({ setup: {} })).toBeNull();
+  });
+});
+
+describe('boardDefFromLibrary', () => {
+  it('falls back to the registry key when the entry has no id', () => {
+    const def = boardDefFromLibrary('my-key', { ...BOARD, id: undefined });
+    expect(def?.id).toBe('my-key');
+  });
+
+  it('rejects entries missing imageInfo or locations', () => {
+    expect(boardDefFromLibrary('x', { imageInfo: { width: 1, height: 1 } })).toBeNull();
+    expect(boardDefFromLibrary('x', { locations: [] })).toBeNull();
+    expect(boardDefFromLibrary('x', 'nope')).toBeNull();
+  });
+
+  it('defaults anchors to an empty map so consumers can index it safely', () => {
+    const def = boardDefFromLibrary('x', { ...BOARD, anchors: undefined });
+    expect(def?.anchors).toEqual({});
+  });
+});
+
+describe('validateRefs — board vocabulary', () => {
+  // lifecycle.boardSetup is the node whose `spawns[]` resolve foeId + location (validate-refs
+  // also checks a foe.spawn EFFECT; both go through the same checkSpawn).
+  const spawnNode = (location: string) => ({
+    id: 'n1',
+    kind: 'lifecycle.boardSetup',
+    props: { spawns: [{ foeId: 'brigands', location }] },
+  });
+
+  it("accepts a spawn at the CUSTOM board's location", () => {
+    const doc = scenario({ graph: { nodes: [spawnNode('Emberfall')] } });
+    const res = validateRefs(doc);
+    expect(res.errors.filter((e) => e.includes('Emberfall'))).toEqual([]);
+  });
+
+  it('rejects an RtDT location once a custom board is active, naming the board as the source', () => {
+    const doc = scenario({ graph: { nodes: [spawnNode('Broken Lands')] } });
+    const res = validateRefs(doc);
+    const err = res.errors.find((e) => e.includes('Broken Lands'));
+    expect(err).toContain('library.boards.shattered-reach');
+  });
+
+  it('still validates against the UDT roster when no custom board is active', () => {
+    const doc = scenario({
+      setup: { board: { boardStateRef: 'board-main' } },
+      library: {},
+      graph: { nodes: [spawnNode('Broken Lands')] },
+    });
+    expect(validateRefs(doc).errors.filter((e) => e.includes('Broken Lands'))).toEqual([]);
+
+    const bad = scenario({
+      setup: { board: { boardStateRef: 'board-main' } },
+      library: {},
+      graph: { nodes: [spawnNode('Emberfall')] },
+    });
+    expect(validateRefs(bad).errors.find((e) => e.includes('Emberfall'))).toContain(
+      'UDT BOARD_LOCATIONS',
+    );
+  });
+
+  it('flags a dangling boardRef', () => {
+    const doc = scenario({ library: { boards: {} } });
+    expect(validateRefs(doc).errors).toContain(
+      'setup.board.boardRef "shattered-reach" is not a key in library.boards',
+    );
+  });
+});
+
+describe('validateRefs — per-board integrity', () => {
+  const withBoard = (patch: Record<string, unknown>) =>
+    scenario({ library: { boards: { 'shattered-reach': { ...BOARD, ...patch } } } });
+
+  it('accepts a well-formed board', () => {
+    expect(validateRefs(scenario()).errors).toEqual([]);
+  });
+
+  it('flags duplicate location names', () => {
+    const doc = withBoard({
+      locations: [...BOARD.locations, { name: 'Emberfall', kingdom: 'south', terrain: 'Bog' }],
+    });
+    expect(validateRefs(doc).errors).toContain(
+      'board "shattered-reach" has duplicate location name "Emberfall"',
+    );
+  });
+
+  it('flags anchors keyed to a non-location', () => {
+    const doc = withBoard({ anchors: { Nowhere: { hero: { x: 0.1, y: 0.1 } } } });
+    expect(validateRefs(doc).errors).toContain(
+      'board "shattered-reach" anchors key "Nowhere" is not a location on that board',
+    );
+  });
+
+  it('flags adjacency pointing off-board', () => {
+    const doc = withBoard({ adjacency: { Emberfall: ['Atlantis'] } });
+    expect(validateRefs(doc).errors.some((e) => e.includes('"Emberfall" → "Atlantis"'))).toBe(true);
+  });
+
+  it('flags ASYMMETRIC adjacency', () => {
+    const doc = withBoard({ adjacency: { Emberfall: ['Coldwatch'] } }); // no reverse edge
+    expect(
+      validateRefs(doc).errors.some(
+        (e) => e.includes('not symmetric') && e.includes('Emberfall') && e.includes('Coldwatch'),
+      ),
+    ).toBe(true);
+  });
+
+  it('checks EVERY authored board, not just the active one', () => {
+    const doc = scenario({
+      library: {
+        boards: {
+          'shattered-reach': BOARD,
+          spare: { ...BOARD, id: 'spare', adjacency: { Emberfall: ['Coldwatch'] } },
+        },
+      },
+    });
+    expect(validateRefs(doc).errors.some((e) => e.includes('board "spare"'))).toBe(true);
+  });
+});
