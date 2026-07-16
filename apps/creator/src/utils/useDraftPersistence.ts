@@ -1,25 +1,34 @@
 import { useEffect } from 'react';
 import { useCreatorStore } from '../store';
-import { flowToSchema } from './serializer';
-import { saveDraft } from './draft';
 
 const AUTOSAVE_DEBOUNCE_MS = 800;
 
+/**
+ * Autosave the working scenario into the IndexedDB library.
+ *
+ * Only ever saves a scenario that already has an id — the first save is an explicit act (Save / Save
+ * As), because it has to name the thing. Until then the RecoveryDialog's migrated draft is the only
+ * safety net, exactly as before.
+ */
 function flushDraft(): void {
-  const { schemaDoc, rfNodes, rfEdges, isDirty, draftSaveFailed, setDraftSaveFailed } =
-    useCreatorStore.getState();
-  if (!schemaDoc || !isDirty) return;
-  const saved = saveDraft(flowToSchema(rfNodes, rfEdges, schemaDoc));
-  // Only flip the flag on an actual change: setting it re-triggers the store subscription, and
-  // isDirty stays true after a save, so an unconditional set would autosave-loop every debounce.
-  if (draftSaveFailed !== !saved) setDraftSaveFailed(!saved);
+  const { schemaDoc, isDirty, currentScenarioId } = useCreatorStore.getState();
+  if (!schemaDoc || !isDirty || !currentScenarioId) return;
+  // saveCurrent() owns the failure flag (draftSaveFailed) and never throws.
+  void useCreatorStore.getState().saveCurrent();
 }
 
 export function useDraftPersistence(): void {
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
+    // The subscription fires on EVERY set(), including pure-UI ones — canvas pan/zoom
+    // (setCanvasViewport) and selection. Those don't set isDirty, but isDirty stays true between
+    // edits, so an unguarded handler re-armed the debounce and rewrote the whole document every
+    // 800ms while panning. Compare schemaDoc identity: only a real document change is autosavable.
+    let lastDoc = useCreatorStore.getState().schemaDoc;
 
-    const unsubscribe = useCreatorStore.subscribe(() => {
+    const unsubscribe = useCreatorStore.subscribe((state) => {
+      if (state.schemaDoc === lastDoc) return;
+      lastDoc = state.schemaDoc;
       if (timer !== null) clearTimeout(timer);
       timer = setTimeout(flushDraft, AUTOSAVE_DEBOUNCE_MS);
     });
@@ -34,6 +43,8 @@ export function useDraftPersistence(): void {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       const { isDirty } = useCreatorStore.getState();
       if (!isDirty) return;
+      // IndexedDB is async and unload won't wait for it, so this is a warning, not a flush. The
+      // debounced save above is what actually protects the work.
       flushDraft();
       e.preventDefault();
       e.returnValue = '';

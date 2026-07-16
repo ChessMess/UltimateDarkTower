@@ -24,7 +24,7 @@ import { useCreatorStore } from '../store';
 import type { ScenarioDoc, GroupProps } from '../types';
 import { computeGroupRects, type CreatorNode } from '../utils/serializer';
 import { NewScenarioDialog } from '../editors/NewScenarioDialog';
-import { clearDraft } from '../utils/draft';
+import { ScenarioListDialog } from '../editors/ScenarioListDialog';
 import { syncDungeonNodes } from '../dungeons/dungeonNodes';
 import type { Dungeon } from '../dungeons/shared';
 
@@ -79,16 +79,22 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
   } = useCreatorStore();
   const {
     loadScenario,
+    clearScenario,
     syncFromRF,
     selectNode,
     addNode,
     applyLayout,
     exportScenario,
     setCanvasViewport,
+    saveCurrent,
+    saveCurrentAs,
+    markExported,
+    currentScenarioId,
   } = useCreatorStore();
   const { fitView, screenToFlowPosition } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newDialogOpen, setNewDialogOpen] = useState(false);
+  const [showScenarios, setShowScenarios] = useState(false);
   const groupDragRef = useRef<{
     groupId: string;
     groupStart: { x: number; y: number };
@@ -244,6 +250,10 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
       reader.onload = (ev) => {
         try {
           const doc = JSON.parse(ev.target?.result as string) as ScenarioDoc;
+          // clearScenario first so the import can never inherit the previous scenario's id (which
+          // would make Save silently overwrite it) or its priorSetupBoard stash. A file carries no
+          // id — the schema forbids one — so an import is always a NEW scenario, and Save prompts.
+          clearScenario();
           loadScenario(doc, !doc.meta.layout?.positions);
           setTimeout(() => fitView({ padding: 0.2 }), 100);
         } catch {
@@ -253,10 +263,15 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
       reader.readAsText(file);
       e.target.value = '';
     },
-    [isDirty, loadScenario, fitView],
+    [isDirty, loadScenario, clearScenario, fitView],
   );
 
-  // Export
+  // Export — produces the Player-consumable artifact, so it keeps the allOk gate.
+  //
+  // It used to also set isDirty:false and clearDraft(), which conflated "exported a file" with
+  // "saved my work": marking the document clean suppressed the next autosave and the beforeunload
+  // warning. Saving is now Save's job. Export only records that a durable copy exists (markExported),
+  // which is what the library's "never exported" warning reads.
   const handleExport = useCallback(() => {
     if (!validationResults?.allOk) return;
     const json = exportScenario();
@@ -267,9 +282,27 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
     a.download = `${schemaDoc?.meta.title ?? 'scenario'}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    useCreatorStore.setState({ isDirty: false });
-    clearDraft();
-  }, [validationResults, exportScenario, schemaDoc]);
+    void markExported();
+  }, [validationResults, exportScenario, schemaDoc, markExported]);
+
+  // Save — never gated on validity. Work in progress is exactly what needs saving.
+  const handleSave = useCallback(() => {
+    if (!schemaDoc) return;
+    if (currentScenarioId) {
+      void saveCurrent();
+      return;
+    }
+    const title = window.prompt('Save scenario as:', schemaDoc.meta.title || 'Untitled');
+    if (title === null) return;
+    void saveCurrentAs(title.trim() || 'Untitled');
+  }, [schemaDoc, currentScenarioId, saveCurrent, saveCurrentAs]);
+
+  const handleSaveAs = useCallback(() => {
+    if (!schemaDoc) return;
+    const title = window.prompt('Save a copy as:', `${schemaDoc.meta.title} (copy)`);
+    if (title === null) return;
+    void saveCurrentAs(title.trim() || 'Untitled');
+  }, [schemaDoc, saveCurrentAs]);
 
   const handleLoadSampleScenario = useCallback(() => {
     if (isDirty && !window.confirm('Discard unsaved changes and load the sample scenario?')) return;
@@ -366,6 +399,35 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
               title="Load the sample scenario"
             >
               Load Sample Scenario
+            </button>
+            <button
+              className="toolbar-btn"
+              onClick={handleSave}
+              disabled={!schemaDoc}
+              title={
+                !schemaDoc
+                  ? 'No scenario loaded'
+                  : currentScenarioId
+                    ? 'Save to this browser'
+                    : 'Save to this browser (names the scenario)'
+              }
+            >
+              {isDirty || !currentScenarioId ? 'Save' : 'Saved'}
+            </button>
+            <button
+              className="toolbar-btn"
+              onClick={handleSaveAs}
+              disabled={!schemaDoc}
+              title="Save a copy under a new name"
+            >
+              Save As
+            </button>
+            <button
+              className="toolbar-btn"
+              onClick={() => setShowScenarios(true)}
+              title="Open a saved scenario"
+            >
+              Scenarios…
             </button>
             <button
               className="toolbar-btn"
@@ -517,8 +579,20 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
         <NewScenarioDialog
           onClose={() => setNewDialogOpen(false)}
           onConfirm={(doc) => {
+            // Detach from any open library entry so New never overwrites the scenario you had open.
+            clearScenario();
             loadScenario(doc, true);
             setNewDialogOpen(false);
+            setTimeout(() => fitView({ padding: 0.2 }), 100);
+          }}
+        />
+      )}
+
+      {showScenarios && (
+        <ScenarioListDialog
+          isDirty={isDirty}
+          onClose={() => {
+            setShowScenarios(false);
             setTimeout(() => fitView({ padding: 0.2 }), 100);
           }}
         />

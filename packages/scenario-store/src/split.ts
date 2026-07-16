@@ -14,11 +14,15 @@
 // resolveImage, the five ref keys (artRef/backRef/bitmapSlice/masterBitmap/imageRef), the card
 // renderer, and export/import all stay unchanged.
 
-/** Structural shape these helpers need. Deliberately loose: the schema types `library` as an
- *  untyped bag, and this package must not depend on an app's hand-written ScenarioDoc. */
+/**
+ * Structural shape these helpers need — nothing but `library`.
+ *
+ * Deliberately minimal: the schema types `library` as an untyped bag, and this package must not
+ * depend on an app's hand-written ScenarioDoc. No index signature, or a concrete interface like the
+ * Creator's ScenarioDoc stops being assignable to it (TS won't widen an interface to one).
+ */
 export interface ScenarioDocLike {
   library?: unknown;
-  [key: string]: unknown;
 }
 
 /** library.resources.images — imageId → data URL */

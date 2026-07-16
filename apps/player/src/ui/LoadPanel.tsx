@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { golden, goldenFull } from '@udtc/engine';
 import { loadGame, startGame, resumeSession, discardSession } from '../game';
+import { resolveHandoff } from '../game/handoff';
 import { usePlayerStore } from '../store';
 
 // Human-friendly "saved N ago" for the resume banner.
@@ -21,6 +22,24 @@ export function LoadPanel() {
   const resumable = usePlayerStore((s) => s.resumable);
   const fileRef = useRef<HTMLInputElement>(null);
   const busy = phase === 'validating';
+  // ?scenario=<id> handoff from the Creator. A miss is expected and survivable — the import path
+  // below is the fallback — so it surfaces as a notice, never a failure.
+  const [handoffMiss, setHandoffMiss] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void resolveHandoff().then((result) => {
+      if (cancelled || result.status === 'none') return;
+      if (result.status === 'missing') {
+        setHandoffMiss(result.message);
+        return;
+      }
+      loadGame(result.doc);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // The shipped golden scenario is the base-game fidelity build (full turn structure, buildings,
   // events, monthly quests); the compact legacy fixture stays available for regression play.
@@ -51,6 +70,21 @@ export function LoadPanel() {
   return (
     <section style={panelStyle}>
       <h3 style={headStyle}>Scenario</h3>
+
+      {/* ?scenario= pointed at something this browser can't see. Say why, then get out of the way. */}
+      {handoffMiss && (
+        <div style={handoffMissStyle}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-text-2)' }}>
+            Couldn&rsquo;t open that scenario
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--c-text-muted)', margin: '4px 0 8px' }}>
+            {handoffMiss}
+          </div>
+          <button style={btnStyle} onClick={() => setHandoffMiss(null)}>
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Resume prompt — a saved in-progress game was found on load (page-refresh recovery) */}
       {resumable && phase === 'idle' && (
@@ -166,6 +200,14 @@ const headStyle: React.CSSProperties = {
 const resumeCardStyle: React.CSSProperties = {
   background: 'var(--c-surface)',
   border: '1px solid var(--c-primary)',
+  borderRadius: 6,
+  padding: 10,
+  marginBottom: 10,
+};
+
+const handoffMissStyle: React.CSSProperties = {
+  background: 'var(--c-surface)',
+  border: '1px solid var(--c-warning, #d29922)',
   borderRadius: 6,
   padding: 10,
   marginBottom: 10,

@@ -35,16 +35,48 @@ export default function App() {
 
   useDraftPersistence();
 
+  // Migrate the legacy localStorage draft into the IndexedDB library, once. Adopting it writes a
+  // real library entry and drops the old key, so this path runs at most one more time ever.
   const handleRestoreDraft = () => {
     if (!pendingDraft) return;
     loadScenario(pendingDraft.doc, !pendingDraft.doc.meta.layout?.positions);
-    useCreatorStore.setState({ isDirty: true });
+    void useCreatorStore
+      .getState()
+      .saveCurrentAs(pendingDraft.title || pendingDraft.doc.meta.title)
+      .then(() => clearDraft());
     setPendingDraft(null);
   };
 
   const handleDiscardDraft = () => {
     clearDraft();
     setPendingDraft(null);
+  };
+
+  // Hand the current scenario to the Player via the shared same-origin IndexedDB. It has to be
+  // saved first — the id IS the handoff, and an unsaved scenario doesn't have one. With no document
+  // at all this is just the old plain link.
+  const openInPlayerTitle = !schemaDoc
+    ? 'Open the Player'
+    : 'Save and open this scenario in the Player';
+
+  const handleOpenInPlayer = async () => {
+    if (!schemaDoc) {
+      window.location.href = '../player/';
+      return;
+    }
+    let id = useCreatorStore.getState().currentScenarioId;
+    if (!id || useCreatorStore.getState().isDirty) {
+      const saved = await useCreatorStore.getState().saveCurrent();
+      if (!saved) {
+        window.alert(
+          "Couldn't save this scenario to the browser, so there's nothing to hand over. " +
+            'Export it and import it in the Player instead.',
+        );
+        return;
+      }
+      id = useCreatorStore.getState().currentScenarioId;
+    }
+    window.location.href = id ? `../player/?scenario=${encodeURIComponent(id)}` : '../player/';
   };
 
   const toggleBottomCollapsed = () => {
@@ -86,8 +118,11 @@ export default function App() {
           )}
           <span style={{ flex: 1 }} />
           {draftSaveFailed && (
+            // Under localStorage this fired predictably at ~5 MB and was near-routine. An IndexedDB
+            // write failure means quota exhaustion or eviction — rare, and much worse — so the
+            // message says what to actually do about it.
             <span
-              title="Autosave failed — this browser's local storage is full. Export your scenario to avoid losing work."
+              title="Couldn't save to this browser's storage — it may be full or restricted. Export your scenario now to avoid losing work."
               style={{
                 fontSize: 11,
                 fontWeight: 700,
@@ -98,12 +133,16 @@ export default function App() {
                 letterSpacing: 0.02,
               }}
             >
-              ⚠ Autosave off
+              ⚠ Save failed — export now
             </span>
           )}
-          <a className="switch-link" href="../player/">
-            Player →
-          </a>
+          <button
+            className="switch-link"
+            onClick={() => void handleOpenInPlayer()}
+            title={openInPlayerTitle}
+          >
+            {schemaDoc ? 'Open in Player →' : 'Player →'}
+          </button>
           <ThemeToggle />
         </div>
 

@@ -27,6 +27,7 @@
     "lint": "eslint .",
     "validate:nodes": "node scripts/creator/validate-node-catalog.mjs",
     "pages:landing": "node scripts/pages/build-landing.mjs",
+    "preview:site": "node scripts/pages/preview-site.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,md}\"",
     "ci": "pnpm validate:nodes && pnpm lint && pnpm format:check && pnpm build && pnpm typecheck && pnpm test",

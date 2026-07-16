@@ -60,9 +60,12 @@ tower's ground disc using `centerX/centerY/radius`. Without all four calibration
 **2D-only**: the player logs a line and stays on the 2D map. (`northHeadingDegrees` is authored but
 the 3D pipeline currently consumes quadrant-based `northKingdom` — a known v1 limitation.)
 
-**Board art shares one budget.** `library.boards` is a map, and all art in a document shares the
-~5 MB localStorage draft budget with decks and dungeons. Roughly three arted boards will overrun it
-and autosave starts failing. The toolbar surfaces the total once a second board gains art.
+**Board art shares one budget.** `library.boards` is a map, and all art in a document shares one
+~50 MB budget with decks and dungeons. That budget is now about **export size**, not storage:
+scenarios live in IndexedDB (quota in the hundreds of MB), so the old ~5 MB localStorage ceiling —
+which roughly three arted boards would overrun — is gone. What the meter tells you instead is
+roughly how large the `.json` you share will be. The toolbar surfaces the total once a second board
+gains art. See [save-load.md](./save-load.md).
 
 **Switching boards touches `setup.board`.** It is a schema `oneOf`, so `{boardRef}` is mutually
 exclusive with a hand-authored `{boardState}` (hero homes + buildings registry). Toggling a board on

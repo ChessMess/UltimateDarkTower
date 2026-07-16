@@ -147,3 +147,6 @@ CLAUDE.md
 /manual-testing/screenshots
 /manual-testing/test-reports
 /planning
+
+# assembled Pages site (pnpm preview:site / deploy-pages.yml)
+_site/

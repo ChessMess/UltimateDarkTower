@@ -1,3 +1,14 @@
+// draft — the legacy localStorage autosave slot, now a one-way migration shim.
+//
+// The Creator used to debounce-write the whole scenario (base64 image payloads and all) into a
+// single localStorage key. That capped a scenario at the ~5 MB localStorage quota, which the image
+// budget alone consumed — the repo's own docs called it at "roughly three arted boards". Drafts now
+// live in the IndexedDB scenario library (see @udtc/scenario-store).
+//
+// This module survives only to rescue a draft written by the previous version, on first run after
+// the upgrade. Nothing writes here any more. Once the draft is adopted or discarded the key is
+// removed and this file can go.
+
 import type { ScenarioDoc } from '../types';
 
 const DRAFT_KEY = 'udtc-creator-draft';
@@ -18,24 +29,12 @@ function isScenarioDocShape(value: unknown): value is ScenarioDoc {
   return typeof graph.entry === 'string' && Array.isArray(graph.nodes);
 }
 
-// Returns true on a successful write, false when storage is unavailable/full (C3: the caller
-// surfaces the failure as a topbar warning chip instead of silently swallowing it).
-export function saveDraft(doc: ScenarioDoc): boolean {
-  try {
-    const envelope: DraftEnvelope = {
-      schema: DRAFT_SCHEMA,
-      savedAt: new Date().toISOString(),
-      title: doc.meta.title,
-      doc,
-    };
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(envelope));
-    return true;
-  } catch {
-    // Storage unavailable or full — autosave is best-effort, never fatal.
-    return false;
-  }
-}
-
+/**
+ * Read the legacy draft, if one is still sitting in localStorage.
+ *
+ * A schema mismatch returns null — there is no migration machinery in this repo and never was; the
+ * old loader discarded mismatches too.
+ */
 export function loadDraft(): DraftEnvelope | null {
   try {
     const raw = localStorage.getItem(DRAFT_KEY);

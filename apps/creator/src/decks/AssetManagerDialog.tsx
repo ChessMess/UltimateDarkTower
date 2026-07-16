@@ -1,7 +1,10 @@
 // AssetManagerDialog — upload (resize→WebP data URL), rename, and delete images in
 // library.resources.images. Delete/rename run a usage scan across artRef/backRef/bitmapSlice/
-// masterBitmap/imageRef and WARN (never block). Shows per-image KB + a running total vs the ~5 MB
-// draft budget so authors can see the localStorage pressure the risks note calls out.
+// masterBitmap/imageRef and WARN (never block).
+//
+// The meter shows per-image size and a running total against IMAGE_BUDGET_BYTES. That budget used
+// to mean "localStorage is about to fail"; scenarios now live in IndexedDB, so it means EXPORT SIZE
+// — roughly how large the .json an author shares will be. Same bar, different question.
 
 import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -94,12 +97,13 @@ export function AssetManagerDialog({ doc, images, onSetImage, onClose }: AssetMa
           <strong style={{ fontSize: 14 }}>Images</strong>
           <span style={{ flex: 1 }} />
           <span
+            title="Roughly how much these images add to the exported .json"
             style={{
               fontSize: 11,
               color: total > IMAGE_BUDGET_BYTES ? 'var(--c-danger)' : 'var(--c-text-muted)',
             }}
           >
-            {kb(total)} / ~{Math.round(IMAGE_BUDGET_BYTES / 1_000_000)} MB
+            {kb(total)} / ~{Math.round(IMAGE_BUDGET_BYTES / 1_000_000)} MB export
           </span>
         </div>
 
@@ -118,7 +122,7 @@ export function AssetManagerDialog({ doc, images, onSetImage, onClose }: AssetMa
           {ids.length === 0 && (
             <div style={{ fontSize: 12, color: 'var(--c-text-faint)', padding: 8 }}>
               No images yet. Upload a PNG/JPG — it lands as a compact WebP data URL embedded in the
-              scenario.
+              scenario, and travels with it on export.
             </div>
           )}
           {ids.map((id) => {

@@ -37,7 +37,16 @@ function meta(id: string, over: Partial<ScenarioMeta> = {}): ScenarioMeta {
   };
 }
 
-const doc = (title = 'T'): ScenarioDocLike => ({
+/** A realistic document. ScenarioDocLike declares only `library`, so tests bring their own shape —
+ *  mirroring how the Creator passes its full ScenarioDoc in. */
+interface TestDoc extends ScenarioDocLike {
+  schemaVersion: string;
+  meta?: Record<string, unknown>;
+  setup?: Record<string, unknown>;
+  graph?: Record<string, unknown>;
+}
+
+const doc = (title = 'T'): TestDoc => ({
   schemaVersion: '0.4.6',
   meta: { title },
   setup: {},
@@ -65,7 +74,7 @@ describe('save / load round-trip', () => {
   });
 
   it('round-trips a document through split → save → load → join', async () => {
-    const full: ScenarioDocLike = {
+    const full: TestDoc = {
       schemaVersion: '0.4.6',
       meta: { title: 'Arted' },
       setup: {},
@@ -98,7 +107,7 @@ describe('writeImages=false — the autosave hot path', () => {
     await saveScenario(meta('a'), doc('v2'), {}, false);
 
     const got = await loadScenarioParts('a');
-    expect((got!.doc.meta as { title: string }).title).toBe('v2');
+    expect(((got!.doc as TestDoc).meta as { title: string }).title).toBe('v2');
     expect(got!.images).toEqual({ a: URL_A });
   });
 
@@ -173,7 +182,7 @@ describe('allOk tri-state', () => {
   });
 
   it('saves an INVALID scenario — saving must never be gated on validity', async () => {
-    const broken: ScenarioDocLike = { schemaVersion: '0.4.6', graph: { entry: 'missing' } };
+    const broken: TestDoc = { schemaVersion: '0.4.6', graph: { entry: 'missing' } };
     expect(await saveScenario(meta('a', { allOk: false }), broken, {}, true)).toBe(true);
     expect((await loadScenarioParts('a'))!.doc).toEqual(broken);
   });

@@ -21,7 +21,16 @@ function canonical(value: unknown): string {
   return JSON.stringify(sortDeep(value), null, 2);
 }
 
-const docWith = (library: unknown): ScenarioDocLike => ({
+/** A realistic document shape. ScenarioDocLike deliberately declares only `library`, so tests need
+ *  their own type for the rest — mirroring how the Creator passes its full ScenarioDoc in. */
+interface TestDoc extends ScenarioDocLike {
+  schemaVersion: string;
+  meta: Record<string, unknown>;
+  setup: Record<string, unknown>;
+  graph: Record<string, unknown>;
+}
+
+const docWith = (library: unknown): TestDoc => ({
   schemaVersion: '0.4.6',
   meta: { title: 'T' },
   setup: {},
@@ -93,7 +102,7 @@ describe('joinImages', () => {
   });
 
   it('creates library and resources when absent', () => {
-    const doc: ScenarioDocLike = { schemaVersion: '0.4.6', meta: {}, setup: {}, graph: {} };
+    const doc: TestDoc = { schemaVersion: '0.4.6', meta: {}, setup: {}, graph: {} };
     const joined = joinImages(doc, { a: URL_A });
     expect((joined.library as Record<string, unknown>).resources).toEqual({ images: { a: URL_A } });
   });
@@ -107,7 +116,7 @@ describe('joinImages', () => {
 });
 
 describe('ROUND-TRIP: join(...split(doc)) is byte-identical', () => {
-  const cases: Array<[string, ScenarioDocLike]> = [
+  const cases: Array<[string, TestDoc]> = [
     ['images only', docWith({ resources: { images: { a: URL_A, b: URL_B } } })],
     [
       'images + sibling library keys',
@@ -123,7 +132,10 @@ describe('ROUND-TRIP: join(...split(doc)) is byte-identical', () => {
       docWith({ resources: { sounds: { horn: 'data:audio/ogg;b' } } }),
     ],
     ['empty library', docWith({})],
-    ['no library key', { schemaVersion: '0.4.6', meta: { title: 'T' }, setup: {}, graph: {} }],
+    [
+      'no library key',
+      { schemaVersion: '0.4.6', meta: { title: 'T' }, setup: {}, graph: {} } as TestDoc,
+    ],
   ];
 
   for (const [name, doc] of cases) {

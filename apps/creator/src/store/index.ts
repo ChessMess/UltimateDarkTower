@@ -1,6 +1,21 @@
 import { create } from 'zustand';
 import type { Edge, Viewport } from '@xyflow/react';
 import { getUDTReferenceLayer } from '@udtc/adapters';
+import {
+  splitImages,
+  joinImages,
+  readImages,
+  measureImages,
+  listScenarios,
+  saveScenario as dbSaveScenario,
+  loadScenarioParts,
+  deleteScenario as dbDeleteScenario,
+  patchScenarioMeta,
+  newScenarioId,
+  requestPersistence,
+  SNAPSHOT_VERSION,
+  type ScenarioMeta,
+} from '@udtc/scenario-store';
 import type { ScenarioDoc, SchemaNode, ValidationResults, NodeKind } from '../types';
 import type { DeckSelection } from '../decks/shared';
 import {
@@ -50,8 +65,34 @@ interface CreatorStore {
    * activating a board in a later session than the one that authored it.
    */
   priorSetupBoard?: Record<string, unknown>;
-  // set true when an autosave hits the localStorage quota (surfaced as a topbar warning chip, C3)
+  // set true when an autosave fails to write (surfaced as a topbar warning chip, C3).
+  // Under IndexedDB this went from routine (localStorage failed predictably at ~5 MB) to rare and
+  // alarming — an IDB write failure means quota exhaustion or eviction, so the chip reads that way.
   draftSaveFailed: boolean;
+  /**
+   * IDB id of the scenario being edited, or null for one that has never been saved (a fresh
+   * scaffold, or a doc that just arrived via Import).
+   *
+   * The id lives ONLY here and in the IDB envelope — never in the document. The schema forbids it:
+   * root and meta are both additionalProperties:false and meta has no `id` property, so a
+   * `meta.id` fails L1. The consequence is deliberate and user-visible: an exported file carries no
+   * id, so export → import creates a NEW scenario rather than updating the original.
+   */
+  currentScenarioId: string | null;
+  /**
+   * The images map object as of the last IDB write — an identity marker, not a copy.
+   *
+   * updateResourceImages is the sole writer to library.resources.images and always spread-clones
+   * it, while the sibling library mutators and flowToSchema pass `library` through by reference.
+   * So `readImages(doc) !== lastSavedImages` is an exact "images changed" signal, and it is what
+   * keeps the 800ms autosave writing kilobytes instead of megabytes.
+   *
+   * Seeded on open/save and reset on clear — otherwise a freshly-opened document has a foreign
+   * identity and its first autosave needlessly rewrites the whole image blob.
+   */
+  lastSavedImages: Record<string, string> | undefined;
+  /** cached list rows for the scenario dialog; refreshed via refreshScenarioList() */
+  scenarioList: ScenarioMeta[];
   // last-known canvas pan/zoom, so switching to Decks/Dungeons and back doesn't reset the viewport.
   // null means "no saved viewport yet" — CreatorCanvas falls back to fitView on mount.
   canvasViewport: Viewport | null;
@@ -60,6 +101,24 @@ interface CreatorStore {
   loadScenario: (doc: ScenarioDoc, autoLayout?: boolean) => void;
   exportScenario: () => string;
   clearScenario: () => void;
+
+  // Scenario library (IndexedDB). Every one of these degrades to a no-op rather than throwing when
+  // storage is unavailable — authoring must never break because persistence did.
+  //
+  // saveCurrent() is NOT gated on validity: saving a work-in-progress scenario is the whole point.
+  // Export keeps its allOk gate, because that artifact is consumed by the Player.
+  /** Persist the working document. Assigns an id on first save. Returns false if the write failed. */
+  saveCurrent: () => Promise<boolean>;
+  /** Persist under a NEW id, leaving any original untouched. Used by Save As, and after an Import. */
+  saveCurrentAs: (title: string) => Promise<boolean>;
+  /** Replace the working document with a stored one. Routes through clearScenario() first. */
+  openScenario: (id: string) => Promise<boolean>;
+  refreshScenarioList: () => Promise<void>;
+  renameScenario: (id: string, title: string) => Promise<void>;
+  duplicateScenario: (id: string) => Promise<void>;
+  removeScenario: (id: string) => Promise<void>;
+  /** Stamp meta.lastExportedAt — the only durable copy of a scenario is an exported file. */
+  markExported: () => Promise<void>;
 
   // Center-view switcher + autosave-failure flag
   setCenterView: (view: CenterView) => void;
@@ -168,6 +227,60 @@ function annotateErrors(nodes: CreatorNode[], results: ValidationResults): Creat
   });
 }
 
+/**
+ * The one place a scenario is written to IndexedDB.
+ *
+ * Flushes the React Flow state into the document (so node positions are current), splits the image
+ * payload out, and writes the image record ONLY when the images map's identity differs from the
+ * last write. That check is the whole reason the 800ms autosave is affordable: the doc record is
+ * kilobytes, the image record is megabytes, and a typical edit touches only the former.
+ *
+ * Returns false — never throws — when storage is unavailable or the write failed.
+ */
+async function writeCurrent(
+  get: () => CreatorStore,
+  set: (partial: Partial<CreatorStore>) => void,
+  id: string,
+): Promise<boolean> {
+  const { schemaDoc, rfNodes, rfEdges, validationResults, lastSavedImages, scenarioList } = get();
+  if (!schemaDoc) return false;
+
+  const flushed = flowToSchema(rfNodes, rfEdges, schemaDoc);
+  const { doc: docSansImages, images } = splitImages(flushed);
+  const liveImages = readImages(flushed);
+  const imagesChanged = liveImages !== lastSavedImages;
+  const { bytes, count } = measureImages(images);
+
+  // Preserve lastExportedAt across saves — it belongs to the scenario, not to this write.
+  const prior = scenarioList.find((r) => r.id === id);
+  const meta: ScenarioMeta = {
+    version: SNAPSHOT_VERSION,
+    id,
+    title: schemaDoc.meta.title,
+    scenarioVersion: schemaDoc.meta.scenarioVersion,
+    updatedAt: Date.now(),
+    imageBytes: bytes,
+    imageCount: count,
+    // null means "never validated", which is not the same as invalid. Saving is never gated on it.
+    allOk: validationResults ? validationResults.allOk : null,
+    lastExportedAt: prior?.lastExportedAt ?? null,
+  };
+
+  const ok = await dbSaveScenario(meta, docSansImages, images, imagesChanged);
+  if (ok) {
+    set({
+      isDirty: false,
+      draftSaveFailed: false,
+      // Only advance the marker on a successful write, or a failed save would convince the next
+      // one that the images are already on disk.
+      ...(imagesChanged ? { lastSavedImages: liveImages } : {}),
+    });
+  } else {
+    set({ draftSaveFailed: true });
+  }
+  return ok;
+}
+
 export const useCreatorStore = create<CreatorStore>((set, get) => ({
   schemaDoc: null,
   rfNodes: [],
@@ -183,6 +296,9 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   priorSetupBoard: undefined,
   draftSaveFailed: false,
   canvasViewport: null,
+  currentScenarioId: null,
+  lastSavedImages: undefined,
+  scenarioList: [],
 
   setCenterView(view) {
     set({ centerView: view });
@@ -230,6 +346,9 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       rfEdges: edges,
       validationResults: results,
       isDirty: false,
+      // Seed the tracker to THIS document's images. Without it a freshly-opened doc carries a
+      // foreign identity and its first autosave rewrites the entire image blob for no reason.
+      lastSavedImages: readImages(finalDoc),
     });
   },
 
@@ -250,10 +369,97 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       deckCardKey: null,
       dungeonSelection: null,
       boardSelection: null,
+      // Session-scoped, no schema surface: the setup.board oneOf stash MUST NOT survive into
+      // another scenario. This is why openScenario() routes through here rather than calling
+      // loadScenario() directly.
       priorSetupBoard: undefined,
       validationResults: null,
       isDirty: false,
+      currentScenarioId: null,
+      // A stale identity from the previous scenario would suppress the next one's first image write.
+      lastSavedImages: undefined,
     });
+  },
+
+  async saveCurrent() {
+    const { currentScenarioId, schemaDoc } = get();
+    if (!schemaDoc) return false;
+    if (!currentScenarioId) return get().saveCurrentAs(schemaDoc.meta.title);
+    return writeCurrent(get, set, currentScenarioId);
+  },
+
+  async saveCurrentAs(title) {
+    const { schemaDoc, rfNodes, rfEdges } = get();
+    if (!schemaDoc) return false;
+    const id = newScenarioId();
+    // Retitle before the write so the stored document and its meta row agree.
+    const retitled: ScenarioDoc = { ...schemaDoc, meta: { ...schemaDoc.meta, title } };
+    set({ schemaDoc: retitled, rfNodes, rfEdges, currentScenarioId: id });
+    // A brand-new library entry is the moment to ask for durable storage. Ignore the answer:
+    // a denial is not an error, it just means Export stays the only durable copy.
+    void requestPersistence();
+    return writeCurrent(get, set, id);
+  },
+
+  async openScenario(id) {
+    const stored = await loadScenarioParts(id);
+    if (!stored) return false;
+    // ScenarioDocLike only constrains `library`; the stored document is a full ScenarioDoc that
+    // round-tripped through structured clone, so widen through unknown.
+    const doc = joinImages(stored.doc, stored.images) as unknown as ScenarioDoc;
+    // clearScenario FIRST: it drops priorSetupBoard, which is session-scoped with no schema
+    // surface and would otherwise leak a stale setup.board stash across scenarios when the list
+    // lets you switch S1 → S2 → S1 without a reload.
+    get().clearScenario();
+    get().loadScenario(doc, !doc.meta.layout?.positions);
+    set({ currentScenarioId: id });
+    return true;
+  },
+
+  async refreshScenarioList() {
+    set({ scenarioList: await listScenarios() });
+  },
+
+  async renameScenario(id, title) {
+    await patchScenarioMeta(id, { title, updatedAt: Date.now() });
+    // Keep the working document's title in step when renaming the one that's open.
+    const { currentScenarioId, schemaDoc } = get();
+    if (currentScenarioId === id && schemaDoc) {
+      set({ schemaDoc: { ...schemaDoc, meta: { ...schemaDoc.meta, title } }, isDirty: true });
+    }
+    await get().refreshScenarioList();
+  },
+
+  async duplicateScenario(id) {
+    const stored = await loadScenarioParts(id);
+    if (!stored) return;
+    const copyId = newScenarioId();
+    const title = `${stored.meta.title} (copy)`;
+    // The stored record is a ScenarioDoc; ScenarioDocLike just doesn't describe meta.
+    const storedDoc = stored.doc as unknown as ScenarioDoc;
+    const doc = { ...storedDoc, meta: { ...storedDoc.meta, title } };
+    await dbSaveScenario(
+      { ...stored.meta, id: copyId, title, updatedAt: Date.now(), lastExportedAt: null },
+      doc,
+      stored.images,
+      true,
+    );
+    await get().refreshScenarioList();
+  },
+
+  async removeScenario(id) {
+    await dbDeleteScenario(id);
+    // Deleting the open scenario detaches it: the work stays on screen but is no longer bound to a
+    // library entry, so the next Save writes a new one rather than resurrecting the deleted id.
+    if (get().currentScenarioId === id) set({ currentScenarioId: null, isDirty: true });
+    await get().refreshScenarioList();
+  },
+
+  async markExported() {
+    const { currentScenarioId } = get();
+    if (!currentScenarioId) return;
+    await patchScenarioMeta(currentScenarioId, { lastExportedAt: Date.now() });
+    await get().refreshScenarioList();
   },
 
   syncFromRF(nodes, edges) {

@@ -12,12 +12,17 @@ export const byteLen = (s: string): number => s.length;
  * Soft budget for all images in one scenario (library.resources.images), metered by the asset
  * manager. Not enforced anywhere — exceeding it degrades the experience, it doesn't break.
  *
- * The unit is data-URL characters. Base64 needs no JSON escaping, so those characters map ~1:1 to
- * bytes in the exported .json.
+ * THE UNIT IS EXPORT SIZE, not storage. Measured: base64 needs no JSON escaping, so data-URL
+ * characters map ~1:1 to bytes in the exported .json (a 50 MB budget produces a ~50 MB file, of
+ * which ~37 MB is decoded artwork). That is the number an author actually cares about — how big
+ * the thing they share becomes.
  *
- * Tracks the ~5 MB localStorage draft slot this number was chosen for. Raising it is gated on
- * drafts moving to IndexedDB *and* a durability story (storage.persist + export nudges): a large
- * scenario whose only copy sits in evictable browser storage is a data-loss risk that the small
- * budget currently masks.
+ * It was 5 MB because that was the localStorage quota the whole draft had to fit inside; the repo's
+ * own docs called the ceiling at "roughly three arted boards". Scenarios now live in IndexedDB
+ * (quota in the hundreds of MB), so storage no longer sets the limit.
+ *
+ * 50 MB is a portability judgement, not a technical one. Going much higher makes a scenario
+ * impractical to share as one file — which is the point at which bundling the assets into a zip
+ * (~33% smaller, base64→binary) starts being worth its cost.
  */
-export const IMAGE_BUDGET_BYTES = 5_000_000;
+export const IMAGE_BUDGET_BYTES = 50_000_000;
