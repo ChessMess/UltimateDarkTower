@@ -384,9 +384,16 @@ export function InspectorPanel() {
         </button>
       </div>
 
-      {/* Props editor for effect.apply */}
+      {/* Props editor for effect.apply. Keyed on the node id: the editor's textarea is
+          uncontrolled, so without a key React reuses the instance across a selection
+          change and keeps showing the previous node's effects while edits commit to the
+          newly selected one. */}
       {sn.kind === 'effect.apply' && (
-        <EffectApplyEditor sn={sn} onUpdate={(props) => updateNodeProps(sn.id, props)} />
+        <EffectApplyEditor
+          key={sn.id}
+          sn={sn}
+          onUpdate={(props) => updateNodeProps(sn.id, props)}
+        />
       )}
 
       {/* Props editor for tower.op */}
@@ -533,6 +540,7 @@ function EffectApplyEditor({
         Edit Effects (JSON)
       </div>
       <textarea
+        aria-label="Edit effects JSON"
         defaultValue={effectsStr}
         onChange={handleChange}
         rows={6}
