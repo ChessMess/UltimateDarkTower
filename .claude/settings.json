@@ -8,7 +8,11 @@
       "Bash(pnpm typecheck *)",
       "Bash(pnpm test *)",
       "mcp__chrome-devtools__take_snapshot",
-      "mcp__chrome-devtools__click"
+      "mcp__chrome-devtools__click",
+      "Bash(pnpm -r typecheck)",
+      "Bash(echo \"EXIT CODE: $?\")",
+      "Bash(grep -iE \"error|Error TS\" /tmp_typecheck_out.log)",
+      "Bash(pnpm --filter ultimatedarktowerdigital typecheck)"
     ]
   }
 }
