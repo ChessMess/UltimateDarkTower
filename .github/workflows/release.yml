@@ -58,3 +58,21 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
+          # `changeset:publish` is `pnpm -r build && changeset publish` — the
+          # recursive build already builds every workspace package in correct
+          # dependency order. But `changeset publish` then calls `npm publish`
+          # per package, and npm auto-runs each package's own prepack/
+          # prepublishOnly hook again — several of which (core, game-data,
+          # relay-core, display) do their own `rm -rf dist` + rebuild. Those
+          # per-package rebuilds race: e.g. core's hook (a slow lint+typecheck+
+          # test+build) can have core's dist mid-rebuild (or briefly deleted)
+          # at the exact moment relay-core's own hook tries to resolve
+          # 'ultimatedarktower' from node_modules, and vice versa. Confirmed
+          # this exact race broke a real release (2026-07-17): relay-core and
+          # display failed with a Changesets-masked "ELIFECYCLE undefined"
+          # while core/game-data/board published fine. `ignore-scripts` only
+          # suppresses *automatic* pre/post hooks (verified against npm's own
+          # docs) — `pnpm -r build`'s explicit script invocations above are
+          # unaffected, so this just stops the redundant, racy rebuild and
+          # publishes exactly what the recursive build already produced.
+          NPM_CONFIG_IGNORE_SCRIPTS: 'true'
