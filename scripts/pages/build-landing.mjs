@@ -66,20 +66,26 @@ function headStamp() {
 const STATUS_LABEL = { released: 'Released', beta: 'Beta', alpha: 'Alpha' };
 
 function renderCard(c, index) {
-  const pkgPath = resolve(root, c.dir, 'package.json');
-  const pkg = existsSync(pkgPath) ? JSON.parse(readFileSync(pkgPath, 'utf8')) : {};
+  // `dir` is a workspace path; components outside this repo omit it and
+  // supply sourceUrl/docsUrl/demoUrl directly instead.
+  const pkgPath = c.dir ? resolve(root, c.dir, 'package.json') : null;
+  const pkg = pkgPath && existsSync(pkgPath) ? JSON.parse(readFileSync(pkgPath, 'utf8')) : {};
   // No package.json (e.g. a bundled demo like the controller) → no version pill.
   const version = pkg.version || null;
   const status = c.status || deriveStatus(version || '0.0.0');
 
-  const demoUrl = c.demo ? `./${c.demo}/` : null;
+  const demoUrl = c.demoUrl || (c.demo ? `./${c.demo}/` : null);
   const npmUrl = pkg.private ? null : pkg.name ? `https://www.npmjs.com/package/${pkg.name}` : null;
-  const sourceUrl = `${REPO_URL}/tree/main/${c.dir}`;
-  const docsUrl = existsSync(resolve(root, c.dir, 'docs'))
-    ? `${REPO_URL}/tree/main/${c.dir}/docs`
-    : existsSync(resolve(root, c.dir, 'README.md'))
-      ? `${REPO_URL}/blob/main/${c.dir}/README.md`
-      : null;
+  const sourceUrl = c.sourceUrl || `${REPO_URL}/tree/main/${c.dir}`;
+  const docsUrl =
+    c.docsUrl ||
+    (c.dir &&
+      (existsSync(resolve(root, c.dir, 'docs'))
+        ? `${REPO_URL}/tree/main/${c.dir}/docs`
+        : existsSync(resolve(root, c.dir, 'README.md'))
+          ? `${REPO_URL}/blob/main/${c.dir}/README.md`
+          : null)) ||
+    null;
 
   const mediaHref = demoUrl || sourceUrl;
   const ribbon = `<span class="ribbon"><span class="dot"></span>${STATUS_LABEL[status]}</span>`;
@@ -147,6 +153,7 @@ function renderSection(id, title, accentWord, items, glyph) {
 const libraries = components.filter((c) => c.category === 'library');
 const apps = components.filter((c) => c.category === 'app');
 const npmCount = components.filter((c) => {
+  if (!c.dir) return false;
   const p = resolve(root, c.dir, 'package.json');
   return existsSync(p) && JSON.parse(readFileSync(p, 'utf8')).private !== true;
 }).length;

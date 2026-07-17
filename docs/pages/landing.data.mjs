@@ -5,10 +5,19 @@
 // derived at build time by scripts/pages/build-landing.mjs from each package's
 // package.json + git history + on-disk files. Edit titles/blurbs/order here.
 //
-//   dir      workspace path; keys into package.json + `git log` lookups
+//   dir      workspace path; keys into package.json + `git log` lookups.
+//            Omit entirely for a component that isn't part of this repo — pair
+//            with sourceUrl/docsUrl/demoUrl below, since there's no package.json
+//            or on-disk docs/README to derive them from.
 //   title    display name on the card
 //   blurb    one-line description
 //   demo     path under the Pages site (./<demo>/), or null if no live demo
+//   demoUrl  full external URL for the primary Launch/Demo button, overriding
+//            `demo` — use for a component hosted outside this Pages site
+//   sourceUrl  override for the Source link, instead of deriving
+//              `<repo>/tree/main/<dir>`
+//   docsUrl  override for the Docs link, instead of deriving from `dir`/docs
+//            or `dir`/README.md
 //   glyph    one of the tower drum glyphs: battle | banner | cleanse | quest | reinforce
 //            (accent icon on every card; the full tile for demo-less components)
 //   image    screenshot in media/thumbs/<image>, or null to fall back to a glyph tile
@@ -17,6 +26,7 @@
 //   status   optional override of the auto-derived Alpha/Beta/Released label
 //
 // Status is auto-derived from the version: >=1.0 Released, 0.5–<1.0 Beta, <0.5 Alpha.
+// Dir-less components have no version to derive from, so `status` is required.
 
 export const repo = 'ChessMess/UltimateDarkTower';
 
@@ -48,6 +58,18 @@ export const components = [
     demo: 'creator',
     glyph: 'quest',
     image: 'creator.jpg',
+  },
+  {
+    title: 'Hero Board Creator',
+    blurb:
+      'Design custom hero boards for Return to Dark Tower — pick virtues, corruptions, and treasures, then export straight to a printable PDF.',
+    category: 'app',
+    demoUrl: 'https://chessmess.github.io/board-game-creator/',
+    sourceUrl: 'https://github.com/ChessMess/board-game-creator',
+    docsUrl: 'https://github.com/ChessMess/board-game-creator/blob/main/README.md',
+    glyph: 'banner',
+    image: 'board-game-creator.jpg',
+    status: 'released',
   },
   {
     dir: 'apps/player',
