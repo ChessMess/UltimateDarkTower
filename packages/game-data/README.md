@@ -16,10 +16,7 @@
 ## What this is
 
 Pure Return to Dark Tower reference data, with **zero runtime dependencies** and
-no Bluetooth. It was split out of [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower)
-(the BLE driver) in v6, because the two were entangled only by packaging, not by
-code — the driver never read this data, but every consumer of it had to load a
-Node-only Bluetooth stack to get it.
+no Bluetooth.
 
 Includes:
 
@@ -56,3 +53,12 @@ re-export what they need. Install it directly when you want the reference data
 ## License
 
 MIT — see [LICENSE](./LICENSE). Some elements are © Restoration Games, LLC and are used with permission.
+
+---
+
+## History
+
+Split out of [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower)
+(the BLE driver) in v6. The two were entangled only by packaging, not by code —
+the driver never read this data, but every consumer of it had to load a
+Node-only Bluetooth stack just to get it.
