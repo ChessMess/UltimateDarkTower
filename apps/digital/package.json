@@ -26,6 +26,7 @@
     "react-dom": "^19.2.0",
     "three": "^0.184.0",
     "ultimatedarktower": "workspace:^",
+    "ultimatedarktowerdata": "workspace:*",
     "ultimatedarktowerboard": "workspace:^",
     "ultimatedarktowerdisplay": "workspace:^",
     "zustand": "^5.0.0"

@@ -93,17 +93,16 @@ npm run dev:example # the full demo — 3D board + 2D map + readout + editing UI
 
 ## Upstream prerequisites
 
-Both upstream dependencies are in place:
-
-- `ultimatedarktower` board data/graph: **shipped in `4.1.0`** and re-exported here —
+- `ultimatedarktowerdata` board data/graph: **as of v6.0.0**, re-exported here from this
+  zero-dependency, Bluetooth-free package (not from `ultimatedarktower`, which no longer ships it) —
   `BOARD_LOCATIONS`, `BOARD_ANCHORS`, `BOARD_IMAGE_INFO`, `BOARD_ADJACENCY`, and
   `neighborsOf`/`stepDistance`/`shortestPath`.
 - `ultimatedarktowerdisplay`'s `anchorToWorld`: **shipped in `0.9.0`** (peer `^0.9.0`); the 3D plugin's
   token placement uses it.
 
-> **Palette rosters from UDT:** the editing UI's hero / foe / adversary / marker / monument categories all
-> source their lists from `ultimatedarktower` re-exports — `HEROES` and `MONUMENTS` were added to UDT for
-> this (re-exported, not vendored). No hero art exists, so heroes render via the programmatic fallback.
+> **Palette rosters:** the editing UI's hero / foe / adversary / marker / monument categories all
+> source their lists from `ultimatedarktowerdata` re-exports — `HEROES` and `MONUMENTS`
+> (re-exported, not vendored). No hero art exists, so heroes render via the programmatic fallback.
 
 The `three` peer range is pinned to **Display's exact declared range** (single-instance
 requirement). The 3D path inherits Display's heavy transitive footprint (three + the board
@@ -113,8 +112,11 @@ image + audio; ~100 MB installed).
 
 Part of the _Return to Dark Tower_ family — the **board-domain** sibling to the tower-domain Display:
 
-- [ultimatedarktower](https://github.com/ChessMess/UltimateDarkTower) — BLE driver + the static board
-  data this package re-exports (locations, rosters, `BOARD_ANCHORS`, `BOARD_ADJACENCY` + graph helpers).
+- [ultimatedarktowerdata](https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/game-data) — the static board
+  data this package re-exports (locations, rosters, `BOARD_ANCHORS`, `BOARD_ADJACENCY` + graph helpers);
+  zero dependencies, no Bluetooth.
+- [ultimatedarktower](https://github.com/ChessMess/UltimateDarkTower) — the BLE driver for the physical
+  tower (not a dependency of this package as of v6.0.0).
 - [ultimatedarktowerdisplay](https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/display) — the tower's
   text/2D/3D renderers; hosts this package's 3D board as a `ScenePlugin`.
 

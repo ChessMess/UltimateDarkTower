@@ -9,7 +9,7 @@ import {
   LIGHT_SEQUENCE_MAX,
 } from '../utils/schemas.js';
 import { lightSequenceNameToValue } from '../utils/lookups.js';
-import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktower';
+import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 
 export function registerLightTools(server: McpServer, tower: TowerController): void {
   server.registerTool(

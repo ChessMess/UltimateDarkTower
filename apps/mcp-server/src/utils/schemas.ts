@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { TOWER_SIDES, TOWER_LIGHT_SEQUENCES } from 'ultimatedarktower';
+import { TOWER_SIDES } from 'ultimatedarktower';
+import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 
 // Tower navigation
 export const TowerSideSchema = z.enum(['north', 'south', 'east', 'west']);

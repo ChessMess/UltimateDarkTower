@@ -80,6 +80,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "ultimatedarktowerdata": "workspace:*"
+  },
   "peerDependencies": {
     "@stoprocent/noble": "^2.0.0"
   },

@@ -6,12 +6,12 @@
  */
 
 import type { FieldMapping } from './types';
-import type { seed as seedApi } from 'ultimatedarktower';
+import type { CharInfo, CharDiff } from 'ultimatedarktowerdata';
 
 export interface BitMapOptions {
-  chars: seedApi.CharInfo[];
+  chars: CharInfo[];
   fieldMappings: FieldMapping[];
-  changedChars?: seedApi.CharDiff[];
+  changedChars?: CharDiff[];
 }
 
 export class BitMapDisplay {

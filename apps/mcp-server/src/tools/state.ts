@@ -1,5 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { TowerSide, Glyphs, TowerState } from 'ultimatedarktower';
+import type { TowerSide, TowerState } from 'ultimatedarktower';
+import type { Glyphs } from 'ultimatedarktowerdata';
 import { TowerController, wrapToolHandler } from '../tower-controller.js';
 import { TowerSideSchema, GlyphSchema, TowerStateSchema } from '../utils/schemas.js';
 

@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 // Library build. Three entries:
-//  - `index`  -> the headless core + readout/2D renderers + UDT data re-exports (three-free)
+//  - `index`  -> the headless core + readout/2D renderers + ultimatedarktowerdata re-exports
+//               (three-free, and — as of v6 — Bluetooth-free: no ultimatedarktower dep at all)
 //  - `plugin` -> the Board3DPlugin (imports three + ultimatedarktowerdisplay)
 //  - `stage`  -> BoardStageView, the all-in-one render stage (three-free statically; the
 //               3D tower is a dynamic import of `src/plugin/stageTower`, emitted as a
@@ -30,7 +31,7 @@ export default defineConfig({
       // Peers — never bundled. Keeps the `.` entry three-free and ensures a
       // single `three` instance is shared with Display in the host app.
       external: [
-        'ultimatedarktower',
+        'ultimatedarktowerdata',
         'ultimatedarktowerdisplay',
         // The 3D plugin reuses Display's `loadSkullModel` (which bundles the GLTF/
         // DRACO loaders). Externalize the subpath so those loaders stay in Display's

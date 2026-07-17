@@ -8,8 +8,11 @@ The API reference has been split into focused topic pages under [docs/api/](api/
 - [State](api/state.md) — tower state types, glyph tracking, seal management
 - [Events](api/events.md) — connection / calibration / skull drop / battery callbacks
 - [Logging](api/logging.md) — logger configuration, outputs, response logging
-- [Seed parser](api/seed.md) — decode / encode / validate game seeds, `SystemRandom` PRNG
 - [Diagnostics](api/diagnostics.md) — flight recorder API
+
+The seed parser and board/hero/foe reference data moved to
+[`ultimatedarktowerdata`](../../game-data) in v6.0.0 — see its
+[seed](../../game-data/docs/seed.md) docs.
 
 New to the library? Start with the [Getting Started tutorial](GETTING_STARTED.md) instead.
 

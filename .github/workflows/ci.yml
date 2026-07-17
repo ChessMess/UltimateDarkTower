@@ -66,8 +66,13 @@ jobs:
       # on it, but a `./packages/relay-*...` path-glob filter does not expand the
       # `...` dependency selector to pull core in, so without this core's dist is
       # missing and relay-client fails with "Cannot find module 'ultimatedarktower'".
+      # Same reason `ultimatedarktowerdata` is listed explicitly too: since v6,
+      # core itself depends on it (board/foe/seed reference data), and the bare
+      # `"ultimatedarktower"` filter doesn't pull in core's own workspace deps
+      # either — without this, core's typecheck fails with the same
+      # "Cannot find module" error, just one level deeper.
       - name: Build relay packages
-        run: pnpm --filter "ultimatedarktower" --filter "./packages/relay-*..." --filter "./apps/relay-cli..." build
+        run: pnpm --filter "ultimatedarktower" --filter "ultimatedarktowerdata" --filter "./packages/relay-*..." --filter "./apps/relay-cli..." build
 
       # electron-forge packages the BLE tower emulator. relay-electron requires
       # Node >= 22.12, so only smoke it on the Node 22 leg.

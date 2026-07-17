@@ -156,28 +156,19 @@ src/
 ├── udtLogger.ts              # Logger + outputs
 ├── udtConstants.ts           # Constants and types
 ├── udtDiagnostics.ts         # Flight recorder (opt-in)
-├── seed/                     # `seed` namespace — seed encode/decode + RNG
-│   ├── index.ts
-│   ├── udtSeedParser.ts      # Game seed encoding (base-34)
-│   └── udtSystemRandom.ts    # C# System.Random replica
-├── data/                     # `data` namespace — game/board reference data
-│   ├── index.ts
-│   ├── udtHeroes.ts          # data.heroes — board hero roster
-│   ├── udtMonuments.ts       # data.monuments
-│   ├── udtFoes.ts            # data.foes — status + identity metadata
-│   ├── udtGameContent.ts     # data.content — gameplay content (virtues, companions…)
-│   ├── udtBoxInventory.ts    # data.inventory — physical component counts
-│   └── board/                # data.board
-│       ├── index.ts
-│       ├── udtGameBoard.ts        # Locations, kingdoms, terrain
-│       ├── udtBoardAnchors.ts     # Token layout anchors + board-image metadata
-│       └── udtBoardAdjacency.ts   # Movement graph + BFS helpers
 ├── adapters/
 │   ├── WebBluetoothAdapter.ts
 │   └── NodeBluetoothAdapter.ts
 └── sinks/
     └── IndexedDBSink.ts      # Browser-only durable sink
 ```
+
+> **v6.0.0:** the game/board reference data (`data/`) and the seed encode/decode + RNG
+> subsystem (`seed/`) moved to the [`ultimatedarktowerdata`](../../game-data) package — core
+> depends on it for the three glyph/light-sequence/audio-library lookups the driver itself
+> reads (`GLYPHS`, `TOWER_LIGHT_SEQUENCES`, `TOWER_AUDIO_LIBRARY`). They were never coupled to
+> the BLE driver; every other consumer of them had to load a Node-only Bluetooth stack to get
+> a list of board locations. See [ultimatedarktowerdata's docs](../../game-data/docs).
 
 ---
 

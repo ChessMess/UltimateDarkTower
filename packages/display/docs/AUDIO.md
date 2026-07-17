@@ -236,7 +236,7 @@ All 113 bundled files are **Ogg Vorbis, stereo (2-channel)**. Sample rates are e
 | `EmpressofShades` | Adversary_Empress_01.ogg    |     4.9s |  48 | 71 KB |
 | `GazeEternal`     | Adversary_Gaze_01.ogg       |     4.5s |  48 | 64 KB |
 | `Gravemaw`        | Adversary_Gravemaw_01.ogg   |     5.3s |  48 | 72 KB |
-| `IsatheHollow`    | Adversary_Isa_01.ogg        |     3.1s |  48 | 51 KB |
+| `IsatheExile`     | Adversary_Isa_01.ogg        |     3.1s |  48 | 51 KB |
 | `LingeringRot`    | Adversary_Rot_03.ogg        |     2.4s |  48 | 38 KB |
 | `UtukKu`          | Adversary_Utuk_03.ogg       |     3.1s |  48 | 44 KB |
 
@@ -343,7 +343,7 @@ Recreations of sounds from the original 1981 Dark Tower game.
 | `Oreks`            | Foe_Oreks_01.ogg     |     2.3s |  48 | 35 KB |
 | `ShadowWolves`     | Foe_Shadow_01.ogg    |     4.5s |  48 | 61 KB |
 | `SpineFiends`      | Foe_Spine_01.ogg     |     2.3s |  48 | 35 KB |
-| `Strigas`          | Foe_Striga_01.ogg    |     3.2s |  48 | 44 KB |
+| `Striga`           | Foe_Striga_01.ogg    |     3.2s |  48 | 44 KB |
 | `Titans`           | Foe_Titan_01.ogg     |     3.5s |  48 | 58 KB |
 | `FrostTrolls`      | Foe_Troll_01.ogg     |     2.4s |  48 | 36 KB |
 | `WidowmadeSpiders` | Foe_Widowmade_01.ogg |     3.4s |  48 | 54 KB |
@@ -357,7 +357,7 @@ Recreations of sounds from the original 1981 Dark Tower game.
 | `EmpressofShadesSpawn` | MainObjectiveVictory_BossSpawn_Empress.ogg    |    11.4s |  48 | 163 KB |
 | `GazeEternalSpawn`     | MainObjectiveVictory_BossSpawn_Gaze.ogg       |    11.3s |  48 | 159 KB |
 | `GravemawSpawn`        | MainObjectiveVictory_BossSpawn_Gravemaw.ogg   |    11.4s |  48 | 159 KB |
-| `IsatheHollowSpawn`    | MainObjectiveVictory_BossSpawn_Isa.ogg        |    10.4s |  48 | 153 KB |
+| `IsatheExileSpawn`     | MainObjectiveVictory_BossSpawn_Isa.ogg        |    10.4s |  48 | 153 KB |
 | `LingeringRotSpawn`    | MainObjectiveVictory_BossSpawn_Rot.ogg        |     9.6s |  48 | 137 KB |
 | `UtukKuSpawn`          | MainObjectiveVictory_BossSpawn_Utuk.ogg       |    10.5s |  48 | 149 KB |
 

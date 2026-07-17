@@ -1,74 +1,16 @@
 import { defineConfig } from 'vite';
-import { fileURLToPath } from 'url';
-import type { Plugin as EsbuildPlugin } from 'esbuild';
 
-const udtCjsEntry = fileURLToPath(
-  new URL('./node_modules/ultimatedarktower/dist/src/index.js', import.meta.url),
-);
-
-function esbuildNodeModuleShim(): EsbuildPlugin {
-  return {
-    name: 'shim-node-module',
-    setup(build) {
-      build.onResolve({ filter: /^module$/ }, () => ({
-        path: 'module',
-        namespace: 'node-module-shim',
-      }));
-      build.onLoad({ filter: /.*/, namespace: 'node-module-shim' }, () => ({
-        contents: `
-          export function createRequire() {
-            return function require(id) {
-              throw new Error('[browser] require("' + id + '") is not available');
-            };
-          }
-        `,
-        loader: 'js',
-      }));
-    },
-  };
-}
-
-function udtCjsForBuild(): import('vite').Plugin {
-  let isBuild = false;
-  return {
-    name: 'ultimatedarktower-cjs-build',
-    enforce: 'pre',
-    configResolved(config) {
-      isBuild = config.command === 'build';
-    },
-    resolveId(source) {
-      if (isBuild && source === 'ultimatedarktower') {
-        return { id: udtCjsEntry, external: false };
-      }
-    },
-  };
-}
-
+// v6.0.0: this app only ever used the seed subsystem, now `ultimatedarktowerdata` — a
+// zero-dependency, Bluetooth-free package with no browser-hostile build step. It no longer
+// depends on `ultimatedarktower` at all, so none of the CJS-alias / commonjsOptions /
+// esbuild-shim workarounds that package needed in the browser are required here.
 export default defineConfig({
   root: '.',
   publicDir: 'public',
-  plugins: [udtCjsForBuild()],
   build: {
     outDir: 'dist',
     sourcemap: true,
     target: 'es2020',
-    commonjsOptions: {
-      // ultimatedarktower's CJS entry resolves via the pnpm workspace symlink to
-      // packages/core/dist (a realpath outside node_modules), which Rollup's
-      // commonjs plugin skips by default — leaving raw require() calls that throw
-      // "require is not defined" in the browser. Opt the workspace core dir in.
-      include: [/node_modules/, /packages\/core/],
-    },
-    rollupOptions: {
-      external: ['@stoprocent/noble'],
-    },
-  },
-  optimizeDeps: {
-    include: ['ultimatedarktower'],
-    exclude: ['@stoprocent/noble'],
-    esbuildOptions: {
-      plugins: [esbuildNodeModuleShim()],
-    },
   },
   server: {
     port: 3002,

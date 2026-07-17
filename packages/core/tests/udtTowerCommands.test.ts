@@ -1,6 +1,6 @@
 import UltimateDarkTower from '../src/UltimateDarkTower';
 import { MockBluetoothAdapter } from './mocks/MockBluetoothAdapter';
-import { TOWER_LIGHT_SEQUENCES, TOWER_AUDIO_LIBRARY } from '../src/udtConstants';
+import { TOWER_LIGHT_SEQUENCES, TOWER_AUDIO_LIBRARY } from 'ultimatedarktowerdata';
 import { rtdt_unpack_state, type Drum } from '../src/udtTowerState';
 
 // Command byte offsets (20-byte packet: byte[0] = command type, bytes[1-19] = state data)

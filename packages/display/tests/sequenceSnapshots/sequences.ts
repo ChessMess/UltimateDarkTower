@@ -1,4 +1,4 @@
-import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktower';
+import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 
 /**
  * Per-sequence drive metadata shared between the baseline test

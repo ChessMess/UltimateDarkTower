@@ -3,8 +3,6 @@ import {
   type TowerSide,
   type TowerLevels,
   type SealIdentifier,
-  type Glyphs,
-  GLYPHS,
   LIGHT_EFFECTS,
   TOWER_COMMAND_PACKET_SIZE,
   TOWER_STATE_DATA_SIZE,
@@ -19,6 +17,7 @@ import {
   TOWER_SIDES,
   TOWER_LEVELS,
 } from './udtConstants';
+import { type Glyphs, GLYPHS } from 'ultimatedarktowerdata';
 import { type TowerState, isCalibrated, rtdt_pack_state, rtdt_unpack_state } from './udtTowerState';
 import {
   createDefaultTowerState,

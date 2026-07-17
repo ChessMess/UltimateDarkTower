@@ -10,8 +10,6 @@ import {
   TOWER_COMMANDS,
   TC,
   DRUM_PACKETS,
-  GLYPHS,
-  TOWER_AUDIO_LIBRARY,
 } from '../src/udtConstants';
 
 describe('Constants', () => {
@@ -71,20 +69,6 @@ describe('Constants', () => {
     test('should have correct drum packet values', () => {
       expect(DRUM_PACKETS.topMiddle).toBe(1);
       expect(DRUM_PACKETS.bottom).toBe(2);
-    });
-  });
-
-  describe('Glyphs', () => {
-    test('should have GLYPHS object defined', () => {
-      expect(GLYPHS).toBeDefined();
-      expect(typeof GLYPHS).toBe('object');
-    });
-  });
-
-  describe('Tower Audio Library', () => {
-    test('should have TOWER_AUDIO_LIBRARY object defined', () => {
-      expect(TOWER_AUDIO_LIBRARY).toBeDefined();
-      expect(typeof TOWER_AUDIO_LIBRARY).toBe('object');
     });
   });
 });

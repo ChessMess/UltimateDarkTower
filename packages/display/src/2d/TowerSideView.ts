@@ -3,11 +3,11 @@ import {
   RING_LIGHT_POSITIONS,
   LEDGE_BASE_LIGHT_POSITIONS,
   TOWER_LAYERS,
-  TOWER_LIGHT_SEQUENCES,
   type TowerState,
   type SealIdentifier,
   type TowerLevels,
 } from 'ultimatedarktower';
+import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 import type { ITowerDisplay, TowerSide } from '../types';
 import { injectStyles } from '../styles';
 import { SideButtons } from '../shared/SideButtons';

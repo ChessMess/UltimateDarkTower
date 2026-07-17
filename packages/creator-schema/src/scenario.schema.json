@@ -148,6 +148,7 @@
           "additionalProperties": false,
           "properties": {
             "udt": { "$ref": "#/$defs/semver" },
+            "gameData": { "$ref": "#/$defs/semver" },
             "board": { "$ref": "#/$defs/semver" },
             "display": { "$ref": "#/$defs/semver" },
             "boardGameCreator": { "$ref": "#/$defs/semver" },

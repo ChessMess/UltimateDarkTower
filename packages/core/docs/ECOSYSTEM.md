@@ -26,9 +26,19 @@ npm install ultimatedarktowerdisplay
 
 ### [UltimateDarkTowerBoard](https://github.com/ChessMess/UltimateDarkTowerBoard)
 
-Composable state + text/2D/3D renderers for the game **board/mat** (heroes, foes, the adversary, skulls-on-buildings, monuments, space markers). It **re-exports** this library's static board data rather than vendoring a copy. As of v5.0.0 that data lives under the `data` namespace (`data.board`, `data.heroes`, `data.monuments`, `data.foes`), with seed rosters under `seed` — including `data.board.BOARD_LOCATIONS`/`BOARD_GROUPINGS`, the enemy/setup rosters, the foe status + foe/adversary metadata (`data.foes.FOE_STATUSES`, `data.foes.FOES`/`ADVERSARY_ROSTER` with level/tier/source), and the board-layout datasets: `data.board.BOARD_ANCHORS` + `BOARD_IMAGE_INFO` (token placement) and `data.board.BOARD_ADJACENCY` + `neighborsOf`/`stepDistance`/`shortestPath` (the movement graph + helpers a host uses for move validation).
+Composable state + text/2D/3D renderers for the game **board/mat** (heroes, foes, the adversary, skulls-on-buildings, monuments, space markers). It **re-exports** [`ultimatedarktowerdata`](#ultimatedarktowerdata)'s static board data rather than vendoring a copy — `BOARD_LOCATIONS`/`BOARD_GROUPINGS`, the enemy/setup rosters, the foe status + foe/adversary metadata (`FOE_STATUSES`, `FOES`/`ADVERSARY_ROSTER` with level/tier/source), and the board-layout datasets: `BOARD_ANCHORS` + `BOARD_IMAGE_INFO` (token placement) and `BOARD_ADJACENCY` + `neighborsOf`/`stepDistance`/`shortestPath` (the movement graph + helpers a host uses for move validation). As of v6.0.0 this is a dependency on `ultimatedarktowerdata` directly — Board no longer depends on this library at all.
 
 **When to use with UltimateDarkTower:** rendering or editing the board's contents, or composing the board state alongside `TowerState`.
+
+### [ultimatedarktowerdata](../../game-data)
+
+Return to Dark Tower reference data (board locations, foes, heroes, monuments, box inventory, glyphs, seed parsing) with **zero dependencies and no Bluetooth**. Split out of this library in v6.0.0: the driver only ever needed three lookup tables from it (`GLYPHS`, `TOWER_LIGHT_SEQUENCES`, `TOWER_AUDIO_LIBRARY`) and depends on it for those; everything else is consumed directly by Display, Board, and app-level consumers.
+
+```bash
+npm install ultimatedarktowerdata
+```
+
+**When to use instead of UltimateDarkTower:** you want the reference data (board layout, foe/hero rosters, seed decode) **without** a Bluetooth dependency — a browser app, a content tool, a card generator.
 
 ### [UltimateDarkTowerSync](https://github.com/ChessMess/UltimateDarkTowerSync)
 
@@ -81,7 +91,8 @@ Homage to the **classic** Dark Tower board game (1981) written for the Feather S
 ```mermaid
 flowchart LR
   Tower[Return to Dark Tower<br/>physical device]
-  UDT[UltimateDarkTower<br/>BLE driver + board data]
+  UDT[UltimateDarkTower<br/>BLE driver]
+  Data[ultimatedarktowerdata<br/>reference data, zero deps]
   Display[UltimateDarkTowerDisplay<br/>tower renderers]
   Board[UltimateDarkTowerBoard<br/>board state + renderers]
   Sync[UltimateDarkTowerSync<br/>multi-device sync]
@@ -89,8 +100,9 @@ flowchart LR
   YourApp[Your app]
 
   Tower -. Bluetooth .-> UDT
+  Data -- glyphs, light sequences,<br/>audio library --> UDT
+  Data -- board data, anchors,<br/>adjacency, graph helpers --> Board
   UDT --> Display
-  UDT -- board data, anchors,<br/>adjacency, graph helpers --> Board
   UDT --> Sync
   UDT --> MCP
   Board --> YourApp

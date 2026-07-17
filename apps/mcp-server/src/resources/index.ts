@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { TOWER_AUDIO_LIBRARY, TOWER_LIGHT_SEQUENCES, LIGHT_EFFECTS } from 'ultimatedarktower';
+import { LIGHT_EFFECTS } from 'ultimatedarktower';
+import { TOWER_AUDIO_LIBRARY, TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 import { TowerController } from '../tower-controller.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

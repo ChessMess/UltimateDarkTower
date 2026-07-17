@@ -5,7 +5,11 @@
 import type { ScenarioDoc } from '../types';
 
 const SCHEMA_VERSION = '0.4.6';
-const UDT_PIN = '5.0.0';
+const UDT_PIN = '6.0.0';
+// The RtDT reference data (board/hero/foe rosters, seed enums) moved out of `ultimatedarktower`
+// into `ultimatedarktowerdata` in v6.0.0 — pin it separately so provenance stays accurate even
+// though the two packages version independently from here on.
+const GAME_DATA_PIN = '1.0.0';
 
 export interface ScaffoldInput {
   title: string;
@@ -62,7 +66,7 @@ export function scaffoldScenario(input: ScaffoldInput): ScenarioDoc {
       // designer.name requires minLength 1 (schema). Fall back to a placeholder when left blank so a
       // title-only scenario stays L1-valid; the author can set a real name in the dialog.
       designer: { name: input.designer.trim() || 'Unknown' },
-      pins: { udt: UDT_PIN },
+      pins: { udt: UDT_PIN, gameData: GAME_DATA_PIN },
     },
     setup: {
       mode: input.mode,

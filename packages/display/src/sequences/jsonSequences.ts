@@ -1,4 +1,4 @@
-import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktower';
+import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 import { Sequence } from './schema';
 
 import defeatJson from './data/defeat.json';

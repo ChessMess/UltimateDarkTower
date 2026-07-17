@@ -1,13 +1,11 @@
 import {
   UltimateDarkTower,
-  GLYPHS,
-  TOWER_AUDIO_LIBRARY,
   type DoorwayLight,
   type TowerLevels,
   type TowerSide,
   type Lights,
-  type Glyphs,
 } from 'ultimatedarktower';
+import { GLYPHS, TOWER_AUDIO_LIBRARY, type Glyphs } from 'ultimatedarktowerdata';
 
 const DarkTower = new UltimateDarkTower();
 

@@ -1,12 +1,8 @@
 import { TowerStateReadout } from '../../src/TowerStateReadout';
 import { _resetStyleInjection } from '../../src/styles';
-import {
-  createDefaultTowerState,
-  LIGHT_EFFECTS,
-  TOWER_AUDIO_LIBRARY,
-  TOWER_LIGHT_SEQUENCES,
-} from 'ultimatedarktower';
+import { createDefaultTowerState, LIGHT_EFFECTS } from 'ultimatedarktower';
 import type { TowerState } from 'ultimatedarktower';
+import { TOWER_AUDIO_LIBRARY, TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 import { EFFECT_CYCLE } from '../../src/effectLabels';
 
 function makeState(overrides?: Partial<TowerState>): TowerState {
