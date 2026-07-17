@@ -1,5 +1,67 @@
 # Changelog
 
+## 6.0.0
+
+### Major Changes
+
+- 6a89e0e: Move all Return to Dark Tower reference data — board locations, foes, heroes, monuments, box
+  inventory, seed encode/decode, and the glyph/light-sequence/audio-library name catalogs — out of
+  this package into the new `ultimatedarktowerdata` package.
+
+  **Why:** this library is a Bluetooth driver. The reference data was never read by the BLE path, but
+  because it could only be reached through the driver's single export, every consumer of it —
+  including browser apps that only wanted a list of board locations — had to load the Node-only
+  `@stoprocent/noble` BLE stack. Splitting it out drops ~31% of this package's published bundle and
+  lets non-Bluetooth consumers (Board, content tools) depend on the data without the driver.
+
+  **Breaking changes:**
+
+  - `data` and `seed` (the grouped namespace exports introduced in v5) are removed. Import the same
+    data from `ultimatedarktowerdata` instead — flat, not namespaced (e.g.
+    `import { BOARD_LOCATIONS, decodeSeed } from 'ultimatedarktowerdata'`).
+  - `GLYPHS`, `TOWER_LIGHT_SEQUENCES`, `TOWER_AUDIO_LIBRARY`, and the `Glyphs` / `SoundCategory` /
+    `AudioLibrary` types are removed from this package's exports. Import them from
+    `ultimatedarktowerdata` instead (same names).
+  - In `TOWER_AUDIO_LIBRARY`, the adversary previously keyed `IsatheHollow` (and its spawn cue
+    `IsatheHollowSpawn`) is renamed `IsatheExile` / `IsatheExileSpawn`, and the foe keyed `Strigas` is
+    renamed `Striga`. Both were spelling errors with no firmware basis — the tower's own audio assets
+    are named `Adversary_Isa_01.ogg` and `Foe_Striga_01.ogg`. Byte values are unchanged; only the key
+    names and display labels are corrected.
+
+  Everything else — the BLE driver, connection lifecycle, commands, state tracking, diagnostics — is
+  unchanged. This package now depends on `ultimatedarktowerdata` for the three lookup tables it reads
+  internally.
+
+### Minor Changes
+
+- 62da52b: Fix `rotateDrumStateful` glyph desync, and export the light and drum mappings consumers were
+  copying.
+
+  - **Fix:** `rotateDrumStateful` now updates glyph positions, as `Rotate`, `rotateWithState` and
+    `randomRotateLevels` already did — it was the only rotate method that didn't. Callers rotating a
+    single drum (e.g. an MCP `tower_rotate_drum` tool) then read stale positions from
+    `getGlyphPosition` / `getAllGlyphPositions`, while the same rotation through `rotateWithState`
+    tracked correctly.
+  - **Fix:** `rotateDrumStateful` now throws `RangeError` on an out-of-range `drumIndex` or
+    `position` instead of sending a command to the tower and silently skipping glyph tracking.
+  - Exports `TOWER_SIDES` and `TOWER_LEVELS` — the name↔index correspondence the drum APIs run on.
+    `rotateWithState` takes side names while `rotateDrumStateful` and `TowerState.drum[n].position`
+    take indices into these arrays, a mapping previously documented only in a JSDoc comment, leaving
+    consumers to hardcode their own copy.
+  - Exports `getTowerLayerForLevel`, `getLightIndexForSide`, `mapSideToCorner`,
+    `getLedgeLightIndexForSide` and `getBaseLightIndexForSide` from a new `udtLightMapping` module.
+    These were private methods, so consumers driving light UIs had to duplicate them to build a
+    `Lights` payload.
+
+  Additive and back-compatible: no existing signature changed. The `RangeError` is the one behaviour
+  change, and it replaces a call that could not have worked (an out-of-range index produced an
+  undefined position).
+
+### Patch Changes
+
+- Updated dependencies [6a89e0e]
+  - ultimatedarktowerdata@1.0.0
+
 ## 5.0.2
 
 ### Patch Changes

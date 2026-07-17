@@ -1,6 +1,6 @@
 {
   "name": "ultimatedarktowerdata",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Return to Dark Tower reference data — board locations, foes, heroes, monuments, box inventory, and seed parsing. Zero dependencies.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
