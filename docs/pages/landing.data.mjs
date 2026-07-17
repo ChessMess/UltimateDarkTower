@@ -162,4 +162,14 @@ export const components = [
     image: 'board.jpg',
     status: 'beta',
   },
+  {
+    dir: 'packages/game-data',
+    title: 'Tower Data',
+    blurb:
+      'Board locations, foes, heroes, monuments, and seed encode/decode — the canonical Return to Dark Tower reference data, with zero dependencies and no Bluetooth required.',
+    category: 'library',
+    demo: null,
+    glyph: 'banner',
+    image: null,
+  },
 ];
