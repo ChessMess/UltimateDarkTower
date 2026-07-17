@@ -1,6 +1,6 @@
 {
   "name": "ultimatedarktowercontroller",
-  "version": "3.5.1",
+  "version": "3.5.2",
   "description": "Web-based controller for the Return to Dark Tower tower — connect over Bluetooth (or a built-in 3D emulator) to rotate drums, light seals, and play sounds.",
   "private": true,
   "type": "module",
