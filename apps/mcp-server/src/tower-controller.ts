@@ -61,6 +61,19 @@ export interface TowerSnapshot {
   drumPositions: Record<string, TowerSide | null>;
 }
 
+/**
+ * How long to wait for the tower to report calibration complete before giving up.
+ * A full three-drum calibration sweep takes a few seconds; this is a generous
+ * ceiling whose only job is to turn an infinite hang into a reportable error.
+ */
+const CALIBRATION_TIMEOUT_MS = 60_000;
+
+interface PendingCalibration {
+  resolve: () => void;
+  reject: (error: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
 export class TowerController {
   private static instance: TowerController | null = null;
   private tower: UltimateDarkTower | null = null;
@@ -70,7 +83,7 @@ export class TowerController {
   private skullCount = 0;
   private connected = false;
   private calibrated = false;
-  private calibrationCompleteResolve: (() => void) | null = null;
+  private pendingCalibration: PendingCalibration | null = null;
   private bufferOutput: BufferOutputType;
 
   private constructor() {
@@ -106,10 +119,7 @@ export class TowerController {
 
       this.tower.onCalibrationComplete = () => {
         this.calibrated = true;
-        if (this.calibrationCompleteResolve) {
-          this.calibrationCompleteResolve();
-          this.calibrationCompleteResolve = null;
-        }
+        this.settlePendingCalibration();
       };
 
       this.tower.onSkullDrop = (count: number) => {
@@ -214,13 +224,63 @@ export class TowerController {
 
   // --- Calibration ---
 
+  /**
+   * Calibrates the tower and waits for the tower to report completion.
+   *
+   * The wait is bounded: completion arrives via a callback, and a jammed drum or a
+   * BLE drop mid-calibration means it may never arrive at all. Without a timeout the
+   * returned promise never settles and the MCP client hangs with no error to report.
+   *
+   * @throws {Error} If calibration does not complete within CALIBRATION_TIMEOUT_MS,
+   * or if a later calibrate() call supersedes this one.
+   */
   async calibrate(): Promise<void> {
     this.requireConnected();
-    const calibrationDone = new Promise<void>((resolve) => {
-      this.calibrationCompleteResolve = resolve;
+
+    // Only one calibration can be in flight — hand the previous caller an error
+    // rather than orphaning its promise when this call replaces it.
+    this.settlePendingCalibration(
+      new Error('Calibration superseded by a newer tower_calibrate call'),
+    );
+
+    let pending!: PendingCalibration;
+    const calibrationDone = new Promise<void>((resolve, reject) => {
+      pending = {
+        resolve,
+        reject,
+        timer: setTimeout(() => {
+          this.settlePendingCalibration(
+            new Error(
+              `Calibration did not complete within ${CALIBRATION_TIMEOUT_MS / 1000}s. ` +
+                'The tower may be jammed or disconnected — check it and retry.',
+            ),
+          );
+        }, CALIBRATION_TIMEOUT_MS),
+      };
+      this.pendingCalibration = pending;
     });
-    await this.tower!.calibrate();
-    await calibrationDone;
+
+    try {
+      await this.tower!.calibrate();
+      await calibrationDone;
+    } finally {
+      clearTimeout(pending.timer);
+      // Only clear the slot if it is still ours; a superseding call owns it now.
+      if (this.pendingCalibration === pending) this.pendingCalibration = null;
+    }
+  }
+
+  /**
+   * Settles the in-flight calibration, if any. Rejects it when given an error,
+   * resolves it otherwise. Safe to call when nothing is pending.
+   */
+  private settlePendingCalibration(error?: Error): void {
+    const pending = this.pendingCalibration;
+    if (!pending) return;
+    this.pendingCalibration = null;
+    clearTimeout(pending.timer);
+    if (error) pending.reject(error);
+    else pending.resolve();
   }
 
   // --- Audio ---

@@ -202,7 +202,8 @@ export function registerResources(server: McpServer, tower: TowerController): vo
     'tower://light-effects',
     {
       title: 'Tower Light Effects & Sequences',
-      description: 'Available light effects (6) and predefined light sequences (19)',
+      // Counted from core — the hand-written "(19)" went stale when two sequences were added.
+      description: `Available light effects (${Object.keys(LIGHT_EFFECTS).length}) and predefined light sequences (${Object.keys(TOWER_LIGHT_SEQUENCES).length})`,
       mimeType: 'application/json',
     },
     () => ({

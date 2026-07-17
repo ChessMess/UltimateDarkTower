@@ -15,5 +15,7 @@
     "sourceMap": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
+  // This package publishes to npm, so tests and their scaffolding must stay out of
+  // dist/ — they are excluded from the build, not just untyped.
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/test-support/**"]
 }

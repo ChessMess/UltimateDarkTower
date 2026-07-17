@@ -1,21 +1,8 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { TowerSide } from 'ultimatedarktower';
+import { TOWER_SIDES, TOWER_LEVELS, type TowerSide, type TowerLevels } from 'ultimatedarktower';
 import { TowerController, wrapToolHandler } from '../tower-controller.js';
 import { TowerSideSchema, SoundIndexSchema } from '../utils/schemas.js';
-
-const SIDE_TO_INDEX: Record<string, number> = {
-  north: 0,
-  east: 1,
-  south: 2,
-  west: 3,
-};
-
-const DRUM_TO_INDEX: Record<string, number> = {
-  top: 0,
-  middle: 1,
-  bottom: 2,
-};
 
 export function registerDrumTools(server: McpServer, tower: TowerController): void {
   server.registerTool(
@@ -49,15 +36,15 @@ export function registerDrumTools(server: McpServer, tower: TowerController): vo
       title: 'Rotate Single Drum',
       description: 'Rotate a single drum to a specified position. Requires calibration.',
       inputSchema: {
-        drum: z.enum(['top', 'middle', 'bottom']).describe('Which drum to rotate'),
+        drum: z.enum(TOWER_LEVELS).describe('Which drum to rotate'),
         position: TowerSideSchema.describe('Target position for the drum'),
         playSound: z.boolean().optional().describe('Play sound during rotation (default: true)'),
       },
     },
     (args) =>
       wrapToolHandler(async () => {
-        const drumIndex = DRUM_TO_INDEX[args.drum];
-        const posIndex = SIDE_TO_INDEX[args.position];
+        const drumIndex = TOWER_LEVELS.indexOf(args.drum as TowerLevels);
+        const posIndex = TOWER_SIDES.indexOf(args.position as TowerSide);
         await tower.rotateDrumStateful(drumIndex, posIndex, args.playSound);
         return `${args.drum} drum rotated to ${args.position}`;
       }),

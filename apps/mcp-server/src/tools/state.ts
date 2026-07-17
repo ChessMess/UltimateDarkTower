@@ -1,8 +1,7 @@
-import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { TowerSide, Glyphs } from 'ultimatedarktower';
+import type { TowerSide, Glyphs, TowerState } from 'ultimatedarktower';
 import { TowerController, wrapToolHandler } from '../tower-controller.js';
-import { TowerSideSchema, GlyphSchema } from '../utils/schemas.js';
+import { TowerSideSchema, GlyphSchema, TowerStateSchema } from '../utils/schemas.js';
 
 export function registerStateTools(server: McpServer, tower: TowerController): void {
   server.registerTool(
@@ -27,12 +26,12 @@ export function registerStateTools(server: McpServer, tower: TowerController): v
       description:
         'Send a complete tower state to the tower. Advanced: directly sets all tower hardware state.',
       inputSchema: {
-        state: z.any().describe('Complete TowerState object to send to the tower'),
+        state: TowerStateSchema,
       },
     },
     (args) =>
       wrapToolHandler(async () => {
-        await tower.sendTowerState(args.state);
+        await tower.sendTowerState(args.state as TowerState);
         return 'Tower state sent successfully';
       }),
   );

@@ -1,7 +1,13 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { TowerController, wrapToolHandler } from '../tower-controller.js';
-import { LightsSchema, LightSequenceSchema, SoundIndexSchema } from '../utils/schemas.js';
+import {
+  LightsSchema,
+  LightSequenceSchema,
+  SoundIndexSchema,
+  LIGHT_SEQUENCE_MIN,
+  LIGHT_SEQUENCE_MAX,
+} from '../utils/schemas.js';
 import { lightSequenceNameToValue } from '../utils/lookups.js';
 import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktower';
 
@@ -52,8 +58,7 @@ export function registerLightTools(server: McpServer, tower: TowerController): v
     'tower_light_sequence',
     {
       title: 'Play Light Sequence',
-      description:
-        'Play a predefined light sequence by ID (1-19). Optionally play a sound simultaneously.',
+      description: `Play a predefined light sequence by ID (${LIGHT_SEQUENCE_MIN}-${LIGHT_SEQUENCE_MAX}). Optionally play a sound simultaneously.`,
       inputSchema: {
         sequence: LightSequenceSchema,
         soundIndex: SoundIndexSchema.optional().describe('Optional sound to play with sequence'),
