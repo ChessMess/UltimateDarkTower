@@ -71,6 +71,7 @@ function udtCjsForBuild(): Plugin {
   };
 }
 
+/// <reference types="vitest/config" />
 // https://vitejs.dev/config/
 export default defineConfig({
   root: '.',
@@ -116,5 +117,11 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+  },
+  test: {
+    // ClientLogger is pure buffer logic over relay-shared types — no DOM needed.
+    // Tests live under tests/, not src/, unlike the other apps in this repo.
+    environment: 'node',
+    include: ['tests/**/*.{test,spec}.ts'],
   },
 });

@@ -2,11 +2,17 @@
  * clientLogger.test.ts — unit tests for ClientLogger.
  *
  * Tests ring buffer eviction, unsent-entry tracking, auto-send interval,
- * and flush-on-disconnect. Uses Jest fake timers for interval-based tests.
- * downloadAsFile() is not tested here (requires browser DOM).
+ * and flush-on-disconnect. downloadAsFile() is not tested here (requires browser DOM).
+ *
+ * Written against the standalone UltimateDarkTowerSync repo's layout and left
+ * unrunnable by the monorepo merge: the import pointed at packages/client/src/, which
+ * no longer exists, and the app had no test runner installed at all. Ported from Jest
+ * to vitest to match the other apps.
  */
 
-import { ClientLogger } from '../../../packages/client/src/clientLogger';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
+
+import { ClientLogger } from '../../../src/clientLogger';
 
 const MAX_ENTRIES = 500;
 const AUTO_SEND_INTERVAL_MS = 30_000;
@@ -21,13 +27,13 @@ function pushN(logger: ClientLogger, n: number, prefix = 'entry'): void {
 /** Create a logger with a mock sendFn and return both. */
 function makeLogger(src = 'test-client') {
   const logger = new ClientLogger(src);
-  const sendFn = jest.fn<void, [string]>();
+  const sendFn = vi.fn<(json: string) => void>();
   logger.setSendFn(sendFn);
   return { logger, sendFn };
 }
 
 /** Parse entries from the JSON string passed to sendFn. */
-function parseSent(sendFn: jest.Mock): { entries: { note?: string }[] } {
+function parseSent(sendFn: Mock<(json: string) => void>): { entries: { note?: string }[] } {
   const call = sendFn.mock.calls[sendFn.mock.calls.length - 1]?.[0] as string | undefined;
   if (!call) return { entries: [] };
   const msg = JSON.parse(call) as { payload: { entries: { note?: string }[] } };
@@ -36,7 +42,7 @@ function parseSent(sendFn: jest.Mock): { entries: { note?: string }[] } {
 
 describe('ClientLogger — ring buffer', () => {
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('accepts up to MAX_ENTRIES without eviction', () => {
@@ -127,12 +133,12 @@ describe('ClientLogger — sendLogs() / unsent tracking', () => {
 
 describe('ClientLogger — auto-send interval', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.clearAllTimers();
-    jest.useRealTimers();
+    vi.clearAllTimers();
+    vi.useRealTimers();
   });
 
   it('fires sendLogs() after AUTO_SEND_INTERVAL_MS', () => {
@@ -140,7 +146,7 @@ describe('ClientLogger — auto-send interval', () => {
     logger.setAutoSend(true);
     pushN(logger, 3);
 
-    jest.advanceTimersByTime(AUTO_SEND_INTERVAL_MS + 1);
+    vi.advanceTimersByTime(AUTO_SEND_INTERVAL_MS + 1);
     expect(sendFn).toHaveBeenCalledTimes(1);
   });
 
@@ -149,9 +155,9 @@ describe('ClientLogger — auto-send interval', () => {
     logger.setAutoSend(true);
     pushN(logger, 3);
 
-    jest.advanceTimersByTime(AUTO_SEND_INTERVAL_MS + 1);
+    vi.advanceTimersByTime(AUTO_SEND_INTERVAL_MS + 1);
     pushN(logger, 3, 'second');
-    jest.advanceTimersByTime(AUTO_SEND_INTERVAL_MS);
+    vi.advanceTimersByTime(AUTO_SEND_INTERVAL_MS);
 
     expect(sendFn).toHaveBeenCalledTimes(2);
   });
@@ -161,12 +167,12 @@ describe('ClientLogger — auto-send interval', () => {
     logger.setAutoSend(true);
     pushN(logger, 3);
 
-    jest.advanceTimersByTime(AUTO_SEND_INTERVAL_MS + 1);
+    vi.advanceTimersByTime(AUTO_SEND_INTERVAL_MS + 1);
     expect(sendFn).toHaveBeenCalledTimes(1);
 
     logger.setAutoSend(false);
     pushN(logger, 3, 'after-stop');
-    jest.advanceTimersByTime(AUTO_SEND_INTERVAL_MS * 3);
+    vi.advanceTimersByTime(AUTO_SEND_INTERVAL_MS * 3);
 
     // Still only 1 call
     expect(sendFn).toHaveBeenCalledTimes(1);
@@ -178,7 +184,7 @@ describe('ClientLogger — auto-send interval', () => {
     logger.setAutoSend(true); // second call should be ignored
     pushN(logger, 3);
 
-    jest.advanceTimersByTime(AUTO_SEND_INTERVAL_MS + 1);
+    vi.advanceTimersByTime(AUTO_SEND_INTERVAL_MS + 1);
     expect(sendFn).toHaveBeenCalledTimes(1);
   });
 });

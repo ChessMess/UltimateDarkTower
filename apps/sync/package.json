@@ -8,6 +8,7 @@
     "build": "vite build",
     "dev": "vite",
     "preview": "vite preview",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -23,7 +24,8 @@
     "ultimatedarktowerrelay-shared": "workspace:^"
   },
   "devDependencies": {
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=18.0.0"

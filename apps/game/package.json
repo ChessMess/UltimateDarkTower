@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "test": "vitest run --passWithNoTests",
     "dev": "vite",
     "preview": "vite preview",
     "clean": "rm -rf dist",
@@ -22,7 +23,8 @@
     "globals": "^15.0.0",
     "prettier": "^3.8.1",
     "typescript": "catalog:",
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=18.0.0"
