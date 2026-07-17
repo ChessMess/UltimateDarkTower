@@ -170,6 +170,7 @@ export const components = [
     category: 'library',
     demo: null,
     glyph: 'banner',
-    image: null,
+    image: 'game-data.jpg',
+    alt: 'The physical Return to Dark Tower board and expansions, with the reference data extracted from it overlaid as a graph',
   },
 ];
