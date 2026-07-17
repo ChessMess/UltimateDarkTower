@@ -16,6 +16,8 @@ import {
   DEFAULT_CONNECTION_MONITORING_TIMEOUT,
   DEFAULT_BATTERY_HEARTBEAT_TIMEOUT,
   TOWER_SIDES_COUNT,
+  TOWER_SIDES,
+  TOWER_LEVELS,
 } from './udtConstants';
 import { type TowerState, isCalibrated, rtdt_pack_state, rtdt_unpack_state } from './udtTowerState';
 import {
@@ -570,17 +572,42 @@ class UltimateDarkTower {
 
   /**
    * Rotates a single drum using stateful commands that preserve existing tower state.
-   * @param drumIndex - Drum index (0=top, 1=middle, 2=bottom)
-   * @param position - Target position (0=north, 1=east, 2=south, 3=west)
+   * @param drumIndex - Drum index into TOWER_LEVELS (0=top, 1=middle, 2=bottom)
+   * @param position - Target position, an index into TOWER_SIDES (0=north, 1=east, 2=south, 3=west)
    * @param playSound - Whether to play sound during rotation
    * @returns Promise that resolves when command is sent
+   * @throws {RangeError} If drumIndex or position is out of range
    */
   async rotateDrumStateful(
     drumIndex: number,
     position: number,
     playSound: boolean = false,
   ): Promise<void> {
-    return await this.towerCommands.rotateDrumStateful(drumIndex, position, playSound);
+    // This API takes indices where the other rotate methods take names, so validate
+    // before use: an out-of-range index would otherwise read as undefined and skip
+    // the glyph update below while still sending a command to the tower.
+    const level = TOWER_LEVELS[drumIndex];
+    const newPosition = TOWER_SIDES[position];
+    if (!level) {
+      throw new RangeError(
+        `drumIndex must be 0-${TOWER_LEVELS.length - 1} (${TOWER_LEVELS.join(', ')}), got ${drumIndex}`,
+      );
+    }
+    if (!newPosition) {
+      throw new RangeError(
+        `position must be 0-${TOWER_SIDES.length - 1} (${TOWER_SIDES.join(', ')}), got ${position}`,
+      );
+    }
+
+    const oldPosition = this.getCurrentDrumPosition(level);
+
+    const result = await this.towerCommands.rotateDrumStateful(drumIndex, position, playSound);
+
+    // Keep glyph tracking in step, as Rotate/rotateWithState/randomRotateLevels do.
+    // Without this, callers rotating a single drum see stale glyph positions.
+    this.calculateAndUpdateGlyphPositions(level, oldPosition, newPosition);
+
+    return result;
   }
 
   /**
@@ -829,7 +856,7 @@ class UltimateDarkTower {
    */
   private updateGlyphPositionsAfterRotation(level: TowerLevels, rotationSteps: number): void {
     // Define the rotation order (clockwise)
-    const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
+    const sides = TOWER_SIDES;
 
     // Find glyphs on the rotated level
     for (const glyphKey in GLYPHS) {
@@ -857,7 +884,7 @@ class UltimateDarkTower {
     newPosition: TowerSide,
   ): void {
     // Calculate rotation steps
-    const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
+    const sides = TOWER_SIDES;
     const oldIndex = sides.indexOf(oldPosition);
     const newIndex = sides.indexOf(newPosition);
 
@@ -928,8 +955,8 @@ class UltimateDarkTower {
    */
   getRandomUnbrokenSeal(): SealIdentifier | null {
     const allSeals: SealIdentifier[] = [];
-    const levels: TowerLevels[] = ['top', 'middle', 'bottom'];
-    const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
+    const levels = TOWER_LEVELS;
+    const sides = TOWER_SIDES;
 
     // Generate all possible seal combinations
     for (const level of levels) {

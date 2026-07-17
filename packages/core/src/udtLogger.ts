@@ -1,4 +1,5 @@
 import type { TowerState } from './udtTowerState';
+import { TOWER_SIDES, TOWER_LEVELS } from './udtConstants';
 
 export type LogLevel = 'all' | 'debug' | 'info' | 'warn' | 'error';
 
@@ -404,27 +405,27 @@ export class Logger {
     const changes: string[] = [];
 
     // Check drum changes
-    for (let i = 0; i < 3; i++) {
-      const drumNames = ['top', 'middle', 'bottom'];
+    for (let i = 0; i < TOWER_LEVELS.length; i++) {
       const oldDrum = oldState.drum[i];
       const newDrum = newState.drum[i];
 
       if (oldDrum.position !== newDrum.position) {
-        const positions = ['north', 'east', 'south', 'west'];
         changes.push(
-          `${drumNames[i]} drum: ${positions[oldDrum.position]} → ${positions[newDrum.position]}`,
+          `${TOWER_LEVELS[i]} drum: ${TOWER_SIDES[oldDrum.position]} → ${TOWER_SIDES[newDrum.position]}`,
         );
       }
       if (oldDrum.calibrated !== newDrum.calibrated) {
         changes.push(
-          `${drumNames[i]} drum calibrated: ${oldDrum.calibrated} → ${newDrum.calibrated}`,
+          `${TOWER_LEVELS[i]} drum calibrated: ${oldDrum.calibrated} → ${newDrum.calibrated}`,
         );
       }
       if (oldDrum.jammed !== newDrum.jammed) {
-        changes.push(`${drumNames[i]} drum jammed: ${oldDrum.jammed} → ${newDrum.jammed}`);
+        changes.push(`${TOWER_LEVELS[i]} drum jammed: ${oldDrum.jammed} → ${newDrum.jammed}`);
       }
       if (oldDrum.playSound !== newDrum.playSound) {
-        changes.push(`${drumNames[i]} drum playSound: ${oldDrum.playSound} → ${newDrum.playSound}`);
+        changes.push(
+          `${TOWER_LEVELS[i]} drum playSound: ${oldDrum.playSound} → ${newDrum.playSound}`,
+        );
       }
     }
 

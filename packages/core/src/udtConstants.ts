@@ -84,6 +84,29 @@ export type TowerLevels = 'top' | 'middle' | 'bottom';
 export type TowerSide = 'north' | 'south' | 'east' | 'west';
 export type TowerCorner = 'northeast' | 'southeast' | 'southwest' | 'northwest';
 
+/**
+ * Drum sides in clockwise rotation order. The index is the wire position: it is what
+ * `TowerState.drum[n].position` holds and what `rotateDrumStateful`'s `position`
+ * argument expects. Use `TOWER_SIDES.indexOf(side)` to convert a name to an index and
+ * `TOWER_SIDES[index]` to go back.
+ *
+ * Note this is deliberately not the declaration order of the `TowerSide` union —
+ * rotation order is north → east → south → west.
+ */
+export const TOWER_SIDES = [
+  'north',
+  'east',
+  'south',
+  'west',
+] as const satisfies readonly TowerSide[];
+
+/**
+ * Drum levels in wire order. The index is the drum index: it is what
+ * `rotateDrumStateful`'s `drumIndex` argument expects and what indexes
+ * `TowerState.drum[]`.
+ */
+export const TOWER_LEVELS = ['top', 'middle', 'bottom'] as const satisfies readonly TowerLevels[];
+
 export type SealIdentifier = {
   side: TowerSide;
   level: TowerLevels;

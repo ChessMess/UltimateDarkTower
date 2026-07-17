@@ -1034,6 +1034,85 @@ describe('UltimateDarkTower', () => {
         }
       });
 
+      // rotateDrumStateful was the one rotate method that never updated glyph
+      // positions — Rotate, rotateWithState and randomRotateLevels all do. Anything
+      // driving single-drum rotations (apps/mcp-server's tower_rotate_drum) then
+      // reported stale glyphs, while the same rotation through tower_rotate was fine.
+      test('should update glyph positions when rotateDrumStateful is called', async () => {
+        const towerCommands = darkTower['towerCommands'];
+        const originalRotateDrum = towerCommands.rotateDrumStateful;
+        towerCommands.rotateDrumStateful = jest.fn().mockResolvedValue(undefined);
+
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        getCurrentDrumPositionSpy.mockReturnValue('north');
+
+        try {
+          // Top drum (index 0) to east (index 1) — one step clockwise.
+          await darkTower.rotateDrumStateful(0, 1);
+
+          // Top level glyphs: cleanse (north->east), quest (south->west)
+          expect(darkTower.getGlyphPosition('cleanse')).toBe('east');
+          expect(darkTower.getGlyphPosition('quest')).toBe('west');
+
+          // Other levels must be untouched — only one drum moved.
+          expect(darkTower.getGlyphPosition('battle')).toBe('north');
+          expect(darkTower.getGlyphPosition('banner')).toBe('north');
+          expect(darkTower.getGlyphPosition('reinforce')).toBe('south');
+        } finally {
+          towerCommands.rotateDrumStateful = originalRotateDrum;
+          getCurrentDrumPositionSpy.mockRestore();
+        }
+      });
+
+      // The indexed API can be handed anything; an out-of-range index used to read as
+      // undefined, silently skipping the glyph update while still sending a command.
+      test('rotateDrumStateful rejects an out-of-range index instead of sending', async () => {
+        const towerCommands = darkTower['towerCommands'];
+        const originalRotateDrum = towerCommands.rotateDrumStateful;
+        const rotateDrumMock = jest.fn().mockResolvedValue(undefined);
+        towerCommands.rotateDrumStateful = rotateDrumMock;
+
+        try {
+          await expect(darkTower.rotateDrumStateful(3, 0)).rejects.toThrow(RangeError);
+          await expect(darkTower.rotateDrumStateful(-1, 0)).rejects.toThrow(RangeError);
+          await expect(darkTower.rotateDrumStateful(0, 4)).rejects.toThrow(RangeError);
+          await expect(darkTower.rotateDrumStateful(0, -1)).rejects.toThrow(RangeError);
+
+          // Nothing reached the tower.
+          expect(rotateDrumMock).not.toHaveBeenCalled();
+        } finally {
+          towerCommands.rotateDrumStateful = originalRotateDrum;
+        }
+      });
+
+      test('rotateDrumStateful tracks glyphs identically to rotateWithState', async () => {
+        const towerCommands = darkTower['towerCommands'];
+        const originalRotateDrum = towerCommands.rotateDrumStateful;
+        const originalRotateWithState = towerCommands.rotateWithState;
+        towerCommands.rotateDrumStateful = jest.fn().mockResolvedValue(undefined);
+        towerCommands.rotateWithState = jest.fn().mockResolvedValue(undefined);
+
+        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        getCurrentDrumPositionSpy.mockReturnValue('north');
+
+        try {
+          // Middle drum to south, via the indexed API.
+          await darkTower.rotateDrumStateful(1, 2);
+          const viaDrumStateful = darkTower.getAllGlyphPositions();
+
+          // Same rotation via the named API, from the same starting state.
+          darkTower['setGlyphPositionsFromCalibration']();
+          await darkTower.rotateWithState('north', 'south', 'north');
+          const viaRotateWithState = darkTower.getAllGlyphPositions();
+
+          expect(viaDrumStateful).toEqual(viaRotateWithState);
+        } finally {
+          towerCommands.rotateDrumStateful = originalRotateDrum;
+          towerCommands.rotateWithState = originalRotateWithState;
+          getCurrentDrumPositionSpy.mockRestore();
+        }
+      });
+
       test('should handle randomRotateLevels correctly', async () => {
         const towerCommands = darkTower['towerCommands'];
         const originalRandomRotate = towerCommands.randomRotateLevels;

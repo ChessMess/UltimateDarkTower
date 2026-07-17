@@ -17,6 +17,16 @@ export {
 } from './udtLogger';
 export { milliVoltsToPercentage, milliVoltsToPercentageNumber } from './udtHelpers';
 
+// Light mapping — consumers driving light UIs need the same level/side/corner →
+// index tables the library uses to build Lights payloads.
+export {
+  getTowerLayerForLevel,
+  getLightIndexForSide,
+  mapSideToCorner,
+  getLedgeLightIndexForSide,
+  getBaseLightIndexForSide,
+} from './udtLightMapping';
+
 // Bluetooth adapter interfaces for custom implementations
 export type { IBluetoothAdapter } from './udtBluetoothAdapter';
 export {

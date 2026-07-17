@@ -7,14 +7,18 @@ import {
   drumPositionCmds,
   LIGHT_EFFECTS,
   TOWER_LAYERS,
-  RING_LIGHT_POSITIONS,
-  LEDGE_BASE_LIGHT_POSITIONS,
+  TOWER_SIDES,
+  TOWER_LEVELS,
   type Lights,
   type TowerSide,
-  type TowerCorner,
-  type TowerLevels,
   type SealIdentifier,
 } from './udtConstants';
+import {
+  getTowerLayerForLevel,
+  getLightIndexForSide,
+  getLedgeLightIndexForSide,
+  getBaseLightIndexForSide,
+} from './udtLightMapping';
 import { type TowerState } from './udtTowerState';
 import { Logger } from './udtLogger';
 import { UdtCommandFactory } from './udtCommandFactory';
@@ -241,8 +245,8 @@ export class UdtTowerCommands {
     // Map doorway lights (top, middle, bottom rings)
     if (lights.doorway) {
       for (const doorwayLight of lights.doorway) {
-        const layerIndex = this.getTowerLayerForLevel(doorwayLight.level);
-        const lightIndex = this.getLightIndexForSide(doorwayLight.position);
+        const layerIndex = getTowerLayerForLevel(doorwayLight.level);
+        const lightIndex = getLightIndexForSide(doorwayLight.position);
         const effect = LIGHT_EFFECTS[doorwayLight.style] || LIGHT_EFFECTS.off;
         commands.push({ layerIndex, lightIndex, effect, loop: effect !== LIGHT_EFFECTS.off });
       }
@@ -252,7 +256,7 @@ export class UdtTowerCommands {
     if (lights.ledge) {
       for (const ledgeLight of lights.ledge) {
         const layerIndex = TOWER_LAYERS.LEDGE;
-        const lightIndex = this.getLedgeLightIndexForSide(ledgeLight.position);
+        const lightIndex = getLedgeLightIndexForSide(ledgeLight.position);
         const effect = LIGHT_EFFECTS[ledgeLight.style] || LIGHT_EFFECTS.off;
         commands.push({ layerIndex, lightIndex, effect, loop: effect !== LIGHT_EFFECTS.off });
       }
@@ -267,102 +271,13 @@ export class UdtTowerCommands {
           baseLight.position.level === 'top' || baseLight.position.level === 'b'
             ? TOWER_LAYERS.BASE2
             : TOWER_LAYERS.BASE1;
-        const lightIndex = this.getBaseLightIndexForSide(baseLight.position.side);
+        const lightIndex = getBaseLightIndexForSide(baseLight.position.side);
         const effect = LIGHT_EFFECTS[baseLight.style] || LIGHT_EFFECTS.off;
         commands.push({ layerIndex, lightIndex, effect, loop: effect !== LIGHT_EFFECTS.off });
       }
     }
 
     return commands;
-  }
-
-  /**
-   * Gets the tower layer index for a doorway light level.
-   * @param level - Tower level (top, middle, bottom)
-   * @returns Layer index
-   */
-  private getTowerLayerForLevel(level: TowerLevels): number {
-    switch (level) {
-      case 'top':
-        return TOWER_LAYERS.TOP_RING;
-      case 'middle':
-        return TOWER_LAYERS.MIDDLE_RING;
-      case 'bottom':
-        return TOWER_LAYERS.BOTTOM_RING;
-      default:
-        return TOWER_LAYERS.TOP_RING;
-    }
-  }
-
-  /**
-   * Gets the light index for a cardinal direction (ring lights).
-   * @param side - Tower side (north, east, south, west)
-   * @returns Light index
-   */
-  private getLightIndexForSide(side: TowerSide): number {
-    switch (side) {
-      case 'north':
-        return RING_LIGHT_POSITIONS.NORTH;
-      case 'east':
-        return RING_LIGHT_POSITIONS.EAST;
-      case 'south':
-        return RING_LIGHT_POSITIONS.SOUTH;
-      case 'west':
-        return RING_LIGHT_POSITIONS.WEST;
-      default:
-        return RING_LIGHT_POSITIONS.NORTH;
-    }
-  }
-
-  /**
-   * Maps cardinal directions to their closest corner positions for ledge lights.
-   * @param side - Tower side (north, east, south, west)
-   * @returns Tower corner (northeast, southeast, southwest, northwest)
-   */
-  private mapSideToCorner(side: TowerSide): TowerCorner {
-    switch (side) {
-      case 'north':
-        return 'northeast';
-      case 'east':
-        return 'southeast';
-      case 'south':
-        return 'southwest';
-      case 'west':
-        return 'northwest';
-      default:
-        return 'northeast';
-    }
-  }
-
-  /**
-   * Gets the light index for ledge lights (ordinal directions).
-   * @param corner - Tower corner (northeast, southeast, southwest, northwest)
-   * @returns Light index
-   */
-  private getLedgeLightIndexForSide(corner: TowerCorner): number {
-    // Map ordinal directions directly to ledge light positions
-    switch (corner) {
-      case 'northeast':
-        return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
-      case 'southeast':
-        return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;
-      case 'southwest':
-        return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;
-      case 'northwest':
-        return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;
-      default:
-        return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
-    }
-  }
-
-  /**
-   * Gets the light index for base lights (ordinal directions).
-   * @param side - Tower side (north, east, south, west)
-   * @returns Light index
-   */
-  private getBaseLightIndexForSide(side: TowerSide): number {
-    // Convert cardinal direction to corner and get light index
-    return this.getLedgeLightIndexForSide(this.mapSideToCorner(side));
   }
 
   /**
@@ -661,7 +576,7 @@ export class UdtTowerCommands {
     // 0 = all, 1 = top, 2 = middle, 3 = bottom
     // 4 = top & middle, 5 = top & bottom, 6 = middle & bottom
 
-    const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
+    const sides = TOWER_SIDES;
     const getRandomSide = (): TowerSide => sides[Math.floor(Math.random() * sides.length)];
 
     // Current positions to preserve unchanged levels
@@ -736,17 +651,17 @@ export class UdtTowerCommands {
       if (level === 'middle') {
         // For middle, compare the middle-specific bits (bits 6-7)
         if ((value & 0b11000000) === (rawValue & 0b11000000)) {
-          return ['north', 'east', 'south', 'west'].indexOf(side);
+          return TOWER_SIDES.indexOf(side as TowerSide);
         }
       } else if (level === 'top') {
         // For top drum, compare the top-specific bits (bits 1, 2, 4)
         if ((value & 0b00010110) === (rawValue & 0b00010110)) {
-          return ['north', 'east', 'south', 'west'].indexOf(side);
+          return TOWER_SIDES.indexOf(side as TowerSide);
         }
       } else {
         // For bottom, direct comparison
         if (value === rawValue) {
-          return ['north', 'east', 'south', 'west'].indexOf(side);
+          return TOWER_SIDES.indexOf(side as TowerSide);
         }
       }
     }
@@ -770,7 +685,7 @@ export class UdtTowerCommands {
     const position = towerState.drum[drumIndex].position;
 
     // Convert numeric position to TowerSide (0=north, 1=east, 2=south, 3=west)
-    const sides: TowerSide[] = ['north', 'east', 'south', 'west'];
+    const sides = TOWER_SIDES;
     return sides[position] || 'north';
   }
 
@@ -906,10 +821,8 @@ export class UdtTowerCommands {
       this.deps.setTowerState(currentState, 'rotateDrumStateful');
     }
 
-    const drumNames = ['top', 'middle', 'bottom'];
-    const positionNames = ['north', 'east', 'south', 'west'];
     this.deps.logger.info(
-      `Rotating ${drumNames[drumIndex]} drum to ${positionNames[position]}${playSound ? ' with sound' : ''}`,
+      `Rotating ${TOWER_LEVELS[drumIndex]} drum to ${TOWER_SIDES[position]}${playSound ? ' with sound' : ''}`,
       '[UDT][CMD]',
     );
 
