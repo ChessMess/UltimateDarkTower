@@ -1,4 +1,4 @@
-import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktower';
+import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 import { SequenceAnimator } from '../../src/sequences/SequenceAnimator';
 import { RecordingAnimator } from '../helpers/recordingAnimator';
 // eslint-disable-next-line @typescript-eslint/no-require-imports

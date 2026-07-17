@@ -1,4 +1,4 @@
-import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktower';
+import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 
 export type SequenceConfidence = 'unknown' | 'approximate' | 'observed' | 'implemented';
 

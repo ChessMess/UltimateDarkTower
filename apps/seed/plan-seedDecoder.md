@@ -29,7 +29,7 @@ Remaining ~43 bits of the 62 total encode: timeline, quests, dungeons, companion
 
 ### Types
 
-- `Adversary` — union of 8 names (Ashstrider, Bane of Omens, Empress of Shades, Gaze Eternal, Gravemaw, Isa the Hollow, Lingering Rot, Utuk'Ku)
+- `Adversary` — union of 8 names (Ashstrider, Bane of Omens, Empress of Shades, Gaze Eternal, Gravemaw, Isa the Exile, Lingering Rot, Utuk'Ku)
 - `Ally` — union of 10 names (Gleb, Grigor, Hakan, Letha, Miras, Nimet, Tomas, Vasa, Yana, Zaida)
 - `Foe` — union of 12 names
 - `MainGoal` — union of 9 goal names

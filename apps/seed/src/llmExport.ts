@@ -2,7 +2,7 @@
  * llmExport.ts — Generate structured LLM prompt from collected seed data.
  */
 
-import { seed as seedApi } from 'ultimatedarktower';
+import * as seedApi from 'ultimatedarktowerdata/seed';
 import { CHANGEABLE_FIELDS, type Session, type FieldMapping } from './types';
 
 export function generateLLMPrompt(session: Session, fieldMappings: FieldMapping[]): string {

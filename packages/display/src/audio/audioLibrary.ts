@@ -1,4 +1,4 @@
-import { TOWER_AUDIO_LIBRARY } from 'ultimatedarktower';
+import { TOWER_AUDIO_LIBRARY } from 'ultimatedarktowerdata';
 import type { SoundPack } from './soundPack';
 
 const A = TOWER_AUDIO_LIBRARY;
@@ -22,7 +22,7 @@ const OFFICIAL_AUDIO_FILES: Record<number, string> = {
   [A.EmpressofShades.value]: 'Adversary_Empress_01.ogg',
   [A.GazeEternal.value]: 'Adversary_Gaze_01.ogg',
   [A.Gravemaw.value]: 'Adversary_Gravemaw_01.ogg',
-  [A.IsatheHollow.value]: 'Adversary_Isa_01.ogg',
+  [A.IsatheExile.value]: 'Adversary_Isa_01.ogg',
   [A.LingeringRot.value]: 'Adversary_Rot_03.ogg',
   [A.UtukKu.value]: 'Adversary_Utuk_03.ogg',
   [A.Gleb.value]: 'Ally_Gleb_01.ogg',
@@ -92,7 +92,7 @@ const OFFICIAL_AUDIO_FILES: Record<number, string> = {
   [A.Oreks.value]: 'Foe_Oreks_01.ogg',
   [A.ShadowWolves.value]: 'Foe_Shadow_01.ogg',
   [A.SpineFiends.value]: 'Foe_Spine_01.ogg',
-  [A.Strigas.value]: 'Foe_Striga_01.ogg',
+  [A.Striga.value]: 'Foe_Striga_01.ogg',
   [A.Titans.value]: 'Foe_Titan_01.ogg',
   [A.FrostTrolls.value]: 'Foe_Troll_01.ogg',
   [A.WidowmadeSpiders.value]: 'Foe_Widowmade_01.ogg',
@@ -101,7 +101,7 @@ const OFFICIAL_AUDIO_FILES: Record<number, string> = {
   [A.EmpressofShadesSpawn.value]: 'MainObjectiveVictory_BossSpawn_Empress.ogg',
   [A.GazeEternalSpawn.value]: 'MainObjectiveVictory_BossSpawn_Gaze.ogg',
   [A.GravemawSpawn.value]: 'MainObjectiveVictory_BossSpawn_Gravemaw.ogg',
-  [A.IsatheHollowSpawn.value]: 'MainObjectiveVictory_BossSpawn_Isa.ogg',
+  [A.IsatheExileSpawn.value]: 'MainObjectiveVictory_BossSpawn_Isa.ogg',
   [A.LingeringRotSpawn.value]: 'MainObjectiveVictory_BossSpawn_Rot.ogg',
   [A.UtukKuSpawn.value]: 'MainObjectiveVictory_BossSpawn_Utuk.ogg',
   [A.QuestComplete.value]: 'Quest_Complete_01.ogg',
@@ -138,7 +138,7 @@ const samples: Record<number, string> = {
   [A.EmpressofShades.value]: new URL('./assets/Adversary_Empress_01.ogg', import.meta.url).href,
   [A.GazeEternal.value]: new URL('./assets/Adversary_Gaze_01.ogg', import.meta.url).href,
   [A.Gravemaw.value]: new URL('./assets/Adversary_Gravemaw_01.ogg', import.meta.url).href,
-  [A.IsatheHollow.value]: new URL('./assets/Adversary_Isa_01.ogg', import.meta.url).href,
+  [A.IsatheExile.value]: new URL('./assets/Adversary_Isa_01.ogg', import.meta.url).href,
   [A.LingeringRot.value]: new URL('./assets/Adversary_Rot_03.ogg', import.meta.url).href,
   [A.UtukKu.value]: new URL('./assets/Adversary_Utuk_03.ogg', import.meta.url).href,
   [A.Gleb.value]: new URL('./assets/Ally_Gleb_01.ogg', import.meta.url).href,
@@ -226,7 +226,7 @@ const samples: Record<number, string> = {
   [A.Oreks.value]: new URL('./assets/Foe_Oreks_01.ogg', import.meta.url).href,
   [A.ShadowWolves.value]: new URL('./assets/Foe_Shadow_01.ogg', import.meta.url).href,
   [A.SpineFiends.value]: new URL('./assets/Foe_Spine_01.ogg', import.meta.url).href,
-  [A.Strigas.value]: new URL('./assets/Foe_Striga_01.ogg', import.meta.url).href,
+  [A.Striga.value]: new URL('./assets/Foe_Striga_01.ogg', import.meta.url).href,
   [A.Titans.value]: new URL('./assets/Foe_Titan_01.ogg', import.meta.url).href,
   [A.FrostTrolls.value]: new URL('./assets/Foe_Troll_01.ogg', import.meta.url).href,
   [A.WidowmadeSpiders.value]: new URL('./assets/Foe_Widowmade_01.ogg', import.meta.url).href,
@@ -250,7 +250,7 @@ const samples: Record<number, string> = {
     './assets/MainObjectiveVictory_BossSpawn_Gravemaw.ogg',
     import.meta.url,
   ).href,
-  [A.IsatheHollowSpawn.value]: new URL(
+  [A.IsatheExileSpawn.value]: new URL(
     './assets/MainObjectiveVictory_BossSpawn_Isa.ogg',
     import.meta.url,
   ).href,

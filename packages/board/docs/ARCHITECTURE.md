@@ -1,7 +1,7 @@
 # Architecture
 
 ```
-ultimatedarktower (data) ──► data/udtReexports ──► state/ ──► renderers/{readout,map2d} ──► view/BoardRenderView ──► ui/
+ultimatedarktowerdata ──► data/udtReexports ──► state/ ──► renderers/{readout,map2d} ──► view/BoardRenderView ──► ui/
                                                        │
                                                        └─► plugin/Board3DPlugin ──► ultimatedarktowerdisplay Tower3DView (three)
 ```

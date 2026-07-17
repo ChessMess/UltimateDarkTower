@@ -1,7 +1,5 @@
 import {
   TOWER_COMMANDS,
-  TOWER_AUDIO_LIBRARY,
-  TOWER_LIGHT_SEQUENCES,
   AUDIO_COMMAND_POS,
   DRUM_PACKETS,
   drumPositionCmds,
@@ -13,6 +11,7 @@ import {
   type TowerSide,
   type SealIdentifier,
 } from './udtConstants';
+import { TOWER_AUDIO_LIBRARY, TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 import {
   getTowerLayerForLevel,
   getLightIndexForSide,

@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-import { LIGHT_EFFECTS, TOWER_AUDIO_LIBRARY } from 'ultimatedarktower';
+import { LIGHT_EFFECTS } from 'ultimatedarktower';
 import type { TowerState, SealIdentifier, TowerSide } from 'ultimatedarktower';
+import { TOWER_AUDIO_LIBRARY } from 'ultimatedarktowerdata';
 
 import type { ITowerDisplay, TowerPhysicsHooks } from '../types';
 import type {

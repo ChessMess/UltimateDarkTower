@@ -87,17 +87,17 @@ await tower.cleanup(); // always clean up on shutdown
 
 A guided map of the docs lives at [docs/README.md](docs/README.md). The headline pages:
 
-| Page                                         | Use it when…                                        |
-| -------------------------------------------- | --------------------------------------------------- |
-| [Getting Started](docs/GETTING_STARTED.md)   | …you're new and want a working tower in 10 minutes. |
-| [API Reference](docs/api/README.md)          | …you need the full surface, split by topic.         |
-| [Architecture](docs/ARCHITECTURE.md)         | …you want to understand how the layers fit.         |
-| [Examples](docs/EXAMPLES.md)                 | …you want to know what the demo apps demonstrate.   |
-| [Tower Tech Notes](docs/TOWER_TECH_NOTES.md) | …you're reverse-engineering the protocol.           |
-| [Seed Format](docs/SEED_FORMAT.md)           | …you're working with game seeds at the byte level.  |
-| [BLE Diagnostics](docs/BLE_DIAGNOSTICS.md)   | …you want disconnect flight-recorder data.          |
-| [Troubleshooting](docs/TROUBLESHOOTING.md)   | …the hardware is misbehaving.                       |
-| [Ecosystem](docs/ECOSYSTEM.md)               | …you want the companion libraries & tools.          |
+| Page                                                                         | Use it when…                                        |
+| ---------------------------------------------------------------------------- | --------------------------------------------------- |
+| [Getting Started](docs/GETTING_STARTED.md)                                   | …you're new and want a working tower in 10 minutes. |
+| [API Reference](docs/api/README.md)                                          | …you need the full surface, split by topic.         |
+| [Architecture](docs/ARCHITECTURE.md)                                         | …you want to understand how the layers fit.         |
+| [Examples](docs/EXAMPLES.md)                                                 | …you want to know what the demo apps demonstrate.   |
+| [Tower Tech Notes](docs/TOWER_TECH_NOTES.md)                                 | …you're reverse-engineering the protocol.           |
+| [Seed Format](../game-data/docs/SEED_FORMAT.md) (in `ultimatedarktowerdata`) | …you're working with game seeds at the byte level.  |
+| [BLE Diagnostics](docs/BLE_DIAGNOSTICS.md)                                   | …you want disconnect flight-recorder data.          |
+| [Troubleshooting](docs/TROUBLESHOOTING.md)                                   | …the hardware is misbehaving.                       |
+| [Ecosystem](docs/ECOSYSTEM.md)                                               | …you want the companion libraries & tools.          |
 
 ## Examples
 

@@ -2,13 +2,13 @@
  * types.ts — App-specific types for the seed decoder web app.
  */
 
-import type { seed as seedApi } from 'ultimatedarktower';
+import type { Confidence } from 'ultimatedarktowerdata';
 
 export interface FieldMapping {
   name: string;
   bitOffset: number;
   bitLength: number;
-  confidence: seedApi.Confidence;
+  confidence: Confidence;
   options?: string[];
 }
 
@@ -67,22 +67,6 @@ export type EventType = (typeof EVENT_TYPES)[number];
 /** Kingdoms / board quadrants where things can spawn. */
 export const KINGDOMS = ['North', 'East', 'South', 'West'] as const;
 export type Kingdom = (typeof KINGDOMS)[number];
-
-/** All foes across all levels, for spawn/defeat tracking. */
-export const ALL_FOES = [
-  'Brigands',
-  'Oreks',
-  'Shadow Wolves',
-  'Spine Fiend',
-  'Frost Troll',
-  'Lemure',
-  'Clan of Neuri',
-  'Widowmade Spider',
-  'Dragon',
-  'Mormo',
-  'Striga',
-  'Titan',
-] as const;
 
 export const COMPANIONS = ['Berat', 'Grigor', 'Yana'] as const;
 

@@ -13,13 +13,17 @@ import {
   type GameConfig,
   EVENT_TYPES,
   KINGDOMS,
-  ALL_FOES,
   COMPANIONS,
   QUEST_TYPES,
   type EventType,
   type GameEvent,
 } from './types';
-import { seed as seedApi } from 'ultimatedarktower';
+import * as seedApi from 'ultimatedarktowerdata/seed';
+import { TIER1_FOES, TIER2_FOES, TIER3_FOES } from 'ultimatedarktowerdata';
+
+/** All foes across all levels, for spawn/defeat tracking — sourced from the seed rosters
+ * (not the adversary), so spelling stays in sync with what a decoded seed actually says. */
+const ALL_FOES: readonly string[] = [...TIER1_FOES, ...TIER2_FOES, ...TIER3_FOES];
 
 export class App {
   private analyzer: SeedAnalyzer;

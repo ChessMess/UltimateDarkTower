@@ -2,7 +2,7 @@
  * seedAnalyzer.ts — Session management, comparison logic, and auto-suggestions.
  */
 
-import { seed as seedApi } from 'ultimatedarktower';
+import * as seedApi from 'ultimatedarktowerdata/seed';
 import type { Session, SeedEntry, FieldMapping, AppState, GameConfig, GameEvent } from './types';
 
 const STORAGE_KEY = 'seed-decoder-state';

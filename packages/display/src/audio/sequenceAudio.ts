@@ -1,4 +1,4 @@
-import { TOWER_AUDIO_LIBRARY, TOWER_LIGHT_SEQUENCES } from 'ultimatedarktower';
+import { TOWER_AUDIO_LIBRARY, TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 
 /**
  * Default mapping of light-sequence names to audio-sample names, matching the

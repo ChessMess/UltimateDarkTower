@@ -3,7 +3,8 @@
  */
 
 import UltimateDarkTower from '../src/UltimateDarkTower';
-import { GLYPHS, LIGHT_EFFECTS, TowerSide } from '../src/udtConstants';
+import { LIGHT_EFFECTS, TowerSide } from '../src/udtConstants';
+import { GLYPHS } from 'ultimatedarktowerdata';
 import { MockBluetoothAdapter } from './mocks/MockBluetoothAdapter';
 
 describe('UltimateDarkTower', () => {

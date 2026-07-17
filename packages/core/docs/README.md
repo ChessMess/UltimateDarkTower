@@ -27,8 +27,8 @@ The full documentation set for [UltimateDarkTower](../README.md). Start here if 
 ### I want to understand the protocol or reverse-engineer something
 
 1. [TOWER_TECH_NOTES.md](TOWER_TECH_NOTES.md) — BLE services (with real device screenshots), 20-byte packet structure, LED channel map, Noble macOS quirks.
-2. [SEED_FORMAT.md](SEED_FORMAT.md) — base-34 game seed format.
-3. [api/seed.md](api/seed.md) — seed parser API.
+2. [SEED_FORMAT.md](../../game-data/docs/SEED_FORMAT.md) — base-34 game seed format (now in `ultimatedarktowerdata`).
+3. [seed.md](../../game-data/docs/seed.md) — seed parser API (now in `ultimatedarktowerdata`).
 
 ### I want to ship a tower-aware app and the BLE is flaky
 
@@ -54,7 +54,6 @@ The full documentation set for [UltimateDarkTower](../README.md). Start here if 
 | **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**   | End-user fixes for jams, disconnects, firmware updates             | End user, support           |
 | **[BLE_DIAGNOSTICS.md](BLE_DIAGNOSTICS.md)**   | Flight recorder concepts + IncidentReport schema                   | App developer debugging BLE |
 | **[TOWER_TECH_NOTES.md](TOWER_TECH_NOTES.md)** | BLE services, packet structure, LED channels, Noble quirks         | Protocol-level developer    |
-| **[SEED_FORMAT.md](SEED_FORMAT.md)**           | Game seed encoding spec (base-34, RNG polynomial)                  | Seed format implementer     |
 | **[API_REFERENCE.md](API_REFERENCE.md)**       | Redirect to `api/` — kept for backward links                       | —                           |
 | **[api/](api/README.md)**                      | The API surface, split by topic                                    | App developer               |
 | **[API_STYLE.md](API_STYLE.md)**               | The shared UDT-family API-doc standard every reference follows     | Contributor                 |
@@ -64,9 +63,11 @@ The full documentation set for [UltimateDarkTower](../README.md). Start here if 
 | **[api/state.md](api/state.md)**               | Tower state types, glyphs, seals                                   | App developer               |
 | **[api/events.md](api/events.md)**             | Connection / calibration / skull / battery callbacks               | App developer               |
 | **[api/logging.md](api/logging.md)**           | Logger config, outputs, response logging                           | App developer               |
-| **[api/seed.md](api/seed.md)**                 | Seed parser + SystemRandom PRNG                                    | Seed-aware app developer    |
 | **[api/diagnostics.md](api/diagnostics.md)**   | Flight recorder API                                                | App developer debugging BLE |
-| **[api/board-data.md](api/board-data.md)**     | Board geometry + hero/monument/foe reference rosters               | Board-data consumer         |
+
+Seed parsing and board/hero/foe reference data moved to
+[`ultimatedarktowerdata`](../../game-data) in v6.0.0 — see its
+[seed.md](../../game-data/docs/seed.md) and [board-data.md](../../game-data/docs/board-data.md).
 
 ---
 

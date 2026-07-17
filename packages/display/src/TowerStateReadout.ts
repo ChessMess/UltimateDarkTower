@@ -2,13 +2,11 @@ import {
   type TowerState,
   type TowerSide,
   type TowerLevels,
-  GLYPHS,
-  TOWER_AUDIO_LIBRARY,
-  TOWER_LIGHT_SEQUENCES,
   VOLUME_DESCRIPTIONS,
   LAYER_TO_POSITION,
   LIGHT_INDEX_TO_DIRECTION,
 } from 'ultimatedarktower';
+import { GLYPHS, TOWER_AUDIO_LIBRARY, TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 import type { ITowerDisplay, SealIdentifier } from './types';
 import { injectStyles } from './styles';
 import { EFFECT_LABELS, EFFECT_TOOLTIP_LABELS, EFFECT_CYCLE } from './effectLabels';

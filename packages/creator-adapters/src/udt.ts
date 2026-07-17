@@ -1,38 +1,68 @@
-// UDT v5.0.0 reference layer — the only module in this repo that imports from ultimatedarktower.
-// All other packages that need UDT data go through this module.
+// UDT reference layer — the module in this repo that imports the RtDT reference data
+// (board/hero/foe rosters, seed enums, glyphs/light-sequences/audio-library names) from
+// `ultimatedarktowerdata`. Other packages that need this data go through this module.
 //
-// v5 reorganised the flat v4 exports into `data.*` / `seed.*` namespaces (foes, heroes, board,
-// tiers). GLYPHS / TOWER_LIGHT_SEQUENCES / TOWER_AUDIO_LIBRARY and the SealIdentifier /
-// SoundCategory types remain top-level (`export * from './udtConstants'`). This module maps them
-// back to the same flat `UDTReferenceLayer` shape so downstream (resolver, engine) is unchanged.
+// v6.0.0: this data moved out of `ultimatedarktower` (which no longer ships it) into
+// `ultimatedarktowerdata`, a zero-dependency package with no Bluetooth — exported flat, no
+// more `data.*` / `seed.*` namespaces. `SealIdentifier` is a BLE/hardware type (calibrated
+// drum position) and stays in `ultimatedarktower`; `SoundCategory` moved with the audio
+// library. This module maps everything to the same flat `UDTReferenceLayer` shape so
+// downstream (resolver, engine) is unchanged.
 
-import { data, seed, GLYPHS, TOWER_LIGHT_SEQUENCES, TOWER_AUDIO_LIBRARY } from 'ultimatedarktower';
-
-const { FOE_BY_ID, ADVERSARY_ROSTER, ALL_FOES, FOES } = data.foes;
-const { HEROES, HERO_BY_ID } = data.heroes;
-const {
+import {
+  FOE_BY_ID,
+  ADVERSARY_ROSTER,
+  ALL_FOES,
+  FOES,
+  HEROES,
+  HERO_BY_ID,
   BOARD_LOCATIONS,
   BOARD_LOCATION_BY_NAME,
   BOARD_ANCHORS,
   BOARD_ADJACENCY,
   BOARD_IMAGE_INFO,
-} = data.board;
-const { TIER1_FOES, TIER2_FOES, TIER3_FOES, ADVERSARIES, ALLIES } = seed;
+  GLYPHS,
+  TOWER_LIGHT_SEQUENCES,
+  TOWER_AUDIO_LIBRARY,
+  TIER1_FOES,
+  TIER2_FOES,
+  TIER3_FOES,
+  ADVERSARIES,
+  ALLIES,
+  type Foe,
+  type FoeId,
+  type FoeName,
+  type FoeLevel,
+  type Hero,
+  type HeroId,
+  type BoardLocation,
+  type BoardKingdom,
+  type Tier1Foe,
+  type Tier2Foe,
+  type Tier3Foe,
+  type Adversary,
+  type Ally,
+  type SoundCategory,
+} from 'ultimatedarktowerdata';
+import type { SealIdentifier } from 'ultimatedarktower';
 
-export type Foe = data.foes.Foe;
-export type FoeId = data.foes.FoeId;
-export type FoeName = data.foes.FoeName;
-export type FoeLevel = data.foes.FoeLevel;
-export type Hero = data.heroes.Hero;
-export type HeroId = data.heroes.HeroId;
-export type BoardLocation = data.board.BoardLocation;
-export type BoardKingdom = data.board.BoardKingdom;
-export type Tier1Foe = seed.Tier1Foe;
-export type Tier2Foe = seed.Tier2Foe;
-export type Tier3Foe = seed.Tier3Foe;
-export type Adversary = seed.Adversary;
-export type Ally = seed.Ally;
-export type { SoundCategory, SealIdentifier } from 'ultimatedarktower';
+export type {
+  Foe,
+  FoeId,
+  FoeName,
+  FoeLevel,
+  Hero,
+  HeroId,
+  BoardLocation,
+  BoardKingdom,
+  Tier1Foe,
+  Tier2Foe,
+  Tier3Foe,
+  Adversary,
+  Ally,
+  SoundCategory,
+  SealIdentifier,
+};
 
 export interface UDTReferenceLayer {
   foeById: typeof FOE_BY_ID;
@@ -45,8 +75,7 @@ export interface UDTReferenceLayer {
   boardLocationByName: typeof BOARD_LOCATION_BY_NAME;
   /** Layout anchors / movement graph / image metadata for the built-in RtDT board. Exposed so
    *  browser consumers (the Creator's RtDT board preset) can read them without importing
-   *  `ultimatedarktower` — or `ultimatedarktowerboard`, whose entry re-exports it — directly.
-   *  Both drag UDT's Node-only BLE stack (`@stoprocent/noble`) into a browser bundle. */
+   *  `ultimatedarktowerdata` — or `ultimatedarktowerboard`, whose entry re-exports it — directly. */
   boardAnchors: typeof BOARD_ANCHORS;
   boardAdjacency: typeof BOARD_ADJACENCY;
   boardImageInfo: typeof BOARD_IMAGE_INFO;

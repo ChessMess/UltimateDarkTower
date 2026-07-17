@@ -17,7 +17,8 @@
   "author": "ChessMess",
   "license": "MIT",
   "dependencies": {
-    "ultimatedarktower": "workspace:^"
+    "ultimatedarktower": "workspace:^",
+    "ultimatedarktowerdata": "workspace:*"
   },
   "devDependencies": {
     "globals": "^15.0.0",

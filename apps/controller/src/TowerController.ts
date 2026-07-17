@@ -9,12 +9,8 @@ import {
   type BaseLight,
   type BaseLightLevel,
   type SealIdentifier,
-  type Glyphs,
-  TOWER_AUDIO_LIBRARY,
-  TOWER_LIGHT_SEQUENCES,
   LIGHT_EFFECTS,
   TOWER_LAYERS,
-  GLYPHS,
   VOLUME_DESCRIPTIONS,
   VOLUME_ICONS,
   // Light mapping — these were copied into this file verbatim while they were private
@@ -25,6 +21,12 @@ import {
   getLedgeLightIndexForSide,
   getBaseLightIndexForSide,
 } from 'ultimatedarktower';
+import {
+  type Glyphs,
+  TOWER_AUDIO_LIBRARY,
+  TOWER_LIGHT_SEQUENCES,
+  GLYPHS,
+} from 'ultimatedarktowerdata';
 import {
   logger,
   DOMOutput,

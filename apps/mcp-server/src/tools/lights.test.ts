@@ -13,7 +13,7 @@
  */
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktower';
+import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 
 import { registerLightTools } from './lights.js';
 import { createHarness, type Harness } from '../test-support/mcpHarness.js';

@@ -10,9 +10,10 @@
  * are sent to the renderer over IPC).
  *
  * This module imports only `ultimatedarktowerrelay-shared` (the byte decoder /
- * `LogEntry` type) and `ultimatedarktower` (constants for human-readable names) —
- * it does NOT touch the BLE-bearing parts of `core` (TowerEmulator → bleno). Import it
- * via the `ultimatedarktowerrelay-core/dist/logAnalysis` subpath (NOT the `core`
+ * `LogEntry` type) and `ultimatedarktowerdata` (constants for human-readable names —
+ * zero dependencies, no Bluetooth as of v6.0.0) — it does NOT touch the BLE-bearing
+ * parts of `core` (TowerEmulator → bleno). Import it via the
+ * `ultimatedarktowerrelay-core/dist/logAnalysis` subpath (NOT the `core`
  * barrel) when you need to keep a log reader Bluetooth-free, exactly as
  * `replayEvents` does for `eventLog`.
  */
@@ -23,7 +24,7 @@ import {
   decodeCommand,
   formatLogEntry,
 } from 'ultimatedarktowerrelay-shared';
-import { TOWER_LIGHT_SEQUENCES, TOWER_AUDIO_LIBRARY } from 'ultimatedarktower';
+import { TOWER_LIGHT_SEQUENCES, TOWER_AUDIO_LIBRARY } from 'ultimatedarktowerdata';
 
 // ---------------------------------------------------------------------------
 // Reverse lookup maps from UDT constants

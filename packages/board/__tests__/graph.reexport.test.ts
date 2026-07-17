@@ -9,7 +9,7 @@ import {
 } from '../src/index';
 
 describe('UDT data re-exports', () => {
-  it('re-exports BOARD_LOCATIONS from ultimatedarktower', () => {
+  it('re-exports BOARD_LOCATIONS from ultimatedarktowerdata', () => {
     expect(Array.isArray(BOARD_LOCATIONS)).toBe(true);
     expect(BOARD_LOCATIONS.length).toBeGreaterThan(0);
   });

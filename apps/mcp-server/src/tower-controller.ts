@@ -12,9 +12,9 @@ import {
   Lights,
   TowerSide,
   SealIdentifier,
-  Glyphs,
   LogOutput,
 } from 'ultimatedarktower';
+import { Glyphs } from 'ultimatedarktowerdata';
 
 // ---------------------------------------------------------------------------
 // TowerState helpers

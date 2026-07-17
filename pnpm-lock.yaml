@@ -63,6 +63,9 @@ importers:
       ultimatedarktower:
         specifier: workspace:^
         version: link:../../packages/core
+      ultimatedarktowerdata:
+        specifier: workspace:*
+        version: link:../../packages/game-data
       ultimatedarktowerdisplay:
         specifier: workspace:^
         version: link:../../packages/display
@@ -194,6 +197,9 @@ importers:
       ultimatedarktowerboard:
         specifier: workspace:^
         version: link:../../packages/board
+      ultimatedarktowerdata:
+        specifier: workspace:*
+        version: link:../../packages/game-data
       ultimatedarktowerdisplay:
         specifier: workspace:^
         version: link:../../packages/display
@@ -252,6 +258,9 @@ importers:
       ultimatedarktower:
         specifier: workspace:^
         version: link:../../packages/core
+      ultimatedarktowerdata:
+        specifier: workspace:*
+        version: link:../../packages/game-data
     devDependencies:
       globals:
         specifier: ^15.0.0
@@ -283,6 +292,9 @@ importers:
       ultimatedarktower:
         specifier: workspace:^
         version: link:../../packages/core
+      ultimatedarktowerdata:
+        specifier: workspace:*
+        version: link:../../packages/game-data
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -467,9 +479,9 @@ importers:
 
   apps/seed:
     dependencies:
-      ultimatedarktower:
-        specifier: workspace:^
-        version: link:../../packages/core
+      ultimatedarktowerdata:
+        specifier: workspace:*
+        version: link:../../packages/game-data
     devDependencies:
       globals:
         specifier: ^15.0.0
@@ -520,6 +532,9 @@ importers:
 
   packages/board:
     dependencies:
+      ultimatedarktowerdata:
+        specifier: workspace:*
+        version: link:../game-data
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -535,7 +550,7 @@ importers:
         version: 3.15.0
       jest:
         specifier: ^29.7.0
-        version: 29.7.0(@types/node@26.1.1)(ts-node@10.9.2(@types/node@26.1.1)(typescript@5.9.3))
+        version: 29.7.0(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3))
       jest-environment-jsdom:
         specifier: ^29.7.0
         version: 29.7.0
@@ -550,13 +565,10 @@ importers:
         version: 0.185.1
       ts-jest:
         specifier: ^29.1.0
-        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.1)(jest-util@30.4.1)(jest@29.7.0(@types/node@26.1.1)(ts-node@10.9.2(@types/node@26.1.1)(typescript@5.9.3)))(typescript@5.9.3)
+        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.1)(jest-util@30.4.1)(jest@29.7.0(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3)))(typescript@5.9.3)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
-      ultimatedarktower:
-        specifier: workspace:^
-        version: link:../core
       ultimatedarktowerdisplay:
         specifier: workspace:^
         version: link:../display
@@ -565,6 +577,10 @@ importers:
         version: 8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
 
   packages/core:
+    dependencies:
+      ultimatedarktowerdata:
+        specifier: workspace:*
+        version: link:../game-data
     devDependencies:
       '@stoprocent/noble':
         specifier: ^2.3.17
@@ -614,6 +630,9 @@ importers:
       ultimatedarktowerboard:
         specifier: workspace:^
         version: link:../board
+      ultimatedarktowerdata:
+        specifier: workspace:*
+        version: link:../game-data
       ultimatedarktowerdisplay:
         specifier: workspace:^
         version: link:../display
@@ -665,6 +684,9 @@ importers:
 
   packages/display:
     dependencies:
+      ultimatedarktowerdata:
+        specifier: workspace:*
+        version: link:../game-data
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -683,7 +705,7 @@ importers:
         version: 3.15.0
       jest:
         specifier: ^29.7.0
-        version: 29.7.0(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3))
+        version: 29.7.0(@types/node@26.1.1)(ts-node@10.9.2(@types/node@26.1.1)(typescript@5.9.3))
       jest-environment-jsdom:
         specifier: ^29.7.0
         version: 29.7.0
@@ -695,7 +717,7 @@ importers:
         version: 0.185.1
       ts-jest:
         specifier: ^29.1.0
-        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.1)(jest-util@30.4.1)(jest@29.7.0(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3)))(typescript@5.9.3)
+        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.1)(jest-util@30.4.1)(jest@29.7.0(@types/node@26.1.1)(ts-node@10.9.2(@types/node@26.1.1)(typescript@5.9.3)))(typescript@5.9.3)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -705,6 +727,18 @@ importers:
       vite:
         specifier: ^8.0.0
         version: 8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
+
+  packages/game-data:
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.0
+        version: 29.5.14
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@26.1.1)(ts-node@10.9.2(@types/node@26.1.1)(typescript@5.9.3))
+      ts-jest:
+        specifier: ^29.1.0
+        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.1)(jest-util@30.4.1)(jest@29.7.0(@types/node@26.1.1)(ts-node@10.9.2(@types/node@26.1.1)(typescript@5.9.3)))(typescript@5.9.3)
 
   packages/relay-client:
     dependencies:
@@ -730,6 +764,9 @@ importers:
       ultimatedarktower:
         specifier: workspace:^
         version: link:../core
+      ultimatedarktowerdata:
+        specifier: workspace:*
+        version: link:../game-data
       ultimatedarktowerrelay-shared:
         specifier: workspace:^
         version: link:../relay-shared

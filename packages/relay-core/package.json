@@ -50,6 +50,7 @@
     "ultimatedarktowerrelay-shared": "workspace:^",
     "@stoprocent/bleno": "^0.12.4",
     "ultimatedarktower": "workspace:^",
+    "ultimatedarktowerdata": "workspace:*",
     "ws": "^8.18.0"
   },
   "optionalDependencies": {

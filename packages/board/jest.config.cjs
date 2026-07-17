@@ -21,10 +21,6 @@ module.exports = {
   // Tower3DView in the plugin integration test. Ported from Display's harness.
   setupFiles: ['<rootDir>/__tests__/setup.js'],
   moduleNameMapper: {
-    // ultimatedarktower's ESM build uses createRequire (unavailable under Jest's
-    // CJS transform); map to its CJS build, the way Display's jest config does.
-    '^ultimatedarktower$': '<rootDir>/node_modules/ultimatedarktower/dist/src/index.js',
-
     // Plugin tests construct a REAL Tower3DView. Display's dist is valid CJS that
     // `require()`s three/addons/gsap as externals, so mock those to run WebGL-free
     // in jsdom (mocks ported from Display's test harness). Pin Display to its CJS

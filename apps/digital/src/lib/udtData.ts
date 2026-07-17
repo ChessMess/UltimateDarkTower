@@ -1,24 +1,31 @@
 /**
- * Local re-export shim for the reference data this app consumes from `ultimatedarktower`.
+ * Local re-export shim for the reference data this app consumes.
  *
- * As of UDT v5.0.0 that data moved off the flat root API into the `data` / `seed`
- * namespaces. This shim destructures the members we use back to flat names so the rest
- * of the app keeps importing them unchanged — just from here instead of the package root.
+ * As of v6.0.0 this data moved out of `ultimatedarktower` into `ultimatedarktowerdata` — a
+ * zero-dependency package with no Bluetooth, exported flat (no more `data` / `seed`
+ * namespaces). This shim exists so the rest of the app keeps importing these names
+ * unchanged — just from here instead of directly from the data package.
  * (Tower-control symbols like `TowerState` / `createDefaultTowerState` are unchanged and
  * should still be imported directly from `'ultimatedarktower'`.)
  */
-import { data, seed } from 'ultimatedarktower';
+export {
+  // Board geometry.
+  BOARD_LOCATIONS,
 
-// Board geometry.
-export const { BOARD_LOCATIONS } = data.board;
+  // Hero roster.
+  HEROES,
+  HERO_BY_ID,
 
-// Hero roster.
-export const { HEROES, HERO_BY_ID } = data.heroes;
+  // Foe status + foe/adversary metadata.
+  FOES,
+  FOE_BY_ID,
+  FOE_BY_NAME,
+  ADVERSARY_ROSTER,
+  FOE_STATUSES,
 
-// Foe status + foe/adversary metadata.
-export const { FOES, FOE_BY_ID, FOE_BY_NAME, ADVERSARY_ROSTER, FOE_STATUSES } = data.foes;
-
-// Seed encode/decode.
-export const { decodeSeed, createSeed } = seed;
-export type Difficulty = seed.Difficulty;
-export type SeedConfig = seed.SeedConfig;
+  // Seed encode/decode.
+  decodeSeed,
+  createSeed,
+  type Difficulty,
+  type SeedConfig,
+} from 'ultimatedarktowerdata';

@@ -6,9 +6,10 @@ const exampleDir = resolve(__dirname, 'example');
 
 // Standalone app build for the GitHub Pages demo. Output goes to example/dist.
 //
-// The core barrel re-exports data from `ultimatedarktower`, whose ESM build uses
-// `createRequire` (which browsers can't run). Alias it to its CJS build and
-// pre-bundle it, exactly as Display's example config does.
+// v6.0.0: the core barrel's re-exported data now comes from `ultimatedarktowerdata` — a
+// plain zero-dependency CJS/ESM package with no browser-hostile `createRequire` banner —
+// so none of the alias/pre-bundle/commonjsOptions workarounds `ultimatedarktower` needed
+// are required here anymore.
 //
 // The demo composes the full board: the 3D board (TowerRenderView + Board3DPlugin via
 // Display 0.9's `anchorToWorld`) alongside the 2D map, the text readout, the shared focus
@@ -23,16 +24,10 @@ export default defineConfig({
   // Dev-only: backs the Token Art Forge tool (`/tokens.html`) with read/list/save endpoints.
   plugins: [tokenArtDevPlugin({ exampleDir })],
   resolve: {
-    alias: {
-      ultimatedarktower: resolve(__dirname, 'node_modules/ultimatedarktower/dist/src/index.js'),
-    },
     // Single `three` instance shared with the file-linked Display package — the
     // 3D plugin builds Object3Ds with the consumer's `three`, so a duplicate
     // copy would silently fail to render (see ROADMAP §2 "single three").
     dedupe: ['three'],
-  },
-  optimizeDeps: {
-    include: ['ultimatedarktower'],
   },
   build: {
     outDir: resolve(__dirname, 'example/dist'),
@@ -46,15 +41,6 @@ export default defineConfig({
         designer: resolve(exampleDir, 'token-designer.html'),
         locationMarker: resolve(exampleDir, 'location-marker.html'),
       },
-    },
-    commonjsOptions: {
-      // `ultimatedarktower` is a symlinked sibling that resolves OUTSIDE node_modules,
-      // so Rollup's commonjs plugin skips it by default and can't see its CJS named
-      // exports (re-exported via Object.defineProperty). Opt it in explicitly so the
-      // production example build resolves BOARD_LOCATIONS/BOARD_ANCHORS/etc.
-      // In the monorepo the alias resolves to packages/core/dist (a realpath outside
-      // node_modules that no longer contains "ultimatedarktower"), so match it too.
-      include: [/ultimatedarktower/i, /node_modules/, /packages\/core/],
     },
   },
 });

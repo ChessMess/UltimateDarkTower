@@ -50,7 +50,7 @@ A complete browser game built on top of the library. You pick a glyph, the tower
 
 - A real game loop on top of `UltimateDarkTower` — turn order, win conditions, persistent score across rounds.
 - Reading drum positions back into game logic via `getCurrentDrumPosition`.
-- Using the seed parser ([SEED_FORMAT.md](SEED_FORMAT.md)) for reproducible game state.
+- Using the seed parser ([`ultimatedarktowerdata`](../../game-data), see [SEED_FORMAT.md](../../game-data/docs/SEED_FORMAT.md)) for reproducible game state.
 - Glyph-position tracking informing UI state.
 - A self-contained example of pairing tower control with arbitrary application logic.
 

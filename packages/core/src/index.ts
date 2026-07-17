@@ -67,15 +67,6 @@ export type {
 } from './udtDiagnostics';
 export { IndexedDBSink } from './sinks/IndexedDBSink';
 
-// Game / board reference data — grouped by domain sub-namespaces (heroes, monuments, foes,
-// board, content, inventory). e.g. data.heroes.HEROES, data.board.BOARD_LOCATIONS,
-// data.content.HEROES (gameplay), data.inventory.expansions. See docs/api/board-data.md.
-export * as data from './data';
-
-// Seed encode/decode + RNG subsystem. e.g. seed.decodeSeed(...), seed.TIER1_FOES,
-// seed.SystemRandom. See docs/api/seed.md.
-export * as seed from './seed';
-
 // For convenience, also export as default
 import UltimateDarkTower from './UltimateDarkTower';
 export default UltimateDarkTower;

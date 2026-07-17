@@ -145,7 +145,7 @@ Identity / value types (all `string`-based; the board never validates them):
   roster _identity_ id; see the note in [UDT re-exports](#udt-re-exports)).
 - **`SpaceMarker`** — a per-space overlay; an open set across expansions (`'wasteland'`, `'power-skull'`,
   …). The literal members are documentation; the type is `string`.
-- **`FoeStatus`** — `'ready' | 'savage' | 'lethal'`. Re-exported from `ultimatedarktower`.
+- **`FoeStatus`** — `'ready' | 'savage' | 'lethal'`. Re-exported from `ultimatedarktowerdata`.
 
 ### `createDefaultBoardState()`
 
@@ -643,9 +643,10 @@ location }`.
 
 ## UDT re-exports
 
-Static board data + rosters from `ultimatedarktower` (≥ 4.1.0), re-exported here (never vendored) so
-consumers get them from this package too. Documented upstream — see the
-[`ultimatedarktower` API docs](https://github.com/ChessMess/UltimateDarkTower/tree/main/docs/api).
+Static board data + rosters from `ultimatedarktowerdata` (≥ 1.0.0; a zero-dependency, Bluetooth-free
+package split out of `ultimatedarktower` in v6.0.0), re-exported here (never vendored) so
+consumers get them from this package too. Documented upstream — see
+[`ultimatedarktowerdata`'s docs](https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/game-data/docs).
 
 | Re-export                                                                          | Kind           | Purpose                                                                                                                                                                                                                                                                                                                                                                            |
 | ---------------------------------------------------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

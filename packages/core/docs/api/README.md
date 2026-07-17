@@ -16,9 +16,12 @@ The complete API surface of UltimateDarkTower, split by topic. New to the librar
 | **[State](state.md)**             | Tower state types, glyph tracking, seal management, low-level state pack/unpack                                                        |
 | **[Events](events.md)**           | Connection, calibration, skull drop, battery callbacks                                                                                 |
 | **[Logging](logging.md)**         | Logger configuration, log levels, console / DOM / buffer outputs, response logging                                                     |
-| **[Seed parser](seed.md)**        | Decode / encode / validate game seeds, `SystemRandom` PRNG replica                                                                     |
 | **[Diagnostics](diagnostics.md)** | Flight-recorder API (cross-link to [BLE_DIAGNOSTICS.md](../BLE_DIAGNOSTICS.md) for the conceptual doc)                                 |
-| **[Board data](board-data.md)**   | Board geometry (locations / anchors / adjacency + graph helpers) and the hero / monument / foe reference rosters                       |
+
+> **v6.0.0:** the seed parser and board/hero/foe reference data moved to the
+> [`ultimatedarktowerdata`](../../../game-data) package — see its
+> [seed](../../../game-data/docs/seed.md) and [board data](../../../game-data/docs/board-data.md)
+> docs. `ultimatedarktower` no longer ships them.
 
 ---
 
@@ -113,5 +116,5 @@ Assignable callback properties (`onTowerConnect`, `onTowerDisconnect`, `onCalibr
 - [ARCHITECTURE.md](../ARCHITECTURE.md) — how the layers fit together
 - [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) — common issues
 - [BLE_DIAGNOSTICS.md](../BLE_DIAGNOSTICS.md) — the flight recorder, conceptual
-- [SEED_FORMAT.md](../SEED_FORMAT.md) — game seed spec
+- [SEED_FORMAT.md](../../../game-data/docs/SEED_FORMAT.md) — game seed spec (now in `ultimatedarktowerdata`)
 - [TOWER_TECH_NOTES.md](../TOWER_TECH_NOTES.md) — wire-level protocol, LED channel map, BLE services

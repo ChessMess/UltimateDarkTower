@@ -57,7 +57,7 @@ collapse/close it; the **summary** updates live. To add a token: in the **palett
 adversary / marker / skull), click **Add**, then click a space on the 2D map **or** the 3D board (or pick
 from the location dropdown) and **Confirm** — both renderers feed the same shared `selection`/`locationPick`
 stores the UI reads. The **inspector** edits/removes whatever is selected. The Hero and Monument categories
-come from UDT's re-exported `HEROES` / `MONUMENTS` rosters (heroes have no art → programmatic fallback).
+come from `ultimatedarktowerdata`'s re-exported `HEROES` / `MONUMENTS` rosters (heroes have no art → programmatic fallback).
 
 ## 3D path
 
@@ -66,8 +66,9 @@ The 3D board is owned by the stage (it builds `TowerRenderView` + `attachBoard3D
 It needs a tower GLB: `example/public/tower.glb` (copied from Display, example-only — excluded from the npm
 tarball by `files: ["dist"]`). The stage passes `modelUrl: './tower.glb'`, so the 3D stack is fetched as a
 separate chunk on first use — visible in the network panel as a distinct `stageTower-*.js` load. The example
-Vite config aliases `ultimatedarktower` to its CJS build, `optimizeDeps.include`s it, and `resolve.dedupe`s
-`three` so the plugin and Display share one `three` instance.
+Vite config `resolve.dedupe`s `three` so the plugin and Display share one `three` instance (no alias or
+`optimizeDeps` workaround is needed for the board data itself — `ultimatedarktowerdata` has no
+browser-hostile build step to route around).
 
 The example keeps the **focus controls canonical** so `All` can show the whole board: the 3D camera always
 faces a side (no `all` equivalent), so the plugin's `onFocusChange` is logged rather than fanned back into

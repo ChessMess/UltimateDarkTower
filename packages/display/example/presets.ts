@@ -1,10 +1,6 @@
 import type { TowerState } from 'ultimatedarktower';
-import {
-  createDefaultTowerState,
-  LIGHT_EFFECTS,
-  TOWER_AUDIO_LIBRARY,
-  TOWER_COMMANDS,
-} from 'ultimatedarktower';
+import { createDefaultTowerState, LIGHT_EFFECTS, TOWER_COMMANDS } from 'ultimatedarktower';
+import { TOWER_AUDIO_LIBRARY } from 'ultimatedarktowerdata';
 import { DEFAULT_SEQUENCE_AUDIO_MAP } from '../src/index';
 import type { AppliedTowerState } from '../src/index';
 

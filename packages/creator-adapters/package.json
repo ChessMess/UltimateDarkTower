@@ -18,6 +18,7 @@
     "@udtc/engine": "workspace:*",
     "@udtc/schema": "workspace:*",
     "ultimatedarktower": "workspace:^",
+    "ultimatedarktowerdata": "workspace:*",
     "ultimatedarktowerdisplay": "workspace:^",
     "ultimatedarktowerboard": "workspace:^"
   },
