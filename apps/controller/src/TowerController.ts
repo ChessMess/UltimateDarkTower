@@ -14,11 +14,16 @@ import {
   TOWER_LIGHT_SEQUENCES,
   LIGHT_EFFECTS,
   TOWER_LAYERS,
-  RING_LIGHT_POSITIONS,
-  LEDGE_BASE_LIGHT_POSITIONS,
   GLYPHS,
   VOLUME_DESCRIPTIONS,
   VOLUME_ICONS,
+  // Light mapping — these were copied into this file verbatim while they were private
+  // to the library, and the copy drifted (the ledge helper was widened to `string` to
+  // swallow corner names the library types as TowerCorner).
+  getTowerLayerForLevel,
+  getLightIndexForSide,
+  getLedgeLightIndexForSide,
+  getBaseLightIndexForSide,
 } from 'ultimatedarktower';
 import {
   logger,
@@ -501,10 +506,21 @@ async function calibrate() {
   if (currentConnectionMode === 'emulator') {
     postCalibrateToTowerEmulatorWindow();
   }
-  await Tower.calibrate();
-  // Hiding the message is handled by onCalibrationComplete (normal path) and
-  // the self-heal check in onTowerStateUpdate (race-condition fallback) —
-  // both already run by the time this await resolves.
+  try {
+    await Tower.calibrate();
+    // Hiding the message is handled by onCalibrationComplete (normal path) and
+    // the self-heal check in onTowerStateUpdate (race-condition fallback) —
+    // both already run by the time this await resolves.
+  } catch (error) {
+    // Only the failure path needs cleanup here — on success the two paths above
+    // have already re-enabled the controls, and a `finally` would race them.
+    // Without this, a rejection while still connected (e.g. the command queue's
+    // timeout) leaves the fieldsets disabled with no way to retry but a reload,
+    // because the self-heal only fires once the drums report fully calibrated.
+    logger.error(`Calibration failed: ${error}`, '[TC]');
+    setCalibrationControlsDisabled(false);
+    document.getElementById('calibrating-message')?.classList.add('hidden');
+  }
 }
 
 const onCalibrationComplete = () => {
@@ -699,21 +715,18 @@ const addDifferentialReading = (reading: DifferentialReading) => {
   }
 };
 
-// Set up custom tower response handler for differential readings
-// This will be called after tower connection is established
+// Feed raw tower packets to the differential-readings chart. Called from
+// onTowerConnected, which fires on every (re)connect.
+//
+// This is an assignment, not a wrapper: the library invokes onTowerResponse after its
+// own internal processing (queue resolution, state tracking), so there is nothing to
+// chain to, and assigning is idempotent. It previously monkey-patched the private
+// bleConnection.callbacks and chained to the previous handler — but connectToTower
+// only builds a new Tower when the connection mode changes, so a BLE→BLE reconnect
+// re-wrapped the already-wrapped callback. After two reconnects every packet was
+// recorded three times, skewing the chart's mean/min/max over triplicated data.
 const setupDifferentialReadingsHandler = () => {
-  if ((Tower as any).bleConnection && (Tower as any).bleConnection.callbacks) {
-    const originalCallback = (Tower as any).bleConnection.callbacks.onTowerResponse;
-    (Tower as any).bleConnection.callbacks.onTowerResponse = (response: Uint8Array) => {
-      // Call the original callback first
-      if (originalCallback) {
-        originalCallback(response);
-      }
-
-      // Handle differential readings
-      handleTowerResponse(response);
-    };
-  }
+  Tower.onTowerResponse = handleTowerResponse;
 };
 
 const updateCalibrationStatus = () => {
@@ -818,12 +831,30 @@ const updateDrumDropdowns = () => {
   }
 };
 
-async function resetSkullCount() {
+/**
+ * Runs a tower command from a DOM handler.
+ *
+ * These are invoked bare from inline `onclick=` attributes, which cannot await. The
+ * library throws when the tower is disconnected, so an un-awaited call surfaced only
+ * as `Uncaught (in promise)` in the console — the user clicked a button and nothing
+ * happened, silently. Checking the connection first and reporting failures to the log
+ * pane keeps every command path on the same footing as saveState/loadState.
+ */
+function runTowerCommand(label: string, run: () => Promise<unknown>): void {
   if (!Tower.isConnected) {
+    logger.warn(`Cannot ${label}: tower is not connected`, '[TC]');
     return;
   }
-  Tower.resetTowerSkullCount();
-  updateSkullDropCount(0);
+  void run().catch((error) => {
+    logger.error(`Failed to ${label}: ${error}`, '[TC]');
+  });
+}
+
+function resetSkullCount() {
+  runTowerCommand('reset skull count', async () => {
+    await Tower.resetTowerSkullCount();
+    updateSkullDropCount(0);
+  });
 }
 
 const playSound = () => {
@@ -837,22 +868,24 @@ const playSound = () => {
 
   // Use the current local volume for playing the sound
   logger.info(`Playing sound ${soundValue} at volume ${localVolume}`, '[Audio]');
-  Tower.playSoundStateful(soundValue, false, localVolume);
+  runTowerCommand('play sound', () => Tower.playSoundStateful(soundValue, false, localVolume));
 };
 
 const overrides = () => {
   const select = document.getElementById('lightOverrideDropDown') as HTMLInputElement;
-  Tower.lightOverrides(Number(select.value));
+  runTowerCommand('apply light override', () => Tower.lightOverrides(Number(select.value)));
 };
 
 const rotate = () => {
   const top = document.getElementById('top') as HTMLInputElement;
   const middle = document.getElementById('middle') as HTMLInputElement;
   const bottom = document.getElementById('bottom') as HTMLInputElement;
-  Tower.rotateWithState(
-    top.value as TowerSide,
-    middle.value as TowerSide,
-    bottom.value as TowerSide,
+  runTowerCommand('rotate drums', () =>
+    Tower.rotateWithState(
+      top.value as TowerSide,
+      middle.value as TowerSide,
+      bottom.value as TowerSide,
+    ),
   );
 };
 
@@ -865,12 +898,7 @@ const randomizeLevels = () => {
     return;
   }
 
-  if (!Tower.isConnected) {
-    logger.warn('Tower is not connected', '[TC]');
-    return;
-  }
-
-  Tower.randomRotateLevels(levelValue);
+  runTowerCommand('randomize levels', () => Tower.randomRotateLevels(levelValue));
 };
 
 const breakSeal = async () => {
@@ -906,15 +934,18 @@ const breakSeal = async () => {
 
   const sealIdentifier = sealMap[sealValue];
   if (sealIdentifier) {
-    await Tower.breakSeal(sealIdentifier, localVolume);
-    logger.info(`Broke seal at ${sealIdentifier.level}-${sealIdentifier.side}`, '[TC]');
+    runTowerCommand('break seal', async () => {
+      await Tower.breakSeal(sealIdentifier, localVolume);
+      logger.info(`Broke seal at ${sealIdentifier.level}-${sealIdentifier.side}`, '[TC]');
 
-    // Update the visual seal grid
-    updateSealGrid(sealIdentifier, true);
-    postSealsToTowerEmulatorWindow();
+      // Update the visual seal grid — only after the command actually lands, so a
+      // failed break doesn't leave the grid showing a seal that is still intact.
+      updateSealGrid(sealIdentifier, true);
+      postSealsToTowerEmulatorWindow();
 
-    // Start cooldown and disable button
-    startBreakSealCooldown();
+      // Start cooldown and disable button
+      startBreakSealCooldown();
+    });
   }
 };
 
@@ -1001,9 +1032,11 @@ const singleLight = async (el: HTMLInputElement) => {
   // Get current tower state
   const currentState = Tower.getCurrentTowerState();
 
-  // Get light attributes
+  // Get light attributes. data-light-location holds a cardinal side for doorway/base
+  // rows but an ordinal corner for ledge rows, so it is narrowed per branch below
+  // rather than cast once — a blanket `as TowerSide` here was wrong for every ledge.
   const lightType = el.getAttribute('data-light-type');
-  const lightLocation = el.getAttribute('data-light-location') as TowerSide;
+  const lightLocation = el.getAttribute('data-light-location');
   const lightLevel = el.getAttribute('data-light-level') as TowerLevels;
   const lightBaseLocation = el.getAttribute('data-light-base-location');
 
@@ -1014,15 +1047,15 @@ const singleLight = async (el: HTMLInputElement) => {
   if (lightType === 'doorway') {
     // Doorway lights: map level to layer and side to light index
     layerIndex = getTowerLayerForLevel(lightLevel);
-    lightIndex = getLightIndexForSide(lightLocation);
+    lightIndex = getLightIndexForSide(lightLocation as TowerSide);
   } else if (lightType === 'ledge') {
-    // Ledge lights
+    // Ledge lights are addressed by corner (northeast, …)
     layerIndex = TOWER_LAYERS.LEDGE;
-    lightIndex = getLedgeLightIndexForSide(lightLocation);
+    lightIndex = getLedgeLightIndexForSide(lightLocation as TowerCorner);
   } else if (lightType === 'base') {
     // Base lights: map base location to layer
     layerIndex = lightBaseLocation === 'b' ? TOWER_LAYERS.BASE2 : TOWER_LAYERS.BASE1;
-    lightIndex = getBaseLightIndexForSide(lightLocation);
+    lightIndex = getBaseLightIndexForSide(lightLocation as TowerSide);
   } else {
     console.error('Unknown light type:', lightType);
     return;
@@ -1040,67 +1073,6 @@ const singleLight = async (el: HTMLInputElement) => {
   }
 };
 
-// Helper functions for light mapping (same logic as in udtTowerCommands.ts)
-const getTowerLayerForLevel = (level: TowerLevels): number => {
-  switch (level) {
-    case 'top':
-      return TOWER_LAYERS.TOP_RING;
-    case 'middle':
-      return TOWER_LAYERS.MIDDLE_RING;
-    case 'bottom':
-      return TOWER_LAYERS.BOTTOM_RING;
-    default:
-      return TOWER_LAYERS.TOP_RING;
-  }
-};
-
-const getLightIndexForSide = (side: TowerSide): number => {
-  switch (side) {
-    case 'north':
-      return RING_LIGHT_POSITIONS.NORTH;
-    case 'east':
-      return RING_LIGHT_POSITIONS.EAST;
-    case 'south':
-      return RING_LIGHT_POSITIONS.SOUTH;
-    case 'west':
-      return RING_LIGHT_POSITIONS.WEST;
-    default:
-      return RING_LIGHT_POSITIONS.NORTH;
-  }
-};
-
-const getLedgeLightIndexForSide = (side: string): number => {
-  // Map ordinal directions directly to ledge light positions
-  switch (side) {
-    case 'northeast':
-      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
-    case 'southeast':
-      return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST;
-    case 'southwest':
-      return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST;
-    case 'northwest':
-      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST;
-    default:
-      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
-  }
-};
-
-const getBaseLightIndexForSide = (side: TowerSide): number => {
-  // Map cardinal directions to ordinal positions for base lights
-  switch (side) {
-    case 'north':
-      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST; // Closest to north
-    case 'east':
-      return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_EAST; // Closest to east
-    case 'south':
-      return LEDGE_BASE_LIGHT_POSITIONS.SOUTH_WEST; // Closest to south
-    case 'west':
-      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_WEST; // Closest to west
-    default:
-      return LEDGE_BASE_LIGHT_POSITIONS.NORTH_EAST;
-  }
-};
-
 // Reverse of singleLight()'s attribute → layer/light-index mapping: reads
 // real tower state back into the light checkboxes. The checkboxes are
 // otherwise pure optimistic UI (set directly by click handlers before/without
@@ -1113,8 +1085,9 @@ const updateLightCheckboxesFromState = (state: TowerState) => {
   ) as NodeListOf<HTMLInputElement>;
 
   checkboxes.forEach((checkbox) => {
+    // Mirrors singleLight()'s narrowing: ledge rows carry corners, the rest carry sides.
     const lightType = checkbox.getAttribute('data-light-type');
-    const lightLocation = checkbox.getAttribute('data-light-location') as TowerSide;
+    const lightLocation = checkbox.getAttribute('data-light-location');
     const lightLevel = checkbox.getAttribute('data-light-level') as TowerLevels;
     const lightBaseLocation = checkbox.getAttribute('data-light-base-location');
 
@@ -1123,13 +1096,13 @@ const updateLightCheckboxesFromState = (state: TowerState) => {
 
     if (lightType === 'doorway') {
       layerIndex = getTowerLayerForLevel(lightLevel);
-      lightIndex = getLightIndexForSide(lightLocation);
+      lightIndex = getLightIndexForSide(lightLocation as TowerSide);
     } else if (lightType === 'ledge') {
       layerIndex = TOWER_LAYERS.LEDGE;
-      lightIndex = getLedgeLightIndexForSide(lightLocation);
+      lightIndex = getLedgeLightIndexForSide(lightLocation as TowerCorner);
     } else if (lightType === 'base') {
       layerIndex = lightBaseLocation === 'b' ? TOWER_LAYERS.BASE2 : TOWER_LAYERS.BASE1;
-      lightIndex = getBaseLightIndexForSide(lightLocation);
+      lightIndex = getBaseLightIndexForSide(lightLocation as TowerSide);
     } else {
       return;
     }
@@ -1165,7 +1138,7 @@ const lights = () => {
   const ledgeLights: Array<LedgeLight> = getLedgeLights();
   const baseLights: Array<BaseLight> = getBaseLights();
   const allLights = { doorway: doorwayLights, ledge: ledgeLights, base: baseLights };
-  Tower.Lights(allLights);
+  runTowerCommand('set lights', () => Tower.Lights(allLights));
 
   // A style of 'off' means every checked light was just turned off — clear the
   // checkmarks so the UI matches reality. Done after building the commands above,
@@ -1397,8 +1370,7 @@ const sealSquareClick = (element: HTMLElement) => {
     element.classList.remove('broken');
 
     // Remove from Tower's broken seals tracking
-    const sealKey = `${level}-${side}`;
-    (Tower as any).brokenSeals.delete(sealKey);
+    Tower.markSealRestored({ level: level as TowerLevels, side: side as TowerSide });
     postSealsToTowerEmulatorWindow();
 
     // Reset dropdown to default
@@ -1655,7 +1627,7 @@ const refreshGlyphPositions = () => {
     // Restore visual light states based on glyph light tracking
     // Add glyph-lit class to any glyph that has a light
     for (const glyphName of glyphLightStates) {
-      const currentPosition = Tower.getGlyphPosition(glyphName as any);
+      const currentPosition = Tower.getGlyphPosition(glyphName as Glyphs);
       if (currentPosition) {
         const level = GLYPHS[glyphName as keyof typeof GLYPHS].level;
         const cellId = `glyph-${level}-${currentPosition}`;
@@ -2250,121 +2222,17 @@ const getGlyphLevel = (glyph: string) => {
   return GLYPHS[glyph as keyof typeof GLYPHS]?.level || 'middle';
 };
 
-// Enhanced moveGlyph function with full functionality (reference/demo, currently unwired)
-const _enhancedMoveGlyph = async () => {
-  const glyphSelect = document.getElementById('glyph-select') as HTMLSelectElement;
-  const sideSelect = document.getElementById('side-select') as HTMLSelectElement;
-
-  const selectedGlyph = glyphSelect.value;
-  const targetSide = sideSelect.value;
-
-  if (!selectedGlyph || !targetSide) {
-    logger.warn('Please select a glyph and target side', '[TC]');
-    return;
-  }
-
-  try {
-    // Get current glyph position directly (more reliable than getAllGlyphPositions)
-    const currentGlyphPosition = Tower.getGlyphPosition(selectedGlyph as Glyphs);
-
-    if (!currentGlyphPosition) {
-      logger.error(
-        `Unable to find current position for ${selectedGlyph} glyph, please perform a calibration first.`,
-        '[TC]',
-      );
-      return;
-    }
-
-    // Get the fixed level for this glyph (glyphs can't change levels)
-    const glyphLevel = GLYPHS[selectedGlyph as keyof typeof GLYPHS].level;
-
-    // Calculate rotation needed to move glyph to target position
-    const sides = ['north', 'east', 'south', 'west'];
-    const currentSideIndex = sides.indexOf(currentGlyphPosition);
-    const targetSideIndex = sides.indexOf(targetSide);
-
-    if (currentSideIndex === -1 || targetSideIndex === -1) {
-      logger.error('Invalid current or target side', '[TC]');
-      return;
-    }
-
-    // Calculate clockwise rotation steps needed
-    const rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
-
-    if (rotationSteps === 0) {
-      logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, '[TC]');
-      return;
-    }
-
-    // Calculate what drum position will put the selected glyph at the target side
-    let targetDrumPosition;
-    if (glyphLevel === 'top' || glyphLevel === 'middle' || glyphLevel === 'bottom') {
-      // Calculate the drum position needed to put this specific glyph at the target side
-      const currentDrumPosition = Tower.getCurrentDrumPosition(glyphLevel);
-      const sides = ['north', 'east', 'south', 'west'];
-
-      const currentDrumIndex = sides.indexOf(currentDrumPosition);
-      const currentGlyphIndex = sides.indexOf(currentGlyphPosition);
-      const targetGlyphIndex = sides.indexOf(targetSide);
-
-      // Calculate how many steps the glyph needs to move
-      const glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
-
-      // Calculate the new drum position
-      const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
-      targetDrumPosition = sides[newDrumIndex];
-    }
-
-    // Set positions for all three drums
-    const topPosition =
-      glyphLevel === 'top' ? targetDrumPosition : Tower.getCurrentDrumPosition('top');
-    const middlePosition =
-      glyphLevel === 'middle' ? targetDrumPosition : Tower.getCurrentDrumPosition('middle');
-    const bottomPosition =
-      glyphLevel === 'bottom' ? targetDrumPosition : Tower.getCurrentDrumPosition('bottom');
-
-    logger.info(
-      `Moving ${selectedGlyph} glyph from ${currentGlyphPosition} to ${targetSide} by rotating ${glyphLevel} level (${rotationSteps} steps clockwise)`,
-      '[TC]',
-    );
-
-    // Execute the rotation with all three drum positions
-    await Tower.rotateWithState(
-      topPosition as TowerSide,
-      middlePosition as TowerSide,
-      bottomPosition as TowerSide,
-    );
-
-    // Restore lights after rotation
-    // Wait a moment for rotation to complete, then restore all lights and refresh UI
-    setTimeout(async () => {
-      try {
-        // Refresh glyph positions (this will also restore visual light states based on glyph tracking)
-        refreshGlyphPositions();
-
-        // Restore all lights on the physical tower based on current glyph positions
-        const allDoorwayLights = getCurrentDoorwayLights();
-        if (allDoorwayLights.length > 0) {
-          await Tower.Lights({ doorway: allDoorwayLights });
-        }
-      } catch (error) {
-        logger.error('Error restoring lights after glyph move: ' + error, '[TC]');
-      }
-    }, 1000);
-
-    logger.info(`Moved ${selectedGlyph} glyph to ${targetSide} position`, '[TC]');
-  } catch (error) {
-    logger.error('Error moving glyph: ' + error, '[TC]');
-  }
-};
-
 // Local volume tracking to avoid conflicts with tower state
 let localVolume = 0;
+
+// The firmware volume scale is inverted: 0 = Loud … 3 = Mute (see VOLUME_DESCRIPTIONS).
+// The `<`/`>` buttons step through that list, so volumeUp walks toward Mute.
+const MUTE_VOLUME = 3;
 
 // Volume control functions
 const volumeUp = async () => {
   try {
-    const newVolume = Math.min(localVolume + 1, 3); // Clamp to max 3
+    const newVolume = Math.min(localVolume + 1, MUTE_VOLUME); // Clamp to Mute
 
     if (newVolume === localVolume) {
       return;
@@ -2385,8 +2253,12 @@ const volumeUp = async () => {
     // Send the updated state to the tower
     await Tower.sendTowerState(newState);
 
-    // Play CardFlipPaper03 sound with new volume for feedback
-    await Tower.playSoundStateful(0x21, false, newVolume);
+    // Play CardFlipPaper03 sound with new volume for feedback — but not at Mute, where
+    // it would be inaudible anyway. (This guard used to live in volumeDown, which can
+    // only ever reach 0, so it could never fire there.)
+    if (newVolume < MUTE_VOLUME) {
+      await Tower.playSoundStateful(0x21, false, newVolume);
+    }
 
     // Update the display
     updateVolumeDisplay(newVolume);
@@ -2414,10 +2286,9 @@ const volumeDown = async () => {
     // Send the updated state to the tower
     await Tower.sendTowerState(newState);
 
-    // Play CardFlipPaper03 sound with new volume for feedback (except when going to Mute)
-    if (newVolume < 3) {
-      await Tower.playSoundStateful(0x21, false, newVolume);
-    }
+    // Play CardFlipPaper03 sound with new volume for feedback. No Mute guard needed:
+    // this path only ever walks toward 0 (Loud).
+    await Tower.playSoundStateful(0x21, false, newVolume);
 
     // Update the display
     updateVolumeDisplay(newVolume);
@@ -2682,18 +2553,19 @@ const toggleDataCollection = () => {
   isCollectingData = !isCollectingData;
   updateChartDataCollectionButton();
 
+  // Toggle response-log verbosity via the library's public accessor. This previously
+  // reached into `bleConnection.loggingConfig`, which has never existed under that
+  // name — the property is `logTowerResponseConfig` — so the guard was always falsy
+  // and neither branch ever ran. The `as any` cast is what let it compile.
+  Tower.logTowerResponseConfig = {
+    ...Tower.logTowerResponseConfig,
+    DIFFERENTIAL_READINGS: isCollectingData,
+  };
+
   if (isCollectingData) {
-    // Enable differential readings logging in the tower
-    if ((Tower as any).bleConnection && (Tower as any).bleConnection.loggingConfig) {
-      (Tower as any).bleConnection.loggingConfig.DIFFERENTIAL_READINGS = true;
-    }
     updateChartStatus('Logging differential readings...');
     logger.info('Started differential readings data collection', '[Charts]');
   } else {
-    // Disable differential readings logging to save bandwidth
-    if ((Tower as any).bleConnection && (Tower as any).bleConnection.loggingConfig) {
-      (Tower as any).bleConnection.loggingConfig.DIFFERENTIAL_READINGS = false;
-    }
     updateChartStatus('Stopped logging differential readings');
     logger.info('Stopped differential readings data collection', '[Charts]');
   }
