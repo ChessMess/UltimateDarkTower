@@ -138,12 +138,15 @@ dist/
 tools/location-marker/board.png
 
 # Claude Code configuration
-CLAUDE.md
+# CLAUDE.md files (root + per-package) are committed — see .claude/CLAUDE.md.
+# Only personal, per-checkout Claude state stays local:
+CLAUDE.local.md
+/.claude/settings.local.json
+/.claude/worktrees
 /.github/chatmodes
 /.github/prompts
 /.kiro
 /.obsidian
-/.claude/worktrees
 /manual-testing/screenshots
 /manual-testing/test-reports
 /planning
