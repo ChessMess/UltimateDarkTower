@@ -200,7 +200,7 @@ export const components = [
     dir: 'packages/game-data',
     title: 'Tower Data',
     blurb:
-      'Board locations, foes, heroes, monuments, and seed encode/decode — the canonical Return to Dark Tower reference data, with zero dependencies and no Bluetooth required.',
+      'Board locations, foes, heroes, monuments, and seed encode/decode — the canonical Return to Dark Tower reference data in strict TypeScript types.',
     category: 'library',
     demo: null,
     glyph: 'banner',
