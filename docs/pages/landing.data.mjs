@@ -151,6 +151,18 @@ export const components = [
     image: 'mcp-server.jpg',
     alt: 'Model Context Protocol — a hub wired to tools, files, APIs, and AI models',
   },
+  {
+    title: 'AI Coding Agents',
+    blurb:
+      'A GitHub Copilot custom agent for the ultimatedarktower API, plus a Claude/ChatGPT agent that drives a real tower through the MCP server.',
+    category: 'app',
+    demo: null,
+    sourceUrl: 'https://github.com/ChessMess/UltimateDarkTower/tree/main/.github/agents',
+    docsUrl: 'https://github.com/ChessMess/UltimateDarkTower/blob/main/docs/agents/README.md',
+    glyph: 'quest',
+    image: null,
+    status: 'released',
+  },
 
   // ── Libraries ──────────────────────────────────────────────────────────
   {

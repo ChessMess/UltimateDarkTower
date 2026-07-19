@@ -27,6 +27,7 @@ It is required for Node.js/Electron; browser environments use Web Bluetooth nati
 Node.js 16+ required.
 
 **Platform support:**
+
 - macOS, Windows, Linux: native Bluetooth, auto-detected
 - Browser: Web Bluetooth API, auto-detected
 - Electron: auto-detected
@@ -50,9 +51,18 @@ import {
   BluetoothTimeoutError,
 } from 'ultimatedarktower';
 import type {
-  TowerState, TowerSide, TowerLevels, TowerCorner, Glyphs,
-  Lights, DoorwayLight, LedgeLight, BaseLight, SealIdentifier,
-  ConnectionStatus, DeviceInformation,
+  TowerState,
+  TowerSide,
+  TowerLevels,
+  TowerCorner,
+  Glyphs,
+  Lights,
+  DoorwayLight,
+  LedgeLight,
+  BaseLight,
+  SealIdentifier,
+  ConnectionStatus,
+  DeviceInformation,
 } from 'ultimatedarktower';
 ```
 
@@ -71,12 +81,24 @@ class TowerController {
 
   private constructor() {
     this.tower = new UltimateDarkTower();
-    this.tower.onTowerConnect = () => { this._connected = true; };
-    this.tower.onTowerDisconnect = () => { this._connected = false; };
-    this.tower.onCalibrationComplete = () => { this._calibrated = true; };
-    this.tower.onSkullDrop = (count) => { console.log(`Skull dropped — total: ${count}`); };
-    this.tower.onBatteryLevelNotify = (mv) => { console.log(`Battery: ${mv}mV`); };
-    this.tower.onTowerStateUpdate = (newState, oldState, source) => { /* react to state */ };
+    this.tower.onTowerConnect = () => {
+      this._connected = true;
+    };
+    this.tower.onTowerDisconnect = () => {
+      this._connected = false;
+    };
+    this.tower.onCalibrationComplete = () => {
+      this._calibrated = true;
+    };
+    this.tower.onSkullDrop = (count) => {
+      console.log(`Skull dropped — total: ${count}`);
+    };
+    this.tower.onBatteryLevelNotify = (mv) => {
+      console.log(`Battery: ${mv}mV`);
+    };
+    this.tower.onTowerStateUpdate = (newState, oldState, source) => {
+      /* react to state */
+    };
   }
 
   static getInstance(): TowerController {
@@ -86,9 +108,15 @@ class TowerController {
     return TowerController.instance;
   }
 
-  get client(): UltimateDarkTower { return this.tower; }
-  get isConnected(): boolean { return this._connected; }
-  get isCalibrated(): boolean { return this._calibrated; }
+  get client(): UltimateDarkTower {
+    return this.tower;
+  }
+  get isConnected(): boolean {
+    return this._connected;
+  }
+  get isCalibrated(): boolean {
+    return this._calibrated;
+  }
 }
 ```
 
@@ -101,10 +129,10 @@ const tower = new UltimateDarkTower();
 tower.onTowerConnect = () => console.log('Connected');
 tower.onCalibrationComplete = () => console.log('Ready');
 
-await tower.connect();        // Scan and connect via BLE
-await tower.calibrate();      // REQUIRED before drum rotation — homes all 3 drums to north
-await tower.disconnect();     // Graceful disconnect
-await tower.cleanup();        // Full cleanup (use on app shutdown)
+await tower.connect(); // Scan and connect via BLE
+await tower.calibrate(); // REQUIRED before drum rotation — homes all 3 drums to north
+await tower.disconnect(); // Graceful disconnect
+await tower.cleanup(); // Full cleanup (use on app shutdown)
 
 // Health check
 const alive = await tower.isConnectedAndResponsive();
@@ -278,24 +306,24 @@ const side = TowerSideSchema.parse(userInput);
 ## Key Constants
 
 ```typescript
-LIGHT_EFFECTS        // { off: 0, on: 1, breathe: 2, breatheFast: 3, breathe50percent: 4, flicker: 5 }
-TOWER_LIGHT_SEQUENCES // { twinkle, flareThenFade, victory, defeat, dungeonIdle, ... } (19 total)
-TOWER_AUDIO_LIBRARY  // { Ashstrider: { name, value, category }, ... } (113 sounds)
-GLYPHS               // { cleanse, quest, battle, banner, reinforce } with initial positions
-VOLUME_DESCRIPTIONS  // { 0: 'Loud', 1: 'Medium', 2: 'Quiet', 3: 'Mute' }
-TOWER_LAYERS         // { TOP_RING: 0, MIDDLE_RING: 1, BOTTOM_RING: 2, LEDGE: 3, BASE1: 4, BASE2: 5 }
+LIGHT_EFFECTS; // { off: 0, on: 1, breathe: 2, breatheFast: 3, breathe50percent: 4, flicker: 5 }
+TOWER_LIGHT_SEQUENCES; // { twinkle, flareThenFade, victory, defeat, dungeonIdle, ... } (19 total)
+TOWER_AUDIO_LIBRARY; // { Ashstrider: { name, value, category }, ... } (113 sounds)
+GLYPHS; // { cleanse, quest, battle, banner, reinforce } with initial positions
+VOLUME_DESCRIPTIONS; // { 0: 'Loud', 1: 'Medium', 2: 'Quiet', 3: 'Mute' }
+TOWER_LAYERS; // { TOP_RING: 0, MIDDLE_RING: 1, BOTTOM_RING: 2, LEDGE: 3, BASE1: 4, BASE2: 5 }
 ```
 
 ## Read-Only Property Getters
 
 ```typescript
-tower.isConnected           // boolean
-tower.isCalibrated          // boolean
-tower.performingCalibration // boolean
-tower.performingLongCommand // boolean
-tower.towerSkullDropCount   // number
-tower.currentBattery        // millivolts
-tower.currentBatteryPercent // number (0–100); for a formatted string use tower.milliVoltsToPercentage(mv)
+tower.isConnected; // boolean
+tower.isCalibrated; // boolean
+tower.performingCalibration; // boolean
+tower.performingLongCommand; // boolean
+tower.towerSkullDropCount; // number
+tower.currentBattery; // millivolts
+tower.currentBatteryPercent; // number (0–100); for a formatted string use tower.milliVoltsToPercentage(mv)
 ```
 
 ## Reference: MCP Server

@@ -20,6 +20,7 @@ via the MCP server. The tower is a motorized Bluetooth-enabled device with rotat
 ## First Steps
 
 Always start a session by:
+
 1. Calling `tower_connect` to connect to the tower via Bluetooth
 2. Calling `tower_calibrate` to home all drums (required before any rotation)
 3. Calling `tower_status` to confirm the tower is connected and calibrated
@@ -30,6 +31,7 @@ and recalibration in one step.
 ## Available Tools (31 total)
 
 ### Connection (8 tools)
+
 - `tower_connect` — Connect to the tower via Bluetooth
 - `tower_disconnect` — Disconnect gracefully
 - `tower_calibrate` — Home all 3 drums to north (required before rotation)
@@ -40,11 +42,13 @@ and recalibration in one step.
 - `tower_set_connection_monitoring` — Enable/disable connection health monitoring
 
 ### Audio (3 tools)
+
 - `tower_play_sound` — Play sound by index (1–113)
 - `tower_play_sound_by_name` — Play sound by name (e.g. `"Victory"`, `"Ashstrider"`)
 - `tower_list_sounds` — List all sounds, optionally filtered by category
 
 ### Lights (5 tools)
+
 - `tower_set_lights` — Configure doorway/ledge/base LEDs with effects (off/on/breathe/breatheFast/breathe50percent/flicker)
 - `tower_set_led` — Set a single LED by layer (0–5) and index (0–3)
 - `tower_light_sequence` — Play a named light sequence by ID (1–19)
@@ -52,12 +56,14 @@ and recalibration in one step.
 - `tower_lights_off` — Turn off all LEDs immediately
 
 ### Drums (4 tools)
+
 - `tower_rotate` — Rotate all 3 drums to positions (north/south/east/west per drum)
 - `tower_rotate_drum` — Rotate a single drum (top/middle/bottom) to a position
 - `tower_random_rotate` — Random rotation of all or selected drums
 - `tower_get_drum_positions` — Query current positions of all 3 drums
 
 ### Seals (5 tools)
+
 - `tower_break_seal` — Break a seal at a given side and level
 - `tower_is_seal_broken` — Check if a specific seal is broken
 - `tower_get_broken_seals` — List all broken seals
@@ -65,6 +71,7 @@ and recalibration in one step.
 - `tower_random_seal` — Get a random unbroken seal
 
 ### State & Glyphs (7 tools)
+
 - `tower_get_state` — Full tower state snapshot
 - `tower_send_state` — Send a state update to the tower
 - `tower_get_glyphs` — Get positions of all 5 glyphs (cleanse/quest/battle/banner/reinforce)
@@ -78,6 +85,7 @@ and recalibration in one step.
 Use these to read live tower state or game knowledge before acting:
 
 ### Tower State (9 resources)
+
 - `tower://connection` — Connection and calibration status
 - `tower://device-info` — Hardware details
 - `tower://battery` — Battery millivolts and percentage
@@ -89,6 +97,7 @@ Use these to read live tower state or game knowledge before acting:
 - `tower://light-effects` — All 6 effects and 19 named sequences (JSON)
 
 ### Game Knowledge (8 resources)
+
 - `tower://game/rules` — Core rules, setup, turn structure, win/loss conditions
 - `tower://game/adversaries` — All adversaries, abilities, escalation
 - `tower://game/quests` — Quest types, conditions, rewards

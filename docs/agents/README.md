@@ -45,10 +45,10 @@ existing AI model behaves for this specific domain.
 
 ## Agents in this repo
 
-| Agent | Platform | Use when... |
-|-------|----------|-------------|
-| [Ultimate Dark Tower](#ultimate-dark-tower--vs-code-coding-agent) | VS Code | Writing TypeScript/JS apps with the [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) npm library |
-| [Return to Dark Tower](#return-to-dark-tower--web-based-ai-agent) | Web AI tools | Controlling or querying the tower via Claude.ai, ChatGPT, or any AI chat interface |
+| Agent                                                             | Platform     | Use when...                                                                                                            |
+| ----------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| [Ultimate Dark Tower](#ultimate-dark-tower--vs-code-coding-agent) | VS Code      | Writing TypeScript/JS apps with the [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) npm library |
+| [Return to Dark Tower](#return-to-dark-tower--web-based-ai-agent) | Web AI tools | Controlling or querying the tower via Claude.ai, ChatGPT, or any AI chat interface                                     |
 
 ---
 
@@ -72,7 +72,7 @@ for full details.
 #### Option A — Workspace agent (scoped to one project)
 
 1. In your project, create the folder `.github/agents/` if it doesn't exist
-2. Copy [`.github/agents/ultimate-dark-tower.agent.md`](.github/agents/ultimate-dark-tower.agent.md)
+2. Copy [`.github/agents/ultimate-dark-tower.agent.md`](../../.github/agents/ultimate-dark-tower.agent.md)
    into that folder
 3. VS Code auto-discovers it — no restart needed
 
@@ -91,7 +91,7 @@ for the exact profile folder path on your OS.
 
 Click the button below to install directly into VS Code:
 
-[Install in VS Code](vscode://ms-vscode.chat/openAgentFile?url=https://raw.githubusercontent.com/ChessMess/return-to-dark-tower-agents/main/.github/agents/ultimate-dark-tower.agent.md)
+[Install in VS Code](vscode://ms-vscode.chat/openAgentFile?url=https://raw.githubusercontent.com/ChessMess/UltimateDarkTower/main/.github/agents/ultimate-dark-tower.agent.md)
 
 See [sharing custom agents](https://code.visualstudio.com/docs/copilot/customization/custom-agents#_share-custom-agents) for details.
 
@@ -124,8 +124,8 @@ npx -y mcp-server-return-to-dark-tower --http-only --port 3001
 ```
 
 Keep this terminal open for the duration of your session. See the
-[mcp-server-return-to-dark-tower](https://github.com/ChessMess/mcp-server-return-to-dark-tower)
-README for full setup instructions including Bluetooth requirements.
+[`apps/mcp-server`](../../apps/mcp-server) README for full setup instructions including
+Bluetooth requirements.
 
 > **Web tools and localhost:** Web-based AI services cannot reach `localhost` directly.
 > To expose the server, use a tunnel such as
@@ -139,7 +139,7 @@ Claude.ai Projects let you attach persistent instructions and an MCP server conn
 
 1. Go to [Claude.ai](https://claude.ai) and create or open a **Project**
 2. Open **Project Settings** → **Instructions**
-3. Open [`.github/agents/return-to-dark-tower.agent.md`](.github/agents/return-to-dark-tower.agent.md),
+3. Open [`.github/agents/return-to-dark-tower.agent.md`](../../.github/agents/return-to-dark-tower.agent.md),
    copy everything **below** the `---` YAML frontmatter block, and paste it into the Instructions field
 4. In **Project Settings** → **Integrations**, click **Add integration** → **Model Context Protocol (MCP)**
 5. Enter your server URL (e.g. `http://localhost:3001/mcp` or your tunnel URL) and save
@@ -171,9 +171,8 @@ when it is present in your workspace — no additional setup needed.
 
 ## Related
 
-- [`mcp-server-return-to-dark-tower`](https://www.npmjs.com/package/mcp-server-return-to-dark-tower) — The MCP server
-- [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) — The Bluetooth library
-- [UltimateDarkTower on GitHub](https://github.com/chessmess/UltimateDarkTower) — Library source
+- [`apps/mcp-server`](../../apps/mcp-server) — The MCP server, published as [`mcp-server-return-to-dark-tower`](https://www.npmjs.com/package/mcp-server-return-to-dark-tower)
+- [`packages/core`](../../packages/core) — The Bluetooth library, published as [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower)
 - [Return to Dark Tower](https://restorationgames.com/return-to-dark-tower/) — Official game page (Restoration Games)
 - [Return to Dark Tower on BGG](https://boardgamegeek.com/boardgame/256680/return-to-dark-tower) — BoardGameGeek entry
 

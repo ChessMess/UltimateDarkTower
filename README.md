@@ -42,6 +42,19 @@ consumed. Publishing is a per-package `private` flag, not a property of the dire
 | [`apps/relay-cli`](apps/relay-cli)           | —                                                                                                  | Relay daemon (CLI)                                                   |
 | [`apps/relay-electron`](apps/relay-electron) | —                                                                                                  | BLE tower-emulator desktop console                                   |
 
+## AI Agents
+
+Two AI coding agents for this ecosystem live in [`.github/agents/`](.github/agents/) and
+are documented in [`docs/agents/README.md`](docs/agents/README.md):
+
+| Agent                | Platform                           | Use when...                                                         |
+| -------------------- | ---------------------------------- | ------------------------------------------------------------------- |
+| Ultimate Dark Tower  | VS Code (Copilot custom agent)     | Writing TypeScript/JS against `packages/core` (`ultimatedarktower`) |
+| Return to Dark Tower | Claude.ai / ChatGPT / web AI tools | Controlling the physical tower via `apps/mcp-server`                |
+
+See also the root [`AGENTS.md`](AGENTS.md) for ecosystem context auto-loaded by
+AGENTS.md-standard tools (Cursor, Aider, Zed, etc.).
+
 ## Development
 
 Requires **Node ≥ 22.13** and **pnpm ≥ 11** (`packageManager` pins pnpm 11.9.0). The Node floor is

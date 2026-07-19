@@ -2,9 +2,9 @@
 
 This repository contains two AI coding agents for the Return to Dark Tower ecosystem:
 
-| Agent | File | Use when... |
-|-------|------|------------|
-| **Ultimate Dark Tower** | `.github/agents/ultimate-dark-tower.agent.md` | Writing TypeScript/JS apps using the `ultimatedarktower` npm library directly |
+| Agent                    | File                                           | Use when...                                                                           |
+| ------------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Ultimate Dark Tower**  | `.github/agents/ultimate-dark-tower.agent.md`  | Writing TypeScript/JS apps using the `ultimatedarktower` npm library directly         |
 | **Return to Dark Tower** | `.github/agents/return-to-dark-tower.agent.md` | Controlling or querying the tower via an AI chat interface (Claude.ai, ChatGPT, etc.) |
 
 ---
@@ -23,11 +23,11 @@ Bluetooth-enabled tower with:
 **Two layers of programmatic control:**
 
 ```
-ultimatedarktower (npm)           ← TypeScript library, reverse-engineered BLE protocol
+packages/core (ultimatedarktower)          ← TypeScript library, reverse-engineered BLE protocol
          ↓
-mcp-server-return-to-dark-tower   ← MCP server wrapping the library for AI tool access
+apps/mcp-server (mcp-server-return-to-dark-tower)   ← MCP server wrapping the library for AI tool access
          ↓
-AI tools (Claude, Copilot, etc.)  ← Natural language tower control via chat
+AI tools (Claude, Copilot, etc.)           ← Natural language tower control via chat
 ```
 
 ---
@@ -48,48 +48,54 @@ Both agents assume TypeScript strict-mode projects targeting Node.js 18+:
 
 ### Directions & Levels
 
-| Concept | Valid values |
-|---------|-------------|
-| `TowerSide` | `"north"` \| `"south"` \| `"east"` \| `"west"` |
-| `TowerLevels` | `"top"` \| `"middle"` \| `"bottom"` |
-| `TowerCorner` | `"northeast"` \| `"southeast"` \| `"southwest"` \| `"northwest"` |
-| `Glyphs` | `"cleanse"` \| `"quest"` \| `"battle"` \| `"banner"` \| `"reinforce"` |
+| Concept       | Valid values                                                          |
+| ------------- | --------------------------------------------------------------------- |
+| `TowerSide`   | `"north"` \| `"south"` \| `"east"` \| `"west"`                        |
+| `TowerLevels` | `"top"` \| `"middle"` \| `"bottom"`                                   |
+| `TowerCorner` | `"northeast"` \| `"southeast"` \| `"southwest"` \| `"northwest"`      |
+| `Glyphs`      | `"cleanse"` \| `"quest"` \| `"battle"` \| `"banner"` \| `"reinforce"` |
 
 ### LED Layers (setLED layer index)
 
-| Index | Layer | LEDs |
-|-------|-------|------|
-| `0` | Top drum ring | 4 (N=0, E=1, S=2, W=3) |
-| `1` | Middle drum ring | 4 |
-| `2` | Bottom drum ring | 4 |
-| `3` | Ledge (corners) | 4 (NE=0, SE=1, SW=2, NW=3) |
-| `4` | Base lower | 4 |
-| `5` | Base upper | 4 |
+| Index | Layer            | LEDs                       |
+| ----- | ---------------- | -------------------------- |
+| `0`   | Top drum ring    | 4 (N=0, E=1, S=2, W=3)     |
+| `1`   | Middle drum ring | 4                          |
+| `2`   | Bottom drum ring | 4                          |
+| `3`   | Ledge (corners)  | 4 (NE=0, SE=1, SW=2, NW=3) |
+| `4`   | Base lower       | 4                          |
+| `5`   | Base upper       | 4                          |
 
 ### Light Effects
 
-| Value | Name | Description |
-|-------|------|-------------|
-| `0` | off | All off |
-| `1` | on | Solid on |
-| `2` | breathe | Slow pulse |
-| `3` | breatheFast | Fast pulse |
-| `4` | breathe50percent | 50% pulse |
-| `5` | flicker | Flicker |
+| Value | Name             | Description |
+| ----- | ---------------- | ----------- |
+| `0`   | off              | All off     |
+| `1`   | on               | Solid on    |
+| `2`   | breathe          | Slow pulse  |
+| `3`   | breatheFast      | Fast pulse  |
+| `4`   | breathe50percent | 50% pulse   |
+| `5`   | flicker          | Flicker     |
 
 ### Volume
 
 | Value | Description |
-|-------|-------------|
-| `0` | Loud |
-| `1` | Medium |
-| `2` | Quiet |
-| `3` | Mute |
+| ----- | ----------- |
+| `0`   | Loud        |
+| `1`   | Medium      |
+| `2`   | Quiet       |
+| `3`   | Mute        |
 
 ---
 
 ## Related Packages
 
-- [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower) — BLE library (v2.3.0)
-- [`mcp-server-return-to-dark-tower`](https://www.npmjs.com/package/mcp-server-return-to-dark-tower) — MCP server
-- [UltimateDarkTower on GitHub](https://github.com/chessmess/UltimateDarkTower) — library source
+- [`packages/core`](packages/core) — BLE library, published as [`ultimatedarktower`](https://www.npmjs.com/package/ultimatedarktower)
+- [`apps/mcp-server`](apps/mcp-server) — MCP server, published as [`mcp-server-return-to-dark-tower`](https://www.npmjs.com/package/mcp-server-return-to-dark-tower)
+
+## AI Coding Agents
+
+Two GitHub Copilot custom agents live in [`.github/agents/`](.github/agents/) and are
+documented in [`docs/agents/README.md`](docs/agents/README.md): one for writing code
+against `packages/core` directly, one for controlling the physical tower via
+`apps/mcp-server` from Claude.ai/ChatGPT.
