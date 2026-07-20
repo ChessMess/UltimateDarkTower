@@ -55,7 +55,7 @@
     "ws": "catalog:"
   },
   "optionalDependencies": {
-    "@stoprocent/noble": "^2.3.10"
+    "@stoprocent/noble": "^2.5.7"
   },
   "devDependencies": {
     "@types/ws": "catalog:",
