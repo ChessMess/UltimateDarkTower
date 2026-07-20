@@ -70,8 +70,7 @@
   },
   "homepage": "https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/core#readme",
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=7.0.0"
+    "node": ">=22.13.0"
   },
   "browserslist": [
     "defaults",
@@ -81,7 +80,7 @@
     "access": "public"
   },
   "dependencies": {
-    "ultimatedarktowerdata": "workspace:*"
+    "ultimatedarktowerdata": "workspace:^"
   },
   "peerDependencies": {
     "@stoprocent/noble": "^2.0.0"

@@ -153,3 +153,8 @@ CLAUDE.local.md
 
 # assembled Pages site (pnpm preview:site / deploy-pages.yml)
 _site/
+
+# Playwright MCP scratch output (screenshots, page snapshots, console logs).
+# packages/board and packages/display each ignored this locally, with different
+# anchoring; the directory is actually created at the repo root.
+.playwright-mcp/

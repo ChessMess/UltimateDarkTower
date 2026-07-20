@@ -40,7 +40,7 @@ Depth in `docs/` (`RENDERERS.md`, `SCENE_PLUGINS.md`, `SEQUENCE_AUTHORING.md`, `
 
 ## Coupling
 
-Depends on `ultimatedarktowerdata` (`workspace:*`); peer-depends on `ultimatedarktower`
+Depends on `ultimatedarktowerdata` (`workspace:^`); peer-depends on `ultimatedarktower`
 (for `TowerState` types), `three`, `gsap`, `@dimforge/rapier3d-compat` (all consumer-supplied).
 Consumed by `packages/board`'s `./plugin` entry. The `files` allowlist ships `dist`, `docs`,
 and README/LICENSE/CHANGELOG — this file is not in the tarball.

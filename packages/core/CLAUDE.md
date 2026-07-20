@@ -47,6 +47,6 @@ enums, LED layer index, light/volume values) live in the repo-root `AGENTS.md`.
 
 ## Publishing
 
-Depends on `ultimatedarktowerdata` (`workspace:*`) — since v6, core re-exports board/foe/
+Depends on `ultimatedarktowerdata` (`workspace:^`) — since v6, core re-exports board/foe/
 seed data from game-data rather than shipping its own. `files` allowlist ships only
 `dist/` + README/LICENSE/CHANGELOG, so this file is never in the npm tarball.

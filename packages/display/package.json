@@ -99,11 +99,10 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=7.0.0"
+    "node": ">=22.13.0"
   },
   "dependencies": {
     "zod": "^4.4.3",
-    "ultimatedarktowerdata": "workspace:*"
+    "ultimatedarktowerdata": "workspace:^"
   }
 }

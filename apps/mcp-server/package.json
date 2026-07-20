@@ -50,13 +50,13 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
     "express": "^4.21.0",
     "ultimatedarktower": "workspace:^",
-    "ultimatedarktowerdata": "workspace:*",
+    "ultimatedarktowerdata": "workspace:^",
     "zod": "^3.25.0"
   },
   "peerDependencies": {

@@ -13,7 +13,7 @@
     "build": "tsc --build",
     "dev": "tsc --build --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --globals",
+    "test": "vitest run",
     "prepack": "npm run clean && npm run build",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
@@ -51,7 +51,7 @@
     "ultimatedarktowerrelay-shared": "workspace:^",
     "@stoprocent/bleno": "^0.12.4",
     "ultimatedarktower": "workspace:^",
-    "ultimatedarktowerdata": "workspace:*",
+    "ultimatedarktowerdata": "workspace:^",
     "ws": "^8.18.0"
   },
   "optionalDependencies": {
@@ -62,6 +62,6 @@
     "vitest": "catalog:"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13.0"
   }
 }

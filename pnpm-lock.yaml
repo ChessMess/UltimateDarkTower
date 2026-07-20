@@ -67,15 +67,12 @@ importers:
         specifier: workspace:^
         version: link:../../packages/core
       ultimatedarktowerdata:
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/game-data
       ultimatedarktowerdisplay:
         specifier: workspace:^
         version: link:../../packages/display
     devDependencies:
-      globals:
-        specifier: ^15.0.0
-        version: 15.15.0
       jsdom:
         specifier: ^25.0.0
         version: 25.0.1
@@ -192,8 +189,8 @@ importers:
         specifier: ^19.2.0
         version: 19.2.7(react@19.2.7)
       three:
-        specifier: ^0.184.0
-        version: 0.184.0
+        specifier: ^0.185.0
+        version: 0.185.1
       ultimatedarktower:
         specifier: workspace:^
         version: link:../../packages/core
@@ -201,7 +198,7 @@ importers:
         specifier: workspace:^
         version: link:../../packages/board
       ultimatedarktowerdata:
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/game-data
       ultimatedarktowerdisplay:
         specifier: workspace:^
@@ -220,23 +217,11 @@ importers:
         specifier: ^19.2.0
         version: 19.2.3(@types/react@19.2.17)
       '@types/three':
-        specifier: ^0.184.1
-        version: 0.184.1
+        specifier: ^0.185.0
+        version: 0.185.1
       '@vitejs/plugin-react':
         specifier: ^6.0.0
         version: 6.0.3(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
-      eslint:
-        specifier: ^9.39.5
-        version: 9.39.5(jiti@2.7.0)
-      eslint-plugin-react-hooks:
-        specifier: ^7.1.0
-        version: 7.1.1(eslint@9.39.5(jiti@2.7.0))
-      eslint-plugin-react-refresh:
-        specifier: ^0.5.0
-        version: 0.5.3(eslint@9.39.5(jiti@2.7.0))
-      globals:
-        specifier: ^17.0.0
-        version: 17.7.0
       jsdom:
         specifier: ^25.0.0
         version: 25.0.1
@@ -246,9 +231,6 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
-      typescript-eslint:
-        specifier: ^8.61.0
-        version: 8.63.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
       vite:
         specifier: ^8.0.0
         version: 8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
@@ -262,12 +244,9 @@ importers:
         specifier: workspace:^
         version: link:../../packages/core
       ultimatedarktowerdata:
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/game-data
     devDependencies:
-      globals:
-        specifier: ^15.0.0
-        version: 15.15.0
       prettier:
         specifier: ^3.8.1
         version: 3.9.5
@@ -296,7 +275,7 @@ importers:
         specifier: workspace:^
         version: link:../../packages/core
       ultimatedarktowerdata:
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/game-data
       zod:
         specifier: ^3.25.0
@@ -483,12 +462,9 @@ importers:
   apps/seed:
     dependencies:
       ultimatedarktowerdata:
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/game-data
     devDependencies:
-      globals:
-        specifier: ^15.0.0
-        version: 15.15.0
       prettier:
         specifier: ^3.8.1
         version: 3.9.5
@@ -508,7 +484,7 @@ importers:
         specifier: ^0.19.3
         version: 0.19.3
       gsap:
-        specifier: ^3.12.0
+        specifier: ^3.15.0
         version: 3.15.0
       three:
         specifier: ^0.185.0
@@ -536,7 +512,7 @@ importers:
   packages/board:
     dependencies:
       ultimatedarktowerdata:
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../game-data
       zod:
         specifier: ^4.4.3
@@ -582,7 +558,7 @@ importers:
   packages/core:
     dependencies:
       ultimatedarktowerdata:
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../game-data
     devDependencies:
       '@stoprocent/noble':
@@ -634,7 +610,7 @@ importers:
         specifier: workspace:^
         version: link:../board
       ultimatedarktowerdata:
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../game-data
       ultimatedarktowerdisplay:
         specifier: workspace:^
@@ -664,13 +640,14 @@ importers:
         version: 3.0.1(ajv@8.20.0)
 
   packages/creator-schema:
-    devDependencies:
+    dependencies:
       ajv:
         specifier: ^8.17.0
         version: 8.20.0
       ajv-formats:
         specifier: ^3.0.0
         version: 3.0.1(ajv@8.20.0)
+    devDependencies:
       json-schema-to-typescript:
         specifier: ^15.0.0
         version: 15.0.4
@@ -688,7 +665,7 @@ importers:
   packages/display:
     dependencies:
       ultimatedarktowerdata:
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../game-data
       zod:
         specifier: ^4.4.3
@@ -771,7 +748,7 @@ importers:
         specifier: workspace:^
         version: link:../core
       ultimatedarktowerdata:
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../game-data
       ultimatedarktowerrelay-shared:
         specifier: workspace:^
@@ -2177,9 +2154,6 @@ packages:
 
   '@types/stats.js@0.17.4':
     resolution: {integrity: sha512-jIBvWWShCvlBqBNIZt0KAshWpvSjhkwkEu4ZUcASoAvhmrgAUI2t1dXrjSL4xXVLB4FznPrIsX3nKXFl/Dt4vA==}
-
-  '@types/three@0.184.1':
-    resolution: {integrity: sha512-6q4VdiqVsrTRqmk62/BnlcAvIrnDM0zf2ZDVKI5kZiniWrSaOHaQzmbp+BNzoggc/8tgW412pL//wZIxu2PPTA==}
 
   '@types/three@0.185.1':
     resolution: {integrity: sha512-db1xTb+EgYF2didW+eudSvVPtn75zo+fGsY8ShQrJY/B5ZBmC2Fiaykv3aImHAlCNEGuMPkPGXBJGLwzu5mC7A==}
@@ -3761,10 +3735,6 @@ packages:
 
   globals@14.0.0:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
-    engines: {node: '>=18'}
-
-  globals@15.15.0:
-    resolution: {integrity: sha512-7ACyT3wmyp3I61S4fG682L0VA2RGD9otkqGJIwNUMF1SWUombIIk+af1unuDYgMm082aHYwD+mzJvv9Iu8dsgg==}
     engines: {node: '>=18'}
 
   globals@17.7.0:
@@ -5696,9 +5666,6 @@ packages:
   test-exclude@6.0.0:
     resolution: {integrity: sha512-cAGWPIyOHU6zlmg88jwm7VRyXnMN7iV68OGAbYDk/Mh/xC/pzVPlQtY6ngoIH/5/tciuhGfvESU8GrHrcxD56w==}
     engines: {node: '>=8'}
-
-  three@0.184.0:
-    resolution: {integrity: sha512-wtTRjG92pM5eUg/KuUnHsqSAlPM296brTOcLgMRqEeylYTh/CdtvKUvCyyCQTzFuStieWxvZb8mVTMvdPyUpxg==}
 
   three@0.185.1:
     resolution: {integrity: sha512-5aojFCXKwnjBRZvUnt3WFfEcvUJgkN5LlijRFN95hMy8WVkG4I0QNcJE+OuWvuJ0bOdStrbfXn0pkd6/QyiAlg==}
@@ -8321,15 +8288,6 @@ snapshots:
 
   '@types/stats.js@0.17.4': {}
 
-  '@types/three@0.184.1':
-    dependencies:
-      '@dimforge/rapier3d-compat': 0.12.0
-      '@tweenjs/tween.js': 23.1.3
-      '@types/stats.js': 0.17.4
-      '@types/webxr': 0.5.24
-      fflate: 0.8.3
-      meshoptimizer: 1.1.1
-
   '@types/three@0.185.1':
     dependencies:
       '@dimforge/rapier3d-compat': 0.12.0
@@ -10173,8 +10131,6 @@ snapshots:
       ini: 2.0.0
 
   globals@14.0.0: {}
-
-  globals@15.15.0: {}
 
   globals@17.7.0: {}
 
@@ -12601,8 +12557,6 @@ snapshots:
       '@istanbuljs/schema': 0.1.6
       glob: 7.2.3
       minimatch: 3.1.5
-
-  three@0.184.0: {}
 
   three@0.185.1: {}
 

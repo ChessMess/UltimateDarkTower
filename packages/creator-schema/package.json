@@ -11,9 +11,14 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },
-  "devDependencies": {
+  "dependencies": {
     "ajv": "^8.17.0",
-    "ajv-formats": "^3.0.0",
+    "ajv-formats": "^3.0.0"
+  },
+  "devDependencies": {
     "json-schema-to-typescript": "^15.0.0"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   }
 }

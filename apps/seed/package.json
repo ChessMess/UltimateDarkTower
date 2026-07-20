@@ -17,16 +17,15 @@
   "author": "ChessMess",
   "license": "MIT",
   "dependencies": {
-    "ultimatedarktowerdata": "workspace:*"
+    "ultimatedarktowerdata": "workspace:^"
   },
   "devDependencies": {
-    "globals": "^15.0.0",
     "prettier": "^3.8.1",
     "typescript": "catalog:",
     "vite": "^8.0.0",
     "vitest": "catalog:"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13.0"
   }
 }

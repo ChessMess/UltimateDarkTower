@@ -40,7 +40,7 @@ the `.`/`stage` ESM bundles and failing if either statically imports `three` (a 
 
 ## Coupling
 
-Depends on `ultimatedarktowerdata` (`workspace:*`) for board/hero/monument data (v6 moved
+Depends on `ultimatedarktowerdata` (`workspace:^`) for board/hero/monument data (v6 moved
 this out of core). **Does not depend on `ultimatedarktower` at all** — board is
 Bluetooth-free by design. Peer-depends on `ultimatedarktowerdisplay` (only for `./plugin`)
 and `three`/`gsap`; `three` must be a single instance (pinned to display's exact range).

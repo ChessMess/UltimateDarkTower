@@ -18,11 +18,14 @@
     "@udtc/engine": "workspace:*",
     "@udtc/schema": "workspace:*",
     "ultimatedarktower": "workspace:^",
-    "ultimatedarktowerdata": "workspace:*",
+    "ultimatedarktowerdata": "workspace:^",
     "ultimatedarktowerdisplay": "workspace:^",
     "ultimatedarktowerboard": "workspace:^"
   },
   "devDependencies": {
     "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   }
 }

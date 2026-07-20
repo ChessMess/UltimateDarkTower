@@ -17,8 +17,9 @@ Framework-agnostic, **isomorphic** relay consumer SDK. Central docs: `docs/relay
 ## Tests
 
 Two vitest suites (`relayClient.test.ts` with a hand-rolled `MockWebSocket`,
-`physicalTowerReplay.test.ts`). `test` = **`vitest run --globals`** (jest-style globals +
-`vi` fake timers) — same setup as `relay-core`; runs in CI's `checks` job via `pnpm -r test`.
+`physicalTowerReplay.test.ts`). Jest-style globals + `vi` fake timers, enabled via
+**`vitest.config.ts`** (`globals: true`) rather than a `--globals` CLI flag — same setup as
+`relay-core`; `test` is plain `vitest run`. Runs in CI's `checks` job via `pnpm -r test`.
 `tsconfig.json` excludes `*.test.ts` from the composite build.
 
 ## Build & coupling
