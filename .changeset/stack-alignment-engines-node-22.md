@@ -36,4 +36,3 @@ outright was evaluated and rejected: verified directly that it makes `require()`
 `ERR_MODULE_NOT_FOUND` for every consumer of these `require()`-based CJS packages, since
 none of them declare `"type": "module"`. `ES2022` output syntax on a package that already
 requires Node >= 22.13 (this same release) is not a compatibility concern.
-

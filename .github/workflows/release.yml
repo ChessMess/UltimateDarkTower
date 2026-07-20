@@ -60,19 +60,25 @@ jobs:
           NPM_CONFIG_PROVENANCE: 'true'
           # `changeset:publish` is `pnpm -r build && changeset publish` — the
           # recursive build already builds every workspace package in correct
-          # dependency order. But `changeset publish` then calls `npm publish`
-          # per package, and npm auto-runs each package's own prepack/
-          # prepublishOnly hook again — several of which (core, game-data,
-          # relay-core, display) do their own `rm -rf dist` + rebuild. Those
-          # per-package rebuilds race: e.g. core's hook (a slow lint+typecheck+
-          # test+build) can have core's dist mid-rebuild (or briefly deleted)
-          # at the exact moment relay-core's own hook tries to resolve
-          # 'ultimatedarktower' from node_modules, and vice versa. Confirmed
-          # this exact race broke a real release (2026-07-17): relay-core and
-          # display failed with a Changesets-masked "ELIFECYCLE undefined"
-          # while core/game-data/board published fine. `ignore-scripts` only
-          # suppresses *automatic* pre/post hooks (verified against npm's own
-          # docs) — `pnpm -r build`'s explicit script invocations above are
-          # unaffected, so this just stops the redundant, racy rebuild and
-          # publishes exactly what the recursive build already produced.
+          # dependency order before `npm publish` runs per package.
+          #
+          # Until the 2026-07 stack-alignment pass, six packages (core,
+          # game-data, relay-{shared,core,client}, display) ALSO carried their
+          # own `prepack`/`prepublishOnly` hook that redundantly did `rm -rf
+          # dist` + rebuild. Those per-package rebuilds raced — e.g. core's
+          # hook (a slow lint+typecheck+test+build) could have core's dist
+          # mid-rebuild (or briefly deleted) at the exact moment relay-core's
+          # own hook tried to resolve 'ultimatedarktower' from node_modules,
+          # and vice versa. That race broke a real release (2026-07-17):
+          # relay-core and display failed with a Changesets-masked
+          # "ELIFECYCLE undefined" while core/game-data/board published fine.
+          #
+          # The hooks are gone now (removed, not just disabled — they were
+          # pure redundancy given the recursive build above). `ignore-scripts`
+          # stays anyway as defense-in-depth: verified against npm's own docs
+          # that it only suppresses *automatic* pre/post hooks, so `pnpm -r
+          # build`'s explicit invocations above are unaffected either way — if
+          # someone adds a prepack hook back to one of these packages without
+          # realizing the race risk, this keeps that hook from firing during
+          # the one publish path that matters.
           NPM_CONFIG_IGNORE_SCRIPTS: 'true'

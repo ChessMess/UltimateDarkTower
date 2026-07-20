@@ -20,5 +20,12 @@
   },
   "engines": {
     "node": ">=22.13.0"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "packages/scenario-store"
   }
 }

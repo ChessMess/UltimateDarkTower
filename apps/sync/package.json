@@ -9,7 +9,7 @@
     "dev": "vite",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc --build --noEmit",
     "clean": "rm -rf dist"
   },
   "author": "ChessMess",
@@ -29,5 +29,10 @@
   },
   "engines": {
     "node": ">=22.13.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "apps/sync"
   }
 }

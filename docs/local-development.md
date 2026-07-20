@@ -65,7 +65,7 @@ above.)
   desktop app:
 
   ```bash
-  pnpm --filter ultimatedarktowerrelay-electron start   # electron-forge start
+  pnpm --filter ultimatedarktowerrelay-electron dev   # electron-forge start
   ```
 
   Needs the native BLE modules built, which the root install's `allowBuilds`

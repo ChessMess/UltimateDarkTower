@@ -14,8 +14,7 @@
   },
   "sideEffects": false,
   "files": [
-    "dist/src/**/*",
-    "dist/esm/**/*",
+    "dist",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
@@ -29,14 +28,10 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist coverage",
-    "watch": "tsc -watch",
-    "build": "npm run clean && npm run typecheck && tsc && esbuild src/index.ts --bundle --format=esm --outfile=dist/esm/index.mjs --packages=external --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
-    "dev": "npm run watch",
-    "ci": "npm run lint && npm run typecheck && npm run test:ci && npm run build",
-    "prepack": "npm run ci",
-    "prepublishOnly": "npm run prepack",
-    "publish:check": "npm run ci",
-    "size": "npm run build && du -sh dist/",
+    "build": "pnpm clean && pnpm typecheck && tsc && esbuild src/index.ts --bundle --format=esm --outfile=dist/esm/index.mjs --packages=external --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
+    "dev": "tsc --watch",
+    "ci": "pnpm lint && pnpm typecheck && pnpm test:ci && pnpm build",
+    "size": "pnpm build && du -sh dist/",
     "test:integration": "npx ts-node tests/integration/calibration.integration.ts",
     "test:integration:lights": "npx ts-node tests/integration/lights.integration.ts",
     "example:node": "npx ts-node examples/node/NodeExample.ts"
@@ -52,7 +47,7 @@
     "ble",
     "restoration-games"
   ],
-  "author": "Chris Koerner-Zeller",
+  "author": "ChessMess",
   "license": "MIT",
   "funding": {
     "type": "github",

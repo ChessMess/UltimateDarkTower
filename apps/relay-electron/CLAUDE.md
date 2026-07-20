@@ -16,15 +16,20 @@ silently ships a broken app — a missing native module **at runtime**, not a bu
 ## Native rebuild
 
 Rebuild native modules with `pnpm --filter ultimatedarktowerrelay-electron rebuild`
-(`electron-rebuild -f -w @stoprocent/bleno,@stoprocent/noble`). `pnpm run ci` does **not**
-cover this (no `build` script). `tar`/`tmp` are transitive build-time-only deps of the
-electron toolchain — see the root CLAUDE.md and `pnpm-workspace.yaml` overrides.
+(`electron-rebuild -f -w @stoprocent/bleno,@stoprocent/noble`). This is **not** part of
+`build` — `build` is deliberately `tsc --noEmit` only (typecheck-only, matching
+`typecheck`), so this app participates in the root `pnpm -r build` fan-out without every
+CI run packaging a full Electron app with native BLE deps. Real packaging/native rebuild
+stays manual or lives in the separate `relay-native` CI job. `tar`/`tmp` are transitive
+build-time-only deps of the electron toolchain — see the root CLAUDE.md and
+`pnpm-workspace.yaml` overrides.
 
 ## macOS packaging
 
 `forge.config.ts` sets `NSBluetoothAlwaysUsageDescription` (macOS Bluetooth entitlement) and
 builds a `.dmg` (macOS) + `zip` (darwin/linux) + `deb` (linux) — no Windows maker configured.
 
-Scripts: `start`/`package`/`make`/`publish` (electron-forge), `typecheck`, `rebuild`,
-`test` (`vitest run --passWithNoTests`, 0 test files). Depends on `relay-core`,
+Scripts: `dev`/`package`/`make`/`publish` (electron-forge; `dev` runs `electron-forge start`
+— renamed from `start` to match every other app's dev-loop convention), `typecheck`,
+`rebuild`, `test` (`vitest run --passWithNoTests`, 0 test files). Depends on `relay-core`,
 `relay-shared`, and `ultimatedarktower` (`workspace:^`) — not `relay-client` or `relay-cli`.

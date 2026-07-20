@@ -25,7 +25,10 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=22.13.0"
@@ -43,9 +46,9 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "clean": "rimraf dist",
+    "clean": "rm -rf dist",
     "promote-token-art": "node scripts/promote-token-art.mjs",
-    "ci": "npm run typecheck && npm run lint && npm run test && npm run build"
+    "ci": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
   },
   "peerDependencies": {
     "ultimatedarktowerdisplay": "^0.10.4 || ^0.11.0",
@@ -72,7 +75,6 @@
     "@vitest/coverage-v8": "catalog:",
     "gsap": "catalog:",
     "jsdom": "catalog:",
-    "rimraf": "^5.0.0",
     "three": "catalog:",
     "typescript": "catalog:",
     "ultimatedarktowerdisplay": "workspace:^",
@@ -97,5 +99,9 @@
   "homepage": "https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/board#readme",
   "bugs": {
     "url": "https://github.com/ChessMess/UltimateDarkTower/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/chessmess"
   }
 }

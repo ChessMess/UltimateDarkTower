@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ci": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "author": "ChessMess",
   "license": "MIT",
@@ -33,5 +33,10 @@
   },
   "engines": {
     "node": ">=22.13.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "apps/controller"
   }
 }

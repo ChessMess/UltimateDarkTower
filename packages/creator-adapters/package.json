@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "pretest": "pnpm --filter @udtc/engine build",
     "build": "echo 'adapters: no emit (type-check only for now)'",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc --build",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -27,5 +27,12 @@
   },
   "engines": {
     "node": ">=22.13.0"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "packages/creator-adapters"
   }
 }

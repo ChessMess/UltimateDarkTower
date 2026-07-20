@@ -27,4 +27,7 @@ UDT `packages/core`, unrelated to `relay-core`.)
 
 ## Build
 
-`build` = `tsc --build`. **No `test` script and no tests** — it's pure types/constants.
+`build` = `tsc --build`. **No tests** — it's pure types/constants. `test` is
+`vitest run --passWithNoTests` (not a genuine suite) purely so a future test file here
+is actually picked up by `pnpm -r test` instead of needing someone to remember to add
+the script when they add the first test.

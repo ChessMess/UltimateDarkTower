@@ -20,15 +20,15 @@
     }
   },
   "files": [
-    "dist/**/*",
+    "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc --build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "prepack": "npm run clean && npm run build",
     "clean": "rm -rf dist *.tsbuildinfo",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

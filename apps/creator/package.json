@@ -6,12 +6,12 @@
   "scripts": {
     "predev": "pnpm --filter @udtc/engine build",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc --build && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc --build",
     "lint": "eslint .",
     "pretest": "pnpm --filter @udtc/engine build",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "test:watch": "vitest",
     "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
@@ -48,5 +48,12 @@
   },
   "engines": {
     "node": ">=22.13.0"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "apps/creator"
   }
 }

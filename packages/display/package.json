@@ -41,8 +41,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint 'src/**/*.ts' 'tests/**/*.ts' 'example/**/*.ts' --fix",
     "clean": "rm -rf dist dist-example coverage",
-    "ci": "npm run typecheck && npm run lint && npm test && npm run build",
-    "prepublishOnly": "npm run ci"
+    "ci": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
   },
   "peerDependencies": {
     "gsap": "^3.12.0",
@@ -100,5 +99,9 @@
   "dependencies": {
     "zod": "^4.4.3",
     "ultimatedarktowerdata": "workspace:^"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/chessmess"
   }
 }

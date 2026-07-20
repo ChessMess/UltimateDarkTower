@@ -9,7 +9,7 @@
     "mcp-server-dark-tower": "dist/index.js"
   },
   "files": [
-    "dist/",
+    "dist",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
@@ -26,7 +26,7 @@
   "bugs": {
     "url": "https://github.com/ChessMess/UltimateDarkTower/issues"
   },
-  "author": "Chris Koerner-Zeller",
+  "author": "ChessMess",
   "scripts": {
     "build": "tsc && rm -rf dist/game-content && cp -R src/game-content dist/game-content",
     "dev": "tsx watch src/index.ts",
@@ -73,5 +73,10 @@
     "tsx": "^4.19.0",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "sideEffects": false,
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/chessmess"
   }
 }

@@ -5,7 +5,8 @@
   "description": "UltimateDarkTowerRelay desktop operator console — Electron GUI over the relay core (selectable emulator/mock/real tower source, WebSocket relay, status, manual controls).",
   "main": ".vite/build/main.js",
   "scripts": {
-    "start": "electron-forge start",
+    "dev": "electron-forge start",
+    "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "package": "electron-forge package",
     "make": "electron-forge make",
@@ -40,5 +41,10 @@
   },
   "engines": {
     "node": ">=22.13.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "apps/relay-electron"
   }
 }
