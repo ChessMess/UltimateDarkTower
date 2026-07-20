@@ -10,14 +10,18 @@ brain; UTDD's role is the tower + board it drives. Keep game-rules logic out —
 `ultimatedarktower` + `ultimatedarktowerdata` + `ultimatedarktowerboard` +
 `ultimatedarktowerdisplay` and renders their state.
 
-## eslint devDeps note (tension with the root convention)
+## eslint: no local devDeps (follows the root convention)
 
-This app carries its own `eslint` / `typescript-eslint` / `eslint-plugin-react-*` devDeps.
-The root CLAUDE.md warns against per-package eslint devDeps because a nested **v8** copy
-shadows the root v9 flat config — but here they're **v9-aligned** (`eslint ^9`,
-`typescript-eslint ^8`), matching the root major, so lint still resolves the root config.
-Understand this before "fixing" it: don't downgrade or add a v8 copy. Root `eslint .` covers
-this app; the local devDeps mainly satisfy the React plugins.
+This app has **no** `eslint` / `typescript-eslint` / `eslint-plugin-react-*` devDeps, and
+should not gain any — see the root CLAUDE.md (a nested copy shadows the root v9 flat config).
+
+It used to carry all five, and an earlier version of this note justified them as needed to
+"satisfy the React plugins." That was wrong: the root `eslint.config.js` imports
+`eslint-plugin-react-hooks` and `eslint-plugin-react-refresh` itself (lines 3-4) and the root
+`package.json` declares all five at the _same_ ranges, so the local copies were exact
+duplicates. They were removed in the July 2026 stack-alignment pass. Root `eslint .` covers
+this app, including the React rules — `eslint.config.js` scopes them to
+`apps/digital/**/*.{ts,tsx}` explicitly.
 
 Standard Vite scripts; `build` = `tsc -b && vite build`; `test` = `vitest run` (tests colocated
 under `src/`). Like `apps/creator`, its Vite setup pre-bundles `ultimatedarktower` (see the

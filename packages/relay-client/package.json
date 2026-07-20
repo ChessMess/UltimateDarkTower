@@ -6,9 +6,10 @@
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "files": [
-    "dist/**/*",
+    "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "exports": {
     ".": {
@@ -20,8 +21,7 @@
     "build": "tsc --build",
     "dev": "tsc --build --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --globals",
-    "prepack": "npm run clean && npm run build",
+    "test": "vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "keywords": [
@@ -40,8 +40,8 @@
     "ultimatedarktower": "workspace:^"
   },
   "devDependencies": {
-    "ws": "^8.18.0",
-    "@types/ws": "^8.5.10",
+    "ws": "catalog:",
+    "@types/ws": "catalog:",
     "vitest": "catalog:"
   },
   "publishConfig": {
@@ -63,6 +63,6 @@
     "url": "https://github.com/sponsors/chessmess"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13.0"
   }
 }

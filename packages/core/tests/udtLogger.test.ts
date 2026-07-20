@@ -177,7 +177,7 @@ describe('DOMOutput basic functionality', () => {
     // Mock document.getElementById to return a dummy element
     const mockContainer = {
       innerHTML: '',
-      appendChild: jest.fn(),
+      appendChild: vi.fn(),
       scrollTop: 0,
       scrollHeight: 100,
     };
@@ -186,11 +186,11 @@ describe('DOMOutput basic functionality', () => {
     // Mock document if it doesn't exist
     if (typeof document === 'undefined') {
       (global as unknown as LoggerTestGlobal).document = {
-        getElementById: jest.fn().mockReturnValue(mockContainer),
-        createElement: jest.fn().mockReturnValue({ className: '', textContent: '' }),
+        getElementById: vi.fn().mockReturnValue(mockContainer),
+        createElement: vi.fn().mockReturnValue({ className: '', textContent: '' }),
       };
     } else {
-      document.getElementById = jest.fn().mockReturnValue(mockContainer as unknown as HTMLElement);
+      document.getElementById = vi.fn().mockReturnValue(mockContainer as unknown as HTMLElement);
     }
 
     const domOutput = new DOMOutput('test-container');
@@ -216,7 +216,7 @@ describe('DOMOutput basic functionality', () => {
   test('should respect maxLines limit', () => {
     const mockContainer = {
       innerHTML: '',
-      appendChild: jest.fn(),
+      appendChild: vi.fn(),
       scrollTop: 0,
       scrollHeight: 100,
     };
@@ -224,11 +224,11 @@ describe('DOMOutput basic functionality', () => {
 
     if (typeof document === 'undefined') {
       (global as unknown as LoggerTestGlobal).document = {
-        getElementById: jest.fn().mockReturnValue(mockContainer),
-        createElement: jest.fn().mockReturnValue({ className: '', textContent: '' }),
+        getElementById: vi.fn().mockReturnValue(mockContainer),
+        createElement: vi.fn().mockReturnValue({ className: '', textContent: '' }),
       };
     } else {
-      document.getElementById = jest.fn().mockReturnValue(mockContainer as unknown as HTMLElement);
+      document.getElementById = vi.fn().mockReturnValue(mockContainer as unknown as HTMLElement);
     }
 
     // Create DOMOutput with small maxLines for testing
@@ -276,15 +276,15 @@ describe('DOMOutput basic functionality', () => {
 
     if (typeof document === 'undefined') {
       (global as unknown as LoggerTestGlobal).document = {
-        getElementById: jest
+        getElementById: vi
           .fn()
           .mockImplementation(
             (id: string) => mockCheckboxes[id as keyof typeof mockCheckboxes] || null,
           ),
-        createElement: jest.fn().mockReturnValue({ className: '', textContent: '' }),
+        createElement: vi.fn().mockReturnValue({ className: '', textContent: '' }),
       };
     } else {
-      document.getElementById = jest
+      document.getElementById = vi
         .fn()
         .mockImplementation(
           (id: string) => mockCheckboxes[id as keyof typeof mockCheckboxes] || null,

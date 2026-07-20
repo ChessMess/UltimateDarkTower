@@ -37,7 +37,7 @@ describe('resolveTokenImageFor', () => {
 
   it('falls the 3D view back to image2d when image3d is unset (one image drives both views)', () => {
     const tokenArt: TokenArtConfig = { foe: { Brigands: { image2d: '/2d.png' } } };
-    const resolveTokenImage = jest.fn((_ref: TokenArtRef, view: string) => `/cb-${view}.png`);
+    const resolveTokenImage = vi.fn((_ref: TokenArtRef, view: string) => `/cb-${view}.png`);
     expect(
       resolveTokenImageFor(BRIGANDS, '3d', { tokenArt, resolveTokenImage, assetBaseUrl: '/t/' }),
     ).toBe('/2d.png');
@@ -46,7 +46,7 @@ describe('resolveTokenImageFor', () => {
 
   it('falls through to the callback for 3D only when neither image3d nor image2d is set', () => {
     const tokenArt: TokenArtConfig = { foe: { Brigands: {} } };
-    const resolveTokenImage = jest.fn((_ref: TokenArtRef, view: string) => `/cb-${view}.png`);
+    const resolveTokenImage = vi.fn((_ref: TokenArtRef, view: string) => `/cb-${view}.png`);
     expect(
       resolveTokenImageFor(BRIGANDS, '3d', { tokenArt, resolveTokenImage, assetBaseUrl: '/t/' }),
     ).toBe('/cb-3d.png');

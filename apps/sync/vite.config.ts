@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from 'vite';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
@@ -71,7 +72,6 @@ function udtCjsForBuild(): Plugin {
   };
 }
 
-/// <reference types="vitest/config" />
 // https://vitejs.dev/config/
 export default defineConfig({
   root: '.',

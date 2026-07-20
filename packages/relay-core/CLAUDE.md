@@ -5,9 +5,12 @@ BLE-emulator + WebSocket relay engine. Central docs: `docs/relay/` (repo root).
 ## Tests
 
 **8 vitest suites** here (`commandParser.test.ts`, `relayServer.integration.test.ts`,
-`towerState.roundtrip.test.ts`, …). `test` = **`vitest run --globals`** — the suites use
-jest-style globals (`describe`/`it`/`expect`) and `vi` fake timers, so `--globals` is
-required. They run in CI's `checks` job via `pnpm -r test`. `tsconfig.json` excludes
+`towerState.roundtrip.test.ts`, …). The suites use jest-style globals
+(`describe`/`it`/`expect`) and `vi` fake timers with no `from 'vitest'` imports, so globals
+must be enabled — that lives in **`vitest.config.ts`** (`globals: true`). It used to be a
+`--globals` flag on the `test` script, which meant a bare `vitest run` in this directory
+failed with `describe is not defined`; `test` is now plain `vitest run`.
+They run in CI's `checks` job via `pnpm -r test`. `tsconfig.json` excludes
 `*.test.ts` from the composite build, so `tsc --build`/`typecheck` stay clean (and don't
 type-check the tests — verify by running the suite).
 
@@ -32,6 +35,6 @@ OS-assigned free port, no BLE.
 ## Build & coupling
 
 `build` = `tsc --build`. Depends on `ultimatedarktowerrelay-shared`, `ultimatedarktower`
-(`workspace:^`), `ultimatedarktowerdata` (`workspace:*`), plus `@stoprocent/bleno` + `ws`.
+(`workspace:^`), `ultimatedarktowerdata` (`workspace:^`), plus `@stoprocent/bleno` + `ws`.
 Consumed by `apps/relay-cli` and `apps/relay-electron` (not by `relay-client`).
 Two `// TODO`s in `src/commandParser.ts` (fuller packet inspection, checksum validation).

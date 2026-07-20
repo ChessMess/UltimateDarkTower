@@ -11,11 +11,6 @@ import { type DeviceInformation } from '../udtBleConnection';
  * hanging silently.
  */
 export class NoopBluetoothAdapter implements IBluetoothAdapter {
-  // Stored but never invoked — this adapter produces no events.
-  private characteristicCallback?: (data: Uint8Array) => void;
-  private disconnectCallback?: () => void;
-  private availabilityCallback?: (available: boolean) => void;
-
   async connect(_deviceName: string, _serviceUuids: string[]): Promise<void> {
     void _deviceName;
     void _serviceUuids;
@@ -39,16 +34,19 @@ export class NoopBluetoothAdapter implements IBluetoothAdapter {
     throw new BluetoothError('Bluetooth is disabled (platform: none)');
   }
 
-  onCharacteristicValueChanged(callback: (data: Uint8Array) => void): void {
-    this.characteristicCallback = callback;
+  onCharacteristicValueChanged(_callback: (data: Uint8Array) => void): void {
+    // This adapter produces no events — the callback is accepted (to satisfy
+    // IBluetoothAdapter) but never fires.
   }
 
-  onDisconnect(callback: () => void): void {
-    this.disconnectCallback = callback;
+  onDisconnect(_callback: () => void): void {
+    // This adapter produces no events — the callback is accepted (to satisfy
+    // IBluetoothAdapter) but never fires.
   }
 
-  onBluetoothAvailabilityChanged(callback: (available: boolean) => void): void {
-    this.availabilityCallback = callback;
+  onBluetoothAvailabilityChanged(_callback: (available: boolean) => void): void {
+    // This adapter produces no events — the callback is accepted (to satisfy
+    // IBluetoothAdapter) but never fires.
   }
 
   async readDeviceInformation(): Promise<DeviceInformation> {

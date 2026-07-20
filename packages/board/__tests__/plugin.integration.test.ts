@@ -2,7 +2,7 @@
 // WebGL-free in jsdom. `buildModelToken` builds (and registers) the token's `THREE.Group`
 // synchronously before this resolves, so a never-resolving promise is enough to exercise the
 // model branch. Only the per-token-model test calls it; the other tests never load a model.
-jest.mock('ultimatedarktowerdisplay/physics', () => ({
+vi.mock('ultimatedarktowerdisplay/physics', () => ({
   loadSkullModel: () => new Promise(() => {}),
 }));
 
@@ -45,12 +45,12 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
   let container: HTMLElement;
   let view: Tower3DView;
   let handle: Board3DHandle | undefined;
-  let pointerSpy: jest.SpyInstance;
+  let pointerSpy: vi.SpyInstance;
 
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
-    pointerSpy = jest.spyOn(Tower3DView.prototype, 'registerPointerTarget');
+    pointerSpy = vi.spyOn(Tower3DView.prototype, 'registerPointerTarget');
   });
 
   afterEach(() => {
@@ -96,7 +96,7 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
   });
 
   it('renders its own board + hides Display’s placeholder only when boardImageUrl is set', async () => {
-    const discSpy = jest.spyOn(Tower3DView.prototype, 'setBoardDiscEnabled');
+    const discSpy = vi.spyOn(Tower3DView.prototype, 'setBoardDiscEnabled');
 
     // No boardImageUrl → Display's board stays visible, no own-board mesh.
     view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
@@ -107,7 +107,7 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
   });
 
   it('with boardImageUrl, hides Display’s board and adds its own board mesh', async () => {
-    const discSpy = jest.spyOn(Tower3DView.prototype, 'setBoardDiscEnabled');
+    const discSpy = vi.spyOn(Tower3DView.prototype, 'setBoardDiscEnabled');
     view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
     handle = attachBoard3D(view, { boardState: makeState(), boardImageUrl: './board.png' });
     await flushModelLoad();
@@ -156,7 +156,7 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
   });
 
   it('applies the initial camera config on model load without any setFocus call', async () => {
-    const applyCamera = jest.spyOn(Tower3DView.prototype, 'applyCameraConfig');
+    const applyCamera = vi.spyOn(Tower3DView.prototype, 'applyCameraConfig');
     view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
     handle = attachBoard3D(view, { boardState: makeState() });
     await flushModelLoad();
@@ -173,8 +173,8 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
   });
 
   it('drives the camera from setFocus (kingdom → side, angle → CameraConfig)', async () => {
-    const selectSide = jest.spyOn(Tower3DView.prototype, 'selectSide');
-    const applyCamera = jest.spyOn(Tower3DView.prototype, 'applyCameraConfig');
+    const selectSide = vi.spyOn(Tower3DView.prototype, 'selectSide');
+    const applyCamera = vi.spyOn(Tower3DView.prototype, 'applyCameraConfig');
     view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
     handle = attachBoard3D(view, { boardState: makeState() });
     await flushModelLoad();
@@ -262,7 +262,7 @@ describe('Board3DPlugin ↔ Tower3DView integration', () => {
   });
 
   it('restores Display’s board disc on dispose after hiding it for boardImageUrl', async () => {
-    const discSpy = jest.spyOn(Tower3DView.prototype, 'setBoardDiscEnabled');
+    const discSpy = vi.spyOn(Tower3DView.prototype, 'setBoardDiscEnabled');
     view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
     handle = attachBoard3D(view, { boardState: makeState(), boardImageUrl: './board.png' });
     await flushModelLoad();

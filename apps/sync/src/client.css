@@ -29,7 +29,10 @@
 /* ─── Base ────────────────────────────────────────────────────────────────── */
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: var(--bg);
   color: var(--fg);
   min-height: 100vh;
@@ -38,8 +41,8 @@ body {
   flex-direction: column;
   align-items: center;
   /* horizontal padding + safe-area insets for notch/home-bar devices */
-  padding: 2.5rem max(1.25rem, env(safe-area-inset-right))
-           2rem     max(1.25rem, env(safe-area-inset-left));
+  padding: 2.5rem max(1.25rem, env(safe-area-inset-right)) 2rem
+    max(1.25rem, env(safe-area-inset-left));
   padding-top: max(2rem, env(safe-area-inset-top));
   padding-bottom: max(2rem, env(safe-area-inset-bottom));
 }
@@ -143,7 +146,9 @@ button {
   letter-spacing: 0.02em;
   padding: 0.75rem 1.2rem;
   min-height: 44px; /* minimum touch target */
-  transition: background 0.15s, box-shadow 0.15s;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
   touch-action: manipulation; /* prevent double-tap zoom delay */
   width: 100%;
 }
@@ -244,7 +249,9 @@ button.btn-ghost:disabled {
   border-radius: 50%;
   background: var(--border);
   flex-shrink: 0;
-  transition: background 0.3s, box-shadow 0.3s;
+  transition:
+    background 0.3s,
+    box-shadow 0.3s;
 }
 
 .dot.connected {
@@ -263,8 +270,13 @@ button.btn-ghost:disabled {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
 /* ─── Event log ───────────────────────────────────────────────────────────── */
@@ -314,8 +326,12 @@ button.btn-ghost:disabled {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ─── Footer ──────────────────────────────────────────────────────────────── */

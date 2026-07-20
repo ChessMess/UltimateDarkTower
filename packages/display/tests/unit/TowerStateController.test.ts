@@ -1,6 +1,4 @@
-/**
- * @jest-environment node
- */
+// @vitest-environment node
 import { LIGHT_EFFECTS } from 'ultimatedarktower';
 import type { TowerState, SealIdentifier } from 'ultimatedarktower';
 import { TowerStateController } from '../../src/state/TowerStateController';

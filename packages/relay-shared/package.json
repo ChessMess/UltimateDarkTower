@@ -6,14 +6,15 @@
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "files": [
-    "dist/**/*",
+    "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc --build",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
-    "prepack": "npm run clean && npm run build",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "keywords": [
@@ -44,6 +45,9 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13.0"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
   }
 }

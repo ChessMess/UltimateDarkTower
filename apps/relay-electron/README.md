@@ -12,7 +12,7 @@ you can point consumers at, and manual command controls for testing without a co
 
 ```bash
 pnpm install
-pnpm --filter ultimatedarktowerrelay-electron start
+pnpm --filter ultimatedarktowerrelay-electron dev
 ```
 
 BLE natives (`@stoprocent/bleno`, `@stoprocent/noble`) are prebuilt for Electron's Node ABI. If you

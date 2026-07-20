@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { LIGHT_EFFECTS } from 'ultimatedarktower';
 import type { TowerState } from 'ultimatedarktower';
 import { Tower3DView } from '../../src/3d/Tower3DView';
@@ -38,15 +39,16 @@ function makeState(): TowerState {
   };
 }
 
-/** A stub plugin whose lifecycle methods are jest spies. */
+/** A stub plugin whose lifecycle methods are vitest mocks. */
 function makeStubPlugin(id = 'test-plugin'): ScenePlugin & {
-  attach: jest.Mock<void, [ScenePluginContext]>;
-  dispose: jest.Mock<void, []>;
+  // vitest 3+ changed Mock's generic from <Return, Args> to a function type.
+  attach: Mock<(ctx: ScenePluginContext) => void>;
+  dispose: Mock<() => void>;
 } {
   return {
     id,
-    attach: jest.fn(),
-    dispose: jest.fn(),
+    attach: vi.fn(),
+    dispose: vi.fn(),
   };
 }
 
@@ -100,7 +102,7 @@ describe('attachScenePlugin', () => {
 
   it('fires plugin.onStateApplied on every applyState with the same state object', () => {
     const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
-    const onStateApplied = jest.fn();
+    const onStateApplied = vi.fn();
     attachScenePlugin(view, { id: 'p', attach: () => {}, onStateApplied, dispose: () => {} });
 
     const state = makeState();
@@ -113,7 +115,7 @@ describe('attachScenePlugin', () => {
 
   it('fires plugin.onSealsApplied on applySeals with the broken-seal list', () => {
     const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
-    const onSealsApplied = jest.fn();
+    const onSealsApplied = vi.fn();
     attachScenePlugin(view, { id: 'p', attach: () => {}, onSealsApplied, dispose: () => {} });
 
     const broken = [{ side: 'north' as const, level: 'top' as const }];
@@ -126,7 +128,7 @@ describe('attachScenePlugin', () => {
   it('registerFrameCallback registers a per-frame callback with a numeric dt; unsubscribe stops it', () => {
     const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
     const baseline = view.physicsFrameListenerCount;
-    const frameCb = jest.fn();
+    const frameCb = vi.fn();
     let unsub: (() => void) | undefined;
 
     attachScenePlugin(view, {
@@ -156,7 +158,7 @@ describe('attachScenePlugin', () => {
   it('handle.detach() disposes the plugin, removes frame callbacks + pointer targets, and is idempotent', () => {
     const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
     const baselineFrames = view.physicsFrameListenerCount;
-    const dispose = jest.fn();
+    const dispose = vi.fn();
 
     const handle = attachScenePlugin(view, {
       id: 'p',
@@ -200,7 +202,7 @@ describe('attachScenePlugin', () => {
 
   it('onSideChange fires for plugin subscribers on programmatic selectSide', () => {
     const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
-    const sideCb = jest.fn();
+    const sideCb = vi.fn();
     attachScenePlugin(view, {
       id: 'p',
       attach: (ctx) => {
@@ -219,7 +221,7 @@ describe('attachScenePlugin', () => {
     gltfLoaderMock.__setAutoLoad(false);
     const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
 
-    const onModelLoaded = jest.fn<void, [ScenePluginModelInfo]>();
+    const onModelLoaded = vi.fn<void, [ScenePluginModelInfo]>();
     let loadedAtAttach = true;
     attachScenePlugin(view, {
       id: 'p',
@@ -265,7 +267,7 @@ describe('attachScenePlugin', () => {
   });
 
   it('attachSkullPhysics registers exactly one scene plugin and detaches it on dispose (dogfood)', () => {
-    const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     // Defer the GLB load so the physics model-ready path (which needs Rapier) does
     // not fire; we only assert the dogfood registers/cleans up a scene plugin.
     gltfLoaderMock.__setAutoLoad(false);

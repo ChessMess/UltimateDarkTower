@@ -14,8 +14,18 @@
     "lint": "eslint ."
   },
   "devDependencies": {
-    "fake-indexeddb": "^6.2.5",
+    "fake-indexeddb": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "packages/scenario-store"
   }
 }

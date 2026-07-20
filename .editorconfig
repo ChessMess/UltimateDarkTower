@@ -1,0 +1,25 @@
+# EditorConfig helps maintain consistent coding styles across editors/IDEs.
+# https://editorconfig.org
+#
+# Prettier (.prettierrc) is the source of truth for JS/TS/JSON/MD formatting —
+# these values mirror it (tabWidth 2, printWidth 100) so an editor's default
+# formatting matches before Prettier ever runs, rather than fighting it.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.md]
+# Markdown often uses trailing whitespace intentionally (hard line breaks).
+trim_trailing_whitespace = false
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[Makefile]
+indent_style = tab

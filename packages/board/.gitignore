@@ -1,8 +1,5 @@
-node_modules
-dist
-example/dist
-coverage
-*.tsbuildinfo
-.DS_Store
+# Entries already covered by the root .gitignore (node_modules, dist — which
+# already matches example/dist at any depth — coverage, *.tsbuildinfo,
+# .DS_Store, .playwright-mcp/) are intentionally not repeated here — only
+# what's genuinely specific to this package.
 docs/planning
-.playwright-mcp

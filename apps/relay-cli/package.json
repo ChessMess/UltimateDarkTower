@@ -20,13 +20,20 @@
     "ultimatedarktowerrelay-client": "workspace:^",
     "ultimatedarktowerrelay-core": "workspace:^",
     "ultimatedarktowerrelay-shared": "workspace:^",
-    "ws": "^8.18.0"
+    "ws": "catalog:"
   },
   "devDependencies": {
-    "@types/ws": "^8.5.10",
+    "@types/ws": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13.0"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "apps/relay-cli"
   }
 }

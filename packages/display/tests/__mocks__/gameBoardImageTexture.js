@@ -6,6 +6,13 @@
 //
 // The pure `getBoardTextureRotation` math lives in `boardTextureRotation.ts` and
 // is imported directly by production code and tests, so it is NOT stubbed here.
-module.exports = {
+const __mock = {
   buildBoardTextureFromImage: async () => null,
 };
+
+// ESM surface. This package is `type: module`, so a CJS `module.exports`
+// assignment is inert. Bindings are pulled off __mock and re-exported under
+// aliases so they cannot collide with the class/const declarations above.
+export default __mock;
+const { buildBoardTextureFromImage: __e_buildBoardTextureFromImage } = __mock;
+export { __e_buildBoardTextureFromImage as buildBoardTextureFromImage };

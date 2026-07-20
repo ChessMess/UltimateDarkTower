@@ -5,6 +5,7 @@
  * data processing, and event forwarding without real Bluetooth hardware.
  */
 
+import type { Mock } from 'vitest';
 import { UdtBleConnection, type TowerEventCallbacks } from '../src/udtBleConnection';
 import { Logger } from '../src/udtLogger';
 import { MockBluetoothAdapter } from './mocks/MockBluetoothAdapter';
@@ -13,12 +14,12 @@ import { MockBluetoothAdapter } from './mocks/MockBluetoothAdapter';
 
 function createMockCallbacks(): TowerEventCallbacks {
   return {
-    onTowerConnect: jest.fn(),
-    onTowerDisconnect: jest.fn(),
-    onBatteryLevelNotify: jest.fn(),
-    onCalibrationComplete: jest.fn(),
-    onSkullDrop: jest.fn(),
-    onTowerResponse: jest.fn(),
+    onTowerConnect: vi.fn(),
+    onTowerDisconnect: vi.fn(),
+    onBatteryLevelNotify: vi.fn(),
+    onCalibrationComplete: vi.fn(),
+    onSkullDrop: vi.fn(),
+    onTowerResponse: vi.fn(),
   };
 }
 
@@ -60,7 +61,7 @@ describe('UdtBleConnection', () => {
   let logger: Logger;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockAdapter = new MockBluetoothAdapter();
     callbacks = createMockCallbacks();
     logger = createMockLogger();
@@ -68,7 +69,7 @@ describe('UdtBleConnection', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     try {
       connection['stopConnectionMonitoring']();
     } catch {
@@ -146,7 +147,7 @@ describe('UdtBleConnection', () => {
     });
 
     test('should always call onBatteryLevelNotify regardless of notification frequency', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       await connection.connect();
 
       mockAdapter.simulateResponse(createBatteryResponse(1350));
@@ -155,7 +156,7 @@ describe('UdtBleConnection', () => {
       mockAdapter.simulateResponse(createBatteryResponse(1350));
       expect(callbacks.onBatteryLevelNotify).toHaveBeenCalledTimes(2);
 
-      jest.advanceTimersByTime(connection.batteryLogFrequency + 100);
+      vi.advanceTimersByTime(connection.batteryLogFrequency + 100);
       mockAdapter.simulateResponse(createBatteryResponse(1350));
       expect(callbacks.onBatteryLevelNotify).toHaveBeenCalledTimes(3);
     });
@@ -181,7 +182,7 @@ describe('UdtBleConnection', () => {
       expect(callbacks.onSkullDrop).toHaveBeenCalledWith(1);
       expect(connection.towerSkullDropCount).toBe(1);
 
-      (callbacks.onSkullDrop as jest.Mock).mockClear();
+      (callbacks.onSkullDrop as Mock).mockClear();
       mockAdapter.simulateResponse(createTowerStateResponse(1));
       expect(callbacks.onSkullDrop).not.toHaveBeenCalled();
 
@@ -220,23 +221,23 @@ describe('UdtBleConnection', () => {
 
   describe('Connection health monitoring', () => {
     test('should detect GATT disconnection via health check', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       await connection.connect();
 
       mockAdapter.isConnectedValue = false;
 
-      jest.advanceTimersByTime(connection.connectionMonitorFrequency + 100);
+      vi.advanceTimersByTime(connection.connectionMonitorFrequency + 100);
 
       expect(connection.isConnected).toBe(false);
       expect(callbacks.onTowerDisconnect).toHaveBeenCalled();
     });
 
     test('should detect battery heartbeat timeout', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       connection.batteryHeartbeatVerifyConnection = false;
       await connection.connect();
 
-      jest.advanceTimersByTime(
+      vi.advanceTimersByTime(
         connection.batteryHeartbeatTimeout + connection.connectionMonitorFrequency + 100,
       );
 
@@ -245,13 +246,13 @@ describe('UdtBleConnection', () => {
     });
 
     test('should reset heartbeat timer when GATT still connected and verify enabled', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       connection.batteryHeartbeatVerifyConnection = true;
       await connection.connect();
 
       const heartbeatBefore = connection.lastBatteryHeartbeat;
 
-      jest.advanceTimersByTime(
+      vi.advanceTimersByTime(
         connection.batteryHeartbeatTimeout + connection.connectionMonitorFrequency + 100,
       );
 
@@ -260,12 +261,12 @@ describe('UdtBleConnection', () => {
     });
 
     test('should use longer timeout during long commands', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       connection.batteryHeartbeatVerifyConnection = false;
       await connection.connect();
       connection.performingLongCommand = true;
 
-      jest.advanceTimersByTime(
+      vi.advanceTimersByTime(
         connection.batteryHeartbeatTimeout + connection.connectionMonitorFrequency + 100,
       );
 
@@ -273,11 +274,11 @@ describe('UdtBleConnection', () => {
     });
 
     test('should detect general command timeout', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       connection.enableBatteryHeartbeatMonitoring = false;
       await connection.connect();
 
-      jest.advanceTimersByTime(
+      vi.advanceTimersByTime(
         connection.connectionTimeoutThreshold + connection.connectionMonitorFrequency + 100,
       );
 
@@ -337,7 +338,7 @@ describe('UdtBleConnection', () => {
       await connection.connect();
       await connection.cleanup();
       // Second call should not throw and adapter cleanup should only run once
-      const cleanupSpy = jest.spyOn(mockAdapter, 'cleanup');
+      const cleanupSpy = vi.spyOn(mockAdapter, 'cleanup');
       await connection.cleanup();
       expect(cleanupSpy).not.toHaveBeenCalled();
     });

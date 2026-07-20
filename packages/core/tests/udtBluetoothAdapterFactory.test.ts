@@ -2,40 +2,45 @@
  * Tests for BluetoothAdapterFactory platform detection and adapter creation
  */
 
-import { BluetoothAdapterFactory, BluetoothPlatform } from '../src/udtBluetoothAdapterFactory';
+import {
+  BluetoothAdapterFactory,
+  BluetoothPlatform,
+  type AdapterConstructorOverrides,
+} from '../src/udtBluetoothAdapterFactory';
+import type { IBluetoothAdapter } from '../src/udtBluetoothAdapter';
+import { NoopBluetoothAdapter } from '../src/adapters/NoopBluetoothAdapter';
 
-// Mock the adapter modules so we don't need real implementations
-jest.mock('../src/adapters/WebBluetoothAdapter', () => ({
-  WebBluetoothAdapter: jest.fn().mockImplementation(() => ({
-    _type: 'web',
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    isConnected: jest.fn(),
-    isGattConnected: jest.fn(),
-    writeCharacteristic: jest.fn(),
-    onCharacteristicValueChanged: jest.fn(),
-    onDisconnect: jest.fn(),
-    onBluetoothAvailabilityChanged: jest.fn(),
-    readDeviceInformation: jest.fn(),
-    cleanup: jest.fn(),
-  })),
-}));
+// The factory lazily `require()`s each adapter so a browser bundle never pulls in
+// the Node BLE stack. That is a runtime call: `vi.mock` cannot intercept it, and it
+// cannot resolve a `.ts` source at all. So these tests inject the constructors via
+// `create`'s `overrides` parameter instead of mocking the modules.
+//
+// A real class, not `vi.fn().mockImplementation(...)`: the factory calls
+// `new Ctor()`, and an arrow-function mock implementation is not constructible
+// ("... is not a constructor"). Jest tolerated this; vitest does not.
+function stubAdapter(type: string): new () => IBluetoothAdapter {
+  return class StubAdapter {
+    readonly _type = type;
+    connect = vi.fn();
+    disconnect = vi.fn();
+    isConnected = vi.fn();
+    isGattConnected = vi.fn();
+    writeCharacteristic = vi.fn();
+    onCharacteristicValueChanged = vi.fn();
+    onDisconnect = vi.fn();
+    onBluetoothAvailabilityChanged = vi.fn();
+    readDeviceInformation = vi.fn();
+    cleanup = vi.fn();
+  } as unknown as new () => IBluetoothAdapter;
+}
 
-jest.mock('../src/adapters/NodeBluetoothAdapter', () => ({
-  NodeBluetoothAdapter: jest.fn().mockImplementation(() => ({
-    _type: 'node',
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    isConnected: jest.fn(),
-    isGattConnected: jest.fn(),
-    writeCharacteristic: jest.fn(),
-    onCharacteristicValueChanged: jest.fn(),
-    onDisconnect: jest.fn(),
-    onBluetoothAvailabilityChanged: jest.fn(),
-    readDeviceInformation: jest.fn(),
-    cleanup: jest.fn(),
-  })),
-}));
+// NoopBluetoothAdapter is passed through for real (statically imported here rather
+// than lazily required) so the NONE case still exercises the actual adapter.
+const adapterOverrides: AdapterConstructorOverrides = {
+  WebBluetoothAdapter: stubAdapter('web'),
+  NodeBluetoothAdapter: stubAdapter('node'),
+  NoopBluetoothAdapter,
+};
 
 type FactoryTestGlobal = {
   window?: object;
@@ -112,12 +117,12 @@ describe('BluetoothAdapterFactory', () => {
 
   describe('create', () => {
     test('should create WebBluetoothAdapter for WEB platform', () => {
-      const adapter = BluetoothAdapterFactory.create(BluetoothPlatform.WEB);
+      const adapter = BluetoothAdapterFactory.create(BluetoothPlatform.WEB, adapterOverrides);
       expect((adapter as MockAdapterResult)._type).toBe('web');
     });
 
     test('should create NodeBluetoothAdapter for NODE platform', () => {
-      const adapter = BluetoothAdapterFactory.create(BluetoothPlatform.NODE);
+      const adapter = BluetoothAdapterFactory.create(BluetoothPlatform.NODE, adapterOverrides);
       expect((adapter as MockAdapterResult)._type).toBe('node');
     });
 
@@ -126,13 +131,13 @@ describe('BluetoothAdapterFactory', () => {
       delete (global as unknown as FactoryTestGlobal).window;
       delete (global as unknown as FactoryTestGlobal).navigator;
 
-      const adapter = BluetoothAdapterFactory.create(BluetoothPlatform.AUTO);
+      const adapter = BluetoothAdapterFactory.create(BluetoothPlatform.AUTO, adapterOverrides);
       expect((adapter as MockAdapterResult)._type).toBe('node');
     });
 
     test('should create a no-op adapter for NONE platform', () => {
       // NoopBluetoothAdapter is not mocked, so this exercises the real adapter.
-      const adapter = BluetoothAdapterFactory.create(BluetoothPlatform.NONE);
+      const adapter = BluetoothAdapterFactory.create(BluetoothPlatform.NONE, adapterOverrides);
       expect(adapter).toBeDefined();
       expect(adapter.isConnected()).toBe(false);
       expect(adapter.isGattConnected()).toBe(false);

@@ -11,23 +11,25 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "format": "prettier --write ."
+    "lint": "eslint ."
   },
   "author": "ChessMess",
   "license": "MIT",
   "dependencies": {
     "ultimatedarktower": "workspace:^",
-    "ultimatedarktowerdata": "workspace:*"
+    "ultimatedarktowerdata": "workspace:^"
   },
   "devDependencies": {
-    "globals": "^15.0.0",
-    "prettier": "^3.8.1",
     "typescript": "catalog:",
-    "vite": "^8.0.0",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "apps/game"
   }
 }

@@ -34,6 +34,19 @@ try {
 }
 
 /**
+ * The subset of the noble singleton this adapter actually uses.
+ *
+ * Declared explicitly so tests can supply a stand-in: the `require()` above is a
+ * runtime call, and module mockers that operate on the ESM graph (vitest's
+ * `vi.mock`) cannot intercept it. Injecting through the constructor is the
+ * supported seam — see `NodeBluetoothAdapter`'s constructor.
+ */
+export type NobleLike = Pick<
+  Noble,
+  'waitForPoweredOnAsync' | 'startScanning' | 'stopScanning' | 'on' | 'removeListener'
+>;
+
+/**
  * Node.js Bluetooth adapter implementation using @stoprocent/noble.
  * Noble is a singleton EventEmitter - event listeners must be carefully managed to prevent leaks.
  *
@@ -62,18 +75,34 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
   private isConnectedFlag = false;
 
   /**
+   * The noble singleton this instance talks to. Defaults to the lazily-required
+   * `@stoprocent/noble` above, so production behaviour is unchanged.
+   */
+  private readonly noble: NobleLike | undefined;
+
+  /**
+   * @param nobleImpl Optional noble stand-in. Production callers omit this and get
+   *   the real `@stoprocent/noble` singleton. Tests pass a mock — the module-level
+   *   `require()` cannot be intercepted by an ESM module mocker, so injection is
+   *   the seam.
+   */
+  constructor(nobleImpl?: NobleLike) {
+    this.noble = nobleImpl ?? (noble as NobleLike | undefined);
+  }
+
+  /**
    * Waits for Noble's BLE adapter to reach 'poweredOn' state.
    * Uses @stoprocent/noble's built-in waitForPoweredOnAsync().
    */
   private async ensureNobleReady(): Promise<void> {
-    if (!noble) {
+    if (!this.noble) {
       throw new BluetoothConnectionError(
         '@stoprocent/noble not found. Install with: npm install @stoprocent/noble',
       );
     }
 
     try {
-      await noble.waitForPoweredOnAsync();
+      await this.noble.waitForPoweredOnAsync();
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
       throw new BluetoothConnectionError(`Bluetooth adapter not ready: ${msg}`, error);
@@ -93,7 +122,7 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
             this.availabilityCallback(state === 'poweredOn');
           }
         };
-        noble!.on('stateChange', this.boundStateChangeHandler);
+        this.noble!.on('stateChange', this.boundStateChangeHandler);
       }
 
       // Step 3: Normalize UUIDs for Noble (strip dashes, lowercase)
@@ -168,8 +197,8 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
   async disconnect(): Promise<void> {
     // Remove the noble singleton's stateChange listener so repeated
     // connect/disconnect cycles don't accumulate listeners across calls.
-    if (noble && this.boundStateChangeHandler) {
-      noble.removeListener('stateChange', this.boundStateChangeHandler);
+    if (this.noble && this.boundStateChangeHandler) {
+      this.noble.removeListener('stateChange', this.boundStateChangeHandler);
       this.boundStateChangeHandler = undefined;
     }
 
@@ -345,8 +374,8 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
   ): Promise<Peripheral> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        noble!.stopScanning();
-        noble!.removeListener('discover', onDiscover);
+        this.noble!.stopScanning();
+        this.noble!.removeListener('discover', onDiscover);
         reject(new BluetoothTimeoutError(`Device scan timeout after ${timeoutMs}ms`));
       }, timeoutMs);
 
@@ -354,15 +383,15 @@ export class NodeBluetoothAdapter implements IBluetoothAdapter {
         const name = peripheral.advertisement?.localName;
         if (name && name.startsWith(deviceName)) {
           clearTimeout(timeout);
-          noble!.stopScanning();
-          noble!.removeListener('discover', onDiscover);
+          this.noble!.stopScanning();
+          this.noble!.removeListener('discover', onDiscover);
           resolve(peripheral);
         }
       };
 
-      noble!.on('discover', onDiscover);
+      this.noble!.on('discover', onDiscover);
       // Start scanning - noble accepts service UUIDs without dashes
-      noble!.startScanning(serviceUuids, false); // false = no duplicates
+      this.noble!.startScanning(serviceUuids, false); // false = no duplicates
     });
   }
 

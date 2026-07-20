@@ -6,41 +6,51 @@
   "scripts": {
     "predev": "pnpm --filter @udtc/engine build",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc --build && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc --build",
     "lint": "eslint .",
     "pretest": "pnpm --filter @udtc/engine build",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "test:watch": "vitest",
     "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "dependencies": {
-    "@dimforge/rapier3d-compat": "^0.19.3",
+    "@dimforge/rapier3d-compat": "catalog:",
     "@udtc/adapters": "workspace:*",
     "@udtc/card-render": "workspace:*",
     "@udtc/engine": "workspace:*",
     "@udtc/scenario-store": "workspace:*",
     "@udtc/schema": "workspace:*",
     "@udtc/theme": "workspace:*",
-    "gsap": "^3.15.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "three": "^0.185.0",
+    "gsap": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "three": "catalog:",
     "ultimatedarktower": "workspace:^",
     "ultimatedarktowerboard": "workspace:^",
     "ultimatedarktowerdisplay": "workspace:^",
-    "zustand": "^5.0.0"
+    "zustand": "catalog:"
   },
   "devDependencies": {
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^6.0.0",
-    "ajv": "^8.17.0",
-    "ajv-formats": "^3.0.0",
-    "fake-indexeddb": "^6.2.5",
-    "jsdom": "^25.0.0",
-    "vite": "^8.0.0",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "ajv": "catalog:",
+    "ajv-formats": "catalog:",
+    "fake-indexeddb": "catalog:",
+    "jsdom": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "apps/player"
   }
 }

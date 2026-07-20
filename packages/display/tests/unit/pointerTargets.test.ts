@@ -53,7 +53,7 @@ describe('pointer/raycast contract', () => {
     const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
     const canvas = (view as unknown as { renderer: { domElement: HTMLCanvasElement } }).renderer
       .domElement;
-    jest.spyOn(canvas, 'getBoundingClientRect').mockReturnValue({
+    vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue({
       left: 0,
       top: 0,
       width: 100,
@@ -69,11 +69,11 @@ describe('pointer/raycast contract', () => {
 
   it('pointerdown on a registered object fires onPointerDown with the intersection; returning true consumes it', () => {
     const { view, canvas } = makeView();
-    const orbitSpy = jest.fn();
+    const orbitSpy = vi.fn();
     canvas.addEventListener('pointerdown', orbitSpy); // OrbitControls stand-in (target phase)
 
     const obj = hitObject();
-    const onPointerDown = jest.fn().mockReturnValue(true);
+    const onPointerDown = vi.fn().mockReturnValue(true);
     view.registerPointerTarget({ objects: [obj], priority: 10, onPointerDown });
 
     pointerDownAt(canvas);
@@ -88,11 +88,11 @@ describe('pointer/raycast contract', () => {
 
   it('clicking empty space (no hit) leaves camera orbit intact', () => {
     const { view, canvas } = makeView();
-    const orbitSpy = jest.fn();
+    const orbitSpy = vi.fn();
     canvas.addEventListener('pointerdown', orbitSpy);
 
     const obj = new THREE.Object3D(); // not flagged __hit → no intersection
-    const onPointerDown = jest.fn().mockReturnValue(true);
+    const onPointerDown = vi.fn().mockReturnValue(true);
     view.registerPointerTarget({ objects: [obj], onPointerDown });
 
     pointerDownAt(canvas);
@@ -136,7 +136,7 @@ describe('pointer/raycast contract', () => {
   it('falls through to a lower-priority target when the higher one does not consume', () => {
     const { view, canvas } = makeView();
     const order: string[] = [];
-    const orbitSpy = jest.fn();
+    const orbitSpy = vi.fn();
     canvas.addEventListener('pointerdown', orbitSpy);
 
     view.registerPointerTarget({
@@ -164,10 +164,10 @@ describe('pointer/raycast contract', () => {
 
   it('unsubscribing a target stops its callbacks (camera orbit restored)', () => {
     const { view, canvas } = makeView();
-    const orbitSpy = jest.fn();
+    const orbitSpy = vi.fn();
     canvas.addEventListener('pointerdown', orbitSpy);
 
-    const onPointerDown = jest.fn().mockReturnValue(true);
+    const onPointerDown = vi.fn().mockReturnValue(true);
     const unsub = view.registerPointerTarget({ objects: [hitObject()], onPointerDown });
 
     unsub();
@@ -181,9 +181,9 @@ describe('pointer/raycast contract', () => {
   it('dispatches move + up to the gesture owner after a consumed pointerdown', () => {
     const { view, canvas } = makeView();
     const obj = hitObject();
-    const onPointerDown = jest.fn().mockReturnValue(true);
-    const onPointerMove = jest.fn();
-    const onPointerUp = jest.fn();
+    const onPointerDown = vi.fn().mockReturnValue(true);
+    const onPointerMove = vi.fn();
+    const onPointerUp = vi.fn();
     view.registerPointerTarget({ objects: [obj], onPointerDown, onPointerMove, onPointerUp });
 
     pointerDownAt(canvas);
@@ -208,9 +208,9 @@ describe('pointer/raycast contract', () => {
 
   it('a pointer target registered through a scene plugin is removed when the plugin detaches', () => {
     const { view, canvas } = makeView();
-    const orbitSpy = jest.fn();
+    const orbitSpy = vi.fn();
     canvas.addEventListener('pointerdown', orbitSpy);
-    const onPointerDown = jest.fn().mockReturnValue(true);
+    const onPointerDown = vi.fn().mockReturnValue(true);
 
     const handle = attachScenePlugin(view, {
       id: 'p',

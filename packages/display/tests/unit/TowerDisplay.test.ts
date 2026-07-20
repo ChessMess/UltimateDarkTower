@@ -195,7 +195,7 @@ describe('TowerDisplay', () => {
 
     it('user-provided onSealClick callback still fires for each click', () => {
       display.dispose();
-      const handler = jest.fn();
+      const handler = vi.fn();
       display = new TowerDisplay({
         container,
         renderers: ['side-view', '3d-view'],
@@ -211,7 +211,7 @@ describe('TowerDisplay', () => {
 
     it('clickToToggleSeals=false disables toggling but still fires onSealClick', () => {
       display.dispose();
-      const handler = jest.fn();
+      const handler = vi.fn();
       display = new TowerDisplay({
         container,
         renderers: ['side-view', '3d-view'],
@@ -235,7 +235,7 @@ describe('TowerDisplay', () => {
 
     it('readout seal click routes through the parent onSealClick callback', () => {
       display.dispose();
-      const handler = jest.fn();
+      const handler = vi.fn();
       display = new TowerDisplay({
         container,
         renderers: 'readout',
@@ -272,7 +272,7 @@ describe('TowerDisplay', () => {
 
     it('clicking a side button in 2D fires parent onSideChange and mirrors to 3D', () => {
       display.dispose();
-      const handler = jest.fn();
+      const handler = vi.fn();
       display = new TowerDisplay({
         container,
         renderers: ['side-view', '3d-view'],

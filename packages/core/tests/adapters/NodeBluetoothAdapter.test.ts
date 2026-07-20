@@ -1,31 +1,33 @@
 /**
  * Tests for NodeBluetoothAdapter
  *
- * Mocks @stoprocent/noble at the module level. Noble is a singleton EventEmitter
- * loaded via require() at the top of NodeBluetoothAdapter.ts. The jest.mock()
- * intercepts that require so the adapter gets our mock instead of the real package.
+ * Noble is a singleton EventEmitter that the adapter loads with a guarded
+ * `require('@stoprocent/noble')` at module scope, so it is never pulled into a
+ * browser build. That `require` is a runtime call and is NOT intercepted by
+ * `vi.mock`, which only rewrites the ESM module graph — so these tests inject a
+ * stand-in through the adapter's constructor instead. `NodeBluetoothAdapter()`
+ * with no argument still resolves the real singleton in production.
  */
 
 import { BluetoothConnectionError, BluetoothTimeoutError } from '../../src/udtBluetoothAdapter';
 import { UART_TX_CHARACTERISTIC_UUID, UART_RX_CHARACTERISTIC_UUID } from '../../src/udtConstants';
+import { NodeBluetoothAdapter, type NobleLike } from '../../src/adapters/NodeBluetoothAdapter';
 
 // Noble/characteristic event handlers are invoked as `handler(...args)`.
 type Listener = (...args: unknown[]) => void;
-
-// --- Build the mock noble singleton BEFORE jest.mock ---
 
 function createMockNoble() {
   const listeners: Record<string, Listener[]> = {};
   return {
     state: 'poweredOn',
-    waitForPoweredOnAsync: jest.fn().mockResolvedValue(undefined),
-    startScanning: jest.fn(),
-    stopScanning: jest.fn(),
-    on: jest.fn((event: string, handler: Listener) => {
+    waitForPoweredOnAsync: vi.fn().mockResolvedValue(undefined),
+    startScanning: vi.fn(),
+    stopScanning: vi.fn(),
+    on: vi.fn((event: string, handler: Listener) => {
       if (!listeners[event]) listeners[event] = [];
       listeners[event].push(handler);
     }),
-    removeListener: jest.fn((event: string, handler: Listener) => {
+    removeListener: vi.fn((event: string, handler: Listener) => {
       if (listeners[event]) {
         listeners[event] = listeners[event].filter((h) => h !== handler);
       }
@@ -39,12 +41,6 @@ function createMockNoble() {
 
 const mockNoble = createMockNoble();
 
-// Mock the noble module - this intercepts the require() in NodeBluetoothAdapter.ts
-jest.mock('@stoprocent/noble', () => mockNoble);
-
-// Import AFTER mocking so the module-level require picks up our mock
-import { NodeBluetoothAdapter } from '../../src/adapters/NodeBluetoothAdapter';
-
 // --- Mock Factories ---
 
 function normalizeUuid(uuid: string): string {
@@ -55,15 +51,15 @@ function createMockCharacteristic(uuid: string, options: { readable?: Buffer } =
   const listeners: Record<string, Listener[]> = {};
   return {
     uuid: normalizeUuid(uuid),
-    subscribeAsync: jest.fn().mockResolvedValue(undefined),
-    unsubscribeAsync: jest.fn().mockResolvedValue(undefined),
-    readAsync: jest.fn().mockResolvedValue(options.readable ?? Buffer.from('')),
-    writeAsync: jest.fn().mockResolvedValue(undefined),
-    on: jest.fn((event: string, handler: Listener) => {
+    subscribeAsync: vi.fn().mockResolvedValue(undefined),
+    unsubscribeAsync: vi.fn().mockResolvedValue(undefined),
+    readAsync: vi.fn().mockResolvedValue(options.readable ?? Buffer.from('')),
+    writeAsync: vi.fn().mockResolvedValue(undefined),
+    on: vi.fn((event: string, handler: Listener) => {
       if (!listeners[event]) listeners[event] = [];
       listeners[event].push(handler);
     }),
-    removeListener: jest.fn((event: string, handler: Listener) => {
+    removeListener: vi.fn((event: string, handler: Listener) => {
       if (listeners[event]) {
         listeners[event] = listeners[event].filter((h) => h !== handler);
       }
@@ -86,16 +82,16 @@ function createMockPeripheral(
   return {
     advertisement: { localName: options.name ?? 'ReturnToDarkTower' },
     state: options.state ?? 'connected',
-    connectAsync: jest.fn().mockResolvedValue(undefined),
-    disconnectAsync: jest.fn().mockResolvedValue(undefined),
-    discoverAllServicesAndCharacteristicsAsync: jest.fn().mockResolvedValue({
+    connectAsync: vi.fn().mockResolvedValue(undefined),
+    disconnectAsync: vi.fn().mockResolvedValue(undefined),
+    discoverAllServicesAndCharacteristicsAsync: vi.fn().mockResolvedValue({
       characteristics: options.characteristics ?? [],
     }),
-    once: jest.fn((event: string, handler: Listener) => {
+    once: vi.fn((event: string, handler: Listener) => {
       if (!listeners[event]) listeners[event] = [];
       listeners[event].push(handler);
     }),
-    removeListener: jest.fn((event: string, handler: Listener) => {
+    removeListener: vi.fn((event: string, handler: Listener) => {
       if (listeners[event]) {
         listeners[event] = listeners[event].filter((h) => h !== handler);
       }
@@ -129,8 +125,8 @@ describe('NodeBluetoothAdapter', () => {
   let adapter: NodeBluetoothAdapter;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useRealTimers();
+    vi.clearAllMocks();
+    vi.useRealTimers();
 
     // Reset noble mock state
     mockNoble._listeners.discover = [];
@@ -138,7 +134,7 @@ describe('NodeBluetoothAdapter', () => {
     mockNoble.state = 'poweredOn';
     mockNoble.waitForPoweredOnAsync.mockResolvedValue(undefined);
 
-    adapter = new NodeBluetoothAdapter();
+    adapter = new NodeBluetoothAdapter(mockNoble as unknown as NobleLike);
   });
 
   afterEach(async () => {
@@ -169,12 +165,10 @@ describe('NodeBluetoothAdapter', () => {
     });
 
     test('should throw BluetoothTimeoutError when scan times out', async () => {
-      jest
-        .spyOn(
-          adapter as unknown as { scanForDevice: (...args: unknown[]) => Promise<unknown> },
-          'scanForDevice',
-        )
-        .mockRejectedValue(new BluetoothTimeoutError('Device scan timeout after 10000ms'));
+      vi.spyOn(
+        adapter as unknown as { scanForDevice: (...args: unknown[]) => Promise<unknown> },
+        'scanForDevice',
+      ).mockRejectedValue(new BluetoothTimeoutError('Device scan timeout after 10000ms'));
 
       await expect(
         adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']),
@@ -194,7 +188,7 @@ describe('NodeBluetoothAdapter', () => {
       const peripheral = createMockPeripheral({ characteristics: [] });
       setupImmediateDiscovery(peripheral);
 
-      const cleanupSpy = jest.spyOn(adapter, 'cleanup');
+      const cleanupSpy = vi.spyOn(adapter, 'cleanup');
 
       try {
         await adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']);
@@ -206,21 +200,19 @@ describe('NodeBluetoothAdapter', () => {
     });
 
     test('callbacks registered before a failed connect still fire after a successful retry', async () => {
-      const dataCallback = jest.fn();
-      const disconnectCallback = jest.fn();
-      const availabilityCallback = jest.fn();
+      const dataCallback = vi.fn();
+      const disconnectCallback = vi.fn();
+      const availabilityCallback = vi.fn();
       adapter.onCharacteristicValueChanged(dataCallback);
       adapter.onDisconnect(disconnectCallback);
       adapter.onBluetoothAvailabilityChanged(availabilityCallback);
 
       // First connect attempt fails (e.g. scan timeout). The adapter's error-path
       // cleanup() must not wipe the callbacks registered above.
-      jest
-        .spyOn(
-          adapter as unknown as { scanForDevice: (...args: unknown[]) => Promise<unknown> },
-          'scanForDevice',
-        )
-        .mockRejectedValueOnce(new BluetoothTimeoutError('Device scan timeout after 10000ms'));
+      vi.spyOn(
+        adapter as unknown as { scanForDevice: (...args: unknown[]) => Promise<unknown> },
+        'scanForDevice',
+      ).mockRejectedValueOnce(new BluetoothTimeoutError('Device scan timeout after 10000ms'));
 
       await expect(
         adapter.connect('ReturnToDarkTower', ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']),
@@ -330,7 +322,7 @@ describe('NodeBluetoothAdapter', () => {
   describe('onCharacteristicValueChanged', () => {
     test('should invoke callback when RX data arrives', async () => {
       const { rxChar, all } = createStandardCharacteristics();
-      const callback = jest.fn();
+      const callback = vi.fn();
       adapter.onCharacteristicValueChanged(callback);
 
       const peripheral = createMockPeripheral({ characteristics: all });
@@ -353,7 +345,7 @@ describe('NodeBluetoothAdapter', () => {
   describe('onDisconnect', () => {
     test('should invoke callback on peripheral disconnect event', async () => {
       const { all } = createStandardCharacteristics();
-      const callback = jest.fn();
+      const callback = vi.fn();
       adapter.onDisconnect(callback);
 
       const peripheral = createMockPeripheral({ characteristics: all });
@@ -374,7 +366,7 @@ describe('NodeBluetoothAdapter', () => {
 
   describe('onBluetoothAvailabilityChanged', () => {
     test('should relay noble stateChange events', async () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       adapter.onBluetoothAvailabilityChanged(callback);
 
       const { all } = createStandardCharacteristics();
@@ -433,7 +425,7 @@ describe('NodeBluetoothAdapter', () => {
 
   describe('cleanup', () => {
     test('should remove noble and peripheral listeners', async () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       adapter.onBluetoothAvailabilityChanged(callback);
 
       const { all } = createStandardCharacteristics();

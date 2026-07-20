@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "echo 'card-render: no emit (source-only)'",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },
@@ -16,6 +17,17 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@types/react": "^19.2.0"
+    "@types/react": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "packages/creator-card-render"
   }
 }

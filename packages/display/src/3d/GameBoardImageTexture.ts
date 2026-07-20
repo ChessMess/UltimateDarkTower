@@ -10,9 +10,11 @@ import { getBoardTextureRotation } from './boardTextureRotation';
 // Rollup, and Parcel each detect this `new URL` shape and emit the asset on the
 // consumer side, so the default board texture still loads out of the box.
 //
-// `import.meta` can't be parsed by Jest's CommonJS transform, so this module is
-// stubbed in jest.config.cjs (like the audio modules). The pure rotation math it
-// needs lives in ./boardTextureRotation, which stays importable by tests.
+// No test exercises real image-texture loading (three's TextureLoader is mocked
+// and the ground disc falls back to the procedural texture), so this module is
+// stubbed in vitest.config.ts's alias list (like the audio modules). The pure
+// rotation math it needs lives in ./boardTextureRotation, which stays importable
+// by tests directly.
 const boardImageUrl = new URL('./assets/board.png', import.meta.url).href;
 
 /**

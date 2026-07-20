@@ -9,25 +9,30 @@
     "dev": "vite",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --build --noEmit",
     "clean": "rm -rf dist"
   },
   "author": "ChessMess",
   "license": "MIT",
   "dependencies": {
-    "@dimforge/rapier3d-compat": "^0.19.3",
-    "gsap": "^3.12.0",
-    "three": "^0.185.0",
+    "@dimforge/rapier3d-compat": "catalog:",
+    "gsap": "catalog:",
+    "three": "catalog:",
     "ultimatedarktower": "workspace:^",
     "ultimatedarktowerdisplay": "workspace:^",
     "ultimatedarktowerrelay-client": "workspace:^",
     "ultimatedarktowerrelay-shared": "workspace:^"
   },
   "devDependencies": {
-    "vite": "^8.0.0",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "apps/sync"
   }
 }

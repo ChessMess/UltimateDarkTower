@@ -3,50 +3,85 @@
 // be parsed by ts-jest's CommonJS transform). The facade's job is to compose
 // chrome around a TowerDisplay and forward calls — both can be verified
 // against a stub.
+//
+// vi.mock is hoisted above every import, so its factory cannot close over plain
+// top-level bindings — they would still be in the temporal dead zone. vi.hoisted
+// runs in that same hoisted phase, so everything the factory needs is built here.
+const {
+  applyStateMock,
+  applySealsMock,
+  selectSideMock,
+  setLedOverrideMock,
+  clearLedOverridesMock,
+  showIdleMock,
+  applyLightingConfigMock,
+  applyCameraConfigMock,
+  applyAudioConfigMock,
+  setSceneLightsMock,
+  playEntranceMock,
+  disposeMock,
+  FakeTowerDisplay,
+} = vi.hoisted(() => {
+  const applyStateMock = vi.fn();
+  const applySealsMock = vi.fn();
+  const selectSideMock = vi.fn();
+  const setLedOverrideMock = vi.fn();
+  const clearLedOverridesMock = vi.fn();
+  const showIdleMock = vi.fn();
+  const applyLightingConfigMock = vi.fn();
+  const applyCameraConfigMock = vi.fn();
+  const applyAudioConfigMock = vi.fn();
+  const setSceneLightsMock = vi.fn();
+  const playEntranceMock = vi.fn();
+  const disposeMock = vi.fn();
 
-const applyStateMock = jest.fn();
-const applySealsMock = jest.fn();
-const selectSideMock = jest.fn();
-const setLedOverrideMock = jest.fn();
-const clearLedOverridesMock = jest.fn();
-const showIdleMock = jest.fn();
-const applyLightingConfigMock = jest.fn();
-const applyCameraConfigMock = jest.fn();
-const applyAudioConfigMock = jest.fn();
-const setSceneLightsMock = jest.fn();
-const playEntranceMock = jest.fn();
-const disposeMock = jest.fn();
-
-class FakeTowerDisplay {
-  view3D: unknown = null;
-  loadState: 'pending' | 'ready' | 'error' | undefined = undefined;
-  applyState = applyStateMock;
-  applySeals = applySealsMock;
-  selectSide = selectSideMock;
-  setLedOverride = setLedOverrideMock;
-  clearLedOverrides = clearLedOverridesMock;
-  showIdle = showIdleMock;
-  applyLightingConfig = applyLightingConfigMock;
-  applyCameraConfig = applyCameraConfigMock;
-  applyAudioConfig = applyAudioConfigMock;
-  setSceneLights = setSceneLightsMock;
-  playEntrance = playEntranceMock;
-  constructor(public readonly options: { container: HTMLElement }) {
-    // Mount a placeholder inside the container so the body has a child the
-    // facade can observe — matches the real TowerDisplay's behaviour of
-    // appending a `.td-layout` div under its container.
-    const layout = document.createElement('div');
-    layout.className = 'td-layout';
-    options.container.appendChild(layout);
+  class FakeTowerDisplay {
+    view3D: unknown = null;
+    loadState: 'pending' | 'ready' | 'error' | undefined = undefined;
+    applyState = applyStateMock;
+    applySeals = applySealsMock;
+    selectSide = selectSideMock;
+    setLedOverride = setLedOverrideMock;
+    clearLedOverrides = clearLedOverridesMock;
+    showIdle = showIdleMock;
+    applyLightingConfig = applyLightingConfigMock;
+    applyCameraConfig = applyCameraConfigMock;
+    applyAudioConfig = applyAudioConfigMock;
+    setSceneLights = setSceneLightsMock;
+    playEntrance = playEntranceMock;
+    constructor(public readonly options: { container: HTMLElement }) {
+      // Mount a placeholder inside the container so the body has a child the
+      // facade can observe — matches the real TowerDisplay's behaviour of
+      // appending a `.td-layout` div under its container.
+      const layout = document.createElement('div');
+      layout.className = 'td-layout';
+      options.container.appendChild(layout);
+    }
+    dispose = (): void => {
+      disposeMock();
+      const layout = this.options.container.querySelector('.td-layout');
+      if (layout) layout.remove();
+    };
   }
-  dispose = (): void => {
-    disposeMock();
-    const layout = this.options.container.querySelector('.td-layout');
-    if (layout) layout.remove();
-  };
-}
 
-jest.mock('../../src/TowerDisplay', () => ({
+  return {
+    applyStateMock,
+    applySealsMock,
+    selectSideMock,
+    setLedOverrideMock,
+    clearLedOverridesMock,
+    showIdleMock,
+    applyLightingConfigMock,
+    applyCameraConfigMock,
+    applyAudioConfigMock,
+    setSceneLightsMock,
+    playEntranceMock,
+    disposeMock,
+    FakeTowerDisplay,
+  };
+});
+
+vi.mock('../../src/TowerDisplay', () => ({
   TowerDisplay: FakeTowerDisplay,
 }));
 
@@ -303,10 +338,11 @@ describe('TowerRenderView', () => {
 });
 
 describe('TOWER_DISPLAY_CSS docking rules', () => {
-  it('includes the overlay + panel-slot rules so injectStyles:false consumers get them', () => {
-    const { TOWER_DISPLAY_CSS } = jest.requireActual('../../src/styles') as {
-      TOWER_DISPLAY_CSS: string;
-    };
+  it('includes the overlay + panel-slot rules so injectStyles:false consumers get them', async () => {
+    // vi.importActual is async — unlike jest.requireActual, which was synchronous.
+    const { TOWER_DISPLAY_CSS } = await vi.importActual<{ TOWER_DISPLAY_CSS: string }>(
+      '../../src/styles',
+    );
     expect(TOWER_DISPLAY_CSS).toContain('.trv-overlay');
     expect(TOWER_DISPLAY_CSS).toContain('pointer-events: none');
     expect(TOWER_DISPLAY_CSS).toContain('.trv-dock');

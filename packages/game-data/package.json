@@ -20,16 +20,18 @@
     }
   },
   "files": [
-    "dist/**/*",
+    "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc --build",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
-    "prepack": "npm run clean && npm run build",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "test": "vitest run",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "ReturnToDarkTower",
@@ -57,11 +59,10 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13.0"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.0"
+    "@vitest/coverage-v8": "catalog:",
+    "vitest": "catalog:"
   }
 }

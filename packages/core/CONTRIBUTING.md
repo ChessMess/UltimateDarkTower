@@ -69,7 +69,7 @@ npm run ci
 ### Testing
 
 - Tests live in `tests/` mirroring the `src/` structure
-- Use [Jest](https://jestjs.io/) as the test framework
+- Use [Vitest](https://vitest.dev/) as the test framework
 - Use `MockBluetoothAdapter` (`tests/mocks/MockBluetoothAdapter.ts`) for unit tests that need a Bluetooth adapter
 - Pass the mock adapter via `new UltimateDarkTower({ adapter: mockAdapter })`
 - Run `npm run test:coverage` and aim for high coverage on new code
@@ -86,51 +86,24 @@ The library uses an **adapter pattern** for multi-platform Bluetooth support. Se
 
 ## Release Process
 
-This project follows [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow) with tagged releases.
+This package lives in the `UltimateDarkTower` pnpm monorepo and releases through
+[Changesets](https://github.com/changesets/changesets), not a manual tag-and-publish flow.
 
 ### Steps
 
-1. **Create a release branch** from `main`:
+1. **Record the change**: `pnpm changeset` at the repo root, select `ultimatedarktower`,
+   pick a bump type, and write the changelog entry.
+2. **Open a PR** with your change + the changeset file into `main`.
+3. **After merge**, the release workflow (`.github/workflows/release.yml`) opens or updates
+   a "Version Packages" PR that bumps `package.json`/`CHANGELOG.md` from the accumulated
+   changesets.
+4. **Merging the Version Packages PR** triggers the actual `npm publish` with provenance —
+   no manual tagging or `npm publish` step.
 
-   ```bash
-   git checkout -b release/vX.Y.Z
-   ```
-
-2. **Update version** in `package.json`
-
-3. **Update `CHANGELOG.md`** with the new version's changes
-
-4. **Run the full CI pipeline**:
-
-   ```bash
-   npm run ci
-   ```
-
-5. **Verify package contents**:
-
-   ```bash
-   npm pack --dry-run
-   ```
-
-6. **Open a Pull Request** from the release branch into `main`
-
-7. **After merge, tag the release**:
-
-   ```bash
-   git checkout main && git pull
-   git tag vX.Y.Z
-   git push origin vX.Y.Z
-   ```
-
-8. **Publish to npm**:
-
-   ```bash
-   npm publish
-   ```
-
-   The `prepack` script automatically runs the full CI pipeline before publishing.
-
-9. **Create a GitHub Release** from the tag with the changelog content as release notes
+See the root [`CLAUDE.md`](../../.claude/CLAUDE.md)'s "Releasing (Changesets)" section for
+the full flow, including the `NPM_TOKEN` package-allowlist gotcha when a new package joins
+the monorepo. Verify what a publish will actually contain locally with `pnpm pack
+--dry-run` before opening the changeset PR.
 
 10. **Delete the release branch**:
     ```bash

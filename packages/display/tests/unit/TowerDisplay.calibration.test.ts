@@ -1,4 +1,4 @@
-/** @jest-environment jsdom */
+// @vitest-environment jsdom
 import { TowerDisplay } from '../../src/TowerDisplay';
 import { createDefaultTowerState, TOWER_COMMANDS } from 'ultimatedarktower';
 import type { TowerState } from 'ultimatedarktower';
@@ -7,7 +7,7 @@ describe('TowerDisplay calibration command', () => {
   it('runs the calibration command to a fully-calibrated state and fires onCalibrationComplete once', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    const onCalibrationComplete = jest.fn();
+    const onCalibrationComplete = vi.fn();
     const display = new TowerDisplay({ container, renderers: 'readout', onCalibrationComplete });
 
     display.applyState({ ...createDefaultTowerState(), command: TOWER_COMMANDS.calibration });
@@ -23,7 +23,7 @@ describe('TowerDisplay calibration command', () => {
   it('does not fire onCalibrationComplete for a normal (non-command) state', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    const onCalibrationComplete = jest.fn();
+    const onCalibrationComplete = vi.fn();
     const display = new TowerDisplay({ container, renderers: 'readout', onCalibrationComplete });
 
     display.applyState(createDefaultTowerState());

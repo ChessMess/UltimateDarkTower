@@ -170,7 +170,7 @@ describe('UdtDiagnosticsRecorder', () => {
           throw new Error('boom');
         },
       };
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       recorder.setSinks([failingSink, sink]);
       recorder.recordIncident({
         cause: 'adapter_event',

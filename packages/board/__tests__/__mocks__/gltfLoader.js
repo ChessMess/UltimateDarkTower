@@ -127,7 +127,7 @@ class GLTFLoader {
   }
 }
 
-module.exports = {
+const __mock = {
   GLTFLoader,
   __setAutoLoad(v) {
     autoLoad = v;
@@ -143,4 +143,23 @@ module.exports = {
     sealNamesOverride = null;
     instances.length = 0;
   },
+};
+
+// ESM surface. This package is `type: module`, so a CJS `module.exports`
+// assignment is inert. Bindings are pulled off __mock and re-exported under
+// aliases so they cannot collide with the class/const declarations above.
+export default __mock;
+const {
+  GLTFLoader: __e_GLTFLoader,
+  __setAutoLoad: __e___setAutoLoad,
+  __setSealNames: __e___setSealNames,
+  __getLastInstance: __e___getLastInstance,
+  __reset: __e___reset,
+} = __mock;
+export {
+  __e_GLTFLoader as GLTFLoader,
+  __e___setAutoLoad as __setAutoLoad,
+  __e___setSealNames as __setSealNames,
+  __e___getLastInstance as __getLastInstance,
+  __e___reset as __reset,
 };

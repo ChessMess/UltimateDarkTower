@@ -20,7 +20,7 @@ art exists yet). Check `assetBaseUrl` and the `${group}/${kebab(id)}.png` path c
 **The GitHub Pages demo loads but assets 404.** Project sites serve under a subpath
 (`/UltimateDarkTowerBoard/`). The example build uses a relative `base` so its hashed bundle and the
 `./board.png` / `./tokens/` / `./tower.glb` assets resolve under that subpath; if you fork to a
-different repo name and assets 404, set `base` in `vite.example.config.ts` to `'/<your-repo>/'`.
+different repo name and assets 404, set `base` in `vite.config.example.ts` to `'/<your-repo>/'`.
 
 **`npm ci` fails in CI.** Make sure CI checks out **and builds** the sibling repos first (see
 `.github/workflows/ci.yml`); the `package-lock.json` is committed so `npm ci` is reproducible.

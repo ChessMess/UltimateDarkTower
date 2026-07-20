@@ -2,6 +2,7 @@
  * Tests for UltimateDarkTower main class
  */
 
+import type { MockInstance } from 'vitest';
 import UltimateDarkTower from '../src/UltimateDarkTower';
 import { LIGHT_EFFECTS, TowerSide } from '../src/udtConstants';
 import { GLYPHS } from 'ultimatedarktowerdata';
@@ -14,7 +15,7 @@ describe('UltimateDarkTower', () => {
   beforeEach(() => {
     mockAdapter = new MockBluetoothAdapter();
     darkTower = new UltimateDarkTower({ adapter: mockAdapter });
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -55,11 +56,11 @@ describe('UltimateDarkTower', () => {
 
   describe('Callback Functions', () => {
     test('should allow setting custom callback functions', () => {
-      const mockCalibrationCallback = jest.fn();
-      const mockSkullDropCallback = jest.fn();
-      const mockBatteryCallback = jest.fn();
-      const mockConnectCallback = jest.fn();
-      const mockDisconnectCallback = jest.fn();
+      const mockCalibrationCallback = vi.fn();
+      const mockSkullDropCallback = vi.fn();
+      const mockBatteryCallback = vi.fn();
+      const mockConnectCallback = vi.fn();
+      const mockDisconnectCallback = vi.fn();
 
       darkTower.onCalibrationComplete = mockCalibrationCallback;
       darkTower.onSkullDrop = mockSkullDropCallback;
@@ -168,11 +169,11 @@ describe('UltimateDarkTower', () => {
 
   describe('getCurrentDrumPosition', () => {
     describe('Primary Path (Tower State)', () => {
-      let mockGetCurrentDrumPosition: jest.SpyInstance;
+      let mockGetCurrentDrumPosition: MockInstance;
 
       beforeEach(() => {
         // Clear any existing mocks
-        jest.clearAllMocks();
+        vi.clearAllMocks();
       });
 
       afterEach(() => {
@@ -185,7 +186,7 @@ describe('UltimateDarkTower', () => {
       test('should return correct side from tower state for all drum levels', () => {
         // Mock the towerCommands.getCurrentDrumPosition method directly since that's what's called
         const towerCommands = darkTower['towerCommands'];
-        mockGetCurrentDrumPosition = jest
+        mockGetCurrentDrumPosition = vi
           .spyOn(towerCommands, 'getCurrentDrumPosition')
           .mockReturnValueOnce('north') // top
           .mockReturnValueOnce('east') // middle
@@ -205,7 +206,7 @@ describe('UltimateDarkTower', () => {
           if (mockGetCurrentDrumPosition) {
             mockGetCurrentDrumPosition.mockRestore();
           }
-          mockGetCurrentDrumPosition = jest
+          mockGetCurrentDrumPosition = vi
             .spyOn(towerCommands, 'getCurrentDrumPosition')
             .mockReturnValue(positions[i]);
 
@@ -217,7 +218,7 @@ describe('UltimateDarkTower', () => {
 
       test('should default to north for invalid position values', () => {
         const towerCommands = darkTower['towerCommands'];
-        mockGetCurrentDrumPosition = jest
+        mockGetCurrentDrumPosition = vi
           .spyOn(towerCommands, 'getCurrentDrumPosition')
           .mockReturnValue('north');
 
@@ -277,7 +278,7 @@ describe('UltimateDarkTower', () => {
       test('should default to north when tower state is null', () => {
         // Mock getCurrentTowerState to return null
         const originalMethod = darkTower.getCurrentTowerState;
-        darkTower.getCurrentTowerState = jest.fn().mockReturnValue(null);
+        darkTower.getCurrentTowerState = vi.fn().mockReturnValue(null);
 
         expect(darkTower.getCurrentDrumPosition('top')).toBe('north');
         expect(darkTower.getCurrentDrumPosition('middle')).toBe('north');
@@ -450,7 +451,7 @@ describe('UltimateDarkTower', () => {
       // Mock the underlying command execution to avoid timing issues
       const towerCommands = darkTower['towerCommands'];
       const originalBreakSeal = towerCommands.breakSeal;
-      towerCommands.breakSeal = jest.fn().mockResolvedValue(undefined);
+      towerCommands.breakSeal = vi.fn().mockResolvedValue(undefined);
 
       try {
         // Call the actual breakSeal method
@@ -548,7 +549,7 @@ describe('UltimateDarkTower', () => {
       const seal = { side: 'east' as const, level: 'middle' as const };
       const towerCommands = darkTower['towerCommands'];
       const originalBreakSeal = towerCommands.breakSeal;
-      towerCommands.breakSeal = jest.fn().mockResolvedValue(undefined);
+      towerCommands.breakSeal = vi.fn().mockResolvedValue(undefined);
 
       try {
         await darkTower.breakSeal(seal);
@@ -644,7 +645,7 @@ describe('UltimateDarkTower', () => {
     beforeEach(async () => {
       // Connect to tower for testing
       await darkTower.connect();
-      jest.clearAllMocks(); // Clear any connection-related calls
+      vi.clearAllMocks(); // Clear any connection-related calls
     });
 
     afterEach(() => {
@@ -657,7 +658,7 @@ describe('UltimateDarkTower', () => {
     });
 
     test('should queue commands sequentially', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       try {
         // Send multiple commands rapidly
         const promises = [darkTower.playSound(1), darkTower.playSound(2), darkTower.playSound(3)];
@@ -670,11 +671,11 @@ describe('UltimateDarkTower', () => {
         // next command is actually dispatched.
         const towerCommands = darkTower['towerCommands'];
         towerCommands.onTowerResponse(); // Complete first command
-        await jest.advanceTimersByTimeAsync(250);
+        await vi.advanceTimersByTimeAsync(250);
         expect(mockAdapter.writeCalls).toBe(2);
 
         towerCommands.onTowerResponse(); // Complete second command
-        await jest.advanceTimersByTimeAsync(250);
+        await vi.advanceTimersByTimeAsync(250);
         expect(mockAdapter.writeCalls).toBe(3);
 
         towerCommands.onTowerResponse(); // Complete third command
@@ -685,19 +686,19 @@ describe('UltimateDarkTower', () => {
         // All commands should have been executed
         expect(mockAdapter.writeCalls).toBe(3);
       } finally {
-        jest.useRealTimers();
+        vi.useRealTimers();
       }
     });
 
     test('should handle command timeout gracefully', async () => {
-      const loggerSpy = jest.spyOn(darkTower['logger'], 'warn');
+      const loggerSpy = vi.spyOn(darkTower['logger'], 'warn');
 
       // Mock a command that will timeout (don't trigger response)
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const promise = darkTower.playSound(1);
 
       // Fast-forward time to trigger timeout (30 seconds)
-      jest.advanceTimersByTime(30000);
+      vi.advanceTimersByTime(30000);
 
       await expect(promise).rejects.toThrow('Command timeout after 30000ms');
 
@@ -707,21 +708,21 @@ describe('UltimateDarkTower', () => {
         '[UDT]',
       );
 
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     test('a command sent while disconnected rejects promptly, not after 30s', async () => {
       await darkTower.disconnect();
 
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       try {
         const promise = darkTower.playSound(1);
-        // No jest.advanceTimersByTime() call: if the fix works, this rejects on
+        // No vi.advanceTimersByTime() call: if the fix works, this rejects on
         // its own without needing the command queue's 30s timeout to fire.
         await expect(promise).rejects.toThrow(/not connected/i);
         expect(mockAdapter.writeCalls).toBe(0);
       } finally {
-        jest.useRealTimers();
+        vi.useRealTimers();
       }
     });
 
@@ -811,7 +812,7 @@ describe('UltimateDarkTower', () => {
         mockAdapter.simulateResponse(new Uint8Array(20));
       };
 
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       try {
         // rotate (1st write) + sound (2nd write) = two commands queued back to back.
         const promise = darkTower.rotateWithState('east', 'north', 'north', 1);
@@ -820,12 +821,12 @@ describe('UltimateDarkTower', () => {
         // already dispatched the second write within the same tick.
         expect(mockAdapter.writeCalls).toBe(1);
 
-        await jest.advanceTimersByTimeAsync(250);
+        await vi.advanceTimersByTimeAsync(250);
         expect(mockAdapter.writeCalls).toBe(2);
 
         await promise;
       } finally {
-        jest.useRealTimers();
+        vi.useRealTimers();
       }
     });
   });
@@ -888,7 +889,7 @@ describe('UltimateDarkTower', () => {
 
       test('should trigger calibration callback on onCalibrationComplete', () => {
         const originalCallback = darkTower.onCalibrationComplete;
-        const mockCallback = jest.fn();
+        const mockCallback = vi.fn();
         darkTower.onCalibrationComplete = mockCallback;
 
         // Simulate calibration complete from BLE connection
@@ -1008,10 +1009,10 @@ describe('UltimateDarkTower', () => {
         // Mock the underlying tower commands
         const towerCommands = darkTower['towerCommands'];
         const originalRotate = towerCommands.rotate;
-        towerCommands.rotate = jest.fn().mockResolvedValue(undefined);
+        towerCommands.rotate = vi.fn().mockResolvedValue(undefined);
 
         // Mock getCurrentDrumPosition to return known positions
-        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        const getCurrentDrumPositionSpy = vi.spyOn(darkTower, 'getCurrentDrumPosition');
         getCurrentDrumPositionSpy.mockReturnValue('north');
 
         try {
@@ -1042,9 +1043,9 @@ describe('UltimateDarkTower', () => {
       test('should update glyph positions when rotateDrumStateful is called', async () => {
         const towerCommands = darkTower['towerCommands'];
         const originalRotateDrum = towerCommands.rotateDrumStateful;
-        towerCommands.rotateDrumStateful = jest.fn().mockResolvedValue(undefined);
+        towerCommands.rotateDrumStateful = vi.fn().mockResolvedValue(undefined);
 
-        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        const getCurrentDrumPositionSpy = vi.spyOn(darkTower, 'getCurrentDrumPosition');
         getCurrentDrumPositionSpy.mockReturnValue('north');
 
         try {
@@ -1070,7 +1071,7 @@ describe('UltimateDarkTower', () => {
       test('rotateDrumStateful rejects an out-of-range index instead of sending', async () => {
         const towerCommands = darkTower['towerCommands'];
         const originalRotateDrum = towerCommands.rotateDrumStateful;
-        const rotateDrumMock = jest.fn().mockResolvedValue(undefined);
+        const rotateDrumMock = vi.fn().mockResolvedValue(undefined);
         towerCommands.rotateDrumStateful = rotateDrumMock;
 
         try {
@@ -1090,10 +1091,10 @@ describe('UltimateDarkTower', () => {
         const towerCommands = darkTower['towerCommands'];
         const originalRotateDrum = towerCommands.rotateDrumStateful;
         const originalRotateWithState = towerCommands.rotateWithState;
-        towerCommands.rotateDrumStateful = jest.fn().mockResolvedValue(undefined);
-        towerCommands.rotateWithState = jest.fn().mockResolvedValue(undefined);
+        towerCommands.rotateDrumStateful = vi.fn().mockResolvedValue(undefined);
+        towerCommands.rotateWithState = vi.fn().mockResolvedValue(undefined);
 
-        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        const getCurrentDrumPositionSpy = vi.spyOn(darkTower, 'getCurrentDrumPosition');
         getCurrentDrumPositionSpy.mockReturnValue('north');
 
         try {
@@ -1117,9 +1118,9 @@ describe('UltimateDarkTower', () => {
       test('should handle randomRotateLevels correctly', async () => {
         const towerCommands = darkTower['towerCommands'];
         const originalRandomRotate = towerCommands.randomRotateLevels;
-        towerCommands.randomRotateLevels = jest.fn().mockResolvedValue(undefined);
+        towerCommands.randomRotateLevels = vi.fn().mockResolvedValue(undefined);
 
-        const getCurrentDrumPositionSpy = jest.spyOn(darkTower, 'getCurrentDrumPosition');
+        const getCurrentDrumPositionSpy = vi.spyOn(darkTower, 'getCurrentDrumPosition');
         // Mock different return values for before and after
         getCurrentDrumPositionSpy
           .mockReturnValueOnce('north') // before top
@@ -1328,7 +1329,7 @@ describe('UltimateDarkTower', () => {
       // Real (unmocked) sendTowerState/sendTowerCommandDirect path, so the
       // calibration guard on sendTowerCommandDirectPublic is actually exercised.
       await darkTower.connect();
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     afterEach(() => {
@@ -1363,10 +1364,10 @@ describe('UltimateDarkTower', () => {
   });
 
   describe('allLightsOn / allLightsOff', () => {
-    let sendStateSpy: jest.SpyInstance;
+    let sendStateSpy: MockInstance;
 
     beforeEach(() => {
-      sendStateSpy = jest.spyOn(darkTower, 'sendTowerState').mockResolvedValue(undefined);
+      sendStateSpy = vi.spyOn(darkTower, 'sendTowerState').mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -1452,7 +1453,7 @@ describe('UltimateDarkTower', () => {
 
     beforeEach(async () => {
       await darkTower.connect();
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     test('clamps volume above 3 to 3', async () => {
@@ -1501,7 +1502,7 @@ describe('UltimateDarkTower', () => {
     });
 
     test('should clear the command queue', async () => {
-      const clearQueueSpy = jest.spyOn(darkTower['towerCommands'], 'clearQueue');
+      const clearQueueSpy = vi.spyOn(darkTower['towerCommands'], 'clearQueue');
       await darkTower.cleanup();
       expect(clearQueueSpy).toHaveBeenCalledTimes(1);
     });

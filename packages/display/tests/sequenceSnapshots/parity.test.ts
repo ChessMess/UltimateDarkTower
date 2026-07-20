@@ -1,7 +1,14 @@
 // Snapshot tests need real GSAP — `tests/__mocks__/gsap.js` is a recording
 // mock that doesn't actually evaluate timelines. The parity test needs real
 // `tl.totalTime(t)` to advance tweens deterministically.
-jest.unmock('gsap');
+//
+// Under jest this file called `jest.unmock('gsap')`, but that call was already
+// inert: `unmock` operates on the module registry, while the alias that mocked
+// `gsap` in the first place (`moduleNameMapper`) operates on resolution — unmock
+// never undid an alias. What actually unmocked gsap here was the separate
+// `jest.config.snapshots.cjs`, which filtered `^gsap$` out of the shared alias
+// set. That's now `vitest.config.ts`'s `snapshots` project, which omits gsapAlias
+// — this file needs no gsap-specific statement at all.
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -23,7 +30,10 @@ import { SEQUENCES, SEED, TOLERANCE } from './sequences';
  * See `tests/sequenceSnapshots/__snapshots__/{name}.snap.json` for the
  * committed baselines (frozen contracts).
  */
-const SNAPSHOT_DIR = path.join(__dirname, '__snapshots__');
+// `__dirname` is a CJS global and is not defined once vitest transforms this to
+// ESM. This package's `engines.node` floor is >=22.13 (not >=20.11), so
+// `import.meta.dirname` is available directly — no fileURLToPath needed.
+const SNAPSHOT_DIR = path.join(import.meta.dirname, '__snapshots__');
 
 // Opt-in write mode. These baselines are the frozen golden contract, so
 // regeneration is gated behind an explicit env var (never a normal `npm test`)

@@ -37,16 +37,29 @@ enums, LED layer index, light/volume values) live in the repo-root `AGENTS.md`.
   build (`dist/src/`) **and** a hand-rolled esbuild ESM bundle (`dist/esm/index.mjs`).
   `tsconfig.json` targets `es2017`/CommonJS on purpose (broadest consumer compat) and
   does not extend the workspace ES2022 base.
-- Tests are **jest** (`tests/`, not colocated). Mocks in `tests/mocks/`,
-  adapter tests in `tests/adapters/`.
+- Tests are **vitest** (`tests/`, not colocated). Mocks in `tests/mocks/`,
+  adapter tests in `tests/adapters/`. Config in `vitest.config.ts` (`globals: true`,
+  so no `from 'vitest'` imports needed); ambient globals are declared for tsc by
+  `tests/vitest-globals.d.ts` rather than a tsconfig `types` array — this package
+  relies on tsc auto-including every hoisted `@types`, which `types` would disable.
+- **`vi.mock` cannot intercept a runtime `require()`.** `NodeBluetoothAdapter` loads
+  noble that way (guarded, so browser builds skip it) and `BluetoothAdapterFactory`
+  does the same per platform. Both therefore take an **optional injection
+  parameter** — `new NodeBluetoothAdapter(nobleImpl?)` and
+  `BluetoothAdapterFactory.create(platform, overrides?)`. Production callers omit
+  them and get the real lazy `require`; tests pass stand-ins. Don't reintroduce
+  module-level mocking for these two.
+- Injected adapter stubs must be **real classes** — the factory calls `new Ctor()`,
+  and a `vi.fn().mockImplementation(() => ({...}))` arrow is not constructible.
 - **`MockBluetoothAdapter` (`tests/mocks/MockBluetoothAdapter.ts`)** is the standard test
   seam — implements `IBluetoothAdapter` with fail-injection flags and call counts. Pass
   it via `new UltimateDarkTower({ adapter: mockAdapter })`.
 - `tests/integration/*.integration.ts` run via **ts-node** (`test:integration`), need a
-  real powered-on tower, and are excluded from the jest run.
+  real powered-on tower, and are excluded from the vitest run (`include` is
+  `tests/**/*.test.ts`).
 
 ## Publishing
 
-Depends on `ultimatedarktowerdata` (`workspace:*`) — since v6, core re-exports board/foe/
+Depends on `ultimatedarktowerdata` (`workspace:^`) — since v6, core re-exports board/foe/
 seed data from game-data rather than shipping its own. `files` allowlist ships only
 `dist/` + README/LICENSE/CHANGELOG, so this file is never in the npm tarball.

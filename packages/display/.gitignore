@@ -1,10 +1,7 @@
-node_modules/
-dist/
+# Entries already covered by the root .gitignore (node_modules, dist,
+# coverage, *.tsbuildinfo, .DS_Store, .playwright-mcp/) are intentionally not
+# repeated here — only what's genuinely specific to this package.
 dist-example/
-coverage/
-*.tsbuildinfo
 .vite/
-.DS_Store
 /.fallow
 .local/
-/.playwright-mcp

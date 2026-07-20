@@ -24,4 +24,4 @@ playbook (masked TypeError, NPM_TOKEN package allow-list, 2FA) lives in the **ro
 - Zod-validates all hardware inputs (sides, levels, sound indices, effects).
 - One singleton `UltimateDarkTower` instance per process, reused across commands.
 - Tests are vitest (colocated under `src/`). Depends on `ultimatedarktower` +
-  `ultimatedarktowerdata` (`workspace:*`).
+  `ultimatedarktowerdata` (`workspace:^`).

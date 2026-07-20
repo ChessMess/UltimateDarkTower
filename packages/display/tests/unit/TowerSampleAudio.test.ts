@@ -6,20 +6,20 @@ import { TowerSampleAudio } from '../../src/audio/TowerSampleAudio';
 
 class MockAudioParam {
   value = 1;
-  cancelScheduledValues = jest.fn<void, [number]>();
-  setValueAtTime = jest.fn<void, [number, number]>();
-  linearRampToValueAtTime = jest.fn<void, [number, number]>();
+  cancelScheduledValues = vi.fn<void, [number]>();
+  setValueAtTime = vi.fn<void, [number, number]>();
+  linearRampToValueAtTime = vi.fn<void, [number, number]>();
 }
 
 class MockGainNode {
   gain = new MockAudioParam();
-  connect = jest.fn();
+  connect = vi.fn();
 }
 
 class MockBufferSource {
   buffer: unknown = null;
   loop = false;
-  connect = jest.fn();
+  connect = vi.fn();
   startCalls = 0;
   stopCalls = 0;
   start(): void {
@@ -34,8 +34,8 @@ class MockAudioContext {
   state: 'running' | 'suspended' | 'closed' = 'running';
   currentTime = 0;
   destination = {};
-  resume = jest.fn(() => Promise.resolve());
-  close = jest.fn(() => Promise.resolve());
+  resume = vi.fn(() => Promise.resolve());
+  close = vi.fn(() => Promise.resolve());
   createGain(): MockGainNode {
     const g = new MockGainNode();
     createdGains.push(g);
@@ -58,7 +58,10 @@ let createdBufferSources: MockBufferSource[] = [];
 let decodeCalls = 0;
 let fetchCalls: string[] = [];
 
-const ContextSpy = jest.fn(() => {
+const ContextSpy = vi.fn(function () {
+  // vitest requires a `function` / `class` implementation for vi.fn() to be
+  // constructible with `new` (an arrow function throws "is not a constructor" —
+  // jest tolerated arrow implementations here, vitest does not).
   const ctx = new MockAudioContext();
   createdContexts.push(ctx);
   return ctx;
@@ -72,7 +75,7 @@ beforeEach(() => {
   fetchCalls = [];
   ContextSpy.mockClear();
   (globalThis as unknown as { AudioContext: unknown }).AudioContext = ContextSpy;
-  (globalThis as unknown as { fetch: unknown }).fetch = jest.fn((url: string) => {
+  (globalThis as unknown as { fetch: unknown }).fetch = vi.fn((url: string) => {
     fetchCalls.push(url);
     return Promise.resolve({
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
@@ -218,7 +221,7 @@ describe('TowerSampleAudio', () => {
   });
 
   it('unknown sample id warns once and does not start a source', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const audio = new TowerSampleAudio();
     audio.setLibrary(LIB);
     audio.setEnabled(true);
@@ -317,7 +320,8 @@ describe('TowerSampleAudio', () => {
     // Make every context start suspended — even after setEnabled's eager
     // ensureCtx + resume, the mock will stay suspended (real browsers behave
     // this way when no user gesture is available yet).
-    ContextSpy.mockImplementation(() => {
+    ContextSpy.mockImplementation(function () {
+      // Same constructibility requirement as the initial vi.fn() implementation above.
       const ctx = new MockAudioContext();
       ctx.state = 'suspended';
       createdContexts.push(ctx);
@@ -361,7 +365,8 @@ describe('TowerSampleAudio', () => {
   });
 
   it('setEnabled(true) resumes a suspended context eagerly', () => {
-    ContextSpy.mockImplementationOnce(() => {
+    ContextSpy.mockImplementationOnce(function () {
+      // Same constructibility requirement as the initial vi.fn() implementation above.
       const ctx = new MockAudioContext();
       ctx.state = 'suspended';
       createdContexts.push(ctx);
@@ -473,7 +478,7 @@ describe('TowerSampleAudio', () => {
   });
 
   it('playSampleOneShot warns once for an unknown sample id', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const audio = new TowerSampleAudio();
     audio.setLibrary(LIB);
     audio.setEnabled(true);

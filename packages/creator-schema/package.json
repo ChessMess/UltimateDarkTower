@@ -11,9 +11,21 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },
+  "dependencies": {
+    "ajv": "catalog:",
+    "ajv-formats": "catalog:"
+  },
   "devDependencies": {
-    "ajv": "^8.17.0",
-    "ajv-formats": "^3.0.0",
     "json-schema-to-typescript": "^15.0.0"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "packages/creator-schema"
   }
 }

@@ -8,48 +8,44 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc --build && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc --build --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ci": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "dependencies": {
-    "@dimforge/rapier3d-compat": "^0.19.3",
-    "gsap": "^3.15.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "three": "^0.184.0",
+    "@dimforge/rapier3d-compat": "catalog:",
+    "gsap": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "three": "catalog:",
     "ultimatedarktower": "workspace:^",
-    "ultimatedarktowerdata": "workspace:*",
+    "ultimatedarktowerdata": "workspace:^",
     "ultimatedarktowerboard": "workspace:^",
     "ultimatedarktowerdisplay": "workspace:^",
-    "zustand": "^5.0.0"
+    "zustand": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.19.21",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@types/three": "^0.184.1",
-    "@vitejs/plugin-react": "^6.0.0",
-    "eslint": "^9.39.5",
-    "eslint-plugin-react-hooks": "^7.1.0",
-    "eslint-plugin-react-refresh": "^0.5.0",
-    "globals": "^17.0.0",
-    "jsdom": "^25.0.0",
-    "prettier": "^3.8.0",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/three": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "jsdom": "catalog:",
     "typescript": "catalog:",
-    "typescript-eslint": "^8.61.0",
-    "vite": "^8.0.0",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=7.0.0"
+    "node": ">=22.13.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "apps/digital"
   }
 }

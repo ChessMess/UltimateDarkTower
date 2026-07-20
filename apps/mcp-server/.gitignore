@@ -1,22 +1,14 @@
-# Dependencies
-node_modules/
+# Entries already covered by the root .gitignore (node_modules, dist,
+# *.tsbuildinfo, .env/.env.local/.env.{development,test,production}.local,
+# .DS_Store, *.log) are intentionally not repeated here — only what's
+# genuinely specific to this app.
 
-# Build output
-dist/
-*.tsbuildinfo
-
-# Environment
-.env
-.env.local
+# Broader than root's enumerated .env.{development,test,production}.local —
+# covers any environment name (e.g. .env.staging.local).
 .env.*.local
 
 # OS files
-.DS_Store
 Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
 
 # IDE
 .vscode/

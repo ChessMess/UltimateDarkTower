@@ -121,7 +121,7 @@ describe('BoardMap2D', () => {
   });
 
   it('fires onTokenSelect and draws a selection ring on click', () => {
-    const onTokenSelect = jest.fn();
+    const onTokenSelect = vi.fn();
     const { map, host } = makeMap(onTokenSelect);
     map.render(populated());
     const foe = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-1"]') as SVGGElement;
@@ -178,7 +178,7 @@ describe('BoardMap2D', () => {
   });
 
   it('a pan-drag suppresses the trailing token-select click', () => {
-    const onTokenSelect = jest.fn();
+    const onTokenSelect = vi.fn();
     const { map, host } = makeMap(onTokenSelect, 'pan'); // pan mode (default is rotate)
     map.render(populated());
     const svg = host.querySelector('svg') as SVGSVGElement;
@@ -201,7 +201,7 @@ describe('BoardMap2D', () => {
   });
 
   it('a drag whose mouseup lands off-map does not permanently swallow the next click (regression)', async () => {
-    const onTokenSelect = jest.fn();
+    const onTokenSelect = vi.fn();
     const { map, host } = makeMap(onTokenSelect, 'pan');
     map.render(populated());
     const svg = host.querySelector('svg') as SVGSVGElement;
@@ -225,7 +225,7 @@ describe('BoardMap2D', () => {
   });
 
   it('default drag-spins the board: rotate-layer transform changes and the trailing click is suppressed', () => {
-    const onTokenSelect = jest.fn();
+    const onTokenSelect = vi.fn();
     const { map, host } = makeMap(onTokenSelect); // default dragMode: 'rotate'
     map.render(populated());
     const svg = host.querySelector('svg') as SVGSVGElement;
@@ -343,8 +343,8 @@ describe('BoardMap2D', () => {
 
   it('armed space-pick: a space click reports a location; disarmed leaves token-select intact', () => {
     const locationPick = createLocationPickStore();
-    const onLocationPick = jest.fn();
-    const onTokenSelect = jest.fn();
+    const onLocationPick = vi.fn();
+    const onTokenSelect = vi.fn();
     const host = document.createElement('div');
     const map = new BoardMap2D(host, {
       boardImageUrl: '/b.png',

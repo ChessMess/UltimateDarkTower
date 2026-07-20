@@ -123,7 +123,7 @@ describe('DrumManager', () => {
     });
 
     it('warnOnMissing logs once per missing drum and is silent when all present', () => {
-      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       try {
         const partial = new DrumManager();
         partial.buildDrumNodes(makeRoot(['drum_top']));

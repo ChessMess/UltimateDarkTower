@@ -34,4 +34,23 @@ class ShaderPass {
   setSize() {}
 }
 
-module.exports = { EffectComposer, RenderPass, UnrealBloomPass, OutputPass, ShaderPass };
+const __mock = { EffectComposer, RenderPass, UnrealBloomPass, OutputPass, ShaderPass };
+
+// ESM surface. This package is `type: module`, so a CJS `module.exports`
+// assignment is inert. Bindings are pulled off __mock and re-exported under
+// aliases so they cannot collide with the class/const declarations above.
+export default __mock;
+const {
+  EffectComposer: __e_EffectComposer,
+  RenderPass: __e_RenderPass,
+  UnrealBloomPass: __e_UnrealBloomPass,
+  OutputPass: __e_OutputPass,
+  ShaderPass: __e_ShaderPass,
+} = __mock;
+export {
+  __e_EffectComposer as EffectComposer,
+  __e_RenderPass as RenderPass,
+  __e_UnrealBloomPass as UnrealBloomPass,
+  __e_OutputPass as OutputPass,
+  __e_ShaderPass as ShaderPass,
+};

@@ -1,8 +1,13 @@
 {
+  // Does not extend the ES2022 workspace base — see packages/relay-shared/tsconfig.json
+  // for the full rationale. Short version: base's module:"ESNext"+moduleResolution:"bundler"
+  // would emit ESM syntax, which breaks require() for this published CJS package's
+  // consumers. target matches the base; module/moduleResolution stay Node16/Node16.
   "compilerOptions": {
-    "target": "es2017",
-    "module": "commonjs",
-    "lib": ["es2017"],
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": ["ES2022"],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -13,9 +18,16 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "references": [{ "path": "../relay-shared" }],
+  "references": [
+    {
+      "path": "../relay-shared"
+    }
+  ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
 }

@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import * as THREE from 'three';
 import { CameraController } from '../../src/3d/CameraController';
 import * as gsapMock from '../__mocks__/gsap.js';
@@ -5,7 +6,8 @@ import * as gsapMock from '../__mocks__/gsap.js';
 interface MockControls {
   target: THREE.Vector3;
   enableZoom: boolean;
-  update: jest.Mock<void, []>;
+  // vitest 3+ changed Mock's generic from <Return, Args> to a function type.
+  update: Mock<() => void>;
 }
 
 interface TweenCall {
@@ -18,9 +20,9 @@ function makeController(config = {}) {
   const controls: MockControls = {
     target: new THREE.Vector3(),
     enableZoom: true,
-    update: jest.fn(),
+    update: vi.fn(),
   };
-  const sideButtons = { setActive: jest.fn() };
+  const sideButtons = { setActive: vi.fn() };
   const controller = new CameraController(camera, controls as never, sideButtons as never, config);
 
   controller.fitToModel(10);
@@ -188,12 +190,12 @@ describe('CameraController – tickDerivedSide', () => {
 
   it('is a no-op before the model loads (defaultCamera is null)', () => {
     const camera = new THREE.PerspectiveCamera();
-    const controls = { target: new THREE.Vector3(), enableZoom: true, update: jest.fn() };
-    const sideButtons = { setActive: jest.fn() };
+    const controls = { target: new THREE.Vector3(), enableZoom: true, update: vi.fn() };
+    const sideButtons = { setActive: vi.fn() };
     const controller = new CameraController(camera, controls as never, sideButtons as never);
     // fitToModel NOT called — defaultCamera is null
 
-    const cb = jest.fn();
+    const cb = vi.fn();
     controller.onSideChange = cb;
     sideButtons.setActive.mockClear();
 
@@ -207,7 +209,7 @@ describe('CameraController – tickDerivedSide', () => {
 
   it('is a no-op while a snap tween is active', () => {
     const { camera, controls, sideButtons, controller } = makeController();
-    const cb = jest.fn();
+    const cb = vi.fn();
     controller.onSideChange = cb;
 
     // snapToSide creates an activeTween
@@ -229,7 +231,7 @@ describe('CameraController – tickDerivedSide', () => {
   it('updates the active side and fires onSideChange when the camera crosses to a new cardinal', () => {
     const { camera, controls, sideButtons, controller } = makeController();
     // After makeController, activeTween is null and currentSide is 'north'
-    const cb = jest.fn();
+    const cb = vi.fn();
     controller.onSideChange = cb;
     sideButtons.setActive.mockClear();
 
@@ -246,7 +248,7 @@ describe('CameraController – tickDerivedSide', () => {
 
   it('does not fire when the camera stays within the same cardinal quadrant', () => {
     const { camera, controls, sideButtons, controller } = makeController();
-    const cb = jest.fn();
+    const cb = vi.fn();
     controller.onSideChange = cb;
     sideButtons.setActive.mockClear();
 
@@ -263,7 +265,7 @@ describe('CameraController – tickDerivedSide', () => {
 
   it('resumes detecting after the snap tween completes (onComplete clears activeTween)', () => {
     const { camera, controls, sideButtons, controller } = makeController();
-    const cb = jest.fn();
+    const cb = vi.fn();
     controller.onSideChange = cb;
 
     // Snap to east — creates activeTween

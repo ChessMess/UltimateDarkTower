@@ -22,8 +22,8 @@ npm run ci   # typecheck + lint + test + build
 ## Conventions (mirrors `ultimatedarktowerdisplay`)
 
 - TypeScript strict, `moduleResolution: bundler`, ESM-first lib build via Vite (ESM + CJS).
-- Jest + ts-jest, jsdom env. The readout is the deterministic snapshot target.
-- ESLint (`.eslintrc.cjs`) + Prettier (`.prettierrc`, 100-col, single quotes).
+- Vitest, jsdom env. The readout is the deterministic snapshot target.
+- ESLint (root `eslint.config.js`) + Prettier (root `.prettierrc`, 100-col, single quotes).
 - **Keep `src/index.ts` three-free.** Only `src/plugin/**` may import `three` /
   `ultimatedarktowerdisplay`; CI greps for violations.
 
