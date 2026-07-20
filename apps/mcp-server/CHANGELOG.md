@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies [cdf7f37]
+- Updated dependencies [cdf7f37]
+  - ultimatedarktower@7.0.0
+  - ultimatedarktowerdata@2.0.0
+
 ## 1.0.2
 
 ### Patch Changes
