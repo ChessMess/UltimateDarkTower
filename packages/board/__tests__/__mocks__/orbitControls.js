@@ -53,4 +53,11 @@ class OrbitControls {
   update() {}
   dispose() {}
 }
-module.exports = { OrbitControls };
+const __mock = { OrbitControls };
+
+// ESM surface. This package is `type: module`, so a CJS `module.exports`
+// assignment is inert. Bindings are pulled off __mock and re-exported under
+// aliases so they cannot collide with the class/const declarations above.
+export default __mock;
+const { OrbitControls: __e_OrbitControls } = __mock;
+export { __e_OrbitControls as OrbitControls };

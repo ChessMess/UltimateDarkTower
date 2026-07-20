@@ -38,9 +38,9 @@
     "build": "vite build && tsc --emitDeclarationOnly && node scripts/check-three-free.mjs",
     "build:example": "vite build --config vite.example.config.ts",
     "preview:example": "vite preview --config vite.example.config.ts",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "clean": "rimraf dist",
@@ -68,17 +68,16 @@
     "ultimatedarktowerdata": "workspace:^"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.0",
     "@types/three": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "gsap": "catalog:",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "catalog:",
     "rimraf": "^5.0.0",
     "three": "catalog:",
-    "ts-jest": "^29.1.0",
     "typescript": "catalog:",
     "ultimatedarktowerdisplay": "workspace:^",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "vitest": "catalog:"
   },
   "keywords": [
     "ReturnToDarkTower",

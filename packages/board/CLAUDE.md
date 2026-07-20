@@ -24,9 +24,26 @@ dev). Hosts own the rules. Don't add rule enforcement here.
   is a dynamic `import()`, never bundled into `stage`). Matches the `exports` map.
 - **CJS filenames are `.cjs`, deliberately NOT display's broken `.cjs.js`** (see the comment
   in `vite.config.ts`).
-- Tests: jest, in `__tests__/` (note: not `tests/`). `plugin.contract.test.ts` asserts
-  `Board3DPlugin` satisfies display's `ScenePlugin` at the type level;
-  `plugin.integration.test.ts` runs a real `Tower3DView` against display-ported mocks.
+- Tests: **vitest** (`vitest.config.ts`), in `__tests__/` (note: not `tests/`).
+  `plugin.contract.test.ts` asserts `Board3DPlugin` satisfies display's `ScenePlugin`
+  at the type level; `plugin.integration.test.ts` runs a real `Tower3DView` against
+  display-ported mocks.
+- The config is standalone, **not** a `test` block in `vite.config.ts` — that file is
+  the library-build config whose `rollupOptions.external` lists `three`, and aliasing
+  `three` to a mock alongside it is not worth reasoning about.
+- **Every alias key is a `RegExp`.** Vite's string alias keys match by _prefix_, so a
+  bare `'three'` would also swallow `three/examples/jsm/*` and `three/addons/*`.
+- The two `ultimatedarktowerdisplay` → `dist/*.cjs.js` aliases are **gone**. They only
+  existed because jest's CJS loader could not use display's `.cjs.js` under
+  `type: module`; vitest resolves the package `exports` map to the ESM build.
+- Mocks in `__tests__/__mocks__/` are **ESM** (`export default` + named re-exports).
+  They were CJS, which is inert in this `type: module` package. Names are re-exported
+  through `__e_`-prefixed aliases because several (e.g. `Layers`) collide with the
+  class declarations in the same file.
+- **Snapshot keys differ from jest**: vitest separates describe/test with `>`. The
+  three `readout.snapshot` baselines were re-keyed during migration; their content is
+  byte-identical to the jest originals (verified). Watch for "N obsolete" in the
+  output — it means keys stopped matching and vitest silently wrote new ones.
 
 ## Stale-doc warnings (do not trust these verbatim)
 

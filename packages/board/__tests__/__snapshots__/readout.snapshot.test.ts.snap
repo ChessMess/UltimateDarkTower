@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`BoardReadout matches a populated readout 1`] = `
+exports[`BoardReadout > matches a populated readout 1`] = `
 "Board — focus: all/isometric
 Heroes (2):
   - h1 @ Broken Lands (north)
@@ -15,7 +15,7 @@ Space markers (1):
   - Broken Lands: wasteland"
 `;
 
-exports[`BoardReadout matches the default-state readout 1`] = `
+exports[`BoardReadout > matches the default-state readout 1`] = `
 "Board — focus: all/isometric
 Heroes (0):
 Foes (0):
@@ -24,7 +24,7 @@ Buildings (0 active):
 Space markers (0):"
 `;
 
-exports[`BoardReadout narrows to a single kingdom when focus.kingdom is set 1`] = `
+exports[`BoardReadout > narrows to a single kingdom when focus.kingdom is set 1`] = `
 "Board — focus: north/overhead
 Heroes (1):
   - hn @ Broken Lands

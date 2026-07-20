@@ -3,15 +3,21 @@
 // stage's own logic — DOM, mode switching, drag/focus wiring, editing UI, lazy 3D
 // toggle, dispose — is tested deterministically and WebGL-free. The stage's static
 // graph is three-free, so nothing here loads `three`/Display.
-const towerHandle = {
-  tower: { __sentinel: 'tower' },
-  view3D: {},
-  setBoardState: jest.fn(),
-  setFocus: jest.fn(),
-  dispose: jest.fn(),
-};
-const createBoardTower3D = jest.fn(() => towerHandle);
-jest.mock('../src/plugin/stageTower', () => ({
+// vi.mock is hoisted above every import, so its factory cannot close over plain
+// top-level consts — they would still be in the temporal dead zone. vi.hoisted runs
+// in that same hoisted phase, so these bindings exist by the time the factory runs.
+const { towerHandle, createBoardTower3D } = vi.hoisted(() => {
+  const handle = {
+    tower: { __sentinel: 'tower' },
+    view3D: {},
+    setBoardState: vi.fn(),
+    setFocus: vi.fn(),
+    dispose: vi.fn(),
+  };
+  return { towerHandle: handle, createBoardTower3D: vi.fn(() => handle) };
+});
+
+vi.mock('../src/plugin/stageTower', () => ({
   createBoardTower3D,
   STAGE_TOWER_CSS: '/* tower css */',
 }));
@@ -34,7 +40,7 @@ function focusButton(stage: BoardStageView, label: string): HTMLButtonElement {
 
 afterEach(() => {
   document.body.innerHTML = '';
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('BoardStageView — DOM + 2D wiring (no 3D)', () => {
@@ -82,7 +88,7 @@ describe('BoardStageView — DOM + 2D wiring (no 3D)', () => {
 
   it('setDragMode forwards to the 2D map and reflects in the Spin/Pan toggle', () => {
     const { stage } = mount();
-    const spy = jest.spyOn(stage.map2d!, 'setDragMode');
+    const spy = vi.spyOn(stage.map2d!, 'setDragMode');
     stage.setDragMode('pan');
     expect(spy).toHaveBeenCalledWith('pan');
     const panBtn = Array.from(
@@ -93,7 +99,7 @@ describe('BoardStageView — DOM + 2D wiring (no 3D)', () => {
 
   it('the kingdom bar drives the shared focus (and clears manual zoom)', () => {
     const { stage } = mount();
-    const resetSpy = jest.spyOn(stage.map2d!, 'resetView');
+    const resetSpy = vi.spyOn(stage.map2d!, 'resetView');
     focusButton(stage, 'N').dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(stage.focus.kingdom).toBe('north');
     expect(resetSpy).toHaveBeenCalled();
@@ -198,7 +204,7 @@ describe('BoardStageView — lazy 3D tower', () => {
   });
 
   it('tower3D:true without a modelUrl warns and stays 2D-only', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const { stage } = mount({ tower3D: true }); // no modelUrl
     await Promise.resolve();
     expect(createBoardTower3D).not.toHaveBeenCalled();
@@ -209,9 +215,9 @@ describe('BoardStageView — lazy 3D tower', () => {
   it('popping out after turning the tower off does not resurrect it (regression)', async () => {
     // A minimal fake Window sufficient for popOut's buildPopupDocument + listener wiring.
     const doc = {
-      open: jest.fn(),
-      write: jest.fn(),
-      close: jest.fn(),
+      open: vi.fn(),
+      write: vi.fn(),
+      close: vi.fn(),
       title: '',
       head: document.createElement('head'),
       body: document.createElement('body'),
@@ -221,12 +227,12 @@ describe('BoardStageView — lazy 3D tower', () => {
     const fakeWin = {
       document: doc,
       closed: false,
-      close: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(() => true),
+      close: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true),
     } as unknown as Window;
-    const openSpy = jest.spyOn(window, 'open').mockReturnValue(fakeWin);
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue(fakeWin);
 
     const { stage } = mount({ tower3D: false, modelUrl: 'mock://tower.glb' });
     await stage.setTowerEnabled(true);

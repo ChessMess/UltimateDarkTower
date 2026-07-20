@@ -20,7 +20,7 @@ describe('BoardRenderView', () => {
   });
 
   it('setFocus fans out and fires onFocusChange; a repeat focus early-returns', () => {
-    const onFocusChange = jest.fn();
+    const onFocusChange = vi.fn();
     const { view } = makeView(onFocusChange);
 
     view.setFocus({ kingdom: 'north', angle: 'overhead' });

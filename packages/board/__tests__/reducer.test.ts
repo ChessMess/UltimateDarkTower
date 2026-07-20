@@ -155,7 +155,7 @@ describe('reducer — buildings (no rule enforcement)', () => {
   });
 
   it('a building command on an unknown location still applies (stores it) and only warns', () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const s = applyBoardCommand(createDefaultBoardState(), {
       type: 'addSkull',
       location: 'Nowhere Real',
