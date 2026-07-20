@@ -4,7 +4,8 @@
   // consumer compatibility, so it does not extend the ES2022 workspace base.
   "compilerOptions": {
     "target": "ES2017",
-    "module": "commonjs",
+    "module": "Node16",
+    "moduleResolution": "Node16",
     // Explicit, not the target-implied default (which also includes DOM). This
     // package genuinely is dual-platform — WebBluetoothAdapter, the optional
     // browser debug logger (udtLogger.ts), and IndexedDBSink all use real DOM
