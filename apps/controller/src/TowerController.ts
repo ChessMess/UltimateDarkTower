@@ -1,4 +1,5 @@
 import { TowerEmulatorAdapter } from './TowerEmulatorAdapter';
+import { computeGlyphMove, stepVolume, resolveLightAddress } from './controller-logic';
 import {
   UltimateDarkTower,
   type TowerSide,
@@ -10,16 +11,8 @@ import {
   type BaseLightLevel,
   type SealIdentifier,
   LIGHT_EFFECTS,
-  TOWER_LAYERS,
   VOLUME_DESCRIPTIONS,
   VOLUME_ICONS,
-  // Light mapping — these were copied into this file verbatim while they were private
-  // to the library, and the copy drifted (the ledge helper was widened to `string` to
-  // swallow corner names the library types as TowerCorner).
-  getTowerLayerForLevel,
-  getLightIndexForSide,
-  getLedgeLightIndexForSide,
-  getBaseLightIndexForSide,
 } from 'ultimatedarktower';
 import {
   type Glyphs,
@@ -1034,34 +1027,21 @@ const singleLight = async (el: HTMLInputElement) => {
   // Get current tower state
   const currentState = Tower.getCurrentTowerState();
 
-  // Get light attributes. data-light-location holds a cardinal side for doorway/base
-  // rows but an ordinal corner for ledge rows, so it is narrowed per branch below
-  // rather than cast once — a blanket `as TowerSide` here was wrong for every ledge.
-  const lightType = el.getAttribute('data-light-type');
-  const lightLocation = el.getAttribute('data-light-location');
-  const lightLevel = el.getAttribute('data-light-level') as TowerLevels;
-  const lightBaseLocation = el.getAttribute('data-light-base-location');
-
-  // Calculate layer and light indices
-  let layerIndex: number;
-  let lightIndex: number;
-
-  if (lightType === 'doorway') {
-    // Doorway lights: map level to layer and side to light index
-    layerIndex = getTowerLayerForLevel(lightLevel);
-    lightIndex = getLightIndexForSide(lightLocation as TowerSide);
-  } else if (lightType === 'ledge') {
-    // Ledge lights are addressed by corner (northeast, …)
-    layerIndex = TOWER_LAYERS.LEDGE;
-    lightIndex = getLedgeLightIndexForSide(lightLocation as TowerCorner);
-  } else if (lightType === 'base') {
-    // Base lights: map base location to layer
-    layerIndex = lightBaseLocation === 'b' ? TOWER_LAYERS.BASE2 : TOWER_LAYERS.BASE1;
-    lightIndex = getBaseLightIndexForSide(lightLocation as TowerSide);
-  } else {
-    console.error('Unknown light type:', lightType);
+  // Resolve the checkbox's (layer, light) address in tower state. The attribute→address mapping is
+  // shared with updateLightCheckboxesFromState (its inverse) via resolveLightAddress, so the two
+  // can't drift — data-light-location is a cardinal side for doorway/base rows but an ordinal
+  // corner for ledge rows, narrowed inside that helper rather than cast once.
+  const address = resolveLightAddress({
+    lightType: el.getAttribute('data-light-type'),
+    lightLocation: el.getAttribute('data-light-location'),
+    lightLevel: el.getAttribute('data-light-level'),
+    lightBaseLocation: el.getAttribute('data-light-base-location'),
+  });
+  if (!address) {
+    console.error('Unknown light type:', el.getAttribute('data-light-type'));
     return;
   }
+  const { layerIndex, lightIndex } = address;
 
   // Update the specific light in tower state
   currentState.layer[layerIndex].light[lightIndex].effect = effect;
@@ -1087,27 +1067,15 @@ const updateLightCheckboxesFromState = (state: TowerState) => {
   ) as NodeListOf<HTMLInputElement>;
 
   checkboxes.forEach((checkbox) => {
-    // Mirrors singleLight()'s narrowing: ledge rows carry corners, the rest carry sides.
-    const lightType = checkbox.getAttribute('data-light-type');
-    const lightLocation = checkbox.getAttribute('data-light-location');
-    const lightLevel = checkbox.getAttribute('data-light-level') as TowerLevels;
-    const lightBaseLocation = checkbox.getAttribute('data-light-base-location');
-
-    let layerIndex: number;
-    let lightIndex: number;
-
-    if (lightType === 'doorway') {
-      layerIndex = getTowerLayerForLevel(lightLevel);
-      lightIndex = getLightIndexForSide(lightLocation as TowerSide);
-    } else if (lightType === 'ledge') {
-      layerIndex = TOWER_LAYERS.LEDGE;
-      lightIndex = getLedgeLightIndexForSide(lightLocation as TowerCorner);
-    } else if (lightType === 'base') {
-      layerIndex = lightBaseLocation === 'b' ? TOWER_LAYERS.BASE2 : TOWER_LAYERS.BASE1;
-      lightIndex = getBaseLightIndexForSide(lightLocation as TowerSide);
-    } else {
-      return;
-    }
+    // Same attribute→address mapping singleLight uses (its inverse), via the shared resolver.
+    const address = resolveLightAddress({
+      lightType: checkbox.getAttribute('data-light-type'),
+      lightLocation: checkbox.getAttribute('data-light-location'),
+      lightLevel: checkbox.getAttribute('data-light-level'),
+      lightBaseLocation: checkbox.getAttribute('data-light-base-location'),
+    });
+    if (!address) return;
+    const { layerIndex, lightIndex } = address;
 
     const effect = state.layer[layerIndex]?.light[lightIndex]?.effect ?? LIGHT_EFFECTS.off;
     const styleName =
@@ -1490,53 +1458,32 @@ const moveGlyph = async () => {
     // Get the fixed level for this glyph (glyphs can't change levels)
     const glyphLevel = GLYPHS[selectedGlyph as keyof typeof GLYPHS].level;
 
-    // Calculate rotation needed to move glyph to target position
-    const sides = ['north', 'east', 'south', 'west'];
-    const currentSideIndex = sides.indexOf(currentGlyphPosition);
-    const targetSideIndex = sides.indexOf(targetSide);
-
-    if (currentSideIndex === -1 || targetSideIndex === -1) {
-      logger.error('Invalid current or target side', '[Glyphs]');
+    // Compute the drum rotation that lands this glyph on the target side. The glyph's clockwise
+    // travel and its drum level's clockwise travel are the same number of steps, so rotationSteps
+    // and the new drum position come from one shared computation (computeGlyphMove) rather than
+    // the two separately-named copies this used to carry.
+    // Every glyph sits on a drum level ('top' | 'middle' | 'bottom'), so glyphLevel is a
+    // TowerLevels here — GLYPHS isn't `as const`, so its `.level` widens to string.
+    const currentDrumPosition = Tower.getCurrentDrumPosition(glyphLevel as TowerLevels);
+    const move = computeGlyphMove(currentGlyphPosition, targetSide, currentDrumPosition);
+    if (!move.ok) {
+      if (move.reason === 'already-at-target') {
+        logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, '[Glyphs]');
+      } else {
+        logger.error('Invalid current or target side', '[Glyphs]');
+      }
       return;
     }
+    const { rotationSteps, targetDrumPosition } = move;
 
-    // Calculate clockwise rotation steps needed
-    const rotationSteps = (targetSideIndex - currentSideIndex + 4) % 4;
-
-    if (rotationSteps === 0) {
-      logger.info(`${selectedGlyph} glyph is already at ${targetSide} position`, '[Glyphs]');
-      return;
-    }
-
-    // Calculate what drum position will put the selected glyph at the target side
-    let targetDrumPosition;
-    if (glyphLevel === 'top' || glyphLevel === 'middle' || glyphLevel === 'bottom') {
-      // Calculate the drum position needed to put this specific glyph at the target side
-      const currentDrumPosition = Tower.getCurrentDrumPosition(glyphLevel);
-      const sides = ['north', 'east', 'south', 'west'];
-
-      const currentDrumIndex = sides.indexOf(currentDrumPosition);
-      const currentGlyphIndex = sides.indexOf(currentGlyphPosition);
-      const targetGlyphIndex = sides.indexOf(targetSide);
-
-      // Debug logging to understand the calculation
-      logger.debug(
-        `Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`,
-        '[Glyphs]',
-      );
-
-      // Calculate how many steps the glyph needs to move
-      const glyphSteps = (targetGlyphIndex - currentGlyphIndex + 4) % 4;
-
-      // Calculate the new drum position
-      const newDrumIndex = (currentDrumIndex + glyphSteps) % 4;
-      targetDrumPosition = sides[newDrumIndex];
-
-      logger.debug(
-        `Move calculation result: glyphSteps=${glyphSteps}, newDrumIndex=${newDrumIndex}, targetDrumPosition=${targetDrumPosition}`,
-        '[Glyphs]',
-      );
-    }
+    logger.debug(
+      `Move calculation: glyph=${selectedGlyph}, currentGlyphPos=${currentGlyphPosition}, targetSide=${targetSide}, currentDrumPos=${currentDrumPosition}`,
+      '[Glyphs]',
+    );
+    logger.debug(
+      `Move calculation result: rotationSteps=${rotationSteps}, targetDrumPosition=${targetDrumPosition}`,
+      '[Glyphs]',
+    );
 
     // Set positions for all three drums
     const topPosition =
@@ -2227,43 +2174,38 @@ const getGlyphLevel = (glyph: string) => {
 // Local volume tracking to avoid conflicts with tower state
 let localVolume = 0;
 
-// The firmware volume scale is inverted: 0 = Loud … 3 = Mute (see VOLUME_DESCRIPTIONS).
-// The `<`/`>` buttons step through that list, so volumeUp walks toward Mute.
-const MUTE_VOLUME = 3;
+// The `<`/`>` buttons step through the volume list; volumeUp walks toward Mute (see stepVolume
+// and MUTE_VOLUME in controller-logic.ts for the inverted 0=Loud…3=Mute scale + mute guard).
 
 // Volume control functions
 const volumeUp = async () => {
   try {
-    const newVolume = Math.min(localVolume + 1, MUTE_VOLUME); // Clamp to Mute
+    const step = stepVolume(localVolume, 'up');
+    if (!step.changed) return;
 
-    if (newVolume === localVolume) {
-      return;
-    }
-
-    logger.info(`Setting volume from ${localVolume} to ${newVolume}`, '[TC]');
+    logger.info(`Setting volume from ${localVolume} to ${step.volume}`, '[TC]');
 
     // Update local volume first
-    localVolume = newVolume;
+    localVolume = step.volume;
 
     // Get current state and update only the volume
     const currentState = Tower.getCurrentTowerState();
     const newState = { ...currentState };
-    newState.audio = { ...currentState.audio, volume: newVolume };
+    newState.audio = { ...currentState.audio, volume: step.volume };
 
     logger.debug(`Sending tower state with volume: ${newState.audio.volume}`, '[TC]');
 
     // Send the updated state to the tower
     await Tower.sendTowerState(newState);
 
-    // Play CardFlipPaper03 sound with new volume for feedback — but not at Mute, where
-    // it would be inaudible anyway. (This guard used to live in volumeDown, which can
-    // only ever reach 0, so it could never fire there.)
-    if (newVolume < MUTE_VOLUME) {
-      await Tower.playSoundStateful(0x21, false, newVolume);
+    // Play CardFlipPaper03 sound with new volume for feedback — but not at Mute, where it would
+    // be inaudible anyway (stepVolume's playFeedback encodes that guard).
+    if (step.playFeedback) {
+      await Tower.playSoundStateful(0x21, false, step.volume);
     }
 
     // Update the display
-    updateVolumeDisplay(newVolume);
+    updateVolumeDisplay(step.volume);
   } catch (error) {
     logger.error(`Error increasing volume: ${error}`, '[TC]');
   }
@@ -2271,29 +2213,28 @@ const volumeUp = async () => {
 
 const volumeDown = async () => {
   try {
-    const newVolume = Math.max(localVolume - 1, 0); // Clamp to min 0
-
-    if (newVolume === localVolume) {
-      return;
-    }
+    const step = stepVolume(localVolume, 'down');
+    if (!step.changed) return;
 
     // Update local volume first
-    localVolume = newVolume;
+    localVolume = step.volume;
 
     // Get current state and update only the volume
     const currentState = Tower.getCurrentTowerState();
     const newState = { ...currentState };
-    newState.audio = { ...currentState.audio, volume: newVolume };
+    newState.audio = { ...currentState.audio, volume: step.volume };
 
     // Send the updated state to the tower
     await Tower.sendTowerState(newState);
 
-    // Play CardFlipPaper03 sound with new volume for feedback. No Mute guard needed:
-    // this path only ever walks toward 0 (Loud).
-    await Tower.playSoundStateful(0x21, false, newVolume);
+    // Play CardFlipPaper03 sound with new volume for feedback (this path only ever walks toward 0,
+    // so step.playFeedback is always true here).
+    if (step.playFeedback) {
+      await Tower.playSoundStateful(0x21, false, step.volume);
+    }
 
     // Update the display
-    updateVolumeDisplay(newVolume);
+    updateVolumeDisplay(step.volume);
   } catch (error) {
     logger.error(`Error decreasing volume: ${error}`, '[TC]');
   }
