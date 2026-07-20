@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { CommandQueue } from '../src/udtCommandQueue';
 import { Logger } from '../src/udtLogger';
 
@@ -8,11 +9,11 @@ function makeLogger(): Logger {
 }
 
 describe('CommandQueue', () => {
-  let sendFn: jest.Mock<Promise<void>, [Uint8Array]>;
+  let sendFn: Mock<(b: Uint8Array) => Promise<void>>;
   let queue: CommandQueue;
 
   beforeEach(() => {
-    sendFn = jest.fn().mockResolvedValue(undefined);
+    sendFn = vi.fn().mockResolvedValue(undefined);
     // minCommandIntervalMs = 0 keeps these tests' existing fast/synchronous-tick
     // assertions unchanged; the nonzero-interval behavior has its own test below.
     queue = new CommandQueue(makeLogger(), sendFn, undefined, 0);
@@ -57,7 +58,7 @@ describe('CommandQueue', () => {
   });
 
   test('timeout: command rejects after 30s, queue continues processing', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       const p1 = queue.enqueue(new Uint8Array([1]), 'cmd1');
       const p2 = queue.enqueue(new Uint8Array([2]), 'cmd2');
@@ -67,7 +68,7 @@ describe('CommandQueue', () => {
       expect(sendFn).toHaveBeenCalledTimes(1);
 
       // Advance past 30s timeout without calling onResponse()
-      jest.advanceTimersByTime(30001);
+      vi.advanceTimersByTime(30001);
       await Promise.resolve();
 
       await expect(p1).rejects.toThrow(/timeout/i);
@@ -79,7 +80,7 @@ describe('CommandQueue', () => {
       queue.onResponse();
       await p2; // cmd2 resolves normally
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
@@ -113,7 +114,7 @@ describe('CommandQueue', () => {
   });
 
   test('enforces a minimum interval between a response and the next command dispatch', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       const intervalQueue = new CommandQueue(makeLogger(), sendFn, undefined, 250);
 
@@ -130,16 +131,16 @@ describe('CommandQueue', () => {
       await Promise.resolve();
       expect(sendFn).toHaveBeenCalledTimes(1);
 
-      await jest.advanceTimersByTimeAsync(249);
+      await vi.advanceTimersByTimeAsync(249);
       expect(sendFn).toHaveBeenCalledTimes(1);
 
-      await jest.advanceTimersByTimeAsync(1);
+      await vi.advanceTimersByTimeAsync(1);
       expect(sendFn).toHaveBeenCalledTimes(2);
 
       intervalQueue.onResponse();
       await Promise.all([p1, p2]);
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 });

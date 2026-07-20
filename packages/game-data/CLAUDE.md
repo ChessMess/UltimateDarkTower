@@ -6,7 +6,7 @@ inventory) + seed encode/decode. Split out of `ultimatedarktower` in v6. Depth i
 
 ## Invariant: zero runtime dependencies
 
-`package.json` has **no `dependencies` key** — only devDeps (jest/ts-jest). This is the
+`package.json` has **no `dependencies` key** — only devDeps (vitest). This is the
 whole point of the package: core/display/board and every app import it to get data
 **without** pulling in a Node-only Bluetooth stack. **Never add a runtime dependency here.**
 
@@ -22,7 +22,9 @@ exists because v6 had the same entity spelled 2–3 ways ("Isa the Exile" vs "Is
 
 - `build` = `tsc --build` (composite project, `"composite": true`), `es2017`/CommonJS.
 - No package-local `lint`/`ci` scripts — relies on the root `eslint .` and `pnpm -r` fan-out.
-- Tests are jest (`tests/`, not colocated), one file per data module.
+- Tests are **vitest** (`tests/`, not colocated), one file per data module. Config lives in
+  `vitest.config.ts` with `globals: true`, so the suites keep using bare
+  `describe`/`it`/`expect` with no imports.
 - Subpath exports: `.` (everything), `./board` (locations/anchors/adjacency graph),
   `./seed` (encode/decode/validate + `SystemRandom`).
 

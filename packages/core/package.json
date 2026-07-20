@@ -21,10 +21,10 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ci": "vitest run --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
@@ -90,14 +90,12 @@
   },
   "devDependencies": {
     "@stoprocent/noble": "^2.3.17",
-    "@types/jest": "^30.0.0",
     "@types/node": "catalog:",
     "@types/web-bluetooth": "^0.0.21",
+    "@vitest/coverage-v8": "catalog:",
     "esbuild": "^0.28.1",
-    "jest": "^30.0.0",
-    "jest-util": "^30.0.0",
-    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

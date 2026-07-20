@@ -30,14 +30,14 @@ function createMockCharacteristic(
   const listeners: Record<string, Listener[]> = {};
   return {
     uuid,
-    startNotifications: jest.fn().mockResolvedValue(undefined),
-    addEventListener: jest.fn((event: string, handler: Listener) => {
+    startNotifications: vi.fn().mockResolvedValue(undefined),
+    addEventListener: vi.fn((event: string, handler: Listener) => {
       if (!listeners[event]) listeners[event] = [];
       listeners[event].push(handler);
     }),
-    removeEventListener: jest.fn(),
-    writeValue: jest.fn().mockResolvedValue(undefined),
-    readValue: jest.fn().mockResolvedValue(options.readValue ?? new DataView(new ArrayBuffer(0))),
+    removeEventListener: vi.fn(),
+    writeValue: vi.fn().mockResolvedValue(undefined),
+    readValue: vi.fn().mockResolvedValue(options.readValue ?? new DataView(new ArrayBuffer(0))),
     _listeners: listeners,
     _fireEvent: (event: string, data: unknown) => {
       (listeners[event] || []).forEach((fn) => fn(data));
@@ -49,7 +49,7 @@ function createMockService(
   characteristics: Record<string, ReturnType<typeof createMockCharacteristic>>,
 ) {
   return {
-    getCharacteristic: jest.fn((uuid: string) => {
+    getCharacteristic: vi.fn((uuid: string) => {
       const char = characteristics[uuid];
       if (!char) return Promise.reject(new Error(`Characteristic ${uuid} not found`));
       return Promise.resolve(char);
@@ -66,9 +66,9 @@ function createMockDevice(
   const deviceListeners: Record<string, Listener[]> = {};
   const server = {
     connected: options.gattConnected ?? true,
-    connect: jest.fn().mockResolvedValue(undefined),
-    disconnect: jest.fn(),
-    getPrimaryService: jest.fn((uuid: string) => {
+    connect: vi.fn().mockResolvedValue(undefined),
+    disconnect: vi.fn(),
+    getPrimaryService: vi.fn((uuid: string) => {
       const svc = options.services?.[uuid];
       if (!svc) return Promise.reject(new Error(`Service ${uuid} not found`));
       return Promise.resolve(svc);
@@ -79,11 +79,11 @@ function createMockDevice(
 
   const device = {
     gatt: server,
-    addEventListener: jest.fn((event: string, handler: Listener) => {
+    addEventListener: vi.fn((event: string, handler: Listener) => {
       if (!deviceListeners[event]) deviceListeners[event] = [];
       deviceListeners[event].push(handler);
     }),
-    removeEventListener: jest.fn(),
+    removeEventListener: vi.fn(),
     _listeners: deviceListeners,
     _fireEvent: (event: string, data?: unknown) => {
       (deviceListeners[event] || []).forEach((fn) => fn(data));
@@ -96,19 +96,24 @@ function createMockDevice(
 function setupMockNavigatorBluetooth(device: ReturnType<typeof createMockDevice> | null) {
   const btListeners: Record<string, Listener[]> = {};
   const bluetooth = {
-    requestDevice: jest.fn().mockResolvedValue(device),
-    addEventListener: jest.fn((event: string, handler: Listener) => {
+    requestDevice: vi.fn().mockResolvedValue(device),
+    addEventListener: vi.fn((event: string, handler: Listener) => {
       if (!btListeners[event]) btListeners[event] = [];
       btListeners[event].push(handler);
     }),
-    removeEventListener: jest.fn(),
+    removeEventListener: vi.fn(),
     _listeners: btListeners,
     _fireEvent: (event: string, data?: unknown) => {
       (btListeners[event] || []).forEach((fn) => fn(data));
     },
   };
 
-  (global as unknown as WebTestGlobal).navigator = { bluetooth };
+  // Node 21+ defines a real `navigator` global as an accessor with no setter, so a
+  // plain assignment throws "Cannot set property navigator ... which has only a
+  // getter". (Jest's node environment replaced the global object wholesale, which
+  // is why this used to work.) vi.stubGlobal goes through defineProperty and is
+  // undone by vi.unstubAllGlobals in afterEach.
+  vi.stubGlobal('navigator', { bluetooth });
 
   return bluetooth;
 }
@@ -139,18 +144,15 @@ type WebTestGlobal = { navigator?: { bluetooth: MockNavigatorBluetooth } };
 
 describe('WebBluetoothAdapter', () => {
   let adapter: WebBluetoothAdapter;
-  const originalNavigator = (global as unknown as WebTestGlobal).navigator;
 
   beforeEach(() => {
     adapter = new WebBluetoothAdapter();
   });
 
   afterEach(() => {
-    if (originalNavigator === undefined) {
-      delete (global as unknown as WebTestGlobal).navigator;
-    } else {
-      (global as unknown as WebTestGlobal).navigator = originalNavigator;
-    }
+    // Restores whatever `navigator` was before the stub — including restoring the
+    // real Node global, which the previous save/reassign dance could not do.
+    vi.unstubAllGlobals();
   });
 
   describe('connect', () => {
@@ -256,7 +258,7 @@ describe('WebBluetoothAdapter', () => {
   describe('onCharacteristicValueChanged', () => {
     test('should invoke callback when RX data arrives', async () => {
       const { rxChar } = createFullMockSetup();
-      const callback = jest.fn();
+      const callback = vi.fn();
       adapter.onCharacteristicValueChanged(callback);
 
       await adapter.connect('ReturnToDarkTower', [UART_SERVICE_UUID]);
@@ -280,7 +282,7 @@ describe('WebBluetoothAdapter', () => {
   describe('onDisconnect', () => {
     test('should invoke callback on gattserverdisconnected event', async () => {
       const { device } = createFullMockSetup();
-      const callback = jest.fn();
+      const callback = vi.fn();
       adapter.onDisconnect(callback);
 
       await adapter.connect('ReturnToDarkTower', [UART_SERVICE_UUID]);
@@ -298,7 +300,7 @@ describe('WebBluetoothAdapter', () => {
   describe('onBluetoothAvailabilityChanged', () => {
     test('should invoke callback on availabilitychanged event', async () => {
       const { bluetooth } = createFullMockSetup();
-      const callback = jest.fn();
+      const callback = vi.fn();
       adapter.onBluetoothAvailabilityChanged(callback);
 
       await adapter.connect('ReturnToDarkTower', [UART_SERVICE_UUID]);
@@ -322,7 +324,7 @@ describe('WebBluetoothAdapter', () => {
       });
 
       const disService = {
-        getCharacteristic: jest.fn((uuid: string) => {
+        getCharacteristic: vi.fn((uuid: string) => {
           if (uuid === '00002a29-0000-1000-8000-00805f9b34fb') {
             return Promise.resolve(manufacturerChar);
           }
@@ -356,7 +358,7 @@ describe('WebBluetoothAdapter', () => {
       });
 
       const disService = {
-        getCharacteristic: jest.fn((uuid: string) => {
+        getCharacteristic: vi.fn((uuid: string) => {
           if (uuid === '00002a23-0000-1000-8000-00805f9b34fb') {
             return Promise.resolve(binaryChar);
           }

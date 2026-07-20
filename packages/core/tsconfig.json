@@ -14,5 +14,10 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "exclude": ["node_modules", "dist", "examples"]
+  // NOTE: `tests` is deliberately NOT excluded. This config sets `outDir` with no
+  // `rootDir`, so tsc infers rootDir from the common root of all inputs — src +
+  // tests — which is what puts the build at `dist/src/`. `main`, `types`,
+  // `exports` and `files` all point there, as do several consumers' vite configs.
+  // Excluding `tests` would collapse the output to `dist/` and silently break them.
+  "exclude": ["node_modules", "dist", "examples", "vitest.config.ts"]
 }

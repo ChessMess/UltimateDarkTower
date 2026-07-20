@@ -8,32 +8,59 @@ export enum BluetoothPlatform {
   NONE = 'none',
 }
 
+/**
+ * Adapter constructors that `BluetoothAdapterFactory.create` would otherwise
+ * lazily `require()`.
+ *
+ * Production callers never pass this. It exists because the `require()` calls
+ * below are runtime calls that an ESM module mocker (vitest's `vi.mock`) cannot
+ * intercept, and which cannot resolve a `.ts` source file at all — so injection
+ * is the supported seam for exercising platform selection. Same rationale as
+ * `NodeBluetoothAdapter`'s constructor parameter.
+ */
+export interface AdapterConstructorOverrides {
+  WebBluetoothAdapter?: new () => IBluetoothAdapter;
+  NodeBluetoothAdapter?: new () => IBluetoothAdapter;
+  NoopBluetoothAdapter?: new () => IBluetoothAdapter;
+}
+
 export class BluetoothAdapterFactory {
   /**
    * Creates a Bluetooth adapter for the specified platform
    * @param platform - Target platform (web, node, or auto-detect)
+   * @param overrides - Optional adapter constructors, for tests. Omitted in
+   *   production, where each adapter is lazily required for the active platform only.
    * @returns Platform-specific Bluetooth adapter instance
    */
-  static create(platform: BluetoothPlatform = BluetoothPlatform.AUTO): IBluetoothAdapter {
+  static create(
+    platform: BluetoothPlatform = BluetoothPlatform.AUTO,
+    overrides: AdapterConstructorOverrides = {},
+  ): IBluetoothAdapter {
     const detectedPlatform = platform === BluetoothPlatform.AUTO ? this.detectPlatform() : platform;
 
     switch (detectedPlatform) {
       case BluetoothPlatform.WEB: {
         // Synchronous require keeps create() sync and lazy-loads only the
         // adapter for the active platform (avoids pulling node BLE into browser bundles).
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { WebBluetoothAdapter } = require('./adapters/WebBluetoothAdapter');
-        return new WebBluetoothAdapter();
+        const Ctor =
+          overrides.WebBluetoothAdapter ??
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          require('./adapters/WebBluetoothAdapter').WebBluetoothAdapter;
+        return new Ctor();
       }
       case BluetoothPlatform.NODE: {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { NodeBluetoothAdapter } = require('./adapters/NodeBluetoothAdapter');
-        return new NodeBluetoothAdapter();
+        const Ctor =
+          overrides.NodeBluetoothAdapter ??
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          require('./adapters/NodeBluetoothAdapter').NodeBluetoothAdapter;
+        return new Ctor();
       }
       case BluetoothPlatform.NONE: {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { NoopBluetoothAdapter } = require('./adapters/NoopBluetoothAdapter');
-        return new NoopBluetoothAdapter();
+        const Ctor =
+          overrides.NoopBluetoothAdapter ??
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          require('./adapters/NoopBluetoothAdapter').NoopBluetoothAdapter;
+        return new Ctor();
       }
       default:
         throw new Error(`Unsupported Bluetooth platform: ${detectedPlatform}`);

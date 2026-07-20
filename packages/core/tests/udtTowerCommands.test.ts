@@ -210,17 +210,17 @@ describe('rotateWithState()', () => {
       throw new Error('Mock write failed');
     };
 
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       const promise = darkTower.rotateWithState('east', 'north', 'north');
       await expect(promise).rejects.toThrow('Mock write failed');
 
       expect(darkTower['bleConnection'].performingLongCommand).toBe(true);
 
-      await jest.advanceTimersByTimeAsync(30000);
+      await vi.advanceTimersByTimeAsync(30000);
       expect(darkTower['bleConnection'].performingLongCommand).toBe(false);
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 });
