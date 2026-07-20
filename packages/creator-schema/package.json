@@ -12,8 +12,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "ajv": "^8.17.0",
-    "ajv-formats": "^3.0.0"
+    "ajv": "catalog:",
+    "ajv-formats": "catalog:"
   },
   "devDependencies": {
     "json-schema-to-typescript": "^15.0.0"

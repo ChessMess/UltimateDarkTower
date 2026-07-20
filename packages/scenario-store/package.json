@@ -14,7 +14,7 @@
     "lint": "eslint ."
   },
   "devDependencies": {
-    "fake-indexeddb": "^6.2.5",
+    "fake-indexeddb": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

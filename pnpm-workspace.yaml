@@ -12,6 +12,40 @@ packages:
 catalog:
   typescript: ^5.9.3
   vitest: ^4.1.10
+  # Coverage provider for vitest. Its peer range on vitest is exact, so these two
+  # must be bumped together — that's the main reason it belongs in the catalog.
+  '@vitest/coverage-v8': ^4.1.10
+
+  # Build/test tooling shared across many workspaces.
+  vite: ^8.0.0
+  jsdom: ^25.0.0
+  '@vitejs/plugin-react': ^6.0.0
+  '@types/node': ^22.0.0
+
+  # Runtime libraries. three is the load-bearing one: .npmrc force-hoists it so
+  # every package shares a single copy (multiple copies break `instanceof`), and
+  # a drifting range is what breaks that. Cataloguing makes the invariant
+  # structural instead of a convention. Keep @types/* on the same version as the
+  # package they type.
+  three: ^0.185.0
+  '@types/three': ^0.185.0
+  gsap: ^3.15.0
+  '@dimforge/rapier3d-compat': ^0.19.3
+  react: ^19.2.0
+  react-dom: ^19.2.0
+  '@types/react': ^19.2.0
+  '@types/react-dom': ^19.2.0
+  ws: ^8.18.0
+  '@types/ws': ^8.5.10
+  ajv: ^8.17.0
+  ajv-formats: ^3.0.0
+  zustand: ^5.0.0
+  fake-indexeddb: ^6.2.5
+
+  # NOTE: peerDependencies are deliberately NOT catalogued. A peer range should be
+  # wider than the version you build against (packages/board and packages/display
+  # declare `three: ">=0.185.0"`), and `catalog:` would narrow it to the caret
+  # range above.
 
 # Security overrides (Dependabot triage, 2026-07): collapse stale duplicate copies
 # onto the already-patched versions that other deps already resolve in-tree.

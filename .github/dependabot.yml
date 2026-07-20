@@ -15,10 +15,21 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 10
     ignore:
-      # typescript is pinned via the pnpm catalog (pnpm-workspace.yaml) and held
-      # at 5.9.x on purpose — TS 6.0 drops the automatic @types inclusion the
-      # packages rely on (see CLAUDE.md). Dependabot also can't resolve the
-      # `catalog:` protocol and errors the whole run when it tries, so skip it.
+      # typescript is held at 5.9.x on purpose — TS 6.0 drops the automatic
+      # @types inclusion the packages rely on (see CLAUDE.md).
+      #
+      # NOTE: an earlier version of this comment also claimed Dependabot "can't
+      # resolve the `catalog:` protocol and errors the whole run". That is no
+      # longer true — pnpm workspace catalogs went GA in Dependabot in Feb 2025:
+      # https://github.blog/changelog/2025-02-04-dependabot-now-supports-pnpm-workspace-catalogs-ga/
+      # So the many deps now in the catalog (vite, three, react, ws, ajv, …) do
+      # NOT need ignore entries and keep receiving security/version PRs. Only the
+      # deliberate version pin below justifies ignoring typescript.
+      #
+      # Known upstream quirk: Dependabot cannot infer dev-vs-prod for catalogued
+      # deps and files them all under `dependency-type: production`, so catalogued
+      # devDeps land in the production-dependencies group below.
+      # https://github.com/dependabot/dependabot-core/issues/14824
       - dependency-name: "typescript"
       # Only auto-propose patch/minor bumps here. Major dev/prod bumps
       # (eslint 9→10, @types/node 22→26, @dagrejs/dagre 1→3, …) are reviewed and

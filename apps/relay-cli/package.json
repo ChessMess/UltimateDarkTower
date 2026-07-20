@@ -20,10 +20,10 @@
     "ultimatedarktowerrelay-client": "workspace:^",
     "ultimatedarktowerrelay-core": "workspace:^",
     "ultimatedarktowerrelay-shared": "workspace:^",
-    "ws": "^8.18.0"
+    "ws": "catalog:"
   },
   "devDependencies": {
-    "@types/ws": "^8.5.10",
+    "@types/ws": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {

@@ -22,7 +22,7 @@
     "ultimatedarktower": "workspace:^",
     "ultimatedarktowerrelay-core": "workspace:^",
     "ultimatedarktowerrelay-shared": "workspace:^",
-    "ws": "^8.18.0"
+    "ws": "catalog:"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.11.2",
@@ -35,7 +35,7 @@
     "@types/electron-squirrel-startup": "^1.0.2",
     "electron": "^42.4.1",
     "typescript": "catalog:",
-    "vite": "^8.0.0",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {

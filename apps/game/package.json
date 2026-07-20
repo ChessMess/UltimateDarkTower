@@ -11,8 +11,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "format": "prettier --write ."
+    "lint": "eslint ."
   },
   "author": "ChessMess",
   "license": "MIT",
@@ -21,9 +20,8 @@
     "ultimatedarktowerdata": "workspace:^"
   },
   "devDependencies": {
-    "prettier": "^3.8.1",
     "typescript": "catalog:",
-    "vite": "^8.0.0",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {

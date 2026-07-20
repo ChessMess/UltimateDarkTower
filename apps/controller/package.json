@@ -11,7 +11,6 @@
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
     "ci": "npm run lint && npm run typecheck && npm run test && npm run build"
@@ -19,18 +18,17 @@
   "author": "ChessMess",
   "license": "MIT",
   "dependencies": {
-    "@dimforge/rapier3d-compat": "^0.19.3",
-    "gsap": "^3.15.0",
-    "three": "^0.185.0",
+    "@dimforge/rapier3d-compat": "catalog:",
+    "gsap": "catalog:",
+    "three": "catalog:",
     "ultimatedarktower": "workspace:^",
     "ultimatedarktowerdata": "workspace:^",
     "ultimatedarktowerdisplay": "workspace:^"
   },
   "devDependencies": {
-    "jsdom": "^25.0.0",
-    "prettier": "^3.8.1",
+    "jsdom": "catalog:",
     "typescript": "catalog:",
-    "vite": "^8.0.0",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {

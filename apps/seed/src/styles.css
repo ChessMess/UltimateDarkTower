@@ -29,7 +29,10 @@
 /* ─── Base ────────────────────────────────────────────────────────────────── */
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: var(--bg);
   color: var(--fg);
   min-height: 100vh;
@@ -37,8 +40,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2.5rem max(1.25rem, env(safe-area-inset-right))
-           2rem     max(1.25rem, env(safe-area-inset-left));
+  padding: 2.5rem max(1.25rem, env(safe-area-inset-right)) 2rem
+    max(1.25rem, env(safe-area-inset-left));
   padding-top: max(2rem, env(safe-area-inset-top));
   padding-bottom: max(2rem, env(safe-area-inset-bottom));
 }
@@ -102,8 +105,8 @@ header p {
   margin-bottom: 0.35rem;
 }
 
-input[type="text"],
-input[type="number"],
+input[type='text'],
+input[type='number'],
 select {
   width: 100%;
   padding: 0.65rem 0.8rem;
@@ -141,7 +144,9 @@ button {
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
-  transition: background 0.15s, opacity 0.15s;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
   background: var(--accent);
   color: #fff;
 }

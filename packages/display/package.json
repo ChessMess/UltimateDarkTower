@@ -40,7 +40,6 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.example.json",
     "lint": "eslint .",
     "lint:fix": "eslint 'src/**/*.ts' 'tests/**/*.ts' 'example/**/*.ts' --fix",
-    "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
     "clean": "rm -rf dist dist-example coverage",
     "ci": "npm run typecheck && npm run lint && npm test && npm run build",
     "prepublishOnly": "npm run ci"
@@ -63,18 +62,17 @@
     }
   },
   "devDependencies": {
-    "@dimforge/rapier3d-compat": "^0.19.3",
+    "@dimforge/rapier3d-compat": "catalog:",
     "@types/jest": "^29.5.0",
-    "@types/three": "^0.185.0",
-    "gsap": "^3.15.0",
+    "@types/three": "catalog:",
+    "gsap": "catalog:",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "prettier": "^3.2.0",
-    "three": "^0.185.0",
+    "three": "catalog:",
     "ts-jest": "^29.1.0",
     "typescript": "catalog:",
     "ultimatedarktower": "workspace:^",
-    "vite": "^8.0.0"
+    "vite": "catalog:"
   },
   "keywords": [
     "ReturnToDarkTower",

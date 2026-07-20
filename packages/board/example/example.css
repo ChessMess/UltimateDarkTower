@@ -78,7 +78,11 @@ html {
 body {
   margin: 0;
   background-color: var(--bg);
-  background-image: radial-gradient(ellipse 80% 40% at 50% 0%, rgba(80, 40, 10, 0.4) 0%, transparent 70%);
+  background-image: radial-gradient(
+    ellipse 80% 40% at 50% 0%,
+    rgba(80, 40, 10, 0.4) 0%,
+    transparent 70%
+  );
   color: var(--text);
   font-family: 'IM Fell English', Georgia, serif;
   min-height: 100vh;

@@ -12,8 +12,8 @@
     "typecheck": "tsc -b"
   },
   "devDependencies": {
-    "ajv": "^8.17.0",
-    "ajv-formats": "^3.0.0"
+    "ajv": "catalog:",
+    "ajv-formats": "catalog:"
   },
   "engines": {
     "node": ">=22.13.0"

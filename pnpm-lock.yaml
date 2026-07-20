@@ -6,12 +6,66 @@ settings:
 
 catalogs:
   default:
+    '@dimforge/rapier3d-compat':
+      specifier: ^0.19.3
+      version: 0.19.3
+    '@types/node':
+      specifier: ^22.0.0
+      version: 22.20.1
+    '@types/react':
+      specifier: ^19.2.0
+      version: 19.2.17
+    '@types/react-dom':
+      specifier: ^19.2.0
+      version: 19.2.3
+    '@types/three':
+      specifier: ^0.185.0
+      version: 0.185.1
+    '@types/ws':
+      specifier: ^8.5.10
+      version: 8.18.1
+    '@vitejs/plugin-react':
+      specifier: ^6.0.0
+      version: 6.0.3
+    ajv:
+      specifier: ^8.17.0
+      version: 8.20.0
+    ajv-formats:
+      specifier: ^3.0.0
+      version: 3.0.1
+    fake-indexeddb:
+      specifier: ^6.2.5
+      version: 6.2.5
+    gsap:
+      specifier: ^3.15.0
+      version: 3.15.0
+    jsdom:
+      specifier: ^25.0.0
+      version: 25.0.1
+    react:
+      specifier: ^19.2.0
+      version: 19.2.7
+    react-dom:
+      specifier: ^19.2.0
+      version: 19.2.7
+    three:
+      specifier: ^0.185.0
+      version: 0.185.1
     typescript:
       specifier: ^5.9.3
       version: 5.9.3
+    vite:
+      specifier: ^8.0.0
+      version: 8.1.4
     vitest:
       specifier: ^4.1.10
       version: 4.1.10
+    ws:
+      specifier: ^8.18.0
+      version: 8.21.0
+    zustand:
+      specifier: ^5.0.0
+      version: 5.0.14
 
 overrides:
   tar: ^7.5.19
@@ -55,13 +109,13 @@ importers:
   apps/controller:
     dependencies:
       '@dimforge/rapier3d-compat':
-        specifier: ^0.19.3
+        specifier: 'catalog:'
         version: 0.19.3
       gsap:
-        specifier: ^3.15.0
+        specifier: 'catalog:'
         version: 3.15.0
       three:
-        specifier: ^0.185.0
+        specifier: 'catalog:'
         version: 0.185.1
       ultimatedarktower:
         specifier: workspace:^
@@ -74,16 +128,13 @@ importers:
         version: link:../../packages/display
     devDependencies:
       jsdom:
-        specifier: ^25.0.0
+        specifier: 'catalog:'
         version: 25.0.1
-      prettier:
-        specifier: ^3.8.1
-        version: 3.9.5
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
       vite:
-        specifier: ^8.0.0
+        specifier: 'catalog:'
         version: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
       vitest:
         specifier: 'catalog:'
@@ -95,7 +146,7 @@ importers:
         specifier: ^1.0.0
         version: 1.1.8
       '@dimforge/rapier3d-compat':
-        specifier: ^0.19.3
+        specifier: 'catalog:'
         version: 0.19.3
       '@udtc/adapters':
         specifier: workspace:*
@@ -119,16 +170,16 @@ importers:
         specifier: ^12.0.0
         version: 12.11.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       gsap:
-        specifier: ^3.15.0
+        specifier: 'catalog:'
         version: 3.15.0
       react:
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.7
       react-dom:
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.7(react@19.2.7)
       three:
-        specifier: ^0.185.0
+        specifier: 'catalog:'
         version: 0.185.1
       ultimatedarktower:
         specifier: workspace:^
@@ -140,56 +191,56 @@ importers:
         specifier: workspace:^
         version: link:../../packages/display
       zustand:
-        specifier: ^5.0.0
+        specifier: 'catalog:'
         version: 5.0.14(@types/react@19.2.17)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
     devDependencies:
       '@testing-library/react':
         specifier: ^16.3.2
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@types/react':
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.17
       '@types/react-dom':
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.3(@types/react@19.2.17)
       '@vitejs/plugin-react':
-        specifier: ^6.0.0
-        version: 6.0.3(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
+        specifier: 'catalog:'
+        version: 6.0.3(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
       ajv:
-        specifier: ^8.17.0
+        specifier: 'catalog:'
         version: 8.20.0
       ajv-formats:
-        specifier: ^3.0.0
+        specifier: 'catalog:'
         version: 3.0.1(ajv@8.20.0)
       fake-indexeddb:
-        specifier: ^6.2.5
+        specifier: 'catalog:'
         version: 6.2.5
       jsdom:
-        specifier: ^25.0.0
+        specifier: 'catalog:'
         version: 25.0.1
       vite:
-        specifier: ^8.0.0
-        version: 8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
+        specifier: 'catalog:'
+        version: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
 
   apps/digital:
     dependencies:
       '@dimforge/rapier3d-compat':
-        specifier: ^0.19.3
+        specifier: 'catalog:'
         version: 0.19.3
       gsap:
-        specifier: ^3.15.0
+        specifier: 'catalog:'
         version: 3.15.0
       react:
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.7
       react-dom:
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.7(react@19.2.7)
       three:
-        specifier: ^0.185.0
+        specifier: 'catalog:'
         version: 0.185.1
       ultimatedarktower:
         specifier: workspace:^
@@ -204,35 +255,32 @@ importers:
         specifier: workspace:^
         version: link:../../packages/display
       zustand:
-        specifier: ^5.0.0
+        specifier: 'catalog:'
         version: 5.0.14(@types/react@19.2.17)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
     devDependencies:
       '@types/node':
-        specifier: ^22.19.21
+        specifier: 'catalog:'
         version: 22.20.1
       '@types/react':
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.17
       '@types/react-dom':
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.3(@types/react@19.2.17)
       '@types/three':
-        specifier: ^0.185.0
+        specifier: 'catalog:'
         version: 0.185.1
       '@vitejs/plugin-react':
-        specifier: ^6.0.0
+        specifier: 'catalog:'
         version: 6.0.3(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
       jsdom:
-        specifier: ^25.0.0
+        specifier: 'catalog:'
         version: 25.0.1
-      prettier:
-        specifier: ^3.8.0
-        version: 3.9.5
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
       vite:
-        specifier: ^8.0.0
+        specifier: 'catalog:'
         version: 8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
       vitest:
         specifier: 'catalog:'
@@ -247,14 +295,11 @@ importers:
         specifier: workspace:^
         version: link:../../packages/game-data
     devDependencies:
-      prettier:
-        specifier: ^3.8.1
-        version: 3.9.5
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
       vite:
-        specifier: ^8.0.0
+        specifier: 'catalog:'
         version: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
       vitest:
         specifier: 'catalog:'
@@ -285,7 +330,7 @@ importers:
         specifier: ^4.17.21
         version: 4.17.25
       '@types/node':
-        specifier: ^22.0.0
+        specifier: 'catalog:'
         version: 22.20.1
       tsx:
         specifier: ^4.19.0
@@ -300,7 +345,7 @@ importers:
   apps/player:
     dependencies:
       '@dimforge/rapier3d-compat':
-        specifier: ^0.19.3
+        specifier: 'catalog:'
         version: 0.19.3
       '@udtc/adapters':
         specifier: workspace:*
@@ -321,16 +366,16 @@ importers:
         specifier: workspace:*
         version: link:../../packages/creator-theme
       gsap:
-        specifier: ^3.15.0
+        specifier: 'catalog:'
         version: 3.15.0
       react:
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.7
       react-dom:
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.7(react@19.2.7)
       three:
-        specifier: ^0.185.0
+        specifier: 'catalog:'
         version: 0.185.1
       ultimatedarktower:
         specifier: workspace:^
@@ -342,36 +387,36 @@ importers:
         specifier: workspace:^
         version: link:../../packages/display
       zustand:
-        specifier: ^5.0.0
+        specifier: 'catalog:'
         version: 5.0.14(@types/react@19.2.17)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
     devDependencies:
       '@types/react':
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.17
       '@types/react-dom':
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.3(@types/react@19.2.17)
       '@vitejs/plugin-react':
-        specifier: ^6.0.0
-        version: 6.0.3(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
+        specifier: 'catalog:'
+        version: 6.0.3(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
       ajv:
-        specifier: ^8.17.0
+        specifier: 'catalog:'
         version: 8.20.0
       ajv-formats:
-        specifier: ^3.0.0
+        specifier: 'catalog:'
         version: 3.0.1(ajv@8.20.0)
       fake-indexeddb:
-        specifier: ^6.2.5
+        specifier: 'catalog:'
         version: 6.2.5
       jsdom:
-        specifier: ^25.0.0
+        specifier: 'catalog:'
         version: 25.0.1
       vite:
-        specifier: ^8.0.0
-        version: 8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
+        specifier: 'catalog:'
+        version: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
 
   apps/relay-cli:
     dependencies:
@@ -388,11 +433,11 @@ importers:
         specifier: workspace:^
         version: link:../../packages/relay-shared
       ws:
-        specifier: ^8.18.0
+        specifier: 'catalog:'
         version: 8.21.0
     devDependencies:
       '@types/ws':
-        specifier: ^8.5.10
+        specifier: 'catalog:'
         version: 8.18.1
       vitest:
         specifier: 'catalog:'
@@ -419,7 +464,7 @@ importers:
         specifier: workspace:^
         version: link:../../packages/relay-shared
       ws:
-        specifier: ^8.18.0
+        specifier: 'catalog:'
         version: 8.21.0
     devDependencies:
       '@electron-forge/cli':
@@ -453,11 +498,11 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vite:
-        specifier: ^8.0.0
-        version: 8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
+        specifier: 'catalog:'
+        version: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
 
   apps/seed:
     dependencies:
@@ -465,29 +510,26 @@ importers:
         specifier: workspace:^
         version: link:../../packages/game-data
     devDependencies:
-      prettier:
-        specifier: ^3.8.1
-        version: 3.9.5
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
       vite:
-        specifier: ^8.0.0
-        version: 8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
+        specifier: 'catalog:'
+        version: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
 
   apps/sync:
     dependencies:
       '@dimforge/rapier3d-compat':
-        specifier: ^0.19.3
+        specifier: 'catalog:'
         version: 0.19.3
       gsap:
-        specifier: ^3.15.0
+        specifier: 'catalog:'
         version: 3.15.0
       three:
-        specifier: ^0.185.0
+        specifier: 'catalog:'
         version: 0.185.1
       ultimatedarktower:
         specifier: workspace:^
@@ -503,11 +545,11 @@ importers:
         version: link:../../packages/relay-shared
     devDependencies:
       vite:
-        specifier: ^8.0.0
-        version: 8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
+        specifier: 'catalog:'
+        version: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
 
   packages/board:
     dependencies:
@@ -522,10 +564,10 @@ importers:
         specifier: ^29.5.0
         version: 29.5.14
       '@types/three':
-        specifier: ^0.185.0
+        specifier: 'catalog:'
         version: 0.185.1
       gsap:
-        specifier: ^3.15.0
+        specifier: 'catalog:'
         version: 3.15.0
       jest:
         specifier: ^29.7.0
@@ -533,14 +575,11 @@ importers:
       jest-environment-jsdom:
         specifier: ^29.7.0
         version: 29.7.0
-      prettier:
-        specifier: ^3.2.0
-        version: 3.9.5
       rimraf:
         specifier: ^5.0.0
         version: 5.0.10
       three:
-        specifier: ^0.185.0
+        specifier: 'catalog:'
         version: 0.185.1
       ts-jest:
         specifier: ^29.1.0
@@ -552,7 +591,7 @@ importers:
         specifier: workspace:^
         version: link:../display
       vite:
-        specifier: ^8.0.0
+        specifier: 'catalog:'
         version: 8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
 
   packages/core:
@@ -568,8 +607,8 @@ importers:
         specifier: ^30.0.0
         version: 30.0.0
       '@types/node':
-        specifier: ^24.12.0
-        version: 24.13.3
+        specifier: 'catalog:'
+        version: 22.20.1
       '@types/web-bluetooth':
         specifier: ^0.0.21
         version: 0.0.21
@@ -578,19 +617,16 @@ importers:
         version: 0.28.1
       jest:
         specifier: ^30.0.0
-        version: 30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3))
+        version: 30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3))
       jest-util:
         specifier: ^30.0.0
         version: 30.4.1
-      prettier:
-        specifier: ^3.8.1
-        version: 3.9.5
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.1)(jest-util@30.4.1)(jest@30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3)))(typescript@5.9.3)
+        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.1)(jest-util@30.4.1)(jest@30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3)))(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@types/node@24.13.3)(typescript@5.9.3)
+        version: 10.9.2(@types/node@22.20.1)(typescript@5.9.3)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -627,25 +663,25 @@ importers:
         version: 19.2.7
     devDependencies:
       '@types/react':
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.17
 
   packages/creator-engine:
     devDependencies:
       ajv:
-        specifier: ^8.17.0
+        specifier: 'catalog:'
         version: 8.20.0
       ajv-formats:
-        specifier: ^3.0.0
+        specifier: 'catalog:'
         version: 3.0.1(ajv@8.20.0)
 
   packages/creator-schema:
     dependencies:
       ajv:
-        specifier: ^8.17.0
+        specifier: 'catalog:'
         version: 8.20.0
       ajv-formats:
-        specifier: ^3.0.0
+        specifier: 'catalog:'
         version: 3.0.1(ajv@8.20.0)
     devDependencies:
       json-schema-to-typescript:
@@ -659,7 +695,7 @@ importers:
         version: 19.2.7
     devDependencies:
       '@types/react':
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.17
 
   packages/display:
@@ -672,16 +708,16 @@ importers:
         version: 4.4.3
     devDependencies:
       '@dimforge/rapier3d-compat':
-        specifier: ^0.19.3
+        specifier: 'catalog:'
         version: 0.19.3
       '@types/jest':
         specifier: ^29.5.0
         version: 29.5.14
       '@types/three':
-        specifier: ^0.185.0
+        specifier: 'catalog:'
         version: 0.185.1
       gsap:
-        specifier: ^3.15.0
+        specifier: 'catalog:'
         version: 3.15.0
       jest:
         specifier: ^29.7.0
@@ -689,11 +725,8 @@ importers:
       jest-environment-jsdom:
         specifier: ^29.7.0
         version: 29.7.0
-      prettier:
-        specifier: ^3.2.0
-        version: 3.9.5
       three:
-        specifier: ^0.185.0
+        specifier: 'catalog:'
         version: 0.185.1
       ts-jest:
         specifier: ^29.1.0
@@ -705,8 +738,8 @@ importers:
         specifier: workspace:^
         version: link:../core
       vite:
-        specifier: ^8.0.0
-        version: 8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
+        specifier: 'catalog:'
+        version: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
 
   packages/game-data:
     devDependencies:
@@ -730,13 +763,13 @@ importers:
         version: link:../relay-shared
     devDependencies:
       '@types/ws':
-        specifier: ^8.5.10
+        specifier: 'catalog:'
         version: 8.18.1
       vitest:
         specifier: 'catalog:'
         version: 4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
       ws:
-        specifier: ^8.18.0
+        specifier: 'catalog:'
         version: 8.21.0
 
   packages/relay-core:
@@ -754,11 +787,11 @@ importers:
         specifier: workspace:^
         version: link:../relay-shared
       ws:
-        specifier: ^8.18.0
+        specifier: 'catalog:'
         version: 8.21.0
     devDependencies:
       '@types/ws':
-        specifier: ^8.5.10
+        specifier: 'catalog:'
         version: 8.18.1
       vitest:
         specifier: 'catalog:'
@@ -773,7 +806,7 @@ importers:
   packages/scenario-store:
     devDependencies:
       fake-indexeddb:
-        specifier: ^6.2.5
+        specifier: 'catalog:'
         version: 6.2.5
       typescript:
         specifier: 'catalog:'
@@ -7463,7 +7496,7 @@ snapshots:
       - supports-color
       - ts-node
 
-  '@jest/core@30.4.2(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3))':
+  '@jest/core@30.4.2(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3))':
     dependencies:
       '@jest/console': 30.4.1
       '@jest/pattern': 30.4.0
@@ -7479,7 +7512,7 @@ snapshots:
       fast-json-stable-stringify: 2.1.0
       graceful-fs: 4.2.11
       jest-changed-files: 30.4.1
-      jest-config: 30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3))
+      jest-config: 30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3))
       jest-haste-map: 30.4.1
       jest-message-util: 30.4.1
       jest-regex-util: 30.4.0
@@ -8491,10 +8524,10 @@ snapshots:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
 
-  '@vitejs/plugin-react@6.0.3(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))':
+  '@vitejs/plugin-react@6.0.3(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
+      vite: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
 
   '@vitest/expect@4.1.10':
     dependencies:
@@ -8512,14 +8545,6 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: 8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
-
-  '@vitest/mocker@4.1.10(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))':
-    dependencies:
-      '@vitest/spy': 4.1.10
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
 
   '@vitest/mocker@4.1.10(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))':
     dependencies:
@@ -10547,15 +10572,15 @@ snapshots:
       - supports-color
       - ts-node
 
-  jest-cli@30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3)):
+  jest-cli@30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3)):
     dependencies:
-      '@jest/core': 30.4.2(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3))
+      '@jest/core': 30.4.2(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3))
       '@jest/test-result': 30.4.1
       '@jest/types': 30.4.1
       chalk: 4.1.2
       exit-x: 0.2.2
       import-local: 3.2.0
-      jest-config: 30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3))
+      jest-config: 30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3))
       jest-util: 30.4.1
       jest-validate: 30.4.1
       yargs: 17.7.3
@@ -10659,7 +10684,7 @@ snapshots:
       - babel-plugin-macros
       - supports-color
 
-  jest-config@30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3)):
+  jest-config@30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3)):
     dependencies:
       '@babel/core': 7.29.7
       '@jest/get-type': 30.1.0
@@ -10686,39 +10711,7 @@ snapshots:
       strip-json-comments: 3.1.1
     optionalDependencies:
       '@types/node': 22.20.1
-      ts-node: 10.9.2(@types/node@24.13.3)(typescript@5.9.3)
-    transitivePeerDependencies:
-      - babel-plugin-macros
-      - supports-color
-
-  jest-config@30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3)):
-    dependencies:
-      '@babel/core': 7.29.7
-      '@jest/get-type': 30.1.0
-      '@jest/pattern': 30.4.0
-      '@jest/test-sequencer': 30.4.1
-      '@jest/types': 30.4.1
-      babel-jest: 30.4.1(@babel/core@7.29.7)
-      chalk: 4.1.2
-      ci-info: 4.4.0
-      deepmerge: 4.3.1
-      glob: 10.5.0
-      graceful-fs: 4.2.11
-      jest-circus: 30.4.2
-      jest-docblock: 30.4.0
-      jest-environment-node: 30.4.1
-      jest-regex-util: 30.4.0
-      jest-resolve: 30.4.1
-      jest-runner: 30.4.2
-      jest-util: 30.4.1
-      jest-validate: 30.4.1
-      parse-json: 5.2.0
-      pretty-format: 30.4.1
-      slash: 3.0.0
-      strip-json-comments: 3.1.1
-    optionalDependencies:
-      '@types/node': 24.13.3
-      ts-node: 10.9.2(@types/node@24.13.3)(typescript@5.9.3)
+      ts-node: 10.9.2(@types/node@22.20.1)(typescript@5.9.3)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
@@ -11199,12 +11192,12 @@ snapshots:
       - supports-color
       - ts-node
 
-  jest@30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3)):
+  jest@30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3)):
     dependencies:
-      '@jest/core': 30.4.2(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3))
+      '@jest/core': 30.4.2(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3))
       '@jest/types': 30.4.1
       import-local: 3.2.0
-      jest-cli: 30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3))
+      jest-cli: 30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3))
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -12674,12 +12667,12 @@ snapshots:
       esbuild: 0.28.1
       jest-util: 30.4.1
 
-  ts-jest@29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.1)(jest-util@30.4.1)(jest@30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3)))(typescript@5.9.3):
+  ts-jest@29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.1)(jest-util@30.4.1)(jest@30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3)))(typescript@5.9.3):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
       handlebars: 4.7.9
-      jest: 30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3))
+      jest: 30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3))
       json5: 2.2.3
       lodash.memoize: 4.1.2
       make-error: 1.3.6
@@ -12703,25 +12696,6 @@ snapshots:
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
       '@types/node': 22.20.1
-      acorn: 8.17.0
-      acorn-walk: 8.3.5
-      arg: 4.1.3
-      create-require: 1.1.1
-      diff: 4.0.4
-      make-error: 1.3.6
-      typescript: 5.9.3
-      v8-compile-cache-lib: 3.0.1
-      yn: 3.1.1
-    optional: true
-
-  ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3):
-    dependencies:
-      '@cspotcode/source-map-support': 0.8.1
-      '@tsconfig/node10': 1.0.12
-      '@tsconfig/node12': 1.0.11
-      '@tsconfig/node14': 1.0.3
-      '@tsconfig/node16': 1.0.4
-      '@types/node': 24.13.3
       acorn: 8.17.0
       acorn-walk: 8.3.5
       arg: 4.1.3
@@ -12934,22 +12908,6 @@ snapshots:
       tsx: 4.23.1
       yaml: 2.9.0
 
-  vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0):
-    dependencies:
-      lightningcss: 1.32.0
-      picomatch: 4.0.5
-      postcss: 8.5.16
-      rolldown: 1.1.5
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 24.13.3
-      esbuild: 0.28.1
-      fsevents: 2.3.3
-      jiti: 2.7.0
-      terser: 5.49.0
-      tsx: 4.23.1
-      yaml: 2.9.0
-
   vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0):
     dependencies:
       lightningcss: 1.32.0
@@ -12990,34 +12948,6 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.20.1
-      jsdom: 25.0.1
-    transitivePeerDependencies:
-      - msw
-
-  vitest@4.1.10(@types/node@26.1.1)(jsdom@25.0.1)(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)):
-    dependencies:
-      '@vitest/expect': 4.1.10
-      '@vitest/mocker': 4.1.10(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
-      '@vitest/pretty-format': 4.1.10
-      '@vitest/runner': 4.1.10
-      '@vitest/snapshot': 4.1.10
-      '@vitest/spy': 4.1.10
-      '@vitest/utils': 4.1.10
-      es-module-lexer: 2.3.0
-      expect-type: 1.4.0
-      magic-string: 0.30.21
-      obug: 2.1.3
-      pathe: 2.0.3
-      picomatch: 4.0.5
-      std-env: 4.2.0
-      tinybench: 2.9.0
-      tinyexec: 1.2.4
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.1.0
-      vite: 8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@types/node': 26.1.1
       jsdom: 25.0.1
     transitivePeerDependencies:
       - msw
