@@ -30,7 +30,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libbluetooth-dev libudev-dev
 
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           # pnpm 11.9.0 requires Node >= 22.13 (node:sqlite built-in).
           node-version: 22
