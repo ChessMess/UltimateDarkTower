@@ -3,10 +3,12 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { localhostHostValidation } from '@modelcontextprotocol/sdk/server/middleware/hostHeaderValidation.js';
+import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import express from 'express';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 
+import { parsePort } from './cli.js';
 import { TowerController } from './tower-controller.js';
 import { McpLogOutput } from './utils/logger.js';
 import { registerConnectionTools } from './tools/connection.js';
@@ -40,7 +42,15 @@ const args = process.argv.slice(2);
 const stdioOnly = args.includes('--stdio-only');
 const httpOnly = args.includes('--http-only');
 const portIndex = args.indexOf('--port');
-const httpPort = portIndex !== -1 ? parseInt(args[portIndex + 1], 10) : 3001;
+let httpPort = 3001;
+if (portIndex !== -1) {
+  try {
+    httpPort = parsePort(args[portIndex + 1]);
+  } catch (err) {
+    console.error((err as Error).message);
+    process.exit(1);
+  }
+}
 
 // Shared tower controller singleton
 const tower = TowerController.getInstance();
@@ -77,21 +87,40 @@ async function startHttp(): Promise<void> {
   app.use(express.json());
   app.use(localhostHostValidation());
 
-  // POST /mcp — main JSON-RPC endpoint
+  // POST /mcp — main JSON-RPC endpoint.
+  // Reuse the transport for an established session; build a NEW one only for an initialize
+  // handshake. The previous code built a fresh transport (+ server.connect) on EVERY POST and only
+  // dropped it via onclose, leaking one transport per request.
   app.post('/mcp', async (req, res) => {
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: () => randomUUID(),
-    });
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
+    let transport: StreamableHTTPServerTransport;
 
-    const sessionId = transport.sessionId;
-    if (sessionId) {
-      transports.set(sessionId, transport);
+    if (sessionId && transports.has(sessionId)) {
+      transport = transports.get(sessionId)!;
+    } else if (!sessionId && isInitializeRequest(req.body)) {
+      transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        // Register once the SDK assigns the session id (it isn't known at construction time).
+        onsessioninitialized: (sid) => {
+          transports.set(sid, transport);
+        },
+      });
       transport.onclose = () => {
-        transports.delete(sessionId);
+        if (transport.sessionId) transports.delete(transport.sessionId);
       };
+      await httpServer!.connect(transport);
+    } else {
+      res.status(400).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32000,
+          message: 'Bad Request: no valid session ID for a non-initialize request',
+        },
+        id: null,
+      });
+      return;
     }
 
-    await httpServer!.connect(transport);
     await transport.handleRequest(req, res, req.body);
   });
 
