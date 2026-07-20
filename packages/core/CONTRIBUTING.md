@@ -69,7 +69,7 @@ npm run ci
 ### Testing
 
 - Tests live in `tests/` mirroring the `src/` structure
-- Use [Jest](https://jestjs.io/) as the test framework
+- Use [Vitest](https://vitest.dev/) as the test framework
 - Use `MockBluetoothAdapter` (`tests/mocks/MockBluetoothAdapter.ts`) for unit tests that need a Bluetooth adapter
 - Pass the mock adapter via `new UltimateDarkTower({ adapter: mockAdapter })`
 - Run `npm run test:coverage` and aim for high coverage on new code

@@ -69,7 +69,7 @@ npm run ci
 ### Testing
 
 - Tests live in `tests/unit/` mirroring the source structure.
-- Use [Jest](https://jestjs.io/) as the test framework with `ts-jest` for TypeScript.
+- Use [Vitest](https://vitest.dev/) as the test framework.
 - Tests run in a `jsdom` environment for DOM API access.
 - Run `npm run test:coverage` and aim for high coverage on new code.
 

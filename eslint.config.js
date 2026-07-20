@@ -58,7 +58,8 @@ export default tseslint.config(
     },
   },
 
-  // Test files: expose the jest/vitest ambient globals.
+  // Test files: expose the vitest ambient globals (all packages are on vitest
+  // as of the July 2026 stack-alignment pass — no jest left in the workspace).
   {
     files: [
       '**/*.{test,spec}.{ts,tsx}',
@@ -67,7 +68,7 @@ export default tseslint.config(
       '**/__tests__/**/*.{ts,tsx}',
     ],
     languageOptions: {
-      globals: { ...globals.jest, ...globals.node },
+      globals: { ...globals.vitest, ...globals.node },
     },
   },
 
