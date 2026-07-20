@@ -1,9 +1,17 @@
 {
+  // Does not extend the ES2022 workspace base: the base's `module: "ESNext"` +
+  // `moduleResolution: "bundler"` would make tsc emit `export`/`import` syntax,
+  // which breaks every `require()` consumer of this published CJS package
+  // outright (verified directly: Node's loader throws ERR_MODULE_NOT_FOUND
+  // trying to resolve emitted ESM as CommonJS). `target` matches the base
+  // (ES2022) — a pure syntax choice, no effect on module format.
+  // `module`/`moduleResolution` stay Node16/Node16: CJS emission (no "type"
+  // field means Node treats it as CommonJS) with exports-map-aware resolution.
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2022",
     "module": "Node16",
     "moduleResolution": "Node16",
-    "lib": ["ES2017"],
+    "lib": ["ES2022"],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -14,7 +22,10 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

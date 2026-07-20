@@ -23,3 +23,17 @@ Also corrects `packages/board`'s `three` peer range, which was `^0.170.0` — on
 that resolves to `>=0.170.0 <0.171.0` and could not be satisfied by the `three` version the
 package is actually built and tested against. It now matches `packages/display` at
 `>=0.185.0`.
+
+Bundled with this Node-floor bump rather than releasing separately (same set of packages,
+same window): `ultimatedarktower`, `ultimatedarktowerdata`, `ultimatedarktowerrelay-shared`,
+`ultimatedarktowerrelay-core`, and `ultimatedarktowerrelay-client` move their TypeScript
+compile target from `ES2017` to `ES2022`, matching the rest of the workspace, plus enable
+`noUnusedLocals`/`noUnusedParameters`/`noFallthroughCasesInSwitch`. **Module format is
+unchanged** — these packages still emit CommonJS (`module`/`moduleResolution` stay
+`Node16`/`Node16`, now with `exports`-map-aware resolution rather than the previous
+`commonjs`+implicit-`node10`). Adopting the workspace's `ESNext`/`bundler` module settings
+outright was evaluated and rejected: verified directly that it makes `require()` throw
+`ERR_MODULE_NOT_FOUND` for every consumer of these `require()`-based CJS packages, since
+none of them declare `"type": "module"`. `ES2022` output syntax on a package that already
+requires Node >= 22.13 (this same release) is not a compatibility concern.
+

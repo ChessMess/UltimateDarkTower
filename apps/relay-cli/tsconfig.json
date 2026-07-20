@@ -1,9 +1,15 @@
 {
+  // Does not extend the ES2022 workspace base. Unlike the three relay packages
+  // it depends on, this app is private (not published) — but it's still invoked
+  // as `node dist/index.js` with no "type" field, so Node treats it as CommonJS.
+  // The base's module:"ESNext"+moduleResolution:"bundler" would make tsc emit
+  // ESM syntax into that same entry point, which Node's CJS loader can't run.
+  // target matches the base; module/moduleResolution stay Node16/Node16.
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2022",
     "module": "Node16",
     "moduleResolution": "Node16",
-    "lib": ["ES2017"],
+    "lib": ["ES2022"],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -14,12 +20,21 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
   },
   "references": [
-    { "path": "../../packages/relay-core" },
-    { "path": "../../packages/relay-client" },
-    { "path": "../../packages/relay-shared" }
+    {
+      "path": "../../packages/relay-core"
+    },
+    {
+      "path": "../../packages/relay-client"
+    },
+    {
+      "path": "../../packages/relay-shared"
+    }
   ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
