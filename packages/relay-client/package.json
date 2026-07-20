@@ -20,6 +20,7 @@
     "build": "tsc --build",
     "dev": "tsc --build --watch",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run --globals",
     "prepack": "npm run clean && npm run build",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
@@ -40,7 +41,8 @@
   },
   "devDependencies": {
     "ws": "^8.18.0",
-    "@types/ws": "^8.5.10"
+    "@types/ws": "^8.5.10",
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public"

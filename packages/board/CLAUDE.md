@@ -30,12 +30,13 @@ dev). Hosts own the rules. Don't add rule enforcement here.
 
 ## Stale-doc warnings (do not trust these verbatim)
 
-- `docs/ARCHITECTURE.md` claims the three-free `.`/`./plugin` split "is enforced by a CI
-  grep" — **no such CI step exists** in this repo. It's doc-only today.
 - `docs/TROUBLESHOOTING.md` describes siblings as `file:` devDeps checked out next to the
   repo — **stale**: it's a pnpm monorepo, deps are `workspace:^`/`workspace:*`.
-- README says "pre-release (v0.1.0, not yet published)" but `package.json` is `0.4.0` —
-  version/status drift; trust `package.json`.
+
+The three-free `.`/`./stage` invariant IS enforced now: `build` runs
+`scripts/check-three-free.mjs` after the Vite/tsc build, walking the static import closure of
+the `.`/`stage` ESM bundles and failing if either statically imports `three` (a dynamic
+`import()`, as `./stage` uses, is allowed).
 
 ## Coupling
 

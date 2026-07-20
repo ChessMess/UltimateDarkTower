@@ -10,7 +10,7 @@ This document is reference-first:
 
 ## Status Legend
 
-- `Implemented`: Executed by engine runtime in `packages/engine/src/engine/nodes.js`.
+- `Implemented`: Executed by engine runtime in `packages/creator-engine/src/engine/nodes.ts`.
 - `Creator-only`: Available in schema/creator palette, but not interpreted by current engine runtime.
 - `Annotation`: Authoring/documentation node, never executed; special L3 validation rules.
 - `Partial`: Some contract exists, but runtime behavior is incomplete (currently `media.showImage`).
@@ -20,10 +20,10 @@ This document is reference-first:
 Use these files when updating this catalog:
 
 - `apps/creator/src/types/index.ts`: node list (`NODE_KINDS`), categories, output handles.
-- `packages/schema/src/scenario.schema.json`: canonical `node.kind` enum and closed props schemas.
-- `packages/engine/src/engine/nodes.js`: runtime semantics per implemented node.
-- `packages/engine/src/engine/types.ts`: request/input/directive vocabularies.
-- `packages/adapters/src/validate-graph.ts`: graph-level constraints and annotation rules.
+- `packages/creator-schema/src/scenario.schema.json`: canonical `node.kind` enum and closed props schemas.
+- `packages/creator-engine/src/engine/nodes.ts`: runtime semantics per implemented node.
+- `packages/creator-engine/src/engine/types.ts`: request/input/directive vocabularies.
+- `packages/creator-adapters/src/validate-graph.ts`: graph-level constraints and annotation rules.
 
 ## Quick Navigation
 
@@ -345,10 +345,10 @@ Current known contract mismatches worth tracking:
 When adding or changing node kinds:
 
 1. Update `NODE_KINDS` and `OUTPUT_HANDLES` in `apps/creator/src/types/index.ts`.
-2. Update schema enum and per-kind props in `packages/schema/src/scenario.schema.json`.
-3. Implement or adjust runtime behavior in `packages/engine/src/engine/nodes.js`.
-4. Update `packages/engine/src/engine/types.ts` unions as needed.
-5. Revisit L3 constraints in `packages/adapters/src/validate-graph.ts`.
+2. Update schema enum and per-kind props in `packages/creator-schema/src/scenario.schema.json`.
+3. Implement or adjust runtime behavior in `packages/creator-engine/src/engine/nodes.ts`.
+4. Update `packages/creator-engine/src/engine/types.ts` unions as needed.
+5. Revisit L3 constraints in `packages/creator-adapters/src/validate-graph.ts`.
 6. Update this document:
 
 - Quick index row

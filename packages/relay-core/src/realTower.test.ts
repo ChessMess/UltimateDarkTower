@@ -172,8 +172,8 @@ describe('RealTower.stopAdvertising()', () => {
 });
 
 describe('RealTower reconnect resilience (FR-5.3)', () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
 
   it('reconnects after a drop and signals resumed', async () => {
     const mock = new MockDriver();
@@ -188,7 +188,7 @@ describe('RealTower reconnect resilience (FR-5.3)', () => {
     expect(disconnected).toEqual([TOWER_DEVICE_NAME]);
     expect(tower.isConnected()).toBe(false);
 
-    await jest.advanceTimersByTimeAsync(1000); // reconnect fires + succeeds
+    await vi.advanceTimersByTimeAsync(1000); // reconnect fires + succeeds
 
     expect(tower.isConnected()).toBe(true);
     expect(connected).toEqual([TOWER_DEVICE_NAME, TOWER_DEVICE_NAME]); // resumed
@@ -206,7 +206,7 @@ describe('RealTower reconnect resilience (FR-5.3)', () => {
     expect(mock.connectCount).toBe(1);
 
     mock.shouldFailConnect = false;
-    await jest.advanceTimersByTimeAsync(1000); // retry succeeds
+    await vi.advanceTimersByTimeAsync(1000); // retry succeeds
 
     expect(tower.isConnected()).toBe(true);
     expect(connected).toEqual([TOWER_DEVICE_NAME]);
@@ -222,7 +222,7 @@ describe('RealTower reconnect resilience (FR-5.3)', () => {
     mock.emitDisconnect(); // schedule reconnect at 1000ms
     await tower.stopAdvertising(); // must cancel it
 
-    await jest.advanceTimersByTimeAsync(5000);
+    await vi.advanceTimersByTimeAsync(5000);
     expect(mock.connectCount).toBe(1); // no reconnect attempt fired
   });
 });

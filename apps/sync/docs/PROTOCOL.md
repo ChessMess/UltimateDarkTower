@@ -8,4 +8,4 @@ client↔host message envelope, all message types (incl. `client:action` and `ho
 connection lifecycle.
 
 The protocol types/factories this client uses come from the `ultimatedarktowerrelay-shared` package
-(`packages/shared/src/protocol.ts` in the relay).
+(`packages/relay-shared/src/protocol.ts` in the relay).

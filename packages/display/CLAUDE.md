@@ -21,9 +21,11 @@ Depth in `docs/` (`RENDERERS.md`, `SCENE_PLUGINS.md`, `SEQUENCE_AUTHORING.md`, `
 - **`test` runs two jest configs**: `jest.config.cjs` (jsdom, mocks `three`/`gsap`/assets)
   then `jest.config.snapshots.cjs` (**unmocks gsap** so tweens actually advance; targets
   `tests/sequenceSnapshots/`, a per-tick per-LED parity check within 1/255 PWM tolerance).
-- **The doc-referenced `record-sequence-snapshots` script does not exist** — only
-  `test:sequence-snapshots` (read/verify mode) is defined. Regenerating baselines per the
-  doc comment will fail on a missing script.
+- **Regenerating snapshot baselines**: `test:sequence-snapshots` is read/verify mode;
+  `record-sequence-snapshots` is write mode (`UPDATE_SNAPSHOTS=1` gate in `parity.test.ts`,
+  then `prettier --write`). Baselines are the frozen golden contract — regenerate only on an
+  intentional sequence change and review the diff. The `.snap.json` files stay
+  prettier-managed (not `.prettierignore`d).
 - **Adding a bundled asset requires adding its module path to `URL_ASSET_HOSTS` in
   `vite.config.ts`** — the custom `emitAssetsAsFiles()` Rollup plugin intercepts
   `new URL('./assets/…', import.meta.url)` to force separate-file emission; otherwise Vite

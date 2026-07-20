@@ -6,9 +6,12 @@ ultimatedarktowerdata ──► data/udtReexports ──► state/ ──► ren
                                                        └─► plugin/Board3DPlugin ──► ultimatedarktowerdisplay Tower3DView (three)
 ```
 
-- **Two entry points.** `.` is the headless core + readout/2D + data re-exports and imports no
-  `three`/Display. `./plugin` is the only place allowed to import them. This mirrors how Display
-  isolates its heavy `./physics` subpath, and is enforced by a CI grep.
+- **Three entry points.** `.` is the headless core + readout/2D + data re-exports and imports no
+  `three`/Display; `./stage` is the all-in-one render stage, statically three-free (it loads the 3D
+  tower via a dynamic `import()`); `./plugin` is the only place allowed to import `three`/Display
+  statically. This mirrors how Display isolates its heavy `./physics` subpath. The invariant is
+  enforced at build time by `scripts/check-three-free.mjs` (wired into the `build` script), which
+  walks the static import closure of the `.`/`./stage` ESM bundles and fails if either imports `three`.
 - **Unidirectional state.** `BoardStateController` holds `BoardState`, runs the pure
   `applyBoardCommand` reducer on dispatch, and emits events; renderers/UI subscribe.
 - **No rules.** The library stores/renders/emits; the host owns game rules.

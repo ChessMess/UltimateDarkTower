@@ -3,7 +3,7 @@ import { validateRefs } from '../src/validate-refs';
 import { validateGraph } from '../src/validate-graph';
 import { createResolver } from '../src/resolver';
 
-// Minimal golden fixture (matches packages/schema/test/fixtures.js `base`)
+// Minimal golden fixture (matches packages/creator-schema/test/fixtures.js `base`)
 const golden = {
   schemaVersion: '0.4.0',
   meta: {

@@ -169,7 +169,7 @@ const client = new RelayClient({
 await client.connect('ws://192.168.1.5:8765');
 ```
 
-For a runnable headless consumer, see `packages/cli/src/mockConsumer.ts`
+For a runnable headless consumer, see `apps/relay-cli/src/mockConsumer.ts`
 (`MOCK_ROLE=participant npm run mock:consumer`).
 
 ---

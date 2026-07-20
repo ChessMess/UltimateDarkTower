@@ -23,7 +23,7 @@ optional dockable editing UI. The 3D board is a `ScenePlugin` for
 
 ---
 
-> **Current Status: pre-release (v0.1.0, not yet published to npm).** Implemented: the headless **state core**
+> **Current Status: published to npm (v0.4.0).** Implemented: the headless **state core**
 > (structured `BoardState`, the full command reducer, the `BoardStateController` with `self`/`host`
 > modes + events, versioned save/load); the **text readout**, **2D overhead map**, and **shared focus
 > controls**; the **3D board plugin** (a Display `ScenePlugin`); and the optional **dockable editing

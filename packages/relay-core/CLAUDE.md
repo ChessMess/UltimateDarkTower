@@ -2,14 +2,14 @@
 
 BLE-emulator + WebSocket relay engine. Central docs: `docs/relay/` (repo root).
 
-## Tests exist but CI never runs them
+## Tests
 
-There are **8 real vitest suites** here (`commandParser.test.ts`, `relayServer.integration.test.ts`,
-`towerState.roundtrip.test.ts`, …) but **no `test` script** and no local `vitest` devDep, so
-`pnpm -r test` and `pnpm run ci` **silently skip this package**. (CI's `relay-native` job
-comment "the relay packages currently have no unit tests" is stale/wrong.) To run them, use
-the hoisted binary from the package dir: `npx vitest run`. `tsconfig.json` excludes
-`*.test.ts` from the composite build, so `tsc --build` stays clean regardless.
+**8 vitest suites** here (`commandParser.test.ts`, `relayServer.integration.test.ts`,
+`towerState.roundtrip.test.ts`, …). `test` = **`vitest run --globals`** — the suites use
+jest-style globals (`describe`/`it`/`expect`) and `vi` fake timers, so `--globals` is
+required. They run in CI's `checks` job via `pnpm -r test`. `tsconfig.json` excludes
+`*.test.ts` from the composite build, so `tsc --build`/`typecheck` stay clean (and don't
+type-check the tests — verify by running the suite).
 
 ## Test discipline (keep it BLE-free)
 

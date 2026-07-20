@@ -234,38 +234,38 @@ describe('RelayClient reconnect behavior', () => {
   });
 
   it('does NOT reconnect on a protocol-version-mismatch close', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       const { socket, events } = await connectedClient();
       const before = MockWebSocket.instances.length;
       socket.serverClose(CLOSE_CODE_PROTOCOL_VERSION_MISMATCH, 'bad version');
 
       expect(events.some((e) => e.type === 'relay:version-mismatch')).toBe(true);
-      jest.advanceTimersByTime(60_000);
+      vi.advanceTimersByTime(60_000);
       expect(MockWebSocket.instances.length).toBe(before); // no new socket
     } finally {
-      jest.clearAllTimers();
-      jest.useRealTimers();
+      vi.clearAllTimers();
+      vi.useRealTimers();
     }
   });
 
   it('does NOT reconnect after an explicit disconnect()', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       const { client, events } = await connectedClient();
       const before = MockWebSocket.instances.length;
       client.disconnect();
-      jest.advanceTimersByTime(60_000);
+      vi.advanceTimersByTime(60_000);
       expect(events.some((e) => e.type === 'relay:reconnecting')).toBe(false);
       expect(MockWebSocket.instances.length).toBe(before);
     } finally {
-      jest.clearAllTimers();
-      jest.useRealTimers();
+      vi.clearAllTimers();
+      vi.useRealTimers();
     }
   });
 
   it('rejects and does NOT start a background reconnect when the initial connect errors before open', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       MockWebSocket.reset();
       const events: RelayClientEvent[] = [];
@@ -277,18 +277,18 @@ describe('RelayClient reconnect behavior', () => {
       await expect(p).rejects.toThrow(/connection failed/i);
 
       // A failed *initial* connect must not spin up a background reconnect loop.
-      jest.advanceTimersByTime(60_000);
+      vi.advanceTimersByTime(60_000);
       expect(events.some((e) => e.type === 'relay:reconnecting')).toBe(false);
       expect(MockWebSocket.instances.length).toBe(1); // no retry socket created
       client.disconnect();
     } finally {
-      jest.clearAllTimers();
-      jest.useRealTimers();
+      vi.clearAllTimers();
+      vi.useRealTimers();
     }
   });
 
   it('keeps the reconnect loop going when a retry attempt times out before opening', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       const { client, socket, events } = await connectedClient(); // established connection
       // The established connection drops abnormally → schedules retry attempt 1.
@@ -296,18 +296,18 @@ describe('RelayClient reconnect behavior', () => {
       expect(events.filter((e) => e.type === 'relay:reconnecting').length).toBe(1);
 
       const before = MockWebSocket.instances.length;
-      jest.advanceTimersByTime(1000); // fire attempt 1's timer → opens a new socket
+      vi.advanceTimersByTime(1000); // fire attempt 1's timer → opens a new socket
       expect(MockWebSocket.instances.length).toBe(before + 1);
 
       // Attempt 1 never opens; advance past the 15s connect timeout.
-      jest.advanceTimersByTime(15_000);
+      vi.advanceTimersByTime(15_000);
       // The loop must schedule attempt 2 rather than dying on the hung attempt.
       expect(events.filter((e) => e.type === 'relay:reconnecting').length).toBe(2);
 
       client.disconnect();
     } finally {
-      jest.clearAllTimers();
-      jest.useRealTimers();
+      vi.clearAllTimers();
+      vi.useRealTimers();
     }
   });
 });

@@ -2,7 +2,7 @@
 
 _Docs: [Index](README.md) > Protocol-level developer > TowerEmulator_
 
-`TowerEmulator` (`packages/core/src/towerEmulator.ts`) is the BLE peripheral the official _Return to Dark Tower_
+`TowerEmulator` (`packages/relay-core/src/towerEmulator.ts`) is the BLE peripheral the official _Return to Dark Tower_
 companion app connects to instead of a real tower. Decoding the app's commands and fanning them out is only
 half the job — the relay must also **send back the tower→app return traffic** a real tower would, or the
 companion app's state machine stalls. This doc captures the **echo-response behavior** (the "why" behind the

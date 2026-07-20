@@ -16,6 +16,6 @@
   "devDependencies": {
     "fake-indexeddb": "^6.2.5",
     "typescript": "catalog:",
-    "vitest": "^4.1.0"
+    "vitest": "catalog:"
   }
 }

@@ -2,15 +2,15 @@
 
 _Docs: [Index](README.md) > Protocol-level developer > Protocol_
 
-This document describes the WebSocket message protocol between the **relay host** (`packages/core`'s
-`RelayServer`, run by `packages/cli` or `packages/electron`) and connected **consumer clients** (the
-`packages/client` SDK — `RelayClient`). Consumers may be _participants_ (a remote player driving a physical
+This document describes the WebSocket message protocol between the **relay host** (`packages/relay-core`'s
+`RelayServer`, run by `apps/relay-cli` or `apps/relay-electron`) and connected **consumer clients** (the
+`packages/relay-client` SDK — `RelayClient`). Consumers may be _participants_ (a remote player driving a physical
 tower, e.g. [UltimateDarkTowerSync](../../apps/sync)) or screen-only _observers_ / digital
 consumers (e.g. a visualizer). The protocol is intentionally a low-churn **superset** of the protocol Sync
 originally defined.
 
 > This is the **client-facing wire protocol**. The relay also maintains a separate, append-only **semantic
-> event log** (`RelayEvent`, see `packages/shared/src/relayEvents.ts` + `packages/core/src/eventLog.ts`) for
+> event log** (`RelayEvent`, see `packages/relay-shared/src/relayEvents.ts` + `packages/relay-core/src/eventLog.ts`) for
 > host-side persistence/replay — that is an internal stream, not a client wire message, and is not covered
 > here.
 
@@ -59,8 +59,8 @@ envelope structure:
 | `payload`   | object | Message-specific data                                 |
 | `timestamp` | string | ISO-8601 UTC timestamp set by the sender at send time |
 
-The canonical definitions live in `packages/shared/src/protocol.ts` (`MessageType`, the per-message
-`BaseMessage<…>` shapes, and `make*Message` factories) and `packages/shared/src/version.ts`
+The canonical definitions live in `packages/relay-shared/src/protocol.ts` (`MessageType`, the per-message
+`BaseMessage<…>` shapes, and `make*Message` factories) and `packages/relay-shared/src/version.ts`
 (`PROTOCOL_VERSION`).
 
 ---
@@ -211,7 +211,7 @@ Broadcast to all remaining clients when a client disconnects.
 ### `host:status`
 
 Sent periodically (every ~5 seconds) and on significant state changes. Clients can use this to display host
-health in the UI. The payload is the `HostStatus` type (`packages/shared/src/types.ts`).
+health in the UI. The payload is the `HostStatus` type (`packages/relay-shared/src/types.ts`).
 
 ```json
 {

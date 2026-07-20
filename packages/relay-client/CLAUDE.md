@@ -14,11 +14,12 @@ Framework-agnostic, **isomorphic** relay consumer SDK. Central docs: `docs/relay
 - `PhysicalTowerReplay` mirrors host commands onto a local tower via a structural
   `TowerWriter` interface (no direct BLE/hardware import).
 
-## Tests exist but CI never runs them
+## Tests
 
 Two vitest suites (`relayClient.test.ts` with a hand-rolled `MockWebSocket`,
-`physicalTowerReplay.test.ts`) but **no `test` script** and no local `vitest` devDep — same
-silent-skip situation as `relay-core`. Run with `npx vitest run` from the package dir.
+`physicalTowerReplay.test.ts`). `test` = **`vitest run --globals`** (jest-style globals +
+`vi` fake timers) — same setup as `relay-core`; runs in CI's `checks` job via `pnpm -r test`.
+`tsconfig.json` excludes `*.test.ts` from the composite build.
 
 ## Build & coupling
 

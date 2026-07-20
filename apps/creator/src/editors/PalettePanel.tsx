@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NODE_CATEGORIES, NODE_KINDS, categoryFor, type NodeKind } from '../types';
+import { NODE_CATEGORIES, NODE_KINDS, type NodeKind } from '../types';
 import { useCreatorStore } from '../store';
 import { useReactFlow } from '@xyflow/react';
 
@@ -198,8 +198,4 @@ export function PalettePanel() {
       </div>
     </div>
   );
-}
-
-export function categoryForKind(kind: string) {
-  return categoryFor(kind);
 }

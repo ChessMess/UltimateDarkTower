@@ -36,7 +36,7 @@
   "scripts": {
     "dev": "vite",
     "dev:example": "vite --config vite.example.config.ts",
-    "build": "vite build && tsc --emitDeclarationOnly",
+    "build": "vite build && tsc --emitDeclarationOnly && node scripts/check-three-free.mjs",
     "build:example": "vite build --config vite.example.config.ts",
     "preview:example": "vite preview --config vite.example.config.ts",
     "test": "jest",

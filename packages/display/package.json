@@ -36,6 +36,7 @@
     "test:watch": "jest --config jest.config.cjs --watch",
     "test:coverage": "jest --config jest.config.cjs --coverage",
     "test:sequence-snapshots": "jest --config jest.config.snapshots.cjs",
+    "record-sequence-snapshots": "UPDATE_SNAPSHOTS=1 jest --config jest.config.snapshots.cjs && prettier --write \"tests/sequenceSnapshots/__snapshots__/*.snap.json\"",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.example.json",
     "lint": "eslint .",
     "lint:fix": "eslint 'src/**/*.ts' 'tests/**/*.ts' 'example/**/*.ts' --fix",

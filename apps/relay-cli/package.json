@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@types/ws": "^8.5.10",
-    "vitest": "^4.1.10"
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=18.0.0"

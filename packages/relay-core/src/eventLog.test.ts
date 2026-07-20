@@ -124,8 +124,8 @@ describe('replayEventLog', () => {
   });
 
   describe('realtime pacing', () => {
-    beforeEach(() => jest.useFakeTimers());
-    afterEach(() => jest.useRealTimers());
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
 
     it('waits the inter-event timestamp deltas', async () => {
       const events = withTimestamps(
@@ -136,14 +136,14 @@ describe('replayEventLog', () => {
         ],
         [0, 100, 250], // deltas: 100ms, 150ms
       );
-      const handler = jest.fn();
+      const handler = vi.fn();
       const done = replayEventLog(events, handler, { realtime: true });
 
       // First event fires immediately (no preceding delay).
       expect(handler).toHaveBeenCalledTimes(1);
-      await jest.advanceTimersByTimeAsync(100);
+      await vi.advanceTimersByTimeAsync(100);
       expect(handler).toHaveBeenCalledTimes(2);
-      await jest.advanceTimersByTimeAsync(150);
+      await vi.advanceTimersByTimeAsync(150);
       expect(handler).toHaveBeenCalledTimes(3);
       await done;
     });
@@ -157,16 +157,16 @@ describe('replayEventLog', () => {
         ],
         [0, 3_600_000, 3_600_000 - 5_000], // 1h gap (clamped to 10s), then negative delta
       );
-      const handler = jest.fn();
+      const handler = vi.fn();
       const done = replayEventLog(events, handler, { realtime: true });
 
       expect(handler).toHaveBeenCalledTimes(1);
       // 1-hour delta is clamped to the 10s ceiling — not fired before 10s…
-      await jest.advanceTimersByTimeAsync(9_999);
+      await vi.advanceTimersByTimeAsync(9_999);
       expect(handler).toHaveBeenCalledTimes(1);
       // …fires at the 10s ceiling (proving the clamp, not a 1-hour wait); the
       // third event's negative delta means no wait, so it rides the same tick.
-      await jest.advanceTimersByTimeAsync(1);
+      await vi.advanceTimersByTimeAsync(1);
       expect(handler).toHaveBeenCalledTimes(3);
       await done;
     });

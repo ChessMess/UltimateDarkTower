@@ -25,6 +25,17 @@ import { SEQUENCES, SEED, TOLERANCE } from './sequences';
  */
 const SNAPSHOT_DIR = path.join(__dirname, '__snapshots__');
 
+// Opt-in write mode. These baselines are the frozen golden contract, so
+// regeneration is gated behind an explicit env var (never a normal `npm test`)
+// and prints a loud banner so an accidental overwrite is obvious in the diff.
+const UPDATE_SNAPSHOTS = Boolean(process.env.UPDATE_SNAPSHOTS);
+if (UPDATE_SNAPSHOTS) {
+  console.warn(
+    '\n⚠️  UPDATE_SNAPSHOTS set — REWRITING sequence baselines (the frozen golden contract).\n' +
+      '   Review the git diff carefully before committing.\n',
+  );
+}
+
 interface RecordedSnapshot {
   seed: number;
   driveTicks: number;
@@ -58,9 +69,25 @@ describe('sequence player ↔ TS parity', () => {
       );
 
       const snapshotPath = path.join(SNAPSHOT_DIR, `${spec.name}.snap.json`);
+
+      if (UPDATE_SNAPSHOTS) {
+        const recorded: RecordedSnapshot = {
+          seed: SEED,
+          driveTicks: spec.driveTicks,
+          loop: spec.loop,
+          completionTick: result.completionTick,
+          samples: result.samples,
+        };
+        // Emit plain JSON; `record-sequence-snapshots` runs prettier --write
+        // afterward to canonicalize to the committed format.
+        fs.writeFileSync(snapshotPath, JSON.stringify(recorded, null, 2) + '\n');
+        console.warn(`  ✎ recorded baseline: ${spec.name}.snap.json`);
+        return;
+      }
+
       if (!fs.existsSync(snapshotPath)) {
         throw new Error(
-          `Missing TS baseline ${snapshotPath} (run record-sequence-snapshots first)`,
+          `Missing baseline ${snapshotPath} (run \`npm run record-sequence-snapshots\` to generate it)`,
         );
       }
       const expected = JSON.parse(fs.readFileSync(snapshotPath, 'utf8')) as RecordedSnapshot;

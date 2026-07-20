@@ -208,7 +208,7 @@ describe('NotificationSynthesizer.onCommand() — calibration', () => {
   });
 
   it('defers the calibration reply when a delay is configured', () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       const sink = new StubSink();
       const synth = new NotificationSynthesizer(sink, { calibrationReplyDelayMs: 500 });
@@ -216,10 +216,10 @@ describe('NotificationSynthesizer.onCommand() — calibration', () => {
       synth.onCommand(Buffer.from([CALIBRATION_CMD]));
       expect(sink.sent).toHaveLength(0); // not yet
 
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
       expect(sink.sent).toHaveLength(1);
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 });
@@ -228,21 +228,21 @@ describe('NotificationSynthesizer.onCommand() — calibration', () => {
 
 describe('NotificationSynthesizer heartbeat fallback', () => {
   it('is disabled by default — startHeartbeat sends nothing', () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       const sink = new StubSink();
       const synth = new NotificationSynthesizer(sink);
       synth.startHeartbeat();
-      jest.advanceTimersByTime(10_000);
+      vi.advanceTimersByTime(10_000);
       expect(sink.sent).toHaveLength(0);
       synth.destroy();
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
   it('emits the heartbeat packet on the configured interval when enabled', () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       const sink = new StubSink();
       const synth = new NotificationSynthesizer(sink, { heartbeatIntervalMs: 1000 });
@@ -250,17 +250,17 @@ describe('NotificationSynthesizer heartbeat fallback', () => {
       synth.on('event', (e) => events.push(e));
 
       synth.startHeartbeat();
-      jest.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(3000);
 
       expect(sink.sent).toHaveLength(3);
       expect(Array.from(sink.last()!)).toEqual([0x07, 0x00, 0x00, 0x0c, 0x10]);
       expect(events.filter((e) => e.type === 'heartbeat')).toHaveLength(3);
 
       synth.stopHeartbeat();
-      jest.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(3000);
       expect(sink.sent).toHaveLength(3); // no more after stop
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 });

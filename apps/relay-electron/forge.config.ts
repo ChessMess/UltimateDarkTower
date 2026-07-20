@@ -5,7 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 // ─── Workspace node_modules copy helper ─────────────────────────────────────
-// npm workspaces hoists all deps to the workspace root, so packages/electron/
+// pnpm workspaces hoist all deps to the workspace root, so apps/relay-electron/
 // node_modules/ is empty after `npm install`. Electron Forge only packages
 // the electron package's own node_modules, so nothing gets included.
 // This hook copies the runtime-external deps (and their transitive deps) from

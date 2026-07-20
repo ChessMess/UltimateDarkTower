@@ -33,7 +33,7 @@ Run the relay on a host whose BLE stack **can** expose the DIS:
 - **Windows** — same: the DIS is exposed.
 
 The relay already advertises the DIS on every non-macOS platform
-(`shouldExposeDeviceInfoService(process.platform)` in `packages/core/src/deviceInfo.ts`).
+(`shouldExposeDeviceInfoService(process.platform)` in `packages/relay-core/src/deviceInfo.ts`).
 
 ## Firmware revision value
 

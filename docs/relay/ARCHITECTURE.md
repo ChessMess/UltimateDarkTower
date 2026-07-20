@@ -36,17 +36,17 @@ This is why the **live state path is a single last-command snapshot, not event s
 An npm-workspaces monorepo built on the published [`ultimatedarktower`](https://github.com/ChessMess/UltimateDarkTower)
 core library. Build order is `shared → core → client → cli` via TypeScript composite project references.
 
-| Package             | Responsibility                                                                                                                                                                                                                                                   |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/shared`   | The wire contract: the message envelope, `MessageType` + `make*Message` factories, the `RelayEvent` semantic-event union, and `PROTOCOL_VERSION`. No BLE or `ultimatedarktower` dependency.                                                                      |
-| `packages/core`     | The headless engine: `TowerEmulator` (BLE peripheral), `RelayServer` + `ConnectionManager` (WebSocket transport), `NotificationSynthesizer`, `RealTower` (real-tower mirror), `EventLog`, `HostLogger`, and the pure `logAnalysis` helpers. Usable as a library. |
-| `packages/cli`      | A headless daemon (`index.ts`) plus the `replayEvents` and `analyzeLogs` tools. Suitable for servers, Raspberry Pi, Docker, or an always-on host.                                                                                                                |
-| `packages/electron` | An operator GUI over `core`: status dashboard, runtime tower-source switching, manual controls, and an in-app log viewer.                                                                                                                                        |
-| `packages/client`   | The published, framework-agnostic consumer SDK — `RelayClient` (transport) and `PhysicalTowerReplay` (local-tower mirroring). Imports `shared` + `ultimatedarktower` types only; never `core`.                                                                   |
+| Package                 | Responsibility                                                                                                                                                                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/relay-shared` | The wire contract: the message envelope, `MessageType` + `make*Message` factories, the `RelayEvent` semantic-event union, and `PROTOCOL_VERSION`. No BLE or `ultimatedarktower` dependency.                                                                      |
+| `packages/relay-core`   | The headless engine: `TowerEmulator` (BLE peripheral), `RelayServer` + `ConnectionManager` (WebSocket transport), `NotificationSynthesizer`, `RealTower` (real-tower mirror), `EventLog`, `HostLogger`, and the pure `logAnalysis` helpers. Usable as a library. |
+| `apps/relay-cli`        | A headless daemon (`index.ts`) plus the `replayEvents` and `analyzeLogs` tools. Suitable for servers, Raspberry Pi, Docker, or an always-on host.                                                                                                                |
+| `apps/relay-electron`   | An operator GUI over `relay-core`: status dashboard, runtime tower-source switching, manual controls, and an in-app log viewer.                                                                                                                                  |
+| `packages/relay-client` | The published, framework-agnostic consumer SDK — `RelayClient` (transport) and `PhysicalTowerReplay` (local-tower mirroring). Imports `relay-shared` + `ultimatedarktower` types only; never `relay-core`.                                                       |
 
-`core` is consumed as a library by both the CLI and the Electron main process — the composition root that
-wires a tower source to the relay lives in `packages/cli/src/index.ts` (and, source-swappable, in
-`packages/electron/src/main/main.ts`).
+`relay-core` is consumed as a library by both the CLI and the Electron main process — the composition root that
+wires a tower source to the relay lives in `apps/relay-cli/src/index.ts` (and, source-swappable, in
+`apps/relay-electron/src/main/main.ts`).
 
 ---
 
@@ -83,7 +83,7 @@ _not_ strict event sourcing, because the commands are already full-state idempot
 
 - **Live state:** a single `TowerState` derived from the last full command. Drives consumers and the
   `sync:state` catch-up. Idempotent replays mean no drift.
-- **Event log:** an append-only, monotonic-`seq` stream of _semantic_ [`RelayEvent`](../packages/shared/src/relayEvents.ts)s
+- **Event log:** an append-only, monotonic-`seq` stream of _semantic_ [`RelayEvent`](../../packages/relay-shared/src/relayEvents.ts)s
   (`app-connected` / `app-disconnected`, `command-received`, `skull-dropped`, `calibration-complete`,
   `heartbeat`, `consumer-joined` / `consumer-left`), persisted as JSONL.
 

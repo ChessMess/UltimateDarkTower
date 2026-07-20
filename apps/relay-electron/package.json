@@ -36,7 +36,7 @@
     "electron": "^42.4.1",
     "typescript": "catalog:",
     "vite": "^8.0.0",
-    "vitest": "^4.1.10"
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=22.12.0"

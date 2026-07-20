@@ -60,8 +60,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # Build the relay libraries + CLI and their workspace deps (core). This
-      # exercises the native install path on both OSes; the relay packages
-      # currently have no unit tests, so a clean build is the smoke test.
+      # exercises the native install path on both OSes; a clean build is the
+      # cross-OS smoke test. The relay unit tests (vitest) run in the `checks`
+      # job via `pnpm run ci` → `pnpm -r test`.
       # Include core (`ultimatedarktower`) explicitly: the relay packages depend
       # on it, but a `./packages/relay-*...` path-glob filter does not expand the
       # `...` dependency selector to pull core in, so without this core's dist is
