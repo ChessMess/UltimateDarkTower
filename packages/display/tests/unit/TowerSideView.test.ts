@@ -1,8 +1,32 @@
-import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+// `globals: true` in vitest.config.ts supplies describe/it/expect/vi without
+// importing them — the old `@jest/globals` import is gone, not replaced.
 
-jest.mock(
-  '../../src/2d/TowerSide.svg?raw',
-  () => `
+// Vite's `?raw` import (`import svgContent from './TowerSide.svg?raw'`, a
+// DEFAULT import) resolves to the module's default export. Jest's mock could
+// return the bare string because its moduleNameMapper pointed at a CJS file
+// whose `module.exports` jest unwrapped for a default import; vi.mock has no
+// such unwrapping, so the factory must return the `{ default }` shape directly.
+//
+// There is no `resolve.alias` for `.svg?raw` in vitest.config.ts — Vite's asset
+// pipeline resolves `?raw`/`?url` specifiers before `resolve.alias` is consulted
+// (`vite:import-analysis` throws "Failed to resolve import" even with a matching
+// alias present, verified directly). `vi.mock()` on the exact specifier is the
+// mechanism that actually works here, and it must cover BOTH of the module's
+// static imports — TowerSideView.ts imports Seal.svg?raw as well as
+// TowerSide.svg?raw, and both load whenever the module does.
+//
+// (Under jest, moduleNameMapper's generic `\.svg\?raw$` -> svgRaw.js entry
+// resolved BOTH files to the same physical mock, so this file's own
+// `jest.mock('TowerSide.svg?raw', factory)` — which jest also resolves through
+// moduleNameMapper — ended up overriding that shared module for both specifiers,
+// meaning Seal.svg?raw got this SAME fixture content too, not the generic
+// placeholder. That was an artifact of the collapse, not a deliberate choice, so
+// it is not reproduced here: Seal.svg?raw gets the same minimal placeholder the
+// old generic svgRaw.js mock provided, since nothing in this suite inspects its
+// content structurally — see the `.tsv-seal-*` assertions below, which check
+// classes TowerSideView generates itself, not markup read out of Seal.svg.)
+vi.mock('../../src/2d/TowerSide.svg?raw', () => ({
+  default: `
   <svg viewBox="0 0 180 374" xmlns="http://www.w3.org/2000/svg">
     <g id="layer1">
       <circle id="base-right-back-led" />
@@ -17,7 +41,10 @@ jest.mock(
     </g>
   </svg>
 `,
-);
+}));
+vi.mock('../../src/2d/Seal.svg?raw', () => ({
+  default: '<svg viewBox="0 0 180 374"></svg>',
+}));
 
 import { TowerSideView } from '../../src/2d/TowerSideView';
 import { _resetStyleInjection } from '../../src/styles';
@@ -228,7 +255,7 @@ describe('TowerSideView', () => {
     });
 
     it('onSealClick still fires when clickToToggleSeals is enabled', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       view.onSealClick = handler;
       const topSeal = container.querySelector('.tsv-seal-top') as Element;
       topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -245,7 +272,7 @@ describe('TowerSideView', () => {
 
     it('when clickToToggleSeals is false, onSealClick still fires', () => {
       view.clickToToggleSeals = false;
-      const handler = jest.fn();
+      const handler = vi.fn();
       view.onSealClick = handler;
       const topSeal = container.querySelector('.tsv-seal-top') as Element;
       topSeal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -296,7 +323,7 @@ describe('TowerSideView', () => {
 
   describe('selectSide', () => {
     it('public selectSide moves the active side and fires onSideChange', () => {
-      const spy = jest.fn();
+      const spy = vi.fn();
       view.onSideChange = spy;
       view.selectSide('east');
       const buttons = container.querySelectorAll('.tower-side-btn');
@@ -305,14 +332,14 @@ describe('TowerSideView', () => {
     });
 
     it('selectSide to current side is a no-op (loop prevention)', () => {
-      const spy = jest.fn();
+      const spy = vi.fn();
       view.onSideChange = spy;
       view.selectSide('north'); // already north by default
       expect(spy).not.toHaveBeenCalled();
     });
 
     it('user button click fires onSideChange', () => {
-      const spy = jest.fn();
+      const spy = vi.fn();
       view.onSideChange = spy;
       const buttons = container.querySelectorAll<HTMLButtonElement>('.tower-side-btn');
       buttons[2].click(); // south

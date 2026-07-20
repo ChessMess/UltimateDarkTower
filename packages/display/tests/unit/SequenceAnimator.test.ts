@@ -1,8 +1,9 @@
 import { TOWER_LIGHT_SEQUENCES } from 'ultimatedarktowerdata';
 import { SequenceAnimator } from '../../src/sequences/SequenceAnimator';
 import { RecordingAnimator } from '../helpers/recordingAnimator';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const gsapMock = require('gsap');
+// `require` is a CJS global; vitest transforms this file to ESM. `gsap` still
+// resolves through vitest.config.ts's alias to the recording mock.
+import * as gsapMock from 'gsap';
 
 const seededRng = () => 0.42; // deterministic; sequence builders just need a number 0..1
 
@@ -148,7 +149,7 @@ describe('SequenceAnimator transient mode (new in 0.7.0)', () => {
 
   it('transient onComplete callback fires when the timeline completes', () => {
     const { animator } = makeAnimator();
-    const onComplete = jest.fn();
+    const onComplete = vi.fn();
     animator.applyTransient(SEQ_DEFEAT, onComplete);
     const tl = gsapMock.__getTimelines().at(-1)!;
     tl.__fireComplete();

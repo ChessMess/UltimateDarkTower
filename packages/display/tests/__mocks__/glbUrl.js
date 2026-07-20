@@ -1,1 +1,3 @@
-module.exports = 'test://tower.glb';
+const __mock = 'test://tower.glb';
+
+export default __mock;

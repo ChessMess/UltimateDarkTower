@@ -6,20 +6,20 @@ import { DrumRotationAudio } from '../../src/audio/DrumRotationAudio';
 
 class MockAudioParam {
   value = 1;
-  cancelScheduledValues = jest.fn<void, [number]>();
-  setValueAtTime = jest.fn<void, [number, number]>();
-  linearRampToValueAtTime = jest.fn<void, [number, number]>();
+  cancelScheduledValues = vi.fn<void, [number]>();
+  setValueAtTime = vi.fn<void, [number, number]>();
+  linearRampToValueAtTime = vi.fn<void, [number, number]>();
 }
 
 class MockGainNode {
   gain = new MockAudioParam();
-  connect = jest.fn();
+  connect = vi.fn();
 }
 
 class MockOscillator {
   type = '';
   frequency = new MockAudioParam();
-  connect = jest.fn();
+  connect = vi.fn();
   startCalls = 0;
   stopCalls = 0;
   start(): void {
@@ -33,7 +33,7 @@ class MockOscillator {
 class MockBufferSource {
   buffer: unknown = null;
   loop = false;
-  connect = jest.fn();
+  connect = vi.fn();
   startCalls = 0;
   stopCalls = 0;
   start(): void {
@@ -48,8 +48,8 @@ class MockAudioContext {
   state: 'running' | 'suspended' | 'closed' = 'running';
   currentTime = 0;
   destination = {};
-  resume = jest.fn(() => Promise.resolve());
-  close = jest.fn(() => Promise.resolve());
+  resume = vi.fn(() => Promise.resolve());
+  close = vi.fn(() => Promise.resolve());
   createGain(): MockGainNode {
     const g = new MockGainNode();
     createdGains.push(g);
@@ -75,7 +75,10 @@ let createdGains: MockGainNode[] = [];
 let createdOscillators: MockOscillator[] = [];
 let createdBufferSources: MockBufferSource[] = [];
 
-const ContextSpy = jest.fn(() => {
+const ContextSpy = vi.fn(function () {
+  // vitest requires a `function` / `class` implementation for vi.fn() to be
+  // constructible with `new` (an arrow function throws "is not a constructor" —
+  // jest tolerated arrow implementations here, vitest does not).
   const ctx = new MockAudioContext();
   createdContexts.push(ctx);
   return ctx;
@@ -125,7 +128,7 @@ describe('DrumRotationAudio', () => {
   it('plays a loaded buffer non-looping when constructed with { loop: false }', async () => {
     const g = globalThis as unknown as { fetch?: unknown };
     const original = g.fetch;
-    g.fetch = jest.fn(() =>
+    g.fetch = vi.fn(() =>
       Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) }),
     );
     try {
@@ -150,7 +153,7 @@ describe('DrumRotationAudio', () => {
     // catches up.
     const g = globalThis as unknown as { fetch?: unknown };
     const original = g.fetch;
-    g.fetch = jest.fn(() =>
+    g.fetch = vi.fn(() =>
       Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) }),
     );
     try {
@@ -172,7 +175,7 @@ describe('DrumRotationAudio', () => {
   it('does not deferred-start if the rotation already ended before the buffer loaded', async () => {
     const g = globalThis as unknown as { fetch?: unknown };
     const original = g.fetch;
-    g.fetch = jest.fn(() =>
+    g.fetch = vi.fn(() =>
       Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) }),
     );
     try {
@@ -270,7 +273,8 @@ describe('DrumRotationAudio', () => {
     audio.setEnabled(true);
 
     // Make the next-created context start suspended.
-    ContextSpy.mockImplementationOnce(() => {
+    ContextSpy.mockImplementationOnce(function () {
+      // Same constructibility requirement as the initial vi.fn() implementation above.
       const ctx = new MockAudioContext();
       ctx.state = 'suspended';
       createdContexts.push(ctx);

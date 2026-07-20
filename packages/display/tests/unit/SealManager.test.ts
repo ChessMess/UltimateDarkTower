@@ -43,7 +43,7 @@ describe('SealManager.onSealsApplied', () => {
   });
 
   it('isolates listener exceptions so subsequent listeners still fire', () => {
-    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     try {
       const mgr = new SealManager();
       let secondFired = false;

@@ -54,7 +54,7 @@ const gsap = {
   timeline: makeTimeline,
 };
 
-module.exports = {
+const __mock = {
   default: gsap,
   ...gsap,
   __getTweens() {
@@ -67,4 +67,23 @@ module.exports = {
     tweens.length = 0;
     timelines.length = 0;
   },
+};
+
+// ESM surface. This package is `type: module`, so a CJS `module.exports`
+// assignment is inert. Bindings are pulled off __mock and re-exported under
+// aliases so they cannot collide with the class/const declarations above.
+export default __mock.default;
+const {
+  to: __e_to,
+  timeline: __e_timeline,
+  __getTweens: __e___getTweens,
+  __getTimelines: __e___getTimelines,
+  __reset: __e___reset,
+} = __mock;
+export {
+  __e_to as to,
+  __e_timeline as timeline,
+  __e___getTweens as __getTweens,
+  __e___getTimelines as __getTimelines,
+  __e___reset as __reset,
 };

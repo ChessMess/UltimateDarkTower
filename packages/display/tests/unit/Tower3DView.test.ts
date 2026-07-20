@@ -472,7 +472,7 @@ describe('Tower3DView instance', () => {
         'seal_north_bottom',
         // south / east / west intentionally omitted
       ]);
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
 
@@ -487,7 +487,7 @@ describe('Tower3DView instance', () => {
     });
 
     it('does not warn when every expected seal is present', () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
       expect(warnSpy).not.toHaveBeenCalled();
       warnSpy.mockRestore();
@@ -553,7 +553,7 @@ describe('Tower3DView instance', () => {
 
     it('creates only as many backlights as available seal nodes', () => {
       gltfLoaderMock.__setSealNames(['seal_north_top', 'seal_north_middle', 'seal_north_bottom']);
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
       expect(getSealBacklightCount(view)).toBe(3);
@@ -752,7 +752,7 @@ describe('Tower3DView instance', () => {
 
     it('after load, selectSide updates cameraController.currentSide and fires onSideChange', () => {
       const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
-      const spy = jest.fn();
+      const spy = vi.fn();
       view.onSideChange = spy;
 
       view.selectSide('east');
@@ -771,7 +771,7 @@ describe('Tower3DView instance', () => {
       const view = new Tower3DView(container, { modelUrl: TEST_MODEL_URL });
       view.selectSide('east');
 
-      const spy = jest.fn();
+      const spy = vi.fn();
       view.onSideChange = spy;
       view.selectSide('east');
       expect(spy).not.toHaveBeenCalled();

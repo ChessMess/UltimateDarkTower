@@ -1,4 +1,4 @@
-/** @jest-environment jsdom */
+// @vitest-environment jsdom
 import * as THREE from 'three';
 import * as gsapMock from '../__mocks__/gsap.js';
 import { DrumManager } from '../../src/3d/DrumManager';

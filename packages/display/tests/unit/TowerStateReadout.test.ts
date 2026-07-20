@@ -294,7 +294,7 @@ describe('TowerStateReadout', () => {
 
     it('clickToToggleSeals=true fires onSealClick with correct seal identity', () => {
       readout.clickToToggleSeals = true;
-      const spy = jest.fn();
+      const spy = vi.fn();
       readout.onSealClick = spy;
       readout.applyState(makeState());
 
@@ -308,7 +308,7 @@ describe('TowerStateReadout', () => {
     });
 
     it('clickToToggleSeals=false (default) disables buttons and never fires onSealClick', () => {
-      const spy = jest.fn();
+      const spy = vi.fn();
       readout.onSealClick = spy;
       readout.applyState(makeState());
 
@@ -334,7 +334,7 @@ describe('TowerStateReadout', () => {
 
     it('dispose() clears the container and detaches the click listener', () => {
       readout.clickToToggleSeals = true;
-      const spy = jest.fn();
+      const spy = vi.fn();
       readout.onSealClick = spy;
       readout.applyState(makeState());
 
@@ -378,7 +378,7 @@ describe('TowerStateReadout', () => {
 
     it('clicking an LED cycles the effect and fires onLedClick', () => {
       readout.clickToToggleLeds = true;
-      const spy = jest.fn();
+      const spy = vi.fn();
       readout.onLedClick = spy;
 
       const state = makeState();
@@ -432,7 +432,7 @@ describe('TowerStateReadout', () => {
     });
 
     it('clicking when clickToToggleLeds=false does not change the effect or fire callback', () => {
-      const spy = jest.fn();
+      const spy = vi.fn();
       readout.onLedClick = spy;
       const state = makeState();
       state.layer[0].light[0].effect = LIGHT_EFFECTS.off;

@@ -18,14 +18,49 @@ Depth in `docs/` (`RENDERERS.md`, `SCENE_PLUGINS.md`, `SEQUENCE_AUTHORING.md`, `
 ## Build & test gotchas
 
 - `build` = `vite build && tsc --emitDeclarationOnly` (Vite bundles; tsc only emits `.d.ts`).
-- **`test` runs two jest configs**: `jest.config.cjs` (jsdom, mocks `three`/`gsap`/assets)
-  then `jest.config.snapshots.cjs` (**unmocks gsap** so tweens actually advance; targets
-  `tests/sequenceSnapshots/`, a per-tick per-LED parity check within 1/255 PWM tolerance).
-- **Regenerating snapshot baselines**: `test:sequence-snapshots` is read/verify mode;
-  `record-sequence-snapshots` is write mode (`UPDATE_SNAPSHOTS=1` gate in `parity.test.ts`,
-  then `prettier --write`). Baselines are the frozen golden contract — regenerate only on an
-  intentional sequence change and review the diff. The `.snap.json` files stay
-  prettier-managed (not `.prettierignore`d).
+- **Tests are vitest** (`vitest.config.ts`), split into two `test.projects`: `unit`
+  (jsdom, mocks `three`/`gsap`/assets) and `snapshots` (jsdom, **real gsap** so tweens
+  actually advance; targets `tests/sequenceSnapshots/`, a per-tick per-LED parity check
+  within 1/255 PWM tolerance). This is the direct replacement for the old two-jest-config
+  setup (`jest.config.cjs` + `jest.config.snapshots.cjs`, which filtered `^gsap$` out of
+  a shared `moduleNameMapper`) — one `vitest run` now covers both.
+- **Verify the project split stays real, not collapsed**: if `snapshots` ever picks up
+  the `gsap` alias by mistake, `tl.totalTime(t)` never advances and every parity
+  assertion compares mocked-zero to mocked-zero and passes without checking anything.
+  Sanity check: corrupt one byte in a `.snap.json` baseline and confirm `vitest run
+--project snapshots` fails.
+- **`resolve.alias` does not work for `?raw`/`?url` asset specifiers.** Verified directly:
+  Vite's `vite:import-analysis` plugin resolves these before `resolve.alias` is
+  consulted, so an alias for `\.svg\?raw$` throws "Failed to resolve import" instead of
+  redirecting. `vi.mock()` on the exact specifier does work and is what
+  `TowerSideView.test.ts` uses for its two `.svg?raw` imports — this is the mechanism for
+  any future asset-with-query mock, not `resolve.alias`. `.glb`/`.png` aliases were
+  removed rather than fixed: nothing in `src` statically imports either.
+- **`vi.fn()` requires a `function`/`class` implementation to be constructible with
+  `new`** — an arrow-function implementation throws "is not a constructor". Jest
+  tolerated arrow implementations for its mock constructors (e.g. mocking
+  `globalThis.AudioContext`); vitest does not, including on later `mockImplementation()`/
+  `mockImplementationOnce()` overrides of the same mock. See `TowerSampleAudio.test.ts`
+  and `DrumRotationAudio.test.ts`'s `ContextSpy`.
+- **Ambient globals (`describe`/`it`/`vi`/…) come from `vitest.config.ts`'s
+  `globals: true`.** Per-file environment overrides use `// @vitest-environment <name>`
+  (a comment, not a docblock) — the direct replacement for jest's `@jest-environment`
+  pragma; `TowerStateController.test.ts` uses `node` (project default is `jsdom`).
+- **Test files are typechecked by nothing.** `tsconfig.json` excludes `tests/`, same as
+  before — under jest, ts-jest typechecked them anyway (with a loosened inline
+  `tsconfig` override, dropped along with `jest.config.cjs`) as a side effect of
+  transformation; vitest transforms with esbuild and does not typecheck. This was never
+  a wired CI gate either way.
+- **Regenerating snapshot baselines**: `test:sequence-snapshots` is read/verify mode
+  (`vitest run --project snapshots`); `record-sequence-snapshots` is write mode
+  (`UPDATE_SNAPSHOTS=1` gate in `parity.test.ts`, then `prettier --write`). Baselines are
+  the frozen golden contract — regenerate only on an intentional sequence change and
+  review the diff. The `.snap.json` files stay prettier-managed (not `.prettierignore`d).
+  Note: these are hand-rolled JSON fixtures read/written via `fs`, not vitest's own
+  `toMatchSnapshot()` mechanism — `jest.unmock('gsap')`, which used to sit at the top of
+  `parity.test.ts`, was already inert under jest too (`unmock` affects the module
+  registry; the alias that mocked gsap operated on resolution) and has been removed
+  rather than translated to `vi.unmock`.
 - **Adding a bundled asset requires adding its module path to `URL_ASSET_HOSTS` in
   `vite.config.ts`** — the custom `emitAssetsAsFiles()` Rollup plugin intercepts
   `new URL('./assets/…', import.meta.url)` to force separate-file emission; otherwise Vite

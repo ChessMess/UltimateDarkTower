@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { buildHullColliderDesc, cloneSkullMesh } from '../../../src/physics/SkullSpawner';
 
 /**
@@ -7,17 +8,17 @@ import { buildHullColliderDesc, cloneSkullMesh } from '../../../src/physics/Skul
  */
 function makeMockRapier(): {
   RAPIER: Parameters<typeof buildHullColliderDesc>[0];
-  hullSpy: jest.Mock;
-  setFrictionSpy: jest.Mock;
-  setRestitutionSpy: jest.Mock;
-  setDensitySpy: jest.Mock;
+  hullSpy: Mock;
+  setFrictionSpy: Mock;
+  setRestitutionSpy: Mock;
+  setDensitySpy: Mock;
   shouldReturnNull: { value: boolean };
 } {
-  const setDensitySpy = jest.fn().mockReturnThis();
-  const setRestitutionSpy = jest.fn(function (this: unknown) {
+  const setDensitySpy = vi.fn().mockReturnThis();
+  const setRestitutionSpy = vi.fn(function (this: unknown) {
     return this;
   });
-  const setFrictionSpy = jest.fn(function (this: unknown) {
+  const setFrictionSpy = vi.fn(function (this: unknown) {
     return this;
   });
 
@@ -32,7 +33,7 @@ function makeMockRapier(): {
   setDensitySpy.mockImplementation(() => chainable);
 
   const shouldReturnNull = { value: false };
-  const hullSpy = jest.fn().mockImplementation(() => (shouldReturnNull.value ? null : chainable));
+  const hullSpy = vi.fn().mockImplementation(() => (shouldReturnNull.value ? null : chainable));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const RAPIER = { ColliderDesc: { convexHull: hullSpy } } as any;
