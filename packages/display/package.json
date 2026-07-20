@@ -1,6 +1,6 @@
 {
   "name": "ultimatedarktowerdisplay",
-  "version": "0.11.0",
+  "version": "1.0.0",
   "description": "Composable text, 2D, and 3D renderers for Return to Dark Tower tower state, with optional skull physics.",
   "type": "module",
   "main": "dist/index.cjs.js",
@@ -46,7 +46,7 @@
   "peerDependencies": {
     "gsap": "^3.12.0",
     "three": ">=0.185.0",
-    "ultimatedarktower": "^4.0.0 || ^5.0.0 || ^6.0.0",
+    "ultimatedarktower": "^7.0.0",
     "@dimforge/rapier3d-compat": "^0.19.3"
   },
   "peerDependenciesMeta": {

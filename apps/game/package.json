@@ -1,6 +1,6 @@
 {
   "name": "ultimatedarktowergame",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The Tower's Challenge — a solo web game driving a real Return to Dark Tower tower over Bluetooth.",
   "private": true,
   "type": "module",

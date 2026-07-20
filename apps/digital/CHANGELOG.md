@@ -1,5 +1,16 @@
 # ultimatedarktowerdigital
 
+## 0.0.2
+
+### Patch Changes
+
+- Updated dependencies [cdf7f37]
+- Updated dependencies [cdf7f37]
+  - ultimatedarktower@7.0.0
+  - ultimatedarktowerdisplay@1.0.0
+  - ultimatedarktowerdata@2.0.0
+  - ultimatedarktowerboard@1.0.0
+
 ## 0.0.1
 
 ### Patch Changes
