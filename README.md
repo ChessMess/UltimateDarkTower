@@ -1,14 +1,55 @@
-# Ultimate Dark Tower
+<p align="center">
+  <img src="docs/pages/media/tower.png" width="200" alt="Return to Dark Tower" />
+</p>
 
-A pnpm monorepo for the **Ultimate Dark Tower (UDT)** ecosystem — a TypeScript library, renderers,
-and companion apps for _Return to Dark Tower_.
+<h1 align="center">Ultimate Dark Tower</h1>
 
-**🎮 Live demos:** https://chessmess.github.io/UltimateDarkTower/
+<p align="center">
+  A TypeScript ecosystem for Restoration Games' <em>Return to Dark Tower</em> — libraries,
+  renderers, and apps for its real, motorized, Bluetooth-enabled tower.
+</p>
+
+<h3 align="center"><a href="https://chessmess.github.io/UltimateDarkTower/">▶ Live Demos</a></h3>
+
+<p align="center">
+  <a href="https://github.com/ChessMess/UltimateDarkTower/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ChessMess/UltimateDarkTower/ci.yml?branch=main&label=CI"></a>
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-MIT-blue"></a>
+</p>
+
+---
+
+Restoration Games' _Return to Dark Tower_ ships with a motorized, Bluetooth-enabled tower — three
+rotating drums, 16 individually addressable LEDs, a 56mm speaker with 113 sound effects, and
+infrared skull sensors. This repo is a reverse-engineered TypeScript driver for that hardware,
+plus everything built on top of it: renderers, a scenario creator, a relay for sharing tower state
+across a network, and companion apps and AI agents that can drive a tower from a chat client.
+
+## Getting Started
+
+```bash
+pnpm install    # installs every workspace + builds native BLE deps and @udtc/engine
+pnpm run ci     # validate:nodes → lint → format:check → build → typecheck → test
+```
+
+Requires **Node ≥ 22.13** and **pnpm ≥ 11** (`packageManager` pins pnpm 11.9.0) — pnpm 11 loads
+the built-in `node:sqlite`, so `pnpm install` fails outright on Node 20. Published libraries still
+target a Node ≥ 18 _runtime_.
+
+No tower required to start — every app with a UI ships a browser-based 3D emulator, so you can
+explore the whole ecosystem without hardware. See [`docs/local-development.md`](docs/local-development.md)
+for the full list of per-app dev commands and ports, or jump straight to the
+[live demos](https://chessmess.github.io/UltimateDarkTower/).
+
+From here:
+
+- **[Packages](#packages)** — the libraries, for building your own app on top of the tower.
+- **[Apps](#apps)** — the runnable companion apps, for playing or driving a tower directly.
 
 ## Packages
 
-Reusable libraries under [`packages/`](packages/). The six below are published to npm (seven
-packages ship in total — [`apps/mcp-server`](apps/mcp-server) publishes too):
+Reusable libraries under [`packages/`](packages/). Six are published to npm — a seventh,
+[`apps/mcp-server`](apps/mcp-server), publishes too, since `npx` is how an MCP server gets
+consumed:
 
 | Package                                          | npm                                                                                            | What it is                                                        |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
@@ -26,8 +67,8 @@ Internal (private) Creator libraries: `creator-schema` (`@udtc/schema`), `creato
 ## Apps
 
 Runnable leaf apps under [`apps/`](apps/). All are private except
-[`apps/mcp-server`](apps/mcp-server), which publishes to npm — `npx` is how an MCP server gets
-consumed. Publishing is a per-package `private` flag, not a property of the directory.
+[`apps/mcp-server`](apps/mcp-server), which publishes to npm. Publishing is a per-package
+`private` flag, not a property of the directory.
 
 | App                                          | Demo / npm                                                                                         | What it is                                                           |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
@@ -57,14 +98,9 @@ AGENTS.md-standard tools (Cursor, Aider, Zed, etc.).
 
 ## Development
 
-Requires **Node ≥ 22.13** and **pnpm ≥ 11** (`packageManager` pins pnpm 11.9.0). The Node floor is
-pnpm 11's, which loads the built-in `node:sqlite` — on Node 20 `pnpm install` fails outright.
-Published libraries still target a Node ≥ 18 _runtime_.
+Day-to-day commands, once you've followed [Getting Started](#getting-started):
 
 ```bash
-pnpm install          # install everything (builds native BLE deps + @udtc/engine)
-pnpm run ci           # validate:nodes → lint → format:check → build → typecheck → test
-
 pnpm --filter <pkg> build        # build one package/app
 pnpm --filter <pkg> test         # test one package/app
 pnpm run format                  # prettier --write across the workspace
@@ -101,3 +137,5 @@ opts a package in automatically.
 ## License
 
 MIT © ChessMess — see [LICENSE](LICENSE).
+
+Questions or ideas? The community hangs out on the [Ultimate Dark Tower Discord server](https://discord.com/invite/87kffaR3jV).
