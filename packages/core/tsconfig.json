@@ -3,9 +3,17 @@
   // (`module`). It deliberately targets ES2017 / CommonJS for the broadest
   // consumer compatibility, so it does not extend the ES2022 workspace base.
   "compilerOptions": {
-    "target": "es2017",
+    "target": "ES2017",
     "module": "commonjs",
+    // Explicit, not the target-implied default (which also includes DOM). This
+    // package genuinely is dual-platform — WebBluetoothAdapter, the optional
+    // browser debug logger (udtLogger.ts), and IndexedDBSink all use real DOM
+    // globals (document/window/indexedDB) by design, unlike e.g. relay-shared
+    // (Node/protocol-only), which excludes DOM on purpose. Confirmed by removing
+    // DOM experimentally: 29 errors surface across exactly those three files.
+    "lib": ["ES2017", "DOM"],
     "declaration": true,
+    "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
     "resolveJsonModule": true,
