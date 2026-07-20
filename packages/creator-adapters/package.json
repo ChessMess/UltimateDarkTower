@@ -17,6 +17,8 @@
   "dependencies": {
     "@udtc/engine": "workspace:*",
     "@udtc/schema": "workspace:*",
+    "ajv": "catalog:",
+    "ajv-formats": "catalog:",
     "ultimatedarktower": "workspace:^",
     "ultimatedarktowerdata": "workspace:^",
     "ultimatedarktowerdisplay": "workspace:^",

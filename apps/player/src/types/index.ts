@@ -34,10 +34,5 @@ export interface Checkpoint {
 
 export type { SavedSession, SavedSessionMeta } from '../game/persistence';
 
-export interface ValidationResults {
-  l1: { ok: boolean; errors: string[] };
-  l2: { ok: boolean; errors: string[] };
-  l3: { ok: boolean; errors: string[] };
-  l4: { ok: boolean; errors: string[] };
-  allOk: boolean;
-}
+// Player runs the shared L1–L3 pipeline plus its own L4 (engine-init) tier — the L4 result shape.
+export type { ValidationResultsL4 as ValidationResults } from '@udtc/adapters';

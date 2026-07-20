@@ -36,8 +36,6 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
-    "ajv": "catalog:",
-    "ajv-formats": "catalog:",
     "fake-indexeddb": "catalog:",
     "jsdom": "catalog:",
     "vite": "catalog:",
