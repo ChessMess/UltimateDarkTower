@@ -37,10 +37,10 @@
   "author": "ChessMess",
   "scripts": {
     "dev": "vite",
-    "dev:example": "vite --config vite.example.config.ts",
+    "dev:example": "vite --config vite.config.example.ts",
     "build": "vite build && tsc --emitDeclarationOnly && node scripts/check-three-free.mjs",
-    "build:example": "vite build --config vite.example.config.ts",
-    "preview:example": "vite preview --config vite.example.config.ts",
+    "build:example": "vite build --config vite.config.example.ts",
+    "preview:example": "vite preview --config vite.config.example.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

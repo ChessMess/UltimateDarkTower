@@ -70,7 +70,7 @@ jobs:
 
           # Library demo sites (dedicated example vite configs)
           vbuild "ultimatedarktowerdisplay" display --config vite.config.example.ts
-          vbuild "ultimatedarktowerboard"   board   --config vite.example.config.ts
+          vbuild "ultimatedarktowerboard"   board   --config vite.config.example.ts
 
           # Manual test plans (self-contained HTML, no build step) — served at
           # /manual-testing/ so testers can open them from a stable URL.

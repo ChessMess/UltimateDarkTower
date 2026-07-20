@@ -1,5 +1,4 @@
-node_modules/
-dist/
+# Entries already covered by the root .gitignore (node_modules, dist,
+# .DS_Store, *.log) are intentionally not repeated here — only what's
+# genuinely specific to this app.
 .vite/
-.DS_Store
-*.log

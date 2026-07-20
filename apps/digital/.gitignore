@@ -1,16 +1,11 @@
-node_modules
-dist
+# Entries already covered by the root .gitignore (node_modules, dist, coverage,
+# *.tsbuildinfo, .DS_Store, .claude/settings.local.json) are intentionally not
+# repeated here — only what's genuinely specific to this app.
 dist-ssr
-coverage
 *.local
-.DS_Store
 .vite
-node_modules/.tmp
 
 # Editor
 .vscode/*
 !.vscode/extensions.json
 .idea
-
-# Local Claude Code settings (not shared)
-.claude/settings.local.json
