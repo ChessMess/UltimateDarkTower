@@ -21,20 +21,22 @@ const TIER2_OPTIONS = foeOptions(udtRef.tier2Foes);
 const TIER3_OPTIONS = foeOptions(udtRef.tier3Foes);
 
 export function InspectorPanel() {
-  const { schemaDoc, rfNodes, selectedNodeId, validationResults } = useCreatorStore();
-  const {
-    updateNodeLabel,
-    updateNodeProps,
-    updateNodeDescription,
-    updateScenarioDescription,
-    updateSetupSelections,
-    updateMainGoal,
-    setEntry,
-    deleteNode,
-    syncLibraryHeroes,
-    setCenterView,
-    setDungeonSelection,
-  } = useCreatorStore();
+  // Narrow selectors (one field each) — this panel used to subscribe to the whole store twice.
+  const schemaDoc = useCreatorStore((s) => s.schemaDoc);
+  const rfNodes = useCreatorStore((s) => s.rfNodes);
+  const selectedNodeId = useCreatorStore((s) => s.selectedNodeId);
+  const validationResults = useCreatorStore((s) => s.validationResults);
+  const updateNodeLabel = useCreatorStore((s) => s.updateNodeLabel);
+  const updateNodeProps = useCreatorStore((s) => s.updateNodeProps);
+  const updateNodeDescription = useCreatorStore((s) => s.updateNodeDescription);
+  const updateScenarioDescription = useCreatorStore((s) => s.updateScenarioDescription);
+  const updateSetupSelections = useCreatorStore((s) => s.updateSetupSelections);
+  const updateMainGoal = useCreatorStore((s) => s.updateMainGoal);
+  const setEntry = useCreatorStore((s) => s.setEntry);
+  const deleteNode = useCreatorStore((s) => s.deleteNode);
+  const syncLibraryHeroes = useCreatorStore((s) => s.syncLibraryHeroes);
+  const setCenterView = useCreatorStore((s) => s.setCenterView);
+  const setDungeonSelection = useCreatorStore((s) => s.setDungeonSelection);
 
   const selectedNode = rfNodes.find((n) => n.id === selectedNodeId);
   const sn = selectedNode?.data?.schemaNode;

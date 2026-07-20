@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -36,16 +36,24 @@ type CreatorCanvasProps = {
 };
 
 export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasProps) {
-  const { schemaDoc, rfNodes, rfEdges, selectedNodeId, canvasViewport } = useCreatorStore();
-  const {
-    loadScenario,
-    syncFromRF,
-    selectNode,
-    addNode,
-    applyLayout,
-    setCanvasViewport,
-    setScenarioDialog,
-  } = useCreatorStore();
+  // Narrow selectors (one field each) instead of subscribing to the whole store — this is the most
+  // expensive subscriber in the app (the React Flow canvas), and a whole-store subscription re-ran
+  // it on every unrelated write.
+  const schemaDoc = useCreatorStore((s) => s.schemaDoc);
+  const rfNodes = useCreatorStore((s) => s.rfNodes);
+  const rfEdges = useCreatorStore((s) => s.rfEdges);
+  const selectedNodeId = useCreatorStore((s) => s.selectedNodeId);
+  // Read the persisted viewport once at mount (lazy useState, not a subscription). It only seeds
+  // React Flow's initial fitView/defaultViewport; subscribing would re-render the canvas on every
+  // pan/zoom end, because onMoveEnd writes canvasViewport — precisely the churn this removes.
+  const [initialViewport] = useState(() => useCreatorStore.getState().canvasViewport);
+  const loadScenario = useCreatorStore((s) => s.loadScenario);
+  const syncFromRF = useCreatorStore((s) => s.syncFromRF);
+  const selectNode = useCreatorStore((s) => s.selectNode);
+  const addNode = useCreatorStore((s) => s.addNode);
+  const applyLayout = useCreatorStore((s) => s.applyLayout);
+  const setCanvasViewport = useCreatorStore((s) => s.setCanvasViewport);
+  const setScenarioDialog = useCreatorStore((s) => s.setScenarioDialog);
   const { fitView, screenToFlowPosition } = useReactFlow();
   const groupDragRef = useRef<{
     groupId: string;
@@ -220,8 +228,8 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
         onDragOver={onDragOver}
         onMoveEnd={onMoveEnd}
         deleteKeyCode="Delete"
-        fitView={!canvasViewport}
-        defaultViewport={canvasViewport ?? undefined}
+        fitView={!initialViewport}
+        defaultViewport={initialViewport ?? undefined}
         minZoom={0.05}
         maxZoom={2}
         proOptions={{ hideAttribution: false }}

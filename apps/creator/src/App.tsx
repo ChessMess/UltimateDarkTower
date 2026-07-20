@@ -36,8 +36,13 @@ export default function App() {
   // schemaDoc is always null on first mount (the store's initial state), so a lazy
   // initializer is sufficient to offer a recovered draft — no effect needed.
   const [pendingDraft, setPendingDraft] = useState<DraftEnvelope | null>(() => loadDraft());
-  const { schemaDoc, validationResults, loadScenario, centerView, setCenterView, draftSaveFailed } =
-    useCreatorStore();
+  // Narrow selectors (one field each) — a whole-store subscription re-rendered App on every write.
+  const schemaDoc = useCreatorStore((s) => s.schemaDoc);
+  const validationResults = useCreatorStore((s) => s.validationResults);
+  const loadScenario = useCreatorStore((s) => s.loadScenario);
+  const centerView = useCreatorStore((s) => s.centerView);
+  const setCenterView = useCreatorStore((s) => s.setCenterView);
+  const draftSaveFailed = useCreatorStore((s) => s.draftSaveFailed);
 
   useDraftPersistence();
 
