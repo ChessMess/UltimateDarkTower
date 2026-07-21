@@ -98,7 +98,10 @@ AGENTS.md-standard tools (Cursor, Aider, Zed, etc.).
 
 ## Development
 
-Day-to-day commands, once you've followed [Getting Started](#getting-started):
+Day-to-day commands, once you've followed [Getting Started](#getting-started). For the full
+breakdown of how the workspace is configured — TypeScript config families, the pnpm catalog,
+lint/test setup, CI/CD architecture, and known gotchas — see
+[`CONFIGURATION.md`](CONFIGURATION.md).
 
 ```bash
 pnpm --filter <pkg> build        # build one package/app

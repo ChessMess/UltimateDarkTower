@@ -9,8 +9,10 @@ Tower_. It was consolidated in July 2026 from three standalone repos
 now archived) into `packages/*` + `apps/*`.
 
 - Package manager: **pnpm** (`packageManager: pnpm@11.9.0`). Toolchain requires
-  **Node >= 22.13** (pnpm 11 loads `node:sqlite`). Published libraries target a
-  **Node >= 18** runtime.
+  **Node >= 22.13** (pnpm 11 loads `node:sqlite`) — published packages declare the
+  same floor (`engines.node: >=22.13.0`), unified in the July 2026 stack-alignment
+  pass after the previous `>=18.0.0` claim on 15 workspaces turned out to have
+  never actually been verified.
 - Workspace config: `pnpm-workspace.yaml` (globs `packages/*`, `apps/*`).
 - Live demos: https://chessmess.github.io/UltimateDarkTower/
 
@@ -175,6 +177,12 @@ the pending version straight back up.
 
 ## Related docs
 
+- **`CONFIGURATION.md`** (repo root) — the monorepo configuration reference:
+  the three `tsconfig*.json` families and who extends which, the pnpm catalog,
+  lint/test conventions, build tooling per package, CI/CD architecture, and a
+  gotchas list. This CLAUDE.md file is about _working_ in the repo; that one is
+  about how the repo's tooling is _wired_ — link to it for configuration detail
+  rather than duplicating it here.
 - **`AGENTS.md`** (repo root) — consumer-facing reference: the two GitHub Copilot
   agents in `.github/agents/`, and the tower layout tables (side/level/corner/glyph
   enums, `setLED` layer index, light-effect and volume values). It is **not** a copy

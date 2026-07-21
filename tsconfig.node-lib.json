@@ -1,0 +1,30 @@
+{
+  // Shared compiler flags for the CommonJS/Node16-published libraries (packages/core,
+  // packages/game-data, packages/relay-shared, packages/relay-core, packages/relay-client,
+  // apps/relay-cli, apps/mcp-server). Holds only non-path options so it can be extended
+  // safely; each package keeps its own outDir/rootDir/declarationDir/composite/
+  // references/include/exclude (those resolve relative to the file that declares them).
+  //
+  // Intentionally does NOT extend tsconfig.base.json: these packages are require()-
+  // consumed CJS (or, for apps/mcp-server, Node16-conditioned ESM under its own
+  // "type": "module") and the base's module:"ESNext"+moduleResolution:"bundler" would
+  // make tsc emit ESM/bundler-only syntax that breaks a require() consumer outright
+  // (verified directly: Node's loader throws ERR_MODULE_NOT_FOUND resolving emitted
+  // ESM as CommonJS). target matches the base (a pure syntax-level choice with no
+  // effect on module format); module/moduleResolution stay Node16/Node16 for
+  // exports-map-aware CJS resolution.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": ["ES2022"],
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}

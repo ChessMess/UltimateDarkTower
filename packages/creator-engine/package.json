@@ -9,7 +9,8 @@
     "test": "node test/run-all.js",
     "pretest": "tsc --build",
     "build": "tsc --build",
-    "typecheck": "tsc --build"
+    "typecheck": "tsc --build",
+    "lint": "eslint ."
   },
   "devDependencies": {
     "ajv": "catalog:",

@@ -35,8 +35,9 @@ enums, LED layer index, light/volume values) live in the repo-root `AGENTS.md`.
 
 - `build` is a chain: `clean && typecheck && tsc && esbuild …` — it ships a `tsc` CJS
   build (`dist/src/`) **and** a hand-rolled esbuild ESM bundle (`dist/esm/index.mjs`).
-  `tsconfig.json` targets `es2017`/CommonJS on purpose (broadest consumer compat) and
-  does not extend the workspace ES2022 base.
+  `tsconfig.json` extends the shared `tsconfig.node-lib.json` (target `ES2022`,
+  `module`/`moduleResolution` `Node16`/`Node16` for CommonJS emission) rather than the
+  workspace's browser-targeted `tsconfig.base.json`.
 - Tests are **vitest** (`tests/`, not colocated). Mocks in `tests/mocks/`,
   adapter tests in `tests/adapters/`. Config in `vitest.config.ts` (`globals: true`,
   so no `from 'vitest'` imports needed); ambient globals are declared for tsc by

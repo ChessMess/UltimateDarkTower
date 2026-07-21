@@ -93,8 +93,6 @@ export class TowerController {
   private lastDeviceInfo: DeviceInformation | null = null;
   private lastConnectionStatus: ConnectionStatus | null = null;
   private skullCount = 0;
-  private connected = false;
-  private calibrated = false;
   private pendingCalibration: PendingCalibration | null = null;
   private bufferOutput: BufferOutputType;
 
@@ -128,16 +126,7 @@ export class TowerController {
 
       this.tower = new UltimateDarkTower(config);
 
-      this.tower.onTowerConnect = () => {
-        this.connected = true;
-      };
-
-      this.tower.onTowerDisconnect = () => {
-        this.connected = false;
-      };
-
       this.tower.onCalibrationComplete = () => {
-        this.calibrated = true;
         this.settlePendingCalibration();
       };
 
@@ -199,7 +188,6 @@ export class TowerController {
   async connect(): Promise<void> {
     const t = this.ensureTower();
     await t.connect();
-    this.connected = true;
     this.lastDeviceInfo = t.getDeviceInformation();
     this.lastConnectionStatus = t.getConnectionStatus();
   }
@@ -207,14 +195,12 @@ export class TowerController {
   async disconnect(): Promise<void> {
     if (this.tower) {
       await this.tower.disconnect();
-      this.connected = false;
     }
   }
 
   async cleanup(): Promise<void> {
     if (this.tower) {
       await this.tower.cleanup();
-      this.connected = false;
     }
   }
 

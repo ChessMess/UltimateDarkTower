@@ -48,8 +48,6 @@ interface TowerEmulatorAdapterOptions {
 export class TowerEmulatorAdapter implements IBluetoothAdapter {
   private connected = false;
   private rxCallback?: (data: Uint8Array) => void;
-  private disconnectCallback?: () => void;
-  private availabilityCallback?: (available: boolean) => void;
   private batteryInterval?: ReturnType<typeof setInterval>;
 
   // Set while a calibration command is awaiting its completion reply. The reply
@@ -170,12 +168,16 @@ export class TowerEmulatorAdapter implements IBluetoothAdapter {
     this.rxCallback = callback;
   }
 
-  onDisconnect(callback: () => void): void {
-    this.disconnectCallback = callback;
+  onDisconnect(_callback: () => void): void {
+    // This emulator only disconnects via an explicit disconnect()/cleanup() call
+    // the controller already knows about — it never loses connection or drops
+    // out spontaneously, so the callback is accepted (to satisfy
+    // IBluetoothAdapter) but never fires.
   }
 
-  onBluetoothAvailabilityChanged(callback: (available: boolean) => void): void {
-    this.availabilityCallback = callback;
+  onBluetoothAvailabilityChanged(_callback: (available: boolean) => void): void {
+    // This emulator has no underlying radio to go unavailable — the callback is
+    // accepted (to satisfy IBluetoothAdapter) but never fires.
   }
 
   async readDeviceInformation(): Promise<DeviceInformation> {
@@ -191,8 +193,6 @@ export class TowerEmulatorAdapter implements IBluetoothAdapter {
     this.cancelCalibration();
     this.lastStatePacket = new Uint8Array(20);
     this.rxCallback = undefined;
-    this.disconnectCallback = undefined;
-    this.availabilityCallback = undefined;
   }
 
   private stopBatteryHeartbeat(): void {

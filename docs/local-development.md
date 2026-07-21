@@ -88,6 +88,8 @@ controller specifically, `dev:controller` already rebuilds core examples on save
 
 ## Related
 
+- [`CONFIGURATION.md`](../CONFIGURATION.md) (repo root) — how the workspace tooling behind these
+  commands is actually configured: TypeScript config families, build tooling per package, CI/CD.
 - The deployed Pages site assembles these same apps/demos under a base path
   (`/creator/`, `/display/`, `/controller/`, …) via
   [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml) —

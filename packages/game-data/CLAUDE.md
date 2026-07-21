@@ -20,8 +20,9 @@ exists because v6 had the same entity spelled 2–3 ways ("Isa the Exile" vs "Is
 
 ## Build & test
 
-- `build` = `tsc --build` (composite project, `"composite": true`), `es2017`/CommonJS.
-- No package-local `lint`/`ci` scripts — relies on the root `eslint .` and `pnpm -r` fan-out.
+- `build` = `tsc --build` (composite project, `"composite": true`), `ES2022`/CommonJS.
+- `lint` = `eslint .` (root flat config); no package-local `ci` script — relies on the
+  root `pnpm -r` fan-out for that.
 - Tests are **vitest** (`tests/`, not colocated), one file per data module. Config lives in
   `vitest.config.ts` with `globals: true`, so the suites keep using bare
   `describe`/`it`/`expect` with no imports.
