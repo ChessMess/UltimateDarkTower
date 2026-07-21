@@ -8,6 +8,7 @@
     "dev": "electron-forge start",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",

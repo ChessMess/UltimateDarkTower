@@ -21,6 +21,7 @@
     "build": "tsc --build",
     "dev": "tsc --build --watch",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },

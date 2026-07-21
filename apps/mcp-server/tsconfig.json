@@ -1,15 +1,13 @@
 {
+  // Extends the shared tsconfig.node-lib.json — see that file for the full
+  // CJS/Node16 rationale. This app ships "type": "module" (Node16-conditioned
+  // ESM), unlike its six CJS siblings, but the compiler-options family is the
+  // same either way; Node's module format follows package.json's "type" field,
+  // not this config.
+  "extends": "../../tsconfig.node-lib.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "Node16",
-    "moduleResolution": "Node16",
     "outDir": "dist",
     "rootDir": "src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true

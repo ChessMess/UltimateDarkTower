@@ -1,27 +1,18 @@
 {
-  // Does not extend the ES2022 workspace base — see packages/relay-shared/tsconfig.json
-  // for the full rationale. Short version: base's module:"ESNext"+moduleResolution:"bundler"
-  // would emit ESM syntax, which breaks require() for this published CJS package's
-  // consumers. target matches the base; module/moduleResolution stay Node16/Node16.
+  // Does not extend the ES2022 workspace base directly — extends the shared
+  // tsconfig.node-lib.json instead. See that file for the full CJS/Node16 rationale.
+  "extends": "../../tsconfig.node-lib.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    // Isomorphic (browser or Node): RelayClient takes an injectable WebSocket
+    // implementation typed against the DOM lib's global, unlike relay-core
+    // (Node-only, no DOM override needed).
     "lib": ["ES2022", "DOM"],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "composite": true
   },
   "references": [
     {

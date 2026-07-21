@@ -33,8 +33,10 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          # pnpm 11.9.0 requires Node >= 22.13 (node:sqlite built-in).
-          node-version: 22
+          # pnpm 11.9.0 requires Node >= 22.13 (node:sqlite built-in). Read from
+          # .nvmrc so there's one source of truth instead of a literal to keep
+          # in sync.
+          node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile

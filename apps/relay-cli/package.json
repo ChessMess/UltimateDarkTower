@@ -10,6 +10,7 @@
     "test": "vitest run --passWithNoTests",
     "dev": "tsc --build --watch",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "start": "node dist/index.js",
     "replay": "node dist/replayEvents.js",
     "analyze": "node dist/analyzeLogs.js",
