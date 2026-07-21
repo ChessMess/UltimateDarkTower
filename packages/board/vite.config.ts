@@ -22,8 +22,9 @@ export default defineConfig({
       // ESM keeps `.esm.js` (a `.js` under "type":"module" is ESM — correct).
       // CJS MUST be `.cjs`, NOT `.cjs.js`: under "type":"module" a `.cjs.js`
       // file is treated as ESM, so `require()` consumers get an empty module.
-      // (Display ships `.cjs.js` and its CJS require is in fact broken — we
-      // intentionally diverge here. See spec §5.)
+      // (Display originally shipped `.cjs.js` and its CJS require was broken
+      // as a result — since fixed to match this same `.cjs` convention. See
+      // spec §5.)
       fileName: (format, entryName) =>
         format === 'es' ? `${entryName}.esm.js` : `${entryName}.cjs`,
     },

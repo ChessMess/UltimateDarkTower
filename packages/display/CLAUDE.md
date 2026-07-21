@@ -65,10 +65,14 @@ Depth in `docs/` (`RENDERERS.md`, `SCENE_PLUGINS.md`, `SEQUENCE_AUTHORING.md`, `
   `vite.config.ts`** — the custom `emitAssetsAsFiles()` Rollup plugin intercepts
   `new URL('./assets/…', import.meta.url)` to force separate-file emission; otherwise Vite
   base64-inlines it and balloons the bundle (113 `.ogg` files + a 21 MB `board.png`).
-- **The shipped CJS build (`*.cjs.js`) is known-broken** under `"type":"module"` (Node
-  treats `.cjs.js` as ESM). A `renderChunk` hook patches `{}.url` → a `pathToFileURL` shim,
-  but consumers should prefer the ESM build. `packages/board` deliberately ships `.cjs`
-  (not `.cjs.js`) to avoid repeating this.
+- **The CJS entry points must keep a bare `.cjs` extension** (`dist/index.cjs`,
+  `dist/physics.cjs`), not `.cjs.js` — under this package's `"type":"module"`, a plain
+  `.js` file is treated as ESM regardless of its actual CommonJS content, which used to
+  make `require('ultimatedarktowerdisplay')` throw `ReferenceError: exports is not
+defined in ES module scope` (fixed; matches `packages/board`'s existing `.cjs`
+  convention). Separately, a `renderChunk` hook patches rolldown's `{}.url` codegen →
+  a `pathToFileURL` shim for `import.meta.url` references in the CJS output — an
+  unrelated fix, still required. `pnpm test:cjs-smoke` (wired into CI) guards both.
 - `/physics` is an isolated subpath (its own Vite entry) so `@dimforge/rapier3d-compat`
   WASM stays out of consumers who don't import it. Draco decoder defaults to a gstatic CDN
   — breaks under strict CSP unless self-hosted via `dracoDecoderPath`.

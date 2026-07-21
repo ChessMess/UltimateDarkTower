@@ -36,6 +36,12 @@ jobs:
       - name: Run full CI pipeline (validate:nodes → lint → format:check → build → typecheck → test)
         run: pnpm run ci
 
+      # Guards against a repeat of the vite-major regression that broke display's
+      # published CJS require() path (see packages/display/CLAUDE.md and the
+      # dependabot-triage skill's references/major-version-upgrades.md).
+      - name: Smoke-test display's CJS require() path
+        run: pnpm --filter ultimatedarktowerdisplay test:cjs-smoke
+
   relay-native:
     name: Relay native (${{ matrix.os }} · Node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}

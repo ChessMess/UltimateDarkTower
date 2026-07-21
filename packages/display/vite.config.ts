@@ -122,7 +122,7 @@ function emitAssetsAsFiles(): Plugin {
     },
     // Vite 6+/rolldown render `import.meta.url` as `{}.url` (i.e. `undefined`)
     // in the CJS lib output, so the emitted `new URL('audio/assets/x.ogg', {}.url)`
-    // throws `Invalid URL` the moment the `.cjs.js` bundle is `require()`d — it
+    // throws `Invalid URL` the moment the CJS bundle is `require()`d — it
     // breaks every CJS consumer (Node, jest/jsdom, tooling), not just tests
     // (Vite 5 shimmed this safely; rolldown's `resolveFileUrl` hook is ignored).
     // Post-process the CJS chunks only: give `import.meta.url` a require-safe,
@@ -163,7 +163,13 @@ export default defineConfig({
         physics: resolve(__dirname, 'src/physics/index.ts'),
       },
       formats: ['es', 'cjs'],
-      fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'esm' : 'cjs'}.js`,
+      // CJS must be a bare `.cjs` extension, not `.cjs.js` — under this
+      // package's `"type": "module"`, a `.js` file is treated as ESM
+      // regardless of its actual CommonJS content, which broke require()
+      // entirely (ReferenceError: exports is not defined in ES module scope).
+      // `.cjs` always resolves as CommonJS regardless of the `type` field.
+      fileName: (format, entryName) =>
+        format === 'es' ? `${entryName}.esm.js` : `${entryName}.cjs`,
     },
     // Force large binary assets (GLB model) to emit as separate files rather
     // than inlining as base64 in the JS bundle.

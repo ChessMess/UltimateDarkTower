@@ -3,19 +3,19 @@
   "version": "1.0.0",
   "description": "Composable text, 2D, and 3D renderers for Return to Dark Tower tower state, with optional skull physics.",
   "type": "module",
-  "main": "dist/index.cjs.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.esm.js",
-      "require": "./dist/index.cjs.js"
+      "require": "./dist/index.cjs"
     },
     "./physics": {
       "types": "./dist/physics/index.d.ts",
       "import": "./dist/physics.esm.js",
-      "require": "./dist/physics.cjs.js"
+      "require": "./dist/physics.cjs"
     }
   },
   "sideEffects": false,
@@ -36,6 +36,7 @@
     "test:watch": "vitest --project unit",
     "test:coverage": "vitest run --project unit --coverage",
     "test:sequence-snapshots": "vitest run --project snapshots",
+    "test:cjs-smoke": "node -e \"require('./dist/index.cjs'); require('./dist/physics.cjs')\"",
     "record-sequence-snapshots": "UPDATE_SNAPSHOTS=1 vitest run --project snapshots && prettier --write \"tests/sequenceSnapshots/__snapshots__/*.snap.json\"",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.example.json",
     "lint": "eslint .",

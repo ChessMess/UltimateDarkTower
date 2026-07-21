@@ -241,10 +241,12 @@ via `release.yml`.
   `pnpm approve-builds`.
 - **`blockExoticSubdeps: false`** is set because `electron-forge`'s `@electron/rebuild` depends on
   a git-hosted `@electron/node-gyp` fork, which pnpm 11 blocks by default otherwise.
-- **Bumping `typescript` to 6.0, or `vite` to a new major?** Don't — TS 6.0 drops automatic
-  `@types` inclusion (breaks ambient types workspace-wide); a `vite` major has previously broken
-  `display`'s CJS `dist` `require()` path. Re-check the `dependabot-triage` skill's
-  `references/repo-gotchas.md` before taking either bump.
+- **Bumping `typescript` to 6.0, or `vite` to a new major?** Don't without a plan — TS 6.0 drops
+  automatic `@types` inclusion (breaks ambient types workspace-wide); a `vite` major has
+  previously broken `display`'s CJS `dist` `require()` path (now guarded by a CI smoke test —
+  see `packages/display/package.json`'s `test:cjs-smoke`). Follow the `dependabot-triage` skill's
+  `references/major-version-upgrades.md` playbook before taking either bump; `references/repo-gotchas.md`
+  has the underlying traps.
 - **`packages/core`'s `tsconfig.json` build note** — see [TypeScript configuration](#typescript-configuration)
   above; excluding `tests` there silently breaks the package's own output path.
 - **`git blame` on an unexpectedly huge range of lines?** Check `.git-blame-ignore-revs` (enable

@@ -7,14 +7,15 @@ Each entry says how to recognize it and what to actually do.
 ## Table of contents
 
 1. `minimumReleaseAge` supply-chain gate (fresh versions are rejected)
-2. `typescript` is a pnpm `catalog:` dep Dependabot can't resolve
-3. Build-before-test: the monorepo CI order, and why isolated `jest` lies
+2. `typescript` is held at 5.9.x on purpose
+3. Build-before-test: the monorepo CI order, and why an isolated test run lies
 4. Attributing a failure: clean-`main` worktree comparison
 5. `pnpm overrides` for transitive deps + the electron/tar verification
 6. Transient GitHub Actions "Set up job / Service Unavailable" flakes
 7. `concurrency: cancel-in-progress` makes a superseded run read as "cancelled"
 8. Known past regressions to sanity-check (not re-derive)
 9. Dev/build-time vs production-runtime reachability in this repo
+10. TypeScript 6.0 / Vite-major upgrades — see `major-version-upgrades.md`
 
 ---
 
@@ -40,31 +41,43 @@ pnpm-level/global default), so you can't grep for it — recognize it by the err
 (`gh run rerun <run-id> --failed`, or comment `@dependabot rebase`). Never "fix"
 it by relaxing the lockfile.
 
-## 2. `typescript` is a `catalog:` dep
+## 2. `typescript` is held at 5.9.x on purpose
 
 TypeScript is pinned once via the pnpm catalog (`pnpm-workspace.yaml` →
 `catalog.typescript`), and packages reference it as `"typescript": "catalog:"`.
-Dependabot **cannot resolve the `catalog:` protocol** and errors the whole
-`npm_and_yarn` update run when it tries (`typescript | unknown_error | null`),
-even though it opened the other PRs fine. TS is also deliberately held at 5.9.x
-(6.0 drops automatic `@types` inclusion — see CLAUDE.md).
+TS is deliberately held at 5.9.x — 6.0 drops automatic `@types` inclusion,
+which the whole workspace relies on for ambient types (see CLAUDE.md and, for
+the full upgrade playbook if this is ever attempted, `major-version-upgrades.md`
+§TypeScript 6.0).
+
+_(An earlier version of this entry claimed Dependabot "can't resolve the
+`catalog:` protocol and errors the whole run" — that's no longer true; pnpm
+workspace catalogs went GA in Dependabot in Feb 2025, so catalogued deps
+resolve and get proposed normally now. `typescript`'s `ignore` entry exists
+purely for the version pin below, not a resolver limitation — see
+`dependabot.yml`'s own comment for the same correction.)_
 
 **What to do:** `dependabot.yml` already lists `typescript` under `ignore`. If a
 new catalog entry appears, ignore it too. Never let Dependabot bump `typescript`.
 
-## 3. Build-before-test (and why isolated `jest` lies)
+## 3. Build-before-test (and why an isolated test run lies)
 
 `pnpm run ci` runs `... build → typecheck → test` **in that order on purpose**:
 cross-package tests resolve workspace imports against each dependency's built
-`dist/`. Notably, `packages/board`'s jest `moduleNameMapper` pins
-`ultimatedarktowerdisplay` → `dist/index.cjs.js` / `dist/physics.cjs.js`, so
-**board's tests require display's dist to exist and be current.**
+`dist/`. Notably, `packages/board`'s vitest config resolves
+`ultimatedarktowerdisplay` through display's package `exports` map (to the ESM
+build), and `plugin.integration.test.ts` runs a real `Tower3DView` against it,
+so **board's tests require display's dist to exist and be current.** (Board
+used to pin this explicitly via a jest `moduleNameMapper` to
+`dist/index.cjs.js`/`dist/physics.cjs.js` — that alias is gone now that board
+runs vitest, which resolves the `exports` map on its own; see
+`packages/board/CLAUDE.md`.)
 
-**Trap:** running `npx jest <file>` or `pnpm --filter board test` _without_
-building the graph first makes board resolve display to _source_, which fails on
-`import.meta.url` asset modules — a false failure that looks pre-existing. Always
-mirror CI: `pnpm -r build` (topological — builds `core → display → board`) then
-test, or just run the full `pnpm run ci`.
+**Trap:** running `pnpm --filter board test` _without_ building the graph first
+makes board resolve display to _source_, which fails on `import.meta.url` asset
+modules — a false failure that looks pre-existing. Always mirror CI:
+`pnpm -r build` (topological — builds `core → display → board`) then test, or
+just run the full `pnpm run ci`.
 
 ## 4. Attributing a failure: clean-`main` worktree comparison
 
@@ -129,10 +142,20 @@ cancelled one.
   display/board off vite 5 made display's **CJS** lib build emit
   `new URL('audio/assets/x.ogg', {}.url)`, throwing `Invalid URL` at `require()`
   — broke every CJS consumer, surfaced by board's tests. Fixed by a `renderChunk`
-  step in `packages/display/vite.config.ts` (documented there). If you touch the
-  vite major again, re-check that display's `dist/index.cjs.js` still `require()`s
-  clean: `node -e "require('./packages/display/dist/index.cjs.js')"` and that
-  board's tests pass after a full build.
+  step in `packages/display/vite.config.ts` (documented there).
+- **Display's CJS entry point shipped as `.cjs.js`, not `.cjs`, and was
+  therefore _always_ broken independent of any Vite bump** (`.js` under
+  `"type":"module"` is treated as ESM regardless of content — `require()`
+  threw `ReferenceError: exports is not defined in ES module scope`). Fixed by
+  renaming the emitted files to `dist/index.cjs` / `dist/physics.cjs`, matching
+  `packages/board`'s existing convention.
+
+Both of the above are now guarded by a **CI gate**, not just a manual check:
+`pnpm --filter ultimatedarktowerdisplay test:cjs-smoke` (wired into
+`.github/workflows/ci.yml`'s `checks` job, right after the main `pnpm run ci`
+step). If you touch a Vite major again and this fails, see
+`major-version-upgrades.md` §Vite major playbook for both known failure modes
+to check.
 
 ## 9. Reachability in this repo
 
@@ -148,3 +171,11 @@ Classify each vulnerable dep before deciding severity-of-action:
 Concrete build-time-only sources seen here: `vite`/`esbuild` (build + dev server),
 `tar`/`@electron/*`/`cacache` (electron packaging), `tmp`/`external-editor` (CLI
 prompts).
+
+## 10. TypeScript 6.0 / Vite-major upgrades
+
+Both are ignored by `dependabot.yml` (see §2 for `typescript`; a global
+`semver-major` ignore blocks a Vite major too), so neither can ever arrive as
+an automatic Dependabot PR — any attempt is hand-driven. The full step-by-step
+playbook for either lives in a dedicated file, not here — see
+[`major-version-upgrades.md`](./major-version-upgrades.md).

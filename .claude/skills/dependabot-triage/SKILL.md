@@ -80,8 +80,9 @@ For every flagged package, answer two questions:
 | Dev/build-only + **no** non-breaking fix, not reachable in production | Recommend **dismissing** with a written rationale (user confirms).                                                 |
 
 Keep the change minimal and mechanical. Before touching a build-tool major
-(e.g. `vite`), check `references/repo-gotchas.md` §8 for the known CJS-build
-regression that bit us last time.
+(e.g. `vite`) or `typescript`, use `references/major-version-upgrades.md` — the
+full playbook for either, including the known CJS-build regressions
+(`references/repo-gotchas.md` §8) that bit us last time.
 
 ## Step 4 — Apply
 
@@ -149,5 +150,9 @@ ignored in `dependabot.yml` — if Dependabot errors on `typescript`, that's why
 
 ## Reference
 
-`references/repo-gotchas.md` — the full catalog of this repo's traps, each with
-how to recognize it and what to do. Read it whenever the triage surprises you.
+- `references/repo-gotchas.md` — the full catalog of this repo's traps, each
+  with how to recognize it and what to do. Read it whenever the triage
+  surprises you.
+- `references/major-version-upgrades.md` — the step-by-step playbook for the
+  two majors this repo deliberately holds back (`typescript` 6.0, a `vite`
+  major), for if either is ever attempted by hand.

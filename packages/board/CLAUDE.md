@@ -22,8 +22,8 @@ dev). Hosts own the rules. Don't add rule enforcement here.
 - Three Vite library entries, each ESM+CJS: `.` (headless, three-free), `./plugin`
   (`Board3DPlugin`, imports `three` + display), `./stage` (`BoardStageView`; the 3D tower
   is a dynamic `import()`, never bundled into `stage`). Matches the `exports` map.
-- **CJS filenames are `.cjs`, deliberately NOT display's broken `.cjs.js`** (see the comment
-  in `vite.config.ts`).
+- **CJS filenames are `.cjs`** (see the comment in `vite.config.ts`) — display originally
+  shipped the broken `.cjs.js` and has since been fixed to match this convention.
 - Tests: **vitest** (`vitest.config.ts`), in `__tests__/` (note: not `tests/`).
   `plugin.contract.test.ts` asserts `Board3DPlugin` satisfies display's `ScenePlugin`
   at the type level; `plugin.integration.test.ts` runs a real `Tower3DView` against
