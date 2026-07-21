@@ -5,18 +5,26 @@
 // lands in a state its own validation rejects. Graph-node props that referenced the old name are
 // deliberately NOT rewritten — L2 surfaces those as dangling refs; the panel hints at it.
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { BUILTIN_BOARD_IMAGE_REF, isBuiltinBoardImageRef } from '@udtc/adapters';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   ANCHOR_SLOTS,
   BUILDING_TYPES,
   KINGDOMS,
+  NO_BUILDING,
   TERRAIN_SUGGESTIONS,
+  dangerBtn,
   dangerIconBtn,
   inputStyle,
   isCalibrated,
   labelStyle,
+  locationsInScope,
   primaryBtn,
+  pruneToLocations,
+  removeLocationsInScope,
+  scopeChoices,
   smallBtn,
   validateBoard,
 } from './shared';
@@ -27,6 +35,8 @@ import type {
   BuildingType,
   Kingdom,
   LocationAnchors,
+  LocationScope,
+  ScopeFacet,
 } from './shared';
 import type { BoardEditMode } from './BoardMapCanvas';
 
@@ -62,6 +72,23 @@ export function BoardEditorPanel({
   const errors = problems.filter((p) => p.level === 'error');
   const warns = problems.filter((p) => p.level === 'warn');
   const calibrated = isCalibrated(board.imageInfo);
+  const builtinArt = isBuiltinBoardImageRef(board.imageRef);
+  // The draft scope while the bulk-remove dialog is open; null = closed.
+  const [removeScope, setRemoveScope] = useState<LocationScope | null>(null);
+
+  /**
+   * Adopt the built-in RtDT art. `imageInfo` follows the art it describes — the built-in board is
+   * square 4096², and a mismatched size would render it stretched. Anchors are normalized `[0,1]`,
+   * so they do not move. Any previously uploaded image stays in `library.resources.images`
+   * (unreferenced); the Asset Manager lists it as unused for deletion.
+   */
+  const useBuiltinArt = (): void => {
+    onChange({
+      ...board,
+      imageRef: BUILTIN_BOARD_IMAGE_REF,
+      imageInfo: { ...board.imageInfo, width: 4096, height: 4096 },
+    });
+  };
 
   const patchLocation = (index: number, patch: Partial<BoardLocation>): void => {
     const locations = board.locations.map((l, i) => (i === index ? { ...l, ...patch } : l));
@@ -99,19 +126,22 @@ export function BoardEditorPanel({
     onSelectLocation(name);
   };
 
+  /** Remove one row. By INDEX, not name: a transient duplicate name must lose only the row clicked. */
   const removeLocation = (index: number): void => {
     const name = board.locations[index].name;
     const locations = board.locations.filter((_, i) => i !== index);
-    const anchors = { ...(board.anchors ?? {}) };
-    delete anchors[name];
-    const adjacency: Record<string, string[]> = {};
-    for (const [k, v] of Object.entries(board.adjacency ?? {})) {
-      if (k === name) continue;
-      const kept = v.filter((x) => x !== name);
-      if (kept.length > 0) adjacency[k] = kept;
-    }
-    onChange({ ...board, locations, anchors, adjacency });
-    if (selectedLocation === name) onSelectLocation(null);
+    onChange(pruneToLocations(board, locations));
+    // The name survives if a duplicate row still carries it — only then does it keep its anchors.
+    if (selectedLocation === name && !locations.some((l) => l.name === name))
+      onSelectLocation(null);
+  };
+
+  /** Bulk remove — everything, or one kingdom / terrain / building. */
+  const removeInScope = (scope: LocationScope): void => {
+    const doomed = new Set(locationsInScope(board, scope).map((l) => l.name));
+    onChange(removeLocationsInScope(board, scope));
+    if (selectedLocation !== null && doomed.has(selectedLocation)) onSelectLocation(null);
+    setRemoveScope(null);
   };
 
   return (
@@ -150,12 +180,27 @@ export function BoardEditorPanel({
             e.target.value = '';
           }}
         />
-        <button style={smallBtn} onClick={() => fileRef.current?.click()}>
-          {board.imageRef ? 'Replace art…' : 'Upload art…'}
-        </button>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <button style={smallBtn} onClick={() => fileRef.current?.click()}>
+            {board.imageRef ? 'Replace art…' : 'Upload art…'}
+          </button>
+          {!builtinArt && (
+            <button
+              style={smallBtn}
+              onClick={useBuiltinArt}
+              title="Render on the built-in Return to Dark Tower board image (referenced, not stored in this file)"
+            >
+              Use built-in RtDT art
+            </button>
+          )}
+        </div>
         <div style={{ fontSize: 11, color: 'var(--c-text-muted)', marginTop: 4 }}>
           {board.imageInfo.width}×{board.imageInfo.height}
-          {board.imageRef ? '' : ' · no art yet (renders blank)'}
+          {builtinArt
+            ? ' · built-in Return to Dark Tower art (not stored in this file)'
+            : board.imageRef
+              ? ''
+              : ' · no art yet (renders blank)'}
         </div>
       </section>
 
@@ -215,9 +260,19 @@ export function BoardEditorPanel({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <label style={labelStyle}>Locations ({board.locations.length})</label>
-          <button style={smallBtn} onClick={addLocation}>
-            + Add
-          </button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button style={smallBtn} onClick={addLocation}>
+              + Add
+            </button>
+            <button
+              style={{ ...dangerBtn, opacity: board.locations.length === 0 ? 0.4 : 1 }}
+              disabled={board.locations.length === 0}
+              title="Remove locations — all of them, or one kingdom / terrain / building"
+              onClick={() => setRemoveScope({ kind: 'all' })}
+            >
+              Remove…
+            </button>
+          </div>
         </div>
         <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {board.locations.map((loc, i) => (
@@ -312,6 +367,97 @@ export function BoardEditorPanel({
           ))}
         </div>
       </section>
+
+      {removeScope !== null && (
+        <ConfirmDialog
+          title="Remove locations"
+          confirmLabel={`Remove ${locationsInScope(board, removeScope).length}`}
+          message={<RemoveScopePicker board={board} scope={removeScope} onScope={setRemoveScope} />}
+          onConfirm={() => removeInScope(removeScope)}
+          onCancel={() => setRemoveScope(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+const FACETS: Array<{ id: ScopeFacet | 'all'; label: string }> = [
+  { id: 'all', label: 'Everything' },
+  { id: 'kingdom', label: 'Kingdom' },
+  { id: 'terrain', label: 'Terrain' },
+  { id: 'building', label: 'Building' },
+];
+
+/**
+ * The bulk-remove dialog body: pick a facet, then a value. Choices come from `scopeChoices`, which
+ * lists only values the board actually has — so every selectable scope removes at least one
+ * location and the confirm button can never be a no-op.
+ */
+function RemoveScopePicker({
+  board,
+  scope,
+  onScope,
+}: {
+  board: Board;
+  scope: LocationScope;
+  onScope: (next: LocationScope) => void;
+}) {
+  const choices = scope.kind === 'all' ? [] : scopeChoices(board, scope.kind);
+  const doomed = locationsInScope(board, scope).length;
+  const total = board.locations.length;
+
+  /** Switching facet lands on its first available value (every facet has one — see scopeChoices). */
+  const pickFacet = (facet: ScopeFacet | 'all'): void => {
+    if (facet === 'all') return onScope({ kind: 'all' });
+    const first = scopeChoices(board, facet)[0]?.value;
+    if (first === undefined) return;
+    onScope(
+      facet === 'kingdom'
+        ? { kind: 'kingdom', value: first as Kingdom }
+        : facet === 'terrain'
+          ? { kind: 'terrain', value: first }
+          : { kind: 'building', value: first as BuildingType | typeof NO_BUILDING },
+    );
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        {FACETS.map((f) => {
+          const empty = f.id !== 'all' && scopeChoices(board, f.id).length === 0;
+          return (
+            <button
+              key={f.id}
+              style={{ ...(f.id === scope.kind ? primaryBtn : smallBtn), opacity: empty ? 0.4 : 1 }}
+              disabled={empty}
+              onClick={() => pickFacet(f.id)}
+            >
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {scope.kind !== 'all' && (
+        <select
+          style={{ ...inputStyle, width: '100%' }}
+          value={scope.value}
+          onChange={(e) => onScope({ kind: scope.kind, value: e.target.value } as LocationScope)}
+        >
+          {choices.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.value} ({c.n})
+            </option>
+          ))}
+        </select>
+      )}
+
+      <div>
+        Removes <strong>{doomed}</strong> of {total} location{total === 1 ? '' : 's'}
+        {doomed === total ? ' — the whole board' : ''}. Their anchors and adjacency edges go with
+        them. Graph nodes that referenced these names are <strong>not</strong> rewritten — the
+        Problems panel will flag them. There is no undo.
+      </div>
     </div>
   );
 }

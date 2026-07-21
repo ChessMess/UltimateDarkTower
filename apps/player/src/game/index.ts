@@ -6,6 +6,7 @@ import {
   runScenarioValidation,
   createBoardAdapter,
   resolveActiveBoardDef,
+  isBuiltinBoardImageRef,
   createDisplayAdapter,
   createResolver,
 } from '@udtc/adapters';
@@ -74,9 +75,14 @@ function adoptScenarioBoard(doc: unknown): void {
   _board = null; // rebuilt on next board() with the new definition
 }
 
-/** The board art data URL for `imageRef`, read out of library.resources.images. */
+/**
+ * The board art URL for `imageRef` — the built-in board image for a board that references it
+ * (a cloned RtDT preset, which carries the ref rather than 22 MB of embedded art), otherwise the
+ * author's own data URL out of library.resources.images.
+ */
 function resolveBoardImageUrl(doc: unknown, imageRef: string | undefined): string | undefined {
   if (!imageRef) return undefined;
+  if (isBuiltinBoardImageRef(imageRef)) return BOARD_IMAGE_URL;
   const d = doc as { library?: { resources?: { images?: Record<string, string> } } } | null;
   const uri = d?.library?.resources?.images?.[imageRef];
   return typeof uri === 'string' ? uri : undefined;
@@ -185,7 +191,8 @@ async function mountStage(el: HTMLElement, gen: number): Promise<void> {
   const stage = new BoardStageView({
     container: el,
     modelUrl: TOWER_MODEL_URL,
-    // A custom board draws its own uploaded art; a board with no art renders blank.
+    // A custom board draws its own uploaded art, or the built-in image when it references it
+    // (a cloned RtDT preset); a board with no art at all renders blank.
     boardImageUrl: _activeBoard ? _activeBoardImageUrl : BOARD_IMAGE_URL,
     board: _activeBoard?.def,
     assetBaseUrl: BOARD_ASSET_BASE,

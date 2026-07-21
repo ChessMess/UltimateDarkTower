@@ -6,13 +6,14 @@
 // clone fails L1 validation. Every `building` must go through `.toLowerCase()` here.
 // (`terrain` is an open string in the schema, so 'Grasslands' passes through as-is.)
 //
-// No `imageRef`: the RtDT art is not bundled into scenario documents. A clone renders on the
-// player's own copy of the board image; the author can upload their own art to override it.
+// The art is REFERENCED, not embedded: `imageRef` is `BUILTIN_BOARD_IMAGE_REF`, so the clone
+// renders on each consumer's own copy of the board image (the real art is 4096²/22 MB — ~30 MB of
+// base64 in a shared document). Uploading art overwrites the ref with a stored `board-<id>` key.
 
 // RtDT data comes from @udtc/adapters' reference layer, NOT a direct import of
 // `ultimatedarktower`/`ultimatedarktowerboard`. See the note in ./vocabulary.ts — importing either
 // here pulls UDT's Node-only BLE stack into the browser bundle and the app dies at load.
-import { getUDTReferenceLayer } from '@udtc/adapters';
+import { BUILTIN_BOARD_IMAGE_REF, getUDTReferenceLayer } from '@udtc/adapters';
 import type { Board, BuildingType, Kingdom, LocationAnchors } from './shared';
 import { BUILDING_TYPES } from './shared';
 
@@ -54,6 +55,7 @@ export function buildRtdtPreset(id: string): Board {
   return {
     id,
     name: 'Return to Dark Tower (copy)',
+    imageRef: BUILTIN_BOARD_IMAGE_REF,
     imageInfo: {
       width: udt.boardImageInfo.width,
       height: udt.boardImageInfo.height,

@@ -16,6 +16,25 @@ likely need to update the schema, the engine, and the catalog doc in lockstep.
 The editor reads its vocabulary via `@udtc/adapters`' `getUDTReferenceLayer` (not direct
 `ultimatedarktower*` imports) so "what the editor offers is exactly what validates."
 
+## `public/assets/board.jpg` — the designer backdrop, not shipped art
+
+The Board Designer canvas draws the RtDT board under a cloned preset's anchors. That backdrop is
+a **downscaled 1400²/~480 KB JPEG**, not the real board image (4096²/22 MB, which the Player
+serves for play from its own `public/assets/board.png`). Anchors are normalized `[0,1]` and the
+SVG stretches the image to `imageInfo.width/height`, so a smaller backdrop annotates identically.
+Regenerate with:
+
+```bash
+sips -Z 1400 -s format jpeg -s formatOptions 60 \
+  apps/player/public/assets/board.png --out apps/creator/public/assets/board.jpg
+```
+
+A cloned board carries `imageRef: BUILTIN_BOARD_IMAGE_REF` (`'builtin:rtdt-board'`, from
+`@udtc/adapters`) — a reserved value that is deliberately NOT a `library.resources.images` key.
+Each consumer maps it to its own copy of the art (`resolveBoardArt` in `src/boards/shared.ts`
+here, `resolveBoardImageUrl` in the Player). Anything counting art bytes must key off **stored**
+art (`hasStoredArt`), never `imageRef` alone.
+
 ## Vite boot gotcha (`os.platform is not a function`)
 
 `vite.config.ts` must both **alias `ultimatedarktower` to its CJS entry** AND list

@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { resolveActiveBoardDef, boardDefFromLibrary, validateRefs } from '../src/index';
+import {
+  resolveActiveBoardDef,
+  boardDefFromLibrary,
+  validateRefs,
+  isBuiltinBoardImageRef,
+  BUILTIN_BOARD_IMAGE_REF,
+} from '../src/index';
 
 const BOARD = {
   id: 'shattered-reach',
@@ -52,6 +58,23 @@ describe('resolveActiveBoardDef', () => {
     expect(resolveActiveBoardDef(null)).toBeNull();
     expect(resolveActiveBoardDef({})).toBeNull();
     expect(resolveActiveBoardDef({ setup: {} })).toBeNull();
+  });
+});
+
+describe('isBuiltinBoardImageRef', () => {
+  it('matches only the sentinel — a stored key and no ref are both "not built-in"', () => {
+    expect(isBuiltinBoardImageRef(BUILTIN_BOARD_IMAGE_REF)).toBe(true);
+    expect(isBuiltinBoardImageRef(BOARD.imageRef)).toBe(false); // 'board-shattered-reach'
+    expect(isBuiltinBoardImageRef(undefined)).toBe(false);
+    expect(isBuiltinBoardImageRef('')).toBe(false);
+  });
+
+  it('surfaces the sentinel through resolveActiveBoardDef unchanged', () => {
+    const board = { ...BOARD, imageRef: BUILTIN_BOARD_IMAGE_REF };
+    const doc = scenario({ library: { boards: { 'shattered-reach': board } } });
+    const active = resolveActiveBoardDef(doc);
+    expect(active?.imageRef).toBe(BUILTIN_BOARD_IMAGE_REF);
+    expect(isBuiltinBoardImageRef(active?.imageRef)).toBe(true);
   });
 });
 

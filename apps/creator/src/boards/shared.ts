@@ -3,7 +3,9 @@
 // The `Board` types here mirror `$defs/boardDef` in the scenario schema (0.4.6); keep them in
 // step with it. Styling/limit helpers are reused from the dungeon module rather than re-declared.
 
+import { isBuiltinBoardImageRef } from '@udtc/adapters';
 import type { ScenarioDoc } from '../types';
+import { resolveImage } from '../dungeons/shared';
 
 export { imagesOf, resolveImage } from '../dungeons/shared';
 export { byteLen, IMAGE_BUDGET_BYTES } from '../utils/budget';
@@ -68,8 +70,8 @@ export type Board = {
 };
 
 /** Board art caps. Larger than decks (750×1050/250KB) and dungeons (1024×1024/400KB) — a board is
- *  the one image a player stares at — but `library.boards` is a MAP sharing one 5 MB budget, so
- *  ~3 boards with art will overrun it. {@link boardArtBytes} feeds the Asset usage meter. */
+ *  the one image a player stares at — but `library.boards` is a MAP, and every board's art shares
+ *  one {@link IMAGE_BUDGET_BYTES} export-size budget. {@link boardArtBytes} feeds the Asset meter. */
 export const BOARD_IMAGE_OPTS = { maxW: 2048, maxH: 2048, capBytes: 1_500_000 } as const;
 
 export function boardsOf(doc: ScenarioDoc | null): Record<string, Board> {
@@ -104,6 +106,30 @@ export function boardArtBytes(doc: ScenarioDoc | null): number {
 /** The resource key a board's art is stored under. */
 export const boardImageKey = (boardId: string): string => `board-${boardId}`;
 
+/**
+ * The Creator's own copy of the RtDT board art — a downscaled 1400² backdrop for the designer
+ * canvas, NOT the shipped 4096² art (which the Player serves for play). Anchors are normalized
+ * `[0,1]` and the canvas stretches the image to `imageInfo.width/height`, so a smaller backdrop
+ * annotates identically to the full-resolution board.
+ */
+export const BUILTIN_BOARD_ART_URL = `${import.meta.env.BASE_URL}assets/board.jpg`;
+
+/**
+ * A board's art URL: the image stored in the document, else this app's copy of the built-in RtDT
+ * art when the board references it ({@link isBuiltinBoardImageRef}), else undefined → blank.
+ */
+export function resolveBoardArt(doc: ScenarioDoc | null, board: Board): string | undefined {
+  return (
+    resolveImage(doc, board.imageRef) ??
+    (isBuiltinBoardImageRef(board.imageRef) ? BUILTIN_BOARD_ART_URL : undefined)
+  );
+}
+
+/** True when the board's art is bytes stored in the document (⇒ it counts against the budget). */
+export function hasStoredArt(doc: ScenarioDoc | null, board: Board): boolean {
+  return resolveImage(doc, board.imageRef) !== undefined;
+}
+
 /** True when the board carries a full circle calibration (⇒ the 3D disc view is available). */
 export function isCalibrated(info: BoardImageInfo | undefined): boolean {
   if (!info) return false;
@@ -137,6 +163,90 @@ export function toggleAdjacency(board: Board, a: string, b: string): Record<stri
     add(b, a);
   }
   return adj;
+}
+
+/** The `building` scope value meaning "locations with no building at all". */
+export const NO_BUILDING = '(none)';
+
+/** What a bulk location removal targets: everything, or one value of one facet. */
+export type LocationScope =
+  | { kind: 'all' }
+  | { kind: 'kingdom'; value: Kingdom }
+  | { kind: 'terrain'; value: string }
+  | { kind: 'building'; value: BuildingType | typeof NO_BUILDING };
+
+/** The scoping facets — every `LocationScope` kind except the unscoped `all`. */
+export type ScopeFacet = Exclude<LocationScope['kind'], 'all'>;
+
+export function matchesScope(loc: BoardLocation, scope: LocationScope): boolean {
+  switch (scope.kind) {
+    case 'all':
+      return true;
+    case 'kingdom':
+      return loc.kingdom === scope.value;
+    case 'terrain':
+      return loc.terrain === scope.value;
+    case 'building':
+      return scope.value === NO_BUILDING
+        ? loc.building === undefined
+        : loc.building === scope.value;
+  }
+}
+
+/** The locations a scope selects — what a bulk remove would delete. */
+export function locationsInScope(board: Board, scope: LocationScope): BoardLocation[] {
+  return board.locations.filter((l) => matchesScope(l, scope));
+}
+
+/**
+ * The values a facet actually has on this board, with counts — the bulk-remove picker offers
+ * only these, so every choice it shows deletes at least one location. Kingdoms and buildings
+ * keep their canonical enum order (with "no building" last); terrains are open strings, sorted.
+ */
+export function scopeChoices(board: Board, facet: ScopeFacet): Array<{ value: string; n: number }> {
+  const tally = new Map<string, number>();
+  for (const loc of board.locations) {
+    const key =
+      facet === 'kingdom' ? loc.kingdom : facet === 'terrain' ? loc.terrain : (loc.building ?? '');
+    if (facet === 'building' && key === '')
+      tally.set(NO_BUILDING, (tally.get(NO_BUILDING) ?? 0) + 1);
+    else if (key !== '') tally.set(key, (tally.get(key) ?? 0) + 1);
+  }
+  const order =
+    facet === 'kingdom'
+      ? [...KINGDOMS]
+      : facet === 'building'
+        ? [...BUILDING_TYPES, NO_BUILDING]
+        : [...tally.keys()].sort((a, b) => a.localeCompare(b));
+  return order.filter((v) => tally.has(v)).map((value) => ({ value, n: tally.get(value)! }));
+}
+
+/**
+ * Anchors and adjacency confined to `locations` — the invariant `validateBoard` enforces
+ * (anchors/adjacency keys and adjacency targets must all be real locations). Every path that
+ * drops locations goes through here so a removal can never leave a dangling edge behind.
+ */
+export function pruneToLocations(board: Board, locations: BoardLocation[]): Board {
+  const names = new Set(locations.map((l) => l.name));
+  const anchors: Record<string, LocationAnchors> = {};
+  for (const [name, slots] of Object.entries(board.anchors ?? {})) {
+    if (names.has(name)) anchors[name] = slots;
+  }
+  const adjacency: Record<string, string[]> = {};
+  for (const [from, tos] of Object.entries(board.adjacency ?? {})) {
+    if (!names.has(from)) continue;
+    const kept = tos.filter((to) => names.has(to));
+    if (kept.length > 0) adjacency[from] = kept;
+  }
+  return { ...board, locations, anchors, adjacency };
+}
+
+/** The board with every location the scope selects removed, anchors/adjacency pruned to match. */
+export function removeLocationsInScope(board: Board, scope: LocationScope): Board {
+  return pruneToLocations(
+    board,
+    board.locations.filter((l) => !matchesScope(l, scope)),
+  );
 }
 
 /** A location's representative point (its `hero` anchor, else any slot it has). */

@@ -2,9 +2,24 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import Ajv from 'ajv/dist/2020';
 import addFormats from 'ajv-formats';
 import { scenarioSchema } from '@udtc/schema';
+import { BUILTIN_BOARD_IMAGE_REF } from '@udtc/adapters';
 import { useCreatorStore } from '../store';
 import { buildRtdtPreset } from './presetRtdt';
-import { activeBoardId, boardsOf, suggestAdjacency, bfsDistance, validateBoard } from './shared';
+import {
+  BUILTIN_BOARD_ART_URL,
+  NO_BUILDING,
+  activeBoardId,
+  boardsOf,
+  hasStoredArt,
+  locationsInScope,
+  pruneToLocations,
+  removeLocationsInScope,
+  resolveBoardArt,
+  scopeChoices,
+  suggestAdjacency,
+  bfsDistance,
+  validateBoard,
+} from './shared';
 import type { Board } from './shared';
 import { activeBoardLocationNames } from './vocabulary';
 import { scaffoldScenario } from '../utils/scaffold';
@@ -55,8 +70,8 @@ describe('buildRtdtPreset', () => {
     expect(preset.locations.find((l) => l.name === 'Radiant Mountains')?.building).toBe('citadel');
   });
 
-  it('carries no imageRef (RtDT art is not bundled into documents)', () => {
-    expect(buildRtdtPreset('rtdt-copy').imageRef).toBeUndefined();
+  it('REFERENCES the built-in art rather than embedding it (4096²/22 MB of board image)', () => {
+    expect(buildRtdtPreset('rtdt-copy').imageRef).toBe(BUILTIN_BOARD_IMAGE_REF);
   });
 
   it('has no validation problems beyond the "no anchors"/calibration advisories', () => {
@@ -79,6 +94,144 @@ describe('buildRtdtPreset', () => {
     const valid = validate(doc);
     expect(validate.errors ?? []).toEqual([]);
     expect(valid).toBe(true);
+  });
+});
+
+describe('resolveBoardArt / hasStoredArt', () => {
+  /** A doc carrying one stored board image. */
+  function docWithArt(): ScenarioDoc {
+    const doc = scaffold() as unknown as Record<string, unknown>;
+    doc.library = {
+      ...(doc.library as Record<string, unknown>),
+      resources: { images: { 'board-custom': 'data:image/webp;base64,AAAA' } },
+    };
+    return doc as unknown as ScenarioDoc;
+  }
+
+  it('resolves the built-in ref to this app’s backdrop, with no bytes in the document', () => {
+    const preset = buildRtdtPreset('rtdt-copy');
+    expect(resolveBoardArt(scaffold(), preset)).toBe(BUILTIN_BOARD_ART_URL);
+    expect(hasStoredArt(scaffold(), preset)).toBe(false);
+  });
+
+  it('prefers stored art — an upload overwrites the built-in ref', () => {
+    const doc = docWithArt();
+    const board: Board = { ...buildRtdtPreset('custom'), imageRef: 'board-custom' };
+    expect(resolveBoardArt(doc, board)).toBe('data:image/webp;base64,AAAA');
+    expect(hasStoredArt(doc, board)).toBe(true);
+  });
+
+  it('leaves an art-less board blank (a bare custom board renders on nothing)', () => {
+    const board: Board = { ...buildRtdtPreset('bare'), imageRef: undefined };
+    expect(resolveBoardArt(scaffold(), board)).toBeUndefined();
+    expect(hasStoredArt(scaffold(), board)).toBe(false);
+  });
+
+  it('treats a dangling ref as blank rather than falling back to the built-in art', () => {
+    const board: Board = { ...buildRtdtPreset('dangling'), imageRef: 'board-missing' };
+    expect(resolveBoardArt(scaffold(), board)).toBeUndefined();
+  });
+});
+
+describe('bulk location removal', () => {
+  /** Four locations spanning two kingdoms, two terrains, one citadel and one building-less. */
+  function mixed(): Board {
+    return {
+      id: 'mixed',
+      name: 'Mixed',
+      imageInfo: { width: 100, height: 100 },
+      locations: [
+        { name: 'A', kingdom: 'north', terrain: 'Hills', building: 'citadel' },
+        { name: 'B', kingdom: 'north', terrain: 'Lake' },
+        { name: 'C', kingdom: 'south', terrain: 'Hills', building: 'bazaar' },
+        { name: 'D', kingdom: 'south', terrain: 'Hills' },
+      ],
+      anchors: {
+        A: { hero: { x: 0.1, y: 0.1 } },
+        B: { hero: { x: 0.2, y: 0.2 } },
+        C: { hero: { x: 0.3, y: 0.3 } },
+        D: { hero: { x: 0.4, y: 0.4 } },
+      },
+      adjacency: { A: ['B', 'C'], B: ['A'], C: ['A', 'D'], D: ['C'] },
+    };
+  }
+
+  it('scopes by kingdom, terrain, building — and "no building" is its own choice', () => {
+    const b = mixed();
+    const names = (s: Parameters<typeof locationsInScope>[1]) =>
+      locationsInScope(b, s).map((l) => l.name);
+    expect(names({ kind: 'all' })).toEqual(['A', 'B', 'C', 'D']);
+    expect(names({ kind: 'kingdom', value: 'north' })).toEqual(['A', 'B']);
+    expect(names({ kind: 'terrain', value: 'Hills' })).toEqual(['A', 'C', 'D']);
+    expect(names({ kind: 'building', value: 'citadel' })).toEqual(['A']);
+    expect(names({ kind: 'building', value: NO_BUILDING })).toEqual(['B', 'D']);
+  });
+
+  it('offers only values the board actually has, with counts and canonical order', () => {
+    const b = mixed();
+    expect(scopeChoices(b, 'kingdom')).toEqual([
+      { value: 'north', n: 2 },
+      { value: 'south', n: 2 },
+    ]);
+    // 'citadel' before 'bazaar' — BUILDING_TYPES order, not alphabetical — and (none) last.
+    expect(scopeChoices(b, 'building')).toEqual([
+      { value: 'citadel', n: 1 },
+      { value: 'bazaar', n: 1 },
+      { value: NO_BUILDING, n: 2 },
+    ]);
+    expect(scopeChoices(b, 'terrain')).toEqual([
+      { value: 'Hills', n: 3 },
+      { value: 'Lake', n: 1 },
+    ]);
+  });
+
+  it('drops the removed locations AND every anchor/adjacency edge touching them', () => {
+    const next = removeLocationsInScope(mixed(), { kind: 'kingdom', value: 'north' });
+    expect(next.locations.map((l) => l.name)).toEqual(['C', 'D']);
+    expect(Object.keys(next.anchors ?? {})).toEqual(['C', 'D']);
+    // C listed A (now gone) and D (still here) — the dangling half of the edge is pruned.
+    expect(next.adjacency).toEqual({ C: ['D'], D: ['C'] });
+  });
+
+  it('leaves a board that still validates — no dangling refs to removed locations', () => {
+    const next = removeLocationsInScope(mixed(), { kind: 'terrain', value: 'Hills' });
+    const errors = validateBoard(next).filter((p) => p.level === 'error');
+    expect(errors).toEqual([]);
+    expect(next.locations.map((l) => l.name)).toEqual(['B']);
+    expect(next.adjacency).toEqual({});
+  });
+
+  it('removing everything empties the board without stranding anchors', () => {
+    const next = removeLocationsInScope(mixed(), { kind: 'all' });
+    expect(next.locations).toEqual([]);
+    expect(next.anchors).toEqual({});
+    expect(next.adjacency).toEqual({});
+  });
+
+  it('pruneToLocations keeps a duplicated name’s anchors while one row still carries it', () => {
+    const b = mixed();
+    b.locations.push({ name: 'A', kingdom: 'west', terrain: 'Desert' });
+    // Remove the FIRST 'A' row; the duplicate survives, so 'A' keeps its anchors and edges.
+    const next = pruneToLocations(
+      b,
+      b.locations.filter((_, i) => i !== 0),
+    );
+    expect(next.anchors?.A).toEqual({ hero: { x: 0.1, y: 0.1 } });
+    expect(next.adjacency?.A).toEqual(['B', 'C']);
+  });
+
+  it('the RtDT preset survives a kingdom purge with 45 of its 60 locations', () => {
+    const next = removeLocationsInScope(buildRtdtPreset('rtdt-copy'), {
+      kind: 'kingdom',
+      value: 'north',
+    });
+    expect(next.locations).toHaveLength(45);
+    expect(next.locations.every((l) => l.kingdom !== 'north')).toBe(true);
+    const names = new Set(next.locations.map((l) => l.name));
+    for (const [from, tos] of Object.entries(next.adjacency ?? {})) {
+      expect(names.has(from)).toBe(true);
+      for (const to of tos) expect(names.has(to)).toBe(true);
+    }
   });
 });
 

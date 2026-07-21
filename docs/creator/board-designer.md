@@ -13,15 +13,15 @@ purpose. Locations are opaque strings everywhere in the system (engine state, ef
 conditions), so a custom vocabulary works with **every existing node kind and effect op
 unchanged**. Authoring a board re-sources the dropdowns; it does not add new authoring primitives.
 
-| Field                                                  | Required | Notes                                                                                         |
-| ------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------- |
-| `id` / `name`                                          | yes      | `id` is the `library.boards` key and must be kebab/snake case                                 |
-| `imageRef`                                             | no       | a `library.resources.images` key; without art the board renders blank                         |
-| `imageInfo.width` / `.height`                          | yes      | the image space anchors are normalized against                                                |
-| `imageInfo.centerX/centerY/radius/northHeadingDegrees` | no       | all four ⇒ **3D-ready** (see below)                                                           |
-| `locations[]`                                          | yes      | `kingdom` is the closed 4-enum; `terrain` is an open string; `building` is the lowercase enum |
-| `anchors`                                              | no       | per-location `building`/`skull`/`hero`/`foe`/`marker` points, normalized `[0,1]`              |
-| `adjacency`                                            | no       | name → names, symmetric (see the caveat below)                                                |
+| Field                                                  | Required | Notes                                                                                             |
+| ------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------- |
+| `id` / `name`                                          | yes      | `id` is the `library.boards` key and must be kebab/snake case                                     |
+| `imageRef`                                             | no       | a `library.resources.images` key, or `builtin:rtdt-board`; without either the board renders blank |
+| `imageInfo.width` / `.height`                          | yes      | the image space anchors are normalized against                                                    |
+| `imageInfo.centerX/centerY/radius/northHeadingDegrees` | no       | all four ⇒ **3D-ready** (see below)                                                               |
+| `locations[]`                                          | yes      | `kingdom` is the closed 4-enum; `terrain` is an open string; `building` is the lowercase enum     |
+| `anchors`                                              | no       | per-location `building`/`skull`/`hero`/`foe`/`marker` points, normalized `[0,1]`                  |
+| `adjacency`                                            | no       | name → names, symmetric (see the caveat below)                                                    |
 
 Stored at `library.boards[id]` (schema **0.4.6**); a scenario selects one with
 `setup.board = { boardRef: id }`.
@@ -30,11 +30,23 @@ Stored at `library.boards[id]` (schema **0.4.6**); a scenario selects one with
 
 1. **Boards tab → Clone RtDT preset.** A full copy of the built-in board — 60 locations, anchors,
    adjacency, calibration — ready to rename and re-art. (Or **Add empty board** to start bare.)
+   The clone keeps the built-in board art by **reference** (`imageRef: builtin:rtdt-board`): the
+   real image is 4096²/22 MB — ~30 MB of base64 in a shared `.json`, and 20× the 1.5 MB cap on an
+   uploaded board image — so nothing is embedded and each app renders it from its own copy. Zero
+   bytes in the document, and the Player still plays it at full resolution.
 2. **Upload art.** Capped at 2048×2048 / ~1.5 MB. The stored image's real dimensions become
-   `imageInfo.width/height`.
+   `imageInfo.width/height`, and the upload replaces the built-in reference. **Use built-in RtDT
+   art** puts it back (and restores `imageInfo` to 4096²; normalized anchors don't move). A
+   replaced upload stays in `library.resources.images` — delete it from the Asset Manager, which
+   lists it as unused, if you want the bytes back.
 3. **Locations.** Add/rename/delete; set kingdom, terrain and building. A **rename remaps this
    board's anchors and adjacency in the same commit** — but it does **not** rewrite graph nodes that
    referenced the old name. Those surface in the Problems panel as dangling refs; fix them there.
+   **Remove…** clears locations in bulk, scoped to everything or to one **kingdom / terrain /
+   building** — handy for keeping the RtDT clone's geometry while replacing a kingdom's spaces.
+   The picker only offers values the board actually has (with counts), and shows how many of how
+   many will go before you confirm. Anchors and adjacency edges go with the removed locations;
+   graph references to them do not, so check the Problems panel afterwards. There is no undo.
 4. **Anchors.** Pick a location, pick a slot, click the map. Tokens are drawn at these points.
 5. **Adjacency.** Click two locations to link/unlink (always written symmetrically). _Suggest from
    proximity_ seeds the graph from anchor distance.

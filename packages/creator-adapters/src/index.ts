@@ -7,7 +7,12 @@ export type { UDTReferenceLayer } from './udt';
 export { createBoardAdapter } from './board';
 export type { BoardState, BoardMutateCommand, BoardAdapterOptions } from './board';
 
-export { resolveActiveBoardDef, boardDefFromLibrary } from './board-def';
+export {
+  resolveActiveBoardDef,
+  boardDefFromLibrary,
+  isBuiltinBoardImageRef,
+  BUILTIN_BOARD_IMAGE_REF,
+} from './board-def';
 export type { ActiveBoard } from './board-def';
 
 export { createDisplayAdapter } from './display';

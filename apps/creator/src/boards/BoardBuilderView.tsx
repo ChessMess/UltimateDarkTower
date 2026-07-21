@@ -22,7 +22,8 @@ import {
   boardArtBytes,
   boardImageKey,
   boardsOf,
-  resolveImage,
+  hasStoredArt,
+  resolveBoardArt,
   smallBtn,
   primaryBtn,
   suggestAdjacency,
@@ -154,7 +155,9 @@ export function BoardBuilderView() {
 
   const artBytes = boardArtBytes(schemaDoc);
   const overBudget = artBytes > IMAGE_BUDGET_BYTES * 0.8;
-  const artedBoards = ids.filter((id) => boards[id].imageRef).length;
+  // Only STORED art counts here — a board referencing the built-in RtDT art contributes no bytes,
+  // so it must not bring up the shared-budget meter.
+  const artedBoards = ids.filter((id) => hasStoredArt(schemaDoc, boards[id])).length;
 
   return (
     <div style={layout}>
@@ -186,7 +189,7 @@ export function BoardBuilderView() {
           {artedBoards > 1 && (
             <span
               style={{ fontSize: 11, color: overBudget ? '#f87171' : 'var(--c-text-muted)' }}
-              title="library.boards is a map — every board's art shares one ~5 MB draft budget"
+              title="library.boards is a map — every board's art shares one export-size budget"
             >
               board art {(artBytes / 1_000_000).toFixed(1)} MB /{' '}
               {(IMAGE_BUDGET_BYTES / 1_000_000).toFixed(0)} MB
@@ -198,7 +201,7 @@ export function BoardBuilderView() {
         {selected ? (
           <BoardMapCanvas
             board={selected}
-            imageUrl={resolveImage(schemaDoc, selected.imageRef)}
+            imageUrl={resolveBoardArt(schemaDoc, selected)}
             mode={mode}
             selectedLocation={selectedLocation}
             activeSlot={activeSlot}

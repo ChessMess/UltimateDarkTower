@@ -974,7 +974,7 @@
         "name": { "type": "string" },
         "imageRef": {
           "$ref": "#/$defs/resourceKey",
-          "$comment": "L2: key in library.resources.images; dangling → placeholder art (like deck artRef)"
+          "$comment": "L2: key in library.resources.images; dangling → placeholder art (like deck artRef). RESERVED VALUE 'builtin:rtdt-board' means the built-in Return to Dark Tower art — deliberately not a resources.images key, since that image is 4096²/22 MB (~30 MB base64); a consumer resolves it to its own copy, and one that doesn't know it degrades to the dangling behaviour."
         },
         "imageInfo": {
           "type": "object",
