@@ -151,7 +151,18 @@ body,
 }
 
 .creator-layout--decks .creator-palette,
-.creator-layout--dungeons .creator-palette {
+.creator-layout--dungeons .creator-palette,
+.creator-layout--boards .creator-palette {
+  display: none;
+}
+
+/* Boards brings its own list rail AND its own editor panel, so neither shell column has
+   anything to show — collapse both and give the whole width to the map. */
+.creator-layout--boards {
+  grid-template-columns: 0 1fr 0;
+}
+
+.creator-layout--boards .creator-inspector {
   display: none;
 }
 

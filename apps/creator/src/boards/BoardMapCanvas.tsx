@@ -8,7 +8,14 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { AnchorSlot, Board } from './shared';
-import { bfsDistance, locationPoint } from './shared';
+import {
+  KINGDOM_COLOR,
+  bfsDistance,
+  clientToNormalized,
+  locationPoint,
+  viewportFit,
+} from './shared';
+import { AnchorGlyph } from './AnchorGlyph';
 
 export type BoardEditMode = 'locations' | 'anchors' | 'adjacency' | 'calibrate';
 
@@ -28,13 +35,6 @@ export interface BoardMapCanvasProps {
   onCalibrate: (patch: { centerX?: number; centerY?: number; radius?: number }) => void;
 }
 
-const KINGDOM_COLOR: Record<string, string> = {
-  north: '#60a5fa',
-  east: '#facc15',
-  south: '#4ade80',
-  west: '#f87171',
-};
-
 export function BoardMapCanvas({
   board,
   imageUrl,
@@ -53,6 +53,9 @@ export function BoardMapCanvas({
   const [panning, setPanning] = useState(false);
   const dragRef = useRef<{ x: number; y: number; pan: { x: number; y: number } } | null>(null);
   const calibDragRef = useRef<'center' | 'radius' | null>(null);
+  // A pan ends in a click on the <svg>, which would otherwise drop an anchor wherever the drag
+  // was released. Set once the pointer travels past DRAG_SLOP; consumed (and reset) by handleClick.
+  const draggedRef = useRef(false);
 
   const { width, height } = board.imageInfo;
 
@@ -66,26 +69,52 @@ export function BoardMapCanvas({
     setPan({ x: 0, y: 0 });
   }
 
-  /** Client point → normalized [0,1] image coords. */
+  /** The SVG's current viewBox — pan is its origin, zoom shrinks its size. */
+  const viewBox = { x: pan.x, y: pan.y, w: width / zoom, h: height / zoom };
+
+  /**
+   * Keeps the viewBox inside the image, so the board can't be dragged off into the void.
+   * At zoom 1 the window is the whole image, so this pins pan to {0,0}.
+   */
+  const clampPan = (p: { x: number; y: number }, z: number): { x: number; y: number } => ({
+    x: clamp(p.x, 0, width - width / z),
+    y: clamp(p.y, 0, height - height / z),
+  });
+
+  /** Client point → normalized [0,1] image coords, through the meet-fit letterbox. */
   const toNorm = (clientX: number, clientY: number): { x: number; y: number } | null => {
     const svg = svgRef.current;
     if (!svg) return null;
     const rect = svg.getBoundingClientRect();
-    // The viewBox maps 1:1 to the rect, so invert rect → viewBox → normalized.
-    const vx = ((clientX - rect.left) / rect.width) * (width / zoom) + pan.x;
-    const vy = ((clientY - rect.top) / rect.height) * (height / zoom) + pan.y;
-    return { x: clamp01(vx / width), y: clamp01(vy / height) };
+    return clientToNormalized({ x: clientX, y: clientY }, rect, viewBox, board.imageInfo);
   };
 
+  /** Zoom about the cursor: the image point under the pointer stays under the pointer. */
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const next = clamp(zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15), 1, 12);
+    if (next === zoom) return; // already railed at min/max
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    // The pads don't move with zoom (the drawn area is zoom-invariant), so they're reused below.
+    const { scale, padX, padY } = viewportFit(rect, viewBox.w, viewBox.h);
+    const offX = e.clientX - rect.left - padX;
+    const offY = e.clientY - rect.top - padY;
+    const nextScale = scale * (next / zoom);
+    setPan(
+      clampPan(
+        { x: offX / scale + pan.x - offX / nextScale, y: offY / scale + pan.y - offY / nextScale },
+        next,
+      ),
+    );
     setZoom(next);
   };
 
   const handleBackgroundDown = (e: React.MouseEvent) => {
     if (mode === 'calibrate' && e.shiftKey) return;
     dragRef.current = { x: e.clientX, y: e.clientY, pan };
+    draggedRef.current = false;
     setPanning(true);
   };
 
@@ -103,12 +132,21 @@ export function BoardMapCanvas({
     }
     const drag = dragRef.current;
     if (!drag) return;
+    if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > DRAG_SLOP) draggedRef.current = true;
     const svg = svgRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    const dx = ((e.clientX - drag.x) / rect.width) * (width / zoom);
-    const dy = ((e.clientY - drag.y) / rect.height) * (height / zoom);
-    setPan({ x: drag.pan.x - dx, y: drag.pan.y - dy });
+    // One uniform scale on both axes — the board tracks the cursor 1:1.
+    const { scale } = viewportFit(rect, viewBox.w, viewBox.h);
+    setPan(
+      clampPan(
+        {
+          x: drag.pan.x - (e.clientX - drag.x) / scale,
+          y: drag.pan.y - (e.clientY - drag.y) / scale,
+        },
+        zoom,
+      ),
+    );
   };
 
   const endDrag = () => {
@@ -118,6 +156,9 @@ export function BoardMapCanvas({
   };
 
   const handleClick = (e: React.MouseEvent) => {
+    const dragged = draggedRef.current;
+    draggedRef.current = false;
+    if (dragged) return; // the tail of a pan, not a placement
     if (mode !== 'anchors' || !selectedLocation) return;
     const p = toNorm(e.clientX, e.clientY);
     if (p) onPlaceAnchor(selectedLocation, activeSlot, p);
@@ -220,18 +261,28 @@ export function BoardMapCanvas({
           const isFrom = loc.name === adjacencyFrom;
           return Object.entries(slots).map(([slot, p]) => {
             if (!p) return null;
-            const emphasize = isSelected && (mode !== 'anchors' || slot === activeSlot);
+            const isActiveSlot = slot === activeSlot;
+            const emphasize = isSelected && (mode !== 'anchors' || isActiveSlot);
+            // In anchors mode the slot you're placing leads; the rest recede so they don't
+            // compete with it. Elsewhere every slot keeps its old uniform weight.
+            const weight = mode !== 'anchors' ? 1 : isActiveSlot ? 1.35 : 0.8;
             return (
               <g key={`${loc.name}:${slot}`}>
-                <circle
+                <AnchorGlyph
+                  slot={slot as AnchorSlot}
                   cx={p.x * width}
                   cy={p.y * height}
-                  r={emphasize || isFrom ? dot * 1.5 : dot}
+                  r={(emphasize || isFrom ? dot * 1.5 : dot) * weight}
                   fill={KINGDOM_COLOR[loc.kingdom] ?? '#94a3b8'}
                   stroke={isFrom ? '#38bdf8' : emphasize ? '#fff' : 'rgba(0,0,0,.55)'}
                   strokeWidth={dot / 2.5}
-                  opacity={slot === 'hero' || mode === 'anchors' ? 1 : 0.75}
-                  style={{ cursor: 'pointer' }}
+                  opacity={
+                    mode === 'anchors' ? (isActiveSlot ? 1 : 0.35) : slot === 'hero' ? 1 : 0.75
+                  }
+                  // Anchors mode makes the map a pure placement surface: a glyph must not eat the
+                  // click, or you could never place a second slot on top of an existing one.
+                  // Selection there comes from the list, which the hint tells you.
+                  style={{ cursor: 'pointer', pointerEvents: mode === 'anchors' ? 'none' : 'auto' }}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (mode === 'adjacency') {
@@ -268,23 +319,47 @@ export function BoardMapCanvas({
       </svg>
 
       <div style={hint}>
-        {mode === 'anchors' && selectedLocation
-          ? `Click the map to place "${selectedLocation}" · ${activeSlot}`
-          : mode === 'anchors'
-            ? 'Pick a location to place its anchors'
-            : mode === 'adjacency'
-              ? adjacencyFrom
-                ? `Linking from "${adjacencyFrom}" — click another location (click it again to unlink)`
-                : 'Click two locations to link/unlink them'
-              : mode === 'calibrate'
-                ? 'Drag the centre dot and the radius handle to fit the board circle'
-                : 'Wheel to zoom · drag to pan'}
+        {hintText({ board, mode, selectedLocation, activeSlot, adjacencyFrom })}
         {mode === 'adjacency' && adjacencyFrom && (
           <AdjacencyDistanceHint board={board} from={adjacencyFrom} />
         )}
       </div>
     </div>
   );
+}
+
+/**
+ * The status line under the canvas — the only place that says what a click will do right now.
+ * In `locations` mode it also calls out a selection that has no anchor: that location is data
+ * only, invisible here, and the list's ◎ button is what puts it on the board.
+ */
+function hintText({
+  board,
+  mode,
+  selectedLocation,
+  activeSlot,
+  adjacencyFrom,
+}: Pick<
+  BoardMapCanvasProps,
+  'board' | 'mode' | 'selectedLocation' | 'activeSlot' | 'adjacencyFrom'
+>): string {
+  switch (mode) {
+    case 'anchors':
+      if (!selectedLocation) return 'Pick a location in the list to place its anchors';
+      return board.anchors?.[selectedLocation]?.[activeSlot]
+        ? `Click the board to move "${selectedLocation}" · ${activeSlot}`
+        : `Click the board to place "${selectedLocation}" · ${activeSlot}`;
+    case 'adjacency':
+      return adjacencyFrom
+        ? `Linking from "${adjacencyFrom}" — click another location (click it again to unlink)`
+        : 'Click two locations to link/unlink them';
+    case 'calibrate':
+      return 'Drag the centre dot and the radius handle to fit the board circle';
+    case 'locations':
+      return selectedLocation && !locationPoint(board, selectedLocation)
+        ? `"${selectedLocation}" is not on the board yet — click ◎ beside it to place it`
+        : 'Wheel to zoom · drag to pan';
+  }
 }
 
 /** Live BFS preview: how far the rest of the board is from the picked endpoint. */
@@ -320,8 +395,10 @@ function adjacencyEdges(
   return out;
 }
 
+/** Pointer travel (px) past which a press counts as a pan rather than a click. */
+const DRAG_SLOP = 4;
+
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
-const clamp01 = (v: number): number => clamp(v, 0, 1);
 
 const wrap: CSSProperties = {
   position: 'relative',

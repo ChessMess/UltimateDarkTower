@@ -5,7 +5,7 @@
 // Supersedes packages/core/tools/location-marker for authoring CUSTOM boards; that standalone tool
 // remains the generator for the built-in RtDT board data (gen-board-data.mjs).
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useCreatorStore } from '../store';
 import { resizeAndEncode } from '../decks/imageUtils';
@@ -68,7 +68,6 @@ export function BoardBuilderView() {
   const commitBoards = useCreatorStore((s) => s.commitBoards);
   const setActiveBoard = useCreatorStore((s) => s.setActiveBoard);
   const updateResourceImage = useCreatorStore((s) => s.updateResourceImage);
-  const setBoardSelection = useCreatorStore((s) => s.setBoardSelection);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mode, setMode] = useState<BoardEditMode>('locations');
@@ -76,10 +75,6 @@ export function BoardBuilderView() {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [pendingActivate, setPendingActivate] = useState<string | null>(null);
-
-  useEffect(() => {
-    setBoardSelection(selectedId);
-  }, [selectedId, setBoardSelection]);
 
   if (!schemaDoc) {
     return (
@@ -241,6 +236,7 @@ export function BoardBuilderView() {
           onChange={commit}
           onSelectLocation={setSelectedLocation}
           onActiveSlot={setActiveSlot}
+          onMode={setMode}
           onUploadArt={uploadArt}
           onToggleActive={toggleActive}
           onSuggestAdjacency={() => commit({ ...selected, adjacency: suggestAdjacency(selected) })}

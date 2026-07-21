@@ -39,7 +39,12 @@ Stored at `library.boards[id]` (schema **0.4.6**); a scenario selects one with
    art** puts it back (and restores `imageInfo` to 4096²; normalized anchors don't move). A
    replaced upload stays in `library.resources.images` — delete it from the Asset Manager, which
    lists it as unused, if you want the bytes back.
-3. **Locations.** Add/rename/delete; set kingdom, terrain and building. A **rename remaps this
+3. **Locations.** Add/rename/delete; set kingdom, terrain and building. **A location's position is
+   its anchors** — there is no separate "place" record — so a new row exists in data but renders
+   nowhere until it has one. **+ Add** therefore drops you straight into Anchors mode with the new
+   location armed: click the board and it lands. For an existing row, the **◎** button beside it
+   does the same (it turns into a filled **◉** once placed), and the Locations header counts how
+   many are still off the map. A **rename remaps this
    board's anchors and adjacency in the same commit** — but it does **not** rewrite graph nodes that
    referenced the old name. Those surface in the Problems panel as dangling refs; fix them there.
    **Remove…** clears locations in bulk, scoped to everything or to one **kingdom / terrain /
@@ -47,7 +52,14 @@ Stored at `library.boards[id]` (schema **0.4.6**); a scenario selects one with
    The picker only offers values the board actually has (with counts), and shows how many of how
    many will go before you confirm. Anchors and adjacency edges go with the removed locations;
    graph references to them do not, so check the Problems panel afterwards. There is no undo.
-4. **Anchors.** Pick a location, pick a slot, click the map. Tokens are drawn at these points.
+4. **Anchors.** Pick a location, pick a slot, click the map. Tokens are drawn at these points. The
+   status line under the canvas always says what the next click will do. Panning does not place an
+   anchor — a press only counts as a click if the pointer barely moved.
+   **Shape is the slot, colour is the kingdom**: ● hero, ■ building, ▲ foe, ◆ skull, ▼ marker. The
+   slot you are placing is drawn larger and the rest recede, and each slot button carries the same
+   glyph — filled when the selected location already has that anchor, hollow when it does not. In
+   this mode the anchors themselves are not clickable, so you can drop one on top of another; pick
+   a different location from the list instead.
 5. **Adjacency.** Click two locations to link/unlink (always written symmetrically). _Suggest from
    proximity_ seeds the graph from anchor distance.
 6. **Calibrate.** Drag the centre dot and radius handle to fit the board's printed circle, and set

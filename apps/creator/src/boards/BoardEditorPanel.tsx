@@ -5,20 +5,24 @@
 // lands in a state its own validation rejects. Graph-node props that referenced the old name are
 // deliberately NOT rewritten — L2 surfaces those as dangling refs; the panel hints at it.
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { BUILTIN_BOARD_IMAGE_REF, isBuiltinBoardImageRef } from '@udtc/adapters';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { AnchorGlyphChip } from './AnchorGlyph';
 import {
   ANCHOR_SLOTS,
   BUILDING_TYPES,
   KINGDOMS,
+  KINGDOM_COLOR,
   NO_BUILDING,
   TERRAIN_SUGGESTIONS,
   dangerBtn,
   dangerIconBtn,
+  hasAnchorSlot,
   inputStyle,
   isCalibrated,
+  isPlaced,
   labelStyle,
   locationsInScope,
   primaryBtn,
@@ -26,6 +30,7 @@ import {
   removeLocationsInScope,
   scopeChoices,
   smallBtn,
+  unplacedLocations,
   validateBoard,
 } from './shared';
 import type {
@@ -49,6 +54,8 @@ export interface BoardEditorPanelProps {
   onChange: (next: Board) => void;
   onSelectLocation: (name: string | null) => void;
   onActiveSlot: (slot: AnchorSlot) => void;
+  /** Switch the canvas mode — how the panel hands a location off to be placed on the map. */
+  onMode: (mode: BoardEditMode) => void;
   onUploadArt: (file: File) => void;
   onToggleActive: () => void;
   onSuggestAdjacency: () => void;
@@ -63,6 +70,7 @@ export function BoardEditorPanel({
   onChange,
   onSelectLocation,
   onActiveSlot,
+  onMode,
   onUploadArt,
   onToggleActive,
   onSuggestAdjacency,
@@ -73,6 +81,18 @@ export function BoardEditorPanel({
   const warns = problems.filter((p) => p.level === 'warn');
   const calibrated = isCalibrated(board.imageInfo);
   const builtinArt = isBuiltinBoardImageRef(board.imageRef);
+  const unplaced = unplacedLocations(board);
+
+  // `addLocation` appends, so the new row is always last — but the list scrolls, and on a
+  // 60-location board it lands below the fold where nothing looks like it happened.
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const scrollToEndRef = useRef(false);
+  useEffect(() => {
+    if (!scrollToEndRef.current) return;
+    scrollToEndRef.current = false;
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  });
   // The draft scope while the bulk-remove dialog is open; null = closed.
   const [removeScope, setRemoveScope] = useState<LocationScope | null>(null);
 
@@ -114,6 +134,18 @@ export function BoardEditorPanel({
     if (selectedLocation === prev) onSelectLocation(nextName);
   };
 
+  /**
+   * Hand a location off to the map: select it, arm a slot, and switch to anchor mode so the very
+   * next click lands its point. A location's position IS its anchors — nothing else ties a row to
+   * a spot on the board — so every path that wants one placed comes through here.
+   */
+  const placeLocation = (name: string): void => {
+    onSelectLocation(name);
+    if (!isPlaced(board, name)) onActiveSlot('hero');
+    onMode('anchors');
+  };
+
+  /** Adds a row and goes straight to placing it — an unplaced location renders nowhere. */
   const addLocation = (): void => {
     let n = board.locations.length + 1;
     let name = `Location ${n}`;
@@ -123,7 +155,8 @@ export function BoardEditorPanel({
       ...board,
       locations: [...board.locations, { name, kingdom: 'north', terrain: 'Grasslands' }],
     });
-    onSelectLocation(name);
+    scrollToEndRef.current = true;
+    placeLocation(name);
   };
 
   /** Remove one row. By INDEX, not name: a transient duplicate name must lose only the row clicked. */
@@ -149,7 +182,7 @@ export function BoardEditorPanel({
       <section style={section}>
         <label style={labelStyle}>Name</label>
         <input
-          style={inputStyle}
+          style={{ ...inputStyle, width: '100%' }}
           value={board.name}
           onChange={(e) => onChange({ ...board, name: e.target.value })}
         />
@@ -197,7 +230,7 @@ export function BoardEditorPanel({
         <div style={{ fontSize: 11, color: 'var(--c-text-muted)', marginTop: 4 }}>
           {board.imageInfo.width}×{board.imageInfo.height}
           {builtinArt
-            ? ' · built-in Return to Dark Tower art (not stored in this file)'
+            ? ' · built-in RtDT art (not stored in this file)'
             : board.imageRef
               ? ''
               : ' · no art yet (renders blank)'}
@@ -230,15 +263,38 @@ export function BoardEditorPanel({
         <section style={section}>
           <label style={labelStyle}>Anchor slot</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {ANCHOR_SLOTS.map((slot) => (
-              <button
-                key={slot}
-                style={slot === activeSlot ? primaryBtn : smallBtn}
-                onClick={() => onActiveSlot(slot)}
-              >
-                {slot}
-              </button>
-            ))}
+            {ANCHOR_SLOTS.map((slot) => {
+              // The chip is the same glyph the map draws, filled once the selected location
+              // carries this slot — so a button and its dots are recognisably the same thing.
+              const placed =
+                selectedLocation !== null && hasAnchorSlot(board, selectedLocation, slot);
+              return (
+                <button
+                  key={slot}
+                  style={{
+                    ...(slot === activeSlot ? primaryBtn : smallBtn),
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                  title={
+                    selectedLocation === null
+                      ? `Place the ${slot} anchor`
+                      : placed
+                        ? `"${selectedLocation}" has a ${slot} anchor — click the board to move it`
+                        : `"${selectedLocation}" has no ${slot} anchor yet`
+                  }
+                  onClick={() => onActiveSlot(slot)}
+                >
+                  <AnchorGlyphChip slot={slot} filled={placed} />
+                  {slot}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--c-text-muted)', marginTop: 6 }}>
+            A filled chip means the selected location already has that anchor. On the board the
+            shape is the slot and the colour is the kingdom.
           </div>
         </section>
       )}
@@ -258,9 +314,19 @@ export function BoardEditorPanel({
       <section
         style={{ ...section, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <label style={labelStyle}>Locations ({board.locations.length})</label>
-          <div style={{ display: 'flex', gap: 6 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 6,
+            flexShrink: 0,
+          }}
+        >
+          <label style={{ ...labelStyle, whiteSpace: 'nowrap' }}>
+            Locations ({board.locations.length})
+          </label>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
             <button style={smallBtn} onClick={addLocation}>
               + Add
             </button>
@@ -274,76 +340,122 @@ export function BoardEditorPanel({
             </button>
           </div>
         </div>
-        <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
-          {board.locations.map((loc, i) => (
-            <div
-              key={i}
-              style={{
-                ...row,
-                outline:
-                  loc.name === selectedLocation ? '1px solid var(--c-accent, #38bdf8)' : 'none',
-              }}
-              onClick={() => onSelectLocation(loc.name)}
-            >
-              <input
-                style={{ ...inputStyle, flex: 2, minWidth: 0 }}
-                value={loc.name}
-                onChange={(e) => renameLocation(i, e.target.value)}
-              />
-              <select
-                style={{ ...inputStyle, flex: 1, minWidth: 0 }}
-                value={loc.kingdom}
-                onChange={(e) => patchLocation(i, { kingdom: e.target.value as Kingdom })}
-              >
-                {KINGDOMS.map((k) => (
-                  <option key={k} value={k}>
-                    {k}
-                  </option>
-                ))}
-              </select>
-              <input
-                style={{ ...inputStyle, flex: 1, minWidth: 0 }}
-                list="udt-terrains"
-                value={loc.terrain}
-                onChange={(e) => patchLocation(i, { terrain: e.target.value })}
-              />
-              <select
-                style={{ ...inputStyle, flex: 1, minWidth: 0 }}
-                value={loc.building ?? ''}
-                onChange={(e) =>
-                  patchLocation(i, {
-                    building: e.target.value ? (e.target.value as BuildingType) : undefined,
-                  })
-                }
-              >
-                <option value="">—</option>
-                {BUILDING_TYPES.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-              <button
-                style={dangerIconBtn}
-                title="Remove location"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeLocation(i);
-                }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
+        {/* Its own line: appended to the label it pushed the count out of the header. */}
+        {unplaced.length > 0 && (
+          <div style={{ fontSize: 11, color: '#fbbf24', margin: '4px 0 2px' }}>
+            {unplaced.length} not on the board yet
+          </div>
+        )}
+        <div ref={listRef} style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
+          {board.locations.map((loc, i) => {
+            const selected = loc.name === selectedLocation;
+            const placed = isPlaced(board, loc.name);
+            return (
+              <div key={i} style={selected ? rowSelected : row}>
+                <div style={rowHead} onClick={() => onSelectLocation(loc.name)}>
+                  <button
+                    style={placed ? placedBtn : unplacedBtn}
+                    title={
+                      placed
+                        ? `"${loc.name}" is on the board — click to re-place it`
+                        : `"${loc.name}" is not on the board yet — click, then click the spot`
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      placeLocation(loc.name);
+                    }}
+                  >
+                    {placed ? '◉' : '◎'}
+                  </button>
+                  <span
+                    style={{ ...kingdomDot, background: KINGDOM_COLOR[loc.kingdom] ?? '#94a3b8' }}
+                    title={loc.kingdom}
+                  />
+                  <span style={nameText}>{loc.name}</span>
+                  {loc.building && <span style={badge}>{loc.building}</span>}
+                  <button
+                    style={dangerIconBtn}
+                    title="Remove location"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeLocation(i);
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Only the selected row carries fields. Four inline inputs never fit this panel —
+                    they truncated to "Gras"/"Mou" and the building select overran its chevron. */}
+                {selected && (
+                  <div style={rowBody}>
+                    <input
+                      style={{ ...inputStyle, width: '100%' }}
+                      value={loc.name}
+                      aria-label="Location name"
+                      onChange={(e) => renameLocation(i, e.target.value)}
+                    />
+                    <div style={fieldGrid}>
+                      <label style={fieldLabel}>
+                        kingdom
+                        <select
+                          style={{ ...inputStyle, width: '100%' }}
+                          value={loc.kingdom}
+                          onChange={(e) => patchLocation(i, { kingdom: e.target.value as Kingdom })}
+                        >
+                          {KINGDOMS.map((k) => (
+                            <option key={k} value={k}>
+                              {k}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label style={fieldLabel}>
+                        terrain
+                        <input
+                          style={{ ...inputStyle, width: '100%' }}
+                          list="udt-terrains"
+                          value={loc.terrain}
+                          onChange={(e) => patchLocation(i, { terrain: e.target.value })}
+                        />
+                      </label>
+                      <label style={fieldLabel}>
+                        building
+                        <select
+                          style={{ ...inputStyle, width: '100%' }}
+                          value={loc.building ?? ''}
+                          onChange={(e) =>
+                            patchLocation(i, {
+                              building: e.target.value
+                                ? (e.target.value as BuildingType)
+                                : undefined,
+                            })
+                          }
+                        >
+                          <option value="">—</option>
+                          {BUILDING_TYPES.map((b) => (
+                            <option key={b} value={b}>
+                              {b}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
         <datalist id="udt-terrains">
           {TERRAIN_SUGGESTIONS.map((t) => (
             <option key={t} value={t} />
           ))}
         </datalist>
-        <div style={{ fontSize: 11, color: 'var(--c-text-muted)', marginTop: 6 }}>
-          Renaming remaps anchors + adjacency. Graph nodes that referenced the old name are not
-          rewritten — the Problems panel will flag them.
+        <div style={listFoot}>
+          <strong>◎</strong> places a location on the board · <strong>◉</strong> already placed.
+          Renaming remaps anchors and adjacency, but not graph nodes — the Problems panel flags
+          those.
         </div>
       </section>
 
@@ -511,13 +623,99 @@ const section: CSSProperties = {
   borderBottom: '1px solid var(--c-border)',
 };
 
+// A location is a compact one-line row; only the SELECTED one opens to reveal its fields.
+// 60 rows have to stay scannable, and four inline inputs in a 340px panel do not.
 const row: CSSProperties = {
-  display: 'flex',
-  gap: 4,
-  alignItems: 'center',
-  padding: '3px 2px',
   borderRadius: 4,
+  marginBottom: 1,
+};
+
+const rowSelected: CSSProperties = {
+  ...row,
+  background: 'var(--c-surface-raised)',
+  outline: '1px solid var(--c-accent, #38bdf8)',
+  marginBottom: 4,
+};
+
+const rowHead: CSSProperties = {
+  display: 'flex',
+  gap: 6,
+  alignItems: 'center',
+  padding: '3px 4px',
   cursor: 'pointer',
+  minWidth: 0,
+};
+
+/** Kingdom as a colour chip — the same colour the map fills this location's anchors with. */
+const kingdomDot: CSSProperties = {
+  width: 7,
+  height: 7,
+  borderRadius: '50%',
+  flexShrink: 0,
+};
+
+const nameText: CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  fontSize: 12,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+};
+
+const badge: CSSProperties = {
+  flexShrink: 0,
+  fontSize: 10,
+  padding: '1px 5px',
+  borderRadius: 3,
+  background: 'var(--c-surface-2, rgba(255,255,255,.07))',
+  color: 'var(--c-text-muted)',
+};
+
+const rowBody: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  padding: '2px 6px 8px',
+};
+
+const fieldGrid: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr 1fr',
+  gap: 5,
+};
+
+const fieldLabel: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+  minWidth: 0,
+  fontSize: 10,
+  color: 'var(--c-text-muted)',
+};
+
+/** The per-row "put this on the board" button. Filled = placed, hollow + amber = not yet. */
+const placedBtn: CSSProperties = {
+  padding: '2px 6px',
+  border: 'none',
+  borderRadius: 4,
+  background: 'transparent',
+  color: 'var(--c-text-muted)',
+  fontSize: 11,
+  lineHeight: 1,
+  cursor: 'pointer',
+};
+
+const unplacedBtn: CSSProperties = { ...placedBtn, color: '#fbbf24' };
+
+/** Sits under the scrolling list — the border is what stops a half-cut row reading as text. */
+const listFoot: CSSProperties = {
+  fontSize: 10,
+  lineHeight: 1.5,
+  color: 'var(--c-text-muted)',
+  marginTop: 6,
+  paddingTop: 6,
+  borderTop: '1px solid var(--c-border)',
 };
 
 const noteBox: CSSProperties = {

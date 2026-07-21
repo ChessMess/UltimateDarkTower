@@ -54,7 +54,6 @@ interface CreatorStore {
   deckCardKey: string | null;
   // read-only mirror of DungeonBuilderView's selected dungeonId (for the DungeonJsonPanel sidebar).
   dungeonSelection: string | null;
-  boardSelection: string | null;
   /**
    * The `setup.board` value displaced when a custom board was activated. `setup.board` is a
    * schema `oneOf`, so `{boardRef}` is mutually exclusive with a hand-authored `{boardState}`
@@ -146,7 +145,6 @@ interface CreatorStore {
   setDeckSelection: (sel: DeckSelection | null) => void;
   setDeckCardKey: (key: string | null) => void;
   setDungeonSelection: (id: string | null) => void;
-  setBoardSelection: (id: string | null) => void;
   setCanvasViewport: (viewport: Viewport | null) => void;
 
   // library.cards / library.decks / library.resources.images editing (schema 0.4.3, deck builder).
@@ -441,7 +439,6 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   deckSelection: null,
   deckCardKey: null,
   dungeonSelection: null,
-  boardSelection: null,
   priorSetupBoard: undefined,
   draftSaveFailed: false,
   canvasViewport: null,
@@ -474,10 +471,6 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
 
   setDungeonSelection(id) {
     set({ dungeonSelection: id });
-  },
-
-  setBoardSelection(id) {
-    set({ boardSelection: id });
   },
 
   setCanvasViewport(viewport) {
@@ -530,7 +523,6 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       deckSelection: null,
       deckCardKey: null,
       dungeonSelection: null,
-      boardSelection: null,
       // Session-scoped, no schema surface: the setup.board oneOf stash MUST NOT survive into
       // another scenario. This is why openScenario() routes through here rather than calling
       // loadScenario() directly.

@@ -10,7 +10,10 @@ import {
   NO_BUILDING,
   activeBoardId,
   boardsOf,
+  clientToNormalized,
+  hasAnchorSlot,
   hasStoredArt,
+  isPlaced,
   locationsInScope,
   pruneToLocations,
   removeLocationsInScope,
@@ -18,7 +21,9 @@ import {
   scopeChoices,
   suggestAdjacency,
   bfsDistance,
+  unplacedLocations,
   validateBoard,
+  viewportFit,
 } from './shared';
 import type { Board } from './shared';
 import { activeBoardLocationNames } from './vocabulary';
@@ -233,6 +238,35 @@ describe('bulk location removal', () => {
       for (const to of tos) expect(names.has(to)).toBe(true);
     }
   });
+
+  describe('isPlaced / unplacedLocations', () => {
+    it('a location is placed once ANY slot has a point', () => {
+      const b = mixed();
+      b.anchors = { A: { skull: { x: 0.5, y: 0.5 } } };
+      expect(isPlaced(b, 'A')).toBe(true);
+      expect(unplacedLocations(b).map((l) => l.name)).toEqual(['B', 'C', 'D']);
+    });
+
+    it('an EMPTY anchors entry is not placed — the row exists but sits nowhere', () => {
+      const b = mixed();
+      b.anchors = { A: {} };
+      expect(isPlaced(b, 'A')).toBe(false);
+      expect(unplacedLocations(b)).toHaveLength(4);
+    });
+
+    it('a freshly added location is unplaced; the RtDT preset is fully placed', () => {
+      const b = mixed();
+      b.locations.push({ name: 'New', kingdom: 'west', terrain: 'Desert' });
+      expect(isPlaced(b, 'New')).toBe(false);
+      expect(unplacedLocations(b).map((l) => l.name)).toEqual(['New']);
+      expect(unplacedLocations(buildRtdtPreset('rtdt-copy'))).toEqual([]);
+    });
+
+    it('removing a location leaves the survivors placed (prune drops only its own anchors)', () => {
+      const next = removeLocationsInScope(mixed(), { kind: 'kingdom', value: 'north' });
+      expect(unplacedLocations(next)).toEqual([]);
+    });
+  });
 });
 
 describe('store — commitBoards / setActiveBoard', () => {
@@ -442,5 +476,111 @@ describe('validateBoard', () => {
 
   it('reports no errors for the RtDT preset', () => {
     expect(validateBoard(buildRtdtPreset('x')).filter((p) => p.level === 'error')).toEqual([]);
+  });
+});
+
+// The canvas is `preserveAspectRatio="xMidYMid meet"`, so the viewBox is uniformly scaled and
+// CENTRED — leaving letterbox bands the old rect-relative maths ignored, which threw placement
+// off by up to ~85px. Ground truth below is computed by hand from the fit, not from the
+// implementation: a square 4096 board in an 880x650 pane fits by HEIGHT (scale 650/4096), so the
+// drawn art is 650x650 with 115px of dead space either side and none top/bottom.
+describe('viewportFit / clientToNormalized', () => {
+  const IMAGE = { width: 4096, height: 4096 };
+  const LANDSCAPE = { left: 0, top: 0, width: 880, height: 650 };
+  const FULL = { x: 0, y: 0, w: 4096, h: 4096 };
+
+  describe('viewportFit', () => {
+    it('fits a square viewBox by the short axis and centres the slack', () => {
+      const fit = viewportFit(LANDSCAPE, 4096, 4096);
+      expect(fit.scale).toBeCloseTo(650 / 4096, 10);
+      expect(fit.padX).toBeCloseTo(115, 10);
+      expect(fit.padY).toBe(0);
+    });
+
+    it('transposes for a portrait pane', () => {
+      const fit = viewportFit({ width: 650, height: 880 }, 4096, 4096);
+      expect(fit.scale).toBeCloseTo(650 / 4096, 10);
+      expect(fit.padX).toBe(0);
+      expect(fit.padY).toBeCloseTo(115, 10);
+    });
+
+    it('leaves no pads when the aspects already agree', () => {
+      const fit = viewportFit({ width: 650, height: 650 }, 4096, 4096);
+      expect(fit.padX).toBe(0);
+      expect(fit.padY).toBe(0);
+    });
+
+    it('degrades to the identity for a zero-size rect (jsdom / hidden element) — never NaN', () => {
+      expect(viewportFit({ width: 0, height: 0 }, 4096, 4096)).toEqual({
+        scale: 1,
+        padX: 0,
+        padY: 0,
+      });
+      expect(viewportFit(LANDSCAPE, 0, 0)).toEqual({ scale: 1, padX: 0, padY: 0 });
+    });
+  });
+
+  describe('clientToNormalized', () => {
+    const at = (x: number, y: number, view = FULL, rect = LANDSCAPE) =>
+      clientToNormalized({ x, y }, rect, view, IMAGE);
+
+    it('maps the pane centre to the image centre', () => {
+      const p = at(440, 325);
+      expect(p.x).toBeCloseTo(0.5, 10);
+      expect(p.y).toBeCloseTo(0.5, 10);
+    });
+
+    it('maps the drawn art’s edges to 0 and 1 — the case the old maths got wrong', () => {
+      expect(at(115, 0).x).toBeCloseTo(0, 10); // left edge of the art, 115px in
+      expect(at(765, 0).x).toBeCloseTo(1, 10); // right edge
+      expect(at(440, 0).y).toBeCloseTo(0, 10); // no vertical letterbox here
+      expect(at(440, 650).y).toBeCloseTo(1, 10);
+    });
+
+    it('clamps a click in the letterbox band instead of going out of range', () => {
+      expect(at(50, 325).x).toBe(0); // left dead zone
+      expect(at(870, 325).x).toBe(1); // right dead zone
+    });
+
+    it('honours pan + zoom: a view window centred on the image still reads 0.5', () => {
+      const p = at(440, 325, { x: 1024, y: 1024, w: 2048, h: 2048 });
+      expect(p.x).toBeCloseTo(0.5, 10);
+      expect(p.y).toBeCloseTo(0.5, 10);
+    });
+
+    it('places a zoomed view’s top-left corner at its pan origin', () => {
+      const p = at(115, 0, { x: 1024, y: 1024, w: 2048, h: 2048 });
+      expect(p.x).toBeCloseTo(0.25, 10); // 1024 / 4096
+      expect(p.y).toBeCloseTo(0.25, 10);
+    });
+
+    it('REGRESSION: the old rect-relative formula disagrees at the edges, agrees at the centre', () => {
+      // What BoardMapCanvas used to do — no letterbox term at all.
+      const old = (clientX: number) => ((clientX - LANDSCAPE.left) / LANDSCAPE.width) * FULL.w;
+      const scale = 650 / 4096;
+
+      expect(old(440) / IMAGE.width).toBeCloseTo(at(440, 325).x, 10);
+      // At the art's left edge the old maths is off by ~85 screen px.
+      const errPx = (old(115) - at(115, 325).x * IMAGE.width) * scale;
+      expect(errPx).toBeGreaterThan(80);
+      expect(errPx).toBeLessThan(90);
+    });
+  });
+});
+
+describe('hasAnchorSlot', () => {
+  const board: Board = {
+    id: 'b',
+    name: 'B',
+    imageInfo: { width: 100, height: 100 },
+    locations: [{ name: 'A', kingdom: 'north', terrain: 'Hills' }],
+    anchors: { A: { hero: { x: 0.1, y: 0.1 } }, B: {} },
+  };
+
+  it('is true only for a slot that carries a point', () => {
+    expect(hasAnchorSlot(board, 'A', 'hero')).toBe(true);
+    expect(hasAnchorSlot(board, 'A', 'foe')).toBe(false);
+    expect(hasAnchorSlot(board, 'B', 'hero')).toBe(false); // empty anchors entry
+    expect(hasAnchorSlot(board, 'Nowhere', 'hero')).toBe(false);
   });
 });

@@ -23,6 +23,14 @@ export const ID_RE = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/;
 export const KINGDOMS = ['north', 'south', 'east', 'west'] as const;
 export type Kingdom = (typeof KINGDOMS)[number];
 
+/** Kingdom → colour. The map fills anchors with it and the locations list dots each row. */
+export const KINGDOM_COLOR: Record<string, string> = {
+  north: '#60a5fa',
+  east: '#facc15',
+  south: '#4ade80',
+  west: '#f87171',
+};
+
 /** The schema's closed lowercase enum ($defs/buildingType). */
 export const BUILDING_TYPES = ['citadel', 'sanctuary', 'village', 'bazaar'] as const;
 export type BuildingType = (typeof BUILDING_TYPES)[number];
@@ -37,7 +45,10 @@ export const TERRAIN_SUGGESTIONS = [
   'Forest',
 ] as const;
 
-export const ANCHOR_SLOTS = ['building', 'skull', 'hero', 'foe', 'marker'] as const;
+/** The five anchor slots, in UI order — `hero` leads because it is the default `activeSlot` and
+ *  the point `locationPoint` treats as a location's position. The order is presentation only:
+ *  JSON keys are unordered, so the schema mirror ($defs/boardDef.anchors) is unaffected. */
+export const ANCHOR_SLOTS = ['hero', 'building', 'foe', 'skull', 'marker'] as const;
 export type AnchorSlot = (typeof ANCHOR_SLOTS)[number];
 
 export type AnchorPoint = { x: number; y: number };
@@ -249,11 +260,81 @@ export function removeLocationsInScope(board: Board, scope: LocationScope): Boar
   );
 }
 
+/**
+ * The geometry `preserveAspectRatio="xMidYMid meet"` applies: ONE uniform scale (the smaller
+ * axis wins, so the whole viewBox fits) plus centring pads on the two spare sides.
+ *
+ * The pads are what a naive `(clientX - rect.left) / rect.width` mapping misses — for a square
+ * board in a landscape pane they are ~115px each, and ignoring them throws a click off by up to
+ * that much (zero error at the centre, worst at the edges).
+ *
+ * `viewBoxPointToClient` in `packages/board/src/renderers/rotate.ts` is the forward twin of this
+ * (image space → client px); it is not exported from that package's root, hence the local copy.
+ * A zero-size rect or viewBox (jsdom, hidden element) returns the identity rather than `NaN`.
+ *
+ * Note the drawn area `viewW * scale` is INVARIANT under zoom — shrinking the viewBox raises the
+ * scale by the same factor — so the pads do not move as you zoom.
+ */
+export function viewportFit(
+  rect: { width: number; height: number },
+  viewW: number,
+  viewH: number,
+): { scale: number; padX: number; padY: number } {
+  if (rect.width <= 0 || rect.height <= 0 || viewW <= 0 || viewH <= 0) {
+    return { scale: 1, padX: 0, padY: 0 };
+  }
+  const scale = Math.min(rect.width / viewW, rect.height / viewH);
+  return {
+    scale,
+    padX: (rect.width - viewW * scale) / 2,
+    padY: (rect.height - viewH * scale) / 2,
+  };
+}
+
+/**
+ * A client pixel → normalized `[0,1]` image coords, honouring the {@link viewportFit} letterbox.
+ * `view` is the SVG's current viewBox (pan is its origin, zoom shrinks its size); `image` is the
+ * board's `imageInfo`. Clamped, so a click in a letterbox band lands on the nearest edge.
+ */
+export function clientToNormalized(
+  client: { x: number; y: number },
+  rect: { left: number; top: number; width: number; height: number },
+  view: { x: number; y: number; w: number; h: number },
+  image: { width: number; height: number },
+): AnchorPoint {
+  const { scale, padX, padY } = viewportFit(rect, view.w, view.h);
+  const ux = (client.x - rect.left - padX) / scale + view.x;
+  const uy = (client.y - rect.top - padY) / scale + view.y;
+  return { x: clamp01(ux / image.width), y: clamp01(uy / image.height) };
+}
+
+const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
+
 /** A location's representative point (its `hero` anchor, else any slot it has). */
 export function locationPoint(board: Board, name: string): AnchorPoint | undefined {
   const slots = board.anchors?.[name];
   if (!slots) return undefined;
   return slots.hero ?? slots.building ?? slots.foe ?? slots.marker ?? slots.skull;
+}
+
+/**
+ * True once a location has an anchor in ANY slot — i.e. it has a spot on the board.
+ * A location is just a row of data until then: the map canvas draws nothing for it, adjacency
+ * can't reach it, and no token can rest on it. Stricter than `anchors[name] !== undefined`,
+ * which an emptied `{}` would satisfy.
+ */
+export function isPlaced(board: Board, name: string): boolean {
+  return locationPoint(board, name) !== undefined;
+}
+
+/** The locations that exist in data but sit nowhere on the board — what the editor nudges about. */
+export function unplacedLocations(board: Board): BoardLocation[] {
+  return board.locations.filter((l) => !isPlaced(board, l.name));
+}
+
+/** True when this exact slot carries a point — what fills/hollows the Anchor-slot buttons. */
+export function hasAnchorSlot(board: Board, name: string, slot: AnchorSlot): boolean {
+  return board.anchors?.[name]?.[slot] !== undefined;
 }
 
 /**

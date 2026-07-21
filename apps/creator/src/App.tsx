@@ -4,7 +4,7 @@ import './App.css';
 import { CreatorCanvas } from './canvas';
 import { DeckBuilderView, DeckJsonPanel } from './decks';
 import { DungeonBuilderView, DungeonJsonPanel } from './dungeons';
-import { BoardBuilderView, BoardJsonPanel } from './boards';
+import { BoardBuilderView } from './boards';
 import {
   PalettePanel,
   InspectorPanel,
@@ -145,8 +145,8 @@ export default function App() {
         className={`creator-layout${focusMode ? ' creator-layout--focus' : ''}${
           centerView === 'decks' ? ' creator-layout--decks' : ''
         }${centerView === 'dungeons' ? ' creator-layout--dungeons' : ''}${
-          bottomCollapsed ? ' creator-layout--bottom-collapsed' : ''
-        }`}
+          centerView === 'boards' ? ' creator-layout--boards' : ''
+        }${bottomCollapsed ? ' creator-layout--bottom-collapsed' : ''}`}
       >
         {/* Top bar */}
         <div className="creator-topbar">
@@ -238,14 +238,13 @@ export default function App() {
           </div>
         </div>
 
-        {/* Right: Inspector (canvas) | Deck JSON (decks) | Dungeon JSON (dungeons) | Board JSON (boards) */}
+        {/* Right: Inspector (canvas) | Deck JSON (decks) | Dungeon JSON (dungeons).
+            The Boards view collapses this column entirely — see .creator-layout--boards. */}
         <div className="creator-inspector">
           {centerView === 'decks' ? (
             <DeckJsonPanel />
           ) : centerView === 'dungeons' ? (
             <DungeonJsonPanel />
-          ) : centerView === 'boards' ? (
-            <BoardJsonPanel />
           ) : (
             <InspectorPanel />
           )}
