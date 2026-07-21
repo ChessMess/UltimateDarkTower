@@ -21,6 +21,7 @@ import {
   scopeChoices,
   suggestAdjacency,
   bfsDistance,
+  terrainChoices,
   unplacedLocations,
   validateBoard,
   viewportFit,
@@ -178,10 +179,10 @@ describe('bulk location removal', () => {
       { value: 'north', n: 2 },
       { value: 'south', n: 2 },
     ]);
-    // 'citadel' before 'bazaar' — BUILDING_TYPES order, not alphabetical — and (none) last.
+    // BUILDING_TYPES order, which is A-Z — and (none) always last, however it sorts.
     expect(scopeChoices(b, 'building')).toEqual([
-      { value: 'citadel', n: 1 },
       { value: 'bazaar', n: 1 },
+      { value: 'citadel', n: 1 },
       { value: NO_BUILDING, n: 2 },
     ]);
     expect(scopeChoices(b, 'terrain')).toEqual([
@@ -565,6 +566,54 @@ describe('viewportFit / clientToNormalized', () => {
       expect(errPx).toBeGreaterThan(80);
       expect(errPx).toBeLessThan(90);
     });
+  });
+});
+
+describe('terrainChoices', () => {
+  const withTerrains = (...terrains: string[]): Board => ({
+    id: 'b',
+    name: 'B',
+    imageInfo: { width: 100, height: 100 },
+    locations: terrains.map((terrain, i) => ({
+      name: `L${i}`,
+      kingdom: 'north' as const,
+      terrain,
+    })),
+  });
+
+  it('always offers RtDT’s six, A-Z', () => {
+    expect(terrainChoices(withTerrains())).toEqual([
+      'Desert',
+      'Forest',
+      'Grasslands',
+      'Hills',
+      'Lake',
+      'Mountains',
+    ]);
+  });
+
+  it('merges the board’s own terrains into the same A-Z list, deduplicated', () => {
+    const choices = terrainChoices(withTerrains('Hills', 'Swamp', 'Ashlands', 'Swamp', 'Forest'));
+    expect(choices).toEqual([
+      'Ashlands',
+      'Desert',
+      'Forest',
+      'Grasslands',
+      'Hills',
+      'Lake',
+      'Mountains',
+      'Swamp',
+    ]);
+  });
+
+  it('ignores blank terrains rather than offering an empty option', () => {
+    expect(terrainChoices(withTerrains('', '   '))).toHaveLength(6);
+  });
+
+  it('covers every terrain the RtDT preset uses, so no row falls off the list', () => {
+    const preset = buildRtdtPreset('rtdt-copy');
+    const choices = new Set(terrainChoices(preset));
+    for (const loc of preset.locations) expect(choices.has(loc.terrain)).toBe(true);
   });
 });
 

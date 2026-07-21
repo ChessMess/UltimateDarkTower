@@ -31,8 +31,9 @@ export const KINGDOM_COLOR: Record<string, string> = {
   west: '#f87171',
 };
 
-/** The schema's closed lowercase enum ($defs/buildingType). */
-export const BUILDING_TYPES = ['citadel', 'sanctuary', 'village', 'bazaar'] as const;
+/** The schema's closed lowercase enum ($defs/buildingType), A-Z for the pickers. A JSON enum is
+ *  a set, so this order is presentation only — the schema and engine unions are unaffected. */
+export const BUILDING_TYPES = ['bazaar', 'citadel', 'sanctuary', 'village'] as const;
 export type BuildingType = (typeof BUILDING_TYPES)[number];
 
 /** RtDT's own six terrains — suggestions only; `terrain` is an open string in the schema. */
@@ -48,6 +49,23 @@ export const TERRAIN_SUGGESTIONS = [
 /** The five anchor slots, in UI order — `hero` leads because it is the default `activeSlot` and
  *  the point `locationPoint` treats as a location's position. The order is presentation only:
  *  JSON keys are unordered, so the schema mirror ($defs/boardDef.anchors) is unaffected. */
+/**
+ * Every terrain the picker offers: RtDT's six, then any OTHER value this board already uses.
+ *
+ * `terrain` is an open string in the schema, so a custom board's own vocabulary has to survive
+ * — and once one location uses it, the rest can pick it from the list rather than retyping it.
+ * (This replaced a `<datalist>`, which browsers filter against whatever is already in the input:
+ * a location sitting on "Grasslands" was offered exactly one suggestion, "Grasslands".)
+ */
+export function terrainChoices(board: Board): string[] {
+  const all = new Set<string>(TERRAIN_SUGGESTIONS);
+  for (const loc of board.locations) {
+    const t = loc.terrain.trim();
+    if (t) all.add(t);
+  }
+  return [...all].sort((a, b) => a.localeCompare(b));
+}
+
 export const ANCHOR_SLOTS = ['hero', 'building', 'foe', 'skull', 'marker'] as const;
 export type AnchorSlot = (typeof ANCHOR_SLOTS)[number];
 

@@ -16,7 +16,6 @@ import {
   KINGDOMS,
   KINGDOM_COLOR,
   NO_BUILDING,
-  TERRAIN_SUGGESTIONS,
   dangerBtn,
   dangerIconBtn,
   hasAnchorSlot,
@@ -30,6 +29,7 @@ import {
   removeLocationsInScope,
   scopeChoices,
   smallBtn,
+  terrainChoices,
   unplacedLocations,
   validateBoard,
 } from './shared';
@@ -95,6 +95,10 @@ export function BoardEditorPanel({
   });
   // The draft scope while the bulk-remove dialog is open; null = closed.
   const [removeScope, setRemoveScope] = useState<LocationScope | null>(null);
+  // The location whose terrain is being typed freehand, if any. Keyed by NAME rather than a
+  // boolean so it scopes itself to that row and lapses when the selection moves on.
+  const [customTerrainFor, setCustomTerrainFor] = useState<string | null>(null);
+  const terrains = terrainChoices(board);
 
   /**
    * Adopt the built-in RtDT art. `imageInfo` follows the art it describes — the built-in board is
@@ -412,14 +416,47 @@ export function BoardEditorPanel({
                       </label>
                       <label style={fieldLabel}>
                         terrain
-                        <input
-                          style={{ ...inputStyle, width: '100%' }}
-                          list="udt-terrains"
-                          value={loc.terrain}
-                          onChange={(e) => patchLocation(i, { terrain: e.target.value })}
-                        />
+                        {/* An empty terrain has no option to select, and a bare <select> would
+                            silently show the first one — so it stays a text field until fixed. */}
+                        {customTerrainFor === loc.name || loc.terrain.trim() === '' ? (
+                          <input
+                            style={{ ...inputStyle, width: '100%' }}
+                            value={loc.terrain}
+                            autoFocus
+                            placeholder="terrain"
+                            onBlur={() => {
+                              if (loc.terrain.trim()) setCustomTerrainFor(null);
+                            }}
+                            onChange={(e) => patchLocation(i, { terrain: e.target.value })}
+                          />
+                        ) : (
+                          <select
+                            style={{ ...inputStyle, width: '100%' }}
+                            value={loc.terrain}
+                            onChange={(e) => {
+                              if (e.target.value === CUSTOM_TERRAIN) {
+                                setCustomTerrainFor(loc.name);
+                                return;
+                              }
+                              patchLocation(i, { terrain: e.target.value });
+                            }}
+                          >
+                            {terrains.map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                            <option value={CUSTOM_TERRAIN}>Custom…</option>
+                          </select>
+                        )}
                       </label>
-                      <label style={fieldLabel}>
+                      {/* No Custom… twin to terrain's: buildings are a CLOSED schema enum
+                          ($defs/buildingType) and a hard union in the engine, which keys rules
+                          off the type. A custom value would fail L1 and mean nothing at play. */}
+                      <label
+                        style={fieldLabel}
+                        title="The four building types are fixed by the schema — unlike terrain, they carry game rules"
+                      >
                         building
                         <select
                           style={{ ...inputStyle, width: '100%' }}
@@ -447,15 +484,10 @@ export function BoardEditorPanel({
             );
           })}
         </div>
-        <datalist id="udt-terrains">
-          {TERRAIN_SUGGESTIONS.map((t) => (
-            <option key={t} value={t} />
-          ))}
-        </datalist>
         <div style={listFoot}>
           <strong>◎</strong> places a location on the board · <strong>◉</strong> already placed.
           Renaming remaps anchors and adjacency, but not graph nodes — the Problems panel flags
-          those.
+          those. Terrain is free-form; the four building types are fixed by the schema.
         </div>
       </section>
 
@@ -492,6 +524,10 @@ export function BoardEditorPanel({
     </div>
   );
 }
+
+/** Sentinel `<option>` value that swaps the terrain picker for a free-text field. Not a
+ *  plausible terrain, and harmless if someone types it: it just opens that field. */
+const CUSTOM_TERRAIN = '__custom__';
 
 const FACETS: Array<{ id: ScopeFacet | 'all'; label: string }> = [
   { id: 'all', label: 'Everything' },
