@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type CSSProperties } from 'react';
 import {
   ReactFlow,
   Background,
@@ -30,6 +30,49 @@ const nodeTypes: NodeTypes = {
   groupNode: GroupNode,
 };
 
+const iconBtnStyle: CSSProperties = { display: 'flex', alignItems: 'center', gap: 5 };
+
+// Matches the stroke-icon convention used elsewhere in this toolbar (the focus-mode icon below):
+// 14x14, viewBox 0 0 24 24, currentColor stroke. Paths are Lucide's rotate-ccw/rotate-cw — a
+// near-full circular arrow with a hooked arrowhead, the recognizable undo/redo shape.
+function UndoIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+    </svg>
+  );
+}
+
+function RedoIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+    </svg>
+  );
+}
+
 type CreatorCanvasProps = {
   focusMode: boolean;
   onToggleFocusMode: () => void;
@@ -52,6 +95,12 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
   const selectNode = useCreatorStore((s) => s.selectNode);
   const addNode = useCreatorStore((s) => s.addNode);
   const applyLayout = useCreatorStore((s) => s.applyLayout);
+  // Lengths, not the arrays themselves — a primitive selector so this only re-renders when
+  // undo/redo availability actually flips, not on every edit that pushes a new entry.
+  const canUndo = useCreatorStore((s) => s.undoStack.length > 0);
+  const canRedo = useCreatorStore((s) => s.redoStack.length > 0);
+  const undo = useCreatorStore((s) => s.undo);
+  const redo = useCreatorStore((s) => s.redo);
   const setCanvasViewport = useCreatorStore((s) => s.setCanvasViewport);
   const setScenarioDialog = useCreatorStore((s) => s.setScenarioDialog);
   const { fitView, screenToFlowPosition } = useReactFlow();
@@ -256,6 +305,27 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
               fontSize: 13,
             }}
           >
+            <button
+              className="toolbar-btn"
+              style={iconBtnStyle}
+              onClick={undo}
+              disabled={!canUndo}
+              title={canUndo ? 'Undo last change (Ctrl/Cmd+Z)' : 'Nothing to undo'}
+            >
+              <UndoIcon />
+              Undo
+            </button>
+            <button
+              className="toolbar-btn"
+              style={iconBtnStyle}
+              onClick={redo}
+              disabled={!canRedo}
+              title={canRedo ? 'Redo last undone change (Ctrl/Cmd+Shift+Z)' : 'Nothing to redo'}
+            >
+              <RedoIcon />
+              Redo
+            </button>
+            <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
             <button
               className="toolbar-btn"
               onClick={() => {

@@ -41,12 +41,6 @@ export function ScenarioBar() {
   const saveCurrent = useCreatorStore((s) => s.saveCurrent);
   const saveCurrentAs = useCreatorStore((s) => s.saveCurrentAs);
   const markExported = useCreatorStore((s) => s.markExported);
-  // Lengths, not the arrays themselves — a primitive selector so this only re-renders when
-  // undo/redo availability actually flips, not on every edit that pushes a new entry.
-  const canUndo = useCreatorStore((s) => s.undoStack.length > 0);
-  const canRedo = useCreatorStore((s) => s.redoStack.length > 0);
-  const undo = useCreatorStore((s) => s.undo);
-  const redo = useCreatorStore((s) => s.redo);
   const setCenterView = useCreatorStore((s) => s.setCenterView);
   const scenarioDialog = useCreatorStore((s) => s.scenarioDialog);
   const setScenarioDialog = useCreatorStore((s) => s.setScenarioDialog);
@@ -218,27 +212,6 @@ export function ScenarioBar() {
               title="Open a saved scenario"
             >
               Open…
-            </button>
-          </div>
-
-          <div style={row}>
-            <button
-              className="toolbar-btn"
-              style={grow}
-              onClick={undo}
-              disabled={!canUndo}
-              title={canUndo ? 'Undo last change (Ctrl/Cmd+Z)' : 'Nothing to undo'}
-            >
-              ↶ Undo
-            </button>
-            <button
-              className="toolbar-btn"
-              style={grow}
-              onClick={redo}
-              disabled={!canRedo}
-              title={canRedo ? 'Redo last undone change (Ctrl/Cmd+Shift+Z)' : 'Nothing to redo'}
-            >
-              ↷ Redo
             </button>
           </div>
 
