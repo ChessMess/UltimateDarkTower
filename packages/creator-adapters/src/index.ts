@@ -26,3 +26,12 @@ export type { L2Result } from './validate-refs';
 
 export { validateGraph } from './validate-graph';
 export type { L3Result } from './validate-graph';
+
+export { runScenarioValidation } from './validate-scenario';
+export type {
+  LayerResult,
+  ValidationResults,
+  ValidationResultsL4,
+  L4Runner,
+  RunValidationOptions,
+} from './validate-scenario';

@@ -30,21 +30,20 @@ function loadCollapsed(): boolean {
 }
 
 export function ScenarioBar() {
-  const {
-    schemaDoc,
-    validationResults,
-    isDirty,
-    currentScenarioId,
-    loadScenario,
-    clearScenario,
-    exportScenario,
-    saveCurrent,
-    saveCurrentAs,
-    markExported,
-    setCenterView,
-    scenarioDialog,
-    setScenarioDialog,
-  } = useCreatorStore();
+  // Narrow selectors (one field each) instead of a whole-store subscription.
+  const schemaDoc = useCreatorStore((s) => s.schemaDoc);
+  const validationResults = useCreatorStore((s) => s.validationResults);
+  const isDirty = useCreatorStore((s) => s.isDirty);
+  const currentScenarioId = useCreatorStore((s) => s.currentScenarioId);
+  const loadScenario = useCreatorStore((s) => s.loadScenario);
+  const clearScenario = useCreatorStore((s) => s.clearScenario);
+  const exportScenario = useCreatorStore((s) => s.exportScenario);
+  const saveCurrent = useCreatorStore((s) => s.saveCurrent);
+  const saveCurrentAs = useCreatorStore((s) => s.saveCurrentAs);
+  const markExported = useCreatorStore((s) => s.markExported);
+  const setCenterView = useCreatorStore((s) => s.setCenterView);
+  const scenarioDialog = useCreatorStore((s) => s.scenarioDialog);
+  const setScenarioDialog = useCreatorStore((s) => s.setScenarioDialog);
   const { fitView } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [collapsed, setCollapsed] = useState<boolean>(loadCollapsed);

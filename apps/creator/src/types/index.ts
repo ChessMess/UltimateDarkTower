@@ -126,17 +126,7 @@ export interface ScenarioDoc {
   };
 }
 
-export interface LayerResult {
-  ok: boolean;
-  errors: string[];
-}
-
-export interface ValidationResults {
-  l1: LayerResult;
-  l2: LayerResult;
-  l3: LayerResult;
-  allOk: boolean;
-}
+export type { LayerResult, ValidationResults } from '@udtc/adapters';
 
 export interface NodeCategory {
   prefix: string;

@@ -1,39 +1,16 @@
+import type { TowerEmulatorState, ConnectedClient } from 'ultimatedarktowerrelay-shared';
+// Payload shapes come from the shared IPC contract (type-only — erased at runtime, so the browser
+// bundle stays decoupled from main-process code, same as the relay-shared type import above).
 import type {
-  TowerEmulatorState,
-  ConnectedClient,
-  RelayEvent,
-} from 'ultimatedarktowerrelay-shared';
-import type { SessionSummary, TimelineRow } from 'ultimatedarktowerrelay-core';
+  SourceMode,
+  ActionResult,
+  LogFileInfo,
+  LogListResult,
+  LogAnalysisResult,
+  EventLogResult,
+} from '../shared/ipc-channels';
 
 // ─── Window type augmentation ─────────────────────────────────────────────────
-
-type SourceMode = 'emulator' | 'mock' | 'real';
-interface ActionResult {
-  ok: boolean;
-  reason?: string;
-}
-
-interface LogFileInfo {
-  name: string;
-  sizeBytes: number;
-  mtimeMs: number;
-}
-interface LogListResult {
-  sessions: LogFileInfo[];
-  events: LogFileInfo[];
-}
-type LogAnalysisResult =
-  | {
-      ok: true;
-      fileCount: number;
-      summary: SessionSummary;
-      timeline: { rows: TimelineRow[]; total: number };
-      anomalies: Array<{ type: string; message: string }>;
-    }
-  | { ok: false; reason: string };
-type EventLogResult =
-  | { ok: true; events: RelayEvent[]; total: number; truncated: boolean }
-  | { ok: false; reason: string };
 
 interface DarkTowerRelayAPI {
   getVersion(): Promise<string>;

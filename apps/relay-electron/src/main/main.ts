@@ -10,13 +10,15 @@ import {
   makeConsumerLeftEvent,
   type RelayEvent,
 } from 'ultimatedarktowerrelay-shared';
+import type { NotificationSink, DeviceInformation, TowerSource } from 'ultimatedarktowerrelay-core';
+import { IPC } from '../shared/ipc-channels';
 import type {
-  NotificationSink,
-  DeviceInformation,
-  TowerSource,
-  SessionSummary,
-  TimelineRow,
-} from 'ultimatedarktowerrelay-core';
+  SourceMode,
+  LogFileInfo,
+  LogListResult,
+  LogAnalysisResult,
+  EventLogResult,
+} from '../shared/ipc-channels';
 
 // ─── Early file logging (captures output when launched from Finder) ─────────
 // Set up BEFORE any native module imports so load failures are captured.
@@ -30,6 +32,17 @@ try {
 }
 const startupLogPath = path.join(_startupLogDir, 'startup.log');
 fs.mkdirSync(_startupLogDir, { recursive: true });
+// Rotate the previous launch's log aside before truncating. A launch-failure log that only ever
+// retains the CURRENT launch discards the "it crashed yesterday" evidence it exists to capture —
+// keep the last two launches (startup.log + startup.log.prev), bounded. The current log stays a
+// fresh write each launch so it's clean and parseable.
+try {
+  if (fs.existsSync(startupLogPath)) {
+    fs.renameSync(startupLogPath, path.join(_startupLogDir, 'startup.log.prev'));
+  }
+} catch {
+  // best-effort rotation — never block startup on it
+}
 const _logStream = fs.createWriteStream(startupLogPath, { flags: 'w' });
 
 function _fileLog(level: string, ...args: unknown[]): void {
@@ -74,7 +87,10 @@ console.log(`cwd: ${process.cwd()}`);
 
 process.on('uncaughtException', (err) => {
   _fileLog('FATAL', `Uncaught exception: ${err.stack ?? err.message}`);
-  _logStream.end();
+  // Registering this handler suppresses Node's default crash-and-terminate, so without an explicit
+  // exit the app would keep running in an unknown state — and blind, since the log stream is closed
+  // below. Flush the FATAL line, then exit non-zero so the process actually dies.
+  _logStream.end(() => process.exit(1));
 });
 process.on('unhandledRejection', (reason) => {
   _fileLog('FATAL', 'Unhandled rejection:', reason instanceof Error ? reason : String(reason));
@@ -93,67 +109,12 @@ if (started) {
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
-// ─── IPC channel names shared with preload ──────────────────────────────────
-export const IPC = {
-  GET_VERSION: 'get-version',
-  GET_RELAY_STATUS: 'get-relay-status',
-  GET_BLE_STATE: 'get-ble-state',
-  GET_TOWER_STATE: 'get-tower-state',
-  GET_SOURCE: 'get-source',
-  SET_SOURCE: 'set-source',
-  SOURCE_CHANGED: 'source:changed',
-  TOWER_STATE: 'tower:state',
-  RELAY_CLIENT_CHANGE: 'relay:client-change',
-  RELAY_STATUS: 'relay:status',
-  TOWER_COMMAND: 'tower:command',
-  BLE_ADAPTER_STATE: 'ble:adapter-state',
-  TRIGGER_SKULL_DROP: 'trigger:skull-drop',
-  TOWER_START_ADVERTISING: 'tower:start-advertising',
-  TOWER_STOP_ADVERTISING: 'tower:stop-advertising',
-  TOGGLE_LOGGING: 'toggle-logging',
-  GET_LOGGING_STATE: 'get-logging-state',
-  OPEN_LOG_DIR: 'open-log-dir',
-  RESEND_LAST_STATE: 'resend-last-state',
-  LOGS_LIST: 'logs:list',
-  LOGS_ANALYZE: 'logs:analyze',
-  LOGS_LOAD_EVENTS: 'logs:load-events',
-  RESIZE_CONTENT_HEIGHT: 'window:resize-content-height',
-} as const;
-
-/** Tower source the GUI can drive. (`bridge` stays CLI-only.) */
-export type SourceMode = 'emulator' | 'mock' | 'real';
-
-// ─── Log-viewer (FR-7.3) payload shapes ─────────────────────────────────────
-// Analysis runs here in main (it has `fs`); the renderer renders the results
-// read-only. Caps bound the IPC payload + DOM; the CLIs remain the unbounded path.
+// ─── Log-viewer (FR-7.3) analysis caps ──────────────────────────────────────
+// Analysis runs here in main (it has `fs`); the renderer renders the results read-only. Caps
+// bound the IPC payload + DOM; the CLIs remain the unbounded path. (Channel names + payload
+// shapes live in ../shared/ipc-channels.)
 const TIMELINE_LIMIT = 500;
 const EVENT_LIMIT = 2000;
-
-/** A log file the viewer can list (a `session-*` or `events-*` JSONL). */
-interface LogFileInfo {
-  name: string;
-  sizeBytes: number;
-  mtimeMs: number;
-}
-
-interface LogListResult {
-  sessions: LogFileInfo[];
-  events: LogFileInfo[];
-}
-
-type LogAnalysisResult =
-  | {
-      ok: true;
-      fileCount: number;
-      summary: SessionSummary;
-      timeline: { rows: TimelineRow[]; total: number };
-      anomalies: Array<{ type: string; message: string }>;
-    }
-  | { ok: false; reason: string };
-
-type EventLogResult =
-  | { ok: true; events: RelayEvent[]; total: number; truncated: boolean }
-  | { ok: false; reason: string };
 
 // ─── Lazy-loaded core modules ───────────────────────────────────────────────
 // Loaded inside initApp() so the file logging above captures any native module

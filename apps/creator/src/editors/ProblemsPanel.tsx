@@ -1,7 +1,8 @@
 import { useCreatorStore } from '../store';
 
 export function ProblemsPanel() {
-  const { validationResults, selectNode } = useCreatorStore();
+  const validationResults = useCreatorStore((s) => s.validationResults);
+  const selectNode = useCreatorStore((s) => s.selectNode);
 
   if (!validationResults) {
     return (

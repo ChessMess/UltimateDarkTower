@@ -29,6 +29,7 @@ import {
 import { slugify } from '../utils/scaffold';
 import { runValidation } from '../utils/validation';
 import { canonicalJson } from '../utils/canonical';
+import { nodeIdsInError } from '../utils/nodeErrors';
 import { applyDagreLayout } from '../utils/layout';
 import { syncDungeonNodes, BASE_X, BASE_Y } from '../dungeons/dungeonNodes';
 import type { Dungeon } from '../dungeons/shared';
@@ -102,6 +103,16 @@ interface CreatorStore {
   // last-known canvas pan/zoom, so switching to Decks/Dungeons and back doesn't reset the viewport.
   // null means "no saved viewport yet" — CreatorCanvas falls back to fitView on mount.
   canvasViewport: Viewport | null;
+  /**
+   * Undo/redo history, scoped to the document only (not UI/view state like selection or
+   * canvasViewport — "cannot be undone" always meant losing document content). `schemaDoc` is
+   * already immutable and structurally shared (every mutator produces a new top-level object
+   * rather than mutating in place), so these are just arrays of past/future references — no
+   * cloning or serialization. Bounded by UNDO_LIMIT; loadScenario/clearScenario reset both, since
+   * "undo" into a DIFFERENT previously-open scenario would be surprising.
+   */
+  undoStack: ScenarioDoc[];
+  redoStack: ScenarioDoc[];
 
   // Scenario lifecycle
   loadScenario: (doc: ScenarioDoc, autoLayout?: boolean) => void;
@@ -198,6 +209,10 @@ interface CreatorStore {
 
   // Auto-layout
   applyLayout: () => void;
+
+  // Undo/redo (document only — see undoStack/redoStack)
+  undo: () => void;
+  redo: () => void;
 }
 
 let _nodeCounter = 0;
@@ -211,12 +226,10 @@ function revalidate(doc: ScenarioDoc): ValidationResults {
 }
 
 function annotateErrors(nodes: CreatorNode[], results: ValidationResults): CreatorNode[] {
+  const knownIds = new Set(nodes.map((n) => n.id));
   const errorsByNode: Record<string, string[]> = {};
   for (const err of [...results.l2.errors, ...results.l3.errors]) {
-    // Errors that reference a node id (heuristic: look for quoted ids like "n-xxx")
-    const match = err.match(/"([a-z0-9]+(?:[-_][a-z0-9]+)*)"/);
-    if (match) {
-      const nodeId = match[1];
+    for (const nodeId of nodeIdsInError(err, knownIds)) {
       errorsByNode[nodeId] ??= [];
       errorsByNode[nodeId].push(err);
     }
@@ -288,6 +301,135 @@ async function writeCurrent(
   return ok;
 }
 
+/** Undo/redo history depth. Just object references (schemaDoc is already immutable/structurally
+ *  shared), so this is cheap — bounded mainly to keep a very long session from growing unbounded. */
+export const UNDO_LIMIT = 100;
+
+/**
+ * Commits within this many ms of each other coalesce into ONE undo entry. Without this, a
+ * controlled text field (node label, description, main goal) pushes a new entry on every
+ * keystroke — technically correct, but it makes Undo revert one character at a time instead of
+ * "the edit," which is not what a user asking for undo wants. Any edit path can be part of a
+ * burst, not just typing; this is a deliberate simplification (two genuinely separate actions
+ * within the window also coalesce) traded for not having to plumb "is this a keystroke" through
+ * every mutator.
+ */
+export const UNDO_COALESCE_MS = 700;
+let _lastCommitAt = 0;
+
+/**
+ * Push the CURRENT schemaDoc onto the undo stack (bounded, coalesced — see UNDO_COALESCE_MS) and
+ * clear the redo stack — call before committing a new document. A fresh edit always invalidates
+ * whatever redo branch existed, matching standard undo/redo semantics (undo, undo, then edit: the
+ * redone-away states are gone).
+ */
+function pushUndo(get: () => CreatorStore): Pick<CreatorStore, 'undoStack' | 'redoStack'> {
+  const { schemaDoc, undoStack } = get();
+  const now = Date.now();
+  const withinBurst = now - _lastCommitAt < UNDO_COALESCE_MS;
+  _lastCommitAt = now;
+  if (withinBurst) {
+    // Same burst as the last commit — leave the stack pointed at the state from BEFORE the burst
+    // started, so one Undo reverts the whole burst rather than one keystroke.
+    return { undoStack, redoStack: [] };
+  }
+  return {
+    undoStack: schemaDoc ? [...undoStack, schemaDoc].slice(-UNDO_LIMIT) : undoStack,
+    redoStack: [],
+  };
+}
+
+/** Force the next commit to start a fresh undo entry rather than coalescing into whatever burst
+ *  was in progress — call at the start of undo/redo/load/clear, all of which change schemaDoc
+ *  out from under any burst the user was mid-typing. */
+function resetUndoBurst(): void {
+  _lastCommitAt = 0;
+}
+
+/**
+ * The shared "derive RF state → revalidate → annotate node errors → commit" tail, previously
+ * copy-pasted across ~13 mutators (syncFromRF, addNode, deleteNode, updateNodeProps, commitDungeons,
+ * createGroup, setEntry, and others).
+ *
+ * `nodes`/`edges` default to a fresh `deriveRF(doc)`. Pass them explicitly when the caller already
+ * has current RF state that must be preserved rather than rebuilt — syncFromRF, most notably: its
+ * incoming nodes carry React Flow's own runtime fields (selection, drag-in-progress) that a fresh
+ * derive would silently drop. `mapNodes` runs on those nodes before error-annotation, for the rare
+ * mutator (setEntry) that also stamps a per-node flag.
+ */
+function commitDoc(
+  get: () => CreatorStore,
+  set: (partial: Partial<CreatorStore>) => void,
+  doc: ScenarioDoc,
+  options: {
+    nodes?: CreatorNode[];
+    edges?: Edge[];
+    mapNodes?: (nodes: CreatorNode[]) => CreatorNode[];
+    extra?: Partial<CreatorStore>;
+  } = {},
+): void {
+  const derived =
+    options.nodes && options.edges ? { nodes: options.nodes, edges: options.edges } : deriveRF(doc);
+  const nodes = options.mapNodes ? options.mapNodes(derived.nodes) : derived.nodes;
+  const results = revalidate(doc);
+  const annotated = annotateErrors(nodes, results);
+  set({
+    ...pushUndo(get),
+    schemaDoc: doc,
+    rfNodes: annotated,
+    rfEdges: derived.edges,
+    validationResults: results,
+    isDirty: true,
+    ...options.extra,
+  });
+}
+
+/**
+ * The "revalidate → commit" tail for scenario-wide edits that don't touch node/wire shape
+ * (updateScenarioDescription, updateSetupSelections, updateMainGoal) — no RF re-derivation or
+ * per-node annotation needed, since nothing about the graph itself changed.
+ */
+function commitDocOnly(
+  get: () => CreatorStore,
+  set: (partial: Partial<CreatorStore>) => void,
+  doc: ScenarioDoc,
+): void {
+  const results = revalidate(doc);
+  set({ ...pushUndo(get), schemaDoc: doc, validationResults: results, isDirty: true });
+}
+
+/**
+ * The "clone library → mutate → revalidate → commit" tail, previously copy-pasted across
+ * updateLibraryCards/updateLibraryDecks/updateBattleDefs/updateResourceImages (plus
+ * updateFoeBattleDefId, whose nested edit doesn't fit `setOrDeleteKey` below but shares this same
+ * tail). No RF re-derivation — none of library.cards/decks/battleDefs/resources/foes are
+ * node-scoped. `mutate` edits the cloned library object in place.
+ */
+function commitLibrary(
+  get: () => CreatorStore,
+  set: (partial: Partial<CreatorStore>) => void,
+  mutate: (library: Record<string, unknown>) => void,
+): void {
+  const { schemaDoc } = get();
+  if (!schemaDoc) return;
+  const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
+  mutate(library);
+  const updated: ScenarioDoc = { ...schemaDoc, library };
+  commitDocOnly(get, set, updated);
+}
+
+/** Replace `obj[key]` with `value`, or delete the key when `value`'s map is empty — keeps exports
+ *  free of empty scaffolding ({} containers). The exact shape of the 3 library mutators that just
+ *  replace one whole top-level key (cards/decks/battleDefs). */
+function setOrDeleteKey(
+  obj: Record<string, unknown>,
+  key: string,
+  value: Record<string, unknown>,
+): void {
+  if (Object.keys(value).length > 0) obj[key] = value;
+  else delete obj[key];
+}
+
 export const useCreatorStore = create<CreatorStore>((set, get) => ({
   schemaDoc: null,
   rfNodes: [],
@@ -307,6 +449,8 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   lastSavedImages: undefined,
   scenarioList: [],
   scenarioDialog: null,
+  undoStack: [],
+  redoStack: [],
 
   setCenterView(view) {
     set({ centerView: view });
@@ -341,6 +485,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   },
 
   loadScenario(doc, autoLayout = false) {
+    resetUndoBurst();
     const { nodes: derivedNodes, edges } = deriveRF(doc);
     let nodes = derivedNodes;
     let finalDoc = doc;
@@ -361,6 +506,10 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       // Seed the tracker to THIS document's images. Without it a freshly-opened doc carries a
       // foreign identity and its first autosave rewrites the entire image blob for no reason.
       lastSavedImages: readImages(finalDoc),
+      // Loading a (possibly different) scenario resets undo history — "undo" into a document that
+      // isn't the one on screen would be surprising, and it would pin the old doc in memory.
+      undoStack: [],
+      redoStack: [],
     });
   },
 
@@ -372,6 +521,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   },
 
   clearScenario() {
+    resetUndoBurst();
     set({
       schemaDoc: null,
       rfNodes: [],
@@ -390,6 +540,8 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       currentScenarioId: null,
       // A stale identity from the previous scenario would suppress the next one's first image write.
       lastSavedImages: undefined,
+      undoStack: [],
+      redoStack: [],
     });
   },
 
@@ -478,15 +630,9 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const { schemaDoc } = get();
     if (!schemaDoc) return;
     const updated = flowToSchema(nodes, edges, schemaDoc);
-    const results = revalidate(updated);
-    const annotated = annotateErrors(nodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-    });
+    // Pass the incoming nodes/edges through rather than re-deriving: they carry React Flow's own
+    // runtime fields (selection, drag-in-progress) that a fresh deriveRF(updated) would drop.
+    commitDoc(get, set, updated, { nodes, edges });
   },
 
   setRfNodes(nodes) {
@@ -511,15 +657,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const { nodes: derivedNodes, edges } = deriveRF(updated);
     // Set position for the new node
     const nodes = derivedNodes.map((n) => (n.id === id ? { ...n, position } : n));
-    const results = revalidate(updated);
-    const annotated = annotateErrors(nodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-    });
+    commitDoc(get, set, updated, { nodes, edges });
   },
 
   deleteNode(id) {
@@ -557,17 +695,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       ...schemaDoc,
       graph: { entry: newEntry, nodes: cleanNodes },
     };
-    const { nodes, edges } = deriveRF(updated);
-    const results = revalidate(updated);
-    const annotated = annotateErrors(nodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-      selectedNodeId: null,
-    });
+    commitDoc(get, set, updated, { extra: { selectedNodeId: null } });
   },
 
   updateNodeProps(id, props) {
@@ -582,16 +710,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
         ),
       },
     };
-    const { nodes, edges } = deriveRF(updated);
-    const results = revalidate(updated);
-    const annotated = annotateErrors(nodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-    });
+    commitDoc(get, set, updated);
   },
 
   // lifecycle.selectHero: ensure a library.heroes entry exists for every heroId in a node's
@@ -613,16 +732,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       ...schemaDoc,
       library: { ...schemaDoc.library, heroes: nextHeroes },
     };
-    const { nodes, edges } = deriveRF(updated);
-    const results = revalidate(updated);
-    const annotated = annotateErrors(nodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-    });
+    commitDoc(get, set, updated);
   },
 
   updateNodeLabel(id, label) {
@@ -635,16 +745,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
         nodes: schemaDoc.graph.nodes.map((n) => (n.id === id ? { ...n, label } : n)),
       },
     };
-    const { nodes, edges } = deriveRF(updated);
-    const results = revalidate(updated);
-    const annotated = annotateErrors(nodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-    });
+    commitDoc(get, set, updated);
   },
 
   updateNodeDescription(id, description) {
@@ -665,16 +766,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
         }),
       },
     };
-    const { nodes, edges } = deriveRF(updated);
-    const results = revalidate(updated);
-    const annotated = annotateErrors(nodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-    });
+    commitDoc(get, set, updated);
   },
 
   updateScenarioDescription(description) {
@@ -688,9 +780,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     } else {
       meta = { ...meta, description };
     }
-    const updated: ScenarioDoc = { ...schemaDoc, meta };
-    const results = revalidate(updated);
-    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+    commitDocOnly(get, set, { ...schemaDoc, meta });
   },
 
   // setup.selections are scenario-wide levers (not node-scoped), so — like updateScenarioDescription —
@@ -721,9 +811,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     else delete selections.foes;
     setup.selections = selections;
 
-    const updated: ScenarioDoc = { ...schemaDoc, setup };
-    const results = revalidate(updated);
-    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+    commitDocOnly(get, set, { ...schemaDoc, setup });
   },
 
   // Sets/clears the main goal. Blank title clears setup.selections.mainGoalId but leaves any existing
@@ -760,61 +848,34 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
 
     setup.selections = selections;
     library.quests = quests;
-    const updated: ScenarioDoc = { ...schemaDoc, setup, library };
-    const results = revalidate(updated);
-    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+    commitDocOnly(get, set, { ...schemaDoc, setup, library });
   },
 
   // library.battleDefs is scenario-wide (not node-scoped) — like updateSetupSelections, this only
   // re-validates; no React Flow re-derivation is needed.
   updateBattleDefs(defs) {
-    const { schemaDoc } = get();
-    if (!schemaDoc) return;
-    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
-    if (Object.keys(defs).length > 0) library.battleDefs = defs;
-    else delete library.battleDefs;
-    const updated: ScenarioDoc = { ...schemaDoc, library };
-    const results = revalidate(updated);
-    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+    commitLibrary(get, set, (library) => setOrDeleteKey(library, 'battleDefs', defs));
   },
 
   updateFoeBattleDefId(foeId, defId) {
-    const { schemaDoc } = get();
-    if (!schemaDoc) return;
-    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
-    const foes = { ...((library.foes as Record<string, unknown>) ?? {}) };
-    const foe = { ...((foes[foeId] as Record<string, unknown>) ?? {}) };
-    if (defId) foe.battleDefId = defId;
-    else delete foe.battleDefId;
-    foes[foeId] = foe;
-    library.foes = foes;
-    const updated: ScenarioDoc = { ...schemaDoc, library };
-    const results = revalidate(updated);
-    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+    commitLibrary(get, set, (library) => {
+      const foes = { ...((library.foes as Record<string, unknown>) ?? {}) };
+      const foe = { ...((foes[foeId] as Record<string, unknown>) ?? {}) };
+      if (defId) foe.battleDefId = defId;
+      else delete foe.battleDefId;
+      foes[foeId] = foe;
+      library.foes = foes;
+    });
   },
 
   // library.cards is scenario-wide (schema 0.4.3) — replaces the whole map or clears it when empty.
   updateLibraryCards(cards) {
-    const { schemaDoc } = get();
-    if (!schemaDoc) return;
-    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
-    if (Object.keys(cards).length > 0) library.cards = cards;
-    else delete library.cards;
-    const updated: ScenarioDoc = { ...schemaDoc, library };
-    const results = revalidate(updated);
-    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+    commitLibrary(get, set, (library) => setOrDeleteKey(library, 'cards', cards));
   },
 
   // library.decks is scenario-wide (schema 0.4.3) — replaces the whole map or clears it when empty.
   updateLibraryDecks(decks) {
-    const { schemaDoc } = get();
-    if (!schemaDoc) return;
-    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
-    if (Object.keys(decks).length > 0) library.decks = decks;
-    else delete library.decks;
-    const updated: ScenarioDoc = { ...schemaDoc, library };
-    const results = revalidate(updated);
-    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+    commitLibrary(get, set, (library) => setOrDeleteKey(library, 'decks', decks));
   },
 
   // Set or clear one library.resources.images[id] (a resolved data URL). Empty images/resources
@@ -832,23 +893,17 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   //
   // A null/undefined value clears that id, matching updateResourceImage's contract.
   updateResourceImages(patch) {
-    const { schemaDoc } = get();
-    if (!schemaDoc) return;
     if (Object.keys(patch).length === 0) return;
-    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
-    const resources = { ...((library.resources as Record<string, unknown>) ?? {}) };
-    const images = { ...((resources.images as Record<string, unknown>) ?? {}) };
-    for (const [id, dataUrlOrNull] of Object.entries(patch)) {
-      if (dataUrlOrNull) images[id] = dataUrlOrNull;
-      else delete images[id];
-    }
-    if (Object.keys(images).length > 0) resources.images = images;
-    else delete resources.images;
-    if (Object.keys(resources).length > 0) library.resources = resources;
-    else delete library.resources;
-    const updated: ScenarioDoc = { ...schemaDoc, library };
-    const results = revalidate(updated);
-    set({ schemaDoc: updated, validationResults: results, isDirty: true });
+    commitLibrary(get, set, (library) => {
+      const resources = { ...((library.resources as Record<string, unknown>) ?? {}) };
+      const images = { ...((resources.images as Record<string, unknown>) ?? {}) };
+      for (const [id, dataUrlOrNull] of Object.entries(patch)) {
+        if (dataUrlOrNull) images[id] = dataUrlOrNull;
+        else delete images[id];
+      }
+      setOrDeleteKey(resources, 'images', images);
+      setOrDeleteKey(library, 'resources', resources);
+    });
   },
 
   // library.dungeons is scenario-wide (schema 0.4.4). Unlike the deck mutators, this also re-syncs
@@ -873,16 +928,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       meta: { ...schemaDoc.meta, layout },
       graph: { ...schemaDoc.graph, nodes },
     };
-    const { nodes: rfNodes, edges } = deriveRF(updated);
-    const results = revalidate(updated);
-    const annotated = annotateErrors(rfNodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-    });
+    commitDoc(get, set, updated);
   },
 
   commitBoards(boards) {
@@ -908,16 +954,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       set({ priorSetupBoard: undefined });
     }
 
-    const { nodes: rfNodes, edges } = deriveRF(updated);
-    const results = revalidate(updated);
-    const annotated = annotateErrors(rfNodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-    });
+    commitDoc(get, set, updated);
   },
 
   setActiveBoard(boardId) {
@@ -950,16 +987,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     }
 
     const updated: ScenarioDoc = { ...schemaDoc, setup };
-    const { nodes: rfNodes, edges } = deriveRF(updated);
-    const results = revalidate(updated);
-    const annotated = annotateErrors(rfNodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-    });
+    commitDoc(get, set, updated);
   },
 
   addDungeonSubflow(dungeonId) {
@@ -1028,19 +1056,13 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       meta: { ...schemaDoc.meta, layout },
       graph: { ...withNode.graph, nodes: synced },
     };
-    const { nodes: rfNodes, edges } = deriveRF(updated);
-    const results = revalidate(updated);
-    const annotated = annotateErrors(rfNodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-      centerView: 'canvas',
-      // Force a fit-to-content on the canvas we're about to reveal, so the newly-wired
-      // subflow node is visible instead of restoring wherever the user last panned to.
-      canvasViewport: null,
+    commitDoc(get, set, updated, {
+      extra: {
+        centerView: 'canvas',
+        // Force a fit-to-content on the canvas we're about to reveal, so the newly-wired
+        // subflow node is visible instead of restoring wherever the user last panned to.
+        canvasViewport: null,
+      },
     });
   },
 
@@ -1059,16 +1081,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       ...schemaDoc,
       graph: { ...schemaDoc.graph, nodes: [...schemaDoc.graph.nodes, newNode] },
     };
-    const { nodes, edges } = deriveRF(updated);
-    const results = revalidate(updated);
-    const annotated = annotateErrors(nodes, results);
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
-    });
+    commitDoc(get, set, updated);
   },
 
   setEntry(id) {
@@ -1078,19 +1091,8 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       ...schemaDoc,
       graph: { ...schemaDoc.graph, entry: id },
     };
-    const { nodes, edges } = deriveRF(updated);
-    const results = revalidate(updated);
-    // Re-annotate isEntry flag
-    const annotated = annotateErrors(
-      nodes.map((n) => ({ ...n, data: { ...n.data, isEntry: n.id === id } })),
-      results,
-    );
-    set({
-      schemaDoc: updated,
-      rfNodes: annotated,
-      rfEdges: edges,
-      validationResults: results,
-      isDirty: true,
+    commitDoc(get, set, updated, {
+      mapNodes: (nodes) => nodes.map((n) => ({ ...n, data: { ...n.data, isEntry: n.id === id } })),
     });
   },
 
@@ -1103,6 +1105,44 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     if (!schemaDoc) return;
     const laid = applyDagreLayout(rfNodes, rfEdges);
     const updated = flowToSchema(laid, rfEdges, schemaDoc);
-    set({ schemaDoc: updated, rfNodes: laid, isDirty: true });
+    commitDoc(get, set, updated, { nodes: laid, edges: rfEdges });
+  },
+
+  undo() {
+    const { undoStack, schemaDoc, redoStack } = get();
+    const prev = undoStack[undoStack.length - 1];
+    if (!prev || !schemaDoc) return;
+    resetUndoBurst();
+    const { nodes, edges } = deriveRF(prev);
+    const results = revalidate(prev);
+    const annotated = annotateErrors(nodes, results);
+    set({
+      schemaDoc: prev,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+      undoStack: undoStack.slice(0, -1),
+      redoStack: [...redoStack, schemaDoc].slice(-UNDO_LIMIT),
+    });
+  },
+
+  redo() {
+    const { redoStack, schemaDoc, undoStack } = get();
+    const next = redoStack[redoStack.length - 1];
+    if (!next || !schemaDoc) return;
+    resetUndoBurst();
+    const { nodes, edges } = deriveRF(next);
+    const results = revalidate(next);
+    const annotated = annotateErrors(nodes, results);
+    set({
+      schemaDoc: next,
+      rfNodes: annotated,
+      rfEdges: edges,
+      validationResults: results,
+      isDirty: true,
+      undoStack: [...undoStack, schemaDoc].slice(-UNDO_LIMIT),
+      redoStack: redoStack.slice(0, -1),
+    });
   },
 }));

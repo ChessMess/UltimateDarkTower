@@ -11,7 +11,8 @@ for (const kind of NODE_KINDS) {
 }
 
 export function PalettePanel() {
-  const { schemaDoc, addNode } = useCreatorStore();
+  const schemaDoc = useCreatorStore((s) => s.schemaDoc);
+  const addNode = useCreatorStore((s) => s.addNode);
   const { getViewport } = useReactFlow();
 
   // Which category prefixes are currently collapsed. Default: all collapsed.

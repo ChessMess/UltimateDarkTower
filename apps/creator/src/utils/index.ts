@@ -5,3 +5,5 @@ export { runValidation } from './validation';
 export { applyDagreLayout } from './layout';
 export { loadDraft, clearDraft, type DraftEnvelope } from './draft';
 export { useDraftPersistence } from './useDraftPersistence';
+export { asObj } from './objectHelpers';
+export { errorMentionsNode, nodeIdsInError } from './nodeErrors';

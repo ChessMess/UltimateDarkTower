@@ -21,18 +21,14 @@
  *   --speed <n>       With --realtime, pacing multiplier (default 1; 2 = twice as fast).
  *   --export <fmt>    Serialize to 'json' (pretty array) or 'jsonl' (one per line) and exit.
  *
- * Imports the EventLog helpers from the core package's bleno-free `eventLog`
- * module directly (NOT the `core` barrel, which pulls in TowerEmulator → bleno) — a
+ * Imports the EventLog helpers via the core package's bleno-free `eventLog`
+ * subpath export (NOT the `core` barrel, which pulls in TowerEmulator → bleno) — a
  * log reader must never initialize Bluetooth.
  */
 
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  loadEventLog,
-  replayEventLog,
-  exportEventLog,
-} from 'ultimatedarktowerrelay-core/dist/eventLog';
+import { loadEventLog, replayEventLog, exportEventLog } from 'ultimatedarktowerrelay-core/eventLog';
 import type { RelayEvent } from 'ultimatedarktowerrelay-shared';
 
 interface CliArgs {

@@ -126,7 +126,9 @@ function traceRowFrom(result: StepResult, stepIndex: number, dispatched: number)
 }
 
 export function SimulatorPanel() {
-  const { schemaDoc, validationResults, exportScenario } = useCreatorStore();
+  const schemaDoc = useCreatorStore((s) => s.schemaDoc);
+  const validationResults = useCreatorStore((s) => s.validationResults);
+  const exportScenario = useCreatorStore((s) => s.exportScenario);
   const [running, setRunning] = useState(false);
   const [trace, setTrace] = useState<StepEntry[]>([]);
   const [error, setError] = useState<string | null>(null);

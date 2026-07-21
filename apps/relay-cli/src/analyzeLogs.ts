@@ -23,8 +23,8 @@
  *   --anomalies        Show only anomalies.
  *
  * The pure analysis helpers live in `core` (`logAnalysis.ts`); this CLI imports
- * them via the `ultimatedarktowerrelay-core/dist/logAnalysis` subpath (NOT the
- * `core` barrel, which pulls in TowerEmulator → bleno), so reading logs never
+ * them via the first-class `ultimatedarktowerrelay-core/logAnalysis` subpath export
+ * (NOT the `core` barrel, which pulls in TowerEmulator → bleno), so reading logs never
  * initializes Bluetooth — the same pattern `replayEvents` uses for `eventLog`.
  */
 
@@ -44,7 +44,7 @@ import {
   selectLogFiles,
   parseLogLines,
   detectAnomalies,
-} from 'ultimatedarktowerrelay-core/dist/logAnalysis';
+} from 'ultimatedarktowerrelay-core/logAnalysis';
 
 // ---------------------------------------------------------------------------
 // CLI argument parsing

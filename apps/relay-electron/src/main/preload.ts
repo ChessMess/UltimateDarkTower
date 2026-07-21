@@ -1,103 +1,20 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
+// Channel names (as CH) + payload shapes come from the shared IPC contract — no local copy to keep
+// in sync with main.ts by hand.
+import { IPC as CH } from '../shared/ipc-channels';
 import type {
-  TowerEmulatorState,
-  ConnectedClient,
-  RelayEvent,
-} from 'ultimatedarktowerrelay-shared';
-import type { SessionSummary, TimelineRow } from 'ultimatedarktowerrelay-core';
-
-// ─── IPC channel names (must match main.ts IPC constants) ───────────────────
-const CH = {
-  GET_VERSION: 'get-version',
-  GET_RELAY_STATUS: 'get-relay-status',
-  GET_BLE_STATE: 'get-ble-state',
-  GET_TOWER_STATE: 'get-tower-state',
-  GET_SOURCE: 'get-source',
-  SET_SOURCE: 'set-source',
-  SOURCE_CHANGED: 'source:changed',
-  TOWER_STATE: 'tower:state',
-  RELAY_CLIENT_CHANGE: 'relay:client-change',
-  RELAY_STATUS: 'relay:status',
-  TOWER_COMMAND: 'tower:command',
-  BLE_ADAPTER_STATE: 'ble:adapter-state',
-  TRIGGER_SKULL_DROP: 'trigger:skull-drop',
-  TOWER_START_ADVERTISING: 'tower:start-advertising',
-  TOWER_STOP_ADVERTISING: 'tower:stop-advertising',
-  TOGGLE_LOGGING: 'toggle-logging',
-  GET_LOGGING_STATE: 'get-logging-state',
-  OPEN_LOG_DIR: 'open-log-dir',
-  RESEND_LAST_STATE: 'resend-last-state',
-  LOGS_LIST: 'logs:list',
-  LOGS_ANALYZE: 'logs:analyze',
-  LOGS_LOAD_EVENTS: 'logs:load-events',
-  RESIZE_CONTENT_HEIGHT: 'window:resize-content-height',
-} as const;
-
-// ─── Payload types ───────────────────────────────────────────────────────────
-
-export type SourceMode = 'emulator' | 'mock' | 'real';
-
-export interface TowerStatePayload {
-  state: TowerEmulatorState;
-  detail?: string;
-}
-
-export interface RelayClientChangePayload {
-  clients: ConnectedClient[];
-}
-
-export interface TowerCommandPayload {
-  count: number;
-  lastAt: string;
-}
-
-export interface RelayStatusPayload {
-  running: boolean;
-  port: number;
-  message: string;
-  urls: string[];
-}
-
-export interface BleAdapterStatePayload {
-  state: string;
-}
-
-export interface SourceChangedPayload {
-  source: SourceMode;
-}
-
-export interface ActionResult {
-  ok: boolean;
-  reason?: string;
-}
-
-// ─── Log-viewer (FR-7.3) payload types ──────────────────────────────────────
-
-/** A log file the viewer can list. */
-export interface LogFileInfo {
-  name: string;
-  sizeBytes: number;
-  mtimeMs: number;
-}
-
-export interface LogListResult {
-  sessions: LogFileInfo[];
-  events: LogFileInfo[];
-}
-
-export type LogAnalysisResult =
-  | {
-      ok: true;
-      fileCount: number;
-      summary: SessionSummary;
-      timeline: { rows: TimelineRow[]; total: number };
-      anomalies: Array<{ type: string; message: string }>;
-    }
-  | { ok: false; reason: string };
-
-export type EventLogResult =
-  | { ok: true; events: RelayEvent[]; total: number; truncated: boolean }
-  | { ok: false; reason: string };
+  SourceMode,
+  TowerStatePayload,
+  RelayClientChangePayload,
+  TowerCommandPayload,
+  RelayStatusPayload,
+  BleAdapterStatePayload,
+  SourceChangedPayload,
+  ActionResult,
+  LogListResult,
+  LogAnalysisResult,
+  EventLogResult,
+} from '../shared/ipc-channels';
 
 // ─── contextBridge API ───────────────────────────────────────────────────────
 

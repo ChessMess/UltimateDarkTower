@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import './App.css';
 import { CreatorCanvas } from './canvas';
@@ -36,10 +36,46 @@ export default function App() {
   // schemaDoc is always null on first mount (the store's initial state), so a lazy
   // initializer is sufficient to offer a recovered draft — no effect needed.
   const [pendingDraft, setPendingDraft] = useState<DraftEnvelope | null>(() => loadDraft());
-  const { schemaDoc, validationResults, loadScenario, centerView, setCenterView, draftSaveFailed } =
-    useCreatorStore();
+  // Narrow selectors (one field each) — a whole-store subscription re-rendered App on every write.
+  const schemaDoc = useCreatorStore((s) => s.schemaDoc);
+  const validationResults = useCreatorStore((s) => s.validationResults);
+  const loadScenario = useCreatorStore((s) => s.loadScenario);
+  const centerView = useCreatorStore((s) => s.centerView);
+  const setCenterView = useCreatorStore((s) => s.setCenterView);
+  const draftSaveFailed = useCreatorStore((s) => s.draftSaveFailed);
 
   useDraftPersistence();
+
+  // Global undo/redo (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z, Ctrl+Y). Document-scoped (see store's
+  // undoStack/redoStack), so it's wired here rather than in CreatorCanvas — Decks/Dungeons/Boards
+  // mutate the document too (they route through the same commitDoc/commitLibrary tail) and should
+  // be undoable from those views as well. Skipped while focus is in a text field so the browser's
+  // own in-field undo (reverting a keystroke) isn't hijacked by a document-level jump.
+  useEffect(() => {
+    function isEditableTarget(el: EventTarget | null): boolean {
+      if (!(el instanceof HTMLElement)) return false;
+      const tag = el.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (isEditableTarget(e.target)) return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) useCreatorStore.getState().redo();
+        else useCreatorStore.getState().undo();
+      } else if (key === 'y') {
+        e.preventDefault();
+        useCreatorStore.getState().redo();
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Migrate the legacy localStorage draft into the IndexedDB library, once. Adopting it writes a
   // real library entry and drops the old key, so this path runs at most one more time ever.

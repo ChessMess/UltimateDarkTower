@@ -13,6 +13,7 @@ import {
   TowerSide,
   SealIdentifier,
   LogOutput,
+  type UltimateDarkTowerConfig,
 } from 'ultimatedarktower';
 import { Glyphs } from 'ultimatedarktowerdata';
 
@@ -74,6 +75,17 @@ interface PendingCalibration {
   timer: ReturnType<typeof setTimeout>;
 }
 
+export interface TowerControllerConfig {
+  /**
+   * Config forwarded verbatim to the `UltimateDarkTower` constructor. Supply `{ adapter }` here to
+   * inject a test/emulator BLE adapter (e.g. `MockBluetoothAdapter`) instead of letting the
+   * controller pick a platform from `TOWER_PLATFORM`. When omitted, the env-based default is used —
+   * so the published server behaves exactly as before, but is now embeddable/testable without
+   * mocking the whole `ultimatedarktower` module.
+   */
+  towerConfig?: UltimateDarkTowerConfig;
+}
+
 export class TowerController {
   private static instance: TowerController | null = null;
   private tower: UltimateDarkTower | null = null;
@@ -86,26 +98,33 @@ export class TowerController {
   private pendingCalibration: PendingCalibration | null = null;
   private bufferOutput: BufferOutputType;
 
-  private constructor() {
+  private constructor(private readonly config: TowerControllerConfig = {}) {
     this.bufferOutput = new BufferOutput(500);
   }
 
-  static getInstance(): TowerController {
+  /**
+   * Returns the process-wide singleton, creating it on first call. `config` is honored only on that
+   * first call (the singleton is created once); later calls return the existing instance.
+   */
+  static getInstance(config?: TowerControllerConfig): TowerController {
     if (!TowerController.instance) {
-      TowerController.instance = new TowerController();
+      TowerController.instance = new TowerController(config);
     }
     return TowerController.instance;
   }
 
   private ensureTower(): UltimateDarkTower {
     if (!this.tower) {
+      // An injected towerConfig wins (e.g. { adapter: MockBluetoothAdapter }); otherwise fall back
+      // to the TOWER_PLATFORM env default.
       const platformEnv = process.env.TOWER_PLATFORM;
       const config =
-        platformEnv === 'node'
+        this.config.towerConfig ??
+        (platformEnv === 'node'
           ? { platform: BluetoothPlatform.NODE }
           : platformEnv === 'web'
             ? { platform: BluetoothPlatform.WEB }
-            : undefined;
+            : undefined);
 
       this.tower = new UltimateDarkTower(config);
 
@@ -144,6 +163,19 @@ export class TowerController {
   setLoggerOutputs(outputs: LogOutput[]): void {
     this.ensureTower();
     this.tower!.setLoggerOutputs([...outputs, this.bufferOutput]);
+  }
+
+  /**
+   * The rolling in-memory log buffer (last ~500 entries) that `setLoggerOutputs` always keeps
+   * attached. Exposed so a diagnostics readout can surface recent driver activity — previously the
+   * buffer was filled on every log line but never readable.
+   */
+  getBuffer(): ReturnType<BufferOutputType['getBuffer']> {
+    return this.bufferOutput.getBuffer();
+  }
+
+  getBufferSize(): number {
+    return this.bufferOutput.getBufferSize();
   }
 
   get isConnected(): boolean {

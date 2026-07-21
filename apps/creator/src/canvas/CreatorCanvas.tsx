@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState, type CSSProperties } from 'react';
 import {
   ReactFlow,
   Background,
@@ -30,22 +30,79 @@ const nodeTypes: NodeTypes = {
   groupNode: GroupNode,
 };
 
+const iconBtnStyle: CSSProperties = { display: 'flex', alignItems: 'center', gap: 5 };
+
+// Matches the stroke-icon convention used elsewhere in this toolbar (the focus-mode icon below):
+// 14x14, viewBox 0 0 24 24, currentColor stroke. Paths are Lucide's rotate-ccw/rotate-cw — a
+// near-full circular arrow with a hooked arrowhead, the recognizable undo/redo shape.
+function UndoIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+    </svg>
+  );
+}
+
+function RedoIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+    </svg>
+  );
+}
+
 type CreatorCanvasProps = {
   focusMode: boolean;
   onToggleFocusMode: () => void;
 };
 
 export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasProps) {
-  const { schemaDoc, rfNodes, rfEdges, selectedNodeId, canvasViewport } = useCreatorStore();
-  const {
-    loadScenario,
-    syncFromRF,
-    selectNode,
-    addNode,
-    applyLayout,
-    setCanvasViewport,
-    setScenarioDialog,
-  } = useCreatorStore();
+  // Narrow selectors (one field each) instead of subscribing to the whole store — this is the most
+  // expensive subscriber in the app (the React Flow canvas), and a whole-store subscription re-ran
+  // it on every unrelated write.
+  const schemaDoc = useCreatorStore((s) => s.schemaDoc);
+  const rfNodes = useCreatorStore((s) => s.rfNodes);
+  const rfEdges = useCreatorStore((s) => s.rfEdges);
+  const selectedNodeId = useCreatorStore((s) => s.selectedNodeId);
+  // Read the persisted viewport once at mount (lazy useState, not a subscription). It only seeds
+  // React Flow's initial fitView/defaultViewport; subscribing would re-render the canvas on every
+  // pan/zoom end, because onMoveEnd writes canvasViewport — precisely the churn this removes.
+  const [initialViewport] = useState(() => useCreatorStore.getState().canvasViewport);
+  const loadScenario = useCreatorStore((s) => s.loadScenario);
+  const syncFromRF = useCreatorStore((s) => s.syncFromRF);
+  const selectNode = useCreatorStore((s) => s.selectNode);
+  const addNode = useCreatorStore((s) => s.addNode);
+  const applyLayout = useCreatorStore((s) => s.applyLayout);
+  // Lengths, not the arrays themselves — a primitive selector so this only re-renders when
+  // undo/redo availability actually flips, not on every edit that pushes a new entry.
+  const canUndo = useCreatorStore((s) => s.undoStack.length > 0);
+  const canRedo = useCreatorStore((s) => s.redoStack.length > 0);
+  const undo = useCreatorStore((s) => s.undo);
+  const redo = useCreatorStore((s) => s.redo);
+  const setCanvasViewport = useCreatorStore((s) => s.setCanvasViewport);
+  const setScenarioDialog = useCreatorStore((s) => s.setScenarioDialog);
   const { fitView, screenToFlowPosition } = useReactFlow();
   const groupDragRef = useRef<{
     groupId: string;
@@ -220,8 +277,8 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
         onDragOver={onDragOver}
         onMoveEnd={onMoveEnd}
         deleteKeyCode="Delete"
-        fitView={!canvasViewport}
-        defaultViewport={canvasViewport ?? undefined}
+        fitView={!initialViewport}
+        defaultViewport={initialViewport ?? undefined}
         minZoom={0.05}
         maxZoom={2}
         proOptions={{ hideAttribution: false }}
@@ -248,6 +305,27 @@ export function CreatorCanvas({ focusMode, onToggleFocusMode }: CreatorCanvasPro
               fontSize: 13,
             }}
           >
+            <button
+              className="toolbar-btn"
+              style={iconBtnStyle}
+              onClick={undo}
+              disabled={!canUndo}
+              title={canUndo ? 'Undo last change (Ctrl/Cmd+Z)' : 'Nothing to undo'}
+            >
+              <UndoIcon />
+              Undo
+            </button>
+            <button
+              className="toolbar-btn"
+              style={iconBtnStyle}
+              onClick={redo}
+              disabled={!canRedo}
+              title={canRedo ? 'Redo last undone change (Ctrl/Cmd+Shift+Z)' : 'Nothing to redo'}
+            >
+              <RedoIcon />
+              Redo
+            </button>
+            <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>|</span>
             <button
               className="toolbar-btn"
               onClick={() => {

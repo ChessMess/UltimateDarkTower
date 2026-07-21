@@ -2,18 +2,14 @@
 // This module owns the RelayClient singleton and drives the engine step loop.
 // All persistent state lives in usePlayerStore; this module mutates it via getState().
 
-import Ajv from 'ajv/dist/2020';
-import addFormats from 'ajv-formats';
-import { scenarioSchema } from '@udtc/schema';
 import {
-  validateRefs,
-  validateGraph,
+  runScenarioValidation,
   createBoardAdapter,
   resolveActiveBoardDef,
   createDisplayAdapter,
   createResolver,
 } from '@udtc/adapters';
-import type { BoardState } from '@udtc/adapters';
+import type { BoardState, LayerResult } from '@udtc/adapters';
 import { init, step, deserialize, ENGINE_VERSION } from '@udtc/engine';
 import type { Input, Directive, StepResult, EngineState } from '@udtc/engine';
 import { RelayClient } from '../relay';
@@ -267,69 +263,19 @@ export function unmountDisplay(): void {
 
 // ---- L1–L4 validation ----
 
-export function validateScenario(doc: unknown): ValidationResults {
-  // L1 — JSON Schema
-  const ajv = new Ajv({ strict: true, allErrors: true });
-  addFormats(ajv);
-  const fn = ajv.compile(scenarioSchema);
-  const l1Ok = fn(doc) as boolean;
-  const l1Errors = l1Ok
-    ? []
-    : (fn.errors ?? []).map((e) => `${e.instancePath || '/'} ${e.message ?? 'invalid'}`);
-
-  if (!l1Ok) {
-    return {
-      l1: { ok: false, errors: l1Errors },
-      l2: { ok: false, errors: ['L1 must pass'] },
-      l3: { ok: false, errors: ['L1 must pass'] },
-      l4: { ok: false, errors: [] },
-      allOk: false,
-    };
-  }
-
-  // L2 — reference resolution
-  const l2 = validateRefs(doc);
-  if (!l2.ok) {
-    return {
-      l1: { ok: true, errors: [] },
-      l2: { ok: false, errors: l2.errors },
-      l3: { ok: false, errors: ['L2 must pass'] },
-      l4: { ok: false, errors: [] },
-      allOk: false,
-    };
-  }
-
-  // L3 — graph semantics
-  const l3 = validateGraph(doc);
-  if (!l3.ok) {
-    return {
-      l1: { ok: true, errors: [] },
-      l2: { ok: true, errors: [] },
-      l3: { ok: false, errors: l3.errors },
-      l4: { ok: false, errors: [] },
-      allOk: false,
-    };
-  }
-
-  // L4 — engine.init (structural simulation check)
+// L4 — engine.init structural simulation check. Player's extra tier on top of the shared
+// L1–L3 pipeline; runs only after L1–L3 pass (runScenarioValidation gates it).
+function l4EngineCheck(doc: unknown): LayerResult {
   try {
     init(doc, { seed: PLAYER_SEED, playerCount: PLAYER_COUNT });
-    return {
-      l1: { ok: true, errors: [] },
-      l2: { ok: true, errors: [] },
-      l3: { ok: true, errors: [] },
-      l4: { ok: true, errors: [] },
-      allOk: true,
-    };
+    return { ok: true, errors: [] };
   } catch (e) {
-    return {
-      l1: { ok: true, errors: [] },
-      l2: { ok: true, errors: [] },
-      l3: { ok: true, errors: [] },
-      l4: { ok: false, errors: [String(e)] },
-      allOk: false,
-    };
+    return { ok: false, errors: [String(e)] };
   }
+}
+
+export function validateScenario(doc: unknown): ValidationResults {
+  return runScenarioValidation(doc, { l4: l4EngineCheck });
 }
 
 // ---- Load & start ----
