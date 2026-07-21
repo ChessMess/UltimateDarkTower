@@ -4,10 +4,14 @@
 // else keeps the built-in Return to Dark Tower roster. This mirrors the L2 check in
 // `@udtc/adapters`' `validate-refs`, so what the editor offers is exactly what validates.
 
-// RtDT data comes from @udtc/adapters' reference layer, NOT a direct import of
-// `ultimatedarktower`/`ultimatedarktowerboard`: the creator's Vite config aliases UDT to its CJS
-// build, whose entry reaches UDT's Node-only BLE stack (@stoprocent/noble) and breaks the browser
-// bundle. `udt.ts` is the single module allowed to import UDT, and it is pre-bundled for the browser.
+// RtDT vocabulary comes from @udtc/adapters' reference layer (getUDTReferenceLayer),
+// not a direct `ultimatedarktower`/`ultimatedarktowerboard` import — an architectural
+// choice so the editor's vocabulary has a single source that matches validation (the
+// validate-refs mirror noted above). This is no longer a browser-safety requirement:
+// core shipped a browser-hostile `createRequire` banner until v7.0.0, which now ships a
+// `browser` export condition, so direct core imports are browser-safe (e.g. sibling
+// `@udtc/adapters` modules import core values directly) — going through the reference
+// layer here is about the data-source convention, not the bundle.
 import { getUDTReferenceLayer } from '@udtc/adapters';
 import type { ScenarioDoc } from '../types';
 import { activeBoardId, boardsOf } from './shared';

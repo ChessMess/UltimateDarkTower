@@ -139,18 +139,10 @@ function emitAssetsAsFiles(): Plugin {
 
 export default defineConfig({
   plugins: [redirectExamplePath(), copyTowerAsset(), emitAssetsAsFiles()],
-  resolve: {
-    alias: {
-      // The ESM build of ultimatedarktower uses createRequire which is not
-      // available in browsers. Alias to the CJS build instead.
-      ultimatedarktower: resolve(__dirname, 'node_modules/ultimatedarktower/dist/src/index.js'),
-    },
-  },
-  optimizeDeps: {
-    // Force Vite to pre-bundle the CJS build of ultimatedarktower so esbuild
-    // converts it to proper ESM with all named exports available statically.
-    include: ['ultimatedarktower'],
-  },
+  // `ultimatedarktower` is externalized in the lib build (see rollupOptions.external
+  // below); for the dev/example server it resolves via its `browser` export condition
+  // (dist/browser/index.mjs) since core v7.0.0 — no `createRequire` banner, so the
+  // former CJS alias + pre-bundle are no longer needed.
   assetsInclude: ['**/*.glb', '**/*.ogg'],
   build: {
     lib: {
