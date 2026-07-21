@@ -2,7 +2,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
-import { createRequire } from 'node:module';
 
 // Deployed to the unified Pages site at /UltimateDarkTower/digital/. The base is
 // injected by deploy-pages.yml (--base); '/' keeps local dev/build path-agnostic.
@@ -18,21 +17,17 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      // The ultimatedarktower ESM build ships an esbuild banner
-      // (`createRequire(import.meta.url)`) that throws in the browser. Its CJS
-      // entry is clean — point the browser at it and let Vite pre-bundle it.
-      // Resolve via the package's `main` (dist/src/index.js) so it follows the
-      // pnpm workspace symlink to packages/core.
-      // (Alias boundary matching leaves ...display / ...board untouched.)
-      ultimatedarktower: createRequire(import.meta.url).resolve('ultimatedarktower'),
     },
     // The UDT libraries externalize these peers; a duplicate copy breaks the
     // single shared 3D scene. Force one instance. See PRD-00 FR-00.3.
     dedupe: ['three', 'gsap', '@dimforge/rapier3d-compat', 'react', 'react-dom'],
   },
   optimizeDeps: {
-    // Pre-bundle the linked libs so file: links resolve cleanly in dev.
-    include: ['ultimatedarktower', 'ultimatedarktowerdisplay', 'ultimatedarktowerboard'],
+    // Pre-bundle the linked libs so file: links resolve cleanly in dev. `ultimatedarktower`
+    // no longer needs listing here: since v7.0.0 it ships a `browser` export condition
+    // (dist/browser/index.mjs) with no `createRequire`/noble banner, so Vite resolves a
+    // browser-safe entry directly.
+    include: ['ultimatedarktowerdisplay', 'ultimatedarktowerboard'],
   },
   test: {
     environment: 'jsdom',

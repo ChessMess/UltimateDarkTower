@@ -2,12 +2,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
-import { createRequire } from 'node:module';
-
-// ultimatedarktower v4.1.0's ESM entry uses `import{createRequire}from'module'` (Node-only).
-// Force Vite to bundle the CJS entry instead, which is browser-safe.
-const _require = createRequire(import.meta.url);
-const udtCjsPath = _require.resolve('ultimatedarktower');
 
 export default defineConfig({
   base: '/', // Pages base is set via --base in deploy-pages.yml
@@ -15,18 +9,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      ultimatedarktower: udtCjsPath,
     },
     dedupe: ['react', 'react-dom', 'three', 'gsap', '@dimforge/rapier3d-compat'],
   },
   optimizeDeps: {
-    // `ultimatedarktower` must be pre-bundled explicitly (as apps/digital does). Without it, the
-    // CJS entry the alias above points at is processed by Vite's ESM pipeline, which hoists UDT's
-    // optional `require('@stoprocent/noble')` (Node-only BLE, guarded by a try/catch in
-    // NodeBluetoothAdapter) into an eager import — noble then runs `os.platform()` at module init
-    // and takes the whole app down with "os.platform is not a function". esbuild's dep optimizer
-    // keeps that require lazy. Pre-existing on a cold `.vite` cache; see PR notes.
-    include: ['@udtc/engine', '@udtc/schema', '@udtc/adapters', 'ultimatedarktower'],
+    // Pre-bundle the linked @udtc/* workspace libs so their file: links resolve cleanly in dev.
+    // `ultimatedarktower` no longer needs listing here: since v7.0.0 it ships a `browser` export
+    // condition (dist/browser/index.mjs) with no `createRequire`/noble banner, so Vite resolves a
+    // browser-safe entry directly — no CJS alias, and no eager-noble `os.platform` crash on cold cache.
+    include: ['@udtc/engine', '@udtc/schema', '@udtc/adapters'],
   },
   server: {
     port: 5174,

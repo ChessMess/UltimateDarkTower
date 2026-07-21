@@ -8,6 +8,7 @@
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
+      "browser": "./dist/browser/index.mjs",
       "import": "./dist/esm/index.mjs",
       "require": "./dist/src/index.js"
     }
@@ -28,7 +29,7 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist coverage",
-    "build": "pnpm clean && pnpm typecheck && tsc && esbuild src/index.ts --bundle --format=esm --outfile=dist/esm/index.mjs --packages=external --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
+    "build": "pnpm clean && pnpm typecheck && tsc && esbuild src/index.ts --bundle --format=esm --outfile=dist/esm/index.mjs --packages=external --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" && esbuild src/index.ts --bundle --format=esm --outfile=dist/browser/index.mjs --packages=external --alias:@stoprocent/noble=./src/adapters/noble-browser-stub.cjs",
     "dev": "tsc --watch",
     "ci": "pnpm lint && pnpm typecheck && pnpm test:ci && pnpm build",
     "size": "pnpm build && du -sh dist/",
