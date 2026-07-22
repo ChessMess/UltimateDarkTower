@@ -100,6 +100,87 @@ check('boardRef: a kingdom with no citadel leaves its hero unplaced (null, not a
   return init(withBoard(board)).state.heroes.hero1.location === null;
 });
 
+// ---------- custom building types + heroStart (schema 0.4.7) ----------
+//
+// `library.buildingTypes` is an open registry, so a scenario can replace the RtDT four outright.
+// Which building a hero starts on then comes from the type's `heroStart` flag rather than the
+// literal string 'citadel' — with a fallback to 'citadel' when NOTHING is flagged, which is what
+// keeps every pre-0.4.7 document (the golden fixture included) on its original path.
+
+/** The golden fixture with an author-defined building registry replacing the RtDT four. */
+function withBuildingTypes(sc, types) {
+  sc.library.buildingTypes = types;
+  return sc;
+}
+
+const watchtowerBoard = () =>
+  customBoard({
+    locations: [
+      { name: 'Emberfall', kingdom: 'north', terrain: 'Ash', building: 'watchtower' },
+      { name: 'Saltmere', kingdom: 'north', terrain: 'Lake', building: 'ashen-shrine' },
+    ],
+  });
+
+check('heroStart: a hero starts on a CUSTOM building type flagged heroStart', () => {
+  const sc = withBuildingTypes(withBoard(watchtowerBoard()), {
+    watchtower: { heroStart: true, free: [] },
+    'ashen-shrine': { free: [] },
+  });
+  return init(sc).state.heroes.hero1.location === 'Emberfall';
+});
+
+check('heroStart: an UNflagged custom type is not a home, even as the only building', () => {
+  const sc = withBuildingTypes(withBoard(watchtowerBoard()), {
+    watchtower: { free: [] }, // no heroStart anywhere in the map...
+    'ashen-shrine': { free: [] },
+  });
+  // ...so the fallback applies, and neither type is 'citadel' ⇒ no home.
+  return init(sc).state.heroes.hero1.location === null;
+});
+
+check('heroStart: the flag WINS over a literal citadel on the same board', () => {
+  const board = customBoard({
+    locations: [
+      { name: 'Old Keep', kingdom: 'north', terrain: 'Ash', building: 'citadel' },
+      { name: 'Emberfall', kingdom: 'north', terrain: 'Ash', building: 'watchtower' },
+    ],
+  });
+  const sc = withBuildingTypes(withBoard(board), {
+    citadel: { free: [] },
+    watchtower: { heroStart: true, free: [] },
+  });
+  return init(sc).state.heroes.hero1.location === 'Emberfall';
+});
+
+check('heroStart: FALLBACK — no flag anywhere ⇒ citadel still places heroes (pre-0.4.7)', () => {
+  // The compatibility guarantee. The golden fixture's own buildingTypes carry no heroStart, so
+  // this is the path every existing document takes.
+  const r = init(withBoard(customBoard()), 4);
+  const owner = r.state.kingdoms.ownership;
+  const at = (k) => r.state.heroes[owner[k]].location;
+  return at('north') === 'Emberfall' && at('south') === 'Kingsreach';
+});
+
+check('heroStart: flags are matched case-insensitively, like the building values', () => {
+  const board = customBoard({
+    locations: [{ name: 'Emberfall', kingdom: 'north', terrain: 'Ash', building: 'Watchtower' }],
+  });
+  const sc = withBuildingTypes(withBoard(board), { watchtower: { heroStart: true, free: [] } });
+  return init(sc).state.heroes.hero1.location === 'Emberfall';
+});
+
+check('custom types: a custom skullCapacity is what capacityOf reports', () => {
+  // capacityOf drives BOTH skull paths (skull.place and emergence), so an authored capacity is
+  // honoured at play — the reason 0.4.7 could relax the schema's `const 3`.
+  const sc = withBuildingTypes(withBoard(watchtowerBoard()), {
+    watchtower: { heroStart: true, skullCapacity: 5, free: [] },
+    'ashen-shrine': { free: [] },
+  });
+  const r = init(sc);
+  const b = r.state.buildings.find((x) => x.location === 'Emberfall');
+  return b.type === 'watchtower' && r.state._lib.buildingTypes.watchtower.skullCapacity === 5;
+});
+
 // ---------- buildings registry ----------
 
 check('boardRef: buildings registry lists every building location, in authored order', () => {

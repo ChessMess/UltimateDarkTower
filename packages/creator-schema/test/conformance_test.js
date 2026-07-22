@@ -57,10 +57,34 @@ t.library.buildingTypes.village.free[0] = {
 };
 check('extra prop on resource.gain rejected', t, false);
 
-// Negative: 5th building type
+// Positive (0.4.7): library.buildingTypes is an OPEN registry — a scenario defines its own
+// buildings. This was ' 5th building type rejected' while the map required exactly the RtDT four.
 t = clone(base);
 t.library.buildingTypes.fortress = clone(base.library.buildingTypes.citadel);
-check('5th building type rejected', t, false);
+check('custom building type accepted', t, true);
+
+// Positive: the 0.4.7 fields, and a def carrying only `free` (relaxed `required`).
+t = clone(base);
+t.library.buildingTypes.watchtower = {
+  name: 'Watchtower',
+  heroStart: true,
+  skullCapacity: 5,
+  destroyOnSkull: 6,
+  free: [{ op: 'resource.gain', resource: 'warriors', amount: 1 }],
+};
+t.library.buildingTypes.ruin = { free: [] };
+check('custom def with name/heroStart/capacity, and a free-only def, accepted', t, true);
+
+// Negative: the registry key is an id, not free text — otherwise a location's `building` could
+// never name it (both sides are $defs/id).
+t = clone(base);
+t.library.buildingTypes['Watch Tower'] = clone(base.library.buildingTypes.citadel);
+check('non-id building-type key rejected', t, false);
+
+// Negative: capacity is authorable but still bounded (1..9) — 0 would mean "razed by its 1st skull".
+t = clone(base);
+t.library.buildingTypes.citadel.skullCapacity = 0;
+check('skullCapacity 0 rejected', t, false);
 
 // Negative: skull.dropTrigger carrying a count (emergence count must be tower-determined)
 t = clone(base);

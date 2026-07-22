@@ -2,8 +2,9 @@
 //
 // TRAP — this cannot be a spread of `RTDT_BOARD_DEFINITION`. That definition keeps core's
 // CAPITALIZED building names ('Citadel'), because the board renderers only test `building` for
-// truthiness. The scenario schema's `$defs/buildingType` is a CLOSED LOWERCASE enum, so a spread
-// clone fails L1 validation. Every `building` must go through `.toLowerCase()` here.
+// truthiness. The scenario schema's `$defs/buildingType` is `$defs/id` — kebab/snake case, so
+// lowercase-only (it was a closed lowercase enum before 0.4.7 opened it; either way a spread clone
+// fails L1). Every `building` must go through `.toLowerCase()` here.
 // (`terrain` is an open string in the schema, so 'Grasslands' passes through as-is.)
 //
 // The art is REFERENCED, not embedded: `imageRef` is `BUILTIN_BOARD_IMAGE_REF`, so the clone

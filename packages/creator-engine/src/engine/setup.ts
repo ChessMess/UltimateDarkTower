@@ -19,7 +19,29 @@ import type {
   ScenarioLibrary,
   ScenarioBoardDef,
   BuildingType,
+  BuildingTypeDef,
 } from './types';
+
+/**
+ * Which building types a hero may start on (schema 0.4.7 `buildingTypeDef.heroStart`).
+ *
+ * Returns `null` when NO type in the library claims the flag — the signal to fall back to the
+ * literal type 'citadel', which is what every pre-0.4.7 document relies on. That fallback is the
+ * whole backward-compatibility story here: the golden fixture sets no `heroStart`, so it keeps
+ * taking the citadel path and its digest/directive streams are untouched.
+ *
+ * Keys are lowercased to match how `boardStateFromDef` normalizes a location's `building`.
+ */
+function heroStartTypes(
+  buildingTypes: Record<string, BuildingTypeDef> | undefined,
+): Set<string> | null {
+  if (!buildingTypes) return null;
+  const flagged = new Set<string>();
+  for (const key of Object.keys(buildingTypes)) {
+    if (buildingTypes[key] && buildingTypes[key].heroStart) flagged.add(key.toLowerCase());
+  }
+  return flagged.size > 0 ? flagged : null;
+}
 
 /**
  * Synthesizes the `{home, buildings}` board state a custom board (schema 0.4.6
@@ -27,27 +49,34 @@ import type {
  * path as a hand-authored inline `boardState`.
  *
  * - `buildings`: every location carrying a building, in authored order.
- * - `home[kingdom]`: that kingdom's FIRST citadel location — where its hero starts.
+ * - `home[kingdom]`: that kingdom's FIRST hero-start location — where its hero starts. Which
+ *   buildings qualify comes from {@link heroStartTypes}: the types flagged `heroStart` in
+ *   `library.buildingTypes`, or the literal 'citadel' when nothing is flagged.
  *
- * Building types are compared case-insensitively: the schema's enum is lowercase, but core's
+ * Building types are compared case-insensitively: the schema's ids are lowercase, but core's
  * `BuildingType` is capitalized ('Citadel'), and a board can be built from either source.
  *
  * Returns `null` when there's no `boardRef`, it doesn't resolve, or the board has no locations —
  * every one of which leaves the caller on the pre-0.4.6 default path.
  */
-function boardStateFromDef(def: ScenarioBoardDef): {
+function boardStateFromDef(
+  def: ScenarioBoardDef,
+  buildingTypes?: Record<string, BuildingTypeDef>,
+): {
   home: Record<string, string>;
   buildings: Array<{ kingdom: Kingdom; type: BuildingType; location: string }>;
 } | null {
   const locations = def.locations;
   if (!Array.isArray(locations) || locations.length === 0) return null;
+  const flagged = heroStartTypes(buildingTypes);
+  const isHome = (type: string): boolean => (flagged ? flagged.has(type) : type === 'citadel');
   const home: Record<string, string> = {};
   const buildings: Array<{ kingdom: Kingdom; type: BuildingType; location: string }> = [];
   for (const loc of locations) {
     if (!loc || !loc.building) continue;
     const type = String(loc.building).toLowerCase();
     buildings.push({ kingdom: loc.kingdom, type: type as BuildingType, location: loc.name });
-    if (type === 'citadel' && home[loc.kingdom] === undefined) home[loc.kingdom] = loc.name;
+    if (isHome(type) && home[loc.kingdom] === undefined) home[loc.kingdom] = loc.name;
   }
   return { home, buildings };
 }
@@ -58,7 +87,7 @@ function boardStateFromRef(sc: Scenario): ReturnType<typeof boardStateFromDef> {
   if (!ref) return null;
   const def = sc.library.boards && sc.library.boards[ref];
   if (!def) return null;
-  return boardStateFromDef(def);
+  return boardStateFromDef(def, sc.library.buildingTypes);
 }
 
 // ---------- public API: init (§2.3) ----------
@@ -166,7 +195,8 @@ export function init(scenario: unknown, opts: InitOpts): StepResult {
   });
   // Buildings registry + hero start locations from the authored (opaque-to-L1) boardState:
   // { home: { kingdom: location }, buildings: [{ kingdom, type, location }] }. Heroes start on
-  // their home kingdom's citadel space (rules.md §Hero Setup).
+  // their home kingdom's citadel space (rules.md §Hero Setup) — or, since schema 0.4.7, on a
+  // building whose type is flagged `heroStart` in library.buildingTypes (see boardStateFromDef).
   // A `boardRef` (schema 0.4.6) names a custom board in library.boards; its locations imply the
   // same {home, buildings} shape an inline boardState spells out, so everything downstream is
   // unchanged. An inline boardState always wins — the branches are mutually exclusive in the

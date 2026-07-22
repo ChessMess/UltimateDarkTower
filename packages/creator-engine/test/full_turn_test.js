@@ -279,6 +279,30 @@ expectFault('reinforce away from any building faults', () =>
 expectFault('second reinforce in a turn faults', () =>
   drive(gf, opts, [act('reinforce'), act('reinforce')]),
 );
+// Schema 0.4.7 relaxed buildingTypeDef.required to `free` alone, so a type may define NO paid
+// Reinforce. Without an explicit fault the enhanced branch no-ops silently — nothing paid,
+// nothing applied — while the once-per-turn latch is already spent.
+expectFault('enhanced reinforce on a type with no `enhanced` faults', () => {
+  const noEnhanced = fixedMonths();
+  delete noEnhanced.library.buildingTypes.village.enhanced;
+  return drive(noEnhanced, opts, [
+    act('move'),
+    mov("Egan's End"),
+    act('reinforce', { enhanced: true }),
+  ]);
+});
+// ...and the free branch on that same type still works, so the guard is scoped to `enhanced`.
+{
+  const noEnhanced = fixedMonths();
+  delete noEnhanced.library.buildingTypes.village.enhanced;
+  const run = drive(noEnhanced, opts, [act('move'), mov("Egan's End"), act('reinforce')]);
+  const h = lastOf(run).state.heroes.hero1;
+  ok(
+    'free reinforce still works on a type with no `enhanced`',
+    h.warriors === 13,
+    'w=' + h.warriors,
+  );
+}
 
 // ---------- citadel enhanced: 5 spirit → activate a virtue ----------
 {

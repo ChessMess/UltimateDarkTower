@@ -1,7 +1,9 @@
 // EffectRow — a single effect. Renders a structured per-op form for the common set (op dropdown +
-// typed fields), a scope select + nested list for hero.scope (depth-capped), or a raw-JSON textarea
-// fallback for every other op / unparseable input. L1 validation (via the store's revalidate) is the
-// authority; the red border here is only a local parse hint, matching the old StepEffects textarea.
+// typed fields), a scope select + nested list for hero.scope (depth-capped), an all/count toggle
+// for corruption.remove (schema oneOf — the two keys are mutually exclusive), or a raw-JSON
+// textarea fallback for every other op / unparseable input. L1 validation (via the store's
+// revalidate) is the authority; the red border here is only a local parse hint, matching the old
+// StepEffects textarea.
 
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -11,6 +13,7 @@ import {
   RESOURCES,
   KINGDOMS,
   FOE_STATUSES,
+  ITEM_TYPES,
   HERO_SCOPES,
   SCOPE_DEPTH_CAP,
   hasStructuredForm,
@@ -107,7 +110,39 @@ export function EffectRow({
         </div>
       )}
 
-      {!showJson && op !== 'hero.scope' && (
+      {!showJson && op === 'corruption.remove' && (
+        <div style={{ paddingLeft: 8, marginTop: 4 }}>
+          <label style={{ ...fieldRow, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={effect.all === true}
+              onChange={(e) => {
+                // `all`/`count` are mutually exclusive (schema oneOf) — switching modes must drop
+                // the other key, not just add one, or the effect carries both and fails L1.
+                const next: Record<string, unknown> = { op };
+                if (e.target.checked) next.all = true;
+                else next.count = 1;
+                onChange(next);
+              }}
+            />
+            <span style={fieldLabel}>Remove ALL corruption</span>
+          </label>
+          {effect.all !== true && (
+            <label style={fieldRow}>
+              <span style={fieldLabel}>Count</span>
+              <input
+                type="number"
+                min={1}
+                value={Number(effect.count ?? 1)}
+                onChange={(e) => onChange({ op, count: Math.max(1, Number(e.target.value) || 1) })}
+                style={{ ...fieldInput, width: 70 }}
+              />
+            </label>
+          )}
+        </div>
+      )}
+
+      {!showJson && op !== 'hero.scope' && op !== 'corruption.remove' && (
         <div style={{ paddingLeft: 8, marginTop: 4 }}>
           {(OP_FORMS[op] ?? []).map((f) => (
             <Field
@@ -172,6 +207,7 @@ function Field({
     kind === 'resource' ||
     kind === 'kingdom' ||
     kind === 'foeStatus' ||
+    kind === 'itemType' ||
     kind === 'deck' ||
     kind === 'foe' ||
     // a board with no locations yet would render an empty dropdown — fall back to free text
@@ -184,11 +220,13 @@ function Field({
           ? [...KINGDOMS]
           : kind === 'foeStatus'
             ? [...FOE_STATUSES]
-            : kind === 'deck'
-              ? deckIds
-              : kind === 'location'
-                ? locationNames
-                : foeIds;
+            : kind === 'itemType'
+              ? [...ITEM_TYPES]
+              : kind === 'deck'
+                ? deckIds
+                : kind === 'location'
+                  ? locationNames
+                  : foeIds;
     const cur = String(raw ?? '');
     return (
       <label style={fieldRow}>

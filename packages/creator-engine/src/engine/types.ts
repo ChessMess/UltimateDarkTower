@@ -18,7 +18,15 @@ export type FoeStatus = 'panicked' | 'unsteady' | 'ready' | 'savage' | 'lethal';
 
 export type Kingdom = 'north' | 'south' | 'east' | 'west';
 
-export type BuildingType = 'citadel' | 'sanctuary' | 'village' | 'bazaar';
+/**
+ * A building's type — the key into `ScenarioLibrary.buildingTypes`.
+ *
+ * OPEN since schema 0.4.7: a scenario defines its own buildings, so this is any `$defs/id`.
+ * The four RtDT names stay spelled out for autocomplete and because `boardStateFromDef`
+ * (setup.ts) falls back to 'citadel' when no type claims `heroStart`; `(string & {})` widens
+ * the union without collapsing those literals in editor hints.
+ */
+export type BuildingType = 'citadel' | 'sanctuary' | 'village' | 'bazaar' | (string & {});
 
 export type ActionChoice =
   | 'quest'
@@ -321,6 +329,16 @@ export interface TokenTypeDef {
   threshold?: { at: number; onReach?: Effect[] };
 }
 export interface BuildingTypeDef {
+  /** display label (schema 0.4.7); presentational — the registry key is the id. */
+  name?: string;
+  /**
+   * A hero starts on their kingdom's FIRST location carrying a building of this type
+   * (schema 0.4.7). When NO type in the library sets it, `boardStateFromDef` (setup.ts) falls
+   * back to the literal type 'citadel' — which is why every pre-0.4.7 document places heroes
+   * unchanged.
+   */
+  heroStart?: boolean;
+  /** skulls that SIT on the building; the next one razes it. Authorable since 0.4.7 (was 3). */
   skullCapacity?: number;
   /** Reinforce's free effect (buildings.md) */
   free?: Effect[];

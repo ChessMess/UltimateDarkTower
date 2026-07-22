@@ -86,3 +86,30 @@
     --c-warning: #fbbf24;
   }
 }
+
+/* Thin, theme-matched scrollbars everywhere — every `overflow`/`overflow-y: auto` container (e.g.
+   the Board Designer's Building types dialog) gets this for free instead of the chunky OS/browser
+   default. Uses the semantic tokens above, so it re-colors with the theme automatically; no
+   separate dark-mode branch needed. `*` is required for the WebKit rules: each scrolling element
+   is its own `::-webkit-scrollbar` target, not something that inherits from `html`/`body`. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--c-border-strong);
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--c-text-muted);
+}

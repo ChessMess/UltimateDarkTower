@@ -160,6 +160,11 @@ export function performAction(
           throw fault('reinforce: the building at ' + hero.location + ' is destroyed');
         const def = (state._lib.buildingTypes || {})[b.type];
         if (!def) throw fault('reinforce: no buildingType definition for ' + b.type);
+        // `enhanced` is OPTIONAL since schema 0.4.7 (buildingTypeDef.required relaxed to `free`
+        // alone), so a type can legitimately offer no paid Reinforce. Without this the enhanced
+        // branch silently no-ops: no cost paid, no effects applied, yet the once-per-turn latch
+        // above is already spent and the log entry claims enhanced: true.
+        if (a.enhanced && !def.enhanced) throw fault('reinforce: no enhanced effect for ' + b.type);
         const effects = a.enhanced ? def.enhanced?.effects : def.free;
         if (a.enhanced && def.enhanced)
           applyEffect(

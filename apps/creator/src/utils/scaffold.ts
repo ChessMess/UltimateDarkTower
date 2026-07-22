@@ -4,7 +4,7 @@
 
 import type { ScenarioDoc } from '../types';
 
-const SCHEMA_VERSION = '0.4.6';
+const SCHEMA_VERSION = '0.4.7';
 const UDT_PIN = '6.0.0';
 // The RtDT reference data (board/hero/foe rosters, seed enums) moved out of `ultimatedarktower`
 // into `ultimatedarktowerdata` in v6.0.0 — pin it separately so provenance stays accurate even
@@ -40,8 +40,9 @@ export function slugify(s: string): string {
 
 const baseEffect = { op: 'resource.gain', resource: 'warriors', amount: 1 };
 
-// A minimal but schema-valid building type. buildingTypeDef requires free + enhanced + skullCapacity;
-// enhanced requires cost + effects. Authors edit these later; the defaults just keep the doc L1-valid.
+// A minimal but schema-valid building type. Authors edit these later (Board Designer → Building
+// types…), and since schema 0.4.7 they can add their own alongside — `library.buildingTypes` is an
+// open registry, so these four are a starting point rather than the fixed set they used to be.
 const baseBuildingType = {
   free: [baseEffect],
   enhanced: { cost: { resource: 'spirit', amount: 1 }, effects: [baseEffect] },
@@ -86,10 +87,14 @@ export function scaffoldScenario(input: ScaffoldInput): ScenarioDoc {
     },
     library: {
       buildingTypes: {
-        citadel: baseBuildingType,
-        sanctuary: baseBuildingType,
-        village: baseBuildingType,
-        bazaar: baseBuildingType,
+        // Spread, not shared by reference: citadel alone carries `heroStart`, which is what
+        // makes it the hero start space now that setup resolves that from the flag rather than
+        // the literal name. (With no type flagged, setup falls back to 'citadel' anyway — so
+        // this is belt-and-braces that also makes the rule visible in the exported document.)
+        citadel: { ...baseBuildingType, heroStart: true },
+        sanctuary: { ...baseBuildingType },
+        village: { ...baseBuildingType },
+        bazaar: { ...baseBuildingType },
       },
       quests: mainGoalId
         ? {

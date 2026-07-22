@@ -111,6 +111,8 @@ interface EngineStateShape {
       { id: string; name: string; isMainGoal?: boolean; requirements?: Array<{ label?: string }> }
     >;
     dungeons?: Record<string, { rooms?: Array<{ id: string; exits?: Record<string, string> }> }>;
+    /** schema 0.4.7 — an open registry, and `enhanced` is optional on a def. */
+    buildingTypes?: Record<string, { enhanced?: unknown }>;
   };
   _setup?: { fullTurn?: boolean; monthlyQuestIds?: string[] };
 }
@@ -174,6 +176,16 @@ function ActionMenu({ options }: { options: Array<{ id: string }> }) {
   const [pickingQuest, setPickingQuest] = useState(false);
   const allowed = new Set(options.map((o) => o.id));
   const fullTurn = allowed.has('endTurn');
+
+  // Whether the building under the active hero offers a PAID Reinforce. `enhanced` is optional on
+  // a buildingTypeDef since schema 0.4.7, and the engine faults rather than silently no-op when it
+  // is missing — so the ✦ button must not be offered where there is nothing to buy.
+  const activeLoc = engineState?.heroes?.[engineState?.clock?.activeHero ?? '']?.location;
+  const hereBuilding = activeLoc
+    ? engineState?.buildings?.find((b) => b.location === activeLoc && !b.destroyed)
+    : undefined;
+  const hasEnhanced =
+    !!hereBuilding && !!engineState?._lib?.buildingTypes?.[hereBuilding.type]?.enhanced;
 
   // Full-turn quests need a questId: offer the attemptable library quests
   // (monthly quests only while issued; completed quests drop out).
@@ -246,7 +258,7 @@ function ActionMenu({ options }: { options: Array<{ id: string }> }) {
             {b.label}
           </button>
         ))}
-        {fullTurn && allowed.has('reinforce') && (
+        {fullTurn && allowed.has('reinforce') && hasEnhanced && (
           <button
             style={{ ...actionBtn, borderStyle: 'dashed' }}
             title="Pay the building's spirit cost for its enhanced effect"

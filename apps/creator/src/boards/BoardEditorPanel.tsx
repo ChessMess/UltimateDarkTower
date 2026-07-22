@@ -12,10 +12,9 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AnchorGlyphChip } from './AnchorGlyph';
 import {
   ANCHOR_SLOTS,
-  BUILDING_TYPES,
   KINGDOMS,
   KINGDOM_COLOR,
-  NO_BUILDING,
+  buildingLabel,
   dangerBtn,
   dangerIconBtn,
   hasAnchorSlot,
@@ -37,7 +36,7 @@ import type {
   AnchorSlot,
   Board,
   BoardLocation,
-  BuildingType,
+  BuildingTypeDef,
   Kingdom,
   LocationAnchors,
   LocationScope,
@@ -51,6 +50,13 @@ export interface BoardEditorPanelProps {
   mode: BoardEditMode;
   activeSlot: AnchorSlot;
   selectedLocation: string | null;
+  /** The scenario's building registry — drives the picker, the labels and the hero-start check. */
+  buildingTypes: Record<string, BuildingTypeDef>;
+  /** Building types this board may use, already merged and sorted (see `buildingChoices`). */
+  buildingOptions: string[];
+  /** Opens the Building types editor on a new type — the picker's `Custom…`. The plain
+   *  "edit them all" entry point is the toolbar button, since the registry is scenario-wide. */
+  onEditBuildingTypes: (createWith?: string) => void;
   onChange: (next: Board) => void;
   onSelectLocation: (name: string | null) => void;
   onActiveSlot: (slot: AnchorSlot) => void;
@@ -67,6 +73,9 @@ export function BoardEditorPanel({
   mode,
   activeSlot,
   selectedLocation,
+  buildingTypes,
+  buildingOptions,
+  onEditBuildingTypes,
   onChange,
   onSelectLocation,
   onActiveSlot,
@@ -76,7 +85,7 @@ export function BoardEditorPanel({
   onSuggestAdjacency,
 }: BoardEditorPanelProps) {
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const problems = validateBoard(board);
+  const problems = validateBoard(board, buildingTypes);
   const errors = problems.filter((p) => p.level === 'error');
   const warns = problems.filter((p) => p.level === 'warn');
   const calibrated = isCalibrated(board.imageInfo);
@@ -227,14 +236,14 @@ export function BoardEditorPanel({
               onClick={useBuiltinArt}
               title="Render on the built-in Return to Dark Tower board image (referenced, not stored in this file)"
             >
-              Use built-in RtDT art
+              Use built-in RTDT art
             </button>
           )}
         </div>
         <div style={{ fontSize: 11, color: 'var(--c-text-muted)', marginTop: 4 }}>
           {board.imageInfo.width}×{board.imageInfo.height}
           {builtinArt
-            ? ' · built-in RtDT art (not stored in this file)'
+            ? ' · built-in RTDT art (not stored in this file)'
             : board.imageRef
               ? ''
               : ' · no art yet (renders blank)'}
@@ -376,7 +385,11 @@ export function BoardEditorPanel({
                     title={loc.kingdom}
                   />
                   <span style={nameText}>{loc.name}</span>
-                  {loc.building && <span style={badge}>{loc.building}</span>}
+                  {loc.building && (
+                    <span style={badge} title={loc.building}>
+                      {buildingLabel(buildingTypes, loc.building)}
+                    </span>
+                  )}
                   <button
                     style={dangerIconBtn}
                     title="Remove location"
@@ -450,31 +463,35 @@ export function BoardEditorPanel({
                           </select>
                         )}
                       </label>
-                      {/* No Custom… twin to terrain's: buildings are a CLOSED schema enum
-                          ($defs/buildingType) and a hard union in the engine, which keys rules
-                          off the type. A custom value would fail L1 and mean nothing at play. */}
+                      {/* Custom… does NOT open a free-text field the way terrain's does: a
+                          building is a rules object, so a new one has to be DEFINED (its
+                          Reinforce effects, its capacity) before a location can carry it. It
+                          opens the Building types editor on a new entry instead — which also
+                          slugifies the id, the one place this feature could otherwise emit a
+                          document that fails L1 only at export. */}
                       <label
                         style={fieldLabel}
-                        title="The four building types are fixed by the schema — unlike terrain, they carry game rules"
+                        title="Building types carry game rules — define them under Building types…"
                       >
                         building
                         <select
                           style={{ ...inputStyle, width: '100%' }}
                           value={loc.building ?? ''}
-                          onChange={(e) =>
-                            patchLocation(i, {
-                              building: e.target.value
-                                ? (e.target.value as BuildingType)
-                                : undefined,
-                            })
-                          }
+                          onChange={(e) => {
+                            if (e.target.value === CUSTOM_BUILDING) {
+                              onEditBuildingTypes('');
+                              return;
+                            }
+                            patchLocation(i, { building: e.target.value || undefined });
+                          }}
                         >
                           <option value="">—</option>
-                          {BUILDING_TYPES.map((b) => (
+                          {buildingOptions.map((b) => (
                             <option key={b} value={b}>
-                              {b}
+                              {buildingLabel(buildingTypes, b)}
                             </option>
                           ))}
+                          <option value={CUSTOM_BUILDING}>Custom…</option>
                         </select>
                       </label>
                     </div>
@@ -487,7 +504,8 @@ export function BoardEditorPanel({
         <div style={listFoot}>
           <strong>◎</strong> places a location on the board · <strong>◉</strong> already placed.
           Renaming remaps anchors and adjacency, but not graph nodes — the Problems panel flags
-          those. Terrain is free-form; the four building types are fixed by the schema.
+          those. Terrain is free-form; buildings come from <strong>Building types…</strong> in the
+          toolbar above, where you define what each one does.
         </div>
       </section>
 
@@ -529,6 +547,11 @@ export function BoardEditorPanel({
  *  plausible terrain, and harmless if someone types it: it just opens that field. */
 const CUSTOM_TERRAIN = '__custom__';
 
+/** The building picker's twin sentinel — opens the Building types editor on a new entry.
+ *  Safe as a sentinel because it is not a valid `$defs/id` (leading underscore), so it can
+ *  never collide with a real building type. */
+const CUSTOM_BUILDING = '__custom_building__';
+
 const FACETS: Array<{ id: ScopeFacet | 'all'; label: string }> = [
   { id: 'all', label: 'Everything' },
   { id: 'kingdom', label: 'Kingdom' },
@@ -564,7 +587,7 @@ function RemoveScopePicker({
         ? { kind: 'kingdom', value: first as Kingdom }
         : facet === 'terrain'
           ? { kind: 'terrain', value: first }
-          : { kind: 'building', value: first as BuildingType | typeof NO_BUILDING },
+          : { kind: 'building', value: first },
     );
   };
 
