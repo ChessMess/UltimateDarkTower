@@ -9,7 +9,7 @@
 // Reached from the Board Designer — the Locations panel's `Building types…` button, and the
 // building picker's `Custom…` option, which opens this straight into a new type.
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { EffectListEditor } from '../editors/effects';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -39,25 +39,32 @@ const newDef = (name: string): BuildingTypeDef => ({
 });
 
 /**
- * Where a building type is referenced. Both sites matter for the delete guard: a location on any
- * board, AND a hand-authored inline `setup.board.boardState.buildings[]` — the latter is opaque to
- * L1 and invisible to L2, so nothing else would catch a delete orphaning it.
+ * How many times each building type is referenced, counted once for the whole dialog. Both sites
+ * matter for the delete guard: a location on any board, AND a hand-authored inline
+ * `setup.board.boardState.buildings[]` — the latter is opaque to L1 and invisible to L2, so
+ * nothing else would catch a delete orphaning it.
  */
-function usageOf(doc: ScenarioDoc | null, boards: Record<string, Board>, id: string): number {
-  let n = 0;
-  for (const board of Object.values(boards)) {
-    for (const loc of board.locations) if (loc.building === id) n++;
-  }
+function usageTally(doc: ScenarioDoc | null, boards: Record<string, Board>): Map<string, number> {
+  const tally = new Map<string, number>();
+  // Keyed lowercased, like the engine, L2 and validateBoard all compare, so an imported document's
+  // capitalized 'Citadel' still counts against the lowercase registry key rather than reading as
+  // an unused type the author can safely delete.
+  const bump = (v: unknown): void => {
+    if (typeof v !== 'string') return;
+    const key = v.trim().toLowerCase();
+    if (key) tally.set(key, (tally.get(key) ?? 0) + 1);
+  };
+  for (const board of Object.values(boards)) for (const loc of board.locations) bump(loc.building);
   const setup = doc?.setup as Record<string, unknown> | undefined;
   const board = setup?.board as Record<string, unknown> | undefined;
   const inline = board?.boardState as Record<string, unknown> | undefined;
   const inlineBuildings = inline?.buildings;
   if (Array.isArray(inlineBuildings)) {
     for (const b of inlineBuildings) {
-      if (b && typeof b === 'object' && (b as Record<string, unknown>).type === id) n++;
+      if (b && typeof b === 'object') bump((b as Record<string, unknown>).type);
     }
   }
-  return n;
+  return tally;
 }
 
 export interface BuildingTypesDialogProps {
@@ -66,11 +73,22 @@ export interface BuildingTypesDialogProps {
   boards: Record<string, Board>;
   types: Record<string, BuildingTypeDef>;
   onCommit: (types: Record<string, BuildingTypeDef>) => void;
-  /** Renames the registry key AND retypes every location using it, in one undoable commit. */
+  /** Renames the registry key AND retypes every reference to it, in one undoable commit. */
   onRename: (from: string, to: string) => void;
-  /** When set, the dialog opens on a fresh type seeded with this name (the picker's `Custom…`). */
+  /**
+   * When non-null the dialog opens on a fresh type, its name field seeded with this string (the
+   * picker's `Custom…` passes `''` — a new type with nothing typed yet). `null`/absent opens on
+   * the existing registry, which is what the toolbar button wants.
+   */
   createWith?: string | null;
   onClose: () => void;
+  /**
+   * Discards every edit made since the dialog opened (field changes, clone, delete, rename — all
+   * of them, via the caller restoring its pre-open doc snapshot in one commit) and closes. Every
+   * edit in here commits live as you make it, like the rest of the Creator's editors, so this is
+   * the only way back out of a change you didn't mean to keep.
+   */
+  onCancel: () => void;
 }
 
 export function BuildingTypesDialog({
@@ -81,14 +99,24 @@ export function BuildingTypesDialog({
   onRename,
   createWith,
   onClose,
+  onCancel,
 }: BuildingTypesDialogProps) {
   const ids = Object.keys(types);
-  const [selected, setSelected] = useState<string | null>(createWith ? null : (ids[0] ?? null));
+  // Both derived from the SAME predicate: `createWith` is a seed string, and the picker's
+  // `Custom…` seeds it with '' — testing its truthiness instead would leave the dialog in
+  // "creating" mode with an unrelated existing type selected behind the name field.
+  const opensOnNewType = createWith != null;
+  const [selected, setSelected] = useState<string | null>(opensOnNewType ? null : (ids[0] ?? null));
   const [draftId, setDraftId] = useState(createWith ?? '');
-  const [creating, setCreating] = useState(createWith != null);
+  const [creating, setCreating] = useState(opensOnNewType);
   const [renaming, setRenaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+
+  // One pass over every board (and the inline board state) per doc, rather than one per type per
+  // render — the rail asks for a count on every row.
+  const usage = useMemo(() => usageTally(doc, boards), [doc, boards]);
+  const usesOf = (id: string): number => usage.get(id.toLowerCase()) ?? 0;
 
   const def = selected ? types[selected] : undefined;
 
@@ -177,7 +205,7 @@ export function BuildingTypesDialog({
               </div>
             )}
             {ids.map((id) => {
-              const uses = usageOf(doc, boards, id);
+              const uses = usesOf(id);
               return (
                 <div
                   key={id}
@@ -221,7 +249,10 @@ export function BuildingTypesDialog({
           </div>
 
           {/* ---- the selected type's rules ---- */}
-          <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', maxHeight: 420 }}>
+          {/* paddingRight keeps the scrollbar off the full-width fields, matching `rail`'s */}
+          <div
+            style={{ flex: 1, minWidth: 0, overflowY: 'auto', maxHeight: 420, paddingRight: 10 }}
+          >
             {!def && (
               <div style={{ fontSize: 12, color: 'var(--c-text-faint)', padding: 8 }}>
                 Select a building type, or add one.
@@ -256,7 +287,7 @@ export function BuildingTypesDialog({
                     ) : (
                       <button
                         style={{ ...inputStyle, width: '100%', textAlign: 'left' }}
-                        title="Rename — every location using this type is retyped with it"
+                        title="Rename — every location using this type is retyped with it, on every board"
                         onClick={() => {
                           setRenaming(true);
                           setDraftId(selected);
@@ -313,6 +344,12 @@ export function BuildingTypesDialog({
                 <div style={section}>
                   <label style={labelStyle}>Reinforce — free</label>
                   <EffectListEditor
+                    // Keyed by the selected type: without it, switching rail rows reuses the SAME
+                    // EffectRow instances (same array index, same tree position), so a per-row
+                    // JSON/Form toggle left on from a PREVIOUS type bleeds into whichever type you
+                    // look at next — reading as "it always opens to JSON" even though a fresh
+                    // resource.gain effect defaults to the structured form.
+                    key={selected}
                     value={def.free ?? []}
                     onChange={(free) => patch({ free })}
                     deckIds={deckIdsOf(doc)}
@@ -365,6 +402,7 @@ export function BuildingTypesDialog({
                     </label>
                   </div>
                   <EffectListEditor
+                    key={selected} // see the `free` editor above — same stale-toggle reason
                     value={def.enhanced?.effects ?? []}
                     onChange={(effects) =>
                       patch({
@@ -389,9 +427,12 @@ export function BuildingTypesDialog({
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 10 }}>
           <span style={{ fontSize: 10, color: 'var(--c-text-faint)' }}>
-            RtDT's own four are {BUILDING_TYPES.join(', ')} — suggestions, not a fixed set.
+            RTDT's own four are {BUILDING_TYPES.join(', ')} — suggestions, not a fixed set.
           </span>
           <span style={{ flex: 1 }} />
+          <button style={smallBtn} onClick={onCancel}>
+            Cancel
+          </button>
           <button style={primaryBtn} onClick={onClose}>
             Done
           </button>
@@ -402,12 +443,20 @@ export function BuildingTypesDialog({
         <ConfirmDialog
           title="Delete building type?"
           message={
-            <>
-              <strong>{buildingLabel(types, pendingDelete)}</strong> is used by{' '}
-              {usageOf(doc, boards, pendingDelete)} location(s). They keep the type name, which will
-              then resolve to nothing — Reinforce there fails and validation flags it. This cannot
-              be undone.
-            </>
+            usesOf(pendingDelete) === 0 ? (
+              <>
+                <strong>{buildingLabel(types, pendingDelete)}</strong> is not used by any location.
+                This cannot be undone.
+              </>
+            ) : (
+              <>
+                <strong>{buildingLabel(types, pendingDelete)}</strong> is used by{' '}
+                {usesOf(pendingDelete)} location
+                {usesOf(pendingDelete) === 1 ? '' : 's'}. They keep the type name, which will then
+                resolve to nothing — Reinforce there fails and validation flags it. This cannot be
+                undone.
+              </>
+            )
           }
           onConfirm={() => remove(pendingDelete)}
           onCancel={() => setPendingDelete(null)}

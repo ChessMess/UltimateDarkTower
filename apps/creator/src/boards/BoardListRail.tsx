@@ -1,5 +1,5 @@
 // BoardListRail — the left rail of the board designer: the board list (library.boards) with add
-// (validated id) + delete + selection, plus "Clone RtDT preset". Mirrors DungeonListRail.
+// (validated id) + delete + selection, plus "Clone RRDT preset". Mirrors DungeonListRail.
 
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -41,7 +41,7 @@ export function BoardListRail({
 
       <div style={{ padding: 8, borderBottom: '1px solid var(--c-border)' }}>
         <button style={primaryBtn} onClick={() => onClonePreset(freshPresetId())}>
-          Clone RtDT preset
+          Clone RTDT Board
         </button>
         <div style={{ fontSize: 11, color: 'var(--c-text-muted)', marginTop: 6, lineHeight: 1.4 }}>
           A full copy of the built-in board — all 60 locations, anchors and adjacency, ready to

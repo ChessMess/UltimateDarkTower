@@ -243,4 +243,11 @@ describe('validateRefs — a location building must resolve to a building type',
     // instead); turning that into a load-time error would reject documents that used to work.
     expect(validateRefs(withTypes(undefined, 'watchtower')).errors).toEqual([]);
   });
+
+  it('treats an EMPTY registry as unauthored, matching the editor', () => {
+    // `{}` is authored-but-empty. Failing it here would contradict the Creator, whose
+    // `buildingTypesOf` returns `{}` for an absent map and so reports no problem at all — the
+    // export would reject a board the Problems panel called clean.
+    expect(validateRefs(withTypes({}, 'watchtower')).errors).toEqual([]);
+  });
 });

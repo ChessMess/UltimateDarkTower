@@ -91,8 +91,10 @@ describe('buildRtdtPreset', () => {
   // THE preset trap: a spread of RTDT_BOARD_DEFINITION would fail L1 on capitalized buildings.
   // Assert FULL schema validity, not just casing.
   it('produces a document that passes L1 schema validation', () => {
+    // Whatever version the scaffold emits — pinning one here would assert that a document
+    // declaring an OLD version still validates while carrying newer fields (schemaVersion is only
+    // pattern-checked, so it never actually gated anything).
     const doc = scaffold() as unknown as Record<string, unknown>;
-    doc.schemaVersion = '0.4.6';
     const preset = buildRtdtPreset('rtdt-copy');
     (doc.library as Record<string, unknown>).boards = { 'rtdt-copy': preset };
     (doc.setup as Record<string, unknown>).board = { boardRef: 'rtdt-copy' };
@@ -677,13 +679,38 @@ describe('custom building types', () => {
     ({ library: { buildingTypes: types } }) as unknown as ScenarioDoc;
 
   describe('buildingChoices', () => {
-    it('offers the DEFINED types, RtDT’s four, and whatever the board already uses', () => {
+    it('offers the DEFINED types and whatever the board already uses — not RtDT’s four', () => {
+      // Once a registry exists it IS the vocabulary: L2 rejects a `building` naming anything
+      // outside it, so offering citadel/sanctuary/village/bazaar here would hand the author a
+      // choice that fails at export. `ruin` stays listed only because the board holds it.
       const choices = buildingChoices(docWith({ watchtower: {} }), board('ruin'));
-      expect(choices).toEqual(['bazaar', 'citadel', 'ruin', 'sanctuary', 'village', 'watchtower']);
+      expect(choices).toEqual(['ruin', 'watchtower']);
+    });
+
+    it('REGRESSION: a deleted RtDT type stops being offered', () => {
+      // An author who removes `bazaar` from the registry must not still be offered it — picking
+      // it produced a location that validateBoard warns about and L2 rejects.
+      const choices = buildingChoices(
+        docWith({ citadel: {}, sanctuary: {}, village: {} }),
+        board(),
+      );
+      expect(choices).not.toContain('bazaar');
+      expect(choices).toEqual(['citadel', 'sanctuary', 'village']);
     });
 
     it('degrades to the RtDT four when no registry is authored', () => {
       expect(buildingChoices(null, board())).toEqual(['bazaar', 'citadel', 'sanctuary', 'village']);
+    });
+
+    it('degrades to the RtDT four when the registry is authored but EMPTY', () => {
+      // `{}` is indistinguishable from absent here (buildingTypesOf returns {} for both), and L2
+      // treats it as unauthored for exactly that reason — so the picker must too.
+      expect(buildingChoices(docWith({}), board())).toEqual([
+        'bazaar',
+        'citadel',
+        'sanctuary',
+        'village',
+      ]);
     });
 
     it('never offers a duplicate when a defined type is also on the board', () => {

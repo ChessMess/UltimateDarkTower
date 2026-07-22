@@ -58,19 +58,25 @@ Stored at `library.boards[id]` (schema **0.4.6**); a scenario selects one with
    building picker. The registry is scenario-wide rather than per-board, so it opens even with no
    board selected. A building is a _rules object_, not a label, so each type carries:
    - **Reinforce — free** and **Reinforce — enhanced**: the effects that run when a hero Reinforces
-     on that space, the enhanced set costing the resource you name.
+     on that space, the enhanced set costing the resource you name. A type may define _only_ the
+     free set — the Player then simply doesn't offer the paid Reinforce on that building.
    - **skull capacity** (1–9, default 3): how many skulls sit on it before the next one razes it.
    - **hero start**: heroes begin on their kingdom's first building of this type.
 
-   **Clone** copies an existing type as a starting point. **Renaming** a type retypes every location
-   using it, across every board, in one undoable step. **Deleting** one that is still in use is
-   allowed but warned about — those locations keep the name, which then resolves to nothing, so
-   Reinforce there fails and validation flags it.
+   **Clone** copies an existing type as a starting point. **Renaming** a type retypes every
+   reference to it — every location on every board, plus a hand-authored inline board state — in one
+   undoable step. **Deleting** one that is still in use is allowed but warned about — those locations
+   keep the name, which then resolves to nothing, so Reinforce there fails and validation flags it.
 
    The four RtDT buildings (`citadel`, `sanctuary`, `village`, `bazaar`) are what a new scenario
    starts with and what a cloned RtDT board uses, but they are only suggestions: you can rename
    them, delete them, or add your own. Ids are kebab/snake case (`watchtower`, `ashen-shrine`) — the
    dialog slugifies what you type, since the id is what a location's `building` stores.
+
+   **The registry is the vocabulary.** A location's building picker offers exactly what you have
+   defined here (plus whatever that board already holds), so a type you delete stops being offered —
+   picking one that isn't defined would fail validation at export. Only when no registry is authored
+   at all does the picker fall back to suggesting the RtDT four.
 
 5. **Anchors.** Pick a location, pick a slot, click the map. Tokens are drawn at these points. The
    status line under the canvas always says what the next click will do. Panning does not place an

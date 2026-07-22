@@ -52,10 +52,17 @@ export function validateRefs(scenario: unknown): L2Result {
   // before 0.4.7 (it just faults at play with "reinforce: no buildingType definition"), and
   // turning that into a load-time failure would reject documents that used to load. The Creator
   // shows the ungated version of this as an editor warning instead.
+  //
+  // An EMPTY map counts as unauthored for the same reason, and to stay in step with the editor:
+  // `buildingTypesOf` (apps/creator boards/shared.ts) cannot tell `{}` from absent — it returns
+  // `{}` for both — so gating on presence alone would fail here every document the Problems panel
+  // called clean. The Creator never writes `{}` (setOrDeleteKey drops an empty map), but an
+  // imported or hand-authored one can carry it.
   const buildingTypesLib = obj(obj(s['library'])?.['buildingTypes']);
-  const knownBuildingTypes = buildingTypesLib
-    ? new Set(Object.keys(buildingTypesLib).map((k) => k.toLowerCase()))
-    : undefined;
+  const knownBuildingTypes =
+    buildingTypesLib && Object.keys(buildingTypesLib).length > 0
+      ? new Set(Object.keys(buildingTypesLib).map((k) => k.toLowerCase()))
+      : undefined;
 
   // Per-board integrity: unique names; buildings resolvable; anchors/adjacency confined to this
   // board's locations; adjacency symmetric. Checked for EVERY authored board, not just the active

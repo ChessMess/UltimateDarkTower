@@ -207,6 +207,28 @@ describe('undo/redo', () => {
     expect(store().schemaDoc?.library?.cards).toBeUndefined();
   });
 
+  it('restoreDoc replaces the whole document in ONE commit — a modal Cancel discarding a burst of edits', () => {
+    store().loadScenario(scaffold(), false);
+    const before = store().schemaDoc;
+
+    stepPastCoalesceWindow();
+    store().updateNodeLabel('n-start', 'A');
+    stepPastCoalesceWindow();
+    store().updateLibraryCards({ 'card-1': { id: 'card-1' } });
+    const afterEdits = store().schemaDoc;
+
+    stepPastCoalesceWindow();
+    store().restoreDoc(before!);
+    expect(store().schemaDoc).toBe(before);
+    expect(entryLabel()).toBeUndefined();
+    expect(store().schemaDoc?.library?.cards).toBeUndefined();
+
+    // The restore is itself a normal commit, so undo brings back the discarded edits in one step —
+    // a user who cancelled by mistake isn't stuck.
+    store().undo();
+    expect(store().schemaDoc).toBe(afterEdits);
+  });
+
   it('bounds the stack depth (UNDO_LIMIT) rather than growing unboundedly', () => {
     store().loadScenario(scaffold(), false);
     for (let i = 0; i < 105; i++) {

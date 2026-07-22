@@ -89,16 +89,20 @@ export function buildingTypesOf(doc: ScenarioDoc | null): Record<string, Buildin
 }
 
 /**
- * Every building type the picker offers: the ones this scenario DEFINES, then RtDT's four, then
- * any other value this board already uses.
+ * Every building type the picker offers: the ones this scenario DEFINES, plus any other value
+ * this board already uses. RtDT's four are added only as a fallback, when no registry is
+ * authored — otherwise the registry IS the vocabulary.
  *
- * The terrain twin ({@link terrainChoices}) — but sourced from the library first, because unlike
- * terrain a building is a rules object: the defined types are the ones that actually do something
- * at play, and L2 rejects a `building` naming anything else once the registry exists.
+ * The terrain twin ({@link terrainChoices}) — but sourced from the library, because unlike terrain
+ * a building is a rules object: the defined types are the ones that actually do something at play,
+ * and L2 rejects a `building` naming anything else once the registry exists. Offering
+ * {@link BUILDING_TYPES} unconditionally therefore hands the author a choice that fails export —
+ * an author who deleted `bazaar` would still be offered it. Values already on the board stay
+ * listed either way, so the picker can always show what a location currently holds.
  */
 export function buildingChoices(doc: ScenarioDoc | null, board: Board): string[] {
-  const all = new Set<string>(Object.keys(buildingTypesOf(doc)));
-  for (const b of BUILDING_TYPES) all.add(b);
+  const defined = Object.keys(buildingTypesOf(doc));
+  const all = new Set<string>(defined.length > 0 ? defined : BUILDING_TYPES);
   for (const loc of board.locations) {
     const b = loc.building?.trim();
     if (b) all.add(b);

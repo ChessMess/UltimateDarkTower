@@ -173,9 +173,11 @@ interface CreatorStore {
   // library.buildingTypes editing (schema 0.4.7 — an open registry, so a scenario defines its own
   // buildings). Replaces the whole map, or clears it when empty, like updateBattleDefs.
   updateBuildingTypes: (defs: Record<string, unknown>) => void;
-  // Retypes a building: renames the library.buildingTypes key AND every library.boards location
-  // using it. Deliberately ONE action rather than updateBuildingTypes + commitBoards — each commit
-  // pushes its own undo entry, so two calls would let undo strip a rename down to half-applied.
+  // Retypes a building: renames the library.buildingTypes key AND every reference to it — every
+  // library.boards location, plus a hand-authored inline setup.board.boardState.buildings[].
+  // Matched case-insensitively, as everywhere else. Deliberately ONE action rather than
+  // updateBuildingTypes + commitBoards — each commit pushes its own undo entry, so two calls would
+  // let undo strip a rename down to half-applied.
   renameBuildingType: (from: string, to: string) => void;
 
   // RF state sync (called by canvas on drag-end, connect, delete)
@@ -218,6 +220,12 @@ interface CreatorStore {
   // Undo/redo (document only — see undoStack/redoStack)
   undo: () => void;
   redo: () => void;
+  /**
+   * Replace the whole document in ONE commit (one undo entry). For a caller that snapshots
+   * schemaDoc before a burst of edits — e.g. a modal's Cancel button — and wants to discard all
+   * of them at once, rather than requiring the user to press undo() once per edit made inside.
+   */
+  restoreDoc: (doc: ScenarioDoc) => void;
 }
 
 let _nodeCounter = 0;
@@ -862,30 +870,66 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
 
   renameBuildingType(from, to) {
     if (from === to || !to) return;
-    commitLibrary(get, set, (library) => {
-      const types = { ...((library.buildingTypes as Record<string, unknown>) ?? {}) };
-      if (!(from in types) || to in types) return; // caller validates; never clobber a sibling
-      // Rebuilt in place rather than delete+assign so the registry keeps its authored order —
-      // the dialog lists types in map order, and a rename shouldn't jump the row to the end.
-      const renamed: Record<string, unknown> = {};
-      for (const [id, def] of Object.entries(types)) renamed[id === from ? to : id] = def;
-      library.buildingTypes = renamed;
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
+    const types = { ...((library.buildingTypes as Record<string, unknown>) ?? {}) };
+    // Caller validates; never clobber a sibling. Bailing BEFORE the commit matters — the commit
+    // tail always pushes an undo entry and marks the doc dirty, so refusing the rename inside it
+    // would cost the author a wasted Undo press for an edit that never happened.
+    if (!(from in types) || to in types) return;
 
-      // Retype every location using it, on EVERY board — an inactive board would otherwise be
-      // left holding a dangling type that L2 only reports once it's selected.
-      const boards = library.boards as Record<string, Board> | undefined;
-      if (!boards) return;
+    // Rebuilt in place rather than delete+assign so the registry keeps its authored order —
+    // the dialog lists types in map order, and a rename shouldn't jump the row to the end.
+    const renamed: Record<string, unknown> = {};
+    for (const [id, def] of Object.entries(types)) renamed[id === from ? to : id] = def;
+    library.buildingTypes = renamed;
+
+    // Compared case-insensitively, like the engine, L2 and validateBoard all do: an imported
+    // document can carry core's capitalized 'Citadel' against a lowercase registry key, and an
+    // exact match would leave exactly those locations pointing at the old name.
+    const lowerFrom = from.toLowerCase();
+    const matches = (v: unknown): boolean => typeof v === 'string' && v.toLowerCase() === lowerFrom;
+
+    // Retype every location using it, on EVERY board — an inactive board would otherwise be
+    // left holding a dangling type that L2 only reports once it's selected.
+    const boards = library.boards as Record<string, Board> | undefined;
+    if (boards) {
       const nextBoards: Record<string, Board> = {};
       for (const [boardId, board] of Object.entries(boards)) {
         nextBoards[boardId] = {
           ...board,
           locations: board.locations.map((loc) =>
-            loc.building === from ? { ...loc, building: to } : loc,
+            matches(loc.building) ? { ...loc, building: to } : loc,
           ),
         };
       }
       library.boards = nextBoards;
-    });
+    }
+
+    // A hand-authored inline `setup.board.boardState` carries its own buildings[]. That array is
+    // opaque to L1 and invisible to L2, so an orphan left here is reported by nothing — it
+    // surfaces only at play, as "reinforce: no buildingType definition". `usageOf` already counts
+    // these for the delete guard, so rename has to honour them too or the two disagree.
+    const setup = { ...((schemaDoc.setup as Record<string, unknown> | undefined) ?? {}) };
+    const board = setup.board as Record<string, unknown> | undefined;
+    const boardState = board?.boardState as Record<string, unknown> | undefined;
+    const inline = boardState?.buildings;
+    const isMatch = (b: unknown): boolean =>
+      !!b && typeof b === 'object' && matches((b as Record<string, unknown>).type);
+    if (Array.isArray(inline) && inline.some(isMatch)) {
+      setup.board = {
+        ...board,
+        boardState: {
+          ...boardState,
+          buildings: inline.map((b) =>
+            isMatch(b) ? { ...(b as Record<string, unknown>), type: to } : b,
+          ),
+        },
+      };
+    }
+
+    commitDocOnly(get, set, { ...schemaDoc, library, setup });
   },
 
   updateFoeBattleDefId(foeId, defId) {
@@ -1137,6 +1181,10 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     const laid = applyDagreLayout(rfNodes, rfEdges);
     const updated = flowToSchema(laid, rfEdges, schemaDoc);
     commitDoc(get, set, updated, { nodes: laid, edges: rfEdges });
+  },
+
+  restoreDoc(doc) {
+    commitDoc(get, set, doc);
   },
 
   undo() {

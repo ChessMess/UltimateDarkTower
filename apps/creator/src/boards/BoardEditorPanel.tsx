@@ -236,14 +236,14 @@ export function BoardEditorPanel({
               onClick={useBuiltinArt}
               title="Render on the built-in Return to Dark Tower board image (referenced, not stored in this file)"
             >
-              Use built-in RtDT art
+              Use built-in RTDT art
             </button>
           )}
         </div>
         <div style={{ fontSize: 11, color: 'var(--c-text-muted)', marginTop: 4 }}>
           {board.imageInfo.width}×{board.imageInfo.height}
           {builtinArt
-            ? ' · built-in RtDT art (not stored in this file)'
+            ? ' · built-in RTDT art (not stored in this file)'
             : board.imageRef
               ? ''
               : ' · no art yet (renders blank)'}

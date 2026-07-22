@@ -9,6 +9,7 @@ import { scenarioSchema } from '@udtc/schema';
 export const RESOURCES = ['warriors', 'spirit'] as const;
 export const KINGDOMS = ['north', 'south', 'east', 'west'] as const;
 export const FOE_STATUSES = ['panicked', 'unsteady', 'ready', 'savage', 'lethal'] as const;
+export const ITEM_TYPES = ['gear', 'treasure', 'potion', 'questItem'] as const;
 export const HERO_SCOPES = [
   'self',
   'other',
@@ -38,6 +39,7 @@ export type FieldKind =
   | 'resource'
   | 'kingdom'
   | 'foeStatus'
+  | 'itemType'
   | 'deck'
   | 'foe'
   // a space on the ACTIVE board — a custom board's own names, else the built-in RtDT roster
@@ -66,7 +68,20 @@ export const OP_FORMS: Record<string, FieldSpec[]> = {
     { key: 'amount', kind: 'number', label: 'Amount', min: 1 },
   ],
   'corruption.gain': [{ key: 'source', kind: 'text', label: 'Source', optional: true }],
-  'corruption.remove': [{ key: 'count', kind: 'number', label: 'Count', min: 1 }],
+  // `all`/`count` are mutually exclusive (schema oneOf: {all: true} XOR {count}), so this is
+  // rendered as a dedicated toggle in EffectRow rather than through the generic per-field loop —
+  // a naive count field alongside a leftover `all: true` could produce both keys at once, which
+  // L1 rejects. The empty array here only registers the op as having a structured form at all.
+  'corruption.remove': [],
+  // Building Reinforce effects (rules.md §buildings.md: citadel/bazaar's free/enhanced grants,
+  // sanctuary's enhanced, citadel's virtue) commonly use these — without a spec they fell back to
+  // the raw-JSON textarea, which is what most authors adjusting a building type want to avoid.
+  'virtue.activate': [{ key: 'virtue', kind: 'text', label: 'Virtue', optional: true }],
+  'virtue.grant': [{ key: 'virtue', kind: 'text', label: 'Virtue' }],
+  'item.gain': [
+    { key: 'itemType', kind: 'itemType', label: 'Item type' },
+    { key: 'from', kind: 'text', label: 'From', optional: true },
+  ],
   'skull.place': [
     { key: 'count', kind: 'number', label: 'Count', min: 1 },
     { key: 'kingdom', kind: 'kingdom', label: 'Kingdom' },
@@ -119,6 +134,10 @@ export function defaultEffect(op: string): Record<string, unknown> {
       return { op };
     case 'corruption.remove':
       return { op, count: 1 };
+    case 'virtue.grant':
+      return { op, virtue: '' };
+    case 'item.gain':
+      return { op, itemType: 'potion' };
     case 'skull.place':
       return { op, count: 1, kingdom: 'north' };
     case 'skull.remove':

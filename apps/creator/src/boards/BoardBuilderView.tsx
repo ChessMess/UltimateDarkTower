@@ -73,6 +73,7 @@ export function BoardBuilderView() {
   const updateResourceImage = useCreatorStore((s) => s.updateResourceImage);
   const updateBuildingTypes = useCreatorStore((s) => s.updateBuildingTypes);
   const renameBuildingType = useCreatorStore((s) => s.renameBuildingType);
+  const restoreDoc = useCreatorStore((s) => s.restoreDoc);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mode, setMode] = useState<BoardEditMode>('locations');
@@ -81,8 +82,13 @@ export function BoardBuilderView() {
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [pendingActivate, setPendingActivate] = useState<string | null>(null);
   // The Building types editor: null = closed. `createWith` opens it on a NEW type seeded with
-  // that name — what the location picker's Custom… option asks for.
-  const [buildingDialog, setBuildingDialog] = useState<{ createWith?: string } | null>(null);
+  // that name — what the location picker's Custom… option asks for. `snapshot` is schemaDoc as of
+  // the moment the dialog opened, so Cancel can discard every edit made inside it (renames, clones,
+  // deletes, field edits) in one restoreDoc() call rather than requiring N presses of undo().
+  const [buildingDialog, setBuildingDialog] = useState<{
+    createWith?: string;
+    snapshot: typeof schemaDoc;
+  } | null>(null);
 
   if (!schemaDoc) {
     return (
@@ -205,9 +211,9 @@ export function BoardBuilderView() {
           <button
             style={smallBtn}
             title="Define the buildings this scenario uses — their Reinforce effects, skull capacity, and which one heroes start on"
-            onClick={() => setBuildingDialog({})}
+            onClick={() => setBuildingDialog({ snapshot: schemaDoc })}
           >
-            Building types…
+            Buildings
           </button>
         </div>
 
@@ -253,7 +259,9 @@ export function BoardBuilderView() {
           selectedLocation={selectedLocation}
           buildingTypes={buildingTypes}
           buildingOptions={buildingChoices(schemaDoc, selected)}
-          onEditBuildingTypes={(createWith) => setBuildingDialog({ createWith })}
+          onEditBuildingTypes={(createWith) =>
+            setBuildingDialog({ createWith, snapshot: schemaDoc })
+          }
           onChange={commit}
           onSelectLocation={setSelectedLocation}
           onActiveSlot={setActiveSlot}
@@ -273,6 +281,11 @@ export function BoardBuilderView() {
           onCommit={(next) => updateBuildingTypes(next as Record<string, unknown>)}
           onRename={renameBuildingType}
           onClose={() => setBuildingDialog(null)}
+          onCancel={() => {
+            const { snapshot } = buildingDialog;
+            setBuildingDialog(null);
+            if (snapshot && snapshot !== schemaDoc) restoreDoc(snapshot);
+          }}
         />
       )}
 
