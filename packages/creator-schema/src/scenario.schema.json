@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://chessmess.dev/rtdt/schemas/scenario.schema.json",
   "title": "Return to Dark Tower — Custom Scenario",
-  "$comment": "schemaVersion 0.4.0 — first JSON change since 0.3.0: closes the F library sub-deferrals (dormantKingdoms, room.improveOnce/enterRequirement, quest.requirements, foe.strike/movement, battleDefs.cards), adds the closed tradeAsset union (decision #7), and adds MVP-scoped per-kind node props. Battle/foe figures are author-editable DEFAULTS, not constraints (official-app-analysis v0.3 §6). Later 0.4.x addition: optional node.description (author documentation) and closed props for the util.comment / util.group annotation kinds (flow documentation/grouping). 0.4.1: setup.selections.adversaryId / foes (and its tier1/tier2/tier3) / mainGoalId are now OPTIONAL — a backward-compatible relaxation so rule-variant scenarios that don't use the standard adversary fight, tiered foe roster, or a main-goal quest still validate at L1. 0.4.2: library.battleDefs values become a oneOf of the legacy strikes shape and the new official-app card-ladder shape ($defs/battleLadderCard), and a hero.scope effect op is added for multi-hero battle-card targets — additive; every 0.4.0/0.4.1 document validates unchanged. 0.4.3: adds $defs/cardAppearance (presentational card back/template/accent — engine passes through opaque), optional artRef/flavor on generic cards and optional artRef on battle-ladder cards, optional appearance on generic decks and ladder battleDefs, and closed props branches for deck.draw (with reveal/resolve flags)/deck.reshuffle/deck.discard — additive; every 0.4.0–0.4.2 document validates unchanged. 0.4.4: adds optional presentational $defs/room.name (room-card title) and $defs/room.artRef (room-card art resourceKey) for the first-class Dungeon Builder — the engine passes both through opaque (neither enters engine state nor a directive), so every 0.4.0–0.4.3 document validates unchanged and golden/goldenFull digest+directive streams are unaffected. 0.4.5: adds optional presentational $defs/dungeon.bitmapRect (masterBitmap placement rect {x,y,w,h} in grid-cell units; when absent the map fills the grid) so the Dungeon Builder's grab-handle alignment of a map image under the room lattice persists and both apps render the map identically — engine passthrough (never enters state nor a directive), so every 0.4.0–0.4.4 document validates unchanged and golden/goldenFull streams are unaffected. 0.4.6: adds $defs/boardDef + $defs/anchorPoint and the library.boards registry, plus a third setup.board branch {boardRef} naming a library.boards entry — a creator-authored custom game board (own art, locations, anchors, adjacency) rendered by ultimatedarktowerboard and played in the player. Locations keep the RtDT shape ({name, kingdom, terrain, building?}), so no node kind or effect op changes: locations are opaque strings everywhere. The other setup.board branches remain the implicit built-in RtDT board. Adjacency is authoring metadata — L2 validates its symmetry but nothing enforces movement during play in v1. Additive: every 0.4.0–0.4.5 document validates unchanged and golden/goldenFull digest+directive streams are unaffected (the boardRef branch only activates when authored).",
+  "$comment": "schemaVersion 0.4.0 — first JSON change since 0.3.0: closes the F library sub-deferrals (dormantKingdoms, room.improveOnce/enterRequirement, quest.requirements, foe.strike/movement, battleDefs.cards), adds the closed tradeAsset union (decision #7), and adds MVP-scoped per-kind node props. Battle/foe figures are author-editable DEFAULTS, not constraints (official-app-analysis v0.3 §6). Later 0.4.x addition: optional node.description (author documentation) and closed props for the util.comment / util.group annotation kinds (flow documentation/grouping). 0.4.1: setup.selections.adversaryId / foes (and its tier1/tier2/tier3) / mainGoalId are now OPTIONAL — a backward-compatible relaxation so rule-variant scenarios that don't use the standard adversary fight, tiered foe roster, or a main-goal quest still validate at L1. 0.4.2: library.battleDefs values become a oneOf of the legacy strikes shape and the new official-app card-ladder shape ($defs/battleLadderCard), and a hero.scope effect op is added for multi-hero battle-card targets — additive; every 0.4.0/0.4.1 document validates unchanged. 0.4.3: adds $defs/cardAppearance (presentational card back/template/accent — engine passes through opaque), optional artRef/flavor on generic cards and optional artRef on battle-ladder cards, optional appearance on generic decks and ladder battleDefs, and closed props branches for deck.draw (with reveal/resolve flags)/deck.reshuffle/deck.discard — additive; every 0.4.0–0.4.2 document validates unchanged. 0.4.4: adds optional presentational $defs/room.name (room-card title) and $defs/room.artRef (room-card art resourceKey) for the first-class Dungeon Builder — the engine passes both through opaque (neither enters engine state nor a directive), so every 0.4.0–0.4.3 document validates unchanged and golden/goldenFull digest+directive streams are unaffected. 0.4.5: adds optional presentational $defs/dungeon.bitmapRect (masterBitmap placement rect {x,y,w,h} in grid-cell units; when absent the map fills the grid) so the Dungeon Builder's grab-handle alignment of a map image under the room lattice persists and both apps render the map identically — engine passthrough (never enters state nor a directive), so every 0.4.0–0.4.4 document validates unchanged and golden/goldenFull streams are unaffected. 0.4.6: adds $defs/boardDef + $defs/anchorPoint and the library.boards registry, plus a third setup.board branch {boardRef} naming a library.boards entry — a creator-authored custom game board (own art, locations, anchors, adjacency) rendered by ultimatedarktowerboard and played in the player. Locations keep the RtDT shape ({name, kingdom, terrain, building?}), so no node kind or effect op changes: locations are opaque strings everywhere. The other setup.board branches remain the implicit built-in RtDT board. Adjacency is authoring metadata — L2 validates its symmetry but nothing enforces movement during play in v1. Additive: every 0.4.0–0.4.5 document validates unchanged and golden/goldenFull digest+directive streams are unaffected (the boardRef branch only activates when authored). 0.4.7: OPENS the building vocabulary, the counterpart to boardDef's already-open `terrain`. $defs/buildingType stops being the closed enum citadel/sanctuary/village/bazaar and becomes $defs/id; library.buildingTypes stops being a fixed 4-key map and becomes an open registry keyed by that id (the library.tokenTypes shape). $defs/buildingTypeDef gains presentational `name` and the behavioural `heroStart` (which type a hero starts on — replacing the hardcoded 'citadel' string in setup, with a fallback to it when no type sets the flag), relaxes `required` to `free` alone, and turns skullCapacity/destroyOnSkull from const 3/4 into authorable integers (capacity is already read through the engine's capacityOf on both skull paths; destroyOnSkull is documentary). L2 gains: a boardDef location's `building` must name a library.buildingTypes key WHEN that map is authored. Relaxing-only: every 0.4.0–0.4.6 document validates unchanged, and golden/goldenFull digest+directive streams are unaffected — the golden fixture sets no heroStart, so setup keeps taking its citadel path.",
   "type": "object",
   "required": ["schemaVersion", "meta", "setup", "library", "graph"],
   "additionalProperties": false,
@@ -34,7 +34,10 @@
     },
     "heroId": { "type": "string", "$comment": "L2: member of UDT HEROES@pins.udt" },
     "kingdom": { "enum": ["north", "south", "east", "west"] },
-    "buildingType": { "enum": ["citadel", "sanctuary", "village", "bazaar"] },
+    "buildingType": {
+      "$ref": "#/$defs/id",
+      "$comment": "0.4.7 — an open kebab/snake id, not a closed enum. RtDT's own four are citadel/sanctuary/village/bazaar. L2: when library.buildingTypes is authored, this must name one of its keys."
+    },
     "foeStatus": { "enum": ["panicked", "unsteady", "ready", "savage", "lethal"] },
     "glyph": { "enum": ["banner", "quest", "battle", "reinforce", "cleanse"] },
     "advantage": { "enum": ["Beast", "Magic", "Humanoid", "Melee", "Undead", "Stealth", "Wild"] },
@@ -820,9 +823,18 @@
 
     "buildingTypeDef": {
       "type": "object",
-      "required": ["free", "enhanced", "skullCapacity"],
+      "required": ["free"],
       "additionalProperties": false,
+      "$comment": "0.4.7 — `required` relaxed to `free` alone (a building with no enhanced Reinforce no longer needs a dummy `enhanced`), and `name`/`heroStart` added for author-defined types.",
       "properties": {
+        "name": {
+          "type": "string",
+          "$comment": "display label; the registry key is the id. Presentational — the engine never reads it."
+        },
+        "heroStart": {
+          "type": "boolean",
+          "$comment": "0.4.7 — a hero starts on their kingdom's FIRST location carrying a building of this type. When NO type in the map sets this, setup falls back to the literal type 'citadel' (the pre-0.4.7 rule), so every earlier document places heroes identically."
+        },
         "free": { "type": "array", "items": { "$ref": "#/$defs/effect" } },
         "enhanced": {
           "type": "object",
@@ -840,8 +852,18 @@
             "effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } }
           }
         },
-        "skullCapacity": { "const": 3 },
-        "destroyOnSkull": { "const": 4 }
+        "skullCapacity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9,
+          "default": 3,
+          "$comment": "0.4.7 — was `const 3`. Skulls that SIT on the building; the next one razes it. The engine reads this via capacityOf(), so a custom type's capacity is honoured on both the emergence and skull.place paths."
+        },
+        "destroyOnSkull": {
+          "type": "integer",
+          "minimum": 2,
+          "$comment": "0.4.7 — was `const 4`. Derived (skullCapacity + 1) and documentary: no engine path reads it."
+        }
       }
     },
 
@@ -1176,14 +1198,9 @@
         },
         "buildingTypes": {
           "type": "object",
-          "required": ["citadel", "sanctuary", "village", "bazaar"],
-          "additionalProperties": false,
-          "properties": {
-            "citadel": { "$ref": "#/$defs/buildingTypeDef" },
-            "sanctuary": { "$ref": "#/$defs/buildingTypeDef" },
-            "village": { "$ref": "#/$defs/buildingTypeDef" },
-            "bazaar": { "$ref": "#/$defs/buildingTypeDef" }
-          }
+          "additionalProperties": { "$ref": "#/$defs/buildingTypeDef" },
+          "propertyNames": { "$ref": "#/$defs/id" },
+          "$comment": "0.4.7 — an OPEN registry (was a fixed map requiring exactly citadel/sanctuary/village/bazaar), so a scenario can define its own buildings. Same shape as library.tokenTypes. The four RtDT names carry no special status beyond the 'citadel' hero-start fallback in setup."
         },
         "decks": { "type": "object", "additionalProperties": { "$ref": "#/$defs/deck" } },
         "cards": { "type": "object", "additionalProperties": { "$ref": "#/$defs/card" } },

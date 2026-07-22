@@ -14,6 +14,7 @@ import { BoardListRail } from './BoardListRail';
 import { BoardMapCanvas } from './BoardMapCanvas';
 import type { BoardEditMode } from './BoardMapCanvas';
 import { BoardEditorPanel } from './BoardEditorPanel';
+import { BuildingTypesDialog } from './BuildingTypesDialog';
 import { buildRtdtPreset } from './presetRtdt';
 import {
   BOARD_IMAGE_OPTS,
@@ -22,6 +23,8 @@ import {
   boardArtBytes,
   boardImageKey,
   boardsOf,
+  buildingChoices,
+  buildingTypesOf,
   hasStoredArt,
   resolveBoardArt,
   smallBtn,
@@ -68,6 +71,8 @@ export function BoardBuilderView() {
   const commitBoards = useCreatorStore((s) => s.commitBoards);
   const setActiveBoard = useCreatorStore((s) => s.setActiveBoard);
   const updateResourceImage = useCreatorStore((s) => s.updateResourceImage);
+  const updateBuildingTypes = useCreatorStore((s) => s.updateBuildingTypes);
+  const renameBuildingType = useCreatorStore((s) => s.renameBuildingType);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mode, setMode] = useState<BoardEditMode>('locations');
@@ -75,6 +80,9 @@ export function BoardBuilderView() {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [pendingActivate, setPendingActivate] = useState<string | null>(null);
+  // The Building types editor: null = closed. `createWith` opens it on a NEW type seeded with
+  // that name — what the location picker's Custom… option asks for.
+  const [buildingDialog, setBuildingDialog] = useState<{ createWith?: string } | null>(null);
 
   if (!schemaDoc) {
     return (
@@ -87,6 +95,7 @@ export function BoardBuilderView() {
   const boards = boardsOf(schemaDoc);
   const ids = Object.keys(boards);
   const activeId = activeBoardId(schemaDoc);
+  const buildingTypes = buildingTypesOf(schemaDoc);
 
   // Keep selection valid & non-null whenever boards exist (adjust during render, as the
   // dungeon/deck builders do).
@@ -191,6 +200,15 @@ export function BoardBuilderView() {
               {overBudget ? ' — autosave may fail' : ''}
             </span>
           )}
+          {/* Not a mode — it opens a dialog, and unlike the modes it is scenario-wide rather than
+              per-board, so it sits across the spacer and stays available with no board selected. */}
+          <button
+            style={smallBtn}
+            title="Define the buildings this scenario uses — their Reinforce effects, skull capacity, and which one heroes start on"
+            onClick={() => setBuildingDialog({})}
+          >
+            Building types…
+          </button>
         </div>
 
         {selected ? (
@@ -233,6 +251,9 @@ export function BoardBuilderView() {
           mode={mode}
           activeSlot={activeSlot}
           selectedLocation={selectedLocation}
+          buildingTypes={buildingTypes}
+          buildingOptions={buildingChoices(schemaDoc, selected)}
+          onEditBuildingTypes={(createWith) => setBuildingDialog({ createWith })}
           onChange={commit}
           onSelectLocation={setSelectedLocation}
           onActiveSlot={setActiveSlot}
@@ -240,6 +261,18 @@ export function BoardBuilderView() {
           onUploadArt={uploadArt}
           onToggleActive={toggleActive}
           onSuggestAdjacency={() => commit({ ...selected, adjacency: suggestAdjacency(selected) })}
+        />
+      )}
+
+      {buildingDialog && (
+        <BuildingTypesDialog
+          doc={schemaDoc}
+          boards={boards}
+          types={buildingTypes}
+          createWith={buildingDialog.createWith ?? null}
+          onCommit={(next) => updateBuildingTypes(next as Record<string, unknown>)}
+          onRename={renameBuildingType}
+          onClose={() => setBuildingDialog(null)}
         />
       )}
 

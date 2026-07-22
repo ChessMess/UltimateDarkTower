@@ -31,10 +31,16 @@ export const KINGDOM_COLOR: Record<string, string> = {
   west: '#f87171',
 };
 
-/** The schema's closed lowercase enum ($defs/buildingType), A-Z for the pickers. A JSON enum is
- *  a set, so this order is presentation only — the schema and engine unions are unaffected. */
+/**
+ * RtDT's own four buildings — suggestions only since schema 0.4.7, exactly like
+ * {@link TERRAIN_SUGGESTIONS}. `building` is an open `$defs/id` and `library.buildingTypes` is an
+ * open registry, so these carry no special status beyond being what a cloned RtDT board uses (and
+ * 'citadel' being setup's hero-start fallback when no type claims `heroStart`).
+ */
 export const BUILDING_TYPES = ['bazaar', 'citadel', 'sanctuary', 'village'] as const;
-export type BuildingType = (typeof BUILDING_TYPES)[number];
+
+/** A building type id — the `library.buildingTypes` key. Open; see {@link BUILDING_TYPES}. */
+export type BuildingType = string;
 
 /** RtDT's own six terrains — suggestions only; `terrain` is an open string in the schema. */
 export const TERRAIN_SUGGESTIONS = [
@@ -64,6 +70,69 @@ export function terrainChoices(board: Board): string[] {
     if (t) all.add(t);
   }
   return [...all].sort((a, b) => a.localeCompare(b));
+}
+
+/** A `library.buildingTypes` entry — the rules a building carries. Mirrors `$defs/buildingTypeDef`. */
+export type BuildingTypeDef = {
+  name?: string;
+  heroStart?: boolean;
+  skullCapacity?: number;
+  destroyOnSkull?: number;
+  free?: unknown[];
+  enhanced?: { cost?: { resource?: string; amount?: number }; effects?: unknown[] };
+};
+
+/** The scenario's building-type registry (schema 0.4.7 `library.buildingTypes`). */
+export function buildingTypesOf(doc: ScenarioDoc | null): Record<string, BuildingTypeDef> {
+  const lib = (doc?.library as Record<string, unknown> | undefined) ?? {};
+  return (lib.buildingTypes as Record<string, BuildingTypeDef> | undefined) ?? {};
+}
+
+/**
+ * Every building type the picker offers: the ones this scenario DEFINES, then RtDT's four, then
+ * any other value this board already uses.
+ *
+ * The terrain twin ({@link terrainChoices}) — but sourced from the library first, because unlike
+ * terrain a building is a rules object: the defined types are the ones that actually do something
+ * at play, and L2 rejects a `building` naming anything else once the registry exists.
+ */
+export function buildingChoices(doc: ScenarioDoc | null, board: Board): string[] {
+  const all = new Set<string>(Object.keys(buildingTypesOf(doc)));
+  for (const b of BUILDING_TYPES) all.add(b);
+  for (const loc of board.locations) {
+    const b = loc.building?.trim();
+    if (b) all.add(b);
+  }
+  return [...all].sort((a, b) => a.localeCompare(b));
+}
+
+/** A type's display label: its authored `name`, else the id itself. */
+export function buildingLabel(types: Record<string, BuildingTypeDef>, id: string): string {
+  return types[id]?.name?.trim() || id;
+}
+
+/**
+ * The building types a hero may start on — the editor's mirror of the engine's `heroStartTypes`
+ * (`packages/creator-engine/src/engine/setup.ts`). `null` means "no type claims the flag", which
+ * is the engine's signal to fall back to the literal type 'citadel'.
+ */
+export function heroStartTypes(types: Record<string, BuildingTypeDef>): Set<string> | null {
+  const flagged = new Set<string>();
+  for (const [id, def] of Object.entries(types)) {
+    if (def?.heroStart) flagged.add(id.toLowerCase());
+  }
+  return flagged.size > 0 ? flagged : null;
+}
+
+/** True when a location's building would place a hero — the flag, or 'citadel' as the fallback. */
+export function isHeroStartBuilding(
+  types: Record<string, BuildingTypeDef>,
+  building: string | undefined,
+): boolean {
+  if (!building) return false;
+  const flagged = heroStartTypes(types);
+  const b = building.toLowerCase();
+  return flagged ? flagged.has(b) : b === 'citadel';
 }
 
 export const ANCHOR_SLOTS = ['hero', 'building', 'foe', 'skull', 'marker'] as const;
@@ -229,8 +298,13 @@ export function locationsInScope(board: Board, scope: LocationScope): BoardLocat
 
 /**
  * The values a facet actually has on this board, with counts — the bulk-remove picker offers
- * only these, so every choice it shows deletes at least one location. Kingdoms and buildings
- * keep their canonical enum order (with "no building" last); terrains are open strings, sorted.
+ * only these, so every choice it shows deletes at least one location. Kingdoms keep their
+ * canonical enum order; terrains and buildings are open strings, sorted A-Z.
+ *
+ * Buildings sort like terrain rather than following {@link BUILDING_TYPES} because that list
+ * stopped being exhaustive at schema 0.4.7: ordering by it and filtering (the pre-0.4.7 shape)
+ * silently DROPPED every custom type, leaving it unremovable in bulk. `NO_BUILDING` is appended
+ * after the sort — '(none)' would otherwise sort ahead of every real id.
  */
 export function scopeChoices(board: Board, facet: ScopeFacet): Array<{ value: string; n: number }> {
   const tally = new Map<string, number>();
@@ -241,12 +315,14 @@ export function scopeChoices(board: Board, facet: ScopeFacet): Array<{ value: st
       tally.set(NO_BUILDING, (tally.get(NO_BUILDING) ?? 0) + 1);
     else if (key !== '') tally.set(key, (tally.get(key) ?? 0) + 1);
   }
+  const sorted = (skip?: string): string[] =>
+    [...tally.keys()].filter((k) => k !== skip).sort((a, b) => a.localeCompare(b));
   const order =
     facet === 'kingdom'
       ? [...KINGDOMS]
       : facet === 'building'
-        ? [...BUILDING_TYPES, NO_BUILDING]
-        : [...tally.keys()].sort((a, b) => a.localeCompare(b));
+        ? [...sorted(NO_BUILDING), NO_BUILDING]
+        : sorted();
   return order.filter((v) => tally.has(v)).map((value) => ({ value, n: tally.get(value)! }));
 }
 
@@ -405,8 +481,16 @@ export type BoardProblem = { level: 'error' | 'warn'; message: string };
  * Editor-side board validation. Mirrors the L2 checks in `@udtc/adapters`' `validate-refs`
  * (duplicate names, anchors/adjacency confined to real locations, adjacency symmetry) so the
  * author sees them while editing rather than at export.
+ *
+ * `buildingTypes` is the scenario's registry ({@link buildingTypesOf}). It drives two checks the
+ * board alone can't answer: which buildings start a hero, and whether a `building` names a type
+ * that exists. Pass `{}` (the default) and both degrade to the pre-0.4.7 behaviour — 'citadel'
+ * is the hero start, and no type is ever reported as unknown.
  */
-export function validateBoard(board: Board): BoardProblem[] {
+export function validateBoard(
+  board: Board,
+  buildingTypes: Record<string, BuildingTypeDef> = {},
+): BoardProblem[] {
   const problems: BoardProblem[] = [];
   if (!ID_RE.test(board.id)) {
     problems.push({ level: 'error', message: `id "${board.id}" must be kebab/snake case` });
@@ -415,6 +499,12 @@ export function validateBoard(board: Board): BoardProblem[] {
   if (board.locations.length === 0) {
     problems.push({ level: 'error', message: 'a board needs at least one location' });
   }
+
+  // Registry keys lowercased once — building values are compared case-insensitively everywhere
+  // (the engine, L2, and here), because a cloned RtDT board carries core's 'Citadel'.
+  const lowerTypes: Record<string, true> = {};
+  for (const id of Object.keys(buildingTypes)) lowerTypes[id.toLowerCase()] = true;
+  const hasRegistry = Object.keys(buildingTypes).length > 0;
 
   const names = new Set<string>();
   for (const loc of board.locations) {
@@ -428,6 +518,22 @@ export function validateBoard(board: Board): BoardProblem[] {
     names.add(loc.name);
     if (!loc.terrain.trim()) {
       problems.push({ level: 'error', message: `location "${loc.name}" has no terrain` });
+    }
+    const building = loc.building?.trim();
+    if (building && !ID_RE.test(building)) {
+      // L1 would reject this at export ($defs/buildingType is $defs/id) — say so while editing.
+      problems.push({
+        level: 'error',
+        message: `location "${loc.name}" building "${building}" must be kebab/snake case`,
+      });
+    } else if (building && hasRegistry && !(building.toLowerCase() in lowerTypes)) {
+      // The editor-side twin of the L2 check, gated the same way: with no registry authored there
+      // is nothing to resolve against, and warning on every building would be noise. A warning
+      // rather than an error because it's a normal mid-edit state.
+      problems.push({
+        level: 'warn',
+        message: `location "${loc.name}" building "${building}" has no entry in Building types — Reinforce there will fail`,
+      });
     }
   }
 
@@ -467,10 +573,13 @@ export function validateBoard(board: Board): BoardProblem[] {
       problems.push({ level: 'warn', message: `no locations in the ${kingdom} kingdom` });
       continue;
     }
-    if (!inK.some((l) => l.building === 'citadel')) {
+    if (!inK.some((l) => isHeroStartBuilding(buildingTypes, l.building))) {
+      // Which buildings start a hero is `heroStart` in the registry, falling back to 'citadel'
+      // when no type claims it — exactly the engine's rule (setup.ts `heroStartTypes`).
+      const what = heroStartTypes(buildingTypes) ? 'hero-start building' : 'citadel';
       problems.push({
         level: 'warn',
-        message: `${kingdom} has no citadel — its hero has no start location`,
+        message: `${kingdom} has no ${what} — its hero has no start location`,
       });
     }
   }

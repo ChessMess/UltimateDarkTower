@@ -13,18 +13,19 @@ purpose. Locations are opaque strings everywhere in the system (engine state, ef
 conditions), so a custom vocabulary works with **every existing node kind and effect op
 unchanged**. Authoring a board re-sources the dropdowns; it does not add new authoring primitives.
 
-| Field                                                  | Required | Notes                                                                                             |
-| ------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------- |
-| `id` / `name`                                          | yes      | `id` is the `library.boards` key and must be kebab/snake case                                     |
-| `imageRef`                                             | no       | a `library.resources.images` key, or `builtin:rtdt-board`; without either the board renders blank |
-| `imageInfo.width` / `.height`                          | yes      | the image space anchors are normalized against                                                    |
-| `imageInfo.centerX/centerY/radius/northHeadingDegrees` | no       | all four ⇒ **3D-ready** (see below)                                                               |
-| `locations[]`                                          | yes      | `kingdom` is the closed 4-enum; `terrain` is an open string; `building` is the lowercase enum     |
-| `anchors`                                              | no       | per-location `building`/`skull`/`hero`/`foe`/`marker` points, normalized `[0,1]`                  |
-| `adjacency`                                            | no       | name → names, symmetric (see the caveat below)                                                    |
+| Field                                                  | Required | Notes                                                                                                                        |
+| ------------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `id` / `name`                                          | yes      | `id` is the `library.boards` key and must be kebab/snake case                                                                |
+| `imageRef`                                             | no       | a `library.resources.images` key, or `builtin:rtdt-board`; without either the board renders blank                            |
+| `imageInfo.width` / `.height`                          | yes      | the image space anchors are normalized against                                                                               |
+| `imageInfo.centerX/centerY/radius/northHeadingDegrees` | no       | all four ⇒ **3D-ready** (see below)                                                                                          |
+| `locations[]`                                          | yes      | `kingdom` is the closed 4-enum; `terrain` is an open string; `building` is an open id naming a `library.buildingTypes` entry |
+| `anchors`                                              | no       | per-location `building`/`skull`/`hero`/`foe`/`marker` points, normalized `[0,1]`                                             |
+| `adjacency`                                            | no       | name → names, symmetric (see the caveat below)                                                                               |
 
 Stored at `library.boards[id]` (schema **0.4.6**); a scenario selects one with
-`setup.board = { boardRef: id }`.
+`setup.board = { boardRef: id }`. The building types a location may name live alongside it in
+`library.buildingTypes` (schema **0.4.7**) — see step 4 below.
 
 ## Authoring flow
 
@@ -52,7 +53,26 @@ Stored at `library.boards[id]` (schema **0.4.6**); a scenario selects one with
    The picker only offers values the board actually has (with counts), and shows how many of how
    many will go before you confirm. Anchors and adjacency edges go with the removed locations;
    graph references to them do not, so check the Problems panel afterwards. There is no undo.
-4. **Anchors.** Pick a location, pick a slot, click the map. Tokens are drawn at these points. The
+4. **Building types.** The **Building types…** button at the right of the mode toolbar opens the
+   scenario's building registry (`library.buildingTypes`) — and so does **Custom…** in a location's
+   building picker. The registry is scenario-wide rather than per-board, so it opens even with no
+   board selected. A building is a _rules object_, not a label, so each type carries:
+   - **Reinforce — free** and **Reinforce — enhanced**: the effects that run when a hero Reinforces
+     on that space, the enhanced set costing the resource you name.
+   - **skull capacity** (1–9, default 3): how many skulls sit on it before the next one razes it.
+   - **hero start**: heroes begin on their kingdom's first building of this type.
+
+   **Clone** copies an existing type as a starting point. **Renaming** a type retypes every location
+   using it, across every board, in one undoable step. **Deleting** one that is still in use is
+   allowed but warned about — those locations keep the name, which then resolves to nothing, so
+   Reinforce there fails and validation flags it.
+
+   The four RtDT buildings (`citadel`, `sanctuary`, `village`, `bazaar`) are what a new scenario
+   starts with and what a cloned RtDT board uses, but they are only suggestions: you can rename
+   them, delete them, or add your own. Ids are kebab/snake case (`watchtower`, `ashen-shrine`) — the
+   dialog slugifies what you type, since the id is what a location's `building` stores.
+
+5. **Anchors.** Pick a location, pick a slot, click the map. Tokens are drawn at these points. The
    status line under the canvas always says what the next click will do. Panning does not place an
    anchor — a press only counts as a click if the pointer barely moved.
    **Shape is the slot, colour is the kingdom**: ● hero, ■ building, ▲ foe, ◆ skull, ▼ marker. The
@@ -60,19 +80,23 @@ Stored at `library.boards[id]` (schema **0.4.6**); a scenario selects one with
    glyph — filled when the selected location already has that anchor, hollow when it does not. In
    this mode the anchors themselves are not clickable, so you can drop one on top of another; pick
    a different location from the list instead.
-5. **Adjacency.** Click two locations to link/unlink (always written symmetrically). _Suggest from
+6. **Adjacency.** Click two locations to link/unlink (always written symmetrically). _Suggest from
    proximity_ seeds the graph from anchor distance.
-6. **Calibrate.** Drag the centre dot and radius handle to fit the board's printed circle, and set
+7. **Calibrate.** Drag the centre dot and radius handle to fit the board's printed circle, and set
    the north heading. Needed only for 3D.
-7. **Use in game.** Points `setup.board` at this board. The Inspector's location dropdowns and the
+8. **Use in game.** Points `setup.board` at this board. The Inspector's location dropdowns and the
    `foe.spawn` / `foe.move` effect fields immediately offer the custom names, and L2 validates
    against them.
 
 ## Things worth knowing
 
-**Each kingdom needs a citadel.** Heroes start on their home kingdom's citadel space. The engine
-takes the _first_ citadel authored in each kingdom; a kingdom without one leaves its hero unplaced.
-The editor warns about this.
+**Each kingdom needs a hero-start building.** Heroes start on their home kingdom's first building
+whose _type_ is marked **hero start** (step 4 above). A kingdom without one leaves its hero
+unplaced, and the editor warns about it.
+
+When **no** type is marked — every scenario written before schema 0.4.7, and any you never touch
+the flag on — the rule falls back to the literal type `citadel`, exactly as it always worked. So
+the marking only matters once you invent your own buildings.
 
 **Adjacency is an authoring aid — it is not enforced during play (v1).** It is saved, validated for
 symmetry, and available to tools, but nothing validates hero movement against it. This matches the

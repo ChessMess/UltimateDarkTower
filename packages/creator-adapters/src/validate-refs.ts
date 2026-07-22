@@ -44,9 +44,22 @@ export function validateRefs(scenario: unknown): L2Result {
     errors.push(`setup.board.boardRef "${boardRef}" is not a key in library.boards`);
   }
 
-  // Per-board integrity: unique names; anchors/adjacency confined to this board's locations;
-  // adjacency symmetric. Checked for EVERY authored board, not just the active one, so an
-  // inactive board can't rot unnoticed.
+  // Building types a location may name (schema 0.4.7: `library.buildingTypes` is an open
+  // registry, so the closed enum no longer guarantees the value means anything).
+  //
+  // `undefined` when the map isn't authored at all — and the check below is SKIPPED in that case
+  // rather than failing every location. A document with no registry was already accepted at L2
+  // before 0.4.7 (it just faults at play with "reinforce: no buildingType definition"), and
+  // turning that into a load-time failure would reject documents that used to load. The Creator
+  // shows the ungated version of this as an editor warning instead.
+  const buildingTypesLib = obj(obj(s['library'])?.['buildingTypes']);
+  const knownBuildingTypes = buildingTypesLib
+    ? new Set(Object.keys(buildingTypesLib).map((k) => k.toLowerCase()))
+    : undefined;
+
+  // Per-board integrity: unique names; buildings resolvable; anchors/adjacency confined to this
+  // board's locations; adjacency symmetric. Checked for EVERY authored board, not just the active
+  // one, so an inactive board can't rot unnoticed.
   if (boardsLib) {
     for (const [bId, bRaw] of Object.entries(boardsLib)) {
       const b = obj(bRaw);
@@ -60,6 +73,18 @@ export function validateRefs(scenario: unknown): L2Result {
           errors.push(`board "${bId}" has duplicate location name "${name}"`);
         }
         names.add(name);
+
+        // Compared lowercased, matching how the engine's boardStateFromDef normalizes it.
+        const building = str(obj(lRaw)?.['building']);
+        if (
+          building !== undefined &&
+          knownBuildingTypes !== undefined &&
+          !knownBuildingTypes.has(building.toLowerCase())
+        ) {
+          errors.push(
+            `board "${bId}" location "${name}" building "${building}" is not a key in library.buildingTypes`,
+          );
+        }
       }
 
       const anchors = obj(b['anchors']);

@@ -10,9 +10,12 @@ import {
   NO_BUILDING,
   activeBoardId,
   boardsOf,
+  buildingChoices,
+  buildingLabel,
   clientToNormalized,
   hasAnchorSlot,
   hasStoredArt,
+  isHeroStartBuilding,
   isPlaced,
   locationsInScope,
   pruneToLocations,
@@ -26,7 +29,7 @@ import {
   validateBoard,
   viewportFit,
 } from './shared';
-import type { Board } from './shared';
+import type { Board, BuildingTypeDef } from './shared';
 import { activeBoardLocationNames } from './vocabulary';
 import { scaffoldScenario } from '../utils/scaffold';
 import type { ScenarioDoc } from '../types';
@@ -179,7 +182,9 @@ describe('bulk location removal', () => {
       { value: 'north', n: 2 },
       { value: 'south', n: 2 },
     ]);
-    // BUILDING_TYPES order, which is A-Z — and (none) always last, however it sorts.
+    // Buildings sort A-Z like terrain (they are open ids since 0.4.7), with (none) always last
+    // however it sorts. Ordering by BUILDING_TYPES instead would drop every custom type — see
+    // the regression test below.
     expect(scopeChoices(b, 'building')).toEqual([
       { value: 'bazaar', n: 1 },
       { value: 'citadel', n: 1 },
@@ -189,6 +194,28 @@ describe('bulk location removal', () => {
       { value: 'Hills', n: 3 },
       { value: 'Lake', n: 1 },
     ]);
+  });
+
+  it('REGRESSION: offers custom building types, which BUILDING_TYPES ordering used to drop', () => {
+    // Ordering by [...BUILDING_TYPES, NO_BUILDING] and filtering by the tally silently omitted
+    // every type outside the RtDT four — so a board of custom buildings could not be bulk-removed
+    // by building at all. Schema 0.4.7 made that the common case.
+    const b = mixed();
+    b.locations = [
+      { name: 'A', kingdom: 'north', terrain: 'Hills', building: 'watchtower' },
+      { name: 'B', kingdom: 'north', terrain: 'Hills', building: 'watchtower' },
+      { name: 'C', kingdom: 'south', terrain: 'Hills', building: 'ashen-shrine' },
+      { name: 'D', kingdom: 'south', terrain: 'Hills' },
+    ];
+    expect(scopeChoices(b, 'building')).toEqual([
+      { value: 'ashen-shrine', n: 1 },
+      { value: 'watchtower', n: 2 },
+      { value: NO_BUILDING, n: 1 },
+    ]);
+    // And the scope it produces actually selects them.
+    expect(
+      locationsInScope(b, { kind: 'building', value: 'watchtower' }).map((l) => l.name),
+    ).toEqual(['A', 'B']);
   });
 
   it('drops the removed locations AND every anchor/adjacency edge touching them', () => {
@@ -631,5 +658,129 @@ describe('hasAnchorSlot', () => {
     expect(hasAnchorSlot(board, 'A', 'foe')).toBe(false);
     expect(hasAnchorSlot(board, 'B', 'hero')).toBe(false); // empty anchors entry
     expect(hasAnchorSlot(board, 'Nowhere', 'hero')).toBe(false);
+  });
+});
+
+// Schema 0.4.7: `library.buildingTypes` is an open registry and `building` is an open id, so the
+// Creator has to source the picker from the scenario and stop assuming 'citadel' means "home".
+describe('custom building types', () => {
+  const board = (building?: string): Board => ({
+    id: 'b',
+    name: 'B',
+    imageInfo: { width: 100, height: 100 },
+    locations: [
+      { name: 'A', kingdom: 'north', terrain: 'Hills', ...(building ? { building } : {}) },
+    ],
+  });
+
+  const docWith = (types: Record<string, unknown>): ScenarioDoc =>
+    ({ library: { buildingTypes: types } }) as unknown as ScenarioDoc;
+
+  describe('buildingChoices', () => {
+    it('offers the DEFINED types, RtDT’s four, and whatever the board already uses', () => {
+      const choices = buildingChoices(docWith({ watchtower: {} }), board('ruin'));
+      expect(choices).toEqual(['bazaar', 'citadel', 'ruin', 'sanctuary', 'village', 'watchtower']);
+    });
+
+    it('degrades to the RtDT four when no registry is authored', () => {
+      expect(buildingChoices(null, board())).toEqual(['bazaar', 'citadel', 'sanctuary', 'village']);
+    });
+
+    it('never offers a duplicate when a defined type is also on the board', () => {
+      const choices = buildingChoices(docWith({ watchtower: {} }), board('watchtower'));
+      expect(choices.filter((c) => c === 'watchtower')).toHaveLength(1);
+    });
+  });
+
+  describe('buildingLabel', () => {
+    it('prefers the authored name and falls back to the id', () => {
+      const types = { watchtower: { name: 'Watchtower' }, ruin: {} };
+      expect(buildingLabel(types, 'watchtower')).toBe('Watchtower');
+      expect(buildingLabel(types, 'ruin')).toBe('ruin');
+      expect(buildingLabel(types, 'unknown')).toBe('unknown');
+    });
+  });
+
+  describe('hero start', () => {
+    it('a flagged type is a hero start; an unflagged one is not', () => {
+      const types = { watchtower: { heroStart: true }, ruin: {} };
+      expect(isHeroStartBuilding(types, 'watchtower')).toBe(true);
+      expect(isHeroStartBuilding(types, 'ruin')).toBe(false);
+    });
+
+    it('FALLS BACK to citadel when no type claims the flag — the pre-0.4.7 rule', () => {
+      // Matches the engine (setup.ts heroStartTypes), which is what actually places heroes.
+      expect(isHeroStartBuilding({ citadel: {}, ruin: {} }, 'citadel')).toBe(true);
+      expect(isHeroStartBuilding({}, 'citadel')).toBe(true);
+    });
+
+    it('once ANY type is flagged, citadel stops being special', () => {
+      const types = { citadel: {}, watchtower: { heroStart: true } };
+      expect(isHeroStartBuilding(types, 'citadel')).toBe(false);
+      expect(isHeroStartBuilding(types, 'watchtower')).toBe(true);
+    });
+
+    it('matches case-insensitively, like a cloned RtDT board’s ‘Citadel’', () => {
+      expect(isHeroStartBuilding({ watchtower: { heroStart: true } }, 'Watchtower')).toBe(true);
+    });
+  });
+
+  describe('validateBoard', () => {
+    /** One location per kingdom — every kingdom must be populated, or the "no locations in the
+     *  {kingdom} kingdom" warning short-circuits the hero-start check under test. */
+    const fourKingdoms = (northBuilding?: string): Board => ({
+      id: 'b',
+      name: 'B',
+      imageInfo: { width: 100, height: 100 },
+      locations: [
+        {
+          name: 'N',
+          kingdom: 'north',
+          terrain: 'Hills',
+          ...(northBuilding ? { building: northBuilding } : {}),
+        },
+        { name: 'S', kingdom: 'south', terrain: 'Hills' },
+        { name: 'E', kingdom: 'east', terrain: 'Hills' },
+        { name: 'W', kingdom: 'west', terrain: 'Hills' },
+      ],
+    });
+
+    const warns = (b: Board, types: Record<string, BuildingTypeDef> = {}) =>
+      validateBoard(b, types)
+        .filter((p) => p.level === 'warn')
+        .map((p) => p.message);
+
+    it('names the hero-start BUILDING once a type is flagged', () => {
+      const msgs = warns(fourKingdoms('watchtower'), { watchtower: { heroStart: true } });
+      // north carries the flagged building, so only the other three are short a start space.
+      expect(msgs).toContain('south has no hero-start building — its hero has no start location');
+      expect(msgs.some((m) => m.startsWith('north has no'))).toBe(false);
+    });
+
+    it('still says "citadel" when nothing is flagged, so the old advice stays accurate', () => {
+      const msgs = warns(fourKingdoms('citadel'), { citadel: {} });
+      expect(msgs).toContain('south has no citadel — its hero has no start location');
+      expect(msgs.some((m) => m.startsWith('north has no'))).toBe(false);
+    });
+
+    it('warns about a building with no entry in the registry', () => {
+      const msgs = warns(fourKingdoms('watchtower'), { citadel: {} });
+      expect(msgs.some((m) => m.includes('"watchtower" has no entry in Building types'))).toBe(
+        true,
+      );
+    });
+
+    it('does NOT warn about unknown buildings when no registry is authored', () => {
+      // Mirrors the L2 gating: with nothing to resolve against, every building would warn.
+      const msgs = warns(fourKingdoms('watchtower'));
+      expect(msgs.some((m) => m.includes('has no entry in Building types'))).toBe(false);
+    });
+
+    it('ERRORS on a building that is not a valid id — L1 would reject it at export', () => {
+      const errors = validateBoard(fourKingdoms('Watch Tower'), { 'watch-tower': {} })
+        .filter((p) => p.level === 'error')
+        .map((p) => p.message);
+      expect(errors.some((m) => m.includes('must be kebab/snake case'))).toBe(true);
+    });
   });
 });

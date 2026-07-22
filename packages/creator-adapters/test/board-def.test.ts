@@ -194,3 +194,53 @@ describe('validateRefs — per-board integrity', () => {
     expect(validateRefs(doc).errors.some((e) => e.includes('board "spare"'))).toBe(true);
   });
 });
+
+// Schema 0.4.7 opened `library.buildingTypes` into a registry, so L1's enum no longer guarantees
+// a location's `building` means anything — L2 resolves it, exactly like every other typed ref.
+describe('validateRefs — a location building must resolve to a building type', () => {
+  /** A scenario whose board uses `building`, with an explicit buildingTypes registry.
+   *  Adjacency is dropped along with the second location so only building errors can surface. */
+  const withTypes = (
+    buildingTypes: Record<string, unknown> | undefined,
+    locationBuilding = 'citadel',
+  ) =>
+    scenario({
+      library: {
+        boards: {
+          'shattered-reach': {
+            ...BOARD,
+            locations: [{ ...BOARD.locations[0], building: locationBuilding }],
+            adjacency: {},
+          },
+        },
+        ...(buildingTypes ? { buildingTypes } : {}),
+      },
+    });
+
+  it('accepts a building naming an authored type', () => {
+    expect(validateRefs(withTypes({ citadel: { free: [] } })).errors).toEqual([]);
+  });
+
+  it('accepts a CUSTOM type — the whole point of the open registry', () => {
+    const doc = withTypes({ watchtower: { name: 'Watchtower', free: [] } }, 'watchtower');
+    expect(validateRefs(doc).errors).toEqual([]);
+  });
+
+  it('flags a building that names no type in the registry', () => {
+    const doc = withTypes({ citadel: { free: [] } }, 'watchtower');
+    expect(validateRefs(doc).errors).toContain(
+      'board "shattered-reach" location "Emberfall" building "watchtower" is not a key in library.buildingTypes',
+    );
+  });
+
+  it('matches case-insensitively, like the engine does', () => {
+    const doc = withTypes({ watchtower: { free: [] } }, 'Watchtower');
+    expect(validateRefs(doc).errors).toEqual([]);
+  });
+
+  it('SKIPS the check entirely when no registry is authored', () => {
+    // Pre-0.4.7 documents without a buildingTypes map loaded fine at L2 (they fault at play
+    // instead); turning that into a load-time error would reject documents that used to work.
+    expect(validateRefs(withTypes(undefined, 'watchtower')).errors).toEqual([]);
+  });
+});

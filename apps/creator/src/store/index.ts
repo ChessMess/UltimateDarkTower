@@ -170,6 +170,13 @@ interface CreatorStore {
   // setup.board is a oneOf, so {boardRef} is mutually exclusive with a hand-authored
   // {boardState}/{boardStateRef} — see the implementation for how that value survives.
   setActiveBoard: (boardId: string | null) => void;
+  // library.buildingTypes editing (schema 0.4.7 — an open registry, so a scenario defines its own
+  // buildings). Replaces the whole map, or clears it when empty, like updateBattleDefs.
+  updateBuildingTypes: (defs: Record<string, unknown>) => void;
+  // Retypes a building: renames the library.buildingTypes key AND every library.boards location
+  // using it. Deliberately ONE action rather than updateBuildingTypes + commitBoards — each commit
+  // pushes its own undo entry, so two calls would let undo strip a rename down to half-applied.
+  renameBuildingType: (from: string, to: string) => void;
 
   // RF state sync (called by canvas on drag-end, connect, delete)
   syncFromRF: (nodes: CreatorNode[], edges: Edge[]) => void;
@@ -847,6 +854,38 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   // re-validates; no React Flow re-derivation is needed.
   updateBattleDefs(defs) {
     commitLibrary(get, set, (library) => setOrDeleteKey(library, 'battleDefs', defs));
+  },
+
+  updateBuildingTypes(defs) {
+    commitLibrary(get, set, (library) => setOrDeleteKey(library, 'buildingTypes', defs));
+  },
+
+  renameBuildingType(from, to) {
+    if (from === to || !to) return;
+    commitLibrary(get, set, (library) => {
+      const types = { ...((library.buildingTypes as Record<string, unknown>) ?? {}) };
+      if (!(from in types) || to in types) return; // caller validates; never clobber a sibling
+      // Rebuilt in place rather than delete+assign so the registry keeps its authored order —
+      // the dialog lists types in map order, and a rename shouldn't jump the row to the end.
+      const renamed: Record<string, unknown> = {};
+      for (const [id, def] of Object.entries(types)) renamed[id === from ? to : id] = def;
+      library.buildingTypes = renamed;
+
+      // Retype every location using it, on EVERY board — an inactive board would otherwise be
+      // left holding a dangling type that L2 only reports once it's selected.
+      const boards = library.boards as Record<string, Board> | undefined;
+      if (!boards) return;
+      const nextBoards: Record<string, Board> = {};
+      for (const [boardId, board] of Object.entries(boards)) {
+        nextBoards[boardId] = {
+          ...board,
+          locations: board.locations.map((loc) =>
+            loc.building === from ? { ...loc, building: to } : loc,
+          ),
+        };
+      }
+      library.boards = nextBoards;
+    });
   },
 
   updateFoeBattleDefId(foeId, defId) {
