@@ -9,6 +9,7 @@
     "build": "tsc --build",
     "test": "vitest run --passWithNoTests",
     "dev": "tsc --build --watch",
+    "dev:relay-cli": "pnpm run build && pnpm run start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "start": "node dist/index.js",

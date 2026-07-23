@@ -7,6 +7,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "dev:sync": "pnpm run dev",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --build --noEmit",

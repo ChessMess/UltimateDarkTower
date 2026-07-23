@@ -15,17 +15,32 @@ consume the libraries through workspace symlinks that resolve to **built
 output** (`dist/`), not source. If you ever skip the install-time build, run
 `pnpm --filter "./packages/*" build` before starting any app.
 
+## Shortcut: `pnpm run dev:<name>`
+
+Every demo below also has a short `dev:<name>` alias (the **Shortcut** column
+in each table) that wraps the full `pnpm --filter ...` command in that row.
+It works two ways:
+
+- From the **repo root**: `pnpm run dev:board`.
+- From **inside that package's own directory** (e.g. `packages/board`): the
+  same `pnpm run dev:board`.
+
+From any _other_ directory in the repo, reach the root alias with pnpm's
+workspace-root flag: `pnpm -w run dev:board`. Plain `pnpm run dev:board`
+only resolves against the current directory's own `package.json`, so it
+fails with `ERR_PNPM_NO_SCRIPT` from an unrelated package without `-w`.
+
 ## Apps (browser — Vite dev servers)
 
-| App                                          | Command                                         | URL                                |
-| -------------------------------------------- | ----------------------------------------------- | ---------------------------------- |
-| **Creator** (`@udtc/creator`)                | `pnpm --filter @udtc/creator dev`               | http://localhost:5173              |
-| **Player** (`@udtc/player`)                  | `pnpm --filter @udtc/player dev`                | http://localhost:5174              |
-| **Digital** — solo digital play              | `pnpm --filter ultimatedarktowerdigital dev`    | http://localhost:5173 †            |
-| **Seed** — seed decoder SPA                  | `pnpm --filter ultimatedarktowerseed dev`       | http://localhost:3002 (auto-opens) |
-| **Sync** (`@dark-tower-sync/client`)         | `pnpm --filter @dark-tower-sync/client dev`     | http://localhost:3000 (auto-opens) |
-| **Controller** — tower control + 3D emulator | `pnpm --filter ultimatedarktowercontroller dev` | http://localhost:3005 (auto-opens) |
-| **Game** — The Tower's Challenge             | `pnpm --filter ultimatedarktowergame dev`       | http://localhost:3004 (auto-opens) |
+| App                                          | Command                                         | Shortcut                  | URL                                |
+| -------------------------------------------- | ----------------------------------------------- | ------------------------- | ---------------------------------- |
+| **Creator** (`@udtc/creator`)                | `pnpm --filter @udtc/creator dev`               | `pnpm run dev:creator`    | http://localhost:5173              |
+| **Player** (`@udtc/player`)                  | `pnpm --filter @udtc/player dev`                | `pnpm run dev:player`     | http://localhost:5174              |
+| **Digital** — solo digital play              | `pnpm --filter ultimatedarktowerdigital dev`    | `pnpm run dev:digital`    | http://localhost:5173 †            |
+| **Seed** — seed decoder SPA                  | `pnpm --filter ultimatedarktowerseed dev`       | `pnpm run dev:seed`       | http://localhost:3002 (auto-opens) |
+| **Sync** (`@dark-tower-sync/client`)         | `pnpm --filter @dark-tower-sync/client dev`     | `pnpm run dev:sync`       | http://localhost:3000 (auto-opens) |
+| **Controller** — tower control + 3D emulator | `pnpm --filter ultimatedarktowercontroller dev` | `pnpm run dev:controller` | http://localhost:3005 (auto-opens) |
+| **Game** — The Tower's Challenge             | `pnpm --filter ultimatedarktowergame dev`       | `pnpm run dev:game`       | http://localhost:3004 (auto-opens) |
 
 † Digital has no pinned port, so it takes 5173 — or the next free port if
 Creator is already running there. Vite prints the actual URL on start.
@@ -45,10 +60,10 @@ These packages are libraries, so their runnable demo lives behind a dedicated
 browser demo, the Tower Controller, is now a standalone app — see the Apps table
 above.)
 
-| Demo                | Command                                                  | URL                                |
-| ------------------- | -------------------------------------------------------- | ---------------------------------- |
-| **Display** example | `pnpm --filter ultimatedarktowerdisplay run dev:example` | opens `/example/index.html` (5173) |
-| **Board** example   | `pnpm --filter ultimatedarktowerboard run dev:example`   | http://localhost:5173              |
+| Demo                | Command                                                  | Shortcut               | URL                                |
+| ------------------- | -------------------------------------------------------- | ---------------------- | ---------------------------------- |
+| **Display** example | `pnpm --filter ultimatedarktowerdisplay run dev:example` | `pnpm run dev:display` | opens `/example/index.html` (5173) |
+| **Board** example   | `pnpm --filter ultimatedarktowerboard run dev:example`   | `pnpm run dev:board`   | http://localhost:5173              |
 
 ## Non-browser apps
 
@@ -59,7 +74,8 @@ above.)
   pnpm --filter ultimatedarktowerrelay-cli start
   ```
 
-  Use `dev` for a `tsc --build --watch` loop.
+  Shortcut for both steps together: `pnpm run dev:relay-cli`. Use `dev` for
+  a `tsc --build --watch` loop instead.
 
 - **Relay Electron** (`ultimatedarktowerrelay-electron`) — BLE tower emulator
   desktop app:
@@ -68,9 +84,19 @@ above.)
   pnpm --filter ultimatedarktowerrelay-electron dev   # electron-forge start
   ```
 
-  Needs the native BLE modules built, which the root install's `allowBuilds`
-  handles. If the native modules complain, rebuild them:
+  Shortcut: `pnpm run dev:relay-electron`. Needs the native BLE modules
+  built, which the root install's `allowBuilds` handles. If the native
+  modules complain, rebuild them:
   `pnpm --filter ultimatedarktowerrelay-electron rebuild`.
+
+- **MCP Server** (`mcp-server-return-to-dark-tower`) — watch-mode stdio
+  server for AI assistants to control the tower:
+
+  ```bash
+  pnpm --filter mcp-server-return-to-dark-tower dev   # tsx watch
+  ```
+
+  Shortcut: `pnpm run dev:mcp-server`.
 
 ## Gotcha: editing a library while an app is running
 
@@ -83,8 +109,10 @@ pnpm --filter ultimatedarktower build
 ```
 
 For a tight loop on a library, run its watcher in a second terminal alongside
-the app — e.g. `pnpm --filter ultimatedarktower dev` (tsc `-watch`). For the
-controller specifically, `dev:controller` already rebuilds core examples on save.
+the app — e.g. `pnpm --filter ultimatedarktower dev` (tsc `-watch`).
+`dev:controller` is just the shortcut for `pnpm --filter
+ultimatedarktowercontroller dev` (plain Vite) — it has no special rebuild
+behavior, so the same HMR caveat above still applies to it.
 
 ## Related
 

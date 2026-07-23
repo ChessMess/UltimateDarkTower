@@ -32,6 +32,7 @@
     "build:example": "vite build --config vite.config.example.ts",
     "dev": "vite",
     "dev:example": "vite --open /example/index.html",
+    "dev:display": "pnpm run dev:example",
     "test": "vitest run",
     "test:watch": "vitest --project unit",
     "test:coverage": "vitest run --project unit --coverage",

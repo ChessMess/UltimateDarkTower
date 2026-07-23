@@ -89,6 +89,7 @@ call only the controller's public command API. It mounts into any element; pass 
 npm install
 npm run ci          # typecheck + lint + test + build
 npm run dev:example # the full demo — 3D board + 2D map + readout + editing UI
+npm run dev:board   # equivalent alias for the same demo
 ```
 
 ## Upstream prerequisites
