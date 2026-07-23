@@ -1,4 +1,13 @@
 import type { BoardState, LocationName } from '../state/boardState';
+import {
+  adversaryOf,
+  buildingAt,
+  foesOf,
+  heroesOf,
+  markersAt,
+  monumentAt,
+  skullsAt,
+} from '../state/selectors';
 import type { BoardKingdom } from '../data/udtReexports';
 import type { BoardDefinition } from '../data/boardDefinition';
 import { resolveBoard } from '../data/boardDefinition';
@@ -41,56 +50,70 @@ export class BoardReadout implements BoardRenderer {
 
     const lines: string[] = [`Board — focus: ${focus.kingdom}/${focus.angle}`];
 
-    const heroIds = Object.keys(state.heroes)
-      .filter((id) => inFocus(state.heroes[id].location))
-      .sort((a, b) => a.localeCompare(b));
-    lines.push(`Heroes (${heroIds.length}):`);
-    for (const id of heroIds) {
-      const hero = state.heroes[id];
-      lines.push(`  - ${id} @ ${hero.location}${hero.owner ? ` (${hero.owner})` : ''}`);
+    const heroes = heroesOf(state)
+      .filter((h) => inFocus(h.location))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    lines.push(`Heroes (${heroes.length}):`);
+    for (const hero of heroes) {
+      const owner = hero.data?.owner;
+      lines.push(`  - ${hero.id} @ ${hero.location}${owner ? ` (${owner})` : ''}`);
     }
 
-    const foeIds = Object.keys(state.foes)
-      .filter((id) => inFocus(state.foes[id].location))
-      .sort((a, b) => a.localeCompare(b));
-    lines.push(`Foes (${foeIds.length}):`);
-    for (const id of foeIds) {
-      const foe = state.foes[id];
-      lines.push(`  - ${id} ${foe.foe} @ ${foe.location}`);
+    const foes = foesOf(state)
+      .filter((f) => inFocus(f.location))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    lines.push(`Foes (${foes.length}):`);
+    for (const foe of foes) {
+      lines.push(`  - ${foe.id} ${foe.art ?? ''} @ ${foe.location}`);
     }
 
+    const adversary = adversaryOf(state);
     const adversaryInFocus =
-      state.adversary !== undefined &&
-      (kingdom === 'all' ||
-        (state.adversary.location !== undefined && inFocus(state.adversary.location)));
-    if (state.adversary && adversaryInFocus) {
-      const { id, location } = state.adversary;
-      lines.push(`Adversary: ${id || '(unselected)'}${location ? ` @ ${location}` : ''}`);
+      adversary !== undefined &&
+      (kingdom === 'all' || (adversary.location !== undefined && inFocus(adversary.location)));
+    if (adversary && adversaryInFocus) {
+      lines.push(
+        `Adversary: ${adversary.id || '(unselected)'}${adversary.location ? ` @ ${adversary.location}` : ''}`,
+      );
     } else {
       lines.push('Adversary: none');
     }
 
-    const active = Object.keys(state.buildings)
+    // Sourced from `state.tokens` (like the marker set below), not the board definition's
+    // static building-location list — so a building/skull/monument token placed anywhere it
+    // actually exists in state is reported, even on a board the state wasn't seeded from.
+    const buildingLocs = new Set<LocationName>();
+    for (const token of Object.values(state.tokens)) {
+      if (token.typeId === 'building' || token.typeId === 'skull' || token.typeId === 'monument') {
+        buildingLocs.add(token.location);
+      }
+    }
+    const active = [...buildingLocs]
       .filter((loc) => {
-        const b = state.buildings[loc];
-        return (b.skulls > 0 || b.destroyed || (b.monument ?? null) !== null) && inFocus(loc);
+        const skulls = skullsAt(state, loc);
+        const b = buildingAt(state, loc);
+        return (skulls > 0 || b.destroyed || monumentAt(state, loc) !== undefined) && inFocus(loc);
       })
       .sort((a, b) => a.localeCompare(b));
     lines.push(`Buildings (${active.length} active):`);
     for (const loc of active) {
-      const b = state.buildings[loc];
-      const parts = [`${b.skulls} skull${b.skulls === 1 ? '' : 's'}`];
+      const skulls = skullsAt(state, loc);
+      const b = buildingAt(state, loc);
+      const monument = monumentAt(state, loc);
+      const parts = [`${skulls} skull${skulls === 1 ? '' : 's'}`];
       if (b.destroyed) parts.push('destroyed');
-      if (b.monument) parts.push(`monument: ${b.monument}`);
+      if (monument) parts.push(`monument: ${monument}`);
       lines.push(`  - ${loc}: ${parts.join(', ')}`);
     }
 
-    const markerLocs = Object.keys(state.spaceMarkers)
-      .filter((loc) => inFocus(loc))
-      .sort((a, b) => a.localeCompare(b));
+    const markerLocSet = new Set<LocationName>();
+    for (const token of Object.values(state.tokens)) {
+      if (token.typeId === 'marker') markerLocSet.add(token.location);
+    }
+    const markerLocs = [...markerLocSet].filter(inFocus).sort((a, b) => a.localeCompare(b));
     lines.push(`Space markers (${markerLocs.length}):`);
     for (const loc of markerLocs) {
-      lines.push(`  - ${loc}: ${state.spaceMarkers[loc].join(', ')}`);
+      lines.push(`  - ${loc}: ${markersAt(state, loc).join(', ')}`);
     }
 
     return lines.join('\n');

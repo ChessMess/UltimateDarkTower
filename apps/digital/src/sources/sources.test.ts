@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { BoardStateController, type FoeStatus } from 'ultimatedarktowerboard';
+import {
+  adversaryOf,
+  BoardStateController,
+  buildingAt,
+  foesOf,
+  markersAt,
+  skullsAt,
+  type FoeStatus,
+} from 'ultimatedarktowerboard';
 import { ManualTowerSource } from './ManualTowerSource';
 import { ManualBoardSource } from './ManualBoardSource';
 
@@ -35,9 +43,9 @@ describe('ManualBoardSource', () => {
     const controller = new BoardStateController();
     const board = new ManualBoardSource(controller);
     board.placeFoe('shadow-wolves-1', 'shadow-wolves', 'Broken Lands', 'ready');
-    const foes = board.getState().foes;
-    expect(foes['shadow-wolves-1']?.location).toBe('Broken Lands');
-    expect(foes['shadow-wolves-1']?.foe).toBe('shadow-wolves');
+    const foe = board.getState().tokens['shadow-wolves-1'];
+    expect(foe?.location).toBe('Broken Lands');
+    expect(foe?.art).toBe('shadow-wolves');
   });
 
   it('emits to subscribers on board change', () => {
@@ -55,7 +63,7 @@ describe('ManualBoardSource', () => {
     const controller = new BoardStateController();
     const board = new ManualBoardSource(controller);
     all.forEach((status, i) => board.placeFoe(`foe-${i}`, 'brigands', 'Broken Lands', status));
-    expect(Object.values(board.getState().foes).map((f) => f.status)).toEqual(all);
+    expect(foesOf(board.getState()).map((f) => f.data?.status)).toEqual(all);
   });
 });
 
@@ -65,47 +73,50 @@ describe('ManualBoardSource — PRD-02 board actions', () => {
   it('destroys a building at the 4th skull and restores it below the threshold', () => {
     const board = make();
     board.addSkull('Dayside', 3);
-    expect(board.getState().buildings['Dayside']).toMatchObject({ skulls: 3, destroyed: false });
+    expect(skullsAt(board.getState(), 'Dayside')).toBe(3);
+    expect(buildingAt(board.getState(), 'Dayside').destroyed).toBe(false);
     board.addSkull('Dayside'); // 4th skull
-    expect(board.getState().buildings['Dayside']).toMatchObject({ skulls: 4, destroyed: true });
+    expect(skullsAt(board.getState(), 'Dayside')).toBe(4);
+    expect(buildingAt(board.getState(), 'Dayside').destroyed).toBe(true);
     board.removeSkull('Dayside'); // back to 3
-    expect(board.getState().buildings['Dayside']).toMatchObject({ skulls: 3, destroyed: false });
+    expect(skullsAt(board.getState(), 'Dayside')).toBe(3);
+    expect(buildingAt(board.getState(), 'Dayside').destroyed).toBe(false);
   });
 
   it('selects + places the adversary, then clears it', () => {
     const board = make();
     board.setAdversary('ashstrider', 'Broken Lands');
-    expect(board.getState().adversary).toMatchObject({
+    expect(adversaryOf(board.getState())).toMatchObject({
       id: 'ashstrider',
       location: 'Broken Lands',
     });
     board.clearAdversary();
-    expect(board.getState().adversary).toBeUndefined();
+    expect(adversaryOf(board.getState())).toBeUndefined();
   });
 
   it('places a hero with its owning kingdom and removes it', () => {
     const board = make();
     board.placeHero('brutal-warlord', 'Radiant Mountains', 'north');
-    expect(board.getState().heroes['brutal-warlord']).toMatchObject({
+    expect(board.getState().tokens['brutal-warlord']).toMatchObject({
       location: 'Radiant Mountains',
-      owner: 'north',
+      data: { owner: 'north' },
     });
     board.removeHero('brutal-warlord');
-    expect(board.getState().heroes['brutal-warlord']).toBeUndefined();
+    expect(board.getState().tokens['brutal-warlord']).toBeUndefined();
   });
 
   it('toggles a space marker on and off', () => {
     const board = make();
     board.setSpaceMarker('Broken Lands', 'wasteland', true);
-    expect(board.getState().spaceMarkers['Broken Lands']).toContain('wasteland');
+    expect(markersAt(board.getState(), 'Broken Lands')).toContain('wasteland');
     board.setSpaceMarker('Broken Lands', 'wasteland', false);
-    expect(board.getState().spaceMarkers['Broken Lands'] ?? []).not.toContain('wasteland');
+    expect(markersAt(board.getState(), 'Broken Lands')).not.toContain('wasteland');
   });
 
   it('moves a placed foe to a new location', () => {
     const board = make();
     board.placeFoe('sw-1', 'shadow-wolves', 'Broken Lands', 'ready');
     board.moveToken('sw-1', 'Dayside');
-    expect(board.getState().foes['sw-1']?.location).toBe('Dayside');
+    expect(board.getState().tokens['sw-1']?.location).toBe('Dayside');
   });
 });

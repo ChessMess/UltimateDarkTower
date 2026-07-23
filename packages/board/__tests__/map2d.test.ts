@@ -1,6 +1,6 @@
 import {
   BoardMap2D,
-  BOARD_ANCHORS,
+  BOARD_SPOTS,
   BOARD_IMAGE_INFO,
   createDefaultBoardState,
   createLocationPickStore,
@@ -9,11 +9,30 @@ import type { BoardState, TokenSelection, DragMode } from '../src/index';
 
 const IDENTITY_ROTATE = `rotate(0 ${BOARD_IMAGE_INFO.width / 2} ${BOARD_IMAGE_INFO.height / 2})`;
 
+function spotOf(location: string, spotId: string): { x: number; y: number } {
+  const spot = BOARD_SPOTS[location].find((s) => s.id === spotId);
+  if (!spot) throw new Error(`no ${spotId} spot at ${location}`);
+  return spot.at;
+}
+
 function populated(): BoardState {
   const s = createDefaultBoardState();
-  s.heroes = { 'hero-1': { location: 'Broken Lands' } }; // north — no art → fallback
-  s.foes = { 'foe-1': { foe: 'Brigands', location: 'Dayside', status: 'ready' } }; // north
-  s.foes['foe-2'] = { foe: 'Dragons', location: 'Big Sister', status: 'ready' }; // east
+  // hero-1 (north, no art → fallback), foe-1 (north), foe-2 (east)
+  s.tokens['hero-1'] = { id: 'hero-1', typeId: 'hero', location: 'Broken Lands', art: 'hero-1' };
+  s.tokens['foe-1'] = {
+    id: 'foe-1',
+    typeId: 'foe',
+    location: 'Dayside',
+    art: 'Brigands',
+    data: { status: 'ready' },
+  };
+  s.tokens['foe-2'] = {
+    id: 'foe-2',
+    typeId: 'foe',
+    location: 'Big Sister',
+    art: 'Dragons',
+    data: { status: 'ready' },
+  };
   return s;
 }
 
@@ -46,7 +65,7 @@ describe('BoardMap2D', () => {
     map.render(populated());
     const foe = host.querySelector('.udt-token[data-kind="foe"][data-id="foe-1"]') as SVGGElement;
     expect(foe).not.toBeNull();
-    const a = BOARD_ANCHORS['Dayside'].foe!;
+    const a = spotOf('Dayside', 'foe');
     const cx = a.x * BOARD_IMAGE_INFO.width;
     const cy = a.y * BOARD_IMAGE_INFO.height;
     const bx = BOARD_IMAGE_INFO.width / 2;
@@ -104,7 +123,18 @@ describe('BoardMap2D', () => {
   it('renders a quest marker as its own kind with the official art; unknown quests fall back to a disc', () => {
     const { map, host } = makeMap();
     const s = populated();
-    s.questMarkers = { 'Radiant Mountains': ['main-goal'], 'Broken Lands': ['some-custom-quest'] };
+    s.tokens['quest:Radiant Mountains:main-goal'] = {
+      id: 'quest:Radiant Mountains:main-goal',
+      typeId: 'quest',
+      location: 'Radiant Mountains',
+      art: 'main-goal',
+    };
+    s.tokens['quest:Broken Lands:some-custom-quest'] = {
+      id: 'quest:Broken Lands:some-custom-quest',
+      typeId: 'quest',
+      location: 'Broken Lands',
+      art: 'some-custom-quest',
+    };
     map.render(s);
     // A shipped quest marker renders its `quests/<id>.png` art (assetBaseUrl '/t/').
     const mainGoal = host.querySelector(

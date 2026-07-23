@@ -16,14 +16,14 @@ const BOARD = {
     { name: 'Emberfall', kingdom: 'north', terrain: 'Ash Flats', building: 'citadel' },
     { name: 'Coldwatch', kingdom: 'north', terrain: 'Tundra' },
   ],
-  anchors: { Emberfall: { hero: { x: 0.2, y: 0.2 } } },
+  spots: { Emberfall: [{ id: 'hero', at: { x: 0.2, y: 0.2 }, accepts: ['hero'] }] },
   adjacency: { Emberfall: ['Coldwatch'], Coldwatch: ['Emberfall'] },
 };
 
 /** A scenario shell that is only as complete as these tests need. */
 function scenario(over: Record<string, unknown> = {}): Record<string, unknown> {
   return {
-    schemaVersion: '0.4.6',
+    schemaVersion: '0.5.0',
     setup: { board: { boardRef: 'shattered-reach' } },
     library: { boards: { 'shattered-reach': BOARD } },
     graph: { nodes: [] },
@@ -90,9 +90,9 @@ describe('boardDefFromLibrary', () => {
     expect(boardDefFromLibrary('x', 'nope')).toBeNull();
   });
 
-  it('defaults anchors to an empty map so consumers can index it safely', () => {
-    const def = boardDefFromLibrary('x', { ...BOARD, anchors: undefined });
-    expect(def?.anchors).toEqual({});
+  it('defaults spots to an empty map so consumers can index it safely', () => {
+    const def = boardDefFromLibrary('x', { ...BOARD, spots: undefined });
+    expect(def?.spots).toEqual({});
   });
 });
 
@@ -161,10 +161,26 @@ describe('validateRefs — per-board integrity', () => {
     );
   });
 
-  it('flags anchors keyed to a non-location', () => {
-    const doc = withBoard({ anchors: { Nowhere: { hero: { x: 0.1, y: 0.1 } } } });
+  it('flags spots keyed to a non-location', () => {
+    const doc = withBoard({
+      spots: { Nowhere: [{ id: 'hero', at: { x: 0.1, y: 0.1 }, accepts: ['hero'] }] },
+    });
     expect(validateRefs(doc).errors).toContain(
-      'board "shattered-reach" anchors key "Nowhere" is not a location on that board',
+      'board "shattered-reach" spots key "Nowhere" is not a location on that board',
+    );
+  });
+
+  it('flags duplicate spot ids within a location', () => {
+    const doc = withBoard({
+      spots: {
+        Emberfall: [
+          { id: 'hero', at: { x: 0.1, y: 0.1 }, accepts: ['hero'] },
+          { id: 'hero', at: { x: 0.2, y: 0.2 }, accepts: ['foe'] },
+        ],
+      },
+    });
+    expect(validateRefs(doc).errors).toContain(
+      'board "shattered-reach" location "Emberfall" has duplicate spot id "hero"',
     );
   });
 
@@ -249,5 +265,59 @@ describe('validateRefs — a location building must resolve to a building type',
     // `buildingTypesOf` returns `{}` for an absent map and so reports no problem at all — the
     // export would reject a board the Problems panel called clean.
     expect(validateRefs(withTypes({}, 'watchtower')).errors).toEqual([]);
+  });
+});
+
+// Schema 0.5.0: a board spot's `accepts` list names either a reserved built-in type or a
+// library.tokenTypes key — gated exactly like the buildingTypes check above.
+describe('validateRefs — a spot accepts entry must resolve to a reserved id or a tokenType', () => {
+  const withAccepts = (accepts: string[], tokenTypes?: Record<string, unknown>) =>
+    scenario({
+      library: {
+        boards: {
+          'shattered-reach': {
+            ...BOARD,
+            spots: { Emberfall: [{ id: 'marker', at: { x: 0.1, y: 0.1 }, accepts }] },
+          },
+        },
+        ...(tokenTypes ? { tokenTypes } : {}),
+      },
+    });
+
+  it('accepts every reserved built-in type with no registry authored', () => {
+    expect(
+      validateRefs(
+        withAccepts([
+          'hero',
+          'foe',
+          'adversary',
+          'building',
+          'skull',
+          'monument',
+          'marker',
+          'quest',
+        ]),
+      ).errors,
+    ).toEqual([]);
+  });
+
+  it('accepts a CUSTOM type that IS in the registry', () => {
+    const doc = withAccepts(['trap'], { trap: { id: 'trap', name: 'Trap' } });
+    expect(validateRefs(doc).errors).toEqual([]);
+  });
+
+  it('flags a custom type that names no entry in the registry', () => {
+    const doc = withAccepts(['trap'], { snare: { id: 'snare', name: 'Snare' } });
+    expect(validateRefs(doc).errors).toContain(
+      'board "shattered-reach" location "Emberfall" spot "marker" accepts unknown type "trap" (not a reserved type or a key in library.tokenTypes)',
+    );
+  });
+
+  it('SKIPS the check entirely when no tokenTypes registry is authored (matches buildingTypes gating)', () => {
+    expect(validateRefs(withAccepts(['trap'])).errors).toEqual([]);
+  });
+
+  it('treats an EMPTY registry as unauthored too', () => {
+    expect(validateRefs(withAccepts(['trap'], {})).errors).toEqual([]);
   });
 });

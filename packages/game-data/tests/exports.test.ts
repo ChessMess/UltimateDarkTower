@@ -9,7 +9,8 @@ import {
   BOARD_LOCATIONS,
   BOARD_LOCATION_BY_NAME,
   BOARD_GROUPINGS,
-  BOARD_ANCHORS,
+  BOARD_SPOTS,
+  RESERVED_TOKEN_TYPES,
   BOARD_IMAGE_INFO,
   BOARD_ADJACENCY,
   neighborsOf,
@@ -20,10 +21,10 @@ import {
   type BoardKingdom,
   type BoardGrouping,
   type BoardLocation,
-  type Anchor,
-  type AnchorSlot,
-  type LocationAnchors,
-  type BoardAnchorMap,
+  type SpotPoint,
+  type BoardSpot,
+  type BoardSpotMap,
+  type ReservedTokenType,
   type BoardImageInfo,
   type BoardAdjacency,
   charToValue,
@@ -160,8 +161,8 @@ describe('Package Exports', () => {
       expect(typeof info.northHeadingDegrees).toBe('number');
     });
 
-    test('BOARD_ANCHORS and BOARD_ADJACENCY each cover all 60 locations', () => {
-      expect(Object.keys(BOARD_ANCHORS)).toHaveLength(60);
+    test('BOARD_SPOTS and BOARD_ADJACENCY each cover all 60 locations', () => {
+      expect(Object.keys(BOARD_SPOTS)).toHaveLength(60);
       expect(Object.keys(BOARD_ADJACENCY)).toHaveLength(60);
     });
 
@@ -171,16 +172,29 @@ describe('Package Exports', () => {
       expect(typeof shortestPath).toBe('function');
     });
 
+    test('RESERVED_TOKEN_TYPES is the built-in vocabulary', () => {
+      expect(RESERVED_TOKEN_TYPES).toEqual([
+        'hero',
+        'foe',
+        'adversary',
+        'building',
+        'skull',
+        'monument',
+        'marker',
+        'quest',
+      ]);
+    });
+
     test('type aliases are usable', () => {
-      const anchor: Anchor = { x: 0.5, y: 0.5 };
-      const slot: AnchorSlot = 'hero';
-      const locAnchors: LocationAnchors = { hero: anchor };
-      const map: BoardAnchorMap = BOARD_ANCHORS;
+      const point: SpotPoint = { x: 0.5, y: 0.5 };
+      const spot: BoardSpot = { id: 'hero', at: point, accepts: ['hero'] };
+      const map: BoardSpotMap = BOARD_SPOTS;
       const adj: BoardAdjacency = BOARD_ADJACENCY;
-      expect(slot).toBe('hero');
-      expect(locAnchors.hero).toBe(anchor);
+      const reserved: ReservedTokenType = 'hero';
+      expect(spot.at).toBe(point);
       expect(map).toBeDefined();
       expect(adj).toBeDefined();
+      expect(reserved).toBe('hero');
     });
   });
 

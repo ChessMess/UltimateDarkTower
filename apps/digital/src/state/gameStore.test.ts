@@ -4,10 +4,13 @@
  * delegating actions to the registered sources, projecting tower snapshots, and driving session
  * lifecycle (new/reset/save/load) through the pure session helpers.
  *
- * `saveToLocalStorage` / `loadFromLocalStorage` / `downloadSession` / `copySessionToClipboard` are
- * mocked (side effects outside the store's own logic — localStorage/Blob/clipboard); everything
- * else from '@/session' (createNewGameSession, applyGameSession, captureSession, nextTurn, …) is
- * real, so the store's delegation to them is exercised faithfully.
+ * `saveToLocalStorage` / `downloadSession` / `copySessionToClipboard` are mocked (side effects
+ * outside the store's own logic — Blob/clipboard, and save is a one-line localStorage.setItem
+ * wrapper); everything else from '@/session' (createNewGameSession, applyGameSession,
+ * captureSession, nextTurn, deserializeSession, …) is real. `loadSession` reads REAL
+ * localStorage directly (it needs the raw bytes for `staleSession`'s download-before-discard
+ * path), so load tests write to it via the real `serializeSession`/`STORAGE_KEY` rather than
+ * mocking the read.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createDefaultTowerState } from 'ultimatedarktower';
@@ -20,7 +23,6 @@ vi.mock('@/session', async (importOriginal) => {
   return {
     ...actual,
     saveToLocalStorage: vi.fn(),
-    loadFromLocalStorage: vi.fn(() => null),
     downloadSession: vi.fn(),
     copySessionToClipboard: vi.fn().mockResolvedValue(undefined),
   };
@@ -31,13 +33,7 @@ const { useGameStore } = await import('./gameStore');
 const sessionMod = await import('@/session');
 
 function emptyBoardState(): BoardState {
-  return {
-    foes: {},
-    heroes: {},
-    adversary: null,
-    skulls: {},
-    markers: {},
-  } as unknown as BoardState;
+  return { tokens: {} };
 }
 
 /** A minimal, spy-friendly BoardStateSource — records every delegated call. */
@@ -104,6 +100,7 @@ class FakeBoardSource implements BoardStateSource {
 describe('useGameStore', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     // Reset the shared ManualTowerSource singleton to a known, calibrated baseline so tower
     // assertions don't leak state between tests.
     const fresh = createDefaultTowerState();
@@ -308,13 +305,55 @@ describe('useGameStore', () => {
         ...useGameStore.getState().session,
         meta: { ...useGameStore.getState().session.meta, name: 'Loaded Game' },
       };
-      vi.mocked(sessionMod.loadFromLocalStorage).mockReturnValueOnce(loaded);
+      localStorage.setItem(sessionMod.STORAGE_KEY, sessionMod.serializeSession(loaded));
 
       const ok = useGameStore.getState().loadSession();
 
       expect(ok).toBe(true);
       expect(useGameStore.getState().session.meta.name).toBe('Loaded Game');
       expect(board.calls.some((c) => c.method === 'load')).toBe(true);
+    });
+
+    it('loadSession refuses a save with an incompatible schemaVersion, surfacing it as staleSession', () => {
+      const current = useGameStore.getState().session;
+      const stale = {
+        ...current,
+        schemaVersion: 2,
+        meta: { ...current.meta, name: 'stale-should-not-load' },
+      };
+      const raw = JSON.stringify(stale, null, 2);
+      localStorage.setItem(sessionMod.STORAGE_KEY, raw);
+
+      const ok = useGameStore.getState().loadSession();
+
+      expect(ok).toBe(false);
+      const stored = useGameStore.getState().staleSession;
+      expect(stored?.raw).toBe(raw); // byte-identical — nothing is silently altered
+      expect(stored?.error.foundVersion).toBe(2);
+      // The session in memory is untouched — nothing was loaded.
+      expect(useGameStore.getState().session.meta.name).not.toBe('stale-should-not-load');
+    });
+
+    it('discardStaleSession clears the stored save and the staleSession dialog state', () => {
+      localStorage.setItem(sessionMod.STORAGE_KEY, JSON.stringify({ schemaVersion: 2 }));
+      useGameStore.getState().loadSession();
+      expect(useGameStore.getState().staleSession).not.toBeNull();
+
+      useGameStore.getState().discardStaleSession();
+
+      expect(useGameStore.getState().staleSession).toBeNull();
+      expect(localStorage.getItem(sessionMod.STORAGE_KEY)).toBeNull();
+    });
+
+    it('dismissStaleSession closes the dialog without touching localStorage', () => {
+      const raw = JSON.stringify({ schemaVersion: 2 });
+      localStorage.setItem(sessionMod.STORAGE_KEY, raw);
+      useGameStore.getState().loadSession();
+
+      useGameStore.getState().dismissStaleSession();
+
+      expect(useGameStore.getState().staleSession).toBeNull();
+      expect(localStorage.getItem(sessionMod.STORAGE_KEY)).toBe(raw);
     });
 
     it('exportSession downloads the captured session', () => {

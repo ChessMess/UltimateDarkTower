@@ -1,5 +1,12 @@
 // Board presets used by the sidebar buttons and the initial load.
-import { ADVERSARIES, BOARD_LOCATIONS, TIER1_FOES, TIER2_FOES, TIER3_FOES } from '../../src/index';
+import {
+  ADVERSARIES,
+  BOARD_LOCATIONS,
+  TIER1_FOES,
+  TIER2_FOES,
+  TIER3_FOES,
+  foesOf,
+} from '../../src/index';
 import type { BoardStateController } from '../../src/index';
 
 const ALL_FOES = [...TIER1_FOES, ...TIER2_FOES, ...TIER3_FOES];
@@ -42,9 +49,9 @@ const ALL_ADVERSARIES = [...ADVERSARIES];
 
 /** Next free `foe-N` instance id against the current state. */
 export function nextFoeId(c: BoardStateController): string {
-  const foes = c.getState().foes;
+  const ids = new Set(foesOf(c.getState()).map((f) => f.id));
   let n = 1;
-  while (`foe-${n}` in foes) n++;
+  while (ids.has(`foe-${n}`)) n++;
   return `foe-${n}`;
 }
 

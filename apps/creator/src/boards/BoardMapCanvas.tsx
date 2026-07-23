@@ -1,36 +1,40 @@
-// BoardMapCanvas — the board art with its anchors, adjacency graph and circle calibration
+// BoardMapCanvas — the board art with its spots, adjacency graph and circle calibration
 // overlaid. Coordinates are normalized [0,1] against the image, matching `$defs/anchorPoint`
-// and `BOARD_ANCHORS`, so the annotation is resolution-independent.
+// and `BOARD_SPOTS`, so the annotation is resolution-independent.
 //
 // Zoom/pan is patterned on DungeonMapCanvas: wheel to zoom at the cursor, drag the background
 // to pan. Mode decides what a click does — see `BoardEditMode`.
 
 import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import type { AnchorSlot, Board } from './shared';
+import type { Board } from './shared';
 import {
   KINGDOM_COLOR,
   bfsDistance,
   clientToNormalized,
   locationPoint,
+  spotsOf,
   viewportFit,
 } from './shared';
 import { AnchorGlyph } from './AnchorGlyph';
 
-export type BoardEditMode = 'locations' | 'anchors' | 'adjacency' | 'calibrate';
+export type BoardEditMode = 'locations' | 'spots' | 'adjacency' | 'calibrate';
+
+/** The spot a 'spots'-mode click targets: a fresh id (create) or an existing one (move). */
+export type PendingSpot = { id: string; accepts: string[] };
 
 export interface BoardMapCanvasProps {
   board: Board;
   imageUrl?: string;
   mode: BoardEditMode;
-  /** The location being edited (anchor placement targets this one). */
+  /** The location being edited (spot placement targets this one). */
   selectedLocation: string | null;
-  /** Which anchor slot `anchors` mode places. */
-  activeSlot: AnchorSlot;
+  /** Which spot the next 'spots'-mode click places or moves. */
+  pendingSpot: PendingSpot | null;
   /** Adjacency mode: the first-clicked endpoint, if any. */
   adjacencyFrom: string | null;
   onSelectLocation: (name: string | null) => void;
-  onPlaceAnchor: (name: string, slot: AnchorSlot, at: { x: number; y: number }) => void;
+  onPlaceSpot: (name: string, at: { x: number; y: number }) => void;
   onToggleAdjacency: (a: string, b: string) => void;
   onCalibrate: (patch: { centerX?: number; centerY?: number; radius?: number }) => void;
 }
@@ -40,10 +44,10 @@ export function BoardMapCanvas({
   imageUrl,
   mode,
   selectedLocation,
-  activeSlot,
+  pendingSpot,
   adjacencyFrom,
   onSelectLocation,
-  onPlaceAnchor,
+  onPlaceSpot,
   onToggleAdjacency,
   onCalibrate,
 }: BoardMapCanvasProps) {
@@ -53,7 +57,7 @@ export function BoardMapCanvas({
   const [panning, setPanning] = useState(false);
   const dragRef = useRef<{ x: number; y: number; pan: { x: number; y: number } } | null>(null);
   const calibDragRef = useRef<'center' | 'radius' | null>(null);
-  // A pan ends in a click on the <svg>, which would otherwise drop an anchor wherever the drag
+  // A pan ends in a click on the <svg>, which would otherwise drop a spot wherever the drag
   // was released. Set once the pointer travels past DRAG_SLOP; consumed (and reset) by handleClick.
   const draggedRef = useRef(false);
 
@@ -159,9 +163,9 @@ export function BoardMapCanvas({
     const dragged = draggedRef.current;
     draggedRef.current = false;
     if (dragged) return; // the tail of a pan, not a placement
-    if (mode !== 'anchors' || !selectedLocation) return;
+    if (mode !== 'spots' || !selectedLocation || !pendingSpot) return;
     const p = toNorm(e.clientX, e.clientY);
-    if (p) onPlaceAnchor(selectedLocation, activeSlot, p);
+    if (p) onPlaceSpot(selectedLocation, p);
   };
 
   const info = board.imageInfo;
@@ -190,7 +194,7 @@ export function BoardMapCanvas({
           <rect x={0} y={0} width={width} height={height} fill="var(--c-surface-2, #1f2937)" />
         )}
 
-        {/* adjacency edges, under the anchors */}
+        {/* adjacency edges, under the spots */}
         {mode === 'adjacency' &&
           adjacencyEdges(board).map(([a, b, pa, pb]) => (
             <line
@@ -253,36 +257,35 @@ export function BoardMapCanvas({
           </>
         )}
 
-        {/* location anchors */}
+        {/* location spots */}
         {board.locations.map((loc) => {
-          const slots = board.anchors?.[loc.name];
-          if (!slots) return null;
+          const spots = spotsOf(board, loc.name);
+          if (spots.length === 0) return null;
           const isSelected = loc.name === selectedLocation;
           const isFrom = loc.name === adjacencyFrom;
-          return Object.entries(slots).map(([slot, p]) => {
-            if (!p) return null;
-            const isActiveSlot = slot === activeSlot;
-            const emphasize = isSelected && (mode !== 'anchors' || isActiveSlot);
-            // In anchors mode the slot you're placing leads; the rest recede so they don't
-            // compete with it. Elsewhere every slot keeps its old uniform weight.
-            const weight = mode !== 'anchors' ? 1 : isActiveSlot ? 1.35 : 0.8;
+          return spots.map((spot) => {
+            const isActiveSpot = spot.id === pendingSpot?.id;
+            const emphasize = isSelected && (mode !== 'spots' || isActiveSpot);
+            // In spots mode the spot you're placing leads; the rest recede so they don't
+            // compete with it. Elsewhere every spot keeps its old uniform weight.
+            const weight = mode !== 'spots' ? 1 : isActiveSpot ? 1.35 : 0.8;
             return (
-              <g key={`${loc.name}:${slot}`}>
+              <g key={`${loc.name}:${spot.id}`}>
                 <AnchorGlyph
-                  slot={slot as AnchorSlot}
-                  cx={p.x * width}
-                  cy={p.y * height}
+                  accepts={spot.accepts}
+                  cx={spot.at.x * width}
+                  cy={spot.at.y * height}
                   r={(emphasize || isFrom ? dot * 1.5 : dot) * weight}
                   fill={KINGDOM_COLOR[loc.kingdom] ?? '#94a3b8'}
                   stroke={isFrom ? '#38bdf8' : emphasize ? '#fff' : 'rgba(0,0,0,.55)'}
                   strokeWidth={dot / 2.5}
                   opacity={
-                    mode === 'anchors' ? (isActiveSlot ? 1 : 0.35) : slot === 'hero' ? 1 : 0.75
+                    mode === 'spots' ? (isActiveSpot ? 1 : 0.35) : spot.id === 'hero' ? 1 : 0.75
                   }
-                  // Anchors mode makes the map a pure placement surface: a glyph must not eat the
-                  // click, or you could never place a second slot on top of an existing one.
+                  // Spots mode makes the map a pure placement surface: a glyph must not eat the
+                  // click, or you could never place a second spot on top of an existing one.
                   // Selection there comes from the list, which the hint tells you.
-                  style={{ cursor: 'pointer', pointerEvents: mode === 'anchors' ? 'none' : 'auto' }}
+                  style={{ cursor: 'pointer', pointerEvents: mode === 'spots' ? 'none' : 'auto' }}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (mode === 'adjacency') {
@@ -299,8 +302,8 @@ export function BoardMapCanvas({
                 />
                 {emphasize && (
                   <text
-                    x={p.x * width}
-                    y={p.y * height - dot * 2}
+                    x={spot.at.x * width}
+                    y={spot.at.y * height - dot * 2}
                     textAnchor="middle"
                     fontSize={dot * 2.6}
                     fill="#fff"
@@ -319,7 +322,7 @@ export function BoardMapCanvas({
       </svg>
 
       <div style={hint}>
-        {hintText({ board, mode, selectedLocation, activeSlot, adjacencyFrom })}
+        {hintText({ board, mode, selectedLocation, pendingSpot, adjacencyFrom })}
         {mode === 'adjacency' && adjacencyFrom && (
           <AdjacencyDistanceHint board={board} from={adjacencyFrom} />
         )}
@@ -330,25 +333,26 @@ export function BoardMapCanvas({
 
 /**
  * The status line under the canvas — the only place that says what a click will do right now.
- * In `locations` mode it also calls out a selection that has no anchor: that location is data
+ * In `locations` mode it also calls out a selection that has no spot: that location is data
  * only, invisible here, and the list's ◎ button is what puts it on the board.
  */
 function hintText({
   board,
   mode,
   selectedLocation,
-  activeSlot,
+  pendingSpot,
   adjacencyFrom,
 }: Pick<
   BoardMapCanvasProps,
-  'board' | 'mode' | 'selectedLocation' | 'activeSlot' | 'adjacencyFrom'
+  'board' | 'mode' | 'selectedLocation' | 'pendingSpot' | 'adjacencyFrom'
 >): string {
   switch (mode) {
-    case 'anchors':
-      if (!selectedLocation) return 'Pick a location in the list to place its anchors';
-      return board.anchors?.[selectedLocation]?.[activeSlot]
-        ? `Click the board to move "${selectedLocation}" · ${activeSlot}`
-        : `Click the board to place "${selectedLocation}" · ${activeSlot}`;
+    case 'spots':
+      if (!selectedLocation) return 'Pick a location in the list to place its spots';
+      if (!pendingSpot) return `Pick a spot to place on "${selectedLocation}"`;
+      return spotsOf(board, selectedLocation).some((s) => s.id === pendingSpot.id)
+        ? `Click the board to move "${selectedLocation}" · ${pendingSpot.id}`
+        : `Click the board to place "${selectedLocation}" · ${pendingSpot.id}`;
     case 'adjacency':
       return adjacencyFrom
         ? `Linking from "${adjacencyFrom}" — click another location (click it again to unlink)`

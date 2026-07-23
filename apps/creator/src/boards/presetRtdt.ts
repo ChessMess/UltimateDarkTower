@@ -15,7 +15,7 @@
 // `ultimatedarktower`/`ultimatedarktowerboard`. See the note in ./vocabulary.ts — importing either
 // here pulls UDT's Node-only BLE stack into the browser bundle and the app dies at load.
 import { BUILTIN_BOARD_IMAGE_REF, getUDTReferenceLayer } from '@udtc/adapters';
-import type { Board, BuildingType, Kingdom, LocationAnchors } from './shared';
+import type { Board, BuildingType, Kingdom, Spot } from './shared';
 import { BUILDING_TYPES } from './shared';
 
 function toBuildingType(raw: string | undefined): BuildingType | undefined {
@@ -39,13 +39,13 @@ export function buildRtdtPreset(id: string): Board {
     };
   });
 
-  const anchors: Record<string, LocationAnchors> = {};
-  for (const [name, slots] of Object.entries(udt.boardAnchors)) {
-    const copy: LocationAnchors = {};
-    for (const [slot, point] of Object.entries(slots)) {
-      if (point) copy[slot as keyof LocationAnchors] = { x: point.x, y: point.y };
-    }
-    anchors[name] = copy;
+  const spots: Record<string, Spot[]> = {};
+  for (const [name, list] of Object.entries(udt.boardSpots)) {
+    spots[name] = list.map((spot) => ({
+      id: spot.id,
+      at: { x: spot.at.x, y: spot.at.y },
+      accepts: [...spot.accepts],
+    }));
   }
 
   const adjacency: Record<string, string[]> = {};
@@ -66,7 +66,7 @@ export function buildRtdtPreset(id: string): Board {
       northHeadingDegrees: udt.boardImageInfo.northHeadingDegrees,
     },
     locations,
-    anchors,
+    spots,
     adjacency,
   };
 }

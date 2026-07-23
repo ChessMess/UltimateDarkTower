@@ -16,8 +16,12 @@ import type { SealRef } from '@/sources/types';
  * Bump on any breaking change to the shape; `deserializeSession` validates it.
  * v2 (PRD-03): `PlayerBoard` gained potions / treasures / gear / questItems /
  * companions / virtues — v1 saves lack those fields and are rejected on load.
+ * v3: `board: BoardState` is now `ultimatedarktowerboard`'s 0.5.0 shape (one `tokens`
+ * collection, replacing the `heroes`/`foes`/`buildings`/`spaceMarkers`/`questMarkers`
+ * buckets) — not backward compatible. A v2 save is refused, not migrated (see
+ * `state/gameStore.ts`'s `staleSession` — the app offers a download before it can be cleared).
  */
-export const GAME_SESSION_SCHEMA_VERSION = 2;
+export const GAME_SESSION_SCHEMA_VERSION = 3;
 
 export type GameMode = 'cooperative'; // 'competitive' is a future mode
 export type Difficulty = 'Heroic' | 'Gritty';

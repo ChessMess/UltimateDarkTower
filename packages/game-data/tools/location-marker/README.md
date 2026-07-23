@@ -21,8 +21,10 @@ get dropped into the library's `src/`.
 > board renders and plays in `@udtc/player` with no code changes.
 >
 > This tool remains the pipeline for the **built-in Return to Dark Tower board data**: it is
-> what regenerates `BOARD_ANCHORS` / `BOARD_ADJACENCY` / `BOARD_IMAGE_INFO` as generated
-> TypeScript in `packages/core/src/data/board/` via `gen-board-data.mjs`.
+> what regenerates `BOARD_SPOTS` / `BOARD_ADJACENCY` / `BOARD_IMAGE_INFO` as generated
+> TypeScript in `packages/game-data/src/board/` via `gen-board-data.mjs` — this is also the
+> one place that lifts the tool's legacy five-slot vocabulary (below) into the `BoardSpot`
+> shape; see that script's header comment for the slot→spot rules.
 
 ## Run it
 

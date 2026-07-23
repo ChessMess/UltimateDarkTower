@@ -11,10 +11,13 @@ import { GAME_SESSION_SCHEMA_VERSION, type GameSession } from './types';
 
 export class GameSessionLoadError extends Error {
   readonly cause?: unknown;
-  constructor(message: string, cause?: unknown) {
+  /** The version found in the payload, when a version mismatch is what caused the rejection. */
+  readonly foundVersion?: number;
+  constructor(message: string, options?: { cause?: unknown; foundVersion?: number }) {
     super(message);
     this.name = 'GameSessionLoadError';
-    this.cause = cause;
+    this.cause = options?.cause;
+    this.foundVersion = options?.foundVersion;
   }
 }
 
@@ -41,7 +44,7 @@ export function deserializeSession(json: string): GameSession {
   try {
     parsed = JSON.parse(json);
   } catch (err) {
-    throw new GameSessionLoadError('Not valid JSON.', err);
+    throw new GameSessionLoadError('Not valid JSON.', { cause: err });
   }
 
   if (!isObject(parsed)) {
@@ -55,6 +58,7 @@ export function deserializeSession(json: string): GameSession {
   if (version !== GAME_SESSION_SCHEMA_VERSION) {
     throw new GameSessionLoadError(
       `Incompatible save version ${version}; this app reads version ${GAME_SESSION_SCHEMA_VERSION}.`,
+      { foundVersion: version },
     );
   }
 

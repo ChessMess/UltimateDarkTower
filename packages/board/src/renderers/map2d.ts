@@ -1,10 +1,11 @@
 import type { BoardState, LocationName } from '../state/boardState';
-import type { AnchorSlot, BoardKingdom } from '../data/udtReexports';
+import { adversaryOf, buildingAt, monumentAt, skullsAt } from '../state/selectors';
+import type { BoardKingdom } from '../data/udtReexports';
 import type { BoardDefImageInfo, BoardDefinition, ResolvedBoard } from '../data/boardDefinition';
-import { boardScaleFactor, resolveBoard } from '../data/boardDefinition';
+import { boardScaleFactor, resolveBoard, resolveSpot, spotPxFor } from '../data/boardDefinition';
 import type { BoardFocus, BoardRenderer } from './shared';
 import { DEFAULT_FOCUS, focusEquals } from './shared';
-import { KIND_TINT, KIND_Z_2D, normalizeAssetBaseUrl, resolveTokenImageFor } from './assetPaths';
+import { normalizeAssetBaseUrl, resolveTokenImageFor, tintFor, zFor2D } from './assetPaths';
 import { panRect, rectToViewBox, zoomRect } from './zoom';
 import type { Rect } from './zoom';
 import { pointerAngleDeg, viewBoxPointToClient } from './rotate';
@@ -12,12 +13,11 @@ import type { ClientPoint } from './rotate';
 import type { TokenSelection, TokenArtRef, TokenArtConfig, BoardView } from './assetPaths';
 import {
   MAX_FANNED_SKULLS,
+  customTokenKindsPresent,
   fanOffset,
+  groupByLocation,
   selectionKey,
-  heroEntries,
-  foeEntries,
-  markerEntries,
-  questEntries,
+  tokensOfKind,
 } from './tokenLayout';
 import type { LocatedEntry } from './tokenLayout';
 // Type-only — no runtime dependency on the UI layer (the store instance is supplied by the caller).
@@ -25,7 +25,20 @@ import type { LocationPickStore } from '../ui/stores';
 
 // Re-export the shared token-art convention so existing consumers keep importing
 // `TokenSelection`/`TokenArtRef`/`kebab` from here (and via the package barrel).
-export { kebab, lookupTokenArt, resolveTokenImageFor } from './assetPaths';
+export {
+  kebab,
+  lookupTokenArt,
+  resolveTokenImageFor,
+  DEFAULT_KIND_TINT,
+  DEFAULT_KIND_Z_2D,
+  DEFAULT_KIND_Z_3D,
+  KIND_TINT,
+  KIND_Z_2D,
+  KIND_Z_3D,
+  tintFor,
+  zFor2D,
+  zFor3D,
+} from './assetPaths';
 export type {
   TokenSelection,
   TokenArtRef,
@@ -121,7 +134,7 @@ export interface BoardMap2DOptions {
   dragMode?: DragMode;
   /**
    * The board to render. Omit for the built-in Return to Dark Tower board — existing
-   * consumers need no change. A custom board supplies its own locations, anchors and
+   * consumers need no change. A custom board supplies its own locations, spots and
    * image size; token geometry scales to that size automatically.
    */
   board?: BoardDefinition;
@@ -131,8 +144,8 @@ export interface BoardMap2DOptions {
 export type DragMode = 'rotate' | 'pan';
 
 /**
- * 2D overhead map renderer. Draws the board image and places tokens via the board's
- * normalized anchors (resolution-independent). Each token is rotated so
+ * 2D overhead map renderer. Draws the board image and places tokens at the board's
+ * normalized spots (resolution-independent). Each token is rotated so
  * its "up" faces inward toward the central tower, matching the board's radially-printed
  * spaces. Inline SVG: jsdom-testable, DOM hit-testing for click-to-select, crisp scaling.
  * Display-/three-free.
@@ -261,7 +274,7 @@ export class BoardMap2D implements BoardRenderer {
     selectionLayer.setAttribute('class', 'udt-board-selection');
     rotate.appendChild(selectionLayer);
 
-    // Armed space-pick: clickable targets at the anchors, drawn on top (M4 editing).
+    // Armed space-pick: clickable targets at the spots, drawn on top (M4 editing).
     if (this.locationPick?.isArmed()) {
       const spaces = document.createElementNS(SVG_NS, 'g');
       spaces.setAttribute('class', 'udt-board-spaces');
@@ -350,21 +363,21 @@ export class BoardMap2D implements BoardRenderer {
     this.render(state, this.lastFocus);
   }
 
-  /** Invisible-but-clickable space targets at the anchors (filtered by the pending placement). */
+  /** Invisible-but-clickable space targets at the spots (filtered by the pending placement). */
   private renderSpaceTargets(root: SVGGElement, focus: BoardFocus): void {
     const { width, height } = this.boardData.def.imageInfo;
     const targets = this.locationPick?.getPending()?.targets ?? 'all';
-    const slot: AnchorSlot = targets === 'buildings' ? 'building' : 'hero';
-    for (const [loc, slots] of Object.entries(this.boardData.def.anchors)) {
-      const anchor = slots[slot];
-      if (!anchor) continue;
+    const typeId = targets === 'buildings' ? 'building' : 'hero';
+    for (const loc of Object.keys(this.boardData.def.spots)) {
+      const spot = resolveSpot(this.boardData, loc, typeId);
+      if (!spot) continue;
       if (focus.kingdom !== 'all' && this.boardData.locationByName[loc]?.kingdom !== focus.kingdom)
         continue;
       const circle = document.createElementNS(SVG_NS, 'circle');
       circle.setAttribute('class', 'udt-space');
       circle.setAttribute('data-location', loc);
-      circle.setAttribute('cx', String(anchor.x * width));
-      circle.setAttribute('cy', String(anchor.y * height));
+      circle.setAttribute('cx', String(spot.at.x * width));
+      circle.setAttribute('cy', String(spot.at.y * height));
       circle.setAttribute('r', String(this.geom.spaceHitR));
       circle.setAttribute('fill', 'rgba(251, 191, 36, 0.18)');
       circle.setAttribute('stroke', '#fbbf24');
@@ -380,25 +393,30 @@ export class BoardMap2D implements BoardRenderer {
   private renderTokens(root: SVGGElement, state: BoardState, focus: BoardFocus): void {
     const layers: Array<{ z: number; render: () => void }> = [
       {
-        z: KIND_Z_2D.foe,
+        z: zFor2D('foe'),
         render: () =>
           this.renderFannedByLocation(
             root,
             focus,
-            foeEntries(state),
+            groupByLocation(tokensOfKind(state, 'foe')),
             'foe',
             (entry) => ({ kind: 'foe', id: entry.id, location: entry.location }),
             (entry) => ({ kind: 'foe', id: entry.art ?? entry.id }),
           ),
       },
       {
-        z: KIND_Z_2D.adversary,
+        z: zFor2D('adversary'),
         render: () => {
-          const adversary = state.adversary;
+          const adversary = adversaryOf(state);
           if (adversary?.location) {
+            // Falls back through `foe` then `building` when the board has no spot that
+            // explicitly accepts 'adversary' — the RtDT-generated board always does (its
+            // `foe` spot's `accepts` includes it), but a from-scratch custom board may not,
+            // and the adversary should still render somewhere rather than vanish.
             const px =
-              anchorPx(this.boardData, adversary.location, 'foe') ??
-              anchorPx(this.boardData, adversary.location, 'building');
+              spotPxFor(this.boardData, adversary.location, 'adversary') ??
+              spotPxFor(this.boardData, adversary.location, 'foe') ??
+              spotPxFor(this.boardData, adversary.location, 'building');
             if (px) {
               root.appendChild(
                 this.makeToken(
@@ -414,14 +432,15 @@ export class BoardMap2D implements BoardRenderer {
         },
       },
       {
-        z: KIND_Z_2D.building,
+        z: zFor2D('building'),
         render: () => {
-          for (const [loc, b] of Object.entries(state.buildings)) {
+          for (const loc of Object.keys(this.boardData.def.spots)) {
             const opacity = this.dim(loc, focus);
-            if (b.skulls > 0) {
-              const px = anchorPx(this.boardData, loc, 'skull');
+            const skulls = skullsAt(state, loc);
+            if (skulls > 0) {
+              const px = spotPxFor(this.boardData, loc, 'skull');
               if (px) {
-                const count = Math.min(b.skulls, MAX_FANNED_SKULLS);
+                const count = Math.min(skulls, MAX_FANNED_SKULLS);
                 const group = this.makeSelectableGroup(
                   { kind: 'building', id: loc, location: loc },
                   px,
@@ -439,22 +458,24 @@ export class BoardMap2D implements BoardRenderer {
                 root.appendChild(group);
               }
             }
-            if (b.monument || b.destroyed) {
-              const px = anchorPx(this.boardData, loc, 'building');
+            const building = buildingAt(state, loc);
+            const monument = monumentAt(state, loc);
+            if (monument || building.destroyed) {
+              const px = spotPxFor(this.boardData, loc, 'building');
               if (px) {
                 const group = this.makeSelectableGroup(
                   { kind: 'building', id: loc, location: loc },
                   px,
                   opacity,
                 );
-                if (b.monument)
+                if (monument)
                   this.appendArtOrFallback(
                     group,
-                    { kind: 'monument', id: b.monument },
+                    { kind: 'monument', id: monument },
                     'building',
                     this.geom.slotSize,
                   );
-                if (b.destroyed) group.appendChild(razedOverlay(this.geom.slotSize));
+                if (building.destroyed) group.appendChild(razedOverlay(this.geom.slotSize));
                 root.appendChild(group);
               }
             }
@@ -462,58 +483,71 @@ export class BoardMap2D implements BoardRenderer {
         },
       },
       {
-        z: KIND_Z_2D.marker,
+        z: zFor2D('marker'),
         render: () =>
           this.renderFannedByLocation(
             root,
             focus,
-            markerEntries(state),
+            groupByLocation(tokensOfKind(state, 'marker')),
             'marker',
-            (entry) => ({ kind: 'marker', id: entry.id, location: entry.location }),
+            (entry) => ({ kind: 'marker', id: entry.art ?? entry.id, location: entry.location }),
             (entry) => ({ kind: 'marker', id: entry.art ?? entry.id }),
           ),
       },
       {
-        // Quests are their own kind but share the `marker` anchor slot (no dedicated board anchor).
-        z: KIND_Z_2D.quest,
+        z: zFor2D('quest'),
         render: () =>
           this.renderFannedByLocation(
             root,
             focus,
-            questEntries(state),
-            'marker',
-            (entry) => ({ kind: 'quest', id: entry.id, location: entry.location }),
+            groupByLocation(tokensOfKind(state, 'quest')),
+            'quest',
+            (entry) => ({ kind: 'quest', id: entry.art ?? entry.id, location: entry.location }),
             (entry) => ({ kind: 'quest', id: entry.art ?? entry.id }),
           ),
       },
       {
-        z: KIND_Z_2D.hero,
+        z: zFor2D('hero'),
         render: () =>
           this.renderFannedByLocation(
             root,
             focus,
-            heroEntries(state),
+            groupByLocation(tokensOfKind(state, 'hero')),
             'hero',
             (entry) => ({ kind: 'hero', id: entry.id, location: entry.location }),
-            (entry) => ({ kind: 'hero', id: entry.id }),
+            (entry) => ({ kind: 'hero', id: entry.art ?? entry.id }),
           ),
       },
+      // Author-defined custom types: one layer per type id actually present, drawn with a
+      // generic (non-reserved) z-order/tint fallback and art resolved by convention.
+      ...customTokenKindsPresent(state).map((typeId) => ({
+        z: zFor2D(typeId),
+        render: () =>
+          this.renderFannedByLocation(
+            root,
+            focus,
+            groupByLocation(tokensOfKind(state, typeId)),
+            typeId,
+            (entry) => ({ kind: typeId, id: entry.id, location: entry.location }),
+            (entry) => ({ kind: typeId, id: entry.art ?? typeId }),
+          ),
+      })),
     ];
     layers.sort((a, b) => a.z - b.z);
     for (const { render } of layers) render();
   }
 
-  /** Place a group of same-location entries at `slot`, fanning when more than one shares the slot. */
+  /** Place a group of same-location entries at a resolved spot, fanning when more than one shares it. */
   private renderFannedByLocation(
     root: SVGGElement,
     focus: BoardFocus,
     byLocation: Map<LocationName, LocatedEntry[]>,
-    slot: AnchorSlot,
+    typeId: string,
     toSelection: (entry: LocatedEntry) => TokenSelection,
     toArt: (entry: LocatedEntry) => TokenArtRef,
   ): void {
     for (const [loc, entries] of byLocation) {
-      const px = anchorPx(this.boardData, loc, slot);
+      const px = spotPxFor(this.boardData, loc, typeId, entries[0]?.spotId);
       if (!px) continue;
       const opacity = this.dim(loc, focus);
       entries.forEach((entry, i) => {
@@ -569,7 +603,7 @@ export class BoardMap2D implements BoardRenderer {
   private appendArtOrFallback(
     group: SVGGElement,
     art: TokenArtRef,
-    kind: TokenSelection['kind'],
+    kind: string,
     size: number,
     off: Offset = { dx: 0, dy: 0 },
   ): void {
@@ -613,14 +647,13 @@ export class BoardMap2D implements BoardRenderer {
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
-    for (const [loc, slots] of Object.entries(this.boardData.def.anchors)) {
+    for (const [loc, spots] of Object.entries(this.boardData.def.spots)) {
       if (this.boardData.locationByName[loc]?.kingdom !== (focus.kingdom as BoardKingdom)) continue;
-      for (const anchor of Object.values(slots)) {
-        if (!anchor) continue;
-        minX = Math.min(minX, anchor.x * width);
-        minY = Math.min(minY, anchor.y * height);
-        maxX = Math.max(maxX, anchor.x * width);
-        maxY = Math.max(maxY, anchor.y * height);
+      for (const spot of spots) {
+        minX = Math.min(minX, spot.at.x * width);
+        minY = Math.min(minY, spot.at.y * height);
+        maxX = Math.max(maxX, spot.at.x * width);
+        maxY = Math.max(maxY, spot.at.y * height);
       }
     }
     if (!Number.isFinite(minX)) return full;
@@ -792,7 +825,7 @@ export class BoardMap2D implements BoardRenderer {
     const group = target?.closest('.udt-token') as SVGGElement | null;
     if (!group) return;
     const selection: TokenSelection = {
-      kind: group.getAttribute('data-kind') as TokenSelection['kind'],
+      kind: group.getAttribute('data-kind') ?? '',
       id: group.getAttribute('data-id') ?? '',
       location: group.getAttribute('data-location') ?? '',
     };
@@ -809,7 +842,7 @@ export class BoardMap2D implements BoardRenderer {
     const ringHost = Array.from(this.svg.querySelectorAll<SVGGElement>('.udt-token')).find(
       (g) =>
         selectionKey({
-          kind: g.getAttribute('data-kind') as TokenSelection['kind'],
+          kind: g.getAttribute('data-kind') ?? '',
           id: g.getAttribute('data-id') ?? '',
           location: g.getAttribute('data-location') ?? '',
         }) === this.selectedKey,
@@ -853,13 +886,6 @@ function inwardAlignDeg(board: ResolvedBoard, center: Point): number {
   return Math.round(deg * 100) / 100;
 }
 
-function anchorPx(board: ResolvedBoard, loc: LocationName, slot: AnchorSlot): Point | null {
-  const anchor = board.def.anchors[loc]?.[slot];
-  if (!anchor) return null;
-  const { width, height } = board.def.imageInfo;
-  return { x: anchor.x * width, y: anchor.y * height };
-}
-
 function makeImage(url: string, size: number, off: Offset): SVGImageElement {
   const image = document.createElementNS(SVG_NS, 'image');
   setHref(image, url);
@@ -871,14 +897,14 @@ function makeImage(url: string, size: number, off: Offset): SVGImageElement {
   return image;
 }
 
-function fallbackDisc(kind: TokenSelection['kind'], label: string, size: number): SVGGElement {
+function fallbackDisc(kind: string, label: string, size: number): SVGGElement {
   const group = document.createElementNS(SVG_NS, 'g');
   group.setAttribute('class', 'udt-token-fallback');
   const circle = document.createElementNS(SVG_NS, 'circle');
   circle.setAttribute('cx', '0');
   circle.setAttribute('cy', '0');
   circle.setAttribute('r', String(size * 0.42));
-  circle.setAttribute('fill', KIND_TINT[kind]);
+  circle.setAttribute('fill', tintFor(kind));
   circle.setAttribute('stroke', '#0b0b0b');
   circle.setAttribute('stroke-width', '4');
   group.appendChild(circle);

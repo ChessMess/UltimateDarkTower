@@ -9,7 +9,18 @@
 // (wired in the example), not an import here.
 import type { BoardStateController } from '../state/controller';
 import type { BoardState, FoeStatus, LocationName } from '../state/boardState';
+import {
+  adversaryOf,
+  buildingAt,
+  foesOf,
+  heroesOf,
+  markersAt,
+  monumentAt,
+  questsAt,
+  skullsAt,
+} from '../state/selectors';
 import type { BoardKingdom } from '../data/udtReexports';
+import { RESERVED_TOKEN_TYPES } from '../data/udtReexports';
 import {
   ADVERSARIES,
   ALLIES,
@@ -79,6 +90,12 @@ export interface BoardUIOptions {
   floating?: boolean;
   /** The board whose locations the panels offer. Omit for the built-in RtDT board. */
   board?: BoardDefinition;
+  /**
+   * Author-defined token types (from `library.tokenTypes`) the palette offers alongside the
+   * reserved kinds. Selecting one places a plain instance of that type via `placeToken` — no
+   * per-kind detail row, since a custom type carries no built-in sub-fields (status, owner, …).
+   */
+  tokenTypes?: ReadonlyArray<RosterEntry>;
 }
 
 export interface BoardUIHandle {
@@ -126,7 +143,7 @@ export function mountBoardUI(host: HTMLElement, options: BoardUIOptions): BoardU
   };
 
   makeAndRegister('palette', 'Palette', (body) =>
-    buildPalette(body, controller, locationPick, rosters, genId, board),
+    buildPalette(body, controller, locationPick, rosters, genId, board, options.tokenTypes ?? []),
   );
   makeAndRegister('inspector', 'Inspector', (body) =>
     buildInspector(body, controller, selection, board),
@@ -161,7 +178,7 @@ function resolveRosters(r?: Partial<BoardUIRosters>): BoardUIRosters {
 
 function defaultFoeId(_kind: 'foe', state: BoardState): string {
   let n = 1;
-  while (`foe-${n}` in state.foes) n++;
+  while (`foe-${n}` in state.tokens) n++;
   return `foe-${n}`;
 }
 
@@ -274,7 +291,11 @@ function makeDraggable(panel: HTMLElement, handle: HTMLElement): void {
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
-type AddKind = 'hero' | 'foe' | 'adversary' | 'marker' | 'quest' | 'skull' | 'monument';
+type ReservedAddKind = 'hero' | 'foe' | 'adversary' | 'marker' | 'quest' | 'skull' | 'monument';
+/** A reserved kind, or an author-defined `library.tokenTypes` id offered via `tokenTypes`. */
+type AddKind = ReservedAddKind | string;
+
+const RESERVED_ADD_KINDS = new Set<string>(RESERVED_TOKEN_TYPES);
 
 function buildPalette(
   body: HTMLElement,
@@ -283,6 +304,7 @@ function buildPalette(
   rosters: BoardUIRosters,
   genId: (kind: 'foe', state: BoardState) => string,
   board: ResolvedBoard,
+  tokenTypes: ReadonlyArray<RosterEntry>,
 ): void {
   const kindSelect = makeSelect(
     [
@@ -293,6 +315,7 @@ function buildPalette(
       { value: 'quest', label: 'Quest marker' },
       { value: 'skull', label: 'Skull' },
       { value: 'monument', label: 'Monument' },
+      ...tokenTypes.map((t) => ({ value: t.id, label: t.name })),
     ],
     'udt-palette-kind',
   );
@@ -383,14 +406,16 @@ function buildPalette(
     const kind = kindSelect.value as AddKind;
     const targets: PendingPlacement['targets'] =
       kind === 'skull' || kind === 'monument' ? 'buildings' : 'all';
-    const label = placementLabel(kind, {
-      hero: optionText(heroSelect),
-      foe: foeType.value,
-      adversary: adversaryId.value,
-      marker: markerValue(markerSelect, markerCustom),
-      quest: optionText(questSelect),
-      monument: monumentCustom.value.trim() || optionText(monumentSelect),
-    });
+    const label = RESERVED_ADD_KINDS.has(kind)
+      ? placementLabel(kind as ReservedAddKind, {
+          hero: optionText(heroSelect),
+          foe: foeType.value,
+          adversary: adversaryId.value,
+          marker: markerValue(markerSelect, markerCustom),
+          quest: optionText(questSelect),
+          monument: monumentCustom.value.trim() || optionText(monumentSelect),
+        })
+      : `${optionText(kindSelect)} (${kind})`;
     // Rebuild the location select for the right target set.
     const fresh = makeLocationSelect(targets, undefined, 'udt-palette-location', board);
     locationSelect.replaceWith(fresh);
@@ -435,6 +460,11 @@ function buildPalette(
         if (monument) controller.setMonument(loc, monument);
         break;
       }
+      default:
+        // An author-defined `library.tokenTypes` id, offered via `tokenTypes` — a plain
+        // instance with no built-in sub-fields.
+        controller.placeToken({ typeId: kind, location: loc });
+        break;
     }
     closeConfirm();
   });
@@ -560,8 +590,9 @@ function renderHero(
   sel: TokenSelection,
   board: ResolvedBoard,
 ): void {
-  const hero = state.heroes[sel.id];
-  if (!hero) return void body.appendChild(emptyNote('Hero no longer on the board.'));
+  const hero = state.tokens[sel.id];
+  if (!hero || hero.typeId !== 'hero')
+    return void body.appendChild(emptyNote('Hero no longer on the board.'));
   body.appendChild(heading(`Hero: ${sel.id}`));
   const move = makeLocationSelect('all', hero.location, 'udt-inspector-move', board);
   move.addEventListener('change', () => controller.moveHero(sel.id, move.value));
@@ -578,16 +609,17 @@ function renderFoe(
   sel: TokenSelection,
   board: ResolvedBoard,
 ): void {
-  const foe = state.foes[sel.id];
-  if (!foe) return void body.appendChild(emptyNote('Foe no longer on the board.'));
-  body.appendChild(heading(`Foe: ${sel.id} (${foe.foe})`));
+  const foe = state.tokens[sel.id];
+  if (!foe || foe.typeId !== 'foe')
+    return void body.appendChild(emptyNote('Foe no longer on the board.'));
+  body.appendChild(heading(`Foe: ${sel.id} (${foe.art ?? ''})`));
   const move = makeLocationSelect('all', foe.location, 'udt-inspector-move', board);
   move.addEventListener('change', () => controller.moveFoe(sel.id, move.value));
   const status = makeSelect(
     FOE_STATUSES.map((s) => ({ value: s, label: s })),
     'udt-inspector-status',
   );
-  status.value = foe.status;
+  status.value = (foe.data?.status as FoeStatus | undefined) ?? 'ready';
   status.addEventListener('change', () =>
     controller.setFoeStatus(sel.id, status.value as FoeStatus),
   );
@@ -604,7 +636,7 @@ function renderAdversary(
   state: BoardState,
   board: ResolvedBoard,
 ): void {
-  const adv = state.adversary;
+  const adv = adversaryOf(state);
   if (!adv) return void body.appendChild(emptyNote('No adversary selected.'));
   body.appendChild(heading(`Adversary: ${adv.id}`));
   const move = makeLocationSelect('all', adv.location, 'udt-inspector-move', board);
@@ -622,13 +654,14 @@ function renderBuilding(
   sel: TokenSelection,
 ): void {
   const loc = sel.location || sel.id;
-  const building = state.buildings[loc];
-  if (!building) return void body.appendChild(emptyNote('Not a building space.'));
+  if (state.tokens[loc]?.typeId !== 'building')
+    return void body.appendChild(emptyNote('Not a building space.'));
+  const building = buildingAt(state, loc);
   body.appendChild(heading(`Building: ${loc}`));
 
   const count = document.createElement('span');
   count.className = 'udt-inspector-skull-count';
-  count.textContent = String(building.skulls);
+  count.textContent = String(skullsAt(state, loc));
   const minus = makeButton('−', 'udt-inspector-skull-remove');
   minus.addEventListener('click', () => controller.removeSkull(loc, 1));
   const plus = makeButton('+', 'udt-inspector-skull-add');
@@ -648,7 +681,7 @@ function renderBuilding(
   monument.type = 'text';
   monument.placeholder = 'monument id';
   monument.className = 'udt-inspector-monument';
-  monument.value = building.monument ?? '';
+  monument.value = monumentAt(state, loc) ?? '';
   const monumentSet = makeButton('Set', 'udt-inspector-monument-set');
   monumentSet.addEventListener('click', () =>
     controller.setMonument(loc, monument.value.trim() || null),
@@ -666,7 +699,7 @@ function renderMarker(
   state: BoardState,
   sel: TokenSelection,
 ): void {
-  const present = state.spaceMarkers[sel.location]?.includes(sel.id);
+  const present = markersAt(state, sel.location).includes(sel.id);
   if (!present) return void body.appendChild(emptyNote('Marker no longer on the board.'));
   body.appendChild(heading(`Marker: ${sel.id} @ ${sel.location}`));
   body.appendChild(
@@ -680,7 +713,7 @@ function renderQuest(
   state: BoardState,
   sel: TokenSelection,
 ): void {
-  const present = state.questMarkers[sel.location]?.includes(sel.id);
+  const present = questsAt(state, sel.location).includes(sel.id);
   if (!present) return void body.appendChild(emptyNote('Quest no longer on the board.'));
   body.appendChild(heading(`Quest: ${sel.id} @ ${sel.location}`));
   body.appendChild(
@@ -745,24 +778,24 @@ function kingdomMetrics(
   board: ResolvedBoard,
 ): KingdomMetrics {
   const inK = (loc: LocationName): boolean => board.locationByName[loc]?.kingdom === kingdom;
-  const heroes = Object.values(state.heroes).filter((h) => inK(h.location)).length;
-  const foes = Object.values(state.foes).filter((f) => inK(f.location)).length;
+  const heroes = heroesOf(state).filter((h) => inK(h.location)).length;
+  const foes = foesOf(state).filter((f) => inK(f.location)).length;
   let skulls = 0;
   let razed = 0;
-  for (const [loc, b] of Object.entries(state.buildings)) {
+  for (const loc of board.buildingLocations) {
     if (!inK(loc)) continue;
-    skulls += b.skulls;
-    if (b.destroyed) razed++;
+    skulls += skullsAt(state, loc);
+    if (buildingAt(state, loc).destroyed) razed++;
   }
   let markers = 0;
-  for (const [loc, list] of Object.entries(state.spaceMarkers)) {
-    if (inK(loc)) markers += list.length;
-  }
   let quests = 0;
-  for (const [loc, list] of Object.entries(state.questMarkers)) {
-    if (inK(loc)) quests += list.length;
+  for (const token of Object.values(state.tokens)) {
+    if (!inK(token.location)) continue;
+    if (token.typeId === 'marker') markers++;
+    else if (token.typeId === 'quest') quests++;
   }
-  const adversary = state.adversary?.location ? inK(state.adversary.location) : false;
+  const adversaryLoc = adversaryOf(state)?.location;
+  const adversary = adversaryLoc ? inK(adversaryLoc) : false;
   return { heroes, foes, skulls, razed, markers, quests, adversary };
 }
 
@@ -935,7 +968,7 @@ function markerValue(select: HTMLSelectElement, custom: HTMLInputElement): strin
 }
 
 function placementLabel(
-  kind: AddKind,
+  kind: ReservedAddKind,
   values: {
     hero: string;
     foe: string;

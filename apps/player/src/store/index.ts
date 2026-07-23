@@ -13,6 +13,18 @@ import type {
   BattlePromptPayload,
 } from '../types';
 
+/**
+ * A saved session `checkForResumableSession` refused because its `version` stamp doesn't
+ * match `SavedSession.version` (or is missing) — most often a pre-0.5.0 `BoardState`. `raw`
+ * is the exact JSON of the stored record, so `LoadPanel` can offer a byte-identical download
+ * before the only option left is to discard it. See `persistence.ts`'s `SavedSession.version` doc.
+ */
+export interface StaleSaveInfo {
+  raw: string;
+  /** The `version` value found in the record (or `undefined` if the stamp was absent). */
+  foundVersion: unknown;
+}
+
 /** State restored from a saved session (page-refresh recovery). */
 export interface SessionHydration {
   scenario: unknown;
@@ -60,6 +72,9 @@ export interface PlayerStore {
   // Resumable saved session detected on boot (drives the LoadPanel resume prompt)
   resumable: SavedSessionMeta | null;
 
+  // A saved session refused for an incompatible `version` stamp (drives the LoadPanel stale-save dialog)
+  staleSave: StaleSaveInfo | null;
+
   // ---- actions ----
   setPhase: (phase: GamePhase) => void;
   setValidationError: (err: string) => void;
@@ -74,6 +89,7 @@ export interface PlayerStore {
   revealRoom: (dungeonId: string, roomId: string) => void;
   saveCheckpoint: (serializedState: string, lastCommand: number[]) => void;
   setResumable: (meta: SavedSessionMeta | null) => void;
+  setStaleSave: (info: StaleSaveInfo | null) => void;
   hydrateFromSession: (h: SessionHydration) => void;
   setRelayConnState: (s: RelayConnState) => void;
   setRelayStatus: (s: RelayStatus) => void;
@@ -99,6 +115,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   relayUrl: 'stub',
   log: [],
   resumable: null,
+  staleSave: null,
 
   setPhase: (phase) => set({ phase }),
 
@@ -140,6 +157,8 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
     })),
 
   setResumable: (resumable) => set({ resumable }),
+
+  setStaleSave: (staleSave) => set({ staleSave }),
 
   hydrateFromSession: ({
     scenario,
@@ -192,5 +211,6 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
       relayStatus: null,
       log: [],
       resumable: null,
+      staleSave: null,
     }),
 }));

@@ -25,17 +25,13 @@ import type {
   CameraConfig,
 } from 'ultimatedarktowerdisplay';
 import type { BoardState, LocationName } from '../state/boardState';
-import type { AnchorSlot, BoardKingdom } from '../data/udtReexports';
+import { adversaryOf, buildingAt, monumentAt, skullsAt } from '../state/selectors';
+import type { BoardKingdom } from '../data/udtReexports';
 import type { BoardDefinition, ResolvedBoard } from '../data/boardDefinition';
-import { resolveBoard } from '../data/boardDefinition';
+import { resolveBoard, resolveSpot } from '../data/boardDefinition';
 import type { BoardFocus, BoardViewAngle } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
-import {
-  KIND_TINT,
-  KIND_Z_3D,
-  lookupTokenArt,
-  resolveTokenImageFor,
-} from '../renderers/assetPaths';
+import { lookupTokenArt, resolveTokenImageFor, tintFor, zFor3D } from '../renderers/assetPaths';
 import type {
   TokenArtRef,
   TokenSelection,
@@ -45,12 +41,11 @@ import type {
 } from '../renderers/assetPaths';
 import {
   MAX_FANNED_SKULLS,
+  customTokenKindsPresent,
   fanOffset,
+  groupByLocation,
   selectionKey,
-  heroEntries,
-  foeEntries,
-  markerEntries,
-  questEntries,
+  tokensOfKind,
 } from '../renderers/tokenLayout';
 import type { LocatedEntry } from '../renderers/tokenLayout';
 // Type-only — the store INSTANCE is supplied by the caller; no runtime UI dependency.
@@ -411,45 +406,50 @@ export class Board3DPlugin implements ScenePlugin {
     const state = this.boardState;
     if (!state) return;
 
-    // Heroes (fanned), at the `hero` slot. No hero art exists → fallback.
+    // Heroes (fanned), at the `hero` spot. No hero art exists → fallback.
     this.placeFanned(
-      heroEntries(state),
+      groupByLocation(tokensOfKind(state, 'hero')),
       'hero',
       (e) => ({ kind: 'hero', id: e.id, location: e.location }),
-      (e) => ({ kind: 'hero', id: e.id }),
+      (e) => ({ kind: 'hero', id: e.art ?? e.id }),
     );
 
-    // Foes (fanned), at the `foe` slot. Art id = foe type; selection id = instance id.
+    // Foes (fanned), at the `foe` spot. Art id = foe type; selection id = instance id.
     this.placeFanned(
-      foeEntries(state),
+      groupByLocation(tokensOfKind(state, 'foe')),
       'foe',
       (e) => ({ kind: 'foe', id: e.id, location: e.location }),
       (e) => ({ kind: 'foe', id: e.art ?? e.id }),
     );
 
-    // Adversary, at its location's `foe` slot (falls back to `building`).
-    const adversary = state.adversary;
+    // Adversary, at its location's spot resolved for the 'adversary' type (the `foe` spot
+    // on RtDT, since its `accepts` includes 'adversary').
+    const adversary = adversaryOf(state);
     if (adversary?.location) {
-      const anchor =
-        this.boardData.def.anchors[adversary.location]?.foe ??
-        this.boardData.def.anchors[adversary.location]?.building;
-      if (anchor) {
+      // Falls back through `foe` then `building` when no spot explicitly accepts 'adversary'
+      // — mirrors the 2D map (see the comment there).
+      const spot =
+        resolveSpot(this.boardData, adversary.location, 'adversary') ??
+        resolveSpot(this.boardData, adversary.location, 'foe') ??
+        resolveSpot(this.boardData, adversary.location, 'building');
+      if (spot) {
         this.addToken(
           { kind: 'adversary', id: adversary.id, location: adversary.location },
           { kind: 'adversary', id: adversary.id },
-          this.worldAt(anchor),
+          this.worldAt(spot.at),
           this.tokenSize(),
         );
       }
     }
 
     // Buildings: skull stacks + monument / razed overlays (a click selects the building).
-    for (const [loc, b] of Object.entries(state.buildings)) {
-      if (b.skulls > 0) {
-        const anchor = this.boardData.def.anchors[loc]?.skull;
-        if (anchor) {
-          const base = this.worldAt(anchor);
-          const count = Math.min(b.skulls, MAX_FANNED_SKULLS);
+    for (const loc of Object.keys(this.boardData.def.spots)) {
+      const skulls = skullsAt(state, loc);
+      if (skulls > 0) {
+        const skullSpot = resolveSpot(this.boardData, loc, 'skull');
+        if (skullSpot) {
+          const base = this.worldAt(skullSpot.at);
+          const count = Math.min(skulls, MAX_FANNED_SKULLS);
           const radius = this.fanRadius();
           for (let i = 0; i < count; i++) {
             const pos = base.clone().add(fanVec3(i, count, radius));
@@ -462,50 +462,62 @@ export class Board3DPlugin implements ScenePlugin {
           }
         }
       }
-      if (b.monument || b.destroyed) {
-        const anchor = this.boardData.def.anchors[loc]?.building;
-        if (anchor) {
-          const pos = this.worldAt(anchor);
+      const building = buildingAt(state, loc);
+      const monument = monumentAt(state, loc);
+      if (monument || building.destroyed) {
+        const spot = resolveSpot(this.boardData, loc, 'building');
+        if (spot) {
+          const pos = this.worldAt(spot.at);
           const selection: TokenSelection = { kind: 'building', id: loc, location: loc };
-          if (b.monument) {
-            this.addToken(selection, { kind: 'monument', id: b.monument }, pos, this.tokenSize());
+          if (monument) {
+            this.addToken(selection, { kind: 'monument', id: monument }, pos, this.tokenSize());
           }
-          if (b.destroyed) this.addRazed(selection, pos, this.tokenSize());
+          if (building.destroyed) this.addRazed(selection, pos, this.tokenSize());
         }
       }
     }
 
-    // Space markers (fanned), at the `marker` slot.
+    // Space markers (fanned), at the `marker` spot.
     this.placeFanned(
-      markerEntries(state),
+      groupByLocation(tokensOfKind(state, 'marker')),
       'marker',
-      (e) => ({ kind: 'marker', id: e.id, location: e.location }),
+      (e) => ({ kind: 'marker', id: e.art ?? e.id, location: e.location }),
       (e) => ({ kind: 'marker', id: e.art ?? e.id }),
     );
 
-    // Quest markers (own kind, but sharing the `marker` anchor slot — no dedicated board anchor).
+    // Quest markers (own kind, but sharing the `marker` spot — no dedicated board spot).
     this.placeFanned(
-      questEntries(state),
-      'marker',
-      (e) => ({ kind: 'quest', id: e.id, location: e.location }),
+      groupByLocation(tokensOfKind(state, 'quest')),
+      'quest',
+      (e) => ({ kind: 'quest', id: e.art ?? e.id, location: e.location }),
       (e) => ({ kind: 'quest', id: e.art ?? e.id }),
     );
+
+    // Author-defined custom types: one pass per type id actually present.
+    for (const typeId of customTokenKindsPresent(state)) {
+      this.placeFanned(
+        groupByLocation(tokensOfKind(state, typeId)),
+        typeId,
+        (e) => ({ kind: typeId, id: e.id, location: e.location }),
+        (e) => ({ kind: typeId, id: e.art ?? typeId }),
+      );
+    }
 
     this.applyHighlight();
   }
 
-  /** Place same-location entries at `slot`, fanning when more than one shares the slot. */
+  /** Place same-location entries at the spot resolved for `typeId`, fanning when several share it. */
   private placeFanned(
     byLocation: Map<LocationName, LocatedEntry[]>,
-    slot: AnchorSlot,
+    typeId: string,
     toSelection: (entry: LocatedEntry) => TokenSelection,
     toArt: (entry: LocatedEntry) => TokenArtRef,
   ): void {
     const radius = this.fanRadius();
     for (const [loc, entries] of byLocation) {
-      const anchor = this.boardData.def.anchors[loc]?.[slot];
-      if (!anchor) continue;
-      const base = this.worldAt(anchor);
+      const spot = resolveSpot(this.boardData, loc, typeId, entries[0]?.spotId);
+      if (!spot) continue;
+      const base = this.worldAt(spot.at);
       entries.forEach((entry, i) => {
         const pos = base.clone().add(fanVec3(i, entries.length, radius));
         this.addToken(toSelection(entry), toArt(entry), pos, this.tokenSize());
@@ -537,7 +549,7 @@ export class Board3DPlugin implements ScenePlugin {
         : this.buildSprite(selection, art, position, size);
     }
     if (node) {
-      node.renderOrder = KIND_Z_3D[selection.kind];
+      node.renderOrder = zFor3D(selection.kind);
       this.register(node, selection);
     }
   }
@@ -600,12 +612,12 @@ export class Board3DPlugin implements ScenePlugin {
     size: number,
   ): THREE.Sprite {
     const url = this.resolveArt(art);
-    const sprite = this.makeSprite(url ? '#ffffff' : KIND_TINT[selection.kind], size, position);
+    const sprite = this.makeSprite(url ? '#ffffff' : tintFor(selection.kind), size, position);
     if (url) {
       const texture = this.loader.load(url, undefined, undefined, () => {
         // load error → kind-tinted fallback
         sprite.material.map = null;
-        sprite.material.color.set(KIND_TINT[selection.kind]);
+        sprite.material.color.set(tintFor(selection.kind));
         sprite.material.needsUpdate = true;
       });
       texture.colorSpace = THREE.SRGBColorSpace;
@@ -720,21 +732,22 @@ export class Board3DPlugin implements ScenePlugin {
       : this.spaceTargets;
   }
 
-  /** Invisible, raycast-only discs at every location anchor (kept off the scene graph). */
+  /** Invisible, raycast-only discs at every location spot (kept off the scene graph). */
   private buildSpaceTargets(): void {
     this.clearSpaceTargets();
     if (!this.disc) return;
     const radius = this.tokenSize();
-    for (const [loc, slots] of Object.entries(this.boardData.def.anchors)) {
-      const anchor = slots.hero ?? slots.building;
-      if (!anchor) continue;
+    for (const loc of Object.keys(this.boardData.def.spots)) {
+      const buildingSpot = resolveSpot(this.boardData, loc, 'building');
+      const spot = resolveSpot(this.boardData, loc, 'hero') ?? buildingSpot;
+      if (!spot) continue;
       const geometry = new THREE.SphereGeometry(radius, 6, 4);
       const material = new THREE.MeshBasicMaterial({ visible: false });
       const mesh = new THREE.Mesh(geometry, material);
-      const pos = this.worldAt(anchor);
+      const pos = this.worldAt(spot.at);
       mesh.position.set(pos.x, pos.y, pos.z);
       mesh.userData.location = loc;
-      mesh.userData.isBuilding = Boolean(slots.building);
+      mesh.userData.isBuilding = Boolean(buildingSpot);
       mesh.updateMatrixWorld(true); // static + detached → compute the world matrix once for raycasting
       this.spaceTargets.push(mesh);
     }

@@ -1,0 +1,3773 @@
+[
+  {
+    "label": "initial",
+    "state": {
+      "heroes": {},
+      "foes": {},
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "placeHero h1@A north",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Broken Lands",
+          "owner": "north"
+        }
+      },
+      "foes": {},
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "placeHero h2@B no-owner",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Broken Lands",
+          "owner": "north"
+        },
+        "h2": {
+          "location": "Dayside"
+        }
+      },
+      "foes": {},
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "moveHero h1 -> B",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        },
+        "h2": {
+          "location": "Dayside"
+        }
+      },
+      "foes": {},
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "moveHero unknown-id (no-op)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        },
+        "h2": {
+          "location": "Dayside"
+        }
+      },
+      "foes": {},
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "removeHero h2",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {},
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "removeHero unknown-id (no-op)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {},
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "spawnFoe f1 default status ready",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Broken Lands",
+          "status": "ready"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "spawnFoe f2 explicit status lethal",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Broken Lands",
+          "status": "ready"
+        },
+        "f2": {
+          "foe": "Oreks",
+          "location": "Dayside",
+          "status": "lethal"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "moveFoe f1 -> B",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "ready"
+        },
+        "f2": {
+          "foe": "Oreks",
+          "location": "Dayside",
+          "status": "lethal"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "moveFoe unknown-id (no-op)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "ready"
+        },
+        "f2": {
+          "foe": "Oreks",
+          "location": "Dayside",
+          "status": "lethal"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "setFoeStatus f1 savage",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        },
+        "f2": {
+          "foe": "Oreks",
+          "location": "Dayside",
+          "status": "lethal"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "setFoeStatus unknown-id (no-op)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        },
+        "f2": {
+          "foe": "Oreks",
+          "location": "Dayside",
+          "status": "lethal"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "removeFoe f2",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "removeFoe unknown-id (no-op)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "selectAdversary before placeAdversary",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "utuk-ku"
+      }
+    }
+  },
+  {
+    "label": "placeAdversary B",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "utuk-ku",
+        "location": "Dayside"
+      }
+    }
+  },
+  {
+    "label": "clearAdversary",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  },
+  {
+    "label": "placeAdversary before selectAdversary (empty id)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "selectAdversary after placeAdversary (identity backfilled)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "addSkull B default 1",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 1,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "addSkull B +2 (3 total)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 3,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "addSkull B +1 (4 total, no clamp)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 4,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "removeSkull B -10 (floors at 0)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setSkulls B = 7 (no clamp)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "destroyBuilding B",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": true
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "restoreBuilding B",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setMonument C argent-oak",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": "argent-oak"
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setMonument C null (cleared)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "addSkull unknown location (still applies)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setSpaceMarker A wasteland on",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {
+        "Broken Lands": ["wasteland"]
+      },
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setSpaceMarker A wasteland on (idempotent re-add)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {
+        "Broken Lands": ["wasteland"]
+      },
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setSpaceMarker A power-skull on",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {
+        "Broken Lands": ["wasteland", "power-skull"]
+      },
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setSpaceMarker A wasteland off",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {
+        "Broken Lands": ["power-skull"]
+      },
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setSpaceMarker A nope off (absent, no-op)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {
+        "Broken Lands": ["power-skull"]
+      },
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setSpaceMarker A power-skull off (key removed)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setQuestMarker B main-goal on",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {
+        "Dayside": ["main-goal"]
+      },
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setQuestMarker B main-goal on (idempotent re-add)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {
+        "Dayside": ["main-goal"]
+      },
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setQuestMarker B main-goal off (key removed)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      }
+    }
+  },
+  {
+    "label": "setSelections difficulty+allies",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      },
+      "selections": {
+        "difficulty": "Heroic",
+        "allies": ["a1"]
+      }
+    }
+  },
+  {
+    "label": "setSelections difficulty overwrite (shallow merge)",
+    "state": {
+      "heroes": {
+        "h1": {
+          "location": "Dayside",
+          "owner": "north"
+        }
+      },
+      "foes": {
+        "f1": {
+          "foe": "Brigands",
+          "location": "Dayside",
+          "status": "savage"
+        }
+      },
+      "buildings": {
+        "Dayside": {
+          "skulls": 7,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false,
+          "monument": null
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Nowhere Real": {
+          "skulls": 2,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {},
+      "adversary": {
+        "id": "gravemaw",
+        "location": "Broken Lands"
+      },
+      "selections": {
+        "difficulty": "Gritty",
+        "allies": ["a1"]
+      }
+    }
+  },
+  {
+    "label": "reset",
+    "state": {
+      "heroes": {},
+      "foes": {},
+      "buildings": {
+        "Dayside": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Egan's End": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Radiant Mountains": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Upper Ice Fangs": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Duwani": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Greater Tombstones": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Inner Kinghills": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Three Rivers": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Howling Desert": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Sands of Madness": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Southern Wastes": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "The Emerald Expanse": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Anza": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Arkartus": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Hissing Groves": {
+          "skulls": 0,
+          "destroyed": false
+        },
+        "Plains of Plovo": {
+          "skulls": 0,
+          "destroyed": false
+        }
+      },
+      "spaceMarkers": {},
+      "questMarkers": {}
+    }
+  }
+]

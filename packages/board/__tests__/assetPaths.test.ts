@@ -1,4 +1,17 @@
-import { lookupTokenArt, resolveTokenImageFor, HERO_BY_ID } from '../src/index';
+import {
+  lookupTokenArt,
+  resolveTokenImageFor,
+  HERO_BY_ID,
+  DEFAULT_KIND_TINT,
+  DEFAULT_KIND_Z_2D,
+  DEFAULT_KIND_Z_3D,
+  KIND_TINT,
+  KIND_Z_2D,
+  KIND_Z_3D,
+  tintFor,
+  zFor2D,
+  zFor3D,
+} from '../src/index';
 import type { TokenArtConfig, TokenArtRef } from '../src/index';
 
 const BRIGANDS: TokenArtRef = { kind: 'foe', id: 'Brigands' };
@@ -128,6 +141,12 @@ describe('resolveTokenImageFor', () => {
     );
   });
 
+  it('an unrecognized (author-defined) type falls through to the markers/ convention', () => {
+    const TRAP: TokenArtRef = { kind: 'trap', id: 'trap' };
+    expect(resolveTokenImageFor(TRAP, '2d', { assetBaseUrl: '/t/' })).toBe('/t/markers/trap.png');
+    expect(resolveTokenImageFor(TRAP, '3d', { assetBaseUrl: '/t/' })).toBe('/t/markers/trap.png');
+  });
+
   it('handles the full hero roster (all expansions) without error', () => {
     // Every hero in UDT's roster — base + alliances + covenant + expeditions — must resolve to
     // either a `heros/*.png` portrait or null (disc fallback), never a malformed path or throw.
@@ -136,5 +155,20 @@ describe('resolveTokenImageFor', () => {
       const url = resolveTokenImageFor({ kind: 'hero', id }, '2d', { assetBaseUrl: '/t/' });
       if (url !== null) expect(url).toMatch(/^\/t\/heros\/.+\.png$/);
     }
+  });
+});
+
+describe('tintFor / zFor2D / zFor3D — Record<string,…> with a fallback for unrecognized kinds', () => {
+  it('resolve the known reserved kinds from the tables', () => {
+    expect(tintFor('hero')).toBe(KIND_TINT.hero);
+    expect(zFor2D('hero')).toBe(KIND_Z_2D.hero);
+    expect(zFor3D('hero')).toBe(KIND_Z_3D.hero);
+  });
+
+  it('fall back to the default constant for an author-defined custom type', () => {
+    expect(tintFor('trap')).toBe(DEFAULT_KIND_TINT);
+    expect(zFor2D('trap')).toBe(DEFAULT_KIND_Z_2D);
+    expect(zFor3D('trap')).toBe(DEFAULT_KIND_Z_3D);
+    expect(KIND_TINT.trap).toBeUndefined();
   });
 });

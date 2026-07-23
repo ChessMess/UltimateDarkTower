@@ -1,7 +1,7 @@
 // BoardEditorPanel — the Board Designer's right-hand editor: identity, art, calibration, the
 // locations table, and the validation summary.
 //
-// Renaming a location remaps its anchors + adjacency keys in the SAME commit, so the board never
+// Renaming a location remaps its spots + adjacency keys in the SAME commit, so the board never
 // lands in a state its own validation rejects. Graph-node props that referenced the old name are
 // deliberately NOT rewritten — L2 surfaces those as dangling refs; the panel hints at it.
 
@@ -11,13 +11,13 @@ import { BUILTIN_BOARD_IMAGE_REF, isBuiltinBoardImageRef } from '@udtc/adapters'
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AnchorGlyphChip } from './AnchorGlyph';
 import {
-  ANCHOR_SLOTS,
   KINGDOMS,
   KINGDOM_COLOR,
+  acceptChoices,
   buildingLabel,
   dangerBtn,
   dangerIconBtn,
-  hasAnchorSlot,
+  defaultSpotId,
   inputStyle,
   isCalibrated,
   isPlaced,
@@ -28,38 +28,43 @@ import {
   removeLocationsInScope,
   scopeChoices,
   smallBtn,
+  spotsOf,
   terrainChoices,
   unplacedLocations,
   validateBoard,
 } from './shared';
 import type {
-  AnchorSlot,
   Board,
   BoardLocation,
   BuildingTypeDef,
   Kingdom,
-  LocationAnchors,
   LocationScope,
   ScopeFacet,
+  Spot,
+  TokenTypeDef,
 } from './shared';
-import type { BoardEditMode } from './BoardMapCanvas';
+import type { BoardEditMode, PendingSpot } from './BoardMapCanvas';
 
 export interface BoardEditorPanelProps {
   board: Board;
   isActive: boolean;
   mode: BoardEditMode;
-  activeSlot: AnchorSlot;
+  pendingSpot: PendingSpot | null;
   selectedLocation: string | null;
   /** The scenario's building registry — drives the picker, the labels and the hero-start check. */
   buildingTypes: Record<string, BuildingTypeDef>;
   /** Building types this board may use, already merged and sorted (see `buildingChoices`). */
   buildingOptions: string[];
+  /** The scenario's token-type registry — drives a spot's accepts picker + labels. */
+  tokenTypes: Record<string, TokenTypeDef>;
   /** Opens the Building types editor on a new type — the picker's `Custom…`. The plain
    *  "edit them all" entry point is the toolbar button, since the registry is scenario-wide. */
   onEditBuildingTypes: (createWith?: string) => void;
+  /** Opens the Token types editor — the toolbar button and a spot's `+ new type…` entry. */
+  onEditTokenTypes: (createWith?: string) => void;
   onChange: (next: Board) => void;
   onSelectLocation: (name: string | null) => void;
-  onActiveSlot: (slot: AnchorSlot) => void;
+  onPendingSpot: (spot: PendingSpot | null) => void;
   /** Switch the canvas mode — how the panel hands a location off to be placed on the map. */
   onMode: (mode: BoardEditMode) => void;
   onUploadArt: (file: File) => void;
@@ -71,26 +76,29 @@ export function BoardEditorPanel({
   board,
   isActive,
   mode,
-  activeSlot,
+  pendingSpot,
   selectedLocation,
   buildingTypes,
   buildingOptions,
+  tokenTypes,
   onEditBuildingTypes,
+  onEditTokenTypes,
   onChange,
   onSelectLocation,
-  onActiveSlot,
+  onPendingSpot,
   onMode,
   onUploadArt,
   onToggleActive,
   onSuggestAdjacency,
 }: BoardEditorPanelProps) {
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const problems = validateBoard(board, buildingTypes);
+  const problems = validateBoard(board, buildingTypes, tokenTypes);
   const errors = problems.filter((p) => p.level === 'error');
   const warns = problems.filter((p) => p.level === 'warn');
   const calibrated = isCalibrated(board.imageInfo);
   const builtinArt = isBuiltinBoardImageRef(board.imageRef);
   const unplaced = unplacedLocations(board);
+  const accepts = acceptChoices(tokenTypes);
 
   // `addLocation` appends, so the new row is always last — but the list scrolls, and on a
   // 60-location board it lands below the fold where nothing looks like it happened.
@@ -108,10 +116,12 @@ export function BoardEditorPanel({
   // boolean so it scopes itself to that row and lapses when the selection moves on.
   const [customTerrainFor, setCustomTerrainFor] = useState<string | null>(null);
   const terrains = terrainChoices(board);
+  // The type picked in the "+ Add spot" row, per-render default recomputed below.
+  const [newSpotType, setNewSpotType] = useState<string>('hero');
 
   /**
    * Adopt the built-in RtDT art. `imageInfo` follows the art it describes — the built-in board is
-   * square 4096², and a mismatched size would render it stretched. Anchors are normalized `[0,1]`,
+   * square 4096², and a mismatched size would render it stretched. Spots are normalized `[0,1]`,
    * so they do not move. Any previously uploaded image stays in `library.resources.images`
    * (unreferenced); the Asset Manager lists it as unused for deletion.
    */
@@ -128,34 +138,38 @@ export function BoardEditorPanel({
     onChange({ ...board, locations });
   };
 
-  /** Rename remaps anchors + adjacency keys/values in the same commit. */
+  /** Rename remaps spots + adjacency keys/values in the same commit. */
   const renameLocation = (index: number, nextName: string): void => {
     const prev = board.locations[index].name;
     if (prev === nextName) return;
     const locations = board.locations.map((l, i) => (i === index ? { ...l, name: nextName } : l));
 
-    const anchors: Record<string, LocationAnchors> = {};
-    for (const [k, v] of Object.entries(board.anchors ?? {}))
-      anchors[k === prev ? nextName : k] = v;
+    const spots: Record<string, Spot[]> = {};
+    for (const [k, v] of Object.entries(board.spots ?? {})) spots[k === prev ? nextName : k] = v;
 
     const adjacency: Record<string, string[]> = {};
     for (const [k, v] of Object.entries(board.adjacency ?? {})) {
       adjacency[k === prev ? nextName : k] = v.map((n) => (n === prev ? nextName : n));
     }
 
-    onChange({ ...board, locations, anchors, adjacency });
+    onChange({ ...board, locations, spots, adjacency });
     if (selectedLocation === prev) onSelectLocation(nextName);
   };
 
   /**
-   * Hand a location off to the map: select it, arm a slot, and switch to anchor mode so the very
-   * next click lands its point. A location's position IS its anchors — nothing else ties a row to
+   * Hand a location off to the map: select it, arm a spot, and switch to spots mode so the very
+   * next click lands its point. A location's position IS its spots — nothing else ties a row to
    * a spot on the board — so every path that wants one placed comes through here.
    */
   const placeLocation = (name: string): void => {
     onSelectLocation(name);
-    if (!isPlaced(board, name)) onActiveSlot('hero');
-    onMode('anchors');
+    const existing = spotsOf(board, name);
+    onPendingSpot(
+      existing.length > 0
+        ? { id: existing[0].id, accepts: existing[0].accepts }
+        : { id: defaultSpotId(board, name, 'hero'), accepts: ['hero'] },
+    );
+    onMode('spots');
   };
 
   /** Adds a row and goes straight to placing it — an unplaced location renders nowhere. */
@@ -177,7 +191,7 @@ export function BoardEditorPanel({
     const name = board.locations[index].name;
     const locations = board.locations.filter((_, i) => i !== index);
     onChange(pruneToLocations(board, locations));
-    // The name survives if a duplicate row still carries it — only then does it keep its anchors.
+    // The name survives if a duplicate row still carries it — only then does it keep its spots.
     if (selectedLocation === name && !locations.some((l) => l.name === name))
       onSelectLocation(null);
   };
@@ -188,6 +202,21 @@ export function BoardEditorPanel({
     onChange(removeLocationsInScope(board, scope));
     if (selectedLocation !== null && doomed.has(selectedLocation)) onSelectLocation(null);
     setRemoveScope(null);
+  };
+
+  /** Patch one spot's `accepts` on the selected location — direct edit, no map interaction. */
+  const patchSpotAccepts = (location: string, spotId: string, next: string[]): void => {
+    const list = spotsOf(board, location).map((s) =>
+      s.id === spotId ? { ...s, accepts: next } : s,
+    );
+    onChange({ ...board, spots: { ...(board.spots ?? {}), [location]: list } });
+    if (pendingSpot?.id === spotId) onPendingSpot({ id: spotId, accepts: next });
+  };
+
+  const removeSpot = (location: string, spotId: string): void => {
+    const list = spotsOf(board, location).filter((s) => s.id !== spotId);
+    onChange({ ...board, spots: { ...(board.spots ?? {}), [location]: list } });
+    if (pendingSpot?.id === spotId) onPendingSpot(null);
   };
 
   return (
@@ -272,42 +301,98 @@ export function BoardEditorPanel({
         </section>
       )}
 
-      {mode === 'anchors' && (
+      {mode === 'spots' && (
         <section style={section}>
-          <label style={labelStyle}>Anchor slot</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {ANCHOR_SLOTS.map((slot) => {
-              // The chip is the same glyph the map draws, filled once the selected location
-              // carries this slot — so a button and its dots are recognisably the same thing.
-              const placed =
-                selectedLocation !== null && hasAnchorSlot(board, selectedLocation, slot);
-              return (
-                <button
-                  key={slot}
-                  style={{
-                    ...(slot === activeSlot ? primaryBtn : smallBtn),
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                  }}
-                  title={
-                    selectedLocation === null
-                      ? `Place the ${slot} anchor`
-                      : placed
-                        ? `"${selectedLocation}" has a ${slot} anchor — click the board to move it`
-                        : `"${selectedLocation}" has no ${slot} anchor yet`
-                  }
-                  onClick={() => onActiveSlot(slot)}
+          <label style={labelStyle}>
+            Spots {selectedLocation ? `— "${selectedLocation}"` : ''}
+          </label>
+          {!selectedLocation && (
+            <div style={{ fontSize: 11, color: 'var(--c-text-muted)' }}>
+              Pick a location in the list below.
+            </div>
+          )}
+          {selectedLocation && (
+            <>
+              {spotsOf(board, selectedLocation).map((spot) => (
+                <div key={spot.id} style={spotRow}>
+                  <button
+                    style={{
+                      ...(spot.id === pendingSpot?.id ? primaryBtn : smallBtn),
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      flexShrink: 0,
+                    }}
+                    title={`Click, then click the board to move "${spot.id}"`}
+                    onClick={() => onPendingSpot({ id: spot.id, accepts: spot.accepts })}
+                  >
+                    <AnchorGlyphChip accepts={spot.accepts} filled />
+                    {spot.id}
+                  </button>
+                  <select
+                    multiple
+                    size={3}
+                    style={{ ...inputStyle, flex: 1, minWidth: 0, fontSize: 10 }}
+                    value={spot.accepts}
+                    onChange={(e) =>
+                      patchSpotAccepts(
+                        selectedLocation,
+                        spot.id,
+                        Array.from(e.target.selectedOptions, (o) => o.value),
+                      )
+                    }
+                  >
+                    {accepts.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    style={dangerIconBtn}
+                    title="Remove spot"
+                    onClick={() => removeSpot(selectedLocation, spot.id)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: 4, marginTop: 6, alignItems: 'center' }}>
+                <select
+                  style={{ ...inputStyle, flex: 1 }}
+                  value={newSpotType}
+                  onChange={(e) => setNewSpotType(e.target.value)}
                 >
-                  <AnchorGlyphChip slot={slot} filled={placed} />
-                  {slot}
+                  {accepts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  style={smallBtn}
+                  title="Arm a new spot — click the board to place it"
+                  onClick={() =>
+                    onPendingSpot({
+                      id: defaultSpotId(board, selectedLocation, newSpotType),
+                      accepts: [newSpotType],
+                    })
+                  }
+                >
+                  + Add spot
                 </button>
-              );
-            })}
-          </div>
+              </div>
+              <button
+                style={{ ...smallBtn, marginTop: 4, fontSize: 10 }}
+                onClick={() => onEditTokenTypes('')}
+              >
+                Define a new token type…
+              </button>
+            </>
+          )}
           <div style={{ fontSize: 11, color: 'var(--c-text-muted)', marginTop: 6 }}>
-            A filled chip means the selected location already has that anchor. On the board the
-            shape is the slot and the colour is the kingdom.
+            A spot's shape reflects what it accepts (multi-select above). On the board the shape is
+            the spot and the colour is the kingdom.
           </div>
         </section>
       )}
@@ -503,9 +588,9 @@ export function BoardEditorPanel({
         </div>
         <div style={listFoot}>
           <strong>◎</strong> places a location on the board · <strong>◉</strong> already placed.
-          Renaming remaps anchors and adjacency, but not graph nodes — the Problems panel flags
-          those. Terrain is free-form; buildings come from <strong>Building types…</strong> in the
-          toolbar above, where you define what each one does.
+          Renaming remaps spots and adjacency, but not graph nodes — the Problems panel flags those.
+          Terrain is free-form; buildings come from <strong>Building types…</strong> in the toolbar
+          above, where you define what each one does.
         </div>
       </section>
 
@@ -625,7 +710,7 @@ function RemoveScopePicker({
 
       <div>
         Removes <strong>{doomed}</strong> of {total} location{total === 1 ? '' : 's'}
-        {doomed === total ? ' — the whole board' : ''}. Their anchors and adjacency edges go with
+        {doomed === total ? ' — the whole board' : ''}. Their spots and adjacency edges go with
         them. Graph nodes that referenced these names are <strong>not</strong> rewritten — the
         Problems panel will flag them. There is no undo.
       </div>
@@ -682,6 +767,13 @@ const section: CSSProperties = {
   borderBottom: '1px solid var(--c-border)',
 };
 
+const spotRow: CSSProperties = {
+  display: 'flex',
+  gap: 4,
+  alignItems: 'center',
+  marginBottom: 4,
+};
+
 // A location is a compact one-line row; only the SELECTED one opens to reveal its fields.
 // 60 rows have to stay scannable, and four inline inputs in a 340px panel do not.
 const row: CSSProperties = {
@@ -705,7 +797,7 @@ const rowHead: CSSProperties = {
   minWidth: 0,
 };
 
-/** Kingdom as a colour chip — the same colour the map fills this location's anchors with. */
+/** Kingdom as a colour chip — the same colour the map fills this location's spots with. */
 const kingdomDot: CSSProperties = {
   width: 7,
   height: 7,

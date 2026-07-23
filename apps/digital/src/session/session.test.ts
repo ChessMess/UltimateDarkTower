@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BoardStateController } from 'ultimatedarktowerboard';
+import { BoardStateController, buildingAt, skullsAt } from 'ultimatedarktowerboard';
 import { ManualTowerSource } from '@/sources/ManualTowerSource';
 import { ManualBoardSource } from '@/sources/ManualBoardSource';
 import {
@@ -100,12 +100,14 @@ describe('capture / apply round-trip through live sources', () => {
     expect(tower2.getSkullDropCount()).toBe(2);
     expect(tower2.getBrokenSeals()).toEqual([{ level: 'top', side: 'north' }]);
     expect(tower2.getState().drum[1].position).toBe(2);
-    expect(board2.getState().foes['sw-1']).toMatchObject({
-      foe: 'shadow-wolves',
+    expect(board2.getState().tokens['sw-1']).toMatchObject({
+      typeId: 'foe',
+      art: 'shadow-wolves',
       location: 'Broken Lands',
-      status: 'ready',
+      data: { status: 'ready' },
     });
-    expect(board2.getState().buildings['Dayside']?.skulls).toBe(2);
+    expect(skullsAt(board2.getState(), 'Dayside')).toBe(2);
+    expect(buildingAt(board2.getState(), 'Dayside').destroyed).toBe(false);
 
     // 6. Re-capturing from the hydrated sources yields identical tower + board slices.
     const recaptured = captureSession(restored, tower2, board2);

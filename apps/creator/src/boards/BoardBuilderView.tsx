@@ -12,9 +12,10 @@ import { resizeAndEncode } from '../decks/imageUtils';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { BoardListRail } from './BoardListRail';
 import { BoardMapCanvas } from './BoardMapCanvas';
-import type { BoardEditMode } from './BoardMapCanvas';
+import type { BoardEditMode, PendingSpot } from './BoardMapCanvas';
 import { BoardEditorPanel } from './BoardEditorPanel';
 import { BuildingTypesDialog } from './BuildingTypesDialog';
+import { TokenTypesDialog } from './TokenTypesDialog';
 import { buildRtdtPreset } from './presetRtdt';
 import {
   BOARD_IMAGE_OPTS,
@@ -29,14 +30,16 @@ import {
   resolveBoardArt,
   smallBtn,
   primaryBtn,
+  spotsOf,
   suggestAdjacency,
   toggleAdjacency,
+  tokenTypesOf,
 } from './shared';
-import type { AnchorSlot, Board } from './shared';
+import type { Board, Spot } from './shared';
 
 const MODES: Array<{ id: BoardEditMode; label: string }> = [
   { id: 'locations', label: 'Locations' },
-  { id: 'anchors', label: 'Anchors' },
+  { id: 'spots', label: 'Spots' },
   { id: 'adjacency', label: 'Adjacency' },
   { id: 'calibrate', label: 'Calibrate' },
 ];
@@ -47,7 +50,7 @@ function emptyBoard(id: string): Board {
     name: id,
     imageInfo: { width: 2048, height: 2048 },
     locations: [],
-    anchors: {},
+    spots: {},
     adjacency: {},
   };
 }
@@ -73,19 +76,25 @@ export function BoardBuilderView() {
   const updateResourceImage = useCreatorStore((s) => s.updateResourceImage);
   const updateBuildingTypes = useCreatorStore((s) => s.updateBuildingTypes);
   const renameBuildingType = useCreatorStore((s) => s.renameBuildingType);
+  const updateTokenTypes = useCreatorStore((s) => s.updateTokenTypes);
+  const renameTokenType = useCreatorStore((s) => s.renameTokenType);
   const restoreDoc = useCreatorStore((s) => s.restoreDoc);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mode, setMode] = useState<BoardEditMode>('locations');
-  const [activeSlot, setActiveSlot] = useState<AnchorSlot>('hero');
+  const [pendingSpot, setPendingSpot] = useState<PendingSpot | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [pendingActivate, setPendingActivate] = useState<string | null>(null);
-  // The Building types editor: null = closed. `createWith` opens it on a NEW type seeded with
-  // that name — what the location picker's Custom… option asks for. `snapshot` is schemaDoc as of
+  // The Building/Token types editors: null = closed. `createWith` opens on a NEW type seeded with
+  // that name — what the location/spot pickers' Custom… asks for. `snapshot` is schemaDoc as of
   // the moment the dialog opened, so Cancel can discard every edit made inside it (renames, clones,
   // deletes, field edits) in one restoreDoc() call rather than requiring N presses of undo().
   const [buildingDialog, setBuildingDialog] = useState<{
+    createWith?: string;
+    snapshot: typeof schemaDoc;
+  } | null>(null);
+  const [tokenDialog, setTokenDialog] = useState<{
     createWith?: string;
     snapshot: typeof schemaDoc;
   } | null>(null);
@@ -102,6 +111,7 @@ export function BoardBuilderView() {
   const ids = Object.keys(boards);
   const activeId = activeBoardId(schemaDoc);
   const buildingTypes = buildingTypesOf(schemaDoc);
+  const tokenTypes = tokenTypesOf(schemaDoc);
 
   // Keep selection valid & non-null whenever boards exist (adjust during render, as the
   // dungeon/deck builders do).
@@ -135,7 +145,7 @@ export function BoardBuilderView() {
     try {
       const url = await resizeAndEncode(file, BOARD_IMAGE_OPTS);
       const key = boardImageKey(selected.id);
-      // The stored art defines the image space the anchors are normalized against, so record
+      // The stored art defines the image space the spots are normalized against, so record
       // its real dimensions — the renderer scales token geometry from them.
       const dims = await imageDims(url);
       updateResourceImage(key, url);
@@ -168,6 +178,18 @@ export function BoardBuilderView() {
   // Only STORED art counts here — a board referencing the built-in RtDT art contributes no bytes,
   // so it must not bring up the shared-budget meter.
   const artedBoards = ids.filter((id) => hasStoredArt(schemaDoc, boards[id])).length;
+
+  /** Upsert `pendingSpot` at `at` on `location` — create if new, move if it already exists. */
+  const placeSpot = (location: string, at: { x: number; y: number }): void => {
+    if (!selected || !pendingSpot) return;
+    const existing = spotsOf(selected, location);
+    const idx = existing.findIndex((s) => s.id === pendingSpot.id);
+    const nextList: Spot[] =
+      idx >= 0
+        ? existing.map((s, i) => (i === idx ? { ...s, at } : s))
+        : [...existing, { id: pendingSpot.id, at, accepts: pendingSpot.accepts }];
+    commit({ ...selected, spots: { ...(selected.spots ?? {}), [location]: nextList } });
+  };
 
   return (
     <div style={layout}>
@@ -206,14 +228,22 @@ export function BoardBuilderView() {
               {overBudget ? ' — autosave may fail' : ''}
             </span>
           )}
-          {/* Not a mode — it opens a dialog, and unlike the modes it is scenario-wide rather than
-              per-board, so it sits across the spacer and stays available with no board selected. */}
+          {/* Not modes — they open a dialog, and unlike the modes they are scenario-wide rather
+              than per-board, so they sit across the spacer and stay available with no board
+              selected. */}
           <button
             style={smallBtn}
             title="Define the buildings this scenario uses — their Reinforce effects, skull capacity, and which one heroes start on"
             onClick={() => setBuildingDialog({ snapshot: schemaDoc })}
           >
             Buildings
+          </button>
+          <button
+            style={smallBtn}
+            title="Define the token types a board spot can accept, beyond the built-in hero/foe/adversary/building/skull/monument/marker/quest vocabulary"
+            onClick={() => setTokenDialog({ snapshot: schemaDoc })}
+          >
+            Token types
           </button>
         </div>
 
@@ -223,18 +253,10 @@ export function BoardBuilderView() {
             imageUrl={resolveBoardArt(schemaDoc, selected)}
             mode={mode}
             selectedLocation={selectedLocation}
-            activeSlot={activeSlot}
+            pendingSpot={pendingSpot}
             adjacencyFrom={mode === 'adjacency' ? selectedLocation : null}
             onSelectLocation={setSelectedLocation}
-            onPlaceAnchor={(name, slot, at) =>
-              commit({
-                ...selected,
-                anchors: {
-                  ...(selected.anchors ?? {}),
-                  [name]: { ...(selected.anchors?.[name] ?? {}), [slot]: at },
-                },
-              })
-            }
+            onPlaceSpot={placeSpot}
             onToggleAdjacency={(a, b) =>
               commit({ ...selected, adjacency: toggleAdjacency(selected, a, b) })
             }
@@ -255,16 +277,18 @@ export function BoardBuilderView() {
           board={selected}
           isActive={activeId === selected.id}
           mode={mode}
-          activeSlot={activeSlot}
+          pendingSpot={pendingSpot}
           selectedLocation={selectedLocation}
           buildingTypes={buildingTypes}
           buildingOptions={buildingChoices(schemaDoc, selected)}
+          tokenTypes={tokenTypes}
           onEditBuildingTypes={(createWith) =>
             setBuildingDialog({ createWith, snapshot: schemaDoc })
           }
+          onEditTokenTypes={(createWith) => setTokenDialog({ createWith, snapshot: schemaDoc })}
           onChange={commit}
           onSelectLocation={setSelectedLocation}
-          onActiveSlot={setActiveSlot}
+          onPendingSpot={setPendingSpot}
           onMode={setMode}
           onUploadArt={uploadArt}
           onToggleActive={toggleActive}
@@ -284,6 +308,22 @@ export function BoardBuilderView() {
           onCancel={() => {
             const { snapshot } = buildingDialog;
             setBuildingDialog(null);
+            if (snapshot && snapshot !== schemaDoc) restoreDoc(snapshot);
+          }}
+        />
+      )}
+
+      {tokenDialog && (
+        <TokenTypesDialog
+          boards={boards}
+          types={tokenTypes}
+          createWith={tokenDialog.createWith ?? null}
+          onCommit={(next) => updateTokenTypes(next as Record<string, unknown>)}
+          onRename={renameTokenType}
+          onClose={() => setTokenDialog(null)}
+          onCancel={() => {
+            const { snapshot } = tokenDialog;
+            setTokenDialog(null);
             if (snapshot && snapshot !== schemaDoc) restoreDoc(snapshot);
           }}
         />
@@ -331,7 +371,7 @@ export function BoardBuilderView() {
   );
 }
 
-/** Natural dimensions of an encoded data URL — the image space anchors are normalized against. */
+/** Natural dimensions of an encoded data URL — the image space spots are normalized against. */
 function imageDims(url: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve) => {
     const img = new Image();

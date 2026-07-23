@@ -37,9 +37,21 @@ import {
   mountBoardUI,
   createSelectionStore,
   createLocationPickStore,
+  // Selectors — read helpers over the unified `tokens` collection
+  tokensAt,
+  tokensOfType,
+  heroesOf,
+  foesOf,
+  adversaryOf,
+  buildingAt,
+  skullsAt,
+  monumentAt,
+  markersAt,
+  questsAt,
   // UDT data re-exports (subset — see "UDT re-exports" below for the full list)
   BOARD_LOCATIONS,
-  BOARD_ANCHORS,
+  BOARD_SPOTS,
+  RESERVED_TOKEN_TYPES,
   BOARD_ADJACENCY,
   neighborsOf,
   stepDistance,
@@ -52,13 +64,9 @@ import {
 } from 'ultimatedarktowerboard';
 import type {
   BoardState,
-  HeroToken,
-  FoeToken,
-  BuildingState,
+  PlacedToken,
   FoeStatus,
-  SpaceMarker,
-  HeroId,
-  FoeId,
+  ReservedTokenType,
   LocationName,
   BoardCommand,
   BoardCommandType,
@@ -113,13 +121,13 @@ read it, hosts own the rules. All values are plain JSON-serializable data (no cl
 `Map`/`Set`, no functions), so state round-trips through JSON cleanly. The schema version is not stored
 here — it lives in the save envelope (see [Save / load](#save--load)).
 
+> **0.5.0** collapsed the pre-0.5.0 six per-kind buckets (`heroes`/`foes`/`adversary`/`buildings`/
+> `spaceMarkers`/`questMarkers`) into one `tokens` collection. This is a non-backward-compatible
+> change — see [Save / load](#save--load)'s "Old data: refuse, don't migrate".
+
 ```ts
 interface BoardState {
-  heroes: Record<HeroId, HeroToken>; // placed heroes, keyed by instance id
-  foes: Record<FoeId, FoeToken>; // placed foes, keyed by instance id
-  adversary?: { id: string; location?: LocationName };
-  buildings: Record<LocationName, BuildingState>; // the 16 building spaces
-  spaceMarkers: Record<LocationName, SpaceMarker[]>; // a key is present only while it has markers
+  tokens: Record<string, PlacedToken>; // every placed token, keyed by instance id
   selections?: {
     difficulty?: string;
     adversary?: string;
@@ -131,31 +139,74 @@ interface BoardState {
 }
 ```
 
-Token shapes:
+### `PlacedToken`
 
-- **`HeroToken`** — `{ location: LocationName; owner?: BoardKingdom; meta? }`. A hero pawn on the board.
-- **`FoeToken`** — `{ foe: string; location: LocationName; status: FoeStatus; meta? }`. `foe` is the foe
-  _type_ id (from UDT's tiered rosters); `status` is the in-play power progression (tracked, not rendered).
-- **`BuildingState`** — `{ skulls: number; destroyed: boolean; monument?: string | null }`. One building space.
+One placed thing — the whole of `BoardState` is a map of these, keyed by instance id (not by
+location, so move/remove stay O(1)):
+
+```ts
+interface PlacedToken {
+  id: string; // instance id, unique on the whole board
+  typeId: string; // a ReservedTokenType, or a library.tokenTypes key
+  location: LocationName;
+  spotId?: string; // explicit target spot; otherwise resolved via the board's spot `accepts` lists
+  art?: string; // art id (foe type, hero id, marker/monument/quest name); defaults to typeId
+  n?: number; // count for stackable types (skulls); absent means 1
+  data?: Record<string, unknown>; // per-type extras: status, owner, destroyed, …
+}
+```
+
+`typeId` is either a **`ReservedTokenType`** — the built-in vocabulary every consumer understands
+natively, re-exported as `RESERVED_TOKEN_TYPES` (`hero | foe | adversary | building | skull |
+monument | marker | quest`) — or an author-defined `library.tokenTypes` key. Reserved kinds use
+deterministic instance ids and `art` conventions (a hero's id IS its token id; a foe's token id is
+the caller's instance id and `art` is the foe _type_; the adversary is a fixed singleton id with
+`art` carrying its identity; skull/monument/marker/quest tokens are keyed off their location) — see
+`BoardStateController`'s class doc (linked from [Controller](#controller)) for the full table.
 
 Identity / value types (all `string`-based; the board never validates them):
 
 - **`LocationName`** — a `BOARD_LOCATIONS[n].name`.
-- **`HeroId`** / **`FoeId`** — caller-assigned _instance_ ids for a placed hero/foe (distinct from a UDT
-  roster _identity_ id; see the note in [UDT re-exports](#udt-re-exports)).
-- **`SpaceMarker`** — a per-space overlay; an open set across expansions (`'wasteland'`, `'power-skull'`,
-  …). The literal members are documentation; the type is `string`.
 - **`FoeStatus`** — `'ready' | 'savage' | 'lethal'`. Re-exported from `ultimatedarktowerdata`.
+- **`ReservedTokenType`** — the `RESERVED_TOKEN_TYPES` union, re-exported from
+  `ultimatedarktowerdata` (see [UDT re-exports](#udt-re-exports)).
 
-### `createDefaultBoardState()`
+### `createDefaultBoardState(board?)`
 
-`(): BoardState` — an empty board: no heroes/foes/adversary/markers, with all 16 building spaces present at
-`{ skulls: 0, destroyed: false }`. Optional keys are omitted so the state round-trips through JSON without
-`undefined`-vs-absent mismatches.
+`(board?: BoardDefinition): BoardState` — seeds a `building` + `skull` token pair
+(`{destroyed: false}` / `{n: 0}`) for every building space on `board` (the built-in RtDT board's 16,
+if omitted), mirroring the pre-0.5.0 `buildings` bucket's always-dense shape. Everything else starts
+empty; optional keys are omitted so the state round-trips through JSON without `undefined`-vs-absent
+mismatches.
 
 ```ts
 import { createDefaultBoardState } from 'ultimatedarktowerboard';
 const state = createDefaultBoardState();
+```
+
+## Selectors
+
+Read helpers over `tokens` — the replacement for the pre-0.5.0 bucket properties
+(`state.heroes`, `state.buildings`, …), which no longer exist.
+
+| Selector       | Signature                                   | Returns                                        |
+| -------------- | ------------------------------------------- | ---------------------------------------------- |
+| `tokensAt`     | `(state, location) => PlacedToken[]`        | Every token at a location, in insertion order. |
+| `tokensOfType` | `(state, typeId) => PlacedToken[]`          | Every token of a type, in insertion order.     |
+| `heroesOf`     | `(state) => PlacedToken[]`                  | `tokensOfType(state, 'hero')`.                 |
+| `foesOf`       | `(state) => PlacedToken[]`                  | `tokensOfType(state, 'foe')`.                  |
+| `adversaryOf`  | `(state) => {id, location?} \| undefined`   | The selected/placed adversary.                 |
+| `buildingAt`   | `(state, location) => {destroyed: boolean}` | `{destroyed: false}` if never placed.          |
+| `skullsAt`     | `(state, location) => number`               | Skull count (`0` if none placed).              |
+| `monumentAt`   | `(state, location) => string \| undefined`  | The monument id, if any.                       |
+| `markersAt`    | `(state, location) => string[]`             | Space-marker names present.                    |
+| `questsAt`     | `(state, location) => string[]`             | Quest-marker names present.                    |
+
+```ts
+import { heroesOf, buildingAt } from 'ultimatedarktowerboard';
+
+heroesOf(state); // -> PlacedToken[]
+buildingAt(state, 'Dayside'); // -> { destroyed: false }
 ```
 
 ## Commands
@@ -166,42 +217,40 @@ The command vocabulary the reducer understands — the _only_ way state mutates.
 `type`; the reducer applies each command faithfully and enforces no rules. `BoardCommandType` is
 `BoardCommand['type']`.
 
-| `type`            | Payload                             | Effect                                            |
-| ----------------- | ----------------------------------- | ------------------------------------------------- |
-| `placeHero`       | `{ heroId, location, owner? }`      | Place a hero (its instance id) at a location      |
-| `moveHero`        | `{ heroId, location }`              | Move a placed hero (no-op if absent)              |
-| `removeHero`      | `{ heroId }`                        | Remove a hero                                     |
-| `spawnFoe`        | `{ foeId, foe, location, status? }` | Add a foe instance of type `foe`                  |
-| `moveFoe`         | `{ foeId, location }`               | Move a placed foe (no-op if absent)               |
-| `setFoeStatus`    | `{ foeId, status }`                 | Set a foe's `ready`/`savage`/`lethal` status      |
-| `removeFoe`       | `{ foeId }`                         | Remove a foe                                      |
-| `selectAdversary` | `{ id }`                            | Set the adversary identity (no location yet)      |
-| `placeAdversary`  | `{ location }`                      | Set/move the adversary's location                 |
-| `clearAdversary`  | `{}`                                | Remove the adversary                              |
-| `addSkull`        | `{ location, n? }`                  | Add `n` skulls to a building (default `1`)        |
-| `removeSkull`     | `{ location, n? }`                  | Remove `n` skulls (default `1`)                   |
-| `setSkulls`       | `{ location, n }`                   | Set the absolute skull count                      |
-| `destroyBuilding` | `{ location }`                      | Mark a building razed                             |
-| `restoreBuilding` | `{ location }`                      | Un-raze a building                                |
-| `setMonument`     | `{ location, monumentId }`          | Place a monument on a building (`null` clears it) |
-| `setSpaceMarker`  | `{ location, marker, on }`          | Add (`on: true`) or remove a per-space overlay    |
-| `setSelections`   | `{ selections }`                    | Shallow-merge game-setup selections               |
-| `replaceState`    | `{ state }`                         | Wholesale-replace the state                       |
-| `reset`           | `{}`                                | Back to `createDefaultBoardState()`               |
+Five generic, id-keyed ops replace the pre-0.5.0 per-kind command set now that `BoardState` is one
+`tokens` collection:
+
+| `type`          | Payload                                              | Effect                                                  |
+| --------------- | ---------------------------------------------------- | ------------------------------------------------------- |
+| `placeToken`    | `{ id, typeId, location, spotId?, art?, n?, data? }` | Upsert a token at `id`                                  |
+| `moveToken`     | `{ id, location }`                                   | Move a placed token (no-op if absent)                   |
+| `removeToken`   | `{ id }`                                             | Remove a token                                          |
+| `updateToken`   | `{ id, patch }`                                      | Shallow-merge `patch` (incl. `patch.data`) onto a token |
+| `setSelections` | `{ selections }`                                     | Shallow-merge game-setup selections                     |
+| `replaceState`  | `{ state }`                                          | Wholesale-replace the state                             |
+| `reset`         | `{}`                                                 | Back to `createDefaultBoardState()`                     |
+
+**The pre-0.5.0 per-kind commands (`placeHero`, `spawnFoe`, `setSpaceMarker`, `addSkull`, …) are
+gone from this union** — but not from the public API. They survive as
+[`BoardStateController`](#boardstatecontroller) convenience methods, reimplemented over the five
+generic ops above with deterministic per-kind ids, so most callers need no change.
 
 ### `applyBoardCommand(state, command)`
 
 `(state: BoardState, command: BoardCommand): BoardState` — the pure reducer. Returns the next state and
 never mutates the input. Most apps drive it through [`BoardStateController`](#boardstatecontroller) rather
-than calling it directly.
+than calling it directly. A spot's `accepts` list is **advisory only** here — the reducer places a
+token regardless of what a spot declares it accepts.
 
 ```ts
 import { applyBoardCommand, createDefaultBoardState } from 'ultimatedarktowerboard';
 
 const next = applyBoardCommand(createDefaultBoardState(), {
-  type: 'placeHero',
-  heroId: 'hero-1',
+  type: 'placeToken',
+  id: 'hero-1',
+  typeId: 'hero',
   location: 'Broken Lands',
+  art: 'hero-1',
 });
 ```
 
@@ -221,7 +270,7 @@ const controller = new BoardStateController();
 // Subscribe to the firehose, or a single event type:
 controller.on('change', ({ state }) => console.log(state));
 
-// Mutate via a named method (or controller.dispatch({ type: 'placeHero', ... })):
+// Mutate via a named method (or controller.dispatch({ type: 'placeToken', ... })):
 controller.placeHero('hero-1', 'Broken Lands');
 ```
 
@@ -250,18 +299,28 @@ without mutating held state — only `applyState(next)` commits. `applyState` is
 - `subscribe(listener: BoardEventListener): () => void` — subscribe to the full event firehose; returns an
   unsubscribe.
 - `on<T>(type: T, listener): () => void` — subscribe to a single event type; returns an unsubscribe.
-- **Named command methods** (thin wrappers over `dispatch`): `placeHero(heroId, location, owner?)`,
+- **Generic token ops** (also the `@udtc/adapters` `BoardCtrl` target for the engine's
+  `board.mutate: placeToken/removeToken` directives): `placeToken(opts): string` — place any token
+  (reserved kind or a `library.tokenTypes` id); mints an instance id (`${typeId}-N`) if
+  `opts.id` is omitted, and returns whichever id was used. `removeToken(typeId, location): void`
+  — removes **every** token of `typeId` at `location` (there's no instance id to target one; this
+  mirrors the engine's own directive filter semantics).
+- **Named command methods** (thin wrappers over the generic ops, with deterministic per-kind ids —
+  see the class doc's id/`art` table): `placeHero(heroId, location, owner?)`,
   `moveHero(heroId, location)`, `removeHero(heroId)`, `spawnFoe(foeId, foe, location, status?)`,
   `moveFoe(foeId, location)`, `setFoeStatus(foeId, status)`, `removeFoe(foeId)`, `selectAdversary(id)`,
   `placeAdversary(location)`, `clearAdversary()`, `addSkull(location, n?)`, `removeSkull(location, n?)`,
   `setSkulls(location, n)`, `destroyBuilding(location)`, `restoreBuilding(location)`,
-  `setMonument(location, monumentId)`, `setSpaceMarker(location, marker, on)`, `setSelections(selections)`.
-- `moveToken(id, location): 'hero' | 'foe' | 'adversary' | null` — **resolver convenience** for callers
-  that hold only an instance id. Resolves the kind from current state (order: heroes → foes → adversary;
-  on a cross-kind id collision the earlier kind wins) and delegates to the matching command above,
-  returning the kind moved or `null` if nothing matches (a no-op). The adversary matches only when one
-  exists with a non-empty id; it is never created. Not a `BoardCommand` — reducer-only users dispatch
-  `moveHero`/`moveFoe` directly.
+  `setMonument(location, monumentId)`, `setSpaceMarker(location, marker, on)`,
+  `setQuestMarker(location, marker, on)`, `setSelections(selections)`.
+- `moveToken(id, location): TokenKind | null` — **resolver convenience** for callers that hold only
+  an instance id. Resolves the kind from current state (checks: is `id` a hero token? a foe token?
+  does an adversary exist whose identity equals `id`? — in that order) and delegates to the matching
+  method above, returning the kind moved or `null` if nothing matches (a no-op — nothing is
+  dispatched, no event fires). The adversary check never creates one. `tokens` is one flat,
+  globally-id-keyed map, so a hero and a foe (or any two kinds) can no longer occupy the same id —
+  the earlier check wins on a collision. Not a `BoardCommand` — reducer-only users dispatch
+  `moveHero`/`moveFoe`/`placeAdversary` directly.
 
 ### `BoardStateControllerOptions`
 
@@ -276,28 +335,36 @@ wholesale `applyState`) carrying the resulting state. The rest are conveniences 
 a consumer can subscribe narrowly. `BoardEventType` is `BoardEvent['type']`; `BoardEventListener` is
 `(event: BoardEvent) => void`.
 
-| `type`                                       | Shape                                                 | Fires when                                    |
-| -------------------------------------------- | ----------------------------------------------------- | --------------------------------------------- |
-| `change`                                     | `{ state, command }`                                  | Any command applied or `applyState` committed |
-| `tokenAdded` / `tokenMoved` / `tokenRemoved` | `{ kind: 'hero'\|'foe'\|'adversary'; id; location? }` | A token is placed / moved / removed           |
-| `buildingChanged`                            | `{ location; building: BuildingState }`               | Skulls / destroy / monument change            |
-| `spaceMarkerChanged`                         | `{ location; markers: SpaceMarker[] }`                | A space marker toggles                        |
-| `selectionChanged`                           | `{ selections }`                                      | `setSelections` applied                       |
+| `type`                                                        | Shape                                | Fires when                                    |
+| ------------------------------------------------------------- | ------------------------------------ | --------------------------------------------- |
+| `change`                                                      | `{ state, command }`                 | Any command applied or `applyState` committed |
+| `tokenAdded` / `tokenMoved` / `tokenRemoved` / `tokenChanged` | `{ kind: TokenKind; id; location? }` | A token is placed / moved / removed / updated |
+| `selectionChanged`                                            | `{ selections }`                     | `setSelections` applied                       |
+
+`TokenKind` is `string` — an open type, not the pre-0.5.0 closed `'hero'|'foe'|'adversary'`
+union, because these events now fire uniformly for every token kind (buildings and markers
+included), not just the three that used to be tracked as named buckets. The pre-0.5.0
+`buildingChanged` / `spaceMarkerChanged` events are **gone** — a building/marker change now
+reports through `tokenChanged`/`tokenAdded`/`tokenRemoved` like everything else. The adversary
+singleton reports its identity (`art`) as `id` in these events, not its internal `'adversary'`
+token key.
 
 ```ts
-// Events with a unique `type` narrow through `on(...)`:
-controller.on('buildingChanged', (e) => console.log(e.location, e.building.skulls));
-
-// `tokenAdded` / `tokenMoved` / `tokenRemoved` share one shape, so read them off the
+// tokenAdded / tokenMoved / tokenRemoved / tokenChanged share one shape, so read them off the
 // firehose (`on('tokenAdded', …)` can't narrow the shared union — `e` would be `never`):
 controller.subscribe((e) => {
   if (e.type === 'tokenAdded') console.log(`${e.kind} ${e.id} @ ${e.location}`);
 });
+
+// Events with a unique `type` narrow through `on(...)`:
+controller.on('selectionChanged', (e) => console.log(e.selections));
 ```
 
 ## Save / load
 
-Versioned (de)serialization through a `{ version, state }` envelope validated with zod.
+Versioned (de)serialization through a `{ version, state }` envelope validated with zod. **No
+migration path**: an envelope whose version doesn't match `BOARD_STATE_SCHEMA_VERSION` is
+refused, not upgraded — see [`loadState`](#loadstatejson) below.
 
 ### `saveState(state)`
 
@@ -305,9 +372,13 @@ Versioned (de)serialization through a `{ version, state }` envelope validated wi
 
 ### `loadState(json)`
 
-`(serialized: string): BoardState` — parse + validate the envelope back into a `BoardState`, running version
-migrations on the way. **Throws [`BoardStateLoadError`](#boardstateloaderror)** on any malformed input (the
-one place an exception is appropriate).
+`(serialized: string): BoardState` — parse + validate the envelope back into a `BoardState`.
+**Throws [`BoardStateLoadError`](#boardstateloaderror)** on malformed input, OR on a version other
+than [`BOARD_STATE_SCHEMA_VERSION`](#board_state_schema_version) — **there is no migration path**.
+A host that needs to recover an old save (offer a download before discarding it, say) does that at
+its own deserialization boundary, using `err.foundVersion` to say which version it found; see
+[STATE_MODEL.md](STATE_MODEL.md#old-data-refuse-dont-migrate) for the pattern and the
+`loadState`-vs-a-host's-own-`loadState` name collision this implies.
 
 ```ts
 import { saveState, loadState, BoardStateLoadError } from 'ultimatedarktowerboard';
@@ -317,19 +388,24 @@ try {
   const restored = loadState(json);
   controller.applyState(restored);
 } catch (err) {
-  if (err instanceof BoardStateLoadError) console.error('bad save:', err.message, err.cause);
+  if (err instanceof BoardStateLoadError) {
+    console.error('bad save:', err.message, 'found version:', err.foundVersion);
+  }
 }
 ```
 
 ### `BOARD_STATE_SCHEMA_VERSION`
 
-`1` (a `const`). The schema version written into the save envelope; bump it when the shape changes and add
-a migration step.
+`2` (a `const`). The schema version written into the save envelope. Bumped from `1` in **0.5.0**
+for the `tokens`-collection `BoardState` — a non-backward-compatible change; `loadState` refuses
+any other version rather than migrate.
 
 ### `BoardStateLoadError`
 
-`extends Error` with an optional `cause`. Thrown by `loadState` on invalid JSON, a malformed envelope, a
-failed schema validation, or an unsupported version.
+`extends Error` with an optional `cause` and an optional `foundVersion: number` (set when a
+version mismatch is what caused the rejection — lets a host's stale-data dialog say which version
+it found). Thrown by `loadState` on invalid JSON, a malformed envelope, a failed schema
+validation, or an unsupported version.
 
 ## Renderers
 
@@ -361,15 +437,18 @@ console.log(readout.getText());
 
 ### `BoardMap2D`
 
-2D overhead map: inline SVG over the board image, tokens placed via UDT's normalized `BOARD_ANCHORS`, with
-click-to-select. Display-/three-free and jsdom-testable. Implements `BoardRenderer`. Token art is **never
-bundled** — it loads at runtime from `assetBaseUrl` by the `${group}/${kebab(id)}.png` convention, falling
-back to a programmatic labeled disc when missing. For **foe/adversary** tokens with a known id, the 2D
-map defaults to the official flat RTDT board-token icon (e.g. `foes/Foe-Token-L2-Brigands.png`) instead of
-the 3D-style portrait the plain convention resolves to; unknown ids and the 3D view keep the plain
-convention. **Hero** tokens in the standard roster (base + all expansions) default to their portrait under
-`heros/` when one has shipped, else the disc. Override any of this per token with
-[`tokenArt`](#per-token-art-tokenart).
+2D overhead map: inline SVG over the board image, tokens placed via `packages/game-data`'s normalized
+`BOARD_SPOTS` (each location's marked spots, resolved by the token's `typeId`/`spotId` — see
+[STATE_MODEL.md](STATE_MODEL.md)), with click-to-select. Display-/three-free and jsdom-testable.
+Implements `BoardRenderer`. Token art is **never bundled** — it loads at runtime from
+`assetBaseUrl` by the `${group}/${kebab(id)}.png` convention, falling back to a programmatic
+labeled disc when missing. For **foe/adversary** tokens with a known id, the 2D map defaults to the
+official flat RTDT board-token icon (e.g. `foes/Foe-Token-L2-Brigands.png`) instead of the 3D-style
+portrait the plain convention resolves to; unknown ids and the 3D view keep the plain convention.
+**Hero** tokens in the standard roster (base + all expansions) default to their portrait under
+`heros/` when one has shipped, else the disc. **Any other kind — including an author-defined custom
+token type** — falls through to `${base}markers/${kebab(art)}.png`, so a new type gets art by
+convention with zero code. Override any of this per token with [`tokenArt`](#per-token-art-tokenart).
 
 **Mouse interaction** is on by default. Scroll the wheel to zoom toward the cursor, and double-click
 (or call [`resetView()`](#methods)) to return to the focus view — dropping zoom **and** spin. What a
@@ -420,12 +499,13 @@ map.render(controller.getState());
 
 ### `TokenSelection` / `TokenArtRef` / `kebab()`
 
-- **`TokenSelection`** — what a click/tap reports: `{ kind: 'hero' | 'foe' | 'adversary' | 'building' |
-'marker'; id: string; location: LocationName }`. `id` is the hero/foe instance id, adversary id, or the
-  host location (building/marker).
-- **`TokenArtRef`** — what the art resolver is asked for: `{ kind; id }` where `kind` is `'hero' | 'foe' |
-'adversary' | 'monument' | 'marker' | 'skull'` and `id` is the _art_ id (foe type, adversary id, monument
-  id, marker name; `'skull'` for skulls).
+- **`TokenSelection`** — what a click/tap reports: `{ kind: string; id: string; location: LocationName }`.
+  `kind` is a `typeId` — a reserved built-in id or a `library.tokenTypes` key (open, not a closed
+  enum). `id` is the hero/foe instance id, adversary identity, or the host location
+  (building/skull/monument/marker/quest).
+- **`TokenArtRef`** — what the art resolver is asked for: `{ kind: string; id: string }`, matching
+  `TokenSelection`'s open `kind`. `id` is the _art_ id (foe type, hero id, adversary/monument
+  identity, marker/quest name).
 - **`kebab(value)`** — `(string) => string`. The id slug used in art paths: `kebab("Utuk'Ku")` → `utuk-ku`.
 
 ### Per-token art (`tokenArt`)
@@ -435,7 +515,7 @@ or a GLB model. It is a declarative table keyed by token kind → **art id**, pa
 renderer and the 3D plugin (the same object). Tokens with no entry render exactly as before.
 
 ```ts
-type TokenArtConfig = Partial<Record<TokenArtRef['kind'], Record<string, TokenArt>>>;
+type TokenArtConfig = Record<string, Record<string, TokenArt>>; // kind -> art id -> art
 
 interface TokenArt {
   image2d?: string; // image for the 2D map, and the 3D billboard when image3d is unset
@@ -596,15 +676,17 @@ ui.dispose();
 
 ### `BoardUIOptions`
 
-| Parameter      | Type                                                  | Default           | Description                                                            |
-| -------------- | ----------------------------------------------------- | ----------------- | ---------------------------------------------------------------------- |
-| `controller`   | `BoardStateController`                                | —                 | The controller the UI drives.                                          |
-| `selection`    | `SelectionStore`                                      | —                 | Active-selection source the inspector reads (renderers/palette write). |
-| `locationPick` | `LocationPickStore`                                   | —                 | Enables board-click placement; the location dropdown works without it. |
-| `panels`       | `Partial<Record<PanelId, boolean \| PanelPlacement>>` | all visible       | Which panels render + each one's placement; `false` ⇒ start hidden.    |
-| `rosters`      | `Partial<BoardUIRosters>`                             | UDT re-exports    | Palette roster lists.                                                  |
-| `generateId`   | `(kind: 'foe', state: BoardState) => string`          | next-free `foe-N` | Mint an instance id for an added foe.                                  |
-| `floating`     | `boolean`                                             | `true`            | Draggable floating panels.                                             |
+| Parameter      | Type                                                  | Default           | Description                                                                                                                                                                       |
+| -------------- | ----------------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `controller`   | `BoardStateController`                                | —                 | The controller the UI drives.                                                                                                                                                     |
+| `selection`    | `SelectionStore`                                      | —                 | Active-selection source the inspector reads (renderers/palette write).                                                                                                            |
+| `locationPick` | `LocationPickStore`                                   | —                 | Enables board-click placement; the location dropdown works without it.                                                                                                            |
+| `panels`       | `Partial<Record<PanelId, boolean \| PanelPlacement>>` | all visible       | Which panels render + each one's placement; `false` ⇒ start hidden.                                                                                                               |
+| `rosters`      | `Partial<BoardUIRosters>`                             | UDT re-exports    | Palette roster lists.                                                                                                                                                             |
+| `generateId`   | `(kind: 'foe', state: BoardState) => string`          | next-free `foe-N` | Mint an instance id for an added foe.                                                                                                                                             |
+| `floating`     | `boolean`                                             | `true`            | Draggable floating panels.                                                                                                                                                        |
+| `board`        | `BoardDefinition`                                     | built-in RtDT     | The board whose locations the panels offer.                                                                                                                                       |
+| `tokenTypes`   | `ReadonlyArray<RosterEntry>`                          | `[]`              | Author-defined `library.tokenTypes` entries offered in the palette alongside the reserved kinds. Selecting one places a plain instance via `placeToken` — no per-kind detail row. |
 
 ### `BoardUIHandle` / `PanelId` / `PanelPlacement` / `BoardUIRosters` / `RosterEntry`
 
@@ -613,8 +695,9 @@ ui.dispose();
 - **`PanelPlacement`** — `{ corner?: 'tl' | 'tr' | 'bl' | 'br'; x?: number; y?: number }`. Initial position
   of a floating panel.
 - **`BoardUIRosters`** — `{ foes: string[]; adversaries: string[]; allies: string[]; markers: string[];
-heroes: ReadonlyArray<RosterEntry>; monuments: ReadonlyArray<RosterEntry> }`. Defaults from the UDT
-  re-exports.
+heroes: ReadonlyArray<RosterEntry>; monuments: ReadonlyArray<RosterEntry>; quests: ReadonlyArray<RosterEntry> }`.
+  Defaults from the UDT re-exports (`quests` defaults to the four game pieces — a local roster,
+  not a UDT one).
 - **`RosterEntry`** — `{ id: string; name: string }`.
 
 ## Stores (UI seams)
@@ -648,20 +731,21 @@ package split out of `ultimatedarktower` in v6.0.0), re-exported here (never ven
 consumers get them from this package too. Documented upstream — see
 [`ultimatedarktowerdata`'s docs](https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/game-data/docs).
 
-| Re-export                                                                          | Kind           | Purpose                                                                                                                                                                                                                                                                                                                                                                            |
-| ---------------------------------------------------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BOARD_LOCATIONS`, `BOARD_LOCATION_BY_NAME`, `BOARD_GROUPINGS`                     | data           | The board's locations + lookups                                                                                                                                                                                                                                                                                                                                                    |
-| `BOARD_ANCHORS`, `BOARD_IMAGE_INFO`                                                | data           | Normalized token-placement anchors + image metadata                                                                                                                                                                                                                                                                                                                                |
-| `BOARD_ADJACENCY`, `neighborsOf`, `stepDistance`, `shortestPath`                   | data + helpers | Movement graph + pure BFS helpers (move-validation; the board enforces no rules)                                                                                                                                                                                                                                                                                                   |
-| `TIER1_FOES` / `TIER2_FOES` / `TIER3_FOES`, `ADVERSARIES`, `ALLIES`                | rosters        | Setup roster lists                                                                                                                                                                                                                                                                                                                                                                 |
-| `HEROES`, `HERO_BY_ID`, `MONUMENTS`, `MONUMENT_BY_ID`                              | rosters        | Hero / monument rosters + lookups                                                                                                                                                                                                                                                                                                                                                  |
-| `FOE_STATUSES`, `FOES`, `ADVERSARY_ROSTER`, `ALL_FOES`, `FOE_BY_ID`, `FOE_BY_NAME` | rosters        | Foe status + identity metadata                                                                                                                                                                                                                                                                                                                                                     |
-| `DIFFICULTIES`, `GAME_SOURCES`                                                     | enums          | Setup enums                                                                                                                                                                                                                                                                                                                                                                        |
-| **types**                                                                          | —              | `BoardLocation`, `TerrainType`, `BuildingType`, `BoardKingdom`, `BoardGrouping`, `Anchor`, `AnchorSlot`, `LocationAnchors`, `BoardAnchorMap`, `BoardImageInfo`, `BoardAdjacency`, `Hero`, `Monument`, `MonumentId`, `Tier1Foe`/`Tier2Foe`/`Tier3Foe`, `Adversary`, `Ally`, `Foe`, `FoeStatus`, `FoeLevel`, `FoeName`, `ContentSource`, `Difficulty`, `GameSource`, `ExpansionType` |
+| Re-export                                                                          | Kind           | Purpose                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `BOARD_LOCATIONS`, `BOARD_LOCATION_BY_NAME`, `BOARD_GROUPINGS`                     | data           | The board's locations + lookups                                                                                                                                                                                                                                                                                                                                                      |
+| `BOARD_SPOTS`, `RESERVED_TOKEN_TYPES`, `BOARD_IMAGE_INFO`                          | data           | Normalized token-placement spots + built-in reserved type ids + image metadata                                                                                                                                                                                                                                                                                                       |
+| `BOARD_ADJACENCY`, `neighborsOf`, `stepDistance`, `shortestPath`                   | data + helpers | Movement graph + pure BFS helpers (move-validation; the board enforces no rules)                                                                                                                                                                                                                                                                                                     |
+| `TIER1_FOES` / `TIER2_FOES` / `TIER3_FOES`, `ADVERSARIES`, `ALLIES`                | rosters        | Setup roster lists                                                                                                                                                                                                                                                                                                                                                                   |
+| `HEROES`, `HERO_BY_ID`, `MONUMENTS`, `MONUMENT_BY_ID`                              | rosters        | Hero / monument rosters + lookups                                                                                                                                                                                                                                                                                                                                                    |
+| `FOE_STATUSES`, `FOES`, `ADVERSARY_ROSTER`, `ALL_FOES`, `FOE_BY_ID`, `FOE_BY_NAME` | rosters        | Foe status + identity metadata                                                                                                                                                                                                                                                                                                                                                       |
+| `DIFFICULTIES`, `GAME_SOURCES`                                                     | enums          | Setup enums                                                                                                                                                                                                                                                                                                                                                                          |
+| **types**                                                                          | —              | `BoardLocation`, `TerrainType`, `BuildingType`, `BoardKingdom`, `BoardGrouping`, `SpotPoint`, `BoardSpot`, `BoardSpotMap`, `ReservedTokenType`, `BoardImageInfo`, `BoardAdjacency`, `Hero`, `Monument`, `MonumentId`, `Tier1Foe`/`Tier2Foe`/`Tier3Foe`, `Adversary`, `Ally`, `Foe`, `FoeStatus`, `FoeLevel`, `FoeName`, `ContentSource`, `Difficulty`, `GameSource`, `ExpansionType` |
 
 > **Identity vs. instance ids.** UDT's `HeroId` / `FoeId` (roster _identity_ ids) are deliberately **not**
-> re-exported — this package's own `HeroId` / `FoeId` (caller-assigned _instance_ ids) own those names. Use
-> a `Hero`/`Foe`'s `id` field for the identity.
+> re-exported. A placed hero/foe's _instance_ id is just `PlacedToken.id: string` (this package no
+> longer has dedicated `HeroId`/`FoeId` types of its own — 0.5.0 moved to one flat `tokens`
+> collection). Use a `Hero`/`Foe`'s `id` field for the identity.
 
 ---
 

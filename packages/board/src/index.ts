@@ -11,6 +11,7 @@ export * from './state/reducer';
 export * from './state/controller';
 export * from './state/events';
 export * from './state/serialize';
+export * from './state/selectors';
 
 export * from './renderers/shared';
 export * from './renderers/readout';

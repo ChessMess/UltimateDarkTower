@@ -16,16 +16,19 @@ import type { BoardStateSource, SealRef, TowerStateSource, Unsubscribe } from '@
 import {
   applyGameSession,
   captureSession,
+  clearLocalStorage,
   copySessionToClipboard,
   createDefaultConfig,
   createNewGameSession,
+  deserializeSession,
   downloadSession,
-  loadFromLocalStorage,
+  GameSessionLoadError,
   nextTurn,
   parseSessionText,
   previousTurn,
   saveToLocalStorage,
   setMonth as setMonthOnProgress,
+  STORAGE_KEY,
   type GameConfig,
   type GameSession,
   type PlayerBoard,
@@ -57,6 +60,17 @@ interface GameStore {
    * granular config/progress/playerBoard update actions.
    */
   session: GameSession;
+
+  /**
+   * A localStorage save `loadSession` refused because it failed to deserialize — most often
+   * an older `schemaVersion` (see `GAME_SESSION_SCHEMA_VERSION`'s v3 note). Non-null shows
+   * `StaleSessionDialog`, carrying the untouched raw bytes so the app can offer a download
+   * before the only option left is to discard them — there is no migration path.
+   */
+  staleSession: { raw: string; error: GameSessionLoadError } | null;
+  dismissStaleSession(): void;
+  /** Clears the stale save from localStorage. Irreversible — the dialog is the last chance to download it. */
+  discardStaleSession(): void;
 
   // --- board registration (called by the stage wrapper on mount) ---
   registerBoard(
@@ -140,6 +154,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
   boardState: null,
 
   session: createNewGameSession(createDefaultConfig()),
+  staleSession: null,
+
+  dismissStaleSession() {
+    set({ staleSession: null });
+  },
+  discardStaleSession() {
+    clearLocalStorage();
+    set({ staleSession: null });
+  },
 
   registerBoard(source, selection, locationPick) {
     boardUnsub?.();
@@ -240,8 +263,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   loadSession() {
-    const loaded = loadFromLocalStorage();
-    if (!loaded) return false;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw == null) return false;
+    let loaded: GameSession;
+    try {
+      loaded = deserializeSession(raw);
+    } catch (err) {
+      // Refuse, don't migrate: an older save (most often GAME_SESSION_SCHEMA_VERSION) can't be
+      // read by this build. Surface the raw bytes via staleSession so the dialog can offer a
+      // download before the user's only remaining option is to discard it.
+      if (err instanceof GameSessionLoadError) {
+        set({ staleSession: { raw, error: err } });
+        return false;
+      }
+      throw err;
+    }
     const { boardSource } = get();
     if (boardSource) applyGameSession(loaded, towerSource, boardSource);
     set({ session: loaded });

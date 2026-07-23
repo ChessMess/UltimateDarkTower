@@ -68,7 +68,7 @@ export function boardDefFromLibrary(id: string, raw: unknown): BoardDefinition |
     name: str(b['name']),
     imageInfo: imageInfo as unknown as BoardDefinition['imageInfo'],
     locations: locations as unknown as BoardDefinition['locations'],
-    anchors: (obj(b['anchors']) ?? {}) as unknown as BoardDefinition['anchors'],
+    spots: (obj(b['spots']) ?? {}) as unknown as BoardDefinition['spots'],
     adjacency: obj(b['adjacency']) as unknown as BoardDefinition['adjacency'],
   };
 }

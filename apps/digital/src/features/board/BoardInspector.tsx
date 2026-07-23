@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import { FOE_STATUSES } from '@/lib/udtData';
 import type { BoardState, FoeStatus, TokenSelection } from 'ultimatedarktowerboard';
+import { adversaryOf, buildingAt, markersAt, skullsAt } from 'ultimatedarktowerboard';
 import { useBoardActions, useBoardSelection, useBoardState } from '@/lib/hooks';
 import { SKULLS_TO_DESTROY } from '@/sources/ManualBoardSource';
 import { adversaryName, foeName, heroName } from './boardData';
@@ -81,12 +82,13 @@ function TokenDetail({
   const { kind, id, location } = selection;
 
   if (kind === 'foe') {
-    const foe = boardState.foes[id];
-    if (!foe) return <Gone />;
+    const foe = boardState.tokens[id];
+    if (!foe || foe.typeId !== 'foe') return <Gone />;
+    const status = (foe.data?.status as FoeStatus | undefined) ?? 'ready';
     return (
       <>
         <h3 className="board-detail-title">
-          {foeName(foe.foe)} <span className="muted">· foe</span>
+          {foeName(foe.art ?? '')} <span className="muted">· foe</span>
         </h3>
         <ul className="rows">
           <li>
@@ -94,7 +96,7 @@ function TokenDetail({
             <span>{foe.location}</span>
           </li>
         </ul>
-        <StatusRow status={foe.status} onChange={(s) => actions.setFoeStatus(id, s)} />
+        <StatusRow status={status} onChange={(s) => actions.setFoeStatus(id, s)} />
         <MoveRow from={foe.location} onMove={(to) => actions.moveToken(id, to)} />
         <button className="board-remove" onClick={() => actions.removeFoe(id)}>
           Remove foe
@@ -104,8 +106,9 @@ function TokenDetail({
   }
 
   if (kind === 'hero') {
-    const hero = boardState.heroes[id];
-    if (!hero) return <Gone />;
+    const hero = boardState.tokens[id];
+    if (!hero || hero.typeId !== 'hero') return <Gone />;
+    const owner = hero.data?.owner as string | undefined;
     return (
       <>
         <h3 className="board-detail-title">
@@ -116,10 +119,10 @@ function TokenDetail({
             <span>Location</span>
             <span>{hero.location}</span>
           </li>
-          {hero.owner && (
+          {owner && (
             <li>
               <span>Kingdom</span>
-              <span>{hero.owner}</span>
+              <span>{owner}</span>
             </li>
           )}
         </ul>
@@ -132,7 +135,7 @@ function TokenDetail({
   }
 
   if (kind === 'adversary') {
-    const adv = boardState.adversary;
+    const adv = adversaryOf(boardState);
     if (!adv) return <Gone />;
     return (
       <>
@@ -154,8 +157,12 @@ function TokenDetail({
   }
 
   // 'building' or 'marker' — both host on a location.
-  const building = boardState.buildings[location];
-  const markers = boardState.spaceMarkers[location] ?? [];
+  const building =
+    boardState.tokens[location]?.typeId === 'building'
+      ? buildingAt(boardState, location)
+      : undefined;
+  const skulls = skullsAt(boardState, location);
+  const markers = markersAt(boardState, location);
   return (
     <>
       <h3 className="board-detail-title">
@@ -167,7 +174,7 @@ function TokenDetail({
             <li>
               <span>Skulls</span>
               <span>
-                {building.skulls} / {SKULLS_TO_DESTROY}
+                {skulls} / {SKULLS_TO_DESTROY}
               </span>
             </li>
             <li>
@@ -179,10 +186,7 @@ function TokenDetail({
           </ul>
           <div className="board-detail-actions">
             <button onClick={() => actions.addSkull(location, 1)}>+ skull</button>
-            <button
-              disabled={building.skulls <= 0}
-              onClick={() => actions.removeSkull(location, 1)}
-            >
+            <button disabled={skulls <= 0} onClick={() => actions.removeSkull(location, 1)}>
               − skull
             </button>
           </div>

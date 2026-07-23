@@ -17,13 +17,6 @@ export function saveToLocalStorage(session: GameSession): void {
   localStorage.setItem(STORAGE_KEY, serializeSession(session));
 }
 
-/** Returns the saved session, or `null` if none. Throws `GameSessionLoadError` if stored data is corrupt. */
-export function loadFromLocalStorage(): GameSession | null {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw == null) return null;
-  return deserializeSession(raw);
-}
-
 export function clearLocalStorage(): void {
   localStorage.removeItem(STORAGE_KEY);
 }

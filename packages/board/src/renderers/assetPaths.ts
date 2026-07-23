@@ -6,36 +6,54 @@
 // Display-free (the CI grep enforces it).
 import type { LocationName } from '../state/boardState';
 
-/** What a click/tap reports. `id` is the hero/foe instance id, adversary id, or the location (building/marker/quest host). */
+/**
+ * What a click/tap reports. `kind` is a reserved built-in id or a `library.tokenTypes` key
+ * (open — no longer a closed enum). `id` is the hero/foe instance id, adversary identity, or
+ * the location (building/skull/monument/marker/quest host).
+ */
 export interface TokenSelection {
-  kind: 'hero' | 'foe' | 'adversary' | 'building' | 'marker' | 'quest';
+  kind: string;
   id: string;
   location: LocationName;
 }
 
-/** What the art resolver is asked to resolve. `id` is the *art* id (foe type, adversary id, monument id, marker/quest name). */
-export type TokenArtRef =
-  | { kind: 'hero'; id: string }
-  | { kind: 'foe'; id: string }
-  | { kind: 'adversary'; id: string }
-  | { kind: 'monument'; id: string }
-  | { kind: 'marker'; id: string }
-  | { kind: 'quest'; id: string }
-  | { kind: 'skull'; id: 'skull' };
+/**
+ * What the art resolver is asked to resolve. `id` is the *art* id (foe type, hero id,
+ * adversary/monument identity, marker/quest name) — open, matching {@link TokenSelection}.
+ */
+export interface TokenArtRef {
+  kind: string;
+  id: string;
+}
+
+/** Fill tint for a kind with no {@link KIND_TINT} entry (an author-defined custom type). */
+export const DEFAULT_KIND_TINT = '#64748b';
 
 /** Fill tints for the programmatic fallback (2D disc / 3D sprite), keyed by token kind. */
-export const KIND_TINT: Record<TokenSelection['kind'], string> = {
+export const KIND_TINT: Record<string, string> = {
   hero: '#3b82f6',
   foe: '#ef4444',
   adversary: '#7c3aed',
   building: '#a16207',
+  skull: '#a16207',
+  monument: '#a16207',
   marker: '#14b8a6',
   quest: '#d4a017',
 };
 
+/** `KIND_TINT[kind]`, falling back to {@link DEFAULT_KIND_TINT} for an unrecognized kind. */
+export function tintFor(kind: string): string {
+  return KIND_TINT[kind] ?? DEFAULT_KIND_TINT;
+}
+
+/** 2D SVG z-order for a kind with no {@link KIND_Z_2D} entry — paints above buildings, below heroes. */
+export const DEFAULT_KIND_Z_2D = 4;
+
 /** 2D SVG render order — higher value = appended later = paints on top (SVG painters algorithm). */
-export const KIND_Z_2D: Record<TokenSelection['kind'], number> = {
+export const KIND_Z_2D: Record<string, number> = {
   building: 1,
+  skull: 1,
+  monument: 1,
   foe: 2,
   adversary: 3,
   marker: 4,
@@ -43,15 +61,30 @@ export const KIND_Z_2D: Record<TokenSelection['kind'], number> = {
   hero: 5,
 };
 
+/** `KIND_Z_2D[kind]`, falling back to {@link DEFAULT_KIND_Z_2D} for an unrecognized kind. */
+export function zFor2D(kind: string): number {
+  return KIND_Z_2D[kind] ?? DEFAULT_KIND_Z_2D;
+}
+
+/** 3D Three.js renderOrder for a kind with no {@link KIND_Z_3D} entry. */
+export const DEFAULT_KIND_Z_3D = 10;
+
 /** 3D Three.js renderOrder — higher value = drawn on top for coplanar objects. */
-export const KIND_Z_3D: Record<TokenSelection['kind'], number> = {
+export const KIND_Z_3D: Record<string, number> = {
   building: 10,
+  skull: 10,
+  monument: 10,
   foe: 10,
   adversary: 10,
   marker: 10,
   quest: 10,
   hero: 11,
 };
+
+/** `KIND_Z_3D[kind]`, falling back to {@link DEFAULT_KIND_Z_3D} for an unrecognized kind. */
+export function zFor3D(kind: string): number {
+  return KIND_Z_3D[kind] ?? DEFAULT_KIND_Z_3D;
+}
 
 /** `Foo Bar` / `Utuk'Ku` → `foo-bar` / `utuk-ku`. */
 export function kebab(value: string): string {
@@ -156,6 +189,10 @@ const OFFICIAL_QUEST_ART: Record<string, string | null> = {
  * {@link OFFICIAL_HERO_ART} (same image both views). Returns `null` for "no art" → a
  * programmatic fallback: heroes with no shipped portrait, and everything when `assetBaseUrl`
  * is empty. `assetBaseUrl` may be passed with or without a trailing slash.
+ *
+ * Any kind with no dedicated case (an author-defined custom type, or `skull`, which the
+ * building layer resolves via `art:'skull'`) falls through to
+ * `${base}markers/${kebab(art)}.png` — a new type gets art by convention with zero code.
  */
 export function defaultTokenImagePath(
   ref: TokenArtRef,
@@ -176,18 +213,17 @@ export function defaultTokenImagePath(
       return `${base}adversaries/${id}.png`;
     case 'monument':
       return `${base}monuments/${id}.png`;
-    case 'marker':
-      return `${base}markers/${id}.png`;
     case 'quest': {
       const art = OFFICIAL_QUEST_ART[id];
       return art ? `${base}quests/${art}` : null; // unmapped/art-less → gold disc fallback
     }
-    case 'skull':
-      return `${base}markers/skull.png`;
     case 'hero': {
       const portrait = OFFICIAL_HERO_ART[id];
       return portrait ? `${base}heros/${portrait}` : null; // unmapped/art-less → disc fallback
     }
+    default:
+      // marker, skull, and any custom author-defined type.
+      return `${base}markers/${id}.png`;
   }
 }
 
@@ -235,11 +271,10 @@ export interface TokenArt {
 /**
  * Declarative per-token art table, keyed by token kind then **art id**. The art id is what
  * the renderer resolves against: the foe *type* for foes (so instances of a type share an
- * entry), the hero/adversary/monument id or marker name otherwise, and `'skull'` for skulls.
- * Note `building` is intentionally absent — a building's overlay is configured under `monument`.
- * Keys are matched kebab-insensitively (`"Brigands"` and `"brigands"` both resolve).
+ * entry), the hero/adversary/monument id or marker/quest name otherwise, and `'skull'` for
+ * skulls. Keys are matched kebab-insensitively (`"Brigands"` and `"brigands"` both resolve).
  */
-export type TokenArtConfig = Partial<Record<TokenArtRef['kind'], Record<string, TokenArt>>>;
+export type TokenArtConfig = Record<string, Record<string, TokenArt>>;
 
 /** Look up a per-token art override by ref, matching the raw id then its kebab slug. */
 export function lookupTokenArt(

@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { golden, goldenFull } from '@udtc/engine';
-import { loadGame, startGame, resumeSession, discardSession } from '../game';
+import {
+  loadGame,
+  startGame,
+  resumeSession,
+  discardSession,
+  downloadStaleSave,
+  discardStaleSave,
+  dismissStaleSave,
+} from '../game';
 import { resolveHandoff } from '../game/handoff';
 import { usePlayerStore } from '../store';
 
@@ -20,6 +28,7 @@ export function LoadPanel() {
   const validationError = usePlayerStore((s) => s.validationError);
   const validationResults = usePlayerStore((s) => s.validationResults);
   const resumable = usePlayerStore((s) => s.resumable);
+  const staleSave = usePlayerStore((s) => s.staleSave);
   const fileRef = useRef<HTMLInputElement>(null);
   const busy = phase === 'validating';
   // ?scenario=<id> handoff from the Creator. A miss is expected and survivable — the import path
@@ -83,6 +92,36 @@ export function LoadPanel() {
           <button style={btnStyle} onClick={() => setHandoffMiss(null)}>
             Dismiss
           </button>
+        </div>
+      )}
+
+      {/* Stale save — a saved session was found but its version stamp doesn't match (most often
+          an older BoardState shape this build can no longer read). Refused, not migrated: offer
+          a download before the only option left is to discard it. */}
+      {staleSave && phase === 'idle' && (
+        <div style={staleCardStyle}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-text-2)' }}>
+            Saved session can&rsquo;t be opened
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--c-text-muted)', margin: '4px 0 8px' }}>
+            This save was made by an earlier, incompatible version
+            {staleSave.foundVersion != null ? ` (v${String(staleSave.foundVersion)})` : ''}.
+            Download a copy to keep it, or discard it and start fresh.
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button style={btnStyle} onClick={downloadStaleSave}>
+              Download a copy
+            </button>
+            <button
+              style={{ ...btnStyle, color: 'var(--c-danger)', borderColor: 'var(--c-danger)' }}
+              onClick={discardStaleSave}
+            >
+              Discard
+            </button>
+            <button style={btnStyle} onClick={dismissStaleSave}>
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
@@ -195,6 +234,14 @@ const headStyle: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 700,
   color: 'var(--c-text-2)',
+};
+
+const staleCardStyle: React.CSSProperties = {
+  background: 'var(--c-surface)',
+  border: '1px solid var(--c-danger)',
+  borderRadius: 6,
+  padding: 10,
+  marginBottom: 10,
 };
 
 const resumeCardStyle: React.CSSProperties = {

@@ -18,7 +18,8 @@ import {
   HERO_BY_ID,
   BOARD_LOCATIONS,
   BOARD_LOCATION_BY_NAME,
-  BOARD_ANCHORS,
+  BOARD_SPOTS,
+  RESERVED_TOKEN_TYPES,
   BOARD_ADJACENCY,
   BOARD_IMAGE_INFO,
   GLYPHS,
@@ -73,10 +74,12 @@ export interface UDTReferenceLayer {
   heroById: typeof HERO_BY_ID;
   boardLocations: typeof BOARD_LOCATIONS;
   boardLocationByName: typeof BOARD_LOCATION_BY_NAME;
-  /** Layout anchors / movement graph / image metadata for the built-in RtDT board. Exposed so
+  /** Layout spots / movement graph / image metadata for the built-in RtDT board. Exposed so
    *  browser consumers (the Creator's RtDT board preset) can read them without importing
    *  `ultimatedarktowerdata` — or `ultimatedarktowerboard`, whose entry re-exports it — directly. */
-  boardAnchors: typeof BOARD_ANCHORS;
+  boardSpots: typeof BOARD_SPOTS;
+  /** The built-in vocabulary a spot's `accepts` can name with no `library.tokenTypes` entry. */
+  reservedTokenTypes: typeof RESERVED_TOKEN_TYPES;
   boardAdjacency: typeof BOARD_ADJACENCY;
   boardImageInfo: typeof BOARD_IMAGE_INFO;
   glyphs: typeof GLYPHS;
@@ -99,7 +102,8 @@ export function getUDTReferenceLayer(): UDTReferenceLayer {
     heroById: HERO_BY_ID,
     boardLocations: BOARD_LOCATIONS,
     boardLocationByName: BOARD_LOCATION_BY_NAME,
-    boardAnchors: BOARD_ANCHORS,
+    boardSpots: BOARD_SPOTS,
+    reservedTokenTypes: RESERVED_TOKEN_TYPES,
     boardAdjacency: BOARD_ADJACENCY,
     boardImageInfo: BOARD_IMAGE_INFO,
     glyphs: GLYPHS,
