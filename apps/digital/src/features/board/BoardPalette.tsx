@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ADVERSARY_ROSTER, FOE_STATUSES } from '@/lib/udtData';
 import type { FoeStatus, TokenSelection } from 'ultimatedarktowerboard';
+import { adversaryOf, foesOf, heroesOf } from 'ultimatedarktowerboard';
 import { useBoardActions, useBoardLocationPick, useBoardState, useSession } from '@/lib/hooks';
 import {
   BUILDING_LOCATIONS,
@@ -250,9 +251,8 @@ export function BoardPalette() {
 
       {boardState && (
         <p className="muted board-counts">
-          {Object.keys(boardState.foes).length} foes · {Object.keys(boardState.heroes).length}{' '}
-          heroes
-          {boardState.adversary?.location ? ' · adversary placed' : ''}
+          {foesOf(boardState).length} foes · {heroesOf(boardState).length} heroes
+          {adversaryOf(boardState)?.location ? ' · adversary placed' : ''}
         </p>
       )}
     </section>

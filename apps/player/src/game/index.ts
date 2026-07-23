@@ -16,7 +16,13 @@ import type { Input, Directive, StepResult, EngineState } from '@udtc/engine';
 import { RelayClient } from '../relay';
 import { usePlayerStore } from '../store';
 import type { ValidationResults, SavedSession, SavedSessionMeta } from '../types';
-import { saveSession, loadSession, clearSession } from './persistence';
+import {
+  saveSession,
+  loadSession,
+  loadRawSession,
+  clearSession,
+  downloadRawSession,
+} from './persistence';
 
 const PLAYER_SEED = 'player-runtime-seed';
 const PLAYER_COUNT = 1;
@@ -406,7 +412,7 @@ function persistSession(): void {
     if (!store.engineState || !store.scenario) return;
     const cp = store.checkpoint;
     const session: SavedSession = {
-      version: 1,
+      version: 2,
       engineVersion: ENGINE_VERSION,
       scenario: store.scenario,
       serializedState: cp?.serializedState ?? JSON.stringify(store.engineState),
@@ -426,14 +432,28 @@ function persistSession(): void {
 }
 
 // Read any saved session on boot; if it's a valid, resumable in-progress game, stash the
-// payload and expose its meta so the LoadPanel can offer Resume/Discard. Incompatible or
-// corrupt snapshots are discarded silently. Returns the meta (or null).
+// payload and expose its meta so the LoadPanel can offer Resume/Discard. A `version` mismatch
+// (including a stamp-less record) is refused, not migrated: it's surfaced via `staleSave` so
+// the LoadPanel can offer a download before the only option left is to discard it — see
+// `SavedSession.version`'s doc. Other incompatibilities (engine build mismatch, corrupt state)
+// aren't recoverable data, so those are discarded silently as before. Returns the meta (or null).
 export async function checkForResumableSession(): Promise<SavedSessionMeta | null> {
   const saved = await loadSession();
   if (!saved) return null;
 
+  if ((saved as { version?: unknown }).version !== 2) {
+    // Prefer the true raw sibling `saveSession` wrote alongside the structured record; only a
+    // record saved before that sibling existed falls back to re-serializing the structured
+    // clone `loadSession` returned (a best effort — see `loadRawSession`'s doc comment).
+    const raw = (await loadRawSession()) ?? JSON.stringify(saved, null, 2);
+    usePlayerStore.getState().setStaleSave({
+      raw,
+      foundVersion: (saved as { version?: unknown }).version,
+    });
+    return null;
+  }
+
   const compatible =
-    saved.version === 1 &&
     saved.engineVersion === ENGINE_VERSION &&
     typeof saved.serializedState === 'string' &&
     saved.serializedState.length > 0;
@@ -528,6 +548,26 @@ export function discardSession(): void {
   _startRequested = false;
   _relayReadyLogged = false;
   usePlayerStore.getState().reset();
+}
+
+// Download the stale save's raw bytes (exactly as stored) so a player can keep a copy.
+export function downloadStaleSave(): void {
+  const staleSave = usePlayerStore.getState().staleSave;
+  if (!staleSave) return;
+  downloadRawSession(staleSave.raw);
+}
+
+// Clear the stale save from IndexedDB and close the dialog. Irreversible — Download is the
+// last chance to keep a copy.
+export function discardStaleSave(): void {
+  void clearSession();
+  usePlayerStore.getState().setStaleSave(null);
+}
+
+// Close the stale-save dialog without touching IndexedDB — the record stays and is re-offered
+// on next load.
+export function dismissStaleSave(): void {
+  usePlayerStore.getState().setStaleSave(null);
 }
 
 // ---- Input submission ----

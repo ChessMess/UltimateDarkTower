@@ -97,7 +97,14 @@ export function createNewGameSession(config: GameConfig, name?: string): GameSes
   const board = createDefaultBoardState();
   for (const h of config.heroes) {
     const location = homeCitadelFor(h.homeKingdom);
-    if (location) board.heroes[h.heroId] = { location, owner: h.homeKingdom };
+    if (location) {
+      board.tokens[h.heroId] = {
+        id: h.heroId,
+        typeId: 'hero',
+        location,
+        data: { owner: h.homeKingdom },
+      };
+    }
   }
   return {
     schemaVersion: GAME_SESSION_SCHEMA_VERSION,

@@ -22,6 +22,16 @@ faithfully. (Mirror of the note in `packages/scenario-store/CLAUDE.md`.)
 `src/game/index.ts` has a manual mount/unmount race guard (`view.dispose()` when a newer
 mount superseded this one) — preserve it if you touch that code.
 
+## Saved-session version guard (refuse, don't migrate)
+
+`SavedSession.version` (`src/game/persistence.ts`) is bumped whenever the shape of what's
+snapshotted to IndexedDB changes in a way this build can't read back (currently `2`, for
+`ultimatedarktowerboard`'s 0.5.0 `tokens`-collection `BoardState`). `checkForResumableSession`
+(`src/game/index.ts`) treats a version mismatch — **or a stamp-less record** — as stale: it sets
+`staleSave` on the store instead of silently discarding it, and `LoadPanel` offers Download a
+copy / Discard / Cancel. There is no migration path. Bump the literal (and update the doc comment
+on `SavedSession.version`) the next time the snapshotted shape changes again.
+
 ## Build & test
 
 Same shape as `apps/creator`: `predev`/`pretest` rebuild `@udtc/engine`; `test` =

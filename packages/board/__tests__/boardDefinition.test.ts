@@ -6,8 +6,10 @@ import {
   createDefaultBoardState,
   isBoardCalibrated,
   resolveBoard,
+  resolveSpot,
+  spotPxFor,
 } from '../src/index';
-import type { BoardDefinition, BoardState } from '../src/index';
+import type { BoardDefinition, BoardState, PlacedToken } from '../src/index';
 
 /** A small custom board: 2048² (half the RtDT reference), one citadel, one plain space. */
 function customBoard(overrides: Partial<BoardDefinition> = {}): BoardDefinition {
@@ -26,12 +28,22 @@ function customBoard(overrides: Partial<BoardDefinition> = {}): BoardDefinition 
       { name: 'Emberfall', kingdom: 'north', terrain: 'Ash Flats', building: 'citadel' },
       { name: 'Coldwatch', kingdom: 'north', terrain: 'Tundra' },
     ],
-    anchors: {
-      Emberfall: { building: { x: 0.25, y: 0.25 }, hero: { x: 0.2, y: 0.2 } },
-      Coldwatch: { hero: { x: 0.75, y: 0.75 } },
+    spots: {
+      Emberfall: [
+        { id: 'building', at: { x: 0.25, y: 0.25 }, accepts: ['building'] },
+        { id: 'skull', at: { x: 0.26, y: 0.26 }, accepts: ['skull'] },
+        { id: 'hero', at: { x: 0.2, y: 0.2 }, accepts: ['hero'] },
+      ],
+      Coldwatch: [{ id: 'hero', at: { x: 0.75, y: 0.75 }, accepts: ['hero'] }],
     },
     ...overrides,
   };
+}
+
+function withTokens(state: BoardState, tokens: PlacedToken[]): BoardState {
+  const next = { ...state, tokens: { ...state.tokens } };
+  for (const token of tokens) next.tokens[token.id] = token;
+  return next;
 }
 
 function render(
@@ -60,6 +72,71 @@ describe('resolveBoard', () => {
   it('RtDT has 16 building spaces', () => {
     expect(resolveBoard().buildingLocations).toHaveLength(16);
   });
+
+  it('indexes spots by every type id they accept', () => {
+    const resolved = resolveBoard(customBoard());
+    expect(resolved.spotsAccepting.get('Emberfall')?.get('building')?.[0]?.id).toBe('building');
+    expect(resolved.spotsAccepting.get('Emberfall')?.get('hero')?.[0]?.id).toBe('hero');
+  });
+});
+
+describe('resolveSpot / spotPxFor', () => {
+  it('resolves via accepts when no explicit spotId is given', () => {
+    const board = resolveBoard(customBoard());
+    expect(resolveSpot(board, 'Emberfall', 'building')?.id).toBe('building');
+  });
+
+  it('an explicit spotId wins over the accepts-based match', () => {
+    const board = resolveBoard(customBoard());
+    expect(resolveSpot(board, 'Emberfall', 'building', 'hero')?.id).toBe('hero');
+  });
+
+  it('falls back to a spot whose id literally equals the type id', () => {
+    // A hand-authored board that named a spot after a reserved type without listing it in
+    // `accepts` — a defensive fallback, not the primary path.
+    const board = resolveBoard({
+      ...customBoard(),
+      spots: { Emberfall: [{ id: 'quest', at: { x: 0.5, y: 0.5 }, accepts: ['marker'] }] },
+    });
+    expect(resolveSpot(board, 'Emberfall', 'quest')?.id).toBe('quest');
+  });
+
+  it('returns undefined when the location has no matching spot', () => {
+    const board = resolveBoard(customBoard());
+    expect(resolveSpot(board, 'Coldwatch', 'building')).toBeUndefined();
+    expect(resolveSpot(board, 'Nowhere', 'hero')).toBeUndefined();
+  });
+
+  it('returns undefined when the location has no spots at all (nothing to draw at)', () => {
+    const board = resolveBoard({ ...customBoard(), spots: { Emberfall: [] } });
+    expect(resolveSpot(board, 'Emberfall', 'hero')).toBeUndefined();
+  });
+
+  it('the first spot wins when several accept the same type', () => {
+    const board = resolveBoard({
+      ...customBoard(),
+      spots: {
+        Emberfall: [
+          { id: 'a', at: { x: 0.1, y: 0.1 }, accepts: ['marker'] },
+          { id: 'b', at: { x: 0.2, y: 0.2 }, accepts: ['marker'] },
+        ],
+      },
+    });
+    expect(resolveSpot(board, 'Emberfall', 'marker')?.id).toBe('a');
+  });
+
+  it('a spot with an empty `accepts` is never selected — not even via the id-equality fallback', () => {
+    const board = resolveBoard({
+      ...customBoard(),
+      spots: { Emberfall: [{ id: 'dead', at: { x: 0.5, y: 0.5 }, accepts: [] }] },
+    });
+    expect(resolveSpot(board, 'Emberfall', 'dead')).toBeUndefined();
+  });
+
+  it('spotPxFor converts the resolved spot to image-space px', () => {
+    const board = resolveBoard(customBoard());
+    expect(spotPxFor(board, 'Coldwatch', 'hero')).toEqual({ x: 0.75 * 2048, y: 0.75 * 2048 });
+  });
 });
 
 describe('isBoardCalibrated', () => {
@@ -83,14 +160,20 @@ describe('isBoardCalibrated', () => {
 describe('createDefaultBoardState', () => {
   it('seeds RtDT building spaces when no board is passed', () => {
     const state = createDefaultBoardState();
-    expect(Object.keys(state.buildings)).toHaveLength(16);
-    expect(state.buildings['Radiant Mountains']).toEqual({ skulls: 0, destroyed: false });
+    const buildings = Object.values(state.tokens).filter((t) => t.typeId === 'building');
+    expect(buildings).toHaveLength(16);
+    expect(state.tokens['Radiant Mountains']).toMatchObject({
+      typeId: 'building',
+      data: { destroyed: false },
+    });
   });
 
   it("seeds a custom board's building spaces only", () => {
     const state = createDefaultBoardState(customBoard());
-    expect(Object.keys(state.buildings)).toEqual(['Emberfall']);
-    expect(state.buildings['Emberfall']).toEqual({ skulls: 0, destroyed: false });
+    const buildings = Object.values(state.tokens).filter((t) => t.typeId === 'building');
+    expect(buildings.map((t) => t.location)).toEqual(['Emberfall']);
+    expect(state.tokens['Emberfall'].data).toEqual({ destroyed: false });
+    expect(state.tokens['skull:Emberfall'].n).toBe(0);
   });
 });
 
@@ -107,25 +190,27 @@ describe('boardScaleFactor', () => {
 });
 
 describe('BoardMap2D board injection', () => {
-  it('renders a custom board at its own anchors and viewBox', () => {
+  it('renders a custom board at its own spots and viewBox', () => {
     const board = customBoard();
-    const state = createDefaultBoardState(board);
-    state.heroes = { h1: { location: 'Coldwatch' } };
+    const state = withTokens(createDefaultBoardState(board), [
+      { id: 'h1', typeId: 'hero', location: 'Coldwatch' },
+    ]);
     const html = render(state, { board, assetBaseUrl: '/t/' });
 
     // viewBox is the custom image size, not RtDT's 4096².
     expect(html).toContain('viewBox="0 0 2048 2048"');
-    // The hero lands on Coldwatch's anchor: 0.75 * 2048 = 1536.
+    // The hero lands on Coldwatch's spot: 0.75 * 2048 = 1536.
     expect(html).toContain('translate(1536 1536)');
   });
 
   it('scales token geometry to a NON-SQUARE board by min(w,h)/4096', () => {
     const board = customBoard({
       imageInfo: { width: 4096, height: 1024 },
-      anchors: { Coldwatch: { hero: { x: 0.5, y: 0.5 } } },
+      spots: { Coldwatch: [{ id: 'hero', at: { x: 0.5, y: 0.5 }, accepts: ['hero'] }] },
     });
-    const state = createDefaultBoardState(board);
-    state.heroes = { h1: { location: 'Coldwatch' } };
+    const state = withTokens(createDefaultBoardState(board), [
+      { id: 'h1', typeId: 'hero', location: 'Coldwatch' },
+    ]);
     const html = render(state, { board, assetBaseUrl: '/t/' });
 
     // factor = min(4096,1024)/4096 = 0.25 ⇒ SLOT_SIZE 150 → 37.5. The token has no art, so it
@@ -136,8 +221,9 @@ describe('BoardMap2D board injection', () => {
   });
 
   it('uses full-size token geometry on the 4096² reference board', () => {
-    const state = createDefaultBoardState();
-    state.heroes = { h1: { location: 'Radiant Mountains' } };
+    const state = withTokens(createDefaultBoardState(), [
+      { id: 'h1', typeId: 'hero', location: 'Radiant Mountains' },
+    ]);
     // SLOT_SIZE 150 unscaled ⇒ fallback disc r = 150 * 0.42 = 63.
     expect(render(state, { assetBaseUrl: '/t/' })).toContain('r="63"');
   });
@@ -145,14 +231,28 @@ describe('BoardMap2D board injection', () => {
   // THE back-compat proof for the published package: injecting the built-in board explicitly
   // must be indistinguishable from omitting the option, byte for byte.
   it('identity regression — no board option renders identically to RTDT_BOARD_DEFINITION', () => {
-    const state = createDefaultBoardState();
-    state.heroes = { h1: { location: 'Radiant Mountains' }, h2: { location: 'Broken Lands' } };
-    state.foes = { f1: { foe: 'Brigands', location: 'Yellowpike', status: 'ready' } };
-    state.buildings['Radiant Mountains'] = { skulls: 3, destroyed: false };
-    state.buildings['Duwani'] = { skulls: 0, destroyed: true };
-    state.spaceMarkers = { Arkartus: ['wasteland'] };
-    state.questMarkers = { Dayside: ['main-goal'] };
-    state.adversary = { id: 'the-baron', location: 'Fivepint' };
+    const state = withTokens(createDefaultBoardState(), [
+      { id: 'h1', typeId: 'hero', location: 'Radiant Mountains' },
+      { id: 'h2', typeId: 'hero', location: 'Broken Lands' },
+      {
+        id: 'f1',
+        typeId: 'foe',
+        location: 'Yellowpike',
+        art: 'Brigands',
+        data: { status: 'ready' },
+      },
+      {
+        id: 'Radiant Mountains',
+        typeId: 'building',
+        location: 'Radiant Mountains',
+        data: { destroyed: false },
+      },
+      { id: 'skull:Radiant Mountains', typeId: 'skull', location: 'Radiant Mountains', n: 3 },
+      { id: 'Duwani', typeId: 'building', location: 'Duwani', data: { destroyed: true } },
+      { id: 'marker:Arkartus:wasteland', typeId: 'marker', location: 'Arkartus', art: 'wasteland' },
+      { id: 'quest:Dayside:main-goal', typeId: 'quest', location: 'Dayside', art: 'main-goal' },
+      { id: 'adversary', typeId: 'adversary', location: 'Fivepint', art: 'the-baron' },
+    ]);
 
     const opts = { assetBaseUrl: '/t/', boardImageUrl: '/board.png' };
     const withoutOption = render(state, opts);
@@ -172,8 +272,10 @@ describe('BoardMap2D board injection', () => {
   // against the default — including through a structural clone, which bypasses `resolveBoard`'s
   // identity fast-path and therefore exercises the generic index-building path end to end.
   it('identity regression holds under a kingdom focus (viewBox + dimming), incl. via a clone', () => {
-    const state = createDefaultBoardState();
-    state.heroes = { h1: { location: 'Radiant Mountains' }, h2: { location: 'Big Sister' } };
+    const state = withTokens(createDefaultBoardState(), [
+      { id: 'h1', typeId: 'hero', location: 'Radiant Mountains' },
+      { id: 'h2', typeId: 'hero', location: 'Big Sister' },
+    ]);
     const focus = { kingdom: 'north', angle: 'top' } as const;
 
     const renderFocused = (board?: BoardDefinition): string => {

@@ -1,14 +1,14 @@
 import type { BoardKingdom } from '../data/udtReexports';
-import type {
-  BoardState,
-  FoeId,
-  FoeStatus,
-  HeroId,
-  LocationName,
-  QuestMarker,
-  SpaceMarker,
+import type { BoardState, FoeStatus, LocationName, PlacedToken } from './boardState';
+import {
+  ADVERSARY_TOKEN_ID,
+  buildingTokenId,
+  createDefaultBoardState,
+  markerTokenId,
+  monumentTokenId,
+  questTokenId,
+  skullTokenId,
 } from './boardState';
-import { createDefaultBoardState } from './boardState';
 import type { BoardCommand } from './commands';
 import { applyBoardCommand } from './reducer';
 import type { BoardEvent, BoardEventListener, BoardEventType, TokenKind } from './events';
@@ -31,6 +31,31 @@ export interface BoardStateControllerOptions {
  * - **`host`**: the host owns the truth. `dispatch` computes the projected next state
  *   and emits it as a `change` *intent* without mutating held state; only
  *   `applyState(next)` commits. Same `applyState` is the commit path in both modes.
+ *
+ * ## Named methods over the generic ops
+ *
+ * `BoardState` is one `tokens` collection keyed by instance id, and the reducer
+ * understands only five generic commands (`placeToken`/`moveToken`/`removeToken`/
+ * `updateToken`/`setSelections`, plus `replaceState`/`reset`). The named methods below
+ * (`placeHero`, `spawnFoe`, `setSpaceMarker`, …) are the pre-0.5.0 public surface,
+ * reimplemented over those generic ops with deterministic per-kind token ids so callers
+ * (and `@udtc/adapters`' `BoardCtrl`) need no change:
+ *
+ * | Kind | Token id | `art` |
+ * | --- | --- | --- |
+ * | hero | the hero id itself | the hero id (explicit — see {@link PlacedToken}) |
+ * | foe | the caller's instance id | the foe *type* |
+ * | adversary | the fixed {@link ADVERSARY_TOKEN_ID} singleton | the adversary's identity |
+ * | building | the location name | — |
+ * | skull | `skull:{location}` | — (`n` carries the count) |
+ * | monument | `monument:{location}` | the monument's identity |
+ * | marker | `marker:{location}:{name}` | the marker name |
+ * | quest | `quest:{location}:{name}` | the quest name |
+ *
+ * The adversary is the one singleton with a separate public identity: `selectAdversary`/
+ * `placeAdversary` read-then-upsert the fixed-id token (preserving whichever half — id or
+ * location — was already set), and its `tokenAdded`/`tokenMoved`/`tokenRemoved` events report
+ * the identity (`art`) as `id`, not the internal `'adversary'` key.
  */
 export class BoardStateController {
   private state: BoardState;
@@ -98,94 +123,213 @@ export class BoardStateController {
     });
   }
 
-  // Ergonomic named methods — thin wrappers over `dispatch`.
-  placeHero(heroId: HeroId, location: LocationName, owner?: BoardKingdom): void {
-    this.dispatch({ type: 'placeHero', heroId, location, owner });
+  // ── generic token ops (also the adapter's `board.mutate: placeToken/removeToken` target) ──
+
+  /** Place any token (reserved kind or a `library.tokenTypes` id). Mints an instance id and upserts. */
+  placeToken(opts: {
+    id?: string;
+    typeId: string;
+    location: LocationName;
+    spotId?: string;
+    art?: string;
+    n?: number;
+    data?: Record<string, unknown>;
+  }): string {
+    const id = opts.id ?? defaultTokenId(opts.typeId, this.state);
+    this.dispatch({
+      type: 'placeToken',
+      id,
+      typeId: opts.typeId,
+      location: opts.location,
+      spotId: opts.spotId,
+      art: opts.art,
+      n: opts.n,
+      data: opts.data,
+    });
+    return id;
   }
-  moveHero(heroId: HeroId, location: LocationName): void {
-    this.dispatch({ type: 'moveHero', heroId, location });
+
+  /**
+   * Remove every token of `typeId` at `location` — mirrors the engine's own directive
+   * filter (`state.tokens.filter(t => !(t.tokenTypeId === typeId && target === location))`),
+   * since the `board.mutate: removeToken` directive carries no instance id.
+   */
+  removeToken(typeId: string, location: LocationName): void {
+    for (const token of Object.values(this.state.tokens)) {
+      if (token.typeId === typeId && token.location === location) {
+        this.dispatch({ type: 'removeToken', id: token.id });
+      }
+    }
   }
-  removeHero(heroId: HeroId): void {
-    this.dispatch({ type: 'removeHero', heroId });
+
+  // ── Ergonomic named methods — thin wrappers over the generic ops (see the class doc). ──
+
+  placeHero(heroId: string, location: LocationName, owner?: BoardKingdom): void {
+    this.dispatch({
+      type: 'placeToken',
+      id: heroId,
+      typeId: 'hero',
+      location,
+      art: heroId,
+      data: owner !== undefined ? { owner } : undefined,
+    });
   }
-  spawnFoe(foeId: FoeId, foe: string, location: LocationName, status?: FoeStatus): void {
-    this.dispatch({ type: 'spawnFoe', foeId, foe, location, status });
+  moveHero(heroId: string, location: LocationName): void {
+    this.dispatch({ type: 'moveToken', id: heroId, location });
   }
-  moveFoe(foeId: FoeId, location: LocationName): void {
-    this.dispatch({ type: 'moveFoe', foeId, location });
+  removeHero(heroId: string): void {
+    this.dispatch({ type: 'removeToken', id: heroId });
+  }
+  spawnFoe(foeId: string, foe: string, location: LocationName, status?: FoeStatus): void {
+    this.dispatch({
+      type: 'placeToken',
+      id: foeId,
+      typeId: 'foe',
+      location,
+      art: foe,
+      data: { status: status ?? 'ready' },
+    });
+  }
+  moveFoe(foeId: string, location: LocationName): void {
+    this.dispatch({ type: 'moveToken', id: foeId, location });
   }
   /**
    * Move whichever token carries `id` to `location`, resolving its kind from current state.
-   * Order is heroes → foes → adversary; on a cross-kind id collision the earlier kind wins.
-   * Returns the kind moved, or `null` if nothing matches (a no-op — nothing is dispatched, no
-   * event fires). The adversary matches only when one exists with a non-empty id equal to `id`,
-   * so this never creates an adversary. Delegates to the existing commands, so the correct
-   * `tokenMoved` event is emitted for free and host-mode behaves like the other named methods.
+   * `tokens` is one flat, globally-id-keyed map, so a hero and a foe can no longer occupy the
+   * same id (unlike the pre-0.5.0 per-kind buckets) — the only remaining ambiguity is a
+   * hero/foe instance id that happens to equal the adversary's identity, and the token
+   * occupying that id wins (checked before the adversary). Returns the kind moved, or `null`
+   * if nothing matches (a no-op — nothing is dispatched, no event fires). The adversary
+   * matches only when one exists whose identity (`art`) equals `id`, so this never creates
+   * an adversary.
    */
   moveToken(id: string, location: LocationName): TokenKind | null {
     const s = this.getState();
-    if (id in s.heroes) {
-      this.dispatch({ type: 'moveHero', heroId: id, location });
+    if (s.tokens[id]?.typeId === 'hero') {
+      this.moveHero(id, location);
       return 'hero';
     }
-    if (id in s.foes) {
-      this.dispatch({ type: 'moveFoe', foeId: id, location });
+    if (s.tokens[id]?.typeId === 'foe') {
+      this.moveFoe(id, location);
       return 'foe';
     }
-    if (s.adversary && s.adversary.id !== '' && s.adversary.id === id) {
-      this.dispatch({ type: 'placeAdversary', location });
+    const adversary = s.tokens[ADVERSARY_TOKEN_ID];
+    if (adversary && adversary.art && adversary.art === id) {
+      this.placeAdversary(location);
       return 'adversary';
     }
     return null;
   }
-  setFoeStatus(foeId: FoeId, status: FoeStatus): void {
-    this.dispatch({ type: 'setFoeStatus', foeId, status });
+  setFoeStatus(foeId: string, status: FoeStatus): void {
+    // No existence pre-check — dispatch unconditionally, matching every other named method
+    // (moveHero/moveFoe/removeHero/removeFoe, …). `updateToken`'s own no-op-on-unknown-id
+    // guard keeps state correct either way; skipping dispatch here would additionally suppress
+    // the `change` event that those sibling no-ops still fire.
+    this.dispatch({ type: 'updateToken', id: foeId, patch: { data: { status } } });
   }
-  removeFoe(foeId: FoeId): void {
-    this.dispatch({ type: 'removeFoe', foeId });
+  removeFoe(foeId: string): void {
+    this.dispatch({ type: 'removeToken', id: foeId });
   }
+  /** Upserts the singleton adversary token, preserving its location if already placed. */
   selectAdversary(id: string): void {
-    this.dispatch({ type: 'selectAdversary', id });
+    const existing = this.state.tokens[ADVERSARY_TOKEN_ID];
+    this.dispatch({
+      type: 'placeToken',
+      id: ADVERSARY_TOKEN_ID,
+      typeId: 'adversary',
+      location: existing?.location ?? '',
+      art: id,
+    });
   }
+  /** Upserts the singleton adversary token, preserving its identity if already selected. */
   placeAdversary(location: LocationName): void {
-    this.dispatch({ type: 'placeAdversary', location });
+    const existing = this.state.tokens[ADVERSARY_TOKEN_ID];
+    this.dispatch({
+      type: 'placeToken',
+      id: ADVERSARY_TOKEN_ID,
+      typeId: 'adversary',
+      location,
+      art: existing?.art ?? '',
+    });
   }
   clearAdversary(): void {
-    this.dispatch({ type: 'clearAdversary' });
+    this.dispatch({ type: 'removeToken', id: ADVERSARY_TOKEN_ID });
   }
   addSkull(location: LocationName, n?: number): void {
-    this.dispatch({ type: 'addSkull', location, n });
+    this.upsertSkull(location, (current) => current + (n ?? 1));
   }
   removeSkull(location: LocationName, n?: number): void {
-    this.dispatch({ type: 'removeSkull', location, n });
+    this.upsertSkull(location, (current) => Math.max(0, current - (n ?? 1)));
   }
   setSkulls(location: LocationName, n: number): void {
-    this.dispatch({ type: 'setSkulls', location, n });
+    this.upsertSkull(location, () => n);
+  }
+  private upsertSkull(location: LocationName, nextCount: (current: number) => number): void {
+    const id = skullTokenId(location);
+    const existing = this.state.tokens[id];
+    const n = nextCount(existing?.n ?? 0);
+    if (existing) {
+      this.dispatch({ type: 'updateToken', id, patch: { n } });
+    } else {
+      this.dispatch({ type: 'placeToken', id, typeId: 'skull', location, n });
+    }
   }
   destroyBuilding(location: LocationName): void {
-    this.dispatch({ type: 'destroyBuilding', location });
+    this.upsertBuildingFlag(location, { destroyed: true });
   }
   restoreBuilding(location: LocationName): void {
-    this.dispatch({ type: 'restoreBuilding', location });
+    this.upsertBuildingFlag(location, { destroyed: false });
   }
   setMonument(location: LocationName, monumentId: string | null): void {
-    this.dispatch({ type: 'setMonument', location, monumentId });
+    const id = monumentTokenId(location);
+    if (monumentId == null) {
+      this.dispatch({ type: 'removeToken', id });
+    } else {
+      this.dispatch({ type: 'placeToken', id, typeId: 'monument', location, art: monumentId });
+    }
   }
-  setSpaceMarker(location: LocationName, marker: SpaceMarker, on: boolean): void {
-    this.dispatch({ type: 'setSpaceMarker', location, marker, on });
+  private upsertBuildingFlag(location: LocationName, patch: Record<string, unknown>): void {
+    const id = buildingTokenId(location);
+    const existing = this.state.tokens[id];
+    if (existing) {
+      this.dispatch({ type: 'updateToken', id, patch: { data: patch } });
+    } else {
+      this.dispatch({ type: 'placeToken', id, typeId: 'building', location, data: patch });
+    }
   }
-  setQuestMarker(location: LocationName, marker: QuestMarker, on: boolean): void {
-    this.dispatch({ type: 'setQuestMarker', location, marker, on });
+  setSpaceMarker(location: LocationName, marker: string, on: boolean): void {
+    const id = markerTokenId(location, marker);
+    if (on) {
+      this.dispatch({ type: 'placeToken', id, typeId: 'marker', location, art: marker });
+    } else {
+      this.dispatch({ type: 'removeToken', id });
+    }
+  }
+  setQuestMarker(location: LocationName, marker: string, on: boolean): void {
+    const id = questTokenId(location, marker);
+    if (on) {
+      this.dispatch({ type: 'placeToken', id, typeId: 'quest', location, art: marker });
+    } else {
+      this.dispatch({ type: 'removeToken', id });
+    }
   }
   setSelections(selections: BoardState['selections']): void {
     this.dispatch({ type: 'setSelections', selections });
   }
 }
 
+/** `foe-N` against the current state — the pre-0.5.0 default for an unsupplied instance id. */
+function defaultTokenId(typeId: string, state: BoardState): string {
+  let n = 1;
+  while (`${typeId}-${n}` in state.tokens) n++;
+  return `${typeId}-${n}`;
+}
+
 /**
- * Derives the specific (non-`change`) events for an applied command. Pure; reads
- * the prior/next state so removals and adversary changes report accurate ids and
- * no-ops emit nothing.
+ * Derives the specific (non-`change`) events for an applied command. Pure; reads the
+ * prior/next state so removals report accurate identities and no-ops emit nothing. The
+ * adversary singleton reports its identity (`art`) as `id`, not the internal token key —
+ * see the class doc.
  */
 function deriveSpecificEvents(
   command: BoardCommand,
@@ -193,82 +337,48 @@ function deriveSpecificEvents(
   next: BoardState,
 ): BoardEvent[] {
   switch (command.type) {
-    case 'placeHero':
-      return [{ type: 'tokenAdded', kind: 'hero', id: command.heroId, location: command.location }];
-    case 'moveHero':
-      return command.heroId in next.heroes
-        ? [{ type: 'tokenMoved', kind: 'hero', id: command.heroId, location: command.location }]
-        : [];
-    case 'removeHero':
-      return command.heroId in prev.heroes
-        ? [{ type: 'tokenRemoved', kind: 'hero', id: command.heroId }]
-        : [];
-
-    case 'spawnFoe':
-      return [{ type: 'tokenAdded', kind: 'foe', id: command.foeId, location: command.location }];
-    case 'moveFoe':
-      return command.foeId in next.foes
-        ? [{ type: 'tokenMoved', kind: 'foe', id: command.foeId, location: command.location }]
-        : [];
-    case 'removeFoe':
-      return command.foeId in prev.foes
-        ? [{ type: 'tokenRemoved', kind: 'foe', id: command.foeId }]
-        : [];
-
-    case 'selectAdversary':
-      return [{ type: 'tokenAdded', kind: 'adversary', id: command.id }];
-    case 'placeAdversary':
-      return [
-        {
-          type: 'tokenMoved',
-          kind: 'adversary',
-          id: next.adversary?.id ?? '',
-          location: command.location,
-        },
-      ];
-    case 'clearAdversary':
-      return prev.adversary
-        ? [{ type: 'tokenRemoved', kind: 'adversary', id: prev.adversary.id }]
-        : [];
-
-    case 'addSkull':
-    case 'removeSkull':
-    case 'setSkulls':
-    case 'destroyBuilding':
-    case 'restoreBuilding':
-    case 'setMonument':
-      return [
-        {
-          type: 'buildingChanged',
-          location: command.location,
-          building: next.buildings[command.location],
-        },
-      ];
-
-    case 'setSpaceMarker':
-      return [
-        {
-          type: 'spaceMarkerChanged',
-          location: command.location,
-          markers: next.spaceMarkers[command.location] ?? [],
-        },
-      ];
-
-    case 'setQuestMarker':
-      return [
-        {
-          type: 'questMarkerChanged',
-          location: command.location,
-          markers: next.questMarkers[command.location] ?? [],
-        },
-      ];
-
+    case 'placeToken': {
+      // Upsert: `tokenAdded` the first time an id is placed, `tokenMoved` on a re-placement —
+      // this is what lets `selectAdversary`/`placeAdversary` (both upsert the same singleton
+      // token) report the right event without the reducer knowing which public method it was.
+      const existed = command.id in prev.tokens;
+      const token = next.tokens[command.id];
+      return [{ type: existed ? 'tokenMoved' : 'tokenAdded', ...tokenEventFields(token) }];
+    }
+    case 'moveToken': {
+      const token = next.tokens[command.id];
+      return token ? [{ type: 'tokenMoved', ...tokenEventFields(token) }] : [];
+    }
+    case 'removeToken': {
+      const token = prev.tokens[command.id];
+      return token ? [{ type: 'tokenRemoved', ...tokenEventFields(token) }] : [];
+    }
+    case 'updateToken': {
+      const token = next.tokens[command.id];
+      return token ? [{ type: 'tokenChanged', kind: token.typeId, id: eventIdentity(token) }] : [];
+    }
     case 'setSelections':
       return [{ type: 'selectionChanged', selections: next.selections }];
-
-    case 'setFoeStatus':
     case 'replaceState':
     case 'reset':
       return [];
   }
+}
+
+/** The adversary singleton reports its identity (`art`); every other token reports its own id. */
+function eventIdentity(token: PlacedToken): string {
+  return token.id === ADVERSARY_TOKEN_ID ? (token.art ?? '') : token.id;
+}
+
+/** `{kind, id, location?}` for a token event — `location` omitted while it's the empty-string
+ *  "not yet placed" sentinel (the adversary between `selectAdversary` and `placeAdversary`). */
+function tokenEventFields(token: PlacedToken): {
+  kind: TokenKind;
+  id: string;
+  location?: LocationName;
+} {
+  const id = eventIdentity(token);
+  return token.location
+    ? { kind: token.typeId, id, location: token.location }
+    : { kind: token.typeId, id };
 }

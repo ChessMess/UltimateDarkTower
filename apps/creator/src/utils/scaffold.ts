@@ -3,8 +3,7 @@
 // Load it via store.loadScenario(doc, true) so schemaToFlow auto-populates the canvas.
 
 import type { ScenarioDoc } from '../types';
-
-const SCHEMA_VERSION = '0.4.7';
+import { CURRENT_SCHEMA_VERSION as SCHEMA_VERSION } from './schemaVersion';
 const UDT_PIN = '6.0.0';
 // The RtDT reference data (board/hero/foe rosters, seed enums) moved out of `ultimatedarktower`
 // into `ultimatedarktowerdata` in v6.0.0 — pin it separately so provenance stays accurate even

@@ -1,37 +1,19 @@
 import { z } from 'zod';
-import type { BoardState, FoeStatus } from './boardState';
-import { FOE_STATUSES } from '../data/udtReexports';
+import type { BoardState } from './boardState';
 
 // zod v4 (matches Display's runtime dependency; v3 -> v4 is breaking).
-const heroTokenSchema = z.object({
+const placedTokenSchema = z.object({
+  id: z.string(),
+  typeId: z.string(),
   location: z.string(),
-  owner: z.enum(['north', 'south', 'east', 'west']).optional(),
-  meta: z.record(z.string(), z.unknown()).optional(),
-});
-
-// Sourced from UDT's `FOE_STATUSES` (not hand-listed) so this stays in sync as the
-// ready→savage→lethal progression gains members (e.g. panicked/unsteady in UDT v5).
-const foeTokenSchema = z.object({
-  foe: z.string(),
-  location: z.string(),
-  status: z.enum(FOE_STATUSES as [FoeStatus, ...FoeStatus[]]),
-  meta: z.record(z.string(), z.unknown()).optional(),
-});
-
-const buildingStateSchema = z.object({
-  skulls: z.number(),
-  destroyed: z.boolean(),
-  monument: z.string().nullable().optional(),
+  spotId: z.string().optional(),
+  art: z.string().optional(),
+  n: z.number().optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
 });
 
 const boardStateSchema = z.object({
-  heroes: z.record(z.string(), heroTokenSchema),
-  foes: z.record(z.string(), foeTokenSchema),
-  adversary: z.object({ id: z.string(), location: z.string().optional() }).optional(),
-  buildings: z.record(z.string(), buildingStateSchema),
-  spaceMarkers: z.record(z.string(), z.array(z.string())),
-  // Additive since v1: older saves omit it, so default to `{}` rather than requiring it (no version bump).
-  questMarkers: z.record(z.string(), z.array(z.string())).default({}),
+  tokens: z.record(z.string(), placedTokenSchema),
   selections: z
     .object({
       difficulty: z.string().optional(),
@@ -46,16 +28,24 @@ const boardStateSchema = z.object({
 
 const envelopeSchema = z.object({ version: z.number(), state: z.unknown() });
 
-/** Schema version written into the save envelope. Keep this name stable. */
-export const BOARD_STATE_SCHEMA_VERSION = 1 as const;
+/**
+ * Schema version written into the save envelope. **0.5.0 bumped this 1 -> 2** for the
+ * `tokens`-collection `BoardState` — a non-backward-compatible change (see the schema
+ * changelog). `loadState` rejects any other version rather than migrate; see
+ * `BoardStateLoadError` and the package docs' "Old data: refuse, don't migrate" note.
+ */
+export const BOARD_STATE_SCHEMA_VERSION = 2 as const;
 
-/** Thrown by `loadState` on malformed input — the one place an exception is appropriate. */
+/** Thrown by `loadState` on malformed or unsupported-version input. */
 export class BoardStateLoadError extends Error {
   readonly cause?: unknown;
-  constructor(message: string, cause?: unknown) {
+  /** The version found in the envelope, when one could be read at all. */
+  readonly foundVersion?: number;
+  constructor(message: string, options?: { cause?: unknown; foundVersion?: number }) {
     super(message);
     this.name = 'BoardStateLoadError';
-    this.cause = cause;
+    this.cause = options?.cause;
+    this.foundVersion = options?.foundVersion;
   }
 }
 
@@ -65,43 +55,37 @@ export function saveState(state: BoardState): string {
 }
 
 /**
- * Parse + validate a JSON envelope back into a `BoardState`, running version
- * migrations on the way. Throws `BoardStateLoadError` on any malformed input.
+ * Parse + validate a JSON envelope back into a `BoardState`. Throws `BoardStateLoadError`
+ * on malformed input OR a version other than {@link BOARD_STATE_SCHEMA_VERSION} — there is
+ * no migration path (see the package docs). The error's `foundVersion` lets a host's
+ * stale-data dialog say which version it found.
  */
 export function loadState(serialized: string): BoardState {
   let parsed: unknown;
   try {
     parsed = JSON.parse(serialized);
   } catch (cause) {
-    throw new BoardStateLoadError('Board state is not valid JSON.', cause);
+    throw new BoardStateLoadError('Board state is not valid JSON.', { cause });
   }
 
   const envelope = envelopeSchema.safeParse(parsed);
   if (!envelope.success) {
     throw new BoardStateLoadError(
       'Board state envelope is malformed (expected { version, state }).',
-      envelope.error,
+      { cause: envelope.error },
     );
   }
 
-  const migrated = migrate(envelope.data.version, envelope.data.state);
+  if (envelope.data.version !== BOARD_STATE_SCHEMA_VERSION) {
+    throw new BoardStateLoadError(
+      `Unsupported board state schema version: ${envelope.data.version} (this build reads ${BOARD_STATE_SCHEMA_VERSION}).`,
+      { foundVersion: envelope.data.version },
+    );
+  }
 
-  const result = boardStateSchema.safeParse(migrated);
+  const result = boardStateSchema.safeParse(envelope.data.state);
   if (!result.success) {
-    throw new BoardStateLoadError('Board state failed schema validation.', result.error);
+    throw new BoardStateLoadError('Board state failed schema validation.', { cause: result.error });
   }
   return result.data;
-}
-
-/**
- * Migration hook. At v1 there is nothing to migrate; older versions would be
- * upgraded here as the schema evolves. Unknown versions are rejected.
- */
-function migrate(version: number, state: unknown): unknown {
-  switch (version) {
-    case BOARD_STATE_SCHEMA_VERSION:
-      return state;
-    default:
-      throw new BoardStateLoadError(`Unsupported board state schema version: ${version}`);
-  }
 }

@@ -7,3 +7,4 @@ export { loadDraft, clearDraft, type DraftEnvelope } from './draft';
 export { useDraftPersistence } from './useDraftPersistence';
 export { asObj } from './objectHelpers';
 export { errorMentionsNode, nodeIdsInError } from './nodeErrors';
+export { CURRENT_SCHEMA_VERSION, isSupportedSchemaVersion } from './schemaVersion';

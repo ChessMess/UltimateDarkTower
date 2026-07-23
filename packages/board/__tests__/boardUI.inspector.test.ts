@@ -1,4 +1,5 @@
 import { BoardStateController, createSelectionStore, mountBoardUI } from '../src/index';
+import { buildingAt, markersAt, monumentAt, questsAt, skullsAt } from '../src/state/selectors';
 import type { SelectionStore } from '../src/index';
 
 function setup(): {
@@ -33,10 +34,10 @@ describe('Inspector', () => {
     const status = $<HTMLSelectElement>(host, '.udt-inspector-status');
     status.value = 'lethal';
     status.dispatchEvent(new Event('change'));
-    expect(controller.getState().foes['foe-1'].status).toBe('lethal');
+    expect(controller.getState().tokens['foe-1'].data?.status).toBe('lethal');
 
     $<HTMLButtonElement>(host, '.udt-inspector-remove').click();
-    expect(controller.getState().foes['foe-1']).toBeUndefined();
+    expect(controller.getState().tokens['foe-1']).toBeUndefined();
     // After removal the inspector clears.
     expect(host.querySelector('.udt-inspector-empty')).not.toBeNull();
   });
@@ -54,18 +55,18 @@ describe('Inspector', () => {
     selection.set({ kind: 'building', id: 'Dayside', location: 'Dayside' });
 
     $<HTMLButtonElement>(host, '.udt-inspector-skull-add').click();
-    expect(controller.getState().buildings['Dayside'].skulls).toBe(1);
+    expect(skullsAt(controller.getState(), 'Dayside')).toBe(1);
     expect($(host, '.udt-inspector-skull-count').textContent).toBe('1');
 
     $<HTMLButtonElement>(host, '.udt-inspector-destroy').click();
-    expect(controller.getState().buildings['Dayside'].destroyed).toBe(true);
+    expect(buildingAt(controller.getState(), 'Dayside').destroyed).toBe(true);
     // Now a Restore button replaces Destroy.
     expect(host.querySelector('.udt-inspector-restore')).not.toBeNull();
 
     const monument = $<HTMLInputElement>(host, '.udt-inspector-monument');
     monument.value = 'argent-oak';
     $<HTMLButtonElement>(host, '.udt-inspector-monument-set').click();
-    expect(controller.getState().buildings['Dayside'].monument).toBe('argent-oak');
+    expect(monumentAt(controller.getState(), 'Dayside')).toBe('argent-oak');
   });
 
   it('removes a marker', () => {
@@ -73,7 +74,7 @@ describe('Inspector', () => {
     controller.setSpaceMarker('Broken Lands', 'wasteland', true);
     selection.set({ kind: 'marker', id: 'wasteland', location: 'Broken Lands' });
     $<HTMLButtonElement>(host, '.udt-inspector-remove').click();
-    expect(controller.getState().spaceMarkers['Broken Lands']).toBeUndefined();
+    expect(markersAt(controller.getState(), 'Broken Lands')).toEqual([]);
   });
 
   it('removes a quest marker', () => {
@@ -82,6 +83,6 @@ describe('Inspector', () => {
     selection.set({ kind: 'quest', id: 'main-goal', location: 'Radiant Mountains' });
     expect(host.querySelector('.udt-inspector-heading')?.textContent).toMatch(/Quest: main-goal/);
     $<HTMLButtonElement>(host, '.udt-inspector-remove').click();
-    expect(controller.getState().questMarkers['Radiant Mountains']).toBeUndefined();
+    expect(questsAt(controller.getState(), 'Radiant Mountains')).toEqual([]);
   });
 });

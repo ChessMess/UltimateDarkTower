@@ -9,27 +9,31 @@ import {
   BUILTIN_BOARD_ART_URL,
   NO_BUILDING,
   activeBoardId,
+  acceptChoices,
   boardsOf,
   buildingChoices,
   buildingLabel,
   clientToNormalized,
-  hasAnchorSlot,
+  defaultSpotId,
   hasStoredArt,
   isHeroStartBuilding,
   isPlaced,
+  locationPoint,
   locationsInScope,
   pruneToLocations,
   removeLocationsInScope,
   resolveBoardArt,
   scopeChoices,
+  spotsOf,
   suggestAdjacency,
   bfsDistance,
   terrainChoices,
+  tokenTypeLabel,
   unplacedLocations,
   validateBoard,
   viewportFit,
 } from './shared';
-import type { Board, BuildingTypeDef } from './shared';
+import type { Board, BuildingTypeDef, TokenTypeDef } from './shared';
 import { activeBoardLocationNames } from './vocabulary';
 import { scaffoldScenario } from '../utils/scaffold';
 import type { ScenarioDoc } from '../types';
@@ -83,7 +87,7 @@ describe('buildRtdtPreset', () => {
     expect(buildRtdtPreset('rtdt-copy').imageRef).toBe(BUILTIN_BOARD_IMAGE_REF);
   });
 
-  it('has no validation problems beyond the "no anchors"/calibration advisories', () => {
+  it('has no validation problems beyond the "no spots"/calibration advisories', () => {
     const errors = validateBoard(buildRtdtPreset('rtdt-copy')).filter((p) => p.level === 'error');
     expect(errors).toEqual([]);
   });
@@ -157,11 +161,11 @@ describe('bulk location removal', () => {
         { name: 'C', kingdom: 'south', terrain: 'Hills', building: 'bazaar' },
         { name: 'D', kingdom: 'south', terrain: 'Hills' },
       ],
-      anchors: {
-        A: { hero: { x: 0.1, y: 0.1 } },
-        B: { hero: { x: 0.2, y: 0.2 } },
-        C: { hero: { x: 0.3, y: 0.3 } },
-        D: { hero: { x: 0.4, y: 0.4 } },
+      spots: {
+        A: [{ id: 'hero', at: { x: 0.1, y: 0.1 }, accepts: ['hero'] }],
+        B: [{ id: 'hero', at: { x: 0.2, y: 0.2 }, accepts: ['hero'] }],
+        C: [{ id: 'hero', at: { x: 0.3, y: 0.3 }, accepts: ['hero'] }],
+        D: [{ id: 'hero', at: { x: 0.4, y: 0.4 }, accepts: ['hero'] }],
       },
       adjacency: { A: ['B', 'C'], B: ['A'], C: ['A', 'D'], D: ['C'] },
     };
@@ -220,10 +224,10 @@ describe('bulk location removal', () => {
     ).toEqual(['A', 'B']);
   });
 
-  it('drops the removed locations AND every anchor/adjacency edge touching them', () => {
+  it('drops the removed locations AND every spot/adjacency edge touching them', () => {
     const next = removeLocationsInScope(mixed(), { kind: 'kingdom', value: 'north' });
     expect(next.locations.map((l) => l.name)).toEqual(['C', 'D']);
-    expect(Object.keys(next.anchors ?? {})).toEqual(['C', 'D']);
+    expect(Object.keys(next.spots ?? {})).toEqual(['C', 'D']);
     // C listed A (now gone) and D (still here) — the dangling half of the edge is pruned.
     expect(next.adjacency).toEqual({ C: ['D'], D: ['C'] });
   });
@@ -236,22 +240,22 @@ describe('bulk location removal', () => {
     expect(next.adjacency).toEqual({});
   });
 
-  it('removing everything empties the board without stranding anchors', () => {
+  it('removing everything empties the board without stranding spots', () => {
     const next = removeLocationsInScope(mixed(), { kind: 'all' });
     expect(next.locations).toEqual([]);
-    expect(next.anchors).toEqual({});
+    expect(next.spots).toEqual({});
     expect(next.adjacency).toEqual({});
   });
 
-  it('pruneToLocations keeps a duplicated name’s anchors while one row still carries it', () => {
+  it('pruneToLocations keeps a duplicated name’s spots while one row still carries it', () => {
     const b = mixed();
     b.locations.push({ name: 'A', kingdom: 'west', terrain: 'Desert' });
-    // Remove the FIRST 'A' row; the duplicate survives, so 'A' keeps its anchors and edges.
+    // Remove the FIRST 'A' row; the duplicate survives, so 'A' keeps its spots and edges.
     const next = pruneToLocations(
       b,
       b.locations.filter((_, i) => i !== 0),
     );
-    expect(next.anchors?.A).toEqual({ hero: { x: 0.1, y: 0.1 } });
+    expect(next.spots?.A).toEqual([{ id: 'hero', at: { x: 0.1, y: 0.1 }, accepts: ['hero'] }]);
     expect(next.adjacency?.A).toEqual(['B', 'C']);
   });
 
@@ -270,16 +274,16 @@ describe('bulk location removal', () => {
   });
 
   describe('isPlaced / unplacedLocations', () => {
-    it('a location is placed once ANY slot has a point', () => {
+    it('a location is placed once it has ANY spot', () => {
       const b = mixed();
-      b.anchors = { A: { skull: { x: 0.5, y: 0.5 } } };
+      b.spots = { A: [{ id: 'skull', at: { x: 0.5, y: 0.5 }, accepts: ['skull'] }] };
       expect(isPlaced(b, 'A')).toBe(true);
       expect(unplacedLocations(b).map((l) => l.name)).toEqual(['B', 'C', 'D']);
     });
 
-    it('an EMPTY anchors entry is not placed — the row exists but sits nowhere', () => {
+    it('an EMPTY spots entry is not placed — the row exists but sits nowhere', () => {
       const b = mixed();
-      b.anchors = { A: {} };
+      b.spots = { A: [] };
       expect(isPlaced(b, 'A')).toBe(false);
       expect(unplacedLocations(b)).toHaveLength(4);
     });
@@ -292,7 +296,7 @@ describe('bulk location removal', () => {
       expect(unplacedLocations(buildRtdtPreset('rtdt-copy'))).toEqual([]);
     });
 
-    it('removing a location leaves the survivors placed (prune drops only its own anchors)', () => {
+    it('removing a location leaves the survivors placed (prune drops only its own spots)', () => {
       const next = removeLocationsInScope(mixed(), { kind: 'kingdom', value: 'north' });
       expect(unplacedLocations(next)).toEqual([]);
     });
@@ -433,11 +437,11 @@ describe('adjacency helpers', () => {
       { name: 'C', kingdom: 'north', terrain: 't' },
       { name: 'D', kingdom: 'north', terrain: 't' },
     ],
-    anchors: {
-      A: { hero: { x: 0.1, y: 0.1 } },
-      B: { hero: { x: 0.15, y: 0.1 } }, // within the default radius of A
-      C: { hero: { x: 0.9, y: 0.9 } },
-      D: { hero: { x: 0.95, y: 0.9 } }, // within the default radius of C
+    spots: {
+      A: [{ id: 'hero', at: { x: 0.1, y: 0.1 }, accepts: ['hero'] }],
+      B: [{ id: 'hero', at: { x: 0.15, y: 0.1 }, accepts: ['hero'] }], // within the default radius of A
+      C: [{ id: 'hero', at: { x: 0.9, y: 0.9 }, accepts: ['hero'] }],
+      D: [{ id: 'hero', at: { x: 0.95, y: 0.9 }, accepts: ['hero'] }], // within the default radius of C
     },
     adjacency: { A: ['B'], B: ['A', 'C'], C: ['B'], D: [] },
   };
@@ -464,7 +468,7 @@ describe('validateBoard', () => {
     name: 'B',
     imageInfo: { width: 100, height: 100 },
     locations: [{ name: 'A', kingdom: 'north', terrain: 't', building: 'citadel' }],
-    anchors: { A: { hero: { x: 0.1, y: 0.1 } } },
+    spots: { A: [{ id: 'hero', at: { x: 0.1, y: 0.1 }, accepts: ['hero'] }] },
   };
 
   it('flags asymmetric adjacency as an error', () => {
@@ -484,7 +488,7 @@ describe('validateBoard', () => {
     ).toBe(true);
   });
 
-  it('flags duplicate names and anchors that name no location', () => {
+  it('flags duplicate names and spots that name no location', () => {
     const dup: Board = {
       ...base,
       locations: [...base.locations, { name: 'A', kingdom: 'south', terrain: 't' }],
@@ -493,10 +497,76 @@ describe('validateBoard', () => {
       true,
     );
 
-    const badAnchor: Board = { ...base, anchors: { Nowhere: { hero: { x: 0, y: 0 } } } };
-    expect(validateBoard(badAnchor).some((p) => p.message.includes('is not a location'))).toBe(
-      true,
+    const badSpot: Board = {
+      ...base,
+      spots: { Nowhere: [{ id: 'hero', at: { x: 0, y: 0 }, accepts: ['hero'] }] },
+    };
+    expect(validateBoard(badSpot).some((p) => p.message.includes('is not a location'))).toBe(true);
+  });
+
+  it('flags a duplicate spot id within a location', () => {
+    const dup: Board = {
+      ...base,
+      spots: {
+        A: [
+          { id: 'hero', at: { x: 0.1, y: 0.1 }, accepts: ['hero'] },
+          { id: 'hero', at: { x: 0.2, y: 0.2 }, accepts: ['foe'] },
+        ],
+      },
+    };
+    expect(validateBoard(dup).some((p) => p.message.includes('duplicate spot id'))).toBe(true);
+  });
+
+  it('warns (not errors) about a spot accepting a type with no tokenTypes entry', () => {
+    const withCustom: Board = {
+      ...base,
+      spots: { A: [{ id: 'trap', at: { x: 0.1, y: 0.1 }, accepts: ['trap'] }] },
+    };
+    const problems = validateBoard(
+      withCustom,
+      {},
+      {
+        snare: {
+          id: 'snare',
+          name: 'Snare',
+          kind: 'boardToken',
+          placement: 'space',
+          removable: true,
+        },
+      },
     );
+    const warn = problems.find((p) => p.message.includes('accepts "trap"'));
+    expect(warn?.level).toBe('warn');
+  });
+
+  it('does not warn about unresolved accepts when no tokenTypes registry is authored', () => {
+    const withCustom: Board = {
+      ...base,
+      spots: { A: [{ id: 'trap', at: { x: 0.1, y: 0.1 }, accepts: ['trap'] }] },
+    };
+    expect(validateBoard(withCustom).some((p) => p.message.includes('accepts "trap"'))).toBe(false);
+  });
+
+  it('never warns about a reserved type, registry or not', () => {
+    const withReserved: Board = {
+      ...base,
+      spots: { A: [{ id: 'quest', at: { x: 0.1, y: 0.1 }, accepts: ['quest'] }] },
+    };
+    expect(
+      validateBoard(
+        withReserved,
+        {},
+        {
+          snare: {
+            id: 'snare',
+            name: 'Snare',
+            kind: 'boardToken',
+            placement: 'space',
+            removable: true,
+          },
+        },
+      ).some((p) => p.message.includes('accepts "quest"')),
+    ).toBe(false);
   });
 
   it('warns (not errors) about an uncalibrated board', () => {
@@ -646,20 +716,87 @@ describe('terrainChoices', () => {
   });
 });
 
-describe('hasAnchorSlot', () => {
+describe('spotsOf / defaultSpotId / locationPoint', () => {
   const board: Board = {
     id: 'b',
     name: 'B',
     imageInfo: { width: 100, height: 100 },
     locations: [{ name: 'A', kingdom: 'north', terrain: 'Hills' }],
-    anchors: { A: { hero: { x: 0.1, y: 0.1 } }, B: {} },
+    spots: {
+      A: [
+        { id: 'hero', at: { x: 0.1, y: 0.1 }, accepts: ['hero'] },
+        { id: 'foe', at: { x: 0.2, y: 0.2 }, accepts: ['foe', 'adversary'] },
+      ],
+      B: [],
+    },
   };
 
-  it('is true only for a slot that carries a point', () => {
-    expect(hasAnchorSlot(board, 'A', 'hero')).toBe(true);
-    expect(hasAnchorSlot(board, 'A', 'foe')).toBe(false);
-    expect(hasAnchorSlot(board, 'B', 'hero')).toBe(false); // empty anchors entry
-    expect(hasAnchorSlot(board, 'Nowhere', 'hero')).toBe(false);
+  it('spotsOf returns [] for a location with none, not undefined', () => {
+    expect(spotsOf(board, 'A')).toHaveLength(2);
+    expect(spotsOf(board, 'B')).toEqual([]);
+    expect(spotsOf(board, 'Nowhere')).toEqual([]);
+  });
+
+  it('defaultSpotId reuses the type as the id when free, else numbers it', () => {
+    expect(defaultSpotId(board, 'A', 'skull')).toBe('skull'); // not yet used at A
+    expect(defaultSpotId(board, 'A', 'hero')).toBe('hero-2'); // 'hero' is taken
+    expect(defaultSpotId(board, 'B', 'hero')).toBe('hero'); // free at B
+  });
+
+  it('locationPoint prefers the spot literally named "hero"', () => {
+    expect(locationPoint(board, 'A')).toEqual({ x: 0.1, y: 0.1 });
+  });
+
+  it('locationPoint falls back to a spot accepting hero, then the first spot, then undefined', () => {
+    const noHeroId: Board = {
+      ...board,
+      spots: { A: [{ id: 'main', at: { x: 0.3, y: 0.3 }, accepts: ['hero', 'foe'] }] },
+    };
+    expect(locationPoint(noHeroId, 'A')).toEqual({ x: 0.3, y: 0.3 });
+
+    const noHeroAtAll: Board = {
+      ...board,
+      spots: { A: [{ id: 'only', at: { x: 0.4, y: 0.4 }, accepts: ['marker'] }] },
+    };
+    expect(locationPoint(noHeroAtAll, 'A')).toEqual({ x: 0.4, y: 0.4 });
+
+    expect(locationPoint(board, 'B')).toBeUndefined();
+  });
+});
+
+describe('acceptChoices / tokenTypeLabel', () => {
+  it('lists the reserved built-ins before the scenario’s own types', () => {
+    const types: Record<string, TokenTypeDef> = {
+      trap: { id: 'trap', name: 'Trap', kind: 'boardToken', placement: 'space', removable: true },
+    };
+    const choices = acceptChoices(types);
+    expect(choices.slice(0, 8).map((c) => c.id)).toEqual([
+      'hero',
+      'foe',
+      'adversary',
+      'building',
+      'skull',
+      'monument',
+      'marker',
+      'quest',
+    ]);
+    expect(choices.at(-1)).toEqual({ id: 'trap', label: 'Trap' });
+  });
+
+  it('tokenTypeLabel prefers the authored name, falling back to the id', () => {
+    const types: Record<string, TokenTypeDef> = {
+      trap: {
+        id: 'trap',
+        name: 'Bear Trap',
+        kind: 'boardToken',
+        placement: 'space',
+        removable: true,
+      },
+      snare: { id: 'snare', name: '', kind: 'boardToken', placement: 'space', removable: true },
+    };
+    expect(tokenTypeLabel(types, 'trap')).toBe('Bear Trap');
+    expect(tokenTypeLabel(types, 'snare')).toBe('snare');
+    expect(tokenTypeLabel(types, 'unknown')).toBe('unknown');
   });
 });
 

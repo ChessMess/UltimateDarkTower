@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { TowerRenderView, attachScenePlugin, anchorToWorld } from 'ultimatedarktowerdisplay';
 import type { ScenePlugin, ScenePluginContext } from 'ultimatedarktowerdisplay';
-import { BOARD_ANCHORS, BOARD_LOCATION_BY_NAME } from '../../src/index';
+import { BOARD_SPOTS, BOARD_LOCATION_BY_NAME } from '../../src/index';
 import type { BoardKingdom } from '../../src/index';
 
 const container = document.getElementById('scene');
@@ -40,12 +40,12 @@ const plugin: ScenePlugin = {
     const metrics = view3D.getDiscMetrics();
     const size = metrics.radius * 0.012;
     let n = 0;
-    for (const [loc, slots] of Object.entries(BOARD_ANCHORS)) {
-      const anchor = slots.building;
-      if (!anchor) continue;
+    for (const [loc, spots] of Object.entries(BOARD_SPOTS)) {
+      const spot = spots.find((s) => s.id === 'building');
+      if (!spot) continue;
       const kingdom = BOARD_LOCATION_BY_NAME[loc]?.kingdom as BoardKingdom | undefined;
       const color = kingdom ? KINGDOM_COLOR[kingdom] : 0xff00ff;
-      const pos = anchorToWorld(anchor, metrics, 0);
+      const pos = anchorToWorld(spot.at, metrics, 0);
       const sprite = new THREE.Sprite(
         new THREE.SpriteMaterial({ color, depthTest: false, depthWrite: false }),
       );

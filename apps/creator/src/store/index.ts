@@ -27,6 +27,7 @@ import {
   type CreatorNode,
 } from '../utils/serializer';
 import { slugify } from '../utils/scaffold';
+import { isSupportedSchemaVersion } from '../utils/schemaVersion';
 import { runValidation } from '../utils/validation';
 import { canonicalJson } from '../utils/canonical';
 import { nodeIdsInError } from '../utils/nodeErrors';
@@ -113,6 +114,15 @@ interface CreatorStore {
   undoStack: ScenarioDoc[];
   redoStack: ScenarioDoc[];
 
+  /**
+   * A document `loadScenario` refused to load because its `schemaVersion` isn't the one this
+   * build reads (schema 0.5.0's `anchors` -> `spots` change is not backward compatible — see
+   * `utils/schemaVersion.ts`). Non-null shows `StaleScenarioDialog`; nothing is loaded, no other
+   * state changes, so dismissing it just closes the dialog.
+   */
+  staleScenario: Record<string, unknown> | null;
+  dismissStaleScenario: () => void;
+
   // Scenario lifecycle
   loadScenario: (doc: ScenarioDoc, autoLayout?: boolean) => void;
   exportScenario: () => string;
@@ -179,6 +189,13 @@ interface CreatorStore {
   // updateBuildingTypes + commitBoards — each commit pushes its own undo entry, so two calls would
   // let undo strip a rename down to half-applied.
   renameBuildingType: (from: string, to: string) => void;
+  // library.tokenTypes editing (schema 0.5.0 — an open registry a board spot's `accepts` can
+  // name alongside the reserved built-in types). Mirrors updateBuildingTypes/renameBuildingType.
+  updateTokenTypes: (defs: Record<string, unknown>) => void;
+  // Retypes a token: renames the library.tokenTypes key AND every board spot's `accepts` entry
+  // naming it, on every board. One action (not update+commitBoards) for the same undo-atomicity
+  // reason as renameBuildingType.
+  renameTokenType: (from: string, to: string) => void;
 
   // RF state sync (called by canvas on drag-end, connect, delete)
   syncFromRF: (nodes: CreatorNode[], edges: Edge[]) => void;
@@ -463,6 +480,11 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   scenarioDialog: null,
   undoStack: [],
   redoStack: [],
+  staleScenario: null,
+
+  dismissStaleScenario() {
+    set({ staleScenario: null });
+  },
 
   setCenterView(view) {
     set({ centerView: view });
@@ -493,6 +515,13 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   },
 
   loadScenario(doc, autoLayout = false) {
+    // Refuse rather than migrate — see utils/schemaVersion.ts. Checked here, not per call site,
+    // because every load path (file import, the IndexedDB library, autosave-draft recovery)
+    // funnels through this one function before touching any state.
+    if (!isSupportedSchemaVersion(doc.schemaVersion)) {
+      set({ staleScenario: doc as unknown as Record<string, unknown> });
+      return;
+    }
     resetUndoBurst();
     const { nodes: derivedNodes, edges } = deriveRF(doc);
     let nodes = derivedNodes;
@@ -930,6 +959,60 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     }
 
     commitDocOnly(get, set, { ...schemaDoc, library, setup });
+  },
+
+  updateTokenTypes(defs) {
+    commitLibrary(get, set, (library) => setOrDeleteKey(library, 'tokenTypes', defs));
+  },
+
+  renameTokenType(from, to) {
+    if (from === to || !to) return;
+    const { schemaDoc } = get();
+    if (!schemaDoc) return;
+    const library = { ...((schemaDoc.library as Record<string, unknown> | undefined) ?? {}) };
+    const types = { ...((library.tokenTypes as Record<string, unknown>) ?? {}) };
+    // Caller validates; never clobber a sibling. Bailing BEFORE the commit matters — the commit
+    // tail always pushes an undo entry and marks the doc dirty, so refusing the rename inside it
+    // would cost the author a wasted Undo press for an edit that never happened.
+    if (!(from in types) || to in types) return;
+
+    // Rebuilt in place rather than delete+assign so the registry keeps its authored order —
+    // the dialog lists types in map order, and a rename shouldn't jump the row to the end.
+    const renamed: Record<string, unknown> = {};
+    for (const [id, def] of Object.entries(types)) renamed[id === from ? to : id] = def;
+    library.tokenTypes = renamed;
+
+    // Compared case-insensitively, matching renameBuildingType and the L2 check.
+    const lowerFrom = from.toLowerCase();
+    const matches = (v: string): boolean => v.toLowerCase() === lowerFrom;
+
+    // Retype every spot accepting it, on EVERY board — an inactive board would otherwise be left
+    // holding a dangling type that L2 only reports once it's selected.
+    const boards = library.boards as Record<string, Board> | undefined;
+    if (boards) {
+      const nextBoards: Record<string, Board> = {};
+      for (const [boardId, board] of Object.entries(boards)) {
+        const spots = board.spots;
+        nextBoards[boardId] = spots
+          ? {
+              ...board,
+              spots: Object.fromEntries(
+                Object.entries(spots).map(([loc, list]) => [
+                  loc,
+                  list.map((spot) =>
+                    spot.accepts.some(matches)
+                      ? { ...spot, accepts: spot.accepts.map((a) => (matches(a) ? to : a)) }
+                      : spot,
+                  ),
+                ]),
+              ),
+            }
+          : board;
+      }
+      library.boards = nextBoards;
+    }
+
+    commitDocOnly(get, set, { ...schemaDoc, library });
   },
 
   updateFoeBattleDefId(foeId, defId) {

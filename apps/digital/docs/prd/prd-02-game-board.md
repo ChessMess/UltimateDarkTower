@@ -2,6 +2,14 @@
 
 > MVP feature. Depends on PRD-00. Read [_overview.md](_overview.md) first.
 
+> **Board-state model note (post-refactor):** `BoardState` was rebuilt around a single
+> `tokens: Record<string, PlacedToken>` collection (see
+> [`packages/board/docs/STATE_MODEL.md`](../../../../packages/board/docs/STATE_MODEL.md)) —
+> the six-bucket model this PRD's functional requirements describe below
+> (`heroes`/`foes`/`adversary`/`buildings`/`spaceMarkers`/`questMarkers`) no longer exists as
+> a distinct shape, though every one of those concepts is still placeable via `tokens`. The
+> FR wording below is preserved as the original design intent, not the current API shape.
+
 ## 1. Introduction / Overview
 
 The digital game board is the playable map: the 4 kingdoms, 60 locations, 16 buildings, and the tokens
@@ -52,8 +60,8 @@ this manually).
    lib's `FOE_STATUSES`/`FoeStatus` was extended from 3 to these 5 to match the official game's
    foe-status track (resolved — see [assumptions-and-open-questions.md](assumptions-and-open-questions.md#known-discrepancies--risks)).
 8. **FR-02.8** The player MUST be able to place/remove **space markers** at locations (e.g. wasteland,
-   power-skull). `BoardState.spaceMarkers` uses an open `SpaceMarker` string union, so **quest markers**
-   are modeled as a marker variant (there is no dedicated quest-marker field).
+   power-skull). Space markers and **quest markers** are both placed via the unified `tokens`
+   collection, using the `marker`/`quest` accepts vocabulary (there is no dedicated quest-marker field).
 9. **FR-02.9** Selecting a token MUST surface its details (type, location, status) in an inspector.
 10. **FR-02.10** The board MUST support the stage's display modes (`2d | 3d | 2d3d | pip-2dbig |
 pip-3dbig`) and kingdom focus (N/E/S/W/all).
@@ -79,7 +87,7 @@ pip-3dbig`) and kingdom focus (N/E/S/W/all).
 - `BoardState`, `BoardStateController`, `createDefaultBoardState`, `BoardStageView` come from
   `ultimatedarktowerboard`; rosters and location/adjacency data from `ultimatedarktower`.
 - Keep `BoardStateSource` mutations thin wrappers over controller methods (`spawnFoe`, `moveToken`,
-  `addSkulls`, …) so PRD-05's `BridgeSource` can apply app-driven board commands the same way.
+  `addSkull`, …) so PRD-05's `BridgeSource` can apply app-driven board commands the same way.
 - The 3D board is the Display ScenePlugin already composed by PRD-00; this PRD just feeds it state.
 
 ## 8. Success Metrics

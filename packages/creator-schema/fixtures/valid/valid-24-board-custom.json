@@ -1,7 +1,7 @@
 {
-  "schemaVersion": "0.4.6",
+  "schemaVersion": "0.5.0",
   "meta": {
-    "title": "v0.4.6 fixture: custom board (library.boards + setup.board.boardRef)",
+    "title": "v0.5.0 fixture: custom board (library.boards + setup.board.boardRef, spots)",
     "scenarioVersion": "0.1.0",
     "designer": {
       "name": "Test"
@@ -228,81 +228,33 @@
             "building": "village"
           }
         ],
-        "anchors": {
-          "Emberfall": {
-            "building": {
-              "x": 0.31,
-              "y": 0.22
-            },
-            "skull": {
-              "x": 0.34,
-              "y": 0.25
-            },
-            "hero": {
-              "x": 0.28,
-              "y": 0.2
-            },
-            "foe": {
-              "x": 0.3,
-              "y": 0.27
-            },
-            "marker": {
-              "x": 0.33,
-              "y": 0.19
-            }
-          },
-          "Coldwatch": {
-            "hero": {
-              "x": 0.44,
-              "y": 0.12
-            },
-            "foe": {
-              "x": 0.47,
-              "y": 0.15
-            }
-          },
-          "Saltmere": {
-            "building": {
-              "x": 0.78,
-              "y": 0.44
-            },
-            "skull": {
-              "x": 0.81,
-              "y": 0.47
-            },
-            "hero": {
-              "x": 0.75,
-              "y": 0.42
-            }
-          },
-          "Thornhollow": {
-            "building": {
-              "x": 0.5,
-              "y": 0.82
-            },
-            "skull": {
-              "x": 0.53,
-              "y": 0.85
-            },
-            "hero": {
-              "x": 0.47,
-              "y": 0.8
-            }
-          },
-          "Gravelrun": {
-            "building": {
-              "x": 0.18,
-              "y": 0.58
-            },
-            "skull": {
-              "x": 0.21,
-              "y": 0.61
-            },
-            "hero": {
-              "x": 0.15,
-              "y": 0.56
-            }
-          }
+        "spots": {
+          "Emberfall": [
+            { "id": "building", "at": { "x": 0.31, "y": 0.22 }, "accepts": ["building"] },
+            { "id": "skull", "at": { "x": 0.34, "y": 0.25 }, "accepts": ["skull"] },
+            { "id": "hero", "at": { "x": 0.28, "y": 0.2 }, "accepts": ["hero"] },
+            { "id": "foe", "at": { "x": 0.3, "y": 0.27 }, "accepts": ["foe", "adversary"] },
+            { "id": "marker", "at": { "x": 0.33, "y": 0.19 }, "accepts": ["marker", "quest"] }
+          ],
+          "Coldwatch": [
+            { "id": "hero", "at": { "x": 0.44, "y": 0.12 }, "accepts": ["hero"] },
+            { "id": "foe", "at": { "x": 0.47, "y": 0.15 }, "accepts": ["foe", "adversary"] }
+          ],
+          "Saltmere": [
+            { "id": "building", "at": { "x": 0.78, "y": 0.44 }, "accepts": ["building"] },
+            { "id": "skull", "at": { "x": 0.81, "y": 0.47 }, "accepts": ["skull"] },
+            { "id": "hero", "at": { "x": 0.75, "y": 0.42 }, "accepts": ["hero"] }
+          ],
+          "Thornhollow": [
+            { "id": "building", "at": { "x": 0.5, "y": 0.82 }, "accepts": ["building"] },
+            { "id": "skull", "at": { "x": 0.53, "y": 0.85 }, "accepts": ["skull"] },
+            { "id": "hero", "at": { "x": 0.47, "y": 0.8 }, "accepts": ["hero"] }
+          ],
+          "Gravelrun": [
+            { "id": "building", "at": { "x": 0.18, "y": 0.58 }, "accepts": ["building"] },
+            { "id": "skull", "at": { "x": 0.21, "y": 0.61 }, "accepts": ["skull"] },
+            { "id": "hero", "at": { "x": 0.15, "y": 0.56 }, "accepts": ["hero"] }
+          ]
         },
         "adjacency": {
           "Emberfall": ["Coldwatch", "Gravelrun"],

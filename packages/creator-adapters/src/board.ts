@@ -38,6 +38,8 @@ type BoardCtrl = {
   setSpaceMarker(location: string, type: string, active: boolean): void;
   addSkull(location: string, count: number): void;
   reset(): void;
+  placeToken(opts: { typeId: string; location: string }): string;
+  removeToken(typeId: string, location: string): void;
 };
 
 export function createBoardAdapter(opts: BoardAdapterOptions = {}): {
@@ -145,9 +147,21 @@ export function createBoardAdapter(opts: BoardAdapterOptions = {}): {
       case 'setupBoard':
         ctrl.reset();
         break;
-      case 'placeToken':
-      case 'removeToken':
+      case 'placeToken': {
+        // {tokenTypeId, target} — the token.place effect's directive shape (effects.ts). No
+        // instance id is carried, so the controller mints one; this is the path that makes an
+        // author-defined `library.tokenTypes` type actually appear on the board during play.
+        const a = args as { tokenTypeId: string; target: string };
+        ctrl.placeToken({ typeId: a.tokenTypeId, location: a.target });
         break;
+      }
+      case 'removeToken': {
+        // Mirrors the engine's own token.remove filter (tokenTypeId + target, no instance id) —
+        // removes every token of that type at that location.
+        const a = args as { tokenTypeId: string; target: string };
+        ctrl.removeToken(a.tokenTypeId, a.target);
+        break;
+      }
       case 'spawnDungeon':
       case 'enterDungeon':
       case 'revealRoom':

@@ -1,14 +1,14 @@
-import type {
-  BoardState,
-  BuildingState,
-  LocationName,
-  QuestMarker,
-  SpaceMarker,
-} from './boardState';
+import type { BoardState, LocationName } from './boardState';
 import type { BoardCommand } from './commands';
 
-/** The instance-token kinds carried on the board (heroes, foes, and the singleton adversary). */
-export type TokenKind = 'hero' | 'foe' | 'adversary';
+/**
+ * The kind carried on a token event — a reserved built-in type id (`hero`/`foe`/
+ * `adversary`/`building`/`skull`/`monument`/`marker`/`quest`) or an author-defined
+ * `library.tokenTypes` key. Open (not the old closed `'hero'|'foe'|'adversary'` union)
+ * because `tokenAdded`/`tokenMoved`/`tokenRemoved` now fire uniformly for every token kind,
+ * not just the three that used to be tracked as named buckets.
+ */
+export type TokenKind = string;
 
 /**
  * The event surface a `BoardStateController` emits.
@@ -26,9 +26,7 @@ export type BoardEvent =
       id: string;
       location?: LocationName;
     }
-  | { type: 'buildingChanged'; location: LocationName; building: BuildingState }
-  | { type: 'spaceMarkerChanged'; location: LocationName; markers: SpaceMarker[] }
-  | { type: 'questMarkerChanged'; location: LocationName; markers: QuestMarker[] }
+  | { type: 'tokenChanged'; kind: TokenKind; id: string }
   | { type: 'selectionChanged'; selections: BoardState['selections'] };
 
 export type BoardEventType = BoardEvent['type'];

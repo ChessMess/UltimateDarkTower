@@ -64,7 +64,31 @@ export function validateRefs(scenario: unknown): L2Result {
       ? new Set(Object.keys(buildingTypesLib).map((k) => k.toLowerCase()))
       : undefined;
 
-  // Per-board integrity: unique names; buildings resolvable; anchors/adjacency confined to this
+  // Same open-registry gating for a board spot's `accepts` list (schema 0.5.0): an entry either
+  // names a reserved built-in type (always resolvable) or a library.tokenTypes key — checked
+  // only when that registry is authored and non-empty, for the same reason as buildingTypes above.
+  const tokenTypesLib = obj(obj(s['library'])?.['tokenTypes']);
+  const knownTokenTypes =
+    tokenTypesLib && Object.keys(tokenTypesLib).length > 0
+      ? new Set(Object.keys(tokenTypesLib).map((k) => k.toLowerCase()))
+      : undefined;
+  const reservedTypes = new Set(udt.reservedTokenTypes.map((t) => t.toLowerCase()));
+
+  // A library.tokenTypes key that collides with a reserved built-in id (hero/foe/adversary/…)
+  // is never reachable — the board always resolves the reserved kind first — so the entry is a
+  // dead letter and any spot naming it silently gets the built-in behavior instead of the
+  // author's own. Flag it explicitly rather than let it fail quietly.
+  if (tokenTypesLib) {
+    for (const key of Object.keys(tokenTypesLib)) {
+      if (reservedTypes.has(key.toLowerCase())) {
+        errors.push(
+          `library.tokenTypes "${key}" collides with the reserved built-in type of the same name`,
+        );
+      }
+    }
+  }
+
+  // Per-board integrity: unique names; buildings resolvable; spots/adjacency confined to this
   // board's locations; adjacency symmetric. Checked for EVERY authored board, not just the active
   // one, so an inactive board can't rot unnoticed.
   if (boardsLib) {
@@ -94,11 +118,40 @@ export function validateRefs(scenario: unknown): L2Result {
         }
       }
 
-      const anchors = obj(b['anchors']);
-      if (anchors) {
-        for (const key of Object.keys(anchors)) {
-          if (!names.has(key)) {
-            errors.push(`board "${bId}" anchors key "${key}" is not a location on that board`);
+      const spots = obj(b['spots']);
+      if (spots) {
+        for (const [locKey, spotsRaw] of Object.entries(spots)) {
+          if (!names.has(locKey)) {
+            errors.push(`board "${bId}" spots key "${locKey}" is not a location on that board`);
+            continue;
+          }
+          const spotIds = new Set<string>();
+          for (const spotRaw of arr(spotsRaw) ?? []) {
+            const spot = obj(spotRaw);
+            if (!spot) continue;
+            const spotId = str(spot['id']);
+            if (spotId !== undefined) {
+              if (spotIds.has(spotId)) {
+                errors.push(
+                  `board "${bId}" location "${locKey}" has duplicate spot id "${spotId}"`,
+                );
+              }
+              spotIds.add(spotId);
+            }
+            for (const acceptRaw of arr(spot['accepts']) ?? []) {
+              const typeId = str(acceptRaw);
+              if (typeId === undefined) continue;
+              const lower = typeId.toLowerCase();
+              const resolvable =
+                reservedTypes.has(lower) ||
+                knownTokenTypes === undefined ||
+                knownTokenTypes.has(lower);
+              if (!resolvable) {
+                errors.push(
+                  `board "${bId}" location "${locKey}" spot "${spotId ?? '?'}" accepts unknown type "${typeId}" (not a reserved type or a key in library.tokenTypes)`,
+                );
+              }
+            }
           }
         }
       }

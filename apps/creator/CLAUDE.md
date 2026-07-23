@@ -18,9 +18,9 @@ The editor reads its vocabulary via `@udtc/adapters`' `getUDTReferenceLayer` (no
 
 ## `public/assets/board.jpg` — the designer backdrop, not shipped art
 
-The Board Designer canvas draws the RtDT board under a cloned preset's anchors. That backdrop is
+The Board Designer canvas draws the RtDT board under a cloned preset's spots. That backdrop is
 a **downscaled 1400²/~480 KB JPEG**, not the real board image (4096²/22 MB, which the Player
-serves for play from its own `public/assets/board.png`). Anchors are normalized `[0,1]` and the
+serves for play from its own `public/assets/board.png`). Spots are normalized `[0,1]` and the
 SVG stretches the image to `imageInfo.width/height`, so a smaller backdrop annotates identically.
 Regenerate with:
 
@@ -34,6 +34,17 @@ A cloned board carries `imageRef: BUILTIN_BOARD_IMAGE_REF` (`'builtin:rtdt-board
 Each consumer maps it to its own copy of the art (`resolveBoardArt` in `src/boards/shared.ts`
 here, `resolveBoardImageUrl` in the Player). Anything counting art bytes must key off **stored**
 art (`hasStoredArt`), never `imageRef` alone.
+
+## Schema-version guard on load (refuse, don't migrate)
+
+`store.loadScenario` (the one function every load path funnels through — file import, IndexedDB
+open, sample-scenario load, and autosave-draft restore all call it) checks
+`isSupportedSchemaVersion(doc.schemaVersion)` (`src/utils/schemaVersion.ts`,
+`CURRENT_SCHEMA_VERSION`) **before** loading anything. A stale document sets `staleScenario`
+instead of loading, and `App.tsx` shows `StaleScenarioDialog` (OK / Download a copy) rather than
+half-loading a document whose shape this build can't read (schema 0.5.0's `spots` replacing
+`anchors` is the first schema change this guard exists to catch). There is no migration path —
+see `docs/creator/board-designer.md`'s "0.5.0 is not backward compatible" note.
 
 ## Vite boot gotcha (`os.platform is not a function`)
 

@@ -11,10 +11,18 @@ import {
   ProblemsPanel,
   RecoveryDialog,
   ScenarioBar,
+  StaleScenarioDialog,
 } from './editors';
 import { SimulatorPanel } from './simulator';
 import { useCreatorStore } from './store';
-import { useDraftPersistence, loadDraft, clearDraft, type DraftEnvelope } from './utils';
+import {
+  useDraftPersistence,
+  loadDraft,
+  clearDraft,
+  CURRENT_SCHEMA_VERSION,
+  isSupportedSchemaVersion,
+  type DraftEnvelope,
+} from './utils';
 import { ThemeToggle } from '@udtc/theme';
 
 type BottomTab = 'problems' | 'simulator';
@@ -43,6 +51,8 @@ export default function App() {
   const centerView = useCreatorStore((s) => s.centerView);
   const setCenterView = useCreatorStore((s) => s.setCenterView);
   const draftSaveFailed = useCreatorStore((s) => s.draftSaveFailed);
+  const staleScenario = useCreatorStore((s) => s.staleScenario);
+  const dismissStaleScenario = useCreatorStore((s) => s.dismissStaleScenario);
 
   useDraftPersistence();
 
@@ -81,6 +91,14 @@ export default function App() {
   // real library entry and drops the old key, so this path runs at most one more time ever.
   const handleRestoreDraft = () => {
     if (!pendingDraft) return;
+    // A draft stamped with an older schemaVersion is refused by loadScenario (it shows
+    // StaleScenarioDialog instead of loading) — don't save-as/clearDraft in that case, or the
+    // only copy of the stale draft is destroyed before the user can download it.
+    if (!isSupportedSchemaVersion(pendingDraft.doc.schemaVersion)) {
+      loadScenario(pendingDraft.doc, !pendingDraft.doc.meta.layout?.positions);
+      setPendingDraft(null);
+      return;
+    }
     loadScenario(pendingDraft.doc, !pendingDraft.doc.meta.layout?.positions);
     void useCreatorStore
       .getState()
@@ -92,6 +110,21 @@ export default function App() {
   const handleDiscardDraft = () => {
     clearDraft();
     setPendingDraft(null);
+  };
+
+  const handleDownloadStaleScenario = () => {
+    if (!staleScenario) return;
+    const title =
+      typeof (staleScenario.meta as { title?: unknown } | undefined)?.title === 'string'
+        ? ((staleScenario.meta as { title: string }).title ?? 'scenario')
+        : 'scenario';
+    const blob = new Blob([JSON.stringify(staleScenario, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // Hand the current scenario to the Player via the shared same-origin IndexedDB. It has to be
@@ -304,6 +337,19 @@ export default function App() {
           savedAt={pendingDraft.savedAt}
           onRestore={handleRestoreDraft}
           onDiscard={handleDiscardDraft}
+        />
+      )}
+
+      {staleScenario && (
+        <StaleScenarioDialog
+          foundVersion={
+            typeof staleScenario.schemaVersion === 'string'
+              ? staleScenario.schemaVersion
+              : undefined
+          }
+          currentVersion={CURRENT_SCHEMA_VERSION}
+          onDownload={handleDownloadStaleScenario}
+          onDismiss={dismissStaleScenario}
         />
       )}
     </ReactFlowProvider>

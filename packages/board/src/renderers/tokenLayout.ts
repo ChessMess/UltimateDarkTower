@@ -1,19 +1,23 @@
 // Shared, `three`-free token-layout conventions for the 2D map (`renderers/map2d.ts`) and the
-// 3D plugin (`plugin/index.ts`). ONE source of the slot/fan grouping so the two renderers cannot
-// drift — they consume these, then each draws with its own primitive (SVG vs `THREE.Sprite`).
+// 3D plugin (`plugin/index.ts`). ONE source of the grouping/fan conventions so the two renderers
+// cannot drift — they consume these, then each draws with its own primitive (SVG vs `THREE.Sprite`).
 //
 // Part of the `.` entry — MUST stay `three`-free and Display-free (the CI grep enforces it).
 import type { BoardState, LocationName } from '../state/boardState';
-import type { TokenSelection } from './assetPaths';
+import { RESERVED_TOKEN_TYPES } from '../state/boardState';
 
 /** Max skulls drawn in a fan before the stack is capped (extra skulls are implied, not drawn). */
 export const MAX_FANNED_SKULLS = 3;
 
-/** A located, optionally-arted entry to place at an anchor slot. */
+/** A located, optionally-arted entry to place at a resolved spot. */
 export interface LocatedEntry {
   id: string;
   location: LocationName;
   art?: string;
+  /** Explicit target spot, if the token carried one — see `data/boardDefinition.ts#resolveSpot`. */
+  spotId?: string;
+  /** Count, for a stackable type (skulls). */
+  n?: number;
 }
 
 /** A radial fan offset. The 2D map uses `{dx,dy}` directly; the plugin maps it to `Vector3(dx,0,dy)`. */
@@ -41,38 +45,40 @@ export function fanOffset(index: number, count: number, radius: number): FanOffs
 }
 
 /** Stable per-token key (kind/id/location) for selection matching within a renderer. */
-export function selectionKey(selection: TokenSelection): string {
+export function selectionKey(selection: {
+  kind: string;
+  id: string;
+  location: LocationName;
+}): string {
   return `${selection.kind} ${selection.id} ${selection.location}`;
 }
 
-/** Heroes grouped by location. No hero art exists → callers always use the programmatic fallback. */
-export function heroEntries(state: BoardState): Map<LocationName, LocatedEntry[]> {
-  return groupByLocation(
-    Object.entries(state.heroes).map(([id, h]) => ({ id, location: h.location })),
-  );
-}
-
-/** Foes grouped by location. Art id = foe *type*; selection id = the instance id. */
-export function foeEntries(state: BoardState): Map<LocationName, LocatedEntry[]> {
-  return groupByLocation(
-    Object.entries(state.foes).map(([id, f]) => ({ id, location: f.location, art: f.foe })),
-  );
-}
-
-/** Space markers grouped by location (one entry per marker; art id = the marker name). */
-export function markerEntries(state: BoardState): Map<LocationName, LocatedEntry[]> {
+/** Every placed token of `typeId`, as located entries ready for `groupByLocation`. */
+export function tokensOfKind(state: BoardState, typeId: string): LocatedEntry[] {
   const entries: LocatedEntry[] = [];
-  for (const [loc, markers] of Object.entries(state.spaceMarkers)) {
-    for (const m of markers) entries.push({ id: m, location: loc, art: m });
+  for (const token of Object.values(state.tokens)) {
+    if (token.typeId !== typeId) continue;
+    entries.push({
+      id: token.id,
+      location: token.location,
+      art: token.art,
+      spotId: token.spotId,
+      n: token.n,
+    });
   }
-  return groupByLocation(entries);
+  return entries;
 }
 
-/** Quest markers grouped by location (one entry per quest; art id = the quest name). */
-export function questEntries(state: BoardState): Map<LocationName, LocatedEntry[]> {
-  const entries: LocatedEntry[] = [];
-  for (const [loc, quests] of Object.entries(state.questMarkers)) {
-    for (const q of quests) entries.push({ id: q, location: loc, art: q });
+/**
+ * Every type id actually present on the board that ISN'T one of the reserved kinds a
+ * renderer already draws its own dedicated layer for — the custom/author-defined types a
+ * renderer's generic fallback layer needs to cover.
+ */
+export function customTokenKindsPresent(state: BoardState): string[] {
+  const reserved = new Set<string>(RESERVED_TOKEN_TYPES);
+  const seen = new Set<string>();
+  for (const token of Object.values(state.tokens)) {
+    if (!reserved.has(token.typeId)) seen.add(token.typeId);
   }
-  return groupByLocation(entries);
+  return [...seen];
 }

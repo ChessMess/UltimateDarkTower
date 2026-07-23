@@ -4,6 +4,7 @@ import {
   createLocationPickStore,
   mountBoardUI,
 } from '../src/index';
+import { adversaryOf, foesOf, monumentAt, questsAt, skullsAt } from '../src/state/selectors';
 
 function setup() {
   const controller = new BoardStateController();
@@ -30,13 +31,21 @@ describe('Palette', () => {
     $<HTMLSelectElement>(host, '.udt-palette-foe-status').value = 'savage';
 
     $<HTMLButtonElement>(host, '.udt-palette-add').click();
-    expect(Object.keys(controller.getState().foes)).toHaveLength(0); // no mutation before Confirm
+    expect(foesOf(controller.getState())).toHaveLength(0); // no mutation before Confirm
 
     $<HTMLSelectElement>(host, '.udt-palette-location').value = 'Dayside';
     $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
 
-    const foes = Object.values(controller.getState().foes);
-    expect(foes).toEqual([{ foe: 'Brigands', location: 'Dayside', status: 'savage' }]);
+    const foes = foesOf(controller.getState());
+    expect(foes).toEqual([
+      {
+        id: 'foe-1',
+        typeId: 'foe',
+        location: 'Dayside',
+        art: 'Brigands',
+        data: { status: 'savage' },
+      },
+    ]);
   });
 
   it('defaults the foe-status select to ready (not FOE_STATUSES[0])', () => {
@@ -59,7 +68,7 @@ describe('Palette', () => {
     expect($<HTMLSelectElement>(host, '.udt-palette-location').value).toBe('Radiant Mountains');
 
     $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
-    expect(Object.values(controller.getState().foes)[0].location).toBe('Radiant Mountains');
+    expect(foesOf(controller.getState())[0].location).toBe('Radiant Mountains');
     expect(locationPick.isArmed()).toBe(false); // disarmed after confirm
   });
 
@@ -68,7 +77,7 @@ describe('Palette', () => {
     $<HTMLButtonElement>(host, '.udt-palette-add').click();
     $<HTMLButtonElement>(host, '.udt-palette-cancel-btn').click();
     expect(locationPick.isArmed()).toBe(false);
-    expect(Object.keys(controller.getState().foes)).toHaveLength(0);
+    expect(foesOf(controller.getState())).toHaveLength(0);
   });
 
   it('adds an adversary (select + place) on Confirm', () => {
@@ -80,7 +89,10 @@ describe('Palette', () => {
     $<HTMLButtonElement>(host, '.udt-palette-add').click();
     $<HTMLSelectElement>(host, '.udt-palette-location').value = 'Upper Ice Fangs';
     $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
-    expect(controller.getState().adversary).toEqual({ id: "Utuk'Ku", location: 'Upper Ice Fangs' });
+    expect(adversaryOf(controller.getState())).toEqual({
+      id: "Utuk'Ku",
+      location: 'Upper Ice Fangs',
+    });
   });
 
   it('skull add targets only building spaces', () => {
@@ -96,7 +108,7 @@ describe('Palette', () => {
     expect(options).not.toContain('Broken Lands'); // not a building
     loc.value = 'Dayside';
     $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
-    expect(controller.getState().buildings['Dayside'].skulls).toBe(1);
+    expect(skullsAt(controller.getState(), 'Dayside')).toBe(1);
   });
 
   it('adds a hero (identity id as the instance id) on Confirm', () => {
@@ -112,7 +124,12 @@ describe('Palette', () => {
     $<HTMLButtonElement>(host, '.udt-palette-add').click();
     $<HTMLSelectElement>(host, '.udt-palette-location').value = 'Broken Lands';
     $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
-    expect(controller.getState().heroes['archwright']).toEqual({ location: 'Broken Lands' });
+    expect(controller.getState().tokens['archwright']).toEqual({
+      id: 'archwright',
+      typeId: 'hero',
+      location: 'Broken Lands',
+      art: 'archwright',
+    });
   });
 
   it('adds a monument onto a building space (targets buildings; setMonument by id)', () => {
@@ -133,7 +150,7 @@ describe('Palette', () => {
     expect(options).not.toContain('Broken Lands'); // not a building
     loc.value = "Egan's End";
     $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
-    expect(controller.getState().buildings["Egan's End"].monument).toBe('argent-oak');
+    expect(monumentAt(controller.getState(), "Egan's End")).toBe('argent-oak');
   });
 
   it('adds a quest marker onto a space (any location; setQuestMarker by id) on Confirm', () => {
@@ -148,7 +165,7 @@ describe('Palette', () => {
     quest.value = 'main-goal';
 
     $<HTMLButtonElement>(host, '.udt-palette-add').click();
-    expect(controller.getState().questMarkers).toEqual({}); // no mutation before Confirm
+    expect(questsAt(controller.getState(), 'Broken Lands')).toEqual([]); // no mutation before Confirm
     // Quests target any space (not buildings-only) — a non-building space is available.
     const loc = $<HTMLSelectElement>(host, '.udt-palette-location');
     expect(Array.from(loc.querySelectorAll('option')).map((o) => o.value)).toContain(
@@ -156,7 +173,7 @@ describe('Palette', () => {
     );
     loc.value = 'Broken Lands';
     $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
-    expect(controller.getState().questMarkers['Broken Lands']).toEqual(['main-goal']);
+    expect(questsAt(controller.getState(), 'Broken Lands')).toEqual(['main-goal']);
   });
 
   it('Setup section dispatches setSelections', () => {
@@ -179,6 +196,10 @@ describe('Palette', () => {
     $<HTMLButtonElement>(host, '.udt-palette-add').click();
     $<HTMLSelectElement>(host, '.udt-palette-location').value = 'Dayside';
     $<HTMLButtonElement>(host, '.udt-palette-confirm-btn').click();
-    expect(Object.keys(controller.getState().foes).sort()).toEqual(['foe-1', 'foe-2']);
+    expect(
+      foesOf(controller.getState())
+        .map((f) => f.id)
+        .sort(),
+    ).toEqual(['foe-1', 'foe-2']);
   });
 });

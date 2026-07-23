@@ -18,6 +18,16 @@ source of truth for foe/adversary spelling, and that every other roster (seed-pa
 exists because v6 had the same entity spelled 2–3 ways ("Isa the Exile" vs "Isa The Exile").
 **Adding a roster entry with an inconsistent spelling fails this test** — match `ALL_FOES`.
 
+## `BOARD_SPOTS` replaces `BOARD_ANCHORS` (schema 0.5.0)
+
+`src/board/boardAnchors.ts` is still generated from the same `tools/location-marker/udtBoardData.json`,
+but the generator now lifts each location's slot map into a `BoardSpot[]` (`{id, at, accepts}`) —
+`BOARD_ANCHORS`/`AnchorSlot`/`LocationAnchors` no longer exist. `RESERVED_TOKEN_TYPES` (also exported
+from here) is the built-in vocabulary (`hero`/`foe`/`adversary`/`building`/`skull`/`monument`/`marker`/
+`quest`) usable in a spot's `accepts` with no `library.tokenTypes` registry entry. See
+`docs/board-data.md` for the full shape and `gen-board-data.mjs`'s header comment for the slot→spot
+lift rules (`foe` spots also accept `adversary`; `marker` spots also accept `quest`).
+
 ## Build & test
 
 - `build` = `tsc --build` (composite project, `"composite": true`), `ES2022`/CommonJS.

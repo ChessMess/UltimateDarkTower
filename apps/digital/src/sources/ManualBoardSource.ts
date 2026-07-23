@@ -10,6 +10,7 @@ import type {
   BoardStateController,
   FoeStatus,
 } from 'ultimatedarktowerboard';
+import { buildingAt, buildingTokenId, skullTokenId } from 'ultimatedarktowerboard';
 import type { BoardStateSource, Unsubscribe } from './types';
 
 /** A building is destroyed when its skull stack reaches this (base game: the 4th skull). */
@@ -88,9 +89,11 @@ export class ManualBoardSource implements BoardStateSource {
    * so UTDD applies this rule here; removing skulls below the threshold restores it (undo).
    */
   private reconcileDestroyed(location: string): void {
-    const building = this.controller.getState().buildings[location];
-    if (!building) return; // not a building space — nothing to destroy
-    const shouldBeDestroyed = building.skulls >= SKULLS_TO_DESTROY;
+    const state = this.controller.getState();
+    if (!state.tokens[buildingTokenId(location)]) return; // not a building space — nothing to destroy
+    const building = buildingAt(state, location);
+    const skulls = state.tokens[skullTokenId(location)]?.n ?? 0;
+    const shouldBeDestroyed = skulls >= SKULLS_TO_DESTROY;
     if (shouldBeDestroyed && !building.destroyed) this.controller.destroyBuilding(location);
     else if (!shouldBeDestroyed && building.destroyed) this.controller.restoreBuilding(location);
   }

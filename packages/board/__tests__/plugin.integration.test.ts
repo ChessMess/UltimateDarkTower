@@ -20,14 +20,35 @@ import type { BoardState, BoardFocus } from '../src/index';
 
 const TEST_MODEL_URL = 'mock://tower.glb';
 
-/** A state with one token per kind at known anchored locations (6 sprites total). */
+/** A state with one token per kind at known spotted locations (6 sprites total). */
 function makeState(): BoardState {
   const state = createDefaultBoardState();
-  state.heroes['h1'] = { location: 'Broken Lands' }; // hero slot → 1
-  state.foes['f1'] = { foe: 'Brigands', location: 'Broken Lands', status: 'ready' }; // foe slot → 1
-  state.spaceMarkers['Broken Lands'] = ['wasteland']; // marker slot → 1
-  state.buildings['Dayside'] = { skulls: 2, destroyed: false }; // skull slot → 2
-  state.buildings["Egan's End"] = { skulls: 0, destroyed: false, monument: 'argent-oak' }; // building slot → 1
+  state.tokens['h1'] = { id: 'h1', typeId: 'hero', location: 'Broken Lands', art: 'h1' }; // hero spot → 1
+  state.tokens['f1'] = {
+    id: 'f1',
+    typeId: 'foe',
+    location: 'Broken Lands',
+    art: 'Brigands',
+    data: { status: 'ready' },
+  }; // foe spot → 1
+  state.tokens['marker:Broken Lands:wasteland'] = {
+    id: 'marker:Broken Lands:wasteland',
+    typeId: 'marker',
+    location: 'Broken Lands',
+    art: 'wasteland',
+  }; // marker spot → 1
+  state.tokens['skull:Dayside'] = {
+    id: 'skull:Dayside',
+    typeId: 'skull',
+    location: 'Dayside',
+    n: 2,
+  }; // skull spot → 2
+  state.tokens["monument:Egan's End"] = {
+    id: "monument:Egan's End",
+    typeId: 'monument',
+    location: "Egan's End",
+    art: 'argent-oak',
+  }; // building spot → 1
   return state;
 }
 const EXPECTED_TOKENS = 6;

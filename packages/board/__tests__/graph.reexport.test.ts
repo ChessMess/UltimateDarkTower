@@ -1,7 +1,7 @@
 import {
   BOARD_LOCATIONS,
   BOARD_LOCATION_BY_NAME,
-  BOARD_ANCHORS,
+  BOARD_SPOTS,
   BOARD_ADJACENCY,
   BOARD_IMAGE_INFO,
   stepDistance,
@@ -19,10 +19,10 @@ describe('UDT data re-exports', () => {
     expect(BOARD_LOCATION_BY_NAME[first.name]).toEqual(first);
   });
 
-  it('re-exports board anchors + image info covering every location', () => {
-    expect(Object.keys(BOARD_ANCHORS)).toHaveLength(BOARD_LOCATIONS.length);
+  it('re-exports board spots + image info covering every location', () => {
+    expect(Object.keys(BOARD_SPOTS)).toHaveLength(BOARD_LOCATIONS.length);
     for (const loc of BOARD_LOCATIONS) {
-      expect(BOARD_ANCHORS[loc.name]).toBeDefined();
+      expect(BOARD_SPOTS[loc.name]).toBeDefined();
     }
     expect(typeof BOARD_IMAGE_INFO.northHeadingDegrees).toBe('number');
   });

@@ -18,7 +18,8 @@ import {
   BOARD_LOCATIONS,
   BOARD_LOCATION_BY_NAME,
   BOARD_GROUPINGS,
-  BOARD_ANCHORS,
+  BOARD_SPOTS,
+  RESERVED_TOKEN_TYPES,
   BOARD_IMAGE_INFO,
   BOARD_ADJACENCY,
   neighborsOf,
@@ -56,19 +57,27 @@ grouping; … }`), **`TerrainType`** (`'Hills' | 'Lake' | 'Desert' | 'Mountains'
 **`BuildingType`** (`'Bazaar' | 'Village' | 'Sanctuary' | 'Citadel'`), **`BoardKingdom`** (`'north' |
 'south' | 'east' | 'west'`), **`BoardGrouping`** (named region union).
 
-## Token-placement anchors
+## Token-placement spots
 
 Normalized (resolution-independent) placement coordinates authored against the upright board image — the
-data the 2D/3D board renderers use to position tokens.
+data the 2D/3D board renderers use to position tokens. A **spot** is a marked point plus the token type
+ids it `accepts` — an open list, not a closed slot enum. `BOARD_SPOTS` (schema 0.5.0) **replaces the
+removed `BOARD_ANCHORS`**: every legacy anchor slot (`building`/`skull`/`hero`/`foe`/`marker`) survives as
+a spot whose `id` is the old slot name, at the same coordinates; the `foe` spot additionally accepts
+`adversary` and the `marker` spot additionally accepts `quest` (both previously hand-wired onto those
+anchors by the renderers, now expressed as data).
 
-| Export             | Type             | Purpose                                        |
-| ------------------ | ---------------- | ---------------------------------------------- |
-| `BOARD_ANCHORS`    | `BoardAnchorMap` | Per-location anchor slots for token placement. |
-| `BOARD_IMAGE_INFO` | `BoardImageInfo` | Board image dimensions + calibration metadata. |
+| Export                 | Type                | Purpose                                                       |
+| ---------------------- | ------------------- | ------------------------------------------------------------- |
+| `BOARD_SPOTS`          | `BoardSpotMap`      | Per-location marked spots for token placement.                |
+| `RESERVED_TOKEN_TYPES` | `readonly string[]` | Built-in type ids usable in `accepts` with no registry entry. |
+| `BOARD_IMAGE_INFO`     | `BoardImageInfo`    | Board image dimensions + calibration metadata.                |
 
-Types: **`Anchor`** (`{ x: number; y: number }`, normalized 0–1), **`AnchorSlot`** (`'building' | 'skull' |
-'hero' | 'foe' | 'marker'`), **`LocationAnchors`** (`Partial<Record<AnchorSlot, Anchor>>`),
-**`BoardAnchorMap`** (`Record<string, LocationAnchors>`), **`BoardImageInfo`**.
+Types: **`SpotPoint`** (`{ x: number; y: number }`, normalized 0–1), **`BoardSpot`**
+(`{ id: string; at: SpotPoint; accepts: readonly string[] }`), **`BoardSpotMap`**
+(`Record<string, readonly BoardSpot[]>`), **`ReservedTokenType`** (the `RESERVED_TOKEN_TYPES` union:
+`'hero' | 'foe' | 'adversary' | 'building' | 'skull' | 'monument' | 'marker' | 'quest'`),
+**`BoardImageInfo`**.
 
 ## Movement graph
 

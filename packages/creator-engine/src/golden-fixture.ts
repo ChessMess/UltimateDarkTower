@@ -1042,7 +1042,12 @@ function buildGoldenFull() {
     },
   };
   // ---- 0.4.3 first-class decks: card art, a generic treasure deck, and a vault treasury room ----
-  c.schemaVersion = '0.4.3';
+  // Stamped with the CURRENT schema version, not '0.4.3' — this fixture is what Creator's own
+  // "Load Sample Scenario" button loads, and it funnels through the same exact-match
+  // schemaVersion refuse-guard as any other document (apps/creator/src/store/index.ts
+  // loadScenario). Falling behind CURRENT_SCHEMA_VERSION doesn't just make the fixture stale —
+  // it makes Creator's sample scenario permanently unloadable until this is bumped to match.
+  c.schemaVersion = '0.5.0';
   // Tiny hand-authored inline SVGs (~0.3–0.5 KB each; no repo image binaries). encodeURIComponent
   // keeps the markup readable AND browser-safe (this fixture is bundled into Creator/Player — no
   // Buffer), and produces an ajv-valid data URI.

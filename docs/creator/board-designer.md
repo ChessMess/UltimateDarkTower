@@ -1,7 +1,7 @@
 # Board Designer
 
 The Board Designer (the **Boards** tab in the Creator app) lets a creator author a **custom game
-board** — their own art, locations, anchors and adjacency — and play it in `@udtc/player`.
+board** — their own art, locations, spots and adjacency — and play it in `@udtc/player`.
 
 A scenario that doesn't author a board keeps using the built-in Return to Dark Tower board exactly
 as before. Nothing about custom boards is opt-out; it is entirely opt-in.
@@ -13,23 +13,32 @@ purpose. Locations are opaque strings everywhere in the system (engine state, ef
 conditions), so a custom vocabulary works with **every existing node kind and effect op
 unchanged**. Authoring a board re-sources the dropdowns; it does not add new authoring primitives.
 
-| Field                                                  | Required | Notes                                                                                                                        |
-| ------------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `id` / `name`                                          | yes      | `id` is the `library.boards` key and must be kebab/snake case                                                                |
-| `imageRef`                                             | no       | a `library.resources.images` key, or `builtin:rtdt-board`; without either the board renders blank                            |
-| `imageInfo.width` / `.height`                          | yes      | the image space anchors are normalized against                                                                               |
-| `imageInfo.centerX/centerY/radius/northHeadingDegrees` | no       | all four ⇒ **3D-ready** (see below)                                                                                          |
-| `locations[]`                                          | yes      | `kingdom` is the closed 4-enum; `terrain` is an open string; `building` is an open id naming a `library.buildingTypes` entry |
-| `anchors`                                              | no       | per-location `building`/`skull`/`hero`/`foe`/`marker` points, normalized `[0,1]`                                             |
-| `adjacency`                                            | no       | name → names, symmetric (see the caveat below)                                                                               |
+| Field                                                  | Required | Notes                                                                                                                                                    |
+| ------------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id` / `name`                                          | yes      | `id` is the `library.boards` key and must be kebab/snake case                                                                                            |
+| `imageRef`                                             | no       | a `library.resources.images` key, or `builtin:rtdt-board`; without either the board renders blank                                                        |
+| `imageInfo.width` / `.height`                          | yes      | the image space spots are normalized against                                                                                                             |
+| `imageInfo.centerX/centerY/radius/northHeadingDegrees` | no       | all four ⇒ **3D-ready** (see below)                                                                                                                      |
+| `locations[]`                                          | yes      | `kingdom` is the closed 4-enum; `terrain` is an open string; `building` is an open id naming a `library.buildingTypes` entry                             |
+| `spots`                                                | no       | per-location list of marked points (`{id, at, accepts}`); `accepts` names the reserved built-in type ids or `library.tokenTypes` keys a spot will render |
+| `adjacency`                                            | no       | name → names, symmetric (see the caveat below)                                                                                                           |
 
-Stored at `library.boards[id]` (schema **0.4.6**); a scenario selects one with
-`setup.board = { boardRef: id }`. The building types a location may name live alongside it in
-`library.buildingTypes` (schema **0.4.7**) — see step 4 below.
+Stored at `library.boards[id]` (schema **0.4.6**, spots since **0.5.0**); a scenario selects one
+with `setup.board = { boardRef: id }`. The building types a location may name live alongside it in
+`library.buildingTypes` (schema **0.4.7**) — see step 4 below. Token types (an open registry a
+spot's `accepts` can name, alongside the reserved built-ins) live in `library.tokenTypes` (schema
+**0.5.0**) — see step 5.
+
+> **0.5.0 is not backward compatible.** It replaced the old closed five-key `anchors` slot map
+> (`building`/`skull`/`hero`/`foe`/`marker`, one point each) with `spots` — an open list per
+> location, each with an `accepts` list of the token types it renders. A document authored before
+> 0.5.0 (still carrying `anchors`) no longer validates; the Creator detects the older
+> `schemaVersion` on open and offers an export-then-clear dialog rather than migrating it — there
+> is no migration path. See [save-load.md](./save-load.md).
 
 ## Authoring flow
 
-1. **Boards tab → Clone RtDT preset.** A full copy of the built-in board — 60 locations, anchors,
+1. **Boards tab → Clone RtDT preset.** A full copy of the built-in board — 60 locations, spots,
    adjacency, calibration — ready to rename and re-art. (Or **Add empty board** to start bare.)
    The clone keeps the built-in board art by **reference** (`imageRef: builtin:rtdt-board`): the
    real image is 4096²/22 MB — ~30 MB of base64 in a shared `.json`, and 20× the 1.5 MB cap on an
@@ -37,21 +46,21 @@ Stored at `library.boards[id]` (schema **0.4.6**); a scenario selects one with
    bytes in the document, and the Player still plays it at full resolution.
 2. **Upload art.** Capped at 2048×2048 / ~1.5 MB. The stored image's real dimensions become
    `imageInfo.width/height`, and the upload replaces the built-in reference. **Use built-in RtDT
-   art** puts it back (and restores `imageInfo` to 4096²; normalized anchors don't move). A
+   art** puts it back (and restores `imageInfo` to 4096²; normalized spots don't move). A
    replaced upload stays in `library.resources.images` — delete it from the Asset Manager, which
    lists it as unused, if you want the bytes back.
 3. **Locations.** Add/rename/delete; set kingdom, terrain and building. **A location's position is
-   its anchors** — there is no separate "place" record — so a new row exists in data but renders
-   nowhere until it has one. **+ Add** therefore drops you straight into Anchors mode with the new
+   its spots** — there is no separate "place" record — so a new row exists in data but renders
+   nowhere until it has one. **+ Add** therefore drops you straight into Spots mode with the new
    location armed: click the board and it lands. For an existing row, the **◎** button beside it
    does the same (it turns into a filled **◉** once placed), and the Locations header counts how
    many are still off the map. A **rename remaps this
-   board's anchors and adjacency in the same commit** — but it does **not** rewrite graph nodes that
+   board's spots and adjacency in the same commit** — but it does **not** rewrite graph nodes that
    referenced the old name. Those surface in the Problems panel as dangling refs; fix them there.
    **Remove…** clears locations in bulk, scoped to everything or to one **kingdom / terrain /
    building** — handy for keeping the RtDT clone's geometry while replacing a kingdom's spaces.
    The picker only offers values the board actually has (with counts), and shows how many of how
-   many will go before you confirm. Anchors and adjacency edges go with the removed locations;
+   many will go before you confirm. Spots and adjacency edges go with the removed locations;
    graph references to them do not, so check the Problems panel afterwards. There is no undo.
 4. **Building types.** The **Building types…** button at the right of the mode toolbar opens the
    scenario's building registry (`library.buildingTypes`) — and so does **Custom…** in a location's
@@ -78,21 +87,35 @@ Stored at `library.boards[id]` (schema **0.4.6**); a scenario selects one with
    picking one that isn't defined would fail validation at export. Only when no registry is authored
    at all does the picker fall back to suggesting the RtDT four.
 
-5. **Anchors.** Pick a location, pick a slot, click the map. Tokens are drawn at these points. The
-   status line under the canvas always says what the next click will do. Panning does not place an
-   anchor — a press only counts as a click if the pointer barely moved.
-   **Shape is the slot, colour is the kingdom**: ● hero, ■ building, ▲ foe, ◆ skull, ▼ marker. The
-   slot you are placing is drawn larger and the rest recede, and each slot button carries the same
-   glyph — filled when the selected location already has that anchor, hollow when it does not. In
-   this mode the anchors themselves are not clickable, so you can drop one on top of another; pick
-   a different location from the list instead.
-6. **Adjacency.** Click two locations to link/unlink (always written symmetrically). _Suggest from
-   proximity_ seeds the graph from anchor distance.
-7. **Calibrate.** Drag the centre dot and radius handle to fit the board's printed circle, and set
+5. **Token types.** The **Token types…** button, mirroring Building types above, opens the
+   scenario's open token registry (`library.tokenTypes`) — a type is presentational (name, id,
+   placement, whether it's removable, an optional art reference, a fallback tint colour, and a
+   stacking capacity), unlike a building type there are no effects to author. A token type's id is
+   what a spot's `accepts` list names, alongside the reserved built-ins (hero/foe/adversary/
+   building/skull/monument/marker/quest) every board understands with no registry entry at all.
+   **Clone** and **rename-retypes-every-reference** work the same way as Building types.
+   Unlike buildings, a new scenario seeds **no** default token types — there is no RtDT-equivalent
+   starting vocabulary for custom tokens, so the registry starts empty until you add one.
+6. **Spots.** Pick a location, pick which types the spot accepts, click the map. Tokens are drawn
+   at these points. The status line under the canvas always says what the next click will do.
+   Panning does not place a spot — a press only counts as a click if the pointer barely moved.
+   **Shape follows the reserved type it single-mindedly accepts** (the five inherited glyphs: ●
+   hero, ■ building, ▲ foe, ◆ skull, ▼ marker — adversary shares foe's triangle, monument shares
+   building's square, quest shares marker's inverted triangle), **colour is the kingdom**; a spot
+   accepting a custom type, or more than one type, draws as a hexagon with an accept-count badge.
+   Each spot can be edited from the Locations panel too: a multi-select lists every reserved id
+   plus whatever `library.tokenTypes` defines, so one spot can legally host several types (e.g. a
+   `foe` spot that also accepts `adversary`, matching the built-in board). In this mode the spots
+   themselves are not clickable, so you can drop one on top of another; pick a different location
+   from the list instead, or remove/edit it from the Locations panel.
+7. **Adjacency.** Click two locations to link/unlink (always written symmetrically). _Suggest from
+   proximity_ seeds the graph from spot distance.
+8. **Calibrate.** Drag the centre dot and radius handle to fit the board's printed circle, and set
    the north heading. Needed only for 3D.
-8. **Use in game.** Points `setup.board` at this board. The Inspector's location dropdowns and the
+9. **Use in game.** Points `setup.board` at this board. The Inspector's location dropdowns and the
    `foe.spawn` / `foe.move` effect fields immediately offer the custom names, and L2 validates
-   against them.
+   against them. A `token.place`/`token.remove` effect naming a `library.tokenTypes` id now
+   actually reaches the board at play time (it used to be a no-op in the Player).
 
 ## Things worth knowing
 
@@ -109,7 +132,7 @@ symmetry, and available to tools, but nothing validates hero movement against it
 built-in board, where adjacency has always been data plus pure helpers. The Adjacency tab says so
 in place.
 
-**3D needs calibration.** The 3D disc projection maps a board's anchors from image space onto the
+**3D needs calibration.** The 3D disc projection maps a board's spots from image space onto the
 tower's ground disc using `centerX/centerY/radius`. Without all four calibration values the board is
 **2D-only**: the player logs a line and stays on the 2D map. (`northHeadingDegrees` is authored but
 the 3D pipeline currently consumes quadrant-based `northKingdom` — a known v1 limitation.)
@@ -128,6 +151,7 @@ the editor asks for confirmation before replacing a non-empty inline `boardState
 
 ## Relationship to the location-marker tool
 
-`packages/core/tools/location-marker/` is the standalone dev tool that generates the **built-in RtDT
-board data** (via `gen-board-data.mjs`). It remains the pipeline for that one board. The Board
-Designer supersedes it for authoring _custom_ boards inside a scenario.
+`packages/game-data/tools/location-marker/` is the standalone dev tool that generates the
+**built-in RtDT board data** (via `gen-board-data.mjs`, which emits `BOARD_SPOTS`). It remains the
+pipeline for that one board. The Board Designer supersedes it for authoring _custom_ boards inside
+a scenario.

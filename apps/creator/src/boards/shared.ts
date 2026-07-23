@@ -1,9 +1,9 @@
 // Board Designer — shared types + pure helpers. Mirrors `../dungeons/shared.ts`.
 //
-// The `Board` types here mirror `$defs/boardDef` in the scenario schema (0.4.6); keep them in
+// The `Board` types here mirror `$defs/boardDef` in the scenario schema (0.5.0); keep them in
 // step with it. Styling/limit helpers are reused from the dungeon module rather than re-declared.
 
-import { isBuiltinBoardImageRef } from '@udtc/adapters';
+import { getUDTReferenceLayer, isBuiltinBoardImageRef } from '@udtc/adapters';
 import type { ScenarioDoc } from '../types';
 import { resolveImage } from '../dungeons/shared';
 
@@ -23,7 +23,7 @@ export const ID_RE = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/;
 export const KINGDOMS = ['north', 'south', 'east', 'west'] as const;
 export type Kingdom = (typeof KINGDOMS)[number];
 
-/** Kingdom → colour. The map fills anchors with it and the locations list dots each row. */
+/** Kingdom → colour. The map fills spots with it and the locations list dots each row. */
 export const KINGDOM_COLOR: Record<string, string> = {
   north: '#60a5fa',
   east: '#facc15',
@@ -52,9 +52,6 @@ export const TERRAIN_SUGGESTIONS = [
   'Forest',
 ] as const;
 
-/** The five anchor slots, in UI order — `hero` leads because it is the default `activeSlot` and
- *  the point `locationPoint` treats as a location's position. The order is presentation only:
- *  JSON keys are unordered, so the schema mirror ($defs/boardDef.anchors) is unaffected. */
 /**
  * Every terrain the picker offers: RtDT's six, then any OTHER value this board already uses.
  *
@@ -139,11 +136,56 @@ export function isHeroStartBuilding(
   return flagged ? flagged.has(b) : b === 'citadel';
 }
 
-export const ANCHOR_SLOTS = ['hero', 'building', 'foe', 'skull', 'marker'] as const;
-export type AnchorSlot = (typeof ANCHOR_SLOTS)[number];
+/**
+ * The built-in vocabulary a spot's `accepts` can name with no `library.tokenTypes` entry — read
+ * through the UDT reference layer (like every other roster here) so "what the editor offers is
+ * exactly what validates" (see `@udtc/adapters`' `getUDTReferenceLayer`).
+ */
+export const RESERVED_TOKEN_TYPES: readonly string[] = getUDTReferenceLayer().reservedTokenTypes;
 
-export type AnchorPoint = { x: number; y: number };
-export type LocationAnchors = Partial<Record<AnchorSlot, AnchorPoint>>;
+/** A `library.tokenTypes` entry. Mirrors `$defs/tokenType` (schema 0.5.0 presentational fields only —
+ *  `kind`/`placement`/`removable`/`crossingPenalty`/`threshold` are the engine-read counter/edge-token
+ *  shape and are opaque to the board designer). */
+export type TokenTypeDef = {
+  id: string;
+  name: string;
+  kind: 'boardToken' | 'edgeToken' | 'perHeroCounter';
+  placement: 'space' | 'edge' | 'heroBoard';
+  removable: boolean;
+  artRef?: string;
+  color?: string;
+  capacity?: number;
+};
+
+/** The scenario's token-type registry (schema 0.5.0 `library.tokenTypes`). */
+export function tokenTypesOf(doc: ScenarioDoc | null): Record<string, TokenTypeDef> {
+  const lib = (doc?.library as Record<string, unknown> | undefined) ?? {};
+  return (lib.tokenTypes as Record<string, TokenTypeDef> | undefined) ?? {};
+}
+
+/** A type's display label: its authored `name`, else the id itself. Mirrors {@link buildingLabel}. */
+export function tokenTypeLabel(types: Record<string, TokenTypeDef>, id: string): string {
+  return types[id]?.name?.trim() || id;
+}
+
+/** Every type id a spot's `accepts` can offer: the reserved built-ins, then the scenario's own. */
+export function acceptChoices(
+  types: Record<string, TokenTypeDef>,
+): Array<{ id: string; label: string }> {
+  const reserved = RESERVED_TOKEN_TYPES.map((id) => ({ id, label: id }));
+  const custom = Object.keys(types).map((id) => ({ id, label: tokenTypeLabel(types, id) }));
+  return [...reserved, ...custom];
+}
+
+export type SpotPoint = { x: number; y: number };
+
+/** A marked spot on a location: a point plus the token type ids it accepts. Mirrors `$defs/boardSpot`. */
+export type Spot = {
+  id: string;
+  at: SpotPoint;
+  accepts: string[];
+  capacity?: number;
+};
 
 export type BoardLocation = {
   name: string;
@@ -167,7 +209,7 @@ export type Board = {
   imageRef?: string;
   imageInfo: BoardImageInfo;
   locations: BoardLocation[];
-  anchors?: Record<string, LocationAnchors>;
+  spots?: Record<string, Spot[]>;
   adjacency?: Record<string, string[]>;
 };
 
@@ -210,7 +252,7 @@ export const boardImageKey = (boardId: string): string => `board-${boardId}`;
 
 /**
  * The Creator's own copy of the RtDT board art — a downscaled 1400² backdrop for the designer
- * canvas, NOT the shipped 4096² art (which the Player serves for play). Anchors are normalized
+ * canvas, NOT the shipped 4096² art (which the Player serves for play). Spots are normalized
  * `[0,1]` and the canvas stretches the image to `imageInfo.width/height`, so a smaller backdrop
  * annotates identically to the full-resolution board.
  */
@@ -331,15 +373,15 @@ export function scopeChoices(board: Board, facet: ScopeFacet): Array<{ value: st
 }
 
 /**
- * Anchors and adjacency confined to `locations` — the invariant `validateBoard` enforces
- * (anchors/adjacency keys and adjacency targets must all be real locations). Every path that
- * drops locations goes through here so a removal can never leave a dangling edge behind.
+ * Spots and adjacency confined to `locations` — the invariant `validateBoard` enforces (spots/
+ * adjacency keys and adjacency targets must all be real locations). Every path that drops
+ * locations goes through here so a removal can never leave a dangling edge behind.
  */
 export function pruneToLocations(board: Board, locations: BoardLocation[]): Board {
   const names = new Set(locations.map((l) => l.name));
-  const anchors: Record<string, LocationAnchors> = {};
-  for (const [name, slots] of Object.entries(board.anchors ?? {})) {
-    if (names.has(name)) anchors[name] = slots;
+  const spots: Record<string, Spot[]> = {};
+  for (const [name, list] of Object.entries(board.spots ?? {})) {
+    if (names.has(name)) spots[name] = list;
   }
   const adjacency: Record<string, string[]> = {};
   for (const [from, tos] of Object.entries(board.adjacency ?? {})) {
@@ -347,10 +389,10 @@ export function pruneToLocations(board: Board, locations: BoardLocation[]): Boar
     const kept = tos.filter((to) => names.has(to));
     if (kept.length > 0) adjacency[from] = kept;
   }
-  return { ...board, locations, anchors, adjacency };
+  return { ...board, locations, spots, adjacency };
 }
 
-/** The board with every location the scope selects removed, anchors/adjacency pruned to match. */
+/** The board with every location the scope selects removed, spots/adjacency pruned to match. */
 export function removeLocationsInScope(board: Board, scope: LocationScope): Board {
   return pruneToLocations(
     board,
@@ -399,7 +441,7 @@ export function clientToNormalized(
   rect: { left: number; top: number; width: number; height: number },
   view: { x: number; y: number; w: number; h: number },
   image: { width: number; height: number },
-): AnchorPoint {
+): SpotPoint {
   const { scale, padX, padY } = viewportFit(rect, view.w, view.h);
   const ux = (client.x - rect.left - padX) / scale + view.x;
   const uy = (client.y - rect.top - padY) / scale + view.y;
@@ -408,21 +450,35 @@ export function clientToNormalized(
 
 const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
 
-/** A location's representative point (its `hero` anchor, else any slot it has). */
-export function locationPoint(board: Board, name: string): AnchorPoint | undefined {
-  const slots = board.anchors?.[name];
-  if (!slots) return undefined;
-  return slots.hero ?? slots.building ?? slots.foe ?? slots.marker ?? slots.skull;
+/** A location's spot list (never undefined — an empty array for one with none yet). */
+export function spotsOf(board: Board, name: string): Spot[] {
+  return board.spots?.[name] ?? [];
 }
 
 /**
- * True once a location has an anchor in ANY slot — i.e. it has a spot on the board.
- * A location is just a row of data until then: the map canvas draws nothing for it, adjacency
- * can't reach it, and no token can rest on it. Stricter than `anchors[name] !== undefined`,
- * which an emptied `{}` would satisfy.
+ * A location's representative point: the spot literally named `hero` (the RtDT convention), else
+ * the first spot whose `accepts` includes `hero`, else the first spot at all, else `undefined`.
+ * Mirrors the pre-0.5.0 priority (hero > building > foe > marker > skull) closely enough for a
+ * map-canvas anchor point — this is presentational (where to draw the location's label/dot when
+ * no more specific spot applies), not a rule.
+ */
+export function locationPoint(board: Board, name: string): SpotPoint | undefined {
+  const spots = spotsOf(board, name);
+  if (spots.length === 0) return undefined;
+  return (
+    spots.find((s) => s.id === 'hero')?.at ??
+    spots.find((s) => s.accepts.includes('hero'))?.at ??
+    spots[0].at
+  );
+}
+
+/**
+ * True once a location has at least one spot — i.e. it has a place on the board. A location is
+ * just a row of data until then: the map canvas draws nothing for it, adjacency can't reach it,
+ * and no token can rest on it.
  */
 export function isPlaced(board: Board, name: string): boolean {
-  return locationPoint(board, name) !== undefined;
+  return spotsOf(board, name).length > 0;
 }
 
 /** The locations that exist in data but sit nowhere on the board — what the editor nudges about. */
@@ -430,19 +486,23 @@ export function unplacedLocations(board: Board): BoardLocation[] {
   return board.locations.filter((l) => !isPlaced(board, l.name));
 }
 
-/** True when this exact slot carries a point — what fills/hollows the Anchor-slot buttons. */
-export function hasAnchorSlot(board: Board, name: string, slot: AnchorSlot): boolean {
-  return board.anchors?.[name]?.[slot] !== undefined;
+/** A fresh, unused spot id for `location`: `type` itself if free, else `type-2`, `type-3`, … */
+export function defaultSpotId(board: Board, location: string, type: string): string {
+  const taken = new Set(spotsOf(board, location).map((s) => s.id));
+  if (!taken.has(type)) return type;
+  let n = 2;
+  while (taken.has(`${type}-${n}`)) n++;
+  return `${type}-${n}`;
 }
 
 /**
- * Proximity-suggested adjacency: links each pair of locations whose anchors are within
- * `radius` (normalized units). An authoring aid — the author edits the result.
+ * Proximity-suggested adjacency: links each pair of locations whose spots are within `radius`
+ * (normalized units). An authoring aid — the author edits the result.
  */
 export function suggestAdjacency(board: Board, radius = 0.12): Record<string, string[]> {
   const pts = board.locations
     .map((l) => ({ name: l.name, p: locationPoint(board, l.name) }))
-    .filter((e): e is { name: string; p: AnchorPoint } => e.p !== undefined);
+    .filter((e): e is { name: string; p: SpotPoint } => e.p !== undefined);
   const adj: Record<string, string[]> = {};
   for (let i = 0; i < pts.length; i++) {
     for (let j = i + 1; j < pts.length; j++) {
@@ -483,17 +543,18 @@ export type BoardProblem = { level: 'error' | 'warn'; message: string };
 
 /**
  * Editor-side board validation. Mirrors the L2 checks in `@udtc/adapters`' `validate-refs`
- * (duplicate names, anchors/adjacency confined to real locations, adjacency symmetry) so the
- * author sees them while editing rather than at export.
+ * (duplicate names, spots/adjacency confined to real locations, adjacency symmetry, spot id
+ * uniqueness, `accepts` resolution) so the author sees them while editing rather than at export.
  *
- * `buildingTypes` is the scenario's registry ({@link buildingTypesOf}). It drives two checks the
- * board alone can't answer: which buildings start a hero, and whether a `building` names a type
- * that exists. Pass `{}` (the default) and both degrade to the pre-0.4.7 behaviour — 'citadel'
- * is the hero start, and no type is ever reported as unknown.
+ * `buildingTypes`/`tokenTypes` are the scenario's registries. `buildingTypes` drives which
+ * buildings start a hero and whether a `building` names a known type; `tokenTypes` drives
+ * whether a spot's `accepts` entries resolve. Pass `{}` (the default) for either and its checks
+ * degrade to "nothing is ever unknown" — matching the pre-registry behaviour and L2's own gating.
  */
 export function validateBoard(
   board: Board,
   buildingTypes: Record<string, BuildingTypeDef> = {},
+  tokenTypes: Record<string, TokenTypeDef> = {},
 ): BoardProblem[] {
   const problems: BoardProblem[] = [];
   if (!ID_RE.test(board.id)) {
@@ -509,6 +570,11 @@ export function validateBoard(
   const lowerTypes: Record<string, true> = {};
   for (const id of Object.keys(buildingTypes)) lowerTypes[id.toLowerCase()] = true;
   const hasRegistry = Object.keys(buildingTypes).length > 0;
+
+  const reservedLower = new Set(RESERVED_TOKEN_TYPES.map((t) => t.toLowerCase()));
+  const lowerTokenTypes: Record<string, true> = {};
+  for (const id of Object.keys(tokenTypes)) lowerTokenTypes[id.toLowerCase()] = true;
+  const hasTokenRegistry = Object.keys(tokenTypes).length > 0;
 
   const names = new Set<string>();
   for (const loc of board.locations) {
@@ -541,9 +607,41 @@ export function validateBoard(
     }
   }
 
-  for (const key of Object.keys(board.anchors ?? {})) {
+  for (const [key, spots] of Object.entries(board.spots ?? {})) {
     if (!names.has(key)) {
-      problems.push({ level: 'error', message: `anchors key "${key}" is not a location` });
+      problems.push({ level: 'error', message: `spots key "${key}" is not a location` });
+      continue;
+    }
+    const spotIds = new Set<string>();
+    for (const spot of spots) {
+      if (spotIds.has(spot.id)) {
+        problems.push({
+          level: 'error',
+          message: `location "${key}" has duplicate spot id "${spot.id}"`,
+        });
+      }
+      spotIds.add(spot.id);
+      if (spot.accepts.length === 0) {
+        // Not just advisory: $defs/boardSpot.accepts is `minItems: 1`, so an emptied accepts
+        // list fails L1 at export outright — surface that now rather than at export time.
+        problems.push({
+          level: 'error',
+          message: `location "${key}" spot "${spot.id}" accepts nothing — pick at least one type`,
+        });
+      }
+      for (const typeId of spot.accepts) {
+        const lower = typeId.toLowerCase();
+        const resolvable =
+          reservedLower.has(lower) || !hasTokenRegistry || lower in lowerTokenTypes;
+        if (!resolvable) {
+          // Advisory only — the plan's decision: Creator warns, L2 errors, the board itself never
+          // blocks. A spot naming a type that doesn't (yet) exist is a normal mid-edit state.
+          problems.push({
+            level: 'warn',
+            message: `location "${key}" spot "${spot.id}" accepts "${typeId}", which has no entry in Token types`,
+          });
+        }
+      }
     }
   }
 
@@ -588,8 +686,8 @@ export function validateBoard(
     }
   }
   for (const loc of board.locations) {
-    if (!board.anchors?.[loc.name]) {
-      problems.push({ level: 'warn', message: `"${loc.name}" has no anchors — it won't render` });
+    if (!isPlaced(board, loc.name)) {
+      problems.push({ level: 'warn', message: `"${loc.name}" has no spots — it won't render` });
     }
   }
   if (!isCalibrated(board.imageInfo)) {

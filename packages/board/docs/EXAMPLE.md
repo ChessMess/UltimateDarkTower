@@ -12,7 +12,7 @@ The demo mounts a single [`BoardStageView`](./STAGE.md) (`ultimatedarktowerboard
 everything below shares one state, one selection, and one focus:
 
 - the **3D board** (`Board3DPlugin` on a Display `TowerRenderView`, **lazy-loaded** by the stage) — tokens as billboards on the disc,
-- the **2D map** (`BoardMap2D`) — the board image with tokens placed via `BOARD_ANCHORS`,
+- the **2D map** (`BoardMap2D`) — the board image with tokens placed via `BOARD_SPOTS`,
 - the **text readout** (deterministic),
 - the **mode switcher** (2D / 3D / 2D+3D / PiP) with swap, the movable/resizable PiP inset, Pop Out, the Spin/Pan toggle,
 - the **N / E / S / W + All** kingdom-zoom bar, and

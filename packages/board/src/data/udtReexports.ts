@@ -5,12 +5,13 @@
 // `ultimatedarktowerdata`, a zero-dependency package with no Bluetooth. It's exported flat —
 // no more `data` / `seed` namespaces to destructure.
 export {
-  // Board geometry, layout anchors + image metadata (token placement), and the
+  // Board geometry, layout spots + image metadata (token placement), and the
   // movement-adjacency graph + pure BFS helpers (move-validation utilities).
   BOARD_LOCATIONS,
   BOARD_LOCATION_BY_NAME,
   BOARD_GROUPINGS,
-  BOARD_ANCHORS,
+  BOARD_SPOTS,
+  RESERVED_TOKEN_TYPES,
   BOARD_IMAGE_INFO,
   BOARD_ADJACENCY,
   neighborsOf,
@@ -21,10 +22,10 @@ export {
   type BuildingType,
   type BoardKingdom,
   type BoardGrouping,
-  type Anchor,
-  type AnchorSlot,
-  type LocationAnchors,
-  type BoardAnchorMap,
+  type SpotPoint,
+  type BoardSpot,
+  type BoardSpotMap,
+  type ReservedTokenType,
   type BoardImageInfo,
   type BoardAdjacency,
 
@@ -37,9 +38,10 @@ export {
   type ContentSource,
   type Monument,
   type MonumentId,
-  // NOTE: UDT's `HeroId` (a hero *identity* id) is deliberately NOT re-exported — this package's
-  // own `HeroId` (a caller-assigned *instance* id, in state/boardState) owns that name. Use a
-  // `Hero`'s `id` field for the identity.
+  // NOTE: UDT's `HeroId` (a hero *identity* id) is deliberately NOT re-exported — a placed
+  // hero's *instance* id is just `PlacedToken.id: string` (state/boardState), unkeyed by any
+  // dedicated type since 0.5.0's move to one flat `tokens` collection. Use a `Hero`'s `id`
+  // field for the identity.
 
   // Seed-encoded setup rosters + enums (foes/adversaries/allies, difficulty, source).
   TIER1_FOES,
@@ -70,7 +72,7 @@ export {
   type FoeLevel,
   type FoeName,
   type Foe,
-  // NOTE: UDT's `FoeId` (a foe *identity* id) is deliberately NOT re-exported — this package's own
-  // `FoeId` (a caller-assigned *instance* id, in state/boardState) owns that name, mirroring `HeroId`
-  // above. Use a `Foe`'s `id` field for the identity.
+  // NOTE: UDT's `FoeId` (a foe *identity* id) is deliberately NOT re-exported — mirrors `HeroId`
+  // above: a placed foe's *instance* id is just `PlacedToken.id: string`. Use a `Foe`'s `id`
+  // field for the identity.
 } from 'ultimatedarktowerdata';

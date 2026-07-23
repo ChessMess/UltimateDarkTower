@@ -3,17 +3,26 @@
  * Generate the library's board-layout data modules from the location-marker
  * tool's combined export (`udtBoardData.json`):
  *
- *   src/board/boardAnchors.ts    <- imageInfo + anchors  (BOARD_IMAGE_INFO, BOARD_ANCHORS)
- *   src/board/boardAdjacency.ts  <- adjacency            (BOARD_ADJACENCY + graph helpers)
+ *   src/board/boardAnchors.ts    <- imageInfo + spots  (BOARD_IMAGE_INFO, BOARD_SPOTS)
+ *   src/board/boardAdjacency.ts  <- adjacency          (BOARD_ADJACENCY + graph helpers)
  *
  * The data is inlined as typed `const`s (the `gameBoard.ts` convention) rather
  * than imported as JSON, because `tsc` does not copy `.json` into `dist/` and the
- * package's `files` whitelist ships only `dist/**`. Anchor coordinates are rounded
- * to 5 decimals (sub-pixel at 4096px). Run prettier afterwards to normalize style:
+ * package's `files` whitelist ships only `dist/**`. Coordinates are rounded to 5
+ * decimals (sub-pixel at 4096px). Run prettier afterwards to normalize style:
  *
  *   node tools/location-marker/gen-board-data.mjs && npm run format
  *
  * Pure file generation — no build step, no dependencies.
+ *
+ * The authoring tool (and `udtBoardData.json`) still speak the old five-slot vocabulary
+ * (`building`/`skull`/`hero`/`foe`/`marker`) — this is the ONE place the slot->spot lift
+ * happens. Each slot becomes a `BoardSpot` whose `id` is the slot name and whose `accepts`
+ * is that slot name PLUS whatever reserved type used to hand-wire itself onto that slot in
+ * the renderers: `foe` also accepts `adversary` (the adversary rendered at the `foe` anchor,
+ * falling back to `building`), and `marker` also accepts `quest` (quest markers had "no
+ * dedicated board anchor" and shared the marker slot). `skull`/`hero`/`building` accept only
+ * themselves.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -25,34 +34,60 @@ const srcDir = resolve(here, '../../src/board');
 
 const round5 = (n) => Number(n.toFixed(5));
 
-// --- anchors: round coordinates, preserve location/slot order ---
-const anchors = {};
+/** Extra reserved type ids a legacy slot's spot must also `accepts`, beyond its own slot name. */
+const EXTRA_ACCEPTS = {
+  foe: ['adversary'],
+  marker: ['quest'],
+};
+
+// --- spots: one BoardSpot per legacy slot, preserving location/slot order ---
+const spots = {};
 for (const [loc, slots] of Object.entries(data.anchors)) {
-  const out = {};
-  for (const [slot, { x, y }] of Object.entries(slots)) {
-    out[slot] = { x: round5(x), y: round5(y) };
-  }
-  anchors[loc] = out;
+  spots[loc] = Object.entries(slots).map(([slot, { x, y }]) => ({
+    id: slot,
+    at: { x: round5(x), y: round5(y) },
+    accepts: [slot, ...(EXTRA_ACCEPTS[slot] ?? [])],
+  }));
 }
 
 const anchorsFile = `/**
- * Multi-slot layout anchors for the Return to Dark Tower board, plus board-image
- * metadata. Each location carries one anchor per occupant slot type that can
- * appear there (a building space adds 'building' + 'skull'); renderers fan
- * multiple tokens around a single slot. Coordinates are normalized [0, 1] against
- * the board image, so they are resolution-independent.
+ * Marked spots for the Return to Dark Tower board, plus board-image metadata. Each
+ * location carries one spot per occupant slot type that can appear there (a building
+ * space adds 'building' + 'skull'); renderers fan multiple tokens around a single spot.
+ * Coordinates are normalized [0, 1] against the board image, so they are
+ * resolution-independent.
  *
  * GENERATED from tools/location-marker/udtBoardData.json by gen-board-data.mjs.
  * Do not hand-edit — re-author in the location-marker tool and regenerate.
  */
 
-export type Anchor = { x: number; y: number };
+export type SpotPoint = { x: number; y: number };
 
-export type AnchorSlot = 'building' | 'skull' | 'hero' | 'foe' | 'marker';
+/** A marked spot on a location: a point plus the token type ids it accepts. */
+export type BoardSpot = {
+  id: string;
+  at: SpotPoint;
+  accepts: readonly string[];
+};
 
-export type LocationAnchors = Partial<Record<AnchorSlot, Anchor>>;
+export type BoardSpotMap = Readonly<Record<string /* LocationName */, readonly BoardSpot[]>>;
 
-export type BoardAnchorMap = Readonly<Record<string /* LocationName */, LocationAnchors>>;
+/**
+ * Token type ids usable in a spot's \`accepts\` with no \`library.tokenTypes\` registry entry —
+ * the RtDT board vocabulary every consumer understands natively.
+ */
+export const RESERVED_TOKEN_TYPES = [
+  'hero',
+  'foe',
+  'adversary',
+  'building',
+  'skull',
+  'monument',
+  'marker',
+  'quest',
+] as const;
+
+export type ReservedTokenType = (typeof RESERVED_TOKEN_TYPES)[number];
 
 /**
  * Board-image metadata so consumers can map normalized image coordinates onto a
@@ -71,8 +106,8 @@ export type BoardImageInfo = {
 
 export const BOARD_IMAGE_INFO: BoardImageInfo = ${JSON.stringify(data.imageInfo)};
 
-/** Layout anchors for all 60 board locations, keyed by location name. */
-export const BOARD_ANCHORS: BoardAnchorMap = ${JSON.stringify(anchors)};
+/** Marked spots for all 60 board locations, keyed by location name. */
+export const BOARD_SPOTS: BoardSpotMap = ${JSON.stringify(spots)};
 `;
 
 const adjacencyFile = `/**

@@ -26,3 +26,15 @@ this app, including the React rules — `eslint.config.js` scopes them to
 Standard Vite scripts; `build` = `tsc -b && vite build`; `test` = `vitest run` (tests colocated
 under `src/`). Like `apps/creator`, its Vite setup pre-bundles `ultimatedarktower` (see the
 `vite-apps-must-prebundle-udt` gotcha).
+
+## `localStorage` in tests needs `src/test/setup.ts`
+
+Node 22+ defines a global `localStorage` accessor gated behind `--localstorage-file` (present but
+returns `undefined` without the flag). Vitest's jsdom environment only overrides globals on its
+own allowlist, and `localStorage`/`sessionStorage` aren't on it — so Node's inert getter silently
+shadows jsdom's real, working `Storage` before any test runs; a test hitting bare `localStorage`
+sees `undefined`, not a jsdom object. `vite.config.ts`'s `test.setupFiles` points at
+`src/test/setup.ts`, which redirects the global accessors to the real jsdom-backed storage at
+`globalThis.jsdom.window`. Don't remove that setup file or its `setupFiles` wiring — tests that
+touch `localStorage` (`gameStore.test.ts`'s save/load/stale-session suite) fail cryptically
+without it.

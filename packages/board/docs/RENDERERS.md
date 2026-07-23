@@ -3,7 +3,7 @@
 | Renderer        | Entry      | Notes                                                                                |
 | --------------- | ---------- | ------------------------------------------------------------------------------------ |
 | `BoardReadout`  | `.`        | Deterministic text; the snapshot test target. Optional per-kingdom filter via focus. |
-| `BoardMap2D`    | `.`        | Inline SVG over the board image; tokens placed via `BOARD_ANCHORS`. Click-to-select. |
+| `BoardMap2D`    | `.`        | Inline SVG over the board image; tokens placed via `BOARD_SPOTS`. Click-to-select.   |
 | `Board3DPlugin` | `./plugin` | 3D in-scene board; a Display `ScenePlugin`.                                          |
 
 All visual renderers implement `BoardRenderer` (`render(state, focus?)`, optional `dispose()`).
@@ -37,11 +37,13 @@ const DEFAULT_FOCUS: BoardFocus = { kingdom: 'all', angle: 'overhead' };
 
 - **Token art is never bundled.** It is loaded at runtime from `assetBaseUrl` by convention
   `${assetBaseUrl}${group}/${kebab(id)}.png`: `foes/<kebab(foe)>`, `adversaries/<kebab(id)>`,
-  `monuments/<kebab(monument)>`, `markers/skull`, `markers/<kebab(marker)>`. `kebab('Utuk'Ku')` →
+  `monuments/<kebab(monument)>`, `markers/skull`, `markers/<kebab(marker)>`. **Any kind with no
+  dedicated case — including an author-defined custom token type — falls through to
+  `markers/<kebab(art)>`**, so a new type gets art by convention with zero code. `kebab('Utuk'Ku')` →
   `utuk-ku`. Pass `resolveTokenImage` to override.
 - When art is missing (image error) or `resolveTokenImage` returns `null`, the token falls back to a
   **programmatic labeled disc**. Heroes always use the fallback (no hero art exists yet).
-- `northHeadingDegrees` is **not** applied — `BOARD_ANCHORS` are normalized against the upright board
+- `northHeadingDegrees` is **not** applied — `BOARD_SPOTS` are normalized against the upright board
   image (that field is for the 3D disc only).
 - **Mouse interaction.** Wheel zooms toward the cursor; double-click resets (zoom **and** spin). A
   **left-drag** follows `dragMode`: `'rotate'` (default) spins the whole board about its center — grab a
@@ -53,7 +55,7 @@ const DEFAULT_FOCUS: BoardFocus = { kingdom: 'all', angle: 'overhead' };
   is renderer-local UI state — it is never written to `BoardState`. Add/move/delete editing lives in the
   dockable UI (below).
 - **Armed space-pick.** Pass a `LocationPickStore` as `locationPick`. While it reports _armed_ (the
-  palette's add flow), the map draws clickable space targets at the anchors (building-only when the pending
+  palette's add flow), the map draws clickable space targets at the spots (building-only when the pending
   placement targets buildings); a space click calls `store.pick(loc)` (and `onLocationPick`). Disarmed, the
   map behaves exactly as before.
 
@@ -94,11 +96,13 @@ ui.dispose();
 
 Three movable / dockable / show-hide-configurable panels:
 
-- **Palette** — add a foe (type + status), adversary, space marker, or skull. Click **Add**, pick a space
-  (click the 2D/3D board while armed, or use the location dropdown), then **Confirm**. A collapsible
+- **Palette** — add a hero, foe (type + status), adversary, space marker, quest marker, skull, monument,
+  or (via the `tokenTypes` option) an author-defined `library.tokenTypes` entry. Click **Add**, pick a
+  space (click the 2D/3D board while armed, or use the location dropdown), then **Confirm**. A collapsible
   **Setup** section dispatches `setSelections`. The Hero and Monument categories are roster-driven from
   UDT's re-exported `HEROES` / `MONUMENTS` (a placed hero uses its identity id as the instance id;
-  monuments are building-targeted → `setMonument`).
+  monuments are building-targeted → `setMonument`); a custom type places a plain instance via
+  `placeToken` — no per-kind detail row.
 - **Inspector** — edits the active `selection`: move/remove a hero or foe, set foe status, place/clear the
   adversary, change a building's skulls / destroy-restore / monument, or remove a marker.
 - **Summary** — per-kingdom counts (heroes, foes, skulls, razed, markers, adversary).

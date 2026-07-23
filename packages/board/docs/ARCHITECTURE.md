@@ -42,7 +42,7 @@ out to the host.
 ```
 command ──► applyBoardCommand (pure reducer) ──► next BoardState ──► controller commits/emits
                                                                       │
-                                       change + tokenAdded/Moved/Removed/buildingChanged/…
+                                    change + tokenAdded/Moved/Removed/Changed + selectionChanged
                                                                       ▼
                                           renderers (readout, 2D map, 3D plugin) + summary UI
 ```

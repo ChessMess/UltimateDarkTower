@@ -9,8 +9,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
 Composable **state + renderers** for the _Return to Dark Tower_ game board. It owns a
-`BoardState` (heroes, foes, adversary, skulls-on-buildings, monuments, space markers),
-renders it three ways — text readout, 2D overhead map, 3D in-scene board — and ships an
+`BoardState` — a single `tokens: Record<string, PlacedToken>` collection covering heroes,
+foes, the adversary, buildings (with skulls), and markers (space/quest) — renders it three ways — text readout, 2D overhead map, 3D in-scene board — and ships an
 optional dockable editing UI. The 3D board is a `ScenePlugin` for
 [`ultimatedarktowerdisplay`](https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/display)'s
 `Tower3DView`. It enforces **no game rules**: it stores, renders, and emits events; hosts own rules.
@@ -96,7 +96,7 @@ npm run dev:board   # equivalent alias for the same demo
 
 - `ultimatedarktowerdata` board data/graph: **as of v6.0.0**, re-exported here from this
   zero-dependency, Bluetooth-free package (not from `ultimatedarktower`, which no longer ships it) —
-  `BOARD_LOCATIONS`, `BOARD_ANCHORS`, `BOARD_IMAGE_INFO`, `BOARD_ADJACENCY`, and
+  `BOARD_LOCATIONS`, `BOARD_SPOTS`, `BOARD_IMAGE_INFO`, `BOARD_ADJACENCY`, and
   `neighborsOf`/`stepDistance`/`shortestPath`.
 - `ultimatedarktowerdisplay`'s `anchorToWorld`: **shipped in `0.9.0`** (peer `^0.9.0`); the 3D plugin's
   token placement uses it.
@@ -114,7 +114,7 @@ image + audio; ~100 MB installed).
 Part of the _Return to Dark Tower_ family — the **board-domain** sibling to the tower-domain Display:
 
 - [ultimatedarktowerdata](https://github.com/ChessMess/UltimateDarkTower/tree/main/packages/game-data) — the static board
-  data this package re-exports (locations, rosters, `BOARD_ANCHORS`, `BOARD_ADJACENCY` + graph helpers);
+  data this package re-exports (locations, rosters, `BOARD_SPOTS`, `BOARD_ADJACENCY` + graph helpers);
   zero dependencies, no Bluetooth.
 - [ultimatedarktower](https://github.com/ChessMess/UltimateDarkTower) — the BLE driver for the physical
   tower (not a dependency of this package as of v6.0.0).

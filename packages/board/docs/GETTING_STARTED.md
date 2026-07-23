@@ -14,7 +14,7 @@ const board = new BoardRenderView();
 // React to state changes (the firehose):
 board.controller.on('change', ({ state }) => console.log(state));
 
-// Mutate via named methods (or board.controller.dispatch({ type: 'placeHero', ... })):
+// Mutate via named methods (or board.controller.dispatch({ type: 'placeToken', ... })):
 board.controller.placeHero('hero-1', 'Broken Lands');
 
 console.log(board.readout.getText());

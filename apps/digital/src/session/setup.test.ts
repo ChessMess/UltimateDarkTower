@@ -23,13 +23,15 @@ describe('createNewGameSession placement', () => {
       ],
     };
     const session = createNewGameSession(config);
-    expect(session.board.heroes['brutal-warlord']).toMatchObject({
+    expect(session.board.tokens['brutal-warlord']).toMatchObject({
+      typeId: 'hero',
       location: 'Radiant Mountains',
-      owner: 'north',
+      data: { owner: 'north' },
     });
-    expect(session.board.heroes['spymaster']).toMatchObject({
+    expect(session.board.tokens['spymaster']).toMatchObject({
+      typeId: 'hero',
       location: 'Hissing Groves',
-      owner: 'west',
+      data: { owner: 'west' },
     });
   });
 });
