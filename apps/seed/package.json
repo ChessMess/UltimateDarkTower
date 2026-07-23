@@ -8,6 +8,7 @@
     "build": "vite build",
     "test": "vitest run --passWithNoTests",
     "dev": "vite",
+    "dev:seed": "pnpm run dev",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",

@@ -128,6 +128,7 @@ For the full documentation index see [docs/README.md](docs/README.md).
 ```bash
 npm install
 npm run dev:example   # Vite dev server + open example/index.html
+npm run dev:display   # equivalent alias for the same demo
 npm run typecheck
 npm run lint
 npm test

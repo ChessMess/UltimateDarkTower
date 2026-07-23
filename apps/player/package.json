@@ -6,6 +6,7 @@
   "scripts": {
     "predev": "pnpm --filter @udtc/engine build",
     "dev": "vite",
+    "dev:player": "pnpm run dev",
     "build": "tsc --build && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --build",

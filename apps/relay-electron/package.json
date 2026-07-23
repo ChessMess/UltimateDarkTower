@@ -6,6 +6,7 @@
   "main": ".vite/build/main.js",
   "scripts": {
     "dev": "electron-forge start",
+    "dev:relay-electron": "pnpm run dev",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

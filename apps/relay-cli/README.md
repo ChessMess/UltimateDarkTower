@@ -16,6 +16,9 @@ pnpm --filter ultimatedarktowerrelay-cli build
 pnpm --filter ultimatedarktowerrelay-cli start
 ```
 
+Shortcut for both steps together: `pnpm run dev:relay-cli` (from the repo
+root, or from this directory).
+
 ### Tower source modes
 
 ```bash

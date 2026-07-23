@@ -8,6 +8,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
+    "dev:digital": "pnpm run dev",
     "build": "tsc --build && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --build --noEmit",
