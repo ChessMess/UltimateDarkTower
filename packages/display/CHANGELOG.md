@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.2
+
+### Patch Changes
+
+- fba6490: Add a `dev:<name>` convenience script (`dev:board` / `dev:display` /
+  `dev:mcp-server`) as an alias for the existing demo/dev command — no
+  behavior change.
+- Updated dependencies [33381f7]
+  - ultimatedarktowerdata@2.1.0
+
 ## 1.0.1
 
 ### Patch Changes

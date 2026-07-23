@@ -1,6 +1,6 @@
 {
   "name": "ultimatedarktowerdigital",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "type": "module",
   "description": "Play a solo base game of Return to Dark Tower in the browser — software tower emulator, digital game board, and digital player boards composed from the UDT library family.",

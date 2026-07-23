@@ -1,5 +1,16 @@
 # @udtc/creator
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [fba6490]
+- Updated dependencies [33381f7]
+  - ultimatedarktowerboard@2.0.0
+  - ultimatedarktowerdisplay@1.0.2
+  - @udtc/schema@0.3.0
+  - @udtc/adapters@0.3.0
+
 ## 0.2.2
 
 ### Patch Changes
