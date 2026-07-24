@@ -30,8 +30,8 @@
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly",
     "build:example": "vite build --config vite.config.example.ts",
-    "dev": "vite",
-    "dev:example": "vite --open /example/index.html",
+    "dev": "trap 'exit 0' INT TERM; vite",
+    "dev:example": "trap 'exit 0' INT TERM; vite --open /example/index.html",
     "dev:display": "pnpm run dev:example",
     "test": "vitest run",
     "test:watch": "vitest --project unit",

@@ -19,7 +19,7 @@
   },
   "scripts": {
     "build": "tsc --build",
-    "dev": "tsc --build --watch",
+    "dev": "trap 'exit 0' INT TERM; tsc --build --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",

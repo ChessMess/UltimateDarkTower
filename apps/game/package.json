@@ -7,9 +7,9 @@
   "scripts": {
     "build": "vite build",
     "test": "vitest run --passWithNoTests",
-    "dev": "vite",
+    "dev": "trap 'exit 0' INT TERM; vite",
     "dev:game": "pnpm run dev",
-    "preview": "vite preview",
+    "preview": "trap 'exit 0' INT TERM; vite preview",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
