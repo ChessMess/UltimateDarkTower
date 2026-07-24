@@ -1,5 +1,6 @@
 import type * as THREE from 'three';
 import type { DeepRequired } from '../3d/types';
+import type { SkullCounts } from './skullCounts';
 export type { DeepRequired };
 
 /**
@@ -179,6 +180,20 @@ export interface SkullPhysicsHandle {
    * any drops queued before init resolved. Safe to call at any time.
    */
   clearSkulls(): void;
+  /**
+   * Snapshot of where every live skull currently is. `total` always equals
+   * `inTower + onBoard + inTransit`. `inTower` uses the radial signal
+   * (center within the tower's measured shell/base outline); `onBoard`
+   * uses the independent height signal (center resting at board level,
+   * outside the base outline); anything ambiguous or in motion (falling
+   * in, sliding down the base exterior, below-board pending despawn)
+   * lands in `inTransit`, which is 0 whenever the sim is settled — so
+   * `total - onBoard === inTower` exactly when the two signals agree.
+   * `pending` (drops queued before init resolved) is reported separately
+   * and excluded from `total`. Cheap (O(live skulls)); safe to poll every
+   * frame.
+   */
+  getSkullCounts(): SkullCounts;
   /**
    * Get a deep-cloned snapshot of the current fully-resolved physics
    * config. Safe to mutate the result.

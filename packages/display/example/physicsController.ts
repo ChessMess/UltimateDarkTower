@@ -9,6 +9,8 @@ import { getDisplay, onViewChange } from './rendererController';
 import { notifyPhysicsConfigChanged } from './configEditor';
 
 let handle: SkullPhysicsHandle | null = null;
+let countsIntervalId: ReturnType<typeof setInterval> | null = null;
+let lastCountsText = '';
 
 /**
  * Working `PhysicsConfig` accumulated from slider/JSON edits. We pass this
@@ -108,12 +110,36 @@ function reattach(): void {
     board: { radiusFactor: readVisualBoardRadius() },
   });
   handle = attachSkullPhysics(view, workingConfig);
+  refreshSkullCountsReadout();
 }
 
 function detach(): void {
   if (handle) {
     handle.dispose();
     handle = null;
+  }
+  refreshSkullCountsReadout();
+}
+
+/**
+ * Poll `getSkullCounts()` and mirror it into the `#skull-counts` toolbar
+ * label. Only touches the DOM when the formatted text actually changes.
+ */
+function refreshSkullCountsReadout(): void {
+  const el = document.getElementById('skull-counts');
+  if (!el) return;
+  const counts = handle?.getSkullCounts();
+  let text: string;
+  if (!counts) {
+    text = 'Skulls: —';
+  } else {
+    text = `Skulls: ${counts.total} total · ${counts.inTower} tower · ${counts.onBoard} board`;
+    if (counts.inTransit > 0) text += ` · ${counts.inTransit} transit`;
+    if (counts.pending > 0) text += ` · ${counts.pending} queued`;
+  }
+  if (text !== lastCountsText) {
+    lastCountsText = text;
+    el.textContent = text;
   }
 }
 
@@ -125,13 +151,25 @@ export function initPhysicsController(): void {
     btnDrop.addEventListener('click', () => {
       if (!handle && isThreeDActive()) reattach();
       handle?.dropSkull();
+      refreshSkullCountsReadout();
     });
   }
 
   const btnClear = document.getElementById('btn-clear-skulls') as HTMLButtonElement | null;
   if (btnClear) {
-    btnClear.addEventListener('click', () => handle?.clearSkulls());
+    btnClear.addEventListener('click', () => {
+      handle?.clearSkulls();
+      refreshSkullCountsReadout();
+    });
   }
+
+  // Live counts readout: polled rather than event-driven since positions
+  // change every physics step. initPhysicsController() runs once at boot
+  // (see example.ts), but the interval is guarded defensively in case that
+  // ever changes.
+  if (countsIntervalId !== null) clearInterval(countsIntervalId);
+  countsIntervalId = setInterval(refreshSkullCountsReadout, 250);
+  refreshSkullCountsReadout();
 
   if (chkDebug) {
     chkDebug.addEventListener('change', () => {

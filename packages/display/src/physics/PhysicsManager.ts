@@ -5,6 +5,7 @@ import { resolvePhysics } from './PhysicsResolver';
 import { buildStaticColliderSpecs } from './buildColliders';
 import { loadSkullModel, type SkullTemplate } from './SkullModelLoader';
 import { cloneSkullMesh, buildHullColliderDesc } from './SkullSpawner';
+import { aggregateSkullCounts, type SkullCounts } from './skullCounts';
 
 // Rapier is dynamic-imported inside init() so the WASM init runs once.
 type RAPIER_NS = typeof import('@dimforge/rapier3d-compat');
@@ -128,6 +129,10 @@ export class PhysicsManager {
     modelBottomY: -1,
     modelTopY: 1,
   };
+  /** Max radial extent of the 12 seal meshes — the shell at drum levels. Set once at model-ready. */
+  private shellRadius: number | null = null;
+  /** Min-over-azimuth radial extent of static geometry near board level — the base's narrowest outline. */
+  private baseRadiusAtBoard: number | null = null;
 
   /** Debug-visualization line segments overlay (opt-in via config.debug.colliders). */
   private debugLines: THREE.LineSegments | null = null;
@@ -383,6 +388,41 @@ export class PhysicsManager {
     this.boardCollider = null;
     this.boardLipBody = null;
     this.boardLipCollider = null;
+    this.shellRadius = null;
+    this.baseRadiusAtBoard = null;
+  }
+
+  /**
+   * Snapshot of where every live skull currently is. `total` always equals
+   * `inTower + onBoard + inTransit`. `inTower` uses the radial signal (center
+   * within the tower's measured shell/base outline); `onBoard` uses the
+   * independent height signal (center resting at board level, outside the
+   * base outline); anything ambiguous or in motion (falling in, sliding down
+   * the base exterior, below-board pending despawn) lands in `inTransit`,
+   * which is 0 whenever the sim is settled — so `total - onBoard ===
+   * inTower` exactly when the two signals agree. `pending` (drops queued
+   * before init resolved) is reported separately and excluded from `total`,
+   * since those skulls haven't spawned yet. Cheap (O(live skulls)); safe to
+   * poll every frame.
+   */
+  getSkullCounts(): SkullCounts {
+    const pending = this.pendingDrops;
+    const total = this.skulls.length;
+    if (!this.world || !this.ready || total === 0) {
+      return { total, inTower: 0, onBoard: 0, inTransit: total, pending };
+    }
+    const fallbackRadius = this.bounds.modelRadius * 0.33;
+    return aggregateSkullCounts(
+      this.skulls.map((s) => s.body.translation()),
+      {
+        shellRadius: this.shellRadius ?? fallbackRadius,
+        baseRadiusAtBoard: this.baseRadiusAtBoard ?? this.shellRadius ?? fallbackRadius,
+        boardTopY: this.bounds.modelBottomY,
+        modelTopY: this.bounds.modelTopY,
+        skullRadius: this.bounds.modelRadius * this.config.skull.radiusFactor,
+      },
+      pending,
+    );
   }
 
   // ── internals ──────────────────────────────────────────────────────────
@@ -506,6 +546,9 @@ export class PhysicsManager {
    *     local frame (scale baked in via worldScale at build time).
    *   - Seals (`seal_*`): skipped — handled by the kinematic door colliders
    *     and the seal-state listener.
+   *
+   * Also measures `shellRadius`/`baseRadiusAtBoard` from the same vertex
+   * data, for `getSkullCounts()`'s zone classification.
    */
   private buildGlbTrimeshColliders(root: THREE.Object3D): void {
     if (!this.rapier || !this.world) return;
@@ -514,6 +557,18 @@ export class PhysicsManager {
 
     // Make sure every transform is current before we read matrixWorld.
     root.updateMatrixWorld(true);
+
+    // Measured alongside collider construction, for getSkullCounts()'s zone
+    // classification: the seal-mesh extent gives the shell radius at drum
+    // levels; the static-mesh extent in the bottom band gives the base's
+    // narrowest outline at board height (binned by azimuth since the base
+    // skirt is not rotationally symmetric — see skullCounts.ts).
+    const measureScratch = new THREE.Vector3();
+    let maxSealRadial = -1;
+    const BASE_BAND_AZIMUTH_BINS = 16;
+    const baseBandMaxByBin = new Float32Array(BASE_BAND_AZIMUTH_BINS).fill(-1);
+    const baseBandCutoffY =
+      this.bounds.modelBottomY + 0.05 * (this.bounds.modelTopY - this.bounds.modelBottomY);
 
     let staticBuilt = 0;
     root.traverse((child) => {
@@ -534,6 +589,12 @@ export class PhysicsManager {
 
       const sealId = parseSealNode(name);
       if (sealId) {
+        for (let i = 0; i < posAttr.count; i++) {
+          measureScratch.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+          measureScratch.applyMatrix4(mesh.matrixWorld);
+          const radial = Math.hypot(measureScratch.x, measureScratch.z);
+          if (radial > maxSealRadial) maxSealRadial = radial;
+        }
         this.buildSealTrimesh(mesh, sealId, posAttr, geom);
         return;
       }
@@ -548,6 +609,16 @@ export class PhysicsManager {
         verts[i * 3 + 0] = v.x;
         verts[i * 3 + 1] = v.y;
         verts[i * 3 + 2] = v.z;
+
+        if (v.y <= baseBandCutoffY) {
+          const radial = Math.hypot(v.x, v.z);
+          const azimuth = Math.atan2(v.z, v.x); // (-PI, PI]
+          const bin = Math.min(
+            BASE_BAND_AZIMUTH_BINS - 1,
+            Math.floor(((azimuth + Math.PI) / (2 * Math.PI)) * BASE_BAND_AZIMUTH_BINS),
+          );
+          if (radial > baseBandMaxByBin[bin]) baseBandMaxByBin[bin] = radial;
+        }
       }
       const indices = extractIndices(geom, posAttr.count);
 
@@ -563,6 +634,13 @@ export class PhysicsManager {
     });
 
     this.trimeshCount = staticBuilt;
+
+    if (maxSealRadial >= 0) this.shellRadius = maxSealRadial;
+    let minBaseRadial = -1;
+    for (const binMax of baseBandMaxByBin) {
+      if (binMax >= 0 && (minBaseRadial < 0 || binMax < minBaseRadial)) minBaseRadial = binMax;
+    }
+    if (minBaseRadial >= 0) this.baseRadiusAtBoard = minBaseRadial;
   }
 
   /**

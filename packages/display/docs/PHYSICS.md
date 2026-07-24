@@ -203,6 +203,7 @@ A deeply-nested partial. Every field is optional; missing leaves fall back to `D
 interface SkullPhysicsHandle {
   dropSkull(): void;
   clearSkulls(): void;
+  getSkullCounts(): SkullCounts;
   getPhysicsConfig(): ResolvedPhysicsConfig;
   applyPhysicsConfig(partial: PhysicsConfig): void;
   dispose(): void;
@@ -211,9 +212,60 @@ interface SkullPhysicsHandle {
 
 - `dropSkull()` — Add one skull just above `modelTopY`. No-op once `skull.maxCount` simultaneous skulls are live; calls made before init resolves are queued and replayed once it does.
 - `clearSkulls()` — Remove every active skull immediately and cancel any queued drops. Safe to call before init resolves.
+- `getSkullCounts()` — Snapshot of where every live skull currently is. See [Counting skulls](#counting-skulls) below.
 - `getPhysicsConfig()` — Deep-cloned snapshot of the fully-resolved config. Safe to mutate.
 - `applyPhysicsConfig(partial)` — Merge a partial config on top of the current one. See lifecycle semantics above.
 - `dispose()` — Tear down the Rapier world, remove every skull, and unsubscribe from frame and seal-state callbacks. Safe to call multiple times.
+
+### Counting skulls
+
+```ts
+interface SkullCounts {
+  total: number;
+  inTower: number;
+  onBoard: number;
+  inTransit: number;
+  pending: number;
+}
+```
+
+`getSkullCounts()` classifies every live skull into a zone and returns the tally. It's a
+poll, not a push API — cheap (`O(live skulls)`, capped by `skull.maxCount`) and safe to
+call every frame.
+
+- **`total`** — every skull body currently in the Rapier world.
+- **`inTower`** — inside the tower's shell at drum height, or radially within the base's
+  outline at board height (archways / hollow base interior count as still-inside).
+- **`onBoard`** — resting at board height, outside the base's outline.
+- **`inTransit`** — falling in above the rim, sliding down the base's exterior skirt,
+  mid-doorway, or below the board pending the OOB despawn. **Always `0` once the sim
+  settles.**
+- **`pending`** — `dropSkull()` calls still queued (init not yet resolved, or a skull
+  model still loading). Not spawned yet, so **not** included in `total`.
+
+**Design**: `inTower`/`onBoard` come from two independent signals — `inTower` from the
+skull's _radial_ distance from the tower axis, `onBoard` from its _height_ relative to
+the board surface — rather than one derived from the other. That makes
+`total === inTower + onBoard + inTransit` a genuine partition rather than a definitional
+identity: `total - onBoard === inTower` exactly when the two signals agree, i.e. whenever
+`inTransit === 0`. A non-zero `inTransit` is the visible signal that skulls are mid-motion
+(or, for a badly-behaved custom model, that the two signals disagree).
+
+**How the geometry is measured**: at model-ready time, alongside collider construction,
+the manager measures two radii from the loaded GLB — `shellRadius` (the max radial extent
+of the 12 seal meshes — the shell a skull can reach at drum levels) and
+`baseRadiusAtBoard` (the _narrowest_ radial extent of static geometry in the bottom 5% of
+the model's height, binned into 16 azimuth wedges and taking the min-of-max across wedges,
+since a rock-textured base is rarely rotationally symmetric). If a custom GLB has no seal
+meshes or no static geometry near the bottom, both fall back to `0.33 × modelRadius`
+(`baseRadiusAtBoard` further falls back to `shellRadius` if that's the only one available).
+
+**Known limitations**: tolerances (the board-height band, `ON_BOARD_HEIGHT_FACTOR × skull
+radius`) use the skull's _current_ `skull.radiusFactor` — a skull dropped under a
+previously larger radius may sit one zone off near a boundary. A skull that comes to rest
+on a flat spot of the base's exterior skirt (mid-height, outside `shellRadius`) reads
+`inTransit` indefinitely rather than `onBoard` — visible in the readout instead of being
+silently miscounted as in-tower.
 
 ### `DEFAULT_PHYSICS` and `resolvePhysics`
 

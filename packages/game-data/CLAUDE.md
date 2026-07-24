@@ -30,7 +30,19 @@ lift rules (`foe` spots also accept `adversary`; `marker` spots also accept `que
 
 ## Build & test
 
-- `build` = `tsc --build` (composite project, `"composite": true`), `ES2022`/CommonJS.
+- `build` = `tsc --build` (composite project, `"composite": true`, `ES2022`/CommonJS,
+  `dist/`) **and** a hand-rolled `esbuild --bundle` ESM pass per entry point
+  (`dist/esm/{index,board/index,seed/index}.mjs`) — same pattern as `packages/core`'s
+  `browser`-condition fix. Needed because this package's CJS `export * from` re-exports
+  compile to tsc's `__exportStar(require(...), exports)` runtime helper, which Vite/esbuild's
+  static CJS-named-export detection can't see through — `import { GLYPHS } from
+'ultimatedarktowerdata'` would come back "does not provide an export named 'GLYPHS'" in any
+  dev server that serves this package's CJS dist raw (native ESM interop) rather than running
+  it through a real bundler pass. The `exports` map's `import` condition points at the ESM
+  bundle; `require` still gets the plain `tsc` CJS output — pure-additive, no consumer changes
+  needed. Do **not** re-add `optimizeDeps.include`/alias workarounds in a consumer's vite
+  config for this package now that the fix lives here (see `packages/core/CLAUDE.md`'s
+  analogous note and `packages/board/vite.config.example.ts`'s history for why).
 - `lint` = `eslint .` (root flat config); no package-local `ci` script — relies on the
   root `pnpm -r` fan-out for that.
 - Tests are **vitest** (`tests/`, not colocated), one file per data module. Config lives in
