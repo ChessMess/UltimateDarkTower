@@ -14,6 +14,7 @@ export type {
 export { DEFAULT_PHYSICS, resolvePhysics } from './PhysicsResolver';
 export { loadSkullModel, clearSkullModelCache } from './SkullModelLoader';
 export type { SkullTemplate, LoadSkullModelOptions } from './SkullModelLoader';
+export type { SkullCounts, SkullZone } from './skullCounts';
 
 /**
  * Attach physics-driven skulls to a Tower3DView. Returns immediately with a
@@ -80,6 +81,9 @@ export function attachSkullPhysics(
     },
     clearSkulls(): void {
       pm.clearSkulls();
+    },
+    getSkullCounts() {
+      return pm.getSkullCounts();
     },
     getPhysicsConfig() {
       return pm.getPhysicsConfig();

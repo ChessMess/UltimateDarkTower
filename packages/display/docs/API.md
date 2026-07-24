@@ -72,6 +72,8 @@ import type {
   ResolvedPhysicsConfig,
   SkullPhysicsHandle,
   SkullTemplate,
+  SkullCounts,
+  SkullZone,
   DeepRequired,
 } from 'ultimatedarktowerdisplay/physics';
 ```
@@ -1017,8 +1019,15 @@ skulls.dropSkull();
 skulls.applyPhysicsConfig({ skull: { restitution: 0.4 } }); // live tuning
 ```
 
-`SkullPhysicsHandle` — `{ dropSkull(): void; clearSkulls(): void; getPhysicsConfig():
-ResolvedPhysicsConfig; applyPhysicsConfig(partial: PhysicsConfig): void; dispose(): void }`.
+`SkullPhysicsHandle` — `{ dropSkull(): void; clearSkulls(): void; getSkullCounts(): SkullCounts;
+getPhysicsConfig(): ResolvedPhysicsConfig; applyPhysicsConfig(partial: PhysicsConfig): void;
+dispose(): void }`.
+
+`getSkullCounts()` returns `{ total, inTower, onBoard, inTransit, pending }` — a poll-safe
+snapshot of where every live skull currently is, classified by two independent signals (radial
+position for `inTower`, height for `onBoard`), so `total - onBoard === inTower` whenever the sim
+is settled (`inTransit === 0`). See [PHYSICS §Counting skulls](PHYSICS.md#counting-skulls) for
+the full field/threshold reference.
 
 Supporting exports:
 
@@ -1028,6 +1037,7 @@ Supporting exports:
   `oob`); pass any subset.
 - `ResolvedPhysicsConfig` — `PhysicsConfig` with every leaf required (`DeepRequired<PhysicsConfig>`).
 - `SkullTemplate` — a preprocessed skull model (decimated mesh + hull points) for `skull.modelUrl`.
+- `SkullCounts` / `SkullZone` — the shape returned by `getSkullCounts()` and its per-skull zone type.
 - `DeepRequired<T>` — utility type making every nested property required (re-exported from the main types).
 
 ---

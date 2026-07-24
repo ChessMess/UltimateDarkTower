@@ -9,13 +9,12 @@ const exampleDir = resolve(__dirname, 'example');
 // v6.0.0: the core barrel's re-exported data now comes from `ultimatedarktowerdata` — a
 // plain zero-dependency package with no browser-hostile `createRequire` banner — so none of
 // the alias/commonjsOptions workarounds `ultimatedarktower` needed are required here anymore.
-// It DOES still need `optimizeDeps.include` below: it ships CJS-only (no ESM/browser
-// condition), and Vite's dev server doesn't run its CJS-interop transform on a linked
-// workspace package served raw via /@fs/ — the browser then tries to parse plain
-// `exports.X = ...` as native ESM and finds no named exports at all ("does not provide an
-// export named 'BOARD_LOCATIONS'"). Forcing it through the esbuild pre-bundle, same as the
-// apps' vite configs do for their own linked `@udtc/*`/`ultimatedarktowerboard` deps, gives
-// it a real interop pass.
+// `ultimatedarktowerdata` used to also need `optimizeDeps.include` (it shipped CJS-only, and
+// Vite dev's CJS-interop transform doesn't run on a linked workspace package served raw via
+// /@fs/, so `export * from` re-exports like `GLYPHS`/`BOARD_LOCATIONS` came back missing).
+// That's fixed at the source now — the package ships a real `import` condition
+// (`dist/esm/index.mjs`, an esbuild ESM bundle with genuine named exports, same pattern as
+// core's `browser` condition fix) — so no per-consumer workaround is needed here either.
 //
 // The demo composes the full board: the 3D board (TowerRenderView + Board3DPlugin via
 // Display 0.9's `anchorToWorld`) alongside the 2D map, the text readout, the shared focus
@@ -34,11 +33,6 @@ export default defineConfig({
     // 3D plugin builds Object3Ds with the consumer's `three`, so a duplicate
     // copy would silently fail to render (see ROADMAP §2 "single three").
     dedupe: ['three'],
-  },
-  optimizeDeps: {
-    // Pre-bundle the linked `ultimatedarktowerdata` so its CJS dist gets a real ESM interop
-    // pass instead of being served raw — see the comment above.
-    include: ['ultimatedarktowerdata'],
   },
   build: {
     outDir: resolve(__dirname, 'example/dist'),

@@ -4,19 +4,23 @@
   "description": "Return to Dark Tower reference data — board locations, foes, heroes, monuments, box inventory, and seed parsing. Zero dependencies.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "module": "dist/esm/index.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/esm/index.mjs",
+      "require": "./dist/index.js"
     },
     "./board": {
       "types": "./dist/board/index.d.ts",
-      "default": "./dist/board/index.js"
+      "import": "./dist/esm/board/index.mjs",
+      "require": "./dist/board/index.js"
     },
     "./seed": {
       "types": "./dist/seed/index.d.ts",
-      "default": "./dist/seed/index.js"
+      "import": "./dist/esm/seed/index.mjs",
+      "require": "./dist/seed/index.js"
     }
   },
   "files": [
@@ -26,7 +30,7 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && esbuild src/index.ts --bundle --format=esm --outfile=dist/esm/index.mjs --packages=external && esbuild src/board/index.ts --bundle --format=esm --outfile=dist/esm/board/index.mjs --packages=external && esbuild src/seed/index.ts --bundle --format=esm --outfile=dist/esm/seed/index.mjs --packages=external",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
@@ -64,6 +68,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "catalog:",
+    "esbuild": "^0.28.1",
     "vitest": "catalog:"
   }
 }
