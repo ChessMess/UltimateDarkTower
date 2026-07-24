@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "predev": "pnpm --filter @udtc/engine build",
-    "dev": "vite",
+    "dev": "trap 'exit 0' INT TERM; vite",
     "dev:player": "pnpm run dev",
     "build": "tsc --build && vite build",
-    "preview": "vite preview",
+    "preview": "trap 'exit 0' INT TERM; vite preview",
     "typecheck": "tsc --build",
     "lint": "eslint .",
     "pretest": "pnpm --filter @udtc/engine build",

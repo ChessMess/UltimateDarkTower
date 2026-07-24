@@ -6,9 +6,9 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite",
+    "dev": "trap 'exit 0' INT TERM; vite",
     "dev:sync": "pnpm run dev",
-    "preview": "vite preview",
+    "preview": "trap 'exit 0' INT TERM; vite preview",
     "test": "vitest run",
     "typecheck": "tsc --build --noEmit",
     "lint": "eslint .",
