@@ -1,5 +1,22 @@
 # ultimatedarktowerrelay-core
 
+## 1.1.2
+
+### Patch Changes
+
+- 0babfd7: Stop `pnpm` printing a scary `[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL]` /
+  `Command failed with signal "SIGINT"`/`"SIGTERM"` / `[ELIFECYCLE]` block when a
+  dev/watch/preview script (`vite`, `tsc --watch`, `tsx watch`,
+  `electron-forge start`, …) is stopped normally with Ctrl-C — no behavior
+  change to the scripts themselves, just a clean exit code on interactive
+  interrupt. (pnpm delivers SIGINT directly for a top-level `--filter` run, but
+  SIGTERM when the interrupt is relayed through a nested `pnpm run` alias —
+  both are now handled.)
+- Updated dependencies [25c9a5e]
+- Updated dependencies [0babfd7]
+  - ultimatedarktowerdata@2.2.0
+  - ultimatedarktower@7.1.1
+
 ## 1.1.1
 
 ### Patch Changes

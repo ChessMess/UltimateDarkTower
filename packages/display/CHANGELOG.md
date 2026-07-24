@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.1.0
+
+### Minor Changes
+
+- 25c9a5e: Add `getSkullCounts()` to the physics `SkullPhysicsHandle` (`attachSkullPhysics`) —
+  returns `{ total, inTower, onBoard, inTransit, pending }`, classifying every live skull
+  by two independent signals (radial position for in-tower, height for on-board) so
+  `total - onBoard === inTower` whenever the sim is settled (`inTransit === 0`). Cheap,
+  poll-safe. The physics example panel now shows a live counts readout below the Drop/Clear
+  buttons.
+
+### Patch Changes
+
+- 0babfd7: Stop `pnpm` printing a scary `[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL]` /
+  `Command failed with signal "SIGINT"`/`"SIGTERM"` / `[ELIFECYCLE]` block when a
+  dev/watch/preview script (`vite`, `tsc --watch`, `tsx watch`,
+  `electron-forge start`, …) is stopped normally with Ctrl-C — no behavior
+  change to the scripts themselves, just a clean exit code on interactive
+  interrupt. (pnpm delivers SIGINT directly for a top-level `--filter` run, but
+  SIGTERM when the interrupt is relayed through a nested `pnpm run` alias —
+  both are now handled.)
+- Updated dependencies [25c9a5e]
+  - ultimatedarktowerdata@2.2.0
+
 ## 1.0.2
 
 ### Patch Changes
