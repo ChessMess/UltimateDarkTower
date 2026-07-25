@@ -1,5 +1,46 @@
 {
   "brigands": {
-    "image3d": "./tokens/foes/Foe-Token-L2-Brigands.png"
+    "image2d": "./tokens/foes/brigands-token.png",
+    "image3d": "./tokens/foes/brigands.png"
+  },
+  "oreks": {
+    "image2d": "./tokens/foes/oreks-token.png",
+    "image3d": "./tokens/foes/oreks.png"
+  },
+  "shadow-wolves": {
+    "image2d": "./tokens/foes/shadow-wolves-token.png",
+    "image3d": "./tokens/foes/shadow-wolves.png"
+  },
+  "frost-trolls": {
+    "image2d": "./tokens/foes/frost-troll-token.png",
+    "image3d": "./tokens/foes/frost-trolls.png"
+  },
+  "clan-of-neuri": {
+    "image2d": "./tokens/foes/clan-of-neuri-token.png",
+    "image3d": "./tokens/foes/clan-of-neuri.png"
+  },
+  "lemures": {
+    "image2d": "./tokens/foes/lemure-token.png",
+    "image3d": "./tokens/foes/lemures.png"
+  },
+  "widowmade-spiders": {
+    "image2d": "./tokens/foes/widowmade-spider-token.png",
+    "image3d": "./tokens/foes/widowmade-spiders.png"
+  },
+  "dragons": {
+    "image2d": "./tokens/foes/dragon-token.png",
+    "image3d": "./tokens/foes/dragons.png"
+  },
+  "mormos": {
+    "image2d": "./tokens/foes/mormo-token.png",
+    "image3d": "./tokens/foes/mormos.png"
+  },
+  "striga": {
+    "image2d": "./tokens/foes/striga-token.png",
+    "image3d": "./tokens/foes/striga.png"
+  },
+  "titans": {
+    "image2d": "./tokens/foes/titan-token.png",
+    "image3d": "./tokens/foes/titans.png"
   }
 }

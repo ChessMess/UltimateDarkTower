@@ -1,1 +1,26 @@
-{}
+{
+  "ashstrider": {
+    "image2d": "./tokens/adversaries/ashstrider-token.png",
+    "image3d": "./tokens/adversaries/ashstrider.png"
+  },
+  "bane-of-omens": {
+    "image2d": "./tokens/adversaries/bane-of-omens-token.png",
+    "image3d": "./tokens/adversaries/bane-of-omens.png"
+  },
+  "empress-of-shades": {
+    "image2d": "./tokens/adversaries/empress-of-shades-token.png",
+    "image3d": "./tokens/adversaries/empress-of-shades.png"
+  },
+  "gaze-eternal": {
+    "image2d": "./tokens/adversaries/gaze-eternal-token.png",
+    "image3d": "./tokens/adversaries/gaze-eternal.png"
+  },
+  "isa-the-exile": {
+    "image2d": "./tokens/adversaries/isa-the-exile-token.png",
+    "image3d": "./tokens/adversaries/isa-the-exile.png"
+  },
+  "utuk-ku": {
+    "image2d": "./tokens/adversaries/utuk-ku-the-ice-herald-token.png",
+    "image3d": "./tokens/adversaries/utuk-ku.png"
+  }
+}
