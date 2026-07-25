@@ -109,6 +109,44 @@ export interface PhysicsConfig {
      * Live — toggling takes effect on the next `applyState` callback.
      */
     autoDropOnSkullCountIncrease?: boolean;
+    /**
+     * When `false`, `bodyDesc.setCanSleep(false)` keeps the skull body
+     * integrating forever instead of letting Rapier auto-sleep it once its
+     * velocity drops near zero. A skull wedged in the tower's trimesh
+     * interior can otherwise sleep permanently with nothing to wake it —
+     * this trades a small perf cost (skulls never sleep) for fewer stuck
+     * skulls. Default `true` (Rapier's normal auto-sleep behavior).
+     *
+     * Applies on next `dropSkull()`.
+     */
+    canSleep?: boolean;
+    /**
+     * Extra Rapier solver iterations for the skull body
+     * (`bodyDesc.setAdditionalSolverIterations`), for firmer contact
+     * resolution in tight trimesh gaps (funnel seams, drum/seal pinch
+     * points) where a skull is prone to wedging. Default `0` (Rapier's
+     * default iteration count).
+     *
+     * Applies on next `dropSkull()`.
+     */
+    additionalSolverIterations?: number;
+    /**
+     * Impulse-strength multiplier used by `shakeSkulls()` and
+     * `shakeSelectedSkull()` when no per-call `options.strength` override is
+     * given. Scales with body mass and model radius — see the handle's
+     * JSDoc for the exact formula. Default `3`.
+     */
+    shakeStrength?: number;
+    /**
+     * When true, clicking a live skull in the 3D view calls
+     * `shakeSelectedSkull(id)` for the clicked skull — a "click a stuck
+     * skull to nudge it free" interaction. Uses the view's pointer-target
+     * seam internally; no camera/raycaster is exposed to the consumer.
+     * Default `false`.
+     *
+     * Live — toggling registers/unregisters the pointer target immediately.
+     */
+    clickToShake?: boolean;
   };
   /** The three rotating drums (kinematic trimesh per level). */
   drum?: {
@@ -173,13 +211,47 @@ export interface SkullPhysicsHandle {
    * Add one skull above the top opening. Calls past the current
    * `skull.maxCount` are no-ops. Calls made before init resolves are
    * queued and replayed once it does.
+   *
+   * Returns the new skull's stable id (usable with `shakeSelectedSkull` /
+   * `getSkullIdForObject`), or `null` when the drop was queued (init not
+   * yet resolved, or a skull model still loading) or refused at
+   * `skull.maxCount`.
    */
-  dropSkull(): void;
+  dropSkull(): number | null;
   /**
    * Remove every active skull from the world immediately. Also cancels
    * any drops queued before init resolved. Safe to call at any time.
    */
   clearSkulls(): void;
+  /**
+   * Impulse-nudge every skull **currently classified `inTower`** (see
+   * {@link getSkullCounts}) — the zone a wedged skull sits in. Skulls
+   * `onBoard` or `inTransit` are untouched. Wakes sleeping bodies. Use this
+   * to dislodge a skull stuck in the tower's interior geometry (funnel
+   * seam, drum/seal pinch point) without touching the tower model itself.
+   *
+   * Impulse magnitude is `body.mass() * modelRadius * strength`, where
+   * `strength` defaults to `skull.shakeStrength` (override via
+   * `options.strength`). No-op before init resolves, after `dispose()`, or
+   * when no skull is currently `inTower`.
+   */
+  shakeSkulls(options?: { strength?: number }): void;
+  /**
+   * Impulse-nudge exactly one skull by id, regardless of which zone it's
+   * currently in — unlike `shakeSkulls()`, there is no `inTower` filter,
+   * since a skull picked by id was selected deliberately (e.g. via
+   * `skull.clickToShake`). No-op if `id` doesn't match a live skull, before
+   * init resolves, or after `dispose()`.
+   */
+  shakeSelectedSkull(id: number, options?: { strength?: number }): void;
+  /**
+   * Walk `obj` up its parent chain looking for a live skull's root mesh
+   * (matched via internal `userData` tagging) and return its id, or `null`
+   * if `obj` isn't part of any live skull. Useful for wiring your own
+   * picking/raycasting to `shakeSelectedSkull` instead of using the
+   * built-in `skull.clickToShake` flag.
+   */
+  getSkullIdForObject(obj: THREE.Object3D): number | null;
   /**
    * Snapshot of where every live skull currently is. `total` always equals
    * `inTower + onBoard + inTransit`. `inTower` uses the radial signal

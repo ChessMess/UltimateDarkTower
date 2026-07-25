@@ -51,6 +51,7 @@ export function attachSkullPhysics(
         modelRadius: ctx.modelRadius,
         modelBottomY: ctx.modelBottomY,
         modelTopY: ctx.modelTopY,
+        registerPointerTarget: ctx.registerPointerTarget,
       };
       const manager = new PhysicsManager(hooks, config);
       state.manager = manager;
@@ -76,11 +77,20 @@ export function attachSkullPhysics(
   const pm = state.manager;
 
   return {
-    dropSkull(): void {
-      pm.dropSkull();
+    dropSkull() {
+      return pm.dropSkull();
     },
     clearSkulls(): void {
       pm.clearSkulls();
+    },
+    shakeSkulls(options) {
+      pm.shakeSkulls(options);
+    },
+    shakeSelectedSkull(id, options) {
+      pm.shakeSelectedSkull(id, options);
+    },
+    getSkullIdForObject(obj) {
+      return pm.getSkullIdForObject(obj);
     },
     getSkullCounts() {
       return pm.getSkullCounts();

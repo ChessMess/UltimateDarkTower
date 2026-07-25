@@ -262,6 +262,7 @@ describe('attachScenePlugin', () => {
     expect(typeof hooks.modelRadius).toBe('number');
     expect(typeof hooks.modelBottomY).toBe('number');
     expect(typeof hooks.modelTopY).toBe('number');
+    expect(typeof hooks.registerPointerTarget).toBe('function');
     expect(hooks.scene).toBeDefined();
     view.dispose();
   });

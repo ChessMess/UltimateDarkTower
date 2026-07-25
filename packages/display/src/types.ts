@@ -6,6 +6,7 @@ import type {
   ApplyCameraConfigOptions,
   AudioConfig,
 } from './3d/types';
+import type { PointerTarget } from './3d/ScenePlugin';
 import type { SoundPack } from './audio/soundPack';
 
 export type { TowerState, TowerSide, SealIdentifier };
@@ -73,6 +74,15 @@ export interface TowerPhysicsHooks {
   modelBottomY: number;
   /** World-space Y of the model's top edge (after centering). */
   modelTopY: number;
+  /**
+   * Register a hit-testable pointer target so clicks on its objects are
+   * consumed before the camera's orbit controls act. Mirrors
+   * `ScenePluginContext.registerPointerTarget` — add-ons use this to wire
+   * click-driven interactions (e.g. skull-physics' `skull.clickToShake`)
+   * without needing their own camera/raycaster. Returns an unsubscribe
+   * function.
+   */
+  registerPointerTarget: (target: PointerTarget) => () => void;
 }
 
 /** Identifies which renderer implementation to use. */

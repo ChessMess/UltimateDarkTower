@@ -14,6 +14,7 @@ export {
   type PerfReport,
   type PerfStat,
 } from './3d/Tower3DView';
+export type { ShakeDrumsOptions } from './3d/DrumManager';
 export { anchorToWorld } from './3d/boardMapping';
 export type { BoardAnchor, DiscMetrics } from './3d/boardMapping';
 export { attachScenePlugin } from './3d/ScenePlugin';

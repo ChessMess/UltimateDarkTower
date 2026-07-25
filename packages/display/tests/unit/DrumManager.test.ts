@@ -294,4 +294,98 @@ describe('DrumManager', () => {
       expect(mgr.drumRefs.size).toBe(0);
     });
   });
+
+  describe('shakeDrums', () => {
+    it('schedules one tween per registered drum, targeting a scratch object (not the ref)', () => {
+      const root = makeRoot(['drum_top', 'drum_middle', 'drum_bottom']);
+      const mgr = new DrumManager();
+      mgr.buildDrumNodes(root);
+
+      mgr.shakeDrums();
+
+      const tweens = gsapMock.__getTweens();
+      expect(tweens).toHaveLength(3);
+      for (const tween of tweens) {
+        expect(tween.target).not.toBe(mgr.drumRefs.get('top'));
+        expect(tween.target).not.toBe(mgr.drumRefs.get('middle'));
+        expect(tween.target).not.toBe(mgr.drumRefs.get('bottom'));
+        expect(tween.vars.t).toBe(1);
+      }
+    });
+
+    it('perturbs rotation.y via onUpdate without mutating currentY', () => {
+      const root = makeRoot(['drum_top']);
+      const mgr = new DrumManager();
+      mgr.buildDrumNodes(root);
+      const ref = mgr.drumRefs.get('top')!;
+      const before = ref.currentY;
+
+      mgr.shakeDrums({ amplitude: 0.5, cycles: 1 });
+      const tween = gsapMock.__getTweens()[0];
+
+      // Simulate gsap having advanced the scratch value partway (the mock
+      // doesn't auto-interpolate), then fire the update callback.
+      (tween.target as { t: number }).t = 0.1;
+      tween.vars.onUpdate();
+
+      expect(ref.node.rotation.y).not.toBe(before);
+      expect(ref.currentY).toBe(before);
+    });
+
+    it('restores rotation.y to currentY on complete and clears shakeTween', () => {
+      const root = makeRoot(['drum_top']);
+      const mgr = new DrumManager();
+      mgr.buildDrumNodes(root);
+      const ref = mgr.drumRefs.get('top')!;
+      const before = ref.currentY;
+
+      mgr.shakeDrums({ amplitude: 0.5, cycles: 1 });
+      const tween = gsapMock.__getTweens()[0];
+      (tween.target as { t: number }).t = 0.3;
+      tween.vars.onUpdate();
+      expect(ref.node.rotation.y).not.toBe(before);
+
+      tween.vars.onComplete();
+
+      expect(ref.node.rotation.y).toBe(before);
+      expect(ref.currentY).toBe(before);
+    });
+
+    it('stopAll kills the shake tween and restores rotation.y', () => {
+      const root = makeRoot(['drum_top']);
+      const mgr = new DrumManager();
+      mgr.buildDrumNodes(root);
+      const ref = mgr.drumRefs.get('top')!;
+      const before = ref.currentY;
+
+      mgr.shakeDrums({ amplitude: 0.5, cycles: 1 });
+      const tween = gsapMock.__getTweens()[0];
+      (tween.target as { t: number }).t = 0.4;
+      tween.vars.onUpdate();
+      expect(ref.node.rotation.y).not.toBe(before);
+
+      mgr.stopAll();
+
+      expect(tween.killed).toBe(true);
+      expect(ref.node.rotation.y).toBe(before);
+    });
+
+    it('a real applyDrums rotation coming in mid-shake kills the shake and wins', () => {
+      const root = makeRoot(['drum_top']);
+      const mgr = new DrumManager();
+      mgr.buildDrumNodes(root);
+
+      mgr.shakeDrums({ amplitude: 0.5, cycles: 1 });
+      const shakeTween = gsapMock.__getTweens()[0];
+      expect(shakeTween.killed).toBe(false);
+
+      mgr.applyDrums(makeDrums([1, 0, 0]));
+
+      expect(shakeTween.killed).toBe(true);
+      // The real rotation's own tween is scheduled after the shake tween.
+      const tweens = gsapMock.__getTweens();
+      expect(tweens).toHaveLength(2);
+      expect(tweens[1].vars.currentY).toBeCloseTo(DRUM_RADIANS_PER_SIDE, 10);
+    });
+  });
 });
