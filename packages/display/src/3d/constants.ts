@@ -86,6 +86,21 @@ export const DRUM_ROTATION_EASE = 'none';
  */
 export const DRUM_CALIBRATION_BEEP_PAUSE_S = 0.9;
 
+// --- Drum Shake (Tower3DView.shakeTower) ---
+
+/**
+ * ⏱️ TWEAK ME: peak angular offset (radians) of the drum-shake oscillation.
+ * Small on purpose — this reads as a rattle, not a spin. Raise it if
+ * `shakeTower()` isn't dislodging skulls resting on the drums.
+ */
+export const DRUM_SHAKE_AMPLITUDE = 0.12;
+
+/** Number of oscillation cycles the shake completes before decaying to rest. */
+export const DRUM_SHAKE_CYCLES = 4;
+
+/** Total duration (seconds) of one `shakeTower()` sweep, envelope decay included. */
+export const DRUM_SHAKE_DURATION_S = 0.5;
+
 /** Corner azimuths (rad) for ledge/base lights. Indexed by LEDGE_BASE_LIGHT_POSITIONS (NE=0, SE=1, SW=2, NW=3). */
 export const CORNER_AZIMUTH: readonly number[] = [
   Math.PI / 4,

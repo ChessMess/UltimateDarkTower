@@ -181,6 +181,10 @@ A deeply-nested partial. Every field is optional; missing leaves fall back to `D
 | `skull.meshFactory`                  | `(r: number) => Object3D` | `undefined` | Next drop         | Per-spawn visual override. Forces `colliderShape` to `'sphere'`. The consumer owns asset lifecycle — the manager only calls `removeFromParent()` on despawn. Not JSON-serializable (function).                                                                                                                                                   |
 | `skull.density`                      | `number`                  | `undefined` | Next drop         | Density override. Only meaningful for hull colliders, where the template carries an auto-computed density that normalizes hull mass to the equivalent sphere.                                                                                                                                                                                    |
 | `skull.autoDropOnSkullCountIncrease` | `boolean`                 | `false`     | Live              | When true, auto-calls `dropSkull()` each time `state.beam.count` increases between consecutive `applyState` calls. Mirrors the readout's "💀 Skull Drop!" highlight. Honors `skull.maxCount` like manual drops.                                                                                                                                  |
+| `skull.canSleep`                     | `boolean`                 | `true`      | Next drop         | `false` keeps the skull body integrating forever (`setCanSleep(false)`) instead of letting Rapier auto-sleep it — fewer skulls stick, at a small perf cost. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                         |
+| `skull.additionalSolverIterations`   | `number`                  | `0`         | Next drop         | Extra Rapier solver iterations on the skull body — firmer contact resolution in tight trimesh gaps. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                                                                                 |
+| `skull.shakeStrength`                | `number`                  | `3`         | Live              | Impulse-strength multiplier used by `shakeSkulls()` / `shakeSelectedSkull()` when no per-call `options.strength` override is given.                                                                                                                                                                                                              |
+| `skull.clickToShake`                 | `boolean`                 | `false`     | Live              | When true, clicking a live skull in the 3D view calls `shakeSelectedSkull(id)` for it. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                                                                                              |
 | `drum.innerRadiusFactor`             | `number`                  | `0.30`      | World rebuild     | Used for drop-jitter heuristics and (future) parametric drum walls.                                                                                                                                                                                                                                                                              |
 | `drum.halfHeightFactor`              | `number`                  | `0.15`      | Unused            | Reserved for future parametric drum walls; currently feeds only the discarded drum-wall spec and has no runtime effect.                                                                                                                                                                                                                          |
 | `drum.friction`                      | `number`                  | `0.15`      | Live              | Friction on kinematic drum trimeshes (Min combine rule).                                                                                                                                                                                                                                                                                         |
@@ -201,8 +205,11 @@ A deeply-nested partial. Every field is optional; missing leaves fall back to `D
 
 ```ts
 interface SkullPhysicsHandle {
-  dropSkull(): void;
+  dropSkull(): number | null;
   clearSkulls(): void;
+  shakeSkulls(options?: { strength?: number }): void;
+  shakeSelectedSkull(id: number, options?: { strength?: number }): void;
+  getSkullIdForObject(obj: THREE.Object3D): number | null;
   getSkullCounts(): SkullCounts;
   getPhysicsConfig(): ResolvedPhysicsConfig;
   applyPhysicsConfig(partial: PhysicsConfig): void;
@@ -210,8 +217,11 @@ interface SkullPhysicsHandle {
 }
 ```
 
-- `dropSkull()` — Add one skull just above `modelTopY`. No-op once `skull.maxCount` simultaneous skulls are live; calls made before init resolves are queued and replayed once it does.
+- `dropSkull()` — Add one skull just above `modelTopY`. No-op once `skull.maxCount` simultaneous skulls are live; calls made before init resolves are queued and replayed once it does. Returns the new skull's stable **id** (see [Unsticking skulls](#unsticking-skulls)), or `null` when queued or refused at the cap.
 - `clearSkulls()` — Remove every active skull immediately and cancel any queued drops. Safe to call before init resolves.
+- `shakeSkulls(options?)` — Impulse-nudge every skull currently classified `inTower`. See [Unsticking skulls](#unsticking-skulls).
+- `shakeSelectedSkull(id, options?)` — Impulse-nudge exactly one skull by id, regardless of zone. See [Unsticking skulls](#unsticking-skulls).
+- `getSkullIdForObject(obj)` — Walk an `Object3D` up its parent chain to find a live skull's id, or `null`. Useful for wiring your own picking instead of `skull.clickToShake`.
 - `getSkullCounts()` — Snapshot of where every live skull currently is. See [Counting skulls](#counting-skulls) below.
 - `getPhysicsConfig()` — Deep-cloned snapshot of the fully-resolved config. Safe to mutate.
 - `applyPhysicsConfig(partial)` — Merge a partial config on top of the current one. See lifecycle semantics above.
@@ -267,6 +277,79 @@ on a flat spot of the base's exterior skirt (mid-height, outside `shellRadius`) 
 `inTransit` indefinitely rather than `onBoard` — visible in the readout instead of being
 silently miscounted as in-tower.
 
+### Unsticking skulls
+
+A skull is a tiny sphere (or hull) collider falling through trimesh geometry (the cone
+funnel, three rotating drum rings, twelve seal doors). It can wedge in a triangle seam
+or a narrow chute, lose velocity, and — since Rapier auto-sleeps low-velocity bodies by
+default — stay stuck there permanently: the out-of-bounds despawn in `step()` only
+catches skulls that fall _below_ the board, never one lodged _inside_. A stuck skull
+shows up as `inTower` (or, for a skirt-level wedge, `inTransit`) never draining toward
+`onBoard` in `getSkullCounts()`.
+
+Every mechanism below is **manually triggered** — there is no background self-heal loop
+polling for stuck skulls — and none of them modify the tower model/GLB.
+
+#### `shakeSkulls(options?)`
+
+Impulse-nudges **every skull currently classified `inTower`** (see
+[Counting skulls](#counting-skulls)) — the zone a wedged skull sits in, whether it's
+stuck in the funnel, a drum, or a seal pinch point. Skulls `onBoard` or `inTransit` are
+left untouched. Wakes sleeping bodies.
+
+```ts
+physics.shakeSkulls(); // uses skull.shakeStrength
+physics.shakeSkulls({ strength: 6 }); // a stronger one-off nudge
+```
+
+Impulse magnitude is `body.mass() * modelRadius * strength` — an upward-biased random
+direction plus a small random spin, so a shake pops a skull free rather than just
+grinding it sideways against whatever it's wedged in.
+
+#### `shakeSelectedSkull(id, options?)` + click-to-shake
+
+Impulse-nudges **exactly one** skull by id, in **any** zone — unlike `shakeSkulls()`,
+there's no `inTower` filter, since a skull picked by id was selected deliberately.
+`dropSkull()` returns each skull's stable id (monotonic, never reused):
+
+```ts
+const id = physics.dropSkull();
+if (id !== null) physics.shakeSelectedSkull(id);
+```
+
+For a "click a stuck skull to nudge it free" interaction, set `skull.clickToShake: true`
+instead of wiring your own raycaster — the library registers the skull meshes as a
+[`PointerTarget`](API.md#pointertarget) internally, above the camera's orbit controls, so
+a skull click shakes it and a miss still orbits the camera as normal:
+
+```ts
+physics.applyPhysicsConfig({ skull: { clickToShake: true } });
+```
+
+`getSkullIdForObject(obj)` is the underlying id lookup (walks `obj` up its parent chain
+for a tagged skull root) — exposed on the handle for consumers wiring their own picking.
+
+#### `shakeTower(options?)`
+
+Lives on `Tower3DView`, not the physics handle — see
+[API §shakeTower](API.md#shaketoweroptions-shakedrumsoptions-void). Oscillates the drum
+rings; the kinematic-collider sync (see [above](#driving-kinematic-colliders-from-visual-transforms))
+turns that into velocity for any skull resting on/near a drum. Independent of
+`shakeSkulls()` — physics is a separate `ScenePlugin` the view doesn't own — so use
+either, both, or neither:
+
+```ts
+view.shakeTower();
+physics.shakeSkulls();
+```
+
+#### Prevention tuning
+
+`skull.canSleep: false` and `skull.additionalSolverIterations` (see the config table
+above) reduce how often a skull sticks in the first place, at a small perf cost —
+Rapier's default auto-sleep and iteration count are otherwise tuned for the common case,
+not the pinch points.
+
 ### `DEFAULT_PHYSICS` and `resolvePhysics`
 
 ```ts
@@ -295,7 +378,11 @@ Copy-paste into an editor (or the example app's "Physics" config tab) to see eve
     "modelUrl": null,
     "colliderShape": "sphere",
     "density": null,
-    "autoDropOnSkullCountIncrease": false
+    "autoDropOnSkullCountIncrease": false,
+    "canSleep": true,
+    "additionalSolverIterations": 0,
+    "shakeStrength": 3,
+    "clickToShake": false
   },
   "drum": { "innerRadiusFactor": 0.3, "halfHeightFactor": 0.15, "friction": 0.15 },
   "seal": { "friction": 0.05 },
@@ -309,18 +396,19 @@ Copy-paste into an editor (or the example app's "Physics" config tab) to see eve
 
 Turn on `debug.sealColliders` (seal-only) or `debug.colliders` (world) and inspect the wireframes against the visual model.
 
-| Symptom                                                            | Try                                                                                                                                                          |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Skulls slip off the drum during rotation.                          | Raise `drum.friction` (and, if needed, `skull.friction` on next drop).                                                                                       |
-| Skulls bounce wildly after landing.                                | Lower `skull.restitution` (try `0.05`).                                                                                                                      |
-| Seal collider debug is hard to inspect.                            | Use `debug.sealColliders` for seal-only wireframes; `debug.colliders` shows the full world.                                                                  |
-| Skull is comically large or small.                                 | Adjust `skull.radiusFactor`.                                                                                                                                 |
-| Skull tunnels through closed geometry at high rotation speed.      | Verify CCD is still enabled, and avoid teleport-style drum updates where possible.                                                                           |
-| Skull falls off the visual board edge.                             | Increase `board.radiusFactor`; floor and lip are intentionally decoupled from board visibility.                                                              |
-| Skull rolls for too long after landing.                            | Increase `skull.angularDamping` (and optionally `skull.linearDamping`).                                                                                      |
-| Hull-collider skulls feel floaty or settle wrong.                  | Set `skull.density` explicitly (default heuristic normalizes to sphere-equivalent mass; precise tuning needs your hull's true volume).                       |
-| Switching to a GLB model wedged a skull in the geometry.           | Set `colliderShape: 'sphere'` for the affected model — visual stays, physics reverts to the proven sphere tuning.                                            |
-| Auto-drop triggers on every state apply, not just count increases. | Verify `state.beam.count` is actually increasing — the delta-check uses strict `>`. Snapshot-replay tools that re-feed identical states won't trigger drops. |
+| Symptom                                                             | Try                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Skulls slip off the drum during rotation.                           | Raise `drum.friction` (and, if needed, `skull.friction` on next drop).                                                                                                                                                                                  |
+| Skulls bounce wildly after landing.                                 | Lower `skull.restitution` (try `0.05`).                                                                                                                                                                                                                 |
+| Seal collider debug is hard to inspect.                             | Use `debug.sealColliders` for seal-only wireframes; `debug.colliders` shows the full world.                                                                                                                                                             |
+| Skull is comically large or small.                                  | Adjust `skull.radiusFactor`.                                                                                                                                                                                                                            |
+| Skull tunnels through closed geometry at high rotation speed.       | Verify CCD is still enabled, and avoid teleport-style drum updates where possible.                                                                                                                                                                      |
+| Skull falls off the visual board edge.                              | Increase `board.radiusFactor`; floor and lip are intentionally decoupled from board visibility.                                                                                                                                                         |
+| Skull rolls for too long after landing.                             | Increase `skull.angularDamping` (and optionally `skull.linearDamping`).                                                                                                                                                                                 |
+| Hull-collider skulls feel floaty or settle wrong.                   | Set `skull.density` explicitly (default heuristic normalizes to sphere-equivalent mass; precise tuning needs your hull's true volume).                                                                                                                  |
+| Switching to a GLB model wedged a skull in the geometry.            | Set `colliderShape: 'sphere'` for the affected model — visual stays, physics reverts to the proven sphere tuning.                                                                                                                                       |
+| A skull is visibly stuck / its count never drains toward `onBoard`. | Call `shakeSkulls()` and/or `view.shakeTower()`, or enable `skull.clickToShake` and click it directly. To reduce future sticking, try `skull.canSleep: false` or raise `skull.additionalSolverIterations`. See [Unsticking skulls](#unsticking-skulls). |
+| Auto-drop triggers on every state apply, not just count increases.  | Verify `state.beam.count` is actually increasing — the delta-check uses strict `>`. Snapshot-replay tools that re-feed identical states won't trigger drops.                                                                                            |
 
 ## Limitations (MVP)
 
@@ -332,6 +420,7 @@ Turn on `debug.sealColliders` (seal-only) or `debug.colliders` (world) and inspe
 - **Hull dynamics need re-tuning.** The bundled friction/restitution defaults are tuned for sphere skulls. Convex-hull skulls roll differently — expect to revisit `drum.friction`, `skull.restitution`, and `skull.density` per model.
 - **`meshFactory` is not JSON-serializable.** Functions are silently dropped by `JSON.stringify`, so they never appear in the example app's JSON-paste flow. Set programmatically only.
 - **Auto-drop uses `>` not `>=`.** A `beam.count` that ticks back down then up to the same value triggers a drop only on the second up-tick. Designed-as-intended (matches the readout highlight).
+- **Shakes are randomized, not guaranteed.** `shakeSkulls()` / `shakeSelectedSkull()` pick a random direction each call — a badly wedged skull may need more than one shake, or a combination with `shakeTower()`, before it pops free.
 
 ## Roadmap
 
@@ -354,6 +443,7 @@ The must-pass manual cases for any change in this area:
 5. Test (4) with the visual board disc hidden via the lighting config — behavior must be identical (proves the physics floor is decoupled from the visual disc).
 6. Spinning drums via a state sequence with a skull inside — no tunneling.
 7. Calling `handle.dispose()` removes the debug overlay and unsubscribes all listeners.
+8. Drop skulls until one wedges in the interior geometry (a funnel seam or drum/seal pinch point). `shakeSkulls()` alone, and separately `view.shakeTower()` alone, each frees it — `shakeSkulls()` must not disturb a skull already `onBoard`, and the tower's silhouette must return to rest after `shakeTower()`. With `skull.clickToShake: true`, clicking the stuck skull frees only that skull (`shakeSelectedSkull`) and clicking empty space still orbits the camera.
 
 ## See also
 

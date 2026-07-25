@@ -7,6 +7,9 @@ import {
   DRUM_ROTATION_EPSILON,
   DRUM_ROTATION_EASE,
   drumRotationDurationS,
+  DRUM_SHAKE_AMPLITUDE,
+  DRUM_SHAKE_CYCLES,
+  DRUM_SHAKE_DURATION_S,
 } from './constants';
 import type { DrumRotationAudio } from '../audio/DrumRotationAudio';
 
@@ -19,11 +22,23 @@ interface DrumRef {
   /** Last applied Y rotation. Continuous (not modulo'd) so shortest-arc resolution sees the true history. */
   currentY: number;
   tween: gsap.core.Tween | null;
+  /** In-flight `shakeDrums()` tween, independent of `tween` (the state-driven rotation). */
+  shakeTween: gsap.core.Tween | null;
 }
 
 interface ApplyOptions {
   /** When false, snap directly to the target rotation with no animation or audio. Defaults to true. */
   animate?: boolean;
+}
+
+/** Options for {@link DrumManager.shakeDrums}. */
+export interface ShakeDrumsOptions {
+  /** Peak angular offset (radians). Defaults to `DRUM_SHAKE_AMPLITUDE`. */
+  amplitude?: number;
+  /** Number of oscillation cycles before decaying to rest. Defaults to `DRUM_SHAKE_CYCLES`. */
+  cycles?: number;
+  /** Total sweep duration (seconds). Defaults to `DRUM_SHAKE_DURATION_S`. */
+  duration?: number;
 }
 
 /**
@@ -56,6 +71,7 @@ export class DrumManager {
         node: child,
         currentY: child.rotation.y,
         tween: null,
+        shakeTween: null,
       });
     });
   }
@@ -86,6 +102,10 @@ export class DrumManager {
       const rawTarget = drum.position * DRUM_RADIANS_PER_SIDE;
       const delta = shortestArcDelta(ref.currentY, rawTarget);
       const finalY = ref.currentY + delta;
+
+      // A real rotation coming in mid-shake wins cleanly: stop the shake and
+      // snap rotation.y back to currentY before scheduling the real tween.
+      this.killShake(ref);
 
       ref.tween?.kill();
       ref.tween = null;
@@ -177,11 +197,66 @@ export class DrumManager {
     });
   }
 
-  /** Kill in-flight rotations and balance the audio refcount. */
+  /**
+   * Oscillate every registered drum ring around its current rotation — a
+   * decaying rattle that (via the kinematic-collider sync in
+   * `PhysicsManager.step`) imparts velocity to skulls resting on/near the
+   * drums, without moving the tower's on-screen silhouette. Purely
+   * visual/kinematic: it does not touch skull physics bodies directly — pair
+   * with the physics handle's `shakeSkulls()` for skulls the drum motion
+   * doesn't reach.
+   *
+   * Does not mutate `currentY` (the state-tracking rotation `applyDrums`
+   * reads/writes) — the oscillation is applied and later unwound around it,
+   * so drum state stays correct across a shake.
+   */
+  shakeDrums(options: ShakeDrumsOptions = {}): void {
+    const amplitude = options.amplitude ?? DRUM_SHAKE_AMPLITUDE;
+    const cycles = options.cycles ?? DRUM_SHAKE_CYCLES;
+    const duration = options.duration ?? DRUM_SHAKE_DURATION_S;
+
+    for (const ref of this.drumRefs.values()) {
+      this.killShake(ref);
+
+      // Tween a local scratch value, not `ref` — shaking must never mutate
+      // `currentY`, the state source of truth `applyDrums` reads.
+      const scratch = { t: 0 };
+      ref.shakeTween = gsap.to(scratch, {
+        t: 1,
+        duration,
+        ease: 'none',
+        onUpdate: () => {
+          // Linear-decay envelope over a sine oscillation: full amplitude at
+          // t=0, settled to 0 by t=1.
+          const decay = 1 - scratch.t;
+          const offset = amplitude * Math.sin(scratch.t * cycles * Math.PI * 2) * decay;
+          ref.node.rotation.y = ref.currentY + offset;
+        },
+        onComplete: () => {
+          ref.shakeTween = null;
+          ref.node.rotation.y = ref.currentY;
+        },
+        onInterrupt: () => {
+          ref.node.rotation.y = ref.currentY;
+        },
+      });
+    }
+  }
+
+  /** Kill `ref`'s in-flight shake tween (if any) and restore rotation.y to currentY. */
+  private killShake(ref: DrumRef): void {
+    if (!ref.shakeTween) return;
+    ref.shakeTween.kill();
+    ref.shakeTween = null;
+    ref.node.rotation.y = ref.currentY;
+  }
+
+  /** Kill in-flight rotations (state + shake) and balance the audio refcount. */
   stopAll(): void {
     for (const ref of this.drumRefs.values()) {
       ref.tween?.kill();
       ref.tween = null;
+      this.killShake(ref);
     }
   }
 

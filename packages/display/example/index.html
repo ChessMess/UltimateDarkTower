@@ -457,6 +457,38 @@
                 </label>
               </div>
 
+              <h3 class="opts-subhead">Unstick Skulls</h3>
+              <div class="opts-row opts-row-actions">
+                <button
+                  id="btn-shake-skulls"
+                  class="secondary-action"
+                  title="Impulse-nudge every skull currently classified 'inTower' (see the Skulls readout) — pops one wedged in the tower's interior geometry loose without touching skulls already on the board."
+                >
+                  Shake Skulls
+                </button>
+                <button
+                  id="btn-shake-tower"
+                  class="secondary-action"
+                  title="Rattle the three drum rings — a small, decaying rotation that jostles skulls resting on/near the drums loose. Independent of Shake Skulls; the tower's silhouette settles back to rest after."
+                >
+                  Shake Tower
+                </button>
+              </div>
+              <div class="opts-row">
+                <label
+                  class="toolbar-label"
+                  title="When enabled, clicking a skull in the 3D view shakes just that one skull (shakeSelectedSkull), regardless of which zone it's in. Clicking empty space still orbits the camera as usual."
+                >
+                  <input type="checkbox" id="chk-click-to-shake" /> Click a skull to shake it
+                </label>
+                <label
+                  class="toolbar-label"
+                  title="When off, a skull's velocity is held above zero forever (setCanSleep(false)) instead of letting Rapier auto-sleep it — fewer skulls stick, at a small perf cost. Applies on the next Drop Skull."
+                >
+                  <input type="checkbox" id="chk-skull-can-sleep" checked /> Skulls can sleep
+                </label>
+              </div>
+
               <h3 class="opts-subhead">Skull &amp; Surfaces</h3>
               <div class="physics-slider-list">
                 <label
@@ -601,6 +633,36 @@
                     value="0"
                   />
                   <span id="lbl-skull-lin-damp" class="physics-slider-value">0.00</span>
+                </label>
+                <label
+                  class="physics-slider"
+                  title="Extra Rapier solver iterations on the skull body — firmer contact resolution in tight trimesh gaps (funnel seams, drum/seal pinch points) where a skull is prone to wedging. 0 = Rapier's default. Applies on the next Drop Skull."
+                >
+                  <span class="physics-slider-name">Solver iters</span>
+                  <input
+                    type="range"
+                    id="rng-skull-solver-iters"
+                    min="0"
+                    max="8"
+                    step="1"
+                    value="0"
+                  />
+                  <span id="lbl-skull-solver-iters" class="physics-slider-value">0</span>
+                </label>
+                <label
+                  class="physics-slider"
+                  title="Impulse-strength multiplier used by Shake Skulls / click-to-shake when no per-call override is given. Impulse scales with body mass and model radius."
+                >
+                  <span class="physics-slider-name">Shake strength</span>
+                  <input
+                    type="range"
+                    id="rng-shake-strength"
+                    min="0.5"
+                    max="10"
+                    step="0.5"
+                    value="3"
+                  />
+                  <span id="lbl-shake-strength" class="physics-slider-value">3.0</span>
                 </label>
               </div>
             </div>

@@ -68,6 +68,19 @@ describe('classifySkull', () => {
     expect(classifySkull({ x: 0, y, z: 0 }, P)).toBe('inTransit'); // radial 0, inside base
     expect(classifySkull({ x: 0.5, y, z: 0 }, P)).toBe('inTransit'); // radial outside base
   });
+
+  it('used as a filter (shakeSkulls scope), keeps only inTower positions out of a mixed batch', () => {
+    // Mirrors PhysicsManager.shakeSkulls(): classify, then keep inTower only.
+    // onBoard and inTransit skulls must be untouched by a shake.
+    const positions = [
+      { x: 0.1, y: 0, z: 0 }, // inTower (mid-height, inside shell)
+      { x: 0.5, y: P.boardTopY + r, z: 0 }, // onBoard
+      { x: 0.5, y: 0, z: 0 }, // inTransit (mid-height, outside shell)
+      { x: 0.2, y: P.boardTopY + r, z: 0 }, // inTower (under-base / archway)
+    ];
+    const inTowerOnly = positions.filter((p) => classifySkull(p, P) === 'inTower');
+    expect(inTowerOnly).toEqual([positions[0], positions[3]]);
+  });
 });
 
 describe('aggregateSkullCounts', () => {
@@ -135,9 +148,9 @@ describe('aggregateSkullCounts', () => {
   });
 });
 
-describe('PhysicsManager.getSkullCounts (pre-init)', () => {
-  it('returns all zeros before init() has resolved', () => {
-    const hooks: TowerPhysicsHooks = {
+describe('PhysicsManager (pre-init)', () => {
+  function makeHooks(): TowerPhysicsHooks {
+    return {
       scene: new THREE.Scene(),
       drumNode: () => null,
       onFrame: () => () => {},
@@ -147,8 +160,12 @@ describe('PhysicsManager.getSkullCounts (pre-init)', () => {
       modelRadius: 1,
       modelBottomY: -1,
       modelTopY: 1,
+      registerPointerTarget: () => () => {},
     };
-    const manager = new PhysicsManager(hooks);
+  }
+
+  it('getSkullCounts returns all zeros before init() has resolved', () => {
+    const manager = new PhysicsManager(makeHooks());
     expect(manager.getSkullCounts()).toEqual({
       total: 0,
       inTower: 0,
@@ -156,5 +173,32 @@ describe('PhysicsManager.getSkullCounts (pre-init)', () => {
       inTransit: 0,
       pending: 0,
     });
+  });
+
+  it('dropSkull queues the drop and returns null before init() has resolved', () => {
+    const manager = new PhysicsManager(makeHooks());
+    expect(manager.dropSkull()).toBeNull();
+    expect(manager.getSkullCounts().pending).toBe(1);
+  });
+
+  it('shakeSkulls and shakeSelectedSkull are no-ops before init() has resolved', () => {
+    const manager = new PhysicsManager(makeHooks());
+    // Neither should throw despite there being no Rapier world yet.
+    expect(() => manager.shakeSkulls()).not.toThrow();
+    expect(() => manager.shakeSelectedSkull(1)).not.toThrow();
+  });
+
+  it('getSkullIdForObject delegates to the pure walk-up helper', () => {
+    const manager = new PhysicsManager(makeHooks());
+    const tagged = { userData: { skullId: 9 }, parent: null } as unknown as THREE.Object3D;
+    const untagged = { userData: {}, parent: null } as unknown as THREE.Object3D;
+    expect(manager.getSkullIdForObject(tagged)).toBe(9);
+    expect(manager.getSkullIdForObject(untagged)).toBeNull();
+  });
+
+  it('dispose is safe to call before init() has resolved and again after', () => {
+    const manager = new PhysicsManager(makeHooks());
+    expect(() => manager.dispose()).not.toThrow();
+    expect(() => manager.dispose()).not.toThrow();
   });
 });

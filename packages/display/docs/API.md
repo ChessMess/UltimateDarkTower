@@ -621,6 +621,17 @@ Drums turn at a **constant angular velocity** with linear easing — duration sc
 
 Rotation audio is opt-in via `setDrumRotationSoundEnabled(true)`. While enabled, a sound plays whenever any drum is rotating. It defaults to the bundled `drumRotation.ogg` recording (`DRUM_ROTATION_SOUND_URL`); override it with `setDrumRotationSoundUrl(url)`, or pass `null` to disable it (silence — there is no procedural fallback tone).
 
+##### `shakeTower(options?: ShakeDrumsOptions): void`
+
+Rattle the three drum rings — a small, decaying rotational oscillation around each drum's current position (`amplitude` radians, `cycles` oscillations, `duration` seconds; all optional, tuned defaults in [`src/3d/constants.ts`](../src/3d/constants.ts)). Via the kinematic-collider sync skull physics piggybacks every frame (see [PHYSICS.md](PHYSICS.md#driving-kinematic-colliders-from-visual-transforms)), this jostles skulls resting on or near the drums loose — without moving the tower's on-screen silhouette and without touching the tower model.
+
+Purely visual/kinematic: it moves drum colliders but does not act on skull physics bodies directly. Pair with the physics handle's `shakeSkulls()` for a skull the drum motion doesn't reach — see [PHYSICS.md §Unsticking skulls](PHYSICS.md#unsticking-skulls) for the full picture (`shakeTower` lives here on `Tower3DView` because physics is a separate `ScenePlugin` this view doesn't own; the two calls are independent and either, both, or neither may be used).
+
+```ts
+view3d.shakeTower(); // defaults
+view3d.shakeTower({ amplitude: 0.2, cycles: 6, duration: 0.8 }); // a stronger rattle
+```
+
 ##### Calibration command
 
 Applying a state with `command === TOWER_COMMANDS.calibration` (an [`AppliedTowerState`](#appliedtowerstate)) triggers a calibration sequence. `TowerDisplay` first renders the incoming state as a baseline, then, when a 3D view is present, runs the visible sweep: each drum homes to position 0 one level at a time (top → middle → bottom), with a `DRUM_CALIBRATION_BEEP_PAUSE_S` pause held after each (room for the real tower's post-rotation beep). The Game Start sample plays at the end, then `onCalibrationComplete` fires with the fully-calibrated state stamped `CALIBRATION_FINISHED` (0x08). Renderers without a 3D view (readout / side-view) settle on the final state immediately and still fire the callback. Re-entrant calibration commands while one is in flight are ignored.
@@ -796,6 +807,18 @@ interface Tower3DViewOptions {
 ```
 
 See the [`LightingConfig`](#lightingconfig) section above for the full shape.
+
+### `ShakeDrumsOptions`
+
+Options for [`Tower3DView#shakeTower`](#shaketoweroptions-shakedrumsoptions-void). All fields optional — defaults live in [`src/3d/constants.ts`](../src/3d/constants.ts) (`DRUM_SHAKE_AMPLITUDE` / `DRUM_SHAKE_CYCLES` / `DRUM_SHAKE_DURATION_S`).
+
+```ts
+interface ShakeDrumsOptions {
+  amplitude?: number; // radians, default 0.12
+  cycles?: number; // default 4
+  duration?: number; // seconds, default 0.5
+}
+```
 
 ### `CameraConfig`
 

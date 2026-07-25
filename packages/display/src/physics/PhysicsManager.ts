@@ -1,11 +1,22 @@
 import * as THREE from 'three';
 import type { SealIdentifier, TowerPhysicsHooks, TowerState } from '../types';
+import type { PointerTarget } from '../3d/ScenePlugin';
 import type { PhysicsConfig, ResolvedPhysicsConfig } from './types';
 import { resolvePhysics } from './PhysicsResolver';
 import { buildStaticColliderSpecs } from './buildColliders';
 import { loadSkullModel, type SkullTemplate } from './SkullModelLoader';
-import { cloneSkullMesh, buildHullColliderDesc } from './SkullSpawner';
-import { aggregateSkullCounts, type SkullCounts } from './skullCounts';
+import {
+  cloneSkullMesh,
+  buildHullColliderDesc,
+  computeShakeImpulse,
+  findSkullIdForObject,
+} from './SkullSpawner';
+import {
+  aggregateSkullCounts,
+  classifySkull,
+  type SkullClassifyParams,
+  type SkullCounts,
+} from './skullCounts';
 
 // Rapier is dynamic-imported inside init() so the WASM init runs once.
 type RAPIER_NS = typeof import('@dimforge/rapier3d-compat');
@@ -60,6 +71,8 @@ interface SealColliderRef {
 }
 
 interface SkullRef {
+  /** Stable id, monotonic and never reused — assigned at drop time, tagged onto `mesh.userData.skullId`. */
+  id: number;
   body: RapierRigidBody;
   /** Widened from Mesh to Object3D so factory- and template-supplied meshes (Groups, hierarchies) work. */
   mesh: THREE.Object3D;
@@ -109,6 +122,10 @@ export class PhysicsManager {
   private boardLipCollider: RapierCollider | null = null;
 
   private skulls: SkullRef[] = [];
+  /** Monotonic skull-id counter; ids are never reused, so a stale id simply no-ops. */
+  private nextSkullId = 1;
+  /** Unsubscribe for the `skull.clickToShake` pointer target, when registered. */
+  private pointerTargetUnsub: (() => void) | null = null;
   /** Number of dropSkull() calls received before colliders were built. Drained on ready. */
   private pendingDrops = 0;
   /** Loaded skull-model template (null until first `modelUrl` resolves, or stays null if unset). */
@@ -168,6 +185,8 @@ export class PhysicsManager {
     if (this.config.skull.modelUrl) {
       this.startSkullModelLoad(this.config.skull.modelUrl);
     }
+
+    this.updateClickToShakeRegistration();
   }
 
   /**
@@ -245,21 +264,25 @@ export class PhysicsManager {
    * Spawn one skull just above the top of the tower. No-op once
    * `skull.maxCount` is reached. If init() hasn't resolved yet, the drop
    * is queued until it does.
+   *
+   * Returns the new skull's stable id, or `null` when the drop was queued
+   * or refused at `maxCount`.
    */
-  dropSkull(): void {
-    if (this.disposed) return;
+  dropSkull(): number | null {
+    if (this.disposed) return null;
     if (!this.rapier || !this.world || !this.ready) {
       this.pendingDrops++;
-      return;
+      return null;
     }
     // Defer when a model URL is set but the template hasn't resolved yet.
     // `meshFactory` short-circuits this (it doesn't need a template).
     if (this.config.skull.modelUrl && !this.config.skull.meshFactory && !this.skullTemplate) {
       this.pendingDrops++;
-      return;
+      return null;
     }
-    if (this.skulls.length >= this.config.skull.maxCount) return;
+    if (this.skulls.length >= this.config.skull.maxCount) return null;
 
+    const id = this.nextSkullId++;
     const RAPIER = this.rapier;
     const R = this.bounds.modelRadius;
     const r = R * this.config.skull.radiusFactor;
@@ -278,7 +301,9 @@ export class PhysicsManager {
       .setTranslation(spawnX, spawnY, spawnZ)
       .setCcdEnabled(true)
       .setAngularDamping(this.config.skull.angularDamping)
-      .setLinearDamping(this.config.skull.linearDamping);
+      .setLinearDamping(this.config.skull.linearDamping)
+      .setCanSleep(this.config.skull.canSleep)
+      .setAdditionalSolverIterations(this.config.skull.additionalSolverIterations);
     const body = this.world.createRigidBody(bodyDesc);
 
     // Collider dispatch: hull only when we have a loaded template AND the
@@ -330,9 +355,11 @@ export class PhysicsManager {
       mesh = sphere;
     }
     mesh.position.set(spawnX, spawnY, spawnZ);
+    mesh.userData.skullId = id;
     this.hooks.scene.add(mesh);
 
-    this.skulls.push({ body, mesh, ownsAssets });
+    this.skulls.push({ id, body, mesh, ownsAssets });
+    return id;
   }
 
   /**
@@ -360,6 +387,8 @@ export class PhysicsManager {
     this.unsubState = () => {};
     this.skullLoadAbort?.abort();
     this.skullLoadAbort = null;
+    this.pointerTargetUnsub?.();
+    this.pointerTargetUnsub = null;
 
     this.despawnAllSkulls();
 
@@ -411,18 +440,93 @@ export class PhysicsManager {
     if (!this.world || !this.ready || total === 0) {
       return { total, inTower: 0, onBoard: 0, inTransit: total, pending };
     }
-    const fallbackRadius = this.bounds.modelRadius * 0.33;
     return aggregateSkullCounts(
       this.skulls.map((s) => s.body.translation()),
-      {
-        shellRadius: this.shellRadius ?? fallbackRadius,
-        baseRadiusAtBoard: this.baseRadiusAtBoard ?? this.shellRadius ?? fallbackRadius,
-        boardTopY: this.bounds.modelBottomY,
-        modelTopY: this.bounds.modelTopY,
-        skullRadius: this.bounds.modelRadius * this.config.skull.radiusFactor,
-      },
+      this.classifyParams(),
       pending,
     );
+  }
+
+  /**
+   * Impulse-nudge every skull currently classified `inTower` (see
+   * `classifySkull` in skullCounts.ts) — the zone a skull wedged in the
+   * tower's interior geometry (funnel seam, drum/seal pinch point) sits in.
+   * Skulls `onBoard` or `inTransit` are left untouched. No-op before init
+   * resolves, after `dispose()`, or when no skull is currently `inTower`.
+   */
+  shakeSkulls(options?: { strength?: number }): void {
+    if (this.disposed || !this.world || !this.ready || this.skulls.length === 0) return;
+    const strength = options?.strength ?? this.config.skull.shakeStrength;
+    const params = this.classifyParams();
+    for (const s of this.skulls) {
+      if (classifySkull(s.body.translation(), params) !== 'inTower') continue;
+      this.applyShakeImpulse(s.body, strength);
+    }
+  }
+
+  /**
+   * Impulse-nudge exactly one skull by id, regardless of its current zone —
+   * unlike `shakeSkulls()`, there is no `inTower` filter, since a
+   * deliberately-selected skull (e.g. via `skull.clickToShake`) should
+   * shake wherever it is. No-op if `id` doesn't match a live skull, before
+   * init resolves, or after `dispose()`.
+   */
+  shakeSelectedSkull(id: number, options?: { strength?: number }): void {
+    if (this.disposed || !this.world || !this.ready) return;
+    const s = this.skulls.find((x) => x.id === id);
+    if (!s) return;
+    const strength = options?.strength ?? this.config.skull.shakeStrength;
+    this.applyShakeImpulse(s.body, strength);
+  }
+
+  /** Walk `obj` up its parent chain to find a live skull's tagged id, or `null`. */
+  getSkullIdForObject(obj: THREE.Object3D): number | null {
+    return findSkullIdForObject(obj);
+  }
+
+  private applyShakeImpulse(body: RapierRigidBody, strength: number): void {
+    const { linear, torque } = computeShakeImpulse(body.mass(), this.bounds.modelRadius, strength);
+    body.applyImpulse(linear, true);
+    body.applyTorqueImpulse(torque, true);
+  }
+
+  /** Shared zone-classification bounds, consumed by `getSkullCounts` and `shakeSkulls`. */
+  private classifyParams(): SkullClassifyParams {
+    const fallbackRadius = this.bounds.modelRadius * 0.33;
+    return {
+      shellRadius: this.shellRadius ?? fallbackRadius,
+      baseRadiusAtBoard: this.baseRadiusAtBoard ?? this.shellRadius ?? fallbackRadius,
+      boardTopY: this.bounds.modelBottomY,
+      modelTopY: this.bounds.modelTopY,
+      skullRadius: this.bounds.modelRadius * this.config.skull.radiusFactor,
+    };
+  }
+
+  /**
+   * Register or unregister the `skull.clickToShake` pointer target to match
+   * the current config. Registering twice, or unregistering when not
+   * registered, is a safe no-op.
+   */
+  private updateClickToShakeRegistration(): void {
+    if (this.config.skull.clickToShake) {
+      if (this.pointerTargetUnsub) return;
+      const target: PointerTarget = {
+        objects: () => this.skulls.map((s) => s.mesh),
+        // Outrank the camera's orbit controls (priority 0) so a skull click
+        // shakes it instead of starting an orbit drag.
+        priority: 10,
+        onPointerDown: (hit) => {
+          const id = this.getSkullIdForObject(hit.object);
+          if (id === null) return false;
+          this.shakeSelectedSkull(id);
+          return true;
+        },
+      };
+      this.pointerTargetUnsub = this.hooks.registerPointerTarget(target);
+    } else {
+      this.pointerTargetUnsub?.();
+      this.pointerTargetUnsub = null;
+    }
   }
 
   // ── internals ──────────────────────────────────────────────────────────
@@ -897,6 +1001,9 @@ export class PhysicsManager {
     }
     if (this.config.debug.sealColliders !== prev.debug.sealColliders) {
       this.applySealDebugVisibility();
+    }
+    if (this.config.skull.clickToShake !== prev.skull.clickToShake) {
+      this.updateClickToShakeRegistration();
     }
     if (this.config.skull.modelUrl !== prev.skull.modelUrl) {
       // URL changed: cancel any in-flight load, drop the old template, and

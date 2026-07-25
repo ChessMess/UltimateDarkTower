@@ -106,4 +106,28 @@ describe('resolvePhysics', () => {
     const out = resolvePhysics({ skull: { autoDropOnSkullCountIncrease: true } });
     expect(out.skull.autoDropOnSkullCountIncrease).toBe(true);
   });
+
+  it('defaults skull.canSleep to true and carries an override', () => {
+    expect(DEFAULT_PHYSICS.skull.canSleep).toBe(true);
+    const out = resolvePhysics({ skull: { canSleep: false } });
+    expect(out.skull.canSleep).toBe(false);
+  });
+
+  it('defaults skull.additionalSolverIterations to 0 and carries an override', () => {
+    expect(DEFAULT_PHYSICS.skull.additionalSolverIterations).toBe(0);
+    const out = resolvePhysics({ skull: { additionalSolverIterations: 4 } });
+    expect(out.skull.additionalSolverIterations).toBe(4);
+  });
+
+  it('defaults skull.shakeStrength to 3 and carries an override', () => {
+    expect(DEFAULT_PHYSICS.skull.shakeStrength).toBe(3);
+    const out = resolvePhysics({ skull: { shakeStrength: 7 } });
+    expect(out.skull.shakeStrength).toBe(7);
+  });
+
+  it('defaults skull.clickToShake to false and carries an override', () => {
+    expect(DEFAULT_PHYSICS.skull.clickToShake).toBe(false);
+    const out = resolvePhysics({ skull: { clickToShake: true } });
+    expect(out.skull.clickToShake).toBe(true);
+  });
 });

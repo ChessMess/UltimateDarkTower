@@ -59,7 +59,7 @@ import { GroundDiscManager } from './GroundDiscManager';
 import { SkyboxManager } from './SkyboxManager';
 import { SealManager } from './SealManager';
 import type { SealBacklightRef } from './SealManager';
-import { DrumManager } from './DrumManager';
+import { DrumManager, type ShakeDrumsOptions } from './DrumManager';
 import { loadTowerModel } from './ModelLoader';
 
 // Re-exported for consumers that import directly from Tower3DView rather than the package root.
@@ -450,6 +450,7 @@ export class Tower3DView implements ITowerDisplay {
       modelRadius: this.modelRadius,
       modelBottomY: this.modelBottomY,
       modelTopY: this.modelTopY,
+      registerPointerTarget: (target) => this.registerPointerTarget(target),
     };
   }
 
@@ -896,6 +897,26 @@ export class Tower3DView implements ITowerDisplay {
       this.calibrationAudio.endRotation();
     }
     this.playSample(TOWER_AUDIO_LIBRARY.GameStart.value);
+  }
+
+  /**
+   * Rattle the three drum rings — a small, decaying rotational oscillation
+   * around each drum's current position. Via the kinematic-collider sync
+   * skull physics piggybacks every frame, this jostles skulls resting on or
+   * near the drums loose without moving the tower's on-screen silhouette
+   * (a whole-model shake would) and without touching the tower model itself.
+   *
+   * Purely visual/kinematic — it moves drum colliders but does not act on
+   * skull physics bodies directly. Pair with the physics handle's
+   * `shakeSkulls()` (impulses every `inTower` skull) for a skull the drum
+   * motion doesn't reach; the two are independent calls (physics is a
+   * separate `ScenePlugin`, this view doesn't own the `PhysicsManager`) — a
+   * consumer may call either, both, or neither.
+   *
+   * No-op if the model hasn't loaded (no drum nodes registered yet).
+   */
+  shakeTower(options?: ShakeDrumsOptions): void {
+    this.drumManager.shakeDrums(options);
   }
 
   /**

@@ -1,5 +1,10 @@
 import type { Mock } from 'vitest';
-import { buildHullColliderDesc, cloneSkullMesh } from '../../../src/physics/SkullSpawner';
+import {
+  buildHullColliderDesc,
+  cloneSkullMesh,
+  computeShakeImpulse,
+  findSkullIdForObject,
+} from '../../../src/physics/SkullSpawner';
 
 /**
  * Minimal Rapier stand-in. Only the surface the spawner touches:
@@ -147,5 +152,98 @@ describe('cloneSkullMesh', () => {
     expect(clone.children[0].geometry).toBe(childGeom);
     expect(clone.children[0].material).toBe(childMat);
     expect(clone.scale.x).toBe(2);
+  });
+});
+
+describe('computeShakeImpulse', () => {
+  const fixedRng = (): number => 0.5; // angle = π, all randoms mid-range
+
+  it('scales linear impulse magnitude with mass, modelRadius, and strength', () => {
+    const a = computeShakeImpulse(1, 1, 1, fixedRng);
+    const b = computeShakeImpulse(2, 1, 1, fixedRng);
+    const c = computeShakeImpulse(1, 2, 1, fixedRng);
+    const d = computeShakeImpulse(1, 1, 2, fixedRng);
+
+    const mag = (v: { x: number; y: number; z: number }): number => Math.hypot(v.x, v.y, v.z);
+
+    expect(mag(b.linear)).toBeCloseTo(mag(a.linear) * 2, 10);
+    expect(mag(c.linear)).toBeCloseTo(mag(a.linear) * 2, 10);
+    expect(mag(d.linear)).toBeCloseTo(mag(a.linear) * 2, 10);
+  });
+
+  it('biases the linear impulse upward (+y dominates the horizontal component)', () => {
+    const { linear } = computeShakeImpulse(1, 1, 1, fixedRng);
+    expect(linear.y).toBeGreaterThan(0);
+    expect(linear.y).toBeGreaterThan(Math.hypot(linear.x, linear.z));
+  });
+
+  it('is deterministic for a fixed rng and varies with a different rng', () => {
+    const a = computeShakeImpulse(1, 1, 3, () => 0.1);
+    const b = computeShakeImpulse(1, 1, 3, () => 0.1);
+    const c = computeShakeImpulse(1, 1, 3, () => 0.9);
+
+    expect(a).toEqual(b);
+    expect(a).not.toEqual(c);
+  });
+
+  it('produces a zero impulse for a massless body', () => {
+    const { linear, torque } = computeShakeImpulse(0, 1, 5, fixedRng);
+    // toBeCloseTo (not toEqual) since cos(π)*0 yields -0, not 0.
+    for (const v of [linear.x, linear.y, linear.z, torque.x, torque.y, torque.z]) {
+      expect(v).toBeCloseTo(0, 10);
+    }
+  });
+
+  it('defaults to Math.random when rng is omitted (does not throw, produces finite values)', () => {
+    const { linear, torque } = computeShakeImpulse(1, 1, 3);
+    for (const v of [linear.x, linear.y, linear.z, torque.x, torque.y, torque.z]) {
+      expect(Number.isFinite(v)).toBe(true);
+    }
+  });
+});
+
+describe('findSkullIdForObject', () => {
+  interface StubObject3D {
+    userData: Record<string, unknown>;
+    parent: StubObject3D | null;
+  }
+
+  function makeStub(
+    userData: Record<string, unknown> = {},
+    parent: StubObject3D | null = null,
+  ): StubObject3D {
+    return { userData, parent };
+  }
+
+  it('returns the id directly tagged on the object', () => {
+    const obj = makeStub({ skullId: 42 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(findSkullIdForObject(obj as any)).toBe(42);
+  });
+
+  it('walks up through untagged ancestors to find a tagged one', () => {
+    const root = makeStub({ skullId: 7 });
+    const mid = makeStub({}, root);
+    const leaf = makeStub({}, mid);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(findSkullIdForObject(leaf as any)).toBe(7);
+  });
+
+  it('returns null when no ancestor is tagged', () => {
+    const root = makeStub({});
+    const leaf = makeStub({}, root);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(findSkullIdForObject(leaf as any)).toBeNull();
+  });
+
+  it('returns null for an object with no userData at all', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(findSkullIdForObject({ parent: null } as any)).toBeNull();
+  });
+
+  it('ignores a non-numeric skullId value', () => {
+    const obj = makeStub({ skullId: 'not-a-number' });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(findSkullIdForObject(obj as any)).toBeNull();
   });
 });

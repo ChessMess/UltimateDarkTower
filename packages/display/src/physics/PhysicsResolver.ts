@@ -26,6 +26,10 @@ export const DEFAULT_PHYSICS: ResolvedPhysicsConfig = {
     density: undefined,
     meshFactory: undefined,
     autoDropOnSkullCountIncrease: false,
+    canSleep: true,
+    additionalSolverIterations: 0,
+    shakeStrength: 3,
+    clickToShake: false,
   },
   drum: {
     innerRadiusFactor: 0.3,
@@ -83,6 +87,11 @@ export function resolvePhysics(
       meshFactory: user?.skull?.meshFactory ?? base.skull.meshFactory,
       autoDropOnSkullCountIncrease:
         user?.skull?.autoDropOnSkullCountIncrease ?? base.skull.autoDropOnSkullCountIncrease,
+      canSleep: user?.skull?.canSleep ?? base.skull.canSleep,
+      additionalSolverIterations:
+        user?.skull?.additionalSolverIterations ?? base.skull.additionalSolverIterations,
+      shakeStrength: user?.skull?.shakeStrength ?? base.skull.shakeStrength,
+      clickToShake: user?.skull?.clickToShake ?? base.skull.clickToShake,
     },
     drum: {
       innerRadiusFactor: user?.drum?.innerRadiusFactor ?? base.drum.innerRadiusFactor,

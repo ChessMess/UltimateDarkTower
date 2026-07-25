@@ -163,6 +163,43 @@ export function initPhysicsController(): void {
     });
   }
 
+  // Two independent shake calls (per the physics handle / view split):
+  // Shake Skulls impulses every currently-inTower skull body; Shake Tower
+  // rattles the drum rings. Either can be clicked on its own.
+  const btnShakeSkulls = document.getElementById('btn-shake-skulls') as HTMLButtonElement | null;
+  if (btnShakeSkulls) {
+    btnShakeSkulls.addEventListener('click', () => {
+      handle?.shakeSkulls();
+    });
+  }
+
+  const btnShakeTower = document.getElementById('btn-shake-tower') as HTMLButtonElement | null;
+  if (btnShakeTower) {
+    btnShakeTower.addEventListener('click', () => {
+      getDisplay().view3D?.shakeTower();
+    });
+  }
+
+  const chkClickToShake = document.getElementById('chk-click-to-shake') as HTMLInputElement | null;
+  if (chkClickToShake) {
+    chkClickToShake.addEventListener('change', () => {
+      applyConfig({ skull: { clickToShake: chkClickToShake.checked } });
+    });
+    sliderSyncers.push((cfg) => {
+      chkClickToShake.checked = cfg.skull.clickToShake;
+    });
+  }
+
+  const chkCanSleep = document.getElementById('chk-skull-can-sleep') as HTMLInputElement | null;
+  if (chkCanSleep) {
+    chkCanSleep.addEventListener('change', () => {
+      applyConfig({ skull: { canSleep: chkCanSleep.checked } });
+    });
+    sliderSyncers.push((cfg) => {
+      chkCanSleep.checked = cfg.skull.canSleep;
+    });
+  }
+
   // Live counts readout: polled rather than event-driven since positions
   // change every physics step. initPhysicsController() runs once at boot
   // (see example.ts), but the interval is guarded defensively in case that
@@ -348,6 +385,22 @@ export function initPhysicsController(): void {
     DEFAULT_PHYSICS.skull.linearDamping,
     (v) => applyConfig({ skull: { linearDamping: v } }),
     (cfg) => cfg.skull.linearDamping,
+  );
+  wireSlider(
+    'rng-skull-solver-iters',
+    'lbl-skull-solver-iters',
+    0,
+    DEFAULT_PHYSICS.skull.additionalSolverIterations,
+    (v) => applyConfig({ skull: { additionalSolverIterations: v } }),
+    (cfg) => cfg.skull.additionalSolverIterations,
+  );
+  wireSlider(
+    'rng-shake-strength',
+    'lbl-shake-strength',
+    1,
+    DEFAULT_PHYSICS.skull.shakeStrength,
+    (v) => applyConfig({ skull: { shakeStrength: v } }),
+    (cfg) => cfg.skull.shakeStrength,
   );
 
   // When the user switches renderers (e.g. from 2D-only to 3D), refresh
