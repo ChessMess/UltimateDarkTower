@@ -200,7 +200,7 @@ See [SCENE_PLUGINS](SCENE_PLUGINS.md) for the author's guide and [API §Scene pl
 
 ## Extension points
 
-- **`modelUrl`** — override the bundled GLB. Custom models must keep the drum and seal naming contract (`drum_top`, `seal_north_top`, etc.) or those subsystems become no-ops.
+- **`modelUrl`** — override the bundled GLB. Custom models must keep the drum and seal naming contract (`drum_top`, `seal_north_top`, etc.) or those subsystems become no-ops. Optionally add 12 `pocket_<side>_<level>` volumes for exact (rather than nearest-seal) skull attribution in `getSkullsBySeal()` — see [POCKET_AUTHORING](POCKET_AUTHORING.md).
 - **`skull.modelUrl` / `skull.meshFactory`** — drop arbitrary models (or fully custom `Object3D`s) instead of the default sphere. The library loads `.glb` itself (with a `.stl` fallback); consumers wanting full control return their own `Object3D` from `meshFactory`. See [PHYSICS §Skull Appearance](PHYSICS.md#skull-appearance).
 - **`attachScenePlugin(view, plugin)`** — the generalized seam (above). Inject and own 3D content in the scene with a clean lifecycle, model-load + state/seal subscriptions, side changes, the render loop, and pointer hit-testing. See [SCENE_PLUGINS](SCENE_PLUGINS.md).
 - **`setBoardDiscEnabled(false)` + `getDiscMetrics()`** — stand the placeholder board image down and read disc geometry so an external plugin can own the disc surface (disc mesh + physics floor stay intact).

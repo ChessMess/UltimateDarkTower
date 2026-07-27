@@ -29,6 +29,10 @@ export const DEFAULT_PHYSICS: ResolvedPhysicsConfig = {
     canSleep: true,
     additionalSolverIterations: 0,
     shakeStrength: 3,
+    // Outward push dominates the lift, so a shake pops a skull toward open
+    // space rather than launching it straight up.
+    shakeHorizontalFactor: 0.5,
+    shakeUpwardFactor: 0.45,
     clickToShake: false,
   },
   drum: {
@@ -43,6 +47,18 @@ export const DEFAULT_PHYSICS: ResolvedPhysicsConfig = {
     // the skull. The drum's interior surface carries the skull during
     // rotation, not the closed seal panel.
     friction: 0.05,
+    // Nearest-seal fallback only (ignored once the model supplies all 12
+    // pocket_<side>_<level> volumes). ~0.25 * modelRadius is roughly half the
+    // stock model's inter-seal spacing (adjacent seal centers are ~0.43 *
+    // modelRadius apart) — a starting point to tune against your own model.
+    attributionRadiusFactor: 0.25,
+    // Auto-shake newly-uncovered skulls on by default — a broken seal should
+    // visibly free what was behind it rather than leaving it silently
+    // resting on the now-open trimesh.
+    shakeSkullsOnSealRemoval: true,
+    // Give gravity a quarter-second to clear the opening on its own before
+    // checking which skulls are still stuck.
+    shakeSkullsOnSealRemovalDelaySeconds: 0.25,
   },
   static: {
     // arctan(0.1) ≈ 5.7° release angle on cone/base/shell surfaces.
@@ -91,6 +107,8 @@ export function resolvePhysics(
       additionalSolverIterations:
         user?.skull?.additionalSolverIterations ?? base.skull.additionalSolverIterations,
       shakeStrength: user?.skull?.shakeStrength ?? base.skull.shakeStrength,
+      shakeHorizontalFactor: user?.skull?.shakeHorizontalFactor ?? base.skull.shakeHorizontalFactor,
+      shakeUpwardFactor: user?.skull?.shakeUpwardFactor ?? base.skull.shakeUpwardFactor,
       clickToShake: user?.skull?.clickToShake ?? base.skull.clickToShake,
     },
     drum: {
@@ -100,6 +118,13 @@ export function resolvePhysics(
     },
     seal: {
       friction: user?.seal?.friction ?? base.seal.friction,
+      attributionRadiusFactor:
+        user?.seal?.attributionRadiusFactor ?? base.seal.attributionRadiusFactor,
+      shakeSkullsOnSealRemoval:
+        user?.seal?.shakeSkullsOnSealRemoval ?? base.seal.shakeSkullsOnSealRemoval,
+      shakeSkullsOnSealRemovalDelaySeconds:
+        user?.seal?.shakeSkullsOnSealRemovalDelaySeconds ??
+        base.seal.shakeSkullsOnSealRemovalDelaySeconds,
     },
     static: {
       friction: user?.static?.friction ?? base.static.friction,

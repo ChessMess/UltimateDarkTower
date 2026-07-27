@@ -56,13 +56,16 @@ export function loadTowerModel(
       const modelBottomY = -size.y / 2;
       const modelTopY = size.y / 2;
 
-      // Enable shadows on every mesh in the hierarchy.
+      // Enable shadows on every mesh in the hierarchy. Authored `pocket_*`
+      // volumes (physics seal-attribution markers, see /physics) are never
+      // rendered — hidden here so a plain Tower3DView doesn't show them.
       root.traverse((child) => {
         const mesh = child as THREE.Mesh;
         if (mesh.isMesh) {
           mesh.castShadow = true;
           mesh.receiveShadow = true;
         }
+        if (child.name.startsWith('pocket_')) child.visible = false;
       });
 
       onLoaded({ root, modelRadius, modelBottomY, modelTopY });

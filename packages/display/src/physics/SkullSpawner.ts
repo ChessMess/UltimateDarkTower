@@ -53,34 +53,46 @@ export interface ShakeImpulse {
 }
 
 /**
- * Compute a randomized "shake" impulse for a skull body: an upward-biased
- * linear impulse (so it pops free rather than digging sideways into the
- * geometry it's wedged in) plus a small random spin. Magnitude scales with
- * body mass and model scale so the same `strength` reads as a gentle nudge
- * at any model size — `impulseMag = mass * modelRadius * strength`.
+ * Compute a "shake" impulse for a skull body: a linear impulse pointing away
+ * from the tower's central axis (through the skull's current position, so it
+ * nudges toward the nearest opening rather than deeper into the geometry it's
+ * wedged in) plus a small random spin. Magnitude scales with body mass and
+ * model scale so the same `strength` reads as a gentle nudge at any model
+ * size — `impulseMag = mass * modelRadius * strength`.
+ *
+ * `horizontalFactor`/`upwardFactor` shape that impulse into direction +
+ * lift — callers read these from `PhysicsConfig.skull.shakeHorizontalFactor`
+ * / `shakeUpwardFactor` (via `ResolvedPhysicsConfig`) so every shake call site
+ * shares one tunable, centralized definition of "what a shake looks like"
+ * rather than each picking its own.
  *
  * Pure — `rng` defaults to `Math.random` but is injectable for deterministic
- * tests. Shared by `PhysicsManager.shakeSkulls()` and `shakeSelectedSkull()`.
+ * tests (it only affects the torque; the linear direction is a function of
+ * `position`, not random). Shared by `PhysicsManager.shakeSkulls()` and
+ * `shakeSelectedSkull()`.
  */
 export function computeShakeImpulse(
   mass: number,
   modelRadius: number,
   strength: number,
+  position: { x: number; z: number },
+  horizontalFactor: number,
+  upwardFactor: number,
   rng: () => number = Math.random,
 ): ShakeImpulse {
   const impulseMag = mass * modelRadius * strength;
 
-  // Upward-biased random direction: strong +Y so a wedged skull pops
-  // upward/free rather than just grinding sideways against the trimesh it's
-  // stuck in, plus a random horizontal component for variety between shakes.
-  const angle = rng() * Math.PI * 2;
-  const horizontalFrac = 0.5;
-  const upFrac = 1.0;
+  // Horizontal direction points radially outward — away from the tower's
+  // central (Y) axis, through the skull's current (x, z) — so a shake pushes
+  // it toward the nearest opening instead of a random direction. A skull
+  // sitting exactly on the axis (x === z === 0) has no defined "away";
+  // atan2(0, 0) is 0, a stable but arbitrary direction for that rare case.
+  const angle = Math.atan2(position.z, position.x);
 
   const linear = {
-    x: Math.cos(angle) * impulseMag * horizontalFrac,
-    y: impulseMag * upFrac,
-    z: Math.sin(angle) * impulseMag * horizontalFrac,
+    x: Math.cos(angle) * impulseMag * horizontalFactor,
+    y: impulseMag * upwardFactor,
+    z: Math.sin(angle) * impulseMag * horizontalFactor,
   };
 
   // Small random spin so a shaken skull doesn't move in perfect lockstep

@@ -74,6 +74,11 @@ import type {
   SkullTemplate,
   SkullCounts,
   SkullZone,
+  SealAnchor,
+  SealPocket,
+  SealSkullBucket,
+  SkullSealBuckets,
+  SealAutoShakeConfig,
   DeepRequired,
 } from 'ultimatedarktowerdisplay/physics';
 ```
@@ -227,7 +232,7 @@ Obtain `TowerState` from the [`ultimatedarktower`](https://www.npmjs.com/package
 Update seal visibility across every active renderer. Pass the full current list of broken seals; seals in the list are hidden, and any seals previously hidden but now absent from the list are restored. Call this whenever the set of broken seals changes.
 
 - **Side view (2D):** seals are hidden via CSS opacity for the currently displayed side; switching sides re-evaluates visibility against the same list.
-- **3D view:** each of the 12 seal meshes in the GLB model is resolved by name and its `Object3D.visible` flag is flipped. The default bundled model ships with the 12 named seal nodes. If you supply a custom `modelUrl`, the model must contain objects named `seal_<side>_<level>` (lowercase) for every `side ∈ {north, south, east, west}` and `level ∈ {top, middle, bottom}` — e.g. `seal_north_top`, `seal_west_bottom`. Missing names are logged once as a `console.warn` at load time and become silent no-ops for `applySeals`.
+- **3D view:** each of the 12 seal meshes in the GLB model is resolved by name and its `Object3D.visible` flag is flipped. The default bundled model ships with the 12 named seal nodes. If you supply a custom `modelUrl`, the model must contain objects named `seal_<side>_<level>` (lowercase) for every `side ∈ {north, south, east, west}` and `level ∈ {top, middle, bottom}` — e.g. `seal_north_top`, `seal_west_bottom`. Missing names are logged once as a `console.warn` at load time and become silent no-ops for `applySeals`. Optionally add 12 matching `pocket_<side>_<level>` volumes for exact skull attribution in `getSkullsBySeal()` — see [POCKET_AUTHORING](POCKET_AUTHORING.md).
 - **Click-to-toggle (`clickToToggleSeals`, default `true`):** `TowerDisplay` owns a user-toggle set that is merged with the external `brokenSeals` list before fan-out. Clicking a seal in the 2D view (or the readout seal grid when `TowerStateReadout` is registered as a renderer) flips its user-toggle state and immediately hides/shows it on every renderer. Clearing the external list (`applySeals([])`) does not clear user toggles — they persist until clicked again or until `dispose()`.
 
 **Two patterns for managing seal state:**
@@ -1042,15 +1047,24 @@ skulls.dropSkull();
 skulls.applyPhysicsConfig({ skull: { restitution: 0.4 } }); // live tuning
 ```
 
-`SkullPhysicsHandle` — `{ dropSkull(): void; clearSkulls(): void; getSkullCounts(): SkullCounts;
-getPhysicsConfig(): ResolvedPhysicsConfig; applyPhysicsConfig(partial: PhysicsConfig): void;
-dispose(): void }`.
+`SkullPhysicsHandle` — `{ dropSkull(): number | null; clearSkulls(): void; shakeSkulls(options?): void;
+shakeSelectedSkull(id: number | number[], options?): void; getSkullIdForObject(obj): number | null;
+getSkullCounts(): SkullCounts; getSkullsBySeal(): SkullSealBuckets; getPhysicsConfig(): ResolvedPhysicsConfig;
+applyPhysicsConfig(partial: PhysicsConfig): void; dispose(): void }`.
 
 `getSkullCounts()` returns `{ total, inTower, onBoard, inTransit, pending }` — a poll-safe
 snapshot of where every live skull currently is, classified by two independent signals (radial
 position for `inTower`, height for `onBoard`), so `total - onBoard === inTower` whenever the sim
 is settled (`inTransit === 0`). See [PHYSICS §Counting skulls](PHYSICS.md#counting-skulls) for
 the full field/threshold reference.
+
+`getSkullsBySeal()` returns `{ bySeal, unattributed, total, mode }` — which of the 12 seal
+openings each `inTower` skull is resting behind (with ids, so a bucket can be passed straight to
+`shakeSelectedSkull`), plus an `unattributed` list for skulls not near any opening. `mode` is
+`'pocket'` (exact, from authored `pocket_<side>_<level>` model geometry) or `'nearest'` (a
+distance-based fallback, tuned by `seal.attributionRadiusFactor`). See
+[PHYSICS §Counting skulls by seal](PHYSICS.md#counting-skulls-by-seal) for the full picture and
+[POCKET_AUTHORING](POCKET_AUTHORING.md) for adding the pocket volumes.
 
 Supporting exports:
 
@@ -1061,6 +1075,9 @@ Supporting exports:
 - `ResolvedPhysicsConfig` — `PhysicsConfig` with every leaf required (`DeepRequired<PhysicsConfig>`).
 - `SkullTemplate` — a preprocessed skull model (decimated mesh + hull points) for `skull.modelUrl`.
 - `SkullCounts` / `SkullZone` — the shape returned by `getSkullCounts()` and its per-skull zone type.
+- `SealAnchor` / `SealPocket` / `SealSkullBucket` / `SkullSealBuckets` — the shapes underlying
+  `getSkullsBySeal()`.
+- `SealAutoShakeConfig` — object form of `PhysicsConfig.seal.shakeSkullsOnSealRemoval`.
 - `DeepRequired<T>` — utility type making every nested property required (re-exported from the main types).
 
 ---
