@@ -14,8 +14,14 @@ import {
 import {
   aggregateSkullCounts,
   classifySkull,
+  bucketSkullsByPocket,
+  bucketSkullsByNearestSeal,
+  resolveSealRemovalShake,
   type SkullClassifyParams,
   type SkullCounts,
+  type SealAnchor,
+  type SealPocket,
+  type SkullSealBuckets,
 } from './skullCounts';
 
 // Rapier is dynamic-imported inside init() so the WASM init runs once.
@@ -24,6 +30,16 @@ type RapierWorld = import('@dimforge/rapier3d-compat').World;
 type RapierRigidBody = import('@dimforge/rapier3d-compat').RigidBody;
 type RapierCollider = import('@dimforge/rapier3d-compat').Collider;
 type RapierColliderDesc = import('@dimforge/rapier3d-compat').ColliderDesc;
+
+/**
+ * Per-call scratch for `getSkullsBySeal()`'s seal-anchor position reads.
+ * `invMatrix` isn't included here (unlike `drumStepScratch`'s `pos`/`quat`):
+ * `getSkullsBySeal()` isn't a per-frame path, so its `Matrix4` is allocated
+ * fresh per call instead, in `getSkullsBySeal()` itself.
+ */
+const sealBucketScratch = {
+  pos: new THREE.Vector3(),
+};
 
 /** Per-frame scratch for sync'ing kinematic drum trimesh poses without alloc. */
 const drumStepScratch = {
@@ -53,6 +69,21 @@ function parseSealNode(name: string): { side: SealSide; level: SealLevel } | nul
   return { side: side as SealSide, level: level as SealLevel };
 }
 
+const POCKET_NAME_PREFIX = 'pocket_';
+
+/** Same `<side>_<level>` naming as `parseSealNode`, under the `pocket_` prefix. */
+function parsePocketNode(name: string): { side: SealSide; level: SealLevel } | null {
+  if (!name.startsWith(POCKET_NAME_PREFIX)) return null;
+  const rest = name.slice(POCKET_NAME_PREFIX.length);
+  const underscore = rest.indexOf('_');
+  if (underscore < 0) return null;
+  const side = rest.slice(0, underscore);
+  const level = rest.slice(underscore + 1);
+  if (!SEAL_SIDES.includes(side as SealSide)) return null;
+  if (!SEAL_LEVELS.includes(level as SealLevel)) return null;
+  return { side: side as SealSide, level: level as SealLevel };
+}
+
 interface DrumColliderRef {
   body: RapierRigidBody;
   collider: RapierCollider;
@@ -68,6 +99,17 @@ interface SealColliderRef {
   wireframe: THREE.LineSegments;
   /** Currently-applied material so we can swap it when broken state flips. */
   wireMat: THREE.LineBasicMaterial;
+}
+
+/** One authored `pocket_<side>_<level>` volume, for `getSkullsBySeal()`'s pocket mode. */
+interface PocketRef {
+  side: SealSide;
+  level: SealLevel;
+  /** Visual pocket node — its world matrix (inverted) maps a skull into local space. */
+  node: THREE.Object3D;
+  /** Local-space AABB of the pocket geometry. */
+  min: { x: number; y: number; z: number };
+  max: { x: number; y: number; z: number };
 }
 
 interface SkullRef {
@@ -108,11 +150,26 @@ export class PhysicsManager {
   private prevBeamCount: number | null = null;
 
   private brokenSet: Set<string> = new Set();
+  /** Running clock (seconds), advanced by `step(dt)` — drives the delayed recheck below. */
+  private simClock = 0;
+  /**
+   * `seal.shakeSkullsOnSealRemoval`'s delayed recheck queue. `applyBrokenSeals`
+   * pushes one entry per update that contains newly-broken seals; `step()`
+   * removes and fires whichever entries are due each frame. Not assumed
+   * sorted by `dueAt` — `delaySeconds` can change between two seal breaks
+   * (it's a Live config leaf), so a later entry can come due before an
+   * earlier one.
+   */
+  private pendingSealChecks: Array<{ dueAt: number; keys: Set<string> }> = [];
   private trimeshCount = 0;
   /** Kinematic drum trimesh bodies, keyed by drum level. */
   private drumColliders: Map<'top' | 'middle' | 'bottom', DrumColliderRef> = new Map();
   /** Kinematic seal trimesh bodies, keyed by `${level}:${side}`. */
   private sealColliders: Map<string, SealColliderRef> = new Map();
+  /** Authored `pocket_<side>_<level>` volumes, keyed by `${level}:${side}`. Empty unless the model supplies them. */
+  private pocketNodes: Map<string, PocketRef> = new Map();
+  /** `'pocket'` once all 12 pocket nodes are found; `'nearest'` otherwise. Resolved once at model-ready. */
+  private attributionMode: 'pocket' | 'nearest' = 'nearest';
   /** Fixed-body trimesh colliders for non-drum/non-seal GLB meshes. */
   private staticGlbColliders: RapierCollider[] = [];
   /** The game-board floor collider, set in buildStaticColliders. */
@@ -414,6 +471,7 @@ export class PhysicsManager {
     this.world = null;
     this.rapier = null;
     this.brokenSet.clear();
+    this.pendingSealChecks.length = 0;
     this.drumColliders.clear();
     this.staticGlbColliders.length = 0;
     this.boardCollider = null;
@@ -421,6 +479,8 @@ export class PhysicsManager {
     this.boardLipCollider = null;
     this.shellRadius = null;
     this.baseRadiusAtBoard = null;
+    this.pocketNodes.clear();
+    this.attributionMode = 'nearest';
   }
 
   /**
@@ -450,6 +510,83 @@ export class PhysicsManager {
   }
 
   /**
+   * Breakdown of in-tower skulls by which seal opening they're behind, plus
+   * an `unattributed` bucket for ones that aren't near any opening (funnel,
+   * central axis). `total` always equals `getSkullCounts().inTower`.
+   *
+   * Uses the model's authored `pocket_<side>_<level>` volumes when all 12 are
+   * present (`mode: 'pocket'` — an exact point-in-box test, correct under
+   * drum rotation whether or not the pocket is drum-parented); otherwise
+   * falls back to nearest-seal-anchor attribution within
+   * `seal.attributionRadiusFactor` (`mode: 'nearest'`), a heuristic. See
+   * PHYSICS.md's "Counting skulls" section for the full picture.
+   *
+   * Pair with `shakeSelectedSkull` to unstick exactly the skulls behind an
+   * already-broken seal:
+   * ```ts
+   * const stuck = physics.getSkullsBySeal();
+   * physics.shakeSelectedSkull(stuck.bySeal.filter((b) => b.broken).flatMap((b) => b.ids));
+   * ```
+   *
+   * No-op-shaped before init resolves or with no live skulls: returns
+   * `{ bySeal: [], unattributed: [], total: 0, mode: 'nearest' }`. Cheap
+   * (O(skulls × 12)); safe to poll every frame.
+   */
+  getSkullsBySeal(): SkullSealBuckets {
+    if (!this.world || !this.ready) {
+      return { bySeal: [], unattributed: [], total: 0, mode: 'nearest' };
+    }
+
+    const skulls = this.skulls.map((s) => {
+      const t = s.body.translation();
+      return { id: s.id, x: t.x, y: t.y, z: t.z };
+    });
+    const params = this.classifyParams();
+
+    if (this.attributionMode === 'pocket') {
+      // Not a per-frame path (unlike drumStepScratch) — allocating one
+      // Matrix4 per call, reused across all 12 pockets, is fine.
+      const invMatrix = new THREE.Matrix4();
+      const pockets: SealPocket[] = [];
+      for (const level of SEAL_LEVELS) {
+        for (const side of SEAL_SIDES) {
+          const ref = this.pocketNodes.get(sealKey(level, side));
+          if (!ref) continue;
+          invMatrix.copy(ref.node.matrixWorld).invert();
+          pockets.push({
+            side,
+            level,
+            broken: this.brokenSet.has(sealKey(level, side)),
+            inverseWorld: invMatrix.toArray(),
+            min: ref.min,
+            max: ref.max,
+          });
+        }
+      }
+      return bucketSkullsByPocket(skulls, pockets, params);
+    }
+
+    const anchors: SealAnchor[] = [];
+    for (const level of SEAL_LEVELS) {
+      for (const side of SEAL_SIDES) {
+        const ref = this.sealColliders.get(sealKey(level, side));
+        if (!ref) continue;
+        ref.node.getWorldPosition(sealBucketScratch.pos);
+        anchors.push({
+          side,
+          level,
+          broken: this.brokenSet.has(sealKey(level, side)),
+          x: sealBucketScratch.pos.x,
+          y: sealBucketScratch.pos.y,
+          z: sealBucketScratch.pos.z,
+        });
+      }
+    }
+    const maxDistance = this.bounds.modelRadius * this.config.seal.attributionRadiusFactor;
+    return bucketSkullsByNearestSeal(skulls, anchors, params, maxDistance);
+  }
+
+  /**
    * Impulse-nudge every skull currently classified `inTower` (see
    * `classifySkull` in skullCounts.ts) — the zone a skull wedged in the
    * tower's interior geometry (funnel seam, drum/seal pinch point) sits in.
@@ -467,18 +604,21 @@ export class PhysicsManager {
   }
 
   /**
-   * Impulse-nudge exactly one skull by id, regardless of its current zone —
-   * unlike `shakeSkulls()`, there is no `inTower` filter, since a
-   * deliberately-selected skull (e.g. via `skull.clickToShake`) should
-   * shake wherever it is. No-op if `id` doesn't match a live skull, before
-   * init resolves, or after `dispose()`.
+   * Impulse-nudge one skull, or a batch of them, regardless of their current
+   * zone — unlike `shakeSkulls()`, there is no `inTower` filter, since a
+   * deliberately-selected skull (e.g. via `skull.clickToShake`, or a
+   * `getSkullsBySeal()` bucket's `ids`) should shake wherever it is. Ids not
+   * matching a live skull are silently skipped; an empty array is a no-op.
+   * No-op before init resolves or after `dispose()`.
    */
-  shakeSelectedSkull(id: number, options?: { strength?: number }): void {
+  shakeSelectedSkull(id: number | number[], options?: { strength?: number }): void {
     if (this.disposed || !this.world || !this.ready) return;
-    const s = this.skulls.find((x) => x.id === id);
-    if (!s) return;
+    const wanted = new Set(Array.isArray(id) ? id : [id]);
+    if (wanted.size === 0) return;
     const strength = options?.strength ?? this.config.skull.shakeStrength;
-    this.applyShakeImpulse(s.body, strength);
+    for (const s of this.skulls) {
+      if (wanted.has(s.id)) this.applyShakeImpulse(s.body, strength);
+    }
   }
 
   /** Walk `obj` up its parent chain to find a live skull's tagged id, or `null`. */
@@ -487,7 +627,14 @@ export class PhysicsManager {
   }
 
   private applyShakeImpulse(body: RapierRigidBody, strength: number): void {
-    const { linear, torque } = computeShakeImpulse(body.mass(), this.bounds.modelRadius, strength);
+    const { linear, torque } = computeShakeImpulse(
+      body.mass(),
+      this.bounds.modelRadius,
+      strength,
+      body.translation(),
+      this.config.skull.shakeHorizontalFactor,
+      this.config.skull.shakeUpwardFactor,
+    );
     body.applyImpulse(linear, true);
     body.applyTorqueImpulse(torque, true);
   }
@@ -705,6 +852,25 @@ export class PhysicsManager {
         return;
       }
 
+      // Authored seal-attribution marker (see /physics's getSkullsBySeal): never
+      // collides and never feeds the shell/base measurement below — just record
+      // its local AABB and world-tracking node for a later point-in-box test.
+      const pocketId = parsePocketNode(name);
+      if (pocketId) {
+        geom.computeBoundingBox();
+        const box = geom.boundingBox;
+        if (box) {
+          this.pocketNodes.set(sealKey(pocketId.level, pocketId.side), {
+            side: pocketId.side,
+            level: pocketId.level,
+            node: mesh,
+            min: { x: box.min.x, y: box.min.y, z: box.min.z },
+            max: { x: box.max.x, y: box.max.y, z: box.max.z },
+          });
+        }
+        return;
+      }
+
       // Static mesh: bake matrixWorld into the vertices and create a fixed
       // body at world origin.
       const v = new THREE.Vector3();
@@ -747,6 +913,42 @@ export class PhysicsManager {
       if (binMax >= 0 && (minBaseRadial < 0 || binMax < minBaseRadial)) minBaseRadial = binMax;
     }
     if (minBaseRadial >= 0) this.baseRadiusAtBoard = minBaseRadial;
+
+    this.resolveAttributionMode();
+  }
+
+  /**
+   * Decide `getSkullsBySeal()`'s attribution mode from what the GLB actually
+   * supplied: `'pocket'` only when all 12 `pocket_<side>_<level>` volumes were
+   * found, `'nearest'` otherwise. A partial set (some but not all 12) warns
+   * with the missing names, mirroring `SealManager.warnOnMissing()`; zero
+   * pockets is the ordinary case for a model that hasn't authored any and
+   * warrants no warning.
+   */
+  private resolveAttributionMode(): void {
+    if (this.pocketNodes.size === 12) {
+      this.attributionMode = 'pocket';
+    } else {
+      this.attributionMode = 'nearest';
+      if (this.pocketNodes.size > 0) {
+        const missing: string[] = [];
+        for (const level of SEAL_LEVELS) {
+          for (const side of SEAL_SIDES) {
+            if (!this.pocketNodes.has(sealKey(level, side))) {
+              missing.push(`${POCKET_NAME_PREFIX}${side}_${level}`);
+            }
+          }
+        }
+        console.warn(
+          `[ultimatedarktowerdisplay/physics] ${missing.length} pocket node(s) missing from the ` +
+            `loaded model; falling back to nearest-seal attribution for getSkullsBySeal(). ` +
+            `Missing: ${missing.join(', ')}.`,
+        );
+      }
+    }
+    console.info(
+      `[ultimatedarktowerdisplay/physics] seal attribution mode: ${this.attributionMode}`,
+    );
   }
 
   /**
@@ -866,6 +1068,17 @@ export class PhysicsManager {
   private step(dt: number): void {
     if (!this.world || !this.ready) return;
     const R = this.bounds.modelRadius;
+
+    this.simClock += dt;
+    if (this.pendingSealChecks.length > 0) {
+      const due: Array<{ keys: Set<string> }> = [];
+      this.pendingSealChecks = this.pendingSealChecks.filter((entry) => {
+        if (entry.dueAt > this.simClock) return true;
+        due.push(entry);
+        return false;
+      });
+      for (const entry of due) this.autoShakeOnSealRemoval(entry.keys);
+    }
 
     // Drums (kinematic trimesh): mirror the visual drum node's world transform.
     const wp = drumStepScratch.pos;
@@ -1063,6 +1276,7 @@ export class PhysicsManager {
   private applyBrokenSeals(broken: SealIdentifier[]): void {
     if (!this.world) return;
     const newBroken = new Set<string>(broken.map((b) => sealKey(b.level, b.side)));
+    const newlyBroken = new Set<string>();
 
     for (const [key, ref] of this.sealColliders) {
       const isBroken = newBroken.has(key);
@@ -1070,9 +1284,38 @@ export class PhysicsManager {
       if (isBroken !== wasBroken) {
         ref.collider.setEnabled(!isBroken);
         ref.wireMat.color.setHex(isBroken ? SEAL_WIRE_COLOR_BROKEN : SEAL_WIRE_COLOR_INTACT);
+        if (isBroken) newlyBroken.add(key);
       }
     }
     this.brokenSet = newBroken;
+
+    if (newlyBroken.size === 0) return;
+    if (this.config.seal.shakeSkullsOnSealRemoval === false) return;
+    const dueAt = this.simClock + this.config.seal.shakeSkullsOnSealRemovalDelaySeconds;
+    this.pendingSealChecks.push({ dueAt, keys: newlyBroken });
+  }
+
+  /**
+   * `seal.shakeSkullsOnSealRemoval` — fires once per queued
+   * `pendingSealChecks` entry, `delaySeconds` after the seals in `keys`
+   * transitioned from intact to broken. Re-evaluates `getSkullsBySeal()` at
+   * fire time (not at break time), so it shakes only whichever of those
+   * skulls are still there — the ones that didn't fall on their own during
+   * the wait. `keys` are `sealKey(level, side)` strings.
+   */
+  private autoShakeOnSealRemoval(keys: Set<string>): void {
+    const decision = resolveSealRemovalShake(
+      this.config.seal.shakeSkullsOnSealRemoval,
+      (seal) => keys.has(sealKey(seal.level, seal.side)),
+      () => this.getSkullsBySeal().bySeal,
+      this.config.skull.shakeStrength,
+    );
+    if (!decision) return;
+    if (decision.mode === 'all') {
+      this.shakeSkulls({ strength: decision.strength });
+    } else {
+      this.shakeSelectedSkull(decision.ids, { strength: decision.strength });
+    }
   }
 
   private despawnSkullAt(index: number): void {

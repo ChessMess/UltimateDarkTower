@@ -1010,6 +1010,52 @@ button.active {
   cursor: pointer;
 }
 
+/* Skulls-behind-seals readout: a header line plus wrapped chips, one per
+   seal that actually has a skull behind it. Its own block (not
+   .toolbar-label) because that class is tuned for short uppercase checkbox
+   labels, not a variable-length data readout. */
+.skull-seal-readout {
+  padding: 0.3rem 0.1rem;
+}
+
+.skull-seal-mode {
+  font-family: 'Cinzel', serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.3rem;
+}
+
+.skull-seal-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.skull-seal-chip {
+  font-family: 'JetBrains Mono', Menlo, monospace;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  background: var(--bg-input);
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+  padding: 0.2rem 0.45rem;
+}
+
+.skull-seal-chip.open {
+  color: var(--lume);
+  border-color: var(--accent);
+  box-shadow: 0 0 6px rgba(200, 112, 32, 0.25);
+}
+
+.skull-seal-chip.loose {
+  color: var(--text);
+  border-color: var(--border-gold);
+  border-style: dashed;
+}
+
 /* ── Range sliders (gothic track + ember thumb) ── */
 input[type='range'] {
   -webkit-appearance: none;

@@ -48,7 +48,7 @@ Common causes:
 - **MIME type wrong.** The server must serve `.glb` as `model/gltf-binary` (or `application/octet-stream`). Some bundler dev servers default to `text/plain`, which breaks Three.js. Vite handles this correctly.
 - **Path is wrong.** The default `modelUrl` is the bundled GLB. If you set `modelUrl` to a custom path, confirm the file is actually served at that URL (open it directly in a browser tab).
 - **Draco decoder cannot load.** The Draco decoder defaults to gstatic CDN. If your CSP blocks external scripts, host the decoder yourself and pass `dracoDecoderPath: '/path/to/draco/'`.
-- **Custom model is missing named nodes.** Custom models must contain `drum_top`, `drum_middle`, `drum_bottom` for drum rotation, and `seal_<side>_<level>` (lowercase, all 12) for seal visibility. Missing names log one warning and become silent no-ops.
+- **Custom model is missing named nodes.** Custom models must contain `drum_top`, `drum_middle`, `drum_bottom` for drum rotation, and `seal_<side>_<level>` (lowercase, all 12) for seal visibility. Missing names log one warning and become silent no-ops. Optionally add all 12 `pocket_<side>_<level>` volumes too, for exact (rather than nearest-seal) skull attribution in `getSkullsBySeal()` — see [POCKET_AUTHORING](POCKET_AUTHORING.md).
 
 For Electron the most common variant of this is `file://` URLs being blocked — see [ELECTRON](ELECTRON.md) for the `app://` protocol recipe.
 

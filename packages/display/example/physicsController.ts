@@ -4,6 +4,7 @@ import {
   type PhysicsConfig,
   type ResolvedPhysicsConfig,
   type SkullPhysicsHandle,
+  type SkullSealBuckets,
 } from '../src/physics';
 import { getDisplay, onViewChange } from './rendererController';
 import { notifyPhysicsConfigChanged } from './configEditor';
@@ -11,6 +12,7 @@ import { notifyPhysicsConfigChanged } from './configEditor';
 let handle: SkullPhysicsHandle | null = null;
 let countsIntervalId: ReturnType<typeof setInterval> | null = null;
 let lastCountsText = '';
+let lastBySealText = '';
 
 /**
  * Working `PhysicsConfig` accumulated from slider/JSON edits. We pass this
@@ -121,25 +123,99 @@ function detach(): void {
   refreshSkullCountsReadout();
 }
 
+/** Level abbreviation for the compact `#skull-by-seal` readout. */
+function levelAbbr(level: 'top' | 'middle' | 'bottom'): string {
+  return level === 'middle' ? 'mid' : level === 'bottom' ? 'bot' : 'top';
+}
+
+/** One chip's worth of data for the `#skull-by-seal-chips` readout. */
+interface SealChip {
+  text: string;
+  open: boolean;
+  loose: boolean;
+}
+
+/** Flatten `getSkullsBySeal()`'s buckets into one chip per non-empty entry. */
+function sealBreakdownChips(buckets: SkullSealBuckets): SealChip[] {
+  const chips: SealChip[] = buckets.bySeal
+    .filter((b) => b.ids.length > 0)
+    .map((b) => ({
+      text: `${b.side[0].toUpperCase()}·${levelAbbr(b.level)} ${b.ids.length}`,
+      open: b.broken,
+      loose: false,
+    }));
+  if (buckets.unattributed.length > 0) {
+    chips.push({ text: `${buckets.unattributed.length} loose`, open: false, loose: true });
+  }
+  return chips;
+}
+
+function makeChip(text: string, extraClass?: 'open' | 'loose'): HTMLSpanElement {
+  const el = document.createElement('span');
+  el.className = extraClass ? `skull-seal-chip ${extraClass}` : 'skull-seal-chip';
+  el.textContent = text;
+  return el;
+}
+
+/** Every skull id sitting behind an already-broken seal, plus every unattributed one. */
+function stuckSkullIds(buckets: SkullSealBuckets): number[] {
+  return buckets.bySeal
+    .filter((b) => b.broken)
+    .flatMap((b) => b.ids)
+    .concat(buckets.unattributed);
+}
+
 /**
- * Poll `getSkullCounts()` and mirror it into the `#skull-counts` toolbar
- * label. Only touches the DOM when the formatted text actually changes.
+ * Poll `getSkullCounts()` / `getSkullsBySeal()` and mirror them into the
+ * `#skull-counts` label and the `#skull-by-seal` chip readout, and
+ * enable/disable the Shake Stuck Skulls button. Only touches the DOM when
+ * the underlying text/chips actually changed.
  */
 function refreshSkullCountsReadout(): void {
   const el = document.getElementById('skull-counts');
-  if (!el) return;
-  const counts = handle?.getSkullCounts();
-  let text: string;
-  if (!counts) {
-    text = 'Skulls: —';
-  } else {
-    text = `Skulls: ${counts.total} total · ${counts.inTower} tower · ${counts.onBoard} board`;
-    if (counts.inTransit > 0) text += ` · ${counts.inTransit} transit`;
-    if (counts.pending > 0) text += ` · ${counts.pending} queued`;
+  if (el) {
+    const counts = handle?.getSkullCounts();
+    let text: string;
+    if (!counts) {
+      text = 'Skulls: —';
+    } else {
+      text = `Skulls: ${counts.total} total · ${counts.inTower} tower · ${counts.onBoard} board`;
+      if (counts.inTransit > 0) text += ` · ${counts.inTransit} transit`;
+      if (counts.pending > 0) text += ` · ${counts.pending} queued`;
+    }
+    if (text !== lastCountsText) {
+      lastCountsText = text;
+      el.textContent = text;
+    }
   }
-  if (text !== lastCountsText) {
-    lastCountsText = text;
-    el.textContent = text;
+
+  const modeEl = document.getElementById('skull-by-seal-mode');
+  const chipsEl = document.getElementById('skull-by-seal-chips');
+  const btnShakeStuck = document.getElementById(
+    'btn-shake-stuck-skulls',
+  ) as HTMLButtonElement | null;
+  const buckets = handle?.getSkullsBySeal();
+  const stuckIds = buckets ? stuckSkullIds(buckets) : [];
+  if (btnShakeStuck) {
+    btnShakeStuck.disabled = stuckIds.length === 0;
+    btnShakeStuck.textContent =
+      stuckIds.length > 0 ? `Shake Stuck Skulls (${stuckIds.length})` : 'Shake Stuck Skulls';
+  }
+  if (modeEl && chipsEl) {
+    const chips = buckets ? sealBreakdownChips(buckets) : [];
+    const modeText = buckets ? `Behind seals — ${buckets.mode} mode` : 'Behind seals: —';
+    // Signature covers both the header and the chip contents, so a single
+    // comparison still gates the (slightly pricier) chip rebuild below.
+    const signature = modeText + '|' + chips.map((c) => `${c.text}:${c.open}:${c.loose}`).join(',');
+    if (signature !== lastBySealText) {
+      lastBySealText = signature;
+      modeEl.textContent = modeText;
+      chipsEl.replaceChildren(
+        ...(chips.length > 0
+          ? chips.map((c) => makeChip(c.text, c.open ? 'open' : c.loose ? 'loose' : undefined))
+          : [makeChip('none')]),
+      );
+    }
   }
 }
 
@@ -177,6 +253,33 @@ export function initPhysicsController(): void {
   if (btnShakeTower) {
     btnShakeTower.addEventListener('click', () => {
       getDisplay().view3D?.shakeTower();
+    });
+  }
+
+  // Targeted variant of Shake Skulls: only the skulls `getSkullsBySeal()`
+  // reports as behind an already-broken seal (or unattributed), rather than
+  // every inTower skull.
+  const btnShakeStuck = document.getElementById(
+    'btn-shake-stuck-skulls',
+  ) as HTMLButtonElement | null;
+  if (btnShakeStuck) {
+    btnShakeStuck.addEventListener('click', () => {
+      const buckets = handle?.getSkullsBySeal();
+      if (buckets) handle?.shakeSelectedSkull(stuckSkullIds(buckets));
+    });
+  }
+
+  const chkShakeOnSealRemoval = document.getElementById(
+    'chk-shake-on-seal-removal',
+  ) as HTMLInputElement | null;
+  if (chkShakeOnSealRemoval) {
+    chkShakeOnSealRemoval.addEventListener('change', () => {
+      applyConfig({ seal: { shakeSkullsOnSealRemoval: chkShakeOnSealRemoval.checked } });
+    });
+    sliderSyncers.push((cfg) => {
+      // The resolved leaf may also be an object (mode/shake overrides) when
+      // set via the JSON config editor — the checkbox only reflects on/off.
+      chkShakeOnSealRemoval.checked = cfg.seal.shakeSkullsOnSealRemoval !== false;
     });
   }
 
@@ -401,6 +504,30 @@ export function initPhysicsController(): void {
     DEFAULT_PHYSICS.skull.shakeStrength,
     (v) => applyConfig({ skull: { shakeStrength: v } }),
     (cfg) => cfg.skull.shakeStrength,
+  );
+  wireSlider(
+    'rng-shake-horizontal',
+    'lbl-shake-horizontal',
+    2,
+    DEFAULT_PHYSICS.skull.shakeHorizontalFactor,
+    (v) => applyConfig({ skull: { shakeHorizontalFactor: v } }),
+    (cfg) => cfg.skull.shakeHorizontalFactor,
+  );
+  wireSlider(
+    'rng-shake-upward',
+    'lbl-shake-upward',
+    2,
+    DEFAULT_PHYSICS.skull.shakeUpwardFactor,
+    (v) => applyConfig({ skull: { shakeUpwardFactor: v } }),
+    (cfg) => cfg.skull.shakeUpwardFactor,
+  );
+  wireSlider(
+    'rng-seal-removal-delay',
+    'lbl-seal-removal-delay',
+    2,
+    DEFAULT_PHYSICS.seal.shakeSkullsOnSealRemovalDelaySeconds,
+    (v) => applyConfig({ seal: { shakeSkullsOnSealRemovalDelaySeconds: v } }),
+    (cfg) => cfg.seal.shakeSkullsOnSealRemovalDelaySeconds,
   );
 
   // When the user switches renderers (e.g. from 2D-only to 3D), refresh

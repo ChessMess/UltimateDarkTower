@@ -166,34 +166,39 @@ Attaches the physics manager to a `Tower3DView`. Returns immediately. Rapier WAS
 
 A deeply-nested partial. Every field is optional; missing leaves fall back to `DEFAULT_PHYSICS`. Grouped by domain:
 
-| Path                                 | Type                      | Default     | Lifecycle         | Notes                                                                                                                                                                                                                                                                                                                                            |
-| ------------------------------------ | ------------------------- | ----------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `debug.colliders`                    | `boolean`                 | `false`     | Attach time       | `THREE.LineSegments` overlay of every Rapier collider.                                                                                                                                                                                                                                                                                           |
-| `debug.sealColliders`                | `boolean`                 | `false`     | Live              | Seal-only wireframes (green=intact, red=broken).                                                                                                                                                                                                                                                                                                 |
-| `skull.radiusFactor`                 | `number`                  | `0.025`     | Next drop         | Skull radius as a fraction of `modelRadius`.                                                                                                                                                                                                                                                                                                     |
-| `skull.friction`                     | `number`                  | `0.8`       | Next drop         | Friction on the skull collider.                                                                                                                                                                                                                                                                                                                  |
-| `skull.restitution`                  | `number`                  | `0.2`       | Next drop         | Bounciness of the skull body. `0` = stick, `1` = perfect bounce.                                                                                                                                                                                                                                                                                 |
-| `skull.angularDamping`               | `number`                  | `1.0`       | Live              | Exponential decay on angular velocity (rolling resistance proxy).                                                                                                                                                                                                                                                                                |
-| `skull.linearDamping`                | `number`                  | `0.0`       | Live              | Exponential decay on linear velocity. Use sparingly.                                                                                                                                                                                                                                                                                             |
-| `skull.maxCount`                     | `number`                  | `30`        | Live              | Maximum simultaneous skulls. Drops past the cap are no-ops; lowering this does not remove existing skulls.                                                                                                                                                                                                                                       |
-| `skull.modelUrl`                     | `string`                  | `undefined` | Next drop (async) | URL to a Draco-compressed `.glb` used as the visual mesh. `.stl` is accepted with a warn (heavier, slower); export to Draco GLB from Blender for production. Library caches loaded templates module-globally — repeated attach/detach cycles never re-fetch. See [Authoring skull models](#authoring-skull-models) for the recommended workflow. |
-| `skull.colliderShape`                | `'sphere' \| 'hull'`      | `'sphere'`  | Next drop         | Collider shape. `'hull'` derives a convex hull from `modelUrl`'s point cloud; falls back to sphere when `modelUrl` is unset or the hull is degenerate. May need re-tuning of friction/restitution.                                                                                                                                               |
-| `skull.meshFactory`                  | `(r: number) => Object3D` | `undefined` | Next drop         | Per-spawn visual override. Forces `colliderShape` to `'sphere'`. The consumer owns asset lifecycle — the manager only calls `removeFromParent()` on despawn. Not JSON-serializable (function).                                                                                                                                                   |
-| `skull.density`                      | `number`                  | `undefined` | Next drop         | Density override. Only meaningful for hull colliders, where the template carries an auto-computed density that normalizes hull mass to the equivalent sphere.                                                                                                                                                                                    |
-| `skull.autoDropOnSkullCountIncrease` | `boolean`                 | `false`     | Live              | When true, auto-calls `dropSkull()` each time `state.beam.count` increases between consecutive `applyState` calls. Mirrors the readout's "💀 Skull Drop!" highlight. Honors `skull.maxCount` like manual drops.                                                                                                                                  |
-| `skull.canSleep`                     | `boolean`                 | `true`      | Next drop         | `false` keeps the skull body integrating forever (`setCanSleep(false)`) instead of letting Rapier auto-sleep it — fewer skulls stick, at a small perf cost. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                         |
-| `skull.additionalSolverIterations`   | `number`                  | `0`         | Next drop         | Extra Rapier solver iterations on the skull body — firmer contact resolution in tight trimesh gaps. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                                                                                 |
-| `skull.shakeStrength`                | `number`                  | `3`         | Live              | Impulse-strength multiplier used by `shakeSkulls()` / `shakeSelectedSkull()` when no per-call `options.strength` override is given.                                                                                                                                                                                                              |
-| `skull.clickToShake`                 | `boolean`                 | `false`     | Live              | When true, clicking a live skull in the 3D view calls `shakeSelectedSkull(id)` for it. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                                                                                              |
-| `drum.innerRadiusFactor`             | `number`                  | `0.30`      | World rebuild     | Used for drop-jitter heuristics and (future) parametric drum walls.                                                                                                                                                                                                                                                                              |
-| `drum.halfHeightFactor`              | `number`                  | `0.15`      | Unused            | Reserved for future parametric drum walls; currently feeds only the discarded drum-wall spec and has no runtime effect.                                                                                                                                                                                                                          |
-| `drum.friction`                      | `number`                  | `0.15`      | Live              | Friction on kinematic drum trimeshes (Min combine rule).                                                                                                                                                                                                                                                                                         |
-| `seal.friction`                      | `number`                  | `0.05`      | Live              | Friction on kinematic seal trimeshes (Min combine rule).                                                                                                                                                                                                                                                                                         |
-| `static.friction`                    | `number`                  | `0.1`       | Live              | Friction on every static GLB trimesh (Min combine rule).                                                                                                                                                                                                                                                                                         |
-| `board.radiusFactor`                 | `number`                  | `3.0`       | Live              | Board cylinder radius as a fraction of `modelRadius`.                                                                                                                                                                                                                                                                                            |
-| `board.thicknessFactor`              | `number`                  | `0.3`       | World rebuild     | Board cylinder thickness as a fraction of `modelRadius`.                                                                                                                                                                                                                                                                                         |
-| `board.friction`                     | `number`                  | `0.5`       | Live              | Friction on the game-board floor + lip (Average combine rule).                                                                                                                                                                                                                                                                                   |
-| `oob.depthFactor`                    | `number`                  | `5.0`       | Live              | Out-of-bounds despawn distance below `modelBottomY`, read every frame.                                                                                                                                                                                                                                                                           |
+| Path                                        | Type                             | Default     | Lifecycle         | Notes                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------- | -------------------------------- | ----------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `debug.colliders`                           | `boolean`                        | `false`     | Attach time       | `THREE.LineSegments` overlay of every Rapier collider.                                                                                                                                                                                                                                                                                           |
+| `debug.sealColliders`                       | `boolean`                        | `false`     | Live              | Seal-only wireframes (green=intact, red=broken).                                                                                                                                                                                                                                                                                                 |
+| `skull.radiusFactor`                        | `number`                         | `0.025`     | Next drop         | Skull radius as a fraction of `modelRadius`.                                                                                                                                                                                                                                                                                                     |
+| `skull.friction`                            | `number`                         | `0.8`       | Next drop         | Friction on the skull collider.                                                                                                                                                                                                                                                                                                                  |
+| `skull.restitution`                         | `number`                         | `0.2`       | Next drop         | Bounciness of the skull body. `0` = stick, `1` = perfect bounce.                                                                                                                                                                                                                                                                                 |
+| `skull.angularDamping`                      | `number`                         | `1.0`       | Live              | Exponential decay on angular velocity (rolling resistance proxy).                                                                                                                                                                                                                                                                                |
+| `skull.linearDamping`                       | `number`                         | `0.0`       | Live              | Exponential decay on linear velocity. Use sparingly.                                                                                                                                                                                                                                                                                             |
+| `skull.maxCount`                            | `number`                         | `30`        | Live              | Maximum simultaneous skulls. Drops past the cap are no-ops; lowering this does not remove existing skulls.                                                                                                                                                                                                                                       |
+| `skull.modelUrl`                            | `string`                         | `undefined` | Next drop (async) | URL to a Draco-compressed `.glb` used as the visual mesh. `.stl` is accepted with a warn (heavier, slower); export to Draco GLB from Blender for production. Library caches loaded templates module-globally — repeated attach/detach cycles never re-fetch. See [Authoring skull models](#authoring-skull-models) for the recommended workflow. |
+| `skull.colliderShape`                       | `'sphere' \| 'hull'`             | `'sphere'`  | Next drop         | Collider shape. `'hull'` derives a convex hull from `modelUrl`'s point cloud; falls back to sphere when `modelUrl` is unset or the hull is degenerate. May need re-tuning of friction/restitution.                                                                                                                                               |
+| `skull.meshFactory`                         | `(r: number) => Object3D`        | `undefined` | Next drop         | Per-spawn visual override. Forces `colliderShape` to `'sphere'`. The consumer owns asset lifecycle — the manager only calls `removeFromParent()` on despawn. Not JSON-serializable (function).                                                                                                                                                   |
+| `skull.density`                             | `number`                         | `undefined` | Next drop         | Density override. Only meaningful for hull colliders, where the template carries an auto-computed density that normalizes hull mass to the equivalent sphere.                                                                                                                                                                                    |
+| `skull.autoDropOnSkullCountIncrease`        | `boolean`                        | `false`     | Live              | When true, auto-calls `dropSkull()` each time `state.beam.count` increases between consecutive `applyState` calls. Mirrors the readout's "💀 Skull Drop!" highlight. Honors `skull.maxCount` like manual drops.                                                                                                                                  |
+| `skull.canSleep`                            | `boolean`                        | `true`      | Next drop         | `false` keeps the skull body integrating forever (`setCanSleep(false)`) instead of letting Rapier auto-sleep it — fewer skulls stick, at a small perf cost. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                         |
+| `skull.additionalSolverIterations`          | `number`                         | `0`         | Next drop         | Extra Rapier solver iterations on the skull body — firmer contact resolution in tight trimesh gaps. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                                                                                 |
+| `skull.shakeStrength`                       | `number`                         | `3`         | Live              | Impulse-strength multiplier used by `shakeSkulls()` / `shakeSelectedSkull()` when no per-call `options.strength` override is given.                                                                                                                                                                                                              |
+| `skull.shakeHorizontalFactor`               | `number`                         | `0.5`       | Live              | Fraction of a shake's impulse pushed radially outward, away from the tower's central axis through the skull's current position. Shared by every shake call site — see [Unsticking skulls](#unsticking-skulls).                                                                                                                                   |
+| `skull.shakeUpwardFactor`                   | `number`                         | `0.45`      | Live              | Fraction of a shake's impulse pushed straight up. Keep below `shakeHorizontalFactor` so the outward push dominates rather than launching the skull. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                                 |
+| `skull.clickToShake`                        | `boolean`                        | `false`     | Live              | When true, clicking a live skull in the 3D view calls `shakeSelectedSkull(id)` for it. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                                                                                              |
+| `drum.innerRadiusFactor`                    | `number`                         | `0.30`      | World rebuild     | Used for drop-jitter heuristics and (future) parametric drum walls.                                                                                                                                                                                                                                                                              |
+| `drum.halfHeightFactor`                     | `number`                         | `0.15`      | Unused            | Reserved for future parametric drum walls; currently feeds only the discarded drum-wall spec and has no runtime effect.                                                                                                                                                                                                                          |
+| `drum.friction`                             | `number`                         | `0.15`      | Live              | Friction on kinematic drum trimeshes (Min combine rule).                                                                                                                                                                                                                                                                                         |
+| `seal.friction`                             | `number`                         | `0.05`      | Live              | Friction on kinematic seal trimeshes (Min combine rule).                                                                                                                                                                                                                                                                                         |
+| `seal.attributionRadiusFactor`              | `number`                         | `0.25`      | Live              | Nearest-seal fallback for `getSkullsBySeal()`, ignored once the model supplies all 12 `pocket_<side>_<level>` volumes. Max distance from a seal's center, as a fraction of `modelRadius`, for an in-tower skull to count as behind it. See [Counting skulls by seal](#counting-skulls-by-seal).                                                  |
+| `seal.shakeSkullsOnSealRemoval`             | `boolean \| SealAutoShakeConfig` | `true`      | Live              | `shakeSkullsOnSealRemovalDelaySeconds` after a seal breaks, auto-shake whichever of its skulls are still there. `false` disables it; an object overrides `mode` (`'nearest'` \| `'all'`) and/or `shake.strength`. See [Unsticking skulls](#unsticking-skulls).                                                                                   |
+| `seal.shakeSkullsOnSealRemovalDelaySeconds` | `number`                         | `0.25`      | Live              | Seconds to wait after a seal breaks before `shakeSkullsOnSealRemoval` checks which skulls actually fell. Simulation time, not wall-clock. Ignored when `shakeSkullsOnSealRemoval` is `false`.                                                                                                                                                    |
+| `static.friction`                           | `number`                         | `0.1`       | Live              | Friction on every static GLB trimesh (Min combine rule).                                                                                                                                                                                                                                                                                         |
+| `board.radiusFactor`                        | `number`                         | `3.0`       | Live              | Board cylinder radius as a fraction of `modelRadius`.                                                                                                                                                                                                                                                                                            |
+| `board.thicknessFactor`                     | `number`                         | `0.3`       | World rebuild     | Board cylinder thickness as a fraction of `modelRadius`.                                                                                                                                                                                                                                                                                         |
+| `board.friction`                            | `number`                         | `0.5`       | Live              | Friction on the game-board floor + lip (Average combine rule).                                                                                                                                                                                                                                                                                   |
+| `oob.depthFactor`                           | `number`                         | `5.0`       | Live              | Out-of-bounds despawn distance below `modelBottomY`, read every frame.                                                                                                                                                                                                                                                                           |
 
 **Lifecycle semantics:**
 
@@ -208,9 +213,10 @@ interface SkullPhysicsHandle {
   dropSkull(): number | null;
   clearSkulls(): void;
   shakeSkulls(options?: { strength?: number }): void;
-  shakeSelectedSkull(id: number, options?: { strength?: number }): void;
+  shakeSelectedSkull(id: number | number[], options?: { strength?: number }): void;
   getSkullIdForObject(obj: THREE.Object3D): number | null;
   getSkullCounts(): SkullCounts;
+  getSkullsBySeal(): SkullSealBuckets;
   getPhysicsConfig(): ResolvedPhysicsConfig;
   applyPhysicsConfig(partial: PhysicsConfig): void;
   dispose(): void;
@@ -220,9 +226,10 @@ interface SkullPhysicsHandle {
 - `dropSkull()` — Add one skull just above `modelTopY`. No-op once `skull.maxCount` simultaneous skulls are live; calls made before init resolves are queued and replayed once it does. Returns the new skull's stable **id** (see [Unsticking skulls](#unsticking-skulls)), or `null` when queued or refused at the cap.
 - `clearSkulls()` — Remove every active skull immediately and cancel any queued drops. Safe to call before init resolves.
 - `shakeSkulls(options?)` — Impulse-nudge every skull currently classified `inTower`. See [Unsticking skulls](#unsticking-skulls).
-- `shakeSelectedSkull(id, options?)` — Impulse-nudge exactly one skull by id, regardless of zone. See [Unsticking skulls](#unsticking-skulls).
+- `shakeSelectedSkull(id, options?)` — Impulse-nudge one skull, or a batch of them, by id, regardless of zone. See [Unsticking skulls](#unsticking-skulls).
 - `getSkullIdForObject(obj)` — Walk an `Object3D` up its parent chain to find a live skull's id, or `null`. Useful for wiring your own picking instead of `skull.clickToShake`.
 - `getSkullCounts()` — Snapshot of where every live skull currently is. See [Counting skulls](#counting-skulls) below.
+- `getSkullsBySeal()` — Breakdown of in-tower skulls by which seal they're behind. See [Counting skulls by seal](#counting-skulls-by-seal).
 - `getPhysicsConfig()` — Deep-cloned snapshot of the fully-resolved config. Safe to mutate.
 - `applyPhysicsConfig(partial)` — Merge a partial config on top of the current one. See lifecycle semantics above.
 - `dispose()` — Tear down the Rapier world, remove every skull, and unsubscribe from frame and seal-state callbacks. Safe to call multiple times.
@@ -277,6 +284,74 @@ on a flat spot of the base's exterior skirt (mid-height, outside `shellRadius`) 
 `inTransit` indefinitely rather than `onBoard` — visible in the readout instead of being
 silently miscounted as in-tower.
 
+### Counting skulls by seal
+
+```ts
+interface SkullSealBucket {
+  side: TowerSide;
+  level: TowerLevels;
+  broken: boolean;
+  ids: number[];
+}
+
+interface SkullSealBuckets {
+  bySeal: SkullSealBucket[];
+  unattributed: number[];
+  total: number;
+  mode: 'pocket' | 'nearest';
+}
+```
+
+`getSkullsBySeal()` breaks `inTower` skulls down further: which of the 12 seal openings
+each one is resting behind, plus an `unattributed` bucket for ones that aren't near any
+opening (wedged in the funnel, or sitting on the central axis). `total` always equals
+`getSkullCounts().inTower` — every `inTower` skull ends up in exactly one place, either a
+`bySeal` entry or `unattributed`. Each bucket carries the resting skulls' stable **ids**
+(ascending), not just a count — pass a bucket's `ids` straight to `shakeSelectedSkull` to
+unstick exactly those skulls.
+
+This answers two things `getSkullCounts()` can't: how many skulls are trapped behind a
+still-intact seal (what breaking it would release), and whether a skull is stuck in a
+doorway that's already broken and should have let it fall through.
+
+**Two attribution modes**, reported in the result's `mode` field:
+
+- **`'pocket'`** — used when the loaded model supplies all 12 authored
+  `pocket_<side>_<level>` volumes (invisible marker boxes behind each seal). Attribution
+  is an exact point-in-box test done in each pocket's own local frame, so it's correct
+  regardless of whether the pocket is parented to a rotating drum or fixed at the scene
+  root. See [POCKET_AUTHORING](POCKET_AUTHORING.md) for how to add these to a model.
+- **`'nearest'`** — the automatic fallback when the model supplies fewer than all 12
+  pocket volumes (including the common case of supplying none). Attributes each in-tower
+  skull to its nearest seal's live world position, within `seal.attributionRadiusFactor ×
+modelRadius`; beyond that, the skull is `unattributed`. This is a heuristic — one
+  distance threshold shared across all three (differently-sized) drum levels, and a skull
+  resting equidistant between two seals is attributed arbitrarily to whichever is
+  marginally closer. If the model supplies _some_ but not all 12 pocket volumes, one
+  `console.warn` at model-ready names the missing ones and the sim falls back to
+  `'nearest'` — supplying zero pockets (the ordinary case for a model that hasn't
+  authored any) logs no warning.
+
+```ts
+const stuck = physics.getSkullsBySeal();
+
+// Skulls trapped behind a still-intact seal in the north-top compartment:
+const northTop = stuck.bySeal.find((b) => b.side === 'north' && b.level === 'top');
+console.log(northTop?.ids.length ?? 0);
+
+// Every skull that should have fallen through an already-broken seal, plus
+// anything loose in the funnel — the stuck-skull case:
+const stuckIds = stuck.bySeal
+  .filter((b) => b.broken)
+  .flatMap((b) => b.ids)
+  .concat(stuck.unattributed);
+physics.shakeSelectedSkull(stuckIds);
+```
+
+Like `getSkullCounts()`, this is a poll, not a push API — cheap (`O(live skulls × 12)`)
+and safe to call every frame. Before init resolves it returns
+`{ bySeal: [], unattributed: [], total: 0, mode: 'nearest' }`.
+
 ### Unsticking skulls
 
 A skull is a tiny sphere (or hull) collider falling through trimesh geometry (the cone
@@ -287,8 +362,10 @@ catches skulls that fall _below_ the board, never one lodged _inside_. A stuck s
 shows up as `inTower` (or, for a skirt-level wedge, `inTransit`) never draining toward
 `onBoard` in `getSkullCounts()`.
 
-Every mechanism below is **manually triggered** — there is no background self-heal loop
-polling for stuck skulls — and none of them modify the tower model/GLB.
+Every mechanism below is **manually triggered** except
+[auto-shake on seal removal](#auto-shake-on-seal-removal-sealshakeskullsonsealremoval) — there is
+no background self-heal loop polling for already-stuck skulls — and none of them modify the tower
+model/GLB.
 
 #### `shakeSkulls(options?)`
 
@@ -302,19 +379,37 @@ physics.shakeSkulls(); // uses skull.shakeStrength
 physics.shakeSkulls({ strength: 6 }); // a stronger one-off nudge
 ```
 
-Impulse magnitude is `body.mass() * modelRadius * strength` — an upward-biased random
-direction plus a small random spin, so a shake pops a skull free rather than just
-grinding it sideways against whatever it's wedged in.
+Impulse magnitude is `body.mass() * modelRadius * strength`. The push direction is
+horizontal, pointing away from the tower's central axis through the skull's current
+position (so it always nudges toward the nearest opening, never a random direction),
+plus an upward lift and a small random spin. `skull.shakeHorizontalFactor` /
+`skull.shakeUpwardFactor` shape that split — defaults favor the outward push over the
+lift, so a shake pops a skull toward open space rather than launching it straight up —
+and every shake call site (`shakeSkulls()`, `shakeSelectedSkull()`, the demo's Shake
+Stuck Skulls button) reads the same two config values, so they always behave alike.
 
 #### `shakeSelectedSkull(id, options?)` + click-to-shake
 
-Impulse-nudges **exactly one** skull by id, in **any** zone — unlike `shakeSkulls()`,
-there's no `inTower` filter, since a skull picked by id was selected deliberately.
-`dropSkull()` returns each skull's stable id (monotonic, never reused):
+Impulse-nudges **one skull, or a batch of them**, by id, in **any** zone — unlike
+`shakeSkulls()`, there's no `inTower` filter, since skulls picked by id were selected
+deliberately. `dropSkull()` returns each skull's stable id (monotonic, never reused):
 
 ```ts
 const id = physics.dropSkull();
 if (id !== null) physics.shakeSelectedSkull(id);
+```
+
+The array form is the natural pairing with [`getSkullsBySeal()`](#counting-skulls-by-seal)
+— shake exactly the skulls behind an already-broken seal, leaving skulls behind intact
+seals untouched (unlike `shakeSkulls()`, which hits every `inTower` skull indiscriminately):
+
+```ts
+const stuck = physics.getSkullsBySeal();
+const ids = stuck.bySeal
+  .filter((b) => b.broken)
+  .flatMap((b) => b.ids)
+  .concat(stuck.unattributed);
+physics.shakeSelectedSkull(ids); // no-op if ids is empty
 ```
 
 For a "click a stuck skull to nudge it free" interaction, set `skull.clickToShake: true`
@@ -328,6 +423,42 @@ physics.applyPhysicsConfig({ skull: { clickToShake: true } });
 
 `getSkullIdForObject(obj)` is the underlying id lookup (walks `obj` up its parent chain
 for a tagged skull root) — exposed on the handle for consumers wiring their own picking.
+
+#### Auto-shake on seal removal (`seal.shakeSkullsOnSealRemoval`)
+
+The one **automatic** mechanism: when a seal transitions from intact to broken (a host-driven
+`onSealsApplied` update — e.g. a real game event, or the example app's seal toggle grid), the
+manager waits `seal.shakeSkullsOnSealRemovalDelaySeconds` (default `0.25`) — giving gravity a
+chance to clear the opening on its own — then re-evaluates
+[`getSkullsBySeal()`](#counting-skulls-by-seal) and runs exactly the
+[`shakeSelectedSkull`](#shakeselectedskullid-options--click-to-shake) pairing above for whichever of
+that seal's skulls are **still there**. A skull that already fell during the wait is left alone;
+one still wedged behind the now-open doorway gets a nudge.
+
+```ts
+physics.applyPhysicsConfig({ seal: { shakeSkullsOnSealRemoval: false } }); // opt out
+physics.applyPhysicsConfig({ seal: { shakeSkullsOnSealRemoval: { mode: 'all' } } }); // shakeSkulls() instead
+physics.applyPhysicsConfig({ seal: { shakeSkullsOnSealRemovalDelaySeconds: 1.5 } }); // longer to fall on its own
+physics.applyPhysicsConfig({
+  seal: { shakeSkullsOnSealRemoval: { shake: { strength: 6 } } }, // stronger auto-shake only
+});
+```
+
+- `false` disables it entirely; `true` (the default) enables it with `mode: 'nearest'` and the
+  ambient `skull.shakeStrength`.
+- `mode: 'nearest'` (default) shakes only the ids that seal's bucket reports **at the moment the
+  delay elapses** — skulls behind other, still-intact seals are untouched. `mode: 'all'` shakes
+  every `inTower` skull instead, same as calling `shakeSkulls()` (still delayed the same way).
+- `shakeSkullsOnSealRemovalDelaySeconds` (default `0.25`) is its own config leaf, not nested inside
+  the `mode`/`shake` object, so it has a real default in `DEFAULT_PHYSICS` like every other tunable
+  and shows up in `getPhysicsConfig()`. It's measured against the same per-frame `dt` the physics
+  step already runs on, not a wall-clock timer — it's driven by simulation time, so it pauses along
+  with the sim.
+- `shake.strength`, when omitted, is read live from `skull.shakeStrength` when the delay elapses —
+  so it always matches whatever that leaf currently resolves to at that point, even if it changed
+  since the seal broke.
+- Multiple seals breaking in the same update each get their own independent delayed check, even if
+  `shakeSkullsOnSealRemovalDelaySeconds` changes between them.
 
 #### `shakeTower(options?)`
 
@@ -382,10 +513,17 @@ Copy-paste into an editor (or the example app's "Physics" config tab) to see eve
     "canSleep": true,
     "additionalSolverIterations": 0,
     "shakeStrength": 3,
+    "shakeHorizontalFactor": 0.5,
+    "shakeUpwardFactor": 0.45,
     "clickToShake": false
   },
   "drum": { "innerRadiusFactor": 0.3, "halfHeightFactor": 0.15, "friction": 0.15 },
-  "seal": { "friction": 0.05 },
+  "seal": {
+    "friction": 0.05,
+    "attributionRadiusFactor": 0.25,
+    "shakeSkullsOnSealRemoval": true,
+    "shakeSkullsOnSealRemovalDelaySeconds": 0.25
+  },
   "static": { "friction": 0.1 },
   "board": { "radiusFactor": 3.0, "thicknessFactor": 0.3, "friction": 0.5 },
   "oob": { "depthFactor": 5.0 }
@@ -396,19 +534,19 @@ Copy-paste into an editor (or the example app's "Physics" config tab) to see eve
 
 Turn on `debug.sealColliders` (seal-only) or `debug.colliders` (world) and inspect the wireframes against the visual model.
 
-| Symptom                                                             | Try                                                                                                                                                                                                                                                     |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Skulls slip off the drum during rotation.                           | Raise `drum.friction` (and, if needed, `skull.friction` on next drop).                                                                                                                                                                                  |
-| Skulls bounce wildly after landing.                                 | Lower `skull.restitution` (try `0.05`).                                                                                                                                                                                                                 |
-| Seal collider debug is hard to inspect.                             | Use `debug.sealColliders` for seal-only wireframes; `debug.colliders` shows the full world.                                                                                                                                                             |
-| Skull is comically large or small.                                  | Adjust `skull.radiusFactor`.                                                                                                                                                                                                                            |
-| Skull tunnels through closed geometry at high rotation speed.       | Verify CCD is still enabled, and avoid teleport-style drum updates where possible.                                                                                                                                                                      |
-| Skull falls off the visual board edge.                              | Increase `board.radiusFactor`; floor and lip are intentionally decoupled from board visibility.                                                                                                                                                         |
-| Skull rolls for too long after landing.                             | Increase `skull.angularDamping` (and optionally `skull.linearDamping`).                                                                                                                                                                                 |
-| Hull-collider skulls feel floaty or settle wrong.                   | Set `skull.density` explicitly (default heuristic normalizes to sphere-equivalent mass; precise tuning needs your hull's true volume).                                                                                                                  |
-| Switching to a GLB model wedged a skull in the geometry.            | Set `colliderShape: 'sphere'` for the affected model — visual stays, physics reverts to the proven sphere tuning.                                                                                                                                       |
-| A skull is visibly stuck / its count never drains toward `onBoard`. | Call `shakeSkulls()` and/or `view.shakeTower()`, or enable `skull.clickToShake` and click it directly. To reduce future sticking, try `skull.canSleep: false` or raise `skull.additionalSolverIterations`. See [Unsticking skulls](#unsticking-skulls). |
-| Auto-drop triggers on every state apply, not just count increases.  | Verify `state.beam.count` is actually increasing — the delta-check uses strict `>`. Snapshot-replay tools that re-feed identical states won't trigger drops.                                                                                            |
+| Symptom                                                             | Try                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Skulls slip off the drum during rotation.                           | Raise `drum.friction` (and, if needed, `skull.friction` on next drop).                                                                                                                                                                                                                                                                                                                                     |
+| Skulls bounce wildly after landing.                                 | Lower `skull.restitution` (try `0.05`).                                                                                                                                                                                                                                                                                                                                                                    |
+| Seal collider debug is hard to inspect.                             | Use `debug.sealColliders` for seal-only wireframes; `debug.colliders` shows the full world.                                                                                                                                                                                                                                                                                                                |
+| Skull is comically large or small.                                  | Adjust `skull.radiusFactor`.                                                                                                                                                                                                                                                                                                                                                                               |
+| Skull tunnels through closed geometry at high rotation speed.       | Verify CCD is still enabled, and avoid teleport-style drum updates where possible.                                                                                                                                                                                                                                                                                                                         |
+| Skull falls off the visual board edge.                              | Increase `board.radiusFactor`; floor and lip are intentionally decoupled from board visibility.                                                                                                                                                                                                                                                                                                            |
+| Skull rolls for too long after landing.                             | Increase `skull.angularDamping` (and optionally `skull.linearDamping`).                                                                                                                                                                                                                                                                                                                                    |
+| Hull-collider skulls feel floaty or settle wrong.                   | Set `skull.density` explicitly (default heuristic normalizes to sphere-equivalent mass; precise tuning needs your hull's true volume).                                                                                                                                                                                                                                                                     |
+| Switching to a GLB model wedged a skull in the geometry.            | Set `colliderShape: 'sphere'` for the affected model — visual stays, physics reverts to the proven sphere tuning.                                                                                                                                                                                                                                                                                          |
+| A skull is visibly stuck / its count never drains toward `onBoard`. | Call `shakeSkulls()` and/or `view.shakeTower()`, or enable `skull.clickToShake` and click it directly. To target only skulls behind an already-broken seal, use `getSkullsBySeal()` + `shakeSelectedSkull(ids)` instead of shaking every `inTower` skull. To reduce future sticking, try `skull.canSleep: false` or raise `skull.additionalSolverIterations`. See [Unsticking skulls](#unsticking-skulls). |
+| Auto-drop triggers on every state apply, not just count increases.  | Verify `state.beam.count` is actually increasing — the delta-check uses strict `>`. Snapshot-replay tools that re-feed identical states won't trigger drops.                                                                                                                                                                                                                                               |
 
 ## Limitations (MVP)
 
@@ -420,7 +558,7 @@ Turn on `debug.sealColliders` (seal-only) or `debug.colliders` (world) and inspe
 - **Hull dynamics need re-tuning.** The bundled friction/restitution defaults are tuned for sphere skulls. Convex-hull skulls roll differently — expect to revisit `drum.friction`, `skull.restitution`, and `skull.density` per model.
 - **`meshFactory` is not JSON-serializable.** Functions are silently dropped by `JSON.stringify`, so they never appear in the example app's JSON-paste flow. Set programmatically only.
 - **Auto-drop uses `>` not `>=`.** A `beam.count` that ticks back down then up to the same value triggers a drop only on the second up-tick. Designed-as-intended (matches the readout highlight).
-- **Shakes are randomized, not guaranteed.** `shakeSkulls()` / `shakeSelectedSkull()` pick a random direction each call — a badly wedged skull may need more than one shake, or a combination with `shakeTower()`, before it pops free.
+- **Shakes are not guaranteed on the first try.** The horizontal push direction is deterministic (away from the tower's central axis through the skull's position) and only the spin is randomized, so a skull wedged directly against geometry in that outward direction may need more than one shake, or a combination with `shakeTower()`, before it pops free.
 
 ## Roadmap
 
@@ -429,7 +567,7 @@ Non-goals for this MVP, in rough order of value:
 1. **Impact audio** — short clatter samples on collider-vs-skull contacts.
 2. **State-event triggers** — wire `dropSkull()` to specific game-state transitions if the host wants automatic skulls.
 3. **Snap-mode filtering** — detect teleport-style drum updates and momentarily decouple kinematic colliders so resting skulls don't get flung.
-4. **More state-driven triggers** — `autoDropOnSkullCountIncrease` is the first; future versions could expose `autoDropOnBrokenSeal`, `autoSpinDrumsOnPing`, etc., all sharing the `onStateApplied` subscription.
+4. **More state-driven triggers** — `autoDropOnSkullCountIncrease` and `seal.shakeSkullsOnSealRemoval` are the first two; future versions could expose `autoDropOnBrokenSeal`, `autoSpinDrumsOnPing`, etc., all sharing the same `onStateApplied` / `onSealsApplied` subscriptions.
 5. **Consumer-overridable `dracoDecoderPath`** — `attachSkullPhysics` currently uses the same gstatic CDN as the tower. A `skull.dracoDecoderPath` config leaf would let self-hosted setups point at their own copy.
 
 ## Verification reference
@@ -444,6 +582,8 @@ The must-pass manual cases for any change in this area:
 6. Spinning drums via a state sequence with a skull inside — no tunneling.
 7. Calling `handle.dispose()` removes the debug overlay and unsubscribes all listeners.
 8. Drop skulls until one wedges in the interior geometry (a funnel seam or drum/seal pinch point). `shakeSkulls()` alone, and separately `view.shakeTower()` alone, each frees it — `shakeSkulls()` must not disturb a skull already `onBoard`, and the tower's silhouette must return to rest after `shakeTower()`. With `skull.clickToShake: true`, clicking the stuck skull frees only that skull (`shakeSelectedSkull`) and clicking empty space still orbits the camera.
+9. `getSkullsBySeal()`'s `bySeal` counts sum to `getSkullCounts().inTower` (via `bySeal` totals + `unattributed`). Rotating a drum with skulls resting on it changes which bucket they're reported under. Breaking a seal drains its bucket to empty. **Shake Stuck Skulls** in the example app moves only the skulls reported behind a broken seal (plus any `unattributed`) — skulls behind an intact seal must stay put.
+10. With `seal.shakeSkullsOnSealRemoval` at its default (`true`), breaking a seal with a skull resting behind it visibly nudges that skull about a quarter-second later (`shakeSkullsOnSealRemovalDelaySeconds`), with no button click — a skull that falls on its own within that window must **not** get an extra shake. Skulls behind other, still-intact seals must not move. Setting it to `false` (the example app's "Shake skulls when seal removed" checkbox) suppresses this; setting it to `{ mode: 'all' }` shakes every `inTower` skull instead of just that seal's bucket; raising `shakeSkullsOnSealRemovalDelaySeconds` lengthens the wait.
 
 ## See also
 
@@ -451,3 +591,4 @@ The must-pass manual cases for any change in this area:
 - [ARCHITECTURE §where physics plugs in](ARCHITECTURE.md#where-physics-plugs-in) — how physics integrates with the render loop.
 - [EXAMPLE §panel-physics](EXAMPLE.md#panel-physics) — the demo's live physics tuner.
 - [TROUBLESHOOTING §rapier-wasm-not-loading](TROUBLESHOOTING.md#rapier-wasm-not-loading) — bundler config for the subpath.
+- [POCKET_AUTHORING](POCKET_AUTHORING.md) — adding the optional `pocket_<side>_<level>` volumes that make `getSkullsBySeal()`'s attribution exact.

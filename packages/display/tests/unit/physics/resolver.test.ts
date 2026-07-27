@@ -130,4 +130,41 @@ describe('resolvePhysics', () => {
     const out = resolvePhysics({ skull: { clickToShake: true } });
     expect(out.skull.clickToShake).toBe(true);
   });
+
+  it('defaults skull.shakeHorizontalFactor to 0.5 and carries an override', () => {
+    expect(DEFAULT_PHYSICS.skull.shakeHorizontalFactor).toBe(0.5);
+    const out = resolvePhysics({ skull: { shakeHorizontalFactor: 0.8 } });
+    expect(out.skull.shakeHorizontalFactor).toBe(0.8);
+  });
+
+  it('defaults skull.shakeUpwardFactor to 0.45 and carries an override', () => {
+    expect(DEFAULT_PHYSICS.skull.shakeUpwardFactor).toBe(0.45);
+    const out = resolvePhysics({ skull: { shakeUpwardFactor: 0.2 } });
+    expect(out.skull.shakeUpwardFactor).toBe(0.2);
+  });
+
+  it('defaults seal.attributionRadiusFactor to 0.25 and carries an override', () => {
+    expect(DEFAULT_PHYSICS.seal.attributionRadiusFactor).toBe(0.25);
+    const out = resolvePhysics({ seal: { attributionRadiusFactor: 0.4 } });
+    expect(out.seal.attributionRadiusFactor).toBe(0.4);
+  });
+
+  it('defaults seal.shakeSkullsOnSealRemoval to true and carries a boolean override', () => {
+    expect(DEFAULT_PHYSICS.seal.shakeSkullsOnSealRemoval).toBe(true);
+    const out = resolvePhysics({ seal: { shakeSkullsOnSealRemoval: false } });
+    expect(out.seal.shakeSkullsOnSealRemoval).toBe(false);
+  });
+
+  it('defaults seal.shakeSkullsOnSealRemovalDelaySeconds to 0.25 and carries an override', () => {
+    expect(DEFAULT_PHYSICS.seal.shakeSkullsOnSealRemovalDelaySeconds).toBe(0.25);
+    const out = resolvePhysics({ seal: { shakeSkullsOnSealRemovalDelaySeconds: 1.5 } });
+    expect(out.seal.shakeSkullsOnSealRemovalDelaySeconds).toBe(1.5);
+  });
+
+  it('carries an object-form seal.shakeSkullsOnSealRemoval override as-is', () => {
+    const out = resolvePhysics({
+      seal: { shakeSkullsOnSealRemoval: { mode: 'all', shake: { strength: 9 } } },
+    });
+    expect(out.seal.shakeSkullsOnSealRemoval).toEqual({ mode: 'all', shake: { strength: 9 } });
+  });
 });

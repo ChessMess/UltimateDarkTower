@@ -156,13 +156,17 @@ describe('cloneSkullMesh', () => {
 });
 
 describe('computeShakeImpulse', () => {
-  const fixedRng = (): number => 0.5; // angle = π, all randoms mid-range
+  const fixedRng = (): number => 0.5; // all torque randoms mid-range
+  // Matches DEFAULT_PHYSICS.skull.{shakeHorizontalFactor,shakeUpwardFactor}.
+  const H = 0.5;
+  const U = 0.45;
 
   it('scales linear impulse magnitude with mass, modelRadius, and strength', () => {
-    const a = computeShakeImpulse(1, 1, 1, fixedRng);
-    const b = computeShakeImpulse(2, 1, 1, fixedRng);
-    const c = computeShakeImpulse(1, 2, 1, fixedRng);
-    const d = computeShakeImpulse(1, 1, 2, fixedRng);
+    const pos = { x: 1, z: 0 };
+    const a = computeShakeImpulse(1, 1, 1, pos, H, U, fixedRng);
+    const b = computeShakeImpulse(2, 1, 1, pos, H, U, fixedRng);
+    const c = computeShakeImpulse(1, 2, 1, pos, H, U, fixedRng);
+    const d = computeShakeImpulse(1, 1, 2, pos, H, U, fixedRng);
 
     const mag = (v: { x: number; y: number; z: number }): number => Math.hypot(v.x, v.y, v.z);
 
@@ -171,31 +175,71 @@ describe('computeShakeImpulse', () => {
     expect(mag(d.linear)).toBeCloseTo(mag(a.linear) * 2, 10);
   });
 
-  it('biases the linear impulse upward (+y dominates the horizontal component)', () => {
-    const { linear } = computeShakeImpulse(1, 1, 1, fixedRng);
-    expect(linear.y).toBeGreaterThan(0);
-    expect(linear.y).toBeGreaterThan(Math.hypot(linear.x, linear.z));
+  it('points the horizontal impulse away from the tower center, through the given position', () => {
+    const east = computeShakeImpulse(1, 1, 1, { x: 5, z: 0 }, H, U, fixedRng);
+    expect(east.linear.x).toBeGreaterThan(0);
+    expect(east.linear.z).toBeCloseTo(0, 10);
+
+    const north = computeShakeImpulse(1, 1, 1, { x: 0, z: 5 }, H, U, fixedRng);
+    expect(north.linear.x).toBeCloseTo(0, 10);
+    expect(north.linear.z).toBeGreaterThan(0);
+
+    // On the opposite side of the axis, the push is in the opposite
+    // direction too — always outward, never toward a fixed compass point.
+    const west = computeShakeImpulse(1, 1, 1, { x: -5, z: 0 }, H, U, fixedRng);
+    expect(west.linear.x).toBeLessThan(0);
   });
 
-  it('is deterministic for a fixed rng and varies with a different rng', () => {
-    const a = computeShakeImpulse(1, 1, 3, () => 0.1);
-    const b = computeShakeImpulse(1, 1, 3, () => 0.1);
-    const c = computeShakeImpulse(1, 1, 3, () => 0.9);
+  it('gives the horizontal (outward) push more magnitude than the vertical lift at the default factors', () => {
+    const { linear } = computeShakeImpulse(1, 1, 1, { x: 1, z: 0 }, H, U, fixedRng);
+    expect(linear.y).toBeGreaterThan(0); // still some upward lift...
+    expect(Math.hypot(linear.x, linear.z)).toBeGreaterThan(linear.y); // ...but outward dominates
+  });
+
+  it('shapes the impulse from horizontalFactor/upwardFactor, not fixed constants', () => {
+    const impulseMag = 1; // mass=1 * modelRadius=1 * strength=1
+
+    // Pure vertical: horizontalFactor 0 zeroes out the outward push entirely.
+    const verticalOnly = computeShakeImpulse(1, 1, 1, { x: 1, z: 0 }, 0, 1, fixedRng);
+    expect(verticalOnly.linear.x).toBeCloseTo(0, 10);
+    expect(verticalOnly.linear.z).toBeCloseTo(0, 10);
+    expect(verticalOnly.linear.y).toBeCloseTo(impulseMag, 10);
+
+    // Pure horizontal: upwardFactor 0 zeroes out the lift entirely.
+    const horizontalOnly = computeShakeImpulse(1, 1, 1, { x: 1, z: 0 }, 1, 0, fixedRng);
+    expect(horizontalOnly.linear.y).toBeCloseTo(0, 10);
+    expect(horizontalOnly.linear.x).toBeCloseTo(impulseMag, 10);
+  });
+
+  it('handles a skull on the central axis (x === z === 0) without NaN/Infinity', () => {
+    const { linear } = computeShakeImpulse(1, 1, 1, { x: 0, z: 0 }, H, U, fixedRng);
+    for (const v of [linear.x, linear.y, linear.z]) {
+      expect(Number.isFinite(v)).toBe(true);
+    }
+  });
+
+  it('is deterministic for a fixed rng; only the torque varies with a different rng', () => {
+    const pos = { x: 1, z: 0 };
+    const a = computeShakeImpulse(1, 1, 3, pos, H, U, () => 0.1);
+    const b = computeShakeImpulse(1, 1, 3, pos, H, U, () => 0.1);
+    const c = computeShakeImpulse(1, 1, 3, pos, H, U, () => 0.9);
 
     expect(a).toEqual(b);
-    expect(a).not.toEqual(c);
+    expect(a.linear).toEqual(c.linear); // direction is a function of position, not rng
+    expect(a.torque).not.toEqual(c.torque);
   });
 
   it('produces a zero impulse for a massless body', () => {
-    const { linear, torque } = computeShakeImpulse(0, 1, 5, fixedRng);
-    // toBeCloseTo (not toEqual) since cos(π)*0 yields -0, not 0.
-    for (const v of [linear.x, linear.y, linear.z, torque.x, torque.y, torque.z]) {
+    const { linear, torque } = computeShakeImpulse(0, 1, 5, { x: 1, z: 0 }, H, U, fixedRng);
+    expect(linear).toEqual({ x: 0, y: 0, z: 0 });
+    // toBeCloseTo (not toEqual) since (rng()*2-1)*0 can yield -0.
+    for (const v of [torque.x, torque.y, torque.z]) {
       expect(v).toBeCloseTo(0, 10);
     }
   });
 
   it('defaults to Math.random when rng is omitted (does not throw, produces finite values)', () => {
-    const { linear, torque } = computeShakeImpulse(1, 1, 3);
+    const { linear, torque } = computeShakeImpulse(1, 1, 3, { x: 1, z: 0 }, H, U);
     for (const v of [linear.x, linear.y, linear.z, torque.x, torque.y, torque.z]) {
       expect(Number.isFinite(v)).toBe(true);
     }

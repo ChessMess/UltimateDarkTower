@@ -9,12 +9,20 @@ export type {
   PhysicsConfig,
   ResolvedPhysicsConfig,
   SkullPhysicsHandle,
+  SealAutoShakeConfig,
   DeepRequired,
 } from './types';
 export { DEFAULT_PHYSICS, resolvePhysics } from './PhysicsResolver';
 export { loadSkullModel, clearSkullModelCache } from './SkullModelLoader';
 export type { SkullTemplate, LoadSkullModelOptions } from './SkullModelLoader';
-export type { SkullCounts, SkullZone } from './skullCounts';
+export type {
+  SkullCounts,
+  SkullZone,
+  SealAnchor,
+  SealPocket,
+  SealSkullBucket,
+  SkullSealBuckets,
+} from './skullCounts';
 
 /**
  * Attach physics-driven skulls to a Tower3DView. Returns immediately with a
@@ -94,6 +102,9 @@ export function attachSkullPhysics(
     },
     getSkullCounts() {
       return pm.getSkullCounts();
+    },
+    getSkullsBySeal() {
+      return pm.getSkullsBySeal();
     },
     getPhysicsConfig() {
       return pm.getPhysicsConfig();

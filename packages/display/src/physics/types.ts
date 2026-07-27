@@ -1,7 +1,23 @@
 import type * as THREE from 'three';
 import type { DeepRequired } from '../3d/types';
-import type { SkullCounts } from './skullCounts';
+import type { SkullCounts, SkullSealBuckets } from './skullCounts';
 export type { DeepRequired };
+
+/** Object form of `PhysicsConfig.seal.shakeSkullsOnSealRemoval`. */
+export interface SealAutoShakeConfig {
+  /**
+   * Which skulls to shake when a seal breaks. `'nearest'` — only the skulls
+   * `getSkullsBySeal()` reports behind that one seal. `'all'` — every
+   * currently `inTower` skull, same as `shakeSkulls()`. Default `'nearest'`.
+   */
+  mode?: 'nearest' | 'all';
+  /**
+   * Shake-shaping override for this auto-shake. Any omitted field falls
+   * back to the ambient `skull.*` config, read live at the moment the delay
+   * (`seal.shakeSkullsOnSealRemovalDelaySeconds`) elapses.
+   */
+  shake?: { strength?: number };
+}
 
 /**
  * Nested, fully-optional physics configuration. Pass any subset to
@@ -138,6 +154,21 @@ export interface PhysicsConfig {
      */
     shakeStrength?: number;
     /**
+     * Horizontal-push fraction of a shake's impulse, applied in the direction
+     * radially outward from the tower's central axis through the skull's
+     * current position — so a shake always nudges it away from the axis,
+     * never a random direction. Shared by `shakeSkulls()` and
+     * `shakeSelectedSkull()`. Default `0.5`. Live.
+     */
+    shakeHorizontalFactor?: number;
+    /**
+     * Upward-lift fraction of a shake's impulse. Combined with
+     * `shakeHorizontalFactor` to shape the impulse direction — keep this
+     * below `shakeHorizontalFactor` so the outward push dominates rather
+     * than launching the skull straight up. Default `0.45`. Live.
+     */
+    shakeUpwardFactor?: number;
+    /**
      * When true, clicking a live skull in the 3D view calls
      * `shakeSelectedSkull(id)` for the clicked skull — a "click a stuck
      * skull to nudge it free" interaction. Uses the view's pointer-target
@@ -165,6 +196,48 @@ export interface PhysicsConfig {
   seal?: {
     /** Friction on the kinematic seal trimeshes (Min combine rule). Live. */
     friction?: number;
+    /**
+     * Nearest-seal fallback for `getSkullsBySeal()`, used only when the
+     * model doesn't supply all 12 authored `pocket_<side>_<level>` volumes
+     * (ignored otherwise). Max distance from a seal node's center, as a
+     * fraction of `modelRadius`, for an in-tower skull to count as behind
+     * that seal — beyond it, the skull is `unattributed`. Live. Default
+     * `0.25` (roughly half the stock model's inter-seal spacing).
+     */
+    attributionRadiusFactor?: number;
+    /**
+     * Auto-shake behavior when a seal transitions from intact to broken
+     * (a host-driven `onSealsApplied` update, e.g. the example app's seal
+     * toggle grid or a real game event). `false` disables it entirely.
+     * `true` enables it with defaults (`mode: 'nearest'`, ambient
+     * `skull.shakeStrength`). An object form overrides either independently.
+     *
+     * Waits `shakeSkullsOnSealRemovalDelaySeconds` after the seal breaks —
+     * giving gravity a chance to clear the opening on its own — then
+     * re-checks which skulls are still there and shakes only those:
+     *
+     * - `mode: 'nearest'` (default) shakes only the skulls
+     *   {@link SkullPhysicsHandle.getSkullsBySeal} reports behind the seal
+     *   that just broke, evaluated fresh after the delay — equivalent to
+     *   `shakeSelectedSkull(bucket.ids)` for that one bucket.
+     * - `mode: 'all'` shakes every currently `inTower` skull — equivalent to
+     *   calling `shakeSkulls()`.
+     * - `shake.strength`, when omitted, falls back to the current
+     *   `skull.shakeStrength` (read live when the delay elapses, so it
+     *   always matches whatever that leaf currently resolves to).
+     *
+     * Default `true`. Live.
+     */
+    shakeSkullsOnSealRemoval?: boolean | SealAutoShakeConfig;
+    /**
+     * Seconds to wait after a seal breaks before
+     * `seal.shakeSkullsOnSealRemoval` checks which of its skulls actually
+     * fell, and shakes only the ones that didn't. Measured in simulation
+     * time (the same per-frame `dt` the physics step runs on), not a
+     * wall-clock timer. Ignored when `shakeSkullsOnSealRemoval` is `false`.
+     * Live. Default `0.25`.
+     */
+    shakeSkullsOnSealRemovalDelaySeconds?: number;
   };
   /** Non-drum, non-seal GLB mesh trimeshes (cone funnel, base, outer shell). */
   static?: {
@@ -190,14 +263,19 @@ export interface PhysicsConfig {
 /**
  * Fully-resolved physics config — every leaf has a value, returned from
  * `getPhysicsConfig()`. Most leaves drop `undefined` from their type via
- * `DeepRequired`, but a handful of optional references (e.g. `skull.meshFactory`)
- * intentionally remain nullable so "unset" is a first-class state.
+ * `DeepRequired`, but a handful of optional references (e.g. `skull.meshFactory`,
+ * `seal.shakeSkullsOnSealRemoval`'s inner `shake.strength`) intentionally
+ * remain nullable so "unset" (defer to another leaf's live value) is a
+ * first-class state.
  */
-export type ResolvedPhysicsConfig = Omit<DeepRequired<PhysicsConfig>, 'skull'> & {
+export type ResolvedPhysicsConfig = Omit<DeepRequired<PhysicsConfig>, 'skull' | 'seal'> & {
   skull: Omit<DeepRequired<PhysicsConfig>['skull'], 'meshFactory' | 'modelUrl' | 'density'> & {
     meshFactory: ((radius: number) => THREE.Object3D) | undefined;
     modelUrl: string | undefined;
     density: number | undefined;
+  };
+  seal: Omit<DeepRequired<PhysicsConfig>['seal'], 'shakeSkullsOnSealRemoval'> & {
+    shakeSkullsOnSealRemoval: boolean | SealAutoShakeConfig;
   };
 };
 
@@ -237,13 +315,14 @@ export interface SkullPhysicsHandle {
    */
   shakeSkulls(options?: { strength?: number }): void;
   /**
-   * Impulse-nudge exactly one skull by id, regardless of which zone it's
-   * currently in — unlike `shakeSkulls()`, there is no `inTower` filter,
-   * since a skull picked by id was selected deliberately (e.g. via
-   * `skull.clickToShake`). No-op if `id` doesn't match a live skull, before
-   * init resolves, or after `dispose()`.
+   * Impulse-nudge one skull, or a batch of them, regardless of which zone
+   * they're currently in — unlike `shakeSkulls()`, there is no `inTower`
+   * filter, since skulls picked by id were selected deliberately (e.g. via
+   * `skull.clickToShake`, or a {@link getSkullsBySeal} bucket's `ids`). Ids
+   * not matching a live skull are silently skipped; an empty array is a
+   * no-op. No-op before init resolves or after `dispose()`.
    */
-  shakeSelectedSkull(id: number, options?: { strength?: number }): void;
+  shakeSelectedSkull(id: number | number[], options?: { strength?: number }): void;
   /**
    * Walk `obj` up its parent chain looking for a live skull's root mesh
    * (matched via internal `userData` tagging) and return its id, or `null`
@@ -267,18 +346,42 @@ export interface SkullPhysicsHandle {
    */
   getSkullCounts(): SkullCounts;
   /**
+   * Breakdown of in-tower skulls by which seal opening they're behind, plus
+   * an `unattributed` bucket for ones not near any opening (funnel, central
+   * axis). `total` always equals `getSkullCounts().inTower`.
+   *
+   * Uses the model's authored `pocket_<side>_<level>` volumes when all 12 are
+   * present (`mode: 'pocket'` — an exact point-in-box test); otherwise falls
+   * back to nearest-seal-anchor attribution within
+   * `seal.attributionRadiusFactor` (`mode: 'nearest'`, a heuristic). See
+   * PHYSICS.md's "Counting skulls" section for the full picture.
+   *
+   * Pairs with `shakeSelectedSkull` to unstick exactly the skulls behind an
+   * already-broken seal:
+   * ```ts
+   * const stuck = physics.getSkullsBySeal();
+   * physics.shakeSelectedSkull(stuck.bySeal.filter((b) => b.broken).flatMap((b) => b.ids));
+   * ```
+   *
+   * Returns `{ bySeal: [], unattributed: [], total: 0, mode: 'nearest' }`
+   * before init resolves. Cheap (O(skulls × 12)); safe to poll every frame.
+   */
+  getSkullsBySeal(): SkullSealBuckets;
+  /**
    * Get a deep-cloned snapshot of the current fully-resolved physics
    * config. Safe to mutate the result.
    */
   getPhysicsConfig(): ResolvedPhysicsConfig;
   /**
    * Apply a partial config on top of the current one. Live-tunable leaves
-   * (frictions, damping, debug overlays, board radius, oob depth) take effect
-   * immediately; skull-body leaves (radius, friction, restitution,
-   * collider shape, model URL, mesh factory) take effect on the next
-   * `dropSkull()`; geometry leaves (drum half-height/inner radius, board
-   * thickness) are only honored at attach time and are silently ignored
-   * otherwise.
+   * (frictions, damping, debug overlays, board radius, oob depth,
+   * `seal.attributionRadiusFactor`, `seal.shakeSkullsOnSealRemoval`,
+   * `seal.shakeSkullsOnSealRemovalDelaySeconds`, `skull.shakeStrength`,
+   * `skull.shakeHorizontalFactor`, `skull.shakeUpwardFactor`) take effect
+   * immediately; skull-body leaves (radius, friction, restitution, collider
+   * shape, model URL, mesh factory) take effect on the next `dropSkull()`;
+   * geometry leaves (drum half-height/inner radius, board thickness) are
+   * only honored at attach time and are silently ignored otherwise.
    *
    * `skull.modelUrl` changes are async — drops queued during a load are
    * replayed once the new model resolves. A second change cancels the

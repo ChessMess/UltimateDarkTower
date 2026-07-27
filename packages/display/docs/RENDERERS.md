@@ -71,7 +71,7 @@ When `clickToToggleSeals` is `true` (the default), clicks toggle the underlying 
 
 ## `Tower3DView`
 
-The Three.js model. Loads a 22 MB GLB, renders 24 LED proxies (six layers × four lights) with red point lights and amber emissive halos, rotates the three named drum meshes (`drum_top`, `drum_middle`, `drum_bottom`) to match drum state, animates LED effects on the bloom layer, and runs a configurable three-point lighting rig.
+The Three.js model. Loads a 22 MB GLB, renders 24 LED proxies (six layers × four lights) with red point lights and amber emissive halos, rotates the three named drum meshes (`drum_top`, `drum_middle`, `drum_bottom`) to match drum state, animates LED effects on the bloom layer, and runs a configurable three-point lighting rig. The GLB may also carry 12 optional `pocket_<side>_<level>` volumes (always hidden, never rendered) that `/physics`'s `getSkullsBySeal()` uses for exact skull-to-seal attribution — see [POCKET_AUTHORING](POCKET_AUTHORING.md).
 
 Out of the box you get:
 
@@ -169,3 +169,4 @@ The 22 MB GLB is the dominant cost. Self-host a smaller model and pass `modelUrl
 - [LIGHTING](LIGHTING.md) — tuning the 3D scene.
 - [EXAMPLE](EXAMPLE.md) — the demo as a reference integration.
 - [TROUBLESHOOTING](TROUBLESHOOTING.md) — common rendering failures.
+- [POCKET_AUTHORING](POCKET_AUTHORING.md) — adding the optional `pocket_<side>_<level>` volumes.

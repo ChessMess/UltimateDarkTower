@@ -409,6 +409,14 @@
                   >Skulls: —</span
                 >
               </div>
+              <div
+                id="skull-by-seal"
+                class="skull-seal-readout"
+                title="Live getSkullsBySeal() readout: which seal opening each in-tower skull is behind, plus a loose count for skulls not near any opening. [pocket] uses the model's authored pocket_&lt;side&gt;_&lt;level&gt; volumes; [nearest] is the fallback used when they're absent."
+              >
+                <div id="skull-by-seal-mode" class="skull-seal-mode">Behind seals: —</div>
+                <div id="skull-by-seal-chips" class="skull-seal-chips"></div>
+              </div>
 
               <h3 class="opts-subhead">Debug</h3>
               <div class="opts-row">
@@ -473,6 +481,25 @@
                 >
                   Shake Tower
                 </button>
+              </div>
+              <div class="opts-row opts-row-block">
+                <button
+                  id="btn-shake-stuck-skulls"
+                  class="secondary-action"
+                  title="Impulse-nudge only the skulls getSkullsBySeal() reports behind an already-broken seal, plus any unattributed (loose) skulls — unlike Shake Skulls, this leaves skulls behind intact seals untouched. Disabled when there's nothing to shake."
+                  disabled
+                >
+                  Shake Stuck Skulls
+                </button>
+              </div>
+              <div class="opts-row">
+                <label
+                  class="toolbar-label"
+                  title="seal.shakeSkullsOnSealRemoval: when a seal breaks, wait seal.shakeSkullsOnSealRemovalDelaySeconds (default 0.25s) then automatically shake whichever of the skulls getSkullsBySeal() reports were behind it are still there — the same effect as clicking Shake Stuck Skulls, but automatic. Default on."
+                >
+                  <input type="checkbox" id="chk-shake-on-seal-removal" checked /> Shake skulls when
+                  seal removed
+                </label>
               </div>
               <div class="opts-row">
                 <label
@@ -663,6 +690,51 @@
                     value="3"
                   />
                   <span id="lbl-shake-strength" class="physics-slider-value">3.0</span>
+                </label>
+                <label
+                  class="physics-slider"
+                  title="skull.shakeHorizontalFactor: fraction of a shake's impulse pushed radially outward, away from the tower's central axis through the skull's current position. Shared by every shake call site (Shake Skulls, click-to-shake, Shake Stuck Skulls, auto-shake on seal removal). Updates live."
+                >
+                  <span class="physics-slider-name">Shake horiz.</span>
+                  <input
+                    type="range"
+                    id="rng-shake-horizontal"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value="0.5"
+                  />
+                  <span id="lbl-shake-horizontal" class="physics-slider-value">0.50</span>
+                </label>
+                <label
+                  class="physics-slider"
+                  title="skull.shakeUpwardFactor: fraction of a shake's impulse pushed straight up. Keep below Shake horiz. so the outward push dominates rather than launching the skull. Shared by every shake call site. Updates live."
+                >
+                  <span class="physics-slider-name">Shake up</span>
+                  <input
+                    type="range"
+                    id="rng-shake-upward"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value="0.45"
+                  />
+                  <span id="lbl-shake-upward" class="physics-slider-value">0.45</span>
+                </label>
+                <label
+                  class="physics-slider"
+                  title="seal.shakeSkullsOnSealRemovalDelaySeconds: seconds to wait after a seal breaks before checking which skulls behind it are still stuck and shaking only those. Ignored when 'Shake skulls when seal removed' is off. Updates live."
+                >
+                  <span class="physics-slider-name">Seal-break delay</span>
+                  <input
+                    type="range"
+                    id="rng-seal-removal-delay"
+                    min="0"
+                    max="3"
+                    step="0.05"
+                    value="0.25"
+                  />
+                  <span id="lbl-seal-removal-delay" class="physics-slider-value">0.25</span>
                 </label>
               </div>
             </div>
