@@ -290,8 +290,10 @@ export class PhysicsManager {
 
     // Drop somewhere over the top opening, not straight down the axis. The
     // opening is roughly the drum's inner radius wide; jitter within a disc
-    // sized as a fraction of it so the skull still clears the rim.
-    const jitterMax = R * this.config.drum.innerRadiusFactor * 0.6;
+    // sized as a fraction of it, minus the skull's own radius, so the whole
+    // skull (not just its center) clears the rim instead of skimming the edge.
+    const openingRadius = R * this.config.drum.innerRadiusFactor;
+    const jitterMax = Math.max(0, openingRadius * 0.35 - r);
     const jitterAngle = Math.random() * Math.PI * 2;
     const jitterRadius = Math.sqrt(Math.random()) * jitterMax;
     const spawnX = Math.cos(jitterAngle) * jitterRadius;
