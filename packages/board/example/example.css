@@ -186,6 +186,14 @@ code {
   align-items: stretch;
   height: 100vh;
   overflow: hidden;
+  transition: grid-template-columns var(--dur-slow) var(--ease-out);
+}
+
+/* Whole-column collapse (distinct from the per-panel collapse below): the
+   hero reclaims the freed track while the column itself slides off to the
+   right. Toggled + persisted by configColumnController.ts. */
+.app-grid.config-hidden {
+  grid-template-columns: var(--sidebar-w) 1fr 0px;
 }
 
 .app-sidebar {
@@ -265,6 +273,27 @@ code {
   min-height: 0;
   overflow-y: auto;
   animation: fadeUp 0.45s 0.15s ease both;
+  transition:
+    transform var(--dur-slow) var(--ease-out),
+    opacity var(--dur-base) var(--ease-out);
+}
+.app-grid.config-hidden .app-config {
+  transform: translateX(calc(100% + var(--grid-gap)));
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Fixed edge tab that toggles .config-hidden — lives outside #config-column
+   so it stays reachable while the column is off-screen. */
+.config-toggle-tab {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 20;
+  padding: 0.6rem 0.35rem;
+  border-radius: var(--radius) 0 0 var(--radius);
+  border-right: none;
 }
 
 .config-section {
@@ -741,6 +770,20 @@ button.active {
   }
   .preset-card-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Stacked layout: no "right side" to slide out — neutralize the desktop
+     collapse state and hide its toggle. */
+  .app-grid.config-hidden {
+    grid-template-columns: 1fr;
+  }
+  .app-grid.config-hidden .app-config {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .config-toggle-tab {
+    display: none;
   }
 }
 

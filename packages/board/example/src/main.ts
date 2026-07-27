@@ -11,6 +11,7 @@ import type { TokenSelection } from '../../src/index';
 import { tokenArt } from './tokenArt';
 import { queryDom } from './dom';
 import { seedBoard } from './presets';
+import { initConfigColumnController } from './configColumnController';
 import { initInstructionsController } from './instructionsController';
 import { initJsonController } from './jsonController';
 import { initPanelCollapseController } from './panelCollapseController';
@@ -74,6 +75,7 @@ stage.controller.subscribe((event) => {
 
 // ── Demo page chrome ─────────────────────────────────────────────────────────
 initPanelCollapseController();
+initConfigColumnController(els);
 initInstructionsController(els);
 const editingUI = stage.editingUI;
 if (editingUI) initSidebarController(els, stage.view, editingUI, jsonCtl);
