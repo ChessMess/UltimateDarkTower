@@ -339,9 +339,7 @@ export class BoardMap2D implements BoardRenderer {
    * that option exists to stop the wheel hijacking page scroll, not to forbid an explicit call.
    */
   zoomBy(factor: number, fx = 0.5, fy = 0.5): void {
-    this.applyView(
-      zoomRect(this.currentViewBox(), this.baseViewBox, fx, fy, factor, this.maxZoom),
-    );
+    this.applyView(zoomRect(this.currentViewBox(), this.baseViewBox, fx, fy, factor, this.maxZoom));
   }
 
   /**

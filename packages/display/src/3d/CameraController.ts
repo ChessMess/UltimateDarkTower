@@ -301,7 +301,10 @@ export class CameraController {
   tickDerivedZoom(): void {
     if (!this.defaultCamera) return;
     const { distanceFactor } = this.getLiveCameraFactors();
-    if (this.lastDistanceFactor !== null && Math.abs(distanceFactor - this.lastDistanceFactor) < 1e-3) {
+    if (
+      this.lastDistanceFactor !== null &&
+      Math.abs(distanceFactor - this.lastDistanceFactor) < 1e-3
+    ) {
       return;
     }
     this.lastDistanceFactor = distanceFactor;
