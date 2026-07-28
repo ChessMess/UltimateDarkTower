@@ -283,19 +283,6 @@ code {
   pointer-events: none;
 }
 
-/* Fixed edge tab that toggles .config-hidden — lives outside #config-column
-   so it stays reachable while the column is off-screen. */
-.config-toggle-tab {
-  position: fixed;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  z-index: 20;
-  padding: 0.6rem 0.35rem;
-  border-radius: var(--radius) 0 0 var(--radius);
-  border-right: none;
-}
-
 .config-section {
   flex: 0 0 auto;
   display: flex;
@@ -773,7 +760,8 @@ button.active {
   }
 
   /* Stacked layout: no "right side" to slide out — neutralize the desktop
-     collapse state and hide its toggle. */
+     collapse state (the toggle button itself lives in the stage's own
+     toolbar and needs no mobile-specific handling). */
   .app-grid.config-hidden {
     grid-template-columns: 1fr;
   }
@@ -781,9 +769,6 @@ button.active {
     transform: none;
     opacity: 1;
     pointer-events: auto;
-  }
-  .config-toggle-tab {
-    display: none;
   }
 }
 
