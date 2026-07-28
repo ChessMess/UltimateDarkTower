@@ -63,10 +63,21 @@ catalog:
 #    range (^3.0.1) already permits the GHSA-v2hh-gcrm-f6hx fix in 3.1.4 — this
 #    is a stale resolution, not a parent waiting to catch up. Stay in the 3.x
 #    line (4.x is outside ajv's declared range).
+#  - brace-expansion: 3 copies resolve in-tree (1.1.16, 2.1.2, 5.0.7). GHSA-mh99-
+#    v99m-4gvg's range ("<=5.0.7") reads as vulnerable against all three by plain
+#    semver comparison, but this package maintains parallel major lines (1.x
+#    through 5.x each patched independently) — 1.1.16 and 2.1.2 already ship the
+#    EXPANSION_MAX_LENGTH fix (backported ahead of the 5.x line's own 5.0.8).
+#    Only 5.0.7 (via minimatch@10.2.5 ← @typescript-eslint/typescript-estree,
+#    root devDependency) actually lacks it. Scoped to that one path so the two
+#    already-fixed copies — used by minimatch@3.1.5/5.1.9/9.0.9 in the
+#    electron-forge toolchain, which expect the old 1.x/2.x API — aren't forced
+#    onto an unrelated major for no security benefit.
 overrides:
   tar: ^7.5.22
   tmp: ^0.2.7
   fast-uri: ^3.1.4
+  "minimatch@10.2.5>brace-expansion": ^5.0.8
 
 # electron-forge's @electron/rebuild depends on a git-hosted @electron/node-gyp
 # fork; pnpm 11 blocks git-hosted subdeps by default. Allow them so the electron
