@@ -126,6 +126,12 @@ export interface BoardMap2DOptions {
   /** Max zoom-in factor relative to the current focus view (default `8`). */
   maxZoom?: number;
   /**
+   * Fired whenever the zoom level changes — wheel, {@link BoardMap2D.zoomBy}, a focus change
+   * (which re-bases the view to 100%), or {@link BoardMap2D.resetView}. `percent` is relative
+   * to the current focus view (`100` = the focus's fit, unzoomed).
+   */
+  onZoomChange?: (percent: number) => void;
+  /**
    * What a left-drag does on the map. `'rotate'` (default) spins the whole board (image + tokens)
    * about its center — grab a point and it follows the cursor, like a lazy-susan. `'pan'` is the
    * classic "move the image around" once zoomed in. Switch at runtime with {@link BoardMap2D.setDragMode}.
@@ -159,6 +165,7 @@ export class BoardMap2D implements BoardRenderer {
   private readonly onLocationPick?: (location: LocationName) => void;
   private readonly enableZoom: boolean;
   private readonly maxZoom: number;
+  private readonly onZoomChange?: (percent: number) => void;
   private dragMode: DragMode;
   private readonly unsubPick?: () => void;
   /** The board being rendered (RtDT unless `options.board` said otherwise). */
@@ -215,6 +222,7 @@ export class BoardMap2D implements BoardRenderer {
     this.onLocationPick = options.onLocationPick;
     this.enableZoom = options.enableZoom ?? true;
     this.maxZoom = options.maxZoom ?? DEFAULT_MAX_ZOOM;
+    this.onZoomChange = options.onZoomChange;
     this.dragMode = options.dragMode ?? 'rotate';
     this.resolve = (ref) =>
       resolveTokenImageFor(ref, '2d', {
@@ -296,6 +304,7 @@ export class BoardMap2D implements BoardRenderer {
     this.rotateLayer = rotate;
     this.selectionLayer = selectionLayer;
     this.redrawSelection();
+    this.onZoomChange?.(this.zoomPercent());
   }
 
   dispose(): void {
@@ -319,6 +328,20 @@ export class BoardMap2D implements BoardRenderer {
     this.rotationDeg = 0;
     this.svg?.setAttribute('viewBox', rectToViewBox(this.baseViewBox));
     this.rotateLayer?.setAttribute('transform', this.rotateTransform());
+    this.onZoomChange?.(this.zoomPercent());
+  }
+
+  /**
+   * Zoom without a wheel event — the imperative equivalent of a wheel notch, for zoom
+   * buttons. `factor` < 1 zooms in, > 1 out; `fx`/`fy` ∈ [0,1] are the anchor's fractional
+   * position within the view (default: its center). Clamped to `maxZoom` and the focus
+   * view exactly like the wheel. Unlike the wheel this is NOT gated on `enableZoom` —
+   * that option exists to stop the wheel hijacking page scroll, not to forbid an explicit call.
+   */
+  zoomBy(factor: number, fx = 0.5, fy = 0.5): void {
+    this.applyView(
+      zoomRect(this.currentViewBox(), this.baseViewBox, fx, fy, factor, this.maxZoom),
+    );
   }
 
   /**
@@ -673,6 +696,11 @@ export class BoardMap2D implements BoardRenderer {
     return this.userViewBox ?? this.baseViewBox;
   }
 
+  /** Zoom relative to the focus view's fit (`100` = unzoomed), rounded for display. */
+  private zoomPercent(): number {
+    return Math.round((this.baseViewBox.w / this.currentViewBox().w) * 100);
+  }
+
   /** Wheel toward the cursor. Reads the cursor's fractional position from the svg rect;
    *  jsdom (and hidden elements) report a zero-size rect, so we fall back to the center. */
   private handleWheel(event: WheelEvent): void {
@@ -796,10 +824,14 @@ export class BoardMap2D implements BoardRenderer {
   }
 
   /** Write a new view to the svg; collapse back to "no manual view" once fully zoomed out
-   *  (width reaches the base) so `currentViewBox()` returns the exact base, free of drift. */
+   *  (width reaches the base) so `currentViewBox()` returns the exact base, free of drift.
+   *  Also used by pan (which only moves x/y) — only fire `onZoomChange` when the width
+   *  actually changed, so a pan-drag's mousemove stream doesn't spam the same percent. */
   private applyView(next: Rect): void {
+    const prevW = this.currentViewBox().w;
     this.userViewBox = next.w >= this.baseViewBox.w ? undefined : next;
     this.svg?.setAttribute('viewBox', rectToViewBox(this.currentViewBox()));
+    if (this.currentViewBox().w !== prevW) this.onZoomChange?.(this.zoomPercent());
   }
 
   // ── focus / selection (cont.) ────────────────────────────────────────────────

@@ -6,6 +6,8 @@
 export interface SegmentedItem<T extends string> {
   key: T;
   label: string;
+  /** Accessible name + tooltip. Needed when `label` is a glyph rather than a word. */
+  title?: string;
 }
 
 export interface Segmented<T extends string> {
@@ -22,11 +24,15 @@ export function createSegmented<T extends string>(
   host.classList.add('udt-focus-group');
   host.setAttribute('role', 'group');
   const byKey = new Map<T, HTMLButtonElement>();
-  for (const { key, label } of items) {
+  for (const { key, label, title } of items) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'udt-focus-button';
     btn.textContent = label;
+    if (title) {
+      btn.title = title;
+      btn.setAttribute('aria-label', title);
+    }
     btn.addEventListener('click', () => onSelect(key));
     host.appendChild(btn);
     byKey.set(key, btn);

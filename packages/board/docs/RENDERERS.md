@@ -50,7 +50,8 @@ const DEFAULT_FOCUS: BoardFocus = { kingdom: 'all', angle: 'overhead' };
   point and it tracks the cursor, like a lazy-susan (the image + tokens share one rotate layer) — while
   `'pan'` moves the zoomed-in view. Flip it live with `setDragMode('rotate' | 'pan')`. The **middle mouse
   button** runs the other action (a quick pan while spinning; a press-and-hold spin while panning).
-  `enableZoom: false` drops wheel-zoom but leaves drag-spin working.
+  `enableZoom: false` drops wheel-zoom but leaves drag-spin working. `zoomBy()` zooms without a wheel
+  event — `BoardStageView`'s floating `+`/`−`/`⟲` widget calls it.
 - **Click-to-select** fires `onTokenSelect({ kind, id, location })` and draws a selection ring. Selection
   is renderer-local UI state — it is never written to `BoardState`. Add/move/delete editing lives in the
   dockable UI (below).

@@ -9,7 +9,14 @@
 const { towerHandle, createBoardTower3D } = vi.hoisted(() => {
   const handle = {
     tower: { __sentinel: 'tower' },
-    view3D: {},
+    view3D: {
+      getLiveCameraFactors: vi.fn(() => ({
+        elevationFactor: 1,
+        targetHeightFactor: 1,
+        distanceFactor: 1,
+      })),
+      applyCameraConfig: vi.fn(),
+    },
     setBoardState: vi.fn(),
     setFocus: vi.fn(),
     dispose: vi.fn(),
@@ -245,5 +252,103 @@ describe('BoardStageView — lazy 3D tower', () => {
     expect(createBoardTower3D).not.toHaveBeenCalled(); // tower is off — must stay off
 
     openSpy.mockRestore();
+  });
+});
+
+describe('BoardStageView — floating zoom widgets', () => {
+  // Scoped by pane, not `focusButton` (root-wide) — both panes now have their own "+".
+  // The widget's buttons are `.bsv-action` (not `.udt-focus-button`/`Segmented`): it also
+  // has a plain-text percent readout in the middle, which `Segmented`'s merged-border
+  // button-only styling doesn't support.
+  function zoomButton(
+    container: HTMLElement,
+    pane: '.bsv-pane-2d' | '.bsv-pane-3d',
+    label: string,
+  ): HTMLButtonElement {
+    const btns = Array.from(
+      container.querySelectorAll<HTMLButtonElement>(`${pane} .bsv-zoom .bsv-action`),
+    );
+    const btn = btns.find((b) => b.textContent === label);
+    if (!btn) throw new Error(`zoom button "${label}" not found in ${pane}`);
+    return btn;
+  }
+
+  function zoomPct(container: HTMLElement, pane: '.bsv-pane-2d' | '.bsv-pane-3d'): string {
+    return (container.querySelector(`${pane} .bsv-zoom-pct`) as HTMLElement).textContent as string;
+  }
+
+  it('builds a zoom widget in both panes', () => {
+    const { container } = mount();
+    expect(container.querySelector('.bsv-pane-2d .bsv-zoom')).not.toBeNull();
+    expect(container.querySelector('.bsv-pane-3d .bsv-zoom')).not.toBeNull();
+  });
+
+  it('2D +/− zoom the map, moving the live percent readout; ⟲ resets both', () => {
+    const { container, stage } = mount();
+    const svg = container.querySelector('.bsv-map-host svg') as SVGSVGElement;
+    const base = svg.getAttribute('viewBox') as string;
+    expect(zoomPct(container, '.bsv-pane-2d')).toBe('100%');
+
+    zoomButton(container, '.bsv-pane-2d', '+').click();
+    const zoomed = svg.getAttribute('viewBox') as string;
+    expect(zoomed).not.toBe(base);
+    expect(zoomPct(container, '.bsv-pane-2d')).not.toBe('100%');
+
+    // The readout also tracks a raw wheel-zoom, not just the buttons — it's wired to the
+    // map's own onZoomChange, the same path a mouse wheel drives.
+    svg.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
+    const afterWheel = zoomPct(container, '.bsv-pane-2d');
+    expect(afterWheel).not.toBe('100%');
+
+    const resetSpy = vi.spyOn(stage.map2d!, 'resetView');
+    zoomButton(container, '.bsv-pane-2d', '⟲').click();
+    expect(resetSpy).toHaveBeenCalled();
+    expect(zoomPct(container, '.bsv-pane-2d')).toBe('100%');
+  });
+
+  it('enableZoom: false hides the 2D zoom widget', () => {
+    const { container } = mount({ enableZoom: false });
+    expect((container.querySelector('.bsv-pane-2d .bsv-zoom') as HTMLElement).hidden).toBe(true);
+  });
+
+  it('3D +/− dolly the camera, preserving the current view', async () => {
+    const { container, stage } = mount({ tower3D: false, modelUrl: 'mock://tower.glb' });
+    await stage.setTowerEnabled(true);
+
+    zoomButton(container, '.bsv-pane-3d', '+').click();
+    expect(towerHandle.view3D.applyCameraConfig).toHaveBeenCalledWith(
+      { distanceFactor: expect.any(Number) },
+      { preserveView: true },
+    );
+    const inCall = towerHandle.view3D.applyCameraConfig.mock.calls[0][0] as {
+      distanceFactor: number;
+    };
+    expect(inCall.distanceFactor).toBeLessThan(1); // '+' zooms in → smaller distance
+
+    zoomButton(container, '.bsv-pane-3d', '−').click();
+    const outCall = towerHandle.view3D.applyCameraConfig.mock.calls[1][0] as {
+      distanceFactor: number;
+    };
+    expect(outCall.distanceFactor).toBeGreaterThan(1); // '−' zooms out → larger distance
+  });
+
+  it("the 3D readout is driven by Display's own onZoomChange callback, not the button handler directly", async () => {
+    const { container, stage } = mount({ tower3D: false, modelUrl: 'mock://tower.glb' });
+    await stage.setTowerEnabled(true);
+    expect(zoomPct(container, '.bsv-pane-3d')).toBe('100%');
+
+    // `buildTower` wires `view3D.onZoomChange` to update the readout. Display fires it from
+    // its own per-frame camera-distance check, covering wheel-zoom, orbit-drag, and
+    // Center/Reset uniformly, alongside our own +/− — simulate that tick here since the
+    // mock has no render loop of its own.
+    expect(typeof towerHandle.view3D.onZoomChange).toBe('function');
+    towerHandle.view3D.onZoomChange(0.5);
+    expect(zoomPct(container, '.bsv-pane-3d')).toBe('200%');
+  });
+
+  it('3D zoom buttons no-op before the tower is built', () => {
+    const { container } = mount(); // tower3D: false (default in `mount`), never enabled
+    zoomButton(container, '.bsv-pane-3d', '+').click(); // must not throw
+    expect(towerHandle.view3D.applyCameraConfig).not.toHaveBeenCalled();
   });
 });

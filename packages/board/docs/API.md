@@ -458,7 +458,8 @@ moves the zoomed-in view. Switch at runtime with [`setDragMode()`](#methods). Th
 always runs the _other_ action — a quick pan while in spin mode, or a press-and-hold spin while in pan
 mode. Zoom/pan/spin stay inside the current focus region and never touch `BoardState`. Pass
 `enableZoom: false` to drop wheel-zoom (e.g. when the map lives in a scroll container); drag-spin still
-works in that case.
+works in that case. `zoomBy()` (see [Methods](#methods)) is the same math without a wheel event — what
+`BoardStageView`'s floating `+`/`−`/`⟲` widget calls (see [STAGE.md](./STAGE.md)).
 
 ```ts
 import { BoardMap2D } from 'ultimatedarktowerboard';
@@ -489,6 +490,7 @@ map.render(controller.getState());
 | `enableZoom`        | `boolean`                                                  | `true`     | Wheel-zoom toward the cursor + double-click-reset. `false` opts out (drag-spin still works).                        |
 | `maxZoom`           | `number`                                                   | `8`        | Max zoom-in factor relative to the focus view.                                                                      |
 | `dragMode`          | `'rotate' \| 'pan'`                                        | `'rotate'` | What a left-drag does: `'rotate'` spins the board about its center (grab & spin); `'pan'` moves the zoomed-in view. |
+| `onZoomChange`      | `(percent: number) => void`                                | —          | Fired on any zoom change — wheel, `zoomBy()`, a focus change, or `resetView()`. `100` = unzoomed. |
 
 #### Methods
 
@@ -496,6 +498,7 @@ map.render(controller.getState());
 
 - `resetView()` — returns the map to its focus view, dropping any manual zoom/pan **and spin** (also bound to double-click).
 - `setDragMode('rotate' | 'pan')` — switches the left-drag behavior at runtime (spin vs pan).
+- `zoomBy(factor, fx?, fy?)` — zoom without a wheel event; `factor < 1` zooms in, `> 1` out, `fx`/`fy` ∈ `[0,1]` anchor the zoom (default: center). Clamped to `maxZoom` and the focus view like the wheel. Not gated on `enableZoom`.
 
 ### `TokenSelection` / `TokenArtRef` / `kebab()`
 

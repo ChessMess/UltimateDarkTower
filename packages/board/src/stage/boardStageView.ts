@@ -110,6 +110,10 @@ interface StageElements {
   dragHost: HTMLDivElement;
   kingdomHost: HTMLDivElement;
   allHost: HTMLDivElement;
+  /** Floating zoom-button host on the 2D pane. */
+  zoom2d: HTMLDivElement;
+  /** Floating zoom-button host on the 3D pane (sibling of `tower3dHost` — see there). */
+  zoom3d: HTMLDivElement;
   pills: {
     d2: HTMLButtonElement;
     d3: HTMLButtonElement;
@@ -122,6 +126,15 @@ interface StageElements {
 }
 
 const DEFAULT_PREFIX = 'udtb.stage';
+/** Zoom-button tuning: each click scales the view by this factor (2D viewBox width /
+ *  3D camera distance). The 3D dolly is clamped to `TOWER_DISTANCE_RANGE` (relative to
+ *  the fitted framing) so the buttons can't push the camera inside the model or off
+ *  to infinity. */
+const ZOOM_STEP = 1.5;
+const TOWER_ZOOM_STEP = 1.3;
+// ponytail: fixed dolly clamp; derive from model radius if a custom GLB ever needs a
+// different range.
+const TOWER_DISTANCE_RANGE = [0.35, 3] as const;
 
 export class BoardStageView {
   /** The inner 2D facade (state controller + 2D map + readout + selection stores). */
@@ -137,6 +150,9 @@ export class BoardStageView {
   private readonly popOutCtl: PopOutController;
   private readonly ui?: BoardUIHandle;
   private readonly unsubscribe: () => void;
+  /** The live "N%" readout in each pane's floating zoom widget. */
+  private readonly zoom2dPct: HTMLSpanElement;
+  private readonly zoom3dPct: HTMLSpanElement;
 
   private tower: BoardTower3DHandle | null = null;
   private towerModule: StageTowerModule | null = null;
@@ -155,6 +171,27 @@ export class BoardStageView {
 
     this.els = buildDom(options.container);
 
+    // Floating zoom widgets — built before `this.view` because `BoardRenderView`'s
+    // constructor synchronously renders the map, which synchronously fires
+    // `onZoomChange` below, which needs `this.zoom2dPct` to already exist. Not a
+    // `Segmented` bar: those assume every child is a button with merged borders, and
+    // this one has a plain-text readout in the middle.
+    this.zoom2dPct = zoomPctSpan();
+    this.els.zoom2d.append(
+      zoomButton('−', 'Zoom out', () => this.view.map2d?.zoomBy(ZOOM_STEP)),
+      this.zoom2dPct,
+      zoomButton('+', 'Zoom in', () => this.view.map2d?.zoomBy(1 / ZOOM_STEP)),
+      zoomButton('⟲', 'Reset the view (zoom and spin)', () => this.view.map2d?.resetView()),
+    );
+    this.els.zoom2d.hidden = options.enableZoom === false;
+
+    this.zoom3dPct = zoomPctSpan();
+    this.els.zoom3d.append(
+      zoomButton('−', 'Move the camera back', () => this.zoomTower(false)),
+      this.zoom3dPct,
+      zoomButton('+', 'Move the camera closer', () => this.zoomTower(true)),
+    );
+
     // 2D map + readout + state, via the existing facade. Its focus fan-out drives the
     // focus bar + the 3D camera + the user callback.
     this.view = new BoardRenderView({
@@ -169,6 +206,9 @@ export class BoardStageView {
       maxZoom: options.maxZoom,
       dragMode: options.dragMode,
       onTokenSelect: (sel) => options.onTokenSelect?.(sel),
+      onZoomChange: (percent) => {
+        this.zoom2dPct.textContent = `${percent}%`;
+      },
       onFocusChange: (focus) => {
         this.reflectKingdom(focus.kingdom);
         this.tower?.setFocus(focus);
@@ -374,6 +414,7 @@ export class BoardStageView {
   resetLayout(): void {
     this.storage.clear();
     this.setDragMode('rotate');
+    this.view.map2d?.resetView();
     const wantTower = this.towerEnabled;
     this.displayMode.set(this.options.defaultMode ?? (wantTower ? 'pip-3dbig' : '2d'));
   }
@@ -406,6 +447,22 @@ export class BoardStageView {
     this.allBar.setActive(kingdom === 'all' ? 'all' : null);
   }
 
+  /** Dolly the 3D camera in/out, preserving the user's orbit angle and pan. No-op if the
+   *  tower isn't built yet. Doesn't touch `zoom3dPct` directly — Display's own
+   *  `onZoomChange` (wired in `buildTower`) picks up the resulting camera move on its next
+   *  frame, the same path a wheel-zoom or Center/Reset click takes. */
+  private zoomTower(inward: boolean): void {
+    const view3D = this.tower?.view3D;
+    if (!view3D) return;
+    const { distanceFactor } = view3D.getLiveCameraFactors();
+    const [min, max] = TOWER_DISTANCE_RANGE;
+    const next = distanceFactor * (inward ? 1 / TOWER_ZOOM_STEP : TOWER_ZOOM_STEP);
+    view3D.applyCameraConfig(
+      { distanceFactor: Math.min(max, Math.max(min, next)) },
+      { preserveView: true },
+    );
+  }
+
   /** (Re)build the 3D tower into `container` (the 3D pane, or the popup's pane). */
   private buildTower(container: HTMLElement): void {
     if (!this.towerModule || !this.options.modelUrl) return;
@@ -429,6 +486,14 @@ export class BoardStageView {
       onFocusChange: (focus) => this.view.setFocus(focus),
     });
     this.tower?.setFocus(this.view.focus);
+    // Display fires this from its own per-frame camera-distance check — covers wheel-zoom,
+    // orbit-drag zoom, Center/Reset, and our own `zoomTower` calls uniformly, so the
+    // readout never needs updating from more than this one place.
+    if (this.tower) {
+      this.tower.view3D.onZoomChange = (distanceFactor) => {
+        this.zoom3dPct.textContent = `${Math.round(100 / distanceFactor)}%`;
+      };
+    }
   }
 
   private disposeTowerHandle(): void {
@@ -445,6 +510,28 @@ export class BoardStageView {
     this.els.root.classList.toggle('bsv-tower-on', this.towerEnabled);
     this.els.towerBtn.classList.toggle('is-active', this.towerEnabled);
   }
+}
+
+/** A floating zoom widget's button — reuses the toolbar's own `.bsv-action` look (not
+ *  `Segmented`/`.udt-focus-group`, whose merged-border styling assumes every child is
+ *  a button; these widgets have a plain-text percent readout in the middle). */
+function zoomButton(label: string, title: string, onClick: () => void): HTMLButtonElement {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'bsv-action';
+  b.textContent = label;
+  b.title = title;
+  b.setAttribute('aria-label', title);
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+/** The "N%" readout between a zoom widget's −/+ buttons. */
+function zoomPctSpan(): HTMLSpanElement {
+  const s = document.createElement('span');
+  s.className = 'bsv-zoom-pct';
+  s.textContent = '100%';
+  return s;
 }
 
 /** Build the stage DOM skeleton into `container` and return typed element refs. */
@@ -497,12 +584,15 @@ function buildDom(container: HTMLElement): StageElements {
   const allHost = div('bsv-all');
   paneToolbar.append(dragHost, kingdomHost, allHost);
   const mapHost = div('bsv-map-host');
-  pane2d.append(paneToolbar, mapHost);
+  const zoom2d = div('bsv-zoom');
+  pane2d.append(paneToolbar, mapHost, zoom2d);
   const pane3d = div('bsv-pane bsv-pane-3d');
   // The tower builds into this inner host; PiP handles attach to `pane3d` itself so a
   // tower rebuild (which clears the host) never strips the inset's drag/resize handles.
+  // The zoom widget is appended as a sibling for the same reason.
   const tower3dHost = div('bsv-pane-3d-host');
-  pane3d.append(tower3dHost);
+  const zoom3d = div('bsv-zoom');
+  pane3d.append(tower3dHost, zoom3d);
   panel.append(overlay, pane2d, pane3d);
 
   root.append(toolbar, panel);
@@ -519,6 +609,8 @@ function buildDom(container: HTMLElement): StageElements {
     dragHost,
     kingdomHost,
     allHost,
+    zoom2d,
+    zoom3d,
     pills: { d2, d3, d2d3, pip },
     swap,
     popOut,

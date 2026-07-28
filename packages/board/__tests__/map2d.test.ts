@@ -207,6 +207,67 @@ describe('BoardMap2D', () => {
     expect(svg.getAttribute('viewBox')).toBe(base);
   });
 
+  it('zoomBy zooms without a wheel event (the button equivalent), and clamps like the wheel', () => {
+    const { map, host } = makeMap();
+    map.render(createDefaultBoardState());
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    const base = svg.getAttribute('viewBox') as string;
+
+    map.zoomBy(0.5); // zoom in
+    const zoomed = svg.getAttribute('viewBox') as string;
+    expect(zoomed).not.toBe(base);
+    const [, , w] = zoomed.split(' ').map(Number);
+    expect(w).toBeLessThan(BOARD_IMAGE_INFO.width);
+
+    map.zoomBy(4); // zoom back out past the base → collapses to exactly the base string
+    expect(svg.getAttribute('viewBox')).toBe(base);
+  });
+
+  it('zoomBy respects enableZoom: false (it is an explicit call, not gated on the option) and maxZoom', () => {
+    const host = document.createElement('div');
+    const map = new BoardMap2D(host, {
+      boardImageUrl: '/b.png',
+      enableZoom: false,
+      maxZoom: 2,
+    });
+    map.render(createDefaultBoardState());
+    const svg = host.querySelector('svg') as SVGSVGElement;
+
+    map.zoomBy(0.1); // way past maxZoom=2 → clamps to base.w / 2
+    const [, , w] = (svg.getAttribute('viewBox') as string).split(' ').map(Number);
+    expect(w).toBeCloseTo(BOARD_IMAGE_INFO.width / 2);
+  });
+
+  it('onZoomChange fires on wheel/zoomBy/resetView, but not for a pure pan (width unchanged)', () => {
+    const onZoomChange = vi.fn();
+    const host = document.createElement('div');
+    const map = new BoardMap2D(host, {
+      boardImageUrl: '/b.png',
+      dragMode: 'pan',
+      onZoomChange,
+    });
+    map.render(createDefaultBoardState());
+    expect(onZoomChange).toHaveBeenLastCalledWith(100); // initial render: unzoomed
+    onZoomChange.mockClear();
+
+    const svg = host.querySelector('svg') as SVGSVGElement;
+    svg.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
+    expect(onZoomChange).toHaveBeenCalledTimes(1);
+    expect(onZoomChange.mock.calls[0][0]).toBeGreaterThan(100);
+    onZoomChange.mockClear();
+
+    // A pan-drag (width unchanged) must not spam the callback on every mousemove.
+    svg.dispatchEvent(
+      new MouseEvent('mousedown', { button: 0, clientX: 0, clientY: 0, bubbles: true }),
+    );
+    document.dispatchEvent(new MouseEvent('mousemove', { clientX: 40, clientY: 40 }));
+    document.dispatchEvent(new MouseEvent('mouseup', {}));
+    expect(onZoomChange).not.toHaveBeenCalled();
+
+    map.resetView();
+    expect(onZoomChange).toHaveBeenCalledWith(100);
+  });
+
   it('a pan-drag suppresses the trailing token-select click', () => {
     const onTokenSelect = vi.fn();
     const { map, host } = makeMap(onTokenSelect, 'pan'); // pan mode (default is rotate)

@@ -342,6 +342,13 @@ export class Tower3DView implements ITowerDisplay {
   /** Optional callback fired when the selected side changes (user click or programmatic). */
   onSideChange?: (side: TowerSide) => void;
 
+  /**
+   * Optional callback fired when the live camera distance changes — wheel-zoom,
+   * `applyCameraConfig`, Center, Reset, or orbit-drag zoom. `distanceFactor` matches
+   * {@link CameraController.getLiveCameraFactors} (`1` = the default fit).
+   */
+  onZoomChange?: (distanceFactor: number) => void;
+
   /** Optional callback fired when the GLB model fails to load. */
   onLoadError?: (details: unknown) => void;
 
@@ -1518,6 +1525,7 @@ export class Tower3DView implements ITowerDisplay {
       this.cameraConfig,
     );
     this.cameraController.onSideChange = (side) => this.emitSideChange(side);
+    this.cameraController.onZoomChange = (distanceFactor) => this.onZoomChange?.(distanceFactor);
     this.cameraController.bindZoomTowardCursor(this.renderer.domElement);
     this.bindPointerTargets();
 
@@ -1771,6 +1779,7 @@ export class Tower3DView implements ITowerDisplay {
       this.rafId = requestAnimationFrame(tick);
       this.controls?.update();
       this.cameraController?.tickDerivedSide();
+      this.cameraController?.tickDerivedZoom();
       this.tickPhysicsListeners();
       this.sceneLighting?.tick();
       if (this.renderer && this.scene && this.camera) {

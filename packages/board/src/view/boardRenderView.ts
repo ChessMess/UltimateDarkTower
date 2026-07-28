@@ -64,6 +64,8 @@ export interface BoardRenderViewOptions {
   dragMode?: DragMode;
   /** Forwarded to the 2D map: fired when a token is clicked (in addition to updating `selection`). */
   onTokenSelect?: (selection: TokenSelection) => void;
+  /** Forwarded to the 2D map: fired whenever its zoom level changes (`100` = unzoomed). */
+  onZoomChange?: (percent: number) => void;
   /** Fired whenever the focus changes (from `setFocus` or a control click). */
   onFocusChange?: (focus: BoardFocus) => void;
 }
@@ -106,6 +108,7 @@ export class BoardRenderView {
         enableZoom: options.enableZoom,
         maxZoom: options.maxZoom,
         dragMode: options.dragMode,
+        onZoomChange: options.onZoomChange,
         // Route a token click into the shared selection store AND the user callback.
         onTokenSelect: (selection) => {
           this.selection.set(selection);

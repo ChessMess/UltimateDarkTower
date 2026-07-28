@@ -239,6 +239,62 @@ export const BOARD_STAGE_CSS = `
   margin: auto;
 }
 
+/* ── Floating zoom widget (bottom-left of each pane) ────────────────────── */
+/* Bottom-LEFT so it never competes with the PiP inset, which defaults to bottom-RIGHT
+   (.bsv-pane.is-mini, styles above). z-index 3 is still a deliberate, conservative
+   choice: the pane itself is position:absolute with z-index:auto (no stacking context),
+   so this competes directly with .bsv-panel's other children — keep it under the
+   overlay (5, pointer-events:none so clicks still reach the widget) regardless.
+   Pill capsule with circular +/− buttons and a plain-text percent readout, like a
+   browser/OS zoom control. A visible border + shadow keeps it legible whether it's
+   sitting over the (often light) board art or the dark 3D scene. A plain system-font
+   stack is set explicitly (not just "font: inherit") so the digits stay legible even
+   when a host page sets a stylized display/serif font on body (e.g. this demo's own). */
+.bsv-zoom {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  background: var(--bsv-panel-bg);
+  border: 1px solid var(--bsv-border);
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  opacity: 0.9;
+  transition: opacity 150ms;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+.bsv-zoom:hover { opacity: 1; }
+.bsv-zoom[hidden] { display: none; }
+.bsv-zoom .bsv-action {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--bsv-text);
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  border-radius: 50%;
+}
+.bsv-zoom .bsv-action:hover { background: rgba(255, 255, 255, 0.14); color: var(--bsv-lume); }
+.bsv-zoom-pct {
+  min-width: 3.6em;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--bsv-text);
+}
+/* The PiP inset is a thumbnail and its SW resize corner owns the bottom-left — wheel-zoom
+   still works there, the widget just doesn't show. */
+.bsv-pane.is-mini .bsv-zoom { display: none; }
+
 /* ── Segmented controls (Spin/Pan + N/E/S/W + All), built by createSegmented ─── */
 .udt-focus-group { display: inline-flex; }
 .udt-focus-button {

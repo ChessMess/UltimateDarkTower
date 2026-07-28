@@ -49,6 +49,13 @@ tilt is a 3D concept — orbit the 3D view directly — so it is not shown on th
 token in **either** the 2D map or the 3D scene logs a `TokenSelection`, highlights it, and populates the
 **inspector**.
 
+Each pane also has a small floating **− / N% / +** zoom widget in its bottom-left corner (dimmed
+until hovered) — a discoverable, clickable stand-in for wheel-zoom, with a live percentage readout
+in the middle (`100%` = the current focus view, unzoomed). The 2D one adds **⟲** to reset zoom and
+spin; the 3D pane already has its own **Center / Reset** buttons, so no reset button is duplicated
+here. Both percentages are fully live — the 2D one tracks its own wheel-zoom, and the 3D one tracks
+Display's OrbitControls wheel-zoom, orbit-drag zoom, and Center/Reset, not just the widget's own buttons.
+
 ## Editing UI
 
 The three HUD panels are docked into Display's overlay (`tower.getOverlayContainer()`, passed as the

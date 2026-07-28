@@ -27,9 +27,18 @@ export class CameraController {
   private zoomToCursor: boolean;
   private preserveViewOnSideSelect: boolean;
   private wheelCleanup: (() => void) | null = null;
+  /** Baseline for {@link tickDerivedZoom}'s change detection; `null` until the model fits. */
+  private lastDistanceFactor: number | null = null;
 
   /** Fired when the active side changes, whether via an explicit snap or orbit detection. */
   onSideChange?: (side: TowerSide) => void;
+  /**
+   * Fired when the live camera distance changes by more than a tiny epsilon — covers
+   * wheel-zoom, any `applyCameraConfig` call (ours or a consumer's), and Center/Reset, not
+   * just this class's own dolly methods. `distanceFactor` matches {@link getLiveCameraFactors}
+   * (`1` = the default fit).
+   */
+  onZoomChange?: (distanceFactor: number) => void;
 
   constructor(
     private readonly camera: THREE.PerspectiveCamera,
@@ -82,6 +91,9 @@ export class CameraController {
 
     this.currentSide = 'north';
     this.updateSideButtons();
+    // Baseline for tickDerivedZoom's change detection — the camera is exactly at
+    // `this.distanceFactor` right after a fit, so this avoids a spurious first-tick fire.
+    this.lastDistanceFactor = this.distanceFactor;
   }
 
   getCurrentSide(): TowerSide | null {
@@ -278,6 +290,22 @@ export class CameraController {
     this.currentSide = side;
     this.sideButtons.setActive(side);
     this.onSideChange?.(side);
+  }
+
+  /**
+   * Called every render frame (alongside {@link tickDerivedSide}). Fires `onZoomChange`
+   * when the live camera distance has moved past a tiny epsilon since the last tick —
+   * covers wheel-zoom, an external `applyCameraConfig` call, and Center/Reset, not just
+   * this class's own dolly methods, without either side needing a dedicated event wire.
+   */
+  tickDerivedZoom(): void {
+    if (!this.defaultCamera) return;
+    const { distanceFactor } = this.getLiveCameraFactors();
+    if (this.lastDistanceFactor !== null && Math.abs(distanceFactor - this.lastDistanceFactor) < 1e-3) {
+      return;
+    }
+    this.lastDistanceFactor = distanceFactor;
+    this.onZoomChange?.(distanceFactor);
   }
 
   dispose(): void {

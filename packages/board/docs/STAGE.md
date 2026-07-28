@@ -4,8 +4,8 @@
 `new BoardStageView({ container })` gives you everything the [example app](./EXAMPLE.md) shows —
 the 2D map + text readout, the **2D / 3D / 2D+3D / PiP** display switcher with a big↔mini **swap**,
 a movable/resizable **PiP inset**, **Pop Out** into a window, the **Spin / Pan** drag toggle, the
-**N / E / S / W + All** kingdom-zoom bar, the dockable **palette / inspector** editing UI, and a
-**3D tower you can turn on and off**.
+**N / E / S / W + All** kingdom-zoom bar, a floating **− / N% / + (/ ⟲ on 2D)** zoom widget on each
+pane, the dockable **palette / inspector** editing UI, and a **3D tower you can turn on and off**.
 
 It is the board-domain analog of Display's `TowerRenderView`: a plain, framework-agnostic class
 that orchestrates the lower-level pieces ([`BoardRenderView`](./RENDERERS.md),
