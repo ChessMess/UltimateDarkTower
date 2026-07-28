@@ -21,7 +21,7 @@ export function initConfigColumnController(els: DomElements): void {
 
   const apply = (): void => {
     els.grid.classList.toggle('config-hidden', hidden);
-    btn.textContent = hidden ? 'Show JSON' : 'Hide Status';
+    btn.textContent = hidden ? 'Show JSON' : 'Hide JSON';
     btn.title = hidden ? 'Show the status & JSON panel' : 'Hide the status & JSON panel';
   };
 
