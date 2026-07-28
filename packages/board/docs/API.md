@@ -490,7 +490,7 @@ map.render(controller.getState());
 | `enableZoom`        | `boolean`                                                  | `true`     | Wheel-zoom toward the cursor + double-click-reset. `false` opts out (drag-spin still works).                        |
 | `maxZoom`           | `number`                                                   | `8`        | Max zoom-in factor relative to the focus view.                                                                      |
 | `dragMode`          | `'rotate' \| 'pan'`                                        | `'rotate'` | What a left-drag does: `'rotate'` spins the board about its center (grab & spin); `'pan'` moves the zoomed-in view. |
-| `onZoomChange`      | `(percent: number) => void`                                | —          | Fired on any zoom change — wheel, `zoomBy()`, a focus change, or `resetView()`. `100` = unzoomed. |
+| `onZoomChange`      | `(percent: number) => void`                                | —          | Fired on any zoom change — wheel, `zoomBy()`, a focus change, or `resetView()`. `100` = unzoomed.                   |
 
 #### Methods
 
