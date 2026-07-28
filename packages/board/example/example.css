@@ -181,7 +181,6 @@ code {
 .app-grid {
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr var(--config-w);
-  gap: var(--grid-gap);
   padding: var(--grid-pad);
   align-items: stretch;
   height: 100vh;
@@ -262,9 +261,14 @@ code {
   gap: 0.75rem;
   min-width: 0;
   min-height: 0;
+  margin-left: var(--grid-gap);
   animation: fadeUp 0.45s 0.1s ease both;
 }
 
+/* The hero<->config gutter lives on .app-config's own margin, not the grid's
+   `gap` shorthand, so it can collapse to 0 alongside the column — a shared
+   grid gap would still reserve a full gutter next to a 0-width collapsed
+   column, wasting space the hero should reclaim. */
 .app-config {
   display: flex;
   flex-direction: column;
@@ -272,19 +276,22 @@ code {
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
+  margin-left: var(--grid-gap);
   animation: fadeUp 0.45s 0.15s ease both;
   transition:
+    margin-left var(--dur-slow) var(--ease-out),
     transform var(--dur-slow) var(--ease-out),
     opacity var(--dur-base) var(--ease-out);
 }
 .app-grid.config-hidden .app-config {
-  transform: translateX(calc(100% + var(--grid-gap)));
+  margin-left: 0;
+  transform: translateX(100%);
   opacity: 0;
   pointer-events: none;
 }
 
 .config-section {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
@@ -293,6 +300,14 @@ code {
 
 .config-section > .panel {
   flex: 0 0 auto;
+}
+
+/* JSON is the one editors panel that should fill whatever vertical space
+   Board Status doesn't use, so its textarea reaches the bottom of the
+   visible column instead of stopping at its own min-height. */
+.config-section > .panel-editors {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* Collapsible panel headers in the config column. */
@@ -751,6 +766,10 @@ button.active {
   .app-sidebar,
   .app-config {
     overflow-y: visible;
+  }
+  .app-hero,
+  .app-config {
+    margin-left: 0;
   }
   .app-hero {
     min-height: 70vh;
