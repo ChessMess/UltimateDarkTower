@@ -3,6 +3,7 @@
   "version": "1.0.1",
   "description": "Shared types, WebSocket protocol constants, and message schemas for UltimateDarkTowerRelay.",
   "main": "dist/index.js",
+  "module": "dist/esm/index.mjs",
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "files": [
@@ -11,8 +12,15 @@
     "LICENSE",
     "CHANGELOG.md"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/esm/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && esbuild src/index.ts --bundle --format=esm --outfile=dist/esm/index.mjs --packages=external",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -49,6 +57,7 @@
     "node": ">=22.13.0"
   },
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "vitest": "catalog:"
   }
 }

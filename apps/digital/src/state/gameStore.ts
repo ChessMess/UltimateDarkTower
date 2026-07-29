@@ -12,6 +12,7 @@ import type {
   SelectionStore,
 } from 'ultimatedarktowerboard';
 import { ManualTowerSource } from '@/sources/ManualTowerSource';
+import { BridgeTowerSource, type RelayStatus } from '@/sources/BridgeTowerSource';
 import type { BoardStateSource, SealRef, TowerStateSource, Unsubscribe } from '@/sources/types';
 import {
   applyGameSession,
@@ -35,7 +36,7 @@ import {
 } from '@/session';
 
 interface GameStore {
-  // --- sources (swap these for Bridge/Network sources later; UI is unchanged) ---
+  // --- sources (swap the board one for a Network source later; UI is unchanged) ---
   readonly towerSource: TowerStateSource;
   boardSource: BoardStateSource | null;
 
@@ -110,6 +111,13 @@ interface GameStore {
   restoreSeal(seal: SealRef): void;
   rotateDrum(drumIndex: 0 | 1 | 2, position: 0 | 1 | 2 | 3): void;
 
+  // --- official app bridge (PRD-05) ---
+  /** Where the relay connection stands. Drives `BridgePanel`. */
+  relayStatus: RelayStatus;
+  /** Connect to a relay host so the official app drives the tower. */
+  connectRelay(url: string): Promise<void>;
+  disconnectRelay(): void;
+
   // --- board actions (PRD-02) ---
   placeFoe(foeId: string, foe: string, location: string, status?: FoeStatus): void;
   removeFoe(foeId: string): void;
@@ -125,7 +133,13 @@ interface GameStore {
   setSpaceMarker(location: string, marker: string, on: boolean): void;
 }
 
-const towerSource = new ManualTowerSource();
+/**
+ * One tower source for the app's lifetime. `BridgeTowerSource` wraps the manual
+ * one rather than replacing it (PRD-05): disconnected it behaves exactly like the
+ * MVP's `ManualTowerSource`, connected the official app drives it — and the 3D
+ * stage, which captures this object once at mount, never has to be rewired.
+ */
+const towerSource = new BridgeTowerSource(new ManualTowerSource());
 
 let boardUnsub: Unsubscribe | null = null;
 
@@ -180,6 +194,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   breakSeal: (seal) => towerSource.breakSeal(seal),
   restoreSeal: (seal) => towerSource.restoreSeal(seal),
   rotateDrum: (drumIndex, position) => towerSource.rotateDrum(drumIndex, position),
+
+  relayStatus: towerSource.status,
+  connectRelay: (url) => towerSource.connect(url),
+  disconnectRelay: () => towerSource.disconnect(),
 
   placeFoe: (foeId, foe, location, status) =>
     get().boardSource?.placeFoe(foeId, foe, location, status),
@@ -308,3 +326,5 @@ towerSource.subscribe((state) => {
     drumPositions: [state.drum[0].position, state.drum[1].position, state.drum[2].position],
   });
 });
+
+towerSource.onStatus((relayStatus) => useGameStore.setState({ relayStatus }));

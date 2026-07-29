@@ -28,6 +28,7 @@
     "ultimatedarktowerdata": "workspace:^",
     "ultimatedarktowerboard": "workspace:^",
     "ultimatedarktowerdisplay": "workspace:^",
+    "ultimatedarktowerrelay-client": "workspace:^",
     "zustand": "catalog:"
   },
   "devDependencies": {
@@ -37,6 +38,7 @@
     "@types/three": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "jsdom": "catalog:",
+    "ultimatedarktowerrelay-shared": "workspace:^",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

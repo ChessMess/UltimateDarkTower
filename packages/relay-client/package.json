@@ -3,6 +3,7 @@
   "version": "1.0.2",
   "description": "UltimateDarkTowerRelay consumer SDK — connect to a relay host over WebSocket, receive decoded tower state, and report participant player actions. Framework-agnostic; browser or Node.",
   "main": "dist/index.js",
+  "module": "dist/esm/index.mjs",
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "files": [
@@ -14,11 +15,12 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/esm/index.mjs",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && esbuild src/index.ts --bundle --format=esm --outfile=dist/esm/index.mjs --packages=external",
     "dev": "trap 'exit 0' INT TERM; tsc --build --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -41,6 +43,7 @@
     "ultimatedarktower": "workspace:^"
   },
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "ws": "catalog:",
     "@types/ws": "catalog:",
     "vitest": "catalog:"

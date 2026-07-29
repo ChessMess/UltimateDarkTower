@@ -6,8 +6,8 @@
  *   • Break a seal  — snap a seal to reveal its glyph (tap again to undo a mistake).
  *
  * Drum rotation, lights, and sounds are driven by the official app, not the player, so they
- * are intentionally absent here; the future bridge (PRD-05) will drive them through the same
- * `TowerStateSource`. Every action flows through the store → source → shared 3D scene.
+ * are intentionally absent here; the bridge (PRD-05, see `BridgePanel`) drives them through
+ * the same `TowerStateSource`. Every action flows through the store → source → shared 3D scene.
  */
 import { useTowerActions, useTowerState } from '@/lib/hooks';
 import type { SealRef } from '@/sources/types';
@@ -60,8 +60,8 @@ export function TowerPanel() {
       </div>
 
       <p className="muted tower-note">
-        Drums, lights &amp; sounds are driven by the official app — they’ll animate here once the
-        bridge (PRD-05) is connected.
+        Drums, lights &amp; sounds are driven by the official app. Connect it below to have them
+        animate here; otherwise mirror the app by hand.
       </p>
     </section>
   );

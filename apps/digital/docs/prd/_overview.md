@@ -18,7 +18,7 @@ UTDD is built by composing the existing UDT library family:
 | UDT core    | `ultimatedarktower`        | `TowerState`, command/seal/skull/glyph logic, and reusable game data (heroes, foes, adversaries, 60 board locations, adjacency, seed parser) |
 | UDT Display | `ultimatedarktowerdisplay` | text/2D/3D tower renderers + the `ScenePlugin` seam                                                                                          |
 | UDT Board   | `ultimatedarktowerboard`   | `BoardState` + the all-in-one `BoardStageView` (2D + 3D board)                                                                               |
-| UDT Sync    | `dark-tower-sync`          | reference for the **future** Node `bleno` FakeTower bridge (PRD-05)                                                                          |
+| UDT Relay   | `ultimatedarktowerrelay-*` | the BLE tower emulator + WebSocket relay the official app connects to, and its browser client SDK (PRD-05)                                   |
 
 ## The single most important design idea: UTDD is a _display_, not a rules engine
 
@@ -35,14 +35,17 @@ physical cards.
 
 The official app connects to a tower as a **Bluetooth LE _peripheral_** (the app is the "central").
 **A browser cannot advertise as a BLE peripheral** — Web Bluetooth is central-only. So a genuine
-connection to the official app requires a small **Node/Electron process running a fake BLE peripheral**
-(UDT Sync already has one: `packages/host/src/fakeTower.ts`). That process must also _synthesize_ the
-notifications a real tower would send back (skull drops, calibration, battery) so the player's actions
-reach the app.
+connection to the official app requires a **Node/Electron process running a fake BLE peripheral**,
+which must also _synthesize_ the notifications a real tower would send back (skull drops,
+calibration, battery) so the player's actions reach the app.
 
-That Node layer is real work, so we **defer it** (PRD-05). For the **MVP the player drives everything
-manually** in the browser: they operate the tower emulator, place foes/heroes on the board, and track
-their player boards by hand — exactly the inputs that will later come from the official app.
+That process now exists in this monorepo — `packages/relay-core` (`TowerEmulator` +
+`NotificationSynthesizer`), run by `apps/relay-cli` or `apps/relay-electron`. PRD-05 connects UTDD to
+it as a WebSocket client, so the app drives the tower directly.
+
+Without a relay running, UTDD still works exactly as the MVP did: **the player drives everything
+manually** in the browser — operating the tower, placing foes/heroes on the board, and tracking
+player boards by hand.
 
 ## The keystone abstraction: state sources
 
@@ -54,21 +57,24 @@ BoardStateSource   // who decides the current BoardState
 ```
 
 - **MVP** ships a `ManualSource` for each: the player's UI actions mutate state directly.
-- **PRD-05** ships a `BridgeSource`: the official app (via the Node FakeTower + WebSocket) drives the
-  same state, and the UI is unchanged.
+- **PRD-05** ships `BridgeTowerSource`: the official app (via the relay host + WebSocket) drives the
+  same state, and the UI is unchanged. It _wraps_ the manual source rather than replacing it, so a
+  disconnected UTDD is byte-for-byte the MVP experience.
 - **PRD-06** reuses the same seam for networked multiplayer.
 
 This is _why_ a browser-only MVP can grow into the official-app-driven product without a rewrite.
 
-## How the player coordinates with the official app (MVP)
+## How the player coordinates with the official app
 
-In the MVP there is **no live connection** to the official app. The player runs the real companion app
+Without a relay host running there is **no live connection** to the official app. The player runs it
 (on their phone/tablet) as they normally would and **mirrors it into UTDD by hand**: when the app says
 "place [foe] at [location]" or "remove the glowing seal," the player performs that action in UTDD; when
 UTDD is used to drop a skull or break a seal, the player also does it in the app. UTDD is the screen
-they look at and act on; the app remains the rules brain. PRD-05 later removes the manual mirroring for
-the tower channel (the app drives UTDD directly); board placement instructions are out-of-band of the
-BLE tower protocol and may stay manual/assisted — see
+they look at and act on; the app remains the rules brain.
+
+With the bridge connected (PRD-05) the manual mirroring is gone for the **tower** channel — the app
+drives UTDD's tower directly and skull drops flow back. **Board placement instructions stay manual**:
+they are out-of-band of the BLE tower protocol — see
 [assumptions-and-open-questions.md](assumptions-and-open-questions.md).
 
 ## Rendering
@@ -96,15 +102,15 @@ this single serializable snapshot. Because tower and board state are already pla
 | [02](prd-02-game-board.md)          | Digital Game Board                | MVP            |
 | [03](prd-03-player-boards.md)       | Digital Player Boards             | MVP            |
 | [04](prd-04-session-solo.md)        | Game Session & Solo Orchestration | MVP            |
-| [05](prd-05-official-app-bridge.md) | Official App Bridge               | Future (stub)  |
+| [05](prd-05-official-app-bridge.md) | Official App Bridge               | Implemented    |
 | [06](prd-06-online-multiplayer.md)  | Online Multiplayer                | Future (stub)  |
 
 ## Glossary
 
 - **TowerState / BoardState** — plain data objects from UDT core / UDT Board describing the tower and
   board. Both are _dumb_: they hold state, they don't enforce rules.
-- **State source** — an object that owns and emits the current TowerState/BoardState (`ManualSource`
-  now, `BridgeSource` later).
+- **State source** — an object that owns and emits the current TowerState/BoardState (`ManualSource`,
+  or `BridgeTowerSource` wrapping it once the official app is connected).
 - **ScenePlugin** — UDT Display's hook for attaching extra 3D objects (the board) to the tower scene.
 - **Official app** — Restoration Games' Bluetooth companion app; the game's rules brain.
 

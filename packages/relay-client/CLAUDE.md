@@ -24,6 +24,12 @@ Two vitest suites (`relayClient.test.ts` with a hand-rolled `MockWebSocket`,
 
 ## Build & coupling
 
-`build` = `tsc --build`. Depends on `ultimatedarktowerrelay-shared` + `ultimatedarktower`
-(`workspace:^`); `ws` is a devDep only (for the Node injection pattern, not bundled).
-Consumed by `apps/relay-cli` only — `apps/relay-electron` is a host, not a client.
+`build` = `tsc --build` (CJS) **+ an esbuild ESM sidecar** (`dist/esm/index.mjs`), exposed as the
+`import` export condition with `require` still on the CJS entry — the same dual shape
+`packages/game-data` uses. The sidecar exists because browser consumers (`apps/digital`'s PRD-05
+bridge) otherwise get CommonJS interop shims; don't drop it, and keep `--packages=external` so
+workspace deps resolve through their own export maps. Node consumers are unaffected.
+
+Depends on `ultimatedarktowerrelay-shared` + `ultimatedarktower` (`workspace:^`); `ws` is a devDep
+only (for the Node injection pattern, not bundled). Consumed by `apps/relay-cli` and `apps/digital`
+— `apps/relay-electron` is a host, not a client.

@@ -28,4 +28,7 @@ export {
   createSeed,
   type Difficulty,
   type SeedConfig,
+
+  // Firmware LED-sequence ids, as they appear in `TowerState.led_sequence`.
+  TOWER_LIGHT_SEQUENCES,
 } from 'ultimatedarktowerdata';

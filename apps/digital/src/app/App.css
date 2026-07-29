@@ -229,6 +229,28 @@ label {
   font-style: italic;
 }
 
+/* Official app bridge (PRD-05) */
+.bridge-status {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.bridge-status.is-connected {
+  color: seagreen;
+}
+.bridge-status.is-paused,
+.bridge-status.is-reconnecting {
+  color: goldenrod;
+}
+.bridge-status.is-error,
+.bridge-status.is-version-mismatch {
+  color: crimson;
+}
+.bridge-help {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+}
+
 /* Board palette + inspector (PRD-02) */
 .board-place-actions,
 .board-detail-actions,

@@ -39,6 +39,17 @@ export function useTowerActions() {
   );
 }
 
+/** Relay connection status + connect/disconnect (PRD-05 official app bridge). */
+export function useRelay() {
+  return useGameStore(
+    useShallow((s) => ({
+      status: s.relayStatus,
+      connect: s.connectRelay,
+      disconnect: s.disconnectRelay,
+    })),
+  );
+}
+
 /** The active board source, or null until the stage has mounted. */
 export function useBoardSource(): BoardStateSource | null {
   return useGameStore((s) => s.boardSource);

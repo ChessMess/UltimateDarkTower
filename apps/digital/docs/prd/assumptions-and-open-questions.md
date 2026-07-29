@@ -50,17 +50,25 @@ Savage → Lethal`). Decision: extend the library. `ultimatedarktower`'s `FoeSta
    it into its JS bundle (~30 MB chunk) — see PRD-00 Non-Functional Requirements. Affects load time and
    is being addressed upstream.
 
-4. **Board placement instructions are out-of-band.** The BLE tower protocol carries _tower_ state, not
-   _board_ placement. So "the app tells you where to place a foe" cannot arrive over the tower channel —
-   in MVP the player reads the official app and places manually; PRD-05 must define how/if this is ever
-   automated.
+4. **Board placement instructions are out-of-band — CONFIRMED, still manual.** The BLE tower protocol
+   carries _tower_ state, not _board_ placement, so "the app tells you where to place a foe" cannot
+   arrive over the tower channel. PRD-05 shipped the tower bridge and left board placement manual;
+   automating it would need a second channel that does not exist today.
+
+5. **Seal identity in a reveal is inferred, not captured.** PRD-05 maps the app's `sealReveal` LED
+   sequence plus the single lit ring light to a `SealRef` (`apps/digital/src/sources/sealReveal.ts`).
+   The layer→level and light-index→side mapping comes from `ultimatedarktower`'s constants, not from a
+   capture of the live app. Ambiguous patterns are deliberately ignored rather than guessed. Validate
+   against `apps/relay-cli`'s JSONL logs during a real session.
 
 ## Open questions (carried from the PRDs)
 
 - **Player-board card text** — how complete for MVP, and is bundling RTDT card text acceptable (IP)?
 - **Tooling** — Vitest vs Jest (chose Vitest); Zustand vs Redux (chose Zustand).
 - **Assets** — copy example assets vs CDN; how to slim `board.png`.
-- **PRD-05 packaging** — extend UDT Sync's Electron host vs a dedicated UTDD host.
+- ~~**PRD-05 packaging**~~ — **resolved**: no new host. `packages/relay-core` already runs the BLE
+  tower emulator; UTDD connects to `apps/relay-cli` (headless) or `apps/relay-electron` (GUI) as a
+  browser WebSocket client via `ultimatedarktowerrelay-client`.
 
 ## Intellectual property & asset provenance
 

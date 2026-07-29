@@ -375,6 +375,18 @@ describe('useGameStore', () => {
     });
   });
 
+  describe('relay bridge (PRD-05)', () => {
+    // The bridge itself is covered in sources/BridgeTowerSource.test.ts against a
+    // mock socket. The store only owns the wiring: an initial projected status and
+    // two delegating actions.
+    it('starts disconnected and exposes connect/disconnect', () => {
+      const { relayStatus, connectRelay, disconnectRelay } = useGameStore.getState();
+      expect(relayStatus).toEqual({ state: 'disconnected' });
+      expect(typeof connectRelay).toBe('function');
+      expect(typeof disconnectRelay).toBe('function');
+    });
+  });
+
   describe('updatePlayerBoard', () => {
     it('applies the transform only to the matching hero and bumps updatedAt', () => {
       useGameStore.setState((s) => ({
