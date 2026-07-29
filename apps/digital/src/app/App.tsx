@@ -10,11 +10,13 @@ import { BoardInspector } from '@/features/board/BoardInspector';
 import { PlayerBoardPane } from '@/features/player-board/PlayerBoardPane';
 import { SessionBar } from '@/features/session/SessionBar';
 import { TurnTracker } from '@/features/session/TurnTracker';
+import { StaleSessionDialog } from '@/features/session/StaleSessionDialog';
 import './App.css';
 
 export function App() {
   return (
     <div className="app">
+      <StaleSessionDialog />
       <header className="app-header">
         <div className="app-title">
           <h1>UltimateDarkTowerDigital</h1>

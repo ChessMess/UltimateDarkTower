@@ -30,9 +30,9 @@ export function sessionFileName(session: GameSession): string {
   return `${base || 'rtdt-game'}-${stamp}.json`;
 }
 
-/** Trigger a browser download of the session as a .json file. */
-export function downloadSession(session: GameSession, fileName = sessionFileName(session)): void {
-  const blob = new Blob([serializeSession(session)], { type: 'application/json' });
+/** Trigger a browser download of arbitrary JSON text — the shared half of `downloadSession`. */
+export function downloadJson(text: string, fileName: string): void {
+  const blob = new Blob([text], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -41,6 +41,11 @@ export function downloadSession(session: GameSession, fileName = sessionFileName
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+/** Trigger a browser download of the session as a .json file. */
+export function downloadSession(session: GameSession, fileName = sessionFileName(session)): void {
+  downloadJson(serializeSession(session), fileName);
 }
 
 /** Copy the session JSON to the clipboard (for paste-sharing). */
