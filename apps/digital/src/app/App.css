@@ -518,7 +518,7 @@ label {
   display: flex;
   gap: 0.3rem;
 }
-.pb-add input {
+.pb-add select {
   flex: 1;
   min-width: 0;
   background: var(--bg);
