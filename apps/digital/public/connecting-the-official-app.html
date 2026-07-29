@@ -1,0 +1,2043 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Connecting the Official App — UltimateDarkTowerDigital</title>
+    <meta
+      name="description"
+      content="Step-by-step guide to driving UTDD's tower from the official Return to Dark Tower companion app."
+    />
+    <style>
+      /* ─────────────────────────────────────────────────────────────
+         Obsidian Codex — an arcane manual for a plastic tower.
+         Self-contained: no network requests, no fonts to fetch.
+         ───────────────────────────────────────────────────────────── */
+
+      :root {
+        --display:
+          'Superclarendon', 'Bookman Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+        --body: 'Iowan Old Style', 'Charter', 'Palatino Linotype', Palatino, Georgia, serif;
+        --mono: 'SF Mono', 'Menlo', 'DejaVu Sans Mono', 'Consolas', monospace;
+
+        --ember: #e08a42;
+        --ember-deep: #b85f22;
+        --gold: #d4af5a;
+        --verdigris: #5aa189;
+        --crimson: #cc4f42;
+
+        --shell: 1360px;
+        --rule: 1px solid var(--edge);
+      }
+
+      html[data-theme='dark'] {
+        --bg: #0e0c0b;
+        --bg-deep: #070605;
+        --panel: #171413;
+        --panel-2: #1f1a18;
+        --ink: #efe3d4;
+        --ink-dim: #b7a692;
+        --ink-faint: #8a7a68;
+        --edge: #2c2522;
+        --edge-bright: #40352f;
+        --glow: rgba(224, 138, 66, 0.16);
+        --code-bg: #0a0908;
+      }
+
+      html[data-theme='light'] {
+        --bg: #f2e9da;
+        --bg-deep: #e8dcc7;
+        --panel: #fbf5e9;
+        --panel-2: #f6eddc;
+        --ink: #2b201a;
+        --ink-dim: #5c4b3d;
+        --ink-faint: #877260;
+        --edge: #ddcdb4;
+        --edge-bright: #c9b596;
+        --glow: rgba(184, 95, 34, 0.12);
+        --code-bg: #2a221c;
+        --ember: #b85f22;
+        --ember-deep: #8f4715;
+        --verdigris: #3d7c66;
+        --crimson: #a8382c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 2rem;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--body);
+        font-size: 17px;
+        line-height: 1.72;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      /* Atmosphere: an ember burning at the top of the page, and a fine grain
+         over everything so the flat colours read as stone rather than screen. */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background:
+          radial-gradient(ellipse 900px 500px at 50% -12%, var(--glow), transparent 70%),
+          radial-gradient(ellipse 600px 400px at 100% 100%, var(--glow), transparent 70%);
+      }
+
+      body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.035;
+        mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      /* ── reading progress ─────────────────────────────────────────── */
+      #progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        width: 0;
+        z-index: 100;
+        background: linear-gradient(90deg, var(--ember-deep), var(--ember), var(--gold));
+        box-shadow: 0 0 12px var(--ember);
+        transition: width 0.1s linear;
+      }
+
+      /* ── masthead ─────────────────────────────────────────────────── */
+      .masthead {
+        position: relative;
+        z-index: 1;
+        border-bottom: var(--rule);
+        background: linear-gradient(180deg, var(--bg-deep), transparent);
+      }
+
+      .masthead-inner {
+        max-width: var(--shell);
+        margin: 0 auto;
+        padding: 3.5rem 2rem 2.75rem;
+      }
+
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--ember);
+        margin: 0 0 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .eyebrow::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, var(--edge-bright), transparent);
+      }
+
+      h1 {
+        font-family: var(--display);
+        font-size: clamp(2.1rem, 5.5vw, 3.9rem);
+        line-height: 1.03;
+        margin: 0 0 1rem;
+        letter-spacing: -0.02em;
+        font-weight: 700;
+      }
+
+      h1 .flame {
+        color: var(--ember);
+        display: block;
+        font-style: italic;
+      }
+
+      .standfirst {
+        max-width: 60ch;
+        font-size: 1.12rem;
+        color: var(--ink-dim);
+        margin: 0 0 2rem;
+      }
+
+      .facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .fact {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        padding: 0.4rem 0.8rem;
+        border: 1px solid var(--edge-bright);
+        border-radius: 2px;
+        color: var(--ink-dim);
+        background: var(--panel);
+      }
+
+      .fact strong {
+        color: var(--ember);
+        font-weight: 700;
+      }
+
+      /* ── theme switch ─────────────────────────────────────────────── */
+      #theme {
+        position: fixed;
+        top: 1.1rem;
+        right: 1.1rem;
+        z-index: 101;
+        width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 50%;
+        border: 1px solid var(--edge-bright);
+        background: var(--panel);
+        color: var(--ember);
+        font-size: 1rem;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        transition:
+          transform 0.25s,
+          box-shadow 0.25s;
+      }
+
+      #theme:hover {
+        transform: rotate(-18deg) scale(1.08);
+        box-shadow: 0 0 18px var(--glow);
+      }
+
+      /* ── layout ───────────────────────────────────────────────────── */
+      .shell {
+        position: relative;
+        z-index: 1;
+        max-width: var(--shell);
+        margin: 0 auto;
+        padding: 0 2rem 6rem;
+        display: grid;
+        grid-template-columns: 250px minmax(0, 1fr);
+        gap: 3.5rem;
+        align-items: start;
+      }
+
+      /* ── contents ─────────────────────────────────────────────────── */
+      .toc {
+        position: sticky;
+        top: 2rem;
+        padding-top: 2.75rem;
+        max-height: calc(100vh - 4rem);
+        overflow-y: auto;
+      }
+
+      .toc h2 {
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        margin: 0 0 1rem;
+        /* opt out of the section-heading rule above */
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .toc ol {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        counter-reset: toc;
+      }
+
+      .toc li {
+        counter-increment: toc;
+      }
+
+      .toc a {
+        display: block;
+        padding: 0.4rem 0 0.4rem 2.1rem;
+        position: relative;
+        color: var(--ink-dim);
+        text-decoration: none;
+        font-size: 0.87rem;
+        line-height: 1.35;
+        border-left: 2px solid var(--edge);
+        transition:
+          color 0.18s,
+          border-color 0.18s;
+      }
+
+      .toc a::before {
+        content: counter(toc, decimal-leading-zero);
+        position: absolute;
+        left: 0.7rem;
+        font-family: var(--mono);
+        font-size: 0.64rem;
+        color: var(--ink-faint);
+        top: 0.62rem;
+      }
+
+      .toc a:hover {
+        color: var(--ink);
+        border-left-color: var(--ember-deep);
+      }
+
+      .toc a.active {
+        color: var(--ember);
+        border-left-color: var(--ember);
+      }
+
+      .toc a.active::before {
+        color: var(--ember);
+      }
+
+      /* ── prose ────────────────────────────────────────────────────── */
+      main {
+        padding-top: 2.75rem;
+        max-width: 74ch;
+      }
+
+      section {
+        margin-bottom: 4.5rem;
+        scroll-margin-top: 1.5rem;
+      }
+
+      h2 {
+        font-family: var(--display);
+        font-size: clamp(1.6rem, 3vw, 2.2rem);
+        line-height: 1.15;
+        letter-spacing: -0.015em;
+        margin: 0 0 0.4rem;
+        padding-top: 1.75rem;
+        border-top: var(--rule);
+        position: relative;
+      }
+
+      h2 .num {
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        letter-spacing: 0.18em;
+        color: var(--ember);
+        display: block;
+        margin-bottom: 0.55rem;
+        font-weight: 400;
+      }
+
+      h3 {
+        font-family: var(--display);
+        font-size: 1.24rem;
+        margin: 2.5rem 0 0.6rem;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+      }
+
+      h4 {
+        font-family: var(--mono);
+        font-size: 0.74rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        margin: 2rem 0 0.6rem;
+        font-weight: 400;
+      }
+
+      p {
+        margin: 0 0 1.1rem;
+      }
+
+      a {
+        color: var(--ember);
+        text-decoration-color: color-mix(in srgb, var(--ember) 40%, transparent);
+        text-underline-offset: 3px;
+      }
+
+      a:hover {
+        text-decoration-color: var(--ember);
+      }
+
+      strong {
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      em {
+        font-style: italic;
+      }
+
+      ul,
+      ol {
+        margin: 0 0 1.2rem;
+        padding-left: 1.35rem;
+      }
+
+      li {
+        margin-bottom: 0.5rem;
+      }
+
+      code {
+        font-family: var(--mono);
+        font-size: 0.86em;
+        background: var(--panel-2);
+        border: 1px solid var(--edge);
+        border-radius: 3px;
+        padding: 0.1em 0.4em;
+        color: var(--gold);
+      }
+
+      kbd {
+        font-family: var(--mono);
+        font-size: 0.8em;
+        background: var(--panel-2);
+        border: 1px solid var(--edge-bright);
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        padding: 0.15em 0.45em;
+        color: var(--ink);
+        white-space: nowrap;
+      }
+
+      /* ── the tower diagram ────────────────────────────────────────── */
+      .diagram {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr auto 1fr;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 2rem 0;
+        padding: 1.75rem 1.25rem;
+        background: var(--panel);
+        border: 1px solid var(--edge);
+        border-radius: 3px;
+      }
+
+      .node {
+        text-align: center;
+        padding: 0.9rem 0.6rem;
+        border: 1px solid var(--edge-bright);
+        border-radius: 3px;
+        background: var(--panel-2);
+      }
+
+      .node .icon {
+        font-size: 1.5rem;
+        display: block;
+        margin-bottom: 0.35rem;
+        filter: saturate(0.85);
+      }
+
+      .node .name {
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 0.95rem;
+        display: block;
+      }
+
+      .node .role {
+        font-size: 0.76rem;
+        color: var(--ink-faint);
+        display: block;
+        line-height: 1.4;
+        margin-top: 0.2rem;
+      }
+
+      .link-label {
+        text-align: center;
+        font-family: var(--mono);
+        font-size: 0.6rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ember);
+      }
+
+      .link-label span {
+        display: block;
+        font-size: 1.1rem;
+        letter-spacing: 0;
+        line-height: 1;
+        color: var(--edge-bright);
+      }
+
+      @media (max-width: 720px) {
+        .diagram {
+          grid-template-columns: 1fr;
+        }
+        .link-label span {
+          transform: rotate(90deg);
+        }
+      }
+
+      /* ── callouts ─────────────────────────────────────────────────── */
+      .callout {
+        margin: 1.75rem 0;
+        padding: 1.15rem 1.35rem;
+        border-left: 3px solid var(--accent, var(--ember));
+        background: var(--panel);
+        border-radius: 0 3px 3px 0;
+      }
+
+      .callout > :last-child {
+        margin-bottom: 0;
+      }
+
+      .callout .tag {
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent, var(--ember));
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+      }
+
+      .callout.danger {
+        --accent: var(--crimson);
+      }
+      .callout.win {
+        --accent: var(--verdigris);
+      }
+      .callout.note {
+        --accent: var(--ink-faint);
+      }
+
+      /* ── command blocks ───────────────────────────────────────────── */
+      .cmd {
+        position: relative;
+        margin: 1.2rem 0 1.6rem;
+        background: var(--code-bg);
+        border: 1px solid var(--edge-bright);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .cmd-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.45rem 0.5rem 0.45rem 0.9rem;
+        border-bottom: 1px solid var(--edge);
+        background: color-mix(in srgb, var(--code-bg) 70%, var(--panel));
+      }
+
+      .cmd-head .label {
+        font-family: var(--mono);
+        font-size: 0.63rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #8a7a68;
+      }
+
+      .copy {
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        background: transparent;
+        border: 1px solid var(--edge-bright);
+        color: #b7a692;
+        padding: 0.28rem 0.7rem;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.18s;
+      }
+
+      .copy:hover {
+        color: var(--ember);
+        border-color: var(--ember);
+      }
+
+      .copy.done {
+        color: var(--verdigris);
+        border-color: var(--verdigris);
+      }
+
+      .cmd pre {
+        margin: 0;
+        padding: 0.95rem 1.1rem;
+        overflow-x: auto;
+        font-family: var(--mono);
+        font-size: 0.845rem;
+        line-height: 1.65;
+        color: #e6dccc;
+      }
+
+      .cmd pre .prompt {
+        color: var(--ember);
+        user-select: none;
+      }
+
+      /* terminal output, not something you type */
+      .out {
+        margin: 1.2rem 0 1.6rem;
+        background: var(--code-bg);
+        border: 1px solid var(--edge);
+        border-left: 3px solid var(--verdigris);
+        border-radius: 3px;
+        padding: 0.95rem 1.1rem;
+        overflow-x: auto;
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        line-height: 1.6;
+        color: #b7a692;
+        white-space: pre;
+      }
+
+      .out b {
+        color: var(--verdigris);
+        font-weight: 700;
+      }
+
+      .out i {
+        color: var(--crimson);
+        font-style: normal;
+      }
+
+      /* ── numbered walkthrough ─────────────────────────────────────── */
+      ol.steps {
+        list-style: none;
+        counter-reset: step;
+        padding: 0;
+        margin: 1.5rem 0 1.5rem;
+      }
+
+      ol.steps > li {
+        counter-increment: step;
+        position: relative;
+        padding: 0 0 1.6rem 3.1rem;
+        margin: 0;
+        border-left: 1px solid var(--edge);
+      }
+
+      ol.steps > li:last-child {
+        border-left-color: transparent;
+        padding-bottom: 0;
+      }
+
+      ol.steps > li::before {
+        content: counter(step);
+        position: absolute;
+        left: -1.02rem;
+        top: -0.1rem;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--bg);
+        background: var(--ember);
+        border: 3px solid var(--bg);
+        box-shadow: 0 0 0 1px var(--ember-deep);
+      }
+
+      ol.steps > li > :first-child {
+        margin-top: 0;
+      }
+
+      /* ── checklist ────────────────────────────────────────────────── */
+      .checklist {
+        list-style: none;
+        padding: 0;
+        margin: 1.4rem 0;
+        border: 1px solid var(--edge);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .checklist li {
+        margin: 0;
+        border-bottom: 1px solid var(--edge);
+        background: var(--panel);
+      }
+
+      .checklist li:last-child {
+        border-bottom: 0;
+      }
+
+      .checklist label {
+        display: flex;
+        gap: 0.85rem;
+        align-items: flex-start;
+        padding: 0.8rem 1.1rem;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .checklist label:hover {
+        background: var(--panel-2);
+      }
+
+      .checklist input {
+        appearance: none;
+        flex: 0 0 auto;
+        width: 1.05rem;
+        height: 1.05rem;
+        margin-top: 0.32rem;
+        border: 1px solid var(--edge-bright);
+        border-radius: 2px;
+        background: var(--bg);
+        cursor: pointer;
+        position: relative;
+      }
+
+      .checklist input:checked {
+        background: var(--ember);
+        border-color: var(--ember);
+      }
+
+      .checklist input:checked::after {
+        content: '✓';
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: 0.75rem;
+        color: var(--bg);
+        font-weight: 700;
+      }
+
+      .checklist input:checked + span {
+        color: var(--ink-faint);
+        text-decoration: line-through;
+        text-decoration-color: var(--edge-bright);
+      }
+
+      /* ── tables ───────────────────────────────────────────────────── */
+      .table-wrap {
+        overflow-x: auto;
+        margin: 1.5rem 0;
+        border: 1px solid var(--edge);
+        border-radius: 3px;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.92rem;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.7rem 1rem;
+        border-bottom: 1px solid var(--edge);
+        vertical-align: top;
+      }
+
+      th {
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        background: var(--panel);
+        font-weight: 400;
+        white-space: nowrap;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      tbody tr:hover td {
+        background: var(--panel);
+      }
+
+      /* ── faults (troubleshooting) ─────────────────────────────────── */
+      details.fault {
+        border: 1px solid var(--edge);
+        border-radius: 3px;
+        margin-bottom: 0.6rem;
+        background: var(--panel);
+        overflow: hidden;
+      }
+
+      details.fault[open] {
+        border-color: var(--edge-bright);
+      }
+
+      details.fault summary {
+        padding: 0.85rem 1.1rem 0.85rem 2.4rem;
+        cursor: pointer;
+        font-weight: 700;
+        color: var(--ink);
+        position: relative;
+        list-style: none;
+        transition: color 0.15s;
+      }
+
+      details.fault summary::-webkit-details-marker {
+        display: none;
+      }
+
+      details.fault summary::before {
+        content: '▸';
+        position: absolute;
+        left: 1.1rem;
+        color: var(--ember);
+        transition: transform 0.2s;
+        display: inline-block;
+      }
+
+      details.fault[open] summary::before {
+        transform: rotate(90deg);
+      }
+
+      details.fault summary:hover {
+        color: var(--ember);
+      }
+
+      details.fault .body {
+        padding: 0 1.1rem 0.9rem;
+        border-top: 1px solid var(--edge);
+        padding-top: 0.9rem;
+      }
+
+      details.fault .body > :last-child {
+        margin-bottom: 0;
+      }
+
+      /* ── footer ───────────────────────────────────────────────────── */
+      footer {
+        position: relative;
+        z-index: 1;
+        border-top: var(--rule);
+        background: var(--bg-deep);
+        padding: 3rem 2rem;
+        margin-top: 2rem;
+      }
+
+      .footer-inner {
+        max-width: var(--shell);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 2rem;
+      }
+
+      .footer-inner h4 {
+        margin-top: 0;
+      }
+
+      .footer-inner ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0.88rem;
+      }
+
+      .colophon {
+        max-width: var(--shell);
+        margin: 2.5rem auto 0;
+        padding-top: 1.5rem;
+        border-top: var(--rule);
+        font-size: 0.8rem;
+        color: var(--ink-faint);
+        font-style: italic;
+      }
+
+      /* ── responsive ───────────────────────────────────────────────── */
+      @media (max-width: 940px) {
+        .shell {
+          grid-template-columns: 1fr;
+          gap: 0;
+          padding: 0 1.25rem 4rem;
+        }
+        .toc {
+          position: static;
+          max-height: none;
+          padding: 2rem 0 0;
+          border-bottom: var(--rule);
+          padding-bottom: 1.5rem;
+        }
+        .toc ol {
+          columns: 2;
+          column-gap: 1.5rem;
+        }
+        .masthead-inner {
+          padding: 2.5rem 1.25rem 2rem;
+        }
+        main {
+          padding-top: 2rem;
+        }
+      }
+
+      @media (max-width: 560px) {
+        body {
+          font-size: 16px;
+        }
+        .toc ol {
+          columns: 1;
+        }
+      }
+
+      /* ── print ────────────────────────────────────────────────────── */
+      @media print {
+        body::before,
+        body::after,
+        #theme,
+        #progress,
+        .toc {
+          display: none !important;
+        }
+        .shell {
+          display: block;
+          max-width: none;
+        }
+        details.fault {
+          break-inside: avoid;
+        }
+        details.fault[open] summary::before,
+        details.fault summary::before {
+          content: '';
+        }
+        .copy {
+          display: none;
+        }
+        body {
+          background: #fff;
+          color: #000;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="progress"></div>
+    <button id="theme" title="Switch between candlelight and daylight" aria-label="Toggle theme">
+      ☾
+    </button>
+
+    <header class="masthead">
+      <div class="masthead-inner">
+        <p class="eyebrow">UltimateDarkTowerDigital · Player Guide</p>
+        <h1>Connecting the<br />Official App <span class="flame">to your digital tower</span></h1>
+        <p class="standfirst">
+          You know the board game. You have never touched this software. This guide takes you from
+          nothing to a working setup where Restoration Games' companion app drives the tower on your
+          screen. There is one program to install and one command to run.
+        </p>
+        <div class="facts">
+          <span class="fact"><strong>~5 min</strong> first time</span>
+          <span class="fact"><strong>~1 min</strong> every time after</span>
+          <span class="fact"><strong>1</strong> terminal window</span>
+          <span class="fact">macOS needs a <strong>real tower</strong></span>
+        </div>
+      </div>
+    </header>
+
+    <div class="shell">
+      <nav class="toc" aria-label="Contents">
+        <h2>Contents</h2>
+        <ol>
+          <li><a href="#what">What you're setting up</a></li>
+          <li><a href="#before">Before you start</a></li>
+          <li><a href="#relay">Start the relay</a></li>
+          <li><a href="#connect-app">Connect the official app</a></li>
+          <li><a href="#connect-utdd">Open &amp; connect UTDD</a></li>
+          <li><a href="#playing">Playing a game</a></li>
+          <li><a href="#again">Next time</a></li>
+          <li><a href="#faults">When something breaks</a></li>
+          <li><a href="#glossary">Glossary</a></li>
+        </ol>
+      </nav>
+
+      <main>
+        <!-- ── 1 ────────────────────────────────────────────────────── -->
+        <section id="what">
+          <h2><span class="num">Section One</span>What you are setting up</h2>
+
+          <p>
+            In a normal game of <em>Return to Dark Tower</em>, your phone app talks to the plastic
+            tower over Bluetooth. The app is the brain: it decides what happens, then tells the
+            tower to spin its drums, light up, and make noise.
+          </p>
+
+          <p>
+            UTDD replaces the plastic tower with a picture of one on your screen. To make that work,
+            three programs have to talk to each other.
+          </p>
+
+          <div class="diagram">
+            <div class="node">
+              <span class="icon">📱</span>
+              <span class="name">Official app</span>
+              <span class="role">the brain — owns all the rules</span>
+            </div>
+            <div class="link-label">Bluetooth<span>▸</span></div>
+            <div class="node">
+              <span class="icon">🗼</span>
+              <span class="name">The relay</span>
+              <span class="role">pretends to be a real tower</span>
+            </div>
+            <div class="link-label">Network<span>▸</span></div>
+            <div class="node">
+              <span class="icon">🖥️</span>
+              <span class="name">UTDD</span>
+              <span class="role">shows the tower and board</span>
+            </div>
+          </div>
+
+          <ul>
+            <li>
+              The <strong>relay</strong> is a small program that runs on your computer. To your
+              phone, it looks and behaves exactly like a real Dark Tower. It has no window — it just
+              prints text in a terminal.
+            </li>
+            <li>
+              <strong>UTDD</strong> is the web page with the 3D tower and the game board. It is
+              already online — there is nothing to install for it, you just open a link.
+            </li>
+            <li>
+              So there is exactly <strong>one thing to run</strong> (the relay) and
+              <strong>one link to open</strong> (UTDD).
+            </li>
+          </ul>
+
+          <div class="callout note">
+            <span class="tag">Why so convoluted?</span>
+            <p>
+              A web browser is not allowed to pretend to be a Bluetooth device — the standard only
+              lets a browser <em>connect to</em> one. That single restriction is the entire reason
+              the relay exists as a separate program instead of living inside the web page.
+            </p>
+          </div>
+        </section>
+
+        <!-- ── 2 ────────────────────────────────────────────────────── -->
+        <section id="before">
+          <h2><span class="num">Section Two</span>Before you start</h2>
+
+          <h3>The macOS problem — read this even if you don't use a Mac</h3>
+
+          <p>
+            Before the official app will talk to any tower, it checks the tower's firmware version.
+            It asks over Bluetooth: <em>"what firmware are you running?"</em>
+          </p>
+
+          <div class="callout danger">
+            <span class="tag">⚠ Hard limitation</span>
+            <p>
+              <strong>On macOS, the relay is not allowed to answer that question.</strong> Apple's
+              Bluetooth stack blocks it. This is a limitation of macOS itself — nothing in this
+              software can fix it. The result is that the app
+              <strong>gets stuck forever on the "checking firmware" screen.</strong>
+            </p>
+          </div>
+
+          <p>You have three ways around it:</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Option</th>
+                  <th>What you need</th>
+                  <th>Verdict</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>A.</strong> Real-tower handoff <em>(Mac)</em></td>
+                  <td>Your actual physical Dark Tower</td>
+                  <td>Easy — but repeat it every session</td>
+                </tr>
+                <tr>
+                  <td><strong>B.</strong> Run the relay on Windows</td>
+                  <td>Any Windows PC with Bluetooth</td>
+                  <td>Easy, works permanently</td>
+                </tr>
+                <tr>
+                  <td><strong>C.</strong> Run the relay on Linux / Pi</td>
+                  <td>A Raspberry Pi (even a Zero W)</td>
+                  <td>More setup, works permanently</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            <strong>Option A is covered in full below</strong> (Section 4b), since it needs no
+            hardware beyond the tower you already own. Options B and C follow this guide exactly,
+            except you skip 4b entirely — the app clears the firmware screen by itself. The gory
+            technical detail is in
+            <a
+              href="https://github.com/ChessMess/UltimateDarkTower/blob/main/docs/relay/MACOS_BLE_PERIPHERAL_LIMITATION.md"
+              >the macOS BLE limitation note</a
+            >.
+          </p>
+
+          <div class="callout note">
+            <span class="tag">If the relay is on a different computer</span>
+            <p>
+              Options B and C put the relay on a <em>second</em> machine, and that changes one
+              thing: <strong>open UTDD in a browser on that same machine.</strong> For security
+              reasons a web page may only reach a relay running on the computer it is displayed on —
+              so a Pi in the cupboard works fine if you view UTDD on the Pi, but not if you view it
+              on your laptop.
+            </p>
+            <p>
+              If you would rather keep the relay headless and watch on your laptop, forward the port
+              first and everything behaves as if it were local:
+            </p>
+            <div class="cmd">
+              <div class="cmd-head">
+                <span class="label">on your laptop, in its own terminal</span>
+                <button class="copy">Copy</button>
+              </div>
+              <pre><span class="prompt">$ </span>ssh -L 8765:localhost:8765 pi@raspberrypi.local</pre>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--ink-faint)">
+              Comfortable with Tailscale? <code>tailscale serve</code> in front of the relay gives
+              it a real certificate and works too. The Tailscale <code>100.x</code> address on its
+              own does not — it has to be the <code>https</code> name.
+            </p>
+          </div>
+
+          <h3>What you need to hand</h3>
+
+          <ul class="checklist" id="kit">
+            <li>
+              <label
+                ><input type="checkbox" /><span
+                  >A computer (Mac, Windows, or Linux) with <strong>Bluetooth</strong></span
+                ></label
+              >
+            </li>
+            <li>
+              <label
+                ><input type="checkbox" /><span
+                  >Your phone or tablet with the
+                  <a href="https://restorationgames.com/return-to-dark-tower/"
+                    >official Return to Dark Tower app</a
+                  >
+                  installed</span
+                ></label
+              >
+            </li>
+            <li>
+              <label
+                ><input type="checkbox" /><span
+                  >Your physical Dark Tower — <strong>only if you're on a Mac</strong> (for the
+                  handoff)</span
+                ></label
+              >
+            </li>
+            <li>
+              <label
+                ><input type="checkbox" /><span
+                  >Phone and computer within about 10 metres of each other</span
+                ></label
+              >
+            </li>
+            <li>
+              <label
+                ><input type="checkbox" /><span
+                  >Your board, cards and figures — <strong>you still play with these</strong> (see
+                  Section 7)</span
+                ></label
+              >
+            </li>
+          </ul>
+
+          <p style="font-size: 0.85rem; color: var(--ink-faint)">
+            Ticks are saved in this browser, so the list survives a reload.
+          </p>
+
+          <h3>Software to install, once</h3>
+
+          <p>
+            <strong>Node.js</strong> — version <strong>22.13 or newer</strong>. Download it from
+            <a href="https://nodejs.org">nodejs.org</a> and run the installer. To check what you
+            already have, open a terminal and type:
+          </p>
+
+          <div class="cmd">
+            <div class="cmd-head">
+              <span class="label">check your version</span>
+              <button class="copy">Copy</button>
+            </div>
+            <pre><span class="prompt">$ </span>node --version</pre>
+          </div>
+
+          <p>
+            If it prints <code>v22.13.0</code> or higher, you're set. If it says "command not
+            found", Node isn't installed yet.
+          </p>
+
+          <div class="callout">
+            <span class="tag">Opening a terminal</span>
+            <p>
+              <strong>Mac:</strong> press <kbd>Cmd</kbd> + <kbd>Space</kbd>, type "Terminal", press
+              Enter.<br />
+              <strong>Windows:</strong> press Start and type "PowerShell".<br />
+              <strong>Linux:</strong> you already know.
+            </p>
+          </div>
+
+          <p>
+            <strong>That is the only thing you install.</strong> The relay itself is fetched by the
+            command in the next section, and UTDD runs in your browser from a web address. There is
+            nothing to download from GitHub and nothing to build.
+          </p>
+
+          <div class="callout note">
+            <span class="tag">One exception</span>
+            <p>
+              On a <strong>Windows PC with an ARM processor</strong> (a Snapdragon-based Surface,
+              for example) the relay has no ready-made Bluetooth component and will try to build
+              one, which usually fails without developer tools installed. Intel and AMD Windows PCs,
+              Macs, and Raspberry Pis are all fine.
+            </p>
+          </div>
+        </section>
+
+        <!-- ── 3 ────────────────────────────────────────────────────── -->
+        <section id="relay">
+          <h2><span class="num">Section Three</span>Start the relay</h2>
+
+          <p>Open a terminal and run this. It works from any folder:</p>
+
+          <div class="cmd">
+            <div class="cmd-head">
+              <span class="label">start the relay</span>
+              <button class="copy">Copy</button>
+            </div>
+            <pre><span class="prompt">$ </span>npx ultimatedarktowerrelay-cli</pre>
+          </div>
+
+          <p>
+            The first time, this downloads the relay — that takes a minute or so, and you may be
+            asked to confirm the install by typing <kbd>y</kbd>. Every time after that it starts
+            immediately.
+          </p>
+
+          <div class="callout danger">
+            <span class="tag">⚠ On a Mac: allow Bluetooth</span>
+            <p>
+              The first run pops up
+              <strong>"Terminal would like to use Bluetooth"</strong> (or the name of whichever
+              terminal app you opened). <strong>Click OK.</strong> The relay pretends to be a
+              Bluetooth tower, so if you refuse this it can never advertise and the official app
+              will never find it.
+            </p>
+            <p style="font-size: 0.85rem">
+              Said no by accident? System Settings → Privacy &amp; Security → Bluetooth, and switch
+              your terminal app on.
+            </p>
+          </div>
+
+          <div class="callout">
+            <span class="tag">You may also be asked about the firewall</span>
+            <p>
+              Some machines also ask "do you want to allow incoming network connections?" —
+              <strong>click Allow</strong>. The relay has to listen for a connection from the web
+              page. If you never see this, nothing is wrong; macOS ships with its firewall switched
+              off.
+            </p>
+          </div>
+
+          <h4>What you should see</h4>
+
+          <pre class="out">
+UltimateDarkTowerRelay v0.2.0 (source: emulator)
+Relay server listening on ws://0.0.0.0:8765
+[TowerEmulator] waiting for poweredOn…
+[TowerEmulator] poweredOn — starting advertising…
+[TowerEmulator] advertising started — setting services…
+<b>[TowerEmulator] services set — tower ready</b>
+Advertising tower emulator — open the companion app to connect.
+
+Now open  <b>https://chessmess.github.io/UltimateDarkTower/digital/</b>  and click Connect.
+Relay address for the "Official app" panel: ws://localhost:8765</pre>
+
+          <p>
+            The line that matters is <strong><code>services set — tower ready</code></strong
+            >. Your computer is now broadcasting itself as a Dark Tower named
+            <code>ReturnToDarkTower</code>. The last two lines are your next step — Sections 4 and 5
+            below just walk through them slowly.
+          </p>
+
+          <p>
+            On a Mac you will also see this, which is expected — it's the problem from Section 2:
+          </p>
+
+          <pre
+            class="out"
+          ><i>[TowerEmulator] macOS detected — skipping Device Information Service (0x180A).</i></pre>
+
+          <div class="callout danger">
+            <span class="tag">Leave it running</span>
+            <p>
+              Keep this window open for the whole game session. Closing it, or pressing
+              <kbd>Ctrl</kbd> + <kbd>C</kbd> in it, shuts the fake tower down.
+            </p>
+          </div>
+        </section>
+
+        <!-- ── 4 ────────────────────────────────────────────────────── -->
+        <section id="connect-app">
+          <h2><span class="num">Section Four</span>Connect the official app</h2>
+
+          <h3>4a · On Windows or Linux / Raspberry Pi</h3>
+
+          <p>
+            Open the official app and connect to the tower exactly as you always do. It finds
+            <code>ReturnToDarkTower</code>, clears the firmware check on its own, and calibrates.
+            <strong>Skip to Section 5.</strong>
+          </p>
+
+          <h3>4b · On a Mac — the real-tower handoff</h3>
+
+          <p>
+            The app refuses to move past "checking firmware" when talking to the relay, but it will
+            happily accept a <strong>real</strong> tower. So we let it check a real tower first,
+            then swap.
+          </p>
+
+          <ol class="steps">
+            <li>
+              <p><strong>Turn on your physical Dark Tower</strong> and put it within reach.</p>
+            </li>
+            <li>
+              <p>
+                <strong>Stop the relay</strong> — press <kbd>Ctrl</kbd> + <kbd>C</kbd> in its
+                terminal. Two Bluetooth towers with the same name at once will only confuse the app.
+              </p>
+            </li>
+            <li>
+              <p>
+                <strong>Connect the app to your real tower</strong>, the ordinary way you always do.
+              </p>
+            </li>
+            <li>
+              <p>
+                <strong>Wait until the app is fully past the firmware check</strong> — you should be
+                at the app's normal game screen, and the real tower should have calibrated (you'll
+                hear the drums spin).
+              </p>
+            </li>
+            <li>
+              <p>
+                <strong>Turn the physical tower off.</strong> The app notices the tower vanish and
+                offers to reconnect.
+              </p>
+            </li>
+            <li>
+              <p><strong>Restart the relay</strong> and wait for <code>tower ready</code> again.</p>
+              <div class="cmd">
+                <div class="cmd-head">
+                  <span class="label">start the relay again</span>
+                  <button class="copy">Copy</button>
+                </div>
+                <pre><span class="prompt">$ </span>npx ultimatedarktowerrelay-cli</pre>
+              </div>
+            </li>
+            <li>
+              <p>
+                <strong>Tell the app to reconnect.</strong> It finds
+                <code>ReturnToDarkTower</code> — the relay — and connects. Having already satisfied
+                itself about the firmware, it goes straight through.
+              </p>
+            </li>
+          </ol>
+
+          <h4>How you know it worked</h4>
+
+          <p>The relay terminal starts printing lines like these:</p>
+
+          <pre class="out">
+<b>[TowerEmulator] companion subscribed to state notifications</b>
+[TowerEmulator] command received: 000000000000…</pre>
+
+          <p>
+            Every <code>command received:</code> line is the app telling the tower to do something.
+            They should appear as you tap around in the app.
+          </p>
+
+          <div class="callout">
+            <span class="tag">Tired of this already?</span>
+            <p>
+              You have to repeat 4b every session on a Mac. A cheap Raspberry Pi running the relay
+              removes the problem permanently — see the
+              <a href="https://github.com/ChessMess/UltimateDarkTower/blob/main/docs/relay/SETUP.md"
+                >relay setup guide</a
+              >.
+            </p>
+          </div>
+        </section>
+
+        <!-- ── 5 ────────────────────────────────────────────────────── -->
+        <section id="connect-utdd">
+          <h2><span class="num">Section Five</span>Open UTDD and connect it</h2>
+
+          <p>
+            Leave the relay running in its terminal. Everything from here happens in your browser —
+            there is nothing else to start.
+          </p>
+
+          <ol class="steps">
+            <li>
+              <p>
+                <strong>Open UTDD in Chrome or Edge</strong> — it is a normal web page, already
+                online:
+              </p>
+              <p>
+                <a href="https://chessmess.github.io/UltimateDarkTower/digital/"
+                  >https://chessmess.github.io/UltimateDarkTower/digital/</a
+                >
+              </p>
+              <p>Bookmark it — this is the same link every session.</p>
+            </li>
+            <li>
+              <p>
+                <strong>Find the "Official app" panel</strong> in the left-hand column of the page,
+                just under the Tower panel.
+              </p>
+            </li>
+            <li>
+              <p>
+                <strong>The box should already say <code>ws://localhost:8765</code></strong> — the
+                address of the relay from Section 3. Leave it alone.
+              </p>
+            </li>
+            <li>
+              <p><strong>Click "Connect".</strong></p>
+            </li>
+            <li>
+              <p>
+                <strong>Chrome will ask permission — click "Allow".</strong> The dialog looks like
+                this:
+              </p>
+              <pre class="out">
+<b>chessmess.github.io wants to:</b>
+Access other apps and services on this device
+
+                              [ Block ]   [ <b>Allow</b> ]</pre>
+              <p>
+                The "other app" is the relay on your own computer. Chrome asks once and then
+                remembers your answer.
+              </p>
+              <div class="callout danger">
+                <span class="tag">⚠ It may still go red — that's expected</span>
+                <p>
+                  Chrome <strong>cancels the attempt that made it ask</strong>, so the panel can
+                  flash <strong>"Could not connect"</strong> even though you clicked Allow. UTDD
+                  notices the permission and retries on its own, so just wait a moment — and if it
+                  doesn't go green, <strong>click Connect once more</strong>. Nothing is broken.
+                </p>
+                <p>
+                  If you clicked <em>Block</em>, Chrome remembers that too and will not ask again —
+                  Section 8 has how to undo it.
+                </p>
+              </div>
+            </li>
+          </ol>
+
+          <div class="callout note">
+            <span class="tag">Why a web page can talk to your computer at all</span>
+            <p>
+              <code>localhost</code> means "this machine". Browsers allow a secure web page to talk
+              to a program on your own computer — but, since Chrome 142, only after you say yes.
+              Nothing about your game leaves your machine: the relay and the web page talk directly
+              to each other, and the connection never goes near the internet.
+            </p>
+          </div>
+
+          <div class="callout win">
+            <span class="tag">✓ Success looks like</span>
+            <p>
+              The status line under the button turns green and reads
+              <strong>"Connected — the official app is driving the tower."</strong>
+            </p>
+            <p>
+              That green line is your confirmation. The relay terminal stays quiet when a browser
+              connects — it only prints Bluetooth activity — so don't read its silence as a failure.
+            </p>
+          </div>
+
+          <p>
+            <strong>Now try it.</strong> Tap something in the official app that makes the tower do
+            something — a drum rotation, a seal reveal. The 3D tower in your browser should move and
+            light up to match.
+          </p>
+        </section>
+
+        <!-- ── 6 ────────────────────────────────────────────────────── -->
+        <section id="playing">
+          <h2><span class="num">Section Six</span>Playing a game</h2>
+
+          <p>This is the important part, and the part that surprises people.</p>
+
+          <h3>The tower is automatic</h3>
+
+          <p>
+            Everything the app tells the tower to do now happens on your screen: drum rotations, the
+            glowing seal lights, the light patterns. You don't touch the tower controls in UTDD.
+          </p>
+
+          <h3>Dropping a skull — you press the button</h3>
+
+          <p>
+            In a real game you physically drop a skull into the tower and its sensor tells the app.
+            There is no sensor here, so
+            <strong>the "Drop skull" button in UTDD is your skull drop.</strong>
+          </p>
+
+          <p>
+            When you press it, UTDD tells the relay, and the relay tells the app "a skull just fell"
+            in exactly the way a real tower would. Press it <strong>once per skull</strong>, at the
+            point in your turn where you'd normally drop one.
+          </p>
+
+          <div class="callout">
+            <span class="tag">Don't double up</span>
+            <p>
+              Do not also do something in the app to register the skull. The button is the whole
+              action.
+            </p>
+          </div>
+
+          <h3>Seals — usually automatic, always correctable</h3>
+
+          <p>
+            When the app reveals a seal, UTDD works out <strong>which</strong> seal from the lights
+            and marks it broken for you.
+          </p>
+
+          <p>
+            This is the least-proven part of the bridge. If UTDD marks the wrong seal, or misses
+            one,
+            <strong>just tap the seal squares in the Tower panel</strong> — tap once to break, tap
+            again to undo. Your taps always win.
+          </p>
+
+          <h3>The board is <em>not</em> automatic</h3>
+
+          <div class="callout danger">
+            <span class="tag">⚠ The big one</span>
+            <p>
+              When the app says <em>"place a foe at the Ruined Village"</em>, that instruction
+              <strong>does not travel over Bluetooth.</strong> The tower connection only ever
+              carried tower state; it never carried board instructions, not even with a real tower.
+            </p>
+          </div>
+
+          <p>So, exactly as in a normal game:</p>
+
+          <ul>
+            <li>Read the placement instructions off the app</li>
+            <li>Move your figures, foes, and skulls yourself</li>
+            <li>Do it on the digital board in UTDD, on your physical board, or both</li>
+          </ul>
+
+          <p>
+            The same goes for cards, items, corruption, and everything else on your player board.
+          </p>
+
+          <div class="callout win">
+            <span class="tag">In short</span>
+            <p>
+              <strong
+                >UTDD replaces your tower. It does not replace your board, your cards, or your
+                table.</strong
+              >
+            </p>
+          </div>
+        </section>
+
+        <!-- ── 7 ────────────────────────────────────────────────────── -->
+        <section id="again">
+          <h2><span class="num">Section Seven</span>Finishing up, and next time</h2>
+
+          <p>
+            To stop: press <kbd>Ctrl</kbd> + <kbd>C</kbd> in the relay's terminal, and close the
+            browser tab.
+          </p>
+
+          <p>Next session, the whole routine is:</p>
+
+          <ol class="steps">
+            <li>
+              <p>Start the relay:</p>
+              <div class="cmd">
+                <div class="cmd-head">
+                  <span class="label">one terminal, any folder</span>
+                  <button class="copy">Copy</button>
+                </div>
+                <pre><span class="prompt">$ </span>npx ultimatedarktowerrelay-cli</pre>
+              </div>
+            </li>
+            <li>
+              <p><strong>Mac only:</strong> the real-tower handoff (Section 4b).</p>
+            </li>
+            <li>
+              <p>Connect the official app to <code>ReturnToDarkTower</code>.</p>
+            </li>
+            <li>
+              <p>Open your UTDD bookmark and click <strong>Connect</strong>.</p>
+            </li>
+          </ol>
+
+          <p>
+            That's it — one command and a bookmark. Nothing to update, nothing to rebuild; the relay
+            and the web page both keep themselves current.
+          </p>
+        </section>
+
+        <!-- ── 8 ────────────────────────────────────────────────────── -->
+        <section id="faults">
+          <h2><span class="num">Section Eight</span>When something goes wrong</h2>
+
+          <p>Click any symptom to expand it.</p>
+
+          <details class="fault">
+            <summary>The app sits on "checking firmware" and never moves</summary>
+            <div class="body">
+              <p>
+                This is the macOS limitation from Section 2. Do the real-tower handoff (<a
+                  href="#connect-app"
+                  >4b</a
+                >), or run the relay on Windows or a Raspberry Pi. There is no other fix on a Mac.
+              </p>
+              <p>
+                If the app instead complains the tower is <em>out of date</em>, the firmware value
+                can be overridden — see
+                <a
+                  href="https://github.com/ChessMess/UltimateDarkTower/blob/main/docs/relay/MACOS_BLE_PERIPHERAL_LIMITATION.md"
+                  >the limitation note</a
+                >.
+              </p>
+            </div>
+          </details>
+
+          <details class="fault">
+            <summary>The app can't find any tower</summary>
+            <div class="body">
+              <ul>
+                <li>
+                  Is the relay terminal still running and showing <code>tower ready</code>? If it
+                  scrolled away, restart it.
+                </li>
+                <li>Is Bluetooth switched on, on both the computer and the phone?</li>
+                <li>
+                  <strong>On a Mac, did you allow the Bluetooth prompt?</strong> If you dismissed
+                  "Terminal would like to use Bluetooth", the relay starts up and looks healthy but
+                  never actually advertises. System Settings → Privacy &amp; Security → Bluetooth,
+                  switch your terminal app on, then restart the relay.
+                </li>
+                <li>Is the phone close to the computer? Stay within ~10 metres.</li>
+                <li>
+                  Is your <strong>physical</strong> tower switched on nearby? Turn it off — two
+                  devices with the same name confuse the app.
+                </li>
+                <li>
+                  On Linux / Raspberry Pi, the relay needs permission for Bluetooth:
+                  <div class="cmd">
+                    <div class="cmd-head">
+                      <span class="label">linux only</span>
+                      <button class="copy">Copy</button>
+                    </div>
+                    <pre><span class="prompt">$ </span>sudo setcap cap_net_raw,cap_net_admin+eip $(which node)</pre>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="fault">
+            <summary>UTDD says "Could not connect"</summary>
+            <div class="body">
+              <ul>
+                <li>
+                  <strong>First, just click Connect again.</strong> Chrome cancels the attempt that
+                  raises its permission dialog, so the very first click can fail even when you
+                  allowed it.
+                </li>
+                <li>
+                  <strong>Then: the local-network permission.</strong> Chrome has to be allowed to
+                  "access other apps and services on this device". If you clicked Block — or
+                  dismissed the dialog — it remembers, and will never ask again on its own. Click
+                  the icon at the left of the address bar → <em>Site settings</em> → set
+                  <strong>Local network access</strong> to <em>Allow</em>, then reload the page and
+                  click Connect again.
+                </li>
+                <li>The relay must be running <strong>before</strong> you click Connect.</li>
+                <li>
+                  Confirm the address is exactly <code>ws://localhost:8765</code> —
+                  <code>ws://</code>, not <code>http://</code>.
+                </li>
+                <li>
+                  If you were asked about the <strong>firewall</strong> and dismissed it, the relay
+                  can't be reached. On a Mac, System Settings → Network → Firewall → Options; on
+                  Windows, Windows Defender Firewall → Allow an app.
+                </li>
+                <li>
+                  <strong>Is the relay on a different computer?</strong> Then this is expected — see
+                  the note in <a href="#before">Section 2</a>. Open UTDD on the machine running the
+                  relay, or forward the port with <code>ssh -L</code>.
+                </li>
+                <li>
+                  If you changed the relay's port, use the port from its
+                  <code>listening on</code> line.
+                </li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="fault">
+            <summary>UTDD says "Paused — the app disconnected from the tower emulator"</summary>
+            <div class="body">
+              <p>
+                The phone lost its Bluetooth link. Reconnect in the official app; UTDD picks up
+                again on its own and goes back to green. Nothing is lost.
+              </p>
+            </div>
+          </details>
+
+          <details class="fault">
+            <summary>UTDD says "Host speaks a different relay protocol"</summary>
+            <div class="body">
+              <p>
+                Your copy of the relay is older than the web page. Stop the relay with
+                <kbd>Ctrl</kbd> + <kbd>C</kbd> and start it again with <code>@latest</code> on the
+                end — that forces a fresh download instead of reusing the one already on your
+                machine. Then reload the browser tab.
+              </p>
+              <div class="cmd">
+                <div class="cmd-head">
+                  <span class="label">force the newest relay</span>
+                  <button class="copy">Copy</button>
+                </div>
+                <pre><span class="prompt">$ </span>npx ultimatedarktowerrelay-cli@latest</pre>
+              </div>
+            </div>
+          </details>
+
+          <details class="fault">
+            <summary>The tower on screen doesn't move when the app does something</summary>
+            <div class="body">
+              <ul>
+                <li>Is the status line green? If not, work through the cases above.</li>
+                <li>
+                  Look at the relay's terminal. If no <code>command received:</code> lines appear
+                  when you tap in the app, the app isn't really connected to the relay — it may have
+                  silently reconnected to your physical tower. Turn the physical tower off and
+                  reconnect.
+                </li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="fault">
+            <summary>The 3D tower never appears in the browser</summary>
+            <div class="body">
+              <p>
+                The 3D view loads lazily and the board image is large. Give it a moment on first
+                load, and use Chrome or Edge.
+              </p>
+            </div>
+          </details>
+
+          <details class="fault">
+            <summary>Something else entirely</summary>
+            <div class="body">
+              <p>
+                The relay writes detailed logs to a <code>logs/</code> folder
+                <em>in whatever folder you ran the command from</em> — it also prints the exact path
+                on startup, on the <code>Event log:</code> line. Those files are what to look at, or
+                attach to a bug report, when nothing here fits. They're also how the seal-detection
+                guesswork gets confirmed, so they're genuinely worth keeping from a real session.
+              </p>
+              <p>
+                The full operator runbook is the
+                <a
+                  href="https://github.com/ChessMess/UltimateDarkTower/blob/main/docs/relay/TROUBLESHOOTING.md"
+                  >relay troubleshooting guide</a
+                >, and bugs go to
+                <a href="https://github.com/ChessMess/UltimateDarkTower/issues">GitHub issues</a>.
+              </p>
+            </div>
+          </details>
+        </section>
+
+        <!-- ── 9 ────────────────────────────────────────────────────── -->
+        <section id="glossary">
+          <h2><span class="num">Section Nine</span>Glossary</h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Term</th>
+                  <th>What it means here</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Official app</strong></td>
+                  <td>
+                    Restoration Games' Return to Dark Tower companion app, on your phone or tablet
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Relay</strong> / <strong>host</strong></td>
+                  <td>
+                    The program from Section 3 that pretends to be a Dark Tower over Bluetooth
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Tower emulator</strong></td>
+                  <td>The Bluetooth part of the relay — the bit the app actually talks to</td>
+                </tr>
+                <tr>
+                  <td><strong>UTDD</strong></td>
+                  <td>The web page: 3D tower, digital board, player boards</td>
+                </tr>
+                <tr>
+                  <td><strong>Bridge</strong></td>
+                  <td>The connection between UTDD and the relay — the "Official app" panel</td>
+                </tr>
+                <tr>
+                  <td><strong>Terminal</strong></td>
+                  <td>The window where you type commands</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl</kbd> + <kbd>C</kbd></td>
+                  <td>Keyboard shortcut that stops a running program in a terminal</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer>
+      <div class="footer-inner">
+        <div>
+          <h4>Go deeper</h4>
+          <ul>
+            <li>
+              <a
+                href="https://github.com/ChessMess/UltimateDarkTower/blob/main/apps/digital/docs/prd/prd-05-official-app-bridge.md"
+                >How the bridge works</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/ChessMess/UltimateDarkTower/tree/main/docs/relay"
+                >Relay documentation</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://github.com/ChessMess/UltimateDarkTower/blob/main/docs/local-development.md"
+                >Running the other apps</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>The software</h4>
+          <ul>
+            <li>
+              <a href="https://github.com/ChessMess/UltimateDarkTower"
+                >UltimateDarkTower on GitHub</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/ChessMess/UltimateDarkTower/issues">Report a problem</a>
+            </li>
+            <li><a href="https://chessmess.github.io/UltimateDarkTower/">Live demos</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>The game</h4>
+          <ul>
+            <li>
+              <a href="https://restorationgames.com/return-to-dark-tower/">Restoration Games</a>
+            </li>
+            <li>
+              <a href="https://boardgamegeek.com/boardgame/256680/return-to-dark-tower"
+                >Return to Dark Tower on BGG</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Tools</h4>
+          <ul>
+            <li><a href="https://nodejs.org">Node.js</a></li>
+            <li>
+              <a href="https://www.npmjs.com/package/ultimatedarktowerrelay-cli"
+                >The relay on npm</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <p class="colophon">
+        UTDD is unofficial, fan-made software. It is not made by or endorsed by Restoration Games,
+        and the official app has no idea it exists — which is rather the point.
+        <em>Return to Dark Tower</em> and its artwork, audio and text are © Restoration Games.
+      </p>
+    </footer>
+
+    <script>
+      (function () {
+        'use strict';
+
+        // ── theme ──────────────────────────────────────────────────
+        var root = document.documentElement;
+        var btn = document.getElementById('theme');
+        var stored = null;
+        try {
+          stored = localStorage.getItem('utdd.guide.theme');
+        } catch (e) {}
+        var prefersLight =
+          window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        var theme = stored || (prefersLight ? 'light' : 'dark');
+
+        function paint(t) {
+          root.setAttribute('data-theme', t);
+          btn.textContent = t === 'dark' ? '☾' : '☀';
+        }
+        paint(theme);
+
+        btn.addEventListener('click', function () {
+          theme = theme === 'dark' ? 'light' : 'dark';
+          paint(theme);
+          try {
+            localStorage.setItem('utdd.guide.theme', theme);
+          } catch (e) {}
+        });
+
+        // ── copy buttons ───────────────────────────────────────────
+        // Strips the "$ " prompts so what lands on the clipboard is runnable.
+        Array.prototype.forEach.call(document.querySelectorAll('.cmd'), function (block) {
+          var button = block.querySelector('.copy');
+          var pre = block.querySelector('pre');
+          if (!button || !pre) return;
+
+          button.addEventListener('click', function () {
+            var text = Array.prototype.map
+              .call(pre.childNodes, function (n) {
+                return n.classList && n.classList.contains('prompt') ? '' : n.textContent;
+              })
+              .join('')
+              .trim();
+
+            var done = function () {
+              button.textContent = 'Copied';
+              button.classList.add('done');
+              setTimeout(function () {
+                button.textContent = 'Copy';
+                button.classList.remove('done');
+              }, 1600);
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text).then(done, fallback);
+            } else {
+              fallback();
+            }
+
+            // file:// pages often have no clipboard API — select it instead.
+            function fallback() {
+              var ta = document.createElement('textarea');
+              ta.value = text;
+              ta.style.position = 'fixed';
+              ta.style.opacity = '0';
+              document.body.appendChild(ta);
+              ta.select();
+              try {
+                document.execCommand('copy');
+                done();
+              } catch (e) {
+                button.textContent = 'Select it';
+              }
+              document.body.removeChild(ta);
+            }
+          });
+        });
+
+        // ── checklist persistence ──────────────────────────────────
+        var boxes = document.querySelectorAll('#kit input[type=checkbox]');
+        Array.prototype.forEach.call(boxes, function (box, i) {
+          var key = 'utdd.guide.kit.' + i;
+          try {
+            if (localStorage.getItem(key) === '1') box.checked = true;
+          } catch (e) {}
+          box.addEventListener('change', function () {
+            try {
+              localStorage.setItem(key, box.checked ? '1' : '0');
+            } catch (e) {}
+          });
+        });
+
+        // ── scroll spy + reading progress ──────────────────────────
+        var sections = Array.prototype.slice.call(document.querySelectorAll('main section'));
+        var links = {};
+        Array.prototype.forEach.call(document.querySelectorAll('.toc a'), function (a) {
+          links[a.getAttribute('href').slice(1)] = a;
+        });
+        var bar = document.getElementById('progress');
+
+        function update() {
+          var scrolled = window.scrollY;
+          var height = document.documentElement.scrollHeight - window.innerHeight;
+          bar.style.width = (height > 0 ? (scrolled / height) * 100 : 0) + '%';
+
+          var current = sections[0];
+          for (var i = 0; i < sections.length; i++) {
+            if (sections[i].getBoundingClientRect().top <= window.innerHeight * 0.35) {
+              current = sections[i];
+            }
+          }
+          for (var id in links) links[id].classList.remove('active');
+          if (current && links[current.id]) links[current.id].classList.add('active');
+        }
+
+        var ticking = false;
+        window.addEventListener(
+          'scroll',
+          function () {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(function () {
+              update();
+              ticking = false;
+            });
+          },
+          { passive: true },
+        );
+        window.addEventListener('resize', update);
+        update();
+      })();
+    </script>
+  </body>
+</html>

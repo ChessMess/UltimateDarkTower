@@ -90,6 +90,10 @@ export const components = [
     demo: 'digital',
     glyph: 'banner',
     image: 'digital.jpg',
+    // Point "Docs" at the player setup guide rather than the auto-derived
+    // apps/digital/docs tree — that folder holds PRDs for contributors, and the
+    // person landing here wants to know how to drive this from the official app.
+    docsUrl: './digital/connecting-the-official-app.html',
   },
   {
     dir: 'apps/seed',

@@ -46,6 +46,11 @@ The workspace packages are symlinked; when you change one, rebuild it
 
 ## Docs
 
+- **[Connecting the official app](https://chessmess.github.io/UltimateDarkTower/digital/connecting-the-official-app.html)**
+  — step-by-step player guide to driving UTDD's tower from Restoration Games' companion app.
+  Written for non-developers. The source lives in
+  [`public/`](public/connecting-the-official-app.html), not `docs/`, so Vite deploys it alongside
+  the app and the in-app "How do I set this up?" link resolves in dev and on Pages alike.
 - **[PRD suite](docs/prd/)** — start with [`_overview.md`](docs/prd/_overview.md), then PRD-00..06.
 
 ## License

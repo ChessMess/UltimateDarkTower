@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * ultimatedarktowerrelay-cli — headless relay daemon entry point.
  *
@@ -5,7 +6,8 @@
  * commands into the relay so any connected consumer receives them.
  *
  * Usage:
- *   node dist/index.js                     # tower emulator (companion app connects)
+ *   npx ultimatedarktowerrelay-cli         # tower emulator (companion app connects)
+ *   node dist/index.js                     # same, from a source checkout
  *   TOWER_SOURCE=mock node dist/index.js   # BLE-free canned-command source
  *   TOWER_SOURCE=real node dist/index.js   # connect to a physical tower, relay its state
  *   TOWER_SOURCE=bridge node dist/index.js # app drives TowerEmulator; forward to a real master tower
@@ -16,6 +18,9 @@
  *                 'real' → RealTower; 'bridge' → TowerEmulator (app connects) + RealTower (forwarded to it).
  *   TOWER_DIS_*   Device Information Service overrides for the tower emulator (see readDeviceInfoFromEnv).
  *   LOGGING       '0' disables JSONL file logging (default enabled).
+ *   RELAY_LOG_DIR Directory for the JSONL logs (default './logs', relative to the
+ *                 current working directory — which under `npx` is wherever the
+ *                 player happened to run the command).
  *
  * Steps:
  *   1. Construct the logger, the semantic-event log, parser, observer.
@@ -49,6 +54,9 @@ import {
 } from 'ultimatedarktowerrelay-shared';
 
 const DEFAULT_PORT = 8765;
+
+/** Hosted UTDD build — the UI this relay drives. Printed on startup. */
+const UTDD_URL = 'https://chessmess.github.io/UltimateDarkTower/digital/';
 
 /**
  * Read Device Information Service overrides from `TOWER_DIS_*` env vars (only the
@@ -86,11 +94,15 @@ async function main(): Promise<void> {
 
   const port = Number(process.env['RELAY_PORT'] ?? DEFAULT_PORT);
   const loggingEnabled = process.env['LOGGING'] !== '0';
-  const logger = new HostLogger('./logs', loggingEnabled);
+  // cwd-relative by default. Under `npx` that is wherever the player ran the
+  // command, not the package directory — RELAY_LOG_DIR is the escape hatch for
+  // anyone who'd rather not have a logs/ folder appear next to them.
+  const logDir = process.env['RELAY_LOG_DIR'] ?? './logs';
+  const logger = new HostLogger(logDir, loggingEnabled);
   // Append-only JSONL log of semantic RelayEvents (PRD §7 / FR-6), separate from
   // the HostLogger's byte/command + human-readable debug log. EventLog assigns its
   // own monotonic seq across all semantic events.
-  const eventLog = new EventLog('./logs', { enabled: loggingEnabled });
+  const eventLog = new EventLog(logDir, { enabled: loggingEnabled });
 
   // Select the tower source:
   //   emulator → real BLE peripheral the companion app connects to (default)
@@ -269,6 +281,12 @@ async function main(): Promise<void> {
           ? 'Bridge mode — app drives the tower emulator; commands forwarded to the real master tower.'
           : 'Advertising tower emulator — open the companion app to connect.',
   );
+
+  // The player's next action shouldn't require finding a doc. UTDD is served over
+  // https, but localhost is a "potentially trustworthy" origin and so is exempt
+  // from mixed-content blocking — the hosted page can reach this ws:// relay.
+  console.log(`\nNow open  ${UTDD_URL}  and click Connect.`);
+  console.log(`Relay address for the "Official app" panel: ws://localhost:${port}`);
 
   // Graceful shutdown.
   const shutdown = async (): Promise<void> => {

@@ -8,7 +8,21 @@ server, for running unattended on a server, a Raspberry Pi, in Docker, or any al
 Starts a `TowerSource` (emulator, mock, real tower, or bridge) and a `RelayServer`, then wires the
 source's commands into the relay so any connected WebSocket consumer receives them in real time.
 
-## Run locally
+## Run it
+
+```bash
+npx ultimatedarktowerrelay-cli
+```
+
+That's the whole install. Needs **Node >= 22.13** and nothing else — the BLE native modules ship
+prebuilt binaries for Windows (x64/x86), macOS (Intel/Apple Silicon) and Linux (x64/arm/arm64), so
+there is no compile step. (Windows-on-ARM has no prebuild and will attempt to build from source.)
+
+It prints a URL for the hosted UTDD build on startup; open that and click **Connect**. Full
+player-facing walkthrough:
+**[Connecting the official app](https://chessmess.github.io/UltimateDarkTower/digital/connecting-the-official-app.html)**.
+
+### From a checkout, for development
 
 ```bash
 pnpm install
@@ -29,8 +43,9 @@ TOWER_SOURCE=bridge node dist/index.js # app drives the emulator; forward to a r
 ```
 
 Other env vars: `RELAY_PORT` (default `8765`), `TOWER_DIS_*` (Device Information Service
-overrides), `LOGGING=0` (disable JSONL file logging). See the header comment in
-[`src/index.ts`](src/index.ts) for the full list.
+overrides), `LOGGING=0` (disable JSONL file logging), `RELAY_LOG_DIR` (log directory, default
+`./logs` — **relative to the current directory**, which under `npx` is wherever you ran it). See
+the header comment in [`src/index.ts`](src/index.ts) for the full list.
 
 ## Files
 
