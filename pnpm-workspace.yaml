@@ -19,7 +19,7 @@ catalog:
   # Build/test tooling shared across many workspaces.
   vite: ^8.1.5
   jsdom: ^25.0.0
-  '@vitejs/plugin-react': ^6.0.0
+  '@vitejs/plugin-react': ^6.0.4
   '@types/node': ^22.0.0
 
   # Runtime libraries. three is the load-bearing one: .npmrc force-hoists it so
@@ -31,8 +31,8 @@ catalog:
   '@types/three': ^0.185.0
   gsap: ^3.15.0
   '@dimforge/rapier3d-compat': ^0.19.3
-  react: ^19.2.0
-  react-dom: ^19.2.0
+  react: ^19.2.8
+  react-dom: ^19.2.8
   '@types/react': ^19.2.0
   '@types/react-dom': ^19.2.0
   ws: ^8.21.1

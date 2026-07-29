@@ -46,14 +46,14 @@ half-loading a document whose shape this build can't read (schema 0.5.0's `spots
 `anchors` is the first schema change this guard exists to catch). There is no migration path —
 see `docs/creator/board-designer.md`'s "0.5.0 is not backward compatible" note.
 
-## Vite boot gotcha (`os.platform is not a function`)
+## Vite boot gotcha (`os.platform is not a function`) — historical, fixed upstream
 
-`vite.config.ts` must both **alias `ultimatedarktower` to its CJS entry** AND list
-`@udtc/engine`/`@udtc/schema`/`@udtc/adapters`/`ultimatedarktower` in `optimizeDeps.include`.
-Without the pre-bundle, Vite's ESM pipeline hoists UDT's guarded `require('@stoprocent/noble')`
-into an eager import → noble runs `os.platform()` at module init → the app crashes at boot on
-a cold `.vite` cache. (Same pattern as `apps/digital`; see the repo memory
-`vite-apps-must-prebundle-udt`.)
+`vite.config.ts`'s `optimizeDeps.include` pre-bundles the linked `@udtc/engine`/`@udtc/schema`/
+`@udtc/adapters` workspace libs so their `file:` links resolve cleanly in dev.
+`ultimatedarktower` no longer needs an alias or a slot in that list: since core v7.0.0 it ships
+a `browser` export condition (`dist/browser/index.mjs`, no `createRequire`/noble banner) that
+Vite resolves directly, so the old guarded `require('@stoprocent/noble')` never gets hoisted
+into an eager import. Same fix applies to `apps/digital`, `apps/player`, and `apps/sync`.
 
 ## Build & test
 

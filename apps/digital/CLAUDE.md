@@ -24,8 +24,11 @@ this app, including the React rules — `eslint.config.js` scopes them to
 `apps/digital/**/*.{ts,tsx}` explicitly.
 
 Standard Vite scripts; `build` = `tsc -b && vite build`; `test` = `vitest run` (tests colocated
-under `src/`). Like `apps/creator`, its Vite setup pre-bundles `ultimatedarktower` (see the
-`vite-apps-must-prebundle-udt` gotcha).
+under `src/`). `vite.config.ts`'s `optimizeDeps.include` pre-bundles the linked
+`ultimatedarktowerdisplay`/`ultimatedarktowerboard` workspace libs so their `file:` links
+resolve cleanly in dev. `ultimatedarktower` is deliberately _not_ listed there: since core
+v7.0.0 it ships a `browser` export condition (`dist/browser/index.mjs`, no `createRequire`/
+noble banner) that Vite resolves directly.
 
 ## `localStorage` in tests needs `src/test/setup.ts`
 
