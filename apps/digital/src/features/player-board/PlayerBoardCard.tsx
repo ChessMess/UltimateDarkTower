@@ -1,15 +1,17 @@
 /**
  * The full per-hero tracker (PRD-03 FR-03.2–FR-03.6). A player-owned tracker: it stores
  * and displays values but enforces no rules. Pools are steppers; treasures (≤4) and gear
- * (≤6) and the open-ended quest items / companions are labeled lists; virtues are toggle
- * tiles. Card/virtue names are © Restoration Games and not bundled — the player labels
- * their own (FR-03.6 / IP caveat).
+ * (≤6) and the open-ended quest items / companions are picked from the base-game card
+ * lists (`itemOptions.ts`); virtues are toggle tiles. Card *names* come from the box
+ * inventory; the rules text on the cards is © Restoration Games and stays unbundled
+ * (FR-03.6 / IP caveat), so virtue tiles remain generic.
  */
 import { useState } from 'react';
 import { HERO_BY_ID } from '@/lib/udtData';
 import {
   CORRUPTION_LOSS,
   CORRUPTION_MAX,
+  LIST_CAPS,
   isCorruptionLoss,
   withListAdded,
   withListRemoved,
@@ -19,6 +21,7 @@ import {
   type PlayerBoard,
   type ResourceKey,
 } from '@/session';
+import { ITEM_OPTIONS, type ItemOption } from './itemOptions';
 
 type Update = (fn: (pb: PlayerBoard) => PlayerBoard) => void;
 
@@ -67,6 +70,8 @@ function ListSection({
   items,
   cap,
   placeholder,
+  options,
+  allowDuplicates,
   onAdd,
   onRemove,
 }: {
@@ -74,11 +79,17 @@ function ListSection({
   items: string[];
   cap?: number;
   placeholder: string;
+  options: ItemOption[];
+  /** Only for lists whose box has multiple copies of a card (quest items). */
+  allowDuplicates?: boolean;
   onAdd: (label: string) => void;
   onRemove: (index: number) => void;
 }) {
   const [draft, setDraft] = useState('');
   const full = cap !== undefined && items.length >= cap;
+  // A card already on the board drops out of the picker — that's the gear rule ("one of
+  // each of the 6 types") and the uniqueness of count-1 treasure/companion cards.
+  const available = allowDuplicates ? options : options.filter((o) => !items.includes(o.value));
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     onAdd(draft);
@@ -108,14 +119,21 @@ function ListSection({
       )}
       {full ? (
         <p className="muted pb-list-full">At capacity.</p>
+      ) : available.length === 0 ? (
+        <p className="muted pb-list-full">All added.</p>
       ) : (
         <form className="pb-add" onSubmit={submit}>
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder={placeholder}
-          />
-          <button type="submit" disabled={!draft.trim()}>
+          {/* Bare select, not wrapped in a <label>: .pb-add is a flex row of
+              [field, button] and a wrapper would become the flex item. */}
+          <select value={draft} onChange={(e) => setDraft(e.target.value)} aria-label={placeholder}>
+            <option value="">{placeholder}</option>
+            {available.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <button type="submit" disabled={!draft}>
             Add
           </button>
         </form>
@@ -192,36 +210,43 @@ export function PlayerBoardCard({ pb, update }: { pb: PlayerBoard; update: Updat
       <ListSection
         label="Gear"
         items={pb.gear}
-        cap={6}
-        placeholder="Name a gear card"
+        cap={LIST_CAPS.gear}
+        placeholder="Choose gear…"
+        options={ITEM_OPTIONS.gear}
         onAdd={listAdd('gear')}
         onRemove={listRemove('gear')}
       />
       <ListSection
         label="Treasures"
         items={pb.treasures}
-        cap={4}
-        placeholder="Name a treasure"
+        cap={LIST_CAPS.treasures}
+        placeholder="Choose a treasure…"
+        options={ITEM_OPTIONS.treasures}
         onAdd={listAdd('treasures')}
         onRemove={listRemove('treasures')}
       />
       <ListSection
         label="Quest items"
         items={pb.questItems}
-        placeholder="Name a quest item"
+        placeholder="Choose a quest item…"
+        options={ITEM_OPTIONS.questItems}
+        // The box has 4 Amulets Of Hope, so a second copy is legitimate.
+        allowDuplicates
         onAdd={listAdd('questItems')}
         onRemove={listRemove('questItems')}
       />
       <ListSection
         label="Companions"
         items={pb.companions}
-        placeholder="Name a companion"
+        placeholder="Choose a companion…"
+        options={ITEM_OPTIONS.companions}
         onAdd={listAdd('companions')}
         onRemove={listRemove('companions')}
       />
 
       <p className="muted pb-ipnote">
-        Card &amp; virtue text isn&apos;t bundled (© Restoration Games) — label your own.
+        Card names come from the box inventory; card &amp; virtue <em>text</em> isn&apos;t bundled
+        (© Restoration Games).
       </p>
     </div>
   );

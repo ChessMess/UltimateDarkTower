@@ -83,14 +83,23 @@ displays the values; it does not enforce rules or costs.
 
 Resolved for MVP (decisions made during implementation):
 
-- **Bundled card/virtue/companion text** — _none_. The text is © Restoration Games and the
-  local game-content is explicitly TODO, so UTDD ships **no card text**. Instead the player
-  **labels their own** gear, treasures, quest items, and companions (free-text lists). Virtue
-  tiles are generic ("Virtue 1–3" + "Kingdom") with an optional player label. A curated
-  data file can be added later if licensing is cleared.
-- **Gear model** — the 6 gear _type_ names aren't available (IP/TODO), so gear is a
-  **labeled list capped at 6** ("up to one of each of the 6 types") rather than 6 named
-  slots. Same approach for treasures (labeled list capped at 4).
+- **Bundled card/virtue/companion text** — _none_. The text is © Restoration Games, so UTDD
+  ships **no card text**. Virtue tiles stay generic ("Virtue 1–3" + "Kingdom") with an
+  optional player label.
+  **Updated:** card _names_ are a separate matter and turned out to be available all along
+  — `ultimatedarktowerdata`'s box inventory lists the base game's 6 gear, 22 treasures,
+  17 quest items and 10 companions by name. Gear / treasures / quest items / companions are
+  therefore **dropdowns** over those names (`features/player-board/itemOptions.ts`), not
+  free text. This is the "curated data file … if licensing is cleared" escape hatch this
+  bullet originally left open; only names cross the line, never rules text. Base game only,
+  since `GameConfig.expansions` is always `[]` in the MVP. The stored shape is unchanged
+  (`string[]`), so sessions saved while the fields were free text still load, and their
+  hand-typed labels still render.
+- **Gear model** — gear is a **list capped at 6** ("up to one of each of the 6 types")
+  rather than 6 named slots; same approach for treasures (capped at 4). A card already on
+  the board drops out of its dropdown, which is what enforces "one of each" for gear and
+  the uniqueness of the count-1 treasure and companion cards. Quest items are exempt — the
+  box holds 4 Amulets Of Hope, so a duplicate can be legitimate.
 - **Free-form per-hero notes** — **deferred**. `GameProgress.notes` already exists for a
   session-level note; per-hero notes can be added without a schema change beyond a field.
 

@@ -23,6 +23,9 @@ export {
   ADVERSARY_ROSTER,
   FOE_STATUSES,
 
+  // Box inventory (card names) — keyed by expansion name.
+  EXPANSIONS,
+
   // Seed encode/decode.
   decodeSeed,
   createSeed,

@@ -77,8 +77,11 @@ export interface VirtueTile {
 
 /**
  * Per-hero tracked state (PRD-03). UTDD is a player-owned tracker — it stores and shows
- * these values but enforces no costs or rules. Card/virtue names are not bundled (IP), so
- * gear / treasures / quest items / companions are free-text the player labels themselves.
+ * these values but enforces no costs or rules. Gear / treasures / quest items / companions
+ * hold base-game card *names* (picked from `features/player-board/itemOptions.ts`, which
+ * derives them from `ultimatedarktowerdata`'s box inventory) — plain strings, so sessions
+ * saved when these were free-text still load. The rules *text* on those cards, and virtue
+ * text, is © Restoration Games and stays unbundled.
  *
  * Pools (`warriors`/`spirit`/`corruption`/`potions`) are simple counts; `treasures` (≤4)
  * and `gear` (≤6, "one of each of the 6 types") are capacity-limited labeled lists;

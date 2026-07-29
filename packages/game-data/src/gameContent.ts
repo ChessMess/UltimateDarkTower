@@ -336,7 +336,7 @@ export const COMPANIONS = {
   Miras: { name: 'Miras', title: 'The Horselord' },
   Nimet: { name: 'Nimet', title: 'The Fathomless' },
   Tomas: { name: 'Tomas', title: 'The Scout' },
-  Vasa: { name: 'Vasa', title: 'The Devine' },
+  Vasa: { name: 'Vasa', title: 'The Divine' },
   Yana: { name: 'Yana', title: 'The Assassin' },
   Zaida: { name: 'Zaida', title: 'The Efreet' },
 } as const satisfies Record<string, Companion>;
