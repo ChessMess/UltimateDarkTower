@@ -76,7 +76,7 @@ describe('resolveTokenImageFor', () => {
   it('falls back to the default convention when nothing else applies', () => {
     // 2D prefers the official flat board-token icon for known foes; 3D keeps the portrait convention.
     expect(resolveTokenImageFor(BRIGANDS, '2d', { assetBaseUrl: '/t/' })).toBe(
-      '/t/foes/Foe-Token-L2-Brigands.png',
+      '/t/foes/brigands-token.png',
     );
     expect(resolveTokenImageFor(BRIGANDS, '3d', { assetBaseUrl: '/t/' })).toBe(
       '/t/foes/brigands.png',
