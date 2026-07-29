@@ -55,6 +55,14 @@ interface GameStore {
   boardState: BoardState | null;
 
   /**
+   * A session's board state waiting for a board to mount (boot restore, or the gap
+   * left by `unregisterBoard` during a stage remount). Distinct from `boardState`,
+   * which means "the live board's current state" and gates `BoardPalette`'s ready
+   * check — leaving a stale value there would report a dead board as ready.
+   */
+  pendingBoardState: BoardState | null;
+
+  /**
    * The non-live parts of the game (meta / config / progress / playerBoards) are the
    * authoritative copy here; its `tower`/`board` fields are a last snapshot and are
    * ignored when capturing (live tower/board come from the sources). PRD-03/04 will add
@@ -152,171 +160,196 @@ function withProgress(session: GameSession, progress: GameSession['progress']): 
   };
 }
 
-export const useGameStore = create<GameStore>((set, get) => ({
-  towerSource,
-  boardSource: null,
-  boardSelection: null,
-  boardLocationPick: null,
+export const useGameStore = create<GameStore>((set, get) => {
+  /**
+   * Hydrate the live sources from a session and install it as the base. When the board
+   * isn't mounted yet (boot restore, or between an unmount and remount), park its state
+   * in `pendingBoardState` so `registerBoard` can apply it the moment a board exists.
+   */
+  const applySession = (session: GameSession) => {
+    const board = get().boardSource;
+    applyGameSession(session, towerSource, board);
+    set(board ? { session } : { session, pendingBoardState: session.board });
+  };
 
-  skullDropCount: towerSource.getSkullDropCount(),
-  brokenSeals: towerSource.getBrokenSeals(),
-  drumPositions: [
-    towerSource.getState().drum[0].position,
-    towerSource.getState().drum[1].position,
-    towerSource.getState().drum[2].position,
-  ],
-  boardState: null,
+  return {
+    towerSource,
+    boardSource: null,
+    boardSelection: null,
+    boardLocationPick: null,
 
-  session: createNewGameSession(createDefaultConfig()),
-  staleSession: null,
+    skullDropCount: towerSource.getSkullDropCount(),
+    brokenSeals: towerSource.getBrokenSeals(),
+    drumPositions: [
+      towerSource.getState().drum[0].position,
+      towerSource.getState().drum[1].position,
+      towerSource.getState().drum[2].position,
+    ],
+    boardState: null,
+    pendingBoardState: null,
 
-  dismissStaleSession() {
-    set({ staleSession: null });
-  },
-  discardStaleSession() {
-    clearLocalStorage();
-    set({ staleSession: null });
-  },
+    session: createNewGameSession(createDefaultConfig()),
+    staleSession: null,
 
-  registerBoard(source, selection, locationPick) {
-    boardUnsub?.();
-    boardUnsub = source.subscribe((state) => set({ boardState: state }));
-    set({ boardSource: source, boardSelection: selection, boardLocationPick: locationPick });
-  },
-  unregisterBoard() {
-    boardUnsub?.();
-    boardUnsub = null;
-    get().boardSource?.dispose();
-    set({ boardSource: null, boardState: null, boardSelection: null, boardLocationPick: null });
-  },
+    dismissStaleSession() {
+      set({ staleSession: null });
+    },
+    discardStaleSession() {
+      clearLocalStorage();
+      set({ staleSession: null });
+    },
 
-  dropSkull: () => towerSource.dropSkull(),
-  breakSeal: (seal) => towerSource.breakSeal(seal),
-  restoreSeal: (seal) => towerSource.restoreSeal(seal),
-  rotateDrum: (drumIndex, position) => towerSource.rotateDrum(drumIndex, position),
+    registerBoard(source, selection, locationPick) {
+      // Read before subscribing: `subscribe` calls its listener synchronously with the
+      // source's (empty) starting state, which would otherwise stomp what we're restoring.
+      const pending = get().pendingBoardState;
+      boardUnsub?.();
+      boardUnsub = source.subscribe((state) => set({ boardState: state }));
+      set({
+        boardSource: source,
+        boardSelection: selection,
+        boardLocationPick: locationPick,
+        pendingBoardState: null,
+      });
+      if (pending) source.load(pending);
+    },
+    unregisterBoard() {
+      boardUnsub?.();
+      boardUnsub = null;
+      get().boardSource?.dispose();
+      set({
+        boardSource: null,
+        boardState: null,
+        boardSelection: null,
+        boardLocationPick: null,
+        // Survive a remount (StrictMode's dev double-mount, HMR) — a fresh
+        // ManualBoardSource starts empty and needs this to come back.
+        pendingBoardState: get().boardState,
+      });
+    },
 
-  relayStatus: towerSource.status,
-  connectRelay: (url) => towerSource.connect(url),
-  disconnectRelay: () => towerSource.disconnect(),
+    dropSkull: () => towerSource.dropSkull(),
+    breakSeal: (seal) => towerSource.breakSeal(seal),
+    restoreSeal: (seal) => towerSource.restoreSeal(seal),
+    rotateDrum: (drumIndex, position) => towerSource.rotateDrum(drumIndex, position),
 
-  placeFoe: (foeId, foe, location, status) =>
-    get().boardSource?.placeFoe(foeId, foe, location, status),
-  removeFoe: (foeId) => get().boardSource?.removeFoe(foeId),
-  setFoeStatus: (foeId, status) => get().boardSource?.setFoeStatus(foeId, status),
-  placeHero: (heroId, location) => {
-    const owner = get().session.config.heroes.find((h) => h.heroId === heroId)?.homeKingdom;
-    get().boardSource?.placeHero(heroId, location, owner);
-  },
-  removeHero: (heroId) => get().boardSource?.removeHero(heroId),
-  setAdversary: (id, location) => get().boardSource?.setAdversary(id, location),
-  clearAdversary: () => get().boardSource?.clearAdversary(),
-  moveToken: (id, location) => get().boardSource?.moveToken(id, location),
-  addSkull: (location, n) => get().boardSource?.addSkull(location, n),
-  removeSkull: (location, n) => get().boardSource?.removeSkull(location, n),
-  setSpaceMarker: (location, marker, on) => get().boardSource?.setSpaceMarker(location, marker, on),
+    relayStatus: towerSource.status,
+    connectRelay: (url) => towerSource.connect(url),
+    disconnectRelay: () => towerSource.disconnect(),
 
-  captureSession() {
-    const { session, boardSource } = get();
-    if (!boardSource) throw new Error('Board not ready — cannot capture session yet.');
-    return captureSession(session, towerSource, boardSource);
-  },
+    placeFoe: (foeId, foe, location, status) =>
+      get().boardSource?.placeFoe(foeId, foe, location, status),
+    removeFoe: (foeId) => get().boardSource?.removeFoe(foeId),
+    setFoeStatus: (foeId, status) => get().boardSource?.setFoeStatus(foeId, status),
+    placeHero: (heroId, location) => {
+      const owner = get().session.config.heroes.find((h) => h.heroId === heroId)?.homeKingdom;
+      get().boardSource?.placeHero(heroId, location, owner);
+    },
+    removeHero: (heroId) => get().boardSource?.removeHero(heroId),
+    setAdversary: (id, location) => get().boardSource?.setAdversary(id, location),
+    clearAdversary: () => get().boardSource?.clearAdversary(),
+    moveToken: (id, location) => get().boardSource?.moveToken(id, location),
+    addSkull: (location, n) => get().boardSource?.addSkull(location, n),
+    removeSkull: (location, n) => get().boardSource?.removeSkull(location, n),
+    setSpaceMarker: (location, marker, on) =>
+      get().boardSource?.setSpaceMarker(location, marker, on),
 
-  newGame(config, name) {
-    const fresh = createNewGameSession(config, name);
-    const { boardSource } = get();
-    if (boardSource) applyGameSession(fresh, towerSource, boardSource);
-    set({ session: fresh });
-  },
+    captureSession() {
+      const { session, boardSource } = get();
+      if (!boardSource) throw new Error('Board not ready — cannot capture session yet.');
+      return captureSession(session, towerSource, boardSource);
+    },
 
-  resetSession() {
-    const { session, boardSource } = get();
-    const fresh = createNewGameSession(session.config, session.meta.name);
-    // Keep the session's identity; only the play state is wiped.
-    fresh.meta.id = session.meta.id;
-    fresh.meta.createdAt = session.meta.createdAt;
-    if (boardSource) applyGameSession(fresh, towerSource, boardSource);
-    set({ session: fresh });
-  },
+    newGame(config, name) {
+      applySession(createNewGameSession(config, name));
+    },
 
-  advanceTurn() {
-    const { session } = get();
-    set({ session: withProgress(session, nextTurn(session.progress, session.config.playerCount)) });
-  },
-  retreatTurn() {
-    const { session } = get();
-    set({
-      session: withProgress(session, previousTurn(session.progress, session.config.playerCount)),
-    });
-  },
-  goToMonth(month) {
-    const { session } = get();
-    set({ session: withProgress(session, setMonthOnProgress(session.progress, month)) });
-  },
-  dismissReminder(id) {
-    const { session } = get();
-    const dismissed = session.progress.dismissedReminders ?? [];
-    if (dismissed.includes(id)) return;
-    set({
-      session: withProgress(session, {
-        ...session.progress,
-        dismissedReminders: [...dismissed, id],
-      }),
-    });
-  },
+    resetSession() {
+      const { session } = get();
+      const fresh = createNewGameSession(session.config, session.meta.name);
+      // Keep the session's identity; only the play state is wiped.
+      fresh.meta.id = session.meta.id;
+      fresh.meta.createdAt = session.meta.createdAt;
+      applySession(fresh);
+    },
 
-  updatePlayerBoard(heroId, fn) {
-    const { session } = get();
-    const playerBoards = session.playerBoards.map((pb) => (pb.heroId === heroId ? fn(pb) : pb));
-    set({
-      session: {
-        ...session,
-        playerBoards,
-        meta: { ...session.meta, updatedAt: new Date().toISOString() },
-      },
-    });
-  },
+    advanceTurn() {
+      const { session } = get();
+      set({
+        session: withProgress(session, nextTurn(session.progress, session.config.playerCount)),
+      });
+    },
+    retreatTurn() {
+      const { session } = get();
+      set({
+        session: withProgress(session, previousTurn(session.progress, session.config.playerCount)),
+      });
+    },
+    goToMonth(month) {
+      const { session } = get();
+      set({ session: withProgress(session, setMonthOnProgress(session.progress, month)) });
+    },
+    dismissReminder(id) {
+      const { session } = get();
+      const dismissed = session.progress.dismissedReminders ?? [];
+      if (dismissed.includes(id)) return;
+      set({
+        session: withProgress(session, {
+          ...session.progress,
+          dismissedReminders: [...dismissed, id],
+        }),
+      });
+    },
 
-  saveSession() {
-    saveToLocalStorage(get().captureSession());
-  },
+    updatePlayerBoard(heroId, fn) {
+      const { session } = get();
+      const playerBoards = session.playerBoards.map((pb) => (pb.heroId === heroId ? fn(pb) : pb));
+      set({
+        session: {
+          ...session,
+          playerBoards,
+          meta: { ...session.meta, updatedAt: new Date().toISOString() },
+        },
+      });
+    },
 
-  loadSession() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw == null) return false;
-    let loaded: GameSession;
-    try {
-      loaded = deserializeSession(raw);
-    } catch (err) {
-      // Refuse, don't migrate: an older save (most often GAME_SESSION_SCHEMA_VERSION) can't be
-      // read by this build. Surface the raw bytes via staleSession so the dialog can offer a
-      // download before the user's only remaining option is to discard it.
-      if (err instanceof GameSessionLoadError) {
-        set({ staleSession: { raw, error: err } });
-        return false;
+    saveSession() {
+      saveToLocalStorage(get().captureSession());
+    },
+
+    loadSession() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw == null) return false;
+      let loaded: GameSession;
+      try {
+        loaded = deserializeSession(raw);
+      } catch (err) {
+        // Refuse, don't migrate: an older save (most often GAME_SESSION_SCHEMA_VERSION) can't be
+        // read by this build. Surface the raw bytes via staleSession so the dialog can offer a
+        // download before the user's only remaining option is to discard it.
+        if (err instanceof GameSessionLoadError) {
+          set({ staleSession: { raw, error: err } });
+          return false;
+        }
+        throw err;
       }
-      throw err;
-    }
-    const { boardSource } = get();
-    if (boardSource) applyGameSession(loaded, towerSource, boardSource);
-    set({ session: loaded });
-    return true;
-  },
+      applySession(loaded);
+      return true;
+    },
 
-  exportSession() {
-    downloadSession(get().captureSession());
-  },
+    exportSession() {
+      downloadSession(get().captureSession());
+    },
 
-  copySession() {
-    return copySessionToClipboard(get().captureSession());
-  },
+    copySession() {
+      return copySessionToClipboard(get().captureSession());
+    },
 
-  importSessionText(text) {
-    const loaded = parseSessionText(text);
-    const { boardSource } = get();
-    if (boardSource) applyGameSession(loaded, towerSource, boardSource);
-    set({ session: loaded });
-  },
-}));
+    importSessionText(text) {
+      applySession(parseSessionText(text));
+    },
+  };
+});
 
 // Project tower changes into primitive snapshots after the store exists.
 towerSource.subscribe((state) => {
@@ -328,3 +361,40 @@ towerSource.subscribe((state) => {
 });
 
 towerSource.onStatus((relayStatus) => useGameStore.setState({ relayStatus }));
+
+/**
+ * Debounce-persist the game to localStorage on every change, so a refresh resumes where
+ * the player left off (PRD-04 FR-04.7). Not started automatically on import — `main.tsx`
+ * calls this once at boot — so importing the store in a test never spins up a background
+ * timer that writes to localStorage.
+ */
+export function startAutosave(delayMs = 750): Unsubscribe {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const save = () => {
+    const s = useGameStore.getState();
+    // No board yet → captureSession throws. A stale save on disk must never be
+    // clobbered — the dialog needs those exact bytes to offer a download.
+    if (!s.boardSource || s.staleSession) return;
+    try {
+      saveToLocalStorage(s.captureSession());
+    } catch (err) {
+      // Quota exceeded / private browsing — manual Save still surfaces a failure to the user.
+      console.warn('Autosave failed:', err);
+    }
+  };
+  const flush = () => {
+    clearTimeout(timer);
+    save();
+  };
+  const unsub = useGameStore.subscribe(() => {
+    clearTimeout(timer);
+    timer = setTimeout(save, delayMs);
+  });
+  // A refresh inside the debounce window would otherwise lose the most recent action.
+  window.addEventListener('pagehide', flush);
+  return () => {
+    unsub();
+    window.removeEventListener('pagehide', flush);
+    clearTimeout(timer);
+  };
+}

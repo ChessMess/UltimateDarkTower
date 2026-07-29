@@ -29,7 +29,7 @@ vi.mock('@/session', async (importOriginal) => {
 });
 
 // Imported AFTER the mock so the store picks up the mocked persistence functions.
-const { useGameStore } = await import('./gameStore');
+const { useGameStore, startAutosave } = await import('./gameStore');
 const sessionMod = await import('@/session');
 
 function emptyBoardState(): BoardState {
@@ -111,6 +111,9 @@ describe('useGameStore', () => {
     useGameStore.getState().unregisterBoard();
     useGameStore.setState({
       session: sessionMod.createNewGameSession(sessionMod.createDefaultConfig()),
+      // `unregisterBoard` above just parked the previous test's board state; without this
+      // reset it leaks into this test's first `registerBoard` as a stray `load` call.
+      pendingBoardState: null,
     });
   });
 
@@ -314,6 +317,47 @@ describe('useGameStore', () => {
       expect(board.calls.some((c) => c.method === 'load')).toBe(true);
     });
 
+    it('loadSession hydrates the tower even with no board registered, and parks the board state', () => {
+      const base = useGameStore.getState().session;
+      const loaded: GameSession = {
+        ...base,
+        meta: { ...base.meta, name: 'Loaded Game' },
+        tower: { state: base.tower.state, brokenSeals: [{ level: 'top', side: 'north' }] },
+        board: { tokens: { 'foe:ghost': { typeId: 'foe', location: 'Narrow Vale' } } } as never,
+      };
+      localStorage.setItem(sessionMod.STORAGE_KEY, sessionMod.serializeSession(loaded));
+
+      const ok = useGameStore.getState().loadSession();
+
+      expect(ok).toBe(true);
+      expect(useGameStore.getState().session.meta.name).toBe('Loaded Game');
+      expect(useGameStore.getState().towerSource.getBrokenSeals()).toEqual([
+        { level: 'top', side: 'north' },
+      ]);
+      expect(useGameStore.getState().pendingBoardState).toEqual(loaded.board);
+
+      // Registering a board afterwards adopts the parked state.
+      const board = new FakeBoardSource();
+      useGameStore.getState().registerBoard(board, {} as never, {} as never);
+      expect(board.calls).toEqual([{ method: 'load', args: [loaded.board] }]);
+      expect(useGameStore.getState().pendingBoardState).toBeNull();
+    });
+
+    it('unregisterBoard parks the board state so a remounted board is re-hydrated', () => {
+      const first = new FakeBoardSource();
+      useGameStore.getState().registerBoard(first, {} as never, {} as never);
+      first.state = { tokens: { 'hero:h1': { typeId: 'hero', location: 'Delmsmire' } } } as never;
+      for (const l of first.listeners) l(first.state);
+      expect(useGameStore.getState().boardState).toEqual(first.state);
+
+      useGameStore.getState().unregisterBoard();
+      expect(useGameStore.getState().pendingBoardState).toEqual(first.state);
+
+      const second = new FakeBoardSource();
+      useGameStore.getState().registerBoard(second, {} as never, {} as never);
+      expect(second.calls).toEqual([{ method: 'load', args: [first.state] }]);
+    });
+
     it('loadSession refuses a save with an incompatible schemaVersion, surfacing it as staleSession', () => {
       const current = useGameStore.getState().session;
       const stale = {
@@ -410,6 +454,77 @@ describe('useGameStore', () => {
       expect(boards.find((b) => b.heroId === 'h2')?.warriors).toBe(
         sessionMod.createPlayerBoard('h2', 'south').warriors,
       );
+    });
+  });
+
+  describe('startAutosave', () => {
+    it('debounce-saves after a change, once a board is registered', () => {
+      vi.useFakeTimers();
+      try {
+        const board = new FakeBoardSource();
+        useGameStore.getState().registerBoard(board, {} as never, {} as never);
+        const stop = startAutosave(750);
+
+        useGameStore.getState().dropSkull();
+        vi.advanceTimersByTime(749);
+        expect(sessionMod.saveToLocalStorage).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+        expect(sessionMod.saveToLocalStorage).toHaveBeenCalledTimes(1);
+
+        stop();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('does not save while no board is registered', () => {
+      vi.useFakeTimers();
+      try {
+        const stop = startAutosave(750);
+        useGameStore.getState().dropSkull();
+        vi.advanceTimersByTime(750);
+        expect(sessionMod.saveToLocalStorage).not.toHaveBeenCalled();
+        stop();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('does not save while a stale session is pending', () => {
+      vi.useFakeTimers();
+      try {
+        const board = new FakeBoardSource();
+        useGameStore.getState().registerBoard(board, {} as never, {} as never);
+        useGameStore.setState({
+          staleSession: { raw: '{}', error: new sessionMod.GameSessionLoadError('stale') },
+        });
+        const stop = startAutosave(750);
+
+        useGameStore.getState().dropSkull();
+        vi.advanceTimersByTime(750);
+
+        expect(sessionMod.saveToLocalStorage).not.toHaveBeenCalled();
+        stop();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('stops saving once unsubscribed', () => {
+      vi.useFakeTimers();
+      try {
+        const board = new FakeBoardSource();
+        useGameStore.getState().registerBoard(board, {} as never, {} as never);
+        const stop = startAutosave(750);
+
+        stop();
+        useGameStore.getState().dropSkull();
+        vi.advanceTimersByTime(750);
+
+        expect(sessionMod.saveToLocalStorage).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });

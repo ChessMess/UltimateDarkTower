@@ -29,12 +29,17 @@ export function captureSession(
   return next;
 }
 
-/** Push a loaded session's tower & board into the live sources (hydration). */
+/**
+ * Push a loaded session's tower & board into the live sources (hydration).
+ * `board` may be null when the stage hasn't mounted yet (e.g. a boot-time restore) —
+ * the tower still hydrates; the caller is responsible for applying `session.board`
+ * once a board source becomes available.
+ */
 export function applyGameSession(
   session: GameSession,
   tower: TowerStateSource,
-  board: BoardStateSource,
+  board: BoardStateSource | null,
 ): void {
   tower.load(session.tower.state, session.tower.brokenSeals);
-  board.load(session.board);
+  board?.load(session.board);
 }
