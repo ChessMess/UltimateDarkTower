@@ -72,9 +72,7 @@ describe('BoardMap2D', () => {
     const by = BOARD_IMAGE_INFO.height / 2;
     const deg = Math.round((Math.atan2(cy - by, cx - bx) * (180 / Math.PI) - 90) * 100) / 100;
     expect(foe.getAttribute('transform')).toBe(`translate(${cx} ${cy}) rotate(${deg})`);
-    expect(foe.querySelector('image')?.getAttribute('href')).toBe(
-      '/t/foes/Foe-Token-L2-Brigands.png',
-    );
+    expect(foe.querySelector('image')?.getAttribute('href')).toBe('/t/foes/brigands-token.png');
   });
 
   it('renders heroes with the programmatic fallback (no hero art)', () => {
@@ -104,9 +102,7 @@ describe('BoardMap2D', () => {
     const dragons = host.querySelector(
       '.udt-token[data-kind="foe"][data-id="foe-2"]',
     ) as SVGGElement;
-    expect(dragons.querySelector('image')?.getAttribute('href')).toBe(
-      '/t/foes/Foe-Token-L4-Dragon.png',
-    );
+    expect(dragons.querySelector('image')?.getAttribute('href')).toBe('/t/foes/dragon-token.png');
   });
 
   it('renders hero art from a tokenArt override (id with no roster-default art)', () => {
