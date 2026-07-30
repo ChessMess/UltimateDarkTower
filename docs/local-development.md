@@ -77,6 +77,9 @@ above.)
   Shortcut for both steps together: `pnpm run dev:relay-cli`. Use `dev` for
   a `tsc --build --watch` loop instead.
 
+  Opens on a live status board when run from a real terminal; set
+  `RELAY_DASHBOARD=0` for plain log lines instead.
+
 - **Relay Electron** (`ultimatedarktowerrelay-electron`) — BLE tower emulator
   desktop app:
 

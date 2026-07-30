@@ -18,9 +18,15 @@ That's the whole install. Needs **Node >= 22.13** and nothing else — the BLE n
 prebuilt binaries for Windows (x64/x86), macOS (Intel/Apple Silicon) and Linux (x64/arm/arm64), so
 there is no compile step. (Windows-on-ARM has no prebuild and will attempt to build from source.)
 
-It prints a URL for the hosted UTDD build on startup; open that and click **Connect**. Full
-player-facing walkthrough:
+It opens on a live status board — relay URLs (including your LAN address, so a phone can
+connect), tower/BLE state, connected clients, and an activity feed — with the URL to open and
+click **Connect** shown in the RELAY panel. Full player-facing walkthrough:
 **[Connecting the official app](https://chessmess.github.io/UltimateDarkTower/digital/connecting-the-official-app.html)**.
+
+Keys: `q` quit, `r` resend the last command, `l` toggle JSONL logging. Set `RELAY_DASHBOARD=0` to
+fall back to plain log lines instead (useful over a dumb pipe, or if you just prefer it) — the
+board also disables itself automatically when stdout/stdin aren't both a real terminal (Docker,
+systemd, a piped log).
 
 ### From a checkout, for development
 
@@ -44,12 +50,15 @@ TOWER_SOURCE=bridge node dist/index.js # app drives the emulator; forward to a r
 
 Other env vars: `RELAY_PORT` (default `8765`), `TOWER_DIS_*` (Device Information Service
 overrides), `LOGGING=0` (disable JSONL file logging), `RELAY_LOG_DIR` (log directory, default
-`./logs` — **relative to the current directory**, which under `npx` is wherever you ran it). See
-the header comment in [`src/index.ts`](src/index.ts) for the full list.
+`./logs` — **relative to the current directory**, which under `npx` is wherever you ran it),
+`RELAY_DASHBOARD=0` (disable the live status board). See the header comment in
+[`src/index.ts`](src/index.ts) for the full list.
 
 ## Files
 
 - `src/index.ts` — daemon entry point (source selection, relay wiring, graceful shutdown).
+- `src/dashboard.tsx` — the Ink status board.
+- `src/format.ts` — pure formatting helpers for the board (unit-tested in `format.test.ts`).
 - `src/replayEvents.ts` — replay a recorded JSONL event log (`pnpm replay`).
 - `src/analyzeLogs.ts` — summarize a recorded session (`pnpm analyze`).
 - `src/mockConsumer.ts` — a minimal WebSocket consumer for manual testing against the relay.

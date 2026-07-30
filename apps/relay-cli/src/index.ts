@@ -13,21 +13,24 @@
  *   TOWER_SOURCE=bridge node dist/index.js # app drives TowerEmulator; forward to a real master tower
  *
  * Environment:
- *   RELAY_PORT    TCP port for the WebSocket relay (default 8765).
- *   TOWER_SOURCE  'emulator' (default; legacy 'fake' accepted) → BLE TowerEmulator; 'mock' → MockTower;
- *                 'real' → RealTower; 'bridge' → TowerEmulator (app connects) + RealTower (forwarded to it).
- *   TOWER_DIS_*   Device Information Service overrides for the tower emulator (see readDeviceInfoFromEnv).
- *   LOGGING       '0' disables JSONL file logging (default enabled).
- *   RELAY_LOG_DIR Directory for the JSONL logs (default './logs', relative to the
- *                 current working directory — which under `npx` is wherever the
- *                 player happened to run the command).
+ *   RELAY_PORT       TCP port for the WebSocket relay (default 8765).
+ *   TOWER_SOURCE     'emulator' (default; legacy 'fake' accepted) → BLE TowerEmulator; 'mock' → MockTower;
+ *                    'real' → RealTower; 'bridge' → TowerEmulator (app connects) + RealTower (forwarded to it).
+ *   TOWER_DIS_*      Device Information Service overrides for the tower emulator (see readDeviceInfoFromEnv).
+ *   LOGGING          '0' disables JSONL file logging (default enabled).
+ *   RELAY_LOG_DIR    Directory for the JSONL logs (default './logs', relative to the
+ *                    current working directory — which under `npx` is wherever the
+ *                    player happened to run the command).
+ *   RELAY_DASHBOARD  '0' disables the live Ink status board even on a TTY, falling back
+ *                    to plain console lines (default: board on when stdout+stdin are TTYs).
  *
  * Steps:
  *   1. Construct the logger, the semantic-event log, parser, observer.
  *   2. Select the tower source (emulator / mock / real); build the synthesizer for sink-capable sources.
- *   3. Wire source 'command' → broadcast; lifecycle events → paused/resumed.
+ *   3. Wire source 'command' → broadcast; lifecycle events → paused/resumed; mutate the live
+ *      dashboard status object alongside the existing JSONL logging.
  *   4. Start the relay, then start the source.
- *   5. Gracefully shut down on SIGINT/SIGTERM.
+ *   5. Gracefully shut down on SIGINT/SIGTERM (or 'q'/Ctrl-C in the dashboard).
  */
 
 import {
@@ -51,9 +54,13 @@ import {
   makeAppDisconnectedEvent,
   makeConsumerJoinedEvent,
   makeConsumerLeftEvent,
+  type LogLevel,
 } from 'ultimatedarktowerrelay-shared';
+import { createDefaultTowerState } from 'ultimatedarktower';
+import { startDashboard, type RelayStatus } from './dashboard.js';
 
 const DEFAULT_PORT = 8765;
+const MAX_ACTIVITY_ENTRIES = 200;
 
 /** Hosted UTDD build — the UI this relay drives. Printed on startup. */
 const UTDD_URL = 'https://chessmess.github.io/UltimateDarkTower/digital/';
@@ -78,6 +85,9 @@ function readDeviceInfoFromEnv(): Partial<DeviceInformation> {
   return info;
 }
 
+/** Mounted only when useDashboard is true; unmounted before shutdown/fatal-error output. */
+let stopDashboard: (() => void) | null = null;
+
 async function main(): Promise<void> {
   // TOWER_SOURCE: 'emulator' (default) | 'mock' | 'real' | 'bridge'. The legacy
   // value 'fake' is accepted as a back-compat alias for 'emulator' (anything not
@@ -90,7 +100,6 @@ async function main(): Promise<void> {
         : process.env['TOWER_SOURCE'] === 'bridge'
           ? 'bridge'
           : 'emulator';
-  console.log(`UltimateDarkTowerRelay v${PROTOCOL_VERSION} (source: ${sourceMode})`);
 
   const port = Number(process.env['RELAY_PORT'] ?? DEFAULT_PORT);
   const loggingEnabled = process.env['LOGGING'] !== '0';
@@ -98,6 +107,46 @@ async function main(): Promise<void> {
   // command, not the package directory — RELAY_LOG_DIR is the escape hatch for
   // anyone who'd rather not have a logs/ folder appear next to them.
   const logDir = process.env['RELAY_LOG_DIR'] ?? './logs';
+
+  // useInput()/setRawMode() throw outright when stdin isn't a TTY (piped, Docker
+  // -d, systemd), so both streams must be checked, not just stdout.
+  const useDashboard =
+    process.stdout.isTTY === true &&
+    process.stdin.isTTY === true &&
+    process.env['RELAY_DASHBOARD'] !== '0';
+
+  const status: RelayStatus = {
+    version: PROTOCOL_VERSION,
+    sourceMode,
+    port,
+    startedAt: Date.now(),
+    utddUrl: UTDD_URL,
+    loggingEnabled,
+    towerEmulatorState: 'idle',
+    companionConnected: false,
+    bleAdapterState: null,
+    towerState: createDefaultTowerState(),
+    commandCount: 0,
+    lastCommandAt: null,
+    skullDropCount: null,
+    clients: [],
+    activity: [],
+  };
+
+  // Records a status-line for the dashboard's activity feed. In non-dashboard
+  // mode this is the only thing standing in for the plain console.log/warn
+  // lines the CLI used to print directly — same text, same stream (warn/error
+  // go to stderr), just routed through one place.
+  function note(kind: LogLevel, text: string): void {
+    status.activity.push({ ts: Date.now(), kind, text: text.trim() });
+    if (status.activity.length > MAX_ACTIVITY_ENTRIES) status.activity.shift();
+    if (useDashboard) return;
+    if (kind === 'warn' || kind === 'error') console.warn(text);
+    else console.log(text);
+  }
+
+  note('event', `UltimateDarkTowerRelay v${PROTOCOL_VERSION} (source: ${sourceMode})`);
+
   const logger = new HostLogger(logDir, loggingEnabled);
   // Append-only JSONL log of semantic RelayEvents (PRD §7 / FR-6), separate from
   // the HostLogger's byte/command + human-readable debug log. EventLog assigns its
@@ -144,6 +193,7 @@ async function main(): Promise<void> {
   // so onClientAction can drive it; its semantic events (command-received,
   // skull-dropped, calibration-complete, heartbeat) are persisted to the EventLog.
   const synth = sink ? new NotificationSynthesizer(sink) : null;
+  if (synth) status.skullDropCount = synth.skullDropCount;
   synth?.on('event', (event) => eventLog.append(event));
 
   const relay = new RelayServer({
@@ -156,13 +206,13 @@ async function main(): Promise<void> {
       );
       logger.writeClientEntries(clientId, entries);
     },
-    onClientConnected: (clientId, label, observer) => {
+    onClientConnected: (clientId, label, observerClient) => {
       logger.logEvent(
         'event',
         'host',
-        `Client connected: ${label ?? clientId.slice(0, 8)}${observer ? ' (observer)' : ''}`,
+        `Client connected: ${label ?? clientId.slice(0, 8)}${observerClient ? ' (observer)' : ''}`,
       );
-      eventLog.append(makeConsumerJoinedEvent(clientId, label, observer));
+      eventLog.append(makeConsumerJoinedEvent(clientId, label, observerClient));
     },
     onClientDisconnected: (clientId, label) => {
       logger.logEvent('event', 'host', `Client disconnected: ${label ?? clientId.slice(0, 8)}`);
@@ -186,6 +236,7 @@ async function main(): Promise<void> {
         return;
       }
       const sent = synth.dropSkull();
+      status.skullDropCount = synth.skullDropCount;
       if (!sent)
         logger.logEvent(
           'warn',
@@ -194,15 +245,22 @@ async function main(): Promise<void> {
         );
     },
   });
+  relay.on('client-change', (clients) => {
+    status.clients = clients;
+  });
 
   // Wire tower commands → relay broadcast.
   source.on('command', (data) => {
     const parsed = parser.parse(data);
     if (!parsed.valid) {
-      console.warn('Dropping invalid command: wrong byte length', Array.from(data).length);
+      note('warn', `Dropping invalid command: wrong byte length ${Array.from(data).length}`);
       return;
     }
     observer.onCommandReceived(data);
+    status.towerState = observer.getCurrentState();
+    status.commandCount = observer.getCommandCount();
+    status.lastCommandAt = observer.getLastReceivedAt();
+    if (parsed.description) note('cmd', parsed.description);
     // parsed.description carries decoded snd/ovr annotations (undefined when none).
     logger.logCommand('companion→host', data, null, 'companion', parsed.description);
     const seq = relay.broadcast(data);
@@ -241,17 +299,21 @@ async function main(): Promise<void> {
   }
   source.on('state-change', (state) => {
     relay.setTowerEmulatorState(state);
+    status.towerEmulatorState = state;
     logger.logEvent('event', 'host', `Tower source state: ${state}`);
   });
   source.on('companion-connected', () => {
+    status.companionConnected = true;
     logger.logEvent('event', 'host', 'Companion app connected');
     eventLog.append(makeAppConnectedEvent());
     relay.broadcastResumed();
   });
   source.on('companion-disconnected', () => {
+    status.companionConnected = false;
     logger.logEvent('event', 'host', 'Companion app disconnected');
     eventLog.append(makeAppDisconnectedEvent());
     synth?.reset();
+    if (synth) status.skullDropCount = synth.skullDropCount;
     relay.broadcastPaused('Companion app disconnected from tower source');
   });
   if (source instanceof TowerEmulator) {
@@ -262,17 +324,71 @@ async function main(): Promise<void> {
         `Ghost BLE connection detected (was ${fromState}) — recovering`,
       );
     });
+    // Only TowerEmulator exposes BLE adapter state; mock/real sources have no
+    // adapter to report (status.bleAdapterState stays null for them).
+    status.bleAdapterState = source.getBleAdapterState();
+    source.on('ble-adapter-state', (state) => {
+      status.bleAdapterState = state;
+    });
+  }
+
+  // relay-core writes unstructured console.log/warn/error from ~30 call sites
+  // (TowerEmulator, RealTower, RelayServer, ConnectionManager, ObserverDisplay).
+  // With the dashboard mounted those would print above the live frame and make
+  // a full-screen board crawl down the terminal, so redirect them into the same
+  // activity feed (still forwarded to the JSONL log so they survive there too).
+  // Left untouched in non-dashboard mode — piped/Docker/systemd users still get
+  // today's exact raw console output.
+  let restoreConsole: (() => void) | null = null;
+  if (useDashboard) {
+    const origLog = console.log.bind(console);
+    const origWarn = console.warn.bind(console);
+    const origError = console.error.bind(console);
+    const toLine = (args: unknown[]): string =>
+      args
+        .map((a) =>
+          typeof a === 'string'
+            ? a
+            : a instanceof Error
+              ? (a.stack ?? a.message)
+              : JSON.stringify(a),
+        )
+        .join(' ');
+    console.log = (...args: unknown[]) => {
+      const line = toLine(args);
+      status.activity.push({ ts: Date.now(), kind: 'event', text: line });
+      if (status.activity.length > MAX_ACTIVITY_ENTRIES) status.activity.shift();
+      logger.logEvent('event', 'console', line);
+    };
+    console.warn = (...args: unknown[]) => {
+      const line = toLine(args);
+      status.activity.push({ ts: Date.now(), kind: 'warn', text: line });
+      if (status.activity.length > MAX_ACTIVITY_ENTRIES) status.activity.shift();
+      logger.logEvent('warn', 'console', line);
+    };
+    console.error = (...args: unknown[]) => {
+      const line = toLine(args);
+      status.activity.push({ ts: Date.now(), kind: 'error', text: line });
+      if (status.activity.length > MAX_ACTIVITY_ENTRIES) status.activity.shift();
+      logger.logEvent('error', 'console', line);
+    };
+    restoreConsole = () => {
+      console.log = origLog;
+      console.warn = origWarn;
+      console.error = origError;
+    };
   }
 
   await relay.start();
-  console.log(`Relay server listening on ws://0.0.0.0:${port}`);
-  if (loggingEnabled) console.log(`Event log: ${eventLog.getPath()}`);
+  note('event', `Relay server listening on ws://0.0.0.0:${port}`);
+  if (loggingEnabled) note('event', `Event log: ${eventLog.getPath()}`);
 
   await source.startAdvertising();
   if (bridgeTarget) {
     await bridgeTarget.startAdvertising(); // connects to the real master tower (retries in background)
   }
-  console.log(
+  note(
+    'event',
     sourceMode === 'real'
       ? 'Connecting to real tower — relaying its state to consumers.'
       : sourceMode === 'mock'
@@ -285,11 +401,17 @@ async function main(): Promise<void> {
   // The player's next action shouldn't require finding a doc. UTDD is served over
   // https, but localhost is a "potentially trustworthy" origin and so is exempt
   // from mixed-content blocking — the hosted page can reach this ws:// relay.
-  console.log(`\nNow open  ${UTDD_URL}  and click Connect.`);
-  console.log(`Relay address for the "Official app" panel: ws://localhost:${port}`);
+  note('event', `Now open  ${UTDD_URL}  and click Connect.`);
+  note('event', `Relay address for the "Official app" panel: ws://localhost:${port}`);
 
-  // Graceful shutdown.
+  // Graceful shutdown. Guarded against double-invocation — the dashboard's 'q'/
+  // Ctrl-C path and an external SIGTERM (e.g. a supervisor escalating after
+  // SIGINT) could both reach here.
+  let shuttingDown = false;
   const shutdown = async (): Promise<void> => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    restoreConsole?.();
     console.log('\nShutting down…');
     synth?.destroy();
     await source.stopAdvertising();
@@ -300,16 +422,33 @@ async function main(): Promise<void> {
     process.exit(0);
   };
 
-  process.on('SIGINT', () => void shutdown());
-  process.on('SIGTERM', () => void shutdown());
-
-  console.log(`Relay port: ${port}`);
-}
-
-// Only run as a standalone process — not when imported.
-if (require.main === module) {
-  main().catch((err) => {
-    console.error('Fatal error:', err);
-    process.exit(1);
+  process.on('SIGINT', () => {
+    stopDashboard?.();
+    void shutdown();
   });
+  process.on('SIGTERM', () => {
+    stopDashboard?.();
+    void shutdown();
+  });
+
+  if (useDashboard) {
+    stopDashboard = startDashboard(status, {
+      quit: () => void shutdown(),
+      resend: () => relay.resendLastCommand(),
+      toggleLogging: () => {
+        const enabled = logger.setEnabled(!logger.enabled);
+        eventLog.setEnabled(enabled);
+        relay.broadcastLogConfig(enabled);
+        status.loggingEnabled = enabled;
+      },
+    });
+  } else {
+    console.log(`Relay port: ${port}`);
+  }
 }
+
+main().catch((err) => {
+  stopDashboard?.();
+  console.error('Fatal error:', err);
+  process.exit(1);
+});
