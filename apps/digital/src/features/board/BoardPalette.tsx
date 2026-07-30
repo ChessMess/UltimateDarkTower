@@ -16,8 +16,11 @@ import {
   LOCATIONS,
   MARKER_PRESETS,
   adversaryName,
+  foeLevelOf,
   foeName,
   heroName,
+  levelLabel,
+  statusForLevel,
 } from './boardData';
 import { LocationSelect } from './LocationSelect';
 
@@ -39,13 +42,13 @@ export function BoardPalette() {
   const boardState = useBoardState();
   const session = useSession();
   const locationPick = useBoardLocationPick();
-  const { placeFoe, placeHero, setAdversary, addSkull, setSpaceMarker } = useBoardActions();
+  const { placeFoe, placeHero, setAdversary, addSkull, setSpaceMarker, setLevelStatus } =
+    useBoardActions();
 
   const heroes = session.config.heroes;
 
   const [kind, setKind] = useState<PlaceKind>('foe');
   const [foeType, setFoeType] = useState(FOE_LEVELS[0]?.foes[0]?.id ?? '');
-  const [foeStatus, setFoeStatus] = useState<FoeStatus>('ready');
   const [heroId, setHeroId] = useState(heroes[0]?.heroId ?? '');
   const [advId, setAdvId] = useState(session.config.adversary ?? ADVERSARY_ROSTER[0]?.id ?? '');
   const [marker, setMarker] = useState<string>(MARKER_PRESETS[0]);
@@ -69,9 +72,13 @@ export function BoardPalette() {
   const placeAt = (loc: string) => {
     if (!loc) return;
     switch (kind) {
-      case 'foe':
-        if (foeType) placeFoe(`${foeType}-${++foeSeq}`, foeType, loc, foeStatus);
+      case 'foe': {
+        if (!foeType) break;
+        const level = foeLevelOf(foeType);
+        const status = level && boardState ? statusForLevel(boardState, level) : undefined;
+        placeFoe(`${foeType}-${++foeSeq}`, foeType, loc, status);
         break;
+      }
       case 'hero':
         if (effectiveHeroId) placeHero(effectiveHeroId, loc);
         break;
@@ -155,32 +162,20 @@ export function BoardPalette() {
       </label>
 
       {kind === 'foe' && (
-        <>
-          <label>
-            Foe
-            <select value={foeType} onChange={(e) => setFoeType(e.target.value)}>
-              {FOE_LEVELS.map((group) => (
-                <optgroup key={group.level} label={`Level ${group.level}`}>
-                  {group.foes.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
-          <label>
-            Status
-            <select value={foeStatus} onChange={(e) => setFoeStatus(e.target.value as FoeStatus)}>
-              {FOE_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </label>
-        </>
+        <label>
+          Foe
+          <select value={foeType} onChange={(e) => setFoeType(e.target.value)}>
+            {FOE_LEVELS.map((group) => (
+              <optgroup key={group.level} label={`Level ${group.level}`}>
+                {group.foes.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
       )}
 
       {kind === 'hero' &&
@@ -248,6 +243,28 @@ export function BoardPalette() {
           </button>
         )}
       </div>
+
+      {boardState && (
+        <>
+          <h3>Threat status</h3>
+          <p className="muted">Applies to every foe of that level, placed or not yet placed.</p>
+          {FOE_LEVELS.map((group) => (
+            <label key={group.level}>
+              {levelLabel(session.config.foes, group.level)}
+              <select
+                value={statusForLevel(boardState, group.level)}
+                onChange={(e) => setLevelStatus(group.level, e.target.value as FoeStatus)}
+              >
+                {FOE_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </>
+      )}
 
       {boardState && (
         <p className="muted board-counts">

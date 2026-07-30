@@ -7,10 +7,12 @@
 import { create } from 'zustand';
 import type {
   BoardState,
+  FoeLevel,
   FoeStatus,
   LocationPickStore,
   SelectionStore,
 } from 'ultimatedarktowerboard';
+import { FOE_BY_ID } from 'ultimatedarktowerboard';
 import { ManualTowerSource } from '@/sources/ManualTowerSource';
 import { BridgeTowerSource, type RelayStatus } from '@/sources/BridgeTowerSource';
 import type { BoardStateSource, SealRef, TowerStateSource, Unsubscribe } from '@/sources/types';
@@ -130,6 +132,13 @@ interface GameStore {
   placeFoe(foeId: string, foe: string, location: string, status?: FoeStatus): void;
   removeFoe(foeId: string): void;
   setFoeStatus(foeId: string, status: FoeStatus): void;
+  /**
+   * Cascade a status to every currently-placed foe of `level` and remember it for the next
+   * placement (real-rules: threat status applies to a whole level, not a single foe). Stored in
+   * `BoardState.meta.levelStatus` so it's settable independent of what's currently placed, and
+   * round-trips with the session for free.
+   */
+  setLevelStatus(level: FoeLevel, status: FoeStatus): void;
   /** Place a hero; the owning kingdom is looked up from the session config for token color. */
   placeHero(heroId: string, location: string): void;
   removeHero(heroId: string): void;
@@ -241,6 +250,22 @@ export const useGameStore = create<GameStore>((set, get) => {
       get().boardSource?.placeFoe(foeId, foe, location, status),
     removeFoe: (foeId) => get().boardSource?.removeFoe(foeId),
     setFoeStatus: (foeId, status) => get().boardSource?.setFoeStatus(foeId, status),
+    setLevelStatus: (level, status) => {
+      const board = get().boardState;
+      const source = get().boardSource;
+      if (!board || !source) return;
+      const tokens = { ...board.tokens };
+      for (const [id, token] of Object.entries(tokens)) {
+        if (token.typeId === 'foe' && FOE_BY_ID[token.art ?? '']?.level === level) {
+          tokens[id] = { ...token, data: { ...token.data, status } };
+        }
+      }
+      const levelStatus = {
+        ...(board.meta?.levelStatus as Partial<Record<FoeLevel, FoeStatus>> | undefined),
+        [level]: status,
+      };
+      source.load({ ...board, tokens, meta: { ...board.meta, levelStatus } });
+    },
     placeHero: (heroId, location) => {
       const owner = get().session.config.heroes.find((h) => h.heroId === heroId)?.homeKingdom;
       get().boardSource?.placeHero(heroId, location, owner);

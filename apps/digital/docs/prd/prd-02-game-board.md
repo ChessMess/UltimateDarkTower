@@ -33,8 +33,9 @@ this manually).
 - _As a player_, I can move a hero from one location to an adjacent one, so I can take my movement.
 - _As a player_, I can add skulls to a building and see it become destroyed at the 4th skull, so the
   board reflects skull emergence.
-- _As a player_, I can place the adversary when it spawns and advance a foe's status, so the board
-  tracks escalation.
+- _As a player_, I can place the adversary when it spawns and advance a foe level's threat status,
+  so the board tracks escalation the way the official game does — as a whole level, not one foe
+  at a time.
 - _As a player_, I can switch between 2D map and 3D disc, so I can use whichever view I prefer.
 
 ## 4. Functional Requirements
@@ -55,10 +56,14 @@ this manually).
    movement is **not enforced** (the app/player owns rules).
 6. **FR-02.6** The player MUST be able to add/remove **skulls on a building**; reaching 4 skulls MUST
    mark the building destroyed (per `BoardState` building semantics).
-7. **FR-02.7** The player MUST be able to set a foe's **status** to any of the game's five values:
-   `panicked | unsteady | ready | savage | lethal` (lowest → highest threat). The `ultimatedarktower`
-   lib's `FOE_STATUSES`/`FoeStatus` was extended from 3 to these 5 to match the official game's
-   foe-status track (resolved — see [assumptions-and-open-questions.md](assumptions-and-open-questions.md#known-discrepancies--risks)).
+7. **FR-02.7** The player MUST be able to set a foe **level's status** (2–4) to any of the game's five
+   values: `panicked | unsteady | ready | savage | lethal` (lowest → highest threat). Status is a
+   property of the **level**, not a single placed foe — matching the official rule that every foe of
+   a level (e.g. all placed Brigands at level 2) advances together — so setting it cascades to every
+   currently-placed foe of that level and is remembered (`BoardState.meta.levelStatus`) for the next
+   one placed, independent of what's currently on the board. The `ultimatedarktower` lib's
+   `FOE_STATUSES`/`FoeStatus` was extended from 3 to these 5 to match the official game's foe-status
+   track (resolved — see [assumptions-and-open-questions.md](assumptions-and-open-questions.md#known-discrepancies--risks)).
 8. **FR-02.8** The player MUST be able to place/remove **space markers** at locations (e.g. wasteland,
    power-skull). Space markers and **quest markers** are both placed via the unified `tokens`
    collection, using the `marker`/`quest` accepts vocabulary (there is no dedicated quest-marker field).
@@ -116,12 +121,16 @@ Implemented and verified (unit tests + in-browser): the board renders all 60 loc
 buildings via `BoardStageView` in 2D + the shared 3D scene (FR-02.1), with its built-in mode pills
 (`2d | 3d | 2d3d | pip`) and N/E/S/W focus covering FR-02.10. All board content is owned by the
 `BoardStateSource`; the stage's selection + armed-placement stores are kept separate from
-`BoardState` (FR-02.2). The **placement palette** places foes (L2–4, with status), heroes,
-the adversary (L5), skulls on buildings, and space/quest markers — each via a grouped location
-dropdown **or** by arming "pick on board" and clicking a space in 2D/3D (FR-02.3–02.8). Adding a
-building's 4th skull marks it destroyed (FR-02.6). The **inspector** reflects the clicked token and
-offers its actions — foe status/move/remove, hero move/remove, adversary move/clear, building
-skull ±, marker removal (FR-02.9). Token art degrades to the stage's programmatic fallback
+`BoardState` (FR-02.2). The **placement palette** places foes (L2–4, inheriting that level's current
+status), heroes, the adversary (L5), skulls on buildings, and space/quest markers — each via a
+grouped location dropdown **or** by arming "pick on board" and clicking a space in 2D/3D
+(FR-02.3–02.8). The palette also has a **threat status** control per foe level (2–4), labeled with
+that game's actual foe name (e.g. "Brigands") once setup has assigned one — changing it cascades to
+every placed foe of that level (FR-02.7). Adding a building's 4th skull marks it destroyed (FR-02.6).
+The **inspector** reflects the clicked token and offers its actions — foe level-status/move/remove
+(status here is the same level-wide control as the palette's), hero move/remove, adversary
+move/clear, building skull ±, marker removal (FR-02.9). Token art degrades to the stage's
+programmatic fallback
 (FR-02.11). Code: `src/sources/ManualBoardSource.ts` (+ the expanded `BoardStateSource`), the
 `gameStore` board actions + selection/locationPick wiring, `useBoardSelection`/`useBoardActions`
 hooks, and `src/features/board/{BoardPalette,BoardInspector,LocationSelect,boardData}.tsx`.

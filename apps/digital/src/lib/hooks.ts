@@ -67,6 +67,7 @@ export function useBoardActions() {
       placeFoe: s.placeFoe,
       removeFoe: s.removeFoe,
       setFoeStatus: s.setFoeStatus,
+      setLevelStatus: s.setLevelStatus,
       placeHero: s.placeHero,
       removeHero: s.removeHero,
       setAdversary: s.setAdversary,
