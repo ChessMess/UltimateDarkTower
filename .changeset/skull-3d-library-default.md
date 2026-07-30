@@ -2,9 +2,11 @@
 'ultimatedarktowerboard': patch
 ---
 
-Add skull tokens to the 3D plugin's library defaults: `Board3DPlugin.resolveModel()`
-now falls through to a `defaultTokenModelPath()` function (mirroring `defaultTokenImagePath`)
-that maps skull tokens to a 3D GLB model by convention. Apps no longer need a
-per-token `tokenArt.skull.model3d` override to render skulls as 3D models instead
-of flat 2D sprites in the 3D view — the library resolves the model automatically
-if it exists at `${assetBaseUrl}markers/skull.glb`.
+Add skull tokens to the library defaults for both 3D models and 2D images:
+
+- `Board3DPlugin.resolveModel()` now falls through to `defaultTokenModelPath()`, mapping skulls
+  to a 3D GLB model by convention. Apps no longer need a per-token `tokenArt.skull.model3d`
+  override — the library resolves the model at `${assetBaseUrl}markers/skull.glb` automatically.
+- `resolveTokenImageFor()` now includes skull in the `OFFICIAL_2D_ICON` table, so both the 2D map
+  and 3D sprite fallbacks render the nice `${assetBaseUrl}foes/skull.png` image instead of a
+  generic colored disc.

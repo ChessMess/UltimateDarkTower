@@ -108,8 +108,12 @@ export function normalizeAssetBaseUrl(base: string | undefined): string {
  * tower's sprite billboard wants. Filenames don't derive from the id by any transform (tier
  * prefixes, abbreviated adversary names), so this is hand-maintained, not computed. A consumer
  * can still override any entry via `tokenArt`.
+ *
+ * Skulls also live under `foes/` (grouped with the board token art) for historical reasons,
+ * and carry an entry here so the 2D map and 3D sprite fallback both render them with the
+ * nice `skull.png` image instead of the generic fallback disc.
  */
-const OFFICIAL_2D_ICON: Partial<Record<'foe' | 'adversary', Record<string, string>>> = {
+const OFFICIAL_2D_ICON: Partial<Record<'foe' | 'adversary' | 'skull', Record<string, string>>> = {
   foe: {
     brigands: 'brigands-token.png',
     oreks: 'oreks-token.png',
@@ -133,6 +137,9 @@ const OFFICIAL_2D_ICON: Partial<Record<'foe' | 'adversary', Record<string, strin
     'isa-the-exile': 'Adversary-Token-Isa.png',
     'lingering-rot': 'Adversary-Token-Lingering-Rot.png',
     'utuk-ku': 'Adversary-Token-Utuk-Ku.png',
+  },
+  skull: {
+    skull: 'skull.png',
   },
 };
 
@@ -226,7 +233,7 @@ export function defaultTokenImagePath(
   const base = normalizeAssetBaseUrl(assetBaseUrl);
   if (!base) return null;
   const id = kebab(ref.id);
-  if (view === '2d' && (ref.kind === 'foe' || ref.kind === 'adversary')) {
+  if (view === '2d' && (ref.kind === 'foe' || ref.kind === 'adversary' || ref.kind === 'skull')) {
     const icon = OFFICIAL_2D_ICON[ref.kind]?.[id];
     if (icon) return `${base}foes/${icon}`;
   }
