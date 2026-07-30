@@ -182,6 +182,30 @@ const OFFICIAL_QUEST_ART: Record<string, string | null> = {
 };
 
 /**
+ * Official RTDT 3D model references (under the `markers/` group folder), keyed by kebab
+ * kind/id. Each model is the 3D GLB equivalent of a token type, used by the 3D plugin when no
+ * per-token `tokenArt.model3d` override is set. Stores the filename and optional model tuning
+ * params (`scale`, `rotation`, `dracoDecoderPath`); A consumer can still override any entry via
+ * `tokenArt`.
+ */
+const OFFICIAL_3D_MODEL: Partial<
+  Record<
+    string,
+    Record<
+      string,
+      {
+        file: string;
+        scale?: number;
+        rotation?: { x?: number; y?: number; z?: number };
+        dracoDecoderPath?: string | null;
+      }
+    >
+  >
+> = {
+  skull: { skull: { file: 'skull.glb', scale: 0.6 } },
+};
+
+/**
  * Default `${assetBaseUrl}${group}/${kebab(id)}.png` convention shared by the 2D map and the
  * 3D plugin. In the 2D view, foe/adversary ids with a known {@link OFFICIAL_2D_ICON} entry
  * resolve to the small flat board-token icon instead of the 3D-style portrait; 3D and every
@@ -225,6 +249,23 @@ export function defaultTokenImagePath(
       // marker, skull, and any custom author-defined type.
       return `${base}markers/${id}.png`;
   }
+}
+
+/**
+ * Default `${assetBaseUrl}markers/${file}` convention for a library-known 3D model — the model
+ * equivalent of {@link defaultTokenImagePath}'s `markers/` fallback. Returns `null` when there's
+ * no known model for this kind/id (most tokens) or no `assetBaseUrl`.
+ */
+export function defaultTokenModelPath(
+  ref: TokenArtRef,
+  assetBaseUrl: string | undefined,
+): TokenModelRef | null {
+  const base = normalizeAssetBaseUrl(assetBaseUrl);
+  if (!base) return null;
+  const entry = OFFICIAL_3D_MODEL[ref.kind]?.[kebab(ref.id)];
+  if (!entry) return null;
+  const { file, ...rest } = entry;
+  return { url: `${base}markers/${file}`, ...rest };
 }
 
 // ── per-token art config (separate 2D vs 3D art) ────────────────────────────
