@@ -8,9 +8,16 @@ import { useState } from 'react';
 import { FOE_STATUSES } from '@/lib/udtData';
 import type { BoardState, FoeStatus, TokenSelection } from 'ultimatedarktowerboard';
 import { adversaryOf, buildingAt, markersAt, skullsAt } from 'ultimatedarktowerboard';
-import { useBoardActions, useBoardSelection, useBoardState } from '@/lib/hooks';
+import { useBoardActions, useBoardSelection, useBoardState, useSession } from '@/lib/hooks';
 import { SKULLS_TO_DESTROY } from '@/sources/ManualBoardSource';
-import { adversaryName, foeName, heroName } from './boardData';
+import {
+  adversaryName,
+  foeLevelOf,
+  foeName,
+  heroName,
+  levelLabel,
+  statusForLevel,
+} from './boardData';
 import { LocationSelect } from './LocationSelect';
 
 type BoardActions = ReturnType<typeof useBoardActions>;
@@ -80,11 +87,13 @@ function TokenDetail({
   actions: BoardActions;
 }) {
   const { kind, id, location } = selection;
+  const session = useSession();
 
   if (kind === 'foe') {
     const foe = boardState.tokens[id];
     if (!foe || foe.typeId !== 'foe') return <Gone />;
-    const status = (foe.data?.status as FoeStatus | undefined) ?? 'ready';
+    const level = foeLevelOf(foe.art ?? '');
+    const status = level ? statusForLevel(boardState, level) : 'ready';
     return (
       <>
         <h3 className="board-detail-title">
@@ -96,7 +105,14 @@ function TokenDetail({
             <span>{foe.location}</span>
           </li>
         </ul>
-        <StatusRow status={status} onChange={(s) => actions.setFoeStatus(id, s)} />
+        {level && (
+          <>
+            <StatusRow status={status} onChange={(s) => actions.setLevelStatus(level, s)} />
+            <p className="muted">
+              Applies to every {levelLabel(session.config.foes, level)}, placed or not yet placed.
+            </p>
+          </>
+        )}
         <MoveRow from={foe.location} onMove={(to) => actions.moveToken(id, to)} />
         <button className="board-remove" onClick={() => actions.removeFoe(id)}>
           Remove foe

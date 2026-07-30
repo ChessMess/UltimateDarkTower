@@ -22,6 +22,7 @@ export {
   FOE_BY_NAME,
   ADVERSARY_ROSTER,
   FOE_STATUSES,
+  type FoeLevel,
 
   // Box inventory (card names) — keyed by expansion name.
   EXPANSIONS,

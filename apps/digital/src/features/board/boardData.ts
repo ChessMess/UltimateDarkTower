@@ -3,7 +3,15 @@
  * (PRD-02). Rosters and the 60 locations come from `ultimatedarktower`; nothing here mutates
  * state — these are display helpers only.
  */
-import { ADVERSARY_ROSTER, BOARD_LOCATIONS, FOES, FOE_BY_ID, HERO_BY_ID } from '@/lib/udtData';
+import type { BoardState, FoeStatus } from 'ultimatedarktowerboard';
+import {
+  ADVERSARY_ROSTER,
+  BOARD_LOCATIONS,
+  FOES,
+  FOE_BY_ID,
+  HERO_BY_ID,
+  type FoeLevel,
+} from '@/lib/udtData';
 
 export const KINGDOMS = ['north', 'east', 'south', 'west'] as const;
 
@@ -30,3 +38,30 @@ export const foeName = (id: string): string => FOE_BY_ID[id]?.name ?? id;
 export const adversaryName = (id: string): string =>
   ADVERSARY_ROSTER.find((a) => a.id === id)?.name ?? id;
 export const heroName = (id: string): string => HERO_BY_ID[id]?.name ?? id;
+
+/** A foe's identity level (2–4), or `undefined` for an unknown/legacy art id. */
+export const foeLevelOf = (id: string): FoeLevel | undefined => FOE_BY_ID[id]?.level;
+
+/**
+ * The stored threat status for `level` (defaults to `'ready'` until explicitly set). Real
+ * Return to Dark Tower rule: status applies to a whole level, not a single placed foe — see
+ * `setLevelStatus` in the game store, which is the only thing that writes this.
+ */
+export function statusForLevel(state: BoardState, level: FoeLevel): FoeStatus {
+  const levelStatus = state.meta?.levelStatus as Partial<Record<FoeLevel, FoeStatus>> | undefined;
+  return levelStatus?.[level] ?? 'ready';
+}
+
+/** This game's foe (levels 2–4 only — level 5 is the adversary, picked separately). */
+export type LevelFoes = { level2: string | null; level3: string | null; level4: string | null };
+
+/**
+ * The name of whichever foe this game's setup assigned to `level` (e.g. "Brigands"), or a
+ * generic "Level N" fallback before setup picks one. Only one foe occupies a level for a given
+ * game, so this is more useful than the bare level number once setup is complete.
+ */
+export function levelLabel(foes: LevelFoes, level: FoeLevel): string {
+  const id =
+    level === 2 ? foes.level2 : level === 3 ? foes.level3 : level === 4 ? foes.level4 : null;
+  return id ? foeName(id) : `Level ${level}`;
+}

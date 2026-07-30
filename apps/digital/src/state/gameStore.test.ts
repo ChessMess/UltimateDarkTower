@@ -143,6 +143,7 @@ describe('useGameStore', () => {
     it('no-ops without throwing when no board is registered', () => {
       expect(() => useGameStore.getState().placeFoe('f1', 'Brigands', 'Delmsmire')).not.toThrow();
       expect(() => useGameStore.getState().moveToken('f1', 'Narrow Vale')).not.toThrow();
+      expect(() => useGameStore.getState().setLevelStatus(2, 'savage')).not.toThrow();
     });
 
     it('delegates board actions to the registered BoardStateSource', () => {
@@ -172,6 +173,58 @@ describe('useGameStore', () => {
         'removeSkull',
         'setSpaceMarker',
       ]);
+    });
+
+    it('setLevelStatus cascades only to same-level placed foes and records the level status', () => {
+      const board = new FakeBoardSource();
+      board.state = {
+        tokens: {
+          'brigands-1': {
+            id: 'brigands-1',
+            typeId: 'foe',
+            art: 'brigands',
+            location: 'Delmsmire',
+            data: { status: 'ready' },
+          },
+          'oreks-1': {
+            id: 'oreks-1',
+            typeId: 'foe',
+            art: 'oreks',
+            location: 'Narrow Vale',
+            data: { status: 'ready' },
+          },
+          'frost-trolls-1': {
+            id: 'frost-trolls-1',
+            typeId: 'foe',
+            art: 'frost-trolls',
+            location: 'Ollow',
+            data: { status: 'ready' },
+          },
+        },
+      };
+      useGameStore.getState().registerBoard(board, {} as never, {} as never);
+
+      useGameStore.getState().setLevelStatus(2, 'savage');
+
+      const loadCall = board.calls.find((c) => c.method === 'load');
+      expect(loadCall).toBeDefined();
+      const next = loadCall!.args[0] as BoardState;
+      expect(next.tokens['brigands-1'].data?.status).toBe('savage');
+      expect(next.tokens['oreks-1'].data?.status).toBe('savage');
+      expect(next.tokens['frost-trolls-1'].data?.status).toBe('ready');
+      expect((next.meta?.levelStatus as Record<number, string>)[2]).toBe('savage');
+    });
+
+    it('setLevelStatus records the level status even with nothing of that level placed', () => {
+      const board = new FakeBoardSource();
+      useGameStore.getState().registerBoard(board, {} as never, {} as never);
+
+      useGameStore.getState().setLevelStatus(3, 'lethal');
+
+      const loadCall = board.calls.find((c) => c.method === 'load');
+      expect(loadCall).toBeDefined();
+      const next = loadCall!.args[0] as BoardState;
+      expect((next.meta?.levelStatus as Record<number, string>)[3]).toBe('lethal');
     });
 
     it('placeHero looks up the owning kingdom from session config before delegating', () => {
