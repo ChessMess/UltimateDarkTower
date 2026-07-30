@@ -233,9 +233,13 @@ export function defaultTokenImagePath(
   const base = normalizeAssetBaseUrl(assetBaseUrl);
   if (!base) return null;
   const id = kebab(ref.id);
-  if (view === '2d' && (ref.kind === 'foe' || ref.kind === 'adversary' || ref.kind === 'skull')) {
+  if (view === '2d' && (ref.kind === 'foe' || ref.kind === 'adversary')) {
     const icon = OFFICIAL_2D_ICON[ref.kind]?.[id];
     if (icon) return `${base}foes/${icon}`;
+  }
+  if (view === '2d' && ref.kind === 'skull') {
+    const icon = OFFICIAL_2D_ICON[ref.kind]?.[id];
+    if (icon) return `${base}markers/${icon}`;
   }
   switch (ref.kind) {
     case 'foe':
