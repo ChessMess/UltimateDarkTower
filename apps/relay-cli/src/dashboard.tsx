@@ -151,10 +151,7 @@ function Dashboard({ status, actions }: { status: RelayStatus; actions: Dashboar
       <Box marginTop={1} flexDirection="column">
         <Text bold color="cyan">
           CLIENTS (
-          <Text color={status.clients.length > 0 ? 'green' : 'gray'}>
-            {status.clients.length}
-          </Text>
-          )
+          <Text color={status.clients.length > 0 ? 'green' : 'gray'}>{status.clients.length}</Text>)
         </Text>
         {visibleClients.length === 0 && <Text dimColor> none connected</Text>}
         {visibleClients.map((c) => (
