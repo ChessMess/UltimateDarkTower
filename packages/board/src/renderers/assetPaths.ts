@@ -111,7 +111,7 @@ export function normalizeAssetBaseUrl(base: string | undefined): string {
  *
  * Skulls also live under `foes/` (grouped with the board token art) for historical reasons,
  * and carry an entry here so the 2D map and 3D sprite fallback both render them with the
- * nice `skull.png` image instead of the generic fallback disc.
+ * nice `grey-skull.png` image instead of the generic fallback disc.
  */
 const OFFICIAL_2D_ICON: Partial<Record<'foe' | 'adversary' | 'skull', Record<string, string>>> = {
   foe: {
@@ -139,7 +139,7 @@ const OFFICIAL_2D_ICON: Partial<Record<'foe' | 'adversary' | 'skull', Record<str
     'utuk-ku': 'Adversary-Token-Utuk-Ku.png',
   },
   skull: {
-    skull: 'skull.png',
+    skull: 'grey-skull.png',
   },
 };
 
