@@ -44,6 +44,32 @@ describe('createNewGameSession', () => {
     });
     expect(session.tower.state.drum.every((d) => d.calibrated)).toBe(true);
   });
+
+  const SANCTUARIES_AND_VILLAGES = [
+    'Upper Ice Fangs',
+    "Egan's End",
+    'Greater Tombstones',
+    'Duwani',
+    'Arkartus',
+    'Anza',
+    'Sands of Madness',
+    'Southern Wastes',
+  ];
+
+  it('auto-places 2 starting skulls on each Sanctuary/Village by default', () => {
+    const session = createNewGameSession(sampleConfig());
+    for (const location of SANCTUARIES_AND_VILLAGES) {
+      expect(skullsAt(session.board, location)).toBe(2);
+    }
+    expect(skullsAt(session.board, 'Radiant Mountains')).toBe(0); // a Citadel, not seeded
+  });
+
+  it('skips auto-placement when autoPlaceSkulls is false', () => {
+    const session = createNewGameSession({ ...sampleConfig(), autoPlaceSkulls: false });
+    for (const location of SANCTUARIES_AND_VILLAGES) {
+      expect(skullsAt(session.board, location)).toBe(0);
+    }
+  });
 });
 
 describe('serialize / deserialize', () => {

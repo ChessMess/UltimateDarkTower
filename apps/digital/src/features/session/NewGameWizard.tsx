@@ -172,6 +172,15 @@ export function NewGameWizard({ onClose }: { onClose: () => void }) {
             </label>
           </div>
 
+          <label className="wizard-checkbox">
+            <input
+              type="checkbox"
+              checked={config.autoPlaceSkulls}
+              onChange={(e) => setConfig((c) => ({ ...c, autoPlaceSkulls: e.target.checked }))}
+            />
+            <span>Auto-place starting skulls (2 on each Sanctuary &amp; Village)</span>
+          </label>
+
           <h3>Heroes</h3>
           {config.heroes.map((h, i) => (
             <div className="wizard-hero" key={i}>

@@ -627,6 +627,14 @@ label {
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
 }
+.wizard-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+.wizard-checkbox input {
+  width: auto;
+}
 .wizard-actions {
   display: flex;
   align-items: center;

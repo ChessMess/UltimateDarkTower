@@ -41,6 +41,8 @@ export interface GameConfig {
   mainGoal: string;
   /** Optional official seed; if present it pre-fills the rest at setup time. */
   seed?: string;
+  /** Auto-place the official app's starting skulls (2 on each Sanctuary/Village) at setup. */
+  autoPlaceSkulls: boolean;
 }
 
 /** Where the game is in the 6-month cadence + UI progress markers. */
