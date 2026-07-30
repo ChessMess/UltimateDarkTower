@@ -29,6 +29,13 @@ Environment:
 | `LOGGING`                                                            | on              | set `0` to disable JSONL logging                                                                                                                       |
 | `TOWER_DIS_FIRMWARE_REVISION`                                        | captured value  | DIS firmware revision the app gates on                                                                                                                 |
 | `TOWER_DIS_{MANUFACTURER,MODEL,HARDWARE_REVISION,SOFTWARE_REVISION}` | captured values | other DIS fields                                                                                                                                       |
+| `RELAY_DASHBOARD`                                                    | on              | set `0` to disable the live status board and fall back to plain log lines                                                                              |
+
+The relay CLI opens on a live status board (relay URL, tower/BLE state, connected clients,
+activity feed) when both stdout and stdin are a real terminal. Under a supervisor (systemd,
+Docker `-d`, a piped log) it isn't a terminal, so the board disables itself automatically and
+you get the same plain lines as before — no need to set `RELAY_DASHBOARD=0` yourself in that
+case, though it's there if you want plain output on an interactive terminal too.
 
 ---
 

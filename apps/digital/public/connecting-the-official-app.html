@@ -1263,32 +1263,50 @@
 
           <h4>What you should see</h4>
 
-          <pre class="out">
-UltimateDarkTowerRelay v0.2.0 (source: emulator)
-Relay server listening on ws://0.0.0.0:8765
-[TowerEmulator] waiting for poweredOn…
-[TowerEmulator] poweredOn — starting advertising…
-[TowerEmulator] advertising started — setting services…
-<b>[TowerEmulator] services set — tower ready</b>
-Advertising tower emulator — open the companion app to connect.
+          <p>
+            The relay opens on a live status board instead of a wall of scrolling text. It looks
+            roughly like this:
+          </p>
 
-Now open  <b>https://chessmess.github.io/UltimateDarkTower/digital/</b>  and click Connect.
-Relay address for the "Official app" panel: ws://localhost:8765</pre>
+          <pre class="out">
+ Ultimate Dark Tower Relay — v0.2.0 · emulator · up 00:03
+
+ RELAY
+  ws://localhost:8765
+  ws://192.168.1.42:8765 (LAN)
+  Open  <b>https://chessmess.github.io/UltimateDarkTower/digital/</b>
+
+ TOWER
+  <b>● advertising</b>    app: disconnected    BLE: poweredOn
+
+ STATE
+  top north  mid north  bot north   cal · · ·
+  led seq 0 · audio #0 vol 0 · beam 0
+
+ CLIENTS (0)
+  none connected
+
+ COUNTERS  commands 0   skulls 0   last never
+
+ q quit   r resend   l logging (on)</pre>
 
           <p>
-            The line that matters is <strong><code>services set — tower ready</code></strong
-            >. Your computer is now broadcasting itself as a Dark Tower named
-            <code>ReturnToDarkTower</code>. The last two lines are your next step — Sections 4 and 5
-            below just walk through them slowly.
+            The line that matters is <strong>TOWER: <code>● advertising</code></strong>. Your
+            computer is now broadcasting itself as a Dark Tower named <code>ReturnToDarkTower</code>.
+            The <strong>RELAY</strong> panel is your next step — Sections 4 and 5 below just walk
+            through it slowly. That panel also prints a <code>ws://192.168.x.x:8765</code> address
+            when it can detect your LAN IP — that's the one to use if you're connecting from a
+            phone instead of the same machine.
           </p>
 
           <p>
-            On a Mac you will also see this, which is expected — it's the problem from Section 2:
+            On a Mac you will also see a line like this in the <strong>activity</strong> feed near
+            the bottom of the board, which is expected — it's the problem from Section 2:
           </p>
 
           <pre
             class="out"
-          ><i>[TowerEmulator] macOS detected — skipping Device Information Service (0x180A).</i></pre>
+          ><i>12:03:50 event [TowerEmulator] macOS detected — skipping Device Information Service (0x180A).</i></pre>
 
           <div class="callout danger">
             <span class="tag">Leave it running</span>
@@ -1368,11 +1386,15 @@ Relay address for the "Official app" panel: ws://localhost:8765</pre>
 
           <h4>How you know it worked</h4>
 
-          <p>The relay terminal starts printing lines like these:</p>
+          <p>
+            The <strong>TOWER</strong> panel switches to <code>● connected</code>, and lines like
+            these start appearing in the <strong>activity</strong> feed near the bottom of the
+            board:
+          </p>
 
           <pre class="out">
-<b>[TowerEmulator] companion subscribed to state notifications</b>
-[TowerEmulator] command received: 000000000000…</pre>
+<b>12:04:09 event [TowerEmulator] companion subscribed to state notifications</b>
+12:04:11 event [TowerEmulator] command received: 000000000000…</pre>
 
           <p>
             Every <code>command received:</code> line is the app telling the tower to do something.
@@ -1475,8 +1497,9 @@ Access other apps and services on this device
               <strong>"Connected — the official app is driving the tower."</strong>
             </p>
             <p>
-              That green line is your confirmation. The relay terminal stays quiet when a browser
-              connects — it only prints Bluetooth activity — so don't read its silence as a failure.
+              That green line is your confirmation. You can also check the relay's
+              <strong>CLIENTS</strong> panel — your browser should now show up there as one
+              connected client.
             </p>
           </div>
 
@@ -1575,8 +1598,8 @@ Access other apps and services on this device
           <h2><span class="num">Section Seven</span>Finishing up, and next time</h2>
 
           <p>
-            To stop: press <kbd>Ctrl</kbd> + <kbd>C</kbd> in the relay's terminal, and close the
-            browser tab.
+            To stop: press <kbd>q</kbd> or <kbd>Ctrl</kbd> + <kbd>C</kbd> in the relay's terminal,
+            and close the browser tab.
           </p>
 
           <p>Next session, the whole routine is:</p>
@@ -1640,8 +1663,9 @@ Access other apps and services on this device
             <div class="body">
               <ul>
                 <li>
-                  Is the relay terminal still running and showing <code>tower ready</code>? If it
-                  scrolled away, restart it.
+                  Is the relay still running, and does its <strong>TOWER</strong> panel show
+                  <code>● advertising</code> or <code>● connected</code>? If the terminal closed or
+                  the process died, restart it.
                 </li>
                 <li>Is Bluetooth switched on, on both the computer and the phone?</li>
                 <li>
@@ -1744,10 +1768,10 @@ Access other apps and services on this device
               <ul>
                 <li>Is the status line green? If not, work through the cases above.</li>
                 <li>
-                  Look at the relay's terminal. If no <code>command received:</code> lines appear
-                  when you tap in the app, the app isn't really connected to the relay — it may have
-                  silently reconnected to your physical tower. Turn the physical tower off and
-                  reconnect.
+                  Look at the relay's <strong>activity</strong> feed. If no
+                  <code>command received:</code> lines appear when you tap in the app, the app
+                  isn't really connected to the relay — it may have silently reconnected to your
+                  physical tower. Turn the physical tower off and reconnect.
                 </li>
               </ul>
             </div>

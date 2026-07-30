@@ -1,19 +1,22 @@
 {
-  // Published to npm (so `npx ultimatedarktowerrelay-cli` works), and invoked as
-  // `node dist/index.js` with no "type" field, so Node treats it as CommonJS.
-  // Extends the shared tsconfig.node-lib.json for the same CJS/Node16 rationale
-  // as its dependencies.
+  // Published to npm (so `npx ultimatedarktowerrelay-cli` works). package.json
+  // sets "type": "module" (needed for the Ink dashboard, which is ESM-only), so
+  // `module: Node16` here emits real ESM — unlike its CJS-published siblings that
+  // also extend tsconfig.node-lib.json.
   //
   // sourceMap/declarationMap are deliberately OFF: package.json `files` ships
   // `dist` but not `src`, so emitted .map files would point at sources that
   // aren't in the tarball — a broken-sourcemap warning in every consumer's
   // debugger. `declaration` stays on because `composite` requires it.
+  //
+  // jsx: react-jsx is for the Ink dashboard (src/dashboard.tsx) only.
   "extends": "../../tsconfig.node-lib.json",
   "compilerOptions": {
     "declaration": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true
+    "composite": true,
+    "jsx": "react-jsx"
   },
   "references": [
     {

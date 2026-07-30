@@ -99,6 +99,25 @@ sure your app calls `replay.setTower(tower)` and `client.sendReady(true)` on `on
 
 ---
 
+## The relay CLI's live status board
+
+### The board doesn't appear, or I just want plain log lines
+
+The relay CLI (`apps/relay-cli`) opens on a live status board only when both stdout and stdin are
+a real terminal. Under a supervisor (systemd, Docker `-d`), over SSH without a tty, or with output
+piped/redirected, it isn't one, so the CLI falls back to plain lines automatically — that's
+expected, not a bug. Set `RELAY_DASHBOARD=0` if you want the plain output on an interactive
+terminal too (e.g. to pipe into `tee` or grep it live).
+
+### Which address do I put in the client's connect box?
+
+The board's RELAY panel prints both `ws://localhost:8765` (same machine) and a `ws://<lan-ip>:8765`
+line (LAN address, for a phone or another device) whenever it can detect one. If no LAN line
+appears, the host has no non-internal IPv4 interface up — fall back to `ws://<host-ip>:8765` as
+described above, using whatever your OS reports for that interface.
+
+---
+
 ## Logs & diagnostics
 
 The host writes two JSONL streams to its logs folder: `session-*.jsonl` (commands + debug) and

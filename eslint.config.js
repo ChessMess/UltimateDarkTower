@@ -58,6 +58,19 @@ export default tseslint.config(
     },
   },
 
+  // Ink dashboard (relay-cli): rules-of-hooks/exhaustive-deps still apply, but
+  // there's no Vite dev server here, so react-refresh's export-shape rule
+  // doesn't apply the way it does to the Vite-bundled apps above.
+  {
+    files: ['apps/relay-cli/**/*.tsx'],
+    plugins: {
+      'react-hooks': reactHooks,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+    },
+  },
+
   // Test files: expose the vitest ambient globals (all packages are on vitest
   // as of the July 2026 stack-alignment pass — no jest left in the workspace).
   {
