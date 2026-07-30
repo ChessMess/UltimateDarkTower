@@ -31,7 +31,13 @@ import type { BoardDefinition, ResolvedBoard } from '../data/boardDefinition';
 import { resolveBoard, resolveSpot } from '../data/boardDefinition';
 import type { BoardFocus, BoardViewAngle } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
-import { lookupTokenArt, resolveTokenImageFor, tintFor, zFor3D } from '../renderers/assetPaths';
+import {
+  lookupTokenArt,
+  resolveTokenImageFor,
+  tintFor,
+  zFor3D,
+  defaultTokenModelPath,
+} from '../renderers/assetPaths';
 import type {
   TokenArtRef,
   TokenSelection,
@@ -644,11 +650,13 @@ export class Board3DPlugin implements ScenePlugin {
     this.tokens.push(node);
   }
 
-  /** The 3D model for a token: a per-token `tokenArt.model3d` override, else the callback. */
+  /** The 3D model for a token: a per-token `tokenArt.model3d` override, then callback, then library default. */
   private resolveModel(art: TokenArtRef): TokenModelRef | null | undefined {
     const override = lookupTokenArt(this.options.tokenArt, art);
     if (override?.model3d != null) return override.model3d;
-    return this.options.resolveTokenModel?.(art);
+    const fromCallback = this.options.resolveTokenModel?.(art);
+    if (fromCallback != null) return fromCallback;
+    return defaultTokenModelPath(art, this.options.assetBaseUrl);
   }
 
   private resolveArt(art: TokenArtRef): string | null {

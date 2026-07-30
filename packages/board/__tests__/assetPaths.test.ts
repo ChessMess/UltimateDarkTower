@@ -13,6 +13,7 @@ import {
   zFor3D,
 } from '../src/index';
 import type { TokenArtConfig, TokenArtRef } from '../src/index';
+import { defaultTokenModelPath } from '../src/renderers/assetPaths';
 
 const BRIGANDS: TokenArtRef = { kind: 'foe', id: 'Brigands' };
 
@@ -145,6 +146,25 @@ describe('resolveTokenImageFor', () => {
     const TRAP: TokenArtRef = { kind: 'trap', id: 'trap' };
     expect(resolveTokenImageFor(TRAP, '2d', { assetBaseUrl: '/t/' })).toBe('/t/markers/trap.png');
     expect(resolveTokenImageFor(TRAP, '3d', { assetBaseUrl: '/t/' })).toBe('/t/markers/trap.png');
+  });
+});
+
+describe('defaultTokenModelPath', () => {
+  it('resolves the official skull 3D model (library default)', () => {
+    const SKULL: TokenArtRef = { kind: 'skull', id: 'skull' };
+    const resolved = defaultTokenModelPath(SKULL, '/t/');
+    expect(resolved).toEqual({ url: '/t/markers/skull.glb', scale: 0.6 });
+  });
+
+  it('returns null for an unknown kind/id (no library model)', () => {
+    expect(defaultTokenModelPath({ kind: 'foe', id: 'brigands' }, '/t/')).toBeNull();
+    expect(defaultTokenModelPath({ kind: 'skull', id: 'unknown' }, '/t/')).toBeNull();
+    expect(defaultTokenModelPath({ kind: 'trap', id: 'trap' }, '/t/')).toBeNull();
+  });
+
+  it('returns null when assetBaseUrl is empty', () => {
+    expect(defaultTokenModelPath({ kind: 'skull', id: 'skull' }, '')).toBeNull();
+    expect(defaultTokenModelPath({ kind: 'skull', id: 'skull' }, undefined)).toBeNull();
   });
 
   it('handles the full hero roster (all expansions) without error', () => {
