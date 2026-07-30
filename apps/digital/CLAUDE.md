@@ -29,6 +29,10 @@ Three traps worth remembering:
 - **Don't derive the skull count from `TowerState.beam.count` while connected.** Every command the
   app writes carries its own beam count (bytes 15-16), so remote state clobbers it on the next
   command. `BridgeTowerSource` keeps its own counter; `BridgeTowerSource.test.ts` guards this.
+  `TowerBoardStage`'s skull-physics sync (`src/lib/skullSync.ts`) reads
+  `towerSource.getSkullDropCount()` for the same reason — never wire the physics lib's own
+  `skull.autoDropOnSkullCountIncrease` (which watches `beam.count`) here, it won't fire while
+  bridged and can fire spuriously off remote state.
 - **`ultimatedarktowerrelay-client` / `-shared` resolve via their `import` condition**, added in
   the PRD-05 pass — both were CJS-only and `relay-shared`'s barrel emits `__exportStar`. They are
   deliberately **not** in `vite.config.ts`'s `optimizeDeps.include`; the export condition is
@@ -56,10 +60,22 @@ this app, including the React rules — `eslint.config.js` scopes them to
 
 Standard Vite scripts; `build` = `tsc -b && vite build`; `test` = `vitest run` (tests colocated
 under `src/`). `vite.config.ts`'s `optimizeDeps.include` pre-bundles the linked
-`ultimatedarktowerdisplay`/`ultimatedarktowerboard` workspace libs so their `file:` links
+`ultimatedarktowerdisplay`/`ultimatedarktowerboard` workspace libs (plus the
+`ultimatedarktowerdisplay/physics` subpath, for skull physics) so their `file:` links
 resolve cleanly in dev. `ultimatedarktower` is deliberately _not_ listed there: since core
 v7.0.0 it ships a `browser` export condition (`dist/browser/index.mjs`, no `createRequire`/
 noble banner) that Vite resolves directly.
+
+## Skull physics: re-attach by `Tower3DView` identity, not once
+
+`TowerBoardStage` drops a real physics skull (`ultimatedarktowerdisplay/physics`'s
+`attachSkullPhysics`) into the 3D scene on every tower-source skull drop, mirroring the
+display demo. The attach is **not** a one-shot done in `onTowerToggle` — the board stage's
+always-visible Pop Out button rebuilds the whole `Tower3DView` behind the scenes
+(`BoardStageView`'s `create3D`/`dispose3D`), which detaches every previously-registered scene
+plugin. `ensurePhysics()` in `TowerBoardStage.tsx` re-attaches lazily, keyed on view identity,
+on the next tower paint — don't cache the `SkullPhysicsHandle` across a pop-out/pop-in without
+that identity check, it'll go silently dead.
 
 ## `localStorage` in tests needs `src/test/setup.ts`
 
