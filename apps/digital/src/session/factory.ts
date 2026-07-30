@@ -4,7 +4,7 @@
  */
 import { createDefaultTowerState } from 'ultimatedarktower';
 import { BOARD_LOCATIONS } from '@/lib/udtData';
-import { createDefaultBoardState } from 'ultimatedarktowerboard';
+import { createDefaultBoardState, skullTokenId } from 'ultimatedarktowerboard';
 import { HERO_VIRTUE_COUNT } from './playerBoard';
 import {
   GAME_SESSION_SCHEMA_VERSION,
@@ -39,8 +39,12 @@ export function createDefaultConfig(): GameConfig {
     adversary: null,
     foes: { level2: null, level3: null, level4: null },
     mainGoal: '',
+    autoPlaceSkulls: true,
   };
 }
+
+/** Starting skull count on each Sanctuary/Village (official-app setup, mirrored by hand). */
+export const STARTING_SKULLS_PER_SANCTUARY_VILLAGE = 2;
 
 export function createDefaultProgress(): GameProgress {
   return { month: 1, turn: 1, dismissedReminders: [] };
@@ -104,6 +108,16 @@ export function createNewGameSession(config: GameConfig, name?: string): GameSes
         location,
         data: { owner: h.homeKingdom },
       };
+    }
+  }
+  // `!== false` (not a truthy check): a pre-feature save has no `autoPlaceSkulls` key at
+  // all, and `resetSession` rebuilds from that same stored config — undefined should still
+  // default on, matching the wizard's "checked by default" behavior for a fresh game.
+  if (config.autoPlaceSkulls !== false) {
+    for (const l of BOARD_LOCATIONS) {
+      if (l.building === 'Sanctuary' || l.building === 'Village') {
+        board.tokens[skullTokenId(l.name)].n = STARTING_SKULLS_PER_SANCTUARY_VILLAGE;
+      }
     }
   }
   return {
