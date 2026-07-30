@@ -31,7 +31,13 @@ import type { BoardDefinition, ResolvedBoard } from '../data/boardDefinition';
 import { resolveBoard, resolveSpot } from '../data/boardDefinition';
 import type { BoardFocus, BoardViewAngle } from '../renderers/shared';
 import { DEFAULT_FOCUS, focusEquals } from '../renderers/shared';
-import { lookupTokenArt, resolveTokenImageFor, tintFor, zFor3D, defaultTokenModelPath } from '../renderers/assetPaths';
+import {
+  lookupTokenArt,
+  resolveTokenImageFor,
+  tintFor,
+  zFor3D,
+  defaultTokenModelPath,
+} from '../renderers/assetPaths';
 import type {
   TokenArtRef,
   TokenSelection,
