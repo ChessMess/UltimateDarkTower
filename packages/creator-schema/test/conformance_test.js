@@ -81,7 +81,7 @@ t = clone(base);
 t.library.buildingTypes['Watch Tower'] = clone(base.library.buildingTypes.citadel);
 check('non-id building-type key rejected', t, false);
 
-// Negative: capacity is authorable but still bounded (1..9) — 0 would mean "razed by its 1st skull".
+// Negative: capacity is authorable but still bounded (1..9) — 0 would mean "destroyed by its 1st skull".
 t = clone(base);
 t.library.buildingTypes.citadel.skullCapacity = 0;
 check('skullCapacity 0 rejected', t, false);

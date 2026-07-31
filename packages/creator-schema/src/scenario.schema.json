@@ -871,7 +871,7 @@
           "minimum": 1,
           "maximum": 9,
           "default": 3,
-          "$comment": "0.4.7 — was `const 3`. Skulls that SIT on the building; the next one razes it. The engine reads this via capacityOf(), so a custom type's capacity is honoured on both the emergence and skull.place paths."
+          "$comment": "0.4.7 — was `const 3`. Skulls that SIT on the building; the next one destroys it. The engine reads this via capacityOf(), so a custom type's capacity is honoured on both the emergence and skull.place paths."
         },
         "destroyOnSkull": {
           "type": "integer",

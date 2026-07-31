@@ -3,7 +3,7 @@
 // Schema 0.4.7 turned that map from a fixed {citadel, sanctuary, village, bazaar} into an OPEN
 // registry, so a creator can define their own buildings the way they already define their own
 // terrain. A building is a rules object, not just a label: its `free`/`enhanced` effects are what
-// Reinforce runs on that space, `skullCapacity` is how many skulls it takes before it's razed, and
+// Reinforce runs on that space, `skullCapacity` is how many skulls it takes before it's destroyed, and
 // `heroStart` marks it as a hero's start space (replacing the hardcoded 'citadel' string).
 //
 // Reached from the Board Designer — the Locations panel's `Building types…` button, and the
@@ -338,7 +338,7 @@ export function BuildingTypesDialog({
                 </div>
 
                 <div style={{ fontSize: 10, color: 'var(--c-text-muted)', margin: '2px 0 10px' }}>
-                  {def.skullCapacity ?? 3} skulls sit on it; the next one razes it.
+                  {def.skullCapacity ?? 3} skulls sit on it; the next one destroys it.
                 </div>
 
                 <div style={section}>

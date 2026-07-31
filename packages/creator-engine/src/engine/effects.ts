@@ -322,7 +322,7 @@ export function applyEffect(
         // registry model: each scenario-placed skull lands on a standing building of the named
         // kingdom (least-loaded first, like emergence), increments onBoard, and destroys the
         // building when its skulls exceed capacity — so authored skulls behave like emergent ones
-        // (visible to cleanse, can raze a building). Byte-frozen `golden` has no registry → else.
+        // (visible to cleanse, can destroy a building). Byte-frozen `golden` has no registry → else.
         for (let i = 0; i < e.count; i++) {
           const b = pickBuildingForSkull(state, e.kingdom ? { kingdom: e.kingdom } : null);
           if (!b) {
