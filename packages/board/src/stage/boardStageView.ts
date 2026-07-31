@@ -37,6 +37,11 @@ import { BOARD_STAGE_CSS, injectStageStyles } from './styles';
 // Type-only + relative path → invisible to the three-free CI guard and erased at
 // runtime. The VALUE side is loaded lazily via `import('../plugin/stageTower')`.
 import type { BoardTower3DHandle } from '../plugin/stageTower';
+// Type-only import erases entirely at build time, so it's invisible to the three-free
+// static-graph check regardless of which package it points at — no VALUE-side import of
+// `ultimatedarktowerdisplay/physics` exists here; the app attaches physics and hands the
+// stage a handle via `setSkullPhysicsHandle`.
+import type { SkullPhysicsHandle } from 'ultimatedarktowerdisplay/physics';
 
 export type { DisplayMode } from './displayMode';
 
@@ -71,6 +76,8 @@ export interface BoardStageViewOptions {
   tower3D?: 'auto' | boolean;
   /** Show the built-in tower on/off button (default: shown when `modelUrl` is set). */
   towerToggle?: boolean;
+  /** Show built-in "Shake Skulls" / "Shake Tower" toolbar buttons (default: hidden). */
+  shakeButtons?: boolean;
   /** Initial display mode (default `pip-3dbig` when the tower is on, else `2d`). A stored pref wins. */
   defaultMode?: DisplayMode;
   /** Mount the dockable palette/inspector editing UI (default `true`). Pass a config object to tune it. */
@@ -123,6 +130,8 @@ interface StageElements {
   swap: HTMLButtonElement;
   popOut: HTMLButtonElement;
   towerBtn: HTMLButtonElement;
+  shakeSkullsBtn: HTMLButtonElement;
+  shakeTowerBtn: HTMLButtonElement;
 }
 
 const DEFAULT_PREFIX = 'udtb.stage';
@@ -158,6 +167,8 @@ export class BoardStageView {
   private towerModule: StageTowerModule | null = null;
   private towerEnabled = false;
   private currentDrag: DragMode;
+  /** Set by the host via `setSkullPhysicsHandle` once it attaches skull physics. */
+  private skullPhysics: SkullPhysicsHandle | null = null;
 
   constructor(options: BoardStageViewOptions) {
     this.options = options;
@@ -294,6 +305,14 @@ export class BoardStageView {
       () => void this.setTowerEnabled(!this.towerEnabled),
     );
 
+    // Optional manual shake buttons (off by default — most consumers don't want the extra
+    // toolbar chrome). Both are inert without an enabled 3D tower; Shake Skulls additionally
+    // needs a handle from `setSkullPhysicsHandle` (packages/board attaches no physics itself).
+    this.els.shakeSkullsBtn.hidden = !(options.shakeButtons ?? false);
+    this.els.shakeTowerBtn.hidden = !(options.shakeButtons ?? false);
+    this.els.shakeSkullsBtn.addEventListener('click', () => this.skullPhysics?.shakeSkulls());
+    this.els.shakeTowerBtn.addEventListener('click', () => this.tower?.view3D?.shakeTower());
+
     // Push controller changes into the 3D tower (the 2D map + readout are handled by
     // the inner BoardRenderView). The host drives its own readout/JSON off `.controller`.
     this.unsubscribe = this.view.controller.subscribe((event) => {
@@ -410,6 +429,16 @@ export class BoardStageView {
     this.options.onTowerToggle?.(this.towerEnabled);
   }
 
+  /**
+   * Give the stage a live skull-physics handle so its "Shake Skulls" button works. Pass
+   * `null` when physics is torn down (view rebuild, dispose) so the button disables again
+   * instead of calling a disposed handle.
+   */
+  setSkullPhysicsHandle(handle: SkullPhysicsHandle | null): void {
+    this.skullPhysics = handle;
+    this.reflectTowerUi();
+  }
+
   /** Clear this instance's persisted layout prefs and reset to defaults. */
   resetLayout(): void {
     this.storage.clear();
@@ -509,6 +538,8 @@ export class BoardStageView {
   private reflectTowerUi(): void {
     this.els.root.classList.toggle('bsv-tower-on', this.towerEnabled);
     this.els.towerBtn.classList.toggle('is-active', this.towerEnabled);
+    this.els.shakeTowerBtn.disabled = !this.towerEnabled;
+    this.els.shakeSkullsBtn.disabled = !this.towerEnabled || !this.skullPhysics;
   }
 }
 
@@ -569,10 +600,12 @@ function buildDom(container: HTMLElement): StageElements {
   pills.append(d2, d3, d2d3, pip);
   const right = div('bsv-toolbar-right');
   const towerBtn = action('Tower 3D', 'Show or hide the 3D tower');
+  const shakeSkullsBtn = action('Shake Skulls', 'Shake every skull currently in the tower');
+  const shakeTowerBtn = action('Shake Tower', 'Wobble the tower drums');
   const swap = action('Swap ⇄', 'Swap which view is large');
   swap.hidden = true;
   const popOut = action('Pop Out ⤴', 'Open the board in a separate resizable window');
-  right.append(towerBtn, swap, popOut);
+  right.append(towerBtn, shakeSkullsBtn, shakeTowerBtn, swap, popOut);
   toolbar.append(pills, right);
 
   const panel = div('bsv-panel');
@@ -615,5 +648,7 @@ function buildDom(container: HTMLElement): StageElements {
     swap,
     popOut,
     towerBtn,
+    shakeSkullsBtn,
+    shakeTowerBtn,
   };
 }

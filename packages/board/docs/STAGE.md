@@ -61,6 +61,7 @@ instead with `injectStyles: false` and import the `BOARD_STAGE_CSS` string (or `
 | `modelUrl`                                                                        | —                             | Tower GLB; required to enable the 3D tower.                                      |
 | `tower3D`                                                                         | `'auto'`                      | `'auto'` \| `true` \| `false` (see above).                                       |
 | `towerToggle`                                                                     | `false`                       | Add a built-in Tower 3D on/off button (the mode pills already cover most needs). |
+| `shakeButtons`                                                                    | `false`                       | Add built-in "Shake Skulls" / "Shake Tower" toolbar buttons.                     |
 | `defaultMode`                                                                     | `pip-3dbig` (tower on) / `2d` | A stored preference wins.                                                        |
 | `editingUI`                                                                       | `true`                        | `false` to skip; or a `mountBoardUI` config object.                              |
 | `enableZoom` / `maxZoom` / `dragMode`                                             | `true` / `8` / `'rotate'`     | Forwarded to the 2D map.                                                         |
@@ -74,7 +75,10 @@ instead with `injectStyles: false` and import the `BOARD_STAGE_CSS` string (or `
 `locationPick`, `focus`, `map2d`, `tower3D` (the Display view, or `null`), `editingUI`, `root`, `mode`.
 
 **Methods:** `setDisplayMode(mode)`, `swap()`, `setDragMode('rotate' | 'pan')`, `setFocus(focus)`,
-`setTowerEnabled(on): Promise<void>`, `popOut()` / `popIn()`, `resetLayout()`, `dispose()`.
+`setTowerEnabled(on): Promise<void>`, `setSkullPhysicsHandle(handle)` (wires the "Shake Skulls"
+button to a `SkullPhysicsHandle` your app already attached via
+`ultimatedarktowerdisplay/physics`'s `attachSkullPhysics` — pass `null` when physics is torn
+down), `popOut()` / `popIn()`, `resetLayout()`, `dispose()`.
 
 `DisplayMode = '2d' | '3d' | '2d3d' | 'pip-2dbig' | 'pip-3dbig'`.
 
