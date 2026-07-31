@@ -84,6 +84,18 @@ Publication is driven **purely by each package's `private` flag** —
 `.changeset/config.json` has an empty `ignore` list. So `private: false` opts a
 package in automatically (`apps/mcp-server` is the only app that does).
 
+**`private: true` packages still get changesets — they just don't publish to
+npm.** The empty `ignore` list means `pnpm changeset:version` bumps _every_
+workspace package with a pending changeset, private or not, and writes its
+`CHANGELOG.md` entry; only the separate `npm publish` step skips `private:
+true`. So a `private` app (`apps/digital`, `apps/controller`, `apps/game`, …)
+still needs a changeset for its own user-facing changes — that's the only way
+its `CHANGELOG.md` records anything beyond dependency-bump ripples. Confirmed
+gap: three `apps/digital`-only features (foe threat status per-level, #68;
+auto-place starting skulls, #70; the PRD-05 companion-app bridge) shipped with
+no changeset and left no trace in its changelog — see
+`.changeset/digital-skull-physics-drop.md` and its neighbors for the backfill.
+
 #### A failed publish reports the wrong error — read this before debugging one
 
 **Changesets masks npm's rejection with a TypeError.** When `npm publish` fails,
@@ -223,5 +235,7 @@ ultimatedarktowerrelay-electron rebuild` — `pnpm run ci` skips it (no `build`
 ## Before committing
 
 Run `pnpm run ci` from the root. Add a changeset (`pnpm changeset`) for any
-change to a published package. This project drives hardware — cover edge cases
-and prefer the mock adapter for automated tests.
+user-facing change to **any** workspace package — private apps included (see
+[Releasing](#releasing-changesets)); "published" only decides whether the
+change also reaches npm, not whether it gets a changeset. This project drives
+hardware — cover edge cases and prefer the mock adapter for automated tests.

@@ -13,10 +13,17 @@
 import { useEffect, useRef } from 'react';
 import { BoardStageView } from 'ultimatedarktowerboard/stage';
 import type { TowerState } from 'ultimatedarktower';
+import type { Tower3DView } from 'ultimatedarktowerdisplay';
+import type { PhysicsConfig, SkullPhysicsHandle } from 'ultimatedarktowerdisplay/physics';
 import { ManualBoardSource } from '@/sources/ManualBoardSource';
 import { useGameStore } from '@/state/gameStore';
+import { syncSkulls } from './skullSync';
 
 const BASE = import.meta.env.BASE_URL; // ends with '/'
+
+const PHYSICS_CONFIG = {
+  skull: { modelUrl: `${BASE}assets/tokens/markers/skull.glb`, colliderShape: 'hull' },
+} as const satisfies PhysicsConfig;
 
 export interface TowerBoardStageProps {
   /** Called once the stage instance exists (e.g. to drive the tower view in PRD-01). */
@@ -34,6 +41,44 @@ export function TowerBoardStage({ onReady, className }: TowerBoardStageProps) {
 
     const towerSource = useGameStore.getState().towerSource;
 
+    // Skull physics is attached lazily, keyed on whichever `Tower3DView` is
+    // currently live. Pop Out / Pop In rebuilds the 3D view behind the scenes
+    // (see BoardStageView's create3D/dispose3D), which detaches any
+    // previously-attached scene plugin — so this re-attaches by view identity
+    // on the next tower paint rather than attaching once and going stale.
+    let physics: SkullPhysicsHandle | null = null;
+    let physicsView: Tower3DView | null = null;
+    let prevSkulls = 0;
+    let attaching = false;
+
+    const ensurePhysics = async (): Promise<void> => {
+      const view = stageRef.current?.tower3D?.view3D ?? null;
+      if (!view) {
+        physics?.dispose();
+        physics = null;
+        physicsView = null;
+        return;
+      }
+      if (view === physicsView || attaching) return;
+      attaching = true;
+      try {
+        // Dynamic: a static import would pull Display + the physics module into
+        // the main bundle and defeat the lazy 3D chunk BoardStageView exists to
+        // preserve. (Rapier itself is dynamic-imported inside PhysicsManager
+        // .init() either way.)
+        const { attachSkullPhysics } = await import('ultimatedarktowerdisplay/physics');
+        const live = stageRef.current?.tower3D?.view3D ?? null; // may have changed mid-await
+        if (!live) return;
+        physics?.dispose();
+        physics = attachSkullPhysics(live, PHYSICS_CONFIG);
+        physicsView = live;
+        prevSkulls = 0; // fresh scene — replay every skull dropped so far
+        prevSkulls = syncSkulls(physics, prevSkulls, towerSource.getSkullDropCount());
+      } finally {
+        attaching = false;
+      }
+    };
+
     const stage = new BoardStageView({
       container,
       assetBaseUrl: `${BASE}assets/tokens/`,
@@ -42,10 +87,12 @@ export function TowerBoardStage({ onReady, className }: TowerBoardStageProps) {
       editingUI: false,
       // The 3D tower loads lazily; once it's on, paint the current state into it.
       onTowerToggle: (enabled) => {
-        if (!enabled) return;
-        const view = stageRef.current?.tower3D;
-        view?.applyState(towerSource.getState(), true);
-        view?.applySeals(towerSource.getBrokenSeals());
+        if (enabled) {
+          const view = stageRef.current?.tower3D;
+          view?.applyState(towerSource.getState(), true);
+          view?.applySeals(towerSource.getBrokenSeals());
+        }
+        void ensurePhysics();
       },
     });
     stageRef.current = stage;
@@ -56,6 +103,11 @@ export function TowerBoardStage({ onReady, className }: TowerBoardStageProps) {
       if (!view) return;
       view.applyState(state);
       view.applySeals(towerSource.getBrokenSeals());
+
+      void ensurePhysics(); // no-op once bound to this view; self-heals after a pop-out
+      if (physics && physicsView === view.view3D) {
+        prevSkulls = syncSkulls(physics, prevSkulls, towerSource.getSkullDropCount());
+      }
     };
 
     const boardSource = new ManualBoardSource(stage.controller);
@@ -69,6 +121,7 @@ export function TowerBoardStage({ onReady, className }: TowerBoardStageProps) {
     return () => {
       towerUnsub();
       useGameStore.getState().unregisterBoard();
+      physics?.dispose();
       stage.dispose();
       stageRef.current = null;
     };

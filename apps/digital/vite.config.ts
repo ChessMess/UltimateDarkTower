@@ -27,7 +27,11 @@ export default defineConfig({
     // no longer needs listing here: since v7.0.0 it ships a `browser` export condition
     // (dist/browser/index.mjs) with no `createRequire`/noble banner, so Vite resolves a
     // browser-safe entry directly.
-    include: ['ultimatedarktowerdisplay', 'ultimatedarktowerboard'],
+    include: [
+      'ultimatedarktowerdisplay',
+      'ultimatedarktowerdisplay/physics',
+      'ultimatedarktowerboard',
+    ],
   },
   test: {
     environment: 'jsdom',
