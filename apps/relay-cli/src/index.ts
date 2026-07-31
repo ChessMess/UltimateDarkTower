@@ -441,6 +441,21 @@ async function main(): Promise<void> {
         relay.broadcastLogConfig(enabled);
         status.loggingEnabled = enabled;
       },
+      toggleAdvertising: () => {
+        const isOn =
+          status.towerEmulatorState === 'advertising' || status.towerEmulatorState === 'connected';
+        const action = isOn ? source.stopAdvertising() : source.startAdvertising();
+        void action.catch((err) =>
+          logger.logEvent('error', 'host', `Toggle advertising failed: ${String(err)}`),
+        );
+      },
+      disconnectCompanion: () => {
+        if (!status.companionConnected) return;
+        const cycle = source.stopAdvertising().then(() => source.startAdvertising());
+        void cycle.catch((err) =>
+          logger.logEvent('error', 'host', `Disconnect failed: ${String(err)}`),
+        );
+      },
     });
   } else {
     console.log(`Relay port: ${port}`);

@@ -44,6 +44,8 @@ export interface DashboardActions {
   quit: () => void;
   resend: () => void;
   toggleLogging: () => void;
+  toggleAdvertising: () => void;
+  disconnectCompanion: () => void;
 }
 
 const MAX_CLIENT_ROWS = 5;
@@ -78,7 +80,12 @@ function Dashboard({ status, actions }: { status: RelayStatus; actions: Dashboar
     if (input === 'q' || (key.ctrl && input === 'c')) actions.quit();
     else if (input === 'r') actions.resend();
     else if (input === 'l') actions.toggleLogging();
+    else if (input === 's') actions.toggleAdvertising();
+    else if (input === 'd') actions.disconnectCompanion();
   });
+
+  const advertisingOn =
+    status.towerEmulatorState === 'advertising' || status.towerEmulatorState === 'connected';
 
   const rows = process.stdout.rows || 24;
   const activityMax = Math.max(3, rows - 20);
@@ -215,7 +222,17 @@ function Dashboard({ status, actions }: { status: RelayStatus; actions: Dashboar
           <Text color={status.loggingEnabled ? 'green' : 'gray'}>
             {status.loggingEnabled ? 'on' : 'off'}
           </Text>
-          )
+          ){'   '}
+          <Text bold color="cyan">
+            s
+          </Text>{' '}
+          advertising (
+          <Text color={advertisingOn ? 'green' : 'gray'}>{advertisingOn ? 'on' : 'off'}</Text>)
+          {'   '}
+          <Text bold color={status.companionConnected ? 'cyan' : 'gray'}>
+            d
+          </Text>{' '}
+          disconnect
         </Text>
       </Box>
     </Box>
