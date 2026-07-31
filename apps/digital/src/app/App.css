@@ -210,6 +210,12 @@ label {
   grid-template-columns: repeat(4, 1fr);
   gap: 0.25rem;
 }
+.collect-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
 .seal-btn {
   padding: 0.3rem 0;
   font-size: 0.7rem;
@@ -276,6 +282,23 @@ label {
 .board-arm-cancel {
   border-color: goldenrod !important;
   background: color-mix(in srgb, goldenrod 20%, transparent) !important;
+}
+.skull-row-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+.skull-row-controls button {
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1rem 0.5rem;
+}
+.skull-row-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 .board-counts {
   margin-top: 0.6rem;

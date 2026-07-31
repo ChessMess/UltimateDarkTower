@@ -7,6 +7,8 @@ import { TowerPanel } from '@/features/tower/TowerPanel';
 import { BridgePanel } from '@/features/tower/BridgePanel';
 import { BoardPalette } from '@/features/board/BoardPalette';
 import { BoardInspector } from '@/features/board/BoardInspector';
+import { KingdomSkulls } from '@/features/board/KingdomSkulls';
+import { SkullCollectBanner } from '@/features/board/SkullCollectBanner';
 import { PlayerBoardPane } from '@/features/player-board/PlayerBoardPane';
 import { SessionBar } from '@/features/session/SessionBar';
 import { TurnTracker } from '@/features/session/TurnTracker';
@@ -28,10 +30,12 @@ export function App() {
 
       <main className="panes">
         <aside className="pane pane-left">
+          <SkullCollectBanner />
           <TowerPanel />
           <BridgePanel />
           <BoardPalette />
           <BoardInspector />
+          <KingdomSkulls />
         </aside>
 
         <div className="pane pane-stage">

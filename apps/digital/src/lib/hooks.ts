@@ -60,6 +60,27 @@ export function useBoardState() {
   return useGameStore((s) => s.boardState);
 }
 
+/** How skulls get collected into the pending pool, plus the setter (PRD-06 skull collection). */
+export function useCollectMode() {
+  return useGameStore(
+    useShallow((s) => ({
+      mode: s.collectMode,
+      setMode: s.setCollectMode,
+    })),
+  );
+}
+
+/** The pending-skull pool: how many await placement, plus the ways to drain/correct it. */
+export function useSkullPool() {
+  return useGameStore(
+    useShallow((s) => ({
+      pending: (s.boardState?.meta?.skullsPending as number | undefined) ?? 0,
+      placeSkulls: s.placeSkulls,
+      adjustPendingSkulls: s.adjustPendingSkulls,
+    })),
+  );
+}
+
 /** Board actions (PRD-02): place/move/remove every token kind, skulls, and markers. */
 export function useBoardActions() {
   return useGameStore(
@@ -75,6 +96,7 @@ export function useBoardActions() {
       moveToken: s.moveToken,
       addSkull: s.addSkull,
       removeSkull: s.removeSkull,
+      restoreBuilding: s.restoreBuilding,
       setSpaceMarker: s.setSpaceMarker,
     })),
   );

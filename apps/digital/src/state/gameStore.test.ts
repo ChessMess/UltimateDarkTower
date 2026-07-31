@@ -84,6 +84,9 @@ class FakeBoardSource implements BoardStateSource {
   removeSkull(location: string, n?: number): void {
     this.record('removeSkull', [location, n]);
   }
+  restoreBuilding(location: string): void {
+    this.record('restoreBuilding', [location]);
+  }
   setSpaceMarker(location: string, marker: string, on: boolean): void {
     this.record('setSpaceMarker', [location, marker, on]);
   }

@@ -9,17 +9,23 @@
  * are intentionally absent here; the bridge (PRD-05, see `BridgePanel`) drives them through
  * the same `TowerStateSource`. Every action flows through the store → source → shared 3D scene.
  */
-import { useTowerActions, useTowerState } from '@/lib/hooks';
+import { useCollectMode, useTowerActions, useTowerState } from '@/lib/hooks';
 import type { SealRef } from '@/sources/types';
 
 const SIDES = ['north', 'east', 'south', 'west'] as const;
 const LEVELS = ['top', 'middle', 'bottom'] as const;
+const COLLECT_MODES = [
+  { value: 'auto', label: 'Auto' },
+  { value: 'click', label: 'Click' },
+  { value: 'off', label: 'Off' },
+] as const;
 
 const sealKey = (level: string, side: string) => `${level}:${side}`;
 
 export function TowerPanel() {
   const { skullDropCount, brokenSeals } = useTowerState();
   const { dropSkull, breakSeal, restoreSeal } = useTowerActions();
+  const { mode, setMode } = useCollectMode();
 
   const broken = new Set(brokenSeals.map((s) => sealKey(s.level, s.side)));
   const toggleSeal = (seal: SealRef) =>
@@ -36,6 +42,24 @@ export function TowerPanel() {
       <button className="tower-drop" onClick={dropSkull}>
         Drop skull
       </button>
+
+      <h3>Collecting fallen skulls</h3>
+      <p className="muted">
+        Auto sweeps them off the board floor; Click collects one at a time; Off leaves them for the
+        assign dialog's pool stepper.
+      </p>
+      <div className="collect-mode-grid">
+        {COLLECT_MODES.map((m) => (
+          <button
+            key={m.value}
+            className={`seal-btn${mode === m.value ? ' is-broken' : ''}`}
+            aria-pressed={mode === m.value}
+            onClick={() => setMode(m.value)}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
 
       <h3>Seals ({brokenSeals.length} broken)</h3>
       <p className="muted">Tap a seal to break it and reveal its glyph. Tap again to undo.</p>

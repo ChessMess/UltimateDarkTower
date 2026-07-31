@@ -206,6 +206,11 @@ function TokenDetail({
               − skull
             </button>
           </div>
+          {building.destroyed && (
+            <button className="board-remove" onClick={() => actions.restoreBuilding(location)}>
+              Rebuild
+            </button>
+          )}
         </>
       )}
       {markers.length > 0 && (
