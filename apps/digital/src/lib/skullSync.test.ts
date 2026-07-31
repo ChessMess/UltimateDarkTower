@@ -44,4 +44,12 @@ describe('syncSkulls', () => {
     expect(handle.dropSkull).not.toHaveBeenCalled();
     expect(handle.clearSkulls).not.toHaveBeenCalled();
   });
+
+  it('always clears on a reset to zero, even if prev already reads zero', () => {
+    const handle = fakeHandle();
+    const prev = syncSkulls(handle, 0, 0);
+    expect(prev).toBe(0);
+    expect(handle.clearSkulls).toHaveBeenCalledTimes(1);
+    expect(handle.dropSkull).not.toHaveBeenCalled();
+  });
 });
