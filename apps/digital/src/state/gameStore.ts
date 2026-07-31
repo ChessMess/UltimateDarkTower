@@ -121,6 +121,32 @@ interface GameStore {
   restoreSeal(seal: SealRef): void;
   rotateDrum(drumIndex: 0 | 1 | 2, position: 0 | 1 | 2 | 3): void;
 
+  /**
+   * How skulls that fall out of the tower get collected into the pending pool: `'auto'`
+   * sweeps them off the board floor, `'click'` collects one on click, `'off'` disables both
+   * (the assign dialog's pool stepper is the only way in). A machine preference, not game
+   * state — seeded from and written to `localStorage`, not the session.
+   */
+  collectMode: 'auto' | 'click' | 'off';
+  setCollectMode(mode: 'auto' | 'click' | 'off'): void;
+  /**
+   * Move `n` skulls from the physics sim into the pending pool (`BoardState.meta.skullsPending`).
+   * Reads the board source directly rather than the store's `boardState` mirror so a rapid
+   * collect can't race a just-applied `addSkull`.
+   */
+  collectSkulls(n: number): void;
+  /**
+   * Assign pending skulls to buildings: `{location: count}`. Runs the destroy rule per
+   * building (via `addSkull`) and removes the total from the pending pool in one meta write.
+   */
+  placeSkulls(assignments: Record<string, number>): void;
+  /**
+   * Manually correct the pending pool by `delta` (clamped at 0) without touching the
+   * cumulative `skullsCollected` counter. The escape hatch for skulls the physics sim lost
+   * uncounted (an OOB despawn, or a drop refused past `skull.maxCount`) — not a placement.
+   */
+  adjustPendingSkulls(delta: number): void;
+
   // --- official app bridge (PRD-05) ---
   /** Where the relay connection stands. Drives `BridgePanel`. */
   relayStatus: RelayStatus;
@@ -147,6 +173,7 @@ interface GameStore {
   moveToken(id: string, location: string): void;
   addSkull(location: string, n?: number): void;
   removeSkull(location: string, n?: number): void;
+  restoreBuilding(location: string): void;
   setSpaceMarker(location: string, marker: string, on: boolean): void;
 }
 
@@ -159,6 +186,14 @@ interface GameStore {
 const towerSource = new BridgeTowerSource(new ManualTowerSource());
 
 let boardUnsub: Unsubscribe | null = null;
+
+const COLLECT_MODE_STORAGE_KEY = 'udtd.skullCollectMode';
+type CollectMode = 'auto' | 'click' | 'off';
+
+function loadCollectMode(): CollectMode {
+  const raw = localStorage.getItem(COLLECT_MODE_STORAGE_KEY);
+  return raw === 'auto' || raw === 'click' || raw === 'off' ? raw : 'auto';
+}
 
 /** Replace a session's progress, stamping `updatedAt`. Keeps progress edits immutable. */
 function withProgress(session: GameSession, progress: GameSession['progress']): GameSession {
@@ -196,6 +231,48 @@ export const useGameStore = create<GameStore>((set, get) => {
     ],
     boardState: null,
     pendingBoardState: null,
+
+    collectMode: loadCollectMode(),
+    setCollectMode(mode) {
+      localStorage.setItem(COLLECT_MODE_STORAGE_KEY, mode);
+      set({ collectMode: mode });
+    },
+    collectSkulls(n) {
+      const source = get().boardSource;
+      if (!source || n <= 0) return;
+      const board = source.getState();
+      const pending = (board.meta?.skullsPending as number | undefined) ?? 0;
+      const collected = (board.meta?.skullsCollected as number | undefined) ?? 0;
+      source.load({
+        ...board,
+        meta: { ...board.meta, skullsPending: pending + n, skullsCollected: collected + n },
+      });
+    },
+    placeSkulls(assignments) {
+      const source = get().boardSource;
+      if (!source) return;
+      const total = Object.values(assignments).reduce((sum, n) => sum + n, 0);
+      if (total <= 0) return;
+      for (const [location, n] of Object.entries(assignments)) {
+        if (n > 0) source.addSkull(location, n);
+      }
+      const board = source.getState();
+      const pending = (board.meta?.skullsPending as number | undefined) ?? 0;
+      source.load({
+        ...board,
+        meta: { ...board.meta, skullsPending: Math.max(0, pending - total) },
+      });
+    },
+    adjustPendingSkulls(delta) {
+      const source = get().boardSource;
+      if (!source) return;
+      const board = source.getState();
+      const pending = (board.meta?.skullsPending as number | undefined) ?? 0;
+      source.load({
+        ...board,
+        meta: { ...board.meta, skullsPending: Math.max(0, pending + delta) },
+      });
+    },
 
     session: createNewGameSession(createDefaultConfig()),
     staleSession: null,
@@ -276,6 +353,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     moveToken: (id, location) => get().boardSource?.moveToken(id, location),
     addSkull: (location, n) => get().boardSource?.addSkull(location, n),
     removeSkull: (location, n) => get().boardSource?.removeSkull(location, n),
+    restoreBuilding: (location) => get().boardSource?.restoreBuilding(location),
     setSpaceMarker: (location, marker, on) =>
       get().boardSource?.setSpaceMarker(location, marker, on),
 

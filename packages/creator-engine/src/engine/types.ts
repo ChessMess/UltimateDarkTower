@@ -338,7 +338,7 @@ export interface BuildingTypeDef {
    * unchanged.
    */
   heroStart?: boolean;
-  /** skulls that SIT on the building; the next one razes it. Authorable since 0.4.7 (was 3). */
+  /** skulls that SIT on the building; the next one destroys it. Authorable since 0.4.7 (was 3). */
   skullCapacity?: number;
   /** Reinforce's free effect (buildings.md) */
   free?: Effect[];

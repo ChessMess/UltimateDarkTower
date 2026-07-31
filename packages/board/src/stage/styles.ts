@@ -25,6 +25,7 @@ export const BOARD_STAGE_CSS = `
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  padding-top: 0.6rem;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -41,6 +42,7 @@ export const BOARD_STAGE_CSS = `
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  padding: 0 0.6rem;
 }
 .bsv-toolbar-right { display: inline-flex; gap: 0.4rem; align-items: center; }
 
@@ -92,6 +94,23 @@ export const BOARD_STAGE_CSS = `
 .bsv-action:hover { background: rgba(200, 112, 32, 0.08); border-color: var(--bsv-accent); color: var(--bsv-lume); }
 .bsv-action[hidden] { display: none; }
 .bsv-action.is-active { border-color: var(--bsv-accent); color: var(--bsv-lume); }
+.bsv-action:disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+
+/* Toolbar action buttons (Tower 3D, Shake Skulls, Shake Tower, Swap, Pop Out) match the
+   mode-switcher pills' look — same border/background/font/padding — even though each stays
+   an independent, non-merged button rather than one segmented control. */
+.bsv-toolbar-right .bsv-action {
+  border-color: var(--bsv-border-gold);
+  background: var(--bsv-panel-bg);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  padding: 0.45rem 1.1rem;
+}
+.bsv-toolbar-right .bsv-action.is-active {
+  background: linear-gradient(180deg, #2a2010 0%, #1a1608 100%);
+  border-color: var(--bsv-border-gold);
+  color: var(--bsv-lume);
+}
 
 /* When the 3D tower is off the stage is 2D-only: there is no mode choice and the
    Overhead/Isometric tilt is inert, so hide the mode switcher + the angle group.

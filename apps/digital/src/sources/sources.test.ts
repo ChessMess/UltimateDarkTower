@@ -70,17 +70,41 @@ describe('ManualBoardSource', () => {
 describe('ManualBoardSource — PRD-02 board actions', () => {
   const make = () => new ManualBoardSource(new BoardStateController());
 
-  it('destroys a building at the 4th skull and restores it below the threshold', () => {
+  it('destroys a building at the 4th skull, returning skulls to supply', () => {
     const board = make();
     board.addSkull('Dayside', 3);
     expect(skullsAt(board.getState(), 'Dayside')).toBe(3);
     expect(buildingAt(board.getState(), 'Dayside').destroyed).toBe(false);
     board.addSkull('Dayside'); // 4th skull
-    expect(skullsAt(board.getState(), 'Dayside')).toBe(4);
+    expect(skullsAt(board.getState(), 'Dayside')).toBe(0); // skulls return to supply
     expect(buildingAt(board.getState(), 'Dayside').destroyed).toBe(true);
-    board.removeSkull('Dayside'); // back to 3
-    expect(skullsAt(board.getState(), 'Dayside')).toBe(3);
+  });
+
+  it('does not auto-restore a destroyed building when skulls are removed', () => {
+    const board = make();
+    board.addSkull('Dayside', 4);
+    expect(buildingAt(board.getState(), 'Dayside').destroyed).toBe(true);
+    board.removeSkull('Dayside'); // a no-op on an already-empty stack; destroy is one-way regardless
+    expect(buildingAt(board.getState(), 'Dayside').destroyed).toBe(true);
+  });
+
+  it('restoreBuilding is the explicit undo for a destroyed building', () => {
+    const board = make();
+    board.addSkull('Dayside', 4);
+    expect(buildingAt(board.getState(), 'Dayside').destroyed).toBe(true);
+    board.restoreBuilding('Dayside');
     expect(buildingAt(board.getState(), 'Dayside').destroyed).toBe(false);
+  });
+
+  it('load() normalizes a legacy session: a destroyed building never keeps a full skull stack', () => {
+    const board = make();
+    // Simulate an old save from before the one-way rule: destroyed AND still holding 4 skulls.
+    const controller = new BoardStateController();
+    controller.addSkull('Dayside', 4);
+    controller.destroyBuilding('Dayside'); // old auto-restore build never zeroed the stack
+    board.load(controller.getState());
+    expect(buildingAt(board.getState(), 'Dayside').destroyed).toBe(true);
+    expect(skullsAt(board.getState(), 'Dayside')).toBe(0);
   });
 
   it('selects + places the adversary, then clears it', () => {

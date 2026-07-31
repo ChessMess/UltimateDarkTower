@@ -85,7 +85,7 @@ const SELECTED_SCALE = 1.35;
 /** Context handed to a custom `tokenFactory` so it can build with the consumer's `three`. */
 export interface TokenBuildContext {
   selection: TokenSelection;
-  /** The art reference (or `null` for a pure programmatic token, e.g. the razed marker). */
+  /** The art reference (or `null` for a pure programmatic token). */
   art: TokenArtRef | null;
   /** World position on the disc top surface (token base rests here). */
   position: THREE.Vector3;
@@ -448,7 +448,7 @@ export class Board3DPlugin implements ScenePlugin {
       }
     }
 
-    // Buildings: skull stacks + monument / razed overlays (a click selects the building).
+    // Buildings: skull stacks + monument / destroyed (wasteland) overlays (a click selects the building).
     for (const loc of Object.keys(this.boardData.def.spots)) {
       const skulls = skullsAt(state, loc);
       if (skulls > 0) {
@@ -478,7 +478,9 @@ export class Board3DPlugin implements ScenePlugin {
           if (monument) {
             this.addToken(selection, { kind: 'monument', id: monument }, pos, this.tokenSize());
           }
-          if (building.destroyed) this.addRazed(selection, pos, this.tokenSize());
+          if (building.destroyed) {
+            this.addToken(selection, { kind: 'marker', id: 'wasteland' }, pos, this.tokenSize());
+          }
         }
       }
     }
@@ -602,13 +604,6 @@ export class Board3DPlugin implements ScenePlugin {
     if (model.rotation)
       mesh.rotation.set(model.rotation.x ?? 0, model.rotation.y ?? 0, model.rotation.z ?? 0);
     return mesh;
-  }
-
-  /** Programmatic "razed" marker for a destroyed building (no art). */
-  private addRazed(selection: TokenSelection, position: THREE.Vector3, size: number): void {
-    const sprite = this.makeSprite('#dc2626', size, position);
-    sprite.material.opacity = 0.85;
-    this.register(sprite, selection);
   }
 
   private buildSprite(

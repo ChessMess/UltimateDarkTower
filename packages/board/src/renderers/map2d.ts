@@ -496,7 +496,14 @@ export class BoardMap2D implements BoardRenderer {
                     'building',
                     this.geom.slotSize,
                   );
-                if (building.destroyed) group.appendChild(razedOverlay(this.geom.slotSize));
+                if (building.destroyed) {
+                  this.appendArtOrFallback(
+                    group,
+                    { kind: 'marker', id: 'wasteland' },
+                    'building',
+                    this.geom.slotSize,
+                  );
+                }
                 root.appendChild(group);
               }
             }
@@ -947,26 +954,6 @@ function fallbackDisc(kind: string, label: string, size: number): SVGGElement {
   text.setAttribute('fill', '#ffffff');
   text.textContent = label.slice(0, 6);
   group.appendChild(text);
-  return group;
-}
-
-function razedOverlay(size: number): SVGGElement {
-  const group = document.createElementNS(SVG_NS, 'g');
-  group.setAttribute('class', 'udt-razed');
-  const r = size * 0.4;
-  for (const [x1, y1, x2, y2] of [
-    [-r, -r, r, r],
-    [-r, r, r, -r],
-  ]) {
-    const line = document.createElementNS(SVG_NS, 'line');
-    line.setAttribute('x1', String(x1));
-    line.setAttribute('y1', String(y1));
-    line.setAttribute('x2', String(x2));
-    line.setAttribute('y2', String(y2));
-    line.setAttribute('stroke', '#dc2626');
-    line.setAttribute('stroke-width', '12');
-    group.appendChild(line);
-  }
   return group;
 }
 

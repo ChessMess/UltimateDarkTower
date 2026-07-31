@@ -400,9 +400,9 @@ expectFault('cleansing a skull-less building faults', () => drive(gf, opts, [act
   ok('reinforce at a destroyed building faults', faulted);
 }
 
-// ---------- LOSS end-to-end: three razed buildings → third corruption ----------
+// ---------- LOSS end-to-end: three destroyed buildings → third corruption ----------
 {
-  const raze = (type) => ({
+  const destroy = (type) => ({
     requestId: 'skullCounter',
     value: {
       count: 4,
@@ -417,11 +417,11 @@ expectFault('cleansing a skull-less building faults', () => drive(gf, opts, [act
   });
   const run = drive(gf, opts, [
     act('endTurn'),
-    raze('village'),
+    destroy('village'),
     act('endTurn'),
-    raze('bazaar'),
+    destroy('bazaar'),
     act('endTurn'),
-    raze('sanctuary'),
+    destroy('sanctuary'),
   ]);
   const f = lastOf(run);
   ok(

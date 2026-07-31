@@ -16,6 +16,7 @@ const { towerHandle, createBoardTower3D } = vi.hoisted(() => {
         distanceFactor: 1,
       })),
       applyCameraConfig: vi.fn(),
+      shakeTower: vi.fn(),
     },
     setBoardState: vi.fn(),
     setFocus: vi.fn(),
@@ -42,6 +43,13 @@ function focusButton(stage: BoardStageView, label: string): HTMLButtonElement {
   const btns = Array.from(stage.root.querySelectorAll<HTMLButtonElement>('.udt-focus-button'));
   const btn = btns.find((b) => b.textContent === label);
   if (!btn) throw new Error(`focus button "${label}" not found`);
+  return btn;
+}
+
+function actionButton(stage: BoardStageView, label: string): HTMLButtonElement {
+  const btns = Array.from(stage.root.querySelectorAll<HTMLButtonElement>('.bsv-action'));
+  const btn = btns.find((b) => b.textContent === label);
+  if (!btn) throw new Error(`action button "${label}" not found`);
   return btn;
 }
 
@@ -252,6 +260,51 @@ describe('BoardStageView — lazy 3D tower', () => {
     expect(createBoardTower3D).not.toHaveBeenCalled(); // tower is off — must stay off
 
     openSpy.mockRestore();
+  });
+});
+
+describe('BoardStageView — shake buttons', () => {
+  it('are hidden without shakeButtons, shown and disabled (no tower) with it', () => {
+    const { stage: withoutOption } = mount({ modelUrl: 'mock://tower.glb' });
+    expect(actionButton(withoutOption, 'Shake Skulls').hidden).toBe(true);
+    expect(actionButton(withoutOption, 'Shake Tower').hidden).toBe(true);
+
+    const { stage } = mount({ modelUrl: 'mock://tower.glb', shakeButtons: true });
+    const shakeSkulls = actionButton(stage, 'Shake Skulls');
+    const shakeTower = actionButton(stage, 'Shake Tower');
+    expect(shakeSkulls.hidden).toBe(false);
+    expect(shakeTower.hidden).toBe(false);
+    expect(shakeSkulls.disabled).toBe(true); // no tower enabled yet
+    expect(shakeTower.disabled).toBe(true);
+  });
+
+  it('Shake Tower calls view3D.shakeTower() once the tower is enabled', async () => {
+    const { stage } = mount({ tower3D: false, modelUrl: 'mock://tower.glb', shakeButtons: true });
+    await stage.setTowerEnabled(true);
+
+    const shakeTower = actionButton(stage, 'Shake Tower');
+    expect(shakeTower.disabled).toBe(false);
+    shakeTower.click();
+    expect(towerHandle.view3D.shakeTower).toHaveBeenCalledTimes(1);
+  });
+
+  it('setSkullPhysicsHandle enables/disables Shake Skulls and wires its click', async () => {
+    const { stage } = mount({ tower3D: false, modelUrl: 'mock://tower.glb', shakeButtons: true });
+    await stage.setTowerEnabled(true);
+
+    const shakeSkulls = actionButton(stage, 'Shake Skulls');
+    expect(shakeSkulls.disabled).toBe(true); // no handle registered yet
+
+    const fakeHandle = { shakeSkulls: vi.fn() } as unknown as Parameters<
+      typeof stage.setSkullPhysicsHandle
+    >[0];
+    stage.setSkullPhysicsHandle(fakeHandle);
+    expect(shakeSkulls.disabled).toBe(false);
+    shakeSkulls.click();
+    expect(fakeHandle!.shakeSkulls).toHaveBeenCalledTimes(1);
+
+    stage.setSkullPhysicsHandle(null);
+    expect(shakeSkulls.disabled).toBe(true);
   });
 });
 

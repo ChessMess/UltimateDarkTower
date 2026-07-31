@@ -21,9 +21,8 @@ import { syncSkulls } from './skullSync';
 
 const BASE = import.meta.env.BASE_URL; // ends with '/'
 
-const PHYSICS_CONFIG = {
-  skull: { modelUrl: `${BASE}assets/tokens/markers/skull.glb`, colliderShape: 'hull' },
-} as const satisfies PhysicsConfig;
+/** How often auto-sweep checks the floor for skulls to collect. */
+const AUTO_SWEEP_INTERVAL_MS = 500;
 
 export interface TowerBoardStageProps {
   /** Called once the stage instance exists (e.g. to drive the tower view in PRD-01). */
@@ -51,12 +50,33 @@ export function TowerBoardStage({ onReady, className }: TowerBoardStageProps) {
     let prevSkulls = 0;
     let attaching = false;
 
+    /** Cumulative skulls already collected off the floor (`BoardState.meta.skullsCollected`). */
+    const skullsCollected = (): number => {
+      const board = useGameStore.getState().boardSource?.getState();
+      return (board?.meta?.skullsCollected as number | undefined) ?? 0;
+    };
+
+    const physicsConfig: PhysicsConfig = {
+      skull: {
+        modelUrl: `${BASE}assets/tokens/markers/skull.glb`,
+        colliderShape: 'hull',
+        onSkullClick: (id, zone) => {
+          const s = useGameStore.getState();
+          if (s.collectMode !== 'click' || zone !== 'onBoard') return false;
+          physics?.removeSkulls([id]);
+          s.collectSkulls(1);
+          return true;
+        },
+      },
+    };
+
     const ensurePhysics = async (): Promise<void> => {
       const view = stageRef.current?.tower3D?.view3D ?? null;
       if (!view) {
         physics?.dispose();
         physics = null;
         physicsView = null;
+        stage.setSkullPhysicsHandle(null);
         return;
       }
       if (view === physicsView || attaching) return;
@@ -70,14 +90,27 @@ export function TowerBoardStage({ onReady, className }: TowerBoardStageProps) {
         const live = stageRef.current?.tower3D?.view3D ?? null; // may have changed mid-await
         if (!live) return;
         physics?.dispose();
-        physics = attachSkullPhysics(live, PHYSICS_CONFIG);
+        physics = attachSkullPhysics(live, physicsConfig);
         physicsView = live;
-        prevSkulls = 0; // fresh scene — replay every skull dropped so far
-        prevSkulls = syncSkulls(physics, prevSkulls, towerSource.getSkullDropCount());
+        stage.setSkullPhysicsHandle(physics);
+        // Fresh scene: spawn only what's still uncollected, but keep the counter on
+        // raw drops so a later paint tick's diff never sees `next < prev` and clears.
+        const dropped = towerSource.getSkullDropCount();
+        syncSkulls(physics, 0, Math.max(0, dropped - skullsCollected()));
+        prevSkulls = dropped;
       } finally {
         attaching = false;
       }
     };
+
+    // ponytail: 500ms poll — no frame hook is exposed to hosts; switch to one if it feels laggy.
+    const sweepInterval = setInterval(() => {
+      if (!physics || useGameStore.getState().collectMode !== 'auto') return;
+      const ids = physics.getSkullIds('onBoard');
+      if (ids.length === 0) return;
+      const removed = physics.removeSkulls(ids);
+      if (removed > 0) useGameStore.getState().collectSkulls(removed);
+    }, AUTO_SWEEP_INTERVAL_MS);
 
     const stage = new BoardStageView({
       container,
@@ -85,6 +118,7 @@ export function TowerBoardStage({ onReady, className }: TowerBoardStageProps) {
       boardImageUrl: `${BASE}assets/board.png`,
       modelUrl: `${BASE}assets/tower.glb`,
       editingUI: false,
+      shakeButtons: true,
       // The 3D tower loads lazily; once it's on, paint the current state into it.
       onTowerToggle: (enabled) => {
         if (enabled) {
@@ -119,6 +153,7 @@ export function TowerBoardStage({ onReady, className }: TowerBoardStageProps) {
     onReady?.(stage);
 
     return () => {
+      clearInterval(sweepInterval);
       towerUnsub();
       useGameStore.getState().unregisterBoard();
       physics?.dispose();

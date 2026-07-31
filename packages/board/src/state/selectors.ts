@@ -1,6 +1,9 @@
 // Read helpers over the unified `tokens` collection — the replacement for the pre-0.5.0
 // bucket properties (`state.heroes`, `state.buildings`, …), which no longer exist. Every
 // consumer that used to read a bucket directly now goes through one of these.
+import type { BoardKingdom } from '../data/udtReexports';
+import type { BoardDefinition } from '../data/boardDefinition';
+import { resolveBoard } from '../data/boardDefinition';
 import type { BoardState, LocationName, PlacedToken } from './boardState';
 import { ADVERSARY_TOKEN_ID, buildingTokenId, monumentTokenId, skullTokenId } from './boardState';
 
@@ -74,4 +77,34 @@ export function questsAt(state: BoardState, location: LocationName): string[] {
   return tokensAt(state, location)
     .filter((t) => t.typeId === 'quest')
     .map((t) => t.art ?? t.id);
+}
+
+/** Total skulls on `kingdom`'s building spaces. Omit `board` for the built-in RtDT board. */
+export function skullsInKingdom(
+  state: BoardState,
+  kingdom: BoardKingdom,
+  board?: BoardDefinition,
+): number {
+  const resolved = resolveBoard(board);
+  let total = 0;
+  for (const loc of resolved.buildingLocations) {
+    if (resolved.locationByName[loc]?.kingdom === kingdom) total += skullsAt(state, loc);
+  }
+  return total;
+}
+
+/** Buildings destroyed in `kingdom`. Omit `board` for the built-in RtDT board. */
+export function destroyedInKingdom(
+  state: BoardState,
+  kingdom: BoardKingdom,
+  board?: BoardDefinition,
+): number {
+  const resolved = resolveBoard(board);
+  let total = 0;
+  for (const loc of resolved.buildingLocations) {
+    if (resolved.locationByName[loc]?.kingdom === kingdom && buildingAt(state, loc).destroyed) {
+      total++;
+    }
+  }
+  return total;
 }

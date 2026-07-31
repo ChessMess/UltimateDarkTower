@@ -12,12 +12,14 @@ import type { BoardState, FoeStatus, LocationName } from '../state/boardState';
 import {
   adversaryOf,
   buildingAt,
+  destroyedInKingdom,
   foesOf,
   heroesOf,
   markersAt,
   monumentAt,
   questsAt,
   skullsAt,
+  skullsInKingdom,
 } from '../state/selectors';
 import type { BoardKingdom } from '../data/udtReexports';
 import { RESERVED_TOKEN_TYPES } from '../data/udtReexports';
@@ -736,7 +738,7 @@ function buildSummary(
     const state = controller.getState();
     table.replaceChildren();
     const header = document.createElement('tr');
-    for (const h of ['', 'Heroes', 'Foes', 'Skulls', 'Razed', 'Markers', 'Quests', 'Adv'])
+    for (const h of ['', 'Heroes', 'Foes', 'Skulls', 'Destroyed', 'Markers', 'Quests', 'Adv'])
       header.appendChild(cell('th', h));
     table.appendChild(header);
     for (const k of KINGDOMS) {
@@ -747,7 +749,7 @@ function buildSummary(
       row.appendChild(metricCell('heroes', m.heroes));
       row.appendChild(metricCell('foes', m.foes));
       row.appendChild(metricCell('skulls', m.skulls));
-      row.appendChild(metricCell('razed', m.razed));
+      row.appendChild(metricCell('destroyed', m.destroyed));
       row.appendChild(metricCell('markers', m.markers));
       row.appendChild(metricCell('quests', m.quests));
       row.appendChild(metricCell('adversary', m.adversary ? '✓' : ''));
@@ -766,7 +768,7 @@ interface KingdomMetrics {
   heroes: number;
   foes: number;
   skulls: number;
-  razed: number;
+  destroyed: number;
   markers: number;
   quests: number;
   adversary: boolean;
@@ -780,13 +782,10 @@ function kingdomMetrics(
   const inK = (loc: LocationName): boolean => board.locationByName[loc]?.kingdom === kingdom;
   const heroes = heroesOf(state).filter((h) => inK(h.location)).length;
   const foes = foesOf(state).filter((f) => inK(f.location)).length;
-  let skulls = 0;
-  let razed = 0;
-  for (const loc of board.buildingLocations) {
-    if (!inK(loc)) continue;
-    skulls += skullsAt(state, loc);
-    if (buildingAt(state, loc).destroyed) razed++;
-  }
+  // ponytail: re-resolves per call for custom boards; pass a ResolvedBoard overload if it shows
+  // up in a profile — for the built-in RtDT board `board.def` hits the prebuilt singleton.
+  const skulls = skullsInKingdom(state, kingdom, board.def);
+  const destroyed = destroyedInKingdom(state, kingdom, board.def);
   let markers = 0;
   let quests = 0;
   for (const token of Object.values(state.tokens)) {
@@ -796,7 +795,7 @@ function kingdomMetrics(
   }
   const adversaryLoc = adversaryOf(state)?.location;
   const adversary = adversaryLoc ? inK(adversaryLoc) : false;
-  return { heroes, foes, skulls, razed, markers, quests, adversary };
+  return { heroes, foes, skulls, destroyed, markers, quests, adversary };
 }
 
 // ── DOM helpers ────────────────────────────────────────────────────────────────

@@ -22,6 +22,7 @@ import {
   type SealAnchor,
   type SealPocket,
   type SkullSealBuckets,
+  type SkullZone,
 } from './skullCounts';
 
 // Rapier is dynamic-imported inside init() so the WASM init runs once.
@@ -626,6 +627,33 @@ export class PhysicsManager {
     return findSkullIdForObject(obj);
   }
 
+  /** Ids of every live skull currently classified in `zone`, ascending (oldest first). */
+  getSkullIds(zone: SkullZone): number[] {
+    if (!this.world || !this.ready) return [];
+    const params = this.classifyParams();
+    const ids: number[] = [];
+    for (const s of this.skulls) {
+      if (classifySkull(s.body.translation(), params) === zone) ids.push(s.id);
+    }
+    return ids;
+  }
+
+  /**
+   * Despawn the skulls named in `ids`. Ids not matching a live skull are
+   * silently skipped. Returns how many were actually despawned.
+   */
+  removeSkulls(ids: number[]): number {
+    if (this.disposed || !this.world || !this.ready || ids.length === 0) return 0;
+    const wanted = new Set(ids);
+    let removed = 0;
+    for (let i = this.skulls.length - 1; i >= 0; i--) {
+      if (!wanted.has(this.skulls[i].id)) continue;
+      this.despawnSkullAt(i);
+      removed++;
+    }
+    return removed;
+  }
+
   private applyShakeImpulse(body: RapierRigidBody, strength: number): void {
     const { linear, torque } = computeShakeImpulse(
       body.mass(),
@@ -652,12 +680,13 @@ export class PhysicsManager {
   }
 
   /**
-   * Register or unregister the `skull.clickToShake` pointer target to match
-   * the current config. Registering twice, or unregistering when not
-   * registered, is a safe no-op.
+   * Register or unregister the click pointer target to match the current
+   * config — live whenever `clickToShake` or `onSkullClick` is set (either
+   * alone is enough to need the registration). Registering twice, or
+   * unregistering when not registered, is a safe no-op.
    */
   private updateClickToShakeRegistration(): void {
-    if (this.config.skull.clickToShake) {
+    if (this.config.skull.clickToShake || this.config.skull.onSkullClick) {
       if (this.pointerTargetUnsub) return;
       const target: PointerTarget = {
         objects: () => this.skulls.map((s) => s.mesh),
@@ -667,6 +696,15 @@ export class PhysicsManager {
         onPointerDown: (hit) => {
           const id = this.getSkullIdForObject(hit.object);
           if (id === null) return false;
+          const onSkullClick = this.config.skull.onSkullClick;
+          if (onSkullClick) {
+            const skull = this.skulls.find((s) => s.id === id);
+            const zone = skull
+              ? classifySkull(skull.body.translation(), this.classifyParams())
+              : 'inTransit';
+            if (onSkullClick(id, zone)) return true;
+          }
+          if (!this.config.skull.clickToShake) return false;
           this.shakeSelectedSkull(id);
           return true;
         },
@@ -1217,7 +1255,10 @@ export class PhysicsManager {
     if (this.config.debug.sealColliders !== prev.debug.sealColliders) {
       this.applySealDebugVisibility();
     }
-    if (this.config.skull.clickToShake !== prev.skull.clickToShake) {
+    if (
+      this.config.skull.clickToShake !== prev.skull.clickToShake ||
+      this.config.skull.onSkullClick !== prev.skull.onSkullClick
+    ) {
       this.updateClickToShakeRegistration();
     }
     if (this.config.skull.modelUrl !== prev.skull.modelUrl) {

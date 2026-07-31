@@ -62,9 +62,12 @@ export interface BoardStateSource {
   /** Move any placed token (hero / foe / adversary) to a location, resolving its kind by id. */
   moveToken(id: string, location: string): void;
 
-  // skulls on buildings: a building is destroyed at SKULLS_TO_DESTROY, restored below it
+  // skulls on buildings: a building is destroyed at SKULLS_TO_DESTROY (skulls return to
+  // supply — the stack zeroes). One-way; `restoreBuilding` is the explicit undo.
   addSkull(location: string, n?: number): void;
   removeSkull(location: string, n?: number): void;
+  /** Un-destroy a building (its skull stack stays at 0 — this doesn't restore skulls). */
+  restoreBuilding(location: string): void;
 
   /** Toggle a per-space marker (wasteland / power-skull / quest / …) on a location. */
   setSpaceMarker(location: string, marker: string, on: boolean): void;

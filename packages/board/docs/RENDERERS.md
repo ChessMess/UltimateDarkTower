@@ -106,7 +106,7 @@ Three movable / dockable / show-hide-configurable panels:
   `placeToken` — no per-kind detail row.
 - **Inspector** — edits the active `selection`: move/remove a hero or foe, set foe status, place/clear the
   adversary, change a building's skulls / destroy-restore / monument, or remove a marker.
-- **Summary** — per-kingdom counts (heroes, foes, skulls, razed, markers, adversary).
+- **Summary** — per-kingdom counts (heroes, foes, skulls, destroyed, markers, adversary).
 
 `BoardRenderView` wires this for you: pass `uiContainer` (+ optional `ui` config) and it owns/exposes
 `view.selection` and `view.locationPick`, feeding the 2D map's clicks/picks into them. The shared stores

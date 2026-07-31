@@ -69,7 +69,7 @@ spot's `accepts` can name, alongside the reserved built-ins) live in `library.to
    - **Reinforce — free** and **Reinforce — enhanced**: the effects that run when a hero Reinforces
      on that space, the enhanced set costing the resource you name. A type may define _only_ the
      free set — the Player then simply doesn't offer the paid Reinforce on that building.
-   - **skull capacity** (1–9, default 3): how many skulls sit on it before the next one razes it.
+   - **skull capacity** (1–9, default 3): how many skulls sit on it before the next one destroys it.
    - **hero start**: heroes begin on their kingdom's first building of this type.
 
    **Clone** copies an existing type as a starting point. **Renaming** a type retypes every

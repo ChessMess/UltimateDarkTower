@@ -71,12 +71,15 @@ export class ManualBoardSource implements BoardStateSource {
 
   addSkull(location: string, n = 1): void {
     this.controller.addSkull(location, n);
-    this.reconcileDestroyed(location);
+    this.destroyIfFull(location);
   }
 
   removeSkull(location: string, n = 1): void {
     this.controller.removeSkull(location, n);
-    this.reconcileDestroyed(location);
+  }
+
+  restoreBuilding(location: string): void {
+    this.controller.restoreBuilding(location);
   }
 
   setSpaceMarker(location: string, marker: string, on: boolean): void {
@@ -84,24 +87,33 @@ export class ManualBoardSource implements BoardStateSource {
   }
 
   /**
-   * Keep a building's `destroyed` flag in sync with its skull count — the base game destroys
-   * a building at its 4th skull. The board library is a dumb container (it never auto-destroys),
-   * so UTDD applies this rule here; removing skulls below the threshold restores it (undo).
+   * Destroy a building at its 4th skull — the base game rule. One-way: skulls return to
+   * supply (the stack zeroes) and `destroyed` stays set until an explicit `restoreBuilding`.
+   * The board library is a dumb container (it never auto-destroys), so UTDD applies this
+   * rule here.
    */
-  private reconcileDestroyed(location: string): void {
+  private destroyIfFull(location: string): void {
     const state = this.controller.getState();
     if (!state.tokens[buildingTokenId(location)]) return; // not a building space — nothing to destroy
     const building = buildingAt(state, location);
     const skulls = state.tokens[skullTokenId(location)]?.n ?? 0;
-    const shouldBeDestroyed = skulls >= SKULLS_TO_DESTROY;
-    if (shouldBeDestroyed && !building.destroyed) this.controller.destroyBuilding(location);
-    else if (!shouldBeDestroyed && building.destroyed) this.controller.restoreBuilding(location);
+    if (building.destroyed || skulls < SKULLS_TO_DESTROY) return;
+    this.controller.destroyBuilding(location);
+    this.controller.setSkulls(location, 0);
   }
 
   load(state: BoardState): void {
     // applyState is the controller's wholesale commit path; it emits `change`,
-    // which our subscription forwards to listeners.
-    this.controller.applyState(structuredClone(state));
+    // which our subscription forwards to listeners. Normalize once on hydrate: a session
+    // saved under the old auto-restore rule can hold a destroyed building with a full skull
+    // stack still on it (both would render — wasteland art AND a skull fan) — zero it here.
+    const normalized = structuredClone(state);
+    for (const token of Object.values(normalized.tokens)) {
+      if (token.typeId !== 'building' || !token.data?.destroyed) continue;
+      const skullId = skullTokenId(token.location);
+      if (normalized.tokens[skullId]) normalized.tokens[skullId].n = 0;
+    }
+    this.controller.applyState(normalized);
   }
 
   dispose(): void {
