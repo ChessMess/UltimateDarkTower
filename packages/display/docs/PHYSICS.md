@@ -187,6 +187,7 @@ A deeply-nested partial. Every field is optional; missing leaves fall back to `D
 | `skull.shakeHorizontalFactor`               | `number`                         | `0.5`       | Live              | Fraction of a shake's impulse pushed radially outward, away from the tower's central axis through the skull's current position. Shared by every shake call site — see [Unsticking skulls](#unsticking-skulls).                                                                                                                                   |
 | `skull.shakeUpwardFactor`                   | `number`                         | `0.45`      | Live              | Fraction of a shake's impulse pushed straight up. Keep below `shakeHorizontalFactor` so the outward push dominates rather than launching the skull. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                                 |
 | `skull.clickToShake`                        | `boolean`                        | `false`     | Live              | When true, clicking a live skull in the 3D view calls `shakeSelectedSkull(id)` for it. See [Unsticking skulls](#unsticking-skulls).                                                                                                                                                                                                              |
+| `skull.onSkullClick`                        | `(id, zone) => boolean           | void`       | `undefined`       | Live                                                                                                                                                                                                                                                                                                                                             | Called on a skull click before `clickToShake`. Return `true` to consume the click (skip the shake); falsy falls through to shake-or-orbit. Shares `clickToShake`'s pointer-target registration. |
 | `drum.innerRadiusFactor`                    | `number`                         | `0.30`      | World rebuild     | Used for drop-jitter heuristics and (future) parametric drum walls.                                                                                                                                                                                                                                                                              |
 | `drum.halfHeightFactor`                     | `number`                         | `0.15`      | Unused            | Reserved for future parametric drum walls; currently feeds only the discarded drum-wall spec and has no runtime effect.                                                                                                                                                                                                                          |
 | `drum.friction`                             | `number`                         | `0.15`      | Live              | Friction on kinematic drum trimeshes (Min combine rule).                                                                                                                                                                                                                                                                                         |
@@ -215,6 +216,8 @@ interface SkullPhysicsHandle {
   shakeSkulls(options?: { strength?: number }): void;
   shakeSelectedSkull(id: number | number[], options?: { strength?: number }): void;
   getSkullIdForObject(obj: THREE.Object3D): number | null;
+  getSkullIds(zone: SkullZone): number[];
+  removeSkulls(ids: number[]): number;
   getSkullCounts(): SkullCounts;
   getSkullsBySeal(): SkullSealBuckets;
   getPhysicsConfig(): ResolvedPhysicsConfig;
@@ -228,6 +231,8 @@ interface SkullPhysicsHandle {
 - `shakeSkulls(options?)` — Impulse-nudge every skull currently classified `inTower`. See [Unsticking skulls](#unsticking-skulls).
 - `shakeSelectedSkull(id, options?)` — Impulse-nudge one skull, or a batch of them, by id, regardless of zone. See [Unsticking skulls](#unsticking-skulls).
 - `getSkullIdForObject(obj)` — Walk an `Object3D` up its parent chain to find a live skull's id, or `null`. Useful for wiring your own picking instead of `skull.clickToShake`.
+- `getSkullIds(zone)` — Ids of every live skull currently classified in `zone`, ascending (oldest first). Cheap; safe to poll every frame.
+- `removeSkulls(ids)` — Despawn the named skulls (same path as the OOB safety net). Ids not matching a live skull are skipped. Returns how many were actually removed.
 - `getSkullCounts()` — Snapshot of where every live skull currently is. See [Counting skulls](#counting-skulls) below.
 - `getSkullsBySeal()` — Breakdown of in-tower skulls by which seal they're behind. See [Counting skulls by seal](#counting-skulls-by-seal).
 - `getPhysicsConfig()` — Deep-cloned snapshot of the fully-resolved config. Safe to mutate.

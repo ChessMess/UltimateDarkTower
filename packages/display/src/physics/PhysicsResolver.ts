@@ -34,6 +34,7 @@ export const DEFAULT_PHYSICS: ResolvedPhysicsConfig = {
     shakeHorizontalFactor: 0.5,
     shakeUpwardFactor: 0.45,
     clickToShake: false,
+    onSkullClick: undefined,
   },
   drum: {
     innerRadiusFactor: 0.3,
@@ -110,6 +111,7 @@ export function resolvePhysics(
       shakeHorizontalFactor: user?.skull?.shakeHorizontalFactor ?? base.skull.shakeHorizontalFactor,
       shakeUpwardFactor: user?.skull?.shakeUpwardFactor ?? base.skull.shakeUpwardFactor,
       clickToShake: user?.skull?.clickToShake ?? base.skull.clickToShake,
+      onSkullClick: user?.skull?.onSkullClick ?? base.skull.onSkullClick,
     },
     drum: {
       innerRadiusFactor: user?.drum?.innerRadiusFactor ?? base.drum.innerRadiusFactor,

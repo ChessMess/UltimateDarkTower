@@ -100,6 +100,12 @@ export function attachSkullPhysics(
     getSkullIdForObject(obj) {
       return pm.getSkullIdForObject(obj);
     },
+    getSkullIds(zone) {
+      return pm.getSkullIds(zone);
+    },
+    removeSkulls(ids) {
+      return pm.removeSkulls(ids);
+    },
     getSkullCounts() {
       return pm.getSkullCounts();
     },

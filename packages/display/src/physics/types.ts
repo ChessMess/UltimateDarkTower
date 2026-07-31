@@ -1,6 +1,6 @@
 import type * as THREE from 'three';
 import type { DeepRequired } from '../3d/types';
-import type { SkullCounts, SkullSealBuckets } from './skullCounts';
+import type { SkullCounts, SkullSealBuckets, SkullZone } from './skullCounts';
 export type { DeepRequired };
 
 /** Object form of `PhysicsConfig.seal.shakeSkullsOnSealRemoval`. */
@@ -178,6 +178,15 @@ export interface PhysicsConfig {
      * Live — toggling registers/unregisters the pointer target immediately.
      */
     clickToShake?: boolean;
+    /**
+     * Called on a skull click before `clickToShake`. Return `true` to consume
+     * the click (the skull is *not* shaken); `false`/`undefined` falls
+     * through to shake-or-orbit. Uses the same pointer-target seam as
+     * `clickToShake` — setting either one registers it.
+     *
+     * Live — toggling registers/unregisters the pointer target immediately.
+     */
+    onSkullClick?: (id: number, zone: SkullZone) => boolean | void;
   };
   /** The three rotating drums (kinematic trimesh per level). */
   drum?: {
@@ -269,10 +278,14 @@ export interface PhysicsConfig {
  * first-class state.
  */
 export type ResolvedPhysicsConfig = Omit<DeepRequired<PhysicsConfig>, 'skull' | 'seal'> & {
-  skull: Omit<DeepRequired<PhysicsConfig>['skull'], 'meshFactory' | 'modelUrl' | 'density'> & {
+  skull: Omit<
+    DeepRequired<PhysicsConfig>['skull'],
+    'meshFactory' | 'modelUrl' | 'density' | 'onSkullClick'
+  > & {
     meshFactory: ((radius: number) => THREE.Object3D) | undefined;
     modelUrl: string | undefined;
     density: number | undefined;
+    onSkullClick: ((id: number, zone: SkullZone) => boolean | void) | undefined;
   };
   seal: Omit<DeepRequired<PhysicsConfig>['seal'], 'shakeSkullsOnSealRemoval'> & {
     shakeSkullsOnSealRemoval: boolean | SealAutoShakeConfig;
@@ -331,6 +344,20 @@ export interface SkullPhysicsHandle {
    * built-in `skull.clickToShake` flag.
    */
   getSkullIdForObject(obj: THREE.Object3D): number | null;
+  /**
+   * Ids of every live skull currently classified in `zone` (see
+   * {@link getSkullCounts}), ascending — oldest (lowest id) first. Cheap
+   * (O(live skulls)); safe to poll every frame.
+   */
+  getSkullIds(zone: SkullZone): number[];
+  /**
+   * Despawn the skulls named in `ids` — same removal path as the OOB safety
+   * net (mesh + collider freed, `ownsAssets` geometry disposed). Ids not
+   * matching a live skull are silently skipped. Returns how many were
+   * actually despawned. No-op (returns `0`) before init resolves or after
+   * `dispose()`.
+   */
+  removeSkulls(ids: number[]): number;
   /**
    * Snapshot of where every live skull currently is. `total` always equals
    * `inTower + onBoard + inTransit`. `inTower` uses the radial signal
