@@ -30,6 +30,14 @@ Includes:
   deterministic `SystemRandom` RNG
 - **Glyphs & audio** — `GLYPHS`, `TOWER_LIGHT_SEQUENCES`, `TOWER_AUDIO_LIBRARY`
   (name/category catalogs; the tower's own byte values, unchanged from `ultimatedarktower`)
+- **Card text** — the printed face of every card, keyed by the same ids as the rosters
+  above: `FOE_CARDS`, `MONUMENT_CARDS`, `COMPANION_CARDS`, `TREASURES`, `POTIONS_AND_GEAR`,
+  `CORRUPTIONS`, `QUEST_ITEMS`, `QUESTS`, `SPELLS`, `NATIONS`
+- **Dungeons & caravans** — `DUNGEON_ROOMS` (78 rooms across the six types),
+  `DUNGEON_ADVANTAGE` (which advantage each type lets you spend), `CARAVAN_ROOMS`
+
+Board locations also carry `borders` and, where one has been identified, the `dungeon`
+found there (46 of 60 so far).
 
 ## Install
 
@@ -49,6 +57,14 @@ physical tower connection, `ultimatedarktowerdisplay` for a renderer, or
 `ultimatedarktowerboard` for a board UI — they depend on this package and
 re-export what they need. Install it directly when you want the reference data
 **without** a Bluetooth dependency (a browser app, a content tool, a card generator).
+
+## Data provenance
+
+The card, dungeon and caravan datasets were compiled from play by George Krubski
+(`@gwek` on BoardGameGeek). Because they are observational, a few sets are known
+incomplete — those rows carry `needsReview: true` and a `sourceNote`.
+See [`docs/spreadsheet-import.md`](./docs/spreadsheet-import.md) for the full record and
+[`docs/open-questions.md`](./docs/open-questions.md) for the outstanding gaps.
 
 ## License
 
