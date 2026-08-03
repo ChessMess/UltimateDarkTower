@@ -24,6 +24,7 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
+    "dev:codex": "pnpm --filter ultimatedarktowercodex dev",
     "dev:creator": "pnpm --filter @udtc/creator dev",
     "dev:player": "pnpm --filter @udtc/player dev",
     "dev:digital": "pnpm --filter ultimatedarktowerdigital dev",

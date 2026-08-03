@@ -105,6 +105,16 @@ export const components = [
     image: 'seed.jpg',
   },
   {
+    dir: 'apps/codex',
+    title: 'Tower Codex',
+    blurb:
+      'Browse the whole Return to Dark Tower reference — every printed card face, the board, the rosters, the box contents — searchable and cross-linked.',
+    category: 'app',
+    demo: 'codex',
+    glyph: 'quest',
+    image: null,
+  },
+  {
     dir: 'apps/sync',
     title: 'Dark Tower Sync',
     blurb: 'Browser client for the relay — mirror relayed commands onto your physical tower.',
@@ -206,7 +216,8 @@ export const components = [
     blurb:
       'Board locations, foes, heroes, monuments, and seed encode/decode — the canonical Return to Dark Tower reference data in strict TypeScript types.',
     category: 'library',
-    demo: null,
+    // The Codex app is this library's demo — it browses every export.
+    demo: 'codex',
     glyph: 'banner',
     image: 'game-data.jpg',
     alt: 'The physical Return to Dark Tower board and expansions, with the reference data extracted from it overlaid as a graph',
