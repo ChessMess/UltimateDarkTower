@@ -66,6 +66,7 @@ jobs:
           vbuild "@udtc/player"                player
           vbuild "ultimatedarktowerdigital"    digital
           vbuild "ultimatedarktowerseed"       seed
+          vbuild "ultimatedarktowercodex"      codex
           vbuild "@dark-tower-sync/client"     sync
           vbuild "ultimatedarktowercontroller" controller
           vbuild "ultimatedarktowergame"       game

@@ -1,0 +1,45 @@
+{
+  "name": "ultimatedarktowercodex",
+  "version": "0.1.0",
+  "description": "Browsable reference for every Return to Dark Tower card, foe, location and box component in ultimatedarktowerdata.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "pnpm --filter ultimatedarktowerdata build",
+    "dev": "trap 'exit 0' INT TERM; vite",
+    "dev:codex": "pnpm run dev",
+    "build": "tsc --build && vite build",
+    "preview": "trap 'exit 0' INT TERM; vite preview",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --build",
+    "lint": "eslint .",
+    "pretest": "pnpm --filter ultimatedarktowerdata build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "dependencies": {
+    "@udtc/theme": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "ultimatedarktowerdata": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "apps/codex"
+  }
+}

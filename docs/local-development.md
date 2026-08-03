@@ -38,6 +38,7 @@ fails with `ERR_PNPM_NO_SCRIPT` from an unrelated package without `-w`.
 | **Player** (`@udtc/player`)                  | `pnpm --filter @udtc/player dev`                | `pnpm run dev:player`     | http://localhost:5174              |
 | **Digital** — solo digital play              | `pnpm --filter ultimatedarktowerdigital dev`    | `pnpm run dev:digital`    | http://localhost:5173 †            |
 | **Seed** — seed decoder SPA                  | `pnpm --filter ultimatedarktowerseed dev`       | `pnpm run dev:seed`       | http://localhost:3002 (auto-opens) |
+| **Codex** — game data browser                | `pnpm --filter ultimatedarktowercodex dev`      | `pnpm run dev:codex`      | http://localhost:3006 (auto-opens) |
 | **Sync** (`@dark-tower-sync/client`)         | `pnpm --filter @dark-tower-sync/client dev`     | `pnpm run dev:sync`       | http://localhost:3000 (auto-opens) |
 | **Controller** — tower control + 3D emulator | `pnpm --filter ultimatedarktowercontroller dev` | `pnpm run dev:controller` | http://localhost:3005 (auto-opens) |
 | **Game** — The Tower's Challenge             | `pnpm --filter ultimatedarktowergame dev`       | `pnpm run dev:game`       | http://localhost:3004 (auto-opens) |
@@ -50,8 +51,10 @@ the initial `pnpm install`; run `pnpm --filter "./packages/*" build` first if yo
 skipped it.
 
 Creator and Player auto-build `@udtc/engine` first (their `predev` hook), so
-those two are self-contained. Digital, Seed, and Sync rely on the core (and, for
-Sync, the relay) `dist/` produced by the initial `pnpm install`.
+those two are self-contained. Codex does the same for `ultimatedarktowerdata` —
+reviewing that data is the point of the app, so a stale `dist/` there would make
+it quietly lie. Digital, Seed, and Sync rely on the core (and, for Sync, the
+relay) `dist/` produced by the initial `pnpm install`.
 
 ## Library demos (display / board)
 

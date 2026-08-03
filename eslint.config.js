@@ -43,6 +43,7 @@ export default tseslint.config(
   // React surfaces: the creator/player/digital apps and package example sites.
   {
     files: [
+      'apps/codex/**/*.{ts,tsx}',
       'apps/creator/**/*.{ts,tsx}',
       'apps/player/**/*.{ts,tsx}',
       'apps/digital/**/*.{ts,tsx}',
