@@ -1,8 +1,26 @@
 # packages/game-data (`ultimatedarktowerdata`) — reference data
 
 Static Return to Dark Tower reference data (board locations, foes, heroes, monuments, box
-inventory) + seed encode/decode. Split out of `ultimatedarktower` in v6. Depth in `docs/`
-(`SEED_FORMAT.md`, `board-data.md`, `seed.md`).
+inventory, card text) + seed encode/decode. Split out of `ultimatedarktower` in v6. Depth in
+`docs/` (`SEED_FORMAT.md`, `board-data.md`, `seed.md`, `spreadsheet-import.md`,
+`open-questions.md`).
+
+## Two layers: identity rosters and card faces
+
+- **Rosters** (`foes.ts`, `heroes.ts`, `monuments.ts`, `board/gameBoard.ts`) — who exists,
+  keyed by stable kebab-case `id`. Canonical for names.
+- **Card faces** (`foeCards.ts`, `monumentCards.ts`, `companionCards.ts`, `treasures.ts`,
+  `potionsAndGear.ts`, `corruptions.ts`, `questItems.ts`, `quests.ts`, `spells.ts`,
+  `nations.ts`, `dungeons.ts`, `caravans.ts`) — the printed text, keyed by the _same_ ids.
+
+The card layer came from George Krubski's research spreadsheets; **`docs/spreadsheet-import.md`
+is the provenance record** and `docs/open-questions.md` the gap list. It is all
+observational, so some sets are known-incomplete — rows that are carry `needsReview: true`
+plus a `sourceNote`. **Never fill a `needsReview` row in by inference; flag, don't guess.**
+
+Naming rule for this layer: the `*_CARDS` names exist to avoid colliding with `gameContent`
+(`COMPANION_CARDS` is NOT `gameContent.COMPANIONS`). Keep new card datasets flat and
+collision-free rather than adding another namespace.
 
 ## Invariant: zero runtime dependencies
 
@@ -17,6 +35,15 @@ source of truth for foe/adversary spelling, and that every other roster (seed-pa
 `gameContent.ts`, `TOWER_AUDIO_LIBRARY` labels) uses exactly one of those spellings. It
 exists because v6 had the same entity spelled 2–3 ways ("Isa the Exile" vs "Isa The Exile").
 **Adding a roster entry with an inconsistent spelling fails this test** — match `ALL_FOES`.
+
+The guard now covers the **card layer too**: foe cards vs `FOE_BY_ID`, monument cards vs
+`MONUMENT_BY_ID`, companions vs `gameContent.COMPANIONS`, every quest's location text vs
+`BOARD_LOCATION_BY_NAME`, and — the big one — **every `boxInventory.ts` component name in a
+card category must exist verbatim in the matching card dataset**. That last check was added
+because `boxInventory` independently named the same ~130 cards and disagreed on 56 of them
+(`Amulet Of Hope`, `Diadem Of The Emmisary`, `Opal of Protection`, `Repair The Weeping
+Damn`). Note `boxInventory`'s **`Heroic Tests` category is the 16 monthly quests** — easy to
+miss when auditing categories.
 
 ## `BOARD_SPOTS` replaces `BOARD_ANCHORS` (schema 0.5.0)
 

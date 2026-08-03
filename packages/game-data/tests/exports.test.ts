@@ -68,6 +68,58 @@ import {
   expansions,
   EXPANSIONS,
   sleeves,
+  type RegionBorder,
+  type LocationDungeon,
+  ADVANTAGE_TYPES,
+  type AdvantageType,
+  DUNGEON_ROOMS,
+  DUNGEON_ROOM_BY_ID,
+  DUNGEON_ADVANTAGE,
+  CAVE_ROOMS,
+  ENCAMPMENT_ROOMS,
+  FORTRESS_ROOMS,
+  RUINS_ROOMS,
+  SHRINE_ROOMS,
+  TOMB_ROOMS,
+  type DungeonType,
+  type DungeonRoom,
+  CARAVAN_ROOMS,
+  CARAVAN_ROOMS_BY_ID,
+  type CaravanRoom,
+  type CaravanRoute,
+  FOE_CARDS,
+  FOE_CARDS_BY_ID,
+  type FoeCard,
+  MONUMENT_CARDS,
+  MONUMENT_CARDS_BY_ID,
+  type MonumentCard,
+  COMPANION_CARDS,
+  COMPANION_CARDS_BY_ID,
+  type CompanionCard,
+  TREASURES,
+  TREASURES_BY_ID,
+  type Treasure,
+  type TreasureAdvantage,
+  type TreasureGroup,
+  POTIONS_AND_GEAR,
+  POTIONS_AND_GEAR_BY_ID,
+  type PotionOrGear,
+  CORRUPTIONS,
+  CORRUPTIONS_BY_ID,
+  type Corruption,
+  QUEST_ITEMS,
+  QUEST_ITEMS_BY_ID,
+  type QuestItem,
+  QUESTS,
+  QUESTS_BY_ID,
+  type Quest,
+  SPELLS,
+  SPELLS_BY_ID,
+  type Spell,
+  NATIONS,
+  NATIONS_BY_ID,
+  type Nation,
+  type NationVirtue,
 } from '../src';
 
 describe('Package Exports', () => {
@@ -90,7 +142,19 @@ describe('Package Exports', () => {
         if (loc.grouping !== undefined) {
           expect(Object.values(BOARD_GROUPINGS)).toContain(loc.grouping);
         }
+        for (const border of loc.borders) {
+          expect(['tower', 'map-edge', 'north', 'south', 'east', 'west']).toContain(border);
+        }
+        if (loc.dungeon !== undefined) {
+          expect(loc.dungeon.name.length).toBeGreaterThan(0);
+          expect(Object.keys(DUNGEON_ADVANTAGE)).toContain(loc.dungeon.type);
+        }
       }
+    });
+
+    test('46 of the 60 locations have an identified dungeon', () => {
+      // A live count, not a closed set — 14 are still unobserved. See docs/open-questions.md.
+      expect(BOARD_LOCATIONS.filter((l) => l.dungeon)).toHaveLength(46);
     });
 
     test('BOARD_LOCATION_BY_NAME has 60 entries', () => {
@@ -343,6 +407,101 @@ describe('Package Exports', () => {
       expect(gameContent.heroes.length).toBe(10);
       expect(gameContent.COMPANIONS.Gleb.title).toBe('The Outlaw King');
       expect(gameContent.kingdomVirtues.length).toBe(4);
+    });
+  });
+
+  describe('Card Data Exports', () => {
+    test('every card dataset and its _BY_ID map resolves at the top level', () => {
+      const datasets = [
+        DUNGEON_ROOMS,
+        CARAVAN_ROOMS,
+        FOE_CARDS,
+        MONUMENT_CARDS,
+        COMPANION_CARDS,
+        TREASURES,
+        POTIONS_AND_GEAR,
+        CORRUPTIONS,
+        QUEST_ITEMS,
+        QUESTS,
+        SPELLS,
+        NATIONS,
+      ];
+      for (const dataset of datasets) {
+        expect(dataset.length).toBeGreaterThan(0);
+      }
+      const maps = [
+        DUNGEON_ROOM_BY_ID,
+        CARAVAN_ROOMS_BY_ID,
+        FOE_CARDS_BY_ID,
+        MONUMENT_CARDS_BY_ID,
+        COMPANION_CARDS_BY_ID,
+        TREASURES_BY_ID,
+        POTIONS_AND_GEAR_BY_ID,
+        CORRUPTIONS_BY_ID,
+        QUEST_ITEMS_BY_ID,
+        QUESTS_BY_ID,
+        SPELLS_BY_ID,
+        NATIONS_BY_ID,
+      ];
+      for (const map of maps) {
+        expect(Object.isFrozen(map)).toBe(true);
+      }
+    });
+
+    test('the six per-dungeon pools resolve at the top level', () => {
+      expect(CAVE_ROOMS.length).toBe(13);
+      expect(ENCAMPMENT_ROOMS.length).toBe(13);
+      expect(FORTRESS_ROOMS.length).toBe(13);
+      expect(RUINS_ROOMS.length).toBe(13);
+      expect(SHRINE_ROOMS.length).toBe(13);
+      expect(TOMB_ROOMS.length).toBe(13);
+      expect(ADVANTAGE_TYPES.length).toBe(7);
+      expect(DUNGEON_ADVANTAGE.cave).toBe('Beast');
+    });
+
+    test('type aliases are usable', () => {
+      const border: RegionBorder = 'tower';
+      const dungeon: LocationDungeon = { name: 'Earthen Warrens', type: 'cave' };
+      const advantage: AdvantageType = 'Wild';
+      const dungeonType: DungeonType = 'shrine';
+      const room: DungeonRoom = DUNGEON_ROOMS[0];
+      const caravan: CaravanRoom = CARAVAN_ROOMS[0];
+      const route: CaravanRoute = 'all';
+      const foeCard: FoeCard = FOE_CARDS[0];
+      const monumentCard: MonumentCard = MONUMENT_CARDS[0];
+      const companion: CompanionCard = COMPANION_CARDS[0];
+      const treasure: Treasure = TREASURES[0];
+      const treasureAdvantage: TreasureAdvantage = { count: 1, type: 'Melee' };
+      const group: TreasureGroup = 'Scroll';
+      const potion: PotionOrGear = POTIONS_AND_GEAR[0];
+      const corruption: Corruption = CORRUPTIONS[0];
+      const questItem: QuestItem = QUEST_ITEMS[0];
+      const quest: Quest = QUESTS[0];
+      const spell: Spell = SPELLS[0];
+      const nation: Nation = NATIONS[0];
+      const virtue: NationVirtue = 'Valor';
+      expect([
+        border,
+        dungeon,
+        advantage,
+        dungeonType,
+        room,
+        caravan,
+        route,
+        foeCard,
+        monumentCard,
+        companion,
+        treasure,
+        treasureAdvantage,
+        group,
+        potion,
+        corruption,
+        questItem,
+        quest,
+        spell,
+        nation,
+        virtue,
+      ]).not.toContain(undefined);
     });
   });
 });

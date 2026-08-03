@@ -25,13 +25,19 @@ describe('ITEM_OPTIONS', () => {
       label: 'Gleb — The Outlaw King',
     });
     expect(ITEM_OPTIONS.treasures).toContainEqual({
-      value: 'Crown Of Azkol',
-      label: 'Crown Of Azkol',
+      value: 'Crown of Azkol',
+      label: 'Crown of Azkol',
     });
   });
 
   it('uses the corrected spellings from the data package', () => {
     expect(ITEM_OPTIONS.gear.map((o) => o.value)).toContain('Leather Armor');
     expect(ITEM_OPTIONS.companions).toContainEqual({ value: 'Vasa', label: 'Vasa — The Divine' });
+    // The box inventory was reconciled against the printed card text, so names read as
+    // they do on the cards ("Crown of Azkol", not the old mechanical "Crown Of Azkol").
+    // Options only feed the add-dropdown; already-saved picks are plain strings and still
+    // render, so no save migration is needed.
+    expect(ITEM_OPTIONS.treasures.map((o) => o.value)).toContain('Scroll of the Great Serpent');
+    expect(ITEM_OPTIONS.questItems.map((o) => o.value)).toContain('Amulet of Hope');
   });
 });
