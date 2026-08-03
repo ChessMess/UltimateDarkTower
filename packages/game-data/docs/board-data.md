@@ -110,13 +110,19 @@ Fixed reference rosters of board content (not seed-encoded).
 | `MONUMENTS`      | `Monument[]`                   | All monuments.        |
 | `MONUMENT_BY_ID` | `Record<MonumentId, Monument>` | Id → monument lookup. |
 
-Types: **`Hero`** (`{ id: HeroId; name: string; source: ContentSource; startLocation? }`), **`HeroId`**
-(`string`), **`ContentSource`** (`'base' | 'alliances' | 'covenant' | 'expeditions'`), **`Monument`**
-(`{ id: MonumentId; name; source }`), **`MonumentId`** (`string`).
+Types: **`Hero`** (`{ id: HeroId; name; source: ContentSource; startLocation?; bannerAction?;
+defaultVirtues?: Virtue[]; unlockableVirtues?: Virtue[] }`), **`HeroId`** (`string`),
+**`ContentSource`** (`'base' | 'alliances' | 'covenant' | 'expeditions'`), **`Virtue`**
+(`{ name; ability }`), **`Monument`** (`{ id: MonumentId; name; source }`), **`MonumentId`**
+(`string`).
 
-> `gameContent.HEROES` (imported via `import { gameContent } from 'ultimatedarktowerdata'`) is a
-> **different** dataset — gameplay content (banner actions, virtues) keyed by name rather than the
-> board-identity roster above. They're namespaced apart because they collide on `Hero`/`HEROES`.
+> **Since v3, `HEROES` is the only hero record.** It carries both board identity and the gameplay
+> sheet. The four unreleased Expeditions heroes have no published card, so `bannerAction` and the
+> virtue lists are absent on those — a hero has either the whole sheet or none of it, never half.
+> Look them up by `HERO_BY_ID` (stable, used for portrait asset paths) or `HERO_BY_NAME`.
+>
+> Through v2 the sheet lived separately in `gameContent.HEROES`, keyed by name with no id. That
+> export — and the whole `gameContent` namespace — is gone; see the CHANGELOG for the migration.
 
 ## Foe & adversary metadata
 

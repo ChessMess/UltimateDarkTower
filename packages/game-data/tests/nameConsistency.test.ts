@@ -8,18 +8,13 @@
  * adversary must use exactly one of those spellings. This is what stops the drift returning.
  */
 
-import { ALL_FOES, FOE_BY_ID } from '../src/foes';
+import { ALL_FOES, ADVERSARY_ROSTER, FOES, FOE_BY_ID } from '../src/foes';
 import {
   TIER1_FOES,
   TIER2_FOES,
   TIER3_FOES,
   ADVERSARIES as SEED_ADVERSARIES,
 } from '../src/seed/seedParser';
-import {
-  FOES as CONTENT_FOES,
-  ADVERSARIES as CONTENT_ADVERSARIES,
-  COMPANIONS as CONTENT_COMPANIONS,
-} from '../src/gameContent';
 import { TOWER_AUDIO_LIBRARY } from '../src/constants';
 import { expansions } from '../src/boxInventory';
 import { MONUMENT_BY_ID } from '../src/monuments';
@@ -49,13 +44,16 @@ describe('foe/adversary name consistency (v6 reconciliation)', () => {
     }
   });
 
-  test('gameContent.ts foes/adversaries use canonical spelling', () => {
-    for (const name of Object.keys(CONTENT_FOES)) {
-      expect(CANONICAL_NAMES.has(name)).toBe(true);
+  test('FOES + ADVERSARY_ROSTER partition the canonical roster exactly', () => {
+    // Until v3 a second, poorer copy of these lived in `gameContent` and this test policed the
+    // spelling agreement between the two. The copy is gone, so what matters now is that the two
+    // halves of ALL_FOES still add up and stay canonical.
+    const split = [...FOES, ...ADVERSARY_ROSTER];
+    expect(split).toHaveLength(ALL_FOES.length);
+    for (const f of split) {
+      expect(CANONICAL_NAMES.has(f.name)).toBe(true);
     }
-    for (const name of Object.keys(CONTENT_ADVERSARIES)) {
-      expect(CANONICAL_NAMES.has(name)).toBe(true);
-    }
+    expect(new Set(split.map((f) => f.id)).size).toBe(ALL_FOES.length);
   });
 
   test('TOWER_AUDIO_LIBRARY Foe/Adversary labels use canonical spelling', () => {
@@ -117,13 +115,24 @@ describe('card data agrees with the identity rosters', () => {
     }
   });
 
-  test('gameContent companions all appear in COMPANION_CARDS with the same title', () => {
-    const byName = new Map(COMPANION_CARDS.map((c) => [c.name, c]));
-    for (const companion of Object.values(CONTENT_COMPANIONS)) {
-      const card = byName.get(companion.name);
-      expect(card, `no companion card named '${companion.name}'`).toBeDefined();
-      expect(card!.title).toBe(companion.title);
+  test('COMPANION_CARDS splits into 10 quest and 12 guild companions, each named and titled', () => {
+    // Until v3 `gameContent.COMPANIONS` held a name+title copy of just the 10 quest
+    // companions, and this test checked the two agreed. COMPANION_CARDS absorbed it: the
+    // quest ten are exactly the cards carrying a `quest`, so the split is still assertable
+    // — from one dataset instead of two that could drift.
+    const quest = COMPANION_CARDS.filter((c) => c.quest);
+    const guild = COMPANION_CARDS.filter((c) => !c.quest);
+    expect(quest).toHaveLength(10);
+    expect(guild).toHaveLength(12);
+    for (const c of COMPANION_CARDS) {
+      expect(c.name.length).toBeGreaterThan(0);
+      expect(c.title.length).toBeGreaterThan(0);
     }
+    // Every guild companion belongs to a guild; that is what distinguishes them.
+    for (const c of guild) {
+      expect(c.guild, `guild companion '${c.name}' has no guild`).toBeTruthy();
+    }
+    expect(new Set(COMPANION_CARDS.map((c) => c.name)).size).toBe(COMPANION_CARDS.length);
   });
 
   test('box inventory card names all exist in the matching card dataset', () => {

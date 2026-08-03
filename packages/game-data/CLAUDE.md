@@ -9,6 +9,14 @@ inventory, card text) + seed encode/decode. Split out of `ultimatedarktower` in 
 
 - **Rosters** (`foes.ts`, `heroes.ts`, `monuments.ts`, `board/gameBoard.ts`) — who exists,
   keyed by stable kebab-case `id`. Canonical for names.
+  - **`heroes.ts` also carries the hero gameplay sheet** (`bannerAction`, `defaultVirtues`,
+    `unlockableVirtues`) as of v3. Through v2 the same 14 heroes existed twice — identity here
+    and the sheet in `gameContent.HEROES`, keyed by name with no `id`, joinable only on a
+    display string. The split was a workaround for the `Hero`/`HEROES` collision, not a
+    modelling call, and the sheet half had zero consumers. **Do not re-add a second hero
+    record**; `tests/virtues.test.ts` asserts the namespace is gone.
+    A hero has the whole sheet or none of it (the 4 unreleased Expeditions heroes have none)
+    — `heroes.test.ts` enforces that, so never fill one in by inference.
 - **Card faces** (`foeCards.ts`, `monumentCards.ts`, `companionCards.ts`, `treasures.ts`,
   `potionsAndGear.ts`, `corruptions.ts`, `questItems.ts`, `quests.ts`, `spells.ts`,
   `nations.ts`, `dungeons.ts`, `caravans.ts`) — the printed text, keyed by the _same_ ids.
@@ -18,9 +26,16 @@ is the provenance record** and `docs/open-questions.md` the gap list. It is all
 observational, so some sets are known-incomplete — rows that are carry `needsReview: true`
 plus a `sourceNote`. **Never fill a `needsReview` row in by inference; flag, don't guess.**
 
-Naming rule for this layer: the `*_CARDS` names exist to avoid colliding with `gameContent`
-(`COMPANION_CARDS` is NOT `gameContent.COMPANIONS`). Keep new card datasets flat and
-collision-free rather than adding another namespace.
+Naming rule for this layer: `*_CARDS` names keep the card face distinct from the roster that
+identifies the same entity. Keep new card datasets flat and collision-free.
+
+**There is no `gameContent` namespace as of v3.** It held second, poorer copies of four
+datasets the flat rosters already covered — heroes, foes, adversaries, companions — each keyed
+by display name with no `id`, and none with a single consumer. Those duplicates were the only
+things colliding, so removing them removed the reason for the namespace; the kingdom virtues
+that were left now live flat in `virtues.ts`. **The invariant is one record per entity, not
+one name per export** — if a new dataset seems to need a namespace, it is probably a duplicate
+of something that already exists.
 
 ## Invariant: zero runtime dependencies
 
@@ -32,12 +47,12 @@ whole point of the package: core/display/board and every app import it to get da
 
 **`tests/nameConsistency.test.ts`** enforces that `foes.ts`'s `ALL_FOES` is the single
 source of truth for foe/adversary spelling, and that every other roster (seed-parser tiers,
-`gameContent.ts`, `TOWER_AUDIO_LIBRARY` labels) uses exactly one of those spellings. It
+`TOWER_AUDIO_LIBRARY` labels) uses exactly one of those spellings. It
 exists because v6 had the same entity spelled 2–3 ways ("Isa the Exile" vs "Isa The Exile").
 **Adding a roster entry with an inconsistent spelling fails this test** — match `ALL_FOES`.
 
 The guard now covers the **card layer too**: foe cards vs `FOE_BY_ID`, monument cards vs
-`MONUMENT_BY_ID`, companions vs `gameContent.COMPANIONS`, every quest's location text vs
+`MONUMENT_BY_ID`, companions split into quest/guild within `COMPANION_CARDS`, every quest's location text vs
 `BOARD_LOCATION_BY_NAME`, and — the big one — **every `boxInventory.ts` component name in a
 card category must exist verbatim in the matching card dataset**. That last check was added
 because `boxInventory` independently named the same ~130 cards and disagreed on 56 of them

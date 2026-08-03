@@ -64,7 +64,7 @@ import {
   MONUMENTS,
   FOES,
   FOE_STATUSES,
-  gameContent,
+  kingdomVirtues,
   expansions,
   EXPANSIONS,
   sleeves,
@@ -402,11 +402,17 @@ describe('Package Exports', () => {
       expect(sleeves.length).toBeGreaterThan(0);
     });
 
-    test('gameContent stays a sub-namespace (distinct shape from the board roster)', () => {
-      expect(gameContent.HEROES.Spymaster.name).toBe('Spymaster');
-      expect(gameContent.heroes.length).toBe(10);
-      expect(gameContent.COMPANIONS.Gleb.title).toBe('The Outlaw King');
-      expect(gameContent.kingdomVirtues.length).toBe(4);
+    test('kingdom virtues are flat (the gameContent namespace is gone as of v3)', () => {
+      expect(kingdomVirtues.length).toBe(4);
+      expect(COMPANION_CARDS.find((c) => c.name === 'Gleb')?.title).toBe('The Outlaw King');
+    });
+
+    test('the hero roster carries its gameplay sheet at the top level', () => {
+      const spymaster = HERO_BY_ID['spymaster'];
+      expect(spymaster.name).toBe('Spymaster');
+      expect(spymaster.bannerAction).toBe('Place your hero on any space in your current kingdom.');
+      expect(spymaster.defaultVirtues).toHaveLength(2);
+      expect(spymaster.unlockableVirtues).toHaveLength(3);
     });
   });
 

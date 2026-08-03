@@ -123,8 +123,9 @@ He is missing roughly 2 each in the East and West and 5 each in the North and So
 
 ## What was deliberately not imported
 
-- **`bannersAndVirtues` (64 rows).** It maps 1:1 onto `gameContent.HEROES` +
-  `KINGDOM_VIRTUES` — same 10 heroes, same tile names, no unmatched row either side. Of the
+- **`bannersAndVirtues` (64 rows).** It maps 1:1 onto the hero sheets (`HEROES`, since v3;
+  `gameContent.HEROES` at the time) + `KINGDOM_VIRTUES` — same 10 heroes, same tile names,
+  no unmatched row either side. Of the
   11 text deltas, 10 were the spreadsheet being worse (`adjancent`, `reiniforce`,
   `addiiton`, `Remov`) and one was an outright rules error ("spend **on** Advantages on" for
   Undaunted Aegis's Ascetic, which should read "spend **no** advantages on"). Its only novel
@@ -158,7 +159,7 @@ He is missing roughly 2 each in the East and West and 5 each in the North and So
 | `BOARD_LOCATIONS` | `grouping`  | Longwater                         | **Long Water**                |
 
 `tests/nameConsistency.test.ts` now enforces all of this — foe cards against `FOE_BY_ID`,
-monument cards against `MONUMENT_BY_ID`, companions against `gameContent.COMPANIONS`, and
+monument cards against `MONUMENT_BY_ID`, companions against `COMPANION_CARDS`, and
 every quest's location text against `BOARD_LOCATION_BY_NAME`.
 
 ### `boxInventory.ts` corrected against the card text

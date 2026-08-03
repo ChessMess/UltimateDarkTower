@@ -21,7 +21,9 @@ no Bluetooth.
 Includes:
 
 - **Foes & adversaries** — `FOES`, `ADVERSARY_ROSTER`, `ALL_FOES`, `FOE_BY_ID`, `FOE_BY_NAME`
-- **Heroes** — `HEROES`, `HERO_BY_ID` (identity) and gameplay content (banner actions, virtues)
+- **Heroes** — `HEROES`, `HERO_BY_ID`, `HERO_BY_NAME`: one record per hero carrying both board
+  identity and the gameplay sheet (banner action, starting and unlockable virtues). The four
+  unreleased Expeditions heroes are identity-only until their cards are public.
 - **Monuments** — `MONUMENTS`, `MONUMENT_BY_ID`
 - **Box inventory** — component/token counts per expansion
 - **Board** (`ultimatedarktowerdata/board`) — the 60 built-in locations, layout
