@@ -14,6 +14,8 @@
 //   demo     path under the Pages site (./<demo>/), or null if no live demo
 //   demoUrl  full external URL for the primary Launch/Demo button, overriding
 //            `demo` — use for a component hosted outside this Pages site
+//   primaryLabel  override the primary button's text, instead of deriving it from
+//            `category` ('Demo' for a library, 'Launch' for an app)
 //   sourceUrl  override for the Source link, instead of deriving
 //              `<repo>/tree/main/<dir>`
 //   docsUrl  override for the Docs link, instead of deriving from `dir`/docs
@@ -216,8 +218,11 @@ export const components = [
     blurb:
       'Board locations, foes, heroes, monuments, and seed encode/decode — the canonical Return to Dark Tower reference data in strict TypeScript types.',
     category: 'library',
-    // The Codex app is this library's demo — it browses every export.
+    // The Codex app is this library's demo — it browses every export. Same URL as
+    // the Tower Codex card, so it carries the same 'Launch' label rather than the
+    // 'Demo' a library would otherwise get.
     demo: 'codex',
+    primaryLabel: 'Launch',
     glyph: 'banner',
     image: 'game-data.jpg',
     alt: 'The physical Return to Dark Tower board and expansions, with the reference data extracted from it overlaid as a graph',

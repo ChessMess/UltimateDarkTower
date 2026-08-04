@@ -101,7 +101,7 @@ function renderCard(c, index) {
           <span class="glyph g-${c.glyph}"></span>${ribbon}
         </a>`;
 
-  const primaryLabel = c.category === 'library' ? 'Demo' : 'Launch';
+  const primaryLabel = c.primaryLabel || (c.category === 'library' ? 'Demo' : 'Launch');
   const links = [
     demoUrl &&
       `<a class="primary" href="${esc(demoUrl)}" target="_blank" rel="noopener">${primaryLabel}</a>`,
