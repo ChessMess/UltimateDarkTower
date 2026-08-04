@@ -13,6 +13,13 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+    // REQUIRED, not tidiness. `@udtc/theme` is source-only with react as a *peer*, so pnpm gives
+    // it its own react under packages/creator-theme/node_modules while the app resolves the root
+    // copy. Without dedupe both get bundled, `useTheme`'s useSyncExternalStore runs against the
+    // copy whose dispatcher was never set, and the app dies on mount with
+    // "Cannot read properties of null (reading 'useSyncExternalStore')" — a blank page.
+    // Every other React app here does the same (creator, player, digital).
+    dedupe: ['react', 'react-dom'],
   },
   server: {
     port: 3006,
@@ -22,8 +29,9 @@ export default defineConfig({
     port: 4006,
   },
   test: {
-    // The only suite is a pure data check over the registry — no DOM, so no jsdom dependency.
-    environment: 'node',
+    // jsdom, because one suite actually mounts the app. A registry that passes every data check
+    // while the app fails to render is exactly the gap that shipped a blank page once.
+    environment: 'jsdom',
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
 });
