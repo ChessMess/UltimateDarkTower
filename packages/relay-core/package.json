@@ -64,13 +64,13 @@
   },
   "dependencies": {
     "ultimatedarktowerrelay-shared": "workspace:^",
-    "@stoprocent/bleno": "^0.12.4",
+    "@stoprocent/bleno": "^0.13.1",
     "ultimatedarktower": "workspace:^",
     "ultimatedarktowerdata": "workspace:^",
     "ws": "catalog:"
   },
   "optionalDependencies": {
-    "@stoprocent/noble": "^2.5.10"
+    "@stoprocent/noble": "^2.6.5"
   },
   "devDependencies": {
     "@types/ws": "catalog:",
