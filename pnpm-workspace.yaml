@@ -41,43 +41,47 @@ catalog:
   ajv-formats: ^3.0.0
   zustand: ^5.0.0
   fake-indexeddb: ^6.2.5
-
   # NOTE: peerDependencies are deliberately NOT catalogued. A peer range should be
   # wider than the version you build against (packages/board and packages/display
   # declare `three: ">=0.185.0"`), and `catalog:` would narrow it to the caret
   # range above.
 
-# Security overrides (Dependabot triage, 2026-07): collapse stale duplicate copies
-# onto the already-patched versions that other deps already resolve in-tree.
-#  - tar: `tar@6.2.1` is pulled by the electron packaging toolchain
-#    (@electron/rebuild, @electron/node-gyp, cacache); every tar advisory <=7.5.15
-#    covers all of 6.x, and the fix ships only in 7.5.16+ (a major bump for those
-#    deps). Forcing 7.5.22 (GHSA-r292-9mhp-454m fixed in 7.5.21) — which already
-#    resolves elsewhere — clears 7 alerts.
-#    Verify the electron native-rebuild path still works: `pnpm --filter
-#    ultimatedarktowerrelay-electron rebuild` (tar is build-time only, never runtime).
-#  - tmp: `tmp@0.0.33` is pulled by external-editor (interactive CLI prompts); the
-#    fix ships only in 0.2.6+. Forcing 0.2.7 clears 2 alerts.
-#  - fast-uri: pulled in at 3.1.3 by ajv@8.20.0 (prod dep of mcp-server via
-#    @modelcontextprotocol/sdk, and of @udtc/adapters/@udtc/schema); ajv's own
-#    range (^3.0.1) already permits the GHSA-v2hh-gcrm-f6hx fix in 3.1.4 — this
-#    is a stale resolution, not a parent waiting to catch up. Stay in the 3.x
-#    line (4.x is outside ajv's declared range).
-#  - brace-expansion: 3 copies resolve in-tree (1.1.16, 2.1.2, 5.0.7). GHSA-mh99-
-#    v99m-4gvg's range ("<=5.0.7") reads as vulnerable against all three by plain
-#    semver comparison, but this package maintains parallel major lines (1.x
-#    through 5.x each patched independently) — 1.1.16 and 2.1.2 already ship the
-#    EXPANSION_MAX_LENGTH fix (backported ahead of the 5.x line's own 5.0.8).
-#    Only 5.0.7 (via minimatch@10.2.5 ← @typescript-eslint/typescript-estree,
-#    root devDependency) actually lacks it. Scoped to that one path so the two
-#    already-fixed copies — used by minimatch@3.1.5/5.1.9/9.0.9 in the
-#    electron-forge toolchain, which expect the old 1.x/2.x API — aren't forced
-#    onto an unrelated major for no security benefit.
+  # Security overrides (Dependabot triage, 2026-07): collapse stale duplicate copies
+  # onto the already-patched versions that other deps already resolve in-tree.
+  #  - tar: `tar@6.2.1` is pulled by the electron packaging toolchain
+  #    (@electron/rebuild, @electron/node-gyp, cacache); every tar advisory <=7.5.15
+  #    covers all of 6.x, and the fix ships only in 7.5.16+ (a major bump for those
+  #    deps). Forcing 7.5.22 (GHSA-r292-9mhp-454m fixed in 7.5.21) — which already
+  #    resolves elsewhere — clears 7 alerts.
+  #    Verify the electron native-rebuild path still works: `pnpm --filter
+  #    ultimatedarktowerrelay-electron rebuild` (tar is build-time only, never runtime).
+  #  - tmp: `tmp@0.0.33` is pulled by external-editor (interactive CLI prompts); the
+  #    fix ships only in 0.2.6+. Forcing 0.2.7 clears 2 alerts.
+  #  - fast-uri: pulled in at 3.1.3 by ajv@8.20.0 (prod dep of mcp-server via
+  #    @modelcontextprotocol/sdk, and of @udtc/adapters/@udtc/schema); ajv's own
+  #    range (^3.0.1) already permits the GHSA-v2hh-gcrm-f6hx fix in 3.1.4 — this
+  #    is a stale resolution, not a parent waiting to catch up. Stay in the 3.x
+  #    line (4.x is outside ajv's declared range).
+  #  - brace-expansion: 3 copies resolve in-tree (1.1.16, 2.1.2, 5.0.7). GHSA-mh99-
+  #    v99m-4gvg's range ("<=5.0.7") reads as vulnerable against all three by plain
+  #    semver comparison, but this package maintains parallel major lines (1.x
+  #    through 5.x each patched independently) — 1.1.16 and 2.1.2 already ship the
+  #    EXPANSION_MAX_LENGTH fix (backported ahead of the 5.x line's own 5.0.8).
+  #    Only 5.0.7 (via minimatch@10.2.5 ← @typescript-eslint/typescript-estree,
+  #    root devDependency) actually lacks it. Scoped to that one path so the two
+  #    already-fixed copies — used by minimatch@3.1.5/5.1.9/9.0.9 in the
+  #    electron-forge toolchain, which expect the old 1.x/2.x API — aren't forced
+  #    onto an unrelated major for no security benefit.
 overrides:
   tar: ^7.5.22
   tmp: ^0.2.7
-  fast-uri: ^3.1.4
+  fast-uri: ^3.1.5
   "minimatch@10.2.5>brace-expansion": ^5.0.8
+  "brace-expansion@2": ^2.1.4
+  # Only the 6.x copy is flagged (node-gyp <- @electron/rebuild, build-time); the 7.x copy that
+  # electron itself pulls is already patched and must not be dragged back.
+  "undici@6": ^6.28.0
+  hono: ^4.12.34
 
 # electron-forge's @electron/rebuild depends on a git-hosted @electron/node-gyp
 # fork; pnpm 11 blocks git-hosted subdeps by default. Allow them so the electron
@@ -100,3 +104,6 @@ allowBuilds:
   fs-xattr: true
   macos-alias: true
   unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - hono@4.12.34
