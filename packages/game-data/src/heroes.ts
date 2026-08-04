@@ -5,7 +5,7 @@
  * seed-encoded. 14 heroes: 4 base, 2 Alliances, 4 Covenant, 4 Expeditions (Expeditions is
  * unreleased; its heroes are publicly confirmed but provisional until the box ships).
  *
- * This is the ONE hero record. Until v3 the same 14 heroes existed twice — identity here
+ * This is the ONE hero record. Until v3, 10 of the 14 existed twice — identity here
  * (keyed by `id`) and the gameplay sheet in `gameContent.HEROES` (keyed by name, no id at
  * all), so nothing could join them without matching on a display string. The split was a
  * workaround for a `Hero`/`HEROES` name collision, not a modelling decision, and the sheet

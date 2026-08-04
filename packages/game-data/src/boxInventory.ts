@@ -1,5 +1,6 @@
 // Return to Dark Tower — box inventory (physical component counts).
-// "What's in the box" data for UDT apps. Gameplay content lives in gameContent.ts.
+// "What's in the box" data for UDT apps. Gameplay content lives in the flat
+// rosters (heroes.ts, foes.ts, companionCards.ts, …).
 // Source: "RTDT Expansion Info v2.xlsx" (categories with < 2 entries were skipped).
 
 /** Top-level grouping a category sits under on a component sheet. */

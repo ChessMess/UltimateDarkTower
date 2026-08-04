@@ -7,7 +7,7 @@ entries now carry the gameplay sheet — `bannerAction`, `defaultVirtues`,
 `unlockableVirtues` — alongside board identity, and the foe/adversary/companion
 copies are gone in favour of the rosters that already covered them.
 
-Through v2 the same 14 heroes existed twice: identity in `heroes.ts` keyed by a
+Through v2, 10 of the 14 heroes existed twice: identity in `heroes.ts` keyed by a
 stable `id`, and the gameplay sheet in `gameContent.HEROES` keyed by display name
 with no `id` at all. Nothing could join the two halves except by matching on a
 name string, and the two could drift apart silently. The split was never a
@@ -40,6 +40,12 @@ So the merge keeps the `id`-keyed roster and folds the sheet into it.
 
 `hero.expansion` (`'Base Game' | 'Alliances' | 'Covenant'`) is gone; it agreed
 with `hero.source` on all 10 rows, so `source` is the single vocabulary now.
+
+**Adversaries no longer have their own type.** `gameContent.Adversary` collapses
+into `Foe` — `ADVERSARY_ROSTER` is a `readonly Foe[]`, and `ALL_FOES` is
+`[...FOES, ...ADVERSARY_ROSTER]`. Annotate with `Foe` wherever you used
+`Adversary`; the fields you were reading are all still there, plus `id`, `tier`
+and `source`.
 
 ```diff
 -import { gameContent } from 'ultimatedarktowerdata';

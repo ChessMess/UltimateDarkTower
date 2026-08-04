@@ -2,8 +2,9 @@
  * companionCards.ts — the printed card face for all 22 companions.
  *
  * 10 base-game quest companions (recruited by completing their quest) and 12 guild
- * companions, three per guild. `gameContent.COMPANIONS` holds the same 10 quest
- * companions as name+title only; this is the full card.
+ * companions, three per guild. Through v2, `gameContent.COMPANIONS` held the same
+ * 10 quest companions as name+title only; this is the full card, and the quest ten
+ * are the rows carrying a `quest`.
  */
 
 import type { BoardKingdom } from './board/gameBoard';
