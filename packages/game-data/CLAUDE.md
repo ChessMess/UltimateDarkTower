@@ -10,7 +10,7 @@ inventory, card text) + seed encode/decode. Split out of `ultimatedarktower` in 
 - **Rosters** (`foes.ts`, `heroes.ts`, `monuments.ts`, `board/gameBoard.ts`) — who exists,
   keyed by stable kebab-case `id`. Canonical for names.
   - **`heroes.ts` also carries the hero gameplay sheet** (`bannerAction`, `defaultVirtues`,
-    `unlockableVirtues`) as of v3. Through v2 the same 14 heroes existed twice — identity here
+    `unlockableVirtues`) as of v3. Through v2, 10 of the 14 heroes existed twice — identity here
     and the sheet in `gameContent.HEROES`, keyed by name with no `id`, joinable only on a
     display string. The split was a workaround for the `Hero`/`HEROES` collision, not a
     modelling call, and the sheet half had zero consumers. **Do not re-add a second hero
