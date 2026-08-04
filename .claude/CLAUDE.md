@@ -106,7 +106,7 @@ Most tower-control detail now lives in the packages that own it, as per-package
 For any Dependabot alert/PR work, use the **`dependabot-triage`** skill
 (`.claude/skills/dependabot-triage/`) — it has the full playbook and this repo's
 durable traps (the `minimumReleaseAge` age gate, the `dependabot.yml` ignore
-policy, the electron `rebuild` verification step).
+policy, the electron `rebuild:native` verification step).
 
 ## Before committing
 

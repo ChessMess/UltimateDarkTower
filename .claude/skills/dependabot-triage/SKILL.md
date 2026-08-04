@@ -115,7 +115,7 @@ pnpm run ci      # validate:nodes → lint → format:check → build → typech
   on your branch = you regressed it; fix it before shipping.
 - **`tar` overrides:** `pnpm run ci` does **not** exercise the electron toolchain
   (it has no `build` script). Verify explicitly:
-  `pnpm --filter ultimatedarktowerrelay-electron rebuild` (§5).
+  `pnpm --filter ultimatedarktowerrelay-electron rebuild:native` (§5).
 
 ## Step 6 — Ship (each step gated by the guardrails)
 
@@ -159,9 +159,12 @@ ignored in `dependabot.yml` — if Dependabot errors on `typescript`, that's why
   is ignored (major bumps taken manually). A major-only _security_ fix therefore
   won't auto-PR — it still shows as a Security-tab alert to handle by hand.
 - **Verify a `tar`/electron override with** `pnpm --filter
-ultimatedarktowerrelay-electron rebuild` — `pnpm run ci` skips it (no `build`
-  script). Bumping the `vite` major? re-check display's CJS `dist` still
-  `require()`s (see `references/repo-gotchas.md`).
+ultimatedarktowerrelay-electron rebuild:native` — `pnpm run ci` skips it (no
+  `build` script). The `:native` suffix is load-bearing: plain `rebuild` is a
+  pnpm builtin that never reaches the script and dies with
+  `ERR_PNPM_MISSING_HOISTED_LOCATIONS` (a red herring — see
+  `references/repo-gotchas.md` §5). Bumping the `vite` major? re-check display's
+  CJS `dist` still `require()`s (same file).
 
 ## Reference
 

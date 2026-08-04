@@ -19,7 +19,7 @@ BLE natives (`@stoprocent/bleno`, `@stoprocent/noble`) are prebuilt for Electron
 add/upgrade a native dep, rebuild for Electron with:
 
 ```bash
-pnpm --filter ultimatedarktowerrelay-electron rebuild
+pnpm --filter ultimatedarktowerrelay-electron rebuild:native
 ```
 
 ### Package / distribute

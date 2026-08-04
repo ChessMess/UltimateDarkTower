@@ -111,12 +111,35 @@ grep -E "<pkg>@<old-version>" pnpm-lock.yaml   # expect no output
 shipped. Forcing `tar` 6→7 risks that toolchain, so verify it:
 
 ```
-pnpm --filter ultimatedarktowerrelay-electron rebuild
+pnpm --filter ultimatedarktowerrelay-electron rebuild:native
 ```
 
 `relay-electron` has **no `build` script**, so `pnpm run ci` does NOT exercise
-this path — you must run `rebuild` (or `electron-forge package`) explicitly. The
-CI `relay-native` matrix job covers it on ubuntu+macOS × Node 22/24.
+this path — you must run `rebuild:native` (or `electron-forge package`)
+explicitly. The CI `relay-native` matrix job covers it on ubuntu+macOS × Node
+22/24.
+
+**The `:native` suffix is load-bearing.** `rebuild` alone is a **pnpm builtin**
+(`pnpm rebuild`, alias `rb`), so `pnpm --filter <pkg> rebuild` runs pnpm's own
+command and never reaches the package script. It then fails for an unrelated
+reason:
+
+```
+[ERR_PNPM_MISSING_HOISTED_LOCATIONS] update-browserslist-db@1.2.3(browserslist@4.28.5)
+is not found in hoistedLocations inside node_modules/.modules.yaml
+```
+
+That error is a **red herring — nothing is missing and nothing needs
+reinstalling.** Under `nodeLinker: hoisted` the builtin looks each package up by
+exact peer-suffixed depPath, but the hoisted linker writes only **one
+`hoistedLocations` key per physical directory**. A package with two peer
+variants sharing one directory therefore has one key, and the other lookup
+throws. Here `update-browserslist-db` resolves against both `browserslist@4.28.5`
+(webpack, via `@electron-forge/cli`) and `4.28.6` (`@babel/helper-compilation-targets`).
+`vite`, `vitest`, `@vitejs/plugin-react` and `@vitest/mocker` collide the same
+way via `@types/node`, so the builtin `pnpm rebuild` is broken repo-wide — and
+nothing in the repo or CI uses it. Don't chase it, and don't `rm -rf
+node_modules` over it.
 
 ## 6. Transient Actions "Set up job / Service Unavailable"
 

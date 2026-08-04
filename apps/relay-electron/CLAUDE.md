@@ -15,8 +15,11 @@ silently ships a broken app — a missing native module **at runtime**, not a bu
 
 ## Native rebuild
 
-Rebuild native modules with `pnpm --filter ultimatedarktowerrelay-electron rebuild`
-(`electron-rebuild -f -w @stoprocent/bleno,@stoprocent/noble`). This is **not** part of
+Rebuild native modules with `pnpm --filter ultimatedarktowerrelay-electron rebuild:native`
+(`electron-rebuild -f -w @stoprocent/bleno,@stoprocent/noble`). The `:native` suffix is
+load-bearing — `rebuild` alone is a **pnpm builtin**, so `pnpm --filter … rebuild` runs
+pnpm's own command and never reaches this script (see the root `pnpm-workspace.yaml`).
+This is **not** part of
 `build` — `build` is deliberately `tsc --noEmit` only (typecheck-only, matching
 `typecheck`), so this app participates in the root `pnpm -r build` fan-out without every
 CI run packaging a full Electron app with native BLE deps. Real packaging/native rebuild
