@@ -19,8 +19,8 @@
   "author": "ChessMess",
   "license": "MIT",
   "dependencies": {
-    "@stoprocent/bleno": "^0.12.4",
-    "@stoprocent/noble": "^2.5.10",
+    "@stoprocent/bleno": "^0.13.1",
+    "@stoprocent/noble": "^2.6.5",
     "electron-squirrel-startup": "^1.0.1",
     "ultimatedarktower": "workspace:^",
     "ultimatedarktowerrelay-core": "workspace:^",
