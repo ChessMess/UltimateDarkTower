@@ -57,5 +57,14 @@ replacement.
 
 ## Tests
 
-`environment: 'node'` — the only suite is a pure data check, so there is no
-`jsdom` devDep. Add one with the first component test.
+Two suites, `environment: 'jsdom'`:
+
+- **`datasets.test.ts`** — the registry drift guard (above), plus key uniqueness,
+  URL-safety, link resolution and readable titles.
+- **`App.test.tsx`** — mounts the real `<App/>` and asserts registry content
+  reaches the DOM. It exists because a blank page once shipped while every data
+  test passed: `resolve.dedupe` was missing from `vite.config.ts`, two React
+  copies got bundled (`@udtc/theme` is source-only with react as a _peer_, so it
+  has its own), and `useTheme`'s `useSyncExternalStore` hit a null dispatcher.
+  **Do not remove `dedupe`** — pull it out and all five render cases fail, which
+  is the point.
