@@ -93,7 +93,7 @@ above.)
   Shortcut: `pnpm run dev:relay-electron`. Needs the native BLE modules
   built, which the root install's `allowBuilds` handles. If the native
   modules complain, rebuild them:
-  `pnpm --filter ultimatedarktowerrelay-electron rebuild`.
+  `pnpm --filter ultimatedarktowerrelay-electron rebuild:native`.
 
 - **MCP Server** (`mcp-server-return-to-dark-tower`) — watch-mode stdio
   server for AI assistants to control the tower:
