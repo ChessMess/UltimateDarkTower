@@ -148,6 +148,21 @@ for later. Remember `typescript` (`catalog:`) and semver-majors are intentionall
 ignored in `dependabot.yml` — if Dependabot errors on `typescript`, that's why
 (§2), not something to "fix" by bumping it.
 
+## Durable facts (previously in the root `CLAUDE.md`)
+
+- **`minimumReleaseAge` gate:** `pnpm install --frozen-lockfile` (CI) rejects
+  package versions published within ~24h (`ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`).
+  So Dependabot version-update PRs proposing a just-published release are red
+  until it ages — not a breakage. Re-run after it ages / `@dependabot rebase`.
+- **`dependabot.yml` policy:** `typescript` is ignored (it's a `catalog:` dep
+  Dependabot can't resolve, and pinned at 5.9.x); `version-update:semver-major`
+  is ignored (major bumps taken manually). A major-only _security_ fix therefore
+  won't auto-PR — it still shows as a Security-tab alert to handle by hand.
+- **Verify a `tar`/electron override with** `pnpm --filter
+ultimatedarktowerrelay-electron rebuild` — `pnpm run ci` skips it (no `build`
+  script). Bumping the `vite` major? re-check display's CJS `dist` still
+  `require()`s (see `references/repo-gotchas.md`).
+
 ## Reference
 
 - `references/repo-gotchas.md` — the full catalog of this repo's traps, each
