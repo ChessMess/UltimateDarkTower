@@ -19,7 +19,8 @@ now archived) into `packages/*` + `apps/*`.
 
 `packages/*` are libraries, `apps/*` are runnable leaf consumers (nothing
 depends on them). Each directory's npm name and one-line purpose live in its own
-`package.json`; the `@udtc/*` scope marks the private Creator libraries.
+`package.json`; the `@udtc/*` scope marks private, unpublished libraries — mostly the Creator
+stack, plus `@udtc/theme` and `@udtc/assets`.
 
 **All apps are `private: true` except `mcp-server` and `relay-cli`**, which publish to npm because
 `npx` is how an MCP server gets consumed. Publishing is a **per-package flag**,
@@ -66,6 +67,15 @@ playbook (Changesets masks npm's real error with a TypeError).
   git-hosted subdep.
 - **three.js is force-hoisted** (`.npmrc` `public-hoist-pattern[]=*three*`) so
   display/board/creator share one copy — multiple copies break `instanceof`.
+- **Game art and audio live in `@udtc/assets` and arrive as bundler-emitted URLs.**
+  Never copy art into an app's `public/` or build a path with
+  `` `${import.meta.env.BASE_URL}assets/…` `` — `import` the URL instead. Two traps
+  worth knowing before you touch it: **there is no asset tree-shaking** (`emitFile`
+  runs in `transform`, before it), so the module split _is_ the granularity and
+  importing the wrong subpath silently ships megabytes; and the package must never
+  reach `optimizeDeps.include`, which breaks `import.meta.glob` in dev only.
+  `packages/assets/CLAUDE.md` has the full list. Browse the collection in the
+  Tower Codex under **Graphics** (`pnpm dev:codex`, then `#/art`).
 - **`CLAUDE.md` files are committed** — the root `.claude/CLAUDE.md` plus a
   per-package `CLAUDE.md` in most `packages/*` and `apps/*` (loaded on demand when
   you open a file there). Only **`.claude/settings.local.json`** and

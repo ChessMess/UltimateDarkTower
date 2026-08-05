@@ -20,6 +20,7 @@ import {
   TOWER_LIGHT_SEQUENCES,
   GLYPHS,
 } from 'ultimatedarktowerdata';
+import { glyphSvg } from '@udtc/assets/glyphs';
 import {
   logger,
   DOMOutput,
@@ -1564,9 +1565,10 @@ const refreshGlyphPositions = () => {
         const cellId = `glyph-${glyphLevel}-${side}`;
         const cell = document.getElementById(cellId);
         if (cell) {
-          // Add glyph icon
+          // Add glyph icon. Indexed off @udtc/assets' map rather than concatenated into a
+          // path: a renamed glyph is now a compile error instead of a silent broken image.
           const img = document.createElement('img');
-          img.src = `${import.meta.env.BASE_URL}assets/glyph_${glyphName}.svg`;
+          img.src = glyphSvg[glyphName as keyof typeof glyphSvg];
           img.alt = glyphName;
           cell.appendChild(img);
         }

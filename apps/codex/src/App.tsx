@@ -1,9 +1,19 @@
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import { useTheme, type ThemeMode } from '@udtc/theme';
 import { DATASETS, DATASET_BY_ID, GROUP_ORDER, TOTAL_ROWS, type Dataset } from './datasets';
 import { Detail, Badges } from './render';
 import { DatasetView, type View } from './views';
 import { parseFacets, searchAll, serializeFacets, titleOf, type Facets } from './search';
+// Two modules, mirroring the dataset side's `datasets.ts` + `views.tsx` split.
+import { ART_GROUPS, ART_GROUP_BY_ID, ART_SECTION_ORDER, TOTAL_ASSETS, searchArt } from './art';
+import { ArtGrid, ArtGroupIndex, ArtRoute } from './artViews';
 
 const REPO = 'https://github.com/ChessMess/UltimateDarkTower';
 
@@ -37,16 +47,27 @@ function replaceHash(next: string) {
   window.dispatchEvent(new Event(HASH_EVENT));
 }
 
-type Route = { datasetId: string; recordId?: string; query: string; facets: Facets; view?: View };
+type Route = {
+  /** A dataset slug, or one of the reserved ids: `search`, `art`. */
+  datasetId: string;
+  /** A record key — or, under `art`, the group id. */
+  recordId?: string;
+  /** Only meaningful under `art`: the asset id. Dataset routes are two segments deep. */
+  subId?: string;
+  query: string;
+  facets: Facets;
+  view?: View;
+};
 
 function parseRoute(hash: string): Route {
   const [path, search = ''] = hash.replace(/^#\/?/, '').split('?');
-  const [datasetId = '', recordId] = path.split('/');
+  const [datasetId = '', recordId, subId] = path.split('/');
   const params = new URLSearchParams(search);
   const view = params.get('view');
   return {
     datasetId: decodeURIComponent(datasetId),
     recordId: recordId === undefined ? undefined : decodeURIComponent(recordId),
+    subId: subId === undefined ? undefined : decodeURIComponent(subId),
     query: params.get('q') ?? '',
     facets: parseFacets(params.getAll('f')),
     view: view === 'cards' || view === 'table' ? view : undefined,
@@ -90,28 +111,129 @@ function ThemeToggle() {
   );
 }
 
-function Sidebar({ activeId }: { activeId: string }) {
+/**
+ * Which shelf sections the reader has collapsed, remembered across reloads.
+ *
+ * Stores the **collapsed** set rather than the open one, so anything added to the sidebar later —
+ * a new dataset group, a new art section — defaults to open instead of silently arriving hidden
+ * behind an entry no stored list mentions.
+ *
+ * Keys are prefixed by side (`data:` / `art:`) because the two registries name their sections
+ * independently: `Board` is a dataset group and `Board & models` is an art section today, and
+ * nothing stops a future pair from colliding outright and toggling together.
+ */
+const SHELF_KEY = 'codex-shelf-collapsed';
+
+function readCollapsed(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SHELF_KEY);
+    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  } catch {
+    // Private mode, a disabled-storage policy, or a corrupt value. A shelf that forgets is a far
+    // better failure than one that throws on mount and takes the whole app with it.
+    return new Set();
+  }
+}
+
+/** One collapsible shelf section. `<details>` so the keyboard and screen-reader behaviour is the
+ *  platform's rather than ours — this needs no role, no aria-expanded and no key handling. */
+function ShelfSection({
+  sectionKey,
+  title,
+  collapsed,
+  onToggle,
+  children,
+}: {
+  sectionKey: string;
+  title: string;
+  collapsed: Set<string>;
+  onToggle: (key: string, open: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <details
+      className="shelf-sec"
+      open={!collapsed.has(sectionKey)}
+      onToggle={(e) => onToggle(sectionKey, e.currentTarget.open)}
+    >
+      <summary>
+        <h2>{title}</h2>
+      </summary>
+      <ul>{children}</ul>
+    </details>
+  );
+}
+
+function Sidebar({ activeId, artId }: { activeId: string; artId?: string }) {
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+
+  const toggle = useCallback((key: string, open: boolean) => {
+    setCollapsed((prev) => {
+      // `has(key) === open` is exactly the disagreement case — the set says collapsed while the
+      // DOM says open, or the reverse — so anything else is React re-applying `open` and the
+      // element re-firing `toggle`. Bail there or the two ping-pong.
+      if (prev.has(key) !== open) return prev;
+      const next = new Set(prev);
+      if (open) next.delete(key);
+      else next.add(key);
+      try {
+        localStorage.setItem(SHELF_KEY, JSON.stringify([...next]));
+      } catch {
+        // Same as reading: the shelf just forgets this session.
+      }
+      return next;
+    });
+  }, []);
+
   return (
     <nav className="shelf" aria-label="Datasets">
       {GROUP_ORDER.map((group) => {
         const items = DATASETS.filter((d) => d.group === group);
         if (items.length === 0) return null;
         return (
-          <section key={group}>
-            <h2>{group}</h2>
-            <ul>
-              {items.map((d) => (
-                <li key={d.id}>
-                  <a href={`#/${d.id}`} aria-current={d.id === activeId ? 'page' : undefined}>
-                    <span className="shelf-name">{d.name}</span>
-                    <span className="shelf-count">{d.rows.length}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
+          <ShelfSection
+            key={group}
+            sectionKey={`data:${group}`}
+            title={group}
+            collapsed={collapsed}
+            onToggle={toggle}
+          >
+            {items.map((d) => (
+              <li key={d.id}>
+                <a href={`#/${d.id}`} aria-current={d.id === activeId ? 'page' : undefined}>
+                  <span className="shelf-name">{d.name}</span>
+                  <span className="shelf-count">{d.rows.length}</span>
+                </a>
+              </li>
+            ))}
+          </ShelfSection>
         );
       })}
+      {/* Graphics is a parallel registry, not more datasets — the divider is what says so. */}
+      <p className="shelf-part">
+        <a href="#/art" aria-current={activeId === 'art' ? 'page' : undefined}>
+          Graphics
+        </a>
+      </p>
+      {ART_SECTION_ORDER.map((section) => (
+        <ShelfSection
+          key={section}
+          sectionKey={`art:${section}`}
+          title={section}
+          collapsed={collapsed}
+          onToggle={toggle}
+        >
+          {ART_GROUPS.filter((g) => g.section === section).map((g) => (
+            <li key={g.id}>
+              <a href={`#/art/${g.id}`} aria-current={artId === g.id ? 'page' : undefined}>
+                <span className="shelf-name">{g.name}</span>
+                <span className="shelf-count">{g.assets.length}</span>
+              </a>
+            </li>
+          ))}
+        </ShelfSection>
+      ))}
+
       <p className="shelf-foot">
         Decoding a game seed? That lives in the{' '}
         <a href="../seed/" className="out">
@@ -174,6 +296,21 @@ function Home() {
         ))}
       </div>
 
+      <section className="home-art">
+        <h3>
+          <a href="#/art">Graphics</a>
+        </h3>
+        <p>
+          {TOTAL_ASSETS} files — board art, the full token roster, the tower model, the drum glyphs
+          and the tower&rsquo;s whole sound library, out of{' '}
+          <a href={`${REPO}/tree/main/packages/assets`} className="out">
+            @udtc/assets
+          </a>
+          .
+        </p>
+        <ArtGroupIndex />
+      </section>
+
       <aside className="quality">
         <h3>Where the data is thin</h3>
         <p>
@@ -215,12 +352,16 @@ function Home() {
 
 function GlobalSearch({ query }: { query: string }) {
   const hits = useMemo(() => searchAll(query), [query]);
+  const art = useMemo(() => searchArt(query), [query]);
   const total = hits.reduce((n, h) => n + h.rows.length, 0);
 
   if (!query.trim()) {
     return (
       <section className="results">
-        <p className="empty">Type to search all {TOTAL_ROWS.toLocaleString()} records.</p>
+        <p className="empty">
+          Type to search all {TOTAL_ROWS.toLocaleString()} records and {TOTAL_ASSETS} graphics and
+          audio files.
+        </p>
       </section>
     );
   }
@@ -232,9 +373,12 @@ function GlobalSearch({ query }: { query: string }) {
         <p className="count">
           {total} {total === 1 ? 'record' : 'records'} in {hits.length}{' '}
           {hits.length === 1 ? 'dataset' : 'datasets'}
+          {art.length > 0 ? ` · ${art.length} art ${art.length === 1 ? 'file' : 'files'}` : ''}
         </p>
       </header>
-      {hits.length === 0 ? <p className="empty">Nothing matches that.</p> : null}
+      {hits.length === 0 && art.length === 0 ? (
+        <p className="empty">Nothing matches that.</p>
+      ) : null}
       {hits.map(({ dataset, rows }) => (
         <div className="result-group" key={dataset.id}>
           <h3>
@@ -260,6 +404,27 @@ function GlobalSearch({ query }: { query: string }) {
           </ul>
         </div>
       ))}
+
+      {/* Graphics last: a query like "glyphs" hits both a dataset and an art group, and the data
+          is what the Codex is primarily for. The grid is visually distinct, so the two never
+          blur. */}
+      {art.length > 0 ? (
+        <div className="result-group">
+          <h3>
+            <a href="#/art">Graphics</a>
+            <span>{art.length}</span>
+          </h3>
+          <ArtGrid
+            assets={art.slice(0, 24)}
+            hrefOf={(a) => `#/art/${a.group.id}/${encodeURIComponent(a.id)}`}
+          />
+          {art.length > 24 ? (
+            <p className="more">
+              <a href="#/art">+{art.length - 24} more files</a>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -282,6 +447,10 @@ export default function App() {
   const route = useMemo(() => parseRoute(hash), [hash]);
   const dataset = DATASET_BY_ID.get(route.datasetId);
   const isSearch = route.datasetId === 'search';
+  // `art` joins `search` as a reserved id, dispatched before the dataset registry is consulted.
+  // `datasets.test.ts` asserts no dataset claims either.
+  const isArt = route.datasetId === 'art';
+  const artGroup = isArt && route.recordId ? ART_GROUP_BY_ID.get(route.recordId) : undefined;
 
   // No mirrored state: query/facets/view are read straight off the route and written back to it.
   const view: View = route.view ?? dataset?.view ?? 'table';
@@ -307,12 +476,15 @@ export default function App() {
   );
 
   useEffect(() => {
-    document.title = dataset ? `${dataset.name} · Tower Codex` : 'Tower Codex';
-  }, [dataset]);
+    const name = artGroup?.name ?? dataset?.name;
+    document.title = name ? `${name} · Tower Codex` : 'Tower Codex';
+  }, [dataset, artGroup]);
 
   let main: React.ReactNode;
   if (isSearch) {
     main = <GlobalSearch query={route.query} />;
+  } else if (isArt) {
+    main = <ArtRoute groupId={route.recordId} assetId={route.subId} />;
   } else if (!dataset) {
     main = <Home />;
   } else if (route.recordId !== undefined) {
@@ -364,7 +536,7 @@ export default function App() {
       </header>
 
       <div className="layout">
-        <Sidebar activeId={route.datasetId} />
+        <Sidebar activeId={route.datasetId} artId={isArt ? route.recordId : undefined} />
         <main>{main}</main>
       </div>
     </>

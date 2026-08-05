@@ -18,7 +18,8 @@ const MODEL_EXT = new Set(['.glb', '.gltf']);
 
 export function tokenArtDevPlugin(opts: { exampleDir: string }): Plugin {
   const tokenArtDir = resolve(opts.exampleDir, 'src/tokenArt');
-  const publicDir = resolve(opts.exampleDir, 'public');
+  // Token art lives in @udtc/assets now, not example/public — the picker lists it from there.
+  const tokenArtAssetsDir = resolve(opts.exampleDir, '../../assets/tokens');
   const fileFor = (kind: string): string => resolve(tokenArtDir, `${kind}_tokens.json`);
 
   return {
@@ -31,7 +32,7 @@ export function tokenArtDevPlugin(opts: { exampleDir: string }): Plugin {
           try {
             const config: Record<string, unknown> = {};
             for (const kind of KINDS) config[kind] = await readJson(fileFor(kind));
-            const assets = await listAssets(publicDir);
+            const assets = await listAssets(tokenArtAssetsDir, './tokens/');
             sendJson(res, 200, { config, assets });
           } catch (err) {
             sendJson(res, 500, { error: String(err) });
@@ -73,8 +74,16 @@ async function readJson(file: string): Promise<unknown> {
   }
 }
 
-/** Recursively list public art as web URLs (relative to the served root, with a leading `./`). */
-async function listAssets(dir: string): Promise<{ images: string[]; models: string[] }> {
+/**
+ * Recursively list art as manifest-format paths (`<prefix><relative path>`).
+ *
+ * These strings are what the Forge writes into `<kind>_tokens.json`, so they must match the
+ * `./tokens/…` shape `resolveDemoPath` understands — NOT the hashed URL the bundler emits.
+ */
+async function listAssets(
+  dir: string,
+  prefix: string,
+): Promise<{ images: string[]; models: string[] }> {
   const images: string[] = [];
   const models: string[] = [];
   async function walk(current: string): Promise<void> {
@@ -90,7 +99,7 @@ async function listAssets(dir: string): Promise<{ images: string[]; models: stri
         await walk(full);
       } else {
         const ext = entry.name.slice(entry.name.lastIndexOf('.')).toLowerCase();
-        const url = `./${relative(dir, full).split(sep).join('/')}`;
+        const url = `${prefix}${relative(dir, full).split(sep).join('/')}`;
         if (IMAGE_EXT.has(ext)) images.push(url);
         else if (MODEL_EXT.has(ext)) models.push(url);
       }

@@ -18,6 +18,10 @@ export default defineConfig({
     // condition (dist/browser/index.mjs) with no `createRequire`/noble banner, so Vite resolves a
     // browser-safe entry directly — no CJS alias, and no eager-noble `os.platform` crash on cold cache.
     include: ['@udtc/engine', '@udtc/schema', '@udtc/adapters'],
+    // NEVER pre-bundle @udtc/assets: the dep optimizer rewrites `new URL(..., import.meta.url)`
+    // relative to node_modules/.vite/deps and has no `import.meta.glob` handling, so a pre-bundled
+    // copy either 404s every asset or throws at runtime. Dev-only, so it looks like a mystery.
+    exclude: ['@udtc/assets'],
   },
   server: {
     port: 5173,

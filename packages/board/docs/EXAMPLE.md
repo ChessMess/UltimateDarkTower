@@ -24,11 +24,19 @@ reset / panel-toggles, and the right column's Board Status readout + JSON copy/a
 `stage.controller` / `stage.view` / `stage.selection`. All the render-stage controllers that used to
 live here are now inside the component.
 
-Assets live in `example/public/` and are loaded at runtime (never bundled):
+Art comes from **`@udtc/assets`** and is emitted by the example's own build with content hashes —
+`example/public/` no longer holds any of it, and nothing is resolved from a runtime base URL:
 
-- `board.png` — the base layer (`boardImageUrl: './board.png'`).
-- `tokens/{foes,adversaries,heros,monuments,markers}/*.png` — token art (`assetBaseUrl: './tokens/'`). This
-  tree is the staging ground for a future standalone board-assets package.
+- `boardFullPng` from `@udtc/assets/board` — the base layer (`boardImageUrl`).
+- `tokenUrls` from `@udtc/assets/tokens` — token art, wired via
+  `makeTokenImageResolver(tokenUrls)` rather than `assetBaseUrl`. That helper runs the library's own
+  `defaultTokenImagePath` against a `udt://` sentinel and maps the result onto the bundled URLs, so the
+  four hand-maintained `OFFICIAL_*` tables stay the single source of truth.
+- `tokenArt` from `@udtc/assets/tokens` — passed **alongside** the resolver, not instead of it. 3D models
+  are a separate seam: `resolveTokenImage` does not cover them, so without this the skull silently
+  degrades to a flat sprite.
+
+`assetBaseUrl` is **not** deprecated — it remains the path for external npm consumers who self-host.
 
 **Two layers of art.** The board **library** ships built-in defaults, so most tokens need no config: foes
 and adversaries resolve to their flat 2D board-token icon in the 2D map and their portrait in 3D, and the
@@ -70,8 +78,8 @@ come from `ultimatedarktowerdata`'s re-exported `HEROES` / `MONUMENTS` rosters (
 
 The 3D board is owned by the stage (it builds `TowerRenderView` + `attachBoard3D` via the lazily-imported
 `ultimatedarktowerboard/plugin/stageTower` adapter), driven by the same controller and focus as the 2D map.
-It needs a tower GLB: `example/public/tower.glb` (copied from Display, example-only — excluded from the npm
-tarball by `files: ["dist"]`). The stage passes `modelUrl: './tower.glb'`, so the 3D stack is fetched as a
+It needs a tower GLB, imported as `towerGlb` from `@udtc/assets/models` and passed as `modelUrl` (the
+library never bundles it — the model is consumer-supplied, and the example is just another consumer). The 3D stack is fetched as a
 separate chunk on first use — visible in the network panel as a distinct `stageTower-*.js` load. The example
 Vite config `resolve.dedupe`s `three` so the plugin and Display share one `three` instance (no alias or
 `optimizeDeps` workaround is needed for the board data itself — `ultimatedarktowerdata` has no
@@ -102,8 +110,9 @@ saves nothing (the file keeps only genuine overrides).
 built-in defaults. To make art that everyone (Player included) gets, run `npm run promote-token-art`: it
 compares the demo overrides against the current library defaults and prints the exact `OFFICIAL_2D_ICON` /
 `OFFICIAL_HERO_ART` entries to paste into [`src/renderers/assetPaths.ts`](../src/renderers/assetPaths.ts),
-plus the asset files to copy into each consumer's `public/tokens`. Workflow: add art in the Forge → verify in
-the demo → `npm run promote-token-art` → paste the entries + copy the assets → rebuild.
+Workflow: add art in the Forge → verify in the demo → `npm run promote-token-art` → paste the entries →
+rebuild. The script's old "copy these files into each consumer's `public/tokens`" checklist is gone:
+art added to `packages/assets/tokens/` reaches every consumer through the glob, with no hand-copying.
 
 ## Token Designer
 
@@ -130,7 +139,7 @@ layer over any background:
   edits text, font, size, rotation, X/Y, alignment, colour and weight; add or delete fields freely.
 - **Save Project** downloads the editable design as `<name>.token.json`; **Load** reopens it. **Export PNG**
   rasterises the token at its canvas size (256×222 by default, supersampled internally for crisp text) to
-  drop into `example/public/tokens/foes/` or use as a custom `image2d` in the Forge. A dirty-guard warns
+  drop into `packages/assets/tokens/foes/` or use as a custom `image2d` in the Forge. A dirty-guard warns
   before navigating away or discarding unsaved edits.
 
 Source: [`example/src/tokenDesigner/`](../example/src/tokenDesigner). Fonts are system stacks so the exported
@@ -141,7 +150,7 @@ PNG matches the on-screen preview (a web font would not render in the SVG→PNG 
 A dependency-free, single-file dev tool for authoring two `UltimateDarkTower` board datasets by clicking on
 the board artwork — open [`/location-marker.html`](../example/location-marker.html) (linked from the demo
 sidebar and the other tool headers), or run `npm run dev:example` and visit `/location-marker.html`. It
-auto-loads the example's own `board.png` on boot.
+auto-loads the board art from `@udtc/assets/board` on boot.
 
 - **Anchors** — multi-slot token positions per location (`building`, `skull`, `hero`, `foe`, `marker`),
   normalized `[0,1]` against the board image.

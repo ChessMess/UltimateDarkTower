@@ -110,11 +110,15 @@ export const components = [
     dir: 'apps/codex',
     title: 'Tower Codex',
     blurb:
-      'Browse the whole Return to Dark Tower reference — every printed card face, the board, the rosters, the box contents — searchable and cross-linked.',
+      'Browse the whole Return to Dark Tower reference — every printed card face, the board, the rosters, the box contents, and every piece of game art and audio — searchable and cross-linked.',
     category: 'app',
     demo: 'codex',
     glyph: 'quest',
-    image: null,
+    // Drawn rather than captured, like mcp-server.jpg and game-data.jpg. Source and regeneration
+    // steps live in scripts/pages/codex-thumb.html; it renders the same `quest` glyph named above,
+    // so changing that field means re-rendering the thumbnail or the badge stops matching.
+    image: 'codex.jpg',
+    alt: 'The Return to Dark Tower tower and board, with the quest scroll glyph struck over it',
   },
   {
     dir: 'apps/sync',

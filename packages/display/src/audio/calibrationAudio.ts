@@ -1,7 +1,9 @@
-// Per-file `new URL('./assets/<literal>', import.meta.url)` is the canonical
-// bundler-detected asset pattern (see audioLibrary.ts for the rationale). Kept
-// in its own module rather than audioLibrary.ts because scripts/extract-audio.mjs
-// regenerates that file wholesale and would wipe a hand-added export.
+// The bytes and the `new URL(...)` expression live in `@udtc/assets/audio-effects`; this module
+// stays as the stable internal specifier (tests alias it — see vitest.config.ts) and as the
+// package's own name for the sound.
+//
+// Kept separate from audioLibrary.ts because scripts/extract-audio.mjs regenerates that file
+// wholesale and would wipe a hand-added export.
 
 /** Bundled calibration-sweep recording. Played only during the calibration command. */
-export const CALIBRATION_SOUND_URL = new URL('./assets/drumCalibration.ogg', import.meta.url).href;
+export { calibrationSoundUrl as CALIBRATION_SOUND_URL } from '@udtc/assets/audio-effects';

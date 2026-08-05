@@ -6,6 +6,7 @@ import {
   type Lights,
 } from 'ultimatedarktower';
 import { GLYPHS, TOWER_AUDIO_LIBRARY, type Glyphs } from 'ultimatedarktowerdata';
+import { glyphsPng } from '@udtc/assets/glyphs';
 
 const DarkTower = new UltimateDarkTower();
 
@@ -428,3 +429,8 @@ const glyphClick = (glyph: Glyphs) => {
 setDifficultyNormal();
 populateSelections();
 resetScore();
+
+// The glyph sprite sheet ships in @udtc/assets; index.html leaves `src` empty for us to fill so
+// the bundler can hash it. The <map usemap> wiring in the HTML is untouched.
+const glyphmapImg = document.getElementById('glyphmap-img');
+if (glyphmapImg instanceof HTMLImageElement) glyphmapImg.src = glyphsPng;

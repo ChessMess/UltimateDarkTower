@@ -121,7 +121,9 @@
         </div>
         <br />
         <div style="display: flex; align-items: center" alt="glyphs">
-          <img style="margin: auto; width: 400px;" src="./assets/glyphs.png" alt="glyphs" usemap="#glyphmap" />
+          <!-- src is set from TowerGame.ts: the sprite sheet lives in @udtc/assets and is
+               bundler-hashed, and Vite's HTML pipeline has no bare-specifier resolution. -->
+          <img id="glyphmap-img" style="margin: auto; width: 400px;" src="" alt="glyphs" usemap="#glyphmap" />
           <map name="glyphmap">
             <area shape="rect" coords="6,7,74,97" alt="banner" onclick="glyphClick('banner')">
             <area shape="rect" coords="83,7,151,96" alt="cleanse" onclick="glyphClick('cleanse')">

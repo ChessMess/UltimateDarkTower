@@ -13,9 +13,10 @@ import {
   ADVERSARY_ROSTER,
   MONUMENTS,
   kebab,
-  resolveTokenImageFor,
+  makeTokenImageResolver,
 } from '../../../src/index';
 import type { TokenArt, TokenModelRef, TokenArtRef, BoardView } from '../../../src/index';
+import { tokenUrls } from '@udtc/assets/tokens';
 import { tokenArt as bundledConfig } from '../tokenArt';
 import { highlight } from './helpers';
 import { imageSlot } from './imageSlot';
@@ -68,10 +69,11 @@ const KINDS: { kind: Kind; label: string; roster: RosterEntry[] }[] = [
 ];
 const rosterFor = (kind: Kind): RosterEntry[] => KINDS.find((k) => k.kind === kind)!.roster;
 
-// The demo mounts the board with `assetBaseUrl: './tokens/'` (see example/src/main.ts), so a token
-// with NO override still renders on the board via the library's built-in default. We preview that
-// here so the Forge mirrors the board instead of looking empty.
-const ASSET_BASE = './tokens/';
+// The demo mounts the board with `resolveTokenImage: makeTokenImageResolver(tokenUrls)` (see
+// example/src/main.ts), so a token with NO override still renders on the board via the library's
+// built-in default. We preview that here — through the SAME resolver — so the Forge mirrors the
+// board instead of looking empty, and can never drift from it.
+const resolveDefaultImage = makeTokenImageResolver(tokenUrls);
 
 /**
  * The default image the board actually falls back to for a token with no override — delegated to
@@ -83,10 +85,7 @@ const ASSET_BASE = './tokens/';
  */
 function conventionImageUrl(kind: Kind, id: string, view: BoardView): string | undefined {
   if (!id) return undefined;
-  return (
-    resolveTokenImageFor({ kind, id } as TokenArtRef, view, { assetBaseUrl: ASSET_BASE }) ??
-    undefined
-  );
+  return resolveDefaultImage({ kind, id } as TokenArtRef, view) ?? undefined;
 }
 
 const state = {

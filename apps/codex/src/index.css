@@ -40,6 +40,19 @@
   --shelf-w: 17rem;
   --topbar-h: 3.5rem;
   --radius: 6px;
+
+  /* The checkerboard behind transparent art. Token PNGs ARE transparent, and on a flat panel they
+     read as having a solid background — which is exactly the detail someone opens the Graphics section
+     to check.
+
+     Fixed, and deliberately NOT derived from --paper-sunk/--ink: a palette-derived checkerboard
+     goes dark with the page, and the glyph SVGs are #231F20 on transparency — near-black art on a
+     near-black plate, invisible. Nothing in @udtc/assets is light-on-transparent, so a light plate
+     is safe for every file here while a dark one is not. These two values are what the derived
+     pair already computed in day mode, so daylight is unchanged; night now shows art on a plate
+     rather than swallowing it. */
+  --checker-a: #f2ebdd;
+  --checker-b: #e2dbce;
 }
 
 :root[data-theme='dark'] {
@@ -293,8 +306,30 @@ main {
   border-right: 1px solid var(--rule);
 }
 
-.shelf section + section {
+.shelf-sec + .shelf-sec {
   margin-top: 1.4rem;
+}
+
+/* Each section is a native <details>, so the whole heading row is the toggle. `list-style: none`
+   plus the -webkit- pseudo-element is what removes the UA's own disclosure triangle — both are
+   needed, they are different browsers' mechanisms for the same marker. */
+.shelf-sec > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.35rem 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--rule-soft);
+  margin-bottom: 0.35rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.shelf-sec > summary::-webkit-details-marker {
+  display: none;
+}
+
+.shelf-sec > summary:hover h2 {
+  color: var(--ink-2);
 }
 
 .shelf h2 {
@@ -304,9 +339,25 @@ main {
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--ink-faint);
-  padding: 0 0 0.45rem 0.6rem;
-  border-bottom: 1px solid var(--rule-soft);
-  margin-bottom: 0.35rem;
+  transition: color 0.14s;
+}
+
+/* The chevron: a bare corner of two borders, rotated. Points right when the section is closed and
+   down when it is open — the `translateY` compensates for rotating a square about its centre. */
+.shelf-sec > summary::after {
+  content: '';
+  flex: none;
+  margin-left: auto;
+  width: 0.36rem;
+  height: 0.36rem;
+  border-right: 1.5px solid var(--ink-faint);
+  border-bottom: 1.5px solid var(--ink-faint);
+  transform: translateY(-1px) rotate(-45deg);
+  transition: transform 0.16s ease;
+}
+
+.shelf-sec[open] > summary::after {
+  transform: translateY(-2px) rotate(45deg);
 }
 
 .shelf ul {
@@ -1163,6 +1214,322 @@ tbody td.num {
   font-style: italic;
 }
 
+/* ── art ────────────────────────────────────────────────────────────────────────────────────── */
+
+/* The Graphics section reuses codex's chrome wherever the markup is the same shape — `.crumbs`,
+   `.fields`/`.field`, `.dataset-head`, `.count`, `.note`, `.empty`, `.home-groups`. Only what is
+   genuinely media-specific lives here, prefixed `art-` so nothing bleeds into a dataset page. */
+
+.shelf-part {
+  margin: 1.75rem 0 0.6rem;
+  padding: 0.9rem 0.6rem 0;
+  border-top: 1px solid var(--rule);
+  font-family: var(--f-display);
+  font-size: 1rem;
+}
+
+.shelf-part a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.shelf-part a[aria-current='page'] {
+  color: var(--leaf-deep);
+}
+
+.home-art {
+  margin: 2.5rem 0 0;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--rule);
+}
+
+.home-art > h3 {
+  font-family: var(--f-display);
+  font-size: 1.15rem;
+  margin: 0 0 0.3rem;
+}
+
+.home-art > h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.home-art > p {
+  max-width: 44rem;
+  margin: 0 0 1.5rem;
+  color: var(--ink-2);
+}
+
+.art-thumb,
+.art-stage {
+  background-color: var(--paper-sunk);
+}
+
+/* One checkerboard recipe at two sizes — `--check` is the only difference.
+   Only images have transparency to reveal. Audio and model tiles show a text badge instead, and
+   that badge is --ink-faint: on the fixed light plate above it would be unreadable in night mode,
+   so they keep the page's own surface. */
+.art-thumb[data-kind='image'],
+.art-stage[data-kind='image'] {
+  --check: 16px;
+  background-color: var(--checker-a);
+  background-image:
+    linear-gradient(45deg, var(--checker-b) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-b) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-b) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-b) 75%);
+  background-size: var(--check) var(--check);
+  background-position:
+    0 0,
+    0 calc(var(--check) / 2),
+    calc(var(--check) / 2) calc(var(--check) / -2),
+    calc(var(--check) / -2) 0;
+}
+
+.art-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The card chrome is on the <li>, not on the anchor, because the thumbnail has to sit outside the
+   anchor — an audio thumbnail contains a play button, and a button inside a link is invalid.
+   `1fr` on the text row keeps every card in a row ending at the same height when a long filename
+   wraps to a second line. */
+.art-tile {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: 0.6rem;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition:
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.art-tile:hover,
+.art-tile:focus-within {
+  border-color: var(--leaf);
+  box-shadow: var(--shadow-lift);
+}
+
+.art-tile-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Stretched link: the anchor's hit area covers the whole card, so the thumbnail still navigates
+   now that it is no longer inside the anchor. `.art-play` lifts above this. */
+.art-tile-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+}
+
+/* Above the stretched link, or the card would swallow the click. */
+.art-play {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  background: var(--card);
+  color: var(--leaf-deep);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+
+.art-play:hover {
+  background: var(--leaf-soft);
+  transform: scale(1.06);
+}
+
+.art-tile-dur {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--ink-faint);
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.art-thumb {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  margin-bottom: 0.55rem;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.art-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.art-thumb-badge,
+.art-stage-model span:first-child {
+  color: var(--ink-faint);
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+}
+
+.art-tile-name {
+  display: block;
+  font-size: 0.88rem;
+  line-height: 1.3;
+}
+
+.art-tile-file {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--ink-faint);
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  line-height: 1.3;
+  word-break: break-all;
+}
+
+.art-import {
+  margin: 0.9rem 0 0;
+}
+
+.art-import code,
+.art-detail .field code {
+  display: inline-block;
+  padding: 0.25rem 0.55rem;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius);
+  color: var(--ink-2);
+  word-break: break-all;
+}
+
+.art-detail {
+  max-width: 52rem;
+}
+
+.art-stage {
+  display: grid;
+  place-items: center;
+  min-height: 18rem;
+  margin-top: 1.2rem;
+  padding: 1.5rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* Must match the checkerboard rule's specificity, not undercut it — a bare `.art-stage` here would
+   lose to `.art-stage[data-kind='image']` above and the stage would draw at the tile's 16px. */
+.art-stage[data-kind='image'] {
+  --check: 20px;
+}
+
+.art-stage img {
+  max-width: 100%;
+  max-height: 34rem;
+  object-fit: contain;
+}
+
+.art-stage-audio,
+.art-stage-model {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: center;
+  max-width: 28rem;
+  margin: 0;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+.art-stage-audio audio {
+  width: 100%;
+}
+
+.art-heavy {
+  margin: 0.8rem 0 0;
+  color: var(--ink-2);
+  font-size: 0.88rem;
+}
+
+.art-heavy button {
+  padding: 0.2rem 0.7rem;
+  background: var(--clay);
+  color: var(--paper);
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.art-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin: 1.6rem 0 0;
+}
+
+.art-actions a {
+  padding: 0.4rem 0.9rem;
+  background: var(--leaf-deep);
+  color: var(--paper);
+  border-radius: 999px;
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.art-actions a.ghost {
+  background: none;
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+}
+
+.art-note {
+  max-width: 46rem;
+  margin-top: 2.5rem;
+  padding: 1.1rem 1.3rem;
+  background: var(--leaf-soft);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--leaf);
+  border-radius: var(--radius);
+}
+
+.art-note h3 {
+  margin: 0 0 0.5rem;
+  font-family: var(--f-display);
+  font-size: 1rem;
+}
+
+.art-note p {
+  margin: 0 0 0.6rem;
+  color: var(--ink-2);
+  font-size: 0.92rem;
+}
+
+.art-note .note-foot {
+  margin-bottom: 0;
+}
+
 /* ── motion ─────────────────────────────────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1236,12 +1603,23 @@ tbody td.num {
     align-items: start;
   }
 
-  .shelf section + section {
+  .shelf-sec + .shelf-sec {
     margin-top: 0;
   }
 
   .shelf-foot {
     grid-column: 1 / -1;
+  }
+
+  /* The sidebar becomes a multi-column grid here, so the Graphics divider has to span it or it lands
+     mid-row and reads as a heading for whichever column it happens to sit above. */
+  .shelf-part {
+    grid-column: 1 / -1;
+    margin-top: 0.75rem;
+  }
+
+  .art-grid {
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
   }
 
   main {

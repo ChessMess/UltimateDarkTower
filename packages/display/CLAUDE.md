@@ -61,10 +61,52 @@ Depth in `docs/` (`RENDERERS.md`, `SCENE_PLUGINS.md`, `SEQUENCE_AUTHORING.md`, `
   `parity.test.ts`, was already inert under jest too (`unmock` affects the module
   registry; the alias that mocked gsap operated on resolution) and has been removed
   rather than translated to `vi.unmock`.
-- **Adding a bundled asset requires adding its module path to `URL_ASSET_HOSTS` in
+- **The asset bytes live in `@udtc/assets`, not here.** All 115 `.ogg`, `board.png` and
+  `tower.glb` moved to `packages/assets/` when the game art was centralized; this package
+  keeps only `src/3d/assets/skull_{1,2}.glb`, which the example's physics dropdown globs and
+  which is never shipped. `@udtc/assets` is a **devDependency** — it is `private: true` and
+  fully inlined, so as a `dependency` the published tarball would carry an unresolvable dep.
+  (`skull_1.glb` is byte-identical to `@udtc/assets`' `tokens/markers/skull.glb` and was left
+  duplicated on purpose: there is no asset tree-shaking, so importing it from `/tokens` would
+  drag all 39 MB of token art into the example build, and moving it into `/models` would push
+  632 KB onto `apps/controller`, which has no skull. 632 KB in an unpublished example beats
+  either.)
+- **Adding a bundled asset requires its module path to be in `URL_ASSET_HOSTS` in
   `vite.config.ts`** — the custom `emitAssetsAsFiles()` Rollup plugin intercepts
-  `new URL('./assets/…', import.meta.url)` to force separate-file emission; otherwise Vite
-  base64-inlines it and balloons the bundle (113 `.ogg` files + a 21 MB `board.png`).
+  `new URL('<relative>', import.meta.url)` to force separate-file emission; otherwise Vite
+  base64-inlines it and balloons the bundle (113 `.ogg` files ≈ 41 MB). The two entries now
+  point **into `@udtc/assets`** (`/assets/src/audio/index.ts`, `/assets/src/audio/effects.ts`);
+  `id.endsWith()` still matches because pnpm's symlink is realpathed before `transform` runs.
+  The regex captures the whole relative specifier and resolves it against the module's own
+  directory, so the assets package keeps its top-level `<kind>/` layout — there is no longer a
+  `<module>/assets/` convention to mirror.
+- **`scripts/check-dist-size.mjs` runs as part of `build` and is not optional.** Base64
+  inlining is a completely silent failure: the build _succeeds_, emits 11 MB bundles and 2
+  `.ogg` instead of 115, and says nothing. Verified by deleting a `URL_ASSET_HOSTS` entry —
+  the build stayed green and only this script caught it. Adding sounds means bumping its
+  `EXPECTED_OGG`.
+- **`audioLibrary.ts` is one half of a split.** It owns sample id → filename;
+  `@udtc/assets/audio` owns filename → URL, keyed by filename so the art package needs no
+  dependency on `ultimatedarktower` (where the id enum lives). `scripts/extract-audio.mjs`
+  regenerates **both** files in one run — regenerating one alone makes `audioLibrary.ts` throw
+  at import time on a filename the art package no longer ships.
+- **The audio URL table must not become an `import.meta.glob`.** Verified directly: under
+  Vite's _library_ mode a glob resolves to a static, base-less string (`/Adversary_Ashstrider_01.ogg`),
+  whereas the per-file `new URL(literal, import.meta.url)` shape survives into the bundle and
+  stays relative to the chunk at runtime — which is what lets each consuming app's own bundler
+  re-detect and re-emit the files. The glob form is correct for _apps_ (`@udtc/assets/tokens`
+  uses it) and wrong for a published library.
+- **`board.png` is NOT bundled and NOT in `URL_ASSET_HOSTS`.** The board art is
+  consumer-supplied via `TowerDisplayOptions.boardTextureUrl` (mirroring `modelUrl` for the
+  tower GLB), because Vite emits assets from the _transform_ hook — before tree-shaking — so a
+  static `new URL` forced the 22 MB PNG into every downstream app's `dist/` whether it rendered
+  a board or not (~85 MB across the deployed site). `copyStaticAssets()` still ships it to
+  `dist/3d/assets/board.png`, exactly as it does for `tower.glb`. With no
+  `boardTextureUrl`, `boardDisc.source: 'image'` silently means procedural — there is nothing
+  bundled to load. Don't "restore" the static import.
+- **`boardTextureUrl` threads through THREE options types**, not one: `TowerRenderViewOptions`
+  → `TowerDisplayOptions` → `Tower3DViewOptions` → `GroundDiscManager`. Missing the
+  `TowerRenderView` layer is a typecheck error, not a silent break — `apps/controller` uses it.
 - **The CJS entry points must keep a bare `.cjs` extension** (`dist/index.cjs`,
   `dist/physics.cjs`), not `.cjs.js` — under this package's `"type":"module"`, a plain
   `.js` file is treated as ESM regardless of its actual CommonJS content, which used to
@@ -79,7 +121,8 @@ defined in ES module scope` (fixed; matches `packages/board`'s existing `.cjs`
 
 ## Coupling
 
-Depends on `ultimatedarktowerdata` (`workspace:^`); peer-depends on `ultimatedarktower`
+Dev-depends on `@udtc/assets` (all bundled art/audio bytes); depends on
+`ultimatedarktowerdata` (`workspace:^`); peer-depends on `ultimatedarktower`
 (for `TowerState` types), `three`, `gsap`, `@dimforge/rapier3d-compat` (all consumer-supplied).
 Consumed by `packages/board`'s `./plugin` entry. The `files` allowlist ships `dist`, `docs`,
 and README/LICENSE/CHANGELOG — this file is not in the tarball.

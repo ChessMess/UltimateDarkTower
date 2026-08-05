@@ -1,6 +1,7 @@
 import {
   lookupTokenArt,
   resolveTokenImageFor,
+  makeTokenImageResolver,
   HERO_BY_ID,
   DEFAULT_KIND_TINT,
   DEFAULT_KIND_Z_2D,
@@ -146,6 +147,56 @@ describe('resolveTokenImageFor', () => {
     const TRAP: TokenArtRef = { kind: 'trap', id: 'trap' };
     expect(resolveTokenImageFor(TRAP, '2d', { assetBaseUrl: '/t/' })).toBe('/t/markers/trap.png');
     expect(resolveTokenImageFor(TRAP, '3d', { assetBaseUrl: '/t/' })).toBe('/t/markers/trap.png');
+  });
+});
+
+describe('makeTokenImageResolver', () => {
+  // The map a bundler-backed consumer supplies: '<group>/<file>' → hashed URL.
+  const URLS: Record<string, string> = {
+    'foes/dragon-token.png': '/h/dragon.HASH.png',
+    'foes/dragons.png': '/h/dragons3d.HASH.png',
+    'foes/Adversary-Token-Utuk-Ku.png': '/h/utuk.HASH.png',
+    'adversaries/utuk-ku.png': '/h/utuk3d.HASH.png',
+    'heros/brutal-warlord-hero.png': '/h/warlord.HASH.png',
+    'quests/main-goal.png': '/h/main-goal.HASH.png',
+    'monuments/argent-oak.png': '/h/oak.HASH.png',
+    'markers/grey-skull.png': '/h/grey-skull.HASH.png',
+    'markers/wasteland.png': '/h/wasteland.HASH.png',
+  };
+  const resolve = makeTokenImageResolver(URLS);
+
+  it('routes every kind through the library tables, not a folder guess', () => {
+    // 2D foes/adversaries use the flat OFFICIAL_2D_ICON art; 3D uses the portrait convention.
+    // Note adversaries' 2D icons live under foes/ — the reason a kind→folder map would be wrong.
+    expect(resolve({ kind: 'foe', id: 'Dragons' }, '2d')).toBe('/h/dragon.HASH.png');
+    expect(resolve({ kind: 'foe', id: 'Dragons' }, '3d')).toBe('/h/dragons3d.HASH.png');
+    expect(resolve({ kind: 'adversary', id: "Utuk'Ku" }, '2d')).toBe('/h/utuk.HASH.png');
+    expect(resolve({ kind: 'adversary', id: "Utuk'Ku" }, '3d')).toBe('/h/utuk3d.HASH.png');
+    expect(resolve({ kind: 'hero', id: 'brutal-warlord' }, '2d')).toBe('/h/warlord.HASH.png');
+    expect(resolve({ kind: 'quest', id: 'main-goal' }, '2d')).toBe('/h/main-goal.HASH.png');
+    expect(resolve({ kind: 'monument', id: 'Argent Oak' }, '3d')).toBe('/h/oak.HASH.png');
+    expect(resolve({ kind: 'skull', id: 'skull' }, '2d')).toBe('/h/grey-skull.HASH.png');
+    // Unrecognized kinds still fall through to the markers/ convention.
+    expect(resolve({ kind: 'marker', id: 'Wasteland' }, '2d')).toBe('/h/wasteland.HASH.png');
+  });
+
+  it('returns null rather than a broken URL when the map has no entry', () => {
+    // A real risk: the art exists in the roster tables but not in the bundle.
+    expect(resolve({ kind: 'monument', id: 'Moonstone Temple' }, '2d')).toBeNull();
+  });
+
+  it('returns null for roster entries the library marks as art-less', () => {
+    // `relic-hunter` is OFFICIAL_HERO_ART: null → programmatic disc, never a lookup.
+    expect(resolve({ kind: 'hero', id: 'relic-hunter' }, '2d')).toBeNull();
+  });
+
+  it('never leaks the sentinel base into a returned URL', () => {
+    const all = [
+      resolve({ kind: 'foe', id: 'Dragons' }, '2d'),
+      resolve({ kind: 'skull', id: 'skull' }, '2d'),
+      resolve({ kind: 'quest', id: 'main-goal' }, '3d'),
+    ];
+    for (const url of all) expect(url).not.toContain('udt://');
   });
 });
 

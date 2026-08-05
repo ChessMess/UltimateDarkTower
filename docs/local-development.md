@@ -38,7 +38,7 @@ fails with `ERR_PNPM_NO_SCRIPT` from an unrelated package without `-w`.
 | **Player** (`@udtc/player`)                  | `pnpm --filter @udtc/player dev`                | `pnpm run dev:player`     | http://localhost:5174              |
 | **Digital** — solo digital play              | `pnpm --filter ultimatedarktowerdigital dev`    | `pnpm run dev:digital`    | http://localhost:5173 †            |
 | **Seed** — seed decoder SPA                  | `pnpm --filter ultimatedarktowerseed dev`       | `pnpm run dev:seed`       | http://localhost:3002 (auto-opens) |
-| **Codex** — game data browser                | `pnpm --filter ultimatedarktowercodex dev`      | `pnpm run dev:codex`      | http://localhost:3006 (auto-opens) |
+| **Codex** — game data + art browser          | `pnpm --filter ultimatedarktowercodex dev`      | `pnpm run dev:codex`      | http://localhost:3006 (auto-opens) |
 | **Sync** (`@dark-tower-sync/client`)         | `pnpm --filter @dark-tower-sync/client dev`     | `pnpm run dev:sync`       | http://localhost:3000 (auto-opens) |
 | **Controller** — tower control + 3D emulator | `pnpm --filter ultimatedarktowercontroller dev` | `pnpm run dev:controller` | http://localhost:3005 (auto-opens) |
 | **Game** — The Tower's Challenge             | `pnpm --filter ultimatedarktowergame dev`       | `pnpm run dev:game`       | http://localhost:3004 (auto-opens) |
@@ -55,6 +55,12 @@ those two are self-contained. Codex does the same for `ultimatedarktowerdata` �
 reviewing that data is the point of the app, so a stale `dist/` there would make
 it quietly lie. Digital, Seed, and Sync rely on the core (and, for Sync, the
 relay) `dist/` produced by the initial `pnpm install`.
+
+`@udtc/assets` needs no prebuild at all — it is source-only and has no `dist/`,
+so Codex's Art section works straight from a cold install. But editing files
+under `packages/assets` triggers a **full page reload rather than HMR**, because
+those modules export asset URLs rather than components. That applies to every app
+consuming the package, not just Codex.
 
 ## Library demos (display / board)
 

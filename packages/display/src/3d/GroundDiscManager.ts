@@ -18,12 +18,15 @@ export class GroundDiscManager {
   private imageLoad: Promise<THREE.Texture | null> | null = null;
   private imageLoadFailed = false;
   private readonly maxAnisotropy: number;
+  private readonly boardTextureUrl: string | undefined;
 
   constructor(
     private readonly scene: THREE.Scene,
     maxAnisotropy = 1,
+    boardTextureUrl?: string,
   ) {
     this.maxAnisotropy = maxAnisotropy;
+    this.boardTextureUrl = boardTextureUrl;
   }
 
   /**
@@ -241,7 +244,9 @@ export class GroundDiscManager {
   private ensureBoardTexture(lighting: ResolvedLightingConfig): THREE.Texture | null {
     const source = lighting.boardDisc.source;
 
-    if (source === 'image' && !this.imageLoadFailed) {
+    // `source: 'image'` with no consumer-supplied `boardTextureUrl` is procedural —
+    // the art is no longer bundled, so there is nothing to load.
+    if (source === 'image' && this.boardTextureUrl && !this.imageLoadFailed) {
       if (this.imageTexture) {
         this.imageTexture.rotation = getBoardTextureRotation(lighting.boardDisc.northKingdom);
         return this.imageTexture;
@@ -259,8 +264,9 @@ export class GroundDiscManager {
   }
 
   private startImageLoad(lighting: ResolvedLightingConfig): void {
-    if (this.imageLoad) return;
+    if (this.imageLoad || !this.boardTextureUrl) return;
     this.imageLoad = buildBoardTextureFromImage(
+      this.boardTextureUrl,
       this.maxAnisotropy,
       lighting.boardDisc.northKingdom,
     ).then((tex) => {

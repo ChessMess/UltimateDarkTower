@@ -20,13 +20,14 @@
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "catalog:",
+    "@udtc/assets": "workspace:*",
     "gsap": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "three": "catalog:",
     "ultimatedarktower": "workspace:^",
-    "ultimatedarktowerdata": "workspace:^",
     "ultimatedarktowerboard": "workspace:^",
+    "ultimatedarktowerdata": "workspace:^",
     "ultimatedarktowerdisplay": "workspace:^",
     "ultimatedarktowerrelay-client": "workspace:^",
     "zustand": "catalog:"

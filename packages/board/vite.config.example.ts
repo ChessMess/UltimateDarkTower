@@ -20,9 +20,13 @@ const exampleDir = resolve(__dirname, 'example');
 // Display 0.9's `anchorToWorld`) alongside the 2D map, the text readout, the shared focus
 // controls, and the dockable editing UI — all over one shared state/selection/focus.
 //
-// `base: './'` keeps the built asset URLs relative so the bundle and the runtime-loaded
-// `./board.png` / `./tokens/` / `./tower.glb` resolve under the GitHub Pages project subpath
-// (`/UltimateDarkTowerBoard/`). Set an absolute `base` if you fork under a different repo name.
+// `base: './'` keeps the built asset URLs relative so they resolve under the GitHub Pages
+// project subpath (`/UltimateDarkTowerBoard/`). Set an absolute `base` if you fork under a
+// different repo name.
+//
+// The art itself is no longer runtime-loaded from `example/public/` — board art, token art and
+// the tower GLB all come from `@udtc/assets` and are emitted by this build with content hashes.
+// `base` still matters for those emitted URLs, and for the example's own HTML/JS.
 export default defineConfig({
   root: exampleDir,
   base: './',

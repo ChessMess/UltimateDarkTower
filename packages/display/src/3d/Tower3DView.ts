@@ -208,6 +208,13 @@ export interface Tower3DViewOptions {
    * or copy it to a static asset path and pass that URL here.
    */
   modelUrl: string;
+  /**
+   * URL of the game-board art painted onto the ground disc. Consumer-supplied, like
+   * {@link modelUrl} — the package ships the PNG at `dist/3d/assets/board.png`.
+   * When omitted, the ground disc uses the procedural canvas texture regardless of
+   * `lighting.boardDisc.source`.
+   */
+  boardTextureUrl?: string;
   /** Override the URL path used to fetch Draco decoders (wasm/js). */
   dracoDecoderPath?: string;
   /** Enable verbose 3D diagnostics (logs + axes helper). */
@@ -233,6 +240,7 @@ export interface Tower3DViewOptions {
 export class Tower3DView implements ITowerDisplay {
   private readonly container: HTMLElement;
   private readonly modelUrl: string;
+  private readonly boardTextureUrl: string | undefined;
   private readonly dracoDecoderPath: string;
   private readonly debug3D: boolean;
   private readonly logger: Logger;
@@ -360,6 +368,7 @@ export class Tower3DView implements ITowerDisplay {
   constructor(container: HTMLElement, options: Tower3DViewOptions) {
     this.container = container;
     this.modelUrl = options.modelUrl;
+    this.boardTextureUrl = options.boardTextureUrl;
     this.dracoDecoderPath = options.dracoDecoderPath ?? DEFAULT_DRACO_DECODER_PATH;
     this.debug3D = options.debug3D ?? false;
     this.logger = this.debug3D ? CONSOLE_LOGGER : NULL_LOGGER;
@@ -1496,6 +1505,7 @@ export class Tower3DView implements ITowerDisplay {
     this.groundDiscManager = new GroundDiscManager(
       this.scene,
       this.renderer.capabilities.getMaxAnisotropy(),
+      this.boardTextureUrl,
     );
     this.skyboxManager = new SkyboxManager(this.scene);
 

@@ -642,11 +642,14 @@ async function loadImageFile(file) {
   else { state.imageInfo.width = state.imgW; state.imageInfo.height = state.imgH; }
   syncCalibInputs(); fitView(); markDirty();
 }
-async function tryAutoLoadBoard() {
-  // Convenience when served: load ./board.png if present (silently ignore failure).
+async function tryAutoLoadBoard(src) {
+  // Convenience when served: load the board art if reachable (silently ignore failure).
+  // `src` is supplied by the module script at the end of this file — the art lives in
+  // @udtc/assets and is bundler-hashed, so it can't be named from this classic script.
+  if (!src) return;
   try {
     const im = new Image();
-    await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = 'board.png'; });
+    await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = src; });
     state.img = im; state.imgW = im.naturalWidth; state.imgH = im.naturalHeight;
     state.imageInfo.width = state.imgW; state.imageInfo.height = state.imgH;
     syncCalibInputs(); fitView(); markDirty();
@@ -977,7 +980,15 @@ restore();
 buildChecklist(); buildDistDropdowns(); refreshSlotChips(); syncCalibInputs(); setMode('anchors');
 resizeCanvas();
 recomputeDistance();
-tryAutoLoadBoard();
+window.__autoLoadBoard = tryAutoLoadBoard;
+</script>
+
+<!-- The board art lives in @udtc/assets and is emitted with a content hash, so its URL can only
+     come from a module. This runs after the classic script above, which parks the loader on
+     `window.__autoLoadBoard` for it to call. -->
+<script type="module">
+import { boardFullPng } from '@udtc/assets/board';
+window.__autoLoadBoard?.(boardFullPng);
 </script>
 </body>
 </html>

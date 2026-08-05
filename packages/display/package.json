@@ -28,7 +28,7 @@
     "docs"
   ],
   "scripts": {
-    "build": "vite build && tsc --emitDeclarationOnly",
+    "build": "vite build && tsc --emitDeclarationOnly && node scripts/check-dist-size.mjs",
     "build:example": "vite build --config vite.config.example.ts",
     "dev": "trap 'exit 0' INT TERM; vite",
     "dev:example": "trap 'exit 0' INT TERM; vite --open /example/index.html",
@@ -64,6 +64,7 @@
   },
   "devDependencies": {
     "@dimforge/rapier3d-compat": "catalog:",
+    "@udtc/assets": "workspace:*",
     "@types/three": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "gsap": "catalog:",

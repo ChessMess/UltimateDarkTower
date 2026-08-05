@@ -55,6 +55,37 @@ The three-free `.`/`./stage` invariant IS enforced now: `build` runs
 the `.`/`stage` ESM bundles and failing if either statically imports `three` (a dynamic
 `import()`, as `./stage` uses, is allowed).
 
+## Token art: two seams, not one
+
+- **Images** — `makeTokenImageResolver(urls)` (exported from `.`) builds a `resolveTokenImage`
+  callback from a `'<group>/<file>' → URL` map. It runs `defaultTokenImagePath` against a
+  `udt://` sentinel base and maps the result through `urls`, so the `OFFICIAL_*` tables stay the
+  single source of truth instead of being duplicated per consumer. This is what in-repo apps use,
+  because bundler-hashed filenames make the `${assetBaseUrl}${group}/${id}.png` convention
+  impossible.
+- **`assetBaseUrl` is NOT deprecated.** It remains the right path for external npm consumers who
+  self-host the art at a stable directory, and every test still covers it.
+- **3D models are a SEPARATE seam.** `resolveTokenImage` covers images only — the plugin resolves
+  models via `defaultTokenModelPath(art, assetBaseUrl)`, and `resolveTokenModel` is not exposed
+  through `BoardStageView`/`stageTower` at all. Dropping `assetBaseUrl` without also passing
+  `tokenArt` silently degrades `markers/skull.glb` to a sprite billboard **with no error**. Pass
+  `@udtc/assets`' `tokenArt` export alongside the resolver.
+- All three public surfaces thread both options: `BoardRenderView`, `BoardStageView`, `stageTower`.
+
+## The example is NOT typechecked
+
+`tsconfig.json` has `exclude: [..., "example"]`, so `pnpm typecheck` never looks at
+`example/**`. `pnpm build:example` (a Vite build) is the only gate on it — run it after touching
+the demo, the Art Forge, the Token Designer, or the location-marker page.
+
+`example/` is a **four-page** build (`vite.config.example.ts`): `index.html`, `tokens.html`
+(Art Forge), `token-designer.html`, `location-marker.html`. Art changes usually touch more than
+`main.ts`. The Forge's asset picker is served by `tokenArtDevPlugin` (`apply: 'serve'`, so
+dev-only) and lists from `packages/assets/tokens` in **manifest format** (`./tokens/…`) —
+that string is what gets saved to `<kind>_tokens.json`, so it must not be the hashed URL.
+`resolveDemoPath` (exported from `example/src/tokenArt`) converts manifest path → bundled URL and
+is applied **only** where a preview `src` is set, never to the input/save value.
+
 ## Coupling
 
 Depends on `ultimatedarktowerdata` (`workspace:^`) for board/hero/monument data (v6 moved

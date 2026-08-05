@@ -6,7 +6,8 @@
 // adversary art (via the Forge dev endpoint, or the re-exported UDT rosters on the static build).
 import '../tokenArtEditor/editor.css';
 import './designer.css';
-import { FOES, ADVERSARY_ROSTER, resolveTokenImageFor } from '../../../src/index';
+import { FOES, ADVERSARY_ROSTER, makeTokenImageResolver } from '../../../src/index';
+import { tokenUrls } from '@udtc/assets/tokens';
 import type { TokenArtRef } from '../../../src/index';
 import { createCanvas } from './canvas';
 import type { DesignCanvas } from './canvas';
@@ -23,7 +24,8 @@ import {
 import type { Align, TextField } from './types';
 import { saveProject, loadProject, readImageFile, exportPng, fileBase } from './io';
 
-const ASSET_BASE = './tokens/';
+// Same resolver the board renders with, so the gallery URLs always match what's on the board.
+const resolveTokenImage = makeTokenImageResolver(tokenUrls);
 
 interface BgOption {
   url: string;
@@ -77,8 +79,8 @@ function loadBackgrounds(): BgOption[] {
     })),
   ];
   for (const { ref, name } of roster) {
-    const art = resolveTokenImageFor(ref, '3d', { assetBaseUrl: ASSET_BASE });
-    const icon = resolveTokenImageFor(ref, '2d', { assetBaseUrl: ASSET_BASE });
+    const art = resolveTokenImage(ref, '3d');
+    const icon = resolveTokenImage(ref, '2d');
     if (art) out.set(art, `${name} (art)`);
     if (icon && icon !== art) out.set(icon, `${name} (token)`);
   }

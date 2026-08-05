@@ -19,6 +19,7 @@
   "dependencies": {
     "@dimforge/rapier3d-compat": "catalog:",
     "@udtc/adapters": "workspace:*",
+    "@udtc/assets": "workspace:*",
     "@udtc/card-render": "workspace:*",
     "@udtc/engine": "workspace:*",
     "@udtc/scenario-store": "workspace:*",

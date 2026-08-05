@@ -263,6 +263,43 @@ export function defaultTokenImagePath(
 }
 
 /**
+ * Sentinel base for {@link makeTokenImageResolver}. Any value works as long as it ends in `/`
+ * (so {@link normalizeAssetBaseUrl} leaves it alone) and never appears in a real path.
+ */
+const RESOLVER_SENTINEL = 'udt://';
+
+/**
+ * Build a `resolveTokenImage` callback from a `'<group>/<file>' → URL` map.
+ *
+ * For consumers whose art comes from a bundler (hashed filenames) rather than a static directory,
+ * so the `${assetBaseUrl}${group}/${file}` convention can't produce a working URL. This runs the
+ * library's own resolution — including the {@link OFFICIAL_2D_ICON}/{@link OFFICIAL_HERO_ART}/
+ * {@link OFFICIAL_QUEST_ART} tables and every per-kind quirk — against a sentinel base, then maps
+ * the resulting relative path through `urls`. That keeps those tables the single source of truth
+ * instead of duplicating them in each consumer.
+ *
+ * `assetBaseUrl` remains fully supported and is still the right choice when self-hosting the art
+ * at a stable path.
+ *
+ * Note this covers **images only**. 3D models resolve separately via `defaultTokenModelPath`,
+ * which is still `assetBaseUrl`-driven — supply those through `tokenArt.<kind>.<id>.model3d`.
+ *
+ * ```ts
+ * import { tokenUrls, tokenArt } from '@udtc/assets/tokens';
+ * new BoardStageView({ resolveTokenImage: makeTokenImageResolver(tokenUrls), tokenArt, ... });
+ * ```
+ */
+export function makeTokenImageResolver(
+  urls: Record<string, string>,
+): (ref: TokenArtRef, view: BoardView) => string | null {
+  return (ref, view) => {
+    const path = defaultTokenImagePath(ref, RESOLVER_SENTINEL, view);
+    if (!path) return null; // art-less roster entry → programmatic fallback
+    return urls[path.slice(RESOLVER_SENTINEL.length)] ?? null;
+  };
+}
+
+/**
  * Default `${assetBaseUrl}markers/${file}` convention for a library-known 3D model — the model
  * equivalent of {@link defaultTokenImagePath}'s `markers/` fallback. Returns `null` when there's
  * no known model for this kind/id (most tokens) or no `assetBaseUrl`.

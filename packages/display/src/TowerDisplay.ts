@@ -51,6 +51,7 @@ function createRenderer(
       }
       return new Tower3DView(container, {
         modelUrl: options.modelUrl,
+        boardTextureUrl: options.boardTextureUrl,
         dracoDecoderPath: options.dracoDecoderPath,
         debug3D: options.debug3D,
         showGroundDisc: options.showGroundDisc,

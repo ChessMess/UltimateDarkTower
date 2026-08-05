@@ -1,0 +1,58 @@
+{
+  "name": "@udtc/assets",
+  "version": "0.1.0",
+  "description": "Single source of truth for Return to Dark Tower game art and audio: board art, token art, 3D models, glyphs and the tower's sound library, delivered as bundler-resolved URLs.",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tokens": {
+      "types": "./types/tokens.d.ts",
+      "default": "./src/tokens/index.ts"
+    },
+    "./board": {
+      "types": "./types/board.d.ts",
+      "default": "./src/board/index.ts"
+    },
+    "./models": {
+      "types": "./types/models.d.ts",
+      "default": "./src/models/index.ts"
+    },
+    "./glyphs": {
+      "types": "./types/glyphs.d.ts",
+      "default": "./src/glyphs/index.ts"
+    },
+    "./board-small": {
+      "types": "./types/board-small.d.ts",
+      "default": "./src/board/small.ts"
+    },
+    "./audio": {
+      "types": "./types/audio.d.ts",
+      "default": "./src/audio/index.ts"
+    },
+    "./audio-effects": {
+      "types": "./types/audio-effects.d.ts",
+      "default": "./src/audio/effects.ts"
+    }
+  },
+  "scripts": {
+    "build": "echo 'assets: no emit (source-only; .d.ts are hand-written under types/)'",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "author": "ChessMess",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChessMess/UltimateDarkTower.git",
+    "directory": "packages/assets"
+  }
+}

@@ -317,7 +317,7 @@ Apply a partial camera configuration at runtime. Any fields provided overwrite t
 
 ##### `setBoardDiscEnabled(enabled: boolean): void`
 
-Show or hide the game board texture on the ground disc. The texture source is governed by `lighting.boardDisc.source` (`'image'` loads `src/3d/assets/board.png`; `'procedural'` uses the canvas-drawn fallback). No-op when no 3D view is active. See [LIGHTING.md §14](LIGHTING.md#14-ground-disc--game-board) for the full board configuration (size, brightness, north-kingdom rotation, source toggle).
+Show or hide the game board texture on the ground disc. The texture source is governed by `lighting.boardDisc.source` (`'image'` loads the consumer-supplied `boardTextureUrl`; `'procedural'` uses the canvas-drawn fallback). With no `boardTextureUrl` set, `'image'` behaves as `'procedural'` — the art is not bundled. No-op when no 3D view is active. See [LIGHTING.md §14](LIGHTING.md#14-ground-disc--game-board) for the full board configuration (size, brightness, north-kingdom rotation, source toggle).
 
 ##### `setGameBoardKingdom(side: TowerSide): void`
 
@@ -544,7 +544,7 @@ interface LightingConfig {
   boardDisc?: {
     enabled?: boolean;                       // true — show the board texture
     opacity?: number;                        // 0.9
-    source?: 'image' | 'procedural';         // 'image' — load src/3d/assets/board.png; 'procedural' = canvas fallback
+    source?: 'image' | 'procedural';         // 'image' — load `boardTextureUrl`; 'procedural' = canvas fallback
     northKingdom?: 0 | 1 | 2 | 3;            // 0 — which kingdom faces +Z (90° steps)
     brightness?: number;                     // 1 — per-board diffuse multiplier, 0–2
     thicknessFactor?: number;                // 0.018 — cylinder height as fraction of modelRadius (visual edge thickness)
