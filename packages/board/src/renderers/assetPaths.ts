@@ -178,7 +178,7 @@ const OFFICIAL_HERO_ART: Record<string, string | null> = {
  * quest id — the game's official marker sculpts (cut from the component photo, background removed),
  * one image driving both the 2D map and the 3D billboard. `null` would mark a quest whose art
  * hasn't shipped (→ programmatic gold disc fallback, no failed request). A consumer hosts these
- * PNGs under `${assetBaseUrl}quests/` (the demo ships them in example/public/tokens/quests/) or
+ * PNGs under `${assetBaseUrl}quests/`, resolves them through {@link makeTokenImageResolver}, or
  * overrides per-token via `tokenArt`. Mirrors {@link OFFICIAL_HERO_ART}.
  */
 const OFFICIAL_QUEST_ART: Record<string, string | null> = {

@@ -65,7 +65,7 @@ function boot(): void {
 /**
  * Foe/adversary art the user can drop behind a token, resolved through the board library's own
  * `resolveTokenImageFor` (the same resolver the board renders with) so the URLs always match what
- * ships under example/public/tokens. Each roster token offers its flat 2D icon (which already bakes
+ * ships in `@udtc/assets`. Each roster token offers its flat 2D icon (which already bakes
  * in text — handy as a re-texting base) and its larger portrait ("art", a clean text-free base).
  * Works identically in dev and the static build; for anything else the user can Upload an image.
  */

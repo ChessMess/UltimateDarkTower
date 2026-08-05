@@ -220,9 +220,20 @@ export interface LightingConfigCore {
     /** Material opacity when board texture is active (0–1). Defaults to 0.9. */
     opacity?: number;
     /**
-     * Texture source. `'image'` loads `src/3d/assets/board.png` (the real game
-     * board art); `'procedural'` uses the stylized canvas-drawn fallback.
-     * If the image asset is missing or fails to load, falls back to procedural.
+     * Texture source. `'procedural'` uses the stylized canvas-drawn fallback.
+     *
+     * `'image'` loads the board art from the **consumer-supplied**
+     * `boardTextureUrl` option — this package does not bundle the art (it is
+     * 22 MB, and asset emission happens before tree-shaking, so bundling it
+     * would push the file into every consumer's build whether they render a
+     * board or not). The package still ships the PNG at
+     * `dist/3d/assets/board.png` for consumers who want it; point
+     * `boardTextureUrl` at that.
+     *
+     * **With no `boardTextureUrl`, `'image'` silently means procedural** —
+     * there is nothing to load, so this is a fallback rather than an error.
+     * The same fallback applies if the URL fails to load.
+     *
      * Defaults to `'image'`.
      */
     source?: 'image' | 'procedural';

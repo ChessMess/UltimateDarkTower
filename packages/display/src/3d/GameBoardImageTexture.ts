@@ -4,8 +4,8 @@ import { getBoardTextureRotation } from './boardTextureRotation';
 // The board art is **consumer-supplied** via `TowerDisplayOptions.boardTextureUrl`
 // (mirroring `modelUrl` for the tower GLB) — this module no longer imports it.
 // The package still ships the PNG at `dist/3d/assets/board.png` via the
-// `copyBoardAsset()` plugin in vite.config.ts, exactly as `copyTowerAsset()` does
-// for `tower.glb`, so consumers can point their bundler at it.
+// `copyStaticAssets()` plugin in vite.config.ts, which copies it and `tower.glb`
+// alike, so consumers can point their bundler at it.
 //
 // Why not a static `new URL('./assets/board.png', import.meta.url)`: Vite emits
 // assets from the *transform* hook, before tree-shaking, so a static reference

@@ -17,8 +17,9 @@ import type { BoardDefinition } from 'ultimatedarktowerboard';
  * DELIBERATELY NOT a `library.resources.images` key. The real art is 4096²/22 MB — ~30 MB once
  * base64-encoded into a document, against a 50 MB export budget, and 20× the Creator's own 1.5 MB
  * cap on uploaded board art. So a clone references it instead of embedding it, and each consumer
- * maps this ref to ITS OWN copy of the board image (the Player to `public/assets/board.png`, the
- * Creator to its downscaled designer backdrop). Nothing is added to the scenario document.
+ * maps this ref to ITS OWN copy of the board image (the Player to `@udtc/assets/board`, the
+ * Creator to its downscaled designer backdrop via `@udtc/assets/board-small`). Nothing is added to
+ * the scenario document.
  *
  * Safe by construction: `$defs/resourceKey` is an open string so L1 accepts it, L2
  * (`validate-refs`) never resolves image refs, and the schema already documents a dangling image

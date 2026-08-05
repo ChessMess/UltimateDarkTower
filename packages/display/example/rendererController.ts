@@ -6,7 +6,7 @@ import { toggleSeal, refreshSeals } from './sealController';
 import { setLedOverride as recordLedOverride, replayLedOverrides } from './ledOverrideController';
 // The example is a normal consumer, so it takes both assets from `@udtc/assets` rather than
 // reaching into the library's own source tree. The library's `dist/3d/assets/` copies (written by
-// copyTowerAsset/copyBoardAsset) are the equivalent path for external consumers.
+// `copyStaticAssets()` in vite.config.ts) are the equivalent path for external consumers.
 import { towerGlb as towerModelUrl } from '@udtc/assets/models';
 // The board art is consumer-supplied since it stopped being bundled (see
 // TowerDisplayOptions.boardTextureUrl); the demo opts in so the disc keeps its real art.
