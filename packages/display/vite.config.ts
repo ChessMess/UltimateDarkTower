@@ -47,7 +47,7 @@ function redirectExamplePath(): Plugin {
 // because those exports are URL *modules*, not file paths. A rename in `@udtc/assets` therefore
 // fails at build time here — `scripts/check-dist-size.mjs` asserts both files land in dist/, which
 // is what catches a silent miss.
-const ART = resolve(__dirname, '../assets');
+const ART = resolve(import.meta.dirname, '../assets');
 const COPIED_ASSETS: [src: string, name: string][] = [
   [`${ART}/models/tower.glb`, 'tower.glb'],
   [`${ART}/board/board.png`, 'board.png'],
@@ -57,7 +57,7 @@ function copyStaticAssets(): Plugin {
     name: 'copy-static-assets',
     apply: 'build',
     closeBundle() {
-      const destDir = resolve(__dirname, 'dist/3d/assets');
+      const destDir = resolve(import.meta.dirname, 'dist/3d/assets');
       mkdirSync(destDir, { recursive: true });
       for (const [src, name] of COPIED_ASSETS) copyFileSync(src, resolve(destDir, name));
     },
@@ -171,8 +171,8 @@ export default defineConfig({
       // own ESM + CJS bundle so consumers who don't import the physics
       // subpath never load Rapier.
       entry: {
-        index: resolve(__dirname, 'src/index.ts'),
-        physics: resolve(__dirname, 'src/physics/index.ts'),
+        index: resolve(import.meta.dirname, 'src/index.ts'),
+        physics: resolve(import.meta.dirname, 'src/physics/index.ts'),
       },
       formats: ['es', 'cjs'],
       // CJS must be a bare `.cjs` extension, not `.cjs.js` — under this

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
 
-const mock = (f: string) => resolve(__dirname, '__tests__/__mocks__', f);
+const mock = (f: string) => resolve(import.meta.dirname, '__tests__/__mocks__', f);
 
 // Standalone rather than a `test` block inside vite.config.ts: that file is the
 // *library build* config (build.lib + rollupOptions.external: ['three', /^three\/.*/]),

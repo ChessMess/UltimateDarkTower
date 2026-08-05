@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import { tokenArtDevPlugin } from './example/tokenArtDevPlugin';
+import { tokenArtDevPlugin } from './example/tokenArtDevPlugin.ts';
 
-const exampleDir = resolve(__dirname, 'example');
+const exampleDir = resolve(import.meta.dirname, 'example');
 
 // Standalone app build for the GitHub Pages demo. Output goes to example/dist.
 //
@@ -39,7 +39,7 @@ export default defineConfig({
     dedupe: ['three'],
   },
   build: {
-    outDir: resolve(__dirname, 'example/dist'),
+    outDir: resolve(import.meta.dirname, 'example/dist'),
     emptyOutDir: true,
     // Multi-page: the demo (index.html) + the Token Art Forge (tokens.html) + the Token Designer +
     // the Location Marker & Adjacency tool.
