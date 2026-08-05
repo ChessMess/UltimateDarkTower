@@ -132,8 +132,11 @@ against the file currently checked into this repo:
   10x larger.
 - The model has no image textures and 6 materials, so texture-related export
   options don't matter here.
-- Save over `packages/display/src/3d/assets/tower.glb`, then commit it
-  through the normal git flow.
+- Save over `packages/assets/models/tower.glb`, then commit it through the
+  normal git flow. (The model moved out of `packages/display/src/3d/assets/`
+  when the game art was centralized into `@udtc/assets`; this package's build
+  copies it into `dist/3d/assets/tower.glb`, which is still where consumers
+  reference it.)
 
 ## 6. The one hard constraint: keep every pocket inside the tower's silhouette
 

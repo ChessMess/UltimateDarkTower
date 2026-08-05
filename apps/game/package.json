@@ -17,6 +17,7 @@
   "author": "ChessMess",
   "license": "MIT",
   "dependencies": {
+    "@udtc/assets": "workspace:*",
     "ultimatedarktower": "workspace:^",
     "ultimatedarktowerdata": "workspace:^"
   },

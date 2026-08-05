@@ -1,5 +1,6 @@
 // Image slot card — renders the 2D / 3D image picker card.
 import { ICON, el, makeInput, slotHead, field, actions, fieldsWrap, emptyState } from './helpers';
+import { resolveDemoPath } from '../tokenArt';
 
 export function imageSlot(
   name: string,
@@ -20,7 +21,9 @@ export function imageSlot(
   // Render an <img>; `isDefault` marks the convention fallback (dimmed + "default" tag, no is-set).
   const showImage = (src: string, isDefault: boolean): void => {
     const img = document.createElement('img');
-    img.src = src;
+    // The manifests store stable `./tokens/…` paths; the art itself is bundler-hashed. Resolve
+    // only here, so the input's value (and therefore what gets saved) stays the readable path.
+    img.src = resolveDemoPath(src);
     img.alt = name;
     img.addEventListener('error', () => {
       preview.classList.remove('is-default');

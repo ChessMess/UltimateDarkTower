@@ -20,6 +20,7 @@
   "license": "MIT",
   "dependencies": {
     "@dimforge/rapier3d-compat": "catalog:",
+    "@udtc/assets": "workspace:*",
     "gsap": "catalog:",
     "three": "catalog:",
     "ultimatedarktower": "workspace:^",

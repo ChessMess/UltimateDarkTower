@@ -13,6 +13,10 @@ import {
 import type { BoardState, LayerResult } from '@udtc/adapters';
 import { init, step, deserialize, ENGINE_VERSION } from '@udtc/engine';
 import type { Input, Directive, StepResult, EngineState } from '@udtc/engine';
+import { makeTokenImageResolver } from 'ultimatedarktowerboard';
+import { tokenUrls, tokenArt } from '@udtc/assets/tokens';
+import { boardFullPng } from '@udtc/assets/board';
+import { towerGlb } from '@udtc/assets/models';
 import { RelayClient } from '../relay';
 import { usePlayerStore } from '../store';
 import type { ValidationResults, SavedSession, SavedSessionMeta } from '../types';
@@ -60,10 +64,13 @@ const SAVE_DEBOUNCE_MS = 200;
 // readout + side-view (a real physical tower/board is on the table).
 export type DisplayMode = 'lite' | 'emulator';
 
-// Board/tower art served from apps/player/public/assets (Vite serves public/ at web root).
-const TOWER_MODEL_URL = `${import.meta.env.BASE_URL}assets/tower.glb`;
-const BOARD_IMAGE_URL = `${import.meta.env.BASE_URL}assets/board.png`;
-const BOARD_ASSET_BASE = `${import.meta.env.BASE_URL}assets/tokens/`;
+// Board/tower art comes from @udtc/assets and is emitted by this app's own Vite build.
+const TOWER_MODEL_URL = towerGlb;
+const BOARD_IMAGE_URL = boardFullPng;
+// Replaces the old `assetBaseUrl`: art is bundler-hashed, so the
+// `${base}${group}/${id}.png` convention can't build a working URL. The resolver runs the board
+// library's own tables against a sentinel base and maps onto the bundled URLs.
+const resolveTokenImage = makeTokenImageResolver(tokenUrls);
 
 function board(): ReturnType<typeof createBoardAdapter> {
   if (!_board) _board = createBoardAdapter({ board: _activeBoard?.def });
@@ -201,9 +208,12 @@ async function mountStage(el: HTMLElement, gen: number): Promise<void> {
     // (a cloned RtDT preset); a board with no art at all renders blank.
     boardImageUrl: _activeBoard ? _activeBoardImageUrl : BOARD_IMAGE_URL,
     board: _activeBoard?.def,
-    assetBaseUrl: BOARD_ASSET_BASE,
-    // Foe/adversary/hero art (2D icons + 3D portraits) all resolve from the board library's
-    // built-in defaults now — no per-token tokenArt needed here.
+    // Foe/adversary/hero art (2D icons + 3D portraits) resolve from the board library's built-in
+    // tables via this resolver. `tokenArt` is NOT optional here despite those defaults: it carries
+    // the skull's 3D model, which `resolveTokenImage` does not cover (models resolve separately,
+    // through `defaultTokenModelPath`) — without it the skull silently drops to a flat sprite.
+    resolveTokenImage,
+    tokenArt,
     // Build the tower explicitly below so its readiness is deterministic (avoid the ctor's
     // fire-and-forget auto-build racing our own).
     tower3D: false,

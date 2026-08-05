@@ -30,6 +30,45 @@ describe('GroundDiscManager.getMetrics', () => {
   });
 });
 
+describe('GroundDiscManager board texture is consumer-supplied', () => {
+  // `source: 'image'` with no `boardTextureUrl` is procedural, and silently so — the art is no
+  // longer bundled, so there is nothing to load and nothing to error on. That silence is exactly
+  // why it is worth asserting: the only observable difference is whether a load was kicked off.
+  const imageLighting = resolveLighting({ boardDisc: { source: 'image' } });
+  const loadOf = (mgr: GroundDiscManager) =>
+    (mgr as unknown as { imageLoad: Promise<unknown> | null }).imageLoad;
+
+  it('starts no image load when the consumer supplied no URL', () => {
+    const mgr = new GroundDiscManager(new THREE.Scene() as unknown as THREE.Scene, 1);
+    mgr.build(2, -1.5, imageLighting);
+
+    expect(imageLighting.boardDisc.source).toBe('image');
+    expect(loadOf(mgr)).toBeNull();
+  });
+
+  it('starts the image load when the consumer supplied a URL', () => {
+    const mgr = new GroundDiscManager(
+      new THREE.Scene() as unknown as THREE.Scene,
+      1,
+      'mock://board.png',
+    );
+    mgr.build(2, -1.5, imageLighting);
+
+    expect(loadOf(mgr)).not.toBeNull();
+  });
+
+  it('starts no image load for source: procedural even with a URL supplied', () => {
+    const mgr = new GroundDiscManager(
+      new THREE.Scene() as unknown as THREE.Scene,
+      1,
+      'mock://board.png',
+    );
+    mgr.build(2, -1.5, resolveLighting({ boardDisc: { source: 'procedural' } }));
+
+    expect(loadOf(mgr)).toBeNull();
+  });
+});
+
 describe('Tower3DView board-surface hand-off', () => {
   let container: HTMLElement;
 

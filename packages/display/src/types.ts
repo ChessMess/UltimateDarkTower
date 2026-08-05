@@ -121,6 +121,14 @@ export interface TowerDisplayOptions {
    * or copy it to a static asset path and pass that URL here.
    */
   modelUrl?: string;
+  /**
+   * URL of the Return to Dark Tower board art painted onto the 3D ground disc.
+   * **Consumer-supplied**, exactly like {@link modelUrl} — the package ships the PNG at
+   * `dist/3d/assets/board.png` (reference it through your bundler, or copy it to a static
+   * asset path). When omitted, the ground disc falls back to the procedural canvas texture
+   * regardless of `lighting.boardDisc.source`.
+   */
+  boardTextureUrl?: string;
   /** Optional override for where Draco decoder wasm/js files are loaded from. */
   dracoDecoderPath?: string;
   /** Enable verbose 3D diagnostics (logs, render heartbeats, axes helpers). Forwarded to Tower3DView. */

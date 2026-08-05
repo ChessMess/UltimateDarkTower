@@ -1,10 +1,10 @@
 // 2D Token Designer — data model. A token "project" is a background image plus a set of freely
 // placed text fields (name / strength / attack-type / foe-type, or custom), each movable,
 // resizable and rotatable over the token canvas. The canvas matches the shipped foe-token size
-// (256×222) so an exported PNG drops straight into example/public/tokens/foes/.
+// (256×222) so an exported PNG drops straight into `packages/assets/tokens/foes/`.
 
 /**
- * Default canvas = the shipped foe-token pixel size (see example/public/tokens/foes/Foe-Token-*.png).
+ * Default canvas = the shipped foe-token pixel size (see `packages/assets/tokens/foes/Foe-Token-*.png`).
  * The size is editable per design (TokenDesign.canvas); these are just the defaults for a new token,
  * and MIN/MAX bound what the user can set.
  */

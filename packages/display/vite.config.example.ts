@@ -46,7 +46,10 @@ export default defineConfig({
       // see through — `import { LIGHT_EFFECTS } from 'ultimatedarktower'`
       // would fail at build time). The createRequire prelude is stripped
       // by the plugin above.
-      ultimatedarktower: resolve(__dirname, 'node_modules/ultimatedarktower/dist/esm/index.mjs'),
+      ultimatedarktower: resolve(
+        import.meta.dirname,
+        'node_modules/ultimatedarktower/dist/esm/index.mjs',
+      ),
     },
   },
   build: {

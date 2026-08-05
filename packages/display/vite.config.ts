@@ -1,5 +1,5 @@
 import { defineConfig, type Plugin } from 'vite';
-import { resolve, dirname } from 'path';
+import { resolve, dirname, basename } from 'path';
 import { copyFileSync, mkdirSync, readFileSync } from 'fs';
 
 function redirectExamplePath(): Plugin {
@@ -36,19 +36,30 @@ function redirectExamplePath(): Plugin {
   };
 }
 
-// Copies the tower GLB into dist/3d/assets/ so consumers can import it via
-// `ultimatedarktowerdisplay/dist/3d/assets/tower.glb`. The source no longer
-// imports the asset directly (it's consumer-supplied via TowerDisplayOptions.modelUrl),
-// so Vite wouldn't otherwise emit it.
-function copyTowerAsset(): Plugin {
+// Both the tower GLB and the board art are consumer-supplied (TowerDisplayOptions.modelUrl and
+// .boardTextureUrl), so nothing in src/ imports them and Vite would not otherwise emit them —
+// but consumers still need a file to point at:
+//   import towerModelUrl from 'ultimatedarktowerdisplay/dist/3d/assets/tower.glb';
+// The bytes themselves live in `@udtc/assets` (a devDependency), which is the single source of
+// truth for game art; this copies them into dist/ so the published tarball is unchanged.
+//
+// The sibling paths below are resolved by hand rather than through the package's exports map,
+// because those exports are URL *modules*, not file paths. A rename in `@udtc/assets` therefore
+// fails at build time here — `scripts/check-dist-size.mjs` asserts both files land in dist/, which
+// is what catches a silent miss.
+const ART = resolve(import.meta.dirname, '../assets');
+const COPIED_ASSETS: [src: string, name: string][] = [
+  [`${ART}/models/tower.glb`, 'tower.glb'],
+  [`${ART}/board/board.png`, 'board.png'],
+];
+function copyStaticAssets(): Plugin {
   return {
-    name: 'copy-tower-asset',
+    name: 'copy-static-assets',
     apply: 'build',
     closeBundle() {
-      const src = resolve(__dirname, 'src/3d/assets/tower.glb');
-      const destDir = resolve(__dirname, 'dist/3d/assets');
+      const destDir = resolve(import.meta.dirname, 'dist/3d/assets');
       mkdirSync(destDir, { recursive: true });
-      copyFileSync(src, resolve(destDir, 'tower.glb'));
+      for (const [src, name] of COPIED_ASSETS) copyFileSync(src, resolve(destDir, name));
     },
   };
 }
@@ -67,50 +78,59 @@ function copyTowerAsset(): Plugin {
 // `new URL('./assets/<file>.<ext>', import.meta.url)` shape so esbuild,
 // webpack 5+, Rollup, and Parcel still detect and emit the assets on the
 // consumer side (each runs its own detector independently of Vite).
-// Add any new hand-maintained `new URL('./assets/*.{ogg,png}', import.meta.url)`
+// Add any new hand-maintained `new URL('<relative>.{ogg,png}', import.meta.url)`
 // module here, or the lib build base64-inlines its bytes instead of emitting a
 // file. See docs/AUDIO.md → "Adding a bundled sound to the library".
-const URL_ASSET_HOSTS = [
-  '/audio/audioLibrary.ts',
-  '/audio/calibrationAudio.ts',
-  '/audio/drumRotationSound.ts',
-  // The real Return to Dark Tower board art (21 MB). Emitted as a separate file
-  // (dist/3d/assets/board.png) rather than base64-inlined. See
-  // src/3d/GameBoardImageTexture.ts.
-  '/3d/GameBoardImageTexture.ts',
-];
+//
+// These now live in `@udtc/assets` (a devDependency), not in this package: the .ogg bytes moved
+// there when the art was centralized. `id.endsWith()` still matches, because pnpm's symlink is
+// realpathed to `<repo>/packages/assets/src/audio/...` before the transform hook sees it — the
+// same property that lets Vite treat the linked package as ordinary source.
+//
+// NOTE: `/3d/GameBoardImageTexture.ts` is deliberately NOT here. The board art is
+// consumer-supplied via `TowerDisplayOptions.boardTextureUrl`, so nothing imports it
+// and there is no `new URL` to intercept; `copyStaticAssets()` ships it to
+// dist/3d/assets/board.png instead, exactly as it does for tower.glb.
+const URL_ASSET_HOSTS = ['/assets/src/audio/index.ts', '/assets/src/audio/effects.ts'];
 function emitAssetsAsFiles(): Plugin {
-  // Match the full `new URL('./assets/<file>.<ext>', import.meta.url).href`
-  // expression so the .href is part of what gets substituted — Rollup's
-  // ROLLUP_FILE_URL_ placeholder already expands to a `.href` string, so
-  // capturing .href in the match avoids a redundant double-wrap.
+  // Match the full `new URL('<relative path>', import.meta.url).href` expression
+  // so the .href is part of what gets substituted — Rollup's ROLLUP_FILE_URL_
+  // placeholder already expands to a `.href` string, so capturing .href in the
+  // match avoids a redundant double-wrap.
+  //
+  // The whole relative specifier is captured (rather than just a filename under a
+  // fixed `./assets/` prefix) and resolved against the module's own directory, so
+  // the assets package can keep its top-level `<kind>/` layout instead of mirroring a
+  // `<module>/assets/` convention that only ever existed for this plugin.
   //
   // Whitespace tolerance matters: Prettier line-wraps the longer entries in
-  // audioLibrary.ts, either dropping `.href` onto the next line or exploding
-  // the call across lines with a trailing comma after `import.meta.url`. Both
-  // shapes must still match, or those files silently fall through to Vite's
-  // lib-mode processor and get base64-inlined into the bundle instead of
-  // emitted as separate assets. So allow an optional trailing comma before `)`
-  // and arbitrary whitespace between `)` and `.href`.
+  // the generated URL table, either dropping `.href` onto the next line or
+  // exploding the call across lines with a trailing comma after
+  // `import.meta.url`. Both shapes must still match, or those files silently
+  // fall through to Vite's lib-mode processor and get base64-inlined into the
+  // bundle instead of emitted as separate assets. So allow an optional trailing
+  // comma before `)` and arbitrary whitespace between `)` and `.href`.
   const URL_RE =
-    /new URL\(\s*['"]\.\/assets\/([A-Za-z0-9_.-]+\.(?:ogg|png))['"]\s*,\s*import\.meta\.url\s*,?\s*\)\s*\.href/g;
+    /new URL\(\s*['"](\.{1,2}\/[A-Za-z0-9_./-]+\.(?:ogg|png))['"]\s*,\s*import\.meta\.url\s*,?\s*\)\s*\.href/g;
   return {
     name: 'emit-assets-as-files',
     apply: 'build',
     enforce: 'pre',
     transform(code, id) {
       if (!URL_ASSET_HOSTS.some((host) => id.endsWith(host))) return null;
-      const assetsDir = resolve(dirname(id), 'assets');
       const segments: string[] = [];
       let last = 0;
       let match: RegExpExecArray | null;
       URL_RE.lastIndex = 0;
       while ((match = URL_RE.exec(code))) {
-        const filename = match[1];
+        const absolute = resolve(dirname(id), match[1]);
+        // `assetFileNames` keys on the basename, so the emitted name must stay bare —
+        // that is what keeps .ogg landing at the documented dist/audio/assets/<file>.
+        const filename = basename(absolute);
         const refId = this.emitFile({
           type: 'asset',
           name: filename,
-          source: readFileSync(resolve(assetsDir, filename)),
+          source: readFileSync(absolute),
         });
         segments.push(code.slice(last, match.index));
         segments.push(`import.meta.ROLLUP_FILE_URL_${refId}`);
@@ -138,7 +158,7 @@ function emitAssetsAsFiles(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [redirectExamplePath(), copyTowerAsset(), emitAssetsAsFiles()],
+  plugins: [redirectExamplePath(), copyStaticAssets(), emitAssetsAsFiles()],
   // `ultimatedarktower` is externalized in the lib build (see rollupOptions.external
   // below); for the dev/example server it resolves via its `browser` export condition
   // (dist/browser/index.mjs) since core v7.0.0 — no `createRequire` banner, so the
@@ -151,8 +171,8 @@ export default defineConfig({
       // own ESM + CJS bundle so consumers who don't import the physics
       // subpath never load Rapier.
       entry: {
-        index: resolve(__dirname, 'src/index.ts'),
-        physics: resolve(__dirname, 'src/physics/index.ts'),
+        index: resolve(import.meta.dirname, 'src/index.ts'),
+        physics: resolve(import.meta.dirname, 'src/physics/index.ts'),
       },
       formats: ['es', 'cjs'],
       // CJS must be a bare `.cjs` extension, not `.cjs.js` — under this

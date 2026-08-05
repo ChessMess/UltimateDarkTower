@@ -8,6 +8,7 @@
 // editable here) so the data round-trips unchanged.
 import type { TokenArt, TokenModelRef } from '../../../src/index';
 import { ICON, el, makeInput, slotHead, field, actions, fieldsWrap, emptyState } from './helpers';
+import { resolveDemoPath } from '../tokenArt';
 
 // URLs ending in one of these read as a flat 3D image (→ `image3d`); anything else loads as a GLB
 // model (→ `model3d`). Mirrors the dev plugin's IMAGE_EXT so the picker and the asset list agree.
@@ -98,7 +99,8 @@ export function modelSlot(
   const showImage = (src: string, isDefault: boolean): void => {
     preview.classList.remove('has-model');
     const img = document.createElement('img');
-    img.src = src;
+    // See imageSlot: resolve for display only, never for the input/save value.
+    img.src = resolveDemoPath(src);
     img.alt = '3D billboard';
     img.addEventListener('error', () => {
       preview.classList.remove('is-default');
@@ -137,7 +139,7 @@ export function modelSlot(
     if (viewerSrc !== u) {
       erroredSrc = '';
       viewerSrc = u;
-      viewer.setAttribute('src', u);
+      viewer.setAttribute('src', resolveDemoPath(u));
     }
     if (erroredSrc === u) {
       preview.classList.remove('has-model');

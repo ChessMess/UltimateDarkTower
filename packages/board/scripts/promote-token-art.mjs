@@ -4,9 +4,13 @@
 //
 // The Forge only writes demo overrides; it never touches the library. Run this after adding art in
 // the Forge to see exactly which library-table entries to add so the art becomes a default for
-// everyone (Player included), plus which asset files to copy into consumers' public/tokens. It is
-// READ-ONLY: it prints paste-ready lines and a checklist, it does not edit source (the tables are
-// hand-maintained, commented TS — you paste, so nothing fragile rewrites them).
+// everyone (Player included). It is READ-ONLY: it prints paste-ready lines, it does not edit
+// source (the tables are hand-maintained, commented TS — you paste, so nothing fragile rewrites
+// them).
+//
+// It no longer prints a per-consumer copy checklist: art lives once in `@udtc/assets` and every
+// consumer resolves it through the bundler, so there is nothing to hand-copy. It only flags files
+// that aren't in that package yet.
 //
 // Detection is exact: it compares each override against what the CURRENT library default already
 // resolves to (via the compiled resolver in dist/), so already-promoted art is skipped. Build the
@@ -21,6 +25,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ASSET_BASE = './tokens/'; // the base the demo (and this comparison) uses
 
 const distPath = resolve(root, 'dist/index.cjs');
+/** Where token art actually lives now — one copy, consumed by every app through the bundler. */
+const ASSETS_TOKENS_DIR = resolve(root, '../assets/tokens');
 if (!existsSync(distPath)) {
   console.error(
     'dist/ not found — run `npm run build` first so the current library defaults are available.',
@@ -102,13 +108,18 @@ if (promotable.length === 0) {
     for (const { id, filename } of heroRows) console.log(`    '${id}': '${filename}',`);
     console.log('');
   }
-  console.log("Asset checklist — copy each file into every consumer's public token folder:");
-  for (const { filename, group } of promotable) {
-    console.log(
-      `  ${group}/${filename}   (e.g. apps/player/public/assets/tokens/${group}/${filename})`,
-    );
+  // No asset checklist any more: art lives once in @udtc/assets and every consumer resolves it
+  // through the bundler, so there is nothing to hand-copy into per-app public/ folders. If a
+  // promoted file isn't in the package yet, drop it in packages/assets/tokens/<group>/ —
+  // the glob picks it up with no further wiring.
+  const missing = promotable.filter(
+    ({ filename, group }) => !existsSync(resolve(ASSETS_TOKENS_DIR, group, filename)),
+  );
+  if (missing.length) {
+    console.log('Add these files to packages/assets/tokens/ (not in the package yet):');
+    for (const { filename, group } of missing) console.log(`  ${group}/${filename}`);
+    console.log('');
   }
-  console.log('');
 }
 
 if (threeDOnly.length) {

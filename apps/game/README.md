@@ -23,7 +23,8 @@ Vite opens the game at the printed URL.
 
 - `index.html` — markup, styles, and the confetti library.
 - `src/TowerGame.ts` — game logic, tower wiring, scoring.
-- `public/assets/` — styles image map, favicon, and glyph sprite.
+- `public/assets/` — stylesheet and favicon. The glyph sprite sheet now comes from
+  `@udtc/assets/glyphs` through the bundler; `src/TowerGame.ts` sets it on the image-map `<img>`.
 
 ## See also
 

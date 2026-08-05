@@ -6,7 +6,12 @@
 // wires the demo's own page chrome (sidebar, JSON editor, instructions, readout)
 // onto the stage's shared controller. The 3D tower is loaded lazily by the stage.
 import { BoardStageView } from '../../src/stage/index';
-import type { TokenSelection } from '../../src/index';
+import { makeTokenImageResolver } from '../../src/index';
+import type { TokenSelection, TokenArtConfig } from '../../src/index';
+// Art comes from @udtc/assets and is emitted by this example's own Vite build.
+import { tokenUrls, tokenArt as assetTokenArt } from '@udtc/assets/tokens';
+import { boardFullPng } from '@udtc/assets/board';
+import { towerGlb } from '@udtc/assets/models';
 // Per-token 2D-vs-3D art overrides, authored as per-kind JSON (see ./tokenArt/*.json).
 import { tokenArt } from './tokenArt';
 import { queryDom } from './dom';
@@ -16,6 +21,15 @@ import { initInstructionsController } from './instructionsController';
 import { initJsonController } from './jsonController';
 import { initPanelCollapseController } from './panelCollapseController';
 import { initSidebarController } from './sidebarController';
+
+/** Two-level merge of `kind → id → TokenArt`; `over` wins per token id. */
+function mergeTokenArt(base: TokenArtConfig, over: TokenArtConfig): TokenArtConfig {
+  const out: TokenArtConfig = { ...base };
+  for (const [kind, entries] of Object.entries(over)) {
+    out[kind] = { ...(out[kind] ?? {}), ...entries };
+  }
+  return out;
+}
 
 const els = queryDom();
 
@@ -29,14 +43,19 @@ function sizeStage(): void {
   els.boardStage.style.height = `${Math.max(240, window.innerHeight - top - padBottom)}px`;
 }
 
-// The all-in-one render stage. Default first-run layout is PiP (3D big, 2D inset);
-// the tower GLB is example-only (example/public/, never bundled).
+// The all-in-one render stage. Default first-run layout is PiP (3D big, 2D inset).
 const stage = new BoardStageView({
   container: els.boardStage,
-  assetBaseUrl: './tokens/',
-  boardImageUrl: './board.png',
-  tokenArt, // shared: the 2D map reads image2d, the 3D tower model3d / image3d
-  modelUrl: './tower.glb',
+  // `resolveTokenImage` replaces `assetBaseUrl`: the art is bundler-hashed now, so the
+  // `${base}${group}/${id}.png` convention can't build a working URL. The resolver runs the
+  // library's own tables against a sentinel base and maps the result onto the bundled URLs.
+  resolveTokenImage: makeTokenImageResolver(tokenUrls),
+  boardImageUrl: boardFullPng,
+  // Demo overrides layered on the package's own (which carries the skull's 3D model — models
+  // are NOT covered by `resolveTokenImage`). Merged per KIND, not per top-level key: a shallow
+  // spread would let `skull: {...}` from the demo drop the package's skull model entirely.
+  tokenArt: mergeTokenArt(assetTokenArt, tokenArt),
+  modelUrl: towerGlb,
   editingUI: {
     panels: {
       palette: { corner: 'tl' },

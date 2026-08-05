@@ -4,7 +4,13 @@ import type { TowerState, TowerSide } from 'ultimatedarktower';
 import type { DomElements } from './dom';
 import { toggleSeal, refreshSeals } from './sealController';
 import { setLedOverride as recordLedOverride, replayLedOverrides } from './ledOverrideController';
-import towerModelUrl from '../src/3d/assets/tower.glb?url';
+// The example is a normal consumer, so it takes both assets from `@udtc/assets` rather than
+// reaching into the library's own source tree. The library's `dist/3d/assets/` copies (written by
+// `copyStaticAssets()` in vite.config.ts) are the equivalent path for external consumers.
+import { towerGlb as towerModelUrl } from '@udtc/assets/models';
+// The board art is consumer-supplied since it stopped being bundled (see
+// TowerDisplayOptions.boardTextureUrl); the demo opts in so the disc keeps its real art.
+import { boardFullPng as boardTextureUrl } from '@udtc/assets/board';
 // The bundled default pack works out of the box — no consumer-side URL map
 // needed. `applyAudioConfig({ enabled })` is the one-line toggle.
 
@@ -86,6 +92,7 @@ function buildViewOptions(
     container: els.towerContainer,
     renderers,
     modelUrl: towerModelUrl,
+    boardTextureUrl,
     clickToToggleSeals: false, // external source of truth lives in sealController.
     onSealClick: (seal) => toggleSeal(seal, view.display, readout),
     onSideChange: (side) => {

@@ -103,4 +103,13 @@ describe('dataset registry', () => {
     expect(new Set(DATASETS.map((d) => d.id)).size).toBe(DATASETS.length);
     expect(DATASETS.filter((d) => d.rows.length === 0).map((d) => d.id)).toEqual([]);
   });
+
+  it('leaves the reserved route ids alone', () => {
+    // `#/search` and `#/art` are dispatched in App.tsx *before* DATASET_BY_ID is consulted, so a
+    // dataset claiming either id would be silently unreachable — no error, just a page that never
+    // opens. `search` has been magic since day one and was never guarded; `art` joins it now that
+    // the art registry lives at `#/art/<group>/<asset>`.
+    const RESERVED = ['search', 'art'];
+    expect(DATASETS.filter((d) => RESERVED.includes(d.id)).map((d) => d.id)).toEqual([]);
+  });
 });

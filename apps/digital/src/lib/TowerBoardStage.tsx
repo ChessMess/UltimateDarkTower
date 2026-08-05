@@ -15,11 +15,16 @@ import { BoardStageView } from 'ultimatedarktowerboard/stage';
 import type { TowerState } from 'ultimatedarktower';
 import type { Tower3DView } from 'ultimatedarktowerdisplay';
 import type { PhysicsConfig, SkullPhysicsHandle } from 'ultimatedarktowerdisplay/physics';
+import { makeTokenImageResolver } from 'ultimatedarktowerboard';
+import { tokenUrls, tokenArt, skullGlb } from '@udtc/assets/tokens';
+import { boardFullPng } from '@udtc/assets/board';
+import { towerGlb } from '@udtc/assets/models';
 import { ManualBoardSource } from '@/sources/ManualBoardSource';
 import { useGameStore } from '@/state/gameStore';
 import { syncSkulls } from './skullSync';
 
-const BASE = import.meta.env.BASE_URL; // ends with '/'
+// Art comes from @udtc/assets, emitted by this app's own Vite build (no public/ copies).
+const resolveTokenImage = makeTokenImageResolver(tokenUrls);
 
 /** How often auto-sweep checks the floor for skulls to collect. */
 const AUTO_SWEEP_INTERVAL_MS = 500;
@@ -58,7 +63,7 @@ export function TowerBoardStage({ onReady, className }: TowerBoardStageProps) {
 
     const physicsConfig: PhysicsConfig = {
       skull: {
-        modelUrl: `${BASE}assets/tokens/markers/skull.glb`,
+        modelUrl: skullGlb,
         colliderShape: 'hull',
         onSkullClick: (id, zone) => {
           const s = useGameStore.getState();
@@ -114,9 +119,11 @@ export function TowerBoardStage({ onReady, className }: TowerBoardStageProps) {
 
     const stage = new BoardStageView({
       container,
-      assetBaseUrl: `${BASE}assets/tokens/`,
-      boardImageUrl: `${BASE}assets/board.png`,
-      modelUrl: `${BASE}assets/tower.glb`,
+      // `tokenArt` carries the skull's 3D model, which `resolveTokenImage` does not cover.
+      resolveTokenImage,
+      tokenArt,
+      boardImageUrl: boardFullPng,
+      modelUrl: towerGlb,
       editingUI: false,
       shakeButtons: true,
       // The 3D tower loads lazily; once it's on, paint the current state into it.

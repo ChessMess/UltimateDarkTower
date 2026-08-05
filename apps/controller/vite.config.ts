@@ -39,6 +39,13 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['ultimatedarktowerdisplay'],
+    // NEVER pre-bundle @udtc/assets. The dep optimizer rewrites `new URL(..., import.meta.url)`
+    // to a paths-relative-to-.vite/deps form and has no `import.meta.glob` handling at all, so a
+    // pre-bundled copy either resolves asset URLs into node_modules/.vite/deps (404s) or keeps
+    // `import.meta.glob` verbatim (runtime TypeError). Dev-only, so it looks like a mystery.
+    // Linked workspace packages are excluded by default — this is belt-and-braces because the
+    // `include` above force-includes display, which imports the assets package.
+    exclude: ['@udtc/assets'],
   },
   server: {
     port: 3005,

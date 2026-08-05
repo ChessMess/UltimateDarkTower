@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
 
-const mock = (f: string) => resolve(__dirname, 'tests/__mocks__', f);
+const mock = (f: string) => resolve(import.meta.dirname, 'tests/__mocks__', f);
 
 // Every alias except gsap, shared by both projects below. gsap is added back for
 // `unit` and left out for `snapshots`, mirroring what jest.config.snapshots.cjs did

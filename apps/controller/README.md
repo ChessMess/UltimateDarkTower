@@ -31,7 +31,9 @@ Vite opens the controller at the printed URL. Use it in Chrome / Edge / Samsung 
 - `index.html` / `src/TowerController.ts` — the main controller UI.
 - `TowerEmulator.html` / `src/TowerEmulator.ts` — the 3D emulator popup the controller opens.
 - `src/TowerEmulatorAdapter.ts` — `IBluetoothAdapter` implementation that talks to the emulator instead of real hardware (with `src/TowerEmulatorAdapter.test.ts`).
-- `public/assets/` — fonts, background, favicon, glyph SVGs, and the `tower.glb` 3D model.
+- `public/assets/` — fonts, background image, and favicon. The glyph SVGs and the `tower.glb`
+  model now come from `@udtc/assets` through the bundler (`@udtc/assets/glyphs`,
+  `@udtc/assets/models`), not from this folder.
 
 ## See also
 

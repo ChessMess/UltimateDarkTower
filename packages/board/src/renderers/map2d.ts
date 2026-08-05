@@ -29,6 +29,7 @@ export {
   kebab,
   lookupTokenArt,
   resolveTokenImageFor,
+  makeTokenImageResolver,
   DEFAULT_KIND_TINT,
   DEFAULT_KIND_Z_2D,
   DEFAULT_KIND_Z_3D,

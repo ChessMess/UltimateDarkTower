@@ -1,19 +1,24 @@
 import { TOWER_AUDIO_LIBRARY } from 'ultimatedarktowerdata';
+import { audioUrls } from '@udtc/assets/audio';
 import type { SoundPack } from './soundPack';
 
 const A = TOWER_AUDIO_LIBRARY;
 
-// Per-file `new URL('./assets/<literal>.ogg', import.meta.url)` is the
-// canonical pattern recognised by every major bundler (Vite, esbuild,
-// webpack 5+, Rollup, Parcel) and by native Node ESM. Each bundler detects
-// the literal filename at build time, emits the asset to its output, and
-// rewrites the expression to a literal URL string — no runtime evaluation
-// of `import.meta.url` is needed, so the pattern survives IIFE/CJS targets
-// where `import.meta` is stripped.
+// This module owns the sample id → filename mapping; `@udtc/assets/audio` owns filename → URL.
+// The split is what lets the art package stay dependency-free (the id enum lives in
+// `ultimatedarktower`, which the art package must not import) while keeping the .ogg bytes in one
+// place. `scripts/extract-audio.mjs` regenerates both halves in one run.
 //
-// OFFICIAL_AUDIO_FILES is the shared source of truth: `buildOfficialSoundPack`
-// uses it to compose URLs against a custom base, while `samples` below
-// references each filename inline so bundler asset detection works.
+// The URL half deliberately keeps the per-file
+// `new URL('<literal>.ogg', import.meta.url)` shape rather than a glob: that is the canonical
+// pattern recognised by every major bundler (Vite, esbuild, webpack 5+, Rollup, Parcel) and by
+// native Node ESM. Each detects the literal filename at build time, emits the asset to its own
+// output, and rewrites the expression — which is how all five apps in this repo end up re-emitting
+// their own copies. See `packages/assets/src/audio/index.ts` for why a glob is NOT equivalent
+// under library mode.
+//
+// OFFICIAL_AUDIO_FILES is also what `buildOfficialSoundPack` composes against a custom base URL,
+// so consumers can self-host the same filenames.
 
 const OFFICIAL_AUDIO_FILES: Record<number, string> = {
   // === BEGIN AUTOGEN (scripts/extract-audio.mjs) ===
@@ -132,165 +137,22 @@ const OFFICIAL_AUDIO_FILES: Record<number, string> = {
   [A.TowerSkullDropped.value]: 'Tower_Skull_Drop_01.ogg',
 };
 
-const samples: Record<number, string> = {
-  [A.Ashstrider.value]: new URL('./assets/Adversary_Ashstrider_01.ogg', import.meta.url).href,
-  [A.BaneofOmens.value]: new URL('./assets/Adversary_Bane_01.ogg', import.meta.url).href,
-  [A.EmpressofShades.value]: new URL('./assets/Adversary_Empress_01.ogg', import.meta.url).href,
-  [A.GazeEternal.value]: new URL('./assets/Adversary_Gaze_01.ogg', import.meta.url).href,
-  [A.Gravemaw.value]: new URL('./assets/Adversary_Gravemaw_01.ogg', import.meta.url).href,
-  [A.IsatheExile.value]: new URL('./assets/Adversary_Isa_01.ogg', import.meta.url).href,
-  [A.LingeringRot.value]: new URL('./assets/Adversary_Rot_03.ogg', import.meta.url).href,
-  [A.UtukKu.value]: new URL('./assets/Adversary_Utuk_03.ogg', import.meta.url).href,
-  [A.Gleb.value]: new URL('./assets/Ally_Gleb_01.ogg', import.meta.url).href,
-  [A.Grigor.value]: new URL('./assets/Ally_Grigor_01.ogg', import.meta.url).href,
-  [A.Hakan.value]: new URL('./assets/Ally_Hakan_02.ogg', import.meta.url).href,
-  [A.Letha.value]: new URL('./assets/Ally_Letha_02.ogg', import.meta.url).href,
-  [A.Miras.value]: new URL('./assets/Ally_Miras_01.ogg', import.meta.url).href,
-  [A.Nimet.value]: new URL('./assets/Ally_Nimet_01.ogg', import.meta.url).href,
-  [A.Tomas.value]: new URL('./assets/Ally_Tomas_03.ogg', import.meta.url).href,
-  [A.Vasa.value]: new URL('./assets/Ally_Vasa_03.ogg', import.meta.url).href,
-  [A.Yana.value]: new URL('./assets/Ally_Yana_01.ogg', import.meta.url).href,
-  [A.Zaida.value]: new URL('./assets/Ally_Zaida_01.ogg', import.meta.url).href,
-  [A.ApplyAdvantage01.value]: new URL('./assets/Battle_Advantage_Applied_01.ogg', import.meta.url)
-    .href,
-  [A.ApplyAdvantage02.value]: new URL('./assets/Battle_Advantage_Applied_02.ogg', import.meta.url)
-    .href,
-  [A.ApplyAdvantage03.value]: new URL('./assets/Battle_Advantage_Applied_03.ogg', import.meta.url)
-    .href,
-  [A.ApplyAdvantage04.value]: new URL('./assets/Battle_Advantage_Applied_04.ogg', import.meta.url)
-    .href,
-  [A.ApplyAdvantage05.value]: new URL('./assets/Battle_Advantage_Applied_05.ogg', import.meta.url)
-    .href,
-  [A.MaxAdvantages.value]: new URL('./assets/Battle_Advantages_Maxed_01.ogg', import.meta.url).href,
-  [A.NoAdvantages.value]: new URL('./assets/Battle_Advantages_None_01.ogg', import.meta.url).href,
-  [A.AdversaryEscaped.value]: new URL('./assets/Battle_Adversary_Escape_01.ogg', import.meta.url)
-    .href,
-  [A.BattleButton.value]: new URL('./assets/Battle_Button_01.ogg', import.meta.url).href,
-  [A.CardFlip01.value]: new URL('./assets/Battle_Card_Flip_01.ogg', import.meta.url).href,
-  [A.CardFlip02.value]: new URL('./assets/Battle_Card_Flip_02.ogg', import.meta.url).href,
-  [A.CardFlip03.value]: new URL('./assets/Battle_Card_Flip_03.ogg', import.meta.url).href,
-  [A.CardFlipPaper01.value]: new URL('./assets/Battle_Card_Flip_Paper_01.ogg', import.meta.url)
-    .href,
-  [A.CardFlipPaper02.value]: new URL('./assets/Battle_Card_Flip_Paper_02.ogg', import.meta.url)
-    .href,
-  [A.CardFlipPaper03.value]: new URL('./assets/Battle_Card_Flip_Paper_03.ogg', import.meta.url)
-    .href,
-  [A.CardSelect01.value]: new URL('./assets/Battle_Card_Select_01.ogg', import.meta.url).href,
-  [A.CardSelect02.value]: new URL('./assets/Battle_Card_Select_02.ogg', import.meta.url).href,
-  [A.CardSelect03.value]: new URL('./assets/Battle_Card_Select_03.ogg', import.meta.url).href,
-  [A.BattleStart.value]: new URL('./assets/Battle_start_01.ogg', import.meta.url).href,
-  [A.BattleVictory.value]: new URL('./assets/Battle_Victory_01.ogg', import.meta.url).href,
-  [A.ButtonHoldPressCombo.value]: new URL(
-    './assets/Button_HoldandPressComboDemo.ogg',
-    import.meta.url,
-  ).href,
-  [A.ButtonHold.value]: new URL('./assets/Button_Hold_01.ogg', import.meta.url).href,
-  [A.ButtonPress.value]: new URL('./assets/Button_Press_01.ogg', import.meta.url).href,
-  [A.ClassicAdvantageApplied.value]: new URL(
-    './assets/Classic_AdvantageApplied.ogg',
-    import.meta.url,
-  ).href,
-  [A.ClassicAttackTower.value]: new URL('./assets/Classic_Attack_Tower.ogg', import.meta.url).href,
-  [A.ClassicBazaar.value]: new URL('./assets/Classic_Bazaar.ogg', import.meta.url).href,
-  [A.ClassicConfirmation.value]: new URL('./assets/Classic_Confirmation_Beep.ogg', import.meta.url)
-    .href,
-  [A.ClassicDragons.value]: new URL('./assets/Classic_DragonStrike.ogg', import.meta.url).href,
-  [A.ClassicQuestFailed.value]: new URL('./assets/Classic_Quest_Failure.ogg', import.meta.url).href,
-  [A.ClassicRetreat.value]: new URL('./assets/Classic_Retreat.ogg', import.meta.url).href,
-  [A.ClassicStartMonth.value]: new URL('./assets/Classic_StartOfMonth.ogg', import.meta.url).href,
-  [A.ClassicStartDungeon.value]: new URL('./assets/Classic_StartingDungeon.ogg', import.meta.url)
-    .href,
-  [A.ClassicTowerLost.value]: new URL('./assets/Classic_TowerLost.ogg', import.meta.url).href,
-  [A.ClassicUnsure.value]: new URL('./assets/Classic_Unsure_5.ogg', import.meta.url).href,
-  [A.DungeonAdvantage01.value]: new URL('./assets/Dungeon_Advantage_01.ogg', import.meta.url).href,
-  [A.DungeonAdvantage02.value]: new URL('./assets/Dungeon_Advantage_02.ogg', import.meta.url).href,
-  [A.DungeonButton.value]: new URL('./assets/Dungeon_Button_01.ogg', import.meta.url).href,
-  [A.DungeonFootsteps.value]: new URL('./assets/Dungeon_Button_Footsteps_01.ogg', import.meta.url)
-    .href,
-  [A.DungeonCaves.value]: new URL('./assets/Dungeon_Caves_01.ogg', import.meta.url).href,
-  [A.DungeonComplete.value]: new URL('./assets/Dungeon_Complete_01.ogg', import.meta.url).href,
-  [A.DungeonEncampment.value]: new URL('./assets/Dungeon_Encampment_01.ogg', import.meta.url).href,
-  [A.DungeonEscape.value]: new URL('./assets/Dungeon_Escape_01.ogg', import.meta.url).href,
-  [A.DungeonFortress.value]: new URL('./assets/Dungeon_Fortress_01.ogg', import.meta.url).href,
-  [A.DungeonRuins.value]: new URL('./assets/Dungeon_Ruins_01.ogg', import.meta.url).href,
-  [A.DungeonShrine.value]: new URL('./assets/Dungeon_Shrine_01.ogg', import.meta.url).href,
-  [A.DungeonTomb.value]: new URL('./assets/Dungeon_Tomb_01.ogg', import.meta.url).href,
-  [A.FoeEvent.value]: new URL('./assets/Event_Foe.ogg', import.meta.url).href,
-  [A.FoeSpawn.value]: new URL('./assets/Event_Spawn.ogg', import.meta.url).href,
-  [A.Brigands.value]: new URL('./assets/Foe_Brigands_03.ogg', import.meta.url).href,
-  [A.ClanofNeuri.value]: new URL('./assets/Foe_Clan_01.ogg', import.meta.url).href,
-  [A.Dragons.value]: new URL('./assets/Foe_Dragon_01.ogg', import.meta.url).href,
-  [A.Lemures.value]: new URL('./assets/Foe_Lemure_01.ogg', import.meta.url).href,
-  [A.LeveledUp.value]: new URL('./assets/Foe_Level_Up_01.ogg', import.meta.url).href,
-  [A.Mormos.value]: new URL('./assets/Foe_Mormo_01.ogg', import.meta.url).href,
-  [A.Oreks.value]: new URL('./assets/Foe_Oreks_01.ogg', import.meta.url).href,
-  [A.ShadowWolves.value]: new URL('./assets/Foe_Shadow_01.ogg', import.meta.url).href,
-  [A.SpineFiends.value]: new URL('./assets/Foe_Spine_01.ogg', import.meta.url).href,
-  [A.Striga.value]: new URL('./assets/Foe_Striga_01.ogg', import.meta.url).href,
-  [A.Titans.value]: new URL('./assets/Foe_Titan_01.ogg', import.meta.url).href,
-  [A.FrostTrolls.value]: new URL('./assets/Foe_Troll_01.ogg', import.meta.url).href,
-  [A.WidowmadeSpiders.value]: new URL('./assets/Foe_Widowmade_01.ogg', import.meta.url).href,
-  [A.AshstriderSpawn.value]: new URL(
-    './assets/MainObjectiveVictory_BossSpawn_Ashstrider.ogg',
-    import.meta.url,
-  ).href,
-  [A.BaneofOmensSpawn.value]: new URL(
-    './assets/MainObjectiveVictory_BossSpawn_Bane.ogg',
-    import.meta.url,
-  ).href,
-  [A.EmpressofShadesSpawn.value]: new URL(
-    './assets/MainObjectiveVictory_BossSpawn_Empress.ogg',
-    import.meta.url,
-  ).href,
-  [A.GazeEternalSpawn.value]: new URL(
-    './assets/MainObjectiveVictory_BossSpawn_Gaze.ogg',
-    import.meta.url,
-  ).href,
-  [A.GravemawSpawn.value]: new URL(
-    './assets/MainObjectiveVictory_BossSpawn_Gravemaw.ogg',
-    import.meta.url,
-  ).href,
-  [A.IsatheExileSpawn.value]: new URL(
-    './assets/MainObjectiveVictory_BossSpawn_Isa.ogg',
-    import.meta.url,
-  ).href,
-  [A.LingeringRotSpawn.value]: new URL(
-    './assets/MainObjectiveVictory_BossSpawn_Rot.ogg',
-    import.meta.url,
-  ).href,
-  [A.UtukKuSpawn.value]: new URL(
-    './assets/MainObjectiveVictory_BossSpawn_Utuk.ogg',
-    import.meta.url,
-  ).href,
-  [A.QuestComplete.value]: new URL('./assets/Quest_Complete_01.ogg', import.meta.url).href,
-  [A.TowerAllGlyphs.value]: new URL('./assets/Tower_All_Glyphs_01.ogg', import.meta.url).href,
-  [A.TowerAngry1.value]: new URL('./assets/Tower_Angry_01.ogg', import.meta.url).href,
-  [A.TowerAngry2.value]: new URL('./assets/Tower_Angry_02.ogg', import.meta.url).href,
-  [A.TowerAngry3.value]: new URL('./assets/Tower_Angry_03.ogg', import.meta.url).href,
-  [A.TowerAngry4.value]: new URL('./assets/Tower_Angry_04.ogg', import.meta.url).href,
-  [A.TowerConnected.value]: new URL('./assets/Tower_Connected_04.ogg', import.meta.url).href,
-  [A.GameStart.value]: new URL('./assets/Tower_Game_Start.ogg', import.meta.url).href,
-  [A.TowerGloat1.value]: new URL('./assets/Tower_Gloat_01.ogg', import.meta.url).href,
-  [A.TowerGloat2.value]: new URL('./assets/Tower_Gloat_02.ogg', import.meta.url).href,
-  [A.TowerGloat3.value]: new URL('./assets/Tower_Gloat_03.ogg', import.meta.url).href,
-  [A.TowerGlyph.value]: new URL('./assets/Tower_Glyph_01.ogg', import.meta.url).href,
-  [A.TowerIdle1.value]: new URL('./assets/Tower_Idle_01.ogg', import.meta.url).href,
-  [A.TowerIdle2.value]: new URL('./assets/Tower_Idle_02.ogg', import.meta.url).href,
-  [A.TowerIdle3.value]: new URL('./assets/Tower_Idle_03.ogg', import.meta.url).href,
-  [A.TowerIdle4.value]: new URL('./assets/Tower_Idle_04.ogg', import.meta.url).href,
-  [A.TowerIdle5.value]: new URL('./assets/Tower_Idle_05.ogg', import.meta.url).href,
-  [A.TowerDisconnected.value]: new URL('./assets/Tower_Lost_Connection_04.ogg', import.meta.url)
-    .href,
-  [A.MonthEnded.value]: new URL('./assets/Tower_Month_End_06.ogg', import.meta.url).href,
-  [A.MonthStarted.value]: new URL('./assets/Tower_Month_Start_01.ogg', import.meta.url).href,
-  [A.QuestFailed.value]: new URL('./assets/Tower_Quest_Failure.ogg', import.meta.url).href,
-  [A.RotateExit.value]: new URL('./assets/Tower_Rotate_Exit.ogg', import.meta.url).href,
-  [A.RotateLoop.value]: new URL('./assets/Tower_Rotate_Loop.ogg', import.meta.url).href,
-  [A.RotateStart.value]: new URL('./assets/Tower_Rotate_Start.ogg', import.meta.url).href,
-  [A.TowerSeal.value]: new URL('./assets/Tower_Seal_01.ogg', import.meta.url).href,
-  [A.TowerSkullDropped.value]: new URL('./assets/Tower_Skull_Drop_01.ogg', import.meta.url).href,
-  // === END AUTOGEN ===
-};
+const samples: Record<number, string> = Object.fromEntries(
+  Object.entries(OFFICIAL_AUDIO_FILES).map(([id, file]) => {
+    const url = audioUrls[file];
+    // A miss here means the two generated halves have drifted — `OFFICIAL_AUDIO_FILES` names a
+    // file `@udtc/assets` no longer ships. Silence would be indistinguishable from a sample that
+    // is simply quiet, so fail at import time instead.
+    if (!url) {
+      throw new Error(
+        `ultimatedarktowerdisplay: no bundled audio for '${file}'. Re-run ` +
+          'packages/display/scripts/extract-audio.mjs — it regenerates this map and the URL table ' +
+          'in @udtc/assets together.',
+      );
+    }
+    return [Number(id), url];
+  }),
+);
 
 /**
  * The official-game sound pack bundled with this package. Built from the

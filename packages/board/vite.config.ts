@@ -14,9 +14,9 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
-        index: resolve(__dirname, 'src/index.ts'),
-        plugin: resolve(__dirname, 'src/plugin/index.ts'),
-        stage: resolve(__dirname, 'src/stage/index.ts'),
+        index: resolve(import.meta.dirname, 'src/index.ts'),
+        plugin: resolve(import.meta.dirname, 'src/plugin/index.ts'),
+        stage: resolve(import.meta.dirname, 'src/stage/index.ts'),
       },
       formats: ['es', 'cjs'],
       // ESM keeps `.esm.js` (a `.js` under "type":"module" is ESM — correct).

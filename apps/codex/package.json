@@ -1,7 +1,7 @@
 {
   "name": "ultimatedarktowercodex",
   "version": "0.1.0",
-  "description": "Browsable reference for every Return to Dark Tower card, foe, location and box component in ultimatedarktowerdata.",
+  "description": "Browsable reference for every Return to Dark Tower card, foe, location and box component in ultimatedarktowerdata, plus every piece of game art and audio in @udtc/assets.",
   "private": true,
   "type": "module",
   "scripts": {
@@ -19,6 +19,7 @@
     "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "dependencies": {
+    "@udtc/assets": "workspace:*",
     "@udtc/theme": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:",

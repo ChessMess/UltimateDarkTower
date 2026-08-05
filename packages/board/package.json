@@ -73,6 +73,7 @@
   },
   "devDependencies": {
     "@types/three": "catalog:",
+    "@udtc/assets": "workspace:*",
     "@vitest/coverage-v8": "catalog:",
     "gsap": "catalog:",
     "jsdom": "catalog:",

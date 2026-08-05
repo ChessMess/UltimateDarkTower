@@ -36,12 +36,12 @@ No build step, no dependencies. Either:
   `localStorage` autosave reliable.
 
 Then **Load the board image** (button, top-right) or drag a PNG onto the canvas. The
-board artwork lives in the sibling Display repo at
-`UltimateDarkTowerDisplay/src/3d/assets/board.png` (4096×4096). For convenience you can
-drop a copy or symlink named `board.png` next to this file:
+board artwork lives in this monorepo at `packages/assets/board/board.png`
+(4096×4096) — `@udtc/assets` is the single source of truth for all game art. For
+convenience you can drop a copy or symlink named `board.png` next to this file:
 
 ```sh
-ln -s ../../../display/src/3d/assets/board.png board.png
+ln -s ../../../assets/board/board.png board.png
 ```
 
 (`board.png` is git-ignored here so the multi-MB asset isn't committed.)

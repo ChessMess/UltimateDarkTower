@@ -16,17 +16,29 @@ likely need to update the schema, the engine, and the catalog doc in lockstep.
 The editor reads its vocabulary via `@udtc/adapters`' `getUDTReferenceLayer` (not direct
 `ultimatedarktower*` imports) so "what the editor offers is exactly what validates."
 
-## `public/assets/board.jpg` — the designer backdrop, not shipped art
+## `@udtc/assets/board-small` — the designer backdrop, not shipped art
 
 The Board Designer canvas draws the RtDT board under a cloned preset's spots. That backdrop is
 a **downscaled 1400²/~480 KB JPEG**, not the real board image (4096²/22 MB, which the Player
-serves for play from its own `public/assets/board.png`). Spots are normalized `[0,1]` and the
-SVG stretches the image to `imageInfo.width/height`, so a smaller backdrop annotates identically.
-Regenerate with:
+loads for play from `@udtc/assets/board`). Spots are normalized `[0,1]` and the SVG stretches the
+image to `imageInfo.width/height`, so a smaller backdrop annotates identically.
+
+Both variants live in `packages/assets` now, not in each app's `public/`. Import the small one
+**from its own subpath** — `@udtc/assets/board-small`, never `@udtc/assets/board`:
+
+```ts
+import { boardSmall } from '@udtc/assets/board-small';
+```
+
+They are separate modules precisely because there is no asset tree-shaking — Vite's `emitFile`
+runs in `transform`, before tree-shaking, so when both lived in one module this app emitted the
+22 MB PNG it explicitly does not want and its `dist/` went from 13 MB back to 34 MB.
+
+Regenerate the downscale with:
 
 ```bash
 sips -Z 1400 -s format jpeg -s formatOptions 60 \
-  apps/player/public/assets/board.png --out apps/creator/public/assets/board.jpg
+  packages/assets/board/board.png --out packages/assets/board/board-small.jpg
 ```
 
 A cloned board carries `imageRef: BUILTIN_BOARD_IMAGE_REF` (`'builtin:rtdt-board'`, from

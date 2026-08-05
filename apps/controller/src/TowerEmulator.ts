@@ -1,9 +1,8 @@
 import { TowerRenderView, CALIBRATION_SOUND_URL } from 'ultimatedarktowerdisplay';
 import { TOWER_COMMANDS, createDefaultTowerState } from 'ultimatedarktower';
-
-// The 3D model ships in this app's public/ dir (copied from the display package,
-// like apps/digital and apps/player); TowerRenderView loads it from this URL.
-const towerModelUrl = `${import.meta.env.BASE_URL}assets/tower.glb`;
+// The 3D model comes from @udtc/assets (single source of truth for game art) and is
+// emitted by this app's own Vite build — no public/ copy, no BASE_URL concat.
+import { towerGlb as towerModelUrl } from '@udtc/assets/models';
 
 const root = document.getElementById('tower-display-root');
 

@@ -4,6 +4,7 @@
 // step with it. Styling/limit helpers are reused from the dungeon module rather than re-declared.
 
 import { getUDTReferenceLayer, isBuiltinBoardImageRef } from '@udtc/adapters';
+import { boardSmall } from '@udtc/assets/board-small';
 import type { ScenarioDoc } from '../types';
 import { resolveImage } from '../dungeons/shared';
 
@@ -251,12 +252,12 @@ export function boardArtBytes(doc: ScenarioDoc | null): number {
 export const boardImageKey = (boardId: string): string => `board-${boardId}`;
 
 /**
- * The Creator's own copy of the RtDT board art — a downscaled 1400² backdrop for the designer
- * canvas, NOT the shipped 4096² art (which the Player serves for play). Spots are normalized
- * `[0,1]` and the canvas stretches the image to `imageInfo.width/height`, so a smaller backdrop
- * annotates identically to the full-resolution board.
+ * The RtDT board art for the designer canvas — the downscaled 1400² variant, NOT the 4096² art
+ * the Player renders for play. Spots are normalized `[0,1]` and the canvas stretches the image to
+ * `imageInfo.width/height`, so a smaller backdrop annotates identically to the full-resolution
+ * board. Importing `boardFullPng` here would pull 22 MB into this bundle for no visual gain.
  */
-export const BUILTIN_BOARD_ART_URL = `${import.meta.env.BASE_URL}assets/board.jpg`;
+export const BUILTIN_BOARD_ART_URL = boardSmall;
 
 /**
  * A board's art URL: the image stored in the document, else this app's copy of the built-in RtDT

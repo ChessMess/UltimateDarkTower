@@ -179,10 +179,14 @@ A missing or failed load is **silent** — there is no procedural placeholder to
 
 To bundle a new sound shipped with the package (as `drumRotation.ogg` and `drumCalibration.ogg` are):
 
-1. Drop the `.ogg` into `src/audio/assets/`.
-2. Reference it from a small hand-maintained module via the canonical pattern: `export const MY_SOUND_URL = new URL('./assets/my-sound.ogg', import.meta.url).href;`. Keep it in its own module — `scripts/extract-audio.mjs` regenerates `audioLibrary.ts` wholesale and would wipe a hand-added export there.
-3. **Add that module's path to `URL_ASSET_HOSTS` in `vite.config.ts`.** Vite's lib build inlines `new URL(literal, import.meta.url)` assets as base64 data URIs by default; the `emitAssetsAsFiles` plugin (which also de-inlines the board texture PNG) emits them as separate files **only** for modules on this list. Skip this step and your asset's bytes get base64-inlined into the JS bundle.
-4. Export the URL constant from `src/index.ts` if consumers should reference it.
+The bytes no longer live in this package — `@udtc/assets` (private, a devDependency here) is the single source of truth for all game art and audio.
+
+1. Drop the `.ogg` into `packages/assets/audio/`.
+2. Reference it from `packages/assets/src/audio/effects.ts` via the canonical pattern: `export const mySoundUrl: string = new URL('../../audio/my-sound.ogg', import.meta.url).href;`. Keep it in `effects.ts`, **not** `src/audio/index.ts` — that one is regenerated wholesale by `scripts/extract-audio.mjs` and would wipe a hand-added export.
+3. Re-export it from a small module here under `src/audio/` (as `calibrationAudio.ts` and `drumRotationSound.ts` do), so this package keeps a stable internal specifier — `vitest.config.ts` aliases those paths to mocks.
+4. **Confirm the assets-package module is listed in `URL_ASSET_HOSTS` in `vite.config.ts`.** `effects.ts` and `index.ts` are both already there, so adding a sound to an existing module needs no change; a _new_ module does. Vite's lib build inlines `new URL(literal, import.meta.url)` assets as base64 data URIs by default, and the `emitAssetsAsFiles` plugin emits them as separate files **only** for modules on this list. Skip this and the bytes get base64-inlined into the JS bundle — with no error.
+5. Export the URL constant from `src/index.ts` if consumers should reference it.
+6. Bump `EXPECTED_OGG` in `scripts/check-dist-size.mjs`. That assertion is what turns step 4's silent failure into a build error, so it has to track the real count.
 
 (This is distinct from the [Bundler compatibility](#bundler-compatibility) section below, which is about _consumers_ bundling the published package — not this repo's own build.)
 

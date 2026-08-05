@@ -27,6 +27,11 @@ export interface TowerRenderViewOptions {
   renderers?: RendererType | RendererType[];
   /** URL of the GLB model for the 3D view. Required when `renderers` includes `'3d-view'`. */
   modelUrl?: string;
+  /**
+   * URL of the board art for the 3D ground disc. Consumer-supplied like {@link modelUrl};
+   * the package ships it at `dist/3d/assets/board.png`. Omit for the procedural texture.
+   */
+  boardTextureUrl?: string;
   dracoDecoderPath?: string;
   debug3D?: boolean;
   showGroundDisc?: boolean;
@@ -126,6 +131,7 @@ export class TowerRenderView implements ITowerDisplay {
       container: this.bodyEl,
       renderers: options.renderers ?? '3d-view',
       modelUrl: options.modelUrl,
+      boardTextureUrl: options.boardTextureUrl,
       dracoDecoderPath: options.dracoDecoderPath,
       debug3D: options.debug3D,
       showGroundDisc: options.showGroundDisc,

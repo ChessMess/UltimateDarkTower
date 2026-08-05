@@ -10,6 +10,8 @@
 import * as THREE from 'three';
 import { TowerRenderView, attachScenePlugin, anchorToWorld } from 'ultimatedarktowerdisplay';
 import type { ScenePlugin, ScenePluginContext } from 'ultimatedarktowerdisplay';
+import { towerGlb } from '@udtc/assets/models';
+import { boardFullPng } from '@udtc/assets/board';
 import { BOARD_SPOTS, BOARD_LOCATION_BY_NAME } from '../../src/index';
 import type { BoardKingdom } from '../../src/index';
 
@@ -23,7 +25,9 @@ const KINGDOM_COLOR: Record<BoardKingdom, number> = {
   west: 0xeab308,
 };
 
-const view = new TowerRenderView({ container, modelUrl: './tower.glb' });
+// `boardTextureUrl` is load-bearing here, not decoration: this page validates marker placement
+// against the *real* printed board art, so the procedural fallback would make it meaningless.
+const view = new TowerRenderView({ container, modelUrl: towerGlb, boardTextureUrl: boardFullPng });
 const view3D = view.view3D;
 if (!view3D) throw new Error('view3D unavailable');
 
