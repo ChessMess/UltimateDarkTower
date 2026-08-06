@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.8
+
+### Patch Changes
+
+- 99f396e: Add a `dev:<name>` convenience script (`dev:board` / `dev:display` /
+  `dev:mcp-server`) as an alias for the existing demo/dev command — no
+  behavior change.
+- Updated dependencies [5f9deec]
+- Updated dependencies [974549e]
+- Updated dependencies [9046309]
+  - ultimatedarktowerdata@3.0.0
+  - ultimatedarktower@7.1.2
+
 ## 1.0.7
 
 ### Patch Changes

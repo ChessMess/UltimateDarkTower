@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [5f9deec]
+- Updated dependencies [974549e]
+- Updated dependencies [9046309]
+  - ultimatedarktowerdata@3.0.0
+
 ## 0.1.2
 
 ### Patch Changes
