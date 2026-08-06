@@ -155,8 +155,12 @@ export function createDisplayAdapter(opts: {
           const { ticks = 1 } = op as { channel: 'wait'; ticks?: number };
           snapshots.push({ data: packFullState(), delayMs: pendingDelayMs });
           pendingDelayMs = ticks * TICKS_TO_MS;
-          // Clear transient audio so it doesn't re-fire in the next snapshot
+          // Clear transient audio + light sequence so they don't re-fire in the
+          // next snapshot — both are one-shot triggers the tower reads on the
+          // edge, but `current` is long-lived and gets packed into every later
+          // packet.
           current.audio = { sample: 0, loop: false, volume: 0 };
+          current.led_sequence = 0;
           continue;
         }
 
@@ -174,6 +178,7 @@ export function createDisplayAdapter(opts: {
     // Close the final (or only) snapshot
     snapshots.push({ data: packFullState(), delayMs: pendingDelayMs });
     current.audio = { sample: 0, loop: false, volume: 0 };
+    current.led_sequence = 0;
     return { snapshots };
   }
 

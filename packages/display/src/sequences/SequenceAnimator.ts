@@ -10,8 +10,10 @@ type GSAPTimeline = ReturnType<typeof gsap.timeline>;
 /**
  * Drives the active firmware-style led_sequence on top of the per-LED renderer.
  * One active timeline at a time; identical-id reapplies are no-ops, distinct
- * ids cancel-and-restart. Returns whether a sequence is currently driving the
- * LEDs so callers can suppress their normal per-LED replay.
+ * ids cancel-and-restart, and an id that already ran to completion stays
+ * latched off until an `apply(0)` re-arms it. Returns whether a sequence is
+ * currently driving the LEDs so callers can suppress their normal per-LED
+ * replay.
  *
  * Backed exclusively by the JSON-driven `SequencePlayer`. Sequence data lives
  * in `src/sequences/data/*.json`, parsed at module load into
@@ -29,11 +31,22 @@ export class SequenceAnimator {
    * mid-playback. Cleared automatically when the timeline completes.
    */
   private currentIsTransient = false;
+  /**
+   * Id of the last sequence that ran to completion. `led_sequence` is a
+   * one-shot trigger riding inside a full-state snapshot, and the snapshot
+   * keeps carrying it after the sequence ends — so without this latch every
+   * later `applyState` (drum rotate, LED click, view switch, GLB reload)
+   * would rebuild the timeline and replay it. `apply(0)`, `stop()` and
+   * `applyTransient()` all re-arm.
+   */
+  private lastCompletedId = 0;
 
   constructor(private readonly deps: SequenceAnimatorDeps) {}
 
   apply(sequenceId: number, onComplete: () => void): boolean {
     if (sequenceId === 0) {
+      // A zero between triggers means "fire again next time".
+      this.lastCompletedId = 0;
       // Don't kill a transient-driven sequence with state-mirror resets.
       if (this.currentIsTransient && this.currentTimeline) {
         return true;
@@ -43,6 +56,10 @@ export class SequenceAnimator {
     }
     if (sequenceId === this.currentSequenceId && this.currentTimeline) {
       return true;
+    }
+    // Already played to completion — this is a stale snapshot, not a retrigger.
+    if (sequenceId === this.lastCompletedId) {
+      return false;
     }
     this.stop();
 
@@ -101,6 +118,7 @@ export class SequenceAnimator {
     this.currentTimeline = null;
     this.currentSequenceId = 0;
     this.currentIsTransient = false;
+    this.lastCompletedId = 0;
   }
 
   isActive(sequenceId: number): boolean {
@@ -113,6 +131,7 @@ export class SequenceAnimator {
 
   private wrapComplete(onComplete: () => void): () => void {
     return () => {
+      this.lastCompletedId = this.currentSequenceId;
       this.currentSequenceId = 0;
       this.currentTimeline = null;
       this.currentIsTransient = false;

@@ -705,7 +705,17 @@ If `bindSequenceToSample` is enabled in the audio config and the sequence has a 
 
 Returns `true` if the sequence started (or was already running), `false` for an unknown id. State-driven drums, individual LEDs, and seal visibility continue to apply normally during transient playback — only `SequenceAnimator.apply(0)` is suppressed. No-op (returns `false`) when the display has no 3D renderer.
 
+`playSequence` is never suppressed by the completed-id latch below — it is an explicit command, so calling it twice with the same id plays the sequence twice.
+
 See [AUDIO](AUDIO.md#one-shot-transient-playback-playsample) for the architectural rationale (same model as `playSample`).
+
+##### `led_sequence` is a one-shot trigger — the completed-id latch — 1.1.1+
+
+`state.led_sequence` rides inside a _full-state snapshot_, but it is an edge trigger: the sequence should fire once, when the id arrives. Consumers that mirror snapshots keep re-sending the same id long after the sequence ended (a drum rotation, an LED click, a renderer switch and a GLB reload all re-apply the stored state), and every one of those used to rebuild the timeline and replay the whole sequence.
+
+`SequenceAnimator` now latches the id of the last sequence that ran to completion and refuses to rebuild it. An `apply(0)` — i.e. any state carrying `led_sequence: 0` — re-arms, so a deliberate re-trigger of the same sequence just needs a zero in between. `stop()` and `applyTransient()` also re-arm.
+
+**If you drive the display from full-state snapshots, clear `led_sequence` after sending it** rather than relying on the latch — that is what `ultimatedarktower` itself does on every tower response. The latch is a backstop for the receiving side, and it does not cover the physical tower, which sees the raw packet.
 
 The bundled default pack ships in the package — no consumer setup is required for audio to work. See [AUDIO](AUDIO.md) for the full guide, including pack authoring, sequence binding, and bundler-compatibility notes.
 
