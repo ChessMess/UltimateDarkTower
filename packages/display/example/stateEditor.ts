@@ -35,7 +35,16 @@ function applyAndShow(
   els: DomElements,
   fromUserGesture = true,
 ): void {
-  setLastState(state);
+  // Remember a *resting* copy. `led_sequence` and `audio.sample` are both
+  // one-shot triggers, so states derived from this one (drum rotate, config
+  // editor, view switch, pop-out) must not carry them forward and re-fire the
+  // light sequence or its sound. Same rule `UltimateDarkTower` applies to every
+  // tower response — see its `updateTowerStateFromResponse`.
+  setLastState(
+    state.led_sequence || state.audio.sample
+      ? { ...state, led_sequence: 0, audio: { ...state.audio, sample: 0 } }
+      : state,
+  );
   if (fromUserGesture) {
     armTowerAudioFromUserGesture(els);
   }
@@ -150,15 +159,11 @@ export function initStateEditor(
         ];
       const label = meta ? formatSequenceName(meta.name) : `sequence 0x${sequenceId.toString(16)}`;
       setStateName(label, els);
-      getDisplay().showIdle();
-      getReadout().showIdle();
-      applyAndShow(
-        createSequenceState(sequenceId, getLastState() ?? undefined),
-        getDisplay,
-        getReadout,
-        setLastState,
-        els,
-      );
+      // Empty state first: every sequence plays from a clean tower. The
+      // `led_sequence: 0` it carries is also what re-arms SequenceAnimator, so
+      // clicking the same sequence twice in a row replays it.
+      applyAndShow(createEmptyState(), getDisplay, getReadout, setLastState, els);
+      applyAndShow(createSequenceState(sequenceId), getDisplay, getReadout, setLastState, els);
     });
   }
 

@@ -625,7 +625,7 @@ Note the **track order** for the flurry phase: `discreteSet` (random drop) is re
 ## Pitfalls and FAQ
 
 **Q: I added a JSON file but the player doesn't seem to use it.**
-Check [src/sequences/jsonSequences.ts](../src/sequences/jsonSequences.ts) — your file needs an entry in both the import block and the `JSON_SEQUENCE_DATA` map. If a sequence id has no entry, `SequenceAnimator.apply(id)` returns `false` and the renderer plays nothing for it. The completeness assertion in `parity.test.ts` should catch this in CI.
+Check [src/sequences/jsonSequences.ts](../src/sequences/jsonSequences.ts) — your file needs an entry in both the import block and the `JSON_SEQUENCE_DATA` map. If a sequence id has no entry, `SequenceAnimator.apply(id)` returns `false` and the renderer plays nothing for it. The completeness assertion in `parity.test.ts` should catch this in CI. (`apply()` also returns `false` for an id that already ran to completion — see [API §the completed-id latch](API.md#led_sequence-is-a-one-shot-trigger--the-completed-id-latch--111) — so when debugging a sequence that "does nothing", check whether a `led_sequence: 0` ever arrived to re-arm it.)
 
 **Q: My JSON parses but the parity test fails.**
 The error message names the first divergence (`tick X, LED (Y, Z): TS=A, JSON=B`). Walk through what each side does at that tick and find where they differ. Common causes: track order wrong, wrong RNG draw order in a custom handler, off-by-one on `endTick` (it's exclusive), wrong `from` on a `subtractAll` shadow.

@@ -74,6 +74,49 @@ describe('SequenceAnimator state-driven apply (existing behavior, unchanged)', (
   });
 });
 
+describe('SequenceAnimator completed-id latch', () => {
+  const noop = (): void => {
+    /* */
+  };
+
+  it('a completed sequence does not replay when a stale snapshot re-applies the same id', () => {
+    const { animator } = makeAnimator();
+    animator.apply(SEQ_DEFEAT, noop);
+    gsapMock.__getTimelines().at(-1)!.__fireComplete();
+
+    // Every later applyState (drum rotate, LED click, view switch) still
+    // carries the spent led_sequence — it must not rebuild the timeline.
+    const before = gsapMock.__getTimelines().length;
+    expect(animator.apply(SEQ_DEFEAT, noop)).toBe(false);
+    expect(gsapMock.__getTimelines().length).toBe(before);
+    expect(animator.isActive(SEQ_DEFEAT)).toBe(false);
+  });
+
+  it('apply(0) re-arms, so the same id fires again afterwards', () => {
+    const { animator } = makeAnimator();
+    animator.apply(SEQ_DEFEAT, noop);
+    gsapMock.__getTimelines().at(-1)!.__fireComplete();
+    animator.apply(0, noop);
+
+    const before = gsapMock.__getTimelines().length;
+    expect(animator.apply(SEQ_DEFEAT, noop)).toBe(true);
+    expect(gsapMock.__getTimelines().length).toBe(before + 1);
+    expect(animator.isActive(SEQ_DEFEAT)).toBe(true);
+  });
+
+  it('applyTransient still re-fires an id that just completed', () => {
+    const { animator } = makeAnimator();
+    animator.applyTransient(SEQ_DEFEAT);
+    gsapMock.__getTimelines().at(-1)!.__fireComplete();
+
+    // playSequence() is an explicit command, never latched.
+    const before = gsapMock.__getTimelines().length;
+    expect(animator.applyTransient(SEQ_DEFEAT)).toBe(true);
+    expect(gsapMock.__getTimelines().length).toBe(before + 1);
+    expect(animator.isActive(SEQ_DEFEAT)).toBe(true);
+  });
+});
+
 describe('SequenceAnimator transient mode (new in 0.7.0)', () => {
   it('applyTransient(seqId) starts the sequence and returns true', () => {
     const { animator } = makeAnimator();

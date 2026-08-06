@@ -111,7 +111,7 @@ Lift this pattern any time your app might recreate the display: keep broken-seal
 
 ## Panel: Light Effects
 
-A dropdown lists every `TOWER_LIGHT_SEQUENCES` entry from UDT — about 20 named sequences (angry, defeat, dungeon idle, gloat, seal reveal, victory, drum rotation, etc.). The Trigger button calls `display.applyState(stateWithSequence, true)`. The `force: true` flag bypasses the audio-dedup so the same sample replays on a second click.
+A dropdown lists every `TOWER_LIGHT_SEQUENCES` entry from UDT — about 20 named sequences (angry, defeat, dungeon idle, gloat, seal reveal, victory, drum rotation, etc.). The Trigger button applies an **empty state first**, then `display.applyState(stateWithSequence, true)` — so every sequence plays from a clean tower, and the `led_sequence: 0` in that empty state re-arms the animator's completed-id latch so clicking the same sequence twice in a row replays it (see [API §the completed-id latch](API.md#led_sequence-is-a-one-shot-trigger--the-completed-id-latch--111)). The `force: true` flag bypasses the audio-dedup so the same sample replays on a second click.
 
 The audio side: the example uses `DEFAULT_SEQUENCE_AUDIO_MAP` (exported from the library) to look up the `TOWER_AUDIO_LIBRARY` sample for each sequence. The bundled default sound pack ships with the package, so playback works out of the box. To rebind sequences to different samples, build your own map with `buildSequenceAudioMap({ victory: 'TowerGloat1', ... })` and pass it via `applyAudioConfig({ sequenceMap, bindSequenceToSample: true })`.
 

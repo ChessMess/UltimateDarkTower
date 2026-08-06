@@ -61,8 +61,8 @@ export function createAllOnState(): TowerState {
 
 export const SEQUENCE_AUDIO_MAP: Readonly<Record<number, number>> = DEFAULT_SEQUENCE_AUDIO_MAP;
 
-export function createSequenceState(sequenceId: number, base?: TowerState): TowerState {
-  const state = base ? structuredClone(base) : createDefaultTowerState();
+export function createSequenceState(sequenceId: number): TowerState {
+  const state = createDefaultTowerState();
   state.led_sequence = sequenceId;
   const sample = SEQUENCE_AUDIO_MAP[sequenceId];
   if (sample !== undefined) {
