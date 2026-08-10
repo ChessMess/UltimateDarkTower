@@ -20,7 +20,7 @@
   "license": "MIT",
   "dependencies": {
     "@stoprocent/bleno": "^0.13.1",
-    "@stoprocent/noble": "^2.6.5",
+    "@stoprocent/noble": "^2.7.1",
     "electron-squirrel-startup": "^1.0.1",
     "ultimatedarktower": "workspace:^",
     "ultimatedarktowerrelay-core": "workspace:^",
