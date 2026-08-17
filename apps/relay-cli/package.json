@@ -1,6 +1,6 @@
 {
   "name": "ultimatedarktowerrelay-cli",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "private": false,
   "description": "UltimateDarkTowerRelay CLI — headless relay daemon (BLE tower emulator + WebSocket relay) for servers, Raspberry Pi, Docker, or an always-on host.",
   "type": "module",

@@ -1,5 +1,47 @@
 # @udtc/adapters
 
+## 0.3.1
+
+### Patch Changes
+
+- a00cf63: Fix: `createDisplayAdapter` no longer re-fires a light sequence on every subsequent op.
+
+  `light.named` stamped `current.led_sequence = numId` onto the adapter's long-lived
+  `TowerState` and never cleared it — unlike `current.audio`, which was already reset in
+  both places. Since `packFullState()` packs byte 18 into every snapshot pushed to the
+  relay, the **physical tower** re-ran the light sequence on each later drum rotation,
+  sound, or seal op in the same program.
+
+  `led_sequence` is now cleared alongside `current.audio`, at the `wait` boundary and at
+  the end of `program()`.
+
+- Updated dependencies [99f396e]
+- Updated dependencies [6961078]
+- Updated dependencies [6961078]
+- Updated dependencies [c4b5e89]
+- Updated dependencies [5f9deec]
+- Updated dependencies [c4b5e89]
+- Updated dependencies [c4b5e89]
+- Updated dependencies [af416e7]
+- Updated dependencies [974549e]
+- Updated dependencies [9046309]
+- Updated dependencies [23cfe9f]
+- Updated dependencies [6961078]
+- Updated dependencies [f41fd0c]
+- Updated dependencies [f41fd0c]
+- Updated dependencies [a00cf63]
+- Updated dependencies [f41fd0c]
+- Updated dependencies [23d4db8]
+- Updated dependencies [6961078]
+- Updated dependencies [5c900e4]
+- Updated dependencies [af416e7]
+  - ultimatedarktowerboard@3.0.0
+  - ultimatedarktowerdisplay@2.0.0
+  - ultimatedarktowerdata@3.0.0
+  - @udtc/engine@0.2.1
+  - @udtc/schema@0.3.1
+  - ultimatedarktower@7.1.2
+
 ## 0.3.0
 
 ### Minor Changes

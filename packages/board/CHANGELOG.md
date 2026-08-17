@@ -1,5 +1,115 @@
 # Changelog
 
+## 3.0.0
+
+### Minor Changes
+
+- 6961078: Add `skullsInKingdom(state, kingdom, board?)` and `destroyedInKingdom(state, kingdom, board?)`
+  selectors — the per-kingdom rollup the editing UI's Summary panel already computed internally,
+  now available to any host. `board` is optional (defaults to the built-in RtDT board), matching
+  `createDefaultBoardState`'s existing optional-board idiom.
+
+  A destroyed building now renders as the `wasteland` marker (2D and 3D) instead of a
+  programmatic red X — a real host asset instead of a placeholder, using the same art-resolution
+  path every other token goes through (falls back to a tinted disc when the asset is missing). The
+  editing UI's Summary panel column is renamed "Razed" → "Destroyed" to match; nothing else about
+  its shape changed (still per-kingdom heroes/foes/skulls/destroyed/markers/quests/adversary
+  counts).
+
+- 6961078: `BoardStageView` gains an opt-in `shakeButtons` toolbar option (default off, matching
+  `towerToggle`'s convention): "Shake Skulls" and "Shake Tower" buttons next to Pop Out / Tower
+  3D. Both are disabled until the 3D tower is enabled; "Shake Skulls" additionally needs a
+  `SkullPhysicsHandle` handed in via the new `setSkullPhysicsHandle(handle | null)` method, since
+  `packages/board` doesn't attach skull physics itself — the host app does, and now hands the
+  stage a reference so its own toolbar button can trigger it.
+
+  Also: Tower 3D / Shake Skulls / Shake Tower / Swap / Pop Out now share the mode-switcher
+  pills' visual style (gold border, panel-fill background, gradient fill when active) instead of
+  the plain bordered "action" look, so the whole toolbar reads as one consistent style.
+
+- c4b5e89: New `makeTokenImageResolver(urls)` export on `ultimatedarktowerboard` — builds a
+  `resolveTokenImage` callback from a `'<group>/<file>' → URL` map, for consumers whose art comes
+  from a bundler (hashed filenames) rather than a static directory.
+
+  It runs the library's own resolution against a sentinel base and maps the result through the
+  supplied map, so the `OFFICIAL_2D_ICON` / `OFFICIAL_HERO_ART` / `OFFICIAL_QUEST_ART` tables stay
+  the single source of truth instead of being re-implemented in each consumer.
+
+  ```ts
+  import { makeTokenImageResolver } from 'ultimatedarktowerboard';
+  import { tokenUrls, tokenArt } from '@udtc/assets/tokens';
+
+  new BoardStageView({ resolveTokenImage: makeTokenImageResolver(tokenUrls), tokenArt, ... });
+  ```
+
+  **`assetBaseUrl` is unchanged and not deprecated** — it remains the right choice when self-hosting
+  art at a stable path.
+
+  Note it covers **images only**. 3D models still resolve through `defaultTokenModelPath`, which is
+  `assetBaseUrl`-driven, so supply those via `tokenArt.<kind>.<id>.model3d` (`@udtc/assets/tokens`
+  exports a ready-made `tokenArt` carrying the skull model). Replacing `assetBaseUrl` with only
+  `resolveTokenImage` would silently drop the skull GLB to a sprite billboard.
+
+  `@udtc/assets` gains its `./tokens` and `./board` entry points, holding the 84 unique token images
+  (previously three drifting copies), the skull GLB and both board variants. The board demo, Token
+  Art Forge, Token Designer and location-marker pages all now resolve art through the package.
+
+- af416e7: Add a floating zoom widget to each `BoardStageView` render pane. Both panes already
+  supported zoom (2D: cursor-anchored wheel-zoom/pan/spin; 3D: Display's OrbitControls) but
+  had no visible control, so it was undiscoverable without a wheel or trackpad. A pill-shaped
+  capsule docks bottom-left of each pane (dimmed until hovered) with circular `−`/`+` buttons
+  around a live "N%" percentage readout:
+
+  - **2D pane**: `− / N% / + / ⟲` (reset), calling a new `BoardMap2D.zoomBy(factor, fx?, fy?)`
+    method — the same clamped, focus-bounded math the wheel handler uses, just without a
+    wheel event. The percentage is driven by a new `onZoomChange` option on `BoardMap2D`/
+    `BoardRenderView`, so it tracks wheel-zoom too, not just the buttons. Hidden when
+    `enableZoom: false`.
+  - **3D pane**: `− / N% / +`, dollying the camera via Display's existing
+    `applyCameraConfig({ distanceFactor }, { preserveView: true })` so the orbit angle and
+    pan are preserved (no reset button — the 3D pane already has Center/Reset). The
+    percentage is driven by Display's new `Tower3DView.onZoomChange` (see the
+    `ultimatedarktowerdisplay` changeset), so it's live for wheel-zoom, orbit-drag zoom, and
+    Center/Reset too, not just this widget's own buttons.
+
+  `BoardStageView.resetLayout()` now also resets the 2D map's zoom/spin, matching the other
+  layout state it already clears. `createSegmented()`'s items gained an optional `title`
+  field (sets `title` + `aria-label`) so icon-only buttons like these have accessible names.
+
+### Patch Changes
+
+- 99f396e: Add a `dev:<name>` convenience script (`dev:board` / `dev:display` /
+  `dev:mcp-server`) as an alias for the existing demo/dev command — no
+  behavior change.
+- 23cfe9f: Promote the updated foe token art (brigands, oreks, shadow-wolves, spine-fiends,
+  frost-trolls, clan-of-neuri, lemures, widowmade-spiders, dragons, mormos, striga,
+  titans) from the demo's per-token overrides into the library's built-in 2D default
+  icon table, so every consumer gets the new art without needing a `tokenArt` override.
+- 23d4db8: Add skull tokens to the library defaults for both 3D models and 2D images:
+
+  - `Board3DPlugin.resolveModel()` now falls through to `defaultTokenModelPath()`, mapping skulls
+    to a 3D GLB model by convention. Apps no longer need a per-token `tokenArt.skull.model3d`
+    override — the library resolves the model at `${assetBaseUrl}markers/skull.glb` automatically.
+  - `resolveTokenImageFor()` now includes skull in the `OFFICIAL_2D_ICON` table, so both the 2D map
+    and 3D sprite fallbacks render the nice `${assetBaseUrl}markers/grey-skull.png` image instead of
+    a generic colored disc.
+
+- Updated dependencies [99f396e]
+- Updated dependencies [5f9deec]
+- Updated dependencies [c4b5e89]
+- Updated dependencies [c4b5e89]
+- Updated dependencies [974549e]
+- Updated dependencies [9046309]
+- Updated dependencies [f41fd0c]
+- Updated dependencies [f41fd0c]
+- Updated dependencies [a00cf63]
+- Updated dependencies [f41fd0c]
+- Updated dependencies [6961078]
+- Updated dependencies [5c900e4]
+- Updated dependencies [af416e7]
+  - ultimatedarktowerdisplay@2.0.0
+  - ultimatedarktowerdata@3.0.0
+
 ## 2.0.1
 
 ### Patch Changes
