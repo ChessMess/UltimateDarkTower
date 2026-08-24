@@ -11,15 +11,15 @@ packages:
 # three, node) across every package. 5.9.3 is what the packages were authored on.
 catalog:
   typescript: ^5.9.3
-  vitest: ^4.1.10
+  vitest: ^4.1.11
   # Coverage provider for vitest. Its peer range on vitest is exact, so these two
   # must be bumped together — that's the main reason it belongs in the catalog.
-  '@vitest/coverage-v8': ^4.1.10
+  '@vitest/coverage-v8': ^4.1.11
 
   # Build/test tooling shared across many workspaces.
-  vite: ^8.2.1
+  vite: ^8.2.2
   jsdom: ^25.0.0
-  '@vitejs/plugin-react': ^6.0.5
+  '@vitejs/plugin-react': ^6.1.0
   '@types/node': ^22.0.0
 
   # Runtime libraries. three is the load-bearing one: .npmrc force-hoists it so

@@ -85,7 +85,7 @@
     }
   },
   "devDependencies": {
-    "@stoprocent/noble": "^2.7.1",
+    "@stoprocent/noble": "^2.8.0",
     "@types/node": "catalog:",
     "@types/web-bluetooth": "^0.0.21",
     "@vitest/coverage-v8": "catalog:",
