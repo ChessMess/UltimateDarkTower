@@ -43,7 +43,7 @@
     "ultimatedarktower": "workspace:^"
   },
   "devDependencies": {
-    "esbuild": "^0.28.1",
+    "esbuild": "^0.28.2",
     "ws": "catalog:",
     "@types/ws": "catalog:",
     "vitest": "catalog:"

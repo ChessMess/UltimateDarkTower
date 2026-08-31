@@ -37,7 +37,7 @@
     "zustand": "catalog:"
   },
   "devDependencies": {
-    "@testing-library/react": "^16.3.2",
+    "@testing-library/react": "^16.3.3",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
