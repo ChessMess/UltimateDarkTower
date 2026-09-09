@@ -26,7 +26,7 @@
     "@udtc/scenario-store": "workspace:*",
     "@udtc/schema": "workspace:*",
     "@udtc/theme": "workspace:*",
-    "@xyflow/react": "^12.0.0",
+    "@xyflow/react": "^12.11.6",
     "gsap": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
