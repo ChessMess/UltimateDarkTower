@@ -77,23 +77,39 @@ catalog:
 overrides:
   tar: ^7.5.22
   tmp: ^0.2.7
-  fast-uri: ^3.1.5
+  # 3.1.6 patches four SSRF/host-confusion advisories (GHSA-5jgf-p345-68v8,
+  # GHSA-fph4-wmhf-6fwf, GHSA-f65p-4m7j-42xc, GHSA-jqff-g426-hqxp). Reaches
+  # production: ajv <- @udtc/schema, @udtc/adapters, mcp-server.
+  fast-uri: ^3.1.6
   "minimatch@10.2.5>brace-expansion": ^5.0.8
   "brace-expansion@2": ^2.1.4
   # Only the 6.x copy is flagged (node-gyp <- @electron/rebuild, build-time); the 7.x copy that
   # electron itself pulls is already patched and must not be dragged back.
   "undici@6": ^6.28.0
-  hono: ^4.12.34
+  # GHSA advisories CVE-2026-8438x (3x MEDIUM) fixed in 4.13.5. Production:
+  # @hono/node-server <- @modelcontextprotocol/sdk <- mcp-server.
+  hono: ^4.13.5
   # js-yaml maintains parallel 3.x/4.x lines; GHSA-5p4m-2wfm-xmqj (!!omap quadratic
   # CPU) was patched in both. Both copies are changesets tooling (3.15.0 via
   # read-yaml-file <- @manypkg/get-packages, 4.3.0 direct). Scoped per-major
   # because 3.x consumers use the pre-4.x API (safeLoad et al).
-  "js-yaml@3": ^3.15.1
-  "js-yaml@4": ^4.3.1
+  "js-yaml@3": ^3.15.2
+  "js-yaml@4": ^4.3.2
   # GHSA-2v37-7h3g-55p8: custom generators loop forever on size 0. Build-time only
   # (postcss <- vite), but the patch is a same-line 3.3.18. Scoped to 3.x so a
   # future 5.x/6.x consumer isn't dragged back to the ESM-less 3 line.
   "nanoid@3": ^3.3.18
+  # GHSA-4mjr-xmp4-gh2g / GHSA-x5fp-wj9c-mxmx: DoS via attacker-controlled
+  # isBuffer, and an array-limit bypass. Production: express/body-parser <-
+  # mcp-server. Two copies resolve (6.15.1, 6.15.3); both are in range.
+  qs: ^6.16.0
+  # Thirteen advisories against 0.9.10 (injection bypasses of requireWellFormed
+  # plus several quadratic-blowup DoS paths), all fixed by 0.9.12. Build-time
+  # only: plist <- @electron/osx-sign / @electron/packager <- electron-forge.
+  "@xmldom/xmldom": ^0.9.12
+  # GHSA-73wf-gq98-2v4g: prototype write via untrusted browserslist-stats.json.
+  # Build-time only (webpack <- electron-forge, and @babel/helper-compilation-targets).
+  browserslist: ^4.28.7
 
 # electron-forge's @electron/rebuild depends on a git-hosted @electron/node-gyp
 # fork; pnpm 11 blocks git-hosted subdeps by default. Allow them so the electron
@@ -118,4 +134,4 @@ allowBuilds:
   unrs-resolver: true
 
 minimumReleaseAgeExclude:
-  - hono@4.12.34
+  - hono@4.13.5
