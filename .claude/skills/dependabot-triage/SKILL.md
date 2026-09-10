@@ -13,7 +13,9 @@ description: >-
   the repo's CI protocol. Encodes this repo's traps (minimumReleaseAge age gate,
   catalog: typescript, build-before-test order, clean-main worktree regression
   attribution, electron-rebuild for tar overrides, transient Actions flakes,
-  concurrency cancel-in-progress) and keeps every merge/publish/dismiss behind
+  concurrency cancel-in-progress, the two permanently unfixable
+  extract-zip/image-size alerts, and the lockfile-staleness refresh that clears
+  more alerts than editing overrides) and keeps every merge/publish/dismiss behind
   explicit human confirmation.
 ---
 
@@ -58,20 +60,38 @@ its transitive parents. Read that last section carefully (see Step 2).
 
 ## Step 2 — Classify each root cause
 
-For every flagged package, answer two questions:
+For every flagged package, answer three questions:
 
-1. **Is the flagged copy a vulnerable _duplicate_, or the live version?** If a
+1. **Is it one of the two known-unfixable ones?** If the only packages left are
+   `extract-zip` and `image-size`, the repo is already clean — both are
+   permanently unpatchable, build-time only, and every fix route has been chased
+   to a dead end. Read `references/repo-gotchas.md` §11 rather than
+   re-investigating; re-deriving it costs an hour.
+2. **Is the flagged copy a vulnerable _duplicate_, or the live version?** If a
    patched copy already resolves in-tree (e.g. `tar@7.5.19`) alongside an old one
    (`tar@6.2.1`), the fix is usually to collapse the old duplicate onto the
    patched one, not a scary upgrade. A vulnerable range like `<= 7.5.15` that
    also covers _all of 6.x_ is the tell that an old major is what's flagged.
-2. **What's the reachability?** Production-runtime (shipped in a published
+3. **What's the reachability?** Production-runtime (shipped in a published
    `dist`, run by consumers) vs dev/build-time (bundlers, test tooling, electron
    packaging, CLI prompts). Dependabot's `scope: runtime` label reflects the
    dep's _own_ manifest, not this project's use — verify with the parents. See
    `references/repo-gotchas.md` §9 for the concrete build-only sources here.
 
-## Step 3 — Choose remediation
+## Step 3 — Refresh the lockfile BEFORE editing anything
+
+Run `pnpm update`, reinstall, and re-check which alerts survive. Dependabot
+files PRs against _manifests_; it never refreshes a lockfile that has drifted
+below the ranges `package.json` already allows. Historically this alone cleared
+**4 of 7** alerts here (and 3 of 4 on metal-and-cleats) with no override touched —
+including four where an existing override's range already permitted the patch.
+Only what survives the refresh needs a manifest edit.
+
+⚠ `pnpm update` also rewrites `package.json` ranges to new floors. Revert that
+and re-derive the lockfile against the original ranges — see
+`references/repo-gotchas.md` §12.
+
+## Step 4 — Choose remediation
 
 | Situation                                                             | Fix                                                                                                                |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -84,7 +104,7 @@ Keep the change minimal and mechanical. Before touching a build-tool major
 full playbook for either, including the known CJS-build regressions
 (`references/repo-gotchas.md` §8) that bit us last time.
 
-## Step 4 — Apply
+## Step 5 — Apply
 
 Branch off `main` (`git checkout -b security/<slug> main`). Edit the manifests /
 `pnpm-workspace.yaml` overrides. Then `pnpm install` to regenerate the lockfile,
@@ -99,7 +119,7 @@ If a published package's `package.json` changed, add a Changesets entry
 (`.changeset/<slug>.md`, `patch` unless it changes public behavior) per the
 repo's release flow.
 
-## Step 5 — Verify (this is where the repo bites)
+## Step 6 — Verify (this is where the repo bites)
 
 Mirror CI exactly — build before test, full graph:
 
@@ -117,7 +137,7 @@ pnpm run ci      # validate:nodes → lint → format:check → build → typech
   (it has no `build` script). Verify explicitly:
   `pnpm --filter ultimatedarktowerrelay-electron rebuild:native` (§5).
 
-## Step 6 — Ship (each step gated by the guardrails)
+## Step 7 — Ship (each step gated by the guardrails)
 
 1. Commit, push, open the PR (`gh pr create`).
 2. Watch checks: `gh pr checks <n> --watch`. Both the `checks` job and the

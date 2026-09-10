@@ -16,6 +16,8 @@ Each entry says how to recognize it and what to actually do.
 8. Known past regressions to sanity-check (not re-derive)
 9. Dev/build-time vs production-runtime reachability in this repo
 10. TypeScript 6.0 / Vite-major upgrades — see `major-version-upgrades.md`
+11. `extract-zip` / `image-size` — the two permanently unfixable alerts
+12. Stale lockfiles, not bad ranges — run `pnpm update` before editing anything
 
 ---
 
@@ -202,3 +204,101 @@ Both are ignored by `dependabot.yml` (see §2 for `typescript`; a global
 an automatic Dependabot PR — any attempt is hand-driven. The full step-by-step
 playbook for either lives in a dedicated file, not here — see
 [`major-version-upgrades.md`](./major-version-upgrades.md).
+
+## 11. `extract-zip` / `image-size` — the two permanently unfixable alerts
+
+**If a triage shows exactly these two packages and nothing else, you are done —
+the repo is clean. Do not re-investigate.** Fully chased on 2026-09-10; all
+three fix routes are closed, with evidence. Re-deriving this costs an hour.
+
+| Alert                                | Package       | In tree | Patched version |
+| ------------------------------------ | ------------- | ------- | --------------- |
+| GHSA-jmr9-qjv8-65gv (CVE-2026-56876) | `extract-zip` | 2.0.1   | **none, ever**  |
+| GHSA-7pqw-9j4j-h8q3 (CVE-2026-19693) | `extract-zip` | 2.0.1   | **none, ever**  |
+| GHSA-5p2g-fcmc-qvqq (CVE-2025-71329) | `image-size`  | 0.7.5   | **none, ever**  |
+| GHSA-w3rx-r6r6-pgpr (CVE-2025-71330) | `image-size`  | 0.7.5   | **none, ever**  |
+
+Paths, both build-time only, both via electron-forge:
+
+- `extract-zip` ← `@electron/packager@18.4.4` ← `@electron-forge/core` ← `apps/relay-electron` (devDeps)
+- `image-size` ← `appdmg` ← `electron-installer-dmg` ← `@electron-forge/maker-dmg` (devDeps)
+
+### The three closed routes
+
+1. **Upgrade the package.** `extract-zip@2.0.1` is the newest release and npm's
+   `time.modified` is 2023-03-04 — unmaintained for three years.
+   `first_patched_version` is genuinely `null`.
+
+2. **Alias-override to Electron's fork.** Tempting and wrong. `@electron/packager@20`
+   replaced `extract-zip` with `@electron-internal/extract-zip`, which is already
+   in the tree (pulled by `electron` itself) and carries no advisories. But it is a
+   **complete rewrite**: ~23 lines delegating to a native binding, and
+   `"type": "module"`. Packager 18 does `require("extract-zip")` in
+   `dist/unzip.js` and the original is CommonJS, so the alias throws
+   `ERR_REQUIRE_ESM`. Not a drop-in.
+
+3. **Force `@electron/packager: ^20.3.0`.** This _does_ remove `extract-zip` from
+   the tree entirely — and then breaks packaging:
+
+   ```
+   electron-forge package
+     TypeError: done is not a function
+       at @electron-forge/core/dist/api/package.js:76:13
+   ```
+
+   Forge 7.11.2 declares `@electron/packager: ^18.3.5` and calls it with an API
+   that 20 changed. Verified by attribution: packaging exits 0 on 18.4.4 and
+   fails on 20.3.0, same command, same tree.
+
+### What actually fixes it
+
+**electron-forge 8.** `@electron-forge/core@8.0.0-alpha.10` already depends on
+`@electron/packager ^20.0.1`, which is the version that dropped `extract-zip`.
+Only alphas exist as of 2026-09-10; 7.11.2 is the newest stable. When forge 8
+ships stable, these alerts disappear for free — and note `dependabot.yml`
+ignores `version-update:semver-major`, so **nobody will tell you it shipped**.
+Check by hand: `npm view @electron-forge/cli version`.
+
+### Why they are safe to sit on
+
+`extract-zip` is called from exactly one place — `Packager.extractElectronZip()`
+— on the Electron distribution zip that `@electron/get` has just downloaded and
+**SHA256-verified against the official `SHASUMS256.txt`**. Exploiting the symlink
+traversal would mean compromising Electron's release artifacts _and_ their
+checksums. Both packages are devDependencies, run at build time, and ship to no
+consumer. The CVSS scores (8.6 for `extract-zip`) assume attacker-controlled zip
+input, which this repo does not have.
+
+Recommend dismissing as `tolerable_risk` with that rationale written in — but
+dismissal is a **user decision**, per the guardrails at the top of `SKILL.md`.
+
+## 12. Stale lockfiles, not bad ranges — run `pnpm update` first
+
+**The single highest-yield triage step, and it is not in Dependabot's job
+description.** Dependabot opens PRs against _manifest_ entries. It does not
+refresh a lockfile that has drifted below the ranges `package.json` already
+declares. So an advisory can sit open against a tree that is one `pnpm update`
+from clean, with no version floor anywhere at fault.
+
+Measured on 2026-09-09/10, before touching a single override:
+
+| Repo               | Alerts fixed by `pnpm update` alone         |
+| ------------------ | ------------------------------------------- |
+| UltimateDarkTower  | 4 of 7                                      |
+| metal-and-cleats   | 3 of 4                                      |
+| board-game-creator | 2 of 4 criticals, plus most of the other 86 |
+
+Concretely here: `fast-uri` had an override of `^3.1.5` while 3.1.6 was the
+patch — the range already permitted it. Same for `js-yaml@3` (`^3.15.1` →
+3.15.2), `js-yaml@4` (`^4.3.1` → 4.3.2) and `hono` (`^4.12.34` → 4.13.5). Four
+HIGH/MEDIUM advisories, zero range problems.
+
+**So: run `pnpm update` and re-check the alerts BEFORE adding or raising any
+override.** Only what survives that needs a manifest edit.
+
+⚠ **`pnpm update` also rewrites `package.json` ranges to new floors** (pnpm 11
+behaviour). That is scope creep in a security PR and it manufactures exactly the
+maintenance treadmill overrides are criticised for. Revert `package.json`, then
+re-run `pnpm install` to re-derive the lockfile against the original ranges — if
+the patched versions still resolve (they usually do), ship the lockfile alone and
+leave the manifest untouched.
