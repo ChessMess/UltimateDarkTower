@@ -81,7 +81,7 @@ For every flagged package, answer three questions:
 ## Step 3 — Refresh the lockfile BEFORE editing anything
 
 Run `pnpm update`, reinstall, and re-check which alerts survive. Dependabot
-files PRs against *manifests*; it never refreshes a lockfile that has drifted
+files PRs against _manifests_; it never refreshes a lockfile that has drifted
 below the ranges `package.json` already allows. Historically this alone cleared
 **4 of 7** alerts here (and 3 of 4 on metal-and-cleats) with no override touched —
 including four where an existing override's range already permitted the patch.

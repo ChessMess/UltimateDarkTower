@@ -211,12 +211,12 @@ playbook for either lives in a dedicated file, not here — see
 the repo is clean. Do not re-investigate.** Fully chased on 2026-09-10; all
 three fix routes are closed, with evidence. Re-deriving this costs an hour.
 
-| Alert | Package | In tree | Patched version |
-| --- | --- | --- | --- |
-| GHSA-jmr9-qjv8-65gv (CVE-2026-56876) | `extract-zip` | 2.0.1 | **none, ever** |
-| GHSA-7pqw-9j4j-h8q3 (CVE-2026-19693) | `extract-zip` | 2.0.1 | **none, ever** |
-| GHSA-5p2g-fcmc-qvqq (CVE-2025-71329) | `image-size` | 0.7.5 | **none, ever** |
-| GHSA-w3rx-r6r6-pgpr (CVE-2025-71330) | `image-size` | 0.7.5 | **none, ever** |
+| Alert                                | Package       | In tree | Patched version |
+| ------------------------------------ | ------------- | ------- | --------------- |
+| GHSA-jmr9-qjv8-65gv (CVE-2026-56876) | `extract-zip` | 2.0.1   | **none, ever**  |
+| GHSA-7pqw-9j4j-h8q3 (CVE-2026-19693) | `extract-zip` | 2.0.1   | **none, ever**  |
+| GHSA-5p2g-fcmc-qvqq (CVE-2025-71329) | `image-size`  | 0.7.5   | **none, ever**  |
+| GHSA-w3rx-r6r6-pgpr (CVE-2025-71330) | `image-size`  | 0.7.5   | **none, ever**  |
 
 Paths, both build-time only, both via electron-forge:
 
@@ -237,7 +237,7 @@ Paths, both build-time only, both via electron-forge:
    `dist/unzip.js` and the original is CommonJS, so the alias throws
    `ERR_REQUIRE_ESM`. Not a drop-in.
 
-3. **Force `@electron/packager: ^20.3.0`.** This *does* remove `extract-zip` from
+3. **Force `@electron/packager: ^20.3.0`.** This _does_ remove `extract-zip` from
    the tree entirely — and then breaks packaging:
 
    ```
@@ -264,7 +264,7 @@ Check by hand: `npm view @electron-forge/cli version`.
 `extract-zip` is called from exactly one place — `Packager.extractElectronZip()`
 — on the Electron distribution zip that `@electron/get` has just downloaded and
 **SHA256-verified against the official `SHASUMS256.txt`**. Exploiting the symlink
-traversal would mean compromising Electron's release artifacts *and* their
+traversal would mean compromising Electron's release artifacts _and_ their
 checksums. Both packages are devDependencies, run at build time, and ship to no
 consumer. The CVSS scores (8.6 for `extract-zip`) assume attacker-controlled zip
 input, which this repo does not have.
@@ -275,17 +275,17 @@ dismissal is a **user decision**, per the guardrails at the top of `SKILL.md`.
 ## 12. Stale lockfiles, not bad ranges — run `pnpm update` first
 
 **The single highest-yield triage step, and it is not in Dependabot's job
-description.** Dependabot opens PRs against *manifest* entries. It does not
+description.** Dependabot opens PRs against _manifest_ entries. It does not
 refresh a lockfile that has drifted below the ranges `package.json` already
 declares. So an advisory can sit open against a tree that is one `pnpm update`
 from clean, with no version floor anywhere at fault.
 
 Measured on 2026-09-09/10, before touching a single override:
 
-| Repo | Alerts fixed by `pnpm update` alone |
-| --- | --- |
-| UltimateDarkTower | 4 of 7 |
-| metal-and-cleats | 3 of 4 |
+| Repo               | Alerts fixed by `pnpm update` alone         |
+| ------------------ | ------------------------------------------- |
+| UltimateDarkTower  | 4 of 7                                      |
+| metal-and-cleats   | 3 of 4                                      |
 | board-game-creator | 2 of 4 criticals, plus most of the other 86 |
 
 Concretely here: `fast-uri` had an override of `^3.1.5` while 3.1.6 was the
