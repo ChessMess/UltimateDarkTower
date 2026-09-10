@@ -1,6 +1,6 @@
 ---
 name: releasing
-description: Release and publish workspace packages in this monorepo with Changesets — the flow from `pnpm changeset` to the Version Packages PR to npm, what `private: true` does and doesn't change, and how to debug a failed publish (Changesets masks npm's real error with a TypeError). Use whenever a release, version bump, changeset, `changeset publish`, npm publishing, provenance, `NPM_TOKEN`, or a red Release workflow comes up.
+description: Release and publish workspace packages in this monorepo with Changesets — the flow from `pnpm changeset` to the Version Packages PR to npm, what `private: true` does and doesn't change, and how to debug a failed publish (Changesets masks npm's real error with a TypeError), and how to tell a real failure from npm replication lag before acting on it. Use whenever a release, version bump, changeset, `changeset publish`, npm publishing, provenance, `NPM_TOKEN`, or a red Release workflow comes up.
 ---
 
 # Releasing (Changesets)
@@ -25,6 +25,49 @@ gap: three `apps/digital`-only features (foe threat status per-level, #68;
 auto-place starting skulls, #70; the PRD-05 companion-app bridge) shipped with
 no changeset and left no trace in its changelog — see
 `.changeset/digital-skull-physics-drop.md` and its neighbors for the backfill.
+
+## Before debugging a "failed" publish — confirm it actually failed
+
+**npm replication lags the publish by up to ~5 minutes, and a lagging package is
+indistinguishable from a failed one.** Check the run log first; check the
+registry second, and give it time.
+
+Measured on 2026-09-10 (run 34495769507, all 9 packages, release finished
+15:29:12Z): seven packages were queryable within seconds, then
+
+- `ultimatedarktowerdisplay@2.0.0` → 404 until **15:32:19** (~3 min)
+- `ultimatedarktowerrelay-shared@1.0.2` → 404 until **15:34:15** (~5 min)
+
+For those minutes the repo looked exactly like a partial failure — green
+workflow, git tags pushed for all nine, two packages missing from npm. Worse, it
+was the _same two package families_ as the real July 2026 partial failure, so the
+false positive is very convincing.
+
+**The run log is authoritative, not the registry.** Changesets prints an explicit
+manifest of what it published:
+
+```
+🦋  success packages published successfully:
+🦋  ultimatedarktowerdisplay@2.0.0
+🦋  ultimatedarktowerrelay-shared@1.0.2
+...
+🦋  Creating git tags...
+```
+
+If a package is in that list and got a `New tag:` line, npm accepted it — wait,
+don't act. Only treat it as failed when the log shows an error, or the package is
+absent from the success list.
+
+```bash
+# what Changesets says it published
+gh run view <id> --log | sed -n '/packages published successfully/,/Creating git tags/p'
+
+# then poll, don't single-shot — 404 for a few minutes means nothing
+curl -s -o /dev/null -w "%{http_code}\n" https://registry.npmjs.org/<pkg>/<version>
+```
+
+⚠ **Never re-run a publish or bump a version off a single 404.** The version is
+already taken on npm's side; retrying can burn a version number for nothing.
 
 ## A failed publish reports the wrong error — read this before debugging one
 
@@ -74,8 +117,16 @@ token carried read+write for exactly the 6 `ultimatedarktower*` packages that
 existed when it was created. Nothing about the token was broken; it had published
 `ultimatedarktowerboard` from CI two days earlier.
 
-**This fires every time a new published package joins the monorepo** — the token
-is a fixed allow-list that does not learn about new names. Fix on npmjs.com
+**This can fire when a new published package joins the monorepo** — a granular
+token is a fixed allow-list that does not learn about new names.
+
+⚠ **It does not always fire, so don't assume it in advance.** On 2026-09-10
+`ultimatedarktowerrelay-cli@0.2.0` — a brand-new name, never before on npm
+(`Received 404 for npm info "ultimatedarktowerrelay-cli"` in the log) — published
+cleanly on the first attempt, in the same run as eight existing packages. So the
+current `NPM_TOKEN` is either not package-scoped or was already broadened. Treat
+the allow-list as the **first hypothesis when a new package's publish fails**,
+not as a blocker to fix pre-emptively. Fix on npmjs.com
 (Access Tokens → the CI token → add the package; if the list isn't editable,
 regenerate and update the `NPM_TOKEN` repo secret), then
 `gh run rerun <id> --failed`. **Add the package to the token _before_ merging the
