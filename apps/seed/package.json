@@ -1,6 +1,6 @@
 {
   "name": "ultimatedarktowerseed",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Interactive seed decoder and reverse-engineering tool for Return to Dark Tower game seeds.",
   "private": true,
   "type": "module",

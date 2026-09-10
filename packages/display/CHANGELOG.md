@@ -1,5 +1,217 @@
 # Changelog
 
+## 2.0.0
+
+### Major Changes
+
+- c4b5e89: **Breaking:** the 3D ground disc's board art is now **consumer-supplied** via the new
+  `boardTextureUrl` option, mirroring how `modelUrl` already works for the tower GLB. The
+  22 MB `board.png` is no longer statically imported by the library.
+
+  **Migration** — pass the URL explicitly:
+
+  ```ts
+  new TowerDisplay(container, {
+    modelUrl: towerModelUrl,
+    boardTextureUrl: boardImageUrl, // NEW — was implicit before
+  });
+  ```
+
+  The package still ships the file at `dist/3d/assets/board.png` (now via a copy plugin,
+  exactly like `tower.glb`), so reference it through your bundler as before:
+
+  ```ts
+  import boardImageUrl from 'ultimatedarktowerdisplay/dist/3d/assets/board.png';
+  ```
+
+  When `boardTextureUrl` is omitted the ground disc uses the procedural canvas texture,
+  regardless of `lighting.boardDisc.source` — `source: 'image'` with no URL is procedural,
+  since there is no longer anything bundled to load.
+
+  **Why:** Vite emits assets from the `transform` hook, _before_ tree-shaking, so a static
+  `new URL('./assets/board.png', import.meta.url)` forced the 22 MB PNG into the `dist/` of
+  every downstream app whether it rendered a board or not. Across this repo's deployed site
+  that was ~85 MB of dead weight — including two apps that never render a board at all, and
+  two that render one but disable Display's disc (`setBoardDiscEnabled(false)`) and so
+  downloaded the image only to cover it up.
+
+  Consumers that already pass `boardImageUrl` to `ultimatedarktowerboard`'s renderers see no
+  visual change: that path draws the board's own surface and disables Display's disc anyway.
+
+### Minor Changes
+
+- f41fd0c: Add `SkullPhysicsHandle.getSkullsBySeal()` to the physics API — a breakdown of
+  in-tower skulls by which of the 12 seal openings each is resting behind, plus
+  an `unattributed` bucket for skulls not near any opening (funnel, central
+  axis). Answers two things `getSkullCounts()` couldn't: how many skulls a
+  still-intact seal is holding back, and whether a skull is stuck in a doorway
+  that's already broken and should have let it fall through.
+
+  - Uses the model's authored `pocket_<side>_<level>` volumes for exact
+    attribution when all 12 are present (`mode: 'pocket'`); otherwise falls back
+    to nearest-seal-anchor attribution within the new `seal.attributionRadiusFactor`
+    config leaf (`mode: 'nearest'`, default `0.25`). See
+    [POCKET_AUTHORING.md](../packages/display/docs/POCKET_AUTHORING.md) for
+    adding the pocket volumes to a custom model.
+  - Each bucket carries the resting skulls' stable ids, so `shakeSelectedSkull`
+    can target exactly them. `shakeSelectedSkull` is widened from `id: number`
+    to `id: number | number[]` to accept a whole bucket at once — existing
+    single-id calls are unaffected.
+  - The example app's Physics panel gains a "Behind seals" readout and a
+    "Shake Stuck Skulls" button (unlike "Shake Skulls", it only nudges skulls
+    behind an already-broken seal or unattributed ones, leaving skulls behind
+    intact seals untouched).
+
+  See [PHYSICS.md §Counting skulls by seal](../packages/display/docs/PHYSICS.md#counting-skulls-by-seal)
+  for the full picture.
+
+- f41fd0c: Add `seal.shakeSkullsOnSealRemoval` to `PhysicsConfig` — when a seal breaks,
+  wait `seal.shakeSkullsOnSealRemovalDelaySeconds` (default `0.25`) so gravity
+  gets a chance to clear the opening on its own, then impulse-nudge whichever of
+  the skulls `getSkullsBySeal()` reports were behind that seal are still there.
+  A skull that already fell during the wait is left alone; one still wedged
+  behind the now-open doorway gets a nudge.
+
+  - Default `true` (`mode: 'nearest'`, ambient `skull.shakeStrength`). Set to
+    `false` to disable.
+  - Object form overrides `mode` (`'nearest'` — only that seal's skulls, the
+    default; or `'all'` — every `inTower` skull, same as `shakeSkulls()`) and/or
+    `shake.strength` (falls back to the live `skull.shakeStrength` when the
+    delay elapses).
+  - `shakeSkullsOnSealRemovalDelaySeconds` is its own sibling config leaf
+    (default `0.25`), not nested inside the object form, so it has a real
+    default in `DEFAULT_PHYSICS` and shows up in `getPhysicsConfig()` like every
+    other tunable.
+  - Both live via `applyPhysicsConfig`. The delay is measured in simulation time
+    (the same per-frame `dt` the physics step runs on), not a wall-clock timer.
+
+  The example app's Physics panel gains a "Shake skulls when seal removed"
+  checkbox, checked by default, and a "Seal-break delay" slider for
+  `shakeSkullsOnSealRemovalDelaySeconds`. See
+  [PHYSICS.md §Auto-shake on seal removal](../packages/display/docs/PHYSICS.md#auto-shake-on-seal-removal-sealshakeskullsonsealremoval).
+
+- f41fd0c: Change the physics shake impulse (`shakeSkulls()` / `shakeSelectedSkull()`) so
+  its horizontal push always points radially outward, away from the tower's
+  central axis through the skull's current position, instead of a random
+  direction — a shake now nudges a stuck skull toward the nearest opening
+  rather than an arbitrary one.
+
+  The direction/lift split is centralized in two new `PhysicsConfig` leaves so
+  every shake call site (`shakeSkulls()`, `shakeSelectedSkull()`, and the demo's
+  Shake Stuck Skulls button, which is built on `shakeSelectedSkull()`) shares one
+  tunable definition instead of a hardcoded constant:
+
+  - `skull.shakeHorizontalFactor` (default `0.5`) — outward-push fraction.
+  - `skull.shakeUpwardFactor` (default `0.45`) — upward-lift fraction, kept
+    below `shakeHorizontalFactor` so the outward push dominates the lift.
+
+  Both are Live via `applyPhysicsConfig`. The example app's Physics panel gains
+  sliders for both ("Shake horiz." / "Shake up"), alongside the existing shake
+  strength slider. See
+  [PHYSICS.md §Unsticking skulls](../packages/display/docs/PHYSICS.md#unsticking-skulls).
+
+- 6961078: Add `SkullPhysicsHandle.getSkullIds(zone)` and `removeSkulls(ids)` to the physics API, plus a
+  new `skull.onSkullClick` config leaf — the pieces needed to collect skulls off the board floor
+  instead of just watching them pile up.
+
+  - `getSkullIds(zone)` lists the ids of every live skull currently classified in a zone (see
+    `getSkullCounts()`); `removeSkulls(ids)` despawns a batch of them (same path as the OOB
+    safety net) and returns how many actually went.
+  - `skull.onSkullClick(id, zone)` fires on a skull click before `clickToShake` — return `true`
+    to consume the click (skip the shake); shares `clickToShake`'s pointer-target registration,
+    so setting either one registers it, and it's live-swappable via `applyPhysicsConfig`.
+
+- 5c900e4: Add manually-triggered ways to dislodge a skull stuck in the tower's interior
+  trimesh geometry, without touching the tower model:
+
+  - `SkullPhysicsHandle.shakeSkulls(options?)` — impulse-nudges every skull
+    currently classified `inTower` (see `getSkullCounts()`), waking sleeping
+    bodies. Skulls `onBoard` or `inTransit` are untouched.
+  - `SkullPhysicsHandle.shakeSelectedSkull(id, options?)` — impulse-nudges one
+    skull by id, in any zone. `dropSkull()` now returns the new skull's stable
+    id (`number | null`, widened from `void`) for this purpose.
+  - `skull.clickToShake` config flag — clicking a skull in the 3D view calls
+    `shakeSelectedSkull` for it, via the existing pointer-target seam (no
+    camera/raycaster exposed). `getSkullIdForObject(obj)` is the underlying
+    lookup, also exposed on the handle for custom picking.
+  - `Tower3DView.shakeTower(options?)` — oscillates the drum rings; the
+    existing kinematic-collider sync jostles skulls resting on/near the drums
+    loose. Independent of `shakeSkulls()` (physics is a separate plugin the
+    view doesn't own) — use either, both, or neither.
+  - Prevention-tuning config: `skull.canSleep` (default `true`) and
+    `skull.additionalSolverIterations` (default `0`) reduce how often a skull
+    sticks in the first place.
+
+  The example app's Physics panel gains a "Shake Skulls" button, a "Shake
+  Tower" button, and toggles for click-to-shake and can-sleep. See
+  [PHYSICS.md §Unsticking skulls](../packages/display/docs/PHYSICS.md#unsticking-skulls)
+  for the full picture.
+
+- af416e7: Add `Tower3DView.onZoomChange` (and the underlying `CameraController.onZoomChange` /
+  `tickDerivedZoom()`), mirroring the existing `onSideChange` pattern: fired from the same
+  per-frame camera check, whenever the live camera distance moves by more than a tiny
+  epsilon. Covers wheel-zoom, orbit-drag zoom, any `applyCameraConfig` call, and the
+  built-in Center/Reset buttons uniformly — a consumer no longer needs to poll
+  `getLiveCameraFactors()` to notice the camera has moved. First consumer:
+  `ultimatedarktowerboard`'s `BoardStageView` zoom-percentage readout.
+
+### Patch Changes
+
+- 99f396e: Add a `dev:<name>` convenience script (`dev:board` / `dev:display` /
+  `dev:mcp-server`) as an alias for the existing demo/dev command — no
+  behavior change.
+- c4b5e89: Internal: the bundled art and audio bytes now live in `@udtc/assets` (private, a devDependency)
+  rather than in this package's `src/`. All 115 `.ogg`, `board.png` and `tower.glb` moved.
+
+  **The published tarball is unchanged** — same 153 files, same `dist/audio/assets/<name>.ogg`
+  paths, same `dist/3d/assets/{board.png,tower.glb}`, same `new URL(…, import.meta.url)` shape in
+  both bundles. Nothing about consuming this package changes, including `buildOfficialSoundPack`
+  self-hosting paths.
+
+  `audioLibrary.ts` is now one half of a split: it keeps the sample-id → filename map, and
+  `@udtc/assets/audio` owns filename → URL. `scripts/extract-audio.mjs` regenerates both halves in
+  one run.
+
+  Also adds `scripts/check-dist-size.mjs` to `build`. Vite's library mode base64-inlines
+  `new URL(literal, import.meta.url)` assets, and the plugin that prevents it fails **silently** —
+  verified by removing an entry from `URL_ASSET_HOSTS`: the build stayed green while emitting 11 MB
+  bundles and 2 `.ogg` instead of 115. The script asserts bundle sizes, the `.ogg` count and the two
+  static assets, so that failure is now a build error.
+
+- a00cf63: Fix: a light sequence no longer replays every time unrelated state changes.
+
+  `state.led_sequence` is a one-shot edge trigger, but it rides inside a full-state
+  snapshot that consumers keep re-sending long after the sequence ended.
+  `SequenceAnimator.apply()` only deduplicated a same-id re-apply _while the timeline was
+  alive_ — `wrapComplete()` zeroes `currentSequenceId` on completion — so any later
+  `applyState` still carrying the spent id rebuilt the timeline and played the whole
+  sequence again. Every path that re-applies a stored state hit this: rotating a drum,
+  clicking an LED (`clearLedOverrides` / `handleLedClick` both re-apply
+  `getResolvedState()`), switching renderers, popping out, and the post-GLB-load replay.
+
+  `SequenceAnimator` now latches the id of the last sequence that ran to completion and
+  will not rebuild it. A state carrying `led_sequence: 0` re-arms it, as do `stop()` and
+  `applyTransient()` — so `playSequence()` is never suppressed, and a deliberate
+  re-trigger of the same sequence only needs a zero in between. The latched call returns
+  `false`, so the renderer resumes normal per-LED replay for the incoming state instead of
+  freezing on the sequence's last frame.
+
+  Consumers driving from full-state snapshots should still clear `led_sequence` after
+  sending it (as `ultimatedarktower` does on every tower response) — the latch is a
+  backstop on the receiving side and does not cover the physical tower.
+
+  The example's Trigger Sequence button now applies an empty state before firing, so every
+  sequence plays from a clean tower and re-triggering the same one works. It also remembers
+  a _resting_ copy of each applied state, with both one-shot triggers (`led_sequence` and
+  `audio.sample`) zeroed — the sequence's bound sound was replaying on the next drum
+  rotation for the same reason the lights were, compounded by the example passing
+  `force: true` on every action, which bypasses the audio dedup.
+
+- Updated dependencies [5f9deec]
+- Updated dependencies [974549e]
+- Updated dependencies [9046309]
+  - ultimatedarktowerdata@3.0.0
+
 ## 1.1.0
 
 ### Minor Changes

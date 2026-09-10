@@ -1,6 +1,6 @@
 {
   "name": "@udtc/assets",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Single source of truth for Return to Dark Tower game art and audio: board art, token art, 3D models, glyphs and the tower's sound library, delivered as bundler-resolved URLs.",
   "private": true,
   "type": "module",
