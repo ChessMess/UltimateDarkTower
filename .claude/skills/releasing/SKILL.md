@@ -142,3 +142,84 @@ other live suspect.)
 Retrying needs no code change: the version bump and consumed changeset are
 already on `main`, and a rejected publish uploads nothing, so Changesets picks
 the pending version straight back up.
+
+## Provenance is configured per package on npmjs.com, and fails silently
+
+**Symptom:** packages publish fine, the Release run is green, but the npm page
+shows no Provenance badge and `dist.attestations` is absent from the registry
+metadata. Nothing errors. Nothing appears in the log.
+
+**Cause:** npm Trusted Publisher is a **per-package** setting on npmjs.com naming
+an exact repo + workflow file. GitHub's OIDC token claims
+`workflow_ref: .github/workflows/release.yml`; npm compares that to the package's
+entry. If it does not match — or there is no entry at all — npm cannot mint the
+attestation, **silently falls back to the `NPM_TOKEN` auth the workflow also
+supplies, and publishes without provenance.**
+
+Audited 2026-09-10. Across 71 published versions exactly one package had ever
+produced an attestation:
+
+```
+ultimatedarktowerboard    8 versions,  7 attested  (0.3.0 onward)
+ultimatedarktower        21 versions,  0  — never
+ultimatedarktowerdisplay 15 versions,  0  — never
+…every other package      0  — never
+```
+
+Checking all nine packages found **two different faults**, and the second was the
+common one:
+
+- **No entry at all** — six packages: game-data, relay-{client,core,shared},
+  mcp-server, relay-cli. Never configured.
+- **Stale entry** — two packages: `ultimatedarktower` named `publish.yml`
+  (a workflow deleted on 2026-07-11), and `ultimatedarktowerdisplay` named
+  `ChessMess/UltimateDarkTowerDisplay`, the archived pre-consolidation repo.
+
+`ultimatedarktowerboard` was the only correct one, configured 2026-07-12 — the
+day after the rename — which is why it alone produced provenance.
+
+⚠ **Nothing in the repo can tell you this is wrong.** `repository` fields,
+`publishConfig`, `prepack` hooks and `NPM_CONFIG_PROVENANCE` were all identical
+across all nine. Diagnose from the registry, not the repo:
+
+```bash
+# who has attestations, across all history
+curl -s "https://registry.npmjs.org/<pkg>" |
+  jq '[.versions[] | select(.dist.attestations)] | length'
+
+# decode a working one — it names the producing workflow
+curl -s "https://registry.npmjs.org/-/npm/v1/attestations/<pkg>@<version>" |
+  jq -r '.attestations[] | select(.predicateType|test("slsa")) | .bundle.dsseEnvelope.payload' |
+  base64 -d | jq '.predicate.buildDefinition.externalParameters.workflow'
+```
+
+**Fix:** on `https://www.npmjs.com/package/<name>/access` → Trusted Publisher.
+Entries are **immutable** — npm says "Cannot be changed… delete it and create a
+new one" — so a wrong one must be deleted and re-added. Values that work here:
+
+| Field                | Value                 |
+| -------------------- | --------------------- |
+| Publisher            | GitHub Actions        |
+| Organization or user | `ChessMess`           |
+| Repository           | `UltimateDarkTower`   |
+| Workflow filename    | `release.yml`         |
+| Environment name     | **blank**             |
+| Allowed actions      | ☑ Allow `npm publish` |
+
+Environment must be blank because `release.yml` declares no `environment:` key;
+filling it in breaks the claim match, silently. npm permits **multiple entries
+per package**, so a correct one can be added alongside a stale one without
+deleting anything — useful, because every write is gated behind a 2FA
+security-key tap.
+
+Nothing backfills: existing versions stay unattested, and each package picks up
+provenance on its next release. Verify with
+
+```bash
+curl -s https://registry.npmjs.org/<pkg> |
+  jq '.versions[.["dist-tags"].latest].dist | has("attestations")'
+```
+
+⚠ **Re-check this whenever the publishing workflow is renamed, or a new package
+joins the monorepo** — both leave npm-side config stale or absent, and neither
+will ever fail a build to tell you.
