@@ -17,24 +17,24 @@ catalog:
   '@vitest/coverage-v8': ^4.1.11
 
   # Build/test tooling shared across many workspaces.
-  vite: ^8.2.2
+  vite: ^8.3.0
   jsdom: ^25.0.0
   '@vitejs/plugin-react': ^6.1.1
-  '@types/node': ^22.0.0
+  '@types/node': ^22.20.2
 
   # Runtime libraries. three is the load-bearing one: .npmrc force-hoists it so
   # every package shares a single copy (multiple copies break `instanceof`), and
   # a drifting range is what breaks that. Cataloguing makes the invariant
   # structural instead of a convention. Keep @types/* on the same version as the
   # package they type.
-  three: ^0.185.0
-  '@types/three': ^0.185.4
+  three: ^0.186.0
+  '@types/three': ^0.186.0
   gsap: ^3.15.0
   '@dimforge/rapier3d-compat': ^0.19.3
-  react: ^19.2.8
-  react-dom: ^19.2.8
-  '@types/react': ^19.2.18
-  '@types/react-dom': ^19.2.7
+  react: ^19.3.0
+  react-dom: ^19.3.0
+  '@types/react': ^19.3.0
+  '@types/react-dom': ^19.3.0
   ws: ^8.21.3
   '@types/ws': ^8.5.10
   ajv: ^8.17.0
