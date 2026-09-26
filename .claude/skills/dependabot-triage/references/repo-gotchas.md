@@ -211,12 +211,23 @@ playbook for either lives in a dedicated file, not here — see
 the repo is clean. Do not re-investigate.** Fully chased on 2026-09-10; all
 three fix routes are closed, with evidence. Re-deriving this costs an hour.
 
-| Alert                                | Package       | In tree | Patched version |
-| ------------------------------------ | ------------- | ------- | --------------- |
-| GHSA-jmr9-qjv8-65gv (CVE-2026-56876) | `extract-zip` | 2.0.1   | **none, ever**  |
-| GHSA-7pqw-9j4j-h8q3 (CVE-2026-19693) | `extract-zip` | 2.0.1   | **none, ever**  |
-| GHSA-5p2g-fcmc-qvqq (CVE-2025-71329) | `image-size`  | 0.7.5   | **none, ever**  |
-| GHSA-w3rx-r6r6-pgpr (CVE-2025-71330) | `image-size`  | 0.7.5   | **none, ever**  |
+| Alert                                | Package       | In tree | Patched version                  |
+| ------------------------------------ | ------------- | ------- | -------------------------------- |
+| GHSA-jmr9-qjv8-65gv (CVE-2026-56876) | `extract-zip` | 2.0.1   | **none, ever**                   |
+| GHSA-7pqw-9j4j-h8q3 (CVE-2026-19693) | `extract-zip` | 2.0.1   | **none, ever**                   |
+| GHSA-5p2g-fcmc-qvqq (CVE-2025-71329) | `image-size`  | 0.7.5   | **none, ever**                   |
+| GHSA-w3rx-r6r6-pgpr (CVE-2025-71330) | `image-size`  | 0.7.5   | 2.0.3 — **unusable** (see below) |
+
+**`image-size` 2.0.3 is not a fix.** On 2026-09-14 the advisory gained
+`first_patched_version: 2.0.3` (2.0.4 also exists), so the alert now _looks_
+fixable. It isn't: `appdmg@0.6.6` does `const sizeOf = require('image-size')` and
+calls `sizeOf(path, callback)`. In 2.x, `require('image-size')` returns an object
+(`{ imageSize, default, disableTypes, types }`) — and file-path/callback support
+moved to `image-size/fromFile` — so an override throws
+`TypeError: sizeOf is not a function` and breaks the DMG maker. Verified
+2026-09-26 by loading 2.0.4 and calling it the way appdmg does. The 0.x line is
+not patched. (As of that date GHSA-5p2g was no longer an open alert, and wasn't
+dismissed either — likely withdrawn/re-scoped.)
 
 Paths, both build-time only, both via electron-forge:
 
@@ -227,7 +238,8 @@ Paths, both build-time only, both via electron-forge:
 
 1. **Upgrade the package.** `extract-zip@2.0.1` is the newest release and npm's
    `time.modified` is 2023-03-04 — unmaintained for three years.
-   `first_patched_version` is genuinely `null`.
+   `first_patched_version` is genuinely `null`. (For `image-size`, the listed
+   2.0.3 patch is an API break for appdmg — see above.)
 
 2. **Alias-override to Electron's fork.** Tempting and wrong. `@electron/packager@20`
    replaced `extract-zip` with `@electron-internal/extract-zip`, which is already
