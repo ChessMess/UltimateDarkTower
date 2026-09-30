@@ -30,7 +30,11 @@ build-time-only deps of the electron toolchain — see the root CLAUDE.md and
 ## macOS packaging
 
 `forge.config.ts` sets `NSBluetoothAlwaysUsageDescription` (macOS Bluetooth entitlement) and
-builds a `.dmg` (macOS) + `zip` (darwin/linux) + `deb` (linux) — no Windows maker configured.
+builds a `zip` (darwin/linux) + `deb` (linux) via makers, plus a plain `.dmg` (macOS) built by a
+`postMake` hook with the system `hdiutil` (app + `/Applications` symlink) — no Windows maker.
+Don't re-add `@electron-forge/maker-dmg`: its `appdmg` → `image-size@0.7.5` chain carries an
+unpatchable Dependabot advisory. Run `make` under Node 22/24 — on Node 26 packaging silently
+exits 0 with no `out/` (packager 18's `extract-zip` dies mid-extract).
 
 Scripts: `dev`/`package`/`make`/`publish` (electron-forge; `dev` runs `electron-forge start`
 — renamed from `start` to match every other app's dev-loop convention), `typecheck`,

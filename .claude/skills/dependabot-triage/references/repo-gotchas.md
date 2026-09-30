@@ -16,7 +16,7 @@ Each entry says how to recognize it and what to actually do.
 8. Known past regressions to sanity-check (not re-derive)
 9. Dev/build-time vs production-runtime reachability in this repo
 10. TypeScript 6.0 / Vite-major upgrades — see `major-version-upgrades.md`
-11. `extract-zip` / `image-size` — the two permanently unfixable alerts
+11. `extract-zip` / `image-size` — no upstream patch; removed by dropping maker-dmg / bumping forge 8
 12. Stale lockfiles, not bad ranges — run `pnpm update` before editing anything
 
 ---
@@ -205,7 +205,7 @@ an automatic Dependabot PR — any attempt is hand-driven. The full step-by-step
 playbook for either lives in a dedicated file, not here — see
 [`major-version-upgrades.md`](./major-version-upgrades.md).
 
-## 11. `extract-zip` / `image-size` — the two permanently unfixable alerts
+## 11. `extract-zip` / `image-size` — no upstream patch; removed by dropping maker-dmg / bumping forge 8
 
 **If a triage shows exactly these two packages and nothing else, you are done —
 the repo is clean. Do not re-investigate.** Fully chased on 2026-09-10; all
