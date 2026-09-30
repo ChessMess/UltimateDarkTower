@@ -3,6 +3,8 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
+import { execFileSync } from 'node:child_process';
 
 // ─── Workspace node_modules copy helper ─────────────────────────────────────
 // pnpm workspaces hoist all deps to the workspace root, so apps/relay-electron/
@@ -55,10 +57,12 @@ function copyWithTransitiveDeps(
   }
 }
 
+const APP_NAME = 'DarkTowerRelay';
+
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    name: 'DarkTowerRelay',
+    name: APP_NAME,
     executableName: 'dark-tower-relay',
     icon: './resources/icon',
     extendInfo: {
@@ -88,14 +92,35 @@ const config: ForgeConfig = {
         copyWithTransitiveDeps(dep, rootModules, targetModules, seen);
       }
     },
+    // Plain drag-to-Applications .dmg via macOS's own hdiutil. Replaces
+    // @electron-forge/maker-dmg, whose appdmg -> image-size@0.7.5 chain carries an
+    // unpatchable advisory. No styled background or volume icon; the app icon shows.
+    postMake: async (_forgeConfig, makeResults) => {
+      for (const result of makeResults) {
+        if (result.platform !== 'darwin') continue;
+        const version: string = result.packageJSON.version;
+        const outDir = path.join(__dirname, 'out');
+        const app = path.join(outDir, `${APP_NAME}-darwin-${result.arch}`, `${APP_NAME}.app`);
+        const dmg = path.join(outDir, 'make', `${APP_NAME}-${version}-${result.arch}.dmg`);
+        const staging = fs.mkdtempSync(path.join(os.tmpdir(), 'dtr-dmg-'));
+        try {
+          execFileSync('ditto', [app, path.join(staging, `${APP_NAME}.app`)]);
+          fs.symlinkSync('/Applications', path.join(staging, 'Applications'));
+          execFileSync(
+            'hdiutil',
+            ['create', '-volname', APP_NAME, '-srcfolder', staging, '-ov', '-format', 'UDZO', dmg],
+            { stdio: 'inherit' },
+          );
+        } finally {
+          fs.rmSync(staging, { recursive: true, force: true });
+        }
+        result.artifacts.push(dmg);
+      }
+      return makeResults;
+    },
   },
   makers: [
     { name: '@electron-forge/maker-zip', platforms: ['darwin', 'linux'], config: {} },
-    {
-      name: '@electron-forge/maker-dmg',
-      platforms: ['darwin'],
-      config: { icon: './resources/icon.icns' },
-    },
     { name: '@electron-forge/maker-deb', platforms: ['linux'], config: {} },
   ],
   plugins: [
