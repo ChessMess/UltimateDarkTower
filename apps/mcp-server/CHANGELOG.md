@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.9
+
+### Patch Changes
+
+- 379a9b0: Bump `@modelcontextprotocol/sdk` to ^1.30.1.
+
 ## 1.0.8
 
 ### Patch Changes
