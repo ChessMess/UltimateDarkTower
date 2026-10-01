@@ -5,13 +5,23 @@ Central docs: `docs/relay/` (repo root).
 
 ## Packaging footgun (silent runtime break)
 
-pnpm hoists to the workspace-root `node_modules`, but Forge only packages the app's own
-`node_modules`. So `forge.config.ts`'s `packageAfterCopy` hook (`copyWithTransitiveDeps`)
-manually copies a **`runtimeExternals`** list (`@stoprocent/bleno`, `@stoprocent/noble`,
-`ultimatedarktower`, `ws`, `electron-squirrel-startup`) + transitive deps from the workspace
-root into the build. **This list MUST stay in sync with the `external` array in
-`vite.main.config.ts`.** Add a runtime-external dep to one and not the other and packaging
-silently ships a broken app — a missing native module **at runtime**, not a build error.
+Forge only packages the app's own `node_modules`, which under pnpm are symlinks (registry deps
+hoisted to the workspace root; workspace packages like `ultimatedarktower` linked only under
+`apps/relay-electron/node_modules`). So `forge.config.ts`'s `packageAfterCopy` hook
+(`copyWithTransitiveDeps`) copies a **`runtimeExternals`** list (`@stoprocent/bleno`,
+`@stoprocent/noble`, `ultimatedarktower`, `ws`, `electron-squirrel-startup`) + transitive deps
+into the build, resolving each Node-style (walk up from the app dir, then from each package's
+real path). A non-optional dep it can't resolve **fails the build**. **This list MUST stay in
+sync with the `external` array in `vite.main.config.ts`** — a dep in `external` but missing
+here ships an app that crashes **at launch**, and CI's `electron-forge package` smoke never
+launches the app, so it won't catch that. (Until 2026-10 the hook only searched the root
+`node_modules`, silently skipped `ultimatedarktower`, and every packaged build crashed with
+`Cannot find module 'ultimatedarktower'`.) To verify a package for real, launch it:
+`ELECTRON_ENABLE_LOGGING=1 out/DarkTowerRelay-darwin-arm64/DarkTowerRelay.app/Contents/MacOS/dark-tower-relay`
+and look for `[main] Core modules loaded successfully`.
+
+Forge 8 emits the main/preload bundles as **`.cjs`**: `package.json` `main` is
+`.vite/build/main.cjs` and `main.ts` loads `preload.cjs` — keep both in sync if renamed.
 
 ## Native rebuild
 
@@ -33,10 +43,9 @@ build-time-only deps of the electron toolchain — see the root CLAUDE.md and
 builds a `zip` (darwin/linux) + `deb` (linux) via makers, plus a plain `.dmg` (macOS) built by a
 `postMake` hook with the system `hdiutil` (app + `/Applications` symlink) — no Windows maker.
 Don't re-add `@electron-forge/maker-dmg`: its `appdmg` → `image-size@0.7.5` chain carries an
-unpatchable Dependabot advisory. Run `make` under Node 22/24 — on Node 26 packaging silently
-exits 0 with no `out/` (packager 18's `extract-zip` dies mid-extract).
+unpatchable Dependabot advisory.
 
-Scripts: `dev`/`package`/`make`/`publish` (electron-forge; `dev` runs `electron-forge start`
+Scripts: `dev`/`package`/`make`/`release` (electron-forge 8 — `release` was `publish` in forge 7; `dev` runs `electron-forge start`
 — renamed from `start` to match every other app's dev-loop convention), `typecheck`,
 `rebuild`, `test` (`vitest run --passWithNoTests`, 0 test files). Depends on `relay-core`,
 `relay-shared`, and `ultimatedarktower` (`workspace:^`) — not `relay-client` or `relay-cli`.
