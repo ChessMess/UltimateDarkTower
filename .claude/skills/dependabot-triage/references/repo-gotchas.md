@@ -16,7 +16,7 @@ Each entry says how to recognize it and what to actually do.
 8. Known past regressions to sanity-check (not re-derive)
 9. Dev/build-time vs production-runtime reachability in this repo
 10. TypeScript 6.0 / Vite-major upgrades — see `major-version-upgrades.md`
-11. `extract-zip` / `image-size` — no upstream patch; removed by dropping maker-dmg / bumping forge 8
+11. `extract-zip` / `image-size` — resolved by removing both chains (historical)
 12. Stale lockfiles, not bad ranges — run `pnpm update` before editing anything
 
 ---
@@ -205,11 +205,19 @@ an automatic Dependabot PR — any attempt is hand-driven. The full step-by-step
 playbook for either lives in a dedicated file, not here — see
 [`major-version-upgrades.md`](./major-version-upgrades.md).
 
-## 11. `extract-zip` / `image-size` — no upstream patch; removed by dropping maker-dmg / bumping forge 8
+## 11. `extract-zip` / `image-size` — resolved by removing both chains (historical)
 
-**If a triage shows exactly these two packages and nothing else, you are done —
-the repo is clean. Do not re-investigate.** Fully chased on 2026-09-10; all
-three fix routes are closed, with evidence. Re-deriving this costs an hour.
+> **Status 2026-10-01: both gone from the tree.** `image-size` left with
+> `@electron-forge/maker-dmg`, replaced by a `postMake` hook in
+> `apps/relay-electron/forge.config.ts` that builds a plain DMG with the system
+> `hdiutil` (#116). Don't re-add maker-dmg — forge 8's still pulls `appdmg@0.6.6`.
+> `extract-zip` left with the bump to **electron-forge 8** (`@electron/packager` 20
+> uses `@electron-internal/extract-zip`). If either alert comes back, something
+> re-added the old chain: check `pnpm why <pkg>`. Everything below is the
+> pre-resolution analysis, kept for why the other routes fail.
+
+Fully chased on 2026-09-10; at the time all three fix routes were closed, with
+evidence.
 
 | Alert                                | Package       | In tree | Patched version                  |
 | ------------------------------------ | ------------- | ------- | -------------------------------- |

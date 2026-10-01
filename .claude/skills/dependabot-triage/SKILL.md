@@ -13,8 +13,8 @@ description: >-
   the repo's CI protocol. Encodes this repo's traps (minimumReleaseAge age gate,
   catalog: typescript, build-before-test order, clean-main worktree regression
   attribution, electron-rebuild for tar overrides, transient Actions flakes,
-  concurrency cancel-in-progress, the extract-zip alert that waits on the
-  electron-forge 8 bump, and the lockfile-staleness refresh that clears
+  concurrency cancel-in-progress, the resolved extract-zip/image-size history,
+  and the lockfile-staleness refresh that clears
   more alerts than editing overrides) and keeps every merge/publish/dismiss behind
   explicit human confirmation.
 ---
@@ -62,11 +62,10 @@ its transitive parents. Read that last section carefully (see Step 2).
 
 For every flagged package, answer three questions:
 
-1. **Is it `extract-zip` (or `image-size`)?** Read `references/repo-gotchas.md`
-   §11 rather than re-investigating; re-deriving it costs an hour. `image-size`
-   was removed by dropping `@electron-forge/maker-dmg` — if it reappears, someone
-   re-added that maker. `extract-zip` has no patch; the fix is bumping
-   electron-forge to 8.x (stable since 2026-09-29), which drops it.
+1. **Is it `extract-zip` or `image-size`?** Both were removed from the tree
+   (electron-forge 8; maker-dmg replaced by an `hdiutil` hook). If one is back,
+   something re-added the old chain — read `references/repo-gotchas.md` §11
+   before re-investigating; re-deriving it costs an hour.
 2. **Is the flagged copy a vulnerable _duplicate_, or the live version?** If a
    patched copy already resolves in-tree (e.g. `tar@7.5.19`) alongside an old one
    (`tar@6.2.1`), the fix is usually to collapse the old duplicate onto the

@@ -315,7 +315,7 @@ function createWindow(): void {
     show: false,
     title: 'Dark Tower Relay — Operator Console',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },

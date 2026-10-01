@@ -6,54 +6,59 @@ import fs from 'node:fs';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 
-// ─── Workspace node_modules copy helper ─────────────────────────────────────
-// pnpm workspaces hoist all deps to the workspace root, so apps/relay-electron/
-// node_modules/ is empty after `npm install`. Electron Forge only packages
-// the electron package's own node_modules, so nothing gets included.
-// This hook copies the runtime-external deps (and their transitive deps) from
-// the workspace root into the build directory before Forge asars it.
+// ─── Runtime node_modules copy helper ───────────────────────────────────────
+// Electron Forge only packages the app's own node_modules, and under pnpm those are
+// symlinks: registry deps are hoisted to the workspace root, while workspace packages
+// (`ultimatedarktower`) are linked only under apps/relay-electron/node_modules. This
+// hook copies the runtime-external deps (and their transitive deps) into the build
+// directory before Forge asars it, resolving each one the way Node does.
 
-function copyDir(src: string, dest: string): void {
-  if (!fs.existsSync(src)) return;
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.cpSync(src, dest, { recursive: true, dereference: true });
+/** Node-style lookup: walk up from `fromDir` through each `node_modules`; returns the real path. */
+function findPackageDir(depName: string, fromDir: string): string | undefined {
+  for (let dir = fromDir; ; dir = path.dirname(dir)) {
+    const candidate = path.join(dir, 'node_modules', depName);
+    if (fs.existsSync(candidate)) return fs.realpathSync(candidate);
+    if (path.dirname(dir) === dir) return undefined;
+  }
 }
 
 function copyWithTransitiveDeps(
   depName: string,
-  rootModules: string,
+  fromDir: string,
   targetModules: string,
   seen: Set<string>,
+  optional = false,
 ): void {
   if (seen.has(depName)) return;
   seen.add(depName);
 
-  const parts = depName.startsWith('@') ? depName.split('/') : [depName];
-  const srcDir = path.join(rootModules, ...parts);
-  const destDir = path.join(targetModules, ...parts);
-
-  if (!fs.existsSync(srcDir)) return;
-
-  // Ensure scoped package parent dir exists (@scope/)
-  if (parts.length > 1) {
-    fs.mkdirSync(path.join(targetModules, parts[0]), { recursive: true });
+  const srcDir = findPackageDir(depName, fromDir);
+  if (!srcDir) {
+    // Platform-specific optional deps may legitimately be absent; anything else would
+    // ship an app that crashes at launch, so fail the build instead.
+    if (optional) return;
+    throw new Error(`packageAfterCopy: cannot resolve runtime dependency "${depName}"`);
   }
-  copyDir(srcDir, destDir);
 
-  // Recurse into this package's own dependencies
-  const pkgJsonPath = path.join(srcDir, 'package.json');
-  if (!fs.existsSync(pkgJsonPath)) return;
-  try {
-    const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')) as {
-      dependencies?: Record<string, string>;
-      optionalDependencies?: Record<string, string>;
-    };
-    const deps = { ...pkg.dependencies, ...pkg.optionalDependencies };
-    for (const transitive of Object.keys(deps)) {
-      copyWithTransitiveDeps(transitive, rootModules, targetModules, seen);
-    }
-  } catch {
-    // ignore malformed package.json
+  // Deps are copied flat, so skip nested node_modules: pnpm keeps only `.bin` CLI shims
+  // there for store packages, and a workspace package's are its devDependencies. The
+  // shims' symlinks also point outside the app, which @electron/asar rejects.
+  fs.cpSync(srcDir, path.join(targetModules, depName), {
+    recursive: true,
+    dereference: true,
+    filter: (p) => path.basename(p) !== 'node_modules',
+  });
+
+  // Recurse from the package's real path, so pnpm's sibling layout resolves its deps.
+  const pkg = JSON.parse(fs.readFileSync(path.join(srcDir, 'package.json'), 'utf8')) as {
+    dependencies?: Record<string, string>;
+    optionalDependencies?: Record<string, string>;
+  };
+  for (const dep of Object.keys(pkg.dependencies ?? {})) {
+    copyWithTransitiveDeps(dep, srcDir, targetModules, seen);
+  }
+  for (const dep of Object.keys(pkg.optionalDependencies ?? {})) {
+    copyWithTransitiveDeps(dep, srcDir, targetModules, seen, true);
   }
 }
 
@@ -72,8 +77,6 @@ const config: ForgeConfig = {
   },
   hooks: {
     packageAfterCopy: async (_forgeConfig, buildPath) => {
-      // Workspace root node_modules (where npm workspaces hoists everything)
-      const rootModules = path.resolve(__dirname, '..', '..', 'node_modules');
       const targetModules = path.join(buildPath, 'node_modules');
       fs.mkdirSync(targetModules, { recursive: true });
 
@@ -89,7 +92,7 @@ const config: ForgeConfig = {
 
       const seen = new Set<string>();
       for (const dep of runtimeExternals) {
-        copyWithTransitiveDeps(dep, rootModules, targetModules, seen);
+        copyWithTransitiveDeps(dep, __dirname, targetModules, seen);
       }
     },
     // Plain drag-to-Applications .dmg via macOS's own hdiutil. Replaces
