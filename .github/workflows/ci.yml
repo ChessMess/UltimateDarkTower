@@ -87,3 +87,24 @@ jobs:
       - name: electron-forge package smoke (relay-electron)
         if: matrix.node == '22'
         run: pnpm --filter ultimatedarktowerrelay-electron exec electron-forge package
+
+      # Packaging succeeding doesn't mean the app starts: a runtime dep missing from the
+      # asar only fails at launch (every build shipped `Cannot find module
+      # 'ultimatedarktower'` until 2026-10). Launch the packaged app and wait for main to
+      # load its core modules. macOS only — the copy logic is platform-independent, and
+      # Linux runners have no display or Bluetooth adapter. BLE itself will time out on
+      # the runner; that's expected and happens after this line.
+      - name: Launch smoke (relay-electron)
+        if: matrix.node == '22' && runner.os == 'macOS'
+        working-directory: apps/relay-electron
+        run: |
+          app=$(ls -d out/DarkTowerRelay-darwin-*/DarkTowerRelay.app)
+          "$app/Contents/MacOS/dark-tower-relay" > launch.log 2>&1 &
+          pid=$!
+          for _ in $(seq 1 60); do
+            grep -qE "Core modules loaded successfully|FATAL" launch.log && break
+            sleep 1
+          done
+          kill "$pid" 2>/dev/null || true
+          cat launch.log
+          grep -q "Core modules loaded successfully" launch.log
