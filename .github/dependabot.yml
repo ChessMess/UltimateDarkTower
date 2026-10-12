@@ -68,3 +68,8 @@ updates:
       github-actions:
         patterns:
           - "*"
+    # changesets/action v2 renames inputs and drops env auth, breaking
+    # release.yml while CI stays green. Migrate by hand (closed #112, #119).
+    ignore:
+      - dependency-name: "changesets/action"
+        update-types: ["version-update:semver-major"]
