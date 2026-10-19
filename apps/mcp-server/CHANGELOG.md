@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.9
+
+### Patch Changes
+
+- f247703: Bump `@modelcontextprotocol/sdk` to 1.32.1 (fixes GHSA-6qxp-vccf-f47h).
+- 379a9b0: Bump `@modelcontextprotocol/sdk` to ^1.30.1.
+
 ## 1.0.8
 
 ### Patch Changes
