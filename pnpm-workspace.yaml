@@ -11,10 +11,10 @@ packages:
 # three, node) across every package. 5.9.3 is what the packages were authored on.
 catalog:
   typescript: ^5.9.3
-  vitest: ^4.1.11
+  vitest: ^4.1.12
   # Coverage provider for vitest. Its peer range on vitest is exact, so these two
   # must be bumped together — that's the main reason it belongs in the catalog.
-  '@vitest/coverage-v8': ^4.1.11
+  '@vitest/coverage-v8': ^4.1.12
 
   # Build/test tooling shared across many workspaces.
   vite: ^8.3.4
@@ -31,8 +31,8 @@ catalog:
   '@types/three': ^0.186.0
   gsap: ^3.15.0
   '@dimforge/rapier3d-compat': ^0.19.3
-  react: ^19.3.0
-  react-dom: ^19.3.0
+  react: ^19.3.1
+  react-dom: ^19.3.1
   '@types/react': ^19.3.0
   '@types/react-dom': ^19.3.0
   ws: ^8.22.0
@@ -40,7 +40,7 @@ catalog:
   ajv: ^8.17.0
   ajv-formats: ^3.0.0
   zustand: ^5.0.15
-  fake-indexeddb: ^6.2.5
+  fake-indexeddb: ^6.2.6
   # NOTE: peerDependencies are deliberately NOT catalogued. A peer range should be
   # wider than the version you build against (packages/board and packages/display
   # declare `three: ">=0.185.0"`), and `catalog:` would narrow it to the caret
