@@ -35,7 +35,7 @@
     "@electron-forge/plugin-vite": "^8.0.1",
     "@electron/rebuild": "^4.2.1",
     "@types/electron-squirrel-startup": "^1.0.2",
-    "electron": "^42.11.15",
+    "electron": "^42.11.18",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
