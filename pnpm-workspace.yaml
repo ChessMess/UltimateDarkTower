@@ -83,8 +83,9 @@ overrides:
   fast-uri: ^3.1.6
   "minimatch@10.2.5>brace-expansion": ^5.0.8
   "brace-expansion@2": ^2.1.4
-  # Only the 6.x copy is flagged (node-gyp <- @electron/rebuild, build-time); the 7.x copy that
-  # electron itself pulls is already patched and must not be dragged back.
+  # Scoped to the 6.x copy (node-gyp <- @electron/rebuild, build-time). The 7.x copy that
+  # @electron/get pulls has its own advisories, so don't drag it back to 6.x; its ^7.24.4 range
+  # takes patches through a lockfile refresh.
   "undici@6": ^6.28.0
   # GHSA advisories CVE-2026-8438x (3x MEDIUM) fixed in 4.13.5. Production:
   # @hono/node-server <- @modelcontextprotocol/sdk <- mcp-server.
