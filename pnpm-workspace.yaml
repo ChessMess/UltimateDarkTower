@@ -17,9 +17,9 @@ catalog:
   '@vitest/coverage-v8': ^4.1.12
 
   # Build/test tooling shared across many workspaces.
-  vite: ^8.3.5
+  vite: ^8.3.6
   jsdom: ^25.0.0
-  '@vitejs/plugin-react': ^6.1.2
+  '@vitejs/plugin-react': ^6.2.1
   '@types/node': ^22.20.5
 
   # Runtime libraries. three is the load-bearing one: .npmrc force-hoists it so
@@ -27,20 +27,20 @@ catalog:
   # a drifting range is what breaks that. Cataloguing makes the invariant
   # structural instead of a convention. Keep @types/* on the same version as the
   # package they type.
-  three: ^0.186.1
-  '@types/three': ^0.186.0
-  gsap: ^3.15.0
+  three: ^0.187.0
+  '@types/three': ^0.187.0
+  gsap: ^3.15.1
   '@dimforge/rapier3d-compat': ^0.19.3
   react: ^19.3.1
   react-dom: ^19.3.1
   '@types/react': ^19.3.0
   '@types/react-dom': ^19.3.0
-  ws: ^8.22.0
+  ws: ^8.22.1
   '@types/ws': ^8.18.2
   ajv: ^8.17.0
   ajv-formats: ^3.0.0
-  zustand: ^5.0.16
-  fake-indexeddb: ^6.2.6
+  zustand: ^5.1.0
+  fake-indexeddb: ^6.2.7
   # NOTE: peerDependencies are deliberately NOT catalogued. A peer range should be
   # wider than the version you build against (packages/board and packages/display
   # declare `three: ">=0.185.0"`), and `catalog:` would narrow it to the caret
