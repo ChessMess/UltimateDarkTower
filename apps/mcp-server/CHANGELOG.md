@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.9
+
+### Patch Changes
+
+- 8d95390: Bump `@modelcontextprotocol/sdk` to ^1.32.2; refreshes its `body-parser` (GHSA-27r3-jxmh-p828) and `ip-address` (GHSA-rxp7-6hxx-x8q5) dependencies to patched versions.
+- f247703: Bump `@modelcontextprotocol/sdk` to 1.32.1 (fixes GHSA-6qxp-vccf-f47h).
+- 379a9b0: Bump `@modelcontextprotocol/sdk` to ^1.30.1.
+- e892211: Move to `zod` 4 (fixes GHSA-mrhx-c7xc-m3w5, which has no patched 3.x release). Tool schemas sent to MCP clients change slightly: repeated enums are inlined instead of using `$ref`, and `additionalProperties: false` is no longer advertised. Unknown keys are still stripped and invalid input is still rejected. Validation error messages now read "Invalid input: expected boolean, received object".
+
 ## 1.0.8
 
 ### Patch Changes
