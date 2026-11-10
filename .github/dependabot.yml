@@ -68,3 +68,10 @@ updates:
       github-actions:
         patterns:
           - "*"
+    ignore:
+      # changesets/action v2 renames the `version`/`publish` inputs and drops
+      # env-based GITHUB_TOKEN/NPM_TOKEN auth; release.yml needs a hand
+      # migration (verified only by a real release). CI can't catch the break —
+      # release.yml doesn't run on PRs. Closed #112 and #132 for this.
+      - dependency-name: "changesets/action"
+        update-types: ["version-update:semver-major"]
