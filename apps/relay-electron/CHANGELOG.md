@@ -1,5 +1,12 @@
 # ultimatedarktowerrelay-electron
 
+## 0.1.4
+
+### Patch Changes
+
+- 5b9d830: Upgrade to electron-forge 8, which drops the unpatched `extract-zip` from the build toolchain. Fix the packaged app crashing at launch with `Cannot find module 'ultimatedarktower'`: the packaging hook now resolves runtime dependencies Node-style instead of only from the workspace root, and fails the build if a required one is missing. The `publish` script is now `release`, matching forge 8's renamed command.
+- fed7577: Build the macOS `.dmg` with the system's `hdiutil` (a `postMake` hook) instead of `@electron-forge/maker-dmg`, removing the unpatchable `appdmg` → `image-size` dependency chain. The DMG is now a plain drag-to-Applications image with no styled background or custom volume icon.
+
 ## 0.1.3
 
 ### Patch Changes
