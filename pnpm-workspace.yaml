@@ -17,9 +17,9 @@ catalog:
   '@vitest/coverage-v8': ^4.1.12
 
   # Build/test tooling shared across many workspaces.
-  vite: ^8.3.6
+  vite: ^8.3.8
   jsdom: ^25.0.0
-  '@vitejs/plugin-react': ^6.2.1
+  '@vitejs/plugin-react': ^6.3.0
   '@types/node': ^22.20.5
 
   # Runtime libraries. three is the load-bearing one: .npmrc force-hoists it so
@@ -35,12 +35,12 @@ catalog:
   react-dom: ^19.3.1
   '@types/react': ^19.3.0
   '@types/react-dom': ^19.3.0
-  ws: ^8.22.1
+  ws: ^8.23.0
   '@types/ws': ^8.18.2
   ajv: ^8.17.0
   ajv-formats: ^3.0.0
   zustand: ^5.1.0
-  fake-indexeddb: ^6.2.7
+  fake-indexeddb: ^6.2.8
   # NOTE: peerDependencies are deliberately NOT catalogued. A peer range should be
   # wider than the version you build against (packages/board and packages/display
   # declare `three: ">=0.185.0"`), and `catalog:` would narrow it to the caret
