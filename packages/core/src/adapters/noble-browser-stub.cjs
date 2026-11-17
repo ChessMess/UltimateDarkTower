@@ -12,7 +12,6 @@
 // already guarded by a `process.versions.node` check, so in a browser this stub
 // is never actually evaluated. The Proxy exists only as a loud failsafe if the
 // browser build is ever mis-resolved into a Node context.
-// eslint-disable-next-line no-undef
 module.exports = new Proxy(
   {},
   {
