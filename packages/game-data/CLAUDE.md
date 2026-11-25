@@ -15,8 +15,8 @@ inventory, card text) + seed encode/decode. Split out of `ultimatedarktower` in 
     display string. The split was a workaround for the `Hero`/`HEROES` collision, not a
     modelling call, and the sheet half had zero consumers. **Do not re-add a second hero
     record**; `tests/virtues.test.ts` asserts the namespace is gone.
-    Every hero has 2 + 3 virtues; the 4 Expeditions heroes have no `bannerAction` because none
-    has been transcribed yet — `heroes.test.ts` enforces that, so never fill one in by inference.
+    Every hero has 2 + 3 virtues; 3 Expeditions heroes have no `bannerAction` because the
+    rulebook only paraphrases it — `heroes.test.ts` enforces that, so never fill one in by inference.
 - **Card faces** (`foeCards.ts`, `monumentCards.ts`, `companionCards.ts`, `treasures.ts`,
   `potionsAndGear.ts`, `corruptions.ts`, `questItems.ts`, `quests.ts`, `spells.ts`,
   `nations.ts`, `dungeons.ts`, `caravans.ts`) — the printed text, keyed by the _same_ ids.

@@ -1,7 +1,8 @@
 /**
  * potionsAndGear.ts — the potion and gear cards.
  *
- * The four Expeditions gear rows not yet fully transcribed are incomplete and carry `needsReview: true`.
+ * The two Expeditions gear rows not yet transcribed carry `needsReview: true`; Gilded Alembic
+ * and Aqua Vitae come from the printed Expeditions rulebook (p. 9/11).
  * One grants '+1 Humanoid Advantage', which would complete the six-advantage gear set
  * alongside Fell Snares (Beast) and Fulgent Relics (Undead).
  */
@@ -147,10 +148,9 @@ export const POTIONS_AND_GEAR: readonly PotionOrGear[] = [
     id: 'gilded-alembic',
     name: 'Gilded Alembic',
     kind: 'gear',
+    effect: 'After you Quest, gain 1 potion and 3[W].',
     count: 3,
     source: 'expeditions',
-    needsReview: true,
-    sourceNote: 'Expeditions gear; the only photo transcribed so far has illegible effect text.',
   },
   {
     id: 'unnamed-gear-1',
@@ -163,13 +163,12 @@ export const POTIONS_AND_GEAR: readonly PotionOrGear[] = [
     sourceNote: 'Expeditions gear; name not transcribed yet.',
   },
   {
-    id: 'unnamed-gear-2',
-    name: '',
+    id: 'aqua-vitae',
+    name: 'Aqua Vitae',
     kind: 'gear',
+    effect: 'After you Cleanse, move up to 2 spaces.',
     count: 3,
     source: 'expeditions',
-    needsReview: true,
-    sourceNote: 'Expeditions gear; name not transcribed yet.',
   },
   {
     id: 'unnamed-gear-3',

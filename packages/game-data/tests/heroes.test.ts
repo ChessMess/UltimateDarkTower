@@ -40,7 +40,7 @@ describe('HEROES', () => {
 
 /**
  * The gameplay sheet, merged in from gameContent.HEROES in v3. Every hero carries 2 + 3
- * virtues; the Expeditions four have no banner action recorded yet.
+ * virtues; 3 Expeditions heroes have no banner action transcribed yet.
  */
 describe('hero gameplay sheets', () => {
   test('every hero has 2 default + 3 unlockable named virtues', () => {
@@ -54,11 +54,16 @@ describe('hero gameplay sheets', () => {
     }
   });
 
-  test('banner actions: all 10 pre-Expeditions heroes have one, Expeditions ones are not guessed', () => {
+  test('banner actions: every pre-Expeditions hero has one; only Expeditions may lack it', () => {
     for (const hero of HEROES) {
-      if (hero.source === 'expeditions') expect(hero.bannerAction).toBeUndefined();
-      else expect(hero.bannerAction?.length ?? 0).toBeGreaterThan(0);
+      if (hero.bannerAction === undefined) expect(hero.source).toBe('expeditions');
+      else expect(hero.bannerAction.length).toBeGreaterThan(0);
     }
+    expect(
+      HEROES.filter((h) => h.bannerAction === undefined)
+        .map((h) => h.id)
+        .sort(),
+    ).toEqual(['clever-tinkerer', 'enlightened-ascetic', 'jocular-druid']);
   });
 
   test('virtue names are unique within a hero', () => {

@@ -47,3 +47,4 @@ export * from './questItems';
 export * from './quests';
 export * from './spells';
 export * from './nations';
+export * from './expeditions';

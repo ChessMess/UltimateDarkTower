@@ -656,6 +656,95 @@ export const expansions: Expansion[] = [
       },
     ],
   },
+  {
+    // Source: the printed Expeditions rulebook's component list (p. 3). Cards are listed by
+    // type, not name — two of the six new gear cards are not transcribed yet.
+    name: 'Expeditions',
+    categories: [
+      {
+        name: 'Boards',
+        section: 'Misc',
+        components: [
+          { name: 'Clever Tinkerer', count: 1 },
+          { name: 'Enlightened Ascetic', count: 1 },
+          { name: 'Grizzled Mariner', count: 1 },
+          { name: 'Jocular Druid', count: 1 },
+          { type: 'Expedition Board (double-sided)', count: 2 },
+          { type: 'Supplies Board', count: 1 },
+          { type: 'Spoils Board', count: 1 },
+        ],
+      },
+      {
+        name: 'Figures',
+        section: 'Minis',
+        components: [
+          { name: 'Clever Tinkerer', count: 1 },
+          { name: 'Enlightened Ascetic', count: 1 },
+          { name: 'Grizzled Mariner', count: 1 },
+          { name: 'Jocular Druid', count: 1 },
+          { name: 'The Brinewraith', count: 1 },
+          { type: 'Expedition Marker', count: 1 },
+        ],
+      },
+      {
+        name: 'Expedition Cards',
+        section: 'Cards',
+        components: [
+          { type: 'Major Reward', description: '12 per expedition', count: 48 },
+          { type: 'Minor Reward', description: '12 per expedition', count: 48 },
+          { type: 'Gear', description: '6 new gear types × 3', count: 18 },
+        ],
+      },
+      {
+        name: 'Site Tokens',
+        section: 'Tokens',
+        components: [
+          { name: 'Runic Menhir', count: 6 },
+          { name: 'Dark Altar', count: 6 },
+          { name: 'Lotus Workshop', count: 6 },
+          { name: 'Guardian Statue', count: 6 },
+        ],
+      },
+      {
+        name: 'Expedition Tokens',
+        section: 'Tokens',
+        components: [
+          { type: 'Path', description: '15 per expedition', count: 60 },
+          { type: 'Major Reward', count: 8 },
+          { type: 'Minor Reward', count: 9 },
+          { type: 'Gear Upgrade', count: 6 },
+        ],
+      },
+      {
+        name: 'Torments',
+        section: 'Tokens',
+        components: [
+          { type: 'Global Torment', count: 12 },
+          { type: 'Foe Torment', count: 20 },
+        ],
+      },
+      {
+        name: 'Virtues',
+        section: 'Tokens',
+        components: [
+          { name: 'Attuned', count: 1 },
+          { name: 'Gregarious', count: 1 },
+          { name: 'Mystical', count: 1 },
+          { name: 'Accursed', count: 1 },
+          { name: 'Marauding', count: 1 },
+          { name: 'Ruthless', count: 1 },
+          { name: "Sprocket's Condenser", count: 1 },
+          { name: "Sprocket's Manifold", count: 1 },
+          { name: "Sprocket's Resonator", count: 1 },
+          { name: 'Illuminated', count: 1 },
+          { name: 'Long-Strider', count: 1 },
+          { name: 'Temperate', count: 1 },
+          { type: 'Alternate Locked Virtue', count: 16 },
+          { type: 'Alternate Champion Virtue', count: 8 },
+        ],
+      },
+    ],
+  },
 ];
 
 /** Expansions keyed by name. */

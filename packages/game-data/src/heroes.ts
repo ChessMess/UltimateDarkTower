@@ -2,8 +2,9 @@
  * heroes.ts — the Return to Dark Tower hero roster (static reference data).
  *
  * Consumed by `ultimatedarktowerboard` (re-exported, not vendored). Heroes are NOT
- * seed-encoded. 14 heroes: 4 base, 2 Alliances, 4 Covenant, 4 Expeditions (the Expeditions
- * heroes' virtues are recorded; their banner actions are not yet).
+ * seed-encoded. 14 heroes: 4 base, 2 Alliances, 4 Covenant, 4 Expeditions (only the
+ * Grizzled Mariner's banner action is transcribed — the rulebook prints it verbatim but only
+ * paraphrases the other three).
  *
  * This is the ONE hero record. Until v3, 10 of the 14 existed twice — identity here
  * (keyed by `id`) and the gameplay sheet in `gameContent.HEROES` (keyed by name, no id at
@@ -35,8 +36,8 @@ export interface Hero {
   /** Optional fixed start location name, if the hero has one (none recorded yet). */
   startLocation?: string;
   /**
-   * The hero's banner action. Absent only where it has not been recorded yet — the 4
-   * Expeditions heroes. Never infer one.
+   * The hero's banner action. Absent only where its card text has not been transcribed — 3
+   * of the 4 Expeditions heroes. Never infer one from the rulebook's paraphrase.
    */
   bannerAction?: string;
   /** The 2 virtues active from the start (printed on the player board). */
@@ -47,8 +48,7 @@ export interface Hero {
 
 /**
  * All 14 heroes, grouped by source (base → alliances → covenant → expeditions).
- * The 10 base/Alliances/Covenant heroes carry their full gameplay sheet; the 4 Expeditions
- * heroes carry their virtues but no banner action until one is transcribed.
+ * Every hero carries its virtues; all but 3 Expeditions heroes carry a banner action.
  */
 export const HEROES: readonly Hero[] = [
   {
@@ -327,6 +327,7 @@ export const HEROES: readonly Hero[] = [
     id: 'grizzled-mariner',
     name: 'Grizzled Mariner',
     source: 'expeditions',
+    bannerAction: 'Move the Brinewraith up to 3 spaces.',
     defaultVirtues: [
       {
         name: 'Commanding',

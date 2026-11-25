@@ -22,9 +22,11 @@ another play, a card photo, or a word from the designers.
 
 ## Potions & gear
 
-4. Three Expeditions gear cards are still **unnamed** (`name: ''`, ids `unnamed-gear-1..3`),
-   and **`Gilded Alembic`**'s effect text is still unknown. One of the three is expected to
-   grant `+1 Humanoid Advantage`, completing the six-advantage gear set.
+4. Two Expeditions gear cards are still **unnamed** (`name: ''`, ids `unnamed-gear-1` and
+   `unnamed-gear-3`). One is expected to grant `+1 Humanoid Advantage`, completing the
+   six-advantage gear set. (Gilded Alembic's effect and Aqua Vitae came from the rulebook.)
+   The rulebook's component photo shows one more gear card whose name and text aren't
+   legible at that size — likely one of these two.
 
 ## Board locations
 
@@ -60,8 +62,11 @@ is authoritative. Both kept the `boxInventory` spelling; a look at the actual ca
 
 ## Heroes & virtues
 
-10. The four **Expeditions heroes' banner actions** haven't been transcribed, so `bannerAction`
-    is absent on them. Their virtues — and the Expeditions `ALTERNATE_VIRTUES` /
+10. Three **Expeditions heroes' banner actions** haven't been transcribed, so `bannerAction`
+    is absent on them. The rulebook prints only the Grizzled Mariner's verbatim; it
+    paraphrases the rest (Tinkerer: gain a gear card from the market; Druid: change the
+    terrain of your space until the end of turn; Ascetic: remove a skull up to N spaces away,
+    N = your virtue count). Needs the hero boards. Their virtues — and the Expeditions `ALTERNATE_VIRTUES` /
     `ALTERNATE_CHAMPIONS` pools — came from a transcribed "Hero Virtues and Champions" reference
     sheet (Nov 2026), not printed cards; typos (`champiuon`, a stray `+If`) were corrected on
     import. Check all of it against the printed cards.
