@@ -1,7 +1,7 @@
 /**
  * potionsAndGear.ts — the potion and gear cards.
  *
- * The four unreleased Expeditions gear rows are incomplete and carry `needsReview: true`.
+ * The four Expeditions gear rows not yet fully transcribed are incomplete and carry `needsReview: true`.
  * One grants '+1 Humanoid Advantage', which would complete the six-advantage gear set
  * alongside Fell Snares (Beast) and Fulgent Relics (Undead).
  */
@@ -12,7 +12,7 @@ import type { ContentSource } from './heroes';
 export interface PotionOrGear {
   /** Stable, unique kebab-case id. */
   id: string;
-  /** Display name. Empty for the unreleased Expeditions gear not yet publicly named. */
+  /** Display name. Empty for the Expeditions gear whose name has not been transcribed yet. */
   name: string;
   /** Which deck the card belongs to. */
   kind: 'potion' | 'gear';
@@ -150,7 +150,7 @@ export const POTIONS_AND_GEAR: readonly PotionOrGear[] = [
     count: 3,
     source: 'expeditions',
     needsReview: true,
-    sourceNote: 'Unreleased Expeditions gear; a photo exists but the effect text is not legible.',
+    sourceNote: 'Expeditions gear; the only photo transcribed so far has illegible effect text.',
   },
   {
     id: 'unnamed-gear-1',
@@ -160,7 +160,7 @@ export const POTIONS_AND_GEAR: readonly PotionOrGear[] = [
     count: 3,
     source: 'expeditions',
     needsReview: true,
-    sourceNote: 'Unreleased Expeditions gear; name not yet public.',
+    sourceNote: 'Expeditions gear; name not transcribed yet.',
   },
   {
     id: 'unnamed-gear-2',
@@ -169,7 +169,7 @@ export const POTIONS_AND_GEAR: readonly PotionOrGear[] = [
     count: 3,
     source: 'expeditions',
     needsReview: true,
-    sourceNote: 'Unreleased Expeditions gear; name not yet public.',
+    sourceNote: 'Expeditions gear; name not transcribed yet.',
   },
   {
     id: 'unnamed-gear-3',
@@ -178,7 +178,7 @@ export const POTIONS_AND_GEAR: readonly PotionOrGear[] = [
     count: 3,
     source: 'expeditions',
     needsReview: true,
-    sourceNote: 'Unreleased Expeditions gear; name not yet public.',
+    sourceNote: 'Expeditions gear; name not transcribed yet.',
   },
 ];
 

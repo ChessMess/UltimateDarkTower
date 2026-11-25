@@ -2,8 +2,8 @@
  * heroes.ts — the Return to Dark Tower hero roster (static reference data).
  *
  * Consumed by `ultimatedarktowerboard` (re-exported, not vendored). Heroes are NOT
- * seed-encoded. 14 heroes: 4 base, 2 Alliances, 4 Covenant, 4 Expeditions (Expeditions is
- * unreleased; its heroes are publicly confirmed but provisional until the box ships).
+ * seed-encoded. 14 heroes: 4 base, 2 Alliances, 4 Covenant, 4 Expeditions (the Expeditions
+ * heroes' virtues are recorded; their banner actions are not yet).
  *
  * This is the ONE hero record. Until v3, 10 of the 14 existed twice — identity here
  * (keyed by `id`) and the gameplay sheet in `gameContent.HEROES` (keyed by name, no id at
@@ -35,20 +35,20 @@ export interface Hero {
   /** Optional fixed start location name, if the hero has one (none recorded yet). */
   startLocation?: string;
   /**
-   * The hero's banner action. Absent only for heroes whose card has not been published —
-   * the 4 Expeditions heroes. Check `source === 'expeditions'` rather than assuming.
+   * The hero's banner action. Absent only where it has not been recorded yet — the 4
+   * Expeditions heroes. Never infer one.
    */
   bannerAction?: string;
-  /** The 2 virtues active from the start (printed on the player board). Absent if unpublished. */
+  /** The 2 virtues active from the start (printed on the player board). */
   defaultVirtues?: readonly Virtue[];
-  /** The 3 virtue tiles unlocked during play. Absent if unpublished. */
+  /** The 3 virtue tiles unlocked during play. */
   unlockableVirtues?: readonly Virtue[];
 }
 
 /**
  * All 14 heroes, grouped by source (base → alliances → covenant → expeditions).
- * The 10 released heroes carry their full gameplay sheet; the 4 Expeditions heroes are
- * identity-only until their cards are public.
+ * The 10 base/Alliances/Covenant heroes carry their full gameplay sheet; the 4 Expeditions
+ * heroes carry their virtues but no banner action until one is transcribed.
  */
 export const HEROES: readonly Hero[] = [
   {
@@ -300,21 +300,105 @@ export const HEROES: readonly Hero[] = [
     id: 'jocular-druid',
     name: 'Jocular Druid',
     source: 'expeditions',
+    defaultVirtues: [
+      { name: 'Empowered', ability: '+1 Wild Advantage in your champion terrain.' },
+      {
+        name: 'Mesmerizing',
+        ability: 'You may spend your moves to move foes in your current kingdom.',
+      },
+    ],
+    unlockableVirtues: [
+      {
+        name: 'Attuned',
+        ability: 'When you Reinforce in your champion terrain, spend 2 less spirit.',
+      },
+      {
+        name: 'Gregarious',
+        ability: 'If you end your turn in your champion terrain, gain 6 warriors and 1 potion.',
+      },
+      {
+        name: 'Mystical',
+        ability:
+          'After you take a heroic action in your champion terrain, place yourself in any space with your champion terrain.',
+      },
+    ],
   },
   {
     id: 'grizzled-mariner',
     name: 'Grizzled Mariner',
     source: 'expeditions',
+    defaultVirtues: [
+      {
+        name: 'Commanding',
+        ability: "You can take your heroic action as if you were in the Brinewraith's space.",
+      },
+      {
+        name: 'Seasoned',
+        ability: '+1 Wild Advantage when you Battle on or adjacent to a river or lake space.',
+      },
+    ],
+    unlockableVirtues: [
+      {
+        name: 'Accursed',
+        ability: 'Once per turn, remove all skulls from a space the Brinewraith enters.',
+      },
+      {
+        name: 'Marauding',
+        ability:
+          'After you take your Banner action, gain 6 warriors, 1 spirit, 1 gear, or 1 potion.',
+      },
+      {
+        name: 'Ruthless',
+        ability: '+1 Wild Advantage and +1 Undead Advantage when you use your Commanding virtue.',
+      },
+    ],
   },
   {
     id: 'clever-tinkerer',
     name: 'Clever Tinkerer',
     source: 'expeditions',
+    defaultVirtues: [
+      { name: 'Astute', ability: 'After you Reinforce, spend a gear to upgrade another gear.' },
+      { name: 'Ingenious', ability: 'You can have a duplicate gear if one of them is upgraded.' },
+    ],
+    unlockableVirtues: [
+      {
+        name: "Sprocket's Condenser",
+        ability: 'When you spend a gear, gain 1 spirit or 1 potion.',
+      },
+      {
+        name: "Sprocket's Manifold",
+        ability: 'After you Battle or Quest, gain a gear and upgrade it for free.',
+      },
+      {
+        name: "Sprocket's Resonator",
+        ability: 'At the start of your turn, gain 2 warriors for each upgraded gear you have.',
+      },
+    ],
   },
   {
     id: 'enlightened-ascetic',
     name: 'Enlightened Ascetic',
     source: 'expeditions',
+    defaultVirtues: [
+      { name: 'Centered', ability: 'Your Virtues cost only 4 spirit.' },
+      { name: 'Studied', ability: '+1 Humanoid Advantage.' },
+    ],
+    unlockableVirtues: [
+      {
+        name: 'Illuminated',
+        ability:
+          'You may lock this virtue to gain +1 Wild Advantage for each virtue you have (including this one).',
+      },
+      {
+        name: 'Long-Strider',
+        ability: 'After you Reinforce, move up to 1 space for each virtue you have.',
+      },
+      {
+        name: 'Temperate',
+        ability: 'Prevent up to 1 warrior loss per battle card for each virtue you have.',
+      },
+    ],
   },
 ];
 

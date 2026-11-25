@@ -6,7 +6,7 @@ dev server on **3006**.
 
 ## Two registries, deliberately not one
 
-- `src/datasets.ts` + `render.tsx`/`views.tsx` — the 28 game-data datasets.
+- `src/datasets.ts` + `render.tsx`/`views.tsx` — the 30 game-data datasets.
 - `src/art.ts` + `artViews.tsx` — the art/audio files, at `#/art/<group>/<asset>`.
 
 They are **not** merged. Art was folded in from a standalone gallery app (it was
@@ -23,7 +23,7 @@ prefixed. Resist growing a second shell.
 
 ## The registry is the app
 
-`src/datasets.ts` declares all 28 datasets — rows, key, columns, facets,
+`src/datasets.ts` declares all 30 datasets — rows, key, columns, facets,
 cross-links. Every view is generic over an entry there, so **adding a dataset is
 a data edit, never a component**. Resist adding per-dataset render config:
 `render.tsx`'s `<Fields>` walks `Object.entries()` and already handles strings,

@@ -39,18 +39,12 @@ describe('HEROES', () => {
 });
 
 /**
- * The gameplay sheet, merged in from gameContent.HEROES in v3. Published heroes carry the
- * full sheet; the unreleased Expeditions four carry none of it. Anything in between means a
- * transcription got half-applied, which is exactly what the old two-record split allowed.
+ * The gameplay sheet, merged in from gameContent.HEROES in v3. Every hero carries 2 + 3
+ * virtues; the Expeditions four have no banner action recorded yet.
  */
 describe('hero gameplay sheets', () => {
-  const published = HEROES.filter((h) => h.source !== 'expeditions');
-  const unreleased = HEROES.filter((h) => h.source === 'expeditions');
-
-  test('all 10 published heroes have a banner action and 2 + 3 virtues', () => {
-    expect(published).toHaveLength(10);
-    for (const hero of published) {
-      expect(hero.bannerAction?.length ?? 0).toBeGreaterThan(0);
+  test('every hero has 2 default + 3 unlockable named virtues', () => {
+    for (const hero of HEROES) {
       expect(hero.defaultVirtues).toHaveLength(2);
       expect(hero.unlockableVirtues).toHaveLength(3);
       for (const v of [...(hero.defaultVirtues ?? []), ...(hero.unlockableVirtues ?? [])]) {
@@ -60,20 +54,10 @@ describe('hero gameplay sheets', () => {
     }
   });
 
-  test('the 4 unreleased Expeditions heroes carry no sheet rather than a guessed one', () => {
-    expect(unreleased).toHaveLength(4);
-    for (const hero of unreleased) {
-      expect(hero.bannerAction).toBeUndefined();
-      expect(hero.defaultVirtues).toBeUndefined();
-      expect(hero.unlockableVirtues).toBeUndefined();
-    }
-  });
-
-  test('a hero has either the whole sheet or none of it', () => {
+  test('banner actions: all 10 pre-Expeditions heroes have one, Expeditions ones are not guessed', () => {
     for (const hero of HEROES) {
-      const parts = [hero.bannerAction, hero.defaultVirtues, hero.unlockableVirtues];
-      const present = parts.filter((p) => p !== undefined).length;
-      expect([0, parts.length]).toContain(present);
+      if (hero.source === 'expeditions') expect(hero.bannerAction).toBeUndefined();
+      else expect(hero.bannerAction?.length ?? 0).toBeGreaterThan(0);
     }
   });
 

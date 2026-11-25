@@ -117,8 +117,8 @@ defaultVirtues?: Virtue[]; unlockableVirtues?: Virtue[] }`), **`HeroId`** (`stri
 (`string`).
 
 > **Since v3, `HEROES` is the only hero record.** It carries both board identity and the gameplay
-> sheet. The four unreleased Expeditions heroes have no published card, so `bannerAction` and the
-> virtue lists are absent on those — a hero has either the whole sheet or none of it, never half.
+> sheet. The four Expeditions heroes have their virtues but no banner action recorded yet, so
+> `bannerAction` is absent on those — never inferred.
 > Look them up by `HERO_BY_ID` (stable, used for portrait asset paths) or `HERO_BY_NAME`.
 >
 > Through v2 the sheet lived separately in `gameContent.HEROES`, keyed by name with no id. That

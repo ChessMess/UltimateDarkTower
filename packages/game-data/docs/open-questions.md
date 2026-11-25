@@ -58,6 +58,14 @@ is authoritative. Both kept the `boxInventory` spelling; a look at the actual ca
    resolves against a real location, but two sources agreeing on `Akartus` is worth checking:
    either both transcribers elided the same `r`, or the board location itself is misspelled.
 
+## Heroes & virtues
+
+10. The four **Expeditions heroes' banner actions** haven't been transcribed, so `bannerAction`
+    is absent on them. Their virtues — and the Expeditions `ALTERNATE_VIRTUES` /
+    `ALTERNATE_CHAMPIONS` pools — came from a transcribed "Hero Virtues and Champions" reference
+    sheet (Nov 2026), not printed cards; typos (`champiuon`, a stray `+If`) were corrected on
+    import. Check all of it against the printed cards.
+
 ## For the designers
 
 - Why does **Isa the Exile** have only one trait when every other foe and adversary has two?
