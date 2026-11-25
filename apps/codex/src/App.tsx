@@ -256,8 +256,8 @@ function useDataQuality() {
     const locations = DATASET_BY_ID.get('board-locations')!;
     const noDungeon = locations.rows.filter((r) => !r.dungeon).length;
     const heroes = DATASET_BY_ID.get('heroes')!;
-    const provisional = heroes.rows.filter((r) => r.source === 'expeditions').length;
-    return { flagged, noDungeon, locationTotal: locations.rows.length, provisional };
+    const noBanner = heroes.rows.filter((r) => !r.bannerAction).length;
+    return { flagged, noDungeon, locationTotal: locations.rows.length, noBanner };
   }, []);
 }
 
@@ -336,7 +336,7 @@ function Home() {
             dungeon <a href="#/board-locations">Board locations</a>
           </li>
           <li>
-            <strong>{q.provisional}</strong> heroes are provisional Expeditions entries{' '}
+            <strong>{q.noBanner}</strong> heroes have no banner action recorded{' '}
             <a href="#/heroes">Heroes</a>
           </li>
         </ul>

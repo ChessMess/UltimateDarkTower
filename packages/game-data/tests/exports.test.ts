@@ -397,7 +397,7 @@ describe('Package Exports', () => {
     });
 
     test('box inventory data resolves at the top level', () => {
-      expect(expansions.length).toBe(4);
+      expect(expansions.length).toBe(5);
       expect(EXPANSIONS['Base Game'].name).toBe('Base Game');
       expect(sleeves.length).toBeGreaterThan(0);
     });

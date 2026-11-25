@@ -9,7 +9,13 @@
  * namespace went away.
  */
 import * as data from '../src/index';
-import { KINGDOM_VIRTUES, kingdomVirtues, type KingdomDirection } from '../src/virtues';
+import {
+  ALTERNATE_CHAMPIONS,
+  ALTERNATE_VIRTUES,
+  KINGDOM_VIRTUES,
+  kingdomVirtues,
+  type KingdomDirection,
+} from '../src/virtues';
 
 describe('KINGDOM_VIRTUES', () => {
   test('one per kingdom, keyed by direction', () => {
@@ -23,6 +29,17 @@ describe('KINGDOM_VIRTUES', () => {
       expect(v.name).toBe(`Champion of the ${dir}`);
       expect(v.ability.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('Expeditions alternate virtues and champions', () => {
+  test.each([
+    ['ALTERNATE_VIRTUES', ALTERNATE_VIRTUES, 16],
+    ['ALTERNATE_CHAMPIONS', ALTERNATE_CHAMPIONS, 8],
+  ] as const)('%s has the expected unique, filled-in entries', (_label, list, n) => {
+    expect(list).toHaveLength(n);
+    expect(new Set(list.map((v) => v.name)).size).toBe(n);
+    for (const v of list) expect(v.ability.length).toBeGreaterThan(0);
   });
 });
 

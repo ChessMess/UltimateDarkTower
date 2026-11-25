@@ -101,11 +101,12 @@ The sheet's literal `N/A` is dropped rather than stored.
 **Complete sets:** 16 quests (four players × four kingdoms in competitive play), 6 spells +
 4 invocations (Reverent Astromancer only), 24 corruptions, 8 monuments, 22 companions.
 
-**Incomplete:** four Expeditions gear cards are unreleased — three unnamed, and
-`Gilded Alembic` named but with illegible effect text in the only available photo. George
+**Incomplete:** four Expeditions gear cards were unreleased at import — three unnamed, and
+`Gilded Alembic` named but with illegible effect text in the only available photo. The
+printed rulebook later supplied Gilded Alembic's effect and named Aqua Vitae; two remain. George
 expects one to grant `+1 Humanoid Advantage`, completing the six-advantage gear set alongside
 Fell Snares (Beast) and Fulgent Relics (Undead). Justin Jacobson has also confirmed on BGG
-that Expeditions adds a `Bloodthirsty` corruption — not in this data, since it hasn't shipped.
+that Expeditions adds a `Bloodthirsty` corruption — not in this data yet (it postdates the import).
 
 ## Board
 

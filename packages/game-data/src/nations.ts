@@ -2,8 +2,8 @@
  * nations.ts — the four kingdoms as a setting: proper name, colour, signature terrain,
  * virtue, guild, and prose description.
  *
- * `description` comes from the Return to Dark Tower RPG and `neighbor` from draft
- * Expeditions text; both describe the published setting. The source sheet's 'Tribe' /
+ * `description` comes from the Return to Dark Tower RPG and `neighbor` from the printed
+ * Expeditions rulebook (p. 2); both describe the published setting. The source sheet's 'Tribe' /
  * 'Ancient' / element columns were the author's own campaign design and are not imported.
  */
 
@@ -17,7 +17,7 @@ export type NationVirtue = 'Prowess' | 'Valor' | 'Sacrifice' | 'Compassion';
 
 /**
  * A kingdom's setting/lore entry. `description` comes from the Return to Dark Tower RPG
- * and `neighbor` from draft Expeditions text; both describe the published setting.
+ * and `neighbor` from the printed Expeditions rulebook; both describe the published setting.
  * Purely RPG-design material lives in `NATION_RPG_NOTES` instead.
  */
 export interface Nation {
@@ -37,8 +37,8 @@ export interface Nation {
   guild: string;
   /** Prose description of the kingdom, from the RtDT RPG. */
   description: string;
-  /** Prose description of the neighbouring realm beyond the map edge (draft Expeditions
-   *  text). */
+  /** Prose description of the neighbouring realm beyond the map edge — the expedition in
+   *  `EXPEDITIONS` with the same `kingdom` (Expeditions rulebook text). */
   neighbor?: string;
 }
 
@@ -54,7 +54,7 @@ export const NATIONS: readonly Nation[] = [
     description:
       'Though as varied in landscape as all of the Four Kingdoms, the North is the coldest and driest of the four. The people that live there are as strong and tough as bears. Falcons and eagles hunt the skies, and fish fill the cold lakes and rivers. Coins bearing double-headed falcons can still be found in the barrows and tombs of the forgotten empire that once held all of the North. Most northerners live in mountain towns that rely on deep mines and hard timber forests for their wealth.',
     neighbor:
-      'To the north are the Gasping Mountains, home to the aether monks, giants who live among the snowy peaks in pursuit of the perfect alignment of body and mind. The spirits of the fallen are entombed within towering statues that watch over their charges as they did in life.',
+      'To the north are the Gasping Mountains, home to the aether monks, giants who live among their snowy peaks in pursuit of the perfect alignment of mind and body. The spirits of the fallen are entombed within towering statues that watch over their charges as they did in life.',
   },
   {
     id: 'brynthia',
@@ -67,7 +67,7 @@ export const NATIONS: readonly Nation[] = [
     description:
       'To the east lies the oldest of the human cities, as well as the ruins of the ancient race that once called the griffon-haunted crags and canyons home. The Kinghills and the Tombstones alike are home to a vigorous people, as well as tales of an ancient kingdom that has faded from memory. The cosmopolitan towns of the East are home to many merchants and traders, and the Easterners are known for traveling far and wide in search of goods for their colorful bazaars.',
     neighbor:
-      'To the east are the Inkstain Isles, home to freebooters, freeloaders, and the enigmatic Madame Dolo, whose undying smiths fashion accursed altars from the driftwood of ships that crash upon the rocks.',
+      'To the east are the Inkstain Isles, home to freebooters, free spirits, and the enigmatic Mistmother, whose undying smiths fashion accursed altars from the driftwood of the ships that crash upon the rocks.',
   },
   {
     id: 'arisilon',
@@ -93,7 +93,7 @@ export const NATIONS: readonly Nation[] = [
     description:
       'The Kingdom of the West is home to dense forests and herds of wild unicorns. The most peaceful of the Four Kingdoms, the West is nevertheless home to warriors and wizards and is known for producing particularly fine archers and bows. Kingdom Dragons, the violent scourge, are more likely found in the West, particularly in Cloudhold and the Hissing Groves.',
     neighbor:
-      'To the west lies the Umberwood an ancient forest of towering trees, cyclopean fungi, and lurking fauna. Ancient ruins are home to mysterious stone menhirs carved with inscrutable runes and infused with primordial power.',
+      'To the west lies the Umberwood, an ancient forest of towering trees, cyclopean fungi, and lurking fauna. Ancient ruins are home to cryptic stone menhirs carved with inscrutable runes and infused with primordial power.',
   },
 ];
 

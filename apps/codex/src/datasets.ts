@@ -189,8 +189,8 @@ export const DATASETS: Dataset[] = [
     columns: ['name', 'source', 'bannerAction', 'startLocation'],
     facets: ['source'],
     view: 'cards',
-    note: 'Identity and the gameplay sheet in one record. The 4 unreleased Expeditions heroes are identity-only — their cards are not public, so they carry no banner action or virtues rather than a guess.',
-    flags: (r) => (s(r, 'source') === 'expeditions' ? ['provisional'] : []),
+    note: 'Identity and the gameplay sheet in one record. Three Expeditions heroes have no banner action — the rulebook only paraphrases it, so it is left blank rather than guessed.',
+    flags: (r) => (r.bannerAction ? [] : ['no banner action']),
   },
   {
     id: 'foes',
@@ -285,7 +285,7 @@ export const DATASETS: Dataset[] = [
     columns: ['name', 'kind', 'effect', 'count', 'color'],
     facets: ['kind', 'color'],
     view: 'cards',
-    note: 'Four rows are unreleased Expeditions gear the source author could not fully observe — they carry a source note rather than a guess.',
+    note: 'Two rows are Expeditions gear not yet transcribed — they carry a source note rather than a guess.',
   },
   {
     id: 'corruptions',
@@ -349,6 +349,35 @@ export const DATASETS: Dataset[] = [
     columns: ['name', 'kingdom', 'color', 'terrain', 'virtue', 'guild'],
     facets: ['kingdom'],
     view: 'cards',
+  },
+
+  {
+    id: 'expeditions',
+    name: 'Expeditions',
+    group: 'Cards',
+    exports: ['EXPEDITIONS', 'EXPEDITION_BY_ID'],
+    rows: asRows(D.EXPEDITIONS),
+    key: byId,
+    columns: ['name', 'kingdom', 'siteToken'],
+    facets: ['kingdom'],
+    view: 'cards',
+    note: 'The four expedition boards and the site token each awards. The realm’s description lives on its bordering nation.',
+    related: (r) =>
+      D.NATIONS.filter((n) => n.kingdom === s(r, 'kingdom')).map((n) => ({
+        label: 'Bordering kingdom',
+        dataset: 'nations',
+        id: n.id,
+      })),
+  },
+  {
+    id: 'torment-setup',
+    name: 'Torment setup',
+    group: 'Reference',
+    exports: ['TORMENT_SETUP'],
+    rows: asRows(D.TORMENT_SETUP),
+    key: (r) => safeKey(s(r, 'slot')),
+    columns: ['slot', 'narrative', 'easy', 'medium', 'hard', 'nightmare'],
+    note: 'Expeditions: which torment tier each foe gets, and how many global torments, per difficulty.',
   },
 
   // ── Dungeons & caravans ──────────────────────────────────────────────────────────────────────
@@ -538,6 +567,26 @@ export const DATASETS: Dataset[] = [
     key: (r) => s(r, 'kingdom'),
     columns: ['kingdom', 'name', 'ability'],
     note: 'Taken at setup for your seating kingdom — not hero-specific, which is why they are not on the hero sheet.',
+  },
+  {
+    id: 'alternate-virtues',
+    name: 'Alternate virtues',
+    group: 'Reference',
+    exports: ['ALTERNATE_VIRTUES'],
+    rows: asRows(D.ALTERNATE_VIRTUES),
+    key: (r) => safeKey(s(r, 'name')),
+    columns: ['name', 'ability'],
+    note: 'Expeditions: a general virtue pool not tied to any hero.',
+  },
+  {
+    id: 'alternate-champions',
+    name: 'Alternate champions',
+    group: 'Reference',
+    exports: ['ALTERNATE_CHAMPIONS'],
+    rows: asRows(D.ALTERNATE_CHAMPIONS),
+    key: (r) => safeKey(s(r, 'name')),
+    columns: ['name', 'ability'],
+    note: 'Expeditions: alternatives to the kingdom virtues.',
   },
   {
     id: 'vocabularies',

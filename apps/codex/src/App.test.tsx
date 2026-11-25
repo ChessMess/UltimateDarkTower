@@ -119,9 +119,9 @@ describe('App renders', () => {
   });
 
   it('renders the review stamp and its source note', () => {
-    const text = renderAt('#/potions-gear/gilded-alembic');
+    const text = renderAt('#/potions-gear/unnamed-gear-3');
     expect(text).toContain('needs review');
-    expect(text).toContain('not legible');
+    expect(text).toContain('not transcribed');
   });
 
   it('renders global search results', () => {

@@ -11,12 +11,13 @@ import {
 } from '../src/boxInventory';
 
 describe('expansions / EXPANSIONS', () => {
-  test('has the 4 expected expansions', () => {
+  test('has the 5 expected expansions', () => {
     expect(expansions.map((e) => e.name)).toEqual([
       'Base Game',
       'Alliances',
       'Covenant',
       'Dark Horde',
+      'Expeditions',
     ]);
   });
 

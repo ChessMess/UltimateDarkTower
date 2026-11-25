@@ -22,8 +22,12 @@ Includes:
 
 - **Foes & adversaries** — `FOES`, `ADVERSARY_ROSTER`, `ALL_FOES`, `FOE_BY_ID`, `FOE_BY_NAME`
 - **Heroes** — `HEROES`, `HERO_BY_ID`, `HERO_BY_NAME`: one record per hero carrying both board
-  identity and the gameplay sheet (banner action, starting and unlockable virtues). The four
-  unreleased Expeditions heroes are identity-only until their cards are public.
+  identity and the gameplay sheet (banner action, starting and unlockable virtues). Three of
+  the Expeditions heroes have no banner action transcribed yet.
+- **Expeditions** — `EXPEDITIONS`/`EXPEDITION_BY_ID` (the four expedition boards and their
+  site tokens) and `TORMENT_SETUP` (torment tiers by difficulty).
+- **Virtues** — `KINGDOM_VIRTUES`/`kingdomVirtues`, plus the Expeditions `ALTERNATE_VIRTUES`
+  and `ALTERNATE_CHAMPIONS` pools.
 - **Monuments** — `MONUMENTS`, `MONUMENT_BY_ID`
 - **Box inventory** — component/token counts per expansion
 - **Board** (`ultimatedarktowerdata/board`) — the 60 built-in locations, layout

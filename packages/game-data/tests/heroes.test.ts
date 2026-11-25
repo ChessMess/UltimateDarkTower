@@ -39,18 +39,12 @@ describe('HEROES', () => {
 });
 
 /**
- * The gameplay sheet, merged in from gameContent.HEROES in v3. Published heroes carry the
- * full sheet; the unreleased Expeditions four carry none of it. Anything in between means a
- * transcription got half-applied, which is exactly what the old two-record split allowed.
+ * The gameplay sheet, merged in from gameContent.HEROES in v3. Every hero carries 2 + 3
+ * virtues; 3 Expeditions heroes have no banner action transcribed yet.
  */
 describe('hero gameplay sheets', () => {
-  const published = HEROES.filter((h) => h.source !== 'expeditions');
-  const unreleased = HEROES.filter((h) => h.source === 'expeditions');
-
-  test('all 10 published heroes have a banner action and 2 + 3 virtues', () => {
-    expect(published).toHaveLength(10);
-    for (const hero of published) {
-      expect(hero.bannerAction?.length ?? 0).toBeGreaterThan(0);
+  test('every hero has 2 default + 3 unlockable named virtues', () => {
+    for (const hero of HEROES) {
       expect(hero.defaultVirtues).toHaveLength(2);
       expect(hero.unlockableVirtues).toHaveLength(3);
       for (const v of [...(hero.defaultVirtues ?? []), ...(hero.unlockableVirtues ?? [])]) {
@@ -60,21 +54,16 @@ describe('hero gameplay sheets', () => {
     }
   });
 
-  test('the 4 unreleased Expeditions heroes carry no sheet rather than a guessed one', () => {
-    expect(unreleased).toHaveLength(4);
-    for (const hero of unreleased) {
-      expect(hero.bannerAction).toBeUndefined();
-      expect(hero.defaultVirtues).toBeUndefined();
-      expect(hero.unlockableVirtues).toBeUndefined();
-    }
-  });
-
-  test('a hero has either the whole sheet or none of it', () => {
+  test('banner actions: every pre-Expeditions hero has one; only Expeditions may lack it', () => {
     for (const hero of HEROES) {
-      const parts = [hero.bannerAction, hero.defaultVirtues, hero.unlockableVirtues];
-      const present = parts.filter((p) => p !== undefined).length;
-      expect([0, parts.length]).toContain(present);
+      if (hero.bannerAction === undefined) expect(hero.source).toBe('expeditions');
+      else expect(hero.bannerAction.length).toBeGreaterThan(0);
     }
+    expect(
+      HEROES.filter((h) => h.bannerAction === undefined)
+        .map((h) => h.id)
+        .sort(),
+    ).toEqual(['clever-tinkerer', 'enlightened-ascetic', 'jocular-druid']);
   });
 
   test('virtue names are unique within a hero', () => {
